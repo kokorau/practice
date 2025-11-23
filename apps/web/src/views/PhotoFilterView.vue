@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { usePhotoUpload } from '../composables/PhotoLocal/usePhotoUpload'
 import { usePhotoCanvas } from '../composables/Photo/usePhotoCanvas'
@@ -18,6 +19,10 @@ const { canvasRef } = usePhotoCanvas(photo, { lut, pixelEffects })
 const { analysis: originalAnalysis } = usePhotoAnalysis(photo)
 // Filtered analysis (after filter)
 const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
+
+// タブ状態
+type TabId = 'source' | 'adjust'
+const activeTab = ref<TabId>('source')
 
 // デバウンスされた更新関数 (重い処理の負荷軽減)
 const debouncedSetExposure = useDebounceFn(setExposure, 16)
@@ -196,587 +201,276 @@ const handleGainBChange = (e: Event) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 text-white p-8">
-    <h1 class="text-3xl font-bold mb-4">Photo Filter</h1>
-
-    <div class="mb-4">
-      <label class="block mb-2 text-sm text-gray-400">画像を選択</label>
-      <input
-        type="file"
-        accept="image/*"
-        @change="handleFileChange"
-        class="block w-full text-sm text-gray-400
-          file:mr-4 file:py-2 file:px-4
-          file:rounded file:border-0
-          file:text-sm file:font-semibold
-          file:bg-blue-600 file:text-white
-          hover:file:bg-blue-700
-          cursor-pointer"
-      />
-    </div>
-
-    <div class="flex gap-8 items-start flex-wrap">
-      <!-- Canvas -->
-      <div class="border border-gray-700 rounded-lg p-4 inline-block">
-        <canvas
-          ref="canvasRef"
-          :class="{ 'hidden': !photo }"
-          class="max-w-full h-auto"
-        />
-        <p v-if="!photo" class="text-gray-500">画像をアップロードしてください</p>
+  <div class="h-screen bg-gray-900 text-white flex justify-center">
+    <div class="flex w-[1200px] max-w-full">
+    <!-- Left Panel: Tabs + Controls -->
+    <div class="w-80 flex-shrink-0 border-r border-gray-700 flex flex-col">
+      <!-- Tab Headers -->
+      <div class="flex border-b border-gray-700">
+        <button
+          @click="activeTab = 'source'"
+          :class="[
+            'flex-1 px-4 py-3 text-sm font-medium transition-colors',
+            activeTab === 'source'
+              ? 'text-white bg-gray-800 border-b-2 border-blue-500'
+              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+          ]"
+        >
+          Source
+        </button>
+        <button
+          @click="activeTab = 'adjust'"
+          :class="[
+            'flex-1 px-4 py-3 text-sm font-medium transition-colors',
+            activeTab === 'adjust'
+              ? 'text-white bg-gray-800 border-b-2 border-blue-500'
+              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+          ]"
+        >
+          Adjust
+        </button>
       </div>
 
-      <!-- Controls & Analysis -->
-      <div class="space-y-4">
+      <!-- Tab Content (Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-4">
+        <!-- Source Tab -->
+        <div v-if="activeTab === 'source'" class="space-y-4">
+          <div class="border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm text-gray-400 mb-3">Upload</h2>
+            <input
+              type="file"
+              accept="image/*"
+              @change="handleFileChange"
+              class="block w-full text-sm text-gray-400
+                file:mr-4 file:py-2 file:px-4
+                file:rounded file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-600 file:text-white
+                hover:file:bg-blue-700
+                cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <!-- Adjust Tab -->
+        <div v-if="activeTab === 'adjust'" class="space-y-3">
         <!-- Basic Adjustments -->
-        <div class="border border-gray-700 rounded-lg p-4">
-          <div class="flex justify-between items-center mb-3">
-            <h2 class="text-sm text-gray-400">Adjustments</h2>
+        <div class="border border-gray-700 rounded-lg p-3">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xs text-gray-400 font-medium">Adjustments</h2>
             <button
               @click="reset"
-              class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded"
+              class="text-xs px-2 py-0.5 bg-gray-700 hover:bg-gray-600 rounded"
             >
-              Reset All
+              Reset
             </button>
           </div>
 
-          <!-- Exposure -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Exposure</span>
-              <span>{{ filter.adjustment.exposure >= 0 ? '+' : '' }}{{ filter.adjustment.exposure.toFixed(2) }} EV</span>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Exposure</span>
+              <input type="range" min="-2" max="2" step="0.01" :value="filter.adjustment.exposure" @input="handleExposureChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-2"
-              max="2"
-              step="0.01"
-              :value="filter.adjustment.exposure"
-              @input="handleExposureChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Highlights -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Highlights</span>
-              <span>{{ filter.adjustment.highlights.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Highlights</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.highlights" @input="handleHighlightsChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.highlights"
-              @input="handleHighlightsChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Shadows -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Shadows</span>
-              <span>{{ filter.adjustment.shadows.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Shadows</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.shadows" @input="handleShadowsChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.shadows"
-              @input="handleShadowsChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Whites -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Whites</span>
-              <span>{{ filter.adjustment.whites.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Whites</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.whites" @input="handleWhitesChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.whites"
-              @input="handleWhitesChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Blacks -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Blacks</span>
-              <span>{{ filter.adjustment.blacks.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Blacks</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.blacks" @input="handleBlacksChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.blacks"
-              @input="handleBlacksChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Brightness -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Brightness</span>
-              <span>{{ filter.adjustment.brightness.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Brightness</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.brightness" @input="handleBrightnessChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.brightness"
-              @input="handleBrightnessChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Contrast -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Contrast</span>
-              <span>{{ filter.adjustment.contrast.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Contrast</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.contrast" @input="handleContrastChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.contrast"
-              @input="handleContrastChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Clarity -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Clarity</span>
-              <span>{{ filter.adjustment.clarity.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Clarity</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.clarity" @input="handleClarityChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.clarity"
-              @input="handleClarityChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Temperature -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Temperature</span>
-              <span>{{ filter.adjustment.temperature.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Temp</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.temperature" @input="handleTemperatureChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.temperature"
-              @input="handleTemperatureChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Tint -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Tint</span>
-              <span>{{ filter.adjustment.tint.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Tint</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.tint" @input="handleTintChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.tint"
-              @input="handleTintChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Fade -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Fade</span>
-              <span>{{ filter.adjustment.fade.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Fade</span>
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.fade" @input="handleFadeChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.fade"
-              @input="handleFadeChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Vibrance -->
-          <div>
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Vibrance</span>
-              <span>{{ filter.adjustment.vibrance.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Vibrance</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.vibrance" @input="handleVibranceChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.vibrance"
-              @input="handleVibranceChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
           </div>
         </div>
 
         <!-- Split Toning -->
-        <div class="border border-gray-700 rounded-lg p-4">
-          <h2 class="text-sm text-gray-400 mb-3">Split Toning</h2>
-
-          <!-- Shadows -->
-          <div class="mb-4">
-            <div class="text-xs text-gray-500 mb-2">Shadows</div>
-            <div class="mb-2">
-              <div class="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Hue</span>
-                <span>{{ Math.round(filter.adjustment.splitShadowHue) }}°</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="360"
-                step="1"
-                :value="filter.adjustment.splitShadowHue"
-                @input="handleSplitShadowHueChange"
-                class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)"
-              />
+        <div class="border border-gray-700 rounded-lg p-3">
+          <h2 class="text-xs text-gray-400 font-medium mb-2">Split Toning</h2>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Sh Hue</span>
+              <input type="range" min="0" max="360" step="1" :value="filter.adjustment.splitShadowHue" @input="handleSplitShadowHueChange" class="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer" style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)" />
             </div>
-            <div>
-              <div class="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Amount</span>
-                <span>{{ filter.adjustment.splitShadowAmount.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.splitShadowAmount"
-                @input="handleSplitShadowAmountChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Sh Amt</span>
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.splitShadowAmount" @input="handleSplitShadowAmountChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-          </div>
-
-          <!-- Highlights -->
-          <div class="mb-4">
-            <div class="text-xs text-gray-500 mb-2">Highlights</div>
-            <div class="mb-2">
-              <div class="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Hue</span>
-                <span>{{ Math.round(filter.adjustment.splitHighlightHue) }}°</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="360"
-                step="1"
-                :value="filter.adjustment.splitHighlightHue"
-                @input="handleSplitHighlightHueChange"
-                class="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)"
-              />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Hi Hue</span>
+              <input type="range" min="0" max="360" step="1" :value="filter.adjustment.splitHighlightHue" @input="handleSplitHighlightHueChange" class="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer" style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)" />
             </div>
-            <div>
-              <div class="flex justify-between text-xs text-gray-500 mb-1">
-                <span>Amount</span>
-                <span>{{ filter.adjustment.splitHighlightAmount.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.splitHighlightAmount"
-                @input="handleSplitHighlightAmountChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Hi Amt</span>
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.splitHighlightAmount" @input="handleSplitHighlightAmountChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-          </div>
-
-          <!-- Balance -->
-          <div>
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Balance</span>
-              <span>{{ filter.adjustment.splitBalance.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Balance</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.splitBalance" @input="handleSplitBalanceChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="-1"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.splitBalance"
-              @input="handleSplitBalanceChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
           </div>
         </div>
 
         <!-- Film Curve -->
-        <div class="border border-gray-700 rounded-lg p-4">
-          <h2 class="text-sm text-gray-400 mb-3">Film Curve</h2>
-
-          <!-- Toe -->
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Toe (黒締まり)</span>
-              <span>{{ filter.adjustment.toe.toFixed(2) }}</span>
+        <div class="border border-gray-700 rounded-lg p-3">
+          <h2 class="text-xs text-gray-400 font-medium mb-2">Film Curve</h2>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Toe</span>
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.toe" @input="handleToeChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.toe"
-              @input="handleToeChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-
-          <!-- Shoulder -->
-          <div>
-            <div class="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Shoulder (白ロールオフ)</span>
-              <span>{{ filter.adjustment.shoulder.toFixed(2) }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Shoulder</span>
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.shoulder" @input="handleShoulderChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              :value="filter.adjustment.shoulder"
-              @input="handleShoulderChange"
-              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
           </div>
         </div>
 
         <!-- Color Balance (Lift/Gamma/Gain) -->
-        <div class="border border-gray-700 rounded-lg p-4">
-          <h2 class="text-sm text-gray-400 mb-3">Color Balance</h2>
-
-          <!-- Lift (Shadows) -->
-          <div class="mb-4">
-            <div class="text-xs text-gray-500 mb-2">Lift (Shadows)</div>
-            <div class="mb-2">
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-red-400">R</span>
-                <span class="text-gray-500">{{ filter.adjustment.liftR.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="-1"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.liftR"
-                @input="handleLiftRChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+        <div class="border border-gray-700 rounded-lg p-3">
+          <h2 class="text-xs text-gray-400 font-medium mb-2">Color Balance</h2>
+          <div class="space-y-1.5">
+            <!-- Lift -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-red-400 w-16 flex-shrink-0">Lift R</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftR" @input="handleLiftRChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <div class="mb-2">
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-green-400">G</span>
-                <span class="text-gray-500">{{ filter.adjustment.liftG.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="-1"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.liftG"
-                @input="handleLiftGChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-green-400 w-16 flex-shrink-0">Lift G</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftG" @input="handleLiftGChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-blue-400">B</span>
-                <span class="text-gray-500">{{ filter.adjustment.liftB.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="-1"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.liftB"
-                @input="handleLiftBChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-blue-400 w-16 flex-shrink-0">Lift B</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftB" @input="handleLiftBChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-          </div>
-
-          <!-- Gamma (Midtones) -->
-          <div class="mb-4">
-            <div class="text-xs text-gray-500 mb-2">Gamma (Midtones)</div>
-            <div class="mb-2">
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-red-400">R</span>
-                <span class="text-gray-500">{{ filter.adjustment.gammaR.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="-1"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.gammaR"
-                @input="handleGammaRChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <!-- Gamma -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-red-400 w-16 flex-shrink-0">Gamma R</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaR" @input="handleGammaRChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <div class="mb-2">
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-green-400">G</span>
-                <span class="text-gray-500">{{ filter.adjustment.gammaG.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="-1"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.gammaG"
-                @input="handleGammaGChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-green-400 w-16 flex-shrink-0">Gamma G</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaG" @input="handleGammaGChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-blue-400">B</span>
-                <span class="text-gray-500">{{ filter.adjustment.gammaB.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="-1"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.gammaB"
-                @input="handleGammaBChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-blue-400 w-16 flex-shrink-0">Gamma B</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaB" @input="handleGammaBChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-          </div>
-
-          <!-- Gain (Highlights) -->
-          <div>
-            <div class="text-xs text-gray-500 mb-2">Gain (Highlights)</div>
-            <div class="mb-2">
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-red-400">R</span>
-                <span class="text-gray-500">{{ filter.adjustment.gainR.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="-1"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.gainR"
-                @input="handleGainRChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <!-- Gain -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-red-400 w-16 flex-shrink-0">Gain R</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainR" @input="handleGainRChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <div class="mb-2">
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-green-400">G</span>
-                <span class="text-gray-500">{{ filter.adjustment.gainG.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="-1"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.gainG"
-                @input="handleGainGChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-green-400 w-16 flex-shrink-0">Gain G</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainG" @input="handleGainGChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-blue-400">B</span>
-                <span class="text-gray-500">{{ filter.adjustment.gainB.toFixed(2) }}</span>
-              </div>
-              <input
-                type="range"
-                min="-1"
-                max="1"
-                step="0.01"
-                :value="filter.adjustment.gainB"
-                @input="handleGainBChange"
-                class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-blue-400 w-16 flex-shrink-0">Gain B</span>
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainB" @input="handleGainBChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
           </div>
         </div>
 
         <!-- Curve Editor -->
-        <div class="border border-gray-700 rounded-lg p-4">
-          <h2 class="text-sm text-gray-400 mb-2">Tone Curve</h2>
+        <div class="border border-gray-700 rounded-lg p-3">
+          <h2 class="text-xs text-gray-400 font-medium mb-2">Tone Curve</h2>
           <CurveEditor
             :curve="filter.master"
-            :width="256"
-            :height="150"
+            :width="240"
+            :height="100"
             @update:point="handlePointUpdate"
           />
-          <div class="mt-2 text-xs text-gray-500">
-            ポイントをドラッグして調整
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Preview + Analysis -->
+    <div class="flex-1 flex flex-col min-w-0 p-4 gap-4 overflow-auto">
+      <!-- Preview Area (16:9 container) -->
+      <div class="flex-shrink-0">
+        <div class="relative w-full bg-gray-800 border border-gray-700 rounded-lg overflow-hidden" style="aspect-ratio: 16/9;">
+          <div class="absolute inset-0 flex items-center justify-center">
+            <canvas
+              ref="canvasRef"
+              :class="{ 'hidden': !photo }"
+              class="max-w-full max-h-full object-contain"
+            />
+            <p v-if="!photo" class="text-gray-500">
+              画像をアップロードしてください
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Histogram & Statistics -->
+      <div v-if="originalAnalysis && filteredAnalysis" class="grid grid-cols-2 gap-4 flex-shrink-0">
+        <!-- Histogram (縦並び) -->
+        <div class="border border-gray-700 rounded-lg p-3 bg-gray-800">
+          <h2 class="text-xs text-gray-400 font-medium mb-2">Histogram</h2>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-8 flex-shrink-0">Bfr</span>
+              <HistogramCanvas :data="originalAnalysis.histogram" :width="300" :height="50" class="flex-1" />
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-8 flex-shrink-0">Aft</span>
+              <HistogramCanvas :data="filteredAnalysis.histogram" :width="300" :height="50" class="flex-1" />
+            </div>
           </div>
         </div>
 
-        <!-- Histograms: Before / After -->
-        <div v-if="originalAnalysis && filteredAnalysis" class="border border-gray-700 rounded-lg p-4">
-          <h2 class="text-sm text-gray-400 mb-3">Histogram</h2>
-          <div class="flex gap-4">
-            <div>
-              <div class="text-xs text-gray-500 mb-1">Before</div>
-              <HistogramCanvas :data="originalAnalysis.histogram" :width="200" :height="80" />
-            </div>
-            <div>
-              <div class="text-xs text-gray-500 mb-1">After</div>
-              <HistogramCanvas :data="filteredAnalysis.histogram" :width="200" :height="80" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Stats: Before / After -->
-        <div v-if="originalAnalysis && filteredAnalysis" class="border border-gray-700 rounded-lg p-4">
-          <h2 class="text-sm text-gray-400 mb-3">Statistics</h2>
-          <div class="flex gap-6">
-            <div>
-              <div class="text-xs text-gray-500 mb-2">Before</div>
+        <!-- Statistics -->
+        <div class="border border-gray-700 rounded-lg p-3 bg-gray-800 min-w-0">
+          <h2 class="text-xs text-gray-400 font-medium mb-2">Statistics</h2>
+          <div class="grid grid-cols-2 gap-6">
+            <div class="min-w-0">
+              <span class="text-xs text-gray-500">Before</span>
               <PhotoStats :stats="originalAnalysis.stats" />
             </div>
-            <div class="border-l border-gray-700 pl-6">
-              <div class="text-xs text-gray-500 mb-2">After</div>
+            <div class="min-w-0">
+              <span class="text-xs text-gray-500">After</span>
               <PhotoStats :stats="filteredAnalysis.stats" />
             </div>
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>

@@ -1,83 +1,89 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { HistogramStats } from '../modules/Photo/Domain'
 
-defineProps<{
+const props = defineProps<{
   stats: HistogramStats
 }>()
 
 const formatPercent = (value: number) => `${(value * 100).toFixed(1)}%`
 const formatValue = (value: number) => value.toFixed(1)
+
+// Distribution を正規化して合計100%になるようにする
+const normalizedDistribution = computed(() => {
+  const { shadows, midtones, highlights } = props.stats.luminance
+  const total = shadows + midtones + highlights
+  if (total === 0) return { shadows: 33.3, midtones: 33.3, highlights: 33.4 }
+  return {
+    shadows: (shadows / total) * 100,
+    midtones: (midtones / total) * 100,
+    highlights: (highlights / total) * 100,
+  }
+})
+
+const hasClipping = computed(() =>
+  props.stats.luminance.clippedBlack > 0.01 || props.stats.luminance.clippedWhite > 0.01
+)
 </script>
 
 <template>
-  <div class="text-sm">
+  <div class="text-xs">
     <!-- Luminance Overview -->
-    <div class="mb-4">
-      <h3 class="text-gray-400 mb-2">輝度</h3>
-      <div class="grid grid-cols-2 gap-2">
-        <div>
-          <span class="text-gray-500">平均:</span>
-          <span class="ml-2">{{ formatValue(stats.luminance.mean) }}</span>
-        </div>
+    <div class="mb-3">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-gray-400">輝度</span>
+        <span class="text-gray-300 tabular-nums">{{ formatValue(stats.luminance.mean) }}</span>
       </div>
       <!-- Distribution Bar -->
-      <div class="mt-2 h-4 flex rounded overflow-hidden">
+      <div class="h-3 flex rounded overflow-hidden bg-gray-900">
         <div
-          class="bg-gray-700"
-          :style="{ width: formatPercent(stats.luminance.shadows) }"
+          class="bg-gray-700 transition-all"
+          :style="{ flexBasis: `${normalizedDistribution.shadows}%` }"
           :title="`Shadows: ${formatPercent(stats.luminance.shadows)}`"
         />
         <div
-          class="bg-gray-500"
-          :style="{ width: formatPercent(stats.luminance.midtones) }"
+          class="bg-gray-500 transition-all"
+          :style="{ flexBasis: `${normalizedDistribution.midtones}%` }"
           :title="`Midtones: ${formatPercent(stats.luminance.midtones)}`"
         />
         <div
-          class="bg-gray-300"
-          :style="{ width: formatPercent(stats.luminance.highlights) }"
+          class="bg-gray-300 transition-all"
+          :style="{ flexBasis: `${normalizedDistribution.highlights}%` }"
           :title="`Highlights: ${formatPercent(stats.luminance.highlights)}`"
         />
       </div>
-      <div class="flex justify-between text-xs text-gray-500 mt-1">
-        <span>シャドウ</span>
-        <span>中間</span>
-        <span>ハイライト</span>
-      </div>
-    </div>
-
-    <!-- Clipping Warning -->
-    <div v-if="stats.luminance.clippedBlack > 0.01 || stats.luminance.clippedWhite > 0.01" class="mb-4">
-      <h3 class="text-gray-400 mb-2">クリッピング警告</h3>
-      <div class="space-y-1">
-        <div v-if="stats.luminance.clippedBlack > 0.01" class="text-yellow-500">
-          ⚠ 黒潰れ: {{ formatPercent(stats.luminance.clippedBlack) }}
-        </div>
-        <div v-if="stats.luminance.clippedWhite > 0.01" class="text-yellow-500">
-          ⚠ 白飛び: {{ formatPercent(stats.luminance.clippedWhite) }}
-        </div>
+      <div class="flex justify-between text-gray-500 mt-0.5" style="font-size: 10px;">
+        <span>S</span>
+        <span>M</span>
+        <span>H</span>
       </div>
     </div>
 
     <!-- RGB Details -->
-    <div>
-      <h3 class="text-gray-400 mb-2">RGB平均</h3>
-      <div class="space-y-1">
-        <div class="flex items-center gap-2">
-          <span class="w-4 h-4 bg-red-500 rounded" />
-          <span class="w-8">R:</span>
-          <span>{{ formatValue(stats.r.mean) }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="w-4 h-4 bg-green-500 rounded" />
-          <span class="w-8">G:</span>
-          <span>{{ formatValue(stats.g.mean) }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="w-4 h-4 bg-blue-500 rounded" />
-          <span class="w-8">B:</span>
-          <span>{{ formatValue(stats.b.mean) }}</span>
-        </div>
+    <div class="space-y-0.5 mb-2">
+      <div class="flex items-center gap-1">
+        <span class="w-2 h-2 bg-red-500 rounded-sm flex-shrink-0" />
+        <span class="text-gray-500 w-4">R</span>
+        <span class="text-gray-300 tabular-nums">{{ formatValue(stats.r.mean) }}</span>
       </div>
+      <div class="flex items-center gap-1">
+        <span class="w-2 h-2 bg-green-500 rounded-sm flex-shrink-0" />
+        <span class="text-gray-500 w-4">G</span>
+        <span class="text-gray-300 tabular-nums">{{ formatValue(stats.g.mean) }}</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <span class="w-2 h-2 bg-blue-500 rounded-sm flex-shrink-0" />
+        <span class="text-gray-500 w-4">B</span>
+        <span class="text-gray-300 tabular-nums">{{ formatValue(stats.b.mean) }}</span>
+      </div>
+    </div>
+
+    <!-- Clipping -->
+    <div style="font-size: 10px;">
+      <span v-if="stats.luminance.clippedBlack > 0.01" class="text-yellow-500">⚠黒潰れ{{ formatPercent(stats.luminance.clippedBlack) }}</span>
+      <span v-if="stats.luminance.clippedBlack > 0.01 && stats.luminance.clippedWhite > 0.01" class="text-gray-600"> / </span>
+      <span v-if="stats.luminance.clippedWhite > 0.01" class="text-yellow-500">⚠白飛び{{ formatPercent(stats.luminance.clippedWhite) }}</span>
+      <span v-if="!hasClipping" class="text-gray-600">クリッピングなし</span>
     </div>
   </div>
 </template>
