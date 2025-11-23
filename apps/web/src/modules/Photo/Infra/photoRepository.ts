@@ -1,4 +1,4 @@
-import type { Photo } from '../Domain/types'
+import type { Photo } from '../Domain'
 import type { PhotoRepository } from '../Application/ports'
 
 let current: Photo | null = null

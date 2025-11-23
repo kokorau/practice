@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { uploadLocalPhoto } from './uploadLocalPhoto'
-import type { Photo } from '../../Photo/Domain/types'
+import type { Photo } from '../../Photo/Domain'
 import type { LocalPhotoUploader } from './ports'
 import type { PhotoRepository } from '../../Photo/Application/ports'
 

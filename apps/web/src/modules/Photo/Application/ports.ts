@@ -1,4 +1,4 @@
-import type { Photo } from '../Domain/types'
+import type { Photo } from '../Domain'
 
 export type PhotoRepository = {
   get: () => Photo | null

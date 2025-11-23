@@ -1,5 +1,5 @@
-import { ref, type Ref } from 'vue'
-import type { Photo } from '../../modules/Photo/Domain/types'
+import { ref, computed, type Ref } from 'vue'
+import { type Photo, type PhotoAnalysis, $PhotoAnalysis } from '../../modules/Photo/Domain'
 import { photoRepository } from '../../modules/Photo/Infra/photoRepository'
 import { createLocalPhotoUploader } from '../../modules/PhotoLocal/Infra/localPhotoUploader'
 import { uploadLocalPhoto } from '../../modules/PhotoLocal/Application/uploadLocalPhoto'
@@ -12,6 +12,11 @@ const deps = {
 export const usePhotoUpload = () => {
   const photo: Ref<Photo | null> = ref(photoRepository.get())
   const canvasRef: Ref<HTMLCanvasElement | null> = ref(null)
+
+  const analysis = computed<PhotoAnalysis | null>(() => {
+    if (!photo.value) return null
+    return $PhotoAnalysis.create(photo.value)
+  })
 
   const handleFileChange = async (event: Event) => {
     const input = event.target as HTMLInputElement
@@ -39,6 +44,7 @@ export const usePhotoUpload = () => {
 
   return {
     photo,
+    analysis,
     canvasRef,
     handleFileChange,
     renderToCanvas,

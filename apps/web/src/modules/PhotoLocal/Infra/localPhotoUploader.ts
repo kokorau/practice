@@ -1,4 +1,4 @@
-import type { Photo } from '../../Photo/Domain/types'
+import { type Photo, $Photo } from '../../Photo/Domain'
 import type { LocalPhotoUploader } from '../Application/ports'
 
 const loadImageFromFile = (file: File): Promise<HTMLImageElement> => {
@@ -26,16 +26,11 @@ const extractImageData = (img: HTMLImageElement): ImageData => {
 }
 
 export const createLocalPhotoUploader = (): LocalPhotoUploader => {
-    return {
-        upload: async (file: File): Promise<Photo> => {
-            const img = await loadImageFromFile(file)
-            const imageData = extractImageData(img)
-
-            return {
-                imageData,
-                width: img.width,
-                height: img.height,
-            }
-        },
-    }
+  return {
+    upload: async (file: File): Promise<Photo> => {
+      const img = await loadImageFromFile(file)
+      const imageData = extractImageData(img)
+      return $Photo.create(imageData)
+    },
+  }
 }
