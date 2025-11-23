@@ -4,6 +4,8 @@ import { type Filter, type Lut, $Filter } from '../../modules/Filter/Domain'
 export type UseFilterReturn = {
   filter: Ref<Filter>
   lut: ComputedRef<Lut>
+  /** Exposure (-2 to +2 EV) */
+  setExposure: (value: number) => void
   /** Brightness (-1 to +1) */
   setBrightness: (value: number) => void
   /** Contrast (-1 to +1) */
@@ -20,6 +22,10 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
   const filter = ref<Filter>($Filter.identity(pointCount))
 
   const lut = computed<Lut>(() => $Filter.toLut(filter.value))
+
+  const setExposure = (value: number) => {
+    filter.value = $Filter.setExposure(filter.value, Math.max(-2, Math.min(2, value)))
+  }
 
   const setBrightness = (value: number) => {
     filter.value = $Filter.setBrightness(filter.value, Math.max(-1, Math.min(1, value)))
@@ -46,6 +52,7 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
   return {
     filter,
     lut,
+    setExposure,
     setBrightness,
     setContrast,
     setMasterPoint,

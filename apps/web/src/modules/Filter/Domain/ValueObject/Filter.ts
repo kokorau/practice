@@ -79,6 +79,12 @@ export const $Filter = {
     adjustment,
   }),
 
+  /** Exposureのみ更新 */
+  setExposure: (filter: Filter, exposure: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, exposure },
+  }),
+
   /** Brightnessのみ更新 */
   setBrightness: (filter: Filter, brightness: number): Filter => ({
     ...filter,

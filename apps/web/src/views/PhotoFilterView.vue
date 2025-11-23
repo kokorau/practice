@@ -9,7 +9,7 @@ import PhotoStats from '../components/PhotoStats.vue'
 import CurveEditor from '../components/CurveEditor.vue'
 
 const { photo, handleFileChange } = usePhotoUpload()
-const { filter, lut, setBrightness, setContrast, setMasterPoint, reset } = useFilter(7)
+const { filter, lut, setExposure, setBrightness, setContrast, setMasterPoint, reset } = useFilter(7)
 
 // Canvas描画は即時 (軽い)
 const { canvasRef } = usePhotoCanvas(photo, { lut })
@@ -20,12 +20,18 @@ const { analysis: originalAnalysis } = usePhotoAnalysis(photo)
 const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
 
 // デバウンスされた更新関数 (重い処理の負荷軽減)
+const debouncedSetExposure = useDebounceFn(setExposure, 16)
 const debouncedSetBrightness = useDebounceFn(setBrightness, 16)
 const debouncedSetContrast = useDebounceFn(setContrast, 16)
 const debouncedSetMasterPoint = useDebounceFn(setMasterPoint, 16)
 
 const handlePointUpdate = (index: number, value: number) => {
   debouncedSetMasterPoint(index, value)
+}
+
+const handleExposureChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetExposure(value)
 }
 
 const handleBrightnessChange = (e: Event) => {
@@ -82,6 +88,23 @@ const handleContrastChange = (e: Event) => {
             >
               Reset All
             </button>
+          </div>
+
+          <!-- Exposure -->
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Exposure</span>
+              <span>{{ filter.adjustment.exposure >= 0 ? '+' : '' }}{{ filter.adjustment.exposure.toFixed(2) }} EV</span>
+            </div>
+            <input
+              type="range"
+              min="-2"
+              max="2"
+              step="0.01"
+              :value="filter.adjustment.exposure"
+              @input="handleExposureChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
           </div>
 
           <!-- Brightness -->

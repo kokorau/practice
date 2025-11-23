@@ -4,6 +4,8 @@
  */
 
 export type Adjustment = {
+  /** 露出: -2 (暗) 〜 0 (無変更) 〜 +2 (明) EV値 */
+  exposure: number
   /** 明るさ: -1 (暗) 〜 0 (無変更) 〜 +1 (明) */
   brightness: number
   /** コントラスト: -1 (低) 〜 0 (無変更) 〜 +1 (高) */
@@ -62,17 +64,66 @@ const brightnessToGamma = (brightness: number): number => {
   return Math.pow(2, -brightness)
 }
 
+/**
+ * sRGB → Linear 変換
+ * sRGBのガンマエンコードを解除
+ */
+const srgbToLinear = (srgb: number): number => {
+  if (srgb <= 0.04045) {
+    return srgb / 12.92
+  }
+  return Math.pow((srgb + 0.055) / 1.055, 2.4)
+}
+
+/**
+ * Linear → sRGB 変換
+ * sRGBのガンマエンコードを適用
+ */
+const linearToSrgb = (linear: number): number => {
+  if (linear <= 0.0031308) {
+    return linear * 12.92
+  }
+  return 1.055 * Math.pow(linear, 1 / 2.4) - 0.055
+}
+
+/**
+ * 露出補正 (Exposure)
+ * 線形光空間で乗算を行う
+ * @param input sRGB値 (0-1)
+ * @param ev EV値 (+1 = 2倍, -1 = 1/2)
+ */
+const applyExposure = (input: number, ev: number): number => {
+  if (Math.abs(ev) < 0.001) {
+    return input // ev ≈ 0 は変化なし
+  }
+
+  // sRGB → Linear
+  const linear = srgbToLinear(input)
+
+  // 露出補正 (2^ev 倍)
+  const multiplier = Math.pow(2, ev)
+  const adjusted = linear * multiplier
+
+  // Linear → sRGB (クランプ付き)
+  return linearToSrgb(Math.max(0, Math.min(1, adjusted)))
+}
+
 
 export const $Adjustment = {
   /** デフォルト (無変更) */
   identity: (): Adjustment => ({
+    exposure: 0,
     brightness: 0,
     contrast: 0,
   }),
 
   /** 調整が無変更かどうか */
   isIdentity: (adj: Adjustment): boolean => {
-    return Math.abs(adj.brightness) < 0.001 && Math.abs(adj.contrast) < 0.001
+    return (
+      Math.abs(adj.exposure) < 0.001 &&
+      Math.abs(adj.brightness) < 0.001 &&
+      Math.abs(adj.contrast) < 0.001
+    )
   },
 
   /** AdjustmentをLUTに変換 (8bit) */
@@ -83,13 +134,16 @@ export const $Adjustment = {
     for (let i = 0; i < 256; i++) {
       let value = i / 255
 
-      // 1. Gamma (brightness)
+      // 1. Exposure (線形光空間で乗算)
+      value = applyExposure(value, adj.exposure)
+
+      // 2. Gamma (brightness)
       value = applyGamma(value, gamma)
 
-      // 2. Contrast (直接 -1〜+1 の値を渡す)
+      // 3. Contrast (直接 -1〜+1 の値を渡す)
       value = applyContrast(value, adj.contrast)
 
-      // 3. クランプして整数化
+      // 4. クランプして整数化
       lut[i] = Math.round(Math.max(0, Math.min(255, value * 255)))
     }
 
@@ -104,13 +158,16 @@ export const $Adjustment = {
     for (let i = 0; i < 256; i++) {
       let value = i / 255
 
-      // 1. Gamma (brightness)
+      // 1. Exposure (線形光空間で乗算)
+      value = applyExposure(value, adj.exposure)
+
+      // 2. Gamma (brightness)
       value = applyGamma(value, gamma)
 
-      // 2. Contrast (直接 -1〜+1 の値を渡す)
+      // 3. Contrast (直接 -1〜+1 の値を渡す)
       value = applyContrast(value, adj.contrast)
 
-      // 3. クランプ (0.0-1.0)
+      // 4. クランプ (0.0-1.0)
       lut[i] = Math.max(0, Math.min(1, value))
     }
 
@@ -118,7 +175,10 @@ export const $Adjustment = {
   },
 
   /** 個別の変換関数をエクスポート (テスト/可視化用) */
+  applyExposure,
   applyGamma,
   applyContrast,
   brightnessToGamma,
+  srgbToLinear,
+  linearToSrgb,
 }
