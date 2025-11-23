@@ -127,7 +127,7 @@ export const $Curve = {
     return xs
   },
 
-  /** カーブを256要素のLUTに変換 */
+  /** カーブを256要素のLUTに変換 (8bit) */
   toLut: (curve: Curve): Uint8Array => {
     const lut = new Uint8Array(256)
     const xs = $Curve.getXPositions(curve.points.length)
@@ -138,6 +138,22 @@ export const $Curve = {
       const y = interpolate(x)
       // 0-255にクランプして整数化
       lut[i] = Math.round(Math.max(0, Math.min(255, y * 255)))
+    }
+
+    return lut
+  },
+
+  /** カーブを256要素のLUTに変換 (浮動小数点 0.0-1.0) */
+  toLutFloat: (curve: Curve): Float32Array => {
+    const lut = new Float32Array(256)
+    const xs = $Curve.getXPositions(curve.points.length)
+    const interpolate = monotoneCubicInterpolation(xs, curve.points)
+
+    for (let i = 0; i < 256; i++) {
+      const x = i / 255
+      const y = interpolate(x)
+      // 0.0-1.0にクランプ
+      lut[i] = Math.max(0, Math.min(1, y))
     }
 
     return lut

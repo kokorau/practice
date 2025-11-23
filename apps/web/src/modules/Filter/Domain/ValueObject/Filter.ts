@@ -3,7 +3,7 @@
  */
 
 import { type Curve, $Curve } from './Curve'
-import { type Lut, $Lut } from './Lut'
+import { type Lut, $LutFloat } from './Lut'
 import { type Adjustment, $Adjustment } from './Adjustment'
 
 export type Filter = {
@@ -36,45 +36,41 @@ export const $Filter = {
     b: null,
   }),
 
-  /** FilterからLUTを生成 */
+  /**
+   * FilterからLUTを生成
+   * 内部計算は浮動小数点で行い、最終出力時のみ8bitに量子化
+   */
   toLut: (filter: Filter): Lut => {
-    // 1. Adjustment LUT (brightness/contrast)
-    const adjustmentLut = $Adjustment.toLut(filter.adjustment)
+    // 1. Adjustment LUT (brightness/contrast) - 浮動小数点
+    const adjustmentLut = $Adjustment.toLutFloat(filter.adjustment)
 
-    // 2. Curve LUT
-    const masterLut = $Curve.toLut(filter.master)
+    // 2. Master Curve LUT - 浮動小数点
+    const masterLut = $Curve.toLutFloat(filter.master)
 
-    // 3. 合成: Adjustment → Curve の順で適用
-    const composedMaster = new Uint8Array(256)
-    for (let i = 0; i < 256; i++) {
-      const afterAdjustment = adjustmentLut[i]!
-      composedMaster[i] = masterLut[afterAdjustment]!
-    }
+    // 3. 合成: Adjustment → Master の順で適用 (浮動小数点のまま)
+    const composedMaster = $LutFloat.compose(adjustmentLut, masterLut)
 
-    // 個別チャンネルがない場合はMasterのみ
+    // 個別チャンネルがない場合はMasterのみ → 量子化して返す
     if (!filter.r && !filter.g && !filter.b) {
-      return $Lut.fromMaster(composedMaster)
+      return $LutFloat.quantize($LutFloat.fromMaster(composedMaster))
     }
 
-    // 個別チャンネルがある場合: Master → 個別の順で適用
-    const rLut = filter.r ? $Curve.toLut(filter.r) : null
-    const gLut = filter.g ? $Curve.toLut(filter.g) : null
-    const bLut = filter.b ? $Curve.toLut(filter.b) : null
+    // 個別チャンネルがある場合: Master → 個別の順で適用 (浮動小数点)
+    const rLut = filter.r ? $Curve.toLutFloat(filter.r) : null
+    const gLut = filter.g ? $Curve.toLutFloat(filter.g) : null
+    const bLut = filter.b ? $Curve.toLutFloat(filter.b) : null
 
-    const result: Lut = {
-      r: new Uint8Array(256),
-      g: new Uint8Array(256),
-      b: new Uint8Array(256),
-    }
+    // 各チャンネルを合成 (浮動小数点)
+    const finalR = rLut ? $LutFloat.compose(composedMaster, rLut) : composedMaster
+    const finalG = gLut ? $LutFloat.compose(composedMaster, gLut) : composedMaster
+    const finalB = bLut ? $LutFloat.compose(composedMaster, bLut) : composedMaster
 
-    for (let i = 0; i < 256; i++) {
-      const afterMaster = composedMaster[i]!
-      result.r[i] = rLut ? rLut[afterMaster]! : afterMaster
-      result.g[i] = gLut ? gLut[afterMaster]! : afterMaster
-      result.b[i] = bLut ? bLut[afterMaster]! : afterMaster
-    }
-
-    return result
+    // 最終的に量子化して返す
+    return $LutFloat.quantize({
+      r: finalR,
+      g: finalG,
+      b: finalB,
+    })
   },
 
   /** Adjustmentを更新 */

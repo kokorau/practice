@@ -75,7 +75,7 @@ export const $Adjustment = {
     return Math.abs(adj.brightness) < 0.001 && Math.abs(adj.contrast) < 0.001
   },
 
-  /** AdjustmentをLUTに変換 */
+  /** AdjustmentをLUTに変換 (8bit) */
   toLut: (adj: Adjustment): Uint8Array => {
     const lut = new Uint8Array(256)
     const gamma = brightnessToGamma(adj.brightness)
@@ -91,6 +91,27 @@ export const $Adjustment = {
 
       // 3. クランプして整数化
       lut[i] = Math.round(Math.max(0, Math.min(255, value * 255)))
+    }
+
+    return lut
+  },
+
+  /** AdjustmentをLUTに変換 (浮動小数点 0.0-1.0) */
+  toLutFloat: (adj: Adjustment): Float32Array => {
+    const lut = new Float32Array(256)
+    const gamma = brightnessToGamma(adj.brightness)
+
+    for (let i = 0; i < 256; i++) {
+      let value = i / 255
+
+      // 1. Gamma (brightness)
+      value = applyGamma(value, gamma)
+
+      // 2. Contrast (直接 -1〜+1 の値を渡す)
+      value = applyContrast(value, adj.contrast)
+
+      // 3. クランプ (0.0-1.0)
+      lut[i] = Math.max(0, Math.min(1, value))
     }
 
     return lut

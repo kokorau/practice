@@ -2,10 +2,18 @@
  * LUT (Look-Up Table) - ピクセル値変換テーブル
  */
 
+/** 最終出力用LUT (8bit) */
 export type Lut = {
-  r: Uint8Array  // [256] input -> output mapping
+  r: Uint8Array  // [256] input -> output mapping (0-255)
   g: Uint8Array
   b: Uint8Array
+}
+
+/** 内部計算用LUT (浮動小数点) */
+export type LutFloat = {
+  r: Float32Array  // [256] input -> output mapping (0.0-1.0)
+  g: Float32Array
+  b: Float32Array
 }
 
 export const $Lut = {
@@ -87,6 +95,64 @@ export const $Lut = {
       result.r = newR
       result.g = newG
       result.b = newB
+    }
+
+    return result
+  },
+}
+
+/** 浮動小数点LUT操作 */
+export const $LutFloat = {
+  /** 無変換LUT (identity) */
+  identity: (): LutFloat => {
+    const identity = new Float32Array(256)
+    for (let i = 0; i < 256; i++) {
+      identity[i] = i / 255
+    }
+    return {
+      r: identity.slice(),
+      g: identity.slice(),
+      b: identity.slice(),
+    }
+  },
+
+  /** Master LUT (RGB共通) を作成 */
+  fromMaster: (master: Float32Array): LutFloat => ({
+    r: master.slice(),
+    g: master.slice(),
+    b: master.slice(),
+  }),
+
+  /** 浮動小数点LUTを8bit LUTに変換 */
+  quantize: (lutFloat: LutFloat): Lut => {
+    const r = new Uint8Array(256)
+    const g = new Uint8Array(256)
+    const b = new Uint8Array(256)
+
+    for (let i = 0; i < 256; i++) {
+      r[i] = Math.round(Math.max(0, Math.min(255, lutFloat.r[i]! * 255)))
+      g[i] = Math.round(Math.max(0, Math.min(255, lutFloat.g[i]! * 255)))
+      b[i] = Math.round(Math.max(0, Math.min(255, lutFloat.b[i]! * 255)))
+    }
+
+    return { r, g, b }
+  },
+
+  /**
+   * 2つの浮動小数点LUTを合成 (first → second の順で適用)
+   * second の入力は 0.0-1.0 なので、first の出力を補間してルックアップ
+   */
+  compose: (first: Float32Array, second: Float32Array): Float32Array => {
+    const result = new Float32Array(256)
+
+    for (let i = 0; i < 256; i++) {
+      const v = first[i]! // 0.0-1.0
+      // second を補間ルックアップ (線形補間)
+      const idx = v * 255
+      const lo = Math.floor(idx)
+      const hi = Math.min(255, lo + 1)
+      const t = idx - lo
+      result[i] = second[lo]! * (1 - t) + second[hi]! * t
     }
 
     return result
