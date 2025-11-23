@@ -4,8 +4,11 @@
 
 import { type Curve, $Curve } from './Curve'
 import { type Lut, $Lut } from './Lut'
+import { type Adjustment, $Adjustment } from './Adjustment'
 
 export type Filter = {
+  /** 基本調整 (Brightness/Contrast) - カーブの前に適用 */
+  adjustment: Adjustment
   /** Master カーブ (RGB共通) */
   master: Curve
   /** 個別チャンネル (将来用、nullの場合はMasterのみ使用) */
@@ -17,6 +20,7 @@ export type Filter = {
 export const $Filter = {
   /** デフォルトフィルター (無変換) */
   identity: (pointCount: number = 7): Filter => ({
+    adjustment: $Adjustment.identity(),
     master: $Curve.identity(pointCount),
     r: null,
     g: null,
@@ -25,6 +29,7 @@ export const $Filter = {
 
   /** Masterカーブのみ設定 */
   fromMaster: (master: Curve): Filter => ({
+    adjustment: $Adjustment.identity(),
     master,
     r: null,
     g: null,
@@ -33,19 +38,29 @@ export const $Filter = {
 
   /** FilterからLUTを生成 */
   toLut: (filter: Filter): Lut => {
+    // 1. Adjustment LUT (brightness/contrast)
+    const adjustmentLut = $Adjustment.toLut(filter.adjustment)
+
+    // 2. Curve LUT
     const masterLut = $Curve.toLut(filter.master)
+
+    // 3. 合成: Adjustment → Curve の順で適用
+    const composedMaster = new Uint8Array(256)
+    for (let i = 0; i < 256; i++) {
+      const afterAdjustment = adjustmentLut[i]!
+      composedMaster[i] = masterLut[afterAdjustment]!
+    }
 
     // 個別チャンネルがない場合はMasterのみ
     if (!filter.r && !filter.g && !filter.b) {
-      return $Lut.fromMaster(masterLut)
+      return $Lut.fromMaster(composedMaster)
     }
 
     // 個別チャンネルがある場合: Master → 個別の順で適用
-    const rLut = filter.r ? $Curve.toLut(filter.r) : masterLut
-    const gLut = filter.g ? $Curve.toLut(filter.g) : masterLut
-    const bLut = filter.b ? $Curve.toLut(filter.b) : masterLut
+    const rLut = filter.r ? $Curve.toLut(filter.r) : null
+    const gLut = filter.g ? $Curve.toLut(filter.g) : null
+    const bLut = filter.b ? $Curve.toLut(filter.b) : null
 
-    // Master適用後に個別チャンネル適用
     const result: Lut = {
       r: new Uint8Array(256),
       g: new Uint8Array(256),
@@ -53,14 +68,32 @@ export const $Filter = {
     }
 
     for (let i = 0; i < 256; i++) {
-      const afterMaster = masterLut[i]!
-      result.r[i] = filter.r ? rLut[afterMaster]! : afterMaster
-      result.g[i] = filter.g ? gLut[afterMaster]! : afterMaster
-      result.b[i] = filter.b ? bLut[afterMaster]! : afterMaster
+      const afterMaster = composedMaster[i]!
+      result.r[i] = rLut ? rLut[afterMaster]! : afterMaster
+      result.g[i] = gLut ? gLut[afterMaster]! : afterMaster
+      result.b[i] = bLut ? bLut[afterMaster]! : afterMaster
     }
 
     return result
   },
+
+  /** Adjustmentを更新 */
+  setAdjustment: (filter: Filter, adjustment: Adjustment): Filter => ({
+    ...filter,
+    adjustment,
+  }),
+
+  /** Brightnessのみ更新 */
+  setBrightness: (filter: Filter, brightness: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, brightness },
+  }),
+
+  /** Contrastのみ更新 */
+  setContrast: (filter: Filter, contrast: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, contrast },
+  }),
 
   /** Masterカーブを更新 */
   setMaster: (filter: Filter, master: Curve): Filter => ({
@@ -103,6 +136,7 @@ export const $Filter = {
     }
 
     return {
+      adjustment: filter.adjustment,
       master: { points },
       r: null,
       g: null,

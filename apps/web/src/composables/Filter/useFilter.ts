@@ -4,6 +4,10 @@ import { type Filter, type Lut, $Filter } from '../../modules/Filter/Domain'
 export type UseFilterReturn = {
   filter: Ref<Filter>
   lut: ComputedRef<Lut>
+  /** Brightness (-1 to +1) */
+  setBrightness: (value: number) => void
+  /** Contrast (-1 to +1) */
+  setContrast: (value: number) => void
   /** Master カーブの特定ポイントを更新 */
   setMasterPoint: (index: number, value: number) => void
   /** Master カーブ全体を更新 */
@@ -16,6 +20,14 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
   const filter = ref<Filter>($Filter.identity(pointCount))
 
   const lut = computed<Lut>(() => $Filter.toLut(filter.value))
+
+  const setBrightness = (value: number) => {
+    filter.value = $Filter.setBrightness(filter.value, Math.max(-1, Math.min(1, value)))
+  }
+
+  const setContrast = (value: number) => {
+    filter.value = $Filter.setContrast(filter.value, Math.max(-1, Math.min(1, value)))
+  }
 
   const setMasterPoint = (index: number, value: number) => {
     const newPoints = [...filter.value.master.points]
@@ -34,6 +46,8 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
   return {
     filter,
     lut,
+    setBrightness,
+    setContrast,
     setMasterPoint,
     setMasterPoints,
     reset,

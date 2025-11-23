@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { usePhotoUpload } from '../composables/PhotoLocal/usePhotoUpload'
 import { usePhotoCanvas } from '../composables/Photo/usePhotoCanvas'
 import { usePhotoAnalysis } from '../composables/Photo/usePhotoAnalysis'
@@ -9,16 +9,33 @@ import PhotoStats from '../components/PhotoStats.vue'
 import CurveEditor from '../components/CurveEditor.vue'
 
 const { photo, handleFileChange } = usePhotoUpload()
-const { filter, lut, setMasterPoint, reset } = useFilter(7)
-const { canvasRef } = usePhotoCanvas(photo, { lut: computed(() => lut.value) })
+const { filter, lut, setBrightness, setContrast, setMasterPoint, reset } = useFilter(7)
+
+// Canvas描画は即時 (軽い)
+const { canvasRef } = usePhotoCanvas(photo, { lut })
 
 // Original analysis (before filter)
 const { analysis: originalAnalysis } = usePhotoAnalysis(photo)
 // Filtered analysis (after filter)
 const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
 
+// デバウンスされた更新関数 (重い処理の負荷軽減)
+const debouncedSetBrightness = useDebounceFn(setBrightness, 16)
+const debouncedSetContrast = useDebounceFn(setContrast, 16)
+const debouncedSetMasterPoint = useDebounceFn(setMasterPoint, 16)
+
 const handlePointUpdate = (index: number, value: number) => {
-  setMasterPoint(index, value)
+  debouncedSetMasterPoint(index, value)
+}
+
+const handleBrightnessChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetBrightness(value)
+}
+
+const handleContrastChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetContrast(value)
 }
 </script>
 
@@ -55,17 +72,56 @@ const handlePointUpdate = (index: number, value: number) => {
 
       <!-- Controls & Analysis -->
       <div class="space-y-4">
-        <!-- Curve Editor -->
+        <!-- Basic Adjustments -->
         <div class="border border-gray-700 rounded-lg p-4">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="text-sm text-gray-400">Tone Curve</h2>
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-sm text-gray-400">Adjustments</h2>
             <button
               @click="reset"
               class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded"
             >
-              Reset
+              Reset All
             </button>
           </div>
+
+          <!-- Brightness -->
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Brightness</span>
+              <span>{{ filter.adjustment.brightness.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.brightness"
+              @input="handleBrightnessChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Contrast -->
+          <div>
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Contrast</span>
+              <span>{{ filter.adjustment.contrast.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.contrast"
+              @input="handleContrastChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <!-- Curve Editor -->
+        <div class="border border-gray-700 rounded-lg p-4">
+          <h2 class="text-sm text-gray-400 mb-2">Tone Curve</h2>
           <CurveEditor
             :curve="filter.master"
             :width="256"

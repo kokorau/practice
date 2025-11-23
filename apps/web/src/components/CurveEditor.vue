@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onUnmounted } from 'vue'
 import { $Curve, type Curve } from '../modules/Filter/Domain'
 
 const props = defineProps<{
@@ -43,37 +43,47 @@ const controlPoints = computed(() =>
   }))
 )
 
-// ドラッグ処理
-let draggingIndex: number | null = null
+// SVG要素の参照
+const svgRef = ref<SVGSVGElement | null>(null)
 
-const handleMouseDown = (index: number) => {
-  draggingIndex = index
-  window.addEventListener('mousemove', handleMouseMove)
-  window.addEventListener('mouseup', handleMouseUp)
-}
+// ドラッグ処理
+const draggingIndex = ref<number | null>(null)
 
 const handleMouseMove = (e: MouseEvent) => {
-  if (draggingIndex === null) return
+  if (draggingIndex.value === null) return
 
-  const svg = document.querySelector('.curve-editor-svg') as SVGSVGElement
+  const svg = svgRef.value
   if (!svg) return
 
   const rect = svg.getBoundingClientRect()
   const y = (e.clientY - rect.top) / rect.height
   const value = Math.max(0, Math.min(1, 1 - y))
 
-  emit('update:point', draggingIndex, value)
+  emit('update:point', draggingIndex.value, value)
 }
 
 const handleMouseUp = () => {
-  draggingIndex = null
+  draggingIndex.value = null
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('mouseup', handleMouseUp)
 }
+
+const handleMouseDown = (index: number) => {
+  draggingIndex.value = index
+  window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('mouseup', handleMouseUp)
+}
+
+// コンポーネント破棄時にリスナーをクリーンアップ
+onUnmounted(() => {
+  window.removeEventListener('mousemove', handleMouseMove)
+  window.removeEventListener('mouseup', handleMouseUp)
+})
 </script>
 
 <template>
   <svg
+    ref="svgRef"
     class="curve-editor-svg bg-gray-900 rounded"
     :width="width"
     :height="height"
