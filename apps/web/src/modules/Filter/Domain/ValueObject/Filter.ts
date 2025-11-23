@@ -41,18 +41,24 @@ export const $Filter = {
    * 内部計算は浮動小数点で行い、最終出力時のみ8bitに量子化
    */
   toLut: (filter: Filter): Lut => {
-    // 1. Adjustment LUT (brightness/contrast) - 浮動小数点
-    const adjustmentLut = $Adjustment.toLutFloat(filter.adjustment)
+    // 1. Adjustment LUT (brightness/contrast/temperature) - RGB別の浮動小数点
+    const adjustmentRGB = $Adjustment.toLutFloatRGB(filter.adjustment)
 
     // 2. Master Curve LUT - 浮動小数点
     const masterLut = $Curve.toLutFloat(filter.master)
 
     // 3. 合成: Adjustment → Master の順で適用 (浮動小数点のまま)
-    const composedMaster = $LutFloat.compose(adjustmentLut, masterLut)
+    const composedR = $LutFloat.compose(adjustmentRGB.r, masterLut)
+    const composedG = $LutFloat.compose(adjustmentRGB.g, masterLut)
+    const composedB = $LutFloat.compose(adjustmentRGB.b, masterLut)
 
-    // 個別チャンネルがない場合はMasterのみ → 量子化して返す
+    // 個別チャンネルがない場合
     if (!filter.r && !filter.g && !filter.b) {
-      return $LutFloat.quantize($LutFloat.fromMaster(composedMaster))
+      return $LutFloat.quantize({
+        r: composedR,
+        g: composedG,
+        b: composedB,
+      })
     }
 
     // 個別チャンネルがある場合: Master → 個別の順で適用 (浮動小数点)
@@ -61,9 +67,9 @@ export const $Filter = {
     const bLut = filter.b ? $Curve.toLutFloat(filter.b) : null
 
     // 各チャンネルを合成 (浮動小数点)
-    const finalR = rLut ? $LutFloat.compose(composedMaster, rLut) : composedMaster
-    const finalG = gLut ? $LutFloat.compose(composedMaster, gLut) : composedMaster
-    const finalB = bLut ? $LutFloat.compose(composedMaster, bLut) : composedMaster
+    const finalR = rLut ? $LutFloat.compose(composedR, rLut) : composedR
+    const finalG = gLut ? $LutFloat.compose(composedG, gLut) : composedG
+    const finalB = bLut ? $LutFloat.compose(composedB, bLut) : composedB
 
     // 最終的に量子化して返す
     return $LutFloat.quantize({
@@ -97,6 +103,18 @@ export const $Filter = {
     adjustment: { ...filter.adjustment, shadows },
   }),
 
+  /** Whitesのみ更新 */
+  setWhites: (filter: Filter, whites: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, whites },
+  }),
+
+  /** Blacksのみ更新 */
+  setBlacks: (filter: Filter, blacks: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, blacks },
+  }),
+
   /** Brightnessのみ更新 */
   setBrightness: (filter: Filter, brightness: number): Filter => ({
     ...filter,
@@ -107,6 +125,30 @@ export const $Filter = {
   setContrast: (filter: Filter, contrast: number): Filter => ({
     ...filter,
     adjustment: { ...filter.adjustment, contrast },
+  }),
+
+  /** Temperatureのみ更新 */
+  setTemperature: (filter: Filter, temperature: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, temperature },
+  }),
+
+  /** Tintのみ更新 */
+  setTint: (filter: Filter, tint: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, tint },
+  }),
+
+  /** Clarityのみ更新 */
+  setClarity: (filter: Filter, clarity: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, clarity },
+  }),
+
+  /** Fadeのみ更新 */
+  setFade: (filter: Filter, fade: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, fade },
   }),
 
   /** Masterカーブを更新 */

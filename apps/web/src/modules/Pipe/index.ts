@@ -56,6 +56,17 @@ export function pipe<A, B, C, D, E, F, G, H>(
   fg: (f: F) => G,
   gh: (g: G) => H
 ): H
+export function pipe<A, B, C, D, E, F, G, H, I>(
+  a: A,
+  ab: (a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+  fg: (f: F) => G,
+  gh: (g: G) => H,
+  hi: (h: H) => I
+): I
 export function pipe(
   a: unknown,
   ...fns: Array<(x: unknown) => unknown>

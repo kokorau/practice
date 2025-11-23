@@ -9,7 +9,7 @@ import PhotoStats from '../components/PhotoStats.vue'
 import CurveEditor from '../components/CurveEditor.vue'
 
 const { photo, handleFileChange } = usePhotoUpload()
-const { filter, lut, setExposure, setHighlights, setShadows, setBrightness, setContrast, setMasterPoint, reset } = useFilter(7)
+const { filter, lut, setExposure, setHighlights, setShadows, setWhites, setBlacks, setBrightness, setContrast, setTemperature, setTint, setClarity, setFade, setMasterPoint, reset } = useFilter(7)
 
 // Canvas描画は即時 (軽い)
 const { canvasRef } = usePhotoCanvas(photo, { lut })
@@ -23,8 +23,14 @@ const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
 const debouncedSetExposure = useDebounceFn(setExposure, 16)
 const debouncedSetHighlights = useDebounceFn(setHighlights, 16)
 const debouncedSetShadows = useDebounceFn(setShadows, 16)
+const debouncedSetWhites = useDebounceFn(setWhites, 16)
+const debouncedSetBlacks = useDebounceFn(setBlacks, 16)
 const debouncedSetBrightness = useDebounceFn(setBrightness, 16)
 const debouncedSetContrast = useDebounceFn(setContrast, 16)
+const debouncedSetTemperature = useDebounceFn(setTemperature, 16)
+const debouncedSetTint = useDebounceFn(setTint, 16)
+const debouncedSetClarity = useDebounceFn(setClarity, 16)
+const debouncedSetFade = useDebounceFn(setFade, 16)
 const debouncedSetMasterPoint = useDebounceFn(setMasterPoint, 16)
 
 const handlePointUpdate = (index: number, value: number) => {
@@ -46,6 +52,16 @@ const handleShadowsChange = (e: Event) => {
   debouncedSetShadows(value)
 }
 
+const handleWhitesChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetWhites(value)
+}
+
+const handleBlacksChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetBlacks(value)
+}
+
 const handleBrightnessChange = (e: Event) => {
   const value = parseFloat((e.target as HTMLInputElement).value)
   debouncedSetBrightness(value)
@@ -54,6 +70,26 @@ const handleBrightnessChange = (e: Event) => {
 const handleContrastChange = (e: Event) => {
   const value = parseFloat((e.target as HTMLInputElement).value)
   debouncedSetContrast(value)
+}
+
+const handleTemperatureChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetTemperature(value)
+}
+
+const handleTintChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetTint(value)
+}
+
+const handleClarityChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetClarity(value)
+}
+
+const handleFadeChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetFade(value)
 }
 </script>
 
@@ -153,6 +189,40 @@ const handleContrastChange = (e: Event) => {
             />
           </div>
 
+          <!-- Whites -->
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Whites</span>
+              <span>{{ filter.adjustment.whites.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.whites"
+              @input="handleWhitesChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Blacks -->
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Blacks</span>
+              <span>{{ filter.adjustment.blacks.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.blacks"
+              @input="handleBlacksChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
           <!-- Brightness -->
           <div class="mb-3">
             <div class="flex justify-between text-xs text-gray-500 mb-1">
@@ -171,7 +241,7 @@ const handleContrastChange = (e: Event) => {
           </div>
 
           <!-- Contrast -->
-          <div>
+          <div class="mb-3">
             <div class="flex justify-between text-xs text-gray-500 mb-1">
               <span>Contrast</span>
               <span>{{ filter.adjustment.contrast.toFixed(2) }}</span>
@@ -183,6 +253,74 @@ const handleContrastChange = (e: Event) => {
               step="0.01"
               :value="filter.adjustment.contrast"
               @input="handleContrastChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Clarity -->
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Clarity</span>
+              <span>{{ filter.adjustment.clarity.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.clarity"
+              @input="handleClarityChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Temperature -->
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Temperature</span>
+              <span>{{ filter.adjustment.temperature.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.temperature"
+              @input="handleTemperatureChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Tint -->
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Tint</span>
+              <span>{{ filter.adjustment.tint.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.tint"
+              @input="handleTintChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Fade -->
+          <div>
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Fade</span>
+              <span>{{ filter.adjustment.fade.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.fade"
+              @input="handleFadeChange"
               class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
             />
           </div>
