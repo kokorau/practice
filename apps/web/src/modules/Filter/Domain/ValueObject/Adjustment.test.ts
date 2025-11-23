@@ -16,6 +16,14 @@ describe('$Adjustment', () => {
       expect(adj.tint).toBe(0)
       expect(adj.clarity).toBe(0)
       expect(adj.fade).toBe(0)
+      expect(adj.vibrance).toBe(0)
+      expect(adj.splitShadowHue).toBe(220)
+      expect(adj.splitShadowAmount).toBe(0)
+      expect(adj.splitHighlightHue).toBe(40)
+      expect(adj.splitHighlightAmount).toBe(0)
+      expect(adj.splitBalance).toBe(0)
+      expect(adj.toe).toBe(0)
+      expect(adj.shoulder).toBe(0)
     })
 
     it('should produce identity LUT', () => {
@@ -30,18 +38,18 @@ describe('$Adjustment', () => {
 
   describe('isIdentity', () => {
     it('should return true for identity', () => {
-      expect($Adjustment.isIdentity({ exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 })).toBe(true)
+      expect($Adjustment.isIdentity({ exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 })).toBe(true)
     })
 
     it('should return false for non-identity', () => {
-      expect($Adjustment.isIdentity({ exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0.1, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 })).toBe(false)
-      expect($Adjustment.isIdentity({ exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0.1, temperature: 0, tint: 0, clarity: 0, fade: 0 })).toBe(false)
+      expect($Adjustment.isIdentity({ exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0.1, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 })).toBe(false)
+      expect($Adjustment.isIdentity({ exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0.1, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 })).toBe(false)
     })
   })
 
   describe('exposure (linear)', () => {
     it('should brighten with positive EV', () => {
-      const adj = { exposure: 1, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 1, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // +1EV = 2倍の明るさ (線形光空間で)
@@ -53,7 +61,7 @@ describe('$Adjustment', () => {
     })
 
     it('should darken with negative EV', () => {
-      const adj = { exposure: -1, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: -1, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // -1EV = 1/2の明るさ
@@ -62,7 +70,7 @@ describe('$Adjustment', () => {
     })
 
     it('should maintain monotonicity', () => {
-      const adj = { exposure: 1.5, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 1.5, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       for (let i = 1; i < 256; i++) {
@@ -73,7 +81,7 @@ describe('$Adjustment', () => {
     it('should apply in linear light space', () => {
       // sRGB 中間値 (118) は線形で約0.18 (18%グレー)
       // +1EV で線形 0.36 → sRGB で約168程度になるはず
-      const adj = { exposure: 1, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 1, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 118 (sRGB) ≈ 0.18 (linear) → 0.36 (linear) ≈ 168 (sRGB)
@@ -84,7 +92,7 @@ describe('$Adjustment', () => {
 
   describe('highlights/shadows', () => {
     it('should brighten highlights with positive value', () => {
-      const adj = { exposure: 0, highlights: 0.5, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0.5, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // ハイライト領域(192)がより明るく
@@ -96,7 +104,7 @@ describe('$Adjustment', () => {
     })
 
     it('should darken highlights with negative value', () => {
-      const adj = { exposure: 0, highlights: -0.5, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: -0.5, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // ハイライト領域が暗くなる
@@ -105,7 +113,7 @@ describe('$Adjustment', () => {
     })
 
     it('should brighten shadows with positive value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0.5, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0.5, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // シャドウ領域(64)がより明るく
@@ -115,7 +123,7 @@ describe('$Adjustment', () => {
     })
 
     it('should darken shadows with negative value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: -0.5, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: -0.5, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // シャドウ領域が暗くなる
@@ -123,7 +131,7 @@ describe('$Adjustment', () => {
     })
 
     it('should maintain monotonicity', () => {
-      const adj = { exposure: 0, highlights: 0.8, shadows: -0.5, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0.8, shadows: -0.5, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       for (let i = 1; i < 256; i++) {
@@ -134,7 +142,7 @@ describe('$Adjustment', () => {
 
   describe('whites/blacks', () => {
     it('should brighten whites with positive value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0.5, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0.5, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 最も明るい部分 (240-255) が影響を受ける
@@ -145,7 +153,7 @@ describe('$Adjustment', () => {
     })
 
     it('should darken whites with negative value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: -0.5, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: -0.5, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 最も明るい部分が暗くなる
@@ -154,7 +162,7 @@ describe('$Adjustment', () => {
     })
 
     it('should brighten blacks with positive value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0.5, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0.5, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 最も暗い部分 (0-64) が影響を受ける
@@ -165,7 +173,7 @@ describe('$Adjustment', () => {
     })
 
     it('should darken blacks with negative value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: -0.5, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: -0.5, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 最も暗い部分がさらに暗くなる
@@ -173,8 +181,8 @@ describe('$Adjustment', () => {
     })
 
     it('should affect narrower range than highlights/shadows', () => {
-      const whitesAdj = { exposure: 0, highlights: 0, shadows: 0, whites: 0.5, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
-      const highlightsAdj = { exposure: 0, highlights: 0.5, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const whitesAdj = { exposure: 0, highlights: 0, shadows: 0, whites: 0.5, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
+      const highlightsAdj = { exposure: 0, highlights: 0.5, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const whitesLut = $Adjustment.toLut(whitesAdj)
       const highlightsLut = $Adjustment.toLut(highlightsAdj)
 
@@ -185,7 +193,7 @@ describe('$Adjustment', () => {
     })
 
     it('should maintain monotonicity', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0.8, blacks: -0.5, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0.8, blacks: -0.5, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       for (let i = 1; i < 256; i++) {
@@ -196,7 +204,7 @@ describe('$Adjustment', () => {
 
   describe('brightness (gamma)', () => {
     it('should brighten with positive value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0.5, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0.5, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 暗いピクセルが明るくなる
@@ -208,7 +216,7 @@ describe('$Adjustment', () => {
     })
 
     it('should darken with negative value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: -0.5, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: -0.5, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 明るいピクセルが暗くなる
@@ -220,7 +228,7 @@ describe('$Adjustment', () => {
     })
 
     it('should maintain monotonicity', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0.8, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0.8, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       for (let i = 1; i < 256; i++) {
@@ -231,7 +239,7 @@ describe('$Adjustment', () => {
 
   describe('contrast (sigmoid)', () => {
     it('should increase contrast with positive value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0.5, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0.5, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // シャドウがより暗く
@@ -244,7 +252,7 @@ describe('$Adjustment', () => {
     })
 
     it('should decrease contrast with negative value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: -0.5, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: -0.5, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 負のコントラストは中央(128)に向かって圧縮
@@ -256,7 +264,7 @@ describe('$Adjustment', () => {
     })
 
     it('should compress to mid-gray at contrast -1', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: -1, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: -1, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // contrast = -1 で全て中央に
@@ -268,7 +276,7 @@ describe('$Adjustment', () => {
     })
 
     it('should maintain monotonicity', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0.8, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0.8, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       for (let i = 1; i < 256; i++) {
@@ -279,7 +287,7 @@ describe('$Adjustment', () => {
 
   describe('combined adjustments', () => {
     it('should apply brightness then contrast', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0.3, contrast: 0.3, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0.3, contrast: 0.3, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 全体的に明るく、コントラストも上がる
@@ -290,7 +298,7 @@ describe('$Adjustment', () => {
     })
 
     it('should not clip values', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 1, contrast: 1, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 1, contrast: 1, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       for (let i = 0; i < 256; i++) {
@@ -302,7 +310,7 @@ describe('$Adjustment', () => {
 
   describe('temperature', () => {
     it('should produce different RGB LUTs with positive temperature (warm)', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0.5, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0.5, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lutRGB = $Adjustment.toLutFloatRGB(adj)
 
       // 暖色: R > G > B (中間値で確認)
@@ -312,7 +320,7 @@ describe('$Adjustment', () => {
     })
 
     it('should produce different RGB LUTs with negative temperature (cool)', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: -0.5, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: -0.5, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lutRGB = $Adjustment.toLutFloatRGB(adj)
 
       // 寒色: B > G > R (中間値で確認)
@@ -322,7 +330,7 @@ describe('$Adjustment', () => {
     })
 
     it('should produce identical RGB LUTs with zero temperature', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lutRGB = $Adjustment.toLutFloatRGB(adj)
 
       // Temperature 0 では全チャンネル同一
@@ -331,7 +339,7 @@ describe('$Adjustment', () => {
     })
 
     it('should maintain values within valid range', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 1, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 1, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lutRGB = $Adjustment.toLutFloatRGB(adj)
 
       for (let i = 0; i < 256; i++) {
@@ -347,7 +355,7 @@ describe('$Adjustment', () => {
 
   describe('tint', () => {
     it('should produce magenta shift with positive tint', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0.5, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0.5, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lutRGB = $Adjustment.toLutFloatRGB(adj)
 
       // マゼンタ: R と B が上がり、G が下がる
@@ -357,7 +365,7 @@ describe('$Adjustment', () => {
     })
 
     it('should produce green shift with negative tint', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: -0.5, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: -0.5, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lutRGB = $Adjustment.toLutFloatRGB(adj)
 
       // 緑: G が上がり、R と B が下がる
@@ -367,7 +375,7 @@ describe('$Adjustment', () => {
     })
 
     it('should combine with temperature', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0.5, tint: 0.5, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0.5, tint: 0.5, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lutRGB = $Adjustment.toLutFloatRGB(adj)
 
       // 暖色 + マゼンタ = R が最も高くなるはず
@@ -379,7 +387,7 @@ describe('$Adjustment', () => {
 
   describe('clarity', () => {
     it('should increase midtone contrast with positive value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0.5, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0.5, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 正の clarity: 中間調が 0.5 から離れる
@@ -392,7 +400,7 @@ describe('$Adjustment', () => {
     })
 
     it('should decrease midtone contrast with negative value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: -0.5, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: -0.5, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 負の clarity: 中間調が 0.5 に近づく
@@ -401,7 +409,7 @@ describe('$Adjustment', () => {
     })
 
     it('should preserve endpoints', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0.8, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0.8, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // Clarity は端点を維持する
@@ -413,7 +421,7 @@ describe('$Adjustment', () => {
     })
 
     it('should maintain monotonicity', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0.8, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0.8, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       for (let i = 1; i < 256; i++) {
@@ -424,7 +432,7 @@ describe('$Adjustment', () => {
 
   describe('fade', () => {
     it('should lift blacks with positive value', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0.5 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0.5, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // Fade: 黒が持ち上がる
@@ -434,7 +442,7 @@ describe('$Adjustment', () => {
     })
 
     it('should have no effect at zero', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       expect(lut[0]).toBe(0)
@@ -443,7 +451,7 @@ describe('$Adjustment', () => {
     })
 
     it('should maintain monotonicity', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 1 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 1, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       for (let i = 1; i < 256; i++) {
@@ -452,7 +460,7 @@ describe('$Adjustment', () => {
     })
 
     it('should compress dynamic range', () => {
-      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0.5 }
+      const adj = { exposure: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, brightness: 0, contrast: 0, temperature: 0, tint: 0, clarity: 0, fade: 0.5, vibrance: 0, splitShadowHue: 220, splitShadowAmount: 0, splitHighlightHue: 40, splitHighlightAmount: 0, splitBalance: 0, toe: 0, shoulder: 0, liftR: 0, liftG: 0, liftB: 0, gammaR: 0, gammaG: 0, gammaB: 0, gainR: 0, gainG: 0, gainB: 0 }
       const lut = $Adjustment.toLut(adj)
 
       // 出力範囲が狭くなる

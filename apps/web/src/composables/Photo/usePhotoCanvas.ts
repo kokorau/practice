@@ -1,9 +1,11 @@
 import { ref, watch, type Ref } from 'vue'
 import type { Photo } from '../../modules/Photo/Domain'
 import { type Lut, $Lut } from '../../modules/Filter/Domain'
+import type { PixelEffects } from '../Filter/useFilter'
 
 export type UsePhotoCanvasOptions = {
   lut?: Ref<Lut | null>
+  pixelEffects?: Ref<PixelEffects | null>
 }
 
 export const usePhotoCanvas = (
@@ -23,20 +25,28 @@ export const usePhotoCanvas = (
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // LUTがあれば適用
+    // LUTとpixelEffectsを適用
     const lut = options.lut?.value
+    const effects = options.pixelEffects?.value
+
     if (lut) {
-      const filteredImageData = $Lut.apply(currentPhoto.imageData, lut)
+      // pixelEffectsがあれば一緒に適用
+      const filteredImageData = effects
+        ? $Lut.applyWithEffects(currentPhoto.imageData, lut, effects)
+        : $Lut.apply(currentPhoto.imageData, lut)
       ctx.putImageData(filteredImageData, 0, 0)
     } else {
       ctx.putImageData(currentPhoto.imageData, 0, 0)
     }
   }
 
-  // Auto-render when photo or lut changes
+  // Auto-render when photo, lut, or pixelEffects changes
   watch(photo, render)
   if (options.lut) {
     watch(options.lut, render, { deep: true })
+  }
+  if (options.pixelEffects) {
+    watch(options.pixelEffects, render, { deep: true })
   }
 
   return {

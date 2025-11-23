@@ -151,6 +151,108 @@ export const $Filter = {
     adjustment: { ...filter.adjustment, fade },
   }),
 
+  /** Vibranceのみ更新 */
+  setVibrance: (filter: Filter, vibrance: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, vibrance },
+  }),
+
+  /** Split Toning: シャドウの色相を更新 */
+  setSplitShadowHue: (filter: Filter, splitShadowHue: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, splitShadowHue },
+  }),
+
+  /** Split Toning: シャドウの強度を更新 */
+  setSplitShadowAmount: (filter: Filter, splitShadowAmount: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, splitShadowAmount },
+  }),
+
+  /** Split Toning: ハイライトの色相を更新 */
+  setSplitHighlightHue: (filter: Filter, splitHighlightHue: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, splitHighlightHue },
+  }),
+
+  /** Split Toning: ハイライトの強度を更新 */
+  setSplitHighlightAmount: (filter: Filter, splitHighlightAmount: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, splitHighlightAmount },
+  }),
+
+  /** Split Toning: バランスを更新 */
+  setSplitBalance: (filter: Filter, splitBalance: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, splitBalance },
+  }),
+
+  /** Toeのみ更新 */
+  setToe: (filter: Filter, toe: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, toe },
+  }),
+
+  /** Shoulderのみ更新 */
+  setShoulder: (filter: Filter, shoulder: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, shoulder },
+  }),
+
+  /** Color Balance: Lift R (シャドウの赤) */
+  setLiftR: (filter: Filter, liftR: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, liftR },
+  }),
+
+  /** Color Balance: Lift G (シャドウの緑) */
+  setLiftG: (filter: Filter, liftG: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, liftG },
+  }),
+
+  /** Color Balance: Lift B (シャドウの青) */
+  setLiftB: (filter: Filter, liftB: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, liftB },
+  }),
+
+  /** Color Balance: Gamma R (ミッドトーンの赤) */
+  setGammaR: (filter: Filter, gammaR: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, gammaR },
+  }),
+
+  /** Color Balance: Gamma G (ミッドトーンの緑) */
+  setGammaG: (filter: Filter, gammaG: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, gammaG },
+  }),
+
+  /** Color Balance: Gamma B (ミッドトーンの青) */
+  setGammaB: (filter: Filter, gammaB: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, gammaB },
+  }),
+
+  /** Color Balance: Gain R (ハイライトの赤) */
+  setGainR: (filter: Filter, gainR: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, gainR },
+  }),
+
+  /** Color Balance: Gain G (ハイライトの緑) */
+  setGainG: (filter: Filter, gainG: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, gainG },
+  }),
+
+  /** Color Balance: Gain B (ハイライトの青) */
+  setGainB: (filter: Filter, gainB: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, gainB },
+  }),
+
   /** Masterカーブを更新 */
   setMaster: (filter: Filter, master: Curve): Filter => ({
     ...filter,

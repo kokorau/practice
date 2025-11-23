@@ -28,6 +28,40 @@ export type Adjustment = {
   clarity: number
   /** フェード: 0 (無変更) 〜 +1 (黒を持ち上げ) - フィルム風 */
   fade: number
+  /** 自然な彩度: -1 (彩度低下) 〜 0 (無変更) 〜 +1 (彩度増加) - 低彩度の色ほど強く効く */
+  vibrance: number
+  /** Split Toning: シャドウの色相 (0-360度) */
+  splitShadowHue: number
+  /** Split Toning: シャドウの強度 (0-1) */
+  splitShadowAmount: number
+  /** Split Toning: ハイライトの色相 (0-360度) */
+  splitHighlightHue: number
+  /** Split Toning: ハイライトの強度 (0-1) */
+  splitHighlightAmount: number
+  /** Split Toning: バランス (-1=シャドウ寄り, 0=中央, +1=ハイライト寄り) */
+  splitBalance: number
+  /** Toe: 黒の締まり (0=ソフト, +1=締まり) */
+  toe: number
+  /** Shoulder: 白のロールオフ (0=リニア, +1=フィルムライク) */
+  shoulder: number
+  /** Color Balance: Lift R (-1 to +1) シャドウの赤 */
+  liftR: number
+  /** Color Balance: Lift G (-1 to +1) シャドウの緑 */
+  liftG: number
+  /** Color Balance: Lift B (-1 to +1) シャドウの青 */
+  liftB: number
+  /** Color Balance: Gamma R (-1 to +1) ミッドトーンの赤 */
+  gammaR: number
+  /** Color Balance: Gamma G (-1 to +1) ミッドトーンの緑 */
+  gammaG: number
+  /** Color Balance: Gamma B (-1 to +1) ミッドトーンの青 */
+  gammaB: number
+  /** Color Balance: Gain R (-1 to +1) ハイライトの赤 */
+  gainR: number
+  /** Color Balance: Gain G (-1 to +1) ハイライトの緑 */
+  gainG: number
+  /** Color Balance: Gain B (-1 to +1) ハイライトの青 */
+  gainB: number
 }
 
 /**
@@ -177,6 +211,81 @@ const clarityMask = (x: number): number => {
 }
 
 /**
+ * Toe (黒の締まり)
+ * 暗部を非線形にカーブさせてフィルムのような黒締まりを実現
+ * @param input 入力値 (0-1)
+ * @param toe 強度 (0-1)
+ */
+const applyToe = (input: number, toe: number): number => {
+  if (toe < 0.001) return input
+
+  // Toe領域 (0-0.3)
+  const toeRange = 0.3
+  if (input >= toeRange) return input
+
+  // べき乗カーブで黒を締める (toe が高いほど急峻)
+  const power = 1 + toe * 1.5 // 1.0 ~ 2.5
+  const t = input / toeRange
+  const curved = Math.pow(t, power)
+  return curved * toeRange
+}
+
+/**
+ * Shoulder (白のロールオフ)
+ * 明部を非線形にカーブさせてフィルムのようなハイライト圧縮を実現
+ * @param input 入力値 (0-1)
+ * @param shoulder 強度 (0-1)
+ */
+const applyShoulder = (input: number, shoulder: number): number => {
+  if (shoulder < 0.001) return input
+
+  // Shoulder領域 (0.7-1.0)
+  const shoulderStart = 0.7
+  if (input <= shoulderStart) return input
+
+  // 逆べき乗カーブで白を圧縮 (shoulder が高いほど圧縮が強い)
+  const range = 1 - shoulderStart
+  const t = (input - shoulderStart) / range
+  const power = 1 / (1 + shoulder * 1.5) // 1.0 ~ 0.4
+  const curved = Math.pow(t, power)
+  return shoulderStart + curved * range
+}
+
+/**
+ * Hue (0-360度) から RGB シフト値を計算
+ * 返り値は -1 to +1 の範囲で、加算用
+ */
+const hueToRGB = (hue: number): { r: number; g: number; b: number } => {
+  // 0-360 を 0-1 に正規化
+  const h = ((hue % 360) + 360) % 360 / 360
+
+  // HSL to RGB (S=1, L=0.5 で最大彩度)
+  const hue2rgb = (p: number, q: number, t: number): number => {
+    if (t < 0) t += 1
+    if (t > 1) t -= 1
+    if (t < 1/6) return p + (q - p) * 6 * t
+    if (t < 1/2) return q
+    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6
+    return p
+  }
+
+  const q = 1 // L=0.5, S=1 の場合
+  const p = 0
+
+  // RGB値 (0-1)
+  const r = hue2rgb(p, q, h + 1/3)
+  const g = hue2rgb(p, q, h)
+  const b = hue2rgb(p, q, h - 1/3)
+
+  // 中央(0.5)からのオフセットに変換 (-0.5 to +0.5) → 2倍して (-1 to +1)
+  return {
+    r: (r - 0.5) * 2,
+    g: (g - 0.5) * 2,
+    b: (b - 0.5) * 2,
+  }
+}
+
+/**
  * ハイライト/シャドウ調整
  * @param input 入力値 (0-1)
  * @param highlights ハイライト調整 (-1 to +1)
@@ -294,6 +403,23 @@ export const $Adjustment = {
     tint: 0,
     clarity: 0,
     fade: 0,
+    vibrance: 0,
+    splitShadowHue: 220,      // デフォルト: 青系
+    splitShadowAmount: 0,
+    splitHighlightHue: 40,    // デフォルト: 暖色系
+    splitHighlightAmount: 0,
+    splitBalance: 0,
+    toe: 0,
+    shoulder: 0,
+    liftR: 0,
+    liftG: 0,
+    liftB: 0,
+    gammaR: 0,
+    gammaG: 0,
+    gammaB: 0,
+    gainR: 0,
+    gainG: 0,
+    gainB: 0,
   }),
 
   /** 調整が無変更かどうか */
@@ -309,13 +435,27 @@ export const $Adjustment = {
       Math.abs(adj.temperature) < 0.001 &&
       Math.abs(adj.tint) < 0.001 &&
       Math.abs(adj.clarity) < 0.001 &&
-      Math.abs(adj.fade) < 0.001
+      Math.abs(adj.fade) < 0.001 &&
+      Math.abs(adj.vibrance) < 0.001 &&
+      adj.splitShadowAmount < 0.001 &&
+      adj.splitHighlightAmount < 0.001 &&
+      adj.toe < 0.001 &&
+      adj.shoulder < 0.001 &&
+      Math.abs(adj.liftR) < 0.001 &&
+      Math.abs(adj.liftG) < 0.001 &&
+      Math.abs(adj.liftB) < 0.001 &&
+      Math.abs(adj.gammaR) < 0.001 &&
+      Math.abs(adj.gammaG) < 0.001 &&
+      Math.abs(adj.gammaB) < 0.001 &&
+      Math.abs(adj.gainR) < 0.001 &&
+      Math.abs(adj.gainG) < 0.001 &&
+      Math.abs(adj.gainB) < 0.001
     )
   },
 
   /**
    * 処理パイプラインを構築
-   * Exposure → Brightness → Contrast → Clarity → Highlights/Shadows → Whites/Blacks → Fade
+   * Exposure → Brightness → Contrast → Clarity → Highlights/Shadows → Whites/Blacks → Toe → Shoulder → Fade
    */
   buildPipeline: (adj: Adjustment) => {
     const gamma = brightnessToGamma(adj.brightness)
@@ -328,6 +468,8 @@ export const $Adjustment = {
         v => applyClarity(v, adj.clarity),
         v => applyHighlightsShadows(v, adj.highlights, adj.shadows),
         v => applyWhitesBlacks(v, adj.whites, adj.blacks),
+        v => applyToe(v, adj.toe),
+        v => applyShoulder(v, adj.shoulder),
         v => applyFade(v, adj.fade),
         clamp(0, 1)
       )
@@ -370,8 +512,16 @@ export const $Adjustment = {
       baseLut[i] = process(i / 255)
     }
 
-    // Temperature と Tint が両方 0 の場合は同じ LUT を共有
-    if (Math.abs(adj.temperature) < 0.001 && Math.abs(adj.tint) < 0.001) {
+    // 色調整が不要な場合は同じLUTを共有
+    const hasTemperature = Math.abs(adj.temperature) >= 0.001
+    const hasTint = Math.abs(adj.tint) >= 0.001
+    const hasSplitTone = adj.splitShadowAmount >= 0.001 || adj.splitHighlightAmount >= 0.001
+    const hasColorBalance =
+      Math.abs(adj.liftR) >= 0.001 || Math.abs(adj.liftG) >= 0.001 || Math.abs(adj.liftB) >= 0.001 ||
+      Math.abs(adj.gammaR) >= 0.001 || Math.abs(adj.gammaG) >= 0.001 || Math.abs(adj.gammaB) >= 0.001 ||
+      Math.abs(adj.gainR) >= 0.001 || Math.abs(adj.gainG) >= 0.001 || Math.abs(adj.gainB) >= 0.001
+
+    if (!hasTemperature && !hasTint && !hasSplitTone && !hasColorBalance) {
       return { r: baseLut, g: baseLut, b: baseLut }
     }
 
@@ -391,10 +541,13 @@ export const $Adjustment = {
     const tintG = -adj.tint * tintStrength
     const tintB = adj.tint * tintStrength
 
-    // 合成シフト
-    const rShift = tempR + tintR
-    const gShift = tempG + tintG
-    const bShift = tempB + tintB
+    // Split Toning 色計算
+    const shadowColor = hueToRGB(adj.splitShadowHue)
+    const highlightColor = hueToRGB(adj.splitHighlightHue)
+    const splitStrength = 0.15
+
+    // バランス調整 (-1 to +1) でマスクの境界をシフト
+    const balanceOffset = adj.splitBalance * 0.25
 
     const rLut = new Float32Array(256)
     const gLut = new Float32Array(256)
@@ -402,6 +555,48 @@ export const $Adjustment = {
 
     for (let i = 0; i < 256; i++) {
       const base = baseLut[i]!
+      const input = i / 255
+
+      // 基本の色シフト (Temperature + Tint)
+      let rShift = tempR + tintR
+      let gShift = tempG + tintG
+      let bShift = tempB + tintB
+
+      // Split Toning
+      if (hasSplitTone) {
+        // マスク計算 (バランスでオフセット)
+        const shadowWeight = (1 - smoothstep(0.0 + balanceOffset, 0.5 + balanceOffset, input)) * adj.splitShadowAmount
+        const highlightWeight = smoothstep(0.5 + balanceOffset, 1.0 + balanceOffset, input) * adj.splitHighlightAmount
+
+        rShift += shadowColor.r * shadowWeight * splitStrength + highlightColor.r * highlightWeight * splitStrength
+        gShift += shadowColor.g * shadowWeight * splitStrength + highlightColor.g * highlightWeight * splitStrength
+        bShift += shadowColor.b * shadowWeight * splitStrength + highlightColor.b * highlightWeight * splitStrength
+      }
+
+      // Color Balance (Lift/Gamma/Gain)
+      // DaVinci Resolve スタイルの 3-way カラーグレーディング
+      if (hasColorBalance) {
+        const cbStrength = 0.2  // 効果の強さ
+
+        // Lift: シャドウ部分に加算 (shadowMaskで重み付け)
+        const liftWeight = shadowMask(input)
+        rShift += adj.liftR * liftWeight * cbStrength
+        gShift += adj.liftG * liftWeight * cbStrength
+        bShift += adj.liftB * liftWeight * cbStrength
+
+        // Gamma: ミッドトーンを調整 (clarityMaskで重み付け)
+        const gammaWeight = clarityMask(input)
+        rShift += adj.gammaR * gammaWeight * cbStrength
+        gShift += adj.gammaG * gammaWeight * cbStrength
+        bShift += adj.gammaB * gammaWeight * cbStrength
+
+        // Gain: ハイライト部分を乗算的に調整 (highlightMaskで重み付け)
+        const gainWeight = highlightMask(input)
+        rShift += adj.gainR * gainWeight * cbStrength
+        gShift += adj.gainG * gainWeight * cbStrength
+        bShift += adj.gainB * gainWeight * cbStrength
+      }
+
       rLut[i] = Math.max(0, Math.min(1, base + rShift))
       gLut[i] = Math.max(0, Math.min(1, base + gShift))
       bLut[i] = Math.max(0, Math.min(1, base + bShift))
@@ -426,4 +621,7 @@ export const $Adjustment = {
   brightnessToGamma,
   srgbToLinear,
   linearToSrgb,
+  hueToRGB,
+  applyToe,
+  applyShoulder,
 }
