@@ -8,6 +8,7 @@ import { histogramShader } from './histogramShader.wgsl'
 
 let device: GPUDevice | null = null
 let pipeline: GPUComputePipeline | null = null
+let initPromise: Promise<GPUDevice> | null = null
 
 /**
  * WebGPU が利用可能かチェック
@@ -17,36 +18,45 @@ export const isWebGPUAvailable = (): boolean => {
 }
 
 /**
- * GPU デバイスを初期化
+ * GPU デバイスを初期化 (レースコンディション防止)
  */
 const initGPU = async (): Promise<GPUDevice> => {
-  if (device) return device
+  // 既に初期化済み
+  if (device && pipeline) return device
 
-  if (!navigator.gpu) {
-    throw new Error('WebGPU not supported')
-  }
+  // 初期化中なら待機
+  if (initPromise) return initPromise
 
-  const adapter = await navigator.gpu.requestAdapter()
-  if (!adapter) {
-    throw new Error('No GPU adapter found')
-  }
+  // 初期化開始 (Promiseを保存して並行呼び出しを防ぐ)
+  initPromise = (async () => {
+    if (!navigator.gpu) {
+      throw new Error('WebGPU not supported')
+    }
 
-  device = await adapter.requestDevice()
+    const adapter = await navigator.gpu.requestAdapter()
+    if (!adapter) {
+      throw new Error('No GPU adapter found')
+    }
 
-  // Compute pipeline 作成
-  const shaderModule = device.createShaderModule({
-    code: histogramShader,
-  })
+    device = await adapter.requestDevice()
 
-  pipeline = device.createComputePipeline({
-    layout: 'auto',
-    compute: {
-      module: shaderModule,
-      entryPoint: 'main',
-    },
-  })
+    // Compute pipeline 作成
+    const shaderModule = device.createShaderModule({
+      code: histogramShader,
+    })
 
-  return device
+    pipeline = device.createComputePipeline({
+      layout: 'auto',
+      compute: {
+        module: shaderModule,
+        entryPoint: 'main',
+      },
+    })
+
+    return device
+  })()
+
+  return initPromise
 }
 
 /**
