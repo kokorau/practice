@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { usePhotoUpload } from '../composables/PhotoLocal/usePhotoUpload'
+import { usePhotoCanvas } from '../composables/Photo/usePhotoCanvas'
+import { usePhotoAnalysis } from '../composables/Photo/usePhotoAnalysis'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
+import PhotoStats from '../components/PhotoStats.vue'
 
-const { photo, analysis, canvasRef, handleFileChange } = usePhotoUpload()
+const { photo, handleFileChange } = usePhotoUpload()
+const { canvasRef } = usePhotoCanvas(photo)
+const { analysis } = usePhotoAnalysis(photo)
 </script>
 
 <template>
@@ -25,7 +30,7 @@ const { photo, analysis, canvasRef, handleFileChange } = usePhotoUpload()
       />
     </div>
 
-    <div class="flex gap-8 items-start">
+    <div class="flex gap-8 items-start flex-wrap">
       <div class="border border-gray-700 rounded-lg p-4 inline-block">
         <canvas
           ref="canvasRef"
@@ -35,9 +40,16 @@ const { photo, analysis, canvasRef, handleFileChange } = usePhotoUpload()
         <p v-if="!photo" class="text-gray-500">画像をアップロードしてください</p>
       </div>
 
-      <div v-if="analysis" class="border border-gray-700 rounded-lg p-4">
-        <h2 class="text-sm text-gray-400 mb-2">Histogram</h2>
-        <HistogramCanvas :data="analysis.histogram" :width="256" :height="100" />
+      <div v-if="analysis" class="space-y-4">
+        <div class="border border-gray-700 rounded-lg p-4">
+          <h2 class="text-sm text-gray-400 mb-2">Histogram</h2>
+          <HistogramCanvas :data="analysis.histogram" :width="256" :height="100" />
+        </div>
+
+        <div class="border border-gray-700 rounded-lg p-4">
+          <h2 class="text-sm text-gray-400 mb-2">Statistics</h2>
+          <PhotoStats :stats="analysis.stats" />
+        </div>
       </div>
     </div>
   </div>
