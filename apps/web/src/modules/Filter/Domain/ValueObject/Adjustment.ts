@@ -193,7 +193,7 @@ export const $Adjustment = {
 
   /**
    * 処理パイプラインを構築
-   * Exposure → Highlights/Shadows → Brightness → Contrast
+   * Exposure → Brightness → Contrast → Highlights/Shadows
    */
   buildPipeline: (adj: Adjustment) => {
     const gamma = brightnessToGamma(adj.brightness)
@@ -201,9 +201,9 @@ export const $Adjustment = {
       pipe(
         value,
         v => applyExposure(v, adj.exposure),
-        v => applyHighlightsShadows(v, adj.highlights, adj.shadows),
         v => applyGamma(v, gamma),
         v => applyContrast(v, adj.contrast),
+        v => applyHighlightsShadows(v, adj.highlights, adj.shadows),
         clamp(0, 1)
       )
   },
