@@ -5,12 +5,14 @@ import { usePhotoUpload } from '../composables/PhotoLocal/usePhotoUpload'
 import { usePhotoCanvas } from '../composables/Photo/usePhotoCanvas'
 import { usePhotoAnalysis } from '../composables/Photo/usePhotoAnalysis'
 import { useFilter } from '../composables/Filter/useFilter'
+import { PRESETS } from '../modules/Filter/Domain'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 import PhotoStats from '../components/PhotoStats.vue'
 import CurveEditor from '../components/CurveEditor.vue'
 
 const { photo, handleFileChange } = usePhotoUpload()
-const { filter, lut, pixelEffects, setExposure, setHighlights, setShadows, setWhites, setBlacks, setBrightness, setContrast, setTemperature, setTint, setClarity, setFade, setVibrance, setSplitShadowHue, setSplitShadowAmount, setSplitHighlightHue, setSplitHighlightAmount, setSplitBalance, setToe, setShoulder, setLiftR, setLiftG, setLiftB, setGammaR, setGammaG, setGammaB, setGainR, setGainG, setGainB, setMasterPoint, reset } = useFilter(7)
+const { filter, lut, pixelEffects, currentPresetId, applyPreset, setExposure, setHighlights, setShadows, setWhites, setBlacks, setBrightness, setContrast, setTemperature, setTint, setClarity, setFade, setVibrance, setSplitShadowHue, setSplitShadowAmount, setSplitHighlightHue, setSplitHighlightAmount, setSplitBalance, setToe, setShoulder, setLiftR, setLiftG, setLiftB, setGammaR, setGammaG, setGammaB, setGainR, setGainG, setGainB, setMasterPoint, reset } = useFilter(7)
+
 
 // Canvas描画は即時 (軽い)
 const { canvasRef } = usePhotoCanvas(photo, { lut, pixelEffects })
@@ -21,7 +23,7 @@ const { analysis: originalAnalysis } = usePhotoAnalysis(photo)
 const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
 
 // タブ状態
-type TabId = 'source' | 'adjust'
+type TabId = 'source' | 'edit'
 const activeTab = ref<TabId>('source')
 
 // デバウンスされた更新関数 (重い処理の負荷軽減)
@@ -210,7 +212,7 @@ const handleGainBChange = (e: Event) => {
         <button
           @click="activeTab = 'source'"
           :class="[
-            'flex-1 px-4 py-3 text-sm font-medium transition-colors',
+            'flex-1 px-2 py-2 text-xs font-medium transition-colors',
             activeTab === 'source'
               ? 'text-white bg-gray-800 border-b-2 border-blue-500'
               : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -219,15 +221,15 @@ const handleGainBChange = (e: Event) => {
           Source
         </button>
         <button
-          @click="activeTab = 'adjust'"
+          @click="activeTab = 'edit'"
           :class="[
-            'flex-1 px-4 py-3 text-sm font-medium transition-colors',
-            activeTab === 'adjust'
+            'flex-1 px-2 py-2 text-xs font-medium transition-colors',
+            activeTab === 'edit'
               ? 'text-white bg-gray-800 border-b-2 border-blue-500'
               : 'text-gray-400 hover:text-white hover:bg-gray-800'
           ]"
         >
-          Adjust
+          Edit
         </button>
       </div>
 
@@ -252,15 +254,36 @@ const handleGainBChange = (e: Event) => {
           </div>
         </div>
 
-        <!-- Adjust Tab -->
-        <div v-if="activeTab === 'adjust'" class="space-y-3">
+        <!-- Edit Tab (Presets + Adjustments) -->
+        <div v-if="activeTab === 'edit'" class="space-y-3">
+        <!-- Presets (コンパクト) -->
+        <div class="border border-gray-700 rounded-lg p-2">
+          <div class="flex flex-wrap gap-1">
+            <button
+              v-for="preset in PRESETS"
+              :key="preset.id"
+              @click="applyPreset(preset)"
+              :class="[
+                'px-1.5 py-0.5 rounded transition-colors',
+                currentPresetId === preset.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              ]"
+              :title="preset.description"
+              style="font-size: 10px;"
+            >
+              {{ preset.name }}
+            </button>
+          </div>
+        </div>
         <!-- Basic Adjustments -->
         <div class="border border-gray-700 rounded-lg p-3">
           <div class="flex justify-between items-center mb-2">
             <h2 class="text-xs text-gray-400 font-medium">Adjustments</h2>
             <button
               @click="reset"
-              class="text-xs px-2 py-0.5 bg-gray-700 hover:bg-gray-600 rounded"
+              class="px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-400"
+              style="font-size: 10px;"
             >
               Reset
             </button>
