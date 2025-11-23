@@ -3,6 +3,8 @@
  * 内部でGamma/Sigmoidを使用して自然な変化を実現
  */
 
+import { pipe, clamp } from '../../../Pipe'
+
 export type Adjustment = {
   /** 露出: -2 (暗) 〜 0 (無変更) 〜 +2 (明) EV値 */
   exposure: number
@@ -189,28 +191,30 @@ export const $Adjustment = {
     )
   },
 
+  /**
+   * 処理パイプラインを構築
+   * Exposure → Highlights/Shadows → Brightness → Contrast
+   */
+  buildPipeline: (adj: Adjustment) => {
+    const gamma = brightnessToGamma(adj.brightness)
+    return (value: number): number =>
+      pipe(
+        value,
+        v => applyExposure(v, adj.exposure),
+        v => applyHighlightsShadows(v, adj.highlights, adj.shadows),
+        v => applyGamma(v, gamma),
+        v => applyContrast(v, adj.contrast),
+        clamp(0, 1)
+      )
+  },
+
   /** AdjustmentをLUTに変換 (8bit) */
   toLut: (adj: Adjustment): Uint8Array => {
     const lut = new Uint8Array(256)
-    const gamma = brightnessToGamma(adj.brightness)
+    const process = $Adjustment.buildPipeline(adj)
 
     for (let i = 0; i < 256; i++) {
-      let value = i / 255
-
-      // 1. Exposure (線形光空間で乗算)
-      value = applyExposure(value, adj.exposure)
-
-      // 2. Highlights / Shadows
-      value = applyHighlightsShadows(value, adj.highlights, adj.shadows)
-
-      // 3. Gamma (brightness)
-      value = applyGamma(value, gamma)
-
-      // 4. Contrast (直接 -1〜+1 の値を渡す)
-      value = applyContrast(value, adj.contrast)
-
-      // 5. クランプして整数化
-      lut[i] = Math.round(Math.max(0, Math.min(255, value * 255)))
+      lut[i] = Math.round(process(i / 255) * 255)
     }
 
     return lut
@@ -219,25 +223,10 @@ export const $Adjustment = {
   /** AdjustmentをLUTに変換 (浮動小数点 0.0-1.0) */
   toLutFloat: (adj: Adjustment): Float32Array => {
     const lut = new Float32Array(256)
-    const gamma = brightnessToGamma(adj.brightness)
+    const process = $Adjustment.buildPipeline(adj)
 
     for (let i = 0; i < 256; i++) {
-      let value = i / 255
-
-      // 1. Exposure (線形光空間で乗算)
-      value = applyExposure(value, adj.exposure)
-
-      // 2. Highlights / Shadows
-      value = applyHighlightsShadows(value, adj.highlights, adj.shadows)
-
-      // 3. Gamma (brightness)
-      value = applyGamma(value, gamma)
-
-      // 4. Contrast (直接 -1〜+1 の値を渡す)
-      value = applyContrast(value, adj.contrast)
-
-      // 5. クランプ (0.0-1.0)
-      lut[i] = Math.max(0, Math.min(1, value))
+      lut[i] = process(i / 255)
     }
 
     return lut
