@@ -11,8 +11,7 @@ import PhotoStats from '../components/PhotoStats.vue'
 import CurveEditor from '../components/CurveEditor.vue'
 
 const { photo, handleFileChange } = usePhotoUpload()
-const { filter, lut, pixelEffects, currentPresetId, applyPreset, setExposure, setHighlights, setShadows, setWhites, setBlacks, setBrightness, setContrast, setTemperature, setTint, setClarity, setFade, setVibrance, setSplitShadowHue, setSplitShadowAmount, setSplitHighlightHue, setSplitHighlightAmount, setSplitBalance, setToe, setShoulder, setLiftR, setLiftG, setLiftB, setGammaR, setGammaG, setGammaB, setGainR, setGainG, setGainB, setMasterPoint, reset } = useFilter(7)
-
+const { filter, lut, pixelEffects, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)
 
 // Canvas描画は即時 (軽い)
 const { canvasRef } = usePhotoCanvas(photo, { lut, pixelEffects })
@@ -26,179 +25,48 @@ const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
 type TabId = 'source' | 'edit'
 const activeTab = ref<TabId>('source')
 
-// デバウンスされた更新関数 (重い処理の負荷軽減)
-const debouncedSetExposure = useDebounceFn(setExposure, 16)
-const debouncedSetHighlights = useDebounceFn(setHighlights, 16)
-const debouncedSetShadows = useDebounceFn(setShadows, 16)
-const debouncedSetWhites = useDebounceFn(setWhites, 16)
-const debouncedSetBlacks = useDebounceFn(setBlacks, 16)
-const debouncedSetBrightness = useDebounceFn(setBrightness, 16)
-const debouncedSetContrast = useDebounceFn(setContrast, 16)
-const debouncedSetTemperature = useDebounceFn(setTemperature, 16)
-const debouncedSetTint = useDebounceFn(setTint, 16)
-const debouncedSetClarity = useDebounceFn(setClarity, 16)
-const debouncedSetFade = useDebounceFn(setFade, 16)
-const debouncedSetVibrance = useDebounceFn(setVibrance, 16)
-const debouncedSetSplitShadowHue = useDebounceFn(setSplitShadowHue, 16)
-const debouncedSetSplitShadowAmount = useDebounceFn(setSplitShadowAmount, 16)
-const debouncedSetSplitHighlightHue = useDebounceFn(setSplitHighlightHue, 16)
-const debouncedSetSplitHighlightAmount = useDebounceFn(setSplitHighlightAmount, 16)
-const debouncedSetSplitBalance = useDebounceFn(setSplitBalance, 16)
-const debouncedSetToe = useDebounceFn(setToe, 16)
-const debouncedSetShoulder = useDebounceFn(setShoulder, 16)
-const debouncedSetLiftR = useDebounceFn(setLiftR, 16)
-const debouncedSetLiftG = useDebounceFn(setLiftG, 16)
-const debouncedSetLiftB = useDebounceFn(setLiftB, 16)
-const debouncedSetGammaR = useDebounceFn(setGammaR, 16)
-const debouncedSetGammaG = useDebounceFn(setGammaG, 16)
-const debouncedSetGammaB = useDebounceFn(setGammaB, 16)
-const debouncedSetGainR = useDebounceFn(setGainR, 16)
-const debouncedSetGainG = useDebounceFn(setGainG, 16)
-const debouncedSetGainB = useDebounceFn(setGainB, 16)
-const debouncedSetMasterPoint = useDebounceFn(setMasterPoint, 16)
+// イベントハンドラファクトリ (デバウンス付き)
+const DEBOUNCE_MS = 16
+const createHandler = (setter: (v: number) => void) => {
+  const debounced = useDebounceFn(setter, DEBOUNCE_MS)
+  return (e: Event) => debounced(parseFloat((e.target as HTMLInputElement).value))
+}
 
+// 全ハンドラを一括生成
+const handlers = {
+  exposure: createHandler(setters.exposure),
+  highlights: createHandler(setters.highlights),
+  shadows: createHandler(setters.shadows),
+  whites: createHandler(setters.whites),
+  blacks: createHandler(setters.blacks),
+  brightness: createHandler(setters.brightness),
+  contrast: createHandler(setters.contrast),
+  temperature: createHandler(setters.temperature),
+  tint: createHandler(setters.tint),
+  clarity: createHandler(setters.clarity),
+  fade: createHandler(setters.fade),
+  vibrance: createHandler(setters.vibrance),
+  splitShadowHue: createHandler(setters.splitShadowHue),
+  splitShadowAmount: createHandler(setters.splitShadowAmount),
+  splitHighlightHue: createHandler(setters.splitHighlightHue),
+  splitHighlightAmount: createHandler(setters.splitHighlightAmount),
+  splitBalance: createHandler(setters.splitBalance),
+  toe: createHandler(setters.toe),
+  shoulder: createHandler(setters.shoulder),
+  liftR: createHandler(setters.liftR),
+  liftG: createHandler(setters.liftG),
+  liftB: createHandler(setters.liftB),
+  gammaR: createHandler(setters.gammaR),
+  gammaG: createHandler(setters.gammaG),
+  gammaB: createHandler(setters.gammaB),
+  gainR: createHandler(setters.gainR),
+  gainG: createHandler(setters.gainG),
+  gainB: createHandler(setters.gainB),
+}
+
+const debouncedSetMasterPoint = useDebounceFn(setMasterPoint, DEBOUNCE_MS)
 const handlePointUpdate = (index: number, value: number) => {
   debouncedSetMasterPoint(index, value)
-}
-
-const handleExposureChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetExposure(value)
-}
-
-const handleHighlightsChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetHighlights(value)
-}
-
-const handleShadowsChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetShadows(value)
-}
-
-const handleWhitesChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetWhites(value)
-}
-
-const handleBlacksChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetBlacks(value)
-}
-
-const handleBrightnessChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetBrightness(value)
-}
-
-const handleContrastChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetContrast(value)
-}
-
-const handleTemperatureChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetTemperature(value)
-}
-
-const handleTintChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetTint(value)
-}
-
-const handleClarityChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetClarity(value)
-}
-
-const handleFadeChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetFade(value)
-}
-
-const handleVibranceChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetVibrance(value)
-}
-
-const handleSplitShadowHueChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetSplitShadowHue(value)
-}
-
-const handleSplitShadowAmountChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetSplitShadowAmount(value)
-}
-
-const handleSplitHighlightHueChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetSplitHighlightHue(value)
-}
-
-const handleSplitHighlightAmountChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetSplitHighlightAmount(value)
-}
-
-const handleSplitBalanceChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetSplitBalance(value)
-}
-
-const handleToeChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetToe(value)
-}
-
-const handleShoulderChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetShoulder(value)
-}
-
-const handleLiftRChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetLiftR(value)
-}
-
-const handleLiftGChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetLiftG(value)
-}
-
-const handleLiftBChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetLiftB(value)
-}
-
-const handleGammaRChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetGammaR(value)
-}
-
-const handleGammaGChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetGammaG(value)
-}
-
-const handleGammaBChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetGammaB(value)
-}
-
-const handleGainRChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetGainR(value)
-}
-
-const handleGainGChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetGainG(value)
-}
-
-const handleGainBChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value)
-  debouncedSetGainB(value)
 }
 </script>
 
@@ -292,51 +160,51 @@ const handleGainBChange = (e: Event) => {
           <div class="space-y-1.5">
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Exposure</span>
-              <input type="range" min="-2" max="2" step="0.01" :value="filter.adjustment.exposure" @input="handleExposureChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-2" max="2" step="0.01" :value="filter.adjustment.exposure" @input="handlers.exposure" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Highlights</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.highlights" @input="handleHighlightsChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.highlights" @input="handlers.highlights" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Shadows</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.shadows" @input="handleShadowsChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.shadows" @input="handlers.shadows" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Whites</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.whites" @input="handleWhitesChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.whites" @input="handlers.whites" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Blacks</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.blacks" @input="handleBlacksChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.blacks" @input="handlers.blacks" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Brightness</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.brightness" @input="handleBrightnessChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.brightness" @input="handlers.brightness" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Contrast</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.contrast" @input="handleContrastChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.contrast" @input="handlers.contrast" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Clarity</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.clarity" @input="handleClarityChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.clarity" @input="handlers.clarity" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Temp</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.temperature" @input="handleTemperatureChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.temperature" @input="handlers.temperature" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Tint</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.tint" @input="handleTintChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.tint" @input="handlers.tint" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Fade</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.fade" @input="handleFadeChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.fade" @input="handlers.fade" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Vibrance</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.vibrance" @input="handleVibranceChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.vibrance" @input="handlers.vibrance" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
           </div>
         </div>
@@ -347,23 +215,23 @@ const handleGainBChange = (e: Event) => {
           <div class="space-y-1.5">
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Sh Hue</span>
-              <input type="range" min="0" max="360" step="1" :value="filter.adjustment.splitShadowHue" @input="handleSplitShadowHueChange" class="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer" style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)" />
+              <input type="range" min="0" max="360" step="1" :value="filter.adjustment.splitShadowHue" @input="handlers.splitShadowHue" class="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer" style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Sh Amt</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.splitShadowAmount" @input="handleSplitShadowAmountChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.splitShadowAmount" @input="handlers.splitShadowAmount" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Hi Hue</span>
-              <input type="range" min="0" max="360" step="1" :value="filter.adjustment.splitHighlightHue" @input="handleSplitHighlightHueChange" class="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer" style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)" />
+              <input type="range" min="0" max="360" step="1" :value="filter.adjustment.splitHighlightHue" @input="handlers.splitHighlightHue" class="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer" style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Hi Amt</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.splitHighlightAmount" @input="handleSplitHighlightAmountChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.splitHighlightAmount" @input="handlers.splitHighlightAmount" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Balance</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.splitBalance" @input="handleSplitBalanceChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.splitBalance" @input="handlers.splitBalance" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
           </div>
         </div>
@@ -374,11 +242,11 @@ const handleGainBChange = (e: Event) => {
           <div class="space-y-1.5">
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Toe</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.toe" @input="handleToeChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.toe" @input="handlers.toe" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-gray-500 w-16 flex-shrink-0">Shoulder</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.shoulder" @input="handleShoulderChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.shoulder" @input="handlers.shoulder" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
           </div>
         </div>
@@ -390,41 +258,41 @@ const handleGainBChange = (e: Event) => {
             <!-- Lift -->
             <div class="flex items-center gap-2">
               <span class="text-xs text-red-400 w-16 flex-shrink-0">Lift R</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftR" @input="handleLiftRChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftR" @input="handlers.liftR" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-green-400 w-16 flex-shrink-0">Lift G</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftG" @input="handleLiftGChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftG" @input="handlers.liftG" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-blue-400 w-16 flex-shrink-0">Lift B</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftB" @input="handleLiftBChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftB" @input="handlers.liftB" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <!-- Gamma -->
             <div class="flex items-center gap-2">
               <span class="text-xs text-red-400 w-16 flex-shrink-0">Gamma R</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaR" @input="handleGammaRChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaR" @input="handlers.gammaR" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-green-400 w-16 flex-shrink-0">Gamma G</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaG" @input="handleGammaGChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaG" @input="handlers.gammaG" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-blue-400 w-16 flex-shrink-0">Gamma B</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaB" @input="handleGammaBChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaB" @input="handlers.gammaB" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <!-- Gain -->
             <div class="flex items-center gap-2">
               <span class="text-xs text-red-400 w-16 flex-shrink-0">Gain R</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainR" @input="handleGainRChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainR" @input="handlers.gainR" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-green-400 w-16 flex-shrink-0">Gain G</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainG" @input="handleGainGChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainG" @input="handlers.gainG" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-blue-400 w-16 flex-shrink-0">Gain B</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainB" @input="handleGainBChange" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainB" @input="handlers.gainB" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
             </div>
           </div>
         </div>
