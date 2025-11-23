@@ -6,6 +6,10 @@ export type UseFilterReturn = {
   lut: ComputedRef<Lut>
   /** Exposure (-2 to +2 EV) */
   setExposure: (value: number) => void
+  /** Highlights (-1 to +1) */
+  setHighlights: (value: number) => void
+  /** Shadows (-1 to +1) */
+  setShadows: (value: number) => void
   /** Brightness (-1 to +1) */
   setBrightness: (value: number) => void
   /** Contrast (-1 to +1) */
@@ -25,6 +29,14 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
 
   const setExposure = (value: number) => {
     filter.value = $Filter.setExposure(filter.value, Math.max(-2, Math.min(2, value)))
+  }
+
+  const setHighlights = (value: number) => {
+    filter.value = $Filter.setHighlights(filter.value, Math.max(-1, Math.min(1, value)))
+  }
+
+  const setShadows = (value: number) => {
+    filter.value = $Filter.setShadows(filter.value, Math.max(-1, Math.min(1, value)))
   }
 
   const setBrightness = (value: number) => {
@@ -53,6 +65,8 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
     filter,
     lut,
     setExposure,
+    setHighlights,
+    setShadows,
     setBrightness,
     setContrast,
     setMasterPoint,

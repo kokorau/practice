@@ -85,6 +85,18 @@ export const $Filter = {
     adjustment: { ...filter.adjustment, exposure },
   }),
 
+  /** Highlightsのみ更新 */
+  setHighlights: (filter: Filter, highlights: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, highlights },
+  }),
+
+  /** Shadowsのみ更新 */
+  setShadows: (filter: Filter, shadows: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, shadows },
+  }),
+
   /** Brightnessのみ更新 */
   setBrightness: (filter: Filter, brightness: number): Filter => ({
     ...filter,

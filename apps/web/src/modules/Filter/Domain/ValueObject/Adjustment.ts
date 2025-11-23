@@ -6,6 +6,10 @@
 export type Adjustment = {
   /** 露出: -2 (暗) 〜 0 (無変更) 〜 +2 (明) EV値 */
   exposure: number
+  /** ハイライト: -1 (暗) 〜 0 (無変更) 〜 +1 (明) */
+  highlights: number
+  /** シャドウ: -1 (暗) 〜 0 (無変更) 〜 +1 (明) */
+  shadows: number
   /** 明るさ: -1 (暗) 〜 0 (無変更) 〜 +1 (明) */
   brightness: number
   /** コントラスト: -1 (低) 〜 0 (無変更) 〜 +1 (高) */
@@ -108,11 +112,68 @@ const applyExposure = (input: number, ev: number): number => {
   return linearToSrgb(Math.max(0, Math.min(1, adjusted)))
 }
 
+/**
+ * Smoothstep関数
+ * edge0からedge1の間で滑らかに0から1へ遷移
+ */
+const smoothstep = (edge0: number, edge1: number, x: number): number => {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)))
+  return t * t * (3 - 2 * t)
+}
+
+/**
+ * ハイライトマスク
+ * 明るい部分ほど影響を受ける (0.5付近から1.0で最大)
+ */
+const highlightMask = (x: number): number => {
+  return smoothstep(0.25, 0.75, x)
+}
+
+/**
+ * シャドウマスク
+ * 暗い部分ほど影響を受ける (0.0で最大、0.5付近から減少)
+ */
+const shadowMask = (x: number): number => {
+  return 1 - smoothstep(0.25, 0.75, x)
+}
+
+/**
+ * ハイライト/シャドウ調整
+ * @param input 入力値 (0-1)
+ * @param highlights ハイライト調整 (-1 to +1)
+ * @param shadows シャドウ調整 (-1 to +1)
+ */
+const applyHighlightsShadows = (
+  input: number,
+  highlights: number,
+  shadows: number
+): number => {
+  if (Math.abs(highlights) < 0.001 && Math.abs(shadows) < 0.001) {
+    return input
+  }
+
+  // 調整の強さ (±1で最大±0.5の変化)
+  const strength = 0.5
+
+  // 各マスクの影響度を計算
+  const hMask = highlightMask(input)
+  const sMask = shadowMask(input)
+
+  // 調整を適用
+  let result = input
+  result += highlights * hMask * strength
+  result += shadows * sMask * strength
+
+  return Math.max(0, Math.min(1, result))
+}
+
 
 export const $Adjustment = {
   /** デフォルト (無変更) */
   identity: (): Adjustment => ({
     exposure: 0,
+    highlights: 0,
+    shadows: 0,
     brightness: 0,
     contrast: 0,
   }),
@@ -121,6 +182,8 @@ export const $Adjustment = {
   isIdentity: (adj: Adjustment): boolean => {
     return (
       Math.abs(adj.exposure) < 0.001 &&
+      Math.abs(adj.highlights) < 0.001 &&
+      Math.abs(adj.shadows) < 0.001 &&
       Math.abs(adj.brightness) < 0.001 &&
       Math.abs(adj.contrast) < 0.001
     )
@@ -137,13 +200,16 @@ export const $Adjustment = {
       // 1. Exposure (線形光空間で乗算)
       value = applyExposure(value, adj.exposure)
 
-      // 2. Gamma (brightness)
+      // 2. Highlights / Shadows
+      value = applyHighlightsShadows(value, adj.highlights, adj.shadows)
+
+      // 3. Gamma (brightness)
       value = applyGamma(value, gamma)
 
-      // 3. Contrast (直接 -1〜+1 の値を渡す)
+      // 4. Contrast (直接 -1〜+1 の値を渡す)
       value = applyContrast(value, adj.contrast)
 
-      // 4. クランプして整数化
+      // 5. クランプして整数化
       lut[i] = Math.round(Math.max(0, Math.min(255, value * 255)))
     }
 
@@ -161,13 +227,16 @@ export const $Adjustment = {
       // 1. Exposure (線形光空間で乗算)
       value = applyExposure(value, adj.exposure)
 
-      // 2. Gamma (brightness)
+      // 2. Highlights / Shadows
+      value = applyHighlightsShadows(value, adj.highlights, adj.shadows)
+
+      // 3. Gamma (brightness)
       value = applyGamma(value, gamma)
 
-      // 3. Contrast (直接 -1〜+1 の値を渡す)
+      // 4. Contrast (直接 -1〜+1 の値を渡す)
       value = applyContrast(value, adj.contrast)
 
-      // 4. クランプ (0.0-1.0)
+      // 5. クランプ (0.0-1.0)
       lut[i] = Math.max(0, Math.min(1, value))
     }
 
@@ -176,6 +245,9 @@ export const $Adjustment = {
 
   /** 個別の変換関数をエクスポート (テスト/可視化用) */
   applyExposure,
+  applyHighlightsShadows,
+  highlightMask,
+  shadowMask,
   applyGamma,
   applyContrast,
   brightnessToGamma,

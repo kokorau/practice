@@ -9,7 +9,7 @@ import PhotoStats from '../components/PhotoStats.vue'
 import CurveEditor from '../components/CurveEditor.vue'
 
 const { photo, handleFileChange } = usePhotoUpload()
-const { filter, lut, setExposure, setBrightness, setContrast, setMasterPoint, reset } = useFilter(7)
+const { filter, lut, setExposure, setHighlights, setShadows, setBrightness, setContrast, setMasterPoint, reset } = useFilter(7)
 
 // Canvas描画は即時 (軽い)
 const { canvasRef } = usePhotoCanvas(photo, { lut })
@@ -21,6 +21,8 @@ const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
 
 // デバウンスされた更新関数 (重い処理の負荷軽減)
 const debouncedSetExposure = useDebounceFn(setExposure, 16)
+const debouncedSetHighlights = useDebounceFn(setHighlights, 16)
+const debouncedSetShadows = useDebounceFn(setShadows, 16)
 const debouncedSetBrightness = useDebounceFn(setBrightness, 16)
 const debouncedSetContrast = useDebounceFn(setContrast, 16)
 const debouncedSetMasterPoint = useDebounceFn(setMasterPoint, 16)
@@ -32,6 +34,16 @@ const handlePointUpdate = (index: number, value: number) => {
 const handleExposureChange = (e: Event) => {
   const value = parseFloat((e.target as HTMLInputElement).value)
   debouncedSetExposure(value)
+}
+
+const handleHighlightsChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetHighlights(value)
+}
+
+const handleShadowsChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  debouncedSetShadows(value)
 }
 
 const handleBrightnessChange = (e: Event) => {
@@ -103,6 +115,40 @@ const handleContrastChange = (e: Event) => {
               step="0.01"
               :value="filter.adjustment.exposure"
               @input="handleExposureChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Highlights -->
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Highlights</span>
+              <span>{{ filter.adjustment.highlights.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.highlights"
+              @input="handleHighlightsChange"
+              class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Shadows -->
+          <div class="mb-3">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Shadows</span>
+              <span>{{ filter.adjustment.shadows.toFixed(2) }}</span>
+            </div>
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.01"
+              :value="filter.adjustment.shadows"
+              @input="handleShadowsChange"
               class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
             />
           </div>
