@@ -12,6 +12,7 @@ export type PresetCategory =
   | 'vintage'    // ヴィンテージ
   | 'bw'         // モノクロ
   | 'creative'   // クリエイティブ
+  | 'design'     // デザイン (Duotone/Selective Color)
 
 /** プリセット定義 */
 export type Preset = {
@@ -74,6 +75,7 @@ export const $Preset = {
       vintage: 'Vintage',
       bw: 'B&W',
       creative: 'Creative',
+      design: 'Design',
     }
     return labels[category]
   },
@@ -427,6 +429,142 @@ export const PRESETS: Preset[] = [
       shadows: 0.2,
       toe: 0.35,
       shoulder: 0.15,
+    },
+  },
+
+  // --- Design (Duotone/Tritone/Selective Color) ---
+  {
+    id: 'duotone-spotify',
+    name: 'Spotify Green',
+    category: 'design',
+    description: 'Spotify風グリーン×ブラック',
+    adjustment: {
+      toneMode: 'duotone',
+      toneColor1Hue: 0,      // 黒（シャドウ）
+      toneColor1Sat: 0,
+      toneColor2Hue: 140,    // Spotifyグリーン
+      toneColor2Sat: 0.8,
+    },
+  },
+  {
+    id: 'duotone-midnight',
+    name: 'Midnight Blue',
+    category: 'design',
+    description: '深いブルー×ライトブルー',
+    adjustment: {
+      toneMode: 'duotone',
+      toneColor1Hue: 230,    // ダークブルー
+      toneColor1Sat: 0.9,
+      toneColor2Hue: 200,    // ライトシアン
+      toneColor2Sat: 0.5,
+    },
+  },
+  {
+    id: 'duotone-sunset',
+    name: 'Sunset',
+    category: 'design',
+    description: 'ディープパープル×ゴールド',
+    adjustment: {
+      toneMode: 'duotone',
+      toneColor1Hue: 280,    // パープル
+      toneColor1Sat: 0.7,
+      toneColor2Hue: 45,     // ゴールド
+      toneColor2Sat: 0.8,
+    },
+  },
+  {
+    id: 'duotone-coral',
+    name: 'Coral Reef',
+    category: 'design',
+    description: 'ティール×コーラル',
+    adjustment: {
+      toneMode: 'duotone',
+      toneColor1Hue: 180,    // ティール
+      toneColor1Sat: 0.6,
+      toneColor2Hue: 15,     // コーラル
+      toneColor2Sat: 0.7,
+    },
+  },
+  {
+    id: 'tritone-retro',
+    name: 'Retro Wave',
+    category: 'design',
+    description: 'シンセウェーブ風3色',
+    adjustment: {
+      toneMode: 'tritone',
+      toneColor1Hue: 280,    // パープル（シャドウ）
+      toneColor1Sat: 0.8,
+      toneColor2Hue: 330,    // ピンク（ハイライト）
+      toneColor2Sat: 0.6,
+      toneColor3Hue: 200,    // シアン（ミッドトーン）
+      toneColor3Sat: 0.7,
+    },
+  },
+  {
+    id: 'tritone-candy',
+    name: 'Candy Pop',
+    category: 'design',
+    description: 'ポップなパステル3色',
+    adjustment: {
+      toneMode: 'tritone',
+      toneColor1Hue: 320,    // マゼンタ
+      toneColor1Sat: 0.5,
+      toneColor2Hue: 60,     // イエロー
+      toneColor2Sat: 0.6,
+      toneColor3Hue: 180,    // ミント
+      toneColor3Sat: 0.4,
+    },
+  },
+  {
+    id: 'selective-red-pop',
+    name: 'Red Pop',
+    category: 'design',
+    description: '赤だけカラーで残す',
+    adjustment: {
+      selectiveColorEnabled: true,
+      selectiveHue: 0,
+      selectiveRange: 30,
+      selectiveDesaturate: 0,
+      contrast: 0.1,
+    },
+  },
+  {
+    id: 'selective-blue-pop',
+    name: 'Blue Pop',
+    category: 'design',
+    description: '青だけカラーで残す',
+    adjustment: {
+      selectiveColorEnabled: true,
+      selectiveHue: 210,
+      selectiveRange: 35,
+      selectiveDesaturate: 0,
+      contrast: 0.1,
+    },
+  },
+  {
+    id: 'selective-yellow-pop',
+    name: 'Yellow Pop',
+    category: 'design',
+    description: '黄色だけカラーで残す',
+    adjustment: {
+      selectiveColorEnabled: true,
+      selectiveHue: 55,
+      selectiveRange: 25,
+      selectiveDesaturate: 0,
+      contrast: 0.1,
+    },
+  },
+  {
+    id: 'selective-green-pop',
+    name: 'Green Pop',
+    category: 'design',
+    description: '緑だけカラーで残す',
+    adjustment: {
+      selectiveColorEnabled: true,
+      selectiveHue: 120,
+      selectiveRange: 40,
+      selectiveDesaturate: 0,
+      contrast: 0.1,
     },
   },
 ]

@@ -411,6 +411,12 @@ const handleLoadScreenshot = async () => {
         </div>
       </div>
 
+      <!-- Palette -->
+      <div v-if="originalPalette" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
+        <h2 class="text-xs text-gray-400 font-medium mb-2">Color Palette</h2>
+        <ProfiledPaletteDisplay :original="originalPalette" :filtered="filteredPalette" />
+      </div>
+
       <!-- Histogram & Statistics -->
       <div v-if="originalAnalysis && filteredAnalysis" class="grid grid-cols-2 gap-4 flex-shrink-0">
         <!-- Histogram (縦並び) -->
@@ -442,12 +448,6 @@ const handleLoadScreenshot = async () => {
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Palette -->
-      <div v-if="originalPalette" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
-        <h2 class="text-xs text-gray-400 font-medium mb-2">Color Palette</h2>
-        <ProfiledPaletteDisplay :original="originalPalette" :filtered="filteredPalette" />
       </div>
 
       <!-- Segmentation -->

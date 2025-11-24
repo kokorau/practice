@@ -1,0 +1,208 @@
+import { describe, it, expect, beforeAll } from 'vitest'
+import { $Lut } from './Lut'
+
+/**
+ * ImageData polyfill for Node.js test environment
+ */
+class ImageDataPolyfill {
+  readonly data: Uint8ClampedArray
+  readonly width: number
+  readonly height: number
+  readonly colorSpace: PredefinedColorSpace = 'srgb'
+
+  constructor(data: Uint8ClampedArray, width: number, height?: number) {
+    this.data = data
+    this.width = width
+    this.height = height ?? Math.floor(data.length / 4 / width)
+  }
+}
+
+beforeAll(() => {
+  if (typeof globalThis.ImageData === 'undefined') {
+    ;(globalThis as unknown as { ImageData: typeof ImageDataPolyfill }).ImageData = ImageDataPolyfill
+  }
+})
+
+/**
+ * ダミーImageDataを作成
+ */
+const createImageData = (pixels: [number, number, number, number][]): ImageData => {
+  const data = new Uint8ClampedArray(pixels.length * 4)
+  for (let i = 0; i < pixels.length; i++) {
+    data[i * 4] = pixels[i]![0]
+    data[i * 4 + 1] = pixels[i]![1]
+    data[i * 4 + 2] = pixels[i]![2]
+    data[i * 4 + 3] = pixels[i]![3]
+  }
+  return new ImageData(data, pixels.length, 1)
+}
+
+describe('$Lut.applyWithEffects', () => {
+  describe('Duotone', () => {
+    it('should map black to toneColor1 and white to toneColor2', () => {
+      const imageData = createImageData([
+        [0, 0, 0, 255],      // 黒
+        [255, 255, 255, 255], // 白
+        [128, 128, 128, 255], // グレー
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        toneMode: 'duotone',
+        toneColor1Hue: 0,     // 赤
+        toneColor1Sat: 1,
+        toneColor2Hue: 120,   // 緑
+        toneColor2Sat: 1,
+      })
+
+      // 黒（luma=0）は toneColor1（赤系）に近い
+      expect(result.data[0]).toBeGreaterThan(result.data[1]!) // R > G
+      expect(result.data[0]).toBeGreaterThan(result.data[2]!) // R > B
+
+      // 白（luma=1）は toneColor2（緑系）に近い
+      expect(result.data[5]).toBeGreaterThan(result.data[4]!) // G > R
+      expect(result.data[5]).toBeGreaterThan(result.data[6]!) // G > B
+    })
+
+    it('should preserve alpha channel', () => {
+      const imageData = createImageData([
+        [100, 100, 100, 128],
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        toneMode: 'duotone',
+        toneColor1Hue: 220,
+        toneColor1Sat: 0.7,
+        toneColor2Hue: 40,
+        toneColor2Sat: 0.7,
+      })
+
+      expect(result.data[3]).toBe(128)
+    })
+  })
+
+  describe('Tritone', () => {
+    it('should use three colors for shadows, midtones, and highlights', () => {
+      const imageData = createImageData([
+        [0, 0, 0, 255],       // 黒（シャドウ）
+        [128, 128, 128, 255], // グレー（ミッドトーン）
+        [255, 255, 255, 255], // 白（ハイライト）
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        toneMode: 'tritone',
+        toneColor1Hue: 0,     // 赤（シャドウ）
+        toneColor1Sat: 1,
+        toneColor2Hue: 120,   // 緑（ハイライト）
+        toneColor2Sat: 1,
+        toneColor3Hue: 240,   // 青（ミッドトーン）
+        toneColor3Sat: 1,
+      })
+
+      // 黒は toneColor1（赤系）
+      expect(result.data[0]).toBeGreaterThan(result.data[1]!) // R > G
+
+      // グレーは toneColor3（青系）
+      expect(result.data[6]).toBeGreaterThan(result.data[4]!) // B > R
+
+      // 白は toneColor2（緑系）
+      expect(result.data[9]).toBeGreaterThan(result.data[8]!) // G > R
+    })
+  })
+
+  describe('Selective Color', () => {
+    it('should keep selected hue in color and desaturate others', () => {
+      const imageData = createImageData([
+        [255, 0, 0, 255],     // 純赤（Hue=0）
+        [0, 0, 255, 255],     // 純青（Hue=240）
+        [0, 255, 0, 255],     // 純緑（Hue=120）
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        selectiveColorEnabled: true,
+        selectiveHue: 0,        // 赤を選択
+        selectiveRange: 30,
+        selectiveDesaturate: 0, // 完全にグレー化
+      })
+
+      // 赤はそのまま（R優勢）
+      expect(result.data[0]).toBeGreaterThan(200)
+      expect(result.data[1]).toBeLessThan(50)
+      expect(result.data[2]).toBeLessThan(50)
+
+      // 青はグレー化（R≈G≈B）
+      const blueR = result.data[4]!
+      const blueG = result.data[5]!
+      const blueB = result.data[6]!
+      expect(Math.abs(blueR - blueG)).toBeLessThan(5)
+      expect(Math.abs(blueG - blueB)).toBeLessThan(5)
+
+      // 緑もグレー化
+      const greenR = result.data[8]!
+      const greenG = result.data[9]!
+      const greenB = result.data[10]!
+      expect(Math.abs(greenR - greenG)).toBeLessThan(5)
+      expect(Math.abs(greenG - greenB)).toBeLessThan(5)
+    })
+
+    it('should partially desaturate with selectiveDesaturate > 0', () => {
+      const imageData = createImageData([
+        [0, 0, 255, 255], // 青
+      ])
+
+      const fullDesat = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        selectiveColorEnabled: true,
+        selectiveHue: 0,
+        selectiveRange: 30,
+        selectiveDesaturate: 0, // 完全グレー
+      })
+
+      const partialDesat = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        selectiveColorEnabled: true,
+        selectiveHue: 0,
+        selectiveRange: 30,
+        selectiveDesaturate: 0.5, // 50%グレー
+      })
+
+      // 部分的な彩度低下では青味がまだ残る
+      expect(partialDesat.data[2]).toBeGreaterThan(fullDesat.data[2]!)
+    })
+
+    it('should handle wide hue range', () => {
+      const imageData = createImageData([
+        [255, 100, 100, 255], // 赤寄り
+        [255, 50, 50, 255],   // より純粋な赤
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        selectiveColorEnabled: true,
+        selectiveHue: 0,
+        selectiveRange: 60, // 広い範囲
+        selectiveDesaturate: 0,
+      })
+
+      // 両方ともカラーのまま（範囲内）
+      expect(result.data[0]).toBeGreaterThan(200)
+      expect(result.data[4]).toBeGreaterThan(200)
+    })
+  })
+
+  describe('Combined effects', () => {
+    it('should apply duotone and vibrance together', () => {
+      const imageData = createImageData([
+        [128, 128, 128, 255],
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        toneMode: 'duotone',
+        toneColor1Hue: 220,
+        toneColor1Sat: 0.7,
+        toneColor2Hue: 40,
+        toneColor2Sat: 0.7,
+        vibrance: 0.5,
+      })
+
+      // エラーなく処理される
+      expect(result.data.length).toBe(4)
+    })
+  })
+})

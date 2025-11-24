@@ -2,6 +2,8 @@
  * LUT (Look-Up Table) - ピクセル値変換テーブル
  */
 
+import { hslToRgb, rgbToHsl, hueDifference } from './colors'
+
 /** 最終出力用LUT (8bit) */
 export type Lut = {
   r: Uint8Array  // [256] input -> output mapping (0-255)
@@ -77,17 +79,56 @@ export const $Lut = {
    * LUT適用後にピクセルエフェクトも適用
    * @param imageData 入力画像
    * @param lut LUT
-   * @param effects ピクセルエフェクト (vibrance等)
+   * @param effects ピクセルエフェクト (vibrance, duotone, selective color等)
    */
   applyWithEffects: (
     imageData: ImageData,
     lut: Lut,
-    effects: { vibrance?: number }
+    effects: {
+      vibrance?: number
+      // Duotone/Tritone
+      toneMode?: 'normal' | 'duotone' | 'tritone'
+      toneColor1Hue?: number
+      toneColor1Sat?: number
+      toneColor2Hue?: number
+      toneColor2Sat?: number
+      toneColor3Hue?: number
+      toneColor3Sat?: number
+      // Selective Color
+      selectiveColorEnabled?: boolean
+      selectiveHue?: number
+      selectiveRange?: number
+      selectiveDesaturate?: number
+    }
   ): ImageData => {
     const { data, width, height } = imageData
     const newData = new Uint8ClampedArray(data.length)
+
+    // エフェクトフラグ
     const vibrance = effects.vibrance ?? 0
     const hasVibrance = Math.abs(vibrance) > 0.001
+
+    const toneMode = effects.toneMode ?? 'normal'
+    const hasTone = toneMode !== 'normal'
+
+    const selectiveEnabled = effects.selectiveColorEnabled ?? false
+    const selectiveHue = effects.selectiveHue ?? 0
+    const selectiveRange = effects.selectiveRange ?? 30
+    const selectiveDesaturate = effects.selectiveDesaturate ?? 0
+
+    // Duotone/Tritone 用の色を事前計算
+    let toneColor1: { r: number; g: number; b: number } | null = null
+    let toneColor2: { r: number; g: number; b: number } | null = null
+    let toneColor3: { r: number; g: number; b: number } | null = null
+
+    if (hasTone) {
+      // HSL→RGB (Lightness=0.5 で最大彩度)
+      toneColor1 = hslToRgb(effects.toneColor1Hue ?? 220, effects.toneColor1Sat ?? 0.7, 0.5)
+      toneColor2 = hslToRgb(effects.toneColor2Hue ?? 40, effects.toneColor2Sat ?? 0.7, 0.5)
+      if (toneMode === 'tritone') {
+        toneColor3 = hslToRgb(effects.toneColor3Hue ?? 300, effects.toneColor3Sat ?? 0.5, 0.5)
+      }
+    }
 
     for (let i = 0; i < data.length; i += 4) {
       // 1. LUT適用
@@ -96,7 +137,57 @@ export const $Lut = {
       let b = lut.b[data[i + 2]!]!
       const a = data[i + 3]!
 
-      // 2. Vibrance適用 (低彩度ほど強く効く)
+      // 2. Duotone/Tritone 適用
+      if (hasTone && toneColor1 && toneColor2) {
+        // 輝度を計算 (Rec. 709)
+        const luma = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255
+
+        if (toneMode === 'duotone') {
+          // 2色間を輝度で補間
+          r = Math.round(toneColor1.r * (1 - luma) + toneColor2.r * luma)
+          g = Math.round(toneColor1.g * (1 - luma) + toneColor2.g * luma)
+          b = Math.round(toneColor1.b * (1 - luma) + toneColor2.b * luma)
+        } else if (toneMode === 'tritone' && toneColor3) {
+          // 3色間を輝度で補間 (シャドウ→ミッド→ハイライト)
+          if (luma < 0.5) {
+            const t = luma * 2 // 0-1
+            r = Math.round(toneColor1.r * (1 - t) + toneColor3.r * t)
+            g = Math.round(toneColor1.g * (1 - t) + toneColor3.g * t)
+            b = Math.round(toneColor1.b * (1 - t) + toneColor3.b * t)
+          } else {
+            const t = (luma - 0.5) * 2 // 0-1
+            r = Math.round(toneColor3.r * (1 - t) + toneColor2.r * t)
+            g = Math.round(toneColor3.g * (1 - t) + toneColor2.g * t)
+            b = Math.round(toneColor3.b * (1 - t) + toneColor2.b * t)
+          }
+        }
+      }
+
+      // 3. Selective Color 適用
+      if (selectiveEnabled) {
+        const hsl = rgbToHsl(r, g, b)
+        const diff = hueDifference(hsl.h, selectiveHue)
+
+        if (diff > selectiveRange) {
+          // 範囲外: 彩度を下げる
+          const gray = Math.round(r * 0.2126 + g * 0.7152 + b * 0.0722)
+          // selectiveDesaturate: 0=完全グレー, 1=元のまま
+          r = Math.round(gray + (r - gray) * selectiveDesaturate)
+          g = Math.round(gray + (g - gray) * selectiveDesaturate)
+          b = Math.round(gray + (b - gray) * selectiveDesaturate)
+        } else if (diff > selectiveRange * 0.7) {
+          // エッジ付近: スムーズに遷移
+          const edgeT = (diff - selectiveRange * 0.7) / (selectiveRange * 0.3)
+          const gray = Math.round(r * 0.2126 + g * 0.7152 + b * 0.0722)
+          const desatAmount = selectiveDesaturate + (1 - selectiveDesaturate) * (1 - edgeT)
+          r = Math.round(gray + (r - gray) * desatAmount)
+          g = Math.round(gray + (g - gray) * desatAmount)
+          b = Math.round(gray + (b - gray) * desatAmount)
+        }
+        // 範囲内: そのまま
+      }
+
+      // 4. Vibrance適用 (低彩度ほど強く効く)
       if (hasVibrance) {
         const max = Math.max(r, g, b)
         const min = Math.min(r, g, b)

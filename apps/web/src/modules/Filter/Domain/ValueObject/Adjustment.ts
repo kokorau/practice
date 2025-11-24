@@ -83,6 +83,32 @@ export type Adjustment = {
   gainG: number
   /** Color Balance: Gain B (-1 to +1) ハイライトの青 */
   gainB: number
+
+  // === Duotone/Tritone ===
+  /** トーンモード: 'normal' (通常), 'duotone' (2色), 'tritone' (3色) */
+  toneMode: 'normal' | 'duotone' | 'tritone'
+  /** Duotone/Tritone: シャドウ色 Hue (0-360度) */
+  toneColor1Hue: number
+  /** Duotone/Tritone: シャドウ色 Saturation (0-1) */
+  toneColor1Sat: number
+  /** Duotone/Tritone: ハイライト色 Hue (0-360度) */
+  toneColor2Hue: number
+  /** Duotone/Tritone: ハイライト色 Saturation (0-1) */
+  toneColor2Sat: number
+  /** Tritone: ミッドトーン色 Hue (0-360度) */
+  toneColor3Hue: number
+  /** Tritone: ミッドトーン色 Saturation (0-1) */
+  toneColor3Sat: number
+
+  // === Selective Color ===
+  /** Selective Color: 有効/無効 */
+  selectiveColorEnabled: boolean
+  /** Selective Color: ターゲット色相 (0-360度) */
+  selectiveHue: number
+  /** Selective Color: 色相の許容範囲 (0-180度) */
+  selectiveRange: number
+  /** Selective Color: 非選択部分の彩度 (0=グレー, 1=元のまま) */
+  selectiveDesaturate: number
 }
 
 export const $Adjustment = {
@@ -116,6 +142,19 @@ export const $Adjustment = {
     gainR: 0,
     gainG: 0,
     gainB: 0,
+    // Duotone/Tritone
+    toneMode: 'normal',
+    toneColor1Hue: 220,    // デフォルト: 青 (シャドウ)
+    toneColor1Sat: 0.7,
+    toneColor2Hue: 40,     // デフォルト: オレンジ (ハイライト)
+    toneColor2Sat: 0.7,
+    toneColor3Hue: 300,    // デフォルト: マゼンタ (ミッドトーン)
+    toneColor3Sat: 0.5,
+    // Selective Color
+    selectiveColorEnabled: false,
+    selectiveHue: 0,       // デフォルト: 赤
+    selectiveRange: 30,    // 30度の範囲
+    selectiveDesaturate: 0, // 完全にグレー化
   }),
 
   /** 調整が無変更かどうか */
@@ -145,7 +184,9 @@ export const $Adjustment = {
       Math.abs(adj.gammaB) < 0.001 &&
       Math.abs(adj.gainR) < 0.001 &&
       Math.abs(adj.gainG) < 0.001 &&
-      Math.abs(adj.gainB) < 0.001
+      Math.abs(adj.gainB) < 0.001 &&
+      adj.toneMode === 'normal' &&
+      !adj.selectiveColorEnabled
     )
   },
 
