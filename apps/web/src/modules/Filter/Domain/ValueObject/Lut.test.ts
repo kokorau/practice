@@ -186,6 +186,171 @@ describe('$Lut.applyWithEffects', () => {
     })
   })
 
+  describe('Posterize', () => {
+    it('should quantize colors to specified levels', () => {
+      const imageData = createImageData([
+        [0, 0, 0, 255],       // 黒
+        [64, 64, 64, 255],    // 暗いグレー
+        [128, 128, 128, 255], // 中間グレー
+        [192, 192, 192, 255], // 明るいグレー
+        [255, 255, 255, 255], // 白
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        posterizeLevels: 4, // 4階調
+      })
+
+      // 4階調では 0, 85, 170, 255 のいずれかになる
+      const validValues = [0, 85, 170, 255]
+      expect(validValues).toContain(result.data[0])  // 黒
+      expect(validValues).toContain(result.data[4])  // 暗いグレー
+      expect(validValues).toContain(result.data[8])  // 中間グレー
+      expect(validValues).toContain(result.data[12]) // 明るいグレー
+      expect(validValues).toContain(result.data[16]) // 白
+    })
+
+    it('should reduce color variation', () => {
+      const imageData = createImageData([
+        [100, 100, 100, 255],
+        [101, 101, 101, 255],
+        [102, 102, 102, 255],
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        posterizeLevels: 4,
+      })
+
+      // 近い値は同じ値に量子化される
+      expect(result.data[0]).toBe(result.data[4])
+      expect(result.data[4]).toBe(result.data[8])
+    })
+
+    it('should preserve alpha channel', () => {
+      const imageData = createImageData([
+        [100, 100, 100, 128],
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        posterizeLevels: 4,
+      })
+
+      expect(result.data[3]).toBe(128)
+    })
+
+    it('should not change image when levels = 256', () => {
+      const imageData = createImageData([
+        [100, 150, 200, 255],
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        posterizeLevels: 256,
+      })
+
+      expect(result.data[0]).toBe(100)
+      expect(result.data[1]).toBe(150)
+      expect(result.data[2]).toBe(200)
+    })
+  })
+
+  describe('Hue Rotation', () => {
+    it('should rotate red to green at 120 degrees', () => {
+      const imageData = createImageData([
+        [255, 0, 0, 255], // 純赤 (Hue=0)
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        hueRotation: 120,
+      })
+
+      // 赤(Hue=0) + 120度 = 緑(Hue=120)
+      expect(result.data[1]).toBeGreaterThan(result.data[0]!) // G > R
+      expect(result.data[1]).toBeGreaterThan(result.data[2]!) // G > B
+    })
+
+    it('should rotate green to blue at 120 degrees', () => {
+      const imageData = createImageData([
+        [0, 255, 0, 255], // 純緑 (Hue=120)
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        hueRotation: 120,
+      })
+
+      // 緑(Hue=120) + 120度 = 青(Hue=240)
+      expect(result.data[2]).toBeGreaterThan(result.data[0]!) // B > R
+      expect(result.data[2]).toBeGreaterThan(result.data[1]!) // B > G
+    })
+
+    it('should handle negative rotation', () => {
+      const imageData = createImageData([
+        [0, 255, 0, 255], // 純緑 (Hue=120)
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        hueRotation: -120,
+      })
+
+      // 緑(Hue=120) - 120度 = 赤(Hue=0)
+      expect(result.data[0]).toBeGreaterThan(result.data[1]!) // R > G
+      expect(result.data[0]).toBeGreaterThan(result.data[2]!) // R > B
+    })
+
+    it('should preserve gray (no saturation)', () => {
+      const imageData = createImageData([
+        [128, 128, 128, 255], // グレー
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        hueRotation: 90,
+      })
+
+      // グレーは彩度0なので色相回転しても変わらない
+      expect(result.data[0]).toBe(128)
+      expect(result.data[1]).toBe(128)
+      expect(result.data[2]).toBe(128)
+    })
+
+    it('should invert colors at 180 degrees', () => {
+      const imageData = createImageData([
+        [255, 0, 0, 255], // 赤
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        hueRotation: 180,
+      })
+
+      // 赤(Hue=0) + 180度 = シアン(Hue=180)
+      expect(result.data[1]).toBeGreaterThan(result.data[0]!) // G > R
+      expect(result.data[2]).toBeGreaterThan(result.data[0]!) // B > R
+    })
+
+    it('should preserve alpha channel', () => {
+      const imageData = createImageData([
+        [255, 0, 0, 128],
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        hueRotation: 120,
+      })
+
+      expect(result.data[3]).toBe(128)
+    })
+
+    it('should not change image when rotation = 0', () => {
+      const imageData = createImageData([
+        [100, 150, 200, 255],
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        hueRotation: 0,
+      })
+
+      expect(result.data[0]).toBe(100)
+      expect(result.data[1]).toBe(150)
+      expect(result.data[2]).toBe(200)
+    })
+  })
+
   describe('Combined effects', () => {
     it('should apply duotone and vibrance together', () => {
       const imageData = createImageData([
@@ -202,6 +367,21 @@ describe('$Lut.applyWithEffects', () => {
       })
 
       // エラーなく処理される
+      expect(result.data.length).toBe(4)
+    })
+
+    it('should apply posterize and hue rotation together', () => {
+      const imageData = createImageData([
+        [255, 0, 0, 255],
+      ])
+
+      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
+        posterizeLevels: 4,
+        hueRotation: 120,
+      })
+
+      // エラーなく処理され、緑系になる
+      expect(result.data[1]).toBeGreaterThan(result.data[0]!)
       expect(result.data.length).toBe(4)
     })
   })

@@ -99,6 +99,10 @@ export const $Lut = {
       selectiveHue?: number
       selectiveRange?: number
       selectiveDesaturate?: number
+      // Posterize
+      posterizeLevels?: number
+      // Hue Rotation
+      hueRotation?: number
     }
   ): ImageData => {
     const { data, width, height } = imageData
@@ -116,6 +120,12 @@ export const $Lut = {
     const selectiveRange = effects.selectiveRange ?? 30
     const selectiveDesaturate = effects.selectiveDesaturate ?? 0
 
+    const posterizeLevels = effects.posterizeLevels ?? 256
+    const hasPosterize = posterizeLevels < 256 && posterizeLevels >= 2
+
+    const hueRotation = effects.hueRotation ?? 0
+    const hasHueRotation = Math.abs(hueRotation) > 0.001
+
     // Duotone/Tritone 用の色を事前計算
     let toneColor1: { r: number; g: number; b: number } | null = null
     let toneColor2: { r: number; g: number; b: number } | null = null
@@ -127,6 +137,18 @@ export const $Lut = {
       toneColor2 = hslToRgb(effects.toneColor2Hue ?? 40, effects.toneColor2Sat ?? 0.7, 0.5)
       if (toneMode === 'tritone') {
         toneColor3 = hslToRgb(effects.toneColor3Hue ?? 300, effects.toneColor3Sat ?? 0.5, 0.5)
+      }
+    }
+
+    // Posterize 用の LUT を事前計算 (1D LUT)
+    let posterizeLut: Uint8Array | null = null
+    if (hasPosterize) {
+      posterizeLut = new Uint8Array(256)
+      const step = 255 / (posterizeLevels - 1)
+      for (let i = 0; i < 256; i++) {
+        // 入力値を levels 段階に量子化
+        const level = Math.round(i / 255 * (posterizeLevels - 1))
+        posterizeLut[i] = Math.round(level * step)
       }
     }
 
@@ -187,7 +209,25 @@ export const $Lut = {
         // 範囲内: そのまま
       }
 
-      // 4. Vibrance適用 (低彩度ほど強く効く)
+      // 4. Posterize 適用 (LUTベース)
+      if (hasPosterize && posterizeLut) {
+        r = posterizeLut[r]!
+        g = posterizeLut[g]!
+        b = posterizeLut[b]!
+      }
+
+      // 5. Hue Rotation 適用
+      if (hasHueRotation) {
+        const hsl = rgbToHsl(r, g, b)
+        // 色相を回転 (0-360度の範囲に収める)
+        hsl.h = (hsl.h + hueRotation + 360) % 360
+        const rotated = hslToRgb(hsl.h, hsl.s, hsl.l)
+        r = rotated.r
+        g = rotated.g
+        b = rotated.b
+      }
+
+      // 6. Vibrance適用 (低彩度ほど強く効く)
       if (hasVibrance) {
         const max = Math.max(r, g, b)
         const min = Math.min(r, g, b)

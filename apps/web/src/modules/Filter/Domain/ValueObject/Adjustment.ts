@@ -109,6 +109,14 @@ export type Adjustment = {
   selectiveRange: number
   /** Selective Color: 非選択部分の彩度 (0=グレー, 1=元のまま) */
   selectiveDesaturate: number
+
+  // === Posterize ===
+  /** Posterize: 階調数 (2-256, 256=無効) */
+  posterizeLevels: number
+
+  // === Hue Rotation ===
+  /** Hue Rotation: 色相回転 (-180 〜 +180度) */
+  hueRotation: number
 }
 
 export const $Adjustment = {
@@ -155,6 +163,10 @@ export const $Adjustment = {
     selectiveHue: 0,       // デフォルト: 赤
     selectiveRange: 30,    // 30度の範囲
     selectiveDesaturate: 0, // 完全にグレー化
+    // Posterize
+    posterizeLevels: 256,  // 256 = 無効（フル階調）
+    // Hue Rotation
+    hueRotation: 0,        // 0 = 無効
   }),
 
   /** 調整が無変更かどうか */
@@ -186,7 +198,9 @@ export const $Adjustment = {
       Math.abs(adj.gainG) < 0.001 &&
       Math.abs(adj.gainB) < 0.001 &&
       adj.toneMode === 'normal' &&
-      !adj.selectiveColorEnabled
+      !adj.selectiveColorEnabled &&
+      adj.posterizeLevels >= 256 &&
+      Math.abs(adj.hueRotation) < 0.001
     )
   },
 

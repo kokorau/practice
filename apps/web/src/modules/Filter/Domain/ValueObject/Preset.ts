@@ -567,4 +567,90 @@ export const PRESETS: Preset[] = [
       contrast: 0.1,
     },
   },
+
+  // --- Posterize ---
+  {
+    id: 'posterize-4',
+    name: 'Poster 4',
+    category: 'design',
+    description: '4階調ポスター風',
+    adjustment: {
+      posterizeLevels: 4,
+      contrast: 0.15,
+    },
+  },
+  {
+    id: 'posterize-8',
+    name: 'Poster 8',
+    category: 'design',
+    description: '8階調ポスター風',
+    adjustment: {
+      posterizeLevels: 8,
+      contrast: 0.1,
+    },
+  },
+  {
+    id: 'posterize-pop',
+    name: 'Pop Art',
+    category: 'design',
+    description: 'ポップアート風（6階調+高彩度）',
+    adjustment: {
+      posterizeLevels: 6,
+      contrast: 0.2,
+      vibrance: 0.4,
+    },
+  },
+  {
+    id: 'posterize-mono',
+    name: 'Poster Mono',
+    category: 'design',
+    description: 'モノクロポスター風',
+    adjustment: {
+      posterizeLevels: 5,
+      vibrance: -1,
+      contrast: 0.25,
+    },
+  },
+
+  // --- Hue Rotation ---
+  {
+    id: 'hue-shift-warm',
+    name: 'Warm Shift',
+    category: 'design',
+    description: '暖色方向にシフト',
+    adjustment: {
+      hueRotation: 30,
+      vibrance: 0.1,
+    },
+  },
+  {
+    id: 'hue-shift-cool',
+    name: 'Cool Shift',
+    category: 'design',
+    description: '寒色方向にシフト',
+    adjustment: {
+      hueRotation: -30,
+      vibrance: 0.1,
+    },
+  },
+  {
+    id: 'hue-invert',
+    name: 'Color Invert',
+    category: 'design',
+    description: '補色に反転',
+    adjustment: {
+      hueRotation: 180,
+    },
+  },
+  {
+    id: 'hue-psychedelic',
+    name: 'Psychedelic',
+    category: 'design',
+    description: 'サイケデリック（90度回転+高彩度）',
+    adjustment: {
+      hueRotation: 90,
+      vibrance: 0.5,
+      contrast: 0.15,
+    },
+  },
 ]

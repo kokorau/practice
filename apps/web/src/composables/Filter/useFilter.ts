@@ -17,6 +17,10 @@ export type PixelEffects = {
   selectiveHue: number
   selectiveRange: number
   selectiveDesaturate: number
+  // Posterize
+  posterizeLevels: number
+  // Hue Rotation
+  hueRotation: number
 }
 
 /** セッター関数の型 */
@@ -71,6 +75,10 @@ export type FilterSetters = {
   selectiveHue: Setter
   selectiveRange: Setter
   selectiveDesaturate: Setter
+  // Posterize
+  posterizeLevels: Setter
+  // Hue Rotation
+  hueRotation: Setter
 }
 
 export type UseFilterReturn = {
@@ -146,6 +154,10 @@ const SETTER_DEFS: Record<NumericSetterKey, SetterDef> = {
   selectiveHue:        { filterFn: $Filter.setSelectiveHue,        clamp: clampHue },
   selectiveRange:      { filterFn: $Filter.setSelectiveRange,      clamp: clampRange(0, 180) },
   selectiveDesaturate: { filterFn: $Filter.setSelectiveDesaturate, clamp: clampRange(0, 1) },
+  // Posterize
+  posterizeLevels:     { filterFn: $Filter.setPosterizeLevels,     clamp: clampRange(2, 256) },
+  // Hue Rotation
+  hueRotation:         { filterFn: $Filter.setHueRotation,         clamp: clampRange(-180, 180) },
 }
 
 export const useFilter = (pointCount: number = 7): UseFilterReturn => {
@@ -170,6 +182,10 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
     selectiveHue: filter.value.adjustment.selectiveHue,
     selectiveRange: filter.value.adjustment.selectiveRange,
     selectiveDesaturate: filter.value.adjustment.selectiveDesaturate,
+    // Posterize
+    posterizeLevels: filter.value.adjustment.posterizeLevels,
+    // Hue Rotation
+    hueRotation: filter.value.adjustment.hueRotation,
   }))
 
   const applyPreset = (preset: Preset) => {

@@ -323,6 +323,22 @@ export const $Filter = {
     adjustment: { ...filter.adjustment, selectiveDesaturate },
   }),
 
+  // === Posterize ===
+
+  /** Posterize 階調数 を更新 */
+  setPosterizeLevels: (filter: Filter, posterizeLevels: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, posterizeLevels },
+  }),
+
+  // === Hue Rotation ===
+
+  /** Hue Rotation 色相回転 を更新 */
+  setHueRotation: (filter: Filter, hueRotation: number): Filter => ({
+    ...filter,
+    adjustment: { ...filter.adjustment, hueRotation },
+  }),
+
   /** Masterカーブを更新 */
   setMaster: (filter: Filter, master: Curve): Filter => ({
     ...filter,
