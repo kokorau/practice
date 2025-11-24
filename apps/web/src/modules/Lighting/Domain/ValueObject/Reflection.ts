@@ -40,16 +40,22 @@ export const Reflection = {
     // 光源の高さ（Z）が高いほど、反射が面全体に広がる
     const heightFactor = Math.min(light.position.z / 200, 1)
 
-    // 反射の強度
-    const intensity = light.intensity * distanceFactor * 0.5
+    // depthが大きいほど反射も強調される
+    const depthFactor = Math.max(obj.depth, 0) / 10
+
+    // 反射の強度: depthが大きいと反射が強くなる
+    const baseIntensity = light.intensity * distanceFactor * 0.5
+    const intensity = baseIntensity * (1 + depthFactor * 0.8) // 0.3 → 0.8に増加
 
     // スペキュラー反射の位置（光源方向の端に近い位置）
     // 角度から位置を計算 (0-1の範囲、0.5が中心)
-    const specularX = 0.5 + Math.cos(angleRad) * 0.3 * (1 - heightFactor * 0.5)
-    const specularY = 0.5 + Math.sin(angleRad) * 0.3 * (1 - heightFactor * 0.5)
+    // depthが大きいとスペキュラーが光源方向により偏る
+    const offsetAmount = 0.3 * (1 - heightFactor * 0.5) * (1 + depthFactor * 0.5) // 0.2 → 0.5に増加
+    const specularX = 0.5 + Math.cos(angleRad) * offsetAmount
+    const specularY = 0.5 + Math.sin(angleRad) * offsetAmount
 
-    // スペキュラーのサイズ（光源が高いほど大きく広がる）
-    const specularSize = 0.2 + heightFactor * 0.3
+    // スペキュラーのサイズ（光源が高いほど、depthが大きいほど広がる）
+    const specularSize = 0.2 + heightFactor * 0.3 + depthFactor * 0.2 // 0.08 → 0.2に増加
 
     return {
       angle,

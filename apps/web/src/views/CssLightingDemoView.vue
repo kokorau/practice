@@ -8,7 +8,7 @@ import ColorPalette from '../components/ColorPalette.vue'
 
 // 光源リスト (fixed position)
 const lights = ref<LightType[]>([
-  Light.create('light-1', Point.create(300, 200, 150), { intensity: 1, color: '#fff4e6' })
+  Light.create('light-1', Point.create(300, 200, 500), { intensity: 1, color: '#fff4e6' })
 ])
 
 // 選択中の光源
@@ -48,7 +48,7 @@ const presets: LightingPreset[] = [
     name: 'Natural Daylight',
     description: 'Soft overhead lighting like natural daylight',
     lights: [
-      { x: 400, y: 200, z: 200, intensity: 0.8, color: '#fff4e6' },
+      { x: 400, y: 200, z: 600, intensity: 0.8, color: '#fff4e6' },
     ],
     ambient: { color: '#fff8f0', intensity: 0.08 },
   },
@@ -56,9 +56,9 @@ const presets: LightingPreset[] = [
     name: 'Studio Setup',
     description: 'Three-point lighting for balanced illumination',
     lights: [
-      { x: 300, y: 200, z: 180, intensity: 1, color: '#ffffff' }, // Key light
-      { x: 600, y: 250, z: 150, intensity: 0.5, color: '#e0f2ff' }, // Fill light
-      { x: 450, y: 400, z: 120, intensity: 0.3, color: '#fef3c7' }, // Back light
+      { x: 300, y: 200, z: 550, intensity: 1, color: '#ffffff' }, // Key light
+      { x: 600, y: 250, z: 500, intensity: 0.5, color: '#e0f2ff' }, // Fill light
+      { x: 450, y: 400, z: 450, intensity: 0.3, color: '#fef3c7' }, // Back light
     ],
     ambient: { color: '#f8fafc', intensity: 0.05 },
   },
@@ -66,8 +66,8 @@ const presets: LightingPreset[] = [
     name: 'Golden Hour',
     description: 'Warm sunset lighting from the side',
     lights: [
-      { x: 200, y: 300, z: 100, intensity: 1, color: '#ff9500' },
-      { x: 700, y: 250, z: 150, intensity: 0.3, color: '#ff6b35' },
+      { x: 200, y: 300, z: 400, intensity: 1, color: '#ff9500' },
+      { x: 700, y: 250, z: 500, intensity: 0.3, color: '#ff6b35' },
     ],
     ambient: { color: '#ffd7aa', intensity: 0.12 },
   },
@@ -75,8 +75,8 @@ const presets: LightingPreset[] = [
     name: 'Neon Night',
     description: 'Colorful neon lights for dramatic effect',
     lights: [
-      { x: 250, y: 200, z: 120, intensity: 0.9, color: '#ff6ec7' },
-      { x: 550, y: 200, z: 120, intensity: 0.9, color: '#00d4ff' },
+      { x: 250, y: 200, z: 450, intensity: 0.9, color: '#ff6ec7' },
+      { x: 550, y: 200, z: 450, intensity: 0.9, color: '#00d4ff' },
     ],
     ambient: { color: '#1e1b4b', intensity: 0.15 },
   },
@@ -84,7 +84,7 @@ const presets: LightingPreset[] = [
     name: 'Dramatic Spotlight',
     description: 'Single strong light from above for high contrast',
     lights: [
-      { x: 400, y: 150, z: 250, intensity: 1, color: '#ffffff' },
+      { x: 400, y: 150, z: 700, intensity: 1, color: '#ffffff' },
     ],
     ambient: { color: '#0f172a', intensity: 0.1 },
   },
@@ -134,7 +134,7 @@ const addLight = () => {
   lightIdCounter++
   const newLight = Light.create(
     `light-${lightIdCounter}`,
-    Point.create(300 + lightIdCounter * 30, 200 + lightIdCounter * 30, 150),
+    Point.create(300 + lightIdCounter * 30, 200 + lightIdCounter * 30, 500),
     { intensity: 1, color: '#fff4e6' }
   )
   lights.value = [...lights.value, newLight]
@@ -203,14 +203,20 @@ const computeStyles = (config: LightingConfig, rect: { x: number; y: number }): 
     depth: config.depth,
   })
 
-  const shadows = lights.value.map(light => Shadow.calculate(light, obj))
+  // 本影と半影を両方計算
+  const allShadows: Array<ReturnType<typeof Shadow.calculate>> = []
+  lights.value.forEach(light => {
+    const { umbra, penumbra } = Shadow.calculateWithPenumbra(light, obj)
+    allShadows.push(penumbra, umbra) // 半影→本影の順で重ねる
+  })
+
   const highlights = lights.value.map(light => Shadow.calculateHighlight(light, obj))
   const reflections = lights.value.map(light => Reflection.calculate(light, obj))
 
   const adjustedColors = AmbientLight.applyToColors(ambientLight.value, config.colors)
 
   return {
-    boxShadow: CssShadowRenderer.toBoxShadowWithHighlight(shadows, highlights),
+    boxShadow: CssShadowRenderer.toBoxShadowWithHighlight(allShadows, highlights),
     reflection: CssReflectionRenderer.toBackgroundMultiple(reflections),
     colors: adjustedColors,
   }
@@ -238,7 +244,10 @@ const updateCardPositions = () => {
 
 // スクロール・リサイズで更新
 onMounted(() => {
-  updateCardPositions()
+  // nextTick で DOM が完全にレンダリングされた後に実行
+  setTimeout(() => {
+    updateCardPositions()
+  }, 100)
   window.addEventListener('scroll', updateCardPositions)
   window.addEventListener('resize', updateCardPositions)
 })
@@ -254,12 +263,78 @@ const getCardStyle = (index: number): CardStyle => {
   if (!card) return defaultCardStyle
   return computeStyles(card.config, card.rect)
 }
+
+const getDepthPattern = (index: number): number => {
+  // [2, 30, 30, 2] の繰り返しパターン
+  const pattern = [2, 30, 30, 2]
+  return pattern[(index - 1) % pattern.length] ?? 2
+}
+
+// デバッグ用：影情報を表示
+const debugInfo = ref<{ depth: number; cardIndex: number; totalCards: number; umbra: any; penumbra: any; highlight: any; reflection: any } | null>(null)
+const showDebugInfo = (index: number) => {
+  // 強制的に更新
+  updateCardPositions()
+
+  const card = cards.value[index]
+  if (!card) {
+    console.log('Card not found:', index, 'total cards:', cards.value.length)
+    return
+  }
+
+  console.log('Card config:', card.config)
+
+  const obj = SceneObject.create('temp', Point.create(card.rect.x, card.rect.y), {
+    width: 100,
+    height: 100,
+    depth: card.config.depth,
+  })
+
+  const light = lights.value[0]
+  if (!light) return
+
+  const { umbra, penumbra } = Shadow.calculateWithPenumbra(light, obj)
+  const highlight = Shadow.calculateHighlight(light, obj)
+  const reflection = Reflection.calculate(light, obj)
+
+  debugInfo.value = {
+    depth: card.config.depth,
+    cardIndex: index,
+    totalCards: cards.value.length,
+    umbra: {
+      offsetX: umbra.offsetX.toFixed(2),
+      offsetY: umbra.offsetY.toFixed(2),
+      blur: umbra.blur.toFixed(2),
+      opacity: umbra.opacity.toFixed(3),
+    },
+    penumbra: {
+      offsetX: penumbra.offsetX.toFixed(2),
+      offsetY: penumbra.offsetY.toFixed(2),
+      blur: penumbra.blur.toFixed(2),
+      opacity: penumbra.opacity.toFixed(3),
+    },
+    highlight: {
+      offsetX: highlight.offsetX.toFixed(2),
+      offsetY: highlight.offsetY.toFixed(2),
+      blur: highlight.blur.toFixed(2),
+      spread: highlight.spread.toFixed(2),
+      opacity: highlight.opacity.toFixed(3),
+    },
+    reflection: {
+      intensity: reflection.intensity.toFixed(3),
+      specularSize: reflection.specularSize.toFixed(3),
+      specularX: reflection.specularX.toFixed(3),
+      specularY: reflection.specularY.toFixed(3),
+    },
+  }
+}
 </script>
 
 <template>
   <div class="min-h-screen" :style="backgroundStyle">
-    <!-- 固定光源たち -->
+    <!-- 固定光源たち (Settingsが開いている時のみ表示) -->
     <div
+      v-if="showSettings"
       v-for="light in lights"
       :key="light.id"
       class="fixed w-6 h-6 rounded-full cursor-grab active:cursor-grabbing z-50 border-1 border-gray-300"
@@ -342,8 +417,9 @@ const getCardStyle = (index: number): CardStyle => {
           <input
             :value="selectedLight.position.z"
             type="range"
-            min="50"
-            max="400"
+            min="100"
+            max="1000"
+            step="10"
             class="w-full"
             @input="(e) => updateSelectedLight({ z: Number((e.target as HTMLInputElement).value) })"
           />
@@ -387,7 +463,14 @@ const getCardStyle = (index: number): CardStyle => {
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-xs text-gray-400">Ambient Color</label>
+        <div class="flex items-center justify-between">
+          <label class="text-xs text-gray-400">Ambient Color</label>
+          <div
+            class="w-6 h-6 rounded border border-gray-600"
+            :style="{ backgroundColor: ambientLight.color }"
+            :title="ambientLight.color"
+          />
+        </div>
         <div class="scale-75 origin-left">
           <ColorPalette
             :model-value="ambientLight.color"
@@ -405,6 +488,46 @@ const getCardStyle = (index: number): CardStyle => {
     >
       Settings
     </button>
+
+    <!-- デバッグ情報パネル -->
+    <div
+      v-if="debugInfo"
+      class="fixed bottom-4 right-4 w-80 bg-gray-900 text-white p-4 rounded-lg shadow-xl z-40 text-xs max-h-[90vh] overflow-y-auto"
+    >
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-bold">Lighting Debug Info</h3>
+        <button class="text-gray-400 hover:text-white" @click="debugInfo = null">×</button>
+      </div>
+      <div class="space-y-2">
+        <div class="text-yellow-400">Depth: {{ debugInfo.depth }}</div>
+        <div class="text-gray-400 text-xs">Card: {{ debugInfo.cardIndex }} / {{ debugInfo.totalCards }}</div>
+        <div class="border-t border-gray-700 pt-2">
+          <div class="text-blue-400 font-semibold">Umbra (本影)</div>
+          <div>offset: ({{ debugInfo.umbra.offsetX }}, {{ debugInfo.umbra.offsetY }})</div>
+          <div>blur: {{ debugInfo.umbra.blur }}</div>
+          <div>opacity: {{ debugInfo.umbra.opacity }}</div>
+        </div>
+        <div class="border-t border-gray-700 pt-2">
+          <div class="text-purple-400 font-semibold">Penumbra (半影)</div>
+          <div>offset: ({{ debugInfo.penumbra.offsetX }}, {{ debugInfo.penumbra.offsetY }})</div>
+          <div>blur: {{ debugInfo.penumbra.blur }}</div>
+          <div>opacity: {{ debugInfo.penumbra.opacity }}</div>
+        </div>
+        <div class="border-t border-gray-700 pt-2">
+          <div class="text-green-400 font-semibold">Highlight</div>
+          <div>offset: ({{ debugInfo.highlight.offsetX }}, {{ debugInfo.highlight.offsetY }})</div>
+          <div>blur: {{ debugInfo.highlight.blur }}</div>
+          <div>spread: {{ debugInfo.highlight.spread }}</div>
+          <div>opacity: {{ debugInfo.highlight.opacity }}</div>
+        </div>
+        <div class="border-t border-gray-700 pt-2">
+          <div class="text-orange-400 font-semibold">Reflection</div>
+          <div>intensity: {{ debugInfo.reflection.intensity }}</div>
+          <div>specularSize: {{ debugInfo.reflection.specularSize }}</div>
+          <div>specular: ({{ debugInfo.reflection.specularX }}, {{ debugInfo.reflection.specularY }})</div>
+        </div>
+      </div>
+    </div>
 
     <!-- メインコンテンツ -->
     <div class="max-w-5xl mx-auto px-6 py-12">
@@ -710,15 +833,16 @@ const getCardStyle = (index: number): CardStyle => {
             v-for="i in 20"
             :key="i"
             :ref="(el) => { if (el) cardRefs[34 + i - 1] = el as HTMLElement }"
-            :data-lighting-depth="10"
+            :data-lighting-depth="String(getDepthPattern(i))"
             :data-lighting-colors="JSON.stringify({ bg: '#ffffff' })"
-            class="p-6 rounded-xl"
+            class="p-6 rounded-xl cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
             :style="{
               backgroundColor: getCardStyle(34 + i - 1).colors?.bg ?? '#fff',
               boxShadow: getCardStyle(34 + i - 1).boxShadow,
             }"
+            @click="showDebugInfo(34 + i - 1)"
           >
-            <h3 class="font-semibold text-gray-800 mb-2">Item {{ i }}</h3>
+            <h3 class="font-semibold text-gray-800 mb-2">Item {{ i }} (depth: {{ getDepthPattern(i) }}) - Click to debug</h3>
             <p class="text-sm text-gray-500">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.
             </p>

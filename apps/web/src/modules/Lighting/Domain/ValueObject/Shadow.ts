@@ -46,7 +46,72 @@ const darkenColor = (hex: string, factor: number = 0.3): string => {
 
 export const Shadow = {
   /**
-   * 光源とオブジェクトから影を計算
+   * 光源とオブジェクトから影を計算（本影と半影の2つ）
+   */
+  calculateWithPenumbra(light: Light, obj: SceneObject): { umbra: Shadow; penumbra: Shadow } {
+    const objTopSurface = SceneObjectOps.topSurface(obj)
+    const distance2D = Point.distance2D(light.position, objTopSurface)
+    const distance3D = Point.distance(light.position, objTopSurface)
+
+    // オブジェクトから光源へのベクトル（影は反対方向に伸びる）
+    const vectorToLight = Point.vector(objTopSurface, light.position)
+    const normalized2D = Point.normalize2D({
+      x: -vectorToLight.x,
+      y: -vectorToLight.y,
+      z: -vectorToLight.z,
+    })
+
+    const lightHeight = Math.max(light.position.z, 1)
+    const heightFactor = 100 / lightHeight
+    const depthFactor = Math.max(obj.depth, 0) / 10
+    const inset = SceneObjectOps.isInset(obj)
+    const color = darkenColor(light.color)
+
+    // 共通のオフセット計算
+    // depthが影の長さに大きく影響するように係数を調整
+    const baseOffset = distance2D * 0.02 * heightFactor * light.intensity // 0.05→0.02に削減
+    const offsetScale = baseOffset + depthFactor * heightFactor * 5 // 係数を2→5に（さらに2.5倍）
+
+    // Umbra（本影）: 濃くて小さい、オブジェクトに近い
+    const umbraOffsetX = normalized2D.x * offsetScale * 0.5
+    const umbraOffsetY = normalized2D.y * offsetScale * 0.5
+    const umbraBlur = (2 + depthFactor * 2) * light.intensity // 係数を0.5→2に
+    const umbraSpread = depthFactor > 0 ? depthFactor * 0.3 * light.intensity : 0 // 係数を0.1→0.3に
+    const maxDistance = 500
+    const normalizedDistance = Math.min(distance3D / maxDistance, 1)
+    const umbraOpacity = light.intensity * (0.4 - normalizedDistance * 0.2)
+
+    // Penumbra（半影）: 薄くて大きい、外側に広がる
+    const penumbraOffsetX = normalized2D.x * offsetScale * 1.5
+    const penumbraOffsetY = normalized2D.y * offsetScale * 1.5
+    const penumbraBlur = (8 + (distance3D / 100) * 5 + depthFactor * 5) * light.intensity // 係数を2→5に
+    const penumbraSpread = 0
+    const penumbraOpacity = light.intensity * (0.15 - normalizedDistance * 0.1)
+
+    return {
+      umbra: {
+        offsetX: umbraOffsetX,
+        offsetY: umbraOffsetY,
+        blur: umbraBlur,
+        spread: umbraSpread,
+        opacity: umbraOpacity,
+        inset,
+        color,
+      },
+      penumbra: {
+        offsetX: penumbraOffsetX,
+        offsetY: penumbraOffsetY,
+        blur: penumbraBlur,
+        spread: penumbraSpread,
+        opacity: penumbraOpacity,
+        inset,
+        color,
+      },
+    }
+  },
+
+  /**
+   * 光源とオブジェクトから影を計算（従来版）
    * 光源のZ位置とオブジェクトのdepthを考慮
    */
   calculate(light: Light, obj: SceneObject): Shadow {
@@ -108,16 +173,22 @@ export const Shadow = {
     const vector = Point.vector(objTopSurface, light.position)
     const normalized2D = Point.normalize2D(vector)
 
+    const lightHeight = Math.max(light.position.z, 1)
+    const heightFactor = 100 / lightHeight
+    const depthFactor = Math.max(obj.depth, 0) / 10
+
     // ハイライトは影の逆方向、より小さく、光源強度で調整
-    const offsetScale = (2 + obj.depth * 0.1) * light.intensity
+    // depthが大きいほどハイライトも強調される
+    const baseOffset = 2 * light.intensity
+    const offsetScale = baseOffset + depthFactor * heightFactor * 2.5 // 0.8 → 2.5に増加
     const offsetX = normalized2D.x * offsetScale
     const offsetY = normalized2D.y * offsetScale
 
-    // ぼかし: 柔らかく、光源強度で調整
-    const blur = (6 + obj.depth * 0.3) * light.intensity
+    // ぼかし: 柔らかく、光源強度とdepthで調整
+    const blur = (6 + depthFactor * 4) * light.intensity // 1.5 → 4に増加
 
-    // 広がり
-    const spread = 0
+    // 広がり: depthが大きいとハイライトも広がる
+    const spread = depthFactor > 0 ? depthFactor * 0.5 * light.intensity : 0 // 0.15 → 0.5に増加
 
     // 不透明度: 光源の強度に応じて
     const distance3D = Point.distance(light.position, objTopSurface)
