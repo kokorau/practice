@@ -273,12 +273,6 @@ const getDepthPattern = (index: number): number => {
   return pattern[(index - 1) % pattern.length] ?? 2
 }
 
-const getReflectivityPattern = (index: number): number => {
-  // [0.2, 1, 1, 0.2] の繰り返しパターン (低反射・高反射を交互に)
-  const pattern = [0.2, 1, 1, 0.2]
-  return pattern[(index - 1) % pattern.length] ?? 1
-}
-
 // デバッグ用：影情報を表示
 const debugInfo = ref<{ depth: number; reflectivity: number; cardIndex: number; totalCards: number; umbra: any; penumbra: any; highlight: any; reflection: any } | null>(null)
 const showDebugInfo = (index: number) => {
