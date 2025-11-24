@@ -25,7 +25,7 @@ app.get('/screenshot', async (c) => {
   try {
     const screenshot = await captureScreenshotUseCase({ url })
 
-    return new Response(screenshot.image, {
+    return new Response(new Uint8Array(screenshot.image), {
       headers: {
         'Content-Type': 'image/png',
       },
