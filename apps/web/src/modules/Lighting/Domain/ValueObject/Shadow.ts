@@ -13,6 +13,7 @@ export type Shadow = {
   readonly spread: number
   readonly opacity: number
   readonly inset: boolean // inset shadow（へこみ用）
+  readonly color: string // 光源色の暗い版
 }
 
 /**
@@ -25,6 +26,22 @@ export type Highlight = {
   readonly spread: number
   readonly opacity: number
   readonly inset: boolean
+  readonly color: string // 光源色
+}
+
+/**
+ * HEX色を暗くする
+ */
+const darkenColor = (hex: string, factor: number = 0.3): string => {
+  // #RRGGBB or #RGB を解析
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (!result) return '#000000'
+
+  const r = Math.round(parseInt(result[1] ?? '0', 16) * factor)
+  const g = Math.round(parseInt(result[2] ?? '0', 16) * factor)
+  const b = Math.round(parseInt(result[3] ?? '0', 16) * factor)
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
 export const Shadow = {
@@ -54,27 +71,30 @@ export const Shadow = {
     // オブジェクトの厚み（depth）が影の長さに影響
     const depthFactor = Math.max(obj.depth, 0) / 10
 
-    // 影のオフセット: XY方向 + 高さ/厚みによる補正
-    const baseOffset = distance2D * 0.1 * heightFactor
-    const offsetScale = baseOffset + depthFactor * heightFactor
+    // 影のオフセット: XY方向 + 高さ/厚み + 光源強度による補正
+    const baseOffset = distance2D * 0.05 * heightFactor * light.intensity
+    const offsetScale = baseOffset + depthFactor * heightFactor * 0.5
     const offsetX = normalized2D.x * offsetScale
     const offsetY = normalized2D.y * offsetScale
 
-    // ぼかし: 距離と高さに応じて増加
-    const blur = 5 + (distance3D / 100) * 10 + depthFactor * 2
+    // ぼかし: 距離と高さに応じて増加、光源強度で調整
+    const blur = (3 + (distance3D / 100) * 5 + depthFactor * 1) * light.intensity
 
-    // 広がり: 厚みに応じて少し広がる
-    const spread = depthFactor > 0 ? depthFactor * 0.5 : 0
+    // 広がり: 厚みと光源強度に応じて広がる
+    const spread = depthFactor > 0 ? depthFactor * 0.2 * light.intensity : 0
 
     // 不透明度: 距離と光源の強度に応じて減少
     const maxDistance = 500
     const normalizedDistance = Math.min(distance3D / maxDistance, 1)
-    const opacity = light.intensity * (0.6 - normalizedDistance * 0.4)
+    const opacity = light.intensity * (0.3 - normalizedDistance * 0.2)
 
     // へこみ（depth < 0）の場合は inset shadow
     const inset = SceneObjectOps.isInset(obj)
 
-    return { offsetX, offsetY, blur, spread, opacity, inset }
+    // 光源色の暗い版を影の色とする
+    const color = darkenColor(light.color)
+
+    return { offsetX, offsetY, blur, spread, opacity, inset, color }
   },
 
   /**
@@ -88,13 +108,13 @@ export const Shadow = {
     const vector = Point.vector(objTopSurface, light.position)
     const normalized2D = Point.normalize2D(vector)
 
-    // ハイライトは影の逆方向、より小さく
-    const offsetScale = 3 + obj.depth * 0.2
+    // ハイライトは影の逆方向、より小さく、光源強度で調整
+    const offsetScale = (2 + obj.depth * 0.1) * light.intensity
     const offsetX = normalized2D.x * offsetScale
     const offsetY = normalized2D.y * offsetScale
 
-    // ぼかし: 柔らかく
-    const blur = 8 + obj.depth * 0.5
+    // ぼかし: 柔らかく、光源強度で調整
+    const blur = (6 + obj.depth * 0.3) * light.intensity
 
     // 広がり
     const spread = 0
@@ -103,11 +123,14 @@ export const Shadow = {
     const distance3D = Point.distance(light.position, objTopSurface)
     const maxDistance = 500
     const normalizedDistance = Math.min(distance3D / maxDistance, 1)
-    const opacity = light.intensity * (0.3 - normalizedDistance * 0.2)
+    const opacity = light.intensity * (0.2 - normalizedDistance * 0.15)
 
     // 浮き出しは外側ハイライト、へこみは内側ハイライト
     const inset = SceneObjectOps.isInset(obj)
 
-    return { offsetX, offsetY, blur, spread, opacity, inset }
+    // ハイライトは光源色をそのまま使う
+    const color = light.color
+
+    return { offsetX, offsetY, blur, spread, opacity, inset, color }
   },
 }

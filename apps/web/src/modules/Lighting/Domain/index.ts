@@ -10,5 +10,11 @@ export type { SceneObject as SceneObjectType } from './ValueObject/SceneObject'
 export { Shadow } from './ValueObject/Shadow'
 export type { Shadow as ShadowType, Highlight as HighlightType } from './ValueObject/Shadow'
 
+export { Reflection } from './ValueObject/Reflection'
+export type { Reflection as ReflectionType } from './ValueObject/Reflection'
+
+export { AmbientLight } from './ValueObject/AmbientLight'
+export type { AmbientLight as AmbientLightType } from './ValueObject/AmbientLight'
+
 export { Scene } from './ValueObject/Scene'
 export type { Scene as SceneType, Bounds } from './ValueObject/Scene'

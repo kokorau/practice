@@ -19,6 +19,11 @@ const router = createRouter({
       name: 'css-lighting',
       component: () => import('../views/CssLightingView.vue'),
     },
+    {
+      path: '/css-lighting-demo',
+      name: 'css-lighting-demo',
+      component: () => import('../views/CssLightingDemoView.vue'),
+    },
   ],
 })
 

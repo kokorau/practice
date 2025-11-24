@@ -1,60 +1,128 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Point, Light, SceneObject, Scene, Shadow } from '../modules/Lighting/Domain'
+import { Point, Light, SceneObject, Shadow, Reflection, AmbientLight } from '../modules/Lighting/Domain'
+import type { LightType, SceneObjectType, AmbientLightType } from '../modules/Lighting/Domain'
 import { CssShadowRenderer } from '../modules/Lighting/Infra/Css/CssShadowRenderer'
+import { CssReflectionRenderer } from '../modules/Lighting/Infra/Css/CssReflectionRenderer'
+import ColorPalette from '../components/ColorPalette.vue'
 
-// 光源設定
-const lightX = ref(200)
-const lightY = ref(200)
-const lightZ = ref(100)
-const lightIntensity = ref(1)
+// 光源リスト
+const lights = ref<LightType[]>([
+  Light.create('light-1', Point.create(200, 200, 100), { intensity: 1 }),
+])
 
-// オブジェクト設定
-const objectX = ref(400)
-const objectY = ref(300)
-const objectDepth = ref(10)
+// オブジェクトリスト
+const objects = ref<SceneObjectType[]>([
+  SceneObject.create('obj-1', Point.create(400, 300), { width: 96, height: 96, depth: 10 }),
+])
 
-// 影・ハイライト設定
+// 選択中のアイテム
+const selectedLight = ref<string | null>('light-1')
+const selectedObject = ref<string | null>('obj-1')
+
+// 影・ハイライト・反射設定
 const shadowStrength = ref(1)
 const highlightStrength = ref(1)
+const reflectionStrength = ref(1)
 
-// DnD 状態
-const dragging = ref<'light' | 'object' | null>(null)
-const previewRef = ref<HTMLElement | null>(null)
+// 環境光
+const ambientLight = ref<AmbientLightType>(AmbientLight.create('#ffffff', 0))
 
-// Scene を構築
-const scene = computed(() => {
-  let s = Scene.create({ width: 800, height: 600 })
+// カードの基本色
+const cardColors = {
+  background: '#ffffff',
+  headerFrom: '#60a5fa', // blue-400
+  headerTo: '#a855f7', // purple-500
+  title: '#1f2937', // gray-800
+  text: '#6b7280', // gray-500
+}
 
-  // 光源を追加
-  const light = Light.create(
-    'light-1',
-    Point.create(lightX.value, lightY.value, lightZ.value),
-    { intensity: lightIntensity.value }
-  )
-  s = Scene.addLight(s, light)
-
-  // オブジェクトを追加
-  const obj = SceneObject.create(
-    'obj-1',
-    Point.create(objectX.value, objectY.value),
-    { width: 96, height: 96, depth: objectDepth.value }
-  )
-  s = Scene.addObject(s, obj)
-
-  return s
+// 環境光を適用した色を取得
+const getAdjustedColors = computed(() => {
+  return AmbientLight.applyToColors(ambientLight.value, cardColors)
 })
 
-// 影とハイライトを計算
-const objectStyle = computed(() => {
-  const obj = scene.value.objects[0]
+// DnD 状態
+const dragging = ref<{ type: 'light' | 'object'; id: string } | null>(null)
+const previewRef = ref<HTMLElement | null>(null)
+
+// ID生成
+let lightIdCounter = 1
+let objectIdCounter = 1
+
+// 光源操作
+const addLight = () => {
+  if (lights.value.length >= 5) return
+  lightIdCounter++
+  const newLight = Light.create(
+    `light-${lightIdCounter}`,
+    Point.create(150 + lightIdCounter * 50, 150 + lightIdCounter * 30, 100),
+    { intensity: 1 }
+  )
+  lights.value = [...lights.value, newLight]
+  selectedLight.value = newLight.id
+}
+
+const removeLight = (id: string) => {
+  lights.value = lights.value.filter((l) => l.id !== id)
+  if (selectedLight.value === id) {
+    selectedLight.value = lights.value[0]?.id ?? null
+  }
+}
+
+const updateLight = (id: string, updates: Partial<Pick<LightType, 'intensity' | 'color'>> & { z?: number }) => {
+  lights.value = lights.value.map((l) => {
+    if (l.id !== id) return l
+    let updated = l
+    if (updates.intensity !== undefined) {
+      updated = Light.setIntensity(updated, updates.intensity)
+    }
+    if (updates.z !== undefined) {
+      updated = Light.moveTo(updated, Point.create(l.position.x, l.position.y, updates.z))
+    }
+    if (updates.color !== undefined) {
+      updated = Light.setColor(updated, updates.color)
+    }
+    return updated
+  })
+}
+
+// オブジェクト操作
+const addObject = () => {
+  objectIdCounter++
+  const newObj = SceneObject.create(
+    `obj-${objectIdCounter}`,
+    Point.create(300 + objectIdCounter * 50, 250 + objectIdCounter * 30),
+    { width: 96, height: 96, depth: 10 }
+  )
+  objects.value = [...objects.value, newObj]
+  selectedObject.value = newObj.id
+}
+
+const removeObject = (id: string) => {
+  objects.value = objects.value.filter((o) => o.id !== id)
+  if (selectedObject.value === id) {
+    selectedObject.value = objects.value[0]?.id ?? null
+  }
+}
+
+const updateObjectDepth = (id: string, depth: number) => {
+  objects.value = objects.value.map((o) => {
+    if (o.id !== id) return o
+    return SceneObject.resize(o, { depth })
+  })
+}
+
+// 各オブジェクトのスタイルを計算
+const getObjectStyle = (objId: string) => {
+  const obj = objects.value.find((o) => o.id === objId)
   if (!obj) return {}
 
-  const shadows = scene.value.lights.map((light) => {
+  const shadows = lights.value.map((light) => {
     const s = Shadow.calculate(light, obj)
     return { ...s, opacity: s.opacity * shadowStrength.value }
   })
-  const highlights = scene.value.lights.map((light) => {
+  const highlights = lights.value.map((light) => {
     const h = Shadow.calculateHighlight(light, obj)
     return { ...h, opacity: h.opacity * highlightStrength.value }
   })
@@ -62,12 +130,33 @@ const objectStyle = computed(() => {
   return {
     boxShadow: CssShadowRenderer.toBoxShadowWithHighlight(shadows, highlights),
   }
-})
+}
+
+// 各オブジェクトの反射スタイルを計算
+const getReflectionStyle = (objId: string) => {
+  const obj = objects.value.find((o) => o.id === objId)
+  if (!obj) return {}
+
+  const reflections = lights.value.map((light) => {
+    const r = Reflection.calculate(light, obj)
+    return { ...r, intensity: r.intensity * reflectionStrength.value }
+  })
+
+  return {
+    background: CssReflectionRenderer.toBackgroundMultiple(reflections),
+  }
+}
+
+// 選択中の Light/Object
+const currentLight = computed(() => lights.value.find((l) => l.id === selectedLight.value))
+const currentObject = computed(() => objects.value.find((o) => o.id === selectedObject.value))
 
 // DnD ハンドラ
-const startDrag = (target: 'light' | 'object', e: MouseEvent) => {
+const startDrag = (type: 'light' | 'object', id: string, e: MouseEvent) => {
   e.preventDefault()
-  dragging.value = target
+  dragging.value = { type, id }
+  if (type === 'light') selectedLight.value = id
+  else selectedObject.value = id
 }
 
 const onMouseMove = (e: MouseEvent) => {
@@ -77,12 +166,16 @@ const onMouseMove = (e: MouseEvent) => {
   const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
   const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height))
 
-  if (dragging.value === 'light') {
-    lightX.value = Math.round(x)
-    lightY.value = Math.round(y)
+  if (dragging.value.type === 'light') {
+    lights.value = lights.value.map((l) => {
+      if (l.id !== dragging.value!.id) return l
+      return Light.moveTo(l, Point.create(Math.round(x), Math.round(y), l.position.z))
+    })
   } else {
-    objectX.value = Math.round(x)
-    objectY.value = Math.round(y)
+    objects.value = objects.value.map((o) => {
+      if (o.id !== dragging.value!.id) return o
+      return SceneObject.moveTo(o, Point.create(Math.round(x), Math.round(y)))
+    })
   }
 }
 
@@ -94,49 +187,124 @@ const stopDrag = () => {
 <template>
   <div class="w-screen min-h-screen bg-gray-900 text-white flex">
     <!-- 左パネル: Config -->
-    <aside class="w-64 bg-gray-800 p-4 flex flex-col gap-4">
+    <aside class="w-72 bg-gray-800 p-4 flex flex-col gap-4 overflow-y-auto">
       <h2 class="text-lg font-bold">Config</h2>
 
-      <!-- 光源設定 -->
+      <!-- 光源リスト -->
       <div class="flex flex-col gap-2">
-        <label class="text-sm text-gray-400">Light</label>
-        <div class="text-xs text-gray-500">X: {{ lightX }}, Y: {{ lightY }}</div>
-        <div class="flex flex-col gap-1">
-          <label class="text-xs text-gray-500">Z (Height): {{ lightZ }}</label>
-          <input
-            v-model.number="lightZ"
-            type="range"
-            min="10"
-            max="300"
-            class="w-full"
-          />
+        <div class="flex items-center justify-between">
+          <label class="text-sm text-gray-400">Lights ({{ lights.length }}/5)</label>
+          <button
+            class="text-xs bg-yellow-600 hover:bg-yellow-500 px-2 py-1 rounded disabled:opacity-50"
+            :disabled="lights.length >= 5"
+            @click="addLight"
+          >
+            + Add
+          </button>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs text-gray-500">Intensity: {{ lightIntensity.toFixed(2) }}</label>
-          <input
-            v-model.number="lightIntensity"
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            class="w-full"
-          />
+          <div
+            v-for="light in lights"
+            :key="light.id"
+            class="flex items-center gap-2 p-2 rounded cursor-pointer text-xs"
+            :class="selectedLight === light.id ? 'bg-gray-700' : 'bg-gray-800 hover:bg-gray-750'"
+            @click="selectedLight = light.id"
+          >
+            <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: light.color }" />
+            <span class="flex-1">{{ light.id }}</span>
+            <button
+              v-if="lights.length > 1"
+              class="text-red-400 hover:text-red-300"
+              @click.stop="removeLight(light.id)"
+            >
+              x
+            </button>
+          </div>
+        </div>
+        <!-- 選択中の光源設定 -->
+        <div v-if="currentLight" class="flex flex-col gap-2 mt-2 p-2 bg-gray-700 rounded">
+          <div class="text-xs text-gray-500">
+            X: {{ currentLight.position.x }}, Y: {{ currentLight.position.y }}
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-gray-500">Z (Height): {{ currentLight.position.z }}</label>
+            <input
+              :value="currentLight.position.z"
+              type="range"
+              min="10"
+              max="300"
+              class="w-full"
+              @input="(e) => updateLight(currentLight!.id, { z: Number((e.target as HTMLInputElement).value) })"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-gray-500">Intensity: {{ currentLight.intensity.toFixed(2) }}</label>
+            <input
+              :value="currentLight.intensity"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              class="w-full"
+              @input="(e) => updateLight(currentLight!.id, { intensity: Number((e.target as HTMLInputElement).value) })"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-gray-500">Color</label>
+            <ColorPalette
+              :model-value="currentLight.color"
+              @update:model-value="(color) => updateLight(currentLight!.id, { color })"
+            />
+          </div>
         </div>
       </div>
 
-      <!-- オブジェクト設定 -->
+      <!-- オブジェクトリスト -->
       <div class="flex flex-col gap-2">
-        <label class="text-sm text-gray-400">Object</label>
-        <div class="text-xs text-gray-500">X: {{ objectX }}, Y: {{ objectY }}</div>
+        <div class="flex items-center justify-between">
+          <label class="text-sm text-gray-400">Objects ({{ objects.length }})</label>
+          <button
+            class="text-xs bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded"
+            @click="addObject"
+          >
+            + Add
+          </button>
+        </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs text-gray-500">Depth: {{ objectDepth }}</label>
-          <input
-            v-model.number="objectDepth"
-            type="range"
-            min="-20"
-            max="30"
-            class="w-full"
-          />
+          <div
+            v-for="obj in objects"
+            :key="obj.id"
+            class="flex items-center gap-2 p-2 rounded cursor-pointer text-xs"
+            :class="selectedObject === obj.id ? 'bg-gray-700' : 'bg-gray-800 hover:bg-gray-750'"
+            @click="selectedObject = obj.id"
+          >
+            <div class="w-3 h-3 bg-gray-500 rounded" />
+            <span class="flex-1">{{ obj.id }}</span>
+            <button
+              v-if="objects.length > 1"
+              class="text-red-400 hover:text-red-300"
+              @click.stop="removeObject(obj.id)"
+            >
+              x
+            </button>
+          </div>
+        </div>
+        <!-- 選択中のオブジェクト設定 -->
+        <div v-if="currentObject" class="flex flex-col gap-2 mt-2 p-2 bg-gray-700 rounded">
+          <div class="text-xs text-gray-500">
+            X: {{ currentObject.position.x }}, Y: {{ currentObject.position.y }}
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-gray-500">Depth: {{ currentObject.depth }}</label>
+            <input
+              :value="currentObject.depth"
+              type="range"
+              min="-20"
+              max="30"
+              class="w-full"
+              @input="(e) => updateObjectDepth(currentObject!.id, Number((e.target as HTMLInputElement).value))"
+            />
+          </div>
         </div>
       </div>
 
@@ -165,13 +333,46 @@ const stopDrag = () => {
             class="w-full"
           />
         </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-gray-500">Reflection: {{ reflectionStrength.toFixed(2) }}</label>
+          <input
+            v-model.number="reflectionStrength"
+            type="range"
+            min="0"
+            max="3"
+            step="0.1"
+            class="w-full"
+          />
+        </div>
+      </div>
+
+      <!-- 環境光設定 -->
+      <div class="flex flex-col gap-2">
+        <label class="text-sm text-gray-400">Ambient Light</label>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-gray-500">Color</label>
+          <ColorPalette
+            :model-value="ambientLight.color"
+            @update:model-value="(color) => ambientLight = AmbientLight.setColor(ambientLight, color)"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-gray-500">Intensity: {{ ambientLight.intensity.toFixed(2) }}</label>
+          <input
+            :value="ambientLight.intensity"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            class="w-full"
+            @input="(e) => ambientLight = AmbientLight.setIntensity(ambientLight, Number((e.target as HTMLInputElement).value))"
+          />
+        </div>
       </div>
 
       <!-- デバッグ情報 -->
       <div class="flex flex-col gap-1 text-xs text-gray-500 mt-4">
-        <div>Lights: {{ scene.lights.length }}</div>
-        <div>Dragging: {{ dragging }}</div>
-        <div class="break-all">{{ objectStyle.boxShadow }}</div>
+        <div>Lights: {{ lights.length }}, Objects: {{ objects.length }}</div>
       </div>
     </aside>
 
@@ -184,29 +385,54 @@ const stopDrag = () => {
         @mouseup="stopDrag"
         @mouseleave="stopDrag"
       >
-        <!-- 光源 -->
+        <!-- 光源たち -->
         <div
-          class="absolute w-4 h-4 bg-yellow-300 rounded-full cursor-grab active:cursor-grabbing"
+          v-for="light in lights"
+          :key="light.id"
+          class="absolute w-4 h-4 rounded-full cursor-grab active:cursor-grabbing"
+          :class="selectedLight === light.id ? 'ring-2 ring-white' : ''"
           :style="{
-            left: `${lightX}px`,
-            top: `${lightY}px`,
+            left: `${light.position.x}px`,
+            top: `${light.position.y}px`,
             transform: 'translate(-50%, -50%)',
-            boxShadow: '0 0 20px 10px rgba(253, 224, 71, 0.5)',
+            backgroundColor: light.color,
+            boxShadow: `0 0 20px 10px ${light.color}80`,
           }"
-          @mousedown="(e) => startDrag('light', e)"
+          @mousedown="(e) => startDrag('light', light.id, e)"
         />
 
-        <!-- オブジェクト -->
+        <!-- オブジェクトたち（カードデザイン） -->
         <div
-          class="absolute w-24 h-24 bg-gray-500 rounded-lg cursor-grab active:cursor-grabbing"
+          v-for="obj in objects"
+          :key="obj.id"
+          class="absolute w-48 rounded-xl cursor-grab active:cursor-grabbing overflow-hidden"
+          :class="selectedObject === obj.id ? 'ring-2 ring-blue-500' : ''"
           :style="{
-            left: `${objectX}px`,
-            top: `${objectY}px`,
+            left: `${obj.position.x}px`,
+            top: `${obj.position.y}px`,
             transform: 'translate(-50%, -50%)',
-            ...objectStyle,
+            backgroundColor: getAdjustedColors.background,
+            ...getObjectStyle(obj.id),
           }"
-          @mousedown="(e) => startDrag('object', e)"
-        />
+          @mousedown="(e) => startDrag('object', obj.id, e)"
+        >
+          <!-- カードコンテンツ -->
+          <div
+            class="h-24"
+            :style="{
+              background: `linear-gradient(to bottom right, ${getAdjustedColors.headerFrom}, ${getAdjustedColors.headerTo})`,
+            }"
+          />
+          <div class="p-3">
+            <h3 class="text-sm font-semibold" :style="{ color: getAdjustedColors.title }">Card Title</h3>
+            <p class="text-xs mt-1" :style="{ color: getAdjustedColors.text }">Sample card with lighting effects</p>
+          </div>
+          <!-- 反射オーバーレイ -->
+          <div
+            class="absolute inset-0 rounded-xl pointer-events-none"
+            :style="getReflectionStyle(obj.id)"
+          />
+        </div>
       </div>
     </main>
   </div>
