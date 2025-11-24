@@ -162,7 +162,7 @@ export const $Adjustment = {
     selectiveColorEnabled: false,
     selectiveHue: 0,       // デフォルト: 赤
     selectiveRange: 30,    // 30度の範囲
-    selectiveDesaturate: 0, // 完全にグレー化
+    selectiveDesaturate: 1, // 範囲外を完全にグレー化 (0=元のまま, 1=完全脱色)
     // Posterize
     posterizeLevels: 256,  // 256 = 無効（フル階調）
     // Hue Rotation

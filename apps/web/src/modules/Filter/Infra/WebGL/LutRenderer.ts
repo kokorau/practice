@@ -17,7 +17,7 @@ const VERTEX_SHADER = `
   }
 `
 
-// Fragment Shader - LUT適用 + Vibrance + Hue Rotation
+// Fragment Shader - LUT適用 + Vibrance + Hue Rotation + Selective Color
 const FRAGMENT_SHADER = `
   precision mediump float;
 
@@ -31,6 +31,12 @@ const FRAGMENT_SHADER = `
   // Effects
   uniform float u_vibrance;
   uniform float u_hueRotation; // in radians
+
+  // Selective Color
+  uniform bool u_selectiveColorEnabled;
+  uniform float u_selectiveHue; // normalized 0-1
+  uniform float u_selectiveRange; // normalized 0-1
+  uniform float u_selectiveDesaturate; // 0-1
 
   // RGB <-> HSL conversion
   vec3 rgbToHsl(vec3 rgb) {
@@ -102,7 +108,24 @@ const FRAGMENT_SHADER = `
       rgb = hslToRgb(hsl);
     }
 
-    // 3. Vibrance
+    // 3. Selective Color (desaturate all except target hue)
+    if (u_selectiveColorEnabled) {
+      vec3 hsl = rgbToHsl(rgb);
+      float h = hsl.x;
+
+      // Calculate hue distance (circular)
+      float hueDist = abs(h - u_selectiveHue);
+      if (hueDist > 0.5) hueDist = 1.0 - hueDist;
+
+      // Check if within range
+      if (hueDist > u_selectiveRange) {
+        // Outside target range - desaturate
+        hsl.y *= (1.0 - u_selectiveDesaturate);
+        rgb = hslToRgb(hsl);
+      }
+    }
+
+    // 4. Vibrance
     if (abs(u_vibrance) > 0.001) {
       float maxC = max(max(rgb.r, rgb.g), rgb.b);
       float minC = min(min(rgb.r, rgb.g), rgb.b);
@@ -126,6 +149,11 @@ export type RenderOptions = {
   lut: Lut
   vibrance?: number
   hueRotation?: number // degrees
+  // Selective Color
+  selectiveColorEnabled?: boolean
+  selectiveHue?: number // degrees 0-360
+  selectiveRange?: number // degrees 0-180
+  selectiveDesaturate?: number // 0-1
 }
 
 export class LutRenderer {
@@ -144,6 +172,10 @@ export class LutRenderer {
     lutB: WebGLUniformLocation
     vibrance: WebGLUniformLocation
     hueRotation: WebGLUniformLocation
+    selectiveColorEnabled: WebGLUniformLocation
+    selectiveHue: WebGLUniformLocation
+    selectiveRange: WebGLUniformLocation
+    selectiveDesaturate: WebGLUniformLocation
   }
 
   constructor(options: LutRendererOptions) {
@@ -272,6 +304,10 @@ export class LutRenderer {
       lutB: gl.getUniformLocation(this.program, 'u_lutB')!,
       vibrance: gl.getUniformLocation(this.program, 'u_vibrance')!,
       hueRotation: gl.getUniformLocation(this.program, 'u_hueRotation')!,
+      selectiveColorEnabled: gl.getUniformLocation(this.program, 'u_selectiveColorEnabled')!,
+      selectiveHue: gl.getUniformLocation(this.program, 'u_selectiveHue')!,
+      selectiveRange: gl.getUniformLocation(this.program, 'u_selectiveRange')!,
+      selectiveDesaturate: gl.getUniformLocation(this.program, 'u_selectiveDesaturate')!,
     }
   }
 
@@ -367,6 +403,12 @@ export class LutRenderer {
     // Set uniforms
     gl.uniform1f(this.uniforms.vibrance, options.vibrance ?? 0)
     gl.uniform1f(this.uniforms.hueRotation, ((options.hueRotation ?? 0) * Math.PI) / 180)
+
+    // Selective Color uniforms
+    gl.uniform1i(this.uniforms.selectiveColorEnabled, options.selectiveColorEnabled ? 1 : 0)
+    gl.uniform1f(this.uniforms.selectiveHue, (options.selectiveHue ?? 0) / 360) // normalize to 0-1
+    gl.uniform1f(this.uniforms.selectiveRange, (options.selectiveRange ?? 0) / 360) // normalize to 0-1
+    gl.uniform1f(this.uniforms.selectiveDesaturate, options.selectiveDesaturate ?? 0)
 
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, 6)

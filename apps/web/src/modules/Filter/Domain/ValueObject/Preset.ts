@@ -524,7 +524,7 @@ export const PRESETS: Preset[] = [
       selectiveColorEnabled: true,
       selectiveHue: 0,
       selectiveRange: 30,
-      selectiveDesaturate: 0,
+      selectiveDesaturate: 1, // 赤以外を完全に脱色
       contrast: 0.1,
     },
   },
@@ -537,7 +537,7 @@ export const PRESETS: Preset[] = [
       selectiveColorEnabled: true,
       selectiveHue: 210,
       selectiveRange: 35,
-      selectiveDesaturate: 0,
+      selectiveDesaturate: 1, // 青以外を完全に脱色
       contrast: 0.1,
     },
   },
@@ -550,7 +550,7 @@ export const PRESETS: Preset[] = [
       selectiveColorEnabled: true,
       selectiveHue: 55,
       selectiveRange: 25,
-      selectiveDesaturate: 0,
+      selectiveDesaturate: 1, // 黄色以外を完全に脱色
       contrast: 0.1,
     },
   },
@@ -563,7 +563,7 @@ export const PRESETS: Preset[] = [
       selectiveColorEnabled: true,
       selectiveHue: 120,
       selectiveRange: 40,
-      selectiveDesaturate: 0,
+      selectiveDesaturate: 1, // 緑以外を完全に脱色
       contrast: 0.1,
     },
   },

@@ -98,6 +98,11 @@ export const useMediaCanvasWebGL = (
       lut,
       vibrance: effects?.vibrance ?? 0,
       hueRotation: effects?.hueRotation ?? 0,
+      // Selective Color
+      selectiveColorEnabled: effects?.selectiveColorEnabled ?? false,
+      selectiveHue: effects?.selectiveHue ?? 0,
+      selectiveRange: effects?.selectiveRange ?? 0,
+      selectiveDesaturate: effects?.selectiveDesaturate ?? 0,
     })
 
     return true

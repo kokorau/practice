@@ -121,7 +121,7 @@ describe('$Lut.applyWithEffects', () => {
         selectiveColorEnabled: true,
         selectiveHue: 0,        // 赤を選択
         selectiveRange: 30,
-        selectiveDesaturate: 0, // 完全にグレー化
+        selectiveDesaturate: 1, // 赤以外を完全にグレー化
       })
 
       // 赤はそのまま（R優勢）
@@ -153,14 +153,14 @@ describe('$Lut.applyWithEffects', () => {
         selectiveColorEnabled: true,
         selectiveHue: 0,
         selectiveRange: 30,
-        selectiveDesaturate: 0, // 完全グレー
+        selectiveDesaturate: 1, // 完全グレー（範囲外を完全に脱色）
       })
 
       const partialDesat = $Lut.applyWithEffects(imageData, $Lut.identity(), {
         selectiveColorEnabled: true,
         selectiveHue: 0,
         selectiveRange: 30,
-        selectiveDesaturate: 0.5, // 50%グレー
+        selectiveDesaturate: 0.5, // 50%グレー（範囲外を50%脱色）
       })
 
       // 部分的な彩度低下では青味がまだ残る
@@ -177,7 +177,7 @@ describe('$Lut.applyWithEffects', () => {
         selectiveColorEnabled: true,
         selectiveHue: 0,
         selectiveRange: 60, // 広い範囲
-        selectiveDesaturate: 0,
+        selectiveDesaturate: 1, // 範囲外を完全に脱色
       })
 
       // 両方ともカラーのまま（範囲内）
