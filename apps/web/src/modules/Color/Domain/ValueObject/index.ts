@@ -1,1 +1,3 @@
-export { type Oklab, type Srgb, $Oklab } from './Oklab'
+export { type Srgb, $Srgb } from './Srgb'
+export { type Hex, $Hex } from './Hex'
+export { type Oklab, $Oklab } from './Oklab'

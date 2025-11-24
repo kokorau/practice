@@ -9,9 +9,11 @@ import { usePhotoCanvas } from '../composables/Photo/usePhotoCanvas'
 import { usePhotoAnalysis } from '../composables/Photo/usePhotoAnalysis'
 import { useFilter } from '../composables/Filter/useFilter'
 import { PRESETS } from '../modules/Filter/Domain'
+import { useProfiledPalette } from '../composables/Palette/useProfiledPalette'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 import PhotoStats from '../components/PhotoStats.vue'
 import CurveEditor from '../components/CurveEditor.vue'
+import ProfiledPaletteDisplay from '../components/ProfiledPaletteDisplay.vue'
 
 const { photo, handleFileChange } = usePhotoUpload()
 const { filter, lut, pixelEffects, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)
@@ -23,6 +25,10 @@ const { canvasRef } = usePhotoCanvas(photo, { lut, pixelEffects })
 const { analysis: originalAnalysis } = usePhotoAnalysis(photo)
 // Filtered analysis (after filter)
 const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
+
+// Palette extraction with role profiling
+const { palette: originalPalette } = useProfiledPalette(photo)
+const { palette: filteredPalette } = useProfiledPalette(photo, { lut })
 
 // タブ状態
 type TabId = 'source' | 'edit'
@@ -415,6 +421,12 @@ const handleLoadScreenshot = async () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Palette -->
+      <div v-if="originalPalette" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
+        <h2 class="text-xs text-gray-400 font-medium mb-2">Color Palette</h2>
+        <ProfiledPaletteDisplay :original="originalPalette" :filtered="filteredPalette" />
       </div>
     </div>
     </div>

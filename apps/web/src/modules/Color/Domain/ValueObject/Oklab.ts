@@ -1,3 +1,5 @@
+import type { Srgb } from './Srgb'
+
 /**
  * OKLAB color space - perceptually uniform
  * L: Lightness (0-1)
@@ -8,15 +10,6 @@ export type Oklab = {
   L: number  // 0-1 (lightness)
   a: number  // ~-0.4 to ~0.4
   b: number  // ~-0.4 to ~0.4
-}
-
-/**
- * sRGB color (0-255 range)
- */
-export type Srgb = {
-  r: number  // 0-255
-  g: number  // 0-255
-  b: number  // 0-255
 }
 
 // sRGB to linear RGB (gamma expansion)
