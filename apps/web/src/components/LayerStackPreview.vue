@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, type Ref } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, type Ref } from 'vue'
 import type { ColorBasedLayerMap } from '../modules/Segmentation/Domain'
 
 const props = defineProps<{
@@ -8,9 +8,9 @@ const props = defineProps<{
 }>()
 
 // 3D view controls
-const rotateX = ref(60)
-const rotateY = ref(-30)
-const layerSpacing = ref(20)
+const rotateX = ref(10)
+const rotateY = ref(20)
+const layerSpacing = ref(50)
 
 // Layers are already sorted by area in the service
 const layers = computed(() => {
@@ -21,8 +21,19 @@ const layers = computed(() => {
 // Generate layer canvases
 const layerCanvases: Ref<HTMLCanvasElement[]> = ref([])
 
-const renderLayers = () => {
+const renderLayers = async () => {
   if (!props.colorLayerMap || !props.originalImageData) return
+
+  // Wait for canvas elements to be mounted in DOM
+  await nextTick()
+
+  // Wait until all canvas refs are populated
+  const expectedCount = layers.value.length
+  let retries = 0
+  while (layerCanvases.value.filter(Boolean).length < expectedCount && retries < 10) {
+    await nextTick()
+    retries++
+  }
 
   const { labels, width, height } = props.colorLayerMap
   const { data: srcData } = props.originalImageData
@@ -54,6 +65,10 @@ const renderLayers = () => {
   })
 }
 
+// Render on mount (for initial display)
+onMounted(renderLayers)
+
+// Re-render when data changes
 watch([() => props.colorLayerMap, () => props.originalImageData, layers], renderLayers, { deep: true })
 
 // Image dimensions for centering
@@ -110,54 +125,23 @@ const handleMouseMove = (e: MouseEvent) => {
   if (!isDragging.value) return
   const dx = e.clientX - lastMouse.value.x
   const dy = e.clientY - lastMouse.value.y
-  rotateY.value += dx * 0.5
-  rotateX.value = Math.max(0, Math.min(90, rotateX.value - dy * 0.5))
+  rotateY.value = Math.max(-80, Math.min(80, rotateY.value + dx * 0.5))
+  rotateX.value = Math.max(-80, Math.min(80, rotateX.value - dy * 0.5))
   lastMouse.value = { x: e.clientX, y: e.clientY }
 }
 
 const handleMouseUp = () => {
   isDragging.value = false
 }
+
+const handleDoubleClick = () => {
+  rotateX.value = 0
+  rotateY.value = 0
+}
 </script>
 
 <template>
-  <div class="space-y-3">
-    <!-- Controls -->
-    <div class="flex items-center gap-4 text-xs">
-      <div class="flex items-center gap-2">
-        <span class="text-gray-500 w-12">Tilt</span>
-        <input
-          type="range"
-          min="0"
-          max="90"
-          v-model.number="rotateX"
-          class="w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-        />
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="text-gray-500 w-12">Rotate</span>
-        <input
-          type="range"
-          min="-180"
-          max="180"
-          v-model.number="rotateY"
-          class="w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-        />
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="text-gray-500 w-12">Gap</span>
-        <input
-          type="range"
-          min="5"
-          max="50"
-          v-model.number="layerSpacing"
-          class="w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-        />
-      </div>
-      <span class="text-[10px] text-gray-500 ml-auto">
-        {{ layers.length }} layers
-      </span>
-    </div>
+  <div>
 
     <!-- 3D Preview -->
     <div
@@ -168,6 +152,7 @@ const handleMouseUp = () => {
       @mousemove="handleMouseMove"
       @mouseup="handleMouseUp"
       @mouseleave="handleMouseUp"
+      @dblclick="handleDoubleClick"
     >
       <div class="absolute inset-0 flex items-center justify-center">
         <div
