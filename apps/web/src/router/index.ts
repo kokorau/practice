@@ -14,6 +14,11 @@ const router = createRouter({
       name: 'photo-filter',
       component: () => import('../views/PhotoFilterView.vue'),
     },
+    {
+      path: '/css-lighting',
+      name: 'css-lighting',
+      component: () => import('../views/CssLightingView.vue'),
+    },
   ],
 })
 
