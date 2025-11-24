@@ -5,7 +5,11 @@ import { captureScreenshotUseCase } from './modules/Screenshot/Application/captu
 
 const app = new Hono()
 
-app.use('*', cors())
+const corsOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5173']
+
+app.use('*', cors({
+  origin: corsOrigins,
+}))
 
 app.get('/', (c) => {
   return c.json({ message: 'Screenshot API' })
@@ -35,9 +39,11 @@ app.get('/screenshot', async (c) => {
   }
 })
 
-const port = 3001
+const port = Number(process.env.PORT) || 3001
 
 serve({
   fetch: app.fetch,
   port,
 })
+
+console.log(`Server running on port ${port}`)
