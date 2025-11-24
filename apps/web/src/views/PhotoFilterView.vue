@@ -10,10 +10,14 @@ import { usePhotoAnalysis } from '../composables/Photo/usePhotoAnalysis'
 import { useFilter } from '../composables/Filter/useFilter'
 import { PRESETS } from '../modules/Filter/Domain'
 import { useProfiledPalette } from '../composables/Palette/useProfiledPalette'
+import { useSegmentation } from '../composables/Segmentation/useSegmentation'
+import { useColorLayers } from '../composables/Segmentation/useColorLayers'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 import PhotoStats from '../components/PhotoStats.vue'
 import CurveEditor from '../components/CurveEditor.vue'
 import ProfiledPaletteDisplay from '../components/ProfiledPaletteDisplay.vue'
+import SegmentationDisplay from '../components/SegmentationDisplay.vue'
+import LayerStackPreview from '../components/LayerStackPreview.vue'
 
 const { photo, handleFileChange } = usePhotoUpload()
 const { filter, lut, pixelEffects, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)
@@ -29,6 +33,21 @@ const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
 // Palette extraction with role profiling
 const { palette: originalPalette } = useProfiledPalette(photo)
 const { palette: filteredPalette } = useProfiledPalette(photo, { lut })
+
+// Segmentation (edge-based)
+const edgeThreshold = ref(30)
+const colorMergeThreshold = ref(0.12)
+const minSegmentArea = ref(200)
+const {
+  segmentVisualization,
+  edgeVisualization,
+  overlayVisualization,
+  segmentCount,
+} = useSegmentation(photo, edgeThreshold, colorMergeThreshold, minSegmentArea)
+
+// Color-based layers (k-means)
+const numColorLayers = ref(6)
+const { colorLayerMap, originalImageData: colorLayerImageData } = useColorLayers(photo, numColorLayers)
 
 // タブ状態
 type TabId = 'source' | 'edit'
@@ -427,6 +446,52 @@ const handleLoadScreenshot = async () => {
       <div v-if="originalPalette" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
         <h2 class="text-xs text-gray-400 font-medium mb-2">Color Palette</h2>
         <ProfiledPaletteDisplay :original="originalPalette" :filtered="filteredPalette" />
+      </div>
+
+      <!-- Segmentation -->
+      <div v-if="photo" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
+        <h2 class="text-xs text-gray-400 font-medium mb-2">Segmentation</h2>
+        <SegmentationDisplay
+          :segment-visualization="segmentVisualization"
+          :edge-visualization="edgeVisualization"
+          :overlay-visualization="overlayVisualization"
+          :segment-count="segmentCount"
+          :edge-threshold="edgeThreshold"
+          @update:edge-threshold="edgeThreshold = $event"
+        />
+      </div>
+
+      <!-- 3D Layer Stack Preview (Color-based) -->
+      <div v-if="colorLayerMap" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
+        <h2 class="text-xs text-gray-400 font-medium mb-2">Color Layers ({{ colorLayerMap.layers.length }} layers)</h2>
+        <div class="flex items-center gap-4 text-xs mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-gray-500 w-12">Layers</span>
+            <input
+              type="range"
+              min="3"
+              max="12"
+              step="1"
+              v-model.number="numColorLayers"
+              class="w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+            <span class="text-gray-500 w-6">{{ numColorLayers }}</span>
+          </div>
+          <!-- Layer color indicators -->
+          <div class="flex gap-1 ml-auto">
+            <div
+              v-for="layer in colorLayerMap.layers"
+              :key="layer.id"
+              class="w-4 h-4 rounded-sm border border-gray-600"
+              :style="{ backgroundColor: `rgb(${layer.color.r}, ${layer.color.g}, ${layer.color.b})` }"
+              :title="`${(layer.ratio * 100).toFixed(1)}%`"
+            />
+          </div>
+        </div>
+        <LayerStackPreview
+          :color-layer-map="colorLayerMap"
+          :original-image-data="colorLayerImageData"
+        />
       </div>
     </div>
     </div>

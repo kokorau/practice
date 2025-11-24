@@ -96,4 +96,22 @@ export const $Oklab = {
   lightness255: (srgb: Srgb): number => {
     return Math.round($Oklab.fromSrgb(srgb).L * 255)
   },
+
+  /**
+   * Calculate perceptual color distance (Delta E in Oklab)
+   * Returns a value typically 0-1, where 0 is identical and ~0.05 is just noticeable difference
+   */
+  distance: (a: Oklab, b: Oklab): number => {
+    const dL = a.L - b.L
+    const da = a.a - b.a
+    const db = a.b - b.b
+    return Math.sqrt(dL * dL + da * da + db * db)
+  },
+
+  /**
+   * Calculate perceptual color distance from sRGB values
+   */
+  distanceSrgb: (a: Srgb, b: Srgb): number => {
+    return $Oklab.distance($Oklab.fromSrgb(a), $Oklab.fromSrgb(b))
+  },
 }
