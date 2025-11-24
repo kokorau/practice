@@ -1,13 +1,7 @@
 import { ref, type Ref } from 'vue'
 import type { Photo } from '../../modules/Photo/Domain'
 import { photoRepository } from '../../modules/Photo/Infra/photoRepository'
-import { createLocalPhotoUploader } from '../../modules/PhotoLocal/Infra/localPhotoUploader'
-import { uploadLocalPhoto } from '../../modules/PhotoLocal/Application/uploadLocalPhoto'
-
-const deps = {
-  uploader: createLocalPhotoUploader(),
-  repository: photoRepository,
-}
+import { loadLocalPhoto } from '../../modules/PhotoLocal/Application/loadLocalPhoto'
 
 export const usePhotoUpload = () => {
   const photo: Ref<Photo | null> = ref(photoRepository.get())
@@ -17,7 +11,7 @@ export const usePhotoUpload = () => {
     const file = input.files?.[0]
     if (!file) return
 
-    await uploadLocalPhoto(file, deps)
+    await loadLocalPhoto(file)
     photo.value = photoRepository.get()
   }
 
