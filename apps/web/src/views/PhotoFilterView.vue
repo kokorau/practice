@@ -34,7 +34,7 @@ const { analysis: filteredAnalysis } = usePhotoAnalysis(photo, { lut })
 const { palette: originalPalette } = useProfiledPalette(photo)
 const { palette: filteredPalette } = useProfiledPalette(photo, { lut })
 
-// Segmentation (edge-based)
+// Segmentation (edge-based) - manual trigger
 const edgeThreshold = ref(30)
 const colorMergeThreshold = ref(0.12)
 const minSegmentArea = ref(200)
@@ -43,11 +43,13 @@ const {
   edgeVisualization,
   overlayVisualization,
   segmentCount,
+  compute: computeSegmentation,
+  isLoading: isSegmentationLoading,
 } = useSegmentation(photo, edgeThreshold, colorMergeThreshold, minSegmentArea)
 
-// Color-based layers (k-means)
+// Color-based layers (k-means) - manual trigger
 const numColorLayers = ref(6)
-const { colorLayerMap, originalImageData: colorLayerImageData } = useColorLayers(photo, numColorLayers)
+const { colorLayerMap, originalImageData: colorLayerImageData, compute: computeColorLayers, isLoading: isColorLayersLoading } = useColorLayers(photo, numColorLayers)
 
 // タブ状態
 type TabId = 'source' | 'edit'
@@ -450,48 +452,72 @@ const handleLoadScreenshot = async () => {
 
       <!-- Segmentation -->
       <div v-if="photo" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
-        <h2 class="text-xs text-gray-400 font-medium mb-2">Segmentation</h2>
-        <SegmentationDisplay
-          :segment-visualization="segmentVisualization"
-          :edge-visualization="edgeVisualization"
-          :overlay-visualization="overlayVisualization"
-          :segment-count="segmentCount"
-          :edge-threshold="edgeThreshold"
-          @update:edge-threshold="edgeThreshold = $event"
-        />
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs text-gray-400 font-medium">Segmentation</h2>
+          <button
+            @click="computeSegmentation"
+            :disabled="isSegmentationLoading"
+            class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded"
+          >
+            {{ isSegmentationLoading ? 'Computing...' : segmentVisualization ? 'Recompute' : 'Compute' }}
+          </button>
+        </div>
+        <template v-if="segmentVisualization">
+          <SegmentationDisplay
+            :segment-visualization="segmentVisualization"
+            :edge-visualization="edgeVisualization"
+            :overlay-visualization="overlayVisualization"
+            :segment-count="segmentCount"
+            :edge-threshold="edgeThreshold"
+            @update:edge-threshold="edgeThreshold = $event"
+          />
+        </template>
+        <p v-else class="text-xs text-gray-500">Click "Compute" to analyze segmentation</p>
       </div>
 
       <!-- 3D Layer Stack Preview (Color-based) -->
-      <div v-if="colorLayerMap" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
-        <h2 class="text-xs text-gray-400 font-medium mb-2">Color Layers ({{ colorLayerMap.layers.length }} layers)</h2>
-        <div class="flex items-center gap-4 text-xs mb-2">
-          <div class="flex items-center gap-2">
-            <span class="text-gray-500 w-12">Layers</span>
-            <input
-              type="range"
-              min="3"
-              max="12"
-              step="1"
-              v-model.number="numColorLayers"
-              class="w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-            />
-            <span class="text-gray-500 w-6">{{ numColorLayers }}</span>
-          </div>
-          <!-- Layer color indicators -->
-          <div class="flex gap-1 ml-auto">
-            <div
-              v-for="layer in colorLayerMap.layers"
-              :key="layer.id"
-              class="w-4 h-4 rounded-sm border border-gray-600"
-              :style="{ backgroundColor: `rgb(${layer.color.r}, ${layer.color.g}, ${layer.color.b})` }"
-              :title="`${(layer.ratio * 100).toFixed(1)}%`"
-            />
-          </div>
+      <div v-if="photo" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs text-gray-400 font-medium">Color Layers</h2>
+          <button
+            @click="computeColorLayers"
+            :disabled="isColorLayersLoading"
+            class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded"
+          >
+            {{ isColorLayersLoading ? 'Computing...' : colorLayerMap ? 'Recompute' : 'Compute' }}
+          </button>
         </div>
-        <LayerStackPreview
-          :color-layer-map="colorLayerMap"
-          :original-image-data="colorLayerImageData"
-        />
+        <template v-if="colorLayerMap">
+          <div class="flex items-center gap-4 text-xs mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-gray-500 w-12">Layers</span>
+              <input
+                type="range"
+                min="3"
+                max="12"
+                step="1"
+                v-model.number="numColorLayers"
+                class="w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              />
+              <span class="text-gray-500 w-6">{{ numColorLayers }}</span>
+            </div>
+            <!-- Layer color indicators -->
+            <div class="flex gap-1 ml-auto">
+              <div
+                v-for="layer in colorLayerMap.layers"
+                :key="layer.id"
+                class="w-4 h-4 rounded-sm border border-gray-600"
+                :style="{ backgroundColor: `rgb(${layer.color.r}, ${layer.color.g}, ${layer.color.b})` }"
+                :title="`${(layer.ratio * 100).toFixed(1)}%`"
+              />
+            </div>
+          </div>
+          <LayerStackPreview
+            :color-layer-map="colorLayerMap"
+            :original-image-data="colorLayerImageData"
+          />
+        </template>
+        <p v-else class="text-xs text-gray-500">Click "Compute" to analyze color layers</p>
       </div>
     </div>
     </div>

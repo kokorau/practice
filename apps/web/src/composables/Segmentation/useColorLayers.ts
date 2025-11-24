@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import type { Photo } from '../../modules/Photo/Domain'
 import type { ColorBasedLayerMap } from '../../modules/Segmentation/Domain'
 import { extractColorLayersUseCase } from '../../modules/Segmentation/Application/extractColorLayersUseCase'
@@ -27,11 +27,16 @@ export const useColorLayers = (
     }
   }
 
-  watch([photo, numLayers], compute, { immediate: true })
+  const clear = () => {
+    colorLayerMap.value = null
+    originalImageData.value = null
+  }
 
   return {
     colorLayerMap,
     originalImageData,
     isLoading,
+    compute,
+    clear,
   }
 }

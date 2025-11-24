@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import type { Photo } from '../../modules/Photo/Domain'
 import type { SegmentationMap, LayeredSegmentationMap } from '../../modules/Segmentation/Domain'
 import { segmentImageUseCase } from '../../modules/Segmentation/Application/segmentImageUseCase'
@@ -23,14 +23,7 @@ export const useSegmentation = (
 
   const compute = () => {
     if (!photo.value) {
-      segmentationMap.value = null
-      layeredMap.value = null
-      originalImageData.value = null
-      segmentVisualization.value = null
-      edgeVisualization.value = null
-      overlayVisualization.value = null
-      segmentCount.value = 0
-      layerCount.value = 0
+      clear()
       return
     }
 
@@ -55,7 +48,16 @@ export const useSegmentation = (
     }
   }
 
-  watch([photo, edgeThreshold, colorMergeThreshold, minSegmentArea], compute, { immediate: true })
+  const clear = () => {
+    segmentationMap.value = null
+    layeredMap.value = null
+    originalImageData.value = null
+    segmentVisualization.value = null
+    edgeVisualization.value = null
+    overlayVisualization.value = null
+    segmentCount.value = 0
+    layerCount.value = 0
+  }
 
   return {
     segmentationMap,
@@ -67,5 +69,7 @@ export const useSegmentation = (
     segmentCount,
     layerCount,
     isLoading,
+    compute,
+    clear,
   }
 }
