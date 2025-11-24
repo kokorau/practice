@@ -6,14 +6,85 @@ import { CssShadowRenderer } from '../modules/Lighting/Infra/Css/CssShadowRender
 import { CssReflectionRenderer } from '../modules/Lighting/Infra/Css/CssReflectionRenderer'
 import ColorPalette from '../components/ColorPalette.vue'
 
+// プリセット定義
+type LightingPreset = {
+  name: string
+  description: string
+  lights: Array<{ x: number; y: number; z: number; intensity: number; color: string }>
+  objects: Array<{ x: number; y: number; depth: number }>
+  ambient: { color: string; intensity: number }
+}
+
+const presets: LightingPreset[] = [
+  {
+    name: 'Natural Daylight',
+    description: 'Soft overhead lighting with multiple objects',
+    lights: [
+      { x: 320, y: 180, z: 150, intensity: 0.9, color: '#fff4e6' },
+    ],
+    objects: [
+      { x: 400, y: 300, depth: 15 },
+      { x: 630, y: 300, depth: 8 },
+      { x: 400, y: 510, depth: 20 },
+      { x: 630, y: 510, depth: 5 },
+    ],
+    ambient: { color: '#fff8f0', intensity: 0.08 },
+  },
+  {
+    name: 'Studio Setup',
+    description: 'Three-point lighting for professional look',
+    lights: [
+      { x: 280, y: 150, z: 140, intensity: 1, color: '#ffffff' },
+      { x: 700, y: 200, z: 120, intensity: 0.5, color: '#e0f2ff' },
+      { x: 515, y: 500, z: 100, intensity: 0.3, color: '#fef3c7' },
+    ],
+    objects: [
+      { x: 450, y: 320, depth: 12 },
+      { x: 680, y: 320, depth: 18 },
+      { x: 450, y: 530, depth: 8 },
+    ],
+    ambient: { color: '#f8fafc', intensity: 0.05 },
+  },
+  {
+    name: 'Golden Hour',
+    description: 'Warm sunset lighting from the side',
+    lights: [
+      { x: 280, y: 340, z: 90, intensity: 1, color: '#ff9500' },
+      { x: 750, y: 300, z: 130, intensity: 0.4, color: '#ff6b35' },
+    ],
+    objects: [
+      { x: 450, y: 350, depth: 10 },
+      { x: 680, y: 350, depth: 15 },
+      { x: 565, y: 530, depth: 8 },
+    ],
+    ambient: { color: '#ffd7aa', intensity: 0.15 },
+  },
+  {
+    name: 'Neon Night',
+    description: 'Colorful neon lights for dramatic effect',
+    lights: [
+      { x: 350, y: 260, z: 100, intensity: 0.9, color: '#ff6ec7' },
+      { x: 680, y: 260, z: 100, intensity: 0.9, color: '#00d4ff' },
+    ],
+    objects: [
+      { x: 515, y: 350, depth: 12 },
+      { x: 515, y: 530, depth: 16 },
+    ],
+    ambient: { color: '#1e1b4b', intensity: 0.2 },
+  },
+]
+
 // 光源リスト
 const lights = ref<LightType[]>([
-  Light.create('light-1', Point.create(200, 200, 100), { intensity: 1 }),
+  Light.create('light-1', Point.create(320, 180, 150), { intensity: 0.9, color: '#fff4e6' }),
 ])
 
 // オブジェクトリスト
 const objects = ref<SceneObjectType[]>([
-  SceneObject.create('obj-1', Point.create(400, 300), { width: 96, height: 96, depth: 10 }),
+  SceneObject.create('obj-1', Point.create(400, 300), { width: 96, height: 96, depth: 15 }),
+  SceneObject.create('obj-2', Point.create(630, 300), { width: 96, height: 96, depth: 8 }),
+  SceneObject.create('obj-3', Point.create(400, 510), { width: 96, height: 96, depth: 20 }),
+  SceneObject.create('obj-4', Point.create(630, 510), { width: 96, height: 96, depth: 5 }),
 ])
 
 // 選択中のアイテム
@@ -26,7 +97,7 @@ const highlightStrength = ref(1)
 const reflectionStrength = ref(1)
 
 // 環境光
-const ambientLight = ref<AmbientLightType>(AmbientLight.create('#ffffff', 0))
+const ambientLight = ref<AmbientLightType>(AmbientLight.create('#fff8f0', 0.08))
 
 // カードの基本色
 const cardColors = {
@@ -47,8 +118,40 @@ const dragging = ref<{ type: 'light' | 'object'; id: string } | null>(null)
 const previewRef = ref<HTMLElement | null>(null)
 
 // ID生成
-let lightIdCounter = 1
-let objectIdCounter = 1
+let lightIdCounter = 4
+let objectIdCounter = 4
+
+// プリセット適用
+const applyPreset = (preset: LightingPreset) => {
+  // 光源をリセット
+  lights.value = preset.lights.map((l, i) => {
+    const id = `light-${i + 1}`
+    lightIdCounter = Math.max(lightIdCounter, i + 1)
+    return Light.create(
+      id,
+      Point.create(l.x, l.y, l.z),
+      { intensity: l.intensity, color: l.color }
+    )
+  })
+
+  // オブジェクトをリセット
+  objects.value = preset.objects.map((o, i) => {
+    const id = `obj-${i + 1}`
+    objectIdCounter = Math.max(objectIdCounter, i + 1)
+    return SceneObject.create(
+      id,
+      Point.create(o.x, o.y),
+      { width: 96, height: 96, depth: o.depth }
+    )
+  })
+
+  // 環境光を設定
+  ambientLight.value = AmbientLight.create(preset.ambient.color, preset.ambient.intensity)
+
+  // 選択をリセット
+  selectedLight.value = lights.value[0]?.id ?? null
+  selectedObject.value = objects.value[0]?.id ?? null
+}
 
 // 光源操作
 const addLight = () => {
@@ -189,6 +292,22 @@ const stopDrag = () => {
     <!-- 左パネル: Config -->
     <aside class="w-72 bg-gray-800 p-4 flex flex-col gap-4 overflow-y-auto">
       <h2 class="text-lg font-bold">Config</h2>
+
+      <!-- プリセット -->
+      <div class="flex flex-col gap-2">
+        <label class="text-sm text-gray-400">Presets</label>
+        <div class="flex flex-col gap-1">
+          <button
+            v-for="preset in presets"
+            :key="preset.name"
+            class="text-xs px-2 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-left"
+            @click="applyPreset(preset)"
+          >
+            <div class="font-semibold">{{ preset.name }}</div>
+            <div class="text-[0.65rem] text-gray-400">{{ preset.description }}</div>
+          </button>
+        </div>
+      </div>
 
       <!-- 光源リスト -->
       <div class="flex flex-col gap-2">

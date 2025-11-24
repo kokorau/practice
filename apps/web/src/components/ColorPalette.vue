@@ -73,23 +73,23 @@ const isSelected = (color: string) => props.modelValue === color
 <template>
   <div class="flex flex-col gap-2">
     <!-- モード切り替え -->
-    <div class="flex gap-1">
+    <div class="flex gap-0.5 text-[0.65rem]">
       <button
-        class="text-xs px-2 py-1 rounded"
+        class="px-1.5 py-0.5 rounded leading-tight flex-1"
         :class="mode === 'natural' ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-650'"
         @click="mode = 'natural'"
       >
         Natural
       </button>
       <button
-        class="text-xs px-2 py-1 rounded"
+        class="px-1.5 py-0.5 rounded leading-tight flex-1"
         :class="mode === 'neon' ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-650'"
         @click="mode = 'neon'"
       >
         Neon
       </button>
       <button
-        class="text-xs px-2 py-1 rounded"
+        class="px-1.5 py-0.5 rounded leading-tight flex-1"
         :class="mode === 'custom' ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-650'"
         @click="mode = 'custom'"
       >
