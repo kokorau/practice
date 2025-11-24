@@ -5,6 +5,7 @@ import { useMedia, useMediaCanvasWebGL, useMediaAnalysis, useMediaPalette } from
 import { loadUnsplashPhoto } from '../modules/PhotoUnsplash/Application/loadUnsplashPhoto'
 import { loadScreenshot } from '../modules/PhotoScreenshot/Application/loadScreenshot'
 import { photoRepository } from '../modules/Photo/Infra/photoRepository'
+import { createDefaultPhotoUseCase } from '../modules/Photo/Application/createDefaultPhotoUseCase'
 import { useFilter } from '../composables/Filter/useFilter'
 import { PRESETS } from '../modules/Filter/Domain'
 import { $Media } from '../modules/Media'
@@ -100,10 +101,16 @@ const handleToggleScreenCapture = async () => {
 }
 
 // 初期化: photoRepository に既存の Photo があれば Media に変換
+// なければ、デフォルトのカラーパレット画像を生成
 onMounted(() => {
   const existingPhoto = photoRepository.get()
   if (existingPhoto && !media.value) {
     setPhoto(existingPhoto)
+  } else if (!media.value) {
+    // デフォルトのカラーパレット画像を生成
+    const defaultPhoto = createDefaultPhotoUseCase()
+    photoRepository.set(defaultPhoto)
+    setPhoto(defaultPhoto)
   }
 })
 
@@ -181,6 +188,13 @@ const handleLoadScreenshot = async () => {
   } finally {
     isLoadingScreenshot.value = false
   }
+}
+
+// Default Palette
+const handleLoadDefaultPalette = () => {
+  const defaultPhoto = createDefaultPhotoUseCase()
+  photoRepository.set(defaultPhoto)
+  setPhoto(defaultPhoto)
 }
 </script>
 
@@ -314,6 +328,16 @@ const handleLoadScreenshot = async () => {
                 </div>
               </div>
             </div>
+          </div>
+          <div class="border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm text-gray-400 mb-3">Default Palette</h2>
+            <button
+              @click="handleLoadDefaultPalette"
+              class="w-full py-2 px-4 rounded text-sm font-semibold bg-pink-600 text-white hover:bg-pink-700"
+            >
+              Load Color Grid
+            </button>
+            <p class="mt-2 text-xs text-gray-500">20 hues × 10 shades color palette</p>
           </div>
           <p v-if="mediaError" class="text-xs text-red-400">{{ mediaError }}</p>
         </div>

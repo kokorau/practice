@@ -3,6 +3,7 @@ import { type Media, $Media } from '../../modules/Media'
 import type { ProfiledPalette } from '../../modules/Palette/Domain'
 import type { Lut } from '../../modules/Filter/Domain'
 import { mediaPaletteService } from '../../modules/Palette/Infra/Service/mediaPaletteService'
+import { paletteRepository } from '../../modules/Palette/Infra/paletteRepository'
 import type { PixelEffects } from '../Filter/useFilter'
 
 export type UseMediaPaletteOptions = {
@@ -55,12 +56,18 @@ export const useMediaPalette = (
 
       // Worker で LUT 適用 + パレット抽出を一括処理
       const effects = options.pixelEffects?.value
-      palette.value = await mediaPaletteService.extract(imageData, {
+      const extracted = await mediaPaletteService.extract(imageData, {
         lut: options.lut?.value,
         vibrance: effects?.vibrance,
         hueRotation: effects?.hueRotation,
         downsampleScale: 0.25, // パレット抽出用に 1/4 サイズにダウンサンプル
       })
+      palette.value = extracted
+
+      // パレットをリポジトリに保存
+      if (extracted) {
+        paletteRepository.set(extracted)
+      }
     } catch (e) {
       console.error('Media palette extraction failed:', e)
     } finally {
