@@ -42,12 +42,11 @@ const { canvasRef: afterCanvasRef } = useMediaCanvasWebGL(media, { lut, pixelEff
 
 // サンプリングレート (動的に変更可能) - 0 で無効
 type FpsOption = 60 | 30 | 15 | 5 | 0
-const analysisSampleRate = ref<FpsOption>(5)
 const paletteSampleRate = ref<FpsOption>(5)
 
-// Analysis (リアルタイム対応、サンプリングレート付き)
-const { analysis: originalAnalysis } = useMediaAnalysis(media, { sampleRate: analysisSampleRate })
-const { analysis: filteredAnalysis } = useMediaAnalysis(media, { lut, pixelEffects, sampleRate: analysisSampleRate })
+// Analysis (リアルタイム対応、5 FPS固定)
+const { analysis: originalAnalysis } = useMediaAnalysis(media, { sampleRate: 5 })
+const { analysis: filteredAnalysis } = useMediaAnalysis(media, { lut, pixelEffects, sampleRate: 5 })
 
 // Palette (リアルタイム対応、低サンプリングレート)
 const { palette: originalPalette } = useMediaPalette(media, { sampleRate: paletteSampleRate })
@@ -200,7 +199,7 @@ const handleLoadDefaultPalette = () => {
 
 <template>
   <div class="h-screen bg-gray-900 text-white flex justify-center">
-    <div class="flex w-[1200px] max-w-full">
+    <div class="flex w-[1800px] max-w-full">
     <!-- Left Panel: Tabs + Controls -->
     <div class="w-80 flex-shrink-0 border-r border-gray-700 flex flex-col">
       <!-- Tab Headers -->
@@ -234,6 +233,56 @@ const handleLoadDefaultPalette = () => {
         <!-- Source Tab -->
         <div v-if="activeTab === 'source'" class="space-y-4">
           <div class="border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm text-gray-400 mb-3">Unsplash</h2>
+            <button
+              @click="handleLoadUnsplash"
+              :disabled="isLoadingUnsplash"
+              class="w-full py-2 px-4 rounded text-sm font-semibold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isLoadingUnsplash ? 'Loading...' : 'Random Photo' }}
+            </button>
+          </div>
+          <div class="border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm text-gray-400 mb-3">Screen Capture</h2>
+            <button
+              @click="handleToggleScreenCapture"
+              class="w-full py-2 px-4 rounded text-sm font-semibold text-white"
+              :class="isScreenCaptureActive ? 'bg-red-600 hover:bg-red-700' : 'bg-cyan-600 hover:bg-cyan-700'"
+            >
+              {{ isScreenCaptureActive ? 'Stop Capture' : 'Start Capture' }}
+            </button>
+            <p class="mt-2 text-xs text-gray-500">Select a tab/window to capture</p>
+
+            <!-- FPS Settings (Streaming モード用) -->
+            <div v-if="isStreaming" class="mt-3 pt-3 border-t border-gray-600">
+              <div class="flex items-center justify-between">
+                <span class="text-gray-500" style="font-size: 10px;">Palette Rate</span>
+                <div class="flex gap-0.5">
+                  <button
+                    v-for="fps in [0, 5, 15, 30, 60] as const"
+                    :key="`palette-${fps}`"
+                    @click="paletteSampleRate = fps"
+                    class="px-1 py-0 rounded transition-colors"
+                    style="font-size: 9px;"
+                    :class="paletteSampleRate === fps ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-500 hover:bg-gray-600'"
+                  >
+                    {{ fps === 0 ? 'Off' : fps }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm text-gray-400 mb-3">Camera</h2>
+            <button
+              @click="handleToggleCamera"
+              class="w-full py-2 px-4 rounded text-sm font-semibold text-white"
+              :class="isCameraActive ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'"
+            >
+              {{ isCameraActive ? 'Stop Camera' : 'Start Camera' }}
+            </button>
+          </div>
+          <div class="border border-gray-700 rounded-lg p-4">
             <h2 class="text-sm text-gray-400 mb-3">Upload</h2>
             <input
               type="file"
@@ -247,16 +296,6 @@ const handleLoadDefaultPalette = () => {
                 hover:file:bg-blue-700
                 cursor-pointer"
             />
-          </div>
-          <div class="border border-gray-700 rounded-lg p-4">
-            <h2 class="text-sm text-gray-400 mb-3">Unsplash</h2>
-            <button
-              @click="handleLoadUnsplash"
-              :disabled="isLoadingUnsplash"
-              class="w-full py-2 px-4 rounded text-sm font-semibold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ isLoadingUnsplash ? 'Loading...' : 'Random Photo' }}
-            </button>
           </div>
           <div class="border border-gray-700 rounded-lg p-4">
             <h2 class="text-sm text-gray-400 mb-3">Screenshot</h2>
@@ -273,61 +312,6 @@ const handleLoadDefaultPalette = () => {
             >
               {{ isLoadingScreenshot ? 'Capturing...' : 'Capture' }}
             </button>
-          </div>
-          <div class="border border-gray-700 rounded-lg p-4">
-            <h2 class="text-sm text-gray-400 mb-3">Camera</h2>
-            <button
-              @click="handleToggleCamera"
-              class="w-full py-2 px-4 rounded text-sm font-semibold text-white"
-              :class="isCameraActive ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'"
-            >
-              {{ isCameraActive ? 'Stop Camera' : 'Start Camera' }}
-            </button>
-          </div>
-          <div class="border border-gray-700 rounded-lg p-4">
-            <h2 class="text-sm text-gray-400 mb-3">Screen Capture</h2>
-            <button
-              @click="handleToggleScreenCapture"
-              class="w-full py-2 px-4 rounded text-sm font-semibold text-white"
-              :class="isScreenCaptureActive ? 'bg-red-600 hover:bg-red-700' : 'bg-cyan-600 hover:bg-cyan-700'"
-            >
-              {{ isScreenCaptureActive ? 'Stop Capture' : 'Start Capture' }}
-            </button>
-            <p class="mt-2 text-xs text-gray-500">Select a tab/window to capture</p>
-
-            <!-- FPS Settings (Streaming モード用) -->
-            <div v-if="isStreaming" class="mt-3 pt-3 border-t border-gray-600 space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="text-gray-500" style="font-size: 10px;">Analysis</span>
-                <div class="flex gap-0.5">
-                  <button
-                    v-for="fps in [0, 5, 15, 30, 60] as const"
-                    :key="`analysis-${fps}`"
-                    @click="analysisSampleRate = fps"
-                    class="px-1 py-0 rounded transition-colors"
-                    style="font-size: 9px;"
-                    :class="analysisSampleRate === fps ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-500 hover:bg-gray-600'"
-                  >
-                    {{ fps === 0 ? 'Off' : fps }}
-                  </button>
-                </div>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-gray-500" style="font-size: 10px;">Palette</span>
-                <div class="flex gap-0.5">
-                  <button
-                    v-for="fps in [0, 5, 15, 30, 60] as const"
-                    :key="`palette-${fps}`"
-                    @click="paletteSampleRate = fps"
-                    class="px-1 py-0 rounded transition-colors"
-                    style="font-size: 9px;"
-                    :class="paletteSampleRate === fps ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-500 hover:bg-gray-600'"
-                  >
-                    {{ fps === 0 ? 'Off' : fps }}
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
           <div class="border border-gray-700 rounded-lg p-4">
             <h2 class="text-sm text-gray-400 mb-3">Default Palette</h2>
