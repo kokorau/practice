@@ -12,13 +12,14 @@ export type SceneObject = {
   readonly width: number
   readonly height: number
   readonly depth: number // +: 浮き出し, -: へこみ, 0: フラット
+  readonly reflectivity: number // 反射率 (0-1), デフォルト1
 }
 
 export const SceneObject = {
   create(
     id: string,
     position: Point,
-    size: { width: number; height: number; depth?: number }
+    size: { width: number; height: number; depth?: number; reflectivity?: number }
   ): SceneObject {
     return {
       id,
@@ -26,6 +27,7 @@ export const SceneObject = {
       width: size.width,
       height: size.height,
       depth: size.depth ?? 0,
+      reflectivity: size.reflectivity ?? 1,
     }
   },
 
@@ -45,13 +47,14 @@ export const SceneObject = {
 
   resize(
     obj: SceneObject,
-    size: { width?: number; height?: number; depth?: number }
+    size: { width?: number; height?: number; depth?: number; reflectivity?: number }
   ): SceneObject {
     return {
       ...obj,
       width: size.width ?? obj.width,
       height: size.height ?? obj.height,
       depth: size.depth ?? obj.depth,
+      reflectivity: size.reflectivity ?? obj.reflectivity,
     }
   },
 

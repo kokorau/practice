@@ -181,6 +181,7 @@ onUnmounted(() => {
 // 要素のスタイルを計算
 type LightingConfig = {
   depth: number
+  reflectivity: number
   colors: Record<string, string>
 }
 
@@ -201,6 +202,7 @@ const computeStyles = (config: LightingConfig, rect: { x: number; y: number }): 
     width: 100,
     height: 100,
     depth: config.depth,
+    reflectivity: config.reflectivity,
   })
 
   // 本影と半影を両方計算
@@ -232,6 +234,7 @@ const updateCardPositions = () => {
     const rect = el.getBoundingClientRect()
     const config: LightingConfig = {
       depth: Number(el.dataset.lightingDepth ?? 10),
+      reflectivity: Number(el.dataset.lightingReflectivity ?? 1),
       colors: JSON.parse(el.dataset.lightingColors ?? '{"bg":"#ffffff"}'),
     }
     return {
@@ -270,8 +273,14 @@ const getDepthPattern = (index: number): number => {
   return pattern[(index - 1) % pattern.length] ?? 2
 }
 
+const getReflectivityPattern = (index: number): number => {
+  // [0.2, 1, 1, 0.2] の繰り返しパターン (低反射・高反射を交互に)
+  const pattern = [0.2, 1, 1, 0.2]
+  return pattern[(index - 1) % pattern.length] ?? 1
+}
+
 // デバッグ用：影情報を表示
-const debugInfo = ref<{ depth: number; cardIndex: number; totalCards: number; umbra: any; penumbra: any; highlight: any; reflection: any } | null>(null)
+const debugInfo = ref<{ depth: number; reflectivity: number; cardIndex: number; totalCards: number; umbra: any; penumbra: any; highlight: any; reflection: any } | null>(null)
 const showDebugInfo = (index: number) => {
   // 強制的に更新
   updateCardPositions()
@@ -299,6 +308,7 @@ const showDebugInfo = (index: number) => {
 
   debugInfo.value = {
     depth: card.config.depth,
+    reflectivity: card.config.reflectivity,
     cardIndex: index,
     totalCards: cards.value.length,
     umbra: {
@@ -344,7 +354,6 @@ const showDebugInfo = (index: number) => {
         top: `${light.position.y}px`,
         transform: 'translate(-50%, -50%)',
         backgroundColor: light.color,
-        boxShadow: `0 0 40px 20px ${light.color}80`,
       }"
       @mousedown="(e) => startDrag(light.id, e)"
     />
@@ -500,6 +509,7 @@ const showDebugInfo = (index: number) => {
       </div>
       <div class="space-y-2">
         <div class="text-yellow-400">Depth: {{ debugInfo.depth }}</div>
+        <div class="text-cyan-400">Reflectivity: {{ debugInfo.reflectivity }}</div>
         <div class="text-gray-400 text-xs">Card: {{ debugInfo.cardIndex }} / {{ debugInfo.totalCards }}</div>
         <div class="border-t border-gray-700 pt-2">
           <div class="text-blue-400 font-semibold">Umbra (本影)</div>
@@ -825,6 +835,37 @@ const showDebugInfo = (index: number) => {
         </div>
       </section>
 
+      <!-- Reflectivity Test -->
+      <section class="mb-16">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Reflectivity Test</h2>
+        <p class="text-sm text-gray-600 mb-4">Different reflectivity values (0.2, 0.5, 1.0) with same depth</p>
+        <div class="grid grid-cols-3 gap-6">
+          <div
+            v-for="(reflectivity, i) in [0.2, 0.5, 1.0]"
+            :key="`reflectivity-${i}`"
+            :ref="(el) => { if (el) cardRefs[34 + i] = el as HTMLElement }"
+            :data-lighting-depth="15"
+            :data-lighting-reflectivity="String(reflectivity)"
+            :data-lighting-colors="JSON.stringify({ bg: '#ffffff' })"
+            class="p-6 rounded-xl cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all relative overflow-hidden"
+            :style="{
+              backgroundColor: getCardStyle(34 + i).colors?.bg ?? '#fff',
+              boxShadow: getCardStyle(34 + i).boxShadow,
+            }"
+            @click="showDebugInfo(34 + i)"
+          >
+            <h3 class="font-semibold text-gray-800 mb-2">Reflectivity: {{ reflectivity }}</h3>
+            <p class="text-sm text-gray-500">
+              Depth: 15 (same for all)
+            </p>
+            <div
+              class="absolute inset-0 pointer-events-none rounded-xl"
+              :style="{ background: getCardStyle(34 + i).reflection }"
+            />
+          </div>
+        </div>
+      </section>
+
       <!-- Long Content for Scroll -->
       <section class="mb-16">
         <h2 class="text-2xl font-semibold text-gray-800 mb-6">More Content</h2>
@@ -832,15 +873,15 @@ const showDebugInfo = (index: number) => {
           <div
             v-for="i in 20"
             :key="i"
-            :ref="(el) => { if (el) cardRefs[34 + i - 1] = el as HTMLElement }"
+            :ref="(el) => { if (el) cardRefs[37 + i - 1] = el as HTMLElement }"
             :data-lighting-depth="String(getDepthPattern(i))"
             :data-lighting-colors="JSON.stringify({ bg: '#ffffff' })"
             class="p-6 rounded-xl cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
             :style="{
-              backgroundColor: getCardStyle(34 + i - 1).colors?.bg ?? '#fff',
-              boxShadow: getCardStyle(34 + i - 1).boxShadow,
+              backgroundColor: getCardStyle(37 + i - 1).colors?.bg ?? '#fff',
+              boxShadow: getCardStyle(37 + i - 1).boxShadow,
             }"
-            @click="showDebugInfo(34 + i - 1)"
+            @click="showDebugInfo(37 + i - 1)"
           >
             <h3 class="font-semibold text-gray-800 mb-2">Item {{ i }} (depth: {{ getDepthPattern(i) }}) - Click to debug</h3>
             <p class="text-sm text-gray-500">

@@ -17,17 +17,19 @@ const hexToRgba = (hex: string, alpha: number): string => {
  */
 export const CssReflectionRenderer = {
   /**
-   * linear-gradient形式の文字列を生成（面全体の明るさ）
+   * radial-gradient形式の文字列を生成（拡散反射・全体の明るさ）
+   * 光源位置を中心に距離ベースで明るさを広げる
    */
-  toLinearGradient(reflection: Reflection): string {
-    const { angle, intensity, color } = reflection
-    // 光源方向から明るくなるグラデーション
-    // angleは光源への角度なので、その方向から開始
-    const gradientAngle = angle + 180 // CSS gradientは下から始まるので調整
-    const colorStart = hexToRgba(color, intensity * 0.4)
-    const colorEnd = 'transparent'
+  toDiffuseGradient(reflection: Reflection): string {
+    const { diffuseX, diffuseY, intensity, color } = reflection
+    // 拡散反射の中心位置（0-1の相対位置を%に変換）
+    const centerX = (diffuseX * 100).toFixed(1)
+    const centerY = (diffuseY * 100).toFixed(1)
 
-    return `linear-gradient(${gradientAngle.toFixed(1)}deg, ${colorStart} 0%, ${colorEnd} 60%)`
+    const colorCenter = hexToRgba(color, intensity * 0.3)
+    const colorEdge = 'transparent'
+
+    return `radial-gradient(ellipse at ${centerX}% ${centerY}%, ${colorCenter} 0%, ${colorEdge} 80%)`
   },
 
   /**
@@ -51,9 +53,9 @@ export const CssReflectionRenderer = {
    * 単一の反射から::before用のbackground文字列を生成
    */
   toBackground(reflection: Reflection): string {
-    const radial = this.toRadialGradient(reflection)
-    const linear = this.toLinearGradient(reflection)
-    return `${radial}, ${linear}`
+    const specular = this.toRadialGradient(reflection)
+    const diffuse = this.toDiffuseGradient(reflection)
+    return `${specular}, ${diffuse}`
   },
 
   /**
@@ -64,7 +66,7 @@ export const CssReflectionRenderer = {
 
     const gradients = reflections.flatMap((r) => [
       this.toRadialGradient(r),
-      this.toLinearGradient(r),
+      this.toDiffuseGradient(r),
     ])
 
     return gradients.join(', ')

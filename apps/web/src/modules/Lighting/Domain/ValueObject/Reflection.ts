@@ -16,6 +16,9 @@ export type Reflection = {
   readonly specularY: number
   /** スペキュラーのサイズ (0-1) */
   readonly specularSize: number
+  /** 拡散反射の中心位置 (0-1, オブジェクト中心からの相対位置) */
+  readonly diffuseX: number
+  readonly diffuseY: number
   /** 光源色 */
   readonly color: string
 }
@@ -45,7 +48,7 @@ export const Reflection = {
 
     // 反射の強度: depthが大きいと反射が強くなる
     const baseIntensity = light.intensity * distanceFactor * 0.5
-    const intensity = baseIntensity * (1 + depthFactor * 0.8) // 0.3 → 0.8に増加
+    const intensity = baseIntensity * (1 + depthFactor * 0.8) * obj.reflectivity // reflectivityを適用
 
     // スペキュラー反射の位置（光源方向の端に近い位置）
     // 角度から位置を計算 (0-1の範囲、0.5が中心)
@@ -57,12 +60,27 @@ export const Reflection = {
     // スペキュラーのサイズ（光源が高いほど、depthが大きいほど広がる）
     const specularSize = 0.2 + heightFactor * 0.3 + depthFactor * 0.2 // 0.08 → 0.2に増加
 
+    // 拡散反射の中心位置（光源のオブジェクト内相対位置）
+    // オブジェクトのバウンディングボックス内での光源位置を計算
+    const objLeft = objCenter.x - obj.width / 2
+    const objTop = objCenter.y - obj.height / 2
+
+    // 光源のオブジェクト内相対位置（0-1の範囲にクランプ）
+    const relativeX = (light.position.x - objLeft) / obj.width
+    const relativeY = (light.position.y - objTop) / obj.height
+
+    // 0-1の範囲にクランプ（オブジェクト外の場合は端に）
+    const diffuseX = Math.max(0, Math.min(1, relativeX))
+    const diffuseY = Math.max(0, Math.min(1, relativeY))
+
     return {
       angle,
       intensity,
       specularX,
       specularY,
       specularSize,
+      diffuseX,
+      diffuseY,
       color: light.color,
     }
   },
