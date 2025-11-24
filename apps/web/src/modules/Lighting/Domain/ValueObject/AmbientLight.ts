@@ -48,7 +48,7 @@ export const AmbientLight = {
 
   /**
    * オブジェクトの色に環境光を適用
-   * 乗算ブレンドで色を混ぜる
+   * 乗算ブレンドで色を混ぜる（控えめに）
    */
   applyToColor(ambient: AmbientLight, objectColor: string): string {
     if (ambient.intensity === 0) return objectColor
@@ -56,11 +56,14 @@ export const AmbientLight = {
     const objRgb = hexToRgb(objectColor)
     const ambRgb = hexToRgb(ambient.color)
 
+    // 乗算ブレンドを弱めに適用（強度を50%に抑える）
+    const effectiveIntensity = ambient.intensity * 0.5
+
     // 乗算ブレンド: obj * (amb / 255)
     // intensity で元の色とブレンド結果を補間
     const blend = (obj: number, amb: number) => {
       const multiplied = (obj * amb) / 255
-      return obj + (multiplied - obj) * ambient.intensity
+      return obj + (multiplied - obj) * effectiveIntensity
     }
 
     return rgbToHex(

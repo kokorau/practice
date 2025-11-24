@@ -19,7 +19,21 @@ const selectedLight = computed(() => lights.value.find(l => l.id === selectedLig
 let lightIdCounter = 1
 
 // 環境光
-const ambientLight = ref<AmbientLightType>(AmbientLight.create('#fff8f0', 0.1))
+const ambientLight = ref<AmbientLightType>(AmbientLight.create('#fff8f0', 0.05))
+
+// 背景スタイルを計算
+const backgroundStyle = computed(() => {
+  if (ambientLight.value.intensity === 0) {
+    return { background: '#f5f5f5' }
+  }
+  // 薄い灰色ベースに環境光色を重ねる
+  const opacity = Math.min(ambientLight.value.intensity * 0.3, 0.1)
+  const hexOpacity = Math.round(opacity * 255).toString(16).padStart(2, '0')
+  return {
+    background: `linear-gradient(${ambientLight.value.color}${hexOpacity}, ${ambientLight.value.color}${hexOpacity}), #f5f5f5`,
+    backgroundAttachment: 'fixed',
+  }
+})
 
 // プリセット
 type LightingPreset = {
@@ -36,7 +50,7 @@ const presets: LightingPreset[] = [
     lights: [
       { x: 400, y: 200, z: 200, intensity: 0.8, color: '#fff4e6' },
     ],
-    ambient: { color: '#fff8f0', intensity: 0.15 },
+    ambient: { color: '#fff8f0', intensity: 0.08 },
   },
   {
     name: 'Studio Setup',
@@ -46,7 +60,7 @@ const presets: LightingPreset[] = [
       { x: 600, y: 250, z: 150, intensity: 0.5, color: '#e0f2ff' }, // Fill light
       { x: 450, y: 400, z: 120, intensity: 0.3, color: '#fef3c7' }, // Back light
     ],
-    ambient: { color: '#f8fafc', intensity: 0.1 },
+    ambient: { color: '#f8fafc', intensity: 0.05 },
   },
   {
     name: 'Golden Hour',
@@ -55,7 +69,7 @@ const presets: LightingPreset[] = [
       { x: 200, y: 300, z: 100, intensity: 1, color: '#ff9500' },
       { x: 700, y: 250, z: 150, intensity: 0.3, color: '#ff6b35' },
     ],
-    ambient: { color: '#fff4e6', intensity: 0.2 },
+    ambient: { color: '#ffd7aa', intensity: 0.12 },
   },
   {
     name: 'Neon Night',
@@ -64,7 +78,7 @@ const presets: LightingPreset[] = [
       { x: 250, y: 200, z: 120, intensity: 0.9, color: '#ff6ec7' },
       { x: 550, y: 200, z: 120, intensity: 0.9, color: '#00d4ff' },
     ],
-    ambient: { color: '#1e1b4b', intensity: 0.05 },
+    ambient: { color: '#1e1b4b', intensity: 0.15 },
   },
   {
     name: 'Dramatic Spotlight',
@@ -72,7 +86,7 @@ const presets: LightingPreset[] = [
     lights: [
       { x: 400, y: 150, z: 250, intensity: 1, color: '#ffffff' },
     ],
-    ambient: { color: '#000000', intensity: 0 },
+    ambient: { color: '#0f172a', intensity: 0.1 },
   },
 ]
 
@@ -243,7 +257,7 @@ const getCardStyle = (index: number): CardStyle => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen" :style="backgroundStyle">
     <!-- 固定光源たち -->
     <div
       v-for="light in lights"
@@ -360,13 +374,13 @@ const getCardStyle = (index: number): CardStyle => {
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-xs text-gray-400">Ambient Intensity: {{ ambientLight.intensity.toFixed(2) }}</label>
+        <label class="text-xs text-gray-400">Ambient Intensity: {{ ambientLight.intensity.toFixed(3) }}</label>
         <input
           :value="ambientLight.intensity"
           type="range"
           min="0"
-          max="0.5"
-          step="0.05"
+          max="0.2"
+          step="0.01"
           class="w-full"
           @input="(e) => ambientLight = AmbientLight.setIntensity(ambientLight, Number((e.target as HTMLInputElement).value))"
         />
