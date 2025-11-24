@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { usePhotoUpload } from '../composables/PhotoLocal/usePhotoUpload'
 import { loadUnsplashPhoto } from '../modules/PhotoUnsplash/Application/loadUnsplashPhoto'
+import { loadScreenshot } from '../modules/PhotoScreenshot/Application/loadScreenshot'
 import { photoRepository } from '../modules/Photo/Infra/photoRepository'
 import { usePhotoCanvas } from '../composables/Photo/usePhotoCanvas'
 import { usePhotoAnalysis } from '../composables/Photo/usePhotoAnalysis'
@@ -82,6 +83,20 @@ const handleLoadUnsplash = async () => {
     isLoadingUnsplash.value = false
   }
 }
+
+// Screenshot
+const screenshotUrl = ref('')
+const isLoadingScreenshot = ref(false)
+const handleLoadScreenshot = async () => {
+  if (!screenshotUrl.value) return
+  isLoadingScreenshot.value = true
+  try {
+    await loadScreenshot({ url: screenshotUrl.value })
+    photo.value = photoRepository.get()
+  } finally {
+    isLoadingScreenshot.value = false
+  }
+}
 </script>
 
 <template>
@@ -142,6 +157,22 @@ const handleLoadUnsplash = async () => {
               class="w-full py-2 px-4 rounded text-sm font-semibold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ isLoadingUnsplash ? 'Loading...' : 'Random Photo' }}
+            </button>
+          </div>
+          <div class="border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm text-gray-400 mb-3">Screenshot</h2>
+            <input
+              v-model="screenshotUrl"
+              type="url"
+              placeholder="https://example.com"
+              class="w-full px-3 py-2 mb-2 bg-gray-800 border border-gray-600 rounded text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            />
+            <button
+              @click="handleLoadScreenshot"
+              :disabled="isLoadingScreenshot || !screenshotUrl"
+              class="w-full py-2 px-4 rounded text-sm font-semibold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isLoadingScreenshot ? 'Capturing...' : 'Capture' }}
             </button>
           </div>
         </div>
