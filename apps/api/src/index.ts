@@ -31,13 +31,11 @@ app.get('/screenshot', async (c) => {
       },
     })
   } catch (error) {
-    console.error('Screenshot error:', error)
     return c.json({ error: 'Failed to capture screenshot', details: String(error) }, 500)
   }
 })
 
 const port = 3001
-console.log(`Server running on http://localhost:${port}`)
 
 serve({
   fetch: app.fetch,
