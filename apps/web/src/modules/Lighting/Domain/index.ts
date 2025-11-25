@@ -16,5 +16,11 @@ export type { Reflection as ReflectionType } from './ValueObject/Reflection'
 export { AmbientLight } from './ValueObject/AmbientLight'
 export type { AmbientLight as AmbientLightType } from './ValueObject/AmbientLight'
 
+export { Illumination } from './ValueObject/Illumination'
+export type { IlluminationResult, PreparedIlluminationContext } from './ValueObject/Illumination'
+
+export { PanelLight } from './ValueObject/PanelLight'
+export type { PanelLight as PanelLightType, PanelLightContribution } from './ValueObject/PanelLight'
+
 export { Scene } from './ValueObject/Scene'
 export type { Scene as SceneType, Bounds } from './ValueObject/Scene'

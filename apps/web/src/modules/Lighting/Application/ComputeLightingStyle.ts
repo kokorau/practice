@@ -1,5 +1,5 @@
-import { Point, SceneObject, Shadow, Reflection, AmbientLight } from '../Domain'
-import type { LightType, AmbientLightType } from '../Domain'
+import { Point, SceneObject, Shadow, Reflection, Illumination } from '../Domain'
+import type { LightType, AmbientLightType, PanelLightType, PreparedIlluminationContext } from '../Domain'
 import { CssShadowRenderer } from '../Infra/Css/CssShadowRenderer'
 import { CssReflectionRenderer } from '../Infra/Css/CssReflectionRenderer'
 
@@ -27,6 +27,15 @@ export type LightingStyle = {
 export type LightingContext = {
   lights: readonly LightType[]
   ambientLight: AmbientLightType
+  panelLight?: PanelLightType
+}
+
+/**
+ * 事前計算済みのライティングコンテキスト
+ */
+export type PreparedLightingContext = {
+  lights: readonly LightType[]
+  illuminationCtx: PreparedIlluminationContext
 }
 
 /**
@@ -48,20 +57,69 @@ const DEFAULT_STYLE: LightingStyle = {
  */
 export const ComputeLightingStyle = {
   /**
-   * 光源・環境光・オブジェクト設定からCSSスタイルを計算
+   * ライティングコンテキストを事前計算
+   * 光源設定が変わったときだけ呼び出す
+   */
+  prepareContext(context: LightingContext): PreparedLightingContext {
+    return {
+      lights: context.lights,
+      illuminationCtx: Illumination.prepareContext(
+        context.lights,
+        context.ambientLight,
+        context.panelLight
+      ),
+    }
+  },
+
+  /**
+   * 事前計算済みコンテキストを使ってCSSスタイルを計算（最適化版）
+   */
+  executeFast(
+    config: LightingConfig,
+    position: ObjectPosition,
+    preparedCtx: PreparedLightingContext
+  ): LightingStyle {
+    const obj = SceneObject.create('temp', Point.create(position.x, position.y), {
+      width: 100,
+      height: 100,
+      depth: config.depth,
+      reflectivity: config.reflectivity,
+    })
+
+    // 本影と半影を両方計算（光源の位置に依存するため毎回必要）
+    const allShadows: Array<ReturnType<typeof Shadow.calculate>> = []
+    preparedCtx.lights.forEach(light => {
+      const { umbra, penumbra } = Shadow.calculateWithPenumbra(light, obj)
+      allShadows.push(penumbra, umbra)
+    })
+
+    const highlights = preparedCtx.lights.map(light => Shadow.calculateHighlight(light, obj))
+    const reflections = preparedCtx.lights.map(light => Reflection.calculate(light, obj))
+
+    // 最適化版の照明計算（事前計算済みコンテキスト使用）
+    const illuminatedColors = Illumination.calculateColorsFast(
+      config.colors,
+      preparedCtx.illuminationCtx,
+      position.x,
+      position.y,
+      config.depth
+    )
+
+    return {
+      boxShadow: CssShadowRenderer.toBoxShadowWithHighlight(allShadows, highlights),
+      reflection: CssReflectionRenderer.toBackgroundMultiple(reflections),
+      colors: illuminatedColors,
+    }
+  },
+
+  /**
+   * 光源・環境光・オブジェクト設定からCSSスタイルを計算（従来版、互換性維持）
    */
   execute(
     config: LightingConfig,
     position: ObjectPosition,
     context: LightingContext
   ): LightingStyle {
-    if (context.lights.length === 0) {
-      return {
-        ...DEFAULT_STYLE,
-        colors: config.colors,
-      }
-    }
-
     const obj = SceneObject.create('temp', Point.create(position.x, position.y), {
       width: 100,
       height: 100,
@@ -79,16 +137,19 @@ export const ComputeLightingStyle = {
     const highlights = context.lights.map(light => Shadow.calculateHighlight(light, obj))
     const reflections = context.lights.map(light => Reflection.calculate(light, obj))
 
-    // 環境光を各色に適用
-    const adjustedColors: Record<string, string> = {}
-    for (const [key, color] of Object.entries(config.colors)) {
-      adjustedColors[key] = AmbientLight.applyToColor(context.ambientLight, color)
-    }
+    // 物理ベースの照明計算: albedo × (環境光 + 直接光 + パネルライト)
+    const illuminatedColors = Illumination.calculateColors(
+      config.colors,
+      context.lights,
+      context.ambientLight,
+      obj,
+      context.panelLight
+    )
 
     return {
       boxShadow: CssShadowRenderer.toBoxShadowWithHighlight(allShadows, highlights),
       reflection: CssReflectionRenderer.toBackgroundMultiple(reflections),
-      colors: adjustedColors,
+      colors: illuminatedColors,
     }
   },
 

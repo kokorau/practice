@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Point, Light, AmbientLight, SceneObject, Shadow, Reflection } from '../modules/Lighting/Domain'
-import type { LightType, AmbientLightType } from '../modules/Lighting/Domain'
+import { Point, Light, AmbientLight, PanelLight, SceneObject, Shadow, Reflection } from '../modules/Lighting/Domain'
+import type { LightType, AmbientLightType, PanelLightType } from '../modules/Lighting/Domain'
 import { ComputeLightingStyle } from '../modules/Lighting/Application'
-import type { LightingConfig, LightingStyle } from '../modules/Lighting/Application'
+import type { LightingConfig, LightingStyle, PreparedLightingContext } from '../modules/Lighting/Application'
 import ColorPalette from '../components/ColorPalette.vue'
 
 // 光源リスト (fixed position)
@@ -19,7 +19,20 @@ const selectedLight = computed(() => lights.value.find(l => l.id === selectedLig
 let lightIdCounter = 1
 
 // 環境光
-const ambientLight = ref<AmbientLightType>(AmbientLight.create('#fff8f0', 0.05))
+const ambientLight = ref<AmbientLightType>(AmbientLight.create('#fff8f0', 0.8))
+
+// パネルライト（画面正面からのフィルライト、影を作らない）
+const panelLight = ref<PanelLightType>(PanelLight.createDefault())
+
+// パネルライトを画面中央に配置
+const updatePanelLightPosition = () => {
+  const centerX = window.innerWidth / 2
+  const centerY = window.innerHeight / 2
+  panelLight.value = PanelLight.moveTo(
+    panelLight.value,
+    Point.create(centerX, centerY, panelLight.value.position.z)
+  )
+}
 
 // 背景スタイルを計算
 const backgroundStyle = computed(() => {
@@ -107,21 +120,34 @@ const applyPreset = (preset: LightingPreset) => {
 // 設定パネル表示
 const showSettings = ref(true)
 
-// 光源ドラッグ
-const dragging = ref<string | null>(null)
+// ドラッグ状態（光源 or パネルライト）
+const dragging = ref<{ type: 'light' | 'panel'; id: string } | null>(null)
 
-const startDrag = (lightId: string, e: MouseEvent) => {
+const startDragLight = (lightId: string, e: MouseEvent) => {
   e.preventDefault()
-  dragging.value = lightId
+  dragging.value = { type: 'light', id: lightId }
   selectedLightId.value = lightId
+}
+
+const startDragPanel = (e: MouseEvent) => {
+  e.preventDefault()
+  dragging.value = { type: 'panel', id: 'panel' }
 }
 
 const onMouseMove = (e: MouseEvent) => {
   if (!dragging.value) return
-  lights.value = lights.value.map(l => {
-    if (l.id !== dragging.value) return l
-    return Light.moveTo(l, Point.create(e.clientX, e.clientY, l.position.z))
-  })
+
+  if (dragging.value.type === 'light') {
+    lights.value = lights.value.map(l => {
+      if (l.id !== dragging.value?.id) return l
+      return Light.moveTo(l, Point.create(e.clientX, e.clientY, l.position.z))
+    })
+  } else if (dragging.value.type === 'panel') {
+    panelLight.value = PanelLight.moveTo(
+      panelLight.value,
+      Point.create(e.clientX, e.clientY, panelLight.value.position.z)
+    )
+  }
 }
 
 const stopDrag = () => {
@@ -178,15 +204,18 @@ onUnmounted(() => {
   window.removeEventListener('mouseup', stopDrag)
 })
 
-// ライティングコンテキストを計算プロパティとして提供
-const lightingContext = computed(() => ({
-  lights: lights.value,
-  ambientLight: ambientLight.value,
-}))
+// ライティングコンテキストを事前計算（光源設定が変わったときだけ再計算）
+const preparedContext = computed<PreparedLightingContext>(() => {
+  return ComputeLightingStyle.prepareContext({
+    lights: lights.value,
+    ambientLight: ambientLight.value,
+    panelLight: panelLight.value,
+  })
+})
 
-// 要素のスタイルを計算
+// 要素のスタイルを計算（最適化版）
 const computeStyles = (config: LightingConfig, rect: { x: number; y: number }): LightingStyle => {
-  return ComputeLightingStyle.execute(config, rect, lightingContext.value)
+  return ComputeLightingStyle.executeFast(config, rect, preparedContext.value)
 }
 
 // 各カードの設定と位置
@@ -216,13 +245,17 @@ onMounted(() => {
   setTimeout(() => {
     updateCardPositions()
   }, 100)
+  // パネルライトを画面中央に配置
+  updatePanelLightPosition()
   window.addEventListener('scroll', updateCardPositions)
   window.addEventListener('resize', updateCardPositions)
+  window.addEventListener('resize', updatePanelLightPosition)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', updateCardPositions)
   window.removeEventListener('resize', updateCardPositions)
+  window.removeEventListener('resize', updatePanelLightPosition)
 })
 
 // カードのスタイルを取得
@@ -314,8 +347,27 @@ const showDebugInfo = (index: number) => {
         transform: 'translate(-50%, -50%)',
         backgroundColor: light.color,
       }"
-      @mousedown="(e) => startDrag(light.id, e)"
+      @mousedown="(e) => startDragLight(light.id, e)"
     />
+
+    <!-- パネルライト位置表示 (Settingsが開いている時のみ表示、ドラッグ可能) -->
+    <div
+      v-if="showSettings && panelLight.enabled"
+      class="fixed border-2 border-dashed border-cyan-400 z-40 cursor-grab active:cursor-grabbing flex items-center justify-center"
+      :style="{
+        left: `${panelLight.position.x}px`,
+        top: `${panelLight.position.y}px`,
+        width: `${panelLight.width}px`,
+        height: `${panelLight.height}px`,
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: `${panelLight.color}20`,
+      }"
+      @mousedown="startDragPanel"
+    >
+      <span class="text-cyan-400 text-xs bg-gray-900/80 px-2 py-1 rounded pointer-events-none">
+        Panel Light (z={{ panelLight.position.z }})
+      </span>
+    </div>
 
     <!-- 設定パネル (固定) -->
     <aside
@@ -423,7 +475,7 @@ const showDebugInfo = (index: number) => {
           :value="ambientLight.intensity"
           type="range"
           min="0"
-          max="0.2"
+          max="1"
           step="0.01"
           class="w-full"
           @input="(e) => ambientLight = AmbientLight.setIntensity(ambientLight, Number((e.target as HTMLInputElement).value))"
@@ -444,6 +496,55 @@ const showDebugInfo = (index: number) => {
             :model-value="ambientLight.color"
             @update:model-value="(c) => ambientLight = AmbientLight.setColor(ambientLight, c)"
           />
+        </div>
+      </div>
+
+      <!-- パネルライト設定 -->
+      <div class="flex flex-col gap-2 border-t border-gray-700 pt-4">
+        <div class="flex items-center justify-between">
+          <label class="text-xs text-gray-400">Panel Light (Fill)</label>
+          <button
+            class="text-xs px-2 py-1 rounded"
+            :class="panelLight.enabled ? 'bg-green-600' : 'bg-gray-600'"
+            @click="panelLight = PanelLight.setEnabled(panelLight, !panelLight.enabled)"
+          >
+            {{ panelLight.enabled ? 'ON' : 'OFF' }}
+          </button>
+        </div>
+        <div v-if="panelLight.enabled" class="flex flex-col gap-2">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-gray-500">Intensity: {{ panelLight.intensity.toFixed(2) }}</label>
+            <input
+              :value="panelLight.intensity"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              class="w-full"
+              @input="(e) => panelLight = PanelLight.setIntensity(panelLight, Number((e.target as HTMLInputElement).value))"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-gray-500">Size: {{ panelLight.width }}px</label>
+            <input
+              :value="panelLight.width"
+              type="range"
+              min="100"
+              max="1000"
+              step="50"
+              class="w-full"
+              @input="(e) => panelLight = PanelLight.resize(panelLight, Number((e.target as HTMLInputElement).value), Number((e.target as HTMLInputElement).value))"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-gray-500">Color</label>
+            <div class="scale-75 origin-left">
+              <ColorPalette
+                :model-value="panelLight.color"
+                @update:model-value="(c) => panelLight = PanelLight.setColor(panelLight, c)"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </aside>
