@@ -81,7 +81,7 @@ export const PanelLight = {
     return PanelLight.create('panel-light-default', Point.create(500, 400, 1000), {
       width: 1000,
       height: 1000,
-      intensity: 0.3,
+      intensity: 0.5,
       color: '#ffffff',
       enabled: true,
     })
@@ -126,7 +126,6 @@ export const PanelLight = {
    * パネルライトからオブジェクトへの照明寄与を計算
    *
    * 面光源として、距離とパネルサイズに応じた柔らかい照明を計算
-   * 平行光として扱うので、オブジェクト位置による方向の違いは小さい
    */
   calculateContribution(panel: PanelLight, obj: SceneObject): PanelLightContribution {
     if (!panel.enabled || panel.intensity === 0) {
@@ -139,8 +138,7 @@ export const PanelLight = {
     // パネルからオブジェクトへの距離
     const distance = Point.distance(panel.position, objSurface)
 
-    // 面光源の特性: パネルが大きいほど、遠くても光が届きやすい
-    // 立体角を簡易的に計算（パネル面積 / 距離^2）
+    // 面光源の特性: 立体角を計算（パネル面積 / 距離^2）
     const panelArea = panel.width * panel.height
     const solidAngle = panelArea / (distance * distance + 1) // +1 で 0除算防止
 

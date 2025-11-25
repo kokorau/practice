@@ -19,7 +19,7 @@ const selectedLight = computed(() => lights.value.find(l => l.id === selectedLig
 let lightIdCounter = 1
 
 // 環境光
-const ambientLight = ref<AmbientLightType>(AmbientLight.create('#fff8f0', 0.8))
+const ambientLight = ref<AmbientLightType>(AmbientLight.create('#fff8f0', 0.7))
 
 // パネルライト（画面正面からのフィルライト、影を作らない）
 const panelLight = ref<PanelLightType>(PanelLight.createDefault())
@@ -34,26 +34,37 @@ const updatePanelLightPosition = () => {
   )
 }
 
-// 背景スタイルを計算
+// ライティングコンテキストを事前計算（光源設定が変わったときだけ再計算）
+const preparedContext = computed<PreparedLightingContext>(() => {
+  return ComputeLightingStyle.prepareContext({
+    lights: lights.value,
+    ambientLight: ambientLight.value,
+    panelLight: panelLight.value,
+  })
+})
+
+// 背景スタイルを計算（オブジェクトと同じ照明計算を使用）
 const backgroundStyle = computed(() => {
-  if (ambientLight.value.intensity === 0) {
-    return { background: '#f5f5f5' }
-  }
-  // 薄い灰色ベースに環境光色を重ねる
-  const opacity = Math.min(ambientLight.value.intensity * 0.3, 0.1)
-  const hexOpacity = Math.round(opacity * 255).toString(16).padStart(2, '0')
+  // 背景のalbedo（元の色）
+  const bgAlbedo = '#f5f5f5'
+  // 画面中央を背景の位置とする
+  const bgPosition = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+  // depth: 0 で背景面として計算
+  const bgConfig = { depth: 0, reflectivity: 0, colors: { bg: bgAlbedo } }
+  const style = ComputeLightingStyle.executeFast(bgConfig, bgPosition, preparedContext.value)
   return {
-    background: `linear-gradient(${ambientLight.value.color}${hexOpacity}, ${ambientLight.value.color}${hexOpacity}), #f5f5f5`,
-    backgroundAttachment: 'fixed',
+    background: style.colors.bg,
   }
 })
 
-// プリセット
+// プリセット（位置は画面サイズに対する相対値 0-1 で定義）
 type LightingPreset = {
   name: string
   description: string
+  // x, y は 0-1 の相対位置（0=左/上端, 0.5=中央, 1=右/下端）
   lights: Array<{ x: number; y: number; z: number; intensity: number; color: string }>
   ambient: { color: string; intensity: number }
+  panel: { intensity: number; color: string; enabled: boolean }
 }
 
 const presets: LightingPreset[] = [
@@ -61,60 +72,72 @@ const presets: LightingPreset[] = [
     name: 'Natural Daylight',
     description: 'Soft overhead lighting like natural daylight',
     lights: [
-      { x: 400, y: 200, z: 600, intensity: 0.8, color: '#fff4e6' },
+      { x: 0.4, y: 0.2, z: 600, intensity: 0.8, color: '#fff4e6' },
     ],
-    ambient: { color: '#fff8f0', intensity: 0.08 },
+    ambient: { color: '#fff8f0', intensity: 0.7 },
+    panel: { intensity: 0.5, color: '#ffffff', enabled: true },
   },
   {
     name: 'Studio Setup',
     description: 'Three-point lighting for balanced illumination',
     lights: [
-      { x: 300, y: 200, z: 550, intensity: 1, color: '#ffffff' }, // Key light
-      { x: 600, y: 250, z: 500, intensity: 0.5, color: '#e0f2ff' }, // Fill light
-      { x: 450, y: 400, z: 450, intensity: 0.3, color: '#fef3c7' }, // Back light
+      { x: 0.3, y: 0.2, z: 550, intensity: 1, color: '#ffffff' }, // Key light (left)
+      { x: 0.7, y: 0.25, z: 500, intensity: 0.5, color: '#e0f2ff' }, // Fill light (right)
     ],
-    ambient: { color: '#f8fafc', intensity: 0.05 },
+    ambient: { color: '#f8fafc', intensity: 0.5 },
+    panel: { intensity: 0.6, color: '#fef3c7', enabled: true },
   },
   {
     name: 'Golden Hour',
     description: 'Warm sunset lighting from the side',
     lights: [
-      { x: 200, y: 300, z: 400, intensity: 1, color: '#ff9500' },
-      { x: 700, y: 250, z: 500, intensity: 0.3, color: '#ff6b35' },
+      { x: 0.15, y: 0.35, z: 400, intensity: 1, color: '#ff9500' }, // Far left
     ],
-    ambient: { color: '#ffd7aa', intensity: 0.12 },
+    ambient: { color: '#ffd7aa', intensity: 0.4 },
+    panel: { intensity: 0.4, color: '#ffcc80', enabled: true },
   },
   {
     name: 'Neon Night',
     description: 'Colorful neon lights for dramatic effect',
     lights: [
-      { x: 250, y: 200, z: 450, intensity: 0.9, color: '#ff6ec7' },
-      { x: 550, y: 200, z: 450, intensity: 0.9, color: '#00d4ff' },
+      { x: 0.1, y: 0.2, z: 450, intensity: 0.9, color: '#ff6ec7' }, // Pink (far left)
+      { x: 0.9, y: 0.2, z: 450, intensity: 0.9, color: '#00d4ff' }, // Cyan (far right)
     ],
-    ambient: { color: '#1e1b4b', intensity: 0.15 },
+    ambient: { color: '#1e1b4b', intensity: 0.3 },
+    panel: { intensity: 0.3, color: '#8b5cf6', enabled: true },
   },
   {
     name: 'Dramatic Spotlight',
     description: 'Single strong light from above for high contrast',
     lights: [
-      { x: 400, y: 150, z: 700, intensity: 1, color: '#ffffff' },
+      { x: 0.5, y: 0.1, z: 700, intensity: 1, color: '#ffffff' }, // Center top
     ],
-    ambient: { color: '#0f172a', intensity: 0.1 },
+    ambient: { color: '#0f172a', intensity: 0.2 },
+    panel: { intensity: 0.15, color: '#334155', enabled: true },
   },
 ]
 
 const applyPreset = (preset: LightingPreset) => {
+  const w = window.innerWidth
+  const h = window.innerHeight
+
   lightIdCounter = 0
   lights.value = preset.lights.map((l) => {
     lightIdCounter++
     return Light.create(
       `light-${lightIdCounter}`,
-      Point.create(l.x, l.y, l.z),
+      Point.create(l.x * w, l.y * h, l.z),
       { intensity: l.intensity, color: l.color }
     )
   })
   selectedLightId.value = lights.value[0]?.id ?? ''
   ambientLight.value = AmbientLight.create(preset.ambient.color, preset.ambient.intensity)
+  panelLight.value = {
+    ...panelLight.value,
+    intensity: preset.panel.intensity,
+    color: preset.panel.color,
+    enabled: preset.panel.enabled,
+  }
 }
 
 // 設定パネル表示
@@ -202,15 +225,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('mousemove', onMouseMove)
   window.removeEventListener('mouseup', stopDrag)
-})
-
-// ライティングコンテキストを事前計算（光源設定が変わったときだけ再計算）
-const preparedContext = computed<PreparedLightingContext>(() => {
-  return ComputeLightingStyle.prepareContext({
-    lights: lights.value,
-    ambientLight: ambientLight.value,
-    panelLight: panelLight.value,
-  })
 })
 
 // 要素のスタイルを計算（最適化版）
@@ -612,11 +626,15 @@ const showDebugInfo = (index: number) => {
         <h2 class="text-2xl font-semibold text-gray-800 mb-6">Features</h2>
         <div class="grid grid-cols-3 gap-6">
           <div
-            v-for="(_, i) in 3"
+            v-for="(feature, i) in [
+              { accent: '#3b82f6', bg: '#ffffff' },
+              { accent: '#8b5cf6', bg: '#ffffff' },
+              { accent: '#ec4899', bg: '#ffffff' },
+            ]"
             :key="i"
             :ref="(el) => { if (el) cardRefs[i] = el as HTMLElement }"
             :data-lighting-depth="12"
-            :data-lighting-colors="JSON.stringify({ bg: '#ffffff', accent: ['#3b82f6', '#8b5cf6', '#ec4899'][i] })"
+            :data-lighting-colors="JSON.stringify({ bg: feature.bg, accent: feature.accent })"
             class="rounded-xl overflow-hidden"
             :style="{
               backgroundColor: getCardStyle(i).colors?.bg ?? '#fff',
@@ -630,6 +648,25 @@ const showDebugInfo = (index: number) => {
             <div class="p-4 relative">
               <h3 class="font-semibold text-gray-800">Feature {{ i + 1 }}</h3>
               <p class="text-sm text-gray-500 mt-1">Description of this amazing feature.</p>
+              <!-- 色の比較表示 -->
+              <div class="mt-3 flex gap-2 text-xs">
+                <div class="flex items-center gap-1">
+                  <span class="text-gray-400">Original:</span>
+                  <div
+                    class="w-4 h-4 rounded border border-gray-300"
+                    :style="{ backgroundColor: feature.accent }"
+                  />
+                  <span class="text-gray-500 font-mono">{{ feature.accent }}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="text-gray-400">→</span>
+                  <div
+                    class="w-4 h-4 rounded border border-gray-300"
+                    :style="{ backgroundColor: getCardStyle(i).colors?.accent }"
+                  />
+                  <span class="text-gray-500 font-mono">{{ getCardStyle(i).colors?.accent }}</span>
+                </div>
+              </div>
               <div
                 class="absolute inset-0 pointer-events-none rounded-b-xl"
                 :style="{ background: getCardStyle(i).reflection }"
