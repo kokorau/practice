@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Point, Light, SceneObject, Shadow, Reflection, AmbientLight } from '../modules/Lighting/Domain'
+import { Point, Light, AmbientLight, SceneObject, Shadow, Reflection } from '../modules/Lighting/Domain'
 import type { LightType, AmbientLightType } from '../modules/Lighting/Domain'
-import { CssShadowRenderer } from '../modules/Lighting/Infra/Css/CssShadowRenderer'
-import { CssReflectionRenderer } from '../modules/Lighting/Infra/Css/CssReflectionRenderer'
+import { ComputeLightingStyle } from '../modules/Lighting/Application'
+import type { LightingConfig, LightingStyle } from '../modules/Lighting/Application'
 import ColorPalette from '../components/ColorPalette.vue'
 
 // 光源リスト (fixed position)
@@ -178,50 +178,15 @@ onUnmounted(() => {
   window.removeEventListener('mouseup', stopDrag)
 })
 
+// ライティングコンテキストを計算プロパティとして提供
+const lightingContext = computed(() => ({
+  lights: lights.value,
+  ambientLight: ambientLight.value,
+}))
+
 // 要素のスタイルを計算
-type LightingConfig = {
-  depth: number
-  reflectivity: number
-  colors: Record<string, string>
-}
-
-type CardStyle = {
-  boxShadow: string
-  reflection: string
-  colors: Record<string, string>
-}
-
-const defaultCardStyle: CardStyle = {
-  boxShadow: 'none',
-  reflection: 'none',
-  colors: { bg: '#ffffff' },
-}
-
-const computeStyles = (config: LightingConfig, rect: { x: number; y: number }): CardStyle => {
-  const obj = SceneObject.create('temp', Point.create(rect.x, rect.y), {
-    width: 100,
-    height: 100,
-    depth: config.depth,
-    reflectivity: config.reflectivity,
-  })
-
-  // 本影と半影を両方計算
-  const allShadows: Array<ReturnType<typeof Shadow.calculate>> = []
-  lights.value.forEach(light => {
-    const { umbra, penumbra } = Shadow.calculateWithPenumbra(light, obj)
-    allShadows.push(penumbra, umbra) // 半影→本影の順で重ねる
-  })
-
-  const highlights = lights.value.map(light => Shadow.calculateHighlight(light, obj))
-  const reflections = lights.value.map(light => Reflection.calculate(light, obj))
-
-  const adjustedColors = AmbientLight.applyToColors(ambientLight.value, config.colors)
-
-  return {
-    boxShadow: CssShadowRenderer.toBoxShadowWithHighlight(allShadows, highlights),
-    reflection: CssReflectionRenderer.toBackgroundMultiple(reflections),
-    colors: adjustedColors,
-  }
+const computeStyles = (config: LightingConfig, rect: { x: number; y: number }): LightingStyle => {
+  return ComputeLightingStyle.execute(config, rect, lightingContext.value)
 }
 
 // 各カードの設定と位置
@@ -261,9 +226,9 @@ onUnmounted(() => {
 })
 
 // カードのスタイルを取得
-const getCardStyle = (index: number): CardStyle => {
+const getCardStyle = (index: number): LightingStyle => {
   const card = cards.value[index]
-  if (!card) return defaultCardStyle
+  if (!card) return ComputeLightingStyle.defaultStyle()
   return computeStyles(card.config, card.rect)
 }
 

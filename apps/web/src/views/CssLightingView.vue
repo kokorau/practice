@@ -110,7 +110,11 @@ const cardColors = {
 
 // 環境光を適用した色を取得
 const getAdjustedColors = computed(() => {
-  return AmbientLight.applyToColors(ambientLight.value, cardColors)
+  const result: Record<string, string> = {}
+  for (const [key, color] of Object.entries(cardColors)) {
+    result[key] = AmbientLight.applyToColor(ambientLight.value, color)
+  }
+  return result
 })
 
 // DnD 状態

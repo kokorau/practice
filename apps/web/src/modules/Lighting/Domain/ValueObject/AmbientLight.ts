@@ -73,17 +73,4 @@ export const AmbientLight = {
     )
   },
 
-  /**
-   * 複数の色に環境光を一括適用
-   */
-  applyToColors(
-    ambient: AmbientLight,
-    colors: Record<string, string>
-  ): Record<string, string> {
-    const result: Record<string, string> = {}
-    for (const [key, color] of Object.entries(colors)) {
-      result[key] = AmbientLight.applyToColor(ambient, color)
-    }
-    return result
-  },
 }
