@@ -1,8 +1,8 @@
 import { ref, reactive, watch, onMounted, onUnmounted, type Ref } from 'vue'
-import { RayTracingRenderer, HTMLToSceneAdapter, $Scene, createPCFShadowShader } from '../../modules/Lighting/Infra'
+import { HTMLToSceneAdapter, $Scene, createPCFShadowShader, TileRenderer, TileCompositor } from '../../modules/Lighting/Infra'
 import { $Light, $Color } from '../../modules/Lighting/Domain/ValueObject'
 import { $Vector3 } from '../../modules/Vector/Domain/ValueObject'
-import { computeBoxShadows, type Viewport, type BoxShadowResult } from '../../modules/Lighting/Application'
+import { computeBoxShadows, RenderTilesUseCase, type Viewport, type BoxShadowResult } from '../../modules/Lighting/Application'
 import { $Hex } from '../../modules/Color/Domain/ValueObject'
 import { lightPresets, type LightPreset, type LightSetting } from '../../modules/Lighting/constant/Preset'
 
@@ -17,6 +17,7 @@ export type DebugInfo = {
   lightsCount: number
   cameraPosition: { x: number; y: number; z: number }
   cameraSize: { width: number; height: number }
+  tiles?: { total: number; pending: number; clean: number }
 }
 
 // Convert hex to normalized RGB (0-1)
@@ -29,13 +30,23 @@ export interface UseLightingSimulatorOptions {
   htmlContainerRef: Ref<HTMLElement | null>
   sampleHtmlRef: Ref<HTMLElement | null>
   canvasRef: Ref<HTMLCanvasElement | null>
+  enableTileRendering?: boolean
+  tileHeight?: number
 }
 
 export function useLightingSimulator(options: UseLightingSimulatorOptions) {
-  const { htmlContainerRef, sampleHtmlRef, canvasRef } = options
+  const {
+    htmlContainerRef,
+    sampleHtmlRef,
+    canvasRef,
+    enableTileRendering = true,
+    tileHeight = 200,
+  } = options
 
-  // Renderer instance (non-reactive)
-  let renderer: RayTracingRenderer | null = null
+  // Tile rendering infrastructure (non-reactive)
+  let tileRenderer: TileRenderer | null = null
+  let tileCompositor: TileCompositor | null = null
+  let renderTilesUseCase: RenderTilesUseCase | null = null
 
   // Current preset
   const currentPreset = ref<string | null>('Default')
@@ -69,18 +80,9 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     lightSettings.shadowBlur = preset.shadowBlur
   }
 
-  // Update scene and render
-  const updateScene = () => {
-    if (!htmlContainerRef.value || !sampleHtmlRef.value || !canvasRef.value || !renderer) return
-
-    // Use container size for viewport (visible area)
-    const containerRect = htmlContainerRef.value.getBoundingClientRect()
-    const viewport: Viewport = {
-      width: containerRect.width,
-      height: containerRect.height,
-      scrollX: htmlContainerRef.value.scrollLeft,
-      scrollY: htmlContainerRef.value.scrollTop,
-    }
+  // Build scene from HTML and light settings
+  const buildScene = (viewport: Viewport) => {
+    if (!sampleHtmlRef.value) return null
 
     // Parse HTML to scene
     const elements = HTMLToSceneAdapter.parseElements(sampleHtmlRef.value, viewport)
@@ -122,13 +124,42 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
       ...directionalLights,
     )
 
-    // Update canvas size to match viewport
-    canvasRef.value.width = viewport.width
-    canvasRef.value.height = viewport.height
+    return { scene, camera, elements }
+  }
+
+  // Update scene and render (full re-render, called when scene content changes)
+  const updateScene = () => {
+    if (!htmlContainerRef.value || !sampleHtmlRef.value || !canvasRef.value) return
+    if (!renderTilesUseCase) return
+
+    // Get container size (visible area) and content size (full scrollable area)
+    const containerRect = htmlContainerRef.value.getBoundingClientRect()
+    const viewportWidth = containerRect.width
+    const viewportHeight = containerRect.height
+    const contentHeight = sampleHtmlRef.value.scrollHeight
+    const scrollY = htmlContainerRef.value.scrollTop
+
+    // Viewport for parsing elements - use full content size
+    const viewport: Viewport = {
+      width: viewportWidth,
+      height: contentHeight,
+      scrollX: 0,
+      scrollY: 0,
+    }
+
+    const result = buildScene(viewport)
+    if (!result) return
+
+    const { scene, camera, elements } = result
 
     // Update debug info
     debugInfo.value = {
-      viewport,
+      viewport: {
+        width: viewportWidth,
+        height: viewportHeight,
+        scrollX: htmlContainerRef.value.scrollLeft,
+        scrollY,
+      },
       elementsCount: elements.length,
       objectsCount: scene.objects.length,
       lightsCount: scene.lights.length,
@@ -136,7 +167,26 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
       cameraSize: { width: camera.width, height: camera.height },
     }
 
-    renderer.render(scene, camera)
+    // Use tile rendering system
+    // - Content size for tile grid (covers all content)
+    // - Viewport size for display canvas
+    renderTilesUseCase.updateScene(
+      scene,
+      camera,
+      viewportWidth,
+      contentHeight,
+      viewportWidth,
+      viewportHeight,
+      scrollY
+    )
+
+    // Update debug info with tile stats
+    const tileDebug = renderTilesUseCase.getDebugInfo()
+    debugInfo.value.tiles = {
+      total: tileDebug.totalTiles,
+      pending: tileDebug.pendingTiles,
+      clean: tileDebug.cleanTiles,
+    }
 
     // Compute box shadows from scene
     boxShadows.value = computeBoxShadows(scene, {
@@ -146,11 +196,34 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     })
   }
 
-  // Event handlers
+  // Handle scroll - only update viewport, tiles are cached
   const onScroll = () => {
-    updateScene()
+    if (!htmlContainerRef.value || !renderTilesUseCase) return
+
+    const containerRect = htmlContainerRef.value.getBoundingClientRect()
+    const scrollY = htmlContainerRef.value.scrollTop
+
+    // Update viewport for tile rendering (re-composite visible tiles)
+    renderTilesUseCase.updateViewport(scrollY, containerRect.height)
+
+    // Update debug viewport info
+    debugInfo.value.viewport = {
+      width: containerRect.width,
+      height: containerRect.height,
+      scrollX: htmlContainerRef.value.scrollLeft,
+      scrollY,
+    }
+
+    // Update tile debug info
+    const tileDebug = renderTilesUseCase.getDebugInfo()
+    debugInfo.value.tiles = {
+      total: tileDebug.totalTiles,
+      pending: tileDebug.pendingTiles,
+      clean: tileDebug.cleanTiles,
+    }
   }
 
+  // Handle resize - need full re-render
   const onResize = () => {
     updateScene()
   }
@@ -181,7 +254,14 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
   // Lifecycle
   onMounted(() => {
     if (!canvasRef.value) return
-    renderer = new RayTracingRenderer(canvasRef.value)
+
+    // Initialize tile rendering system
+    tileRenderer = new TileRenderer()
+    tileCompositor = new TileCompositor(canvasRef.value)
+    renderTilesUseCase = new RenderTilesUseCase(tileRenderer, tileCompositor, {
+      tileHeight,
+      enableIdleRendering: enableTileRendering,
+    })
 
     // Add event listeners
     window.addEventListener('resize', onResize)
@@ -198,8 +278,12 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     window.removeEventListener('resize', onResize)
     htmlContainerRef.value?.removeEventListener('scroll', onScroll)
 
-    renderer?.dispose()
-    renderer = null
+    // Dispose tile rendering system
+    renderTilesUseCase?.dispose()
+    tileRenderer?.dispose()
+    renderTilesUseCase = null
+    tileRenderer = null
+    tileCompositor = null
   })
 
   return {
