@@ -3,7 +3,7 @@
  * GPU でレイトレーシングを行う
  */
 
-import type { OrthographicCamera, PlaneGeometry } from '../../Domain/ValueObject'
+import type { OrthographicCamera, PlaneGeometry, AmbientLight } from '../../Domain/ValueObject'
 
 // Vertex Shader - フルスクリーンクワッド
 const VERTEX_SHADER = `
@@ -38,6 +38,10 @@ const FRAGMENT_SHADER = `
   uniform vec3 u_planeNormals[MAX_PLANES];
   uniform vec3 u_planeColors[MAX_PLANES];
   uniform vec2 u_planeSizes[MAX_PLANES]; // width, height (-1 = infinite)
+
+  // Ambient light
+  uniform vec3 u_ambientColor;
+  uniform float u_ambientIntensity;
 
   // Background color
   uniform vec3 u_backgroundColor;
@@ -102,6 +106,8 @@ const FRAGMENT_SHADER = `
     // Find closest intersection
     float closestT = 1e10;
     vec3 hitColor = u_backgroundColor;
+    vec3 hitSurfaceColor = vec3(0.0);
+    bool hasHit = false;
 
     for (int i = 0; i < MAX_PLANES; i++) {
       if (i >= u_planeCount) break;
@@ -116,8 +122,15 @@ const FRAGMENT_SHADER = `
 
       if (t > 0.0 && t < closestT) {
         closestT = t;
-        hitColor = u_planeColors[i];
+        hitSurfaceColor = u_planeColors[i];
+        hasHit = true;
       }
+    }
+
+    if (hasHit) {
+      // Apply ambient lighting: surfaceColor * ambientColor * intensity
+      vec3 ambient = hitSurfaceColor * u_ambientColor * u_ambientIntensity;
+      hitColor = ambient;
     }
 
     gl_FragColor = vec4(hitColor, 1.0);
@@ -132,6 +145,7 @@ export interface ScenePlane {
 export interface RenderOptions {
   camera: OrthographicCamera
   planes: ScenePlane[]
+  ambientLight?: AmbientLight
   backgroundColor?: readonly [number, number, number]
 }
 
@@ -152,6 +166,8 @@ export class RayTracingRenderer {
     planeNormals: WebGLUniformLocation
     planeColors: WebGLUniformLocation
     planeSizes: WebGLUniformLocation
+    ambientColor: WebGLUniformLocation
+    ambientIntensity: WebGLUniformLocation
     backgroundColor: WebGLUniformLocation
   }
 
@@ -244,6 +260,8 @@ export class RayTracingRenderer {
       planeNormals: gl.getUniformLocation(this.program, 'u_planeNormals')!,
       planeColors: gl.getUniformLocation(this.program, 'u_planeColors')!,
       planeSizes: gl.getUniformLocation(this.program, 'u_planeSizes')!,
+      ambientColor: gl.getUniformLocation(this.program, 'u_ambientColor')!,
+      ambientIntensity: gl.getUniformLocation(this.program, 'u_ambientIntensity')!,
       backgroundColor: gl.getUniformLocation(this.program, 'u_backgroundColor')!,
     }
   }
@@ -277,7 +295,12 @@ export class RayTracingRenderer {
   render(options: RenderOptions): void {
     const gl = this.gl
     const canvas = gl.canvas as HTMLCanvasElement
-    const { camera, planes, backgroundColor = [20, 20, 40] } = options
+    const {
+      camera,
+      planes,
+      ambientLight = { type: 'ambient', color: [1, 1, 1], intensity: 1 },
+      backgroundColor = [20, 20, 40],
+    } = options
 
     gl.viewport(0, 0, canvas.width, canvas.height)
 
@@ -326,6 +349,15 @@ export class RayTracingRenderer {
     gl.uniform3fv(this.uniforms.planeNormals, normals)
     gl.uniform3fv(this.uniforms.planeColors, colors)
     gl.uniform2fv(this.uniforms.planeSizes, sizes)
+
+    // Set ambient light uniforms
+    gl.uniform3f(
+      this.uniforms.ambientColor,
+      ambientLight.color[0],
+      ambientLight.color[1],
+      ambientLight.color[2]
+    )
+    gl.uniform1f(this.uniforms.ambientIntensity, ambientLight.intensity)
 
     gl.uniform3f(
       this.uniforms.backgroundColor,
