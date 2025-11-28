@@ -100,7 +100,7 @@ const FRAGMENT_SHADER = `
 
   // Calculate normal from SDF using gradient
   vec3 calcRoundBoxNormal(vec3 p, vec3 halfSize, float radius) {
-    const float eps = 0.001;
+    const float eps = 0.0001;
     return normalize(vec3(
       sdRoundBox(p + vec3(eps, 0.0, 0.0), halfSize, radius) - sdRoundBox(p - vec3(eps, 0.0, 0.0), halfSize, radius),
       sdRoundBox(p + vec3(0.0, eps, 0.0), halfSize, radius) - sdRoundBox(p - vec3(0.0, eps, 0.0), halfSize, radius),
@@ -130,9 +130,9 @@ const FRAGMENT_SHADER = `
     }
 
     // Start ray marching from tNear (or 0 if inside)
-    float t = max(tNear - 0.01, 0.0);
-    const int MAX_STEPS = 64;
-    const float MIN_DIST = 0.001;
+    float t = max(tNear - 0.001, 0.0);
+    const int MAX_STEPS = 128;
+    const float MIN_DIST = 0.0001;
 
     for (int i = 0; i < MAX_STEPS; i++) {
       vec3 p = localOrigin + t * localDir;
@@ -174,9 +174,9 @@ const FRAGMENT_SHADER = `
       return -1.0;
     }
 
-    float t = max(tNear - 0.01, 0.0);
-    const int MAX_STEPS = 32;
-    const float MIN_DIST = 0.01;
+    float t = max(tNear - 0.001, 0.0);
+    const int MAX_STEPS = 64;
+    const float MIN_DIST = 0.001;
 
     for (int i = 0; i < MAX_STEPS; i++) {
       vec3 p = localOrigin + t * localDir;
