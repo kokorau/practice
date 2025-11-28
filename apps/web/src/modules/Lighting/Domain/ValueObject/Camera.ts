@@ -1,11 +1,11 @@
-import type { Point3, Vector3 } from '../../../Vector/Domain/ValueObject'
+import type { Vector3 } from '../../../Vector/Domain/ValueObject'
 
 /**
  * Base camera properties
  */
 export interface CameraBase {
-  readonly position: Point3
-  readonly lookAt: Point3
+  readonly position: Vector3
+  readonly lookAt: Vector3
   readonly up: Vector3
 }
 
