@@ -48,7 +48,7 @@ const updateScene = () => {
 
   const directionalLights = [
     $Light.createDirectional($Vector3.create(1, -1, 2), white, 0.5),
-    $Light.createDirectional($Vector3.create(-1, -0.5, 1), white, 0.3),
+    $Light.createDirectional($Vector3.create(-1, 1, 3), white, 0.1),
   ]
 
   // Calculate ambient so that ambient + directional contribution = 1 for front-facing surfaces
