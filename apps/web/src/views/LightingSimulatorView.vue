@@ -34,13 +34,33 @@ const updateScene = () => {
 
   // Parse HTML to scene
   const elements = HTMLToSceneAdapter.parseElements(sampleHtmlRef.value, viewport)
+  // Debug: log elements with borderRadius
+  console.log('Elements with borderRadius:', elements.filter(e => e.borderRadius).map(e => ({ borderRadius: e.borderRadius, width: e.width, height: e.height })))
   let { scene, camera } = HTMLToSceneAdapter.toScene(elements, viewport)
+  // Debug: log boxes with radius
+  const boxesWithRadius = scene.objects.filter(o => o.type === 'box' && o.geometry.radius)
+  console.log('Boxes with radius:', boxesWithRadius.map(b => b.type === 'box' ? { radius: b.geometry.radius, size: b.geometry.size } : null))
 
-  // Add lights - direction pointing toward positive Z (into the scene) for shadows
+  // Add lights
+  // Create directional lights first, then calculate ambient to make total = 1 for front-facing surfaces
+  const white = $Color.create(1.0, 1.0, 1.0)
+  const frontNormal = $Vector3.create(0, 0, -1)
+
+  const directionalLights = [
+    $Light.createDirectional($Vector3.create(1, -1, 2), white, 0.5),
+    $Light.createDirectional($Vector3.create(-1, -0.5, 1), white, 0.3),
+  ]
+
+  // Calculate ambient so that ambient + directional contribution = 1 for front-facing surfaces
+  const ambientIntensity = Math.max(0, 1.0 - directionalLights.reduce(
+    (sum, light) => sum + $Light.intensityToward(light, frontNormal),
+    0
+  ))
+
   scene = $Scene.add(
     scene,
-    $Light.createAmbient($Color.create(1.0, 1.0, 1.0), 0.3),
-    $Light.createDirectional($Vector3.create(1, -1, 2), $Color.create(1.0, 1.0, 1.0), 0.7),
+    $Light.createAmbient(white, ambientIntensity),
+    ...directionalLights,
   )
 
   // Update canvas size to match viewport

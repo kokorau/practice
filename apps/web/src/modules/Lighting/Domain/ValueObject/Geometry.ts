@@ -12,7 +12,7 @@ export interface PlaneGeometry {
 }
 
 /**
- * Oriented Bounding Box (OBB)
+ * Oriented Bounding Box (OBB) with optional rounded corners
  * Rotation is specified as Euler angles in radians (X, Y, Z order)
  */
 export interface BoxGeometry {
@@ -20,6 +20,7 @@ export interface BoxGeometry {
   readonly center: Vector3
   readonly size: Vector3 // width, height, depth
   readonly rotation?: Vector3 // Euler angles in radians (x, y, z)
+  readonly radius?: number // Corner radius for rounded box (0 = sharp corners)
 }
 
 /**
@@ -44,11 +45,20 @@ export const $Geometry = {
   createBox: (
     center: Vector3,
     size: Vector3,
-    rotation?: Vector3
-  ): BoxGeometry => ({
-    type: 'box',
-    center,
-    size: { x: Math.abs(size.x), y: Math.abs(size.y), z: Math.abs(size.z) },
-    ...(rotation !== undefined && { rotation }),
-  }),
+    rotation?: Vector3,
+    radius?: number
+  ): BoxGeometry => {
+    const absSize = { x: Math.abs(size.x), y: Math.abs(size.y), z: Math.abs(size.z) }
+    // Clamp radius to half of the smallest XY dimension (ignore Z for 2D-like rendering)
+    const maxRadius = Math.min(absSize.x, absSize.y) / 2
+    const clampedRadius = radius !== undefined ? Math.min(Math.max(0, radius), maxRadius) : undefined
+
+    return {
+      type: 'box',
+      center,
+      size: absSize,
+      ...(rotation !== undefined && { rotation }),
+      ...(clampedRadius !== undefined && clampedRadius > 0 && { radius: clampedRadius }),
+    }
+  },
 }

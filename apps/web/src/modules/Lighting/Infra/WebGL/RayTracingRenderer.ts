@@ -45,6 +45,7 @@ const FRAGMENT_SHADER = `
   uniform vec3 u_boxCenters[MAX_BOXES];
   uniform vec3 u_boxSizes[MAX_BOXES];
   uniform vec3 u_boxColors[MAX_BOXES];
+  uniform float u_boxRadii[MAX_BOXES]; // Corner radius for rounded boxes
   uniform mat3 u_boxRotations[MAX_BOXES]; // Rotation matrices (world -> local)
   uniform mat3 u_boxRotationsInv[MAX_BOXES]; // Inverse rotation matrices (local -> world)
 
@@ -67,6 +68,132 @@ const FRAGMENT_SHADER = `
     vec3 tmp = abs(normal.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
     right = normalize(cross(tmp, normal));
     up = cross(normal, right);
+  }
+
+  // Signed Distance Function for rounded box (full 3D)
+  // p: point in local space (box centered at origin)
+  // b: half-size of the box
+  // r: corner radius
+  float sdRoundBox3D(vec3 p, vec3 b, float r) {
+    vec3 q = abs(p) - b + r;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
+  }
+
+  // Signed Distance Function for 2D rounded box (XY plane only)
+  // For flat boxes viewed from front, only round XY corners
+  float sdRoundBox2D(vec3 p, vec3 b, float r) {
+    // 2D rounded rect in XY, extruded in Z
+    vec2 q = abs(p.xy) - b.xy + r;
+    float d2d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+    float dz = abs(p.z) - b.z;
+    return max(d2d, dz);
+  }
+
+  // Use 2D version for flat boxes (when z dimension is small relative to radius)
+  float sdRoundBox(vec3 p, vec3 b, float r) {
+    // If box is thin in Z (like our HTML elements), use 2D rounding
+    if (b.z < r * 2.0) {
+      return sdRoundBox2D(p, b, r);
+    }
+    return sdRoundBox3D(p, b, r);
+  }
+
+  // Calculate normal from SDF using gradient
+  vec3 calcRoundBoxNormal(vec3 p, vec3 halfSize, float radius) {
+    const float eps = 0.001;
+    return normalize(vec3(
+      sdRoundBox(p + vec3(eps, 0.0, 0.0), halfSize, radius) - sdRoundBox(p - vec3(eps, 0.0, 0.0), halfSize, radius),
+      sdRoundBox(p + vec3(0.0, eps, 0.0), halfSize, radius) - sdRoundBox(p - vec3(0.0, eps, 0.0), halfSize, radius),
+      sdRoundBox(p + vec3(0.0, 0.0, eps), halfSize, radius) - sdRoundBox(p - vec3(0.0, 0.0, eps), halfSize, radius)
+    ));
+  }
+
+  // Ray-RoundBox intersection using ray marching
+  // Returns t (distance), or -1.0 if no hit
+  float intersectRoundBox(vec3 rayOrigin, vec3 rayDir, vec3 boxCenter, vec3 boxSize, float radius, mat3 rotMatrix, mat3 rotMatrixInv, out vec3 normal) {
+    // Transform ray to box local space
+    vec3 localOrigin = rotMatrix * (rayOrigin - boxCenter);
+    vec3 localDir = normalize(rotMatrix * rayDir);
+    vec3 halfSize = boxSize * 0.5;
+
+    // First, do a quick AABB check to get approximate bounds
+    vec3 invDir = 1.0 / localDir;
+    vec3 t1 = (-halfSize - radius - localOrigin) * invDir;
+    vec3 t2 = (halfSize + radius - localOrigin) * invDir;
+    vec3 tMin = min(t1, t2);
+    vec3 tMax = max(t1, t2);
+    float tNear = max(max(tMin.x, tMin.y), tMin.z);
+    float tFar = min(min(tMax.x, tMax.y), tMax.z);
+
+    if (tNear > tFar || tFar < 0.0) {
+      return -1.0;
+    }
+
+    // Start ray marching from tNear (or 0 if inside)
+    float t = max(tNear - 0.01, 0.0);
+    const int MAX_STEPS = 64;
+    const float MIN_DIST = 0.001;
+
+    for (int i = 0; i < MAX_STEPS; i++) {
+      vec3 p = localOrigin + t * localDir;
+      float d = sdRoundBox(p, halfSize, radius);
+
+      if (d < MIN_DIST) {
+        // Hit! Calculate normal in local space then transform to world
+        vec3 localNormal = calcRoundBoxNormal(p, halfSize, radius);
+        normal = normalize(rotMatrixInv * localNormal);
+        return t;
+      }
+
+      t += d;
+
+      if (t > tFar) {
+        break;
+      }
+    }
+
+    return -1.0;
+  }
+
+  // Ray-RoundBox intersection without normal (for shadow rays)
+  float intersectRoundBoxSimple(vec3 rayOrigin, vec3 rayDir, vec3 boxCenter, vec3 boxSize, float radius, mat3 rotMatrix) {
+    vec3 localOrigin = rotMatrix * (rayOrigin - boxCenter);
+    vec3 localDir = normalize(rotMatrix * rayDir);
+    vec3 halfSize = boxSize * 0.5;
+
+    // Quick AABB bounds check
+    vec3 invDir = 1.0 / localDir;
+    vec3 t1 = (-halfSize - radius - localOrigin) * invDir;
+    vec3 t2 = (halfSize + radius - localOrigin) * invDir;
+    vec3 tMin = min(t1, t2);
+    vec3 tMax = max(t1, t2);
+    float tNear = max(max(tMin.x, tMin.y), tMin.z);
+    float tFar = min(min(tMax.x, tMax.y), tMax.z);
+
+    if (tNear > tFar || tFar < 0.0) {
+      return -1.0;
+    }
+
+    float t = max(tNear - 0.01, 0.0);
+    const int MAX_STEPS = 32;
+    const float MIN_DIST = 0.01;
+
+    for (int i = 0; i < MAX_STEPS; i++) {
+      vec3 p = localOrigin + t * localDir;
+      float d = sdRoundBox(p, halfSize, radius);
+
+      if (d < MIN_DIST) {
+        return t;
+      }
+
+      t += d;
+
+      if (t > tFar) {
+        break;
+      }
+    }
+
+    return -1.0;
   }
 
   // Ray-plane intersection
@@ -196,10 +323,16 @@ const FRAGMENT_SHADER = `
       if (t > 0.0) return true;
     }
 
-    // Check boxes
+    // Check boxes (use rounded or sharp depending on radius)
     for (int i = 0; i < MAX_BOXES; i++) {
       if (i >= u_boxCount) break;
-      float t = intersectBoxSimple(shadowOrigin, lightDir, u_boxCenters[i], u_boxSizes[i], u_boxRotations[i]);
+      float radius = u_boxRadii[i];
+      float t;
+      if (radius > 0.0) {
+        t = intersectRoundBoxSimple(shadowOrigin, lightDir, u_boxCenters[i], u_boxSizes[i], radius, u_boxRotations[i]);
+      } else {
+        t = intersectBoxSimple(shadowOrigin, lightDir, u_boxCenters[i], u_boxSizes[i], u_boxRotations[i]);
+      }
       if (t > 0.0) return true;
     }
 
@@ -243,20 +376,36 @@ const FRAGMENT_SHADER = `
       }
     }
 
-    // Check boxes
+    // Check boxes (use rounded or sharp depending on radius)
     for (int i = 0; i < MAX_BOXES; i++) {
       if (i >= u_boxCount) break;
 
       vec3 boxNormal;
-      float t = intersectBox(
-        rayOrigin,
-        rayDir,
-        u_boxCenters[i],
-        u_boxSizes[i],
-        u_boxRotations[i],
-        u_boxRotationsInv[i],
-        boxNormal
-      );
+      float radius = u_boxRadii[i];
+      float t;
+
+      if (radius > 0.0) {
+        t = intersectRoundBox(
+          rayOrigin,
+          rayDir,
+          u_boxCenters[i],
+          u_boxSizes[i],
+          radius,
+          u_boxRotations[i],
+          u_boxRotationsInv[i],
+          boxNormal
+        );
+      } else {
+        t = intersectBox(
+          rayOrigin,
+          rayDir,
+          u_boxCenters[i],
+          u_boxSizes[i],
+          u_boxRotations[i],
+          u_boxRotationsInv[i],
+          boxNormal
+        );
+      }
 
       if (t > 0.0 && t < closestT) {
         closestT = t;
@@ -376,6 +525,7 @@ export class RayTracingRenderer {
     boxCenters: WebGLUniformLocation
     boxSizes: WebGLUniformLocation
     boxColors: WebGLUniformLocation
+    boxRadii: WebGLUniformLocation
     boxRotations: WebGLUniformLocation[]
     boxRotationsInv: WebGLUniformLocation[]
     ambientColor: WebGLUniformLocation
@@ -490,6 +640,7 @@ export class RayTracingRenderer {
       boxCenters: gl.getUniformLocation(this.program, 'u_boxCenters')!,
       boxSizes: gl.getUniformLocation(this.program, 'u_boxSizes')!,
       boxColors: gl.getUniformLocation(this.program, 'u_boxColors')!,
+      boxRadii: gl.getUniformLocation(this.program, 'u_boxRadii')!,
       boxRotations,
       boxRotationsInv,
       ambientColor: gl.getUniformLocation(this.program, 'u_ambientColor')!,
@@ -632,6 +783,7 @@ export class RayTracingRenderer {
     const boxCenters = new Float32Array(maxBoxes * 3)
     const boxSizes = new Float32Array(maxBoxes * 3)
     const boxColors = new Float32Array(maxBoxes * 3)
+    const boxRadii = new Float32Array(maxBoxes)
     const identityEuler = { x: 0, y: 0, z: 0 }
 
     for (let i = 0; i < maxBoxes; i++) {
@@ -649,6 +801,8 @@ export class RayTracingRenderer {
         boxColors[i * 3 + 1] = box.color.g
         boxColors[i * 3 + 2] = box.color.b
 
+        boxRadii[i] = box.geometry.radius ?? 0
+
         const euler = box.geometry.rotation ?? identityEuler
         gl.uniformMatrix3fv(this.uniforms.boxRotations[i]!, false, this.eulerToMatrix(euler))
         gl.uniformMatrix3fv(this.uniforms.boxRotationsInv[i]!, false, this.eulerToMatrixInverse(euler))
@@ -662,6 +816,7 @@ export class RayTracingRenderer {
     gl.uniform3fv(this.uniforms.boxCenters, boxCenters)
     gl.uniform3fv(this.uniforms.boxSizes, boxSizes)
     gl.uniform3fv(this.uniforms.boxColors, boxColors)
+    gl.uniform1fv(this.uniforms.boxRadii, boxRadii)
 
     // Set ambient light uniforms
     gl.uniform3f(

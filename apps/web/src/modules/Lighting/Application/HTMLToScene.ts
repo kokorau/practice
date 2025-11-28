@@ -29,6 +29,8 @@ export interface ParsedElement {
   readonly backgroundColor: Color
   /** Nesting depth (0 = root) */
   readonly depth: number
+  /** Border radius in pixels (for rounded corners) */
+  readonly borderRadius?: number
 }
 
 /**

@@ -151,6 +151,18 @@ export const HTMLToSceneAdapter: HTMLToScenePort = {
       // Only include elements with visible background
       if (backgroundColor) {
         const depth = getDepth(element, root)
+
+        // Parse border-radius (take the first value if multiple)
+        // CSS border-radius can be "8px", "8px 4px", etc.
+        const borderRadiusStr = style.borderRadius
+        let borderRadius: number | undefined
+        if (borderRadiusStr) {
+          const match = borderRadiusStr.match(/^([\d.]+)px/)
+          if (match) {
+            borderRadius = parseFloat(match[1]!)
+          }
+        }
+
         elements.push({
           x: rect.left - viewport.scrollX,
           y: rect.top - viewport.scrollY,
@@ -158,6 +170,7 @@ export const HTMLToSceneAdapter: HTMLToScenePort = {
           height: rect.height,
           backgroundColor,
           depth,
+          ...(borderRadius && borderRadius > 0 && { borderRadius }),
         })
       }
 
@@ -206,7 +219,9 @@ export const HTMLToSceneAdapter: HTMLToScenePort = {
       const box = $SceneObject.createBox(
         $Geometry.createBox(
           $Vector3.create(worldPos.x, worldPos.y, worldPos.z),
-          $Vector3.create(el.width, el.height, DEPTH_UNIT * 0.5) // Thin boxes
+          $Vector3.create(el.width, el.height, DEPTH_UNIT * 0.5), // Thin boxes
+          undefined, // rotation
+          el.borderRadius // corner radius
         ),
         el.backgroundColor
       )

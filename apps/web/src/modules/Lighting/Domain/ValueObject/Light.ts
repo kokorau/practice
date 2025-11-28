@@ -46,4 +46,14 @@ export const $Light = {
     color,
     intensity: Math.max(0, intensity),
   }),
+
+  /**
+   * Calculate the intensity contribution of a directional light toward a specific direction
+   * Returns intensity * max(0, dot(direction, -lightDir))
+   */
+  intensityToward: (light: DirectionalLight, direction: Vector3): number => {
+    const toLightDir = $Vector3.scale(light.direction, -1)
+    const factor = Math.max(0, $Vector3.dot(direction, toLightDir))
+    return light.intensity * factor
+  },
 }
