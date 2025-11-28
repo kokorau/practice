@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { RayTracingRenderer, HTMLToSceneAdapter, $Scene, createPCFShadowShader } from '../modules/Lighting/Infra'
 import { $Light, $Color } from '../modules/Lighting/Domain/ValueObject'
 import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
-import type { Viewport } from '../modules/Lighting/Application'
+import { computeBoxShadows, type Viewport, type BoxShadowResult } from '../modules/Lighting/Application'
 
 const htmlContainerRef = ref<HTMLElement | null>(null)
 const sampleHtmlRef = ref<HTMLElement | null>(null)
@@ -19,6 +19,9 @@ const debugInfo = ref({
   cameraPosition: { x: 0, y: 0, z: 0 },
   cameraSize: { width: 0, height: 0 },
 })
+
+// Box shadow results
+const boxShadows = ref<BoxShadowResult[]>([])
 
 const updateScene = () => {
   if (!htmlContainerRef.value || !sampleHtmlRef.value || !canvasRef.value || !renderer) return
@@ -82,6 +85,14 @@ const updateScene = () => {
   }
 
   renderer.render(scene, camera)
+
+  // Compute box shadows from scene
+  boxShadows.value = computeBoxShadows(scene, {
+    shadowOpacity: 0.25,
+    depthScale: 0.5,
+    blurScale: 2.0,
+  })
+  console.log('Box shadows:', boxShadows.value.slice(0, 5))
 }
 
 onMounted(() => {
@@ -198,7 +209,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Debug Panel -->
-    <div class="fixed bottom-4 right-4 bg-black/80 text-white text-xs font-mono p-3 rounded-lg max-w-xs">
+    <div class="fixed bottom-4 right-4 bg-black/80 text-white text-xs font-mono p-3 rounded-lg max-w-sm max-h-96 overflow-auto">
       <div class="font-bold mb-2 text-green-400">Scene Debug</div>
       <div class="space-y-1">
         <div>Viewport: {{ debugInfo.viewport.width.toFixed(0) }} x {{ debugInfo.viewport.height.toFixed(0) }}</div>
@@ -208,6 +219,17 @@ onUnmounted(() => {
         <div>Lights: {{ debugInfo.lightsCount }}</div>
         <div class="border-t border-gray-600 pt-1 mt-1">Camera pos: ({{ debugInfo.cameraPosition.x.toFixed(1) }}, {{ debugInfo.cameraPosition.y.toFixed(1) }}, {{ debugInfo.cameraPosition.z.toFixed(1) }})</div>
         <div>Camera size: {{ debugInfo.cameraSize.width.toFixed(0) }} x {{ debugInfo.cameraSize.height.toFixed(0) }}</div>
+      </div>
+
+      <!-- Box Shadow Output -->
+      <div class="border-t border-gray-600 pt-2 mt-2">
+        <div class="font-bold mb-1 text-yellow-400">Box Shadows ({{ boxShadows.length }})</div>
+        <div class="space-y-1 text-[10px]">
+          <div v-for="(shadow, i) in boxShadows.slice(0, 8)" :key="i" class="bg-gray-900 p-1 rounded">
+            <span class="text-gray-500">[{{ shadow.objectIndex }}]</span> {{ shadow.boxShadow }}
+          </div>
+          <div v-if="boxShadows.length > 8" class="text-gray-500">... and {{ boxShadows.length - 8 }} more</div>
+        </div>
       </div>
     </div>
   </div>
