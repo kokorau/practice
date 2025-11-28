@@ -1,12 +1,14 @@
 import type { Vector3 } from '../../../Vector/Domain/ValueObject'
 
 /**
- * Infinite plane defined by a point and normal
+ * Finite rectangular plane defined by center, normal, and size
  */
 export interface PlaneGeometry {
   readonly type: 'plane'
-  readonly point: Vector3 // A point on the plane
+  readonly point: Vector3 // Center point of the plane
   readonly normal: Vector3 // Normal vector (normalized)
+  readonly width?: number // Width (along right vector), undefined = infinite
+  readonly height?: number // Height (along up vector), undefined = infinite
 }
 
 /**

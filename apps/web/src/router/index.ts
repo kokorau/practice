@@ -14,6 +14,11 @@ const router = createRouter({
       name: 'photo-filter',
       component: () => import('../views/PhotoFilterView.vue'),
     },
+    {
+      path: '/ray-tracing',
+      name: 'ray-tracing',
+      component: () => import('../views/RayTracingView.vue'),
+    },
   ],
 })
 

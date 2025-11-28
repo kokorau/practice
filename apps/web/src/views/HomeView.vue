@@ -6,14 +6,9 @@ const pages = [
     description: 'LUTやカラーグレーディングで写真にフィルター効果を適用',
   },
   {
-    to: '/css-lighting',
-    title: 'CSS Lighting',
-    description: 'CSSで光源と影を表現するライティングシミュレーション',
-  },
-  {
-    to: '/css-lighting-demo',
-    title: 'CSS Lighting Demo',
-    description: '実際のUIでライティング効果を確認するデモページ',
+    to: '/ray-tracing',
+    title: 'Ray Tracing',
+    description: 'シンプルなレイトレーシングで光の物理シミュレーション',
   },
 ]
 </script>
