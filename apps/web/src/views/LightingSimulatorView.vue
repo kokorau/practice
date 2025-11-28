@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { RayTracingRenderer, HTMLToSceneAdapter, $Scene, createPCFShadowShader } from '../modules/Lighting/Infra'
 import { $Light, $Color } from '../modules/Lighting/Domain/ValueObject'
 import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
@@ -70,10 +70,11 @@ const lightPresets: LightPreset[] = [
 const currentPreset = ref<string | null>('Default')
 
 // Light settings (reactive for UI binding)
+const defaultPreset = lightPresets[0]!
 const lightSettings = reactive({
-  primary: { ...lightPresets[0].primary },
-  secondary: { ...lightPresets[0].secondary },
-  shadowBlur: lightPresets[0].shadowBlur,
+  primary: { ...defaultPreset.primary },
+  secondary: { ...defaultPreset.secondary },
+  shadowBlur: defaultPreset.shadowBlur,
 })
 
 // Apply preset
