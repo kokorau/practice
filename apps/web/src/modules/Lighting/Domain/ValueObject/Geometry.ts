@@ -1,4 +1,4 @@
-import type { Vector3 } from '../../../Vector/Domain/ValueObject'
+import { $Vector3, type Vector3 } from '../../../Vector/Domain/ValueObject'
 
 /**
  * Finite rectangular plane defined by center, normal, and size
@@ -26,3 +26,29 @@ export interface BoxGeometry {
  * Union type for all geometry types
  */
 export type Geometry = PlaneGeometry | BoxGeometry
+
+export const $Geometry = {
+  createPlane: (
+    point: Vector3,
+    normal: Vector3,
+    width?: number,
+    height?: number
+  ): PlaneGeometry => ({
+    type: 'plane',
+    point,
+    normal: $Vector3.normalize(normal),
+    ...(width !== undefined && { width: Math.abs(width) }),
+    ...(height !== undefined && { height: Math.abs(height) }),
+  }),
+
+  createBox: (
+    center: Vector3,
+    size: Vector3,
+    rotation?: Vector3
+  ): BoxGeometry => ({
+    type: 'box',
+    center,
+    size: { x: Math.abs(size.x), y: Math.abs(size.y), z: Math.abs(size.z) },
+    ...(rotation !== undefined && { rotation }),
+  }),
+}

@@ -8,3 +8,10 @@ export interface SceneObject {
   readonly geometry: Geometry
   readonly material: Material
 }
+
+export const $SceneObject = {
+  create: (geometry: Geometry, material: Material): SceneObject => ({
+    geometry,
+    material,
+  }),
+}

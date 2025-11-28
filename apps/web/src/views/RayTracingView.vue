@@ -2,7 +2,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RayTracingRenderer } from '../modules/Lighting/Infra'
 import type { ScenePlane, SceneBox } from '../modules/Lighting/Infra'
-import type { OrthographicCamera, AmbientLight, DirectionalLight } from '../modules/Lighting/Domain/ValueObject'
+import { $Camera, $Light, $Geometry, $Color } from '../modules/Lighting/Domain/ValueObject'
+import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let renderer: RayTracingRenderer | null = null
@@ -10,56 +11,36 @@ let renderer: RayTracingRenderer | null = null
 const WIDTH = 400
 const HEIGHT = 400
 
-const camera: OrthographicCamera = {
-  type: 'orthographic',
-  position: { x: 0, y: 0, z: 0 },
-  lookAt: { x: 0, y: 0, z: 1 },
-  up: { x: 0, y: 1, z: 0 },
-  width: 2,
-  height: 2,
-}
+const camera = $Camera.createOrthographic(
+  $Vector3.create(0, 0, 0),
+  $Vector3.create(0, 0, 1),
+  $Vector3.create(0, 1, 0),
+  2,
+  2
+)
 
-const ambientLight: AmbientLight = {
-  type: 'ambient',
-  color: [1.0, 1.0, 1.0],
-  intensity: 0.2, // Low ambient for contrast
-}
+const ambientLight = $Light.createAmbient($Color.create(1.0, 1.0, 1.0), 0.2)
 
-const directionalLights: DirectionalLight[] = [
-  {
-    type: 'directional',
-    direction: { x: 1, y: -1, z: 2 }, // From left
-    color: [1.0, 0.2, 0.1], // Red
-    intensity: 0.6,
-  },
-  {
-    type: 'directional',
-    direction: { x: 1, y: -2, z: 2 }, // From right
-    color: [0.1, 0.3, 1.0], // Blue
-    intensity: 0.6,
-  },
+const directionalLights = [
+  $Light.createDirectional($Vector3.create(1, -1, 2), $Color.create(1.0, 0.2, 0.1), 0.6),
+  $Light.createDirectional($Vector3.create(1, -2, 2), $Color.create(0.1, 0.3, 1.0), 0.6),
 ]
 
 const planes: ScenePlane[] = [
   {
-    geometry: {
-      type: 'plane',
-      point: { x: 0, y: 0, z: 5 },
-      normal: { x: 0, y: 0, z: -1 },
-    },
-    color: [255, 255, 255], // White background plane (infinite)
+    geometry: $Geometry.createPlane($Vector3.create(0, 0, 5), $Vector3.create(0, 0, -1)),
+    color: $Color.fromRgb255(255, 255, 255),
   },
 ]
 
 const boxes: SceneBox[] = [
   {
-    geometry: {
-      type: 'box',
-      center: { x: 0, y: 0.05, z: 4.5 },
-      size: { x: 0.3, y: 0.3, z: 0.3 },
-      rotation: { x: Math.PI / 6, y: Math.PI / 4, z: 0 }, // Rotated 30° on X, 45° on Y
-    },
-    color: [100, 150, 255], // Blue box on the plane
+    geometry: $Geometry.createBox(
+      $Vector3.create(0, 0.05, 4.5),
+      $Vector3.create(0.3, 0.3, 0.3),
+      $Vector3.create(Math.PI / 6, Math.PI / 4, 0)
+    ),
+    color: $Color.fromRgb255(100, 150, 255),
   },
 ]
 

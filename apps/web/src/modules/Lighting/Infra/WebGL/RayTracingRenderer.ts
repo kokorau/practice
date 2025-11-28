@@ -3,7 +3,7 @@
  * GPU でレイトレーシングを行う
  */
 
-import type { OrthographicCamera, PlaneGeometry, BoxGeometry, AmbientLight, DirectionalLight } from '../../Domain/ValueObject'
+import type { OrthographicCamera, PlaneGeometry, BoxGeometry, AmbientLight, DirectionalLight, Color } from '../../Domain/ValueObject'
 
 // Vertex Shader - フルスクリーンクワッド
 const VERTEX_SHADER = `
@@ -294,12 +294,12 @@ const FRAGMENT_SHADER = `
 
 export interface ScenePlane {
   geometry: PlaneGeometry
-  color: readonly [number, number, number] // RGB 0-255
+  color: Color
 }
 
 export interface SceneBox {
   geometry: BoxGeometry
-  color: readonly [number, number, number] // RGB 0-255
+  color: Color
 }
 
 export interface RenderOptions {
@@ -521,7 +521,7 @@ export class RayTracingRenderer {
       camera,
       planes = [],
       boxes = [],
-      ambientLight = { type: 'ambient', color: [1, 1, 1], intensity: 1 },
+      ambientLight = { type: 'ambient', color: { r: 1, g: 1, b: 1 }, intensity: 1 },
       directionalLights = [],
       backgroundColor = [20, 20, 40],
     } = options
@@ -561,9 +561,9 @@ export class RayTracingRenderer {
       planeNormals[i * 3 + 1] = plane.geometry.normal.y
       planeNormals[i * 3 + 2] = plane.geometry.normal.z
 
-      planeColors[i * 3] = plane.color[0] / 255
-      planeColors[i * 3 + 1] = plane.color[1] / 255
-      planeColors[i * 3 + 2] = plane.color[2] / 255
+      planeColors[i * 3] = plane.color.r
+      planeColors[i * 3 + 1] = plane.color.g
+      planeColors[i * 3 + 2] = plane.color.b
 
       planeSizes[i * 2] = plane.geometry.width ?? -1
       planeSizes[i * 2 + 1] = plane.geometry.height ?? -1
@@ -595,9 +595,9 @@ export class RayTracingRenderer {
         boxSizes[i * 3 + 1] = box.geometry.size.y
         boxSizes[i * 3 + 2] = box.geometry.size.z
 
-        boxColors[i * 3] = box.color[0] / 255
-        boxColors[i * 3 + 1] = box.color[1] / 255
-        boxColors[i * 3 + 2] = box.color[2] / 255
+        boxColors[i * 3] = box.color.r
+        boxColors[i * 3 + 1] = box.color.g
+        boxColors[i * 3 + 2] = box.color.b
 
         const euler = box.geometry.rotation ?? identityEuler
         gl.uniformMatrix3fv(this.uniforms.boxRotations[i]!, false, this.eulerToMatrix(euler))
@@ -616,9 +616,9 @@ export class RayTracingRenderer {
     // Set ambient light uniforms
     gl.uniform3f(
       this.uniforms.ambientColor,
-      ambientLight.color[0],
-      ambientLight.color[1],
-      ambientLight.color[2]
+      ambientLight.color.r,
+      ambientLight.color.g,
+      ambientLight.color.b
     )
     gl.uniform1f(this.uniforms.ambientIntensity, ambientLight.intensity)
 
@@ -639,9 +639,9 @@ export class RayTracingRenderer {
       lightDirs[i * 3 + 1] = -dir.y
       lightDirs[i * 3 + 2] = -dir.z
 
-      lightColors[i * 3] = light.color[0]
-      lightColors[i * 3 + 1] = light.color[1]
-      lightColors[i * 3 + 2] = light.color[2]
+      lightColors[i * 3] = light.color.r
+      lightColors[i * 3 + 1] = light.color.g
+      lightColors[i * 3 + 2] = light.color.b
 
       lightIntensities[i] = light.intensity
     }

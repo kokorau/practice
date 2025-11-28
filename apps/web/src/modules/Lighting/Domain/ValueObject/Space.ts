@@ -10,3 +10,15 @@ export interface Space {
   readonly lights: readonly Light[]
   readonly camera: Camera
 }
+
+export const $Space = {
+  create: (
+    objects: readonly SceneObject[],
+    lights: readonly Light[],
+    camera: Camera
+  ): Space => ({
+    objects,
+    lights,
+    camera,
+  }),
+}

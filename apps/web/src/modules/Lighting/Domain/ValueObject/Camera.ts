@@ -1,4 +1,4 @@
-import type { Vector3 } from '../../../Vector/Domain/ValueObject'
+import { $Vector3, type Vector3 } from '../../../Vector/Domain/ValueObject'
 
 /**
  * Base camera properties
@@ -31,3 +31,35 @@ export interface OrthographicCamera extends CameraBase {
  * Union type for all camera types
  */
 export type Camera = PerspectiveCamera | OrthographicCamera
+
+export const $Camera = {
+  createPerspective: (
+    position: Vector3,
+    lookAt: Vector3,
+    up: Vector3,
+    fov: number,
+    aspectRatio: number
+  ): PerspectiveCamera => ({
+    type: 'perspective',
+    position,
+    lookAt,
+    up: $Vector3.normalize(up),
+    fov: Math.max(1, Math.min(179, fov)),
+    aspectRatio: Math.abs(aspectRatio),
+  }),
+
+  createOrthographic: (
+    position: Vector3,
+    lookAt: Vector3,
+    up: Vector3,
+    width: number,
+    height: number
+  ): OrthographicCamera => ({
+    type: 'orthographic',
+    position,
+    lookAt,
+    up: $Vector3.normalize(up),
+    width: Math.abs(width),
+    height: Math.abs(height),
+  }),
+}
