@@ -1,4 +1,5 @@
 export { type Srgb, $Srgb } from './Srgb'
+export { type LinearRgb, $LinearRgb } from './LinearRgb'
 export { type Hex, $Hex } from './Hex'
 export { type Oklab, $Oklab } from './Oklab'
 export { type Oklch, $Oklch } from './Oklch'

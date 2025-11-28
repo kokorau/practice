@@ -73,6 +73,16 @@ const FRAGMENT_SHADER_HEADER = `
     up = cross(normal, right);
   }
 
+  // sRGB to Linear conversion (gamma removal)
+  vec3 srgbToLinear(vec3 srgb) {
+    return pow(srgb, vec3(2.2));
+  }
+
+  // Linear to sRGB conversion (gamma application)
+  vec3 linearToSrgb(vec3 linear) {
+    return pow(linear, vec3(1.0 / 2.2));
+  }
+
   // Simple hash function for noise
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -508,8 +518,12 @@ const FRAGMENT_SHADER_BODY = `
     if (hasHit) {
       vec3 hitPoint = rayOrigin + closestT * rayDir;
 
+      // Convert surface color from sRGB to linear for correct lighting calculation
+      vec3 linearSurfaceColor = srgbToLinear(hitSurfaceColor);
+      vec3 linearAmbientColor = srgbToLinear(u_ambientColor);
+
       // Ambient lighting (always applied)
-      vec3 ambient = hitSurfaceColor * u_ambientColor * u_ambientIntensity;
+      vec3 ambient = linearSurfaceColor * linearAmbientColor * u_ambientIntensity;
 
       // Accumulate diffuse from all directional lights
       vec3 diffuse = vec3(0.0);
@@ -520,12 +534,14 @@ const FRAGMENT_SHADER_BODY = `
         float NdotL = max(0.0, dot(hitNormal, lightDir));
 
         if (NdotL > 0.0) {
+          vec3 linearLightColor = srgbToLinear(u_lightColors[i]);
           float shadow = calcShadow(hitPoint, lightDir, v_uv);
-          diffuse += hitSurfaceColor * u_lightColors[i] * u_lightIntensities[i] * NdotL * shadow;
+          diffuse += linearSurfaceColor * linearLightColor * u_lightIntensities[i] * NdotL * shadow;
         }
       }
 
-      hitColor = ambient + diffuse;
+      // Calculate final color in linear space, then convert back to sRGB
+      hitColor = linearToSrgb(ambient + diffuse);
     }
 
     gl_FragColor = vec4(hitColor, 1.0);
