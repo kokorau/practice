@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RayTracingRenderer } from '../modules/Lighting/Infra'
 import type { ScenePlane, SceneBox } from '../modules/Lighting/Infra'
-import type { OrthographicCamera, AmbientLight } from '../modules/Lighting/Domain/ValueObject'
+import type { OrthographicCamera, AmbientLight, DirectionalLight } from '../modules/Lighting/Domain/ValueObject'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let renderer: RayTracingRenderer | null = null
@@ -21,7 +21,14 @@ const camera: OrthographicCamera = {
 
 const ambientLight: AmbientLight = {
   type: 'ambient',
-  color: [1.0, 0.9, 0.8], // Warm light
+  color: [1.0, 1.0, 1.0],
+  intensity: 0.2, // Low ambient for contrast
+}
+
+const directionalLight: DirectionalLight = {
+  type: 'directional',
+  direction: { x: -1, y: -1, z: 1 }, // From top-left-front
+  color: [1.0, 0.95, 0.9], // Slightly warm
   intensity: 0.8,
 }
 
@@ -63,7 +70,7 @@ onMounted(() => {
   if (!canvas) return
 
   renderer = new RayTracingRenderer(canvas)
-  renderer.render({ camera, planes, boxes, ambientLight })
+  renderer.render({ camera, planes, boxes, ambientLight, directionalLight })
 })
 
 onUnmounted(() => {

@@ -3,7 +3,7 @@
  * GPU でレイトレーシングを行う
  */
 
-import type { OrthographicCamera, PlaneGeometry, BoxGeometry, AmbientLight } from '../../Domain/ValueObject'
+import type { OrthographicCamera, PlaneGeometry, BoxGeometry, AmbientLight, DirectionalLight } from '../../Domain/ValueObject'
 
 // Vertex Shader - フルスクリーンクワッド
 const VERTEX_SHADER = `
@@ -51,6 +51,11 @@ const FRAGMENT_SHADER = `
   // Ambient light
   uniform vec3 u_ambientColor;
   uniform float u_ambientIntensity;
+
+  // Directional light
+  uniform vec3 u_directionalDir; // Direction TO the light (normalized)
+  uniform vec3 u_directionalColor;
+  uniform float u_directionalIntensity;
 
   // Background color
   uniform vec3 u_backgroundColor;
@@ -105,7 +110,8 @@ const FRAGMENT_SHADER = `
   // Ray-OBB intersection (Oriented Bounding Box)
   // Transform ray to box local space, then do AABB test
   // Returns t (distance), or -1.0 if no hit
-  float intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxCenter, vec3 boxSize, mat3 rotMatrix) {
+  // Also outputs the hit normal in world space
+  float intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxCenter, vec3 boxSize, mat3 rotMatrix, mat3 rotMatrixInv, out vec3 normal) {
     // Transform ray to box local space
     vec3 localOrigin = rotMatrix * (rayOrigin - boxCenter);
     vec3 localDir = rotMatrix * rayDir;
@@ -130,7 +136,26 @@ const FRAGMENT_SHADER = `
       return -1.0;
     }
 
-    return tNear > 0.0 ? tNear : tFar;
+    float t = tNear > 0.0 ? tNear : tFar;
+
+    // Calculate local normal based on which face was hit
+    vec3 hitPoint = localOrigin + t * localDir;
+    vec3 localNormal = vec3(0.0);
+
+    // Find which face was hit by checking which component is closest to the box surface
+    vec3 d = abs(hitPoint) - halfSize;
+    if (d.x > d.y && d.x > d.z) {
+      localNormal = vec3(sign(hitPoint.x), 0.0, 0.0);
+    } else if (d.y > d.z) {
+      localNormal = vec3(0.0, sign(hitPoint.y), 0.0);
+    } else {
+      localNormal = vec3(0.0, 0.0, sign(hitPoint.z));
+    }
+
+    // Transform normal back to world space
+    normal = normalize(rotMatrixInv * localNormal);
+
+    return t;
   }
 
   void main() {
@@ -147,6 +172,7 @@ const FRAGMENT_SHADER = `
     float closestT = 1e10;
     vec3 hitColor = u_backgroundColor;
     vec3 hitSurfaceColor = vec3(0.0);
+    vec3 hitNormal = vec3(0.0);
     bool hasHit = false;
 
     // Check planes
@@ -164,6 +190,7 @@ const FRAGMENT_SHADER = `
       if (t > 0.0 && t < closestT) {
         closestT = t;
         hitSurfaceColor = u_planeColors[i];
+        hitNormal = u_planeNormals[i];
         hasHit = true;
       }
     }
@@ -172,25 +199,34 @@ const FRAGMENT_SHADER = `
     for (int i = 0; i < MAX_BOXES; i++) {
       if (i >= u_boxCount) break;
 
+      vec3 boxNormal;
       float t = intersectBox(
         rayOrigin,
         rayDir,
         u_boxCenters[i],
         u_boxSizes[i],
-        u_boxRotations[i]
+        u_boxRotations[i],
+        u_boxRotationsInv[i],
+        boxNormal
       );
 
       if (t > 0.0 && t < closestT) {
         closestT = t;
         hitSurfaceColor = u_boxColors[i];
+        hitNormal = boxNormal;
         hasHit = true;
       }
     }
 
     if (hasHit) {
-      // Apply ambient lighting: surfaceColor * ambientColor * intensity
+      // Ambient lighting
       vec3 ambient = hitSurfaceColor * u_ambientColor * u_ambientIntensity;
-      hitColor = ambient;
+
+      // Directional lighting (Lambertian diffuse)
+      float NdotL = max(0.0, dot(hitNormal, u_directionalDir));
+      vec3 diffuse = hitSurfaceColor * u_directionalColor * u_directionalIntensity * NdotL;
+
+      hitColor = ambient + diffuse;
     }
 
     gl_FragColor = vec4(hitColor, 1.0);
@@ -212,6 +248,7 @@ export interface RenderOptions {
   planes?: ScenePlane[]
   boxes?: SceneBox[]
   ambientLight?: AmbientLight
+  directionalLight?: DirectionalLight
   backgroundColor?: readonly [number, number, number]
 }
 
@@ -240,6 +277,9 @@ export class RayTracingRenderer {
     boxRotationsInv: WebGLUniformLocation[]
     ambientColor: WebGLUniformLocation
     ambientIntensity: WebGLUniformLocation
+    directionalDir: WebGLUniformLocation
+    directionalColor: WebGLUniformLocation
+    directionalIntensity: WebGLUniformLocation
     backgroundColor: WebGLUniformLocation
   }
 
@@ -350,6 +390,9 @@ export class RayTracingRenderer {
       boxRotationsInv,
       ambientColor: gl.getUniformLocation(this.program, 'u_ambientColor')!,
       ambientIntensity: gl.getUniformLocation(this.program, 'u_ambientIntensity')!,
+      directionalDir: gl.getUniformLocation(this.program, 'u_directionalDir')!,
+      directionalColor: gl.getUniformLocation(this.program, 'u_directionalColor')!,
+      directionalIntensity: gl.getUniformLocation(this.program, 'u_directionalIntensity')!,
       backgroundColor: gl.getUniformLocation(this.program, 'u_backgroundColor')!,
     }
   }
@@ -418,6 +461,7 @@ export class RayTracingRenderer {
       planes = [],
       boxes = [],
       ambientLight = { type: 'ambient', color: [1, 1, 1], intensity: 1 },
+      directionalLight,
       backgroundColor = [20, 20, 40],
     } = options
 
@@ -516,6 +560,25 @@ export class RayTracingRenderer {
       ambientLight.color[2]
     )
     gl.uniform1f(this.uniforms.ambientIntensity, ambientLight.intensity)
+
+    // Set directional light uniforms
+    if (directionalLight) {
+      // Normalize and negate direction (shader expects direction TO the light)
+      const dir = this.normalize(directionalLight.direction)
+      gl.uniform3f(this.uniforms.directionalDir, -dir.x, -dir.y, -dir.z)
+      gl.uniform3f(
+        this.uniforms.directionalColor,
+        directionalLight.color[0],
+        directionalLight.color[1],
+        directionalLight.color[2]
+      )
+      gl.uniform1f(this.uniforms.directionalIntensity, directionalLight.intensity)
+    } else {
+      // No directional light
+      gl.uniform3f(this.uniforms.directionalDir, 0, 0, 0)
+      gl.uniform3f(this.uniforms.directionalColor, 0, 0, 0)
+      gl.uniform1f(this.uniforms.directionalIntensity, 0)
+    }
 
     gl.uniform3f(
       this.uniforms.backgroundColor,
