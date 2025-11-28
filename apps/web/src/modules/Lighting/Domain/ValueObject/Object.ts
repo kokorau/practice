@@ -1,21 +1,10 @@
-import type { Point3, Vector3 } from '../../../Vector/Domain/ValueObject'
+import type { Geometry } from './Geometry'
+import type { Material } from './Material'
 
 /**
- * Material properties for light interaction
- */
-export interface Material {
-  readonly albedo: readonly [number, number, number] // RGB reflectance (0-1)
-  readonly roughness: number // 0 = mirror, 1 = diffuse
-  readonly metallic: number // 0 = dielectric, 1 = metal
-  readonly emissive: readonly [number, number, number] // RGB emission
-}
-
-/**
- * Base interface for scene objects
+ * Scene object combining geometry and material
  */
 export interface SceneObject {
-  readonly position: Point3
-  readonly rotation: Vector3 // Euler angles
-  readonly scale: Vector3
+  readonly geometry: Geometry
   readonly material: Material
 }
