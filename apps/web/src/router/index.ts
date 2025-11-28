@@ -19,6 +19,11 @@ const router = createRouter({
       name: 'ray-tracing',
       component: () => import('../views/RayTracingView.vue'),
     },
+    {
+      path: '/lighting-simulator',
+      name: 'lighting-simulator',
+      component: () => import('../views/LightingSimulatorView.vue'),
+    },
   ],
 })
 

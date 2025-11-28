@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { RayTracingRenderer } from '../modules/Lighting/Infra'
-import type { ScenePlane, SceneBox } from '../modules/Lighting/Infra'
+import { RayTracingRenderer, $Scene, $SceneObject } from '../modules/Lighting/Infra'
 import { $Camera, $Light, $Geometry, $Color } from '../modules/Lighting/Domain/ValueObject'
 import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
 
@@ -19,37 +18,31 @@ const camera = $Camera.createOrthographic(
   2
 )
 
-const ambientLight = $Light.createAmbient($Color.create(1.0, 1.0, 1.0), 0.2)
-
-const directionalLights = [
+const scene = $Scene.add(
+  $Scene.create(),
+  $Light.createAmbient($Color.create(1.0, 1.0, 1.0), 0.2),
   $Light.createDirectional($Vector3.create(1, -1, 2), $Color.create(1.0, 0.2, 0.1), 0.6),
   $Light.createDirectional($Vector3.create(1, -2, 2), $Color.create(0.1, 0.3, 1.0), 0.6),
-]
-
-const planes: ScenePlane[] = [
-  {
-    geometry: $Geometry.createPlane($Vector3.create(0, 0, 5), $Vector3.create(0, 0, -1)),
-    color: $Color.fromRgb255(255, 255, 255),
-  },
-]
-
-const boxes: SceneBox[] = [
-  {
-    geometry: $Geometry.createBox(
+  $SceneObject.createPlane(
+    $Geometry.createPlane($Vector3.create(0, 0, 5), $Vector3.create(0, 0, -1)),
+    $Color.fromRgb255(255, 255, 255)
+  ),
+  $SceneObject.createBox(
+    $Geometry.createBox(
       $Vector3.create(0, 0.05, 4.5),
       $Vector3.create(0.3, 0.3, 0.3),
       $Vector3.create(Math.PI / 6, Math.PI / 4, 0)
     ),
-    color: $Color.fromRgb255(100, 150, 255),
-  },
-]
+    $Color.fromRgb255(100, 150, 255)
+  ),
+)
 
 onMounted(() => {
   const canvas = canvasRef.value
   if (!canvas) return
 
   renderer = new RayTracingRenderer(canvas)
-  renderer.render({ camera, planes, boxes, ambientLight, directionalLights })
+  renderer.render(scene, camera)
 })
 
 onUnmounted(() => {

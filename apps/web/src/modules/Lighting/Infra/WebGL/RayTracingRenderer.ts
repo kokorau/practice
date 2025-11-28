@@ -3,7 +3,7 @@
  * GPU でレイトレーシングを行う
  */
 
-import type { OrthographicCamera, PlaneGeometry, BoxGeometry, AmbientLight, DirectionalLight, Color } from '../../Domain/ValueObject'
+import type { OrthographicCamera, PlaneGeometry, BoxGeometry, Light, AmbientLight, DirectionalLight, Color } from '../../Domain/ValueObject'
 
 // Vertex Shader - フルスクリーンクワッド
 const VERTEX_SHADER = `
@@ -293,22 +293,66 @@ const FRAGMENT_SHADER = `
 `
 
 export interface ScenePlane {
+  type: 'plane'
   geometry: PlaneGeometry
   color: Color
 }
 
 export interface SceneBox {
+  type: 'box'
   geometry: BoxGeometry
   color: Color
 }
 
-export interface RenderOptions {
-  camera: OrthographicCamera
-  planes?: ScenePlane[]
-  boxes?: SceneBox[]
-  ambientLight?: AmbientLight
-  directionalLights?: DirectionalLight[]
-  backgroundColor?: readonly [number, number, number]
+export type SceneObject = ScenePlane | SceneBox
+
+export const $SceneObject = {
+  createPlane: (geometry: PlaneGeometry, color: Color): ScenePlane => ({
+    type: 'plane',
+    geometry,
+    color,
+  }),
+  createBox: (geometry: BoxGeometry, color: Color): SceneBox => ({
+    type: 'box',
+    geometry,
+    color,
+  }),
+}
+
+export interface Scene {
+  readonly objects: SceneObject[]
+  readonly lights: Light[]
+  readonly backgroundColor?: Color
+}
+
+type SceneItem = SceneObject | Light
+
+const isLight = (item: SceneItem): item is Light =>
+  item.type === 'ambient' || item.type === 'directional'
+
+const isSceneObject = (item: SceneItem): item is SceneObject =>
+  item.type === 'plane' || item.type === 'box'
+
+export const $Scene = {
+  create: (params?: {
+    objects?: SceneObject[]
+    lights?: Light[]
+    backgroundColor?: Color
+  }): Scene => ({
+    objects: params?.objects ?? [],
+    lights: params?.lights ?? [],
+    backgroundColor: params?.backgroundColor,
+  }),
+
+  add: (scene: Scene, ...items: SceneItem[]): Scene => {
+    const newObjects = items.filter(isSceneObject)
+    const newLights = items.filter(isLight)
+    return {
+      ...scene,
+      objects: [...scene.objects, ...newObjects],
+      lights: [...scene.lights, ...newLights],
+    }
+  },
 }
 
 export class RayTracingRenderer {
@@ -514,17 +558,23 @@ export class RayTracingRenderer {
     ])
   }
 
-  render(options: RenderOptions): void {
+  render(scene: Scene, camera: OrthographicCamera): void {
     const gl = this.gl
     const canvas = gl.canvas as HTMLCanvasElement
     const {
-      camera,
-      planes = [],
-      boxes = [],
-      ambientLight = { type: 'ambient', color: { r: 1, g: 1, b: 1 }, intensity: 1 },
-      directionalLights = [],
-      backgroundColor = [20, 20, 40],
-    } = options
+      objects,
+      lights,
+      backgroundColor = { r: 20 / 255, g: 20 / 255, b: 40 / 255 },
+    } = scene
+
+    // Separate objects by type
+    const planes = objects.filter((o): o is ScenePlane => o.type === 'plane')
+    const boxes = objects.filter((o): o is SceneBox => o.type === 'box')
+
+    // Separate lights by type
+    const ambientLight = lights.find((l): l is AmbientLight => l.type === 'ambient')
+      ?? { type: 'ambient' as const, color: { r: 1, g: 1, b: 1 }, intensity: 1 }
+    const directionalLights = lights.filter((l): l is DirectionalLight => l.type === 'directional')
 
     gl.viewport(0, 0, canvas.width, canvas.height)
 
@@ -652,9 +702,9 @@ export class RayTracingRenderer {
 
     gl.uniform3f(
       this.uniforms.backgroundColor,
-      backgroundColor[0] / 255,
-      backgroundColor[1] / 255,
-      backgroundColor[2] / 255
+      backgroundColor.r,
+      backgroundColor.g,
+      backgroundColor.b
     )
 
     // Draw

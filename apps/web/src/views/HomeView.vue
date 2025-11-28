@@ -10,6 +10,11 @@ const pages = [
     title: 'Ray Tracing',
     description: 'シンプルなレイトレーシングで光の物理シミュレーション',
   },
+  {
+    to: '/lighting-simulator',
+    title: 'Lighting Simulator',
+    description: 'HTML構造を3D空間にマッピングして照明効果をシミュレート',
+  },
 ]
 </script>
 
