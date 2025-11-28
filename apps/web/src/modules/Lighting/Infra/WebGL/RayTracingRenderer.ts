@@ -3,7 +3,7 @@
  * GPU でレイトレーシングを行う
  */
 
-import type { OrthographicCamera, PlaneGeometry, AmbientLight } from '../../Domain/ValueObject'
+import type { OrthographicCamera, PlaneGeometry, BoxGeometry, AmbientLight } from '../../Domain/ValueObject'
 
 // Vertex Shader - フルスクリーンクワッド
 const VERTEX_SHADER = `
@@ -38,6 +38,15 @@ const FRAGMENT_SHADER = `
   uniform vec3 u_planeNormals[MAX_PLANES];
   uniform vec3 u_planeColors[MAX_PLANES];
   uniform vec2 u_planeSizes[MAX_PLANES]; // width, height (-1 = infinite)
+
+  // Box uniforms (max 8 boxes)
+  const int MAX_BOXES = 8;
+  uniform int u_boxCount;
+  uniform vec3 u_boxCenters[MAX_BOXES];
+  uniform vec3 u_boxSizes[MAX_BOXES];
+  uniform vec3 u_boxColors[MAX_BOXES];
+  uniform mat3 u_boxRotations[MAX_BOXES]; // Rotation matrices (world -> local)
+  uniform mat3 u_boxRotationsInv[MAX_BOXES]; // Inverse rotation matrices (local -> world)
 
   // Ambient light
   uniform vec3 u_ambientColor;
@@ -93,6 +102,37 @@ const FRAGMENT_SHADER = `
     return t;
   }
 
+  // Ray-OBB intersection (Oriented Bounding Box)
+  // Transform ray to box local space, then do AABB test
+  // Returns t (distance), or -1.0 if no hit
+  float intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxCenter, vec3 boxSize, mat3 rotMatrix) {
+    // Transform ray to box local space
+    vec3 localOrigin = rotMatrix * (rayOrigin - boxCenter);
+    vec3 localDir = rotMatrix * rayDir;
+
+    // AABB intersection in local space (centered at origin)
+    vec3 halfSize = boxSize * 0.5;
+    vec3 boxMin = -halfSize;
+    vec3 boxMax = halfSize;
+
+    vec3 invDir = 1.0 / localDir;
+
+    vec3 t1 = (boxMin - localOrigin) * invDir;
+    vec3 t2 = (boxMax - localOrigin) * invDir;
+
+    vec3 tMin = min(t1, t2);
+    vec3 tMax = max(t1, t2);
+
+    float tNear = max(max(tMin.x, tMin.y), tMin.z);
+    float tFar = min(min(tMax.x, tMax.y), tMax.z);
+
+    if (tNear > tFar || tFar < 0.0) {
+      return -1.0;
+    }
+
+    return tNear > 0.0 ? tNear : tFar;
+  }
+
   void main() {
     // Generate ray from orthographic camera
     float offsetU = v_uv.x - 0.5;
@@ -109,6 +149,7 @@ const FRAGMENT_SHADER = `
     vec3 hitSurfaceColor = vec3(0.0);
     bool hasHit = false;
 
+    // Check planes
     for (int i = 0; i < MAX_PLANES; i++) {
       if (i >= u_planeCount) break;
 
@@ -123,6 +164,25 @@ const FRAGMENT_SHADER = `
       if (t > 0.0 && t < closestT) {
         closestT = t;
         hitSurfaceColor = u_planeColors[i];
+        hasHit = true;
+      }
+    }
+
+    // Check boxes
+    for (int i = 0; i < MAX_BOXES; i++) {
+      if (i >= u_boxCount) break;
+
+      float t = intersectBox(
+        rayOrigin,
+        rayDir,
+        u_boxCenters[i],
+        u_boxSizes[i],
+        u_boxRotations[i]
+      );
+
+      if (t > 0.0 && t < closestT) {
+        closestT = t;
+        hitSurfaceColor = u_boxColors[i];
         hasHit = true;
       }
     }
@@ -142,9 +202,15 @@ export interface ScenePlane {
   color: readonly [number, number, number] // RGB 0-255
 }
 
+export interface SceneBox {
+  geometry: BoxGeometry
+  color: readonly [number, number, number] // RGB 0-255
+}
+
 export interface RenderOptions {
   camera: OrthographicCamera
-  planes: ScenePlane[]
+  planes?: ScenePlane[]
+  boxes?: SceneBox[]
   ambientLight?: AmbientLight
   backgroundColor?: readonly [number, number, number]
 }
@@ -166,6 +232,12 @@ export class RayTracingRenderer {
     planeNormals: WebGLUniformLocation
     planeColors: WebGLUniformLocation
     planeSizes: WebGLUniformLocation
+    boxCount: WebGLUniformLocation
+    boxCenters: WebGLUniformLocation
+    boxSizes: WebGLUniformLocation
+    boxColors: WebGLUniformLocation
+    boxRotations: WebGLUniformLocation[]
+    boxRotationsInv: WebGLUniformLocation[]
     ambientColor: WebGLUniformLocation
     ambientIntensity: WebGLUniformLocation
     backgroundColor: WebGLUniformLocation
@@ -248,6 +320,16 @@ export class RayTracingRenderer {
 
   private getUniformLocations() {
     const gl = this.gl
+    const maxBoxes = 8
+
+    // Get mat3 array uniform locations for each element
+    const boxRotations: WebGLUniformLocation[] = []
+    const boxRotationsInv: WebGLUniformLocation[] = []
+    for (let i = 0; i < maxBoxes; i++) {
+      boxRotations.push(gl.getUniformLocation(this.program, `u_boxRotations[${i}]`)!)
+      boxRotationsInv.push(gl.getUniformLocation(this.program, `u_boxRotationsInv[${i}]`)!)
+    }
+
     return {
       cameraPosition: gl.getUniformLocation(this.program, 'u_cameraPosition')!,
       cameraForward: gl.getUniformLocation(this.program, 'u_cameraForward')!,
@@ -260,6 +342,12 @@ export class RayTracingRenderer {
       planeNormals: gl.getUniformLocation(this.program, 'u_planeNormals')!,
       planeColors: gl.getUniformLocation(this.program, 'u_planeColors')!,
       planeSizes: gl.getUniformLocation(this.program, 'u_planeSizes')!,
+      boxCount: gl.getUniformLocation(this.program, 'u_boxCount')!,
+      boxCenters: gl.getUniformLocation(this.program, 'u_boxCenters')!,
+      boxSizes: gl.getUniformLocation(this.program, 'u_boxSizes')!,
+      boxColors: gl.getUniformLocation(this.program, 'u_boxColors')!,
+      boxRotations,
+      boxRotationsInv,
       ambientColor: gl.getUniformLocation(this.program, 'u_ambientColor')!,
       ambientIntensity: gl.getUniformLocation(this.program, 'u_ambientIntensity')!,
       backgroundColor: gl.getUniformLocation(this.program, 'u_backgroundColor')!,
@@ -292,12 +380,43 @@ export class RayTracingRenderer {
     return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }
   }
 
+  // Create rotation matrix from Euler angles (XYZ order)
+  // Returns column-major mat3 as Float32Array for WebGL
+  private eulerToMatrix(euler: { x: number; y: number; z: number }): Float32Array {
+    const cx = Math.cos(euler.x), sx = Math.sin(euler.x)
+    const cy = Math.cos(euler.y), sy = Math.sin(euler.y)
+    const cz = Math.cos(euler.z), sz = Math.sin(euler.z)
+
+    // Rotation matrix R = Rz * Ry * Rx (applied in order X, Y, Z)
+    // Column-major order for WebGL
+    return new Float32Array([
+      cy * cz,                      cy * sz,                      -sy,
+      sx * sy * cz - cx * sz,       sx * sy * sz + cx * cz,       sx * cy,
+      cx * sy * cz + sx * sz,       cx * sy * sz - sx * cz,       cx * cy,
+    ])
+  }
+
+  // Create inverse rotation matrix (transpose of rotation matrix)
+  private eulerToMatrixInverse(euler: { x: number; y: number; z: number }): Float32Array {
+    const cx = Math.cos(euler.x), sx = Math.sin(euler.x)
+    const cy = Math.cos(euler.y), sy = Math.sin(euler.y)
+    const cz = Math.cos(euler.z), sz = Math.sin(euler.z)
+
+    // Transpose of rotation matrix (column-major)
+    return new Float32Array([
+      cy * cz,                      sx * sy * cz - cx * sz,       cx * sy * cz + sx * sz,
+      cy * sz,                      sx * sy * sz + cx * cz,       cx * sy * sz - sx * cz,
+      -sy,                          sx * cy,                      cx * cy,
+    ])
+  }
+
   render(options: RenderOptions): void {
     const gl = this.gl
     const canvas = gl.canvas as HTMLCanvasElement
     const {
       camera,
-      planes,
+      planes = [],
+      boxes = [],
       ambientLight = { type: 'ambient', color: [1, 1, 1], intensity: 1 },
       backgroundColor = [20, 20, 40],
     } = options
@@ -322,33 +441,72 @@ export class RayTracingRenderer {
     const planeCount = Math.min(planes.length, maxPlanes)
     gl.uniform1i(this.uniforms.planeCount, planeCount)
 
-    const points = new Float32Array(maxPlanes * 3)
-    const normals = new Float32Array(maxPlanes * 3)
-    const colors = new Float32Array(maxPlanes * 3)
-    const sizes = new Float32Array(maxPlanes * 2)
+    const planePoints = new Float32Array(maxPlanes * 3)
+    const planeNormals = new Float32Array(maxPlanes * 3)
+    const planeColors = new Float32Array(maxPlanes * 3)
+    const planeSizes = new Float32Array(maxPlanes * 2)
 
     for (let i = 0; i < planeCount; i++) {
       const plane = planes[i]!
-      points[i * 3] = plane.geometry.point.x
-      points[i * 3 + 1] = plane.geometry.point.y
-      points[i * 3 + 2] = plane.geometry.point.z
+      planePoints[i * 3] = plane.geometry.point.x
+      planePoints[i * 3 + 1] = plane.geometry.point.y
+      planePoints[i * 3 + 2] = plane.geometry.point.z
 
-      normals[i * 3] = plane.geometry.normal.x
-      normals[i * 3 + 1] = plane.geometry.normal.y
-      normals[i * 3 + 2] = plane.geometry.normal.z
+      planeNormals[i * 3] = plane.geometry.normal.x
+      planeNormals[i * 3 + 1] = plane.geometry.normal.y
+      planeNormals[i * 3 + 2] = plane.geometry.normal.z
 
-      colors[i * 3] = plane.color[0] / 255
-      colors[i * 3 + 1] = plane.color[1] / 255
-      colors[i * 3 + 2] = plane.color[2] / 255
+      planeColors[i * 3] = plane.color[0] / 255
+      planeColors[i * 3 + 1] = plane.color[1] / 255
+      planeColors[i * 3 + 2] = plane.color[2] / 255
 
-      sizes[i * 2] = plane.geometry.width ?? -1
-      sizes[i * 2 + 1] = plane.geometry.height ?? -1
+      planeSizes[i * 2] = plane.geometry.width ?? -1
+      planeSizes[i * 2 + 1] = plane.geometry.height ?? -1
     }
 
-    gl.uniform3fv(this.uniforms.planePoints, points)
-    gl.uniform3fv(this.uniforms.planeNormals, normals)
-    gl.uniform3fv(this.uniforms.planeColors, colors)
-    gl.uniform2fv(this.uniforms.planeSizes, sizes)
+    gl.uniform3fv(this.uniforms.planePoints, planePoints)
+    gl.uniform3fv(this.uniforms.planeNormals, planeNormals)
+    gl.uniform3fv(this.uniforms.planeColors, planeColors)
+    gl.uniform2fv(this.uniforms.planeSizes, planeSizes)
+
+    // Set box uniforms
+    const maxBoxes = 8
+    const boxCount = Math.min(boxes.length, maxBoxes)
+    gl.uniform1i(this.uniforms.boxCount, boxCount)
+
+    const boxCenters = new Float32Array(maxBoxes * 3)
+    const boxSizes = new Float32Array(maxBoxes * 3)
+    const boxColors = new Float32Array(maxBoxes * 3)
+    const identityEuler = { x: 0, y: 0, z: 0 }
+
+    for (let i = 0; i < maxBoxes; i++) {
+      if (i < boxCount) {
+        const box = boxes[i]!
+        boxCenters[i * 3] = box.geometry.center.x
+        boxCenters[i * 3 + 1] = box.geometry.center.y
+        boxCenters[i * 3 + 2] = box.geometry.center.z
+
+        boxSizes[i * 3] = box.geometry.size.x
+        boxSizes[i * 3 + 1] = box.geometry.size.y
+        boxSizes[i * 3 + 2] = box.geometry.size.z
+
+        boxColors[i * 3] = box.color[0] / 255
+        boxColors[i * 3 + 1] = box.color[1] / 255
+        boxColors[i * 3 + 2] = box.color[2] / 255
+
+        const euler = box.geometry.rotation ?? identityEuler
+        gl.uniformMatrix3fv(this.uniforms.boxRotations[i]!, false, this.eulerToMatrix(euler))
+        gl.uniformMatrix3fv(this.uniforms.boxRotationsInv[i]!, false, this.eulerToMatrixInverse(euler))
+      } else {
+        // Set identity matrix for unused boxes
+        gl.uniformMatrix3fv(this.uniforms.boxRotations[i]!, false, this.eulerToMatrix(identityEuler))
+        gl.uniformMatrix3fv(this.uniforms.boxRotationsInv[i]!, false, this.eulerToMatrixInverse(identityEuler))
+      }
+    }
+
+    gl.uniform3fv(this.uniforms.boxCenters, boxCenters)
+    gl.uniform3fv(this.uniforms.boxSizes, boxSizes)
+    gl.uniform3fv(this.uniforms.boxColors, boxColors)
 
     // Set ambient light uniforms
     gl.uniform3f(

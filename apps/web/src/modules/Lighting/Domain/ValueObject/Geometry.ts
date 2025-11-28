@@ -12,12 +12,14 @@ export interface PlaneGeometry {
 }
 
 /**
- * Axis-aligned box
+ * Oriented Bounding Box (OBB)
+ * Rotation is specified as Euler angles in radians (X, Y, Z order)
  */
 export interface BoxGeometry {
   readonly type: 'box'
   readonly center: Vector3
   readonly size: Vector3 // width, height, depth
+  readonly rotation?: Vector3 // Euler angles in radians (x, y, z)
 }
 
 /**

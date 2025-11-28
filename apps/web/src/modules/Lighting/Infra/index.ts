@@ -1,2 +1,2 @@
 export { RayTracingRenderer } from './WebGL'
-export type { ScenePlane, RenderOptions } from './WebGL'
+export type { ScenePlane, SceneBox, RenderOptions } from './WebGL'
