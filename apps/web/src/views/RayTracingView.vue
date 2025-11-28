@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { render } from '../modules/Lighting/Application'
-import type { ScenePlane } from '../modules/Lighting/Application'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { RayTracingRenderer } from '../modules/Lighting/Infra'
+import type { ScenePlane } from '../modules/Lighting/Infra'
 import type { OrthographicCamera } from '../modules/Lighting/Domain/ValueObject'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+let renderer: RayTracingRenderer | null = null
 
 const WIDTH = 400
 const HEIGHT = 400
@@ -43,17 +44,13 @@ onMounted(() => {
   const canvas = canvasRef.value
   if (!canvas) return
 
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  renderer = new RayTracingRenderer(canvas)
+  renderer.render({ camera, planes })
+})
 
-  const imageData = render({
-    width: WIDTH,
-    height: HEIGHT,
-    camera,
-    planes,
-  })
-
-  ctx.putImageData(imageData, 0, 0)
+onUnmounted(() => {
+  renderer?.dispose()
+  renderer = null
 })
 </script>
 
@@ -67,7 +64,7 @@ onMounted(() => {
       class="border border-gray-600"
     />
     <p class="mt-4 text-gray-400">
-      Orthographic camera looking at a plane
+      WebGL ray tracing - orthographic camera
     </p>
   </div>
 </template>
