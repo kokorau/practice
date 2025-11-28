@@ -31,16 +31,16 @@ const FRAGMENT_SHADER = `
   uniform float u_cameraWidth;
   uniform float u_cameraHeight;
 
-  // Plane uniforms (max 8 planes)
-  const int MAX_PLANES = 8;
+  // Plane uniforms (max 32 planes)
+  const int MAX_PLANES = 32;
   uniform int u_planeCount;
   uniform vec3 u_planePoints[MAX_PLANES];
   uniform vec3 u_planeNormals[MAX_PLANES];
   uniform vec3 u_planeColors[MAX_PLANES];
   uniform vec2 u_planeSizes[MAX_PLANES]; // width, height (-1 = infinite)
 
-  // Box uniforms (max 8 boxes)
-  const int MAX_BOXES = 8;
+  // Box uniforms (max 64 boxes)
+  const int MAX_BOXES = 64;
   uniform int u_boxCount;
   uniform vec3 u_boxCenters[MAX_BOXES];
   uniform vec3 u_boxSizes[MAX_BOXES];
@@ -464,7 +464,7 @@ export class RayTracingRenderer {
 
   private getUniformLocations() {
     const gl = this.gl
-    const maxBoxes = 8
+    const maxBoxes = 64
 
     // Get mat3 array uniform locations for each element
     const boxRotations: WebGLUniformLocation[] = []
@@ -592,7 +592,7 @@ export class RayTracingRenderer {
     gl.uniform1f(this.uniforms.cameraHeight, camera.height)
 
     // Set plane uniforms
-    const maxPlanes = 8
+    const maxPlanes = 32
     const planeCount = Math.min(planes.length, maxPlanes)
     gl.uniform1i(this.uniforms.planeCount, planeCount)
 
@@ -625,7 +625,7 @@ export class RayTracingRenderer {
     gl.uniform2fv(this.uniforms.planeSizes, planeSizes)
 
     // Set box uniforms
-    const maxBoxes = 8
+    const maxBoxes = 64
     const boxCount = Math.min(boxes.length, maxBoxes)
     gl.uniform1i(this.uniforms.boxCount, boxCount)
 

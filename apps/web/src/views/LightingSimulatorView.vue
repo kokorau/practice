@@ -1,11 +1,86 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+import { RayTracingRenderer, HTMLToSceneAdapter, $Scene } from '../modules/Lighting/Infra'
+import { $Light, $Color } from '../modules/Lighting/Domain/ValueObject'
+import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
+import type { Viewport } from '../modules/Lighting/Application'
+
+const htmlContainerRef = ref<HTMLElement | null>(null)
+const sampleHtmlRef = ref<HTMLElement | null>(null)
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+let renderer: RayTracingRenderer | null = null
+
+// Debug state
+const debugInfo = ref({
+  viewport: { width: 0, height: 0, scrollX: 0, scrollY: 0 },
+  elementsCount: 0,
+  objectsCount: 0,
+  lightsCount: 0,
+  cameraPosition: { x: 0, y: 0, z: 0 },
+  cameraSize: { width: 0, height: 0 },
+})
+
+const updateScene = () => {
+  if (!htmlContainerRef.value || !sampleHtmlRef.value || !canvasRef.value || !renderer) return
+
+  // Use container size for viewport (visible area)
+  const containerRect = htmlContainerRef.value.getBoundingClientRect()
+  const viewport: Viewport = {
+    width: containerRect.width,
+    height: containerRect.height,
+    scrollX: htmlContainerRef.value.scrollLeft,
+    scrollY: htmlContainerRef.value.scrollTop,
+  }
+
+  // Parse HTML to scene
+  const elements = HTMLToSceneAdapter.parseElements(sampleHtmlRef.value, viewport)
+  let { scene, camera } = HTMLToSceneAdapter.toScene(elements, viewport)
+
+  // Add lights - direction pointing toward positive Z (into the scene) for shadows
+  scene = $Scene.add(
+    scene,
+    $Light.createAmbient($Color.create(1.0, 1.0, 1.0), 0.3),
+    $Light.createDirectional($Vector3.create(1, -1, 2), $Color.create(1.0, 1.0, 1.0), 0.7),
+  )
+
+  // Update canvas size to match viewport
+  canvasRef.value.width = viewport.width
+  canvasRef.value.height = viewport.height
+
+  // Update debug info
+  debugInfo.value = {
+    viewport,
+    elementsCount: elements.length,
+    objectsCount: scene.objects.length,
+    lightsCount: scene.lights.length,
+    cameraPosition: camera.position,
+    cameraSize: { width: camera.width, height: camera.height },
+  }
+
+  renderer.render(scene, camera)
+}
+
+onMounted(() => {
+  if (!canvasRef.value) return
+  renderer = new RayTracingRenderer(canvasRef.value)
+
+  // Wait for layout to complete
+  requestAnimationFrame(() => {
+    updateScene()
+  })
+})
+
+onUnmounted(() => {
+  renderer?.dispose()
+  renderer = null
+})
 </script>
 
 <template>
   <div class="flex h-screen bg-gray-900">
     <!-- Left: HTML Sample -->
-    <div class="w-1/2 overflow-auto bg-white">
-      <div class="sample-html p-6">
+    <div ref="htmlContainerRef" class="w-1/2 overflow-auto bg-white">
+      <div ref="sampleHtmlRef" class="sample-html p-6">
         <!-- Header -->
         <header class="bg-slate-800 text-white p-4 rounded-lg mb-6">
           <nav class="flex items-center justify-between">
@@ -94,9 +169,21 @@
     </div>
 
     <!-- Right: Canvas Simulation -->
-    <div class="w-1/2 flex items-center justify-center bg-gray-800">
-      <div class="text-gray-500 text-lg">
-        Canvas Simulation (Coming Soon)
+    <div class="w-1/2 bg-gray-800 flex items-center justify-center">
+      <canvas ref="canvasRef" class="max-w-full max-h-full" />
+    </div>
+
+    <!-- Debug Panel -->
+    <div class="fixed bottom-4 right-4 bg-black/80 text-white text-xs font-mono p-3 rounded-lg max-w-xs">
+      <div class="font-bold mb-2 text-green-400">Scene Debug</div>
+      <div class="space-y-1">
+        <div>Viewport: {{ debugInfo.viewport.width.toFixed(0) }} x {{ debugInfo.viewport.height.toFixed(0) }}</div>
+        <div>Scroll: ({{ debugInfo.viewport.scrollX.toFixed(0) }}, {{ debugInfo.viewport.scrollY.toFixed(0) }})</div>
+        <div class="border-t border-gray-600 pt-1 mt-1">Elements: {{ debugInfo.elementsCount }}</div>
+        <div>Objects: {{ debugInfo.objectsCount }}</div>
+        <div>Lights: {{ debugInfo.lightsCount }}</div>
+        <div class="border-t border-gray-600 pt-1 mt-1">Camera pos: ({{ debugInfo.cameraPosition.x.toFixed(1) }}, {{ debugInfo.cameraPosition.y.toFixed(1) }}, {{ debugInfo.cameraPosition.z.toFixed(1) }})</div>
+        <div>Camera size: {{ debugInfo.cameraSize.width.toFixed(0) }} x {{ debugInfo.cameraSize.height.toFixed(0) }}</div>
       </div>
     </div>
   </div>
