@@ -46,7 +46,14 @@ export class TileRenderer {
     scene: Scene,
     camera: OrthographicCamera
   ): void {
-    const { canvasWidth, canvasHeight, tiles } = grid
+    const { canvasWidth: rawWidth, canvasHeight: rawHeight, tiles } = grid
+
+    // Ensure integer dimensions
+    const canvasWidth = Math.floor(rawWidth)
+    const canvasHeight = Math.floor(rawHeight)
+
+    // Skip if canvas size is invalid
+    if (canvasWidth <= 0 || canvasHeight <= 0) return
 
     // Ensure render canvas is properly sized
     this.ensureRenderCanvas(canvasWidth, canvasHeight)
@@ -74,24 +81,35 @@ export class TileRenderer {
 
     // Extract each tile as ImageData
     for (const tile of tiles) {
-      const tilePixels = new Uint8ClampedArray(tile.width * tile.height * 4)
+      // Ensure integer dimensions for tile
+      const tileW = Math.floor(tile.width)
+      const tileH = Math.floor(tile.height)
+      const tileX = Math.floor(tile.x)
+      const tileY = Math.floor(tile.y)
+
+      // Skip invalid tiles
+      if (tileW <= 0 || tileH <= 0) continue
+
+      const tilePixels = new Uint8ClampedArray(tileW * tileH * 4)
 
       // Copy tile region from full image
-      for (let y = 0; y < tile.height; y++) {
-        const srcY = tile.y + y
+      for (let y = 0; y < tileH; y++) {
+        const srcY = tileY + y
         if (srcY >= canvasHeight) continue
 
-        const srcOffset = (srcY * canvasWidth + tile.x) * 4
-        const dstOffset = y * tile.width * 4
-        const rowWidth = Math.min(tile.width, canvasWidth - tile.x) * 4
+        const srcOffset = (srcY * canvasWidth + tileX) * 4
+        const dstOffset = y * tileW * 4
+        const copyLength = Math.min(tileW, canvasWidth - tileX) * 4
 
-        tilePixels.set(
-          flippedPixels.subarray(srcOffset, srcOffset + rowWidth),
-          dstOffset
-        )
+        if (srcOffset >= 0 && srcOffset + copyLength <= flippedPixels.length) {
+          tilePixels.set(
+            flippedPixels.subarray(srcOffset, srcOffset + copyLength),
+            dstOffset
+          )
+        }
       }
 
-      const imageData = new ImageData(tilePixels, tile.width, tile.height)
+      const imageData = new ImageData(tilePixels, tileW, tileH)
       this.tileCache.set(tile.id, { imageData })
     }
   }
