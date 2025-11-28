@@ -25,12 +25,20 @@ const ambientLight: AmbientLight = {
   intensity: 0.2, // Low ambient for contrast
 }
 
-const directionalLight: DirectionalLight = {
-  type: 'directional',
-  direction: { x: -1, y: -1, z: 1 }, // From top-left-front
-  color: [1.0, 0.95, 0.9], // Slightly warm
-  intensity: 0.8,
-}
+const directionalLights: DirectionalLight[] = [
+  {
+    type: 'directional',
+    direction: { x: 1, y: -1, z: 2 }, // From left
+    color: [1.0, 0.2, 0.1], // Red
+    intensity: 0.6,
+  },
+  {
+    type: 'directional',
+    direction: { x: 1, y: -2, z: 2 }, // From right
+    color: [0.1, 0.3, 1.0], // Blue
+    intensity: 0.6,
+  },
+]
 
 const planes: ScenePlane[] = [
   {
@@ -41,23 +49,13 @@ const planes: ScenePlane[] = [
     },
     color: [255, 255, 255], // White background plane (infinite)
   },
-  {
-    geometry: {
-      type: 'plane',
-      point: { x: 0, y: -0.25, z: 3 },
-      normal: { x: 0, y: 0, z: -1 },
-      width: 1.5,
-      height: 1,
-    },
-    color: [200, 200, 200], // Gray floor plane
-  },
 ]
 
 const boxes: SceneBox[] = [
   {
     geometry: {
       type: 'box',
-      center: { x: 0, y: 0.05, z: 2.5 },
+      center: { x: 0, y: 0.05, z: 4.5 },
       size: { x: 0.3, y: 0.3, z: 0.3 },
       rotation: { x: Math.PI / 6, y: Math.PI / 4, z: 0 }, // Rotated 30° on X, 45° on Y
     },
@@ -70,7 +68,7 @@ onMounted(() => {
   if (!canvas) return
 
   renderer = new RayTracingRenderer(canvas)
-  renderer.render({ camera, planes, boxes, ambientLight, directionalLight })
+  renderer.render({ camera, planes, boxes, ambientLight, directionalLights })
 })
 
 onUnmounted(() => {

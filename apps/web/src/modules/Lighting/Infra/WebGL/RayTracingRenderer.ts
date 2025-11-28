@@ -52,10 +52,12 @@ const FRAGMENT_SHADER = `
   uniform vec3 u_ambientColor;
   uniform float u_ambientIntensity;
 
-  // Directional light
-  uniform vec3 u_directionalDir; // Direction TO the light (normalized)
-  uniform vec3 u_directionalColor;
-  uniform float u_directionalIntensity;
+  // Directional lights (max 4)
+  const int MAX_LIGHTS = 4;
+  uniform int u_lightCount;
+  uniform vec3 u_lightDirs[MAX_LIGHTS]; // Direction TO the light (normalized)
+  uniform vec3 u_lightColors[MAX_LIGHTS];
+  uniform float u_lightIntensities[MAX_LIGHTS];
 
   // Background color
   uniform vec3 u_backgroundColor;
@@ -270,12 +272,17 @@ const FRAGMENT_SHADER = `
       // Ambient lighting (always applied)
       vec3 ambient = hitSurfaceColor * u_ambientColor * u_ambientIntensity;
 
-      // Directional lighting with shadow
+      // Accumulate diffuse from all directional lights
       vec3 diffuse = vec3(0.0);
-      float NdotL = max(0.0, dot(hitNormal, u_directionalDir));
+      for (int i = 0; i < MAX_LIGHTS; i++) {
+        if (i >= u_lightCount) break;
 
-      if (NdotL > 0.0 && !isInShadow(hitPoint, u_directionalDir)) {
-        diffuse = hitSurfaceColor * u_directionalColor * u_directionalIntensity * NdotL;
+        vec3 lightDir = u_lightDirs[i];
+        float NdotL = max(0.0, dot(hitNormal, lightDir));
+
+        if (NdotL > 0.0 && !isInShadow(hitPoint, lightDir)) {
+          diffuse += hitSurfaceColor * u_lightColors[i] * u_lightIntensities[i] * NdotL;
+        }
       }
 
       hitColor = ambient + diffuse;
@@ -300,7 +307,7 @@ export interface RenderOptions {
   planes?: ScenePlane[]
   boxes?: SceneBox[]
   ambientLight?: AmbientLight
-  directionalLight?: DirectionalLight
+  directionalLights?: DirectionalLight[]
   backgroundColor?: readonly [number, number, number]
 }
 
@@ -329,9 +336,10 @@ export class RayTracingRenderer {
     boxRotationsInv: WebGLUniformLocation[]
     ambientColor: WebGLUniformLocation
     ambientIntensity: WebGLUniformLocation
-    directionalDir: WebGLUniformLocation
-    directionalColor: WebGLUniformLocation
-    directionalIntensity: WebGLUniformLocation
+    lightCount: WebGLUniformLocation
+    lightDirs: WebGLUniformLocation
+    lightColors: WebGLUniformLocation
+    lightIntensities: WebGLUniformLocation
     backgroundColor: WebGLUniformLocation
   }
 
@@ -442,9 +450,10 @@ export class RayTracingRenderer {
       boxRotationsInv,
       ambientColor: gl.getUniformLocation(this.program, 'u_ambientColor')!,
       ambientIntensity: gl.getUniformLocation(this.program, 'u_ambientIntensity')!,
-      directionalDir: gl.getUniformLocation(this.program, 'u_directionalDir')!,
-      directionalColor: gl.getUniformLocation(this.program, 'u_directionalColor')!,
-      directionalIntensity: gl.getUniformLocation(this.program, 'u_directionalIntensity')!,
+      lightCount: gl.getUniformLocation(this.program, 'u_lightCount')!,
+      lightDirs: gl.getUniformLocation(this.program, 'u_lightDirs')!,
+      lightColors: gl.getUniformLocation(this.program, 'u_lightColors')!,
+      lightIntensities: gl.getUniformLocation(this.program, 'u_lightIntensities')!,
       backgroundColor: gl.getUniformLocation(this.program, 'u_backgroundColor')!,
     }
   }
@@ -513,7 +522,7 @@ export class RayTracingRenderer {
       planes = [],
       boxes = [],
       ambientLight = { type: 'ambient', color: [1, 1, 1], intensity: 1 },
-      directionalLight,
+      directionalLights = [],
       backgroundColor = [20, 20, 40],
     } = options
 
@@ -614,23 +623,32 @@ export class RayTracingRenderer {
     gl.uniform1f(this.uniforms.ambientIntensity, ambientLight.intensity)
 
     // Set directional light uniforms
-    if (directionalLight) {
+    const maxLights = 4
+    const lightCount = Math.min(directionalLights.length, maxLights)
+    gl.uniform1i(this.uniforms.lightCount, lightCount)
+
+    const lightDirs = new Float32Array(maxLights * 3)
+    const lightColors = new Float32Array(maxLights * 3)
+    const lightIntensities = new Float32Array(maxLights)
+
+    for (let i = 0; i < lightCount; i++) {
+      const light = directionalLights[i]!
       // Normalize and negate direction (shader expects direction TO the light)
-      const dir = this.normalize(directionalLight.direction)
-      gl.uniform3f(this.uniforms.directionalDir, -dir.x, -dir.y, -dir.z)
-      gl.uniform3f(
-        this.uniforms.directionalColor,
-        directionalLight.color[0],
-        directionalLight.color[1],
-        directionalLight.color[2]
-      )
-      gl.uniform1f(this.uniforms.directionalIntensity, directionalLight.intensity)
-    } else {
-      // No directional light
-      gl.uniform3f(this.uniforms.directionalDir, 0, 0, 0)
-      gl.uniform3f(this.uniforms.directionalColor, 0, 0, 0)
-      gl.uniform1f(this.uniforms.directionalIntensity, 0)
+      const dir = this.normalize(light.direction)
+      lightDirs[i * 3] = -dir.x
+      lightDirs[i * 3 + 1] = -dir.y
+      lightDirs[i * 3 + 2] = -dir.z
+
+      lightColors[i * 3] = light.color[0]
+      lightColors[i * 3 + 1] = light.color[1]
+      lightColors[i * 3 + 2] = light.color[2]
+
+      lightIntensities[i] = light.intensity
     }
+
+    gl.uniform3fv(this.uniforms.lightDirs, lightDirs)
+    gl.uniform3fv(this.uniforms.lightColors, lightColors)
+    gl.uniform1fv(this.uniforms.lightIntensities, lightIntensities)
 
     gl.uniform3f(
       this.uniforms.backgroundColor,
