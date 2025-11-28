@@ -14,24 +14,94 @@ let renderer: RayTracingRenderer | null = null
 // Debug panel state
 const debugPanelOpen = ref(true)
 
+// Lighting presets
+type LightPreset = {
+  name: string
+  primary: { x: number; y: number; z: number; intensity: number; colorHex: Hex }
+  secondary: { x: number; y: number; z: number; intensity: number; colorHex: Hex }
+  shadowBlur: number
+}
+
+const lightPresets: LightPreset[] = [
+  {
+    name: 'Default',
+    primary: { x: 1, y: -1, z: 2, intensity: 0.5, colorHex: '#ffffff' },
+    secondary: { x: -1, y: 1, z: 3, intensity: 0.1, colorHex: '#ffffff' },
+    shadowBlur: 1.0,
+  },
+  {
+    name: 'Outdoor Daylight',
+    primary: { x: 1, y: -2, z: 3, intensity: 0.7, colorHex: '#fff5e6' },
+    secondary: { x: -1, y: 0.5, z: 2, intensity: 0.15, colorHex: '#e6f0ff' },
+    shadowBlur: 0.8,
+  },
+  {
+    name: 'Indoor Cool',
+    primary: { x: 0, y: -1, z: 2, intensity: 0.5, colorHex: '#e8f4ff' },
+    secondary: { x: -1, y: 0, z: 1.5, intensity: 0.2, colorHex: '#ffffff' },
+    shadowBlur: 1.5,
+  },
+  {
+    name: 'Indoor Warm',
+    primary: { x: 0.5, y: -1, z: 2, intensity: 0.5, colorHex: '#ffe4c4' },
+    secondary: { x: -0.5, y: 0.5, z: 1.5, intensity: 0.15, colorHex: '#ffd9b3' },
+    shadowBlur: 1.2,
+  },
+  {
+    name: 'Sunset',
+    primary: { x: 2, y: -0.5, z: 1, intensity: 0.6, colorHex: '#ff9966' },
+    secondary: { x: -1, y: 0, z: 2, intensity: 0.1, colorHex: '#6699cc' },
+    shadowBlur: 1.0,
+  },
+  {
+    name: 'Studio',
+    primary: { x: 1, y: -1, z: 2, intensity: 0.6, colorHex: '#ffffff' },
+    secondary: { x: -1, y: 1, z: 2, intensity: 0.3, colorHex: '#ffffff' },
+    shadowBlur: 0.5,
+  },
+  {
+    name: 'Dramatic',
+    primary: { x: 2, y: -1, z: 1.5, intensity: 0.8, colorHex: '#ffffff' },
+    secondary: { x: -1, y: 0, z: 3, intensity: 0.05, colorHex: '#4466aa' },
+    shadowBlur: 0.3,
+  },
+]
+
+const currentPreset = ref<string | null>('Default')
+
 // Light settings (reactive for UI binding)
 const lightSettings = reactive({
-  primary: {
-    x: 1,
-    y: -1,
-    z: 2,
-    intensity: 0.5,
-    colorHex: '#ffffff' as Hex,
-  },
-  secondary: {
-    x: -1,
-    y: 1,
-    z: 3,
-    intensity: 0.1,
-    colorHex: '#ffffff' as Hex,
-  },
-  shadowBlur: 1.0,
+  primary: { ...lightPresets[0].primary },
+  secondary: { ...lightPresets[0].secondary },
+  shadowBlur: lightPresets[0].shadowBlur,
 })
+
+// Apply preset
+const applyPreset = (preset: LightPreset) => {
+  currentPreset.value = preset.name
+  lightSettings.primary = { ...preset.primary }
+  lightSettings.secondary = { ...preset.secondary }
+  lightSettings.shadowBlur = preset.shadowBlur
+}
+
+// Clear preset selection when manually adjusting
+watch(lightSettings, () => {
+  // Check if current settings match any preset
+  const matchingPreset = lightPresets.find(p =>
+    p.primary.x === lightSettings.primary.x &&
+    p.primary.y === lightSettings.primary.y &&
+    p.primary.z === lightSettings.primary.z &&
+    p.primary.intensity === lightSettings.primary.intensity &&
+    p.primary.colorHex === lightSettings.primary.colorHex &&
+    p.secondary.x === lightSettings.secondary.x &&
+    p.secondary.y === lightSettings.secondary.y &&
+    p.secondary.z === lightSettings.secondary.z &&
+    p.secondary.intensity === lightSettings.secondary.intensity &&
+    p.secondary.colorHex === lightSettings.secondary.colorHex &&
+    p.shadowBlur === lightSettings.shadowBlur
+  )
+  currentPreset.value = matchingPreset?.name ?? null
+}, { deep: true })
 
 // Convert hex to normalized RGB (0-1)
 const hexToNormalizedRgb = (hex: Hex) => {
@@ -277,8 +347,28 @@ onUnmounted(() => {
 
       <!-- Panel Content -->
       <div v-show="debugPanelOpen" class="p-3 pt-0 w-80 max-h-[32rem] overflow-auto">
-        <!-- Scene Info -->
+        <!-- Presets -->
         <div class="mb-3">
+          <div class="font-bold mb-2 text-green-400">Presets</div>
+          <div class="flex flex-wrap gap-1">
+            <button
+              v-for="preset in lightPresets"
+              :key="preset.name"
+              @click="applyPreset(preset)"
+              :class="[
+                'px-2 py-1 rounded text-[10px] transition-colors',
+                currentPreset === preset.name
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+              ]"
+            >
+              {{ preset.name }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Scene Info -->
+        <div class="border-t border-gray-700 pt-2 mb-3">
           <div class="font-bold mb-1 text-blue-400">Scene Info</div>
           <div class="space-y-0.5 text-[11px]">
             <div>Viewport: {{ debugInfo.viewport.width.toFixed(0) }} x {{ debugInfo.viewport.height.toFixed(0) }}</div>
