@@ -17,8 +17,8 @@ const VERTEX_SHADER = `
   }
 `
 
-// Fragment Shader - レイトレーシング
-const FRAGMENT_SHADER = `
+// Fragment Shader - レイトレーシング (split into parts for injection)
+const FRAGMENT_SHADER_HEADER = `
   precision highp float;
 
   varying vec2 v_uv;
@@ -63,11 +63,31 @@ const FRAGMENT_SHADER = `
   // Background color
   uniform vec3 u_backgroundColor;
 
+  // Shadow blur radius (world units)
+  uniform float u_shadowBlur;
+
   // Build orthonormal basis from normal
   void buildBasis(vec3 normal, out vec3 right, out vec3 up) {
     vec3 tmp = abs(normal.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
     right = normalize(cross(tmp, normal));
     up = cross(normal, right);
+  }
+
+  // Simple hash function for noise
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+  }
+
+  // 2D noise
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f); // smoothstep
+    return mix(
+      mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), f.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x),
+      f.y
+    );
   }
 
   // Signed Distance Function for rounded box (full 3D)
@@ -311,19 +331,13 @@ const FRAGMENT_SHADER = `
     return tNear > 0.0 ? tNear : tFar;
   }
 
-  // Check if a point is in shadow
-  bool isInShadow(vec3 hitPoint, vec3 lightDir) {
+  // Calculate shadow - returns shadow distance (>0 if in shadow, -1.0 if not)
+  // Note: Only checks boxes for shadow casting (planes like background don't cast shadows)
+  float traceShadow(vec3 hitPoint, vec3 lightDir) {
     // Offset slightly along normal to avoid self-intersection
     vec3 shadowOrigin = hitPoint + lightDir * 0.001;
 
-    // Check planes
-    for (int i = 0; i < MAX_PLANES; i++) {
-      if (i >= u_planeCount) break;
-      float t = intersectPlane(shadowOrigin, lightDir, u_planePoints[i], u_planeNormals[i], u_planeSizes[i]);
-      if (t > 0.0) return true;
-    }
-
-    // Check boxes (use rounded or sharp depending on radius)
+    // Check boxes only (planes like background don't cast shadows)
     for (int i = 0; i < MAX_BOXES; i++) {
       if (i >= u_boxCount) break;
       float radius = u_boxRadii[i];
@@ -333,10 +347,86 @@ const FRAGMENT_SHADER = `
       } else {
         t = intersectBoxSimple(shadowOrigin, lightDir, u_boxCenters[i], u_boxSizes[i], u_boxRotations[i]);
       }
-      if (t > 0.0) return true;
+      if (t > 0.0) {
+        return t;
+      }
     }
 
-    return false;
+    return -1.0; // No shadow
+  }
+`
+
+// Default shadow shader - no effect, just returns baseShadow
+const DEFAULT_SHADOW_SHADER = `
+  float applyShadow(float baseShadow, vec3 hitPoint, vec2 screenUV, float shadowDistance) {
+    return baseShadow;
+  }
+`
+
+// Fragment shader body after applyShadow injection point
+const FRAGMENT_SHADER_BODY = `
+  // PCF shadow sampling helper - sample shadow at offset
+  float sampleShadowAt(vec3 hitPoint, vec3 lightDir, vec3 lightRight, vec3 lightUp, vec2 offset) {
+    vec3 offsetPoint = hitPoint + lightRight * offset.x * u_shadowBlur + lightUp * offset.y * u_shadowBlur;
+    return traceShadow(offsetPoint, lightDir);
+  }
+
+  // Calculate shadow intensity using PCF (Percentage Closer Filtering)
+  float calcShadow(vec3 hitPoint, vec3 lightDir, vec2 screenUV) {
+    // If no blur, use single sample for performance
+    if (u_shadowBlur <= 0.0) {
+      float shadowDist = traceShadow(hitPoint, lightDir);
+      if (shadowDist > 0.0) {
+        return applyShadow(0.0, hitPoint, screenUV, shadowDist);
+      }
+      return 1.0;
+    }
+
+    // Build basis vectors perpendicular to light direction for PCF sampling
+    vec3 lightRight, lightUp;
+    buildBasis(lightDir, lightRight, lightUp);
+
+    // Sample 9 points in a 3x3 grid pattern (unrolled for GLSL ES 1.00 compatibility)
+    float totalDist = 0.0;
+    int hitCount = 0;
+    float d;
+
+    // Row 1: y = -1
+    d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2(-1.0, -1.0));
+    if (d > 0.0) { hitCount++; totalDist += d; }
+    d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2( 0.0, -1.0));
+    if (d > 0.0) { hitCount++; totalDist += d; }
+    d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2( 1.0, -1.0));
+    if (d > 0.0) { hitCount++; totalDist += d; }
+
+    // Row 2: y = 0
+    d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2(-1.0, 0.0));
+    if (d > 0.0) { hitCount++; totalDist += d; }
+    d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2( 0.0, 0.0));
+    if (d > 0.0) { hitCount++; totalDist += d; }
+    d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2( 1.0, 0.0));
+    if (d > 0.0) { hitCount++; totalDist += d; }
+
+    // Row 3: y = 1
+    d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2(-1.0, 1.0));
+    if (d > 0.0) { hitCount++; totalDist += d; }
+    d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2( 0.0, 1.0));
+    if (d > 0.0) { hitCount++; totalDist += d; }
+    d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2( 1.0, 1.0));
+    if (d > 0.0) { hitCount++; totalDist += d; }
+
+    // No shadow hits
+    if (hitCount == 0) {
+      return 1.0;
+    }
+
+    // Calculate average shadow
+    float avgDist = totalDist / float(hitCount);
+    float shadowRatio = float(hitCount) / 9.0;
+
+    // Apply custom shadow shader with the shadow ratio as baseShadow
+    float baseShadow = 1.0 - shadowRatio; // 0 = full shadow, 1 = no shadow
+    return applyShadow(baseShadow, hitPoint, screenUV, avgDist);
   }
 
   void main() {
@@ -429,8 +519,9 @@ const FRAGMENT_SHADER = `
         vec3 lightDir = u_lightDirs[i];
         float NdotL = max(0.0, dot(hitNormal, lightDir));
 
-        if (NdotL > 0.0 && !isInShadow(hitPoint, lightDir)) {
-          diffuse += hitSurfaceColor * u_lightColors[i] * u_lightIntensities[i] * NdotL;
+        if (NdotL > 0.0) {
+          float shadow = calcShadow(hitPoint, lightDir, v_uv);
+          diffuse += hitSurfaceColor * u_lightColors[i] * u_lightIntensities[i] * NdotL * shadow;
         }
       }
 
@@ -440,6 +531,12 @@ const FRAGMENT_SHADER = `
     gl_FragColor = vec4(hitColor, 1.0);
   }
 `
+
+// Build complete fragment shader with injected applyShadow function
+const buildFragmentShader = (shadowShader?: string): string => {
+  const applyShadow = shadowShader ?? DEFAULT_SHADOW_SHADER
+  return FRAGMENT_SHADER_HEADER + applyShadow + FRAGMENT_SHADER_BODY
+}
 
 export interface ScenePlane {
   type: 'plane'
@@ -468,10 +565,21 @@ export const $SceneObject = {
   }),
 }
 
+/**
+ * Custom shadow shader GLSL function signature:
+ * float applyShadow(float baseShadow, vec3 hitPoint, vec2 screenUV, float shadowDistance)
+ * - baseShadow: 0.0 (in shadow) or 1.0 (no shadow)
+ * - hitPoint: world position of the surface being shaded
+ * - screenUV: screen coordinates (0-1)
+ * - shadowDistance: distance to the shadow-casting object
+ * - returns: modified shadow value (0.0-1.0)
+ */
 export interface Scene {
   readonly objects: SceneObject[]
   readonly lights: Light[]
   readonly backgroundColor?: Color
+  readonly shadowShader?: string  // Custom GLSL applyShadow function
+  readonly shadowBlur?: number    // Shadow blur radius in world units (0 = sharp, default)
 }
 
 type SceneItem = SceneObject | Light
@@ -487,10 +595,14 @@ export const $Scene = {
     objects?: SceneObject[]
     lights?: Light[]
     backgroundColor?: Color
+    shadowShader?: string
+    shadowBlur?: number
   }): Scene => ({
     objects: params?.objects ?? [],
     lights: params?.lights ?? [],
     backgroundColor: params?.backgroundColor,
+    shadowShader: params?.shadowShader,
+    shadowBlur: params?.shadowBlur,
   }),
 
   add: (scene: Scene, ...items: SceneItem[]): Scene => {
@@ -508,8 +620,9 @@ export class RayTracingRenderer {
   private gl: WebGLRenderingContext
   private program: WebGLProgram
   private positionBuffer: WebGLBuffer
+  private currentShadowShader: string | undefined
 
-  private uniforms: {
+  private uniforms!: {
     cameraPosition: WebGLUniformLocation
     cameraForward: WebGLUniformLocation
     cameraRight: WebGLUniformLocation
@@ -535,6 +648,7 @@ export class RayTracingRenderer {
     lightColors: WebGLUniformLocation
     lightIntensities: WebGLUniformLocation
     backgroundColor: WebGLUniformLocation
+    shadowBlur: WebGLUniformLocation
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -573,10 +687,11 @@ export class RayTracingRenderer {
     return shader
   }
 
-  private createProgram(): WebGLProgram {
+  private createProgram(shadowShader?: string): WebGLProgram {
     const gl = this.gl
     const vertexShader = this.createShader(gl.VERTEX_SHADER, VERTEX_SHADER)
-    const fragmentShader = this.createShader(gl.FRAGMENT_SHADER, FRAGMENT_SHADER)
+    const fragmentShaderSource = buildFragmentShader(shadowShader)
+    const fragmentShader = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
 
     const program = gl.createProgram()!
     gl.attachShader(program, vertexShader)
@@ -589,7 +704,21 @@ export class RayTracingRenderer {
     }
 
     gl.useProgram(program)
+    this.currentShadowShader = shadowShader
     return program
+  }
+
+  private recompileIfNeeded(shadowShader?: string): void {
+    if (this.currentShadowShader === shadowShader) {
+      return
+    }
+
+    // Delete old program and create new one with updated shader
+    const gl = this.gl
+    gl.deleteProgram(this.program)
+    this.program = this.createProgram(shadowShader)
+    this.uniforms = this.getUniformLocations()
+    this.setupVertexAttributes()
   }
 
   private createPositionBuffer(): WebGLBuffer {
@@ -650,6 +779,7 @@ export class RayTracingRenderer {
       lightColors: gl.getUniformLocation(this.program, 'u_lightColors')!,
       lightIntensities: gl.getUniformLocation(this.program, 'u_lightIntensities')!,
       backgroundColor: gl.getUniformLocation(this.program, 'u_backgroundColor')!,
+      shadowBlur: gl.getUniformLocation(this.program, 'u_shadowBlur')!,
     }
   }
 
@@ -716,7 +846,12 @@ export class RayTracingRenderer {
       objects,
       lights,
       backgroundColor = { r: 20 / 255, g: 20 / 255, b: 40 / 255 },
+      shadowShader,
+      shadowBlur = 0,
     } = scene
+
+    // Recompile shader if shadowShader changed
+    this.recompileIfNeeded(shadowShader)
 
     // Separate objects by type
     const planes = objects.filter((o): o is ScenePlane => o.type === 'plane')
@@ -861,6 +996,9 @@ export class RayTracingRenderer {
       backgroundColor.g,
       backgroundColor.b
     )
+
+    // Set shadow blur
+    gl.uniform1f(this.uniforms.shadowBlur, shadowBlur)
 
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, 6)

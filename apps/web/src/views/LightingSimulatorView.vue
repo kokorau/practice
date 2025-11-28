@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { RayTracingRenderer, HTMLToSceneAdapter, $Scene } from '../modules/Lighting/Infra'
+import { RayTracingRenderer, HTMLToSceneAdapter, $Scene, createPCFShadowShader } from '../modules/Lighting/Infra'
 import { $Light, $Color } from '../modules/Lighting/Domain/ValueObject'
 import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
 import type { Viewport } from '../modules/Lighting/Application'
@@ -56,6 +56,10 @@ const updateScene = () => {
     (sum, light) => sum + $Light.intensityToward(light, frontNormal),
     0
   ))
+
+  // Add shadowShader to scene (PCF for CSS box-shadow-like blur)
+  // shadowBlur is in world units - try smaller value first
+  scene = { ...scene, shadowShader: createPCFShadowShader(0.3), shadowBlur: 1.0 }
 
   scene = $Scene.add(
     scene,
