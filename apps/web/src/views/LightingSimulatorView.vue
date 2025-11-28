@@ -1,14 +1,43 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { RayTracingRenderer, HTMLToSceneAdapter, $Scene, createPCFShadowShader } from '../modules/Lighting/Infra'
 import { $Light, $Color } from '../modules/Lighting/Domain/ValueObject'
 import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
 import { computeBoxShadows, type Viewport, type BoxShadowResult } from '../modules/Lighting/Application'
+import { $Hex, type Hex } from '../modules/Color/Domain/ValueObject'
 
 const htmlContainerRef = ref<HTMLElement | null>(null)
 const sampleHtmlRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let renderer: RayTracingRenderer | null = null
+
+// Debug panel state
+const debugPanelOpen = ref(true)
+
+// Light settings (reactive for UI binding)
+const lightSettings = reactive({
+  primary: {
+    x: 1,
+    y: -1,
+    z: 2,
+    intensity: 0.5,
+    colorHex: '#ffffff' as Hex,
+  },
+  secondary: {
+    x: -1,
+    y: 1,
+    z: 3,
+    intensity: 0.1,
+    colorHex: '#ffffff' as Hex,
+  },
+  shadowBlur: 1.0,
+})
+
+// Convert hex to normalized RGB (0-1)
+const hexToNormalizedRgb = (hex: Hex) => {
+  const srgb = $Hex.toSrgb(hex)
+  return { r: srgb.r / 255, g: srgb.g / 255, b: srgb.b / 255 }
+}
 
 // Debug state
 const debugInfo = ref({
@@ -37,32 +66,37 @@ const updateScene = () => {
 
   // Parse HTML to scene
   const elements = HTMLToSceneAdapter.parseElements(sampleHtmlRef.value, viewport)
-  // Debug: log elements with borderRadius
-  console.log('Elements with borderRadius:', elements.filter(e => e.borderRadius).map(e => ({ borderRadius: e.borderRadius, width: e.width, height: e.height })))
   let { scene, camera } = HTMLToSceneAdapter.toScene(elements, viewport)
-  // Debug: log boxes with radius
-  const boxesWithRadius = scene.objects.filter(o => o.type === 'box' && o.geometry.radius)
-  console.log('Boxes with radius:', boxesWithRadius.map(b => b.type === 'box' ? { radius: b.geometry.radius, size: b.geometry.size } : null))
 
-  // Add lights
-  // Create directional lights first, then calculate ambient to make total = 1 for front-facing surfaces
-  const white = $Color.create(1.0, 1.0, 1.0)
+  // Create lights from settings
+  const primaryRgb = hexToNormalizedRgb(lightSettings.primary.colorHex)
+  const primaryColor = $Color.create(primaryRgb.r, primaryRgb.g, primaryRgb.b)
+  const secondaryRgb = hexToNormalizedRgb(lightSettings.secondary.colorHex)
+  const secondaryColor = $Color.create(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b)
   const frontNormal = $Vector3.create(0, 0, -1)
 
   const directionalLights = [
-    $Light.createDirectional($Vector3.create(1, -1, 2), white, 0.5),
-    $Light.createDirectional($Vector3.create(-1, 1, 3), white, 0.1),
+    $Light.createDirectional(
+      $Vector3.create(lightSettings.primary.x, lightSettings.primary.y, lightSettings.primary.z),
+      primaryColor,
+      lightSettings.primary.intensity
+    ),
+    $Light.createDirectional(
+      $Vector3.create(lightSettings.secondary.x, lightSettings.secondary.y, lightSettings.secondary.z),
+      secondaryColor,
+      lightSettings.secondary.intensity
+    ),
   ]
 
   // Calculate ambient so that ambient + directional contribution = 1 for front-facing surfaces
+  const white = $Color.create(1.0, 1.0, 1.0)
   const ambientIntensity = Math.max(0, 1.0 - directionalLights.reduce(
     (sum, light) => sum + $Light.intensityToward(light, frontNormal),
     0
   ))
 
   // Add shadowShader to scene (PCF for CSS box-shadow-like blur)
-  // shadowBlur is in world units - try smaller value first
-  scene = { ...scene, shadowShader: createPCFShadowShader(0.3), shadowBlur: 1.0 }
+  scene = { ...scene, shadowShader: createPCFShadowShader(0.3), shadowBlur: lightSettings.shadowBlur }
 
   scene = $Scene.add(
     scene,
@@ -92,12 +126,30 @@ const updateScene = () => {
     depthScale: 0.5,
     blurScale: 2.0,
   })
-  console.log('Box shadows:', boxShadows.value.slice(0, 5))
 }
+
+// Handle scroll sync
+const onScroll = () => {
+  updateScene()
+}
+
+// Handle resize
+const onResize = () => {
+  updateScene()
+}
+
+// Watch light settings changes
+watch(lightSettings, () => {
+  updateScene()
+}, { deep: true })
 
 onMounted(() => {
   if (!canvasRef.value) return
   renderer = new RayTracingRenderer(canvasRef.value)
+
+  // Add event listeners
+  window.addEventListener('resize', onResize)
+  htmlContainerRef.value?.addEventListener('scroll', onScroll)
 
   // Wait for layout to complete
   requestAnimationFrame(() => {
@@ -106,6 +158,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  // Remove event listeners
+  window.removeEventListener('resize', onResize)
+  htmlContainerRef.value?.removeEventListener('scroll', onScroll)
+
   renderer?.dispose()
   renderer = null
 })
@@ -209,26 +265,93 @@ onUnmounted(() => {
     </div>
 
     <!-- Debug Panel -->
-    <div class="fixed bottom-4 right-4 bg-black/80 text-white text-xs font-mono p-3 rounded-lg max-w-sm max-h-96 overflow-auto">
-      <div class="font-bold mb-2 text-green-400">Scene Debug</div>
-      <div class="space-y-1">
-        <div>Viewport: {{ debugInfo.viewport.width.toFixed(0) }} x {{ debugInfo.viewport.height.toFixed(0) }}</div>
-        <div>Scroll: ({{ debugInfo.viewport.scrollX.toFixed(0) }}, {{ debugInfo.viewport.scrollY.toFixed(0) }})</div>
-        <div class="border-t border-gray-600 pt-1 mt-1">Elements: {{ debugInfo.elementsCount }}</div>
-        <div>Objects: {{ debugInfo.objectsCount }}</div>
-        <div>Lights: {{ debugInfo.lightsCount }}</div>
-        <div class="border-t border-gray-600 pt-1 mt-1">Camera pos: ({{ debugInfo.cameraPosition.x.toFixed(1) }}, {{ debugInfo.cameraPosition.y.toFixed(1) }}, {{ debugInfo.cameraPosition.z.toFixed(1) }})</div>
-        <div>Camera size: {{ debugInfo.cameraSize.width.toFixed(0) }} x {{ debugInfo.cameraSize.height.toFixed(0) }}</div>
-      </div>
+    <div class="fixed bottom-4 right-4 bg-black/90 text-white text-xs font-mono rounded-lg shadow-xl">
+      <!-- Toggle Button -->
+      <button
+        class="w-full px-3 py-2 flex items-center justify-between hover:bg-white/10 rounded-t-lg"
+        @click="debugPanelOpen = !debugPanelOpen"
+      >
+        <span class="font-bold text-green-400">Debug Panel</span>
+        <span class="text-gray-400">{{ debugPanelOpen ? '▼' : '▲' }}</span>
+      </button>
 
-      <!-- Box Shadow Output -->
-      <div class="border-t border-gray-600 pt-2 mt-2">
-        <div class="font-bold mb-1 text-yellow-400">Box Shadows ({{ boxShadows.length }})</div>
-        <div class="space-y-1 text-[10px]">
-          <div v-for="(shadow, i) in boxShadows.slice(0, 8)" :key="i" class="bg-gray-900 p-1 rounded">
-            <span class="text-gray-500">[{{ shadow.objectIndex }}]</span> {{ shadow.boxShadow }}
+      <!-- Panel Content -->
+      <div v-show="debugPanelOpen" class="p-3 pt-0 w-80 max-h-[32rem] overflow-auto">
+        <!-- Scene Info -->
+        <div class="mb-3">
+          <div class="font-bold mb-1 text-blue-400">Scene Info</div>
+          <div class="space-y-0.5 text-[11px]">
+            <div>Viewport: {{ debugInfo.viewport.width.toFixed(0) }} x {{ debugInfo.viewport.height.toFixed(0) }}</div>
+            <div>Scroll: ({{ debugInfo.viewport.scrollX.toFixed(0) }}, {{ debugInfo.viewport.scrollY.toFixed(0) }})</div>
+            <div>Elements: {{ debugInfo.elementsCount }} | Objects: {{ debugInfo.objectsCount }}</div>
           </div>
-          <div v-if="boxShadows.length > 8" class="text-gray-500">... and {{ boxShadows.length - 8 }} more</div>
+        </div>
+
+        <!-- Primary Light Controls -->
+        <div class="border-t border-gray-700 pt-2 mb-3">
+          <div class="font-bold mb-2 text-yellow-400">Primary Light</div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <label class="w-16 text-gray-400">Direction</label>
+              <input type="number" v-model.number="lightSettings.primary.x" step="0.1" class="w-14 px-1 py-0.5 bg-gray-800 rounded text-center" />
+              <input type="number" v-model.number="lightSettings.primary.y" step="0.1" class="w-14 px-1 py-0.5 bg-gray-800 rounded text-center" />
+              <input type="number" v-model.number="lightSettings.primary.z" step="0.1" class="w-14 px-1 py-0.5 bg-gray-800 rounded text-center" />
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="w-16 text-gray-400">Intensity</label>
+              <input type="range" v-model.number="lightSettings.primary.intensity" min="0" max="1" step="0.05" class="flex-1" />
+              <span class="w-10 text-right">{{ lightSettings.primary.intensity.toFixed(2) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="w-16 text-gray-400">Color</label>
+              <input type="color" v-model="lightSettings.primary.colorHex" class="w-10 h-8 rounded cursor-pointer" />
+              <span class="text-gray-500">{{ lightSettings.primary.colorHex }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Light Controls -->
+        <div class="border-t border-gray-700 pt-2 mb-3">
+          <div class="font-bold mb-2 text-yellow-400">Secondary Light</div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <label class="w-16 text-gray-400">Direction</label>
+              <input type="number" v-model.number="lightSettings.secondary.x" step="0.1" class="w-14 px-1 py-0.5 bg-gray-800 rounded text-center" />
+              <input type="number" v-model.number="lightSettings.secondary.y" step="0.1" class="w-14 px-1 py-0.5 bg-gray-800 rounded text-center" />
+              <input type="number" v-model.number="lightSettings.secondary.z" step="0.1" class="w-14 px-1 py-0.5 bg-gray-800 rounded text-center" />
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="w-16 text-gray-400">Intensity</label>
+              <input type="range" v-model.number="lightSettings.secondary.intensity" min="0" max="1" step="0.05" class="flex-1" />
+              <span class="w-10 text-right">{{ lightSettings.secondary.intensity.toFixed(2) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="w-16 text-gray-400">Color</label>
+              <input type="color" v-model="lightSettings.secondary.colorHex" class="w-10 h-8 rounded cursor-pointer" />
+              <span class="text-gray-500">{{ lightSettings.secondary.colorHex }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shadow Settings -->
+        <div class="border-t border-gray-700 pt-2 mb-3">
+          <div class="font-bold mb-2 text-purple-400">Shadow</div>
+          <div class="flex items-center gap-2">
+            <label class="w-16 text-gray-400">Blur</label>
+            <input type="range" v-model.number="lightSettings.shadowBlur" min="0" max="5" step="0.1" class="flex-1" />
+            <span class="w-10 text-right">{{ lightSettings.shadowBlur.toFixed(1) }}</span>
+          </div>
+        </div>
+
+        <!-- Box Shadow Output -->
+        <div class="border-t border-gray-700 pt-2">
+          <div class="font-bold mb-1 text-cyan-400">CSS Box Shadows ({{ boxShadows.length }})</div>
+          <div class="space-y-1 text-[10px] max-h-32 overflow-auto">
+            <div v-for="(shadow, i) in boxShadows.slice(0, 10)" :key="i" class="bg-gray-900 p-1 rounded">
+              <span class="text-gray-500">[{{ shadow.objectIndex }}]</span> {{ shadow.boxShadow }}
+            </div>
+            <div v-if="boxShadows.length > 10" class="text-gray-500">... and {{ boxShadows.length - 10 }} more</div>
+          </div>
         </div>
       </div>
     </div>
