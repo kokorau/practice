@@ -24,6 +24,7 @@ export type TileRenderRequest = {
 // Port interface for tile rendering infrastructure
 export interface TileRenderPort {
   renderTile(tile: Tile, scene: Scene, camera: OrthographicCamera): HTMLCanvasElement
+  renderAllTiles(grid: TileGrid, scene: Scene, camera: OrthographicCamera): void
   getCachedCanvas(tileId: string): HTMLCanvasElement | null
   invalidateAll(): void
 }
@@ -50,7 +51,9 @@ export type RenderTilesState = {
   viewportWidth: number
   viewportHeight: number
   idleCallbackId: number | null
+  rafId: number | null
   pendingTiles: Set<string>
+  renderVersion: number // Incremented on each updateScene to cancel stale renders
 }
 
 export class RenderTilesUseCase {
@@ -79,7 +82,9 @@ export class RenderTilesUseCase {
       viewportWidth: 0,
       viewportHeight: 0,
       idleCallbackId: null,
+      rafId: null,
       pendingTiles: new Set(),
+      renderVersion: 0,
     }
   }
 
@@ -124,14 +129,39 @@ export class RenderTilesUseCase {
     this.state.viewportWidth = viewportWidth
     this.state.viewportHeight = viewportHeight
 
-    // Mark all tiles as pending
-    this.state.pendingTiles = new Set(this.state.grid.tiles.map((t) => t.id))
+    // Cancel any pending render operations
+    this.cancelPendingRenders()
 
-    // Render ALL tiles immediately on scene update for faster initial display
-    this.renderAllTiles()
+    // Increment version to invalidate any in-flight renders
+    this.state.renderVersion++
+
+    // Clear pending tiles - we'll render all at once
+    this.state.pendingTiles.clear()
+
+    // Render all tiles in one WebGL pass (much faster than per-tile rendering)
+    this.tileRenderer.renderAllTiles(this.state.grid, scene, camera)
+
+    // Mark all tiles as clean
+    for (const tile of this.state.grid.tiles) {
+      this.state.grid = $TileGrid.updateTile(this.state.grid, tile.id, $Tile.markClean)
+    }
 
     // Composite visible tiles to display canvas
     this.compositeVisible()
+  }
+
+  /**
+   * Cancel any pending render operations
+   */
+  private cancelPendingRenders(): void {
+    if (this.state.rafId !== null) {
+      cancelAnimationFrame(this.state.rafId)
+      this.state.rafId = null
+    }
+    if (this.state.idleCallbackId !== null) {
+      cancelIdleCallback(this.state.idleCallbackId)
+      this.state.idleCallbackId = null
+    }
   }
 
   /**
@@ -144,34 +174,6 @@ export class RenderTilesUseCase {
 
     // Composite visible tiles to display canvas at viewport position
     this.compositeVisible()
-  }
-
-  /**
-   * Render a single tile
-   */
-  private renderTile(tile: Tile): void {
-    if (!this.state.scene || !this.state.camera) return
-
-    // Update tile state to rendering
-    this.state.grid = $TileGrid.updateTile(this.state.grid, tile.id, $Tile.markRendering)
-
-    // Render the tile
-    this.tileRenderer.renderTile(tile, this.state.scene, this.state.camera)
-
-    // Update tile state to clean
-    this.state.grid = $TileGrid.updateTile(this.state.grid, tile.id, $Tile.markClean)
-  }
-
-  /**
-   * Render all tiles immediately (for initial render or full scene update)
-   */
-  private renderAllTiles(): void {
-    if (!this.state.scene || !this.state.camera) return
-
-    for (const tile of this.state.grid.tiles) {
-      this.renderTile(tile as Tile)
-      this.state.pendingTiles.delete(tile.id)
-    }
   }
 
   /**
@@ -205,74 +207,13 @@ export class RenderTilesUseCase {
   }
 
   /**
-   * Schedule idle rendering for non-visible tiles
-   */
-  private scheduleIdleRendering(): void {
-    // Cancel any existing idle callback
-    if (this.state.idleCallbackId !== null) {
-      cancelIdleCallback(this.state.idleCallbackId)
-      this.state.idleCallbackId = null
-    }
-
-    // Nothing to do if no pending tiles
-    if (this.state.pendingTiles.size === 0) return
-
-    this.state.idleCallbackId = requestIdleCallback(
-      (deadline) => this.processIdleRendering(deadline),
-      { timeout: 1000 } // Max wait time
-    )
-  }
-
-  /**
-   * Process idle rendering
-   */
-  private processIdleRendering(deadline: IdleDeadline): void {
-    this.state.idleCallbackId = null
-
-    if (!this.state.scene || !this.state.camera) return
-
-    // Get tiles in priority order: adjacent first, then others
-    const adjacentTiles = $TileGrid.getAdjacentTiles(this.state.grid, this.state.viewport)
-    const otherTiles = this.state.grid.tiles.filter(
-      (t) =>
-        this.state.pendingTiles.has(t.id) &&
-        !adjacentTiles.some((at) => at.id === t.id)
-    )
-
-    const prioritizedTiles = [
-      ...adjacentTiles.filter((t) => this.state.pendingTiles.has(t.id)),
-      ...otherTiles,
-    ]
-
-    // Render tiles while we have time
-    for (const tile of prioritizedTiles) {
-      // Check if we have time left (leave some buffer)
-      if (deadline.timeRemaining() < 5) break
-
-      if (this.state.pendingTiles.has(tile.id)) {
-        this.renderTile(tile as Tile)
-        this.state.pendingTiles.delete(tile.id)
-
-        // Composite after each tile so user sees progress
-        this.compositeVisible()
-      }
-    }
-
-    // Schedule more rendering if there are still pending tiles
-    if (this.state.pendingTiles.size > 0) {
-      this.scheduleIdleRendering()
-    }
-  }
-
-  /**
    * Force render all tiles immediately
    */
   forceRenderAll(): void {
     if (!this.state.scene || !this.state.camera) return
 
-    for (const tile of this.state.grid.tiles) {
-      this.renderTile(tile as Tile)
-    }
+    // Render all tiles in one pass
+    this.tileRenderer.renderAllTiles(this.state.grid, this.state.scene, this.state.camera)
     this.state.pendingTiles.clear()
     this.compositeVisible()
   }
@@ -301,9 +242,6 @@ export class RenderTilesUseCase {
    * Dispose resources
    */
   dispose(): void {
-    if (this.state.idleCallbackId !== null) {
-      cancelIdleCallback(this.state.idleCallbackId)
-      this.state.idleCallbackId = null
-    }
+    this.cancelPendingRenders()
   }
 }

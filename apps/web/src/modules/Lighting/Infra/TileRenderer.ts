@@ -1,103 +1,145 @@
 /**
- * TileRenderer - Renders individual tiles using RayTracingRenderer
+ * TileRenderer - Renders tiles using a single shared WebGL context
  *
- * Each tile is rendered to its own offscreen canvas for caching
+ * Uses one large canvas for rendering and extracts tile regions as ImageData
+ * This is much faster than creating WebGL context per tile
  */
 
-import type { Tile } from '../Domain/ValueObject'
+import type { Tile, TileGrid } from '../Domain/ValueObject'
 import type { OrthographicCamera } from '../Domain/ValueObject'
 import { RayTracingRenderer, type Scene } from './WebGL/RayTracingRenderer'
 
-export type TileCanvas = {
-  readonly tileId: string
-  readonly canvas: HTMLCanvasElement
-  readonly renderer: RayTracingRenderer
+export type TileCache = {
+  readonly imageData: ImageData
 }
 
 export class TileRenderer {
-  private tileCanvases: Map<string, TileCanvas> = new Map()
+  private renderer: RayTracingRenderer | null = null
+  private renderCanvas: HTMLCanvasElement | null = null
+  private tileCache: Map<string, TileCache> = new Map()
 
   /**
-   * Create or reuse a tile canvas for the given tile
+   * Initialize or resize the render canvas
    */
-  private getOrCreateTileCanvas(tile: Tile): TileCanvas {
-    const existing = this.tileCanvases.get(tile.id)
-    if (existing && existing.canvas.width === tile.width && existing.canvas.height === tile.height) {
-      return existing
+  private ensureRenderCanvas(width: number, height: number): void {
+    if (!this.renderCanvas) {
+      this.renderCanvas = document.createElement('canvas')
+      this.renderCanvas.width = width
+      this.renderCanvas.height = height
+      this.renderer = new RayTracingRenderer(this.renderCanvas)
+    } else if (this.renderCanvas.width !== width || this.renderCanvas.height !== height) {
+      // Resize canvas
+      this.renderCanvas.width = width
+      this.renderCanvas.height = height
+      // Recreate renderer (WebGL context needs to be reset)
+      this.renderer?.dispose()
+      this.renderer = new RayTracingRenderer(this.renderCanvas)
+    }
+  }
+
+  /**
+   * Render the entire scene once and cache all tiles
+   * This is the key optimization - one WebGL render for all tiles
+   */
+  renderAllTiles(
+    grid: TileGrid,
+    scene: Scene,
+    camera: OrthographicCamera
+  ): void {
+    const { canvasWidth, canvasHeight, tiles } = grid
+
+    // Ensure render canvas is properly sized
+    this.ensureRenderCanvas(canvasWidth, canvasHeight)
+
+    if (!this.renderer || !this.renderCanvas) return
+
+    // Render entire scene in one pass
+    this.renderer.render(scene, camera)
+
+    // Get the full rendered image
+    const gl = this.renderCanvas.getContext('webgl', { preserveDrawingBuffer: true })
+    if (!gl) return
+
+    // Read pixels from WebGL
+    const fullPixels = new Uint8Array(canvasWidth * canvasHeight * 4)
+    gl.readPixels(0, 0, canvasWidth, canvasHeight, gl.RGBA, gl.UNSIGNED_BYTE, fullPixels)
+
+    // WebGL pixels are bottom-up, need to flip
+    const flippedPixels = new Uint8Array(canvasWidth * canvasHeight * 4)
+    for (let y = 0; y < canvasHeight; y++) {
+      const srcRow = (canvasHeight - 1 - y) * canvasWidth * 4
+      const dstRow = y * canvasWidth * 4
+      flippedPixels.set(fullPixels.subarray(srcRow, srcRow + canvasWidth * 4), dstRow)
     }
 
-    // Dispose existing if size changed
-    if (existing) {
-      existing.renderer.dispose()
-    }
+    // Extract each tile as ImageData
+    for (const tile of tiles) {
+      const tilePixels = new Uint8ClampedArray(tile.width * tile.height * 4)
 
-    // Create new offscreen canvas for this tile
+      // Copy tile region from full image
+      for (let y = 0; y < tile.height; y++) {
+        const srcY = tile.y + y
+        if (srcY >= canvasHeight) continue
+
+        const srcOffset = (srcY * canvasWidth + tile.x) * 4
+        const dstOffset = y * tile.width * 4
+        const rowWidth = Math.min(tile.width, canvasWidth - tile.x) * 4
+
+        tilePixels.set(
+          flippedPixels.subarray(srcOffset, srcOffset + rowWidth),
+          dstOffset
+        )
+      }
+
+      const imageData = new ImageData(tilePixels, tile.width, tile.height)
+      this.tileCache.set(tile.id, { imageData })
+    }
+  }
+
+  /**
+   * Render a single tile (for incremental updates)
+   * Falls back to full render if not efficient
+   */
+  renderTile(tile: Tile, scene: Scene, camera: OrthographicCamera): HTMLCanvasElement {
+    // For single tile, we still need to render the full scene
+    // but we can use viewport/scissor optimization in future
+    // For now, create a small canvas for this tile
+
     const canvas = document.createElement('canvas')
     canvas.width = tile.width
     canvas.height = tile.height
 
+    const tileCamera = this.createTileCamera(tile, camera)
     const renderer = new RayTracingRenderer(canvas)
+    renderer.render(scene, tileCamera)
 
-    const tileCanvas: TileCanvas = {
-      tileId: tile.id,
-      canvas,
-      renderer,
+    // Cache the result
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      const imageData = ctx.getImageData(0, 0, tile.width, tile.height)
+      this.tileCache.set(tile.id, { imageData })
     }
 
-    this.tileCanvases.set(tile.id, tileCanvas)
-    return tileCanvas
-  }
-
-  /**
-   * Render a single tile
-   *
-   * @param tile - The tile to render
-   * @param scene - The full scene to render
-   * @param camera - The full scene camera
-   * @returns The rendered canvas for this tile
-   */
-  renderTile(tile: Tile, scene: Scene, camera: OrthographicCamera): HTMLCanvasElement {
-    const tileCanvas = this.getOrCreateTileCanvas(tile)
-
-    // Create a camera that only shows this tile's portion
-    // The camera position needs to be offset so that this tile's region
-    // maps to the full tile canvas
-    const tileCamera = this.createTileCamera(tile, camera)
-
-    tileCanvas.renderer.render(scene, tileCamera)
-
-    return tileCanvas.canvas
+    renderer.dispose()
+    return canvas
   }
 
   /**
    * Create a camera adjusted for rendering a specific tile
    */
   private createTileCamera(tile: Tile, fullCamera: OrthographicCamera): OrthographicCamera {
-    // The full camera renders the entire scene
-    // For a tile, we need to offset the camera position so the tile region
-    // fills the entire tile canvas
-
-    // Calculate the center of the tile in camera space
-    // Full camera renders from (0,0) to (fullWidth, fullHeight)
-    // Tile is at (tile.x, tile.y) with size (tile.width, tile.height)
-
-    // Camera center offset: move camera so tile center becomes render center
     const fullCenterX = fullCamera.width / 2
     const fullCenterY = fullCamera.height / 2
     const tileCenterX = tile.x + tile.width / 2
     const tileCenterY = tile.y + tile.height / 2
 
-    // Offset in world space (camera right is +X, camera up is -Y for screen coords)
     const offsetX = tileCenterX - fullCenterX
     const offsetY = tileCenterY - fullCenterY
 
-    // Calculate camera basis vectors (same as in RayTracingRenderer)
     const forward = this.normalize(this.sub(fullCamera.lookAt, fullCamera.position))
     const right = this.normalize(this.cross(fullCamera.up, forward))
     const up = this.cross(forward, right)
 
-    // New camera position = original + right * offsetX - up * offsetY
-    // (negative up because screen Y is inverted)
     const newPosition = {
       x: fullCamera.position.x + right.x * offsetX - up.x * offsetY,
       y: fullCamera.position.y + right.y * offsetX - up.y * offsetY,
@@ -139,31 +181,49 @@ export class TileRenderer {
   }
 
   /**
-   * Get cached canvas for a tile (if exists)
+   * Get cached ImageData for a tile
    */
-  getCachedCanvas(tileId: string): HTMLCanvasElement | null {
-    return this.tileCanvases.get(tileId)?.canvas ?? null
+  getCachedImageData(tileId: string): ImageData | null {
+    return this.tileCache.get(tileId)?.imageData ?? null
   }
 
   /**
-   * Invalidate a specific tile (force re-render on next request)
+   * Get cached canvas for a tile (creates temporary canvas from ImageData)
+   */
+  getCachedCanvas(tileId: string): HTMLCanvasElement | null {
+    const cached = this.tileCache.get(tileId)
+    if (!cached) return null
+
+    // Create canvas from ImageData
+    const canvas = document.createElement('canvas')
+    canvas.width = cached.imageData.width
+    canvas.height = cached.imageData.height
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      ctx.putImageData(cached.imageData, 0, 0)
+    }
+    return canvas
+  }
+
+  /**
+   * Check if a tile is cached
+   */
+  hasCachedTile(tileId: string): boolean {
+    return this.tileCache.has(tileId)
+  }
+
+  /**
+   * Invalidate a specific tile
    */
   invalidateTile(tileId: string): void {
-    const tileCanvas = this.tileCanvases.get(tileId)
-    if (tileCanvas) {
-      tileCanvas.renderer.dispose()
-      this.tileCanvases.delete(tileId)
-    }
+    this.tileCache.delete(tileId)
   }
 
   /**
    * Invalidate all tiles
    */
   invalidateAll(): void {
-    for (const tileCanvas of this.tileCanvases.values()) {
-      tileCanvas.renderer.dispose()
-    }
-    this.tileCanvases.clear()
+    this.tileCache.clear()
   }
 
   /**
@@ -171,5 +231,8 @@ export class TileRenderer {
    */
   dispose(): void {
     this.invalidateAll()
+    this.renderer?.dispose()
+    this.renderer = null
+    this.renderCanvas = null
   }
 }
