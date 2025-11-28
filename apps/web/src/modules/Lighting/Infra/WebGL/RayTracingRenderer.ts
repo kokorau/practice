@@ -158,6 +158,52 @@ const FRAGMENT_SHADER = `
     return t;
   }
 
+  // Ray-OBB intersection without normal calculation (for shadow rays)
+  float intersectBoxSimple(vec3 rayOrigin, vec3 rayDir, vec3 boxCenter, vec3 boxSize, mat3 rotMatrix) {
+    vec3 localOrigin = rotMatrix * (rayOrigin - boxCenter);
+    vec3 localDir = rotMatrix * rayDir;
+
+    vec3 halfSize = boxSize * 0.5;
+    vec3 invDir = 1.0 / localDir;
+
+    vec3 t1 = (-halfSize - localOrigin) * invDir;
+    vec3 t2 = (halfSize - localOrigin) * invDir;
+
+    vec3 tMin = min(t1, t2);
+    vec3 tMax = max(t1, t2);
+
+    float tNear = max(max(tMin.x, tMin.y), tMin.z);
+    float tFar = min(min(tMax.x, tMax.y), tMax.z);
+
+    if (tNear > tFar || tFar < 0.0) {
+      return -1.0;
+    }
+
+    return tNear > 0.0 ? tNear : tFar;
+  }
+
+  // Check if a point is in shadow
+  bool isInShadow(vec3 hitPoint, vec3 lightDir) {
+    // Offset slightly along normal to avoid self-intersection
+    vec3 shadowOrigin = hitPoint + lightDir * 0.001;
+
+    // Check planes
+    for (int i = 0; i < MAX_PLANES; i++) {
+      if (i >= u_planeCount) break;
+      float t = intersectPlane(shadowOrigin, lightDir, u_planePoints[i], u_planeNormals[i], u_planeSizes[i]);
+      if (t > 0.0) return true;
+    }
+
+    // Check boxes
+    for (int i = 0; i < MAX_BOXES; i++) {
+      if (i >= u_boxCount) break;
+      float t = intersectBoxSimple(shadowOrigin, lightDir, u_boxCenters[i], u_boxSizes[i], u_boxRotations[i]);
+      if (t > 0.0) return true;
+    }
+
+    return false;
+  }
+
   void main() {
     // Generate ray from orthographic camera
     float offsetU = v_uv.x - 0.5;
@@ -219,12 +265,18 @@ const FRAGMENT_SHADER = `
     }
 
     if (hasHit) {
-      // Ambient lighting
+      vec3 hitPoint = rayOrigin + closestT * rayDir;
+
+      // Ambient lighting (always applied)
       vec3 ambient = hitSurfaceColor * u_ambientColor * u_ambientIntensity;
 
-      // Directional lighting (Lambertian diffuse)
+      // Directional lighting with shadow
+      vec3 diffuse = vec3(0.0);
       float NdotL = max(0.0, dot(hitNormal, u_directionalDir));
-      vec3 diffuse = hitSurfaceColor * u_directionalColor * u_directionalIntensity * NdotL;
+
+      if (NdotL > 0.0 && !isInShadow(hitPoint, u_directionalDir)) {
+        diffuse = hitSurfaceColor * u_directionalColor * u_directionalIntensity * NdotL;
+      }
 
       hitColor = ambient + diffuse;
     }
