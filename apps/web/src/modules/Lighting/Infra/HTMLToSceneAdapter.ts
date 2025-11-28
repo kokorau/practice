@@ -90,7 +90,13 @@ const parseCssColor = (cssColor: string): Color | null => {
     g = Math.max(0, Math.min(1, g))
     bVal = Math.max(0, Math.min(1, bVal))
 
-    return $Color.create(r, g, bVal)
+    // Convert Linear RGB to sRGB (apply gamma)
+    const gamma = 1 / 2.2
+    return $Color.create(
+      Math.pow(r, gamma),
+      Math.pow(g, gamma),
+      Math.pow(bVal, gamma)
+    )
   }
 
   // Unknown format - return white as fallback
