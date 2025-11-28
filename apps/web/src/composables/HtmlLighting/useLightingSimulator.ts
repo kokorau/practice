@@ -5,9 +5,13 @@ import { $Vector3 } from '../../modules/Vector/Domain/ValueObject'
 import { computeBoxShadows, RenderTilesUseCase, type Viewport, type BoxShadowResult } from '../../modules/Lighting/Application'
 import { $Hex } from '../../modules/Color/Domain/ValueObject'
 import { lightPresets, type LightPreset, type LightSetting } from '../../modules/Lighting/constant/Preset'
+import { useFilter } from '../Filter/useFilter'
+import { PRESETS } from '../../modules/Filter/Domain'
+import type { Preset } from '../../modules/Filter/Domain'
 
 // Re-export types for convenience
 export type { LightPreset, LightSetting }
+export type { Preset as FilterPreset }
 
 // Debug info type
 export type DebugInfo = {
@@ -32,6 +36,7 @@ export interface UseLightingSimulatorOptions {
   canvasRef: Ref<HTMLCanvasElement | null>
   enableTileRendering?: boolean
   tileHeight?: number
+  enableFilter?: boolean
 }
 
 export function useLightingSimulator(options: UseLightingSimulatorOptions) {
@@ -41,6 +46,7 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     canvasRef,
     enableTileRendering = true,
     tileHeight = 200,
+    enableFilter = true,
   } = options
 
   // Tile rendering infrastructure (non-reactive)
@@ -50,6 +56,22 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
 
   // Current preset
   const currentPreset = ref<string | null>('Default')
+
+  // Filter composable
+  const {
+    filter,
+    lut,
+    pixelEffects,
+    currentPresetId: currentFilterPresetId,
+    applyPreset: applyFilterPreset,
+    setters: filterSetters,
+    setMasterPoint,
+    setMasterPoints,
+    reset: resetFilter,
+  } = useFilter(7)
+
+  // Filter enabled state
+  const filterEnabled = ref(enableFilter)
 
   // Light settings (reactive for UI binding)
   const defaultPreset = lightPresets[0]!
@@ -194,6 +216,15 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
       depthScale: 0.5,
       blurScale: 2.0,
     })
+
+    // Apply filter if enabled
+    applyFilterToCanvas()
+  }
+
+  // Apply filter to the canvas
+  const applyFilterToCanvas = () => {
+    if (!filterEnabled.value || !tileCompositor) return
+    tileCompositor.applyFilter(lut.value, pixelEffects.value)
   }
 
   // Handle scroll - only update viewport, tiles are cached
@@ -221,6 +252,9 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
       pending: tileDebug.pendingTiles,
       clean: tileDebug.cleanTiles,
     }
+
+    // Apply filter after scroll
+    applyFilterToCanvas()
   }
 
   // Handle resize - need full re-render
@@ -249,6 +283,16 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
   // Watch light settings changes to trigger re-render
   watch(lightSettings, () => {
     updateScene()
+  }, { deep: true })
+
+  // Watch filter changes to re-apply (without re-rendering tiles)
+  watch([lut, pixelEffects, filterEnabled], () => {
+    // Re-composite tiles without re-rendering, then apply filter
+    if (!renderTilesUseCase || !htmlContainerRef.value) return
+    const scrollY = htmlContainerRef.value.scrollTop
+    const containerRect = htmlContainerRef.value.getBoundingClientRect()
+    renderTilesUseCase.updateViewport(scrollY, containerRect.height)
+    applyFilterToCanvas()
   }, { deep: true })
 
   // Lifecycle
@@ -287,17 +331,32 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
   })
 
   return {
-    // State
+    // Lighting State
     lightSettings,
     currentPreset,
     debugInfo,
     boxShadows,
 
-    // Actions
+    // Lighting Actions
     applyPreset,
     updateScene,
 
-    // Constants
+    // Lighting Constants
     lightPresets,
+
+    // Filter State
+    filter,
+    filterEnabled,
+    currentFilterPresetId,
+
+    // Filter Actions
+    applyFilterPreset,
+    filterSetters,
+    setMasterPoint,
+    setMasterPoints,
+    resetFilter,
+
+    // Filter Constants
+    filterPresets: PRESETS,
   }
 }
