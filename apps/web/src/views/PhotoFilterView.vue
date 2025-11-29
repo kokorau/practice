@@ -6,7 +6,7 @@ import { loadScreenshot } from '../modules/PhotoScreenshot/Application/loadScree
 import { photoRepository } from '../modules/Photo/Infra/photoRepository'
 import { createDefaultPhotoUseCase } from '../modules/Photo/Application/createDefaultPhotoUseCase'
 import { useFilter } from '../composables/Filter/useFilter'
-import { PRESETS } from '../modules/Filter/Domain'
+import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { $Media } from '../modules/Media'
 import { useSegmentation } from '../composables/Segmentation/useSegmentation'
 import { useColorLayers } from '../composables/Segmentation/useColorLayers'
@@ -31,6 +31,9 @@ const {
   isStreaming,
   error: mediaError,
 } = useMedia()
+
+// Presets
+const PRESETS = getPresets()
 
 // Filter
 const { filter, lut, pixelEffects, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)

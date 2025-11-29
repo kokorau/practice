@@ -6,8 +6,10 @@ import { computeBoxShadows, RenderTilesUseCase, type Viewport, type BoxShadowRes
 import { $Hex } from '../../modules/Color/Domain/ValueObject'
 import { lightPresets, type LightPreset, type LightSetting } from '../../modules/Lighting/constant/Preset'
 import { useFilter } from '../Filter/useFilter'
-import { PRESETS } from '../../modules/Filter/Domain'
+import { getPresets } from '../../modules/Filter/Infra/PresetRepository'
 import type { Preset } from '../../modules/Filter/Domain'
+
+const PRESETS = getPresets()
 
 // Re-export types for convenience
 export type { LightPreset, LightSetting }

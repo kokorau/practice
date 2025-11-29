@@ -6,7 +6,9 @@ import RgbCubeViewer from '../components/ColorPicker/RgbCubeViewer.vue'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
 import { $Hsv } from '../modules/Color/Domain/ValueObject'
 import { useFilter } from '../composables/Filter/useFilter'
-import { PRESETS } from '../modules/Filter/Domain'
+import { getPresets } from '../modules/Filter/Infra/PresetRepository'
+
+const PRESETS = getPresets()
 
 const hue = ref(0)
 const saturation = ref(1)
