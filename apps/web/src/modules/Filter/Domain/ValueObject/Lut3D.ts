@@ -674,6 +674,532 @@ export const $Lut3D = {
     return { type: 'lut3d', size, data }
   },
 
+  // ========================================
+  // Web Design 向けジェネレーター
+  // ========================================
+
+  /**
+   * 彩度調整 3D LUT を生成
+   * @param amount 彩度調整量 (-1〜1、-1で完全グレー、1で2倍)
+   */
+  saturationAdjust: (amount: number, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const hsl = rgbToHsl(r, g, b)
+          hsl.s = Math.max(0, Math.min(1, hsl.s * (1 + amount)))
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          data[idx] = rgb.r
+          data[idx + 1] = rgb.g
+          data[idx + 2] = rgb.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * 明度調整 3D LUT を生成
+   * @param amount 明度調整量 (-1〜1)
+   */
+  lightnessAdjust: (amount: number, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const hsl = rgbToHsl(r, g, b)
+          if (amount > 0) {
+            hsl.l = hsl.l + (1 - hsl.l) * amount
+          } else {
+            hsl.l = hsl.l * (1 + amount)
+          }
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          data[idx] = rgb.r
+          data[idx + 1] = rgb.g
+          data[idx + 2] = rgb.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * パステル化 3D LUT を生成
+   * 彩度を下げつつ明度を上げる
+   * @param strength 強度 (0〜1)
+   */
+  pastel: (strength: number = 0.5, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const hsl = rgbToHsl(r, g, b)
+          // 彩度を下げる
+          hsl.s = hsl.s * (1 - strength * 0.5)
+          // 明度を上げる（白に近づける）
+          hsl.l = hsl.l + (1 - hsl.l) * strength * 0.4
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          data[idx] = rgb.r
+          data[idx + 1] = rgb.g
+          data[idx + 2] = rgb.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * くすみ色（ミュート）3D LUT を生成
+   * 彩度を下げてグレー寄りに
+   * @param strength 強度 (0〜1)
+   */
+  muted: (strength: number = 0.5, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const hsl = rgbToHsl(r, g, b)
+          // 彩度を大幅に下げる
+          hsl.s = hsl.s * (1 - strength * 0.6)
+          // 明度を中間に寄せる
+          hsl.l = hsl.l + (0.5 - hsl.l) * strength * 0.2
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          data[idx] = rgb.r
+          data[idx + 1] = rgb.g
+          data[idx + 2] = rgb.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * 色相寄せ（ティント）3D LUT を生成
+   * 全体を特定の色相に寄せる
+   * @param targetHue ターゲット色相 (0-360)
+   * @param strength 強度 (0〜1)
+   */
+  tint: (targetHue: number, strength: number = 0.3, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const hsl = rgbToHsl(r, g, b)
+          // 色相をターゲットに寄せる
+          const hueDiff = ((targetHue - hsl.h + 540) % 360) - 180
+          hsl.h = (hsl.h + hueDiff * strength + 360) % 360
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          data[idx] = rgb.r
+          data[idx + 1] = rgb.g
+          data[idx + 2] = rgb.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * アースカラー変換 3D LUT を生成
+   * 茶色・ベージュ・オリーブなどの自然な色調に
+   * @param strength 強度 (0〜1)
+   */
+  earthTone: (strength: number = 0.5, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const hsl = rgbToHsl(r, g, b)
+
+          // 色相を暖色〜緑の範囲に寄せる (0-120度)
+          if (hsl.h > 180) {
+            // 青〜紫 → 暖色に
+            const shift = ((30 - hsl.h + 540) % 360) - 180
+            hsl.h = (hsl.h + shift * strength + 360) % 360
+          } else if (hsl.h > 120) {
+            // シアン → 緑〜黄に
+            const shift = ((90 - hsl.h + 540) % 360) - 180
+            hsl.h = (hsl.h + shift * strength + 360) % 360
+          }
+
+          // 彩度を下げる
+          hsl.s = hsl.s * (1 - strength * 0.4)
+
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          data[idx] = rgb.r
+          data[idx + 1] = rgb.g
+          data[idx + 2] = rgb.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * ダークモード変換 3D LUT を生成
+   * 明度を反転しつつ彩度を調整
+   * @param _preserveHue 色相を保持するか（将来の拡張用）
+   */
+  darkMode: (_preserveHue: boolean = true, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const hsl = rgbToHsl(r, g, b)
+
+          // 明度を反転（完全反転ではなく、ダークモードらしい範囲に）
+          hsl.l = 1 - hsl.l
+          // 暗い背景用に明度を調整
+          hsl.l = hsl.l * 0.85 + 0.1
+
+          // 彩度を若干下げる（ダークモードでは彩度が高いと目に痛い）
+          hsl.s = hsl.s * 0.85
+
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          data[idx] = rgb.r
+          data[idx + 1] = rgb.g
+          data[idx + 2] = rgb.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * 高コントラスト 3D LUT を生成
+   * アクセシビリティ向け
+   * @param amount コントラスト量 (0〜2、1が標準)
+   */
+  contrastAdjust: (amount: number = 1.5, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          // 各チャンネルにコントラストを適用
+          data[idx] = Math.max(0, Math.min(1, (r - 0.5) * amount + 0.5))
+          data[idx + 1] = Math.max(0, Math.min(1, (g - 0.5) * amount + 0.5))
+          data[idx + 2] = Math.max(0, Math.min(1, (b - 0.5) * amount + 0.5))
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * 色覚多様性対応 3D LUT を生成
+   * 赤緑の区別を改善（Protanopia/Deuteranopia対応）
+   */
+  colorBlindSafe: (size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const hsl = rgbToHsl(r, g, b)
+
+          // 赤(0°)と緑(120°)の区別を改善
+          // 赤をオレンジ寄りに、緑をシアン寄りにシフト
+          if (hsl.h < 30 || hsl.h > 330) {
+            // 赤 → オレンジ方向にシフト
+            hsl.h = (hsl.h + 15) % 360
+          } else if (hsl.h > 90 && hsl.h < 150) {
+            // 緑 → シアン方向にシフト
+            hsl.h = hsl.h + 30
+          }
+
+          // 彩度を若干上げて区別しやすく
+          hsl.s = Math.min(1, hsl.s * 1.1)
+
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          data[idx] = rgb.r
+          data[idx + 1] = rgb.g
+          data[idx + 2] = rgb.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  // ========================================
+  // Retro Gaming ジェネレーター
+  // ========================================
+
+  /**
+   * Game Boy (DMG) 風 4階調グリーン 3D LUT を生成
+   * 元祖ゲームボーイの緑がかった液晶を再現
+   */
+  gameBoy: (size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    // Game Boy の4色パレット (0-1 に正規化)
+    const palette = [
+      { r: 15 / 255, g: 56 / 255, b: 15 / 255 },    // 最暗 #0f380f
+      { r: 48 / 255, g: 98 / 255, b: 48 / 255 },    // 暗 #306230
+      { r: 139 / 255, g: 172 / 255, b: 15 / 255 },  // 明 #8bac0f
+      { r: 155 / 255, g: 188 / 255, b: 15 / 255 },  // 最明 #9bbc0f
+    ]
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          // 輝度を計算
+          const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+          // 4階調にクォンタイズ
+          const level = Math.min(3, Math.floor(luminance * 4))
+          const color = palette[level]!
+
+          data[idx] = color.r
+          data[idx + 1] = color.g
+          data[idx + 2] = color.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * Game Boy Pocket 風 4階調グレー 3D LUT を生成
+   * ゲームボーイポケットのグレースケール液晶を再現
+   */
+  gameBoyPocket: (size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    // Game Boy Pocket の4色パレット（グレー系）
+    const palette = [
+      { r: 0.0, g: 0.0, b: 0.0 },       // 黒
+      { r: 0.33, g: 0.33, b: 0.33 },    // ダークグレー
+      { r: 0.66, g: 0.66, b: 0.66 },    // ライトグレー
+      { r: 1.0, g: 1.0, b: 1.0 },       // 白
+    ]
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+          const level = Math.min(3, Math.floor(luminance * 4))
+          const color = palette[level]!
+
+          data[idx] = color.r
+          data[idx + 1] = color.g
+          data[idx + 2] = color.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * Game Boy Color 風 3D LUT を生成
+   * GBCの暖かみのある、やや彩度の低い色を再現
+   * 15ビットカラー (32色/チャンネル) への量子化 + 独特の色味
+   */
+  gameBoyColor: (size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          let r = ri / (size - 1)
+          let g = gi / (size - 1)
+          let b = bi / (size - 1)
+
+          // 15ビットカラーへの量子化 (32段階)
+          r = Math.round(r * 31) / 31
+          g = Math.round(g * 31) / 31
+          b = Math.round(b * 31) / 31
+
+          // GBCの独特な色味を再現（暖かみ + やや低彩度）
+          const hsl = rgbToHsl(r, g, b)
+          // 彩度を少し下げる
+          hsl.s = hsl.s * 0.85
+          // 暖色方向にシフト
+          hsl.h = (hsl.h + 10) % 360
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          // ガンマ補正（GBCの液晶特性）
+          data[idx] = Math.pow(rgb.r, 0.9)
+          data[idx + 1] = Math.pow(rgb.g, 0.9)
+          data[idx + 2] = Math.pow(rgb.b, 0.85)
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * Game Boy Advance 風 3D LUT を生成
+   * GBAの鮮やかだがバックライトなしの特有の色を再現
+   */
+  gameBoyAdvance: (size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          let r = ri / (size - 1)
+          let g = gi / (size - 1)
+          let b = bi / (size - 1)
+
+          // 15ビットカラーへの量子化 (32段階)
+          r = Math.round(r * 31) / 31
+          g = Math.round(g * 31) / 31
+          b = Math.round(b * 31) / 31
+
+          // GBAの色特性（より鮮やか、わずかに青みがかる）
+          const hsl = rgbToHsl(r, g, b)
+          // 彩度を少し上げる
+          hsl.s = Math.min(1, hsl.s * 1.1)
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          // GBAのガンマ特性（コントラスト強め）
+          data[idx] = Math.pow(rgb.r, 1.1) * 0.95 + 0.02
+          data[idx + 1] = Math.pow(rgb.g, 1.05) * 0.95 + 0.02
+          data[idx + 2] = Math.pow(rgb.b, 1.0) * 0.98 + 0.02
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * Game Boy Advance SP (バックライト) 風 3D LUT を生成
+   * AGS-101のより鮮やかな液晶を再現
+   */
+  gameBoyAdvanceSP: (size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          let r = ri / (size - 1)
+          let g = gi / (size - 1)
+          let b = bi / (size - 1)
+
+          // 15ビットカラーへの量子化
+          r = Math.round(r * 31) / 31
+          g = Math.round(g * 31) / 31
+          b = Math.round(b * 31) / 31
+
+          // SP (AGS-101) の鮮やかな色
+          const hsl = rgbToHsl(r, g, b)
+          hsl.s = Math.min(1, hsl.s * 1.15)
+          // コントラスト強調
+          hsl.l = (hsl.l - 0.5) * 1.1 + 0.5
+          hsl.l = Math.max(0, Math.min(1, hsl.l))
+          const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
+          data[idx] = rgb.r
+          data[idx + 1] = rgb.g
+          data[idx + 2] = rgb.b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
   /**
    * WebGL用に3Dテクスチャデータを生成
    * WebGL1では3Dテクスチャがないため、2Dテクスチャにパックする
