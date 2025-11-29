@@ -358,6 +358,125 @@ export const $Lut3D = {
   },
 
   /**
+   * 輝度に基づく色相/彩度調整 3D LUT を生成
+   * シャドウ/ミッドトーン/ハイライトを個別に調整可能
+   * @param target 'shadows' | 'midtones' | 'highlights'
+   * @param hueShiftAmount 色相シフト量 (度、-180〜180)
+   * @param saturationBoost 彩度調整 (-1〜1)
+   * @param range 影響範囲の広さ (0〜1、デフォルト0.3)
+   */
+  luminanceAdjust: (
+    target: 'shadows' | 'midtones' | 'highlights',
+    hueShiftAmount: number = 0,
+    saturationBoost: number = 0,
+    range: number = 0.3,
+    size: number = 17
+  ): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    // ターゲット輝度の中心値
+    const targetCenter = target === 'shadows' ? 0.2 : target === 'highlights' ? 0.8 : 0.5
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          // 輝度を計算 (Rec. 709)
+          const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+          // ターゲット範囲からの距離を計算
+          const distance = Math.abs(luminance - targetCenter)
+          const factor = Math.max(0, 1 - distance / range)
+
+          if (factor > 0 && (hueShiftAmount !== 0 || saturationBoost !== 0)) {
+            // RGB → HSL
+            const hsl = rgbToHsl(r, g, b)
+
+            // 色相シフト
+            if (hueShiftAmount !== 0) {
+              hsl.h = (hsl.h + hueShiftAmount * factor + 360) % 360
+            }
+
+            // 彩度調整
+            if (saturationBoost !== 0) {
+              hsl.s = Math.max(0, Math.min(1, hsl.s + saturationBoost * factor))
+            }
+
+            // HSL → RGB
+            const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+            data[idx] = rgb.r
+            data[idx + 1] = rgb.g
+            data[idx + 2] = rgb.b
+          } else {
+            data[idx] = r
+            data[idx + 1] = g
+            data[idx + 2] = b
+          }
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * 特定の色相範囲を保護しつつ彩度調整 3D LUT を生成
+   * 指定した色相は彩度を変えず、それ以外を調整
+   * @param protectHue 保護する色相 (0-360)
+   * @param protectRange 保護範囲 (度)
+   * @param saturationBoost 保護範囲外の彩度調整 (-1〜1)
+   */
+  protectHue: (
+    protectHue: number,
+    protectRange: number = 30,
+    saturationBoost: number = -0.5,
+    size: number = 17
+  ): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          // RGB → HSL
+          const hsl = rgbToHsl(r, g, b)
+
+          // 保護色相からの距離を計算
+          const hueDiff = Math.abs(((hsl.h - protectHue + 540) % 360) - 180)
+
+          if (hueDiff > protectRange) {
+            // 保護範囲外: 彩度を調整
+            const factor = Math.min(1, (hueDiff - protectRange) / protectRange)
+            hsl.s = Math.max(0, Math.min(1, hsl.s + saturationBoost * factor))
+
+            const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+            data[idx] = rgb.r
+            data[idx + 1] = rgb.g
+            data[idx + 2] = rgb.b
+          } else {
+            // 保護範囲内: そのまま
+            data[idx] = r
+            data[idx + 1] = g
+            data[idx + 2] = b
+          }
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
    * WebGL用に3Dテクスチャデータを生成
    * WebGL1では3Dテクスチャがないため、2Dテクスチャにパックする
    * レイアウト: size x (size * size) の2Dテクスチャ

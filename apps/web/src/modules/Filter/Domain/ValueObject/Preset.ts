@@ -493,6 +493,112 @@ export const PRESETS: Preset[] = [
     lut3d: $Lut3D.channelSwap(['b', 'r', 'g'], 17),
   },
 
+  // --- 3D LUT Practical (Skin Tone / Landscape / Color Cast Fix) ---
+
+  // スキントーン系
+  {
+    id: 'lut3d-skin-protect',
+    name: 'Skin Protect',
+    category: 'film',
+    description: '肌色を保護しつつ他の彩度を落とす（ポートレート向け）',
+    adjustment: {},
+    lut3d: $Lut3D.protectHue(20, 35, -0.4, 17),
+  },
+  {
+    id: 'lut3d-skin-warm',
+    name: 'Skin Warm',
+    category: 'film',
+    description: '肌色を少し暖かくシフト（健康的な印象に）',
+    adjustment: {},
+    lut3d: $Lut3D.hueShift(20, 28, 25, 0.5, 17),
+  },
+  {
+    id: 'lut3d-skin-smooth',
+    name: 'Skin Smooth',
+    category: 'film',
+    description: '肌色の彩度を少し落として均一化',
+    adjustment: {},
+    lut3d: $Lut3D.hueSaturation(20, -0.15, 30, 17),
+  },
+
+  // 風景・自然向け
+  {
+    id: 'lut3d-sky-enhance',
+    name: 'Sky Enhance',
+    category: 'film',
+    description: '空のシアン〜青を自然に強調',
+    adjustment: {},
+    lut3d: $Lut3D.hueSaturation(200, 0.2, 45, 17),
+  },
+  {
+    id: 'lut3d-foliage-natural',
+    name: 'Foliage Natural',
+    category: 'film',
+    description: 'デジタルグリーンを自然な黄緑寄りに補正',
+    adjustment: {},
+    lut3d: $Lut3D.hueShift(120, 100, 35, 0.5, 17),
+  },
+  {
+    id: 'lut3d-autumn-warmth',
+    name: 'Autumn Warmth',
+    category: 'film',
+    description: '黄〜オレンジを暖かく、緑は控えめに（紅葉向け）',
+    adjustment: {},
+    lut3d: $Lut3D.hueSaturation(40, 0.25, 40, 17),
+  },
+  {
+    id: 'lut3d-muted-greens',
+    name: 'Neutralize Greens',
+    category: 'film',
+    description: '植物の緑を落ち着かせる（ポートレート背景用）',
+    adjustment: {},
+    lut3d: $Lut3D.hueSaturation(120, -0.35, 45, 17),
+  },
+
+  // 輝度連動
+  {
+    id: 'lut3d-warm-shadows',
+    name: 'Warm Shadows',
+    category: 'cinematic',
+    description: 'シャドウを少し暖かく（冷たい印象を軽減）',
+    adjustment: {},
+    lut3d: $Lut3D.luminanceAdjust('shadows', 15, 0, 0.35, 17),
+  },
+  {
+    id: 'lut3d-cool-highlights',
+    name: 'Cool Highlights',
+    category: 'cinematic',
+    description: 'ハイライトを少しクールに（清潔感）',
+    adjustment: {},
+    lut3d: $Lut3D.luminanceAdjust('highlights', -10, 0, 0.35, 17),
+  },
+  {
+    id: 'lut3d-desat-highlights',
+    name: 'Soft Highlights',
+    category: 'cinematic',
+    description: 'ハイライトの彩度を落とす（ソフトな印象）',
+    adjustment: {},
+    lut3d: $Lut3D.luminanceAdjust('highlights', 0, -0.3, 0.4, 17),
+  },
+  {
+    id: 'lut3d-vibrant-midtones',
+    name: 'Vibrant Midtones',
+    category: 'cinematic',
+    description: '中間調の彩度を強調',
+    adjustment: {},
+    lut3d: $Lut3D.luminanceAdjust('midtones', 0, 0.25, 0.4, 17),
+  },
+
+  // 色かぶり補正
+  {
+    id: 'lut3d-fix-fluorescent',
+    name: 'Fix Fluorescent',
+    category: 'film',
+    description: '蛍光灯のグリーンかぶりを軽減',
+    adjustment: {},
+    lut3d: $Lut3D.hueSaturation(100, -0.35, 45, 17),
+  },
+
   // --- Design (Selective Color/Posterize/Hue Rotation) ---
   {
     id: 'selective-red-pop',
