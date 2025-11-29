@@ -24,9 +24,9 @@ export type AnalysisResponse = {
   analysis: ReturnType<typeof $PhotoAnalysis.create>
 }
 
-/** Type guard: 3D LUT かどうかを判定 */
+/** Type guard: 3D LUT かどうかを判定 (discriminated union の type プロパティを使用) */
 const isLut3D = (lut: Lut): lut is Lut3D => {
-  return 'size' in lut && 'data' in lut
+  return lut.type === 'lut3d'
 }
 
 /**

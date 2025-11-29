@@ -58,7 +58,8 @@ export const useMediaCanvasWebGL = (
     if (!canvas || rendererRef.value) return
 
     try {
-      rendererRef.value = new LutRenderer({ canvas })
+      // use3D: true で初期化し、1D/3D LUT 両方に対応（1D は自動的に 3D に変換される）
+      rendererRef.value = new LutRenderer({ canvas, use3D: true })
     } catch (e) {
       console.error('Failed to initialize WebGL renderer:', e)
     }

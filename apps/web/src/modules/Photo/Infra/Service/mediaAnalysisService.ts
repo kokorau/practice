@@ -53,6 +53,30 @@ export type AnalyzeOptions = {
   downsampleScale?: number
 }
 
+/**
+ * LUT を transferable な形式に変換
+ * Float32Array は structured clone で転送可能だが、
+ * 念のためプレーンオブジェクトに変換
+ */
+const serializeLut = (lut: Lut): Lut | undefined => {
+  if (!lut) return undefined
+
+  if (lut.type === 'lut3d') {
+    return {
+      type: 'lut3d' as const,
+      size: lut.size,
+      data: new Float32Array(lut.data), // コピー
+    }
+  } else {
+    return {
+      type: 'lut1d' as const,
+      r: new Float32Array(lut.r),
+      g: new Float32Array(lut.g),
+      b: new Float32Array(lut.b),
+    }
+  }
+}
+
 export const mediaAnalysisService = {
   /**
    * ImageData を解析（LUT 適用 + エフェクト適用 + 解析を Worker で一括処理）
@@ -68,7 +92,7 @@ export const mediaAnalysisService = {
         id,
         type: 'analyze',
         imageData,
-        lut: options.lut,
+        lut: options.lut ? serializeLut(options.lut) : undefined,
         vibrance: options.vibrance,
         hueRotation: options.hueRotation,
         downsampleScale: options.downsampleScale ?? 0.5, // デフォルト 1/2 サイズ

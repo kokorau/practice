@@ -46,9 +46,9 @@ export type PaletteResponse = {
 const K_CLUSTERS = 7
 const TOP_COLORS = 4
 
-/** Type guard: 3D LUT かどうかを判定 */
+/** Type guard: 3D LUT かどうかを判定 (discriminated union の type プロパティを使用) */
 const isLut3D = (lut: Lut): lut is Lut3D => {
-  return 'size' in lut && 'data' in lut
+  return lut.type === 'lut3d'
 }
 
 // === 1D LUT 適用 ===
