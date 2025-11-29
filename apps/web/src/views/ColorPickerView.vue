@@ -4,6 +4,7 @@ import SvPlane from '../components/ColorPicker/SvPlane.vue'
 import HueSlider from '../components/ColorPicker/HueSlider.vue'
 import RgbCubeViewer from '../components/ColorPicker/RgbCubeViewer.vue'
 import HslCylinderViewer from '../components/ColorPicker/HslCylinderViewer.vue'
+import ColorGridViewer from '../components/ColorPicker/ColorGridViewer.vue'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
 import { $Hsv, $Hsl } from '../modules/Color/Domain/ValueObject'
 import { useFilter } from '../composables/Filter/useFilter'
@@ -99,6 +100,14 @@ function onHueChange(h: number) {
             <div class="w-72 h-72 border border-gray-600 rounded-lg overflow-hidden">
               <HslCylinderViewer :h="hsl.h" :s="hsl.s" :l="hsl.l" :lut="lut" />
             </div>
+          </div>
+        </div>
+
+        <!-- Color Grid Viewer -->
+        <div class="flex flex-col gap-1 flex-shrink-0">
+          <div class="text-xs text-gray-500">Color Grid (20 hues × 10 shades)</div>
+          <div class="border border-gray-600 rounded-lg overflow-hidden">
+            <ColorGridViewer :lut="lut" />
           </div>
         </div>
       </div>
