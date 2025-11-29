@@ -1,6 +1,6 @@
 import { ref, watch, onUnmounted, type Ref } from 'vue'
 import { type Media, $Media } from '../../modules/Media'
-import { type Lut, $Lut, $Lut3D, isLut3D } from '../../modules/Filter/Domain'
+import { type Lut, $Lut, $Lut3D } from '../../modules/Filter/Domain'
 import type { PixelEffects } from '../Filter/useFilter'
 
 export type PerformanceStats = {
@@ -68,7 +68,7 @@ export const useMediaCanvas = (
     let outputData = imageData
     if (options.lut?.value) {
       const lut = options.lut.value
-      if (isLut3D(lut)) {
+      if ($Lut3D.is(lut)) {
         // 3D LUT
         outputData = $Lut3D.apply(imageData, lut)
       } else {

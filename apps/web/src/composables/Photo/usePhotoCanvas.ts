@@ -1,6 +1,6 @@
 import { ref, watch, type Ref } from 'vue'
 import type { Photo } from '../../modules/Photo/Domain'
-import { type Lut, $Lut, $Lut3D, isLut3D } from '../../modules/Filter/Domain'
+import { type Lut, $Lut, $Lut3D } from '../../modules/Filter/Domain'
 import type { PixelEffects } from '../Filter/useFilter'
 
 export type UsePhotoCanvasOptions = {
@@ -31,7 +31,7 @@ export const usePhotoCanvas = (
 
     if (lut) {
       let filteredImageData: ImageData
-      if (isLut3D(lut)) {
+      if ($Lut3D.is(lut)) {
         // 3D LUT
         filteredImageData = $Lut3D.apply(currentPhoto.imageData, lut)
       } else {

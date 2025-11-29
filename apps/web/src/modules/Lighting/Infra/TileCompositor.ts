@@ -7,7 +7,7 @@
 import type { Tile, TileGrid } from '../Domain/ValueObject'
 import type { Lut } from '../../Filter/Domain/ValueObject'
 import type { PixelEffects } from '../../../composables/Filter/useFilter'
-import { $Lut, $Lut3D, isLut3D } from '../../Filter/Domain/ValueObject'
+import { $Lut, $Lut3D } from '../../Filter/Domain/ValueObject'
 
 export class TileCompositor {
   private displayCanvas: HTMLCanvasElement
@@ -110,7 +110,7 @@ export class TileCompositor {
 
     // Apply LUT (1D or 3D) with optional pixel effects
     let filteredData: ImageData
-    if (isLut3D(lut)) {
+    if ($Lut3D.is(lut)) {
       // 3D LUT: apply without pixel effects (not yet supported for 3D)
       filteredData = $Lut3D.apply(imageData, lut)
     } else {

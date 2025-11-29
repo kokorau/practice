@@ -52,12 +52,13 @@ const isLut3D = (lut: Lut): lut is Lut3D => {
 }
 
 // === 1D LUT 適用 ===
+// Lut1D は Float32Array (0-1) なので * 255 が必要
 const applyLut1D = (imageData: ImageData, lut: Lut1D): void => {
   const data = imageData.data
   for (let i = 0; i < data.length; i += 4) {
-    data[i] = lut.r[data[i]!]!
-    data[i + 1] = lut.g[data[i + 1]!]!
-    data[i + 2] = lut.b[data[i + 2]!]!
+    data[i] = Math.round(lut.r[data[i]!]! * 255)
+    data[i + 1] = Math.round(lut.g[data[i + 1]!]! * 255)
+    data[i + 2] = Math.round(lut.b[data[i + 2]!]! * 255)
   }
 }
 

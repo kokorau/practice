@@ -3,7 +3,7 @@
  */
 
 import { type Curve, $Curve } from './Curve'
-import { type Lut, $LutFloat } from './Lut'
+import { type Lut1D, $Lut1D } from './Lut'
 import { type Adjustment, $Adjustment } from './Adjustment'
 
 export type Filter = {
@@ -38,9 +38,9 @@ export const $Filter = {
 
   /**
    * FilterからLUTを生成
-   * 内部計算は浮動小数点で行い、最終出力時のみ8bitに量子化
+   * 全て浮動小数点で計算
    */
-  toLut: (filter: Filter): Lut => {
+  toLut: (filter: Filter): Lut1D => {
     // 1. Adjustment LUT (brightness/contrast/temperature) - RGB別の浮動小数点
     const adjustmentRGB = $Adjustment.toLutFloatRGB(filter.adjustment)
 
@@ -48,17 +48,13 @@ export const $Filter = {
     const masterLut = $Curve.toLutFloat(filter.master)
 
     // 3. 合成: Adjustment → Master の順で適用 (浮動小数点のまま)
-    const composedR = $LutFloat.compose(adjustmentRGB.r, masterLut)
-    const composedG = $LutFloat.compose(adjustmentRGB.g, masterLut)
-    const composedB = $LutFloat.compose(adjustmentRGB.b, masterLut)
+    const composedR = $Lut1D.composeChannel(adjustmentRGB.r, masterLut)
+    const composedG = $Lut1D.composeChannel(adjustmentRGB.g, masterLut)
+    const composedB = $Lut1D.composeChannel(adjustmentRGB.b, masterLut)
 
     // 個別チャンネルがない場合
     if (!filter.r && !filter.g && !filter.b) {
-      return $LutFloat.quantize({
-        r: composedR,
-        g: composedG,
-        b: composedB,
-      })
+      return $Lut1D.create(composedR, composedG, composedB)
     }
 
     // 個別チャンネルがある場合: Master → 個別の順で適用 (浮動小数点)
@@ -67,16 +63,11 @@ export const $Filter = {
     const bLut = filter.b ? $Curve.toLutFloat(filter.b) : null
 
     // 各チャンネルを合成 (浮動小数点)
-    const finalR = rLut ? $LutFloat.compose(composedR, rLut) : composedR
-    const finalG = gLut ? $LutFloat.compose(composedG, gLut) : composedG
-    const finalB = bLut ? $LutFloat.compose(composedB, bLut) : composedB
+    const finalR = rLut ? $Lut1D.composeChannel(composedR, rLut) : composedR
+    const finalG = gLut ? $Lut1D.composeChannel(composedG, gLut) : composedG
+    const finalB = bLut ? $Lut1D.composeChannel(composedB, bLut) : composedB
 
-    // 最終的に量子化して返す
-    return $LutFloat.quantize({
-      r: finalR,
-      g: finalG,
-      b: finalB,
-    })
+    return $Lut1D.create(finalR, finalG, finalB)
   },
 
   /** Adjustmentを更新 */

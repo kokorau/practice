@@ -1,7 +1,7 @@
 import { ref, watch, type Ref, type ComputedRef } from 'vue'
 import type { Photo } from '../../modules/Photo/Domain'
 import type { Palette } from '../../modules/Palette/Domain'
-import { type Lut, $Lut, $Lut3D, isLut3D } from '../../modules/Filter/Domain'
+import { type Lut, $Lut, $Lut3D } from '../../modules/Filter/Domain'
 import { $Photo } from '../../modules/Photo/Domain'
 import { extractPaletteUseCase } from '../../modules/Palette/Application/extractPaletteUseCase'
 
@@ -28,7 +28,7 @@ export const usePalette = (
       let targetPhoto = photo.value
       if (options.lut?.value) {
         const lut = options.lut.value
-        const filteredImageData = isLut3D(lut)
+        const filteredImageData = $Lut3D.is(lut)
           ? $Lut3D.apply(photo.value.imageData, lut)
           : $Lut.apply(photo.value.imageData, lut)
         targetPhoto = $Photo.create(filteredImageData)

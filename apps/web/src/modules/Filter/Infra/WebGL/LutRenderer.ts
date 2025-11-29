@@ -5,7 +5,7 @@
  */
 
 import type { Lut, Lut1D, Lut3D } from '../../Domain/ValueObject/Lut'
-import { $Lut3D, isLut3D } from '../../Domain/ValueObject/Lut'
+import { $Lut3D } from '../../Domain/ValueObject/Lut'
 
 // Vertex Shader - 単純な矩形描画
 const VERTEX_SHADER = `
@@ -537,17 +537,26 @@ export class LutRenderer {
 
     const gl = this.gl
 
+    // Float32Array (0-1) を Uint8Array (0-255) に変換
+    const toUint8 = (arr: Float32Array): Uint8Array => {
+      const result = new Uint8Array(256)
+      for (let i = 0; i < 256; i++) {
+        result[i] = Math.round(arr[i]! * 255)
+      }
+      return result
+    }
+
     // R channel
     gl.bindTexture(gl.TEXTURE_2D, this.lutTextures1D.r)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, lut.r)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, toUint8(lut.r))
 
     // G channel
     gl.bindTexture(gl.TEXTURE_2D, this.lutTextures1D.g)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, lut.g)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, toUint8(lut.g))
 
     // B channel
     gl.bindTexture(gl.TEXTURE_2D, this.lutTextures1D.b)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, lut.b)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 256, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, toUint8(lut.b))
   }
 
   /** 3D LUT テクスチャを更新 */
@@ -614,7 +623,7 @@ export class LutRenderer {
     if (this.use3D) {
       // 3D mode: expect Lut3D or convert Lut to Lut3D
       if (options.lut) {
-        if (isLut3D(options.lut)) {
+        if ($Lut3D.is(options.lut)) {
           this.updateLut3D(options.lut)
         } else {
           // Convert 1D LUT to 3D LUT for compatibility
@@ -628,7 +637,7 @@ export class LutRenderer {
     } else {
       // 1D mode: expect Lut (1D)
       if (options.lut) {
-        if (isLut3D(options.lut)) {
+        if ($Lut3D.is(options.lut)) {
           throw new Error('Cannot use 3D LUT in 1D mode. Set use3D: true in LutRendererOptions.')
         }
         this.updateLut1D(options.lut)
