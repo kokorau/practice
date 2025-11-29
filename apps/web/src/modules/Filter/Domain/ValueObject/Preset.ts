@@ -8,6 +8,7 @@ import type { Lut3D } from './Lut3D'
 
 /** プリセットカテゴリ */
 export type PresetCategory =
+  | 'utility'    // ユーティリティ（リセット等）
   | 'film'       // フィルムエミュレーション
   | 'cinematic'  // シネマティック
   | 'vintage'    // ヴィンテージ
@@ -79,6 +80,7 @@ export const $Preset = {
   /** カテゴリの表示名 */
   categoryLabel: (category: PresetCategory): string => {
     const labels: Record<PresetCategory, string> = {
+      utility: 'Utility',
       film: 'Film',
       cinematic: 'Cinematic',
       vintage: 'Vintage',

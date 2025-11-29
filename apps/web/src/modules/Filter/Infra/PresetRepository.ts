@@ -6,6 +6,17 @@ import type { Preset } from '../Domain'
 import { $Lut3D } from '../Domain'
 
 const PRESETS: Preset[] = [
+  // --- No Filter (Reset) ---
+  {
+    id: 'no-filter',
+    name: 'No Filter',
+    category: 'utility',
+    description: 'フィルターなし（リセット）',
+    aiDescription: 'No adjustments applied. Resets all filter settings to default neutral values.',
+    suitableFor: ['reset', 'comparison', 'baseline'],
+    characteristics: ['neutral', 'no-adjustment', 'original'],
+    adjustment: {},
+  },
   // --- Film Emulation ---
   {
     id: 'kodak-portra-400',
