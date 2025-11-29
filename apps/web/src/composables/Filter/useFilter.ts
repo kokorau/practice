@@ -1,5 +1,5 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
-import { type Filter, type Lut, type Preset, $Filter, $Preset } from '../../modules/Filter/Domain'
+import { type Filter, type Lut, type Lut3D, type Preset, $Filter, $Preset } from '../../modules/Filter/Domain'
 
 /** LUTに焼けないピクセル単位エフェクト */
 export type PixelEffects = {
@@ -138,8 +138,11 @@ const SETTER_DEFS: Record<NumericSetterKey, SetterDef> = {
 export const useFilter = (pointCount: number = 7): UseFilterReturn => {
   const filter = ref<Filter>($Filter.identity(pointCount))
   const currentPresetId = ref<string | null>(null)
+  /** 現在適用中の3D LUT (プリセットで指定された場合) */
+  const currentLut3d = ref<Lut3D | null>(null)
 
-  const lut = computed<Lut>(() => $Filter.toLut(filter.value))
+  // 3D LUTがある場合はそれを使用、なければ1D LUTを生成
+  const lut = computed<Lut>(() => currentLut3d.value ?? $Filter.toLut(filter.value))
 
   // LUTに焼けないエフェクト
   const pixelEffects = computed<PixelEffects>(() => ({
@@ -158,11 +161,14 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
   const applyPreset = (preset: Preset) => {
     filter.value = $Preset.toFilter(preset, pointCount)
     currentPresetId.value = preset.id
+    // 3D LUTプリセットの場合は保持
+    currentLut3d.value = preset.lut3d ?? null
   }
 
-  // パラメータ変更時はプリセットIDをクリア
+  // パラメータ変更時はプリセットIDと3D LUTをクリア
   const clearPresetId = () => {
     currentPresetId.value = null
+    currentLut3d.value = null
   }
 
   // セッターファクトリ
@@ -202,6 +208,7 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
   const reset = () => {
     filter.value = $Filter.identity(pointCount)
     currentPresetId.value = null
+    currentLut3d.value = null
   }
 
   return {

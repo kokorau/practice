@@ -4,6 +4,60 @@
 
 import type { Lut1D } from './Lut1D'
 
+// HSL 変換ユーティリティ (0-1 スケール)
+function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const l = (max + min) / 2
+  let h = 0
+  let s = 0
+
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6
+        break
+      case g:
+        h = ((b - r) / d + 2) / 6
+        break
+      case b:
+        h = ((r - g) / d + 4) / 6
+        break
+    }
+  }
+
+  return { h: h * 360, s, l }
+}
+
+function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
+  h = h / 360
+  let r: number, g: number, b: number
+
+  if (s === 0) {
+    r = g = b = l
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1
+      if (t > 1) t -= 1
+      if (t < 1 / 6) return p + (q - p) * 6 * t
+      if (t < 1 / 2) return q
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+      return p
+    }
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+    const p = 2 * l - q
+    r = hue2rgb(p, q, h + 1 / 3)
+    g = hue2rgb(p, q, h)
+    b = hue2rgb(p, q, h - 1 / 3)
+  }
+
+  return { r, g, b }
+}
+
 /**
  * 3D LUT - RGB組み合わせ全体に対する変換テーブル
  * サイズは size^3 × 3 (通常 17, 33, 65 など)
@@ -167,6 +221,140 @@ export const $Lut3D = {
     }
 
     return new ImageData(newData, width, height)
+  },
+
+  // ========================================
+  // ジェネレーター関数
+  // ========================================
+
+  /**
+   * チャンネルスワップ 3D LUT を生成
+   * RGB チャンネルを入れ替える
+   * @param mapping [出力R, 出力G, 出力B] それぞれ 'r' | 'g' | 'b' を指定
+   */
+  channelSwap: (mapping: ['r' | 'g' | 'b', 'r' | 'g' | 'b', 'r' | 'g' | 'b'], size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    const getChannel = (r: number, g: number, b: number, ch: 'r' | 'g' | 'b') => {
+      if (ch === 'r') return r
+      if (ch === 'g') return g
+      return b
+    }
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          data[idx] = getChannel(r, g, b, mapping[0])
+          data[idx + 1] = getChannel(r, g, b, mapping[1])
+          data[idx + 2] = getChannel(r, g, b, mapping[2])
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * 色相シフト 3D LUT を生成
+   * 特定の色相範囲を別の色相にシフト
+   * @param sourceHue ソース色相 (0-360)
+   * @param targetHue ターゲット色相 (0-360)
+   * @param range 影響範囲 (度)
+   * @param strength 強度 (0-1)
+   */
+  hueShift: (sourceHue: number, targetHue: number, range: number = 30, strength: number = 1, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          // RGB → HSL
+          const hsl = rgbToHsl(r, g, b)
+
+          // 色相差を計算
+          const hueDiff = Math.abs(((hsl.h - sourceHue + 540) % 360) - 180)
+
+          if (hueDiff < range) {
+            // 範囲内：色相をシフト
+            const factor = (1 - hueDiff / range) * strength
+            const shift = ((targetHue - sourceHue + 540) % 360) - 180
+            hsl.h = (hsl.h + shift * factor + 360) % 360
+
+            // HSL → RGB
+            const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+            data[idx] = rgb.r
+            data[idx + 1] = rgb.g
+            data[idx + 2] = rgb.b
+          } else {
+            // 範囲外：そのまま
+            data[idx] = r
+            data[idx + 1] = g
+            data[idx + 2] = b
+          }
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * 色相ごとの彩度調整 3D LUT を生成
+   * @param hue ターゲット色相 (0-360)
+   * @param saturationBoost 彩度ブースト (-1 to 1)
+   * @param range 影響範囲 (度)
+   */
+  hueSaturation: (hue: number, saturationBoost: number, range: number = 30, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          // RGB → HSL
+          const hsl = rgbToHsl(r, g, b)
+
+          // 色相差を計算
+          const hueDiff = Math.abs(((hsl.h - hue + 540) % 360) - 180)
+
+          if (hueDiff < range) {
+            // 範囲内：彩度を調整
+            const factor = 1 - hueDiff / range
+            hsl.s = Math.max(0, Math.min(1, hsl.s + saturationBoost * factor))
+
+            // HSL → RGB
+            const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+            data[idx] = rgb.r
+            data[idx + 1] = rgb.g
+            data[idx + 2] = rgb.b
+          } else {
+            // 範囲外：そのまま
+            data[idx] = r
+            data[idx + 1] = g
+            data[idx + 2] = b
+          }
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
   },
 
   /**

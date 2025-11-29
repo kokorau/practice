@@ -4,6 +4,7 @@
 
 import { type Adjustment, $Adjustment } from './Adjustment'
 import { type Filter, $Filter } from './Filter'
+import { type Lut3D, $Lut3D } from './Lut3D'
 
 /** プリセットカテゴリ */
 export type PresetCategory =
@@ -28,6 +29,8 @@ export type Preset = {
   adjustment: Partial<Adjustment>
   /** Master Curve ポイント (オプション、指定しなければidentity) */
   masterPoints?: number[]
+  /** 3D LUT (指定した場合、1D LUTの代わりにこちらを使用) */
+  lut3d?: Lut3D
 }
 
 export const $Preset = {
@@ -430,6 +433,64 @@ export const PRESETS: Preset[] = [
       toe: 0.35,
       shoulder: 0.15,
     },
+  },
+
+  // --- 3D LUT Creative (Cross-Channel Color Mapping) ---
+  {
+    id: 'lut3d-red-to-cyan',
+    name: 'Red → Cyan',
+    category: 'creative',
+    description: '赤をシアンにシフト（3D LUT）',
+    adjustment: {},
+    lut3d: $Lut3D.hueShift(0, 180, 40, 1, 17),
+  },
+  {
+    id: 'lut3d-orange-to-teal',
+    name: 'Orange → Teal',
+    category: 'creative',
+    description: 'オレンジをティールにシフト（3D LUT）',
+    adjustment: {},
+    lut3d: $Lut3D.hueShift(30, 180, 35, 1, 17),
+  },
+  {
+    id: 'lut3d-boost-blue-sat',
+    name: 'Blue Boost',
+    category: 'creative',
+    description: '青の彩度を強調（3D LUT）',
+    adjustment: {},
+    lut3d: $Lut3D.hueSaturation(210, 0.5, 40, 17),
+  },
+  {
+    id: 'lut3d-boost-red-sat',
+    name: 'Red Boost',
+    category: 'creative',
+    description: '赤の彩度を強調（3D LUT）',
+    adjustment: {},
+    lut3d: $Lut3D.hueSaturation(0, 0.5, 35, 17),
+  },
+  {
+    id: 'lut3d-desaturate-green',
+    name: 'Muted Greens',
+    category: 'creative',
+    description: '緑の彩度を落とす（3D LUT）',
+    adjustment: {},
+    lut3d: $Lut3D.hueSaturation(120, -0.6, 50, 17),
+  },
+  {
+    id: 'lut3d-swap-rgb-gbr',
+    name: 'RGB → GBR',
+    category: 'creative',
+    description: 'RGBチャンネルをGBRにスワップ（3D LUT）',
+    adjustment: {},
+    lut3d: $Lut3D.channelSwap(['g', 'b', 'r'], 17),
+  },
+  {
+    id: 'lut3d-swap-rgb-brg',
+    name: 'RGB → BRG',
+    category: 'creative',
+    description: 'RGBチャンネルをBRGにスワップ（3D LUT）',
+    adjustment: {},
+    lut3d: $Lut3D.channelSwap(['b', 'r', 'g'], 17),
   },
 
   // --- Design (Selective Color/Posterize/Hue Rotation) ---
