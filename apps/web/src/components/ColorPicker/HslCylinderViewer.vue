@@ -116,100 +116,21 @@ function createCylinderShell(resolution: number = 32): THREE.Mesh {
     vertexColors: true,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.2,
+    depthWrite: false,
+    depthTest: false,
   })
 
-  return new THREE.Mesh(geometry, material)
-}
-
-/**
- * Create top cap (L=1, white center fading to hue colors)
- */
-function createTopCap(resolution: number = 32): THREE.Mesh {
-  const positions: number[] = []
-  const colors: number[] = []
-  const indices: number[] = []
-
-  // Center vertex
-  positions.push(0.5, 1, 0.5)
-  colors.push(1, 1, 1) // white
-
-  // Outer ring vertices
-  for (let hi = 0; hi <= resolution; hi++) {
-    const h = (hi / resolution) * 360
-    const pos = hslToPosition(h, 1, 1)
-    positions.push(pos.x, pos.y, pos.z)
-
-    const color = hslToColor(h, 1, 1)
-    colors.push(color.r, color.g, color.b)
-  }
-
-  // Create triangles (fan from center)
-  for (let hi = 0; hi < resolution; hi++) {
-    indices.push(0, hi + 1, hi + 2)
-  }
-
-  const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
-  geometry.setIndex(indices)
-
-  const material = new THREE.MeshBasicMaterial({
-    vertexColors: true,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.3,
-  })
-
-  return new THREE.Mesh(geometry, material)
-}
-
-/**
- * Create bottom cap (L=0, black)
- */
-function createBottomCap(resolution: number = 32): THREE.Mesh {
-  const positions: number[] = []
-  const colors: number[] = []
-  const indices: number[] = []
-
-  // Center vertex
-  positions.push(0.5, 0, 0.5)
-  colors.push(0, 0, 0) // black
-
-  // Outer ring vertices
-  for (let hi = 0; hi <= resolution; hi++) {
-    const h = (hi / resolution) * 360
-    const pos = hslToPosition(h, 1, 0)
-    positions.push(pos.x, pos.y, pos.z)
-    colors.push(0, 0, 0) // black at L=0
-  }
-
-  // Create triangles (fan from center)
-  for (let hi = 0; hi < resolution; hi++) {
-    indices.push(0, hi + 2, hi + 1) // reversed winding for bottom
-  }
-
-  const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
-  geometry.setIndex(indices)
-
-  const material = new THREE.MeshBasicMaterial({
-    vertexColors: true,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.3,
-  })
-
-  return new THREE.Mesh(geometry, material)
+  const mesh = new THREE.Mesh(geometry, material)
+  mesh.renderOrder = -1 // ラインより先に描画
+  return mesh
 }
 
 function createHslCylinder(): THREE.Group {
   const group = new THREE.Group()
 
-  group.add(createCylinderShell(32))
-  group.add(createTopCap(32))
-  group.add(createBottomCap(32))
+  // Only shell, no caps for better visibility of internal structure
+  group.add(createCylinderShell(48))
 
   return group
 }
@@ -352,7 +273,7 @@ function updateLutGrid() {
   }
 
   const transform = props.lut ? createLutTransform(props.lut) : undefined
-  lutGrid = createLutGrid(12, transform)
+  lutGrid = createLutGrid(24, transform)
   scene.add(lutGrid)
 }
 
