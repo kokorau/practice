@@ -15,6 +15,11 @@ const pages = [
     title: 'Lighting Simulator',
     description: 'HTML構造を3D空間にマッピングして照明効果をシミュレート',
   },
+  {
+    to: '/color-picker',
+    title: 'Color Picker',
+    description: 'カラーピッカーで色を選択',
+  },
 ]
 </script>
 
