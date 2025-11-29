@@ -20,6 +20,7 @@ let renderer: THREE.WebGLRenderer
 let controls: OrbitControls
 let animationId: number
 let colorPoint: THREE.Mesh
+let colorPointAfter: THREE.Mesh
 let lutGrid: THREE.LineSegments | null = null
 
 function createAxes(): THREE.Group {
@@ -309,14 +310,26 @@ function updateLutGrid() {
 }
 
 function updateColorPoint() {
-  if (!colorPoint) return
+  if (!colorPoint || !colorPointAfter) return
 
   const rNorm = props.r / 255
   const gNorm = props.g / 255
   const bNorm = props.b / 255
 
+  // Before point
   colorPoint.position.set(rNorm, gNorm, bNorm)
   ;(colorPoint.material as THREE.MeshBasicMaterial).color.setRGB(rNorm, gNorm, bNorm)
+
+  // After point (LUT applied)
+  if (props.lut) {
+    const transform = createLutTransform(props.lut)
+    const [rAfter, gAfter, bAfter] = transform(rNorm, gNorm, bNorm)
+    colorPointAfter.position.set(rAfter, gAfter, bAfter)
+    ;(colorPointAfter.material as THREE.MeshBasicMaterial).color.setRGB(rAfter, gAfter, bAfter)
+    colorPointAfter.visible = true
+  } else {
+    colorPointAfter.visible = false
+  }
 }
 
 function init() {
@@ -353,9 +366,15 @@ function init() {
   // Add LUT grid
   updateLutGrid()
 
-  // Add color point
+  // Add color points (before and after)
   colorPoint = createColorPoint()
   scene.add(colorPoint)
+
+  colorPointAfter = createColorPoint()
+  ;(colorPointAfter.material as THREE.MeshBasicMaterial).wireframe = true
+  colorPointAfter.visible = false
+  scene.add(colorPointAfter)
+
   updateColorPoint()
 
   animate()
@@ -365,7 +384,10 @@ function init() {
 watch(() => [props.r, props.g, props.b], updateColorPoint)
 
 // Watch for LUT changes
-watch(() => props.lut, updateLutGrid)
+watch(() => props.lut, () => {
+  updateLutGrid()
+  updateColorPoint()
+})
 
 function animate() {
   animationId = requestAnimationFrame(animate)
