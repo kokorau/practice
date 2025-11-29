@@ -38,77 +38,6 @@ const createImageData = (pixels: [number, number, number, number][]): ImageData 
 }
 
 describe('$Lut.applyWithEffects', () => {
-  describe('Duotone', () => {
-    it('should map black to toneColor1 and white to toneColor2', () => {
-      const imageData = createImageData([
-        [0, 0, 0, 255],      // 黒
-        [255, 255, 255, 255], // 白
-        [128, 128, 128, 255], // グレー
-      ])
-
-      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
-        toneMode: 'duotone',
-        toneColor1Hue: 0,     // 赤
-        toneColor1Sat: 1,
-        toneColor2Hue: 120,   // 緑
-        toneColor2Sat: 1,
-      })
-
-      // 黒（luma=0）は toneColor1（赤系）に近い
-      expect(result.data[0]).toBeGreaterThan(result.data[1]!) // R > G
-      expect(result.data[0]).toBeGreaterThan(result.data[2]!) // R > B
-
-      // 白（luma=1）は toneColor2（緑系）に近い
-      expect(result.data[5]).toBeGreaterThan(result.data[4]!) // G > R
-      expect(result.data[5]).toBeGreaterThan(result.data[6]!) // G > B
-    })
-
-    it('should preserve alpha channel', () => {
-      const imageData = createImageData([
-        [100, 100, 100, 128],
-      ])
-
-      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
-        toneMode: 'duotone',
-        toneColor1Hue: 220,
-        toneColor1Sat: 0.7,
-        toneColor2Hue: 40,
-        toneColor2Sat: 0.7,
-      })
-
-      expect(result.data[3]).toBe(128)
-    })
-  })
-
-  describe('Tritone', () => {
-    it('should use three colors for shadows, midtones, and highlights', () => {
-      const imageData = createImageData([
-        [0, 0, 0, 255],       // 黒（シャドウ）
-        [128, 128, 128, 255], // グレー（ミッドトーン）
-        [255, 255, 255, 255], // 白（ハイライト）
-      ])
-
-      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
-        toneMode: 'tritone',
-        toneColor1Hue: 0,     // 赤（シャドウ）
-        toneColor1Sat: 1,
-        toneColor2Hue: 120,   // 緑（ハイライト）
-        toneColor2Sat: 1,
-        toneColor3Hue: 240,   // 青（ミッドトーン）
-        toneColor3Sat: 1,
-      })
-
-      // 黒は toneColor1（赤系）
-      expect(result.data[0]).toBeGreaterThan(result.data[1]!) // R > G
-
-      // グレーは toneColor3（青系）
-      expect(result.data[6]).toBeGreaterThan(result.data[4]!) // B > R
-
-      // 白は toneColor2（緑系）
-      expect(result.data[9]).toBeGreaterThan(result.data[8]!) // G > R
-    })
-  })
-
   describe('Selective Color', () => {
     it('should keep selected hue in color and desaturate others', () => {
       const imageData = createImageData([
@@ -121,7 +50,7 @@ describe('$Lut.applyWithEffects', () => {
         selectiveColorEnabled: true,
         selectiveHue: 0,        // 赤を選択
         selectiveRange: 30,
-        selectiveDesaturate: 1, // 赤以外を完全にグレー化
+        selectiveDesaturate: 0, // 赤以外を完全にグレー化 (0=完全グレー)
       })
 
       // 赤はそのまま（R優勢）
@@ -153,7 +82,7 @@ describe('$Lut.applyWithEffects', () => {
         selectiveColorEnabled: true,
         selectiveHue: 0,
         selectiveRange: 30,
-        selectiveDesaturate: 1, // 完全グレー（範囲外を完全に脱色）
+        selectiveDesaturate: 0, // 完全グレー（0=範囲外を完全に脱色）
       })
 
       const partialDesat = $Lut.applyWithEffects(imageData, $Lut.identity(), {
@@ -177,7 +106,7 @@ describe('$Lut.applyWithEffects', () => {
         selectiveColorEnabled: true,
         selectiveHue: 0,
         selectiveRange: 60, // 広い範囲
-        selectiveDesaturate: 1, // 範囲外を完全に脱色
+        selectiveDesaturate: 0, // 範囲外を完全に脱色 (0=完全グレー)
       })
 
       // 両方ともカラーのまま（範囲内）
@@ -352,24 +281,6 @@ describe('$Lut.applyWithEffects', () => {
   })
 
   describe('Combined effects', () => {
-    it('should apply duotone and vibrance together', () => {
-      const imageData = createImageData([
-        [128, 128, 128, 255],
-      ])
-
-      const result = $Lut.applyWithEffects(imageData, $Lut.identity(), {
-        toneMode: 'duotone',
-        toneColor1Hue: 220,
-        toneColor1Sat: 0.7,
-        toneColor2Hue: 40,
-        toneColor2Sat: 0.7,
-        vibrance: 0.5,
-      })
-
-      // エラーなく処理される
-      expect(result.data.length).toBe(4)
-    })
-
     it('should apply posterize and hue rotation together', () => {
       const imageData = createImageData([
         [255, 0, 0, 255],

@@ -4,14 +4,6 @@ import { type Filter, type Lut, type Preset, $Filter, $Preset } from '../../modu
 /** LUTに焼けないピクセル単位エフェクト */
 export type PixelEffects = {
   vibrance: number
-  // Duotone/Tritone
-  toneMode: 'normal' | 'duotone' | 'tritone'
-  toneColor1Hue: number
-  toneColor1Sat: number
-  toneColor2Hue: number
-  toneColor2Sat: number
-  toneColor3Hue: number
-  toneColor3Sat: number
   // Selective Color
   selectiveColorEnabled: boolean
   selectiveHue: number
@@ -28,9 +20,6 @@ type Setter = (value: number) => void
 
 /** boolean用セッター関数の型 */
 type BoolSetter = (value: boolean) => void
-
-/** モード用セッター関数の型 */
-type ToneModeSetter = (value: 'normal' | 'duotone' | 'tritone') => void
 
 /** セッターオブジェクトの型 */
 export type FilterSetters = {
@@ -62,14 +51,6 @@ export type FilterSetters = {
   gainR: Setter
   gainG: Setter
   gainB: Setter
-  // Duotone/Tritone
-  toneMode: ToneModeSetter
-  toneColor1Hue: Setter
-  toneColor1Sat: Setter
-  toneColor2Hue: Setter
-  toneColor2Sat: Setter
-  toneColor3Hue: Setter
-  toneColor3Sat: Setter
   // Selective Color
   selectiveColorEnabled: BoolSetter
   selectiveHue: Setter
@@ -111,7 +92,7 @@ const clampRange = (min: number, max: number) => (v: number) => Math.max(min, Ma
 const clampHue = (v: number) => ((v % 360) + 360) % 360
 
 /** 数値セッターのキー */
-type NumericSetterKey = Exclude<keyof FilterSetters, 'toneMode' | 'selectiveColorEnabled'>
+type NumericSetterKey = Exclude<keyof FilterSetters, 'selectiveColorEnabled'>
 
 /** セッター定義マップ */
 const SETTER_DEFS: Record<NumericSetterKey, SetterDef> = {
@@ -143,13 +124,6 @@ const SETTER_DEFS: Record<NumericSetterKey, SetterDef> = {
   gainR:               { filterFn: $Filter.setGainR,               clamp: clampRange(-1, 1) },
   gainG:               { filterFn: $Filter.setGainG,               clamp: clampRange(-1, 1) },
   gainB:               { filterFn: $Filter.setGainB,               clamp: clampRange(-1, 1) },
-  // Duotone/Tritone (toneModeは別処理)
-  toneColor1Hue:       { filterFn: $Filter.setToneColor1Hue,       clamp: clampHue },
-  toneColor1Sat:       { filterFn: $Filter.setToneColor1Sat,       clamp: clampRange(0, 1) },
-  toneColor2Hue:       { filterFn: $Filter.setToneColor2Hue,       clamp: clampHue },
-  toneColor2Sat:       { filterFn: $Filter.setToneColor2Sat,       clamp: clampRange(0, 1) },
-  toneColor3Hue:       { filterFn: $Filter.setToneColor3Hue,       clamp: clampHue },
-  toneColor3Sat:       { filterFn: $Filter.setToneColor3Sat,       clamp: clampRange(0, 1) },
   // Selective Color (selectiveColorEnabledは別処理)
   selectiveHue:        { filterFn: $Filter.setSelectiveHue,        clamp: clampHue },
   selectiveRange:      { filterFn: $Filter.setSelectiveRange,      clamp: clampRange(0, 180) },
@@ -169,14 +143,6 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
   // LUTに焼けないエフェクト
   const pixelEffects = computed<PixelEffects>(() => ({
     vibrance: filter.value.adjustment.vibrance,
-    // Duotone/Tritone
-    toneMode: filter.value.adjustment.toneMode,
-    toneColor1Hue: filter.value.adjustment.toneColor1Hue,
-    toneColor1Sat: filter.value.adjustment.toneColor1Sat,
-    toneColor2Hue: filter.value.adjustment.toneColor2Hue,
-    toneColor2Sat: filter.value.adjustment.toneColor2Sat,
-    toneColor3Hue: filter.value.adjustment.toneColor3Hue,
-    toneColor3Sat: filter.value.adjustment.toneColor3Sat,
     // Selective Color
     selectiveColorEnabled: filter.value.adjustment.selectiveColorEnabled,
     selectiveHue: filter.value.adjustment.selectiveHue,
@@ -209,12 +175,6 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
     Object.entries(SETTER_DEFS).map(([key, def]) => [key, createSetter(def)])
   )
 
-  // toneMode セッター
-  const setToneMode: ToneModeSetter = (value) => {
-    filter.value = $Filter.setToneMode(filter.value, value)
-    clearPresetId()
-  }
-
   // selectiveColorEnabled セッター
   const setSelectiveColorEnabled: BoolSetter = (value) => {
     filter.value = $Filter.setSelectiveColorEnabled(filter.value, value)
@@ -223,7 +183,6 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
 
   const setters: FilterSetters = {
     ...numericSetters,
-    toneMode: setToneMode,
     selectiveColorEnabled: setSelectiveColorEnabled,
   } as FilterSetters
 

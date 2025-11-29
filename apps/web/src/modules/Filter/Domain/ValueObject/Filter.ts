@@ -253,50 +253,6 @@ export const $Filter = {
     adjustment: { ...filter.adjustment, gainB },
   }),
 
-  // === Duotone/Tritone ===
-
-  /** Tone Mode を更新 */
-  setToneMode: (filter: Filter, toneMode: 'normal' | 'duotone' | 'tritone'): Filter => ({
-    ...filter,
-    adjustment: { ...filter.adjustment, toneMode },
-  }),
-
-  /** Tone Color 1 Hue (シャドウ色) を更新 */
-  setToneColor1Hue: (filter: Filter, toneColor1Hue: number): Filter => ({
-    ...filter,
-    adjustment: { ...filter.adjustment, toneColor1Hue },
-  }),
-
-  /** Tone Color 1 Saturation を更新 */
-  setToneColor1Sat: (filter: Filter, toneColor1Sat: number): Filter => ({
-    ...filter,
-    adjustment: { ...filter.adjustment, toneColor1Sat },
-  }),
-
-  /** Tone Color 2 Hue (ハイライト色) を更新 */
-  setToneColor2Hue: (filter: Filter, toneColor2Hue: number): Filter => ({
-    ...filter,
-    adjustment: { ...filter.adjustment, toneColor2Hue },
-  }),
-
-  /** Tone Color 2 Saturation を更新 */
-  setToneColor2Sat: (filter: Filter, toneColor2Sat: number): Filter => ({
-    ...filter,
-    adjustment: { ...filter.adjustment, toneColor2Sat },
-  }),
-
-  /** Tone Color 3 Hue (ミッドトーン色) を更新 */
-  setToneColor3Hue: (filter: Filter, toneColor3Hue: number): Filter => ({
-    ...filter,
-    adjustment: { ...filter.adjustment, toneColor3Hue },
-  }),
-
-  /** Tone Color 3 Saturation を更新 */
-  setToneColor3Sat: (filter: Filter, toneColor3Sat: number): Filter => ({
-    ...filter,
-    adjustment: { ...filter.adjustment, toneColor3Sat },
-  }),
-
   // === Selective Color ===
 
   /** Selective Color 有効/無効 を更新 */
