@@ -26,13 +26,6 @@ const adjustmentsOpen = ref(false)
 // プリセットをカテゴリ別にグループ化
 const groupedPresets = computed(() => $Preset.groupByCategory([...props.presets]))
 
-// 現在選択中のプリセット
-const currentPreset = computed(() =>
-  props.currentPresetId
-    ? props.presets.find(p => p.id === props.currentPresetId) ?? null
-    : null
-)
-
 // イベントハンドラファクトリ (デバウンス付き)
 const DEBOUNCE_MS = 16
 const createHandler = (setter: (v: number) => void) => {
@@ -107,51 +100,43 @@ const handlePointUpdate = (index: number, value: number) => {
       </button>
       <div v-show="presetsOpen" class="p-2 space-y-2">
         <div v-for="[category, categoryPresets] in groupedPresets" :key="category">
-          <div class="text-xs text-gray-500 mb-1">{{ $Preset.categoryLabel(category) }}</div>
-          <div class="flex flex-wrap gap-1">
+          <div class="text-xs text-gray-500 font-medium mb-1">{{ $Preset.categoryLabel(category) }}</div>
+          <div class="space-y-0.5">
             <button
               v-for="preset in categoryPresets"
               :key="preset.id"
               @click="emit('applyPreset', preset)"
               :class="[
-                'px-1.5 py-0.5 rounded transition-colors',
+                'w-full text-left px-2 py-1 rounded transition-colors',
                 currentPresetId === preset.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-blue-600/20 border border-blue-500'
+                  : 'bg-gray-800 border border-transparent hover:border-gray-600'
               ]"
-              :title="preset.description"
-              style="font-size: 10px;"
             >
-              {{ preset.name }}
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-medium flex-shrink-0" :class="currentPresetId === preset.id ? 'text-blue-400' : 'text-gray-300'">
+                  {{ preset.name }}
+                </span>
+                <span v-if="preset.lut3d" class="text-cyan-500 flex-shrink-0" style="font-size: 8px;">3D</span>
+                <span v-if="preset.description" class="text-gray-500 truncate" style="font-size: 10px;">
+                  {{ preset.description }}
+                </span>
+              </div>
+              <div v-if="preset.suitableFor?.length || preset.characteristics?.length" class="flex gap-1 mt-0.5">
+                <span
+                  v-for="tag in (preset.suitableFor || []).slice(0, 2)"
+                  :key="'s-' + tag"
+                  class="px-1 bg-green-900/40 text-green-500 rounded"
+                  style="font-size: 7px;"
+                >{{ tag }}</span>
+                <span
+                  v-for="tag in (preset.characteristics || []).slice(0, 2)"
+                  :key="'c-' + tag"
+                  class="px-1 bg-purple-900/40 text-purple-500 rounded"
+                  style="font-size: 7px;"
+                >{{ tag }}</span>
+              </div>
             </button>
-          </div>
-        </div>
-
-        <!-- Selected Preset Details -->
-        <div v-if="currentPreset" class="mt-3 pt-3 border-t border-gray-600">
-          <div class="text-xs font-medium text-blue-400 mb-1">{{ currentPreset.name }}</div>
-          <div v-if="currentPreset.description" class="text-xs text-gray-400 mb-2">
-            {{ currentPreset.description }}
-          </div>
-          <div v-if="currentPreset.suitableFor?.length" class="flex flex-wrap gap-1 mb-1">
-            <span
-              v-for="tag in currentPreset.suitableFor"
-              :key="tag"
-              class="px-1.5 py-0.5 bg-green-900/50 text-green-400 rounded"
-              style="font-size: 9px;"
-            >
-              {{ tag }}
-            </span>
-          </div>
-          <div v-if="currentPreset.characteristics?.length" class="flex flex-wrap gap-1">
-            <span
-              v-for="tag in currentPreset.characteristics"
-              :key="tag"
-              class="px-1.5 py-0.5 bg-purple-900/50 text-purple-400 rounded"
-              style="font-size: 9px;"
-            >
-              {{ tag }}
-            </span>
           </div>
         </div>
       </div>
