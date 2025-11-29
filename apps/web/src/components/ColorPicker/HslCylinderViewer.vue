@@ -157,35 +157,36 @@ function createLutGrid(
     h1: number, s1: number, l1: number,
     h2: number, s2: number, l2: number
   ) => {
-    // Convert HSL to RGB for color and transform
+    // Convert HSL to RGB for color
     const rgb1 = $Hsl.toSrgb({ h: h1, s: s1, l: l1 })
     const rgb2 = $Hsl.toSrgb({ h: h2, s: s2, l: l2 })
 
     let pos1: THREE.Vector3, pos2: THREE.Vector3
 
     if (transform) {
-      // Apply LUT transform to RGB, then map back to position
+      // Apply LUT transform to RGB
       const [r1t, g1t, b1t] = transform(rgb1.r / 255, rgb1.g / 255, rgb1.b / 255)
       const [r2t, g2t, b2t] = transform(rgb2.r / 255, rgb2.g / 255, rgb2.b / 255)
 
-      // Convert transformed RGB back to HSL for positioning
+      // Get L from transformed RGB, but keep original H and S (maintains cylinder shape)
       const hsl1t = $Hsl.fromSrgb({ r: Math.round(r1t * 255), g: Math.round(g1t * 255), b: Math.round(b1t * 255) })
       const hsl2t = $Hsl.fromSrgb({ r: Math.round(r2t * 255), g: Math.round(g2t * 255), b: Math.round(b2t * 255) })
 
-      pos1 = hslToPosition(hsl1t.h, hsl1t.s, hsl1t.l)
-      pos2 = hslToPosition(hsl2t.h, hsl2t.s, hsl2t.l)
+      pos1 = hslToPosition(h1, s1, hsl1t.l)
+      pos2 = hslToPosition(h2, s2, hsl2t.l)
+
+      colors.push(r1t, g1t, b1t, r2t, g2t, b2t)
     } else {
       pos1 = hslToPosition(h1, s1, l1)
       pos2 = hslToPosition(h2, s2, l2)
+
+      colors.push(
+        rgb1.r / 255, rgb1.g / 255, rgb1.b / 255,
+        rgb2.r / 255, rgb2.g / 255, rgb2.b / 255
+      )
     }
 
     positions.push(pos1.x, pos1.y, pos1.z, pos2.x, pos2.y, pos2.z)
-
-    // Original colors
-    colors.push(
-      rgb1.r / 255, rgb1.g / 255, rgb1.b / 255,
-      rgb2.r / 255, rgb2.g / 255, rgb2.b / 255
-    )
   }
 
   // Grid lines along each HSL dimension
