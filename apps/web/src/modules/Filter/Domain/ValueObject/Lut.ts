@@ -4,8 +4,9 @@
 
 import { hslToRgb, rgbToHsl, hueDifference } from './colors'
 
-/** 最終出力用LUT (8bit) - 1D */
-export type Lut = {
+/** 1D LUT (8bit) - チャンネル独立 */
+export type Lut1D = {
+  type: 'lut1d'
   r: Uint8Array  // [256] input -> output mapping (0-255)
   g: Uint8Array
   b: Uint8Array
@@ -25,18 +26,60 @@ export type LutFloat = {
  * インデックス: (r + g * size + b * size * size) * 3
  */
 export type Lut3D = {
+  type: 'lut3d'
   size: number           // グリッドサイズ (17, 33, 65 など)
   data: Float32Array     // [size^3 * 3] RGB values (0.0-1.0)
 }
 
-export const $Lut = {
-  /** 無変換LUT (identity) */
-  identity: (): Lut => {
+/**
+ * LUT Union Type - 1D または 3D LUT (discriminated union)
+ */
+export type Lut = Lut1D | Lut3D
+
+/** Type guard: 3D LUT かどうかを判定 */
+export const isLut3D = (lut: Lut): lut is Lut3D => {
+  return lut.type === 'lut3d'
+}
+
+/** Type guard: 1D LUT かどうかを判定 */
+export const isLut1D = (lut: Lut): lut is Lut1D => {
+  return lut.type === 'lut1d'
+}
+
+/** 1D LUT 作成 */
+export const $Lut1D = {
+  /** LUT1D を作成 */
+  create: (r: Uint8Array, g: Uint8Array, b: Uint8Array): Lut1D => ({
+    type: 'lut1d',
+    r,
+    g,
+    b,
+  }),
+
+  /** 無変換 LUT (identity) */
+  identity: (): Lut1D => {
     const identity = new Uint8Array(256)
     for (let i = 0; i < 256; i++) {
       identity[i] = i
     }
     return {
+      type: 'lut1d',
+      r: identity.slice(),
+      g: identity.slice(),
+      b: identity.slice(),
+    }
+  },
+}
+
+export const $Lut = {
+  /** 無変換LUT (identity) */
+  identity: (): Lut1D => {
+    const identity = new Uint8Array(256)
+    for (let i = 0; i < 256; i++) {
+      identity[i] = i
+    }
+    return {
+      type: 'lut1d',
       r: identity.slice(),
       g: identity.slice(),
       b: identity.slice(),
@@ -44,14 +87,15 @@ export const $Lut = {
   },
 
   /** Master LUT (RGB共通) を作成 */
-  fromMaster: (master: Uint8Array): Lut => ({
+  fromMaster: (master: Uint8Array): Lut1D => ({
+    type: 'lut1d',
     r: master.slice(),
     g: master.slice(),
     b: master.slice(),
   }),
 
   /** LUTをImageDataに適用 (新しいImageDataを返す) */
-  apply: (imageData: ImageData, lut: Lut): ImageData => {
+  apply: (imageData: ImageData, lut: Lut1D): ImageData => {
     const { data, width, height } = imageData
     const newData = new Uint8ClampedArray(data.length)
 
@@ -71,7 +115,7 @@ export const $Lut = {
   },
 
   /** LUTをImageDataに直接適用 (破壊的) */
-  applyInPlace: (imageData: ImageData, lut: Lut): void => {
+  applyInPlace: (imageData: ImageData, lut: Lut1D): void => {
     const { data } = imageData
 
     for (let i = 0; i < data.length; i += 4) {
@@ -94,7 +138,7 @@ export const $Lut = {
    */
   applyWithEffects: (
     imageData: ImageData,
-    lut: Lut,
+    lut: Lut1D,
     effects: {
       vibrance?: number
       // Selective Color
@@ -223,7 +267,7 @@ export const $Lut = {
   },
 
   /** 複数のLUTを合成 (順番に適用した結果と等価) */
-  compose: (...luts: Lut[]): Lut => {
+  compose: (...luts: Lut1D[]): Lut1D => {
     if (luts.length === 0) {
       return $Lut.identity()
     }
@@ -273,7 +317,7 @@ export const $LutFloat = {
   }),
 
   /** 浮動小数点LUTを8bit LUTに変換 */
-  quantize: (lutFloat: LutFloat): Lut => {
+  quantize: (lutFloat: LutFloat): Lut1D => {
     const r = new Uint8Array(256)
     const g = new Uint8Array(256)
     const b = new Uint8Array(256)
@@ -284,7 +328,7 @@ export const $LutFloat = {
       b[i] = Math.round(Math.max(0, Math.min(255, lutFloat.b[i]! * 255)))
     }
 
-    return { r, g, b }
+    return { type: 'lut1d', r, g, b }
   },
 
   /**
@@ -329,14 +373,21 @@ export const $Lut3D = {
       }
     }
 
-    return { size, data }
+    return { type: 'lut3d', size, data }
   },
+
+  /** 3D LUT を作成 */
+  create: (size: number, data: Float32Array): Lut3D => ({
+    type: 'lut3d',
+    size,
+    data,
+  }),
 
   /**
    * 1D LUT を 3D LUT に変換
    * 各チャンネル独立の変換を3D空間に展開
    */
-  fromLut1D: (lut: Lut, size: number = 17): Lut3D => {
+  fromLut1D: (lut: Lut1D, size: number = 17): Lut3D => {
     const totalSize = size * size * size * 3
     const data = new Float32Array(totalSize)
 
@@ -356,7 +407,7 @@ export const $Lut3D = {
       }
     }
 
-    return { size, data }
+    return { type: 'lut3d', size, data }
   },
 
   /**

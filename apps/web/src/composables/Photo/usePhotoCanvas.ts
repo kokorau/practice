@@ -1,6 +1,6 @@
 import { ref, watch, type Ref } from 'vue'
 import type { Photo } from '../../modules/Photo/Domain'
-import { type Lut, $Lut } from '../../modules/Filter/Domain'
+import { type Lut, $Lut, $Lut3D, isLut3D } from '../../modules/Filter/Domain'
 import type { PixelEffects } from '../Filter/useFilter'
 
 export type UsePhotoCanvasOptions = {
@@ -30,10 +30,16 @@ export const usePhotoCanvas = (
     const effects = options.pixelEffects?.value
 
     if (lut) {
-      // pixelEffectsがあれば一緒に適用
-      const filteredImageData = effects
-        ? $Lut.applyWithEffects(currentPhoto.imageData, lut, effects)
-        : $Lut.apply(currentPhoto.imageData, lut)
+      let filteredImageData: ImageData
+      if (isLut3D(lut)) {
+        // 3D LUT
+        filteredImageData = $Lut3D.apply(currentPhoto.imageData, lut)
+      } else {
+        // 1D LUT: pixelEffectsがあれば一緒に適用
+        filteredImageData = effects
+          ? $Lut.applyWithEffects(currentPhoto.imageData, lut, effects)
+          : $Lut.apply(currentPhoto.imageData, lut)
+      }
       ctx.putImageData(filteredImageData, 0, 0)
     } else {
       ctx.putImageData(currentPhoto.imageData, 0, 0)

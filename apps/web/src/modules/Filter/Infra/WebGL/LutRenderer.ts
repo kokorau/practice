@@ -4,8 +4,8 @@
  * 1D LUT と 3D LUT の両方をサポート
  */
 
-import type { Lut, Lut3D } from '../../Domain/ValueObject/Lut'
-import { $Lut3D } from '../../Domain/ValueObject/Lut'
+import type { Lut, Lut1D, Lut3D } from '../../Domain/ValueObject/Lut'
+import { $Lut3D, isLut3D } from '../../Domain/ValueObject/Lut'
 
 // Vertex Shader - 単純な矩形描画
 const VERTEX_SHADER = `
@@ -314,10 +314,8 @@ export type LutRendererOptions = {
 }
 
 export type RenderOptions = {
-  /** 1D LUT (use3D = false の場合) */
+  /** LUT (1D or 3D - 自動判別) */
   lut?: Lut
-  /** 3D LUT (use3D = true の場合) */
-  lut3d?: Lut3D
   vibrance?: number
   hueRotation?: number // degrees
   // Selective Color
@@ -532,7 +530,7 @@ export class LutRenderer {
   }
 
   /** 1D LUT テクスチャを更新 */
-  updateLut1D(lut: Lut): void {
+  updateLut1D(lut: Lut1D): void {
     if (this.use3D || !this.lutTextures1D) {
       throw new Error('Cannot use 1D LUT in 3D mode')
     }
@@ -614,15 +612,25 @@ export class LutRenderer {
 
     // Bind LUT textures based on mode
     if (this.use3D) {
-      if (options.lut3d) {
-        this.updateLut3D(options.lut3d)
+      // 3D mode: expect Lut3D or convert Lut to Lut3D
+      if (options.lut) {
+        if (isLut3D(options.lut)) {
+          this.updateLut3D(options.lut)
+        } else {
+          // Convert 1D LUT to 3D LUT for compatibility
+          this.updateLut3D($Lut3D.fromLut1D(options.lut))
+        }
       }
       gl.activeTexture(gl.TEXTURE1)
       gl.bindTexture(gl.TEXTURE_2D, this.lutTexture3D)
       gl.uniform1i(this.uniforms.lut3d!, 1)
       gl.uniform1f(this.uniforms.lutSize!, this.currentLut3DSize)
     } else {
+      // 1D mode: expect Lut (1D)
       if (options.lut) {
+        if (isLut3D(options.lut)) {
+          throw new Error('Cannot use 3D LUT in 1D mode. Set use3D: true in LutRendererOptions.')
+        }
         this.updateLut1D(options.lut)
       }
       gl.activeTexture(gl.TEXTURE1)

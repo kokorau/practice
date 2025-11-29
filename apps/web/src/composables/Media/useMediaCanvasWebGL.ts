@@ -14,7 +14,7 @@ export type PerformanceStats = {
 }
 
 export type UseMediaCanvasWebGLOptions = {
-  /** LUT (optional - if not provided, uses identity LUT) */
+  /** LUT (optional - if not provided, uses identity LUT). Can be 1D or 3D LUT. */
   lut?: Ref<Lut>
   /** Pixel effects (optional) */
   pixelEffects?: Ref<PixelEffects>

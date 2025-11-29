@@ -3,12 +3,13 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { Lut } from '../../modules/Filter/Domain/ValueObject/Lut'
+import { isLut3D, $Lut3D } from '../../modules/Filter/Domain/ValueObject/Lut'
 
 const props = defineProps<{
   r: number // 0-255
   g: number // 0-255
   b: number // 0-255
-  lut?: Lut // Optional LUT for color transform
+  lut?: Lut // Optional LUT for color transform (1D or 3D)
 }>()
 
 const container = ref<HTMLDivElement>()
@@ -262,21 +263,29 @@ function createLutGrid(
 }
 
 /**
- * Create transform function from LUT
+ * Create transform function from LUT (1D or 3D)
  */
 function createLutTransform(lut: Lut): ColorTransform {
-  return (r: number, g: number, b: number): [number, number, number] => {
-    // r, g, b are 0-1, convert to 0-255 index
-    const ri = Math.round(r * 255)
-    const gi = Math.round(g * 255)
-    const bi = Math.round(b * 255)
+  if (isLut3D(lut)) {
+    // 3D LUT: use trilinear interpolation
+    return (r: number, g: number, b: number): [number, number, number] => {
+      return $Lut3D.lookup(lut, r, g, b)
+    }
+  } else {
+    // 1D LUT: per-channel lookup
+    return (r: number, g: number, b: number): [number, number, number] => {
+      // r, g, b are 0-1, convert to 0-255 index
+      const ri = Math.round(r * 255)
+      const gi = Math.round(g * 255)
+      const bi = Math.round(b * 255)
 
-    // Look up in LUT and convert back to 0-1
-    return [
-      lut.r[ri]! / 255,
-      lut.g[gi]! / 255,
-      lut.b[bi]! / 255,
-    ]
+      // Look up in LUT and convert back to 0-1
+      return [
+        lut.r[ri]! / 255,
+        lut.g[gi]! / 255,
+        lut.b[bi]! / 255,
+      ]
+    }
   }
 }
 

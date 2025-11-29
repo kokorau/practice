@@ -64,6 +64,7 @@ export type FilterSetters = {
 
 export type UseFilterReturn = {
   filter: Ref<Filter>
+  /** LUT (1D or 3D depending on configuration) */
   lut: ComputedRef<Lut>
   /** LUTに焼けないエフェクト (vibrance等) */
   pixelEffects: ComputedRef<PixelEffects>

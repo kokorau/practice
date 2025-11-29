@@ -1,5 +1,5 @@
 export { type Curve, $Curve } from './Curve'
-export { type Lut, type LutFloat, type Lut3D, $Lut, $LutFloat, $Lut3D } from './Lut'
+export { type Lut, type Lut1D, type LutFloat, type Lut3D, $Lut, $Lut1D, $LutFloat, $Lut3D, isLut1D, isLut3D } from './Lut'
 export { type Adjustment, $Adjustment } from './Adjustment'
 export { type Filter, $Filter } from './Filter'
 export { type Preset, type PresetCategory, $Preset, PRESETS } from './Preset'

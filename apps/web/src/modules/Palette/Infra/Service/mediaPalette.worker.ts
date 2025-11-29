@@ -3,7 +3,7 @@
  * k-means パレット抽出を Worker で処理
  */
 
-import type { Lut } from '../../../Filter/Domain/ValueObject/Lut'
+import type { Lut, Lut1D, Lut3D } from '../../../Filter/Domain/ValueObject/Lut'
 
 // Domain と互換の型定義（Worker 内で使用）
 type RGB = { r: number; g: number; b: number }
@@ -46,13 +46,91 @@ export type PaletteResponse = {
 const K_CLUSTERS = 7
 const TOP_COLORS = 4
 
-// === LUT 適用 ===
-const applyLut = (imageData: ImageData, lut: Lut): void => {
+/** Type guard: 3D LUT かどうかを判定 */
+const isLut3D = (lut: Lut): lut is Lut3D => {
+  return 'size' in lut && 'data' in lut
+}
+
+// === 1D LUT 適用 ===
+const applyLut1D = (imageData: ImageData, lut: Lut1D): void => {
   const data = imageData.data
   for (let i = 0; i < data.length; i += 4) {
     data[i] = lut.r[data[i]!]!
     data[i + 1] = lut.g[data[i + 1]!]!
     data[i + 2] = lut.b[data[i + 2]!]!
+  }
+}
+
+// === 3D LUT 適用（三線形補間） ===
+const applyLut3D = (imageData: ImageData, lut: Lut3D): void => {
+  const data = imageData.data
+  const { size, data: lutData } = lut
+  const maxIdx = size - 1
+
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+
+  const getColor = (ri: number, gi: number, bi: number): [number, number, number] => {
+    const idx = (ri + gi * size + bi * size * size) * 3
+    return [lutData[idx]!, lutData[idx + 1]!, lutData[idx + 2]!]
+  }
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i]! / 255
+    const g = data[i + 1]! / 255
+    const b = data[i + 2]! / 255
+
+    // Scale to LUT indices
+    const rScaled = r * maxIdx
+    const gScaled = g * maxIdx
+    const bScaled = b * maxIdx
+
+    // Get integer indices
+    const r0 = Math.floor(rScaled)
+    const g0 = Math.floor(gScaled)
+    const b0 = Math.floor(bScaled)
+    const r1 = Math.min(r0 + 1, maxIdx)
+    const g1 = Math.min(g0 + 1, maxIdx)
+    const b1 = Math.min(b0 + 1, maxIdx)
+
+    // Interpolation weights
+    const rT = rScaled - r0
+    const gT = gScaled - g0
+    const bT = bScaled - b0
+
+    // Sample 8 corners
+    const c000 = getColor(r0, g0, b0)
+    const c100 = getColor(r1, g0, b0)
+    const c010 = getColor(r0, g1, b0)
+    const c110 = getColor(r1, g1, b0)
+    const c001 = getColor(r0, g0, b1)
+    const c101 = getColor(r1, g0, b1)
+    const c011 = getColor(r0, g1, b1)
+    const c111 = getColor(r1, g1, b1)
+
+    // Trilinear interpolation for each channel
+    const result: [number, number, number] = [0, 0, 0]
+    for (let ch = 0; ch < 3; ch++) {
+      const c00 = lerp(c000[ch]!, c100[ch]!, rT)
+      const c01 = lerp(c001[ch]!, c101[ch]!, rT)
+      const c10 = lerp(c010[ch]!, c110[ch]!, rT)
+      const c11 = lerp(c011[ch]!, c111[ch]!, rT)
+      const c0_g = lerp(c00, c10, gT)
+      const c1_g = lerp(c01, c11, gT)
+      result[ch] = lerp(c0_g, c1_g, bT)
+    }
+
+    data[i] = Math.round(result[0] * 255)
+    data[i + 1] = Math.round(result[1] * 255)
+    data[i + 2] = Math.round(result[2] * 255)
+  }
+}
+
+// === LUT 適用（1D または 3D を自動判別）===
+const applyLut = (imageData: ImageData, lut: Lut): void => {
+  if (isLut3D(lut)) {
+    applyLut3D(imageData, lut)
+  } else {
+    applyLut1D(imageData, lut)
   }
 }
 

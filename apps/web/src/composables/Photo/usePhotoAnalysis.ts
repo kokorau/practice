@@ -1,6 +1,6 @@
 import { ref, watch, type Ref, type ComputedRef } from 'vue'
 import type { Photo, PhotoAnalysis } from '../../modules/Photo/Domain'
-import { type Lut, $Lut } from '../../modules/Filter/Domain'
+import { type Lut, $Lut, $Lut3D, isLut3D } from '../../modules/Filter/Domain'
 import { $Photo } from '../../modules/Photo/Domain'
 import { photoAnalysisService } from '../../modules/Photo/Infra/Service/photoAnalysisService'
 
@@ -28,7 +28,10 @@ export const usePhotoAnalysis = (
       // LUTがあれば適用
       let targetPhoto = photo.value
       if (options.lut?.value) {
-        const filteredImageData = $Lut.apply(photo.value.imageData, options.lut.value)
+        const lut = options.lut.value
+        const filteredImageData = isLut3D(lut)
+          ? $Lut3D.apply(photo.value.imageData, lut)
+          : $Lut.apply(photo.value.imageData, lut)
         targetPhoto = $Photo.create(filteredImageData)
       }
 
