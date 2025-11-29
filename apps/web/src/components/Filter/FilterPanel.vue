@@ -26,6 +26,13 @@ const adjustmentsOpen = ref(false)
 // プリセットをカテゴリ別にグループ化
 const groupedPresets = computed(() => $Preset.groupByCategory([...props.presets]))
 
+// 現在選択中のプリセット
+const currentPreset = computed(() =>
+  props.currentPresetId
+    ? props.presets.find(p => p.id === props.currentPresetId) ?? null
+    : null
+)
+
 // イベントハンドラファクトリ (デバウンス付き)
 const DEBOUNCE_MS = 16
 const createHandler = (setter: (v: number) => void) => {
@@ -117,6 +124,34 @@ const handlePointUpdate = (index: number, value: number) => {
             >
               {{ preset.name }}
             </button>
+          </div>
+        </div>
+
+        <!-- Selected Preset Details -->
+        <div v-if="currentPreset" class="mt-3 pt-3 border-t border-gray-600">
+          <div class="text-xs font-medium text-blue-400 mb-1">{{ currentPreset.name }}</div>
+          <div v-if="currentPreset.description" class="text-xs text-gray-400 mb-2">
+            {{ currentPreset.description }}
+          </div>
+          <div v-if="currentPreset.suitableFor?.length" class="flex flex-wrap gap-1 mb-1">
+            <span
+              v-for="tag in currentPreset.suitableFor"
+              :key="tag"
+              class="px-1.5 py-0.5 bg-green-900/50 text-green-400 rounded"
+              style="font-size: 9px;"
+            >
+              {{ tag }}
+            </span>
+          </div>
+          <div v-if="currentPreset.characteristics?.length" class="flex flex-wrap gap-1">
+            <span
+              v-for="tag in currentPreset.characteristics"
+              :key="tag"
+              class="px-1.5 py-0.5 bg-purple-900/50 text-purple-400 rounded"
+              style="font-size: 9px;"
+            >
+              {{ tag }}
+            </span>
           </div>
         </div>
       </div>

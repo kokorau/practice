@@ -23,8 +23,14 @@ export type Preset = {
   name: string
   /** カテゴリ */
   category: PresetCategory
-  /** 説明 (オプション) */
+  /** 短い説明（UI表示用、日本語） */
   description?: string
+  /** AI向け詳細説明（効果、適したシーン、特徴を含む、英語推奨） */
+  aiDescription?: string
+  /** 適したシーン・被写体のタグ */
+  suitableFor?: string[]
+  /** 色調特性タグ */
+  characteristics?: string[]
   /** Adjustment パラメータ (identityからの差分) */
   adjustment: Partial<Adjustment>
   /** Master Curve ポイント (オプション、指定しなければidentity) */
@@ -82,6 +88,47 @@ export const $Preset = {
     }
     return labels[category]
   },
+
+  /** AI向けプリセット情報をJSON形式で取得 */
+  toAIContext: (preset: Preset): string => {
+    const info = {
+      id: preset.id,
+      name: preset.name,
+      category: preset.category,
+      description: preset.aiDescription || preset.description || '',
+      suitableFor: preset.suitableFor || [],
+      characteristics: preset.characteristics || [],
+    }
+    return JSON.stringify(info, null, 2)
+  },
+
+  /** 全プリセットのAI向けサマリーを取得 */
+  getAllAIContext: (presets: Preset[]): string => {
+    const summary = presets.map(p => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      description: p.aiDescription || p.description || '',
+      suitableFor: p.suitableFor || [],
+      characteristics: p.characteristics || [],
+    }))
+    return JSON.stringify(summary, null, 2)
+  },
+
+  /** UI表示用の詳細情報を取得 */
+  getDisplayInfo: (preset: Preset): {
+    name: string
+    category: string
+    description: string
+    suitableFor: string[]
+    characteristics: string[]
+  } => ({
+    name: preset.name,
+    category: $Preset.categoryLabel(preset.category),
+    description: preset.description || '',
+    suitableFor: preset.suitableFor || [],
+    characteristics: preset.characteristics || [],
+  }),
 }
 
 // ========================================
@@ -95,6 +142,9 @@ export const PRESETS: Preset[] = [
     name: 'Kodak Portra 400',
     category: 'film',
     description: '暖かいスキントーン、ウェディング・ポートレート向け',
+    aiDescription: 'Warm skin tones with soft contrast. Lifted shadows with orange/yellow highlights and blue shadows. Ideal for portraits, weddings, and lifestyle photography. Creates a romantic, timeless look.',
+    suitableFor: ['portrait', 'wedding', 'lifestyle', 'fashion', 'people'],
+    characteristics: ['warm', 'soft-contrast', 'lifted-shadows', 'natural-skin', 'film-like'],
     adjustment: {
       exposure: 0.05,
       contrast: 0.1,
@@ -116,6 +166,9 @@ export const PRESETS: Preset[] = [
     name: 'Kodak Portra 160',
     category: 'film',
     description: '低感度、きめ細やかな粒子、スタジオ向け',
+    aiDescription: 'Fine grain, subtle warmth with excellent skin tone reproduction. Lower contrast than Portra 400. Best for studio portraits, beauty, and controlled lighting situations.',
+    suitableFor: ['studio', 'beauty', 'portrait', 'product', 'controlled-lighting'],
+    characteristics: ['fine-grain', 'subtle-warm', 'low-contrast', 'clean', 'professional'],
     adjustment: {
       contrast: 0.05,
       highlights: -0.1,
@@ -136,6 +189,9 @@ export const PRESETS: Preset[] = [
     name: 'Fuji Pro 400H',
     category: 'film',
     description: 'クールなパステル調、ウェディング向け',
+    aiDescription: 'Cool pastel tones with lifted shadows and cyan/blue color shift. Soft, dreamy aesthetic. Popular for weddings, editorial, and airy lifestyle photography.',
+    suitableFor: ['wedding', 'editorial', 'lifestyle', 'bright-scenes', 'airy'],
+    characteristics: ['cool', 'pastel', 'lifted-shadows', 'dreamy', 'soft', 'cyan-tint'],
     adjustment: {
       exposure: 0.1,
       contrast: 0.05,
@@ -158,6 +214,9 @@ export const PRESETS: Preset[] = [
     name: 'Kodak Ektar 100',
     category: 'film',
     description: '高彩度、風景向け、鮮やかな色',
+    aiDescription: 'High saturation with punchy colors and strong contrast. Excellent for landscapes, travel, and outdoor photography. Vivid blues and greens with warm highlights.',
+    suitableFor: ['landscape', 'travel', 'outdoor', 'nature', 'architecture'],
+    characteristics: ['high-saturation', 'vivid', 'punchy', 'high-contrast', 'sharp'],
     adjustment: {
       contrast: 0.2,
       highlights: -0.1,
@@ -177,6 +236,9 @@ export const PRESETS: Preset[] = [
     name: 'Fuji Velvia 50',
     category: 'film',
     description: '超高彩度、風景向け、ドラマチック',
+    aiDescription: 'Ultra-high saturation with deep blacks and dramatic contrast. Legendary for landscape and nature photography. Intense colors, especially reds, greens, and blues.',
+    suitableFor: ['landscape', 'nature', 'sunset', 'dramatic-sky', 'macro'],
+    characteristics: ['ultra-saturated', 'dramatic', 'deep-blacks', 'vivid-colors', 'intense'],
     adjustment: {
       contrast: 0.3,
       highlights: -0.15,
@@ -195,6 +257,9 @@ export const PRESETS: Preset[] = [
     name: 'Kodachrome 64',
     category: 'film',
     description: 'クラシック、ビビッドでポップな色',
+    aiDescription: 'Classic vintage look with warm reds and yellows. Strong contrast with a nostalgic, timeless quality. Great for street, documentary, and retro aesthetics.',
+    suitableFor: ['street', 'documentary', 'retro', 'vintage', 'everyday'],
+    characteristics: ['warm-red', 'vintage', 'nostalgic', 'classic', 'punchy'],
     adjustment: {
       contrast: 0.25,
       highlights: -0.1,
@@ -217,6 +282,9 @@ export const PRESETS: Preset[] = [
     name: 'Teal & Orange',
     category: 'cinematic',
     description: 'ハリウッド風カラーグレード',
+    aiDescription: 'Hollywood blockbuster color grade. Teal/cyan shadows with warm orange highlights. Creates cinematic separation between subjects and backgrounds. Great for action, drama, and commercial work.',
+    suitableFor: ['movie', 'commercial', 'music-video', 'action', 'drama'],
+    characteristics: ['cinematic', 'teal-orange', 'color-contrast', 'hollywood', 'professional'],
     adjustment: {
       contrast: 0.2,
       highlights: -0.1,
@@ -236,6 +304,9 @@ export const PRESETS: Preset[] = [
     name: 'Blockbuster',
     category: 'cinematic',
     description: '映画風、高コントラスト',
+    aiDescription: 'High contrast cinematic look with crushed blacks and controlled highlights. Blue shadows with warm midtones. Ideal for dramatic scenes, trailers, and epic storytelling.',
+    suitableFor: ['movie', 'trailer', 'epic', 'dramatic', 'action'],
+    characteristics: ['high-contrast', 'cinematic', 'crushed-blacks', 'dramatic', 'bold'],
     adjustment: {
       contrast: 0.35,
       highlights: -0.2,
@@ -255,6 +326,9 @@ export const PRESETS: Preset[] = [
     name: 'Film Noir',
     category: 'cinematic',
     description: 'ダーク、ミステリアス',
+    aiDescription: 'Dark, mysterious look inspired by classic film noir. Very high contrast with desaturated colors and deep shadows. Perfect for thriller, mystery, and moody atmospheres.',
+    suitableFor: ['thriller', 'mystery', 'moody', 'night', 'dramatic'],
+    characteristics: ['dark', 'desaturated', 'high-contrast', 'mysterious', 'noir'],
     adjustment: {
       contrast: 0.4,
       brightness: -0.1,
