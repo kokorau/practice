@@ -164,16 +164,15 @@ function createLutGrid(
     let pos1: THREE.Vector3, pos2: THREE.Vector3
 
     if (transform) {
-      // Apply LUT transform to RGB
+      // Apply LUT transform to RGB, then convert back to HSL for positioning
       const [r1t, g1t, b1t] = transform(rgb1.r / 255, rgb1.g / 255, rgb1.b / 255)
       const [r2t, g2t, b2t] = transform(rgb2.r / 255, rgb2.g / 255, rgb2.b / 255)
 
-      // Get L from transformed RGB, but keep original H and S (maintains cylinder shape)
       const hsl1t = $Hsl.fromSrgb({ r: Math.round(r1t * 255), g: Math.round(g1t * 255), b: Math.round(b1t * 255) })
       const hsl2t = $Hsl.fromSrgb({ r: Math.round(r2t * 255), g: Math.round(g2t * 255), b: Math.round(b2t * 255) })
 
-      pos1 = hslToPosition(h1, s1, hsl1t.l)
-      pos2 = hslToPosition(h2, s2, hsl2t.l)
+      pos1 = hslToPosition(hsl1t.h, hsl1t.s, hsl1t.l)
+      pos2 = hslToPosition(hsl2t.h, hsl2t.s, hsl2t.l)
 
       colors.push(r1t, g1t, b1t, r2t, g2t, b2t)
     } else {
