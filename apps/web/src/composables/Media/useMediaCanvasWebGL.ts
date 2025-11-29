@@ -153,10 +153,15 @@ export const useMediaCanvasWebGL = (
     }
   }
 
-  // Canvas が設定されたら Renderer を初期化
+  // Canvas が設定されたら Renderer を初期化し、Photo モードなら描画
   watch(canvasRef, (canvas) => {
     if (canvas) {
       initRenderer()
+      // Photo モードで media が既に設定されていたら描画
+      const currentMedia = media.value
+      if (currentMedia && $Media.isPhoto(currentMedia)) {
+        requestAnimationFrame(() => renderFrame())
+      }
     } else {
       disposeRenderer()
     }

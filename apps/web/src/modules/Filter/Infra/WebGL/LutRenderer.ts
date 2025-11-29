@@ -622,6 +622,7 @@ export class LutRenderer {
     // Bind LUT textures based on mode
     if (this.use3D) {
       // 3D mode: expect Lut3D or convert Lut to Lut3D
+      gl.activeTexture(gl.TEXTURE1)
       if (options.lut) {
         if ($Lut3D.is(options.lut)) {
           this.updateLut3D(options.lut)
@@ -630,19 +631,19 @@ export class LutRenderer {
           this.updateLut3D($Lut3D.fromLut1D(options.lut))
         }
       }
-      gl.activeTexture(gl.TEXTURE1)
       gl.bindTexture(gl.TEXTURE_2D, this.lutTexture3D)
       gl.uniform1i(this.uniforms.lut3d!, 1)
       gl.uniform1f(this.uniforms.lutSize!, this.currentLut3DSize)
     } else {
       // 1D mode: expect Lut (1D)
+      // NOTE: updateLut1D uses gl.bindTexture, so we need to set active texture first
+      gl.activeTexture(gl.TEXTURE1)
       if (options.lut) {
         if ($Lut3D.is(options.lut)) {
           throw new Error('Cannot use 3D LUT in 1D mode. Set use3D: true in LutRendererOptions.')
         }
         this.updateLut1D(options.lut)
       }
-      gl.activeTexture(gl.TEXTURE1)
       gl.bindTexture(gl.TEXTURE_2D, this.lutTextures1D!.r)
       gl.uniform1i(this.uniforms.lutR!, 1)
 
