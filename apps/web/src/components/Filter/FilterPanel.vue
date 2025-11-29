@@ -21,7 +21,7 @@ const emit = defineEmits<{
 
 // セクション開閉状態
 const presetsOpen = ref(true)
-const adjustmentsOpen = ref(true)
+const adjustmentsOpen = ref(false)
 
 // プリセットをカテゴリ別にグループ化
 const groupedPresets = computed(() => $Preset.groupByCategory([...props.presets]))
@@ -325,8 +325,8 @@ const handlePointUpdate = (index: number, value: number) => {
           <div class="text-xs text-gray-500 font-medium mb-2">Tone Curve</div>
           <CurveEditor
             :curve="filter.master"
-            :width="240"
-            :height="100"
+            :width="420"
+            :height="120"
             @update:point="handlePointUpdate"
           />
         </div>

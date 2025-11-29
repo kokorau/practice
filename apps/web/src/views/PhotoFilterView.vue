@@ -157,7 +157,7 @@ const handleLoadDefaultPalette = () => {
   <div class="h-screen bg-gray-900 text-white flex justify-center">
     <div class="flex w-[1800px] max-w-full">
     <!-- Left Panel: Tabs + Controls -->
-    <div class="w-80 flex-shrink-0 border-r border-gray-700 flex flex-col">
+    <div class="w-[480px] flex-shrink-0 border-r border-gray-700 flex flex-col">
       <!-- Tab Headers -->
       <div class="flex border-b border-gray-700">
         <button
