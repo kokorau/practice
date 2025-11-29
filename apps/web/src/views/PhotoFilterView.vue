@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
 import { useMedia, useMediaCanvasWebGL, useMediaAnalysis, useMediaPalette } from '../composables/Media'
 import { loadUnsplashPhoto } from '../modules/PhotoUnsplash/Application/loadUnsplashPhoto'
 import { loadScreenshot } from '../modules/PhotoScreenshot/Application/loadScreenshot'
@@ -13,10 +12,10 @@ import { useSegmentation } from '../composables/Segmentation/useSegmentation'
 import { useColorLayers } from '../composables/Segmentation/useColorLayers'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 import PhotoStats from '../components/PhotoStats.vue'
-import CurveEditor from '../components/CurveEditor.vue'
 import ProfiledPaletteDisplay from '../components/ProfiledPaletteDisplay.vue'
 import SegmentationDisplay from '../components/SegmentationDisplay.vue'
 import LayerStackPreview from '../components/LayerStackPreview.vue'
+import FilterPanel from '../components/Filter/FilterPanel.vue'
 
 // Media (Photo + Camera + ScreenCapture 統一)
 const {
@@ -117,49 +116,6 @@ onMounted(() => {
 type TabId = 'source' | 'edit'
 const activeTab = ref<TabId>('source')
 
-// イベントハンドラファクトリ (デバウンス付き)
-const DEBOUNCE_MS = 16
-const createHandler = (setter: (v: number) => void) => {
-  const debounced = useDebounceFn(setter, DEBOUNCE_MS)
-  return (e: Event) => debounced(parseFloat((e.target as HTMLInputElement).value))
-}
-
-// 全ハンドラを一括生成
-const handlers = {
-  exposure: createHandler(setters.exposure),
-  highlights: createHandler(setters.highlights),
-  shadows: createHandler(setters.shadows),
-  whites: createHandler(setters.whites),
-  blacks: createHandler(setters.blacks),
-  brightness: createHandler(setters.brightness),
-  contrast: createHandler(setters.contrast),
-  temperature: createHandler(setters.temperature),
-  tint: createHandler(setters.tint),
-  clarity: createHandler(setters.clarity),
-  fade: createHandler(setters.fade),
-  vibrance: createHandler(setters.vibrance),
-  splitShadowHue: createHandler(setters.splitShadowHue),
-  splitShadowAmount: createHandler(setters.splitShadowAmount),
-  splitHighlightHue: createHandler(setters.splitHighlightHue),
-  splitHighlightAmount: createHandler(setters.splitHighlightAmount),
-  splitBalance: createHandler(setters.splitBalance),
-  toe: createHandler(setters.toe),
-  shoulder: createHandler(setters.shoulder),
-  liftR: createHandler(setters.liftR),
-  liftG: createHandler(setters.liftG),
-  liftB: createHandler(setters.liftB),
-  gammaR: createHandler(setters.gammaR),
-  gammaG: createHandler(setters.gammaG),
-  gammaB: createHandler(setters.gammaB),
-  gainR: createHandler(setters.gainR),
-  gainG: createHandler(setters.gainG),
-  gainB: createHandler(setters.gainB),
-}
-
-const debouncedSetMasterPoint = useDebounceFn(setMasterPoint, DEBOUNCE_MS)
-const handlePointUpdate = (index: number, value: number) => {
-  debouncedSetMasterPoint(index, value)
-}
 
 // Unsplash
 const isLoadingUnsplash = ref(false)
@@ -327,191 +283,16 @@ const handleLoadDefaultPalette = () => {
         </div>
 
         <!-- Edit Tab (Presets + Adjustments) -->
-        <div v-if="activeTab === 'edit'" class="space-y-3">
-        <!-- Presets (コンパクト) -->
-        <div class="border border-gray-700 rounded-lg p-2">
-          <div class="flex flex-wrap gap-1">
-            <button
-              v-for="preset in PRESETS"
-              :key="preset.id"
-              @click="applyPreset(preset)"
-              :class="[
-                'px-1.5 py-0.5 rounded transition-colors',
-                currentPresetId === preset.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              ]"
-              :title="preset.description"
-              style="font-size: 10px;"
-            >
-              {{ preset.name }}
-            </button>
-          </div>
-        </div>
-        <!-- Basic Adjustments -->
-        <div class="border border-gray-700 rounded-lg p-3">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="text-xs text-gray-400 font-medium">Adjustments</h2>
-            <button
-              @click="reset"
-              class="px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-400"
-              style="font-size: 10px;"
-            >
-              Reset
-            </button>
-          </div>
-
-          <div class="space-y-1.5">
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Exposure</span>
-              <input type="range" min="-2" max="2" step="0.01" :value="filter.adjustment.exposure" @input="handlers.exposure" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Highlights</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.highlights" @input="handlers.highlights" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Shadows</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.shadows" @input="handlers.shadows" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Whites</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.whites" @input="handlers.whites" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Blacks</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.blacks" @input="handlers.blacks" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Brightness</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.brightness" @input="handlers.brightness" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Contrast</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.contrast" @input="handlers.contrast" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Clarity</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.clarity" @input="handlers.clarity" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Temp</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.temperature" @input="handlers.temperature" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Tint</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.tint" @input="handlers.tint" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Fade</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.fade" @input="handlers.fade" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Vibrance</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.vibrance" @input="handlers.vibrance" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Split Toning -->
-        <div class="border border-gray-700 rounded-lg p-3">
-          <h2 class="text-xs text-gray-400 font-medium mb-2">Split Toning</h2>
-          <div class="space-y-1.5">
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Sh Hue</span>
-              <input type="range" min="0" max="360" step="1" :value="filter.adjustment.splitShadowHue" @input="handlers.splitShadowHue" class="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer" style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Sh Amt</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.splitShadowAmount" @input="handlers.splitShadowAmount" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Hi Hue</span>
-              <input type="range" min="0" max="360" step="1" :value="filter.adjustment.splitHighlightHue" @input="handlers.splitHighlightHue" class="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer" style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Hi Amt</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.splitHighlightAmount" @input="handlers.splitHighlightAmount" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Balance</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.splitBalance" @input="handlers.splitBalance" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Film Curve -->
-        <div class="border border-gray-700 rounded-lg p-3">
-          <h2 class="text-xs text-gray-400 font-medium mb-2">Film Curve</h2>
-          <div class="space-y-1.5">
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Toe</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.toe" @input="handlers.toe" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-500 w-16 flex-shrink-0">Shoulder</span>
-              <input type="range" min="0" max="1" step="0.01" :value="filter.adjustment.shoulder" @input="handlers.shoulder" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Color Balance (Lift/Gamma/Gain) -->
-        <div class="border border-gray-700 rounded-lg p-3">
-          <h2 class="text-xs text-gray-400 font-medium mb-2">Color Balance</h2>
-          <div class="space-y-1.5">
-            <!-- Lift -->
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-red-400 w-16 flex-shrink-0">Lift R</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftR" @input="handlers.liftR" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-green-400 w-16 flex-shrink-0">Lift G</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftG" @input="handlers.liftG" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-blue-400 w-16 flex-shrink-0">Lift B</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.liftB" @input="handlers.liftB" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <!-- Gamma -->
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-red-400 w-16 flex-shrink-0">Gamma R</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaR" @input="handlers.gammaR" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-green-400 w-16 flex-shrink-0">Gamma G</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaG" @input="handlers.gammaG" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-blue-400 w-16 flex-shrink-0">Gamma B</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gammaB" @input="handlers.gammaB" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <!-- Gain -->
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-red-400 w-16 flex-shrink-0">Gain R</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainR" @input="handlers.gainR" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-green-400 w-16 flex-shrink-0">Gain G</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainG" @input="handlers.gainG" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-blue-400 w-16 flex-shrink-0">Gain B</span>
-              <input type="range" min="-1" max="1" step="0.01" :value="filter.adjustment.gainB" @input="handlers.gainB" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Curve Editor -->
-        <div class="border border-gray-700 rounded-lg p-3">
-          <h2 class="text-xs text-gray-400 font-medium mb-2">Tone Curve</h2>
-          <CurveEditor
-            :curve="filter.master"
-            :width="240"
-            :height="100"
-            @update:point="handlePointUpdate"
-          />
-        </div>
-        </div>
+        <FilterPanel
+          v-if="activeTab === 'edit'"
+          :filter="filter"
+          :presets="PRESETS"
+          :current-preset-id="currentPresetId"
+          :setters="setters"
+          @apply-preset="applyPreset"
+          @update:master-point="setMasterPoint"
+          @reset="reset"
+        />
       </div>
     </div>
 

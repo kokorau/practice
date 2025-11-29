@@ -2,7 +2,11 @@
 import { ref, computed } from 'vue'
 import SvPlane from '../components/ColorPicker/SvPlane.vue'
 import HueSlider from '../components/ColorPicker/HueSlider.vue'
+import RgbCubeViewer from '../components/ColorPicker/RgbCubeViewer.vue'
+import FilterPanel from '../components/Filter/FilterPanel.vue'
 import { $Hsv } from '../modules/Color/Domain/ValueObject'
+import { useFilter } from '../composables/Filter/useFilter'
+import { PRESETS } from '../modules/Filter/Domain'
 
 const hue = ref(0)
 const saturation = ref(1)
@@ -13,6 +17,9 @@ const hexColor = computed(() => {
   const { r, g, b } = rgb.value
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 })
+
+// Filter / LUT
+const { filter, lut, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter()
 
 function onSvChange(s: number, v: number) {
   saturation.value = s
@@ -60,6 +67,24 @@ function onHueChange(h: number) {
           <div>G: {{ rgb.g }}</div>
           <div>B: {{ rgb.b }}</div>
         </div>
+      </div>
+
+      <!-- RGB Cube Viewer -->
+      <div class="w-96 h-96 border border-gray-600 rounded-lg overflow-hidden">
+        <RgbCubeViewer :r="rgb.r" :g="rgb.g" :b="rgb.b" :lut="lut" />
+      </div>
+
+      <!-- Filter Controls -->
+      <div class="w-72 max-h-[600px] overflow-y-auto">
+        <FilterPanel
+          :filter="filter"
+          :presets="PRESETS"
+          :current-preset-id="currentPresetId"
+          :setters="setters"
+          @apply-preset="applyPreset"
+          @update:master-point="setMasterPoint"
+          @reset="reset"
+        />
       </div>
     </div>
   </div>
