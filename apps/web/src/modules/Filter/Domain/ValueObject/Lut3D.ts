@@ -477,6 +477,204 @@ export const $Lut3D = {
   },
 
   /**
+   * デュオトーン 3D LUT を生成
+   * シャドウとハイライトにそれぞれ色を割り当て
+   * @param shadowColor シャドウ色 { r, g, b } (0-1)
+   * @param highlightColor ハイライト色 { r, g, b } (0-1)
+   * @param contrast コントラスト調整 (0-2, default 1)
+   */
+  duotone: (
+    shadowColor: { r: number; g: number; b: number },
+    highlightColor: { r: number; g: number; b: number },
+    contrast: number = 1,
+    size: number = 17
+  ): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          // 輝度を計算 (Rec. 709)
+          let luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+          // コントラスト適用
+          luminance = (luminance - 0.5) * contrast + 0.5
+          luminance = Math.max(0, Math.min(1, luminance))
+
+          // シャドウ色とハイライト色を補間
+          data[idx] = shadowColor.r + (highlightColor.r - shadowColor.r) * luminance
+          data[idx + 1] = shadowColor.g + (highlightColor.g - shadowColor.g) * luminance
+          data[idx + 2] = shadowColor.b + (highlightColor.b - shadowColor.b) * luminance
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * トライトーン 3D LUT を生成
+   * シャドウ、ミッドトーン、ハイライトにそれぞれ色を割り当て
+   * @param shadowColor シャドウ色 { r, g, b } (0-1)
+   * @param midColor ミッドトーン色 { r, g, b } (0-1)
+   * @param highlightColor ハイライト色 { r, g, b } (0-1)
+   */
+  tritone: (
+    shadowColor: { r: number; g: number; b: number },
+    midColor: { r: number; g: number; b: number },
+    highlightColor: { r: number; g: number; b: number },
+    size: number = 17
+  ): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          // 輝度を計算 (Rec. 709)
+          const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+          // 3点補間
+          if (luminance < 0.5) {
+            const t = luminance * 2
+            data[idx] = shadowColor.r + (midColor.r - shadowColor.r) * t
+            data[idx + 1] = shadowColor.g + (midColor.g - shadowColor.g) * t
+            data[idx + 2] = shadowColor.b + (midColor.b - shadowColor.b) * t
+          } else {
+            const t = (luminance - 0.5) * 2
+            data[idx] = midColor.r + (highlightColor.r - midColor.r) * t
+            data[idx + 1] = midColor.g + (highlightColor.g - midColor.g) * t
+            data[idx + 2] = midColor.b + (highlightColor.b - midColor.b) * t
+          }
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * カラーマトリックス変換 3D LUT を生成
+   * 3x3マトリックスでRGB変換（映画業界標準）
+   * @param matrix 3x3変換マトリックス [r1,r2,r3, g1,g2,g3, b1,b2,b3]
+   */
+  colorMatrix: (matrix: number[], size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          // マトリックス乗算
+          data[idx] = Math.max(0, Math.min(1, matrix[0]! * r + matrix[1]! * g + matrix[2]! * b))
+          data[idx + 1] = Math.max(0, Math.min(1, matrix[3]! * r + matrix[4]! * g + matrix[5]! * b))
+          data[idx + 2] = Math.max(0, Math.min(1, matrix[6]! * r + matrix[7]! * g + matrix[8]! * b))
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * 色温度シフト 3D LUT を生成
+   * @param kelvinShift 色温度シフト量 (-100〜100、負で暖色、正で寒色)
+   */
+  colorTemperature: (kelvinShift: number, size: number = 17): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    // 簡易的な色温度変換係数
+    const rMult = 1 - kelvinShift * 0.003
+    const bMult = 1 + kelvinShift * 0.003
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          data[idx] = Math.max(0, Math.min(1, r * rMult))
+          data[idx + 1] = g
+          data[idx + 2] = Math.max(0, Math.min(1, b * bMult))
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
+   * 複数の色相を同時にシフト 3D LUT を生成
+   * @param shifts 色相シフトの配列 [{ sourceHue, targetHue, range, strength }, ...]
+   */
+  multiHueShift: (
+    shifts: Array<{ sourceHue: number; targetHue: number; range: number; strength: number }>,
+    size: number = 17
+  ): Lut3D => {
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          const r = ri / (size - 1)
+          const g = gi / (size - 1)
+          const b = bi / (size - 1)
+
+          const hsl = rgbToHsl(r, g, b)
+          let totalShift = 0
+          let totalWeight = 0
+
+          // 各シフト設定を適用
+          for (const shift of shifts) {
+            const hueDiff = Math.abs(((hsl.h - shift.sourceHue + 540) % 360) - 180)
+            if (hueDiff < shift.range) {
+              const factor = (1 - hueDiff / shift.range) * shift.strength
+              const shiftAmount = ((shift.targetHue - shift.sourceHue + 540) % 360) - 180
+              totalShift += shiftAmount * factor
+              totalWeight += factor
+            }
+          }
+
+          if (totalWeight > 0) {
+            hsl.h = (hsl.h + totalShift + 360) % 360
+            const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+            data[idx] = rgb.r
+            data[idx + 1] = rgb.g
+            data[idx + 2] = rgb.b
+          } else {
+            data[idx] = r
+            data[idx + 1] = g
+            data[idx + 2] = b
+          }
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
    * WebGL用に3Dテクスチャデータを生成
    * WebGL1では3Dテクスチャがないため、2Dテクスチャにパックする
    * レイアウト: size x (size * size) の2Dテクスチャ

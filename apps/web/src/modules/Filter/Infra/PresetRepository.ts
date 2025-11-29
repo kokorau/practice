@@ -682,6 +682,315 @@ const PRESETS: Preset[] = [
       contrast: 0.15,
     },
   },
+
+  // ========================================
+  // 3D LUT - Cinematic Movie Looks
+  // ========================================
+  {
+    id: 'lut3d-matrix',
+    name: 'Matrix',
+    category: 'cinematic',
+    description: 'マトリックス風グリーンかぶり',
+    aiDescription: 'Iconic green tint inspired by The Matrix. Shifts all colors toward green/cyan while maintaining contrast. Perfect for sci-fi, cyberpunk, and dystopian aesthetics.',
+    suitableFor: ['sci-fi', 'cyberpunk', 'dystopian', 'tech', 'night'],
+    characteristics: ['green-tint', 'cold', 'digital', 'futuristic'],
+    adjustment: {},
+    lut3d: $Lut3D.colorMatrix([
+      0.7, 0.3, 0.0,   // R → 70% R + 30% G
+      0.1, 1.0, 0.1,   // G → 10% R + 100% G + 10% B (強調)
+      0.0, 0.2, 0.6,   // B → 20% G + 60% B
+    ], 17),
+  },
+  {
+    id: 'lut3d-blade-runner',
+    name: 'Blade Runner',
+    category: 'cinematic',
+    description: 'ブレードランナー風ティール＆オレンジ',
+    aiDescription: 'Intense teal shadows with warm orange highlights. Inspired by Blade Runner 2049 cinematography. Creates futuristic noir atmosphere.',
+    suitableFor: ['sci-fi', 'noir', 'urban', 'night', 'neon'],
+    characteristics: ['teal-orange', 'high-contrast', 'futuristic', 'noir'],
+    adjustment: {},
+    lut3d: $Lut3D.multiHueShift([
+      { sourceHue: 200, targetHue: 185, range: 50, strength: 0.8 },  // シアン強調
+      { sourceHue: 30, targetHue: 25, range: 40, strength: 0.6 },    // オレンジ強調
+      { sourceHue: 120, targetHue: 180, range: 40, strength: 0.5 },  // 緑→シアン
+    ], 17),
+  },
+  {
+    id: 'lut3d-moonlight',
+    name: 'Moonlight',
+    category: 'cinematic',
+    description: '深いブルーシャドウ（夜間・ムード系）',
+    aiDescription: 'Deep blue shadows with subtle warmth in highlights. Inspired by moonlit night scenes. Creates intimate, contemplative mood.',
+    suitableFor: ['night', 'moody', 'intimate', 'drama', 'portrait'],
+    characteristics: ['blue-shadows', 'intimate', 'soft', 'emotional'],
+    adjustment: {},
+    lut3d: $Lut3D.tritone(
+      { r: 0.05, g: 0.08, b: 0.18 },  // シャドウ: ディープブルー
+      { r: 0.35, g: 0.38, b: 0.45 },  // ミッド: クールグレー
+      { r: 1.0, g: 0.95, b: 0.9 },    // ハイライト: ウォームホワイト
+      17
+    ),
+  },
+  {
+    id: 'lut3d-wes-anderson',
+    name: 'Wes Anderson',
+    category: 'cinematic',
+    description: 'パステル調＋暖色（ウェス・アンダーソン風）',
+    aiDescription: 'Pastel colors with warm, whimsical tones. Characteristic of Wes Anderson films. Desaturated yet warm palette with pink/yellow bias.',
+    suitableFor: ['whimsical', 'retro', 'quirky', 'fashion', 'interior'],
+    characteristics: ['pastel', 'warm', 'whimsical', 'vintage', 'pink-yellow'],
+    adjustment: {
+      vibrance: -0.15,
+      fade: 0.1,
+    },
+    lut3d: $Lut3D.multiHueShift([
+      { sourceHue: 0, targetHue: 350, range: 30, strength: 0.4 },    // 赤→ピンク
+      { sourceHue: 60, targetHue: 50, range: 30, strength: 0.5 },    // 黄色をマスタード寄りに
+      { sourceHue: 200, targetHue: 190, range: 40, strength: 0.3 },  // 青→ティール寄り
+    ], 17),
+  },
+  {
+    id: 'lut3d-joker',
+    name: 'Joker',
+    category: 'cinematic',
+    description: 'ダークで不穏なグリーン＋イエロー',
+    aiDescription: 'Dark, unsettling color grade with sickly green-yellow tones. Inspired by gritty urban dramas. Creates sense of unease and decay.',
+    suitableFor: ['drama', 'dark', 'urban', 'gritty', 'psychological'],
+    characteristics: ['green-yellow', 'dark', 'gritty', 'unsettling'],
+    adjustment: {
+      contrast: 0.15,
+      shadows: -0.1,
+    },
+    lut3d: $Lut3D.colorMatrix([
+      0.9, 0.15, 0.0,   // R: 若干緑を混ぜる
+      0.05, 0.95, 0.1,  // G: 青を少し混ぜる
+      0.0, 0.1, 0.7,    // B: 彩度落とす
+    ], 17),
+  },
+  {
+    id: 'lut3d-mad-max',
+    name: 'Mad Max',
+    category: 'cinematic',
+    description: '砂漠・オレンジティール極端版',
+    aiDescription: 'Extreme orange and teal contrast. Desert wasteland aesthetic inspired by Mad Max. Pushes warm and cool tones to extremes.',
+    suitableFor: ['action', 'desert', 'apocalyptic', 'intense', 'outdoor'],
+    characteristics: ['extreme-contrast', 'orange-teal', 'harsh', 'apocalyptic'],
+    adjustment: {
+      contrast: 0.25,
+    },
+    lut3d: $Lut3D.multiHueShift([
+      { sourceHue: 30, targetHue: 25, range: 50, strength: 1.0 },    // オレンジ強調
+      { sourceHue: 200, targetHue: 190, range: 50, strength: 1.0 },  // ティール強調
+      { sourceHue: 120, targetHue: 25, range: 40, strength: 0.7 },   // 緑→オレンジ
+    ], 17),
+  },
+
+  // ========================================
+  // 3D LUT - Time of Day / Season
+  // ========================================
+  {
+    id: 'lut3d-golden-hour',
+    name: 'Golden Hour',
+    category: 'film',
+    description: 'ゴールデンアワーの暖かい光',
+    aiDescription: 'Warm, golden light of sunset/sunrise. Orange-pink tones throughout with lifted shadows. Creates romantic, nostalgic atmosphere.',
+    suitableFor: ['sunset', 'sunrise', 'outdoor', 'portrait', 'romantic'],
+    characteristics: ['warm', 'golden', 'soft', 'romantic', 'orange-pink'],
+    adjustment: {},
+    lut3d: $Lut3D.tritone(
+      { r: 0.15, g: 0.08, b: 0.05 },  // シャドウ: ウォームブラウン
+      { r: 0.7, g: 0.45, b: 0.3 },    // ミッド: オレンジ
+      { r: 1.0, g: 0.9, b: 0.75 },    // ハイライト: ウォームホワイト
+      17
+    ),
+  },
+  {
+    id: 'lut3d-blue-hour',
+    name: 'Blue Hour',
+    category: 'film',
+    description: 'ブルーアワー（日没後の青い時間帯）',
+    aiDescription: 'Cool blue tones of twilight. Deep blue shadows with subtle magenta in highlights. Creates contemplative, ethereal mood.',
+    suitableFor: ['twilight', 'evening', 'urban', 'landscape', 'moody'],
+    characteristics: ['cool', 'blue', 'twilight', 'ethereal', 'magenta-hints'],
+    adjustment: {},
+    lut3d: $Lut3D.tritone(
+      { r: 0.05, g: 0.1, b: 0.2 },    // シャドウ: ディープブルー
+      { r: 0.3, g: 0.35, b: 0.5 },    // ミッド: クールブルー
+      { r: 0.9, g: 0.85, b: 0.95 },   // ハイライト: 薄いマゼンタ
+      17
+    ),
+  },
+  {
+    id: 'lut3d-winter-cold',
+    name: 'Winter Cold',
+    category: 'film',
+    description: '冬の冷たい空気感',
+    aiDescription: 'Cold, crisp winter atmosphere. Cyan-blue color cast with desaturated tones. Creates sense of cold, clean air.',
+    suitableFor: ['winter', 'cold', 'snow', 'landscape', 'nordic'],
+    characteristics: ['cold', 'cyan', 'desaturated', 'crisp', 'clean'],
+    adjustment: {
+      vibrance: -0.2,
+    },
+    lut3d: $Lut3D.colorTemperature(30, 17),
+  },
+  {
+    id: 'lut3d-summer-warm',
+    name: 'Summer Warm',
+    category: 'film',
+    description: '夏の暖かい陽射し',
+    aiDescription: 'Warm, inviting summer light. Yellow-orange warmth with vibrant greens. Creates sense of lazy summer days.',
+    suitableFor: ['summer', 'outdoor', 'beach', 'vacation', 'lifestyle'],
+    characteristics: ['warm', 'yellow', 'vibrant', 'cheerful', 'sunny'],
+    adjustment: {
+      vibrance: 0.1,
+    },
+    lut3d: $Lut3D.colorTemperature(-25, 17),
+  },
+  {
+    id: 'lut3d-autumn-forest',
+    name: 'Autumn Forest',
+    category: 'film',
+    description: '紅葉の森（オレンジ＋赤強調）',
+    aiDescription: 'Rich autumn colors with enhanced oranges and reds. Greens shifted toward yellow-orange. Perfect for fall foliage.',
+    suitableFor: ['autumn', 'forest', 'nature', 'landscape', 'foliage'],
+    characteristics: ['orange', 'red', 'warm', 'rich', 'earthy'],
+    adjustment: {},
+    lut3d: $Lut3D.multiHueShift([
+      { sourceHue: 120, targetHue: 60, range: 50, strength: 0.6 },   // 緑→黄
+      { sourceHue: 60, targetHue: 40, range: 40, strength: 0.5 },    // 黄→オレンジ
+      { sourceHue: 30, targetHue: 20, range: 30, strength: 0.4 },    // オレンジ→赤オレンジ
+    ], 17),
+  },
+  {
+    id: 'lut3d-spring-fresh',
+    name: 'Spring Fresh',
+    category: 'film',
+    description: '春の新緑（グリーン＋イエロー強調）',
+    aiDescription: 'Fresh spring colors with vivid greens and soft yellows. Light, airy feel with gentle warmth. New growth and renewal.',
+    suitableFor: ['spring', 'nature', 'garden', 'fresh', 'cheerful'],
+    characteristics: ['green', 'yellow', 'fresh', 'light', 'vibrant'],
+    adjustment: {
+      vibrance: 0.15,
+    },
+    lut3d: $Lut3D.hueSaturation(120, 0.3, 50, 17),
+  },
+
+  // ========================================
+  // 3D LUT - Duotone / Tritone (Design)
+  // ========================================
+  {
+    id: 'lut3d-duotone-blue-orange',
+    name: 'Duo: Blue/Orange',
+    category: 'design',
+    description: 'デュオトーン: ブルー＆オレンジ',
+    aiDescription: 'Classic complementary duotone. Deep blue shadows with vibrant orange highlights. High visual impact.',
+    suitableFor: ['design', 'poster', 'graphic', 'bold', 'sports'],
+    characteristics: ['duotone', 'blue-orange', 'bold', 'graphic'],
+    adjustment: {},
+    lut3d: $Lut3D.duotone(
+      { r: 0.0, g: 0.15, b: 0.4 },    // シャドウ: ディープブルー
+      { r: 1.0, g: 0.6, b: 0.2 },     // ハイライト: オレンジ
+      1.1,
+      17
+    ),
+  },
+  {
+    id: 'lut3d-duotone-pink-cyan',
+    name: 'Duo: Pink/Cyan',
+    category: 'design',
+    description: 'デュオトーン: ピンク＆シアン（80sレトロ）',
+    aiDescription: 'Retro 80s aesthetic with hot pink and cyan. Synthwave and vaporwave vibes. Bold, nostalgic design look.',
+    suitableFor: ['retro', '80s', 'synthwave', 'vaporwave', 'design'],
+    characteristics: ['duotone', 'pink-cyan', 'retro', '80s', 'neon'],
+    adjustment: {},
+    lut3d: $Lut3D.duotone(
+      { r: 0.15, g: 0.0, b: 0.25 },   // シャドウ: ディープパープル
+      { r: 1.0, g: 0.4, b: 0.8 },     // ハイライト: ホットピンク
+      1.0,
+      17
+    ),
+  },
+  {
+    id: 'lut3d-duotone-green-purple',
+    name: 'Duo: Green/Purple',
+    category: 'design',
+    description: 'デュオトーン: グリーン＆パープル',
+    aiDescription: 'Striking complementary duotone with green shadows and purple highlights. Unique, eye-catching combination.',
+    suitableFor: ['design', 'creative', 'bold', 'unique', 'experimental'],
+    characteristics: ['duotone', 'green-purple', 'bold', 'unique'],
+    adjustment: {},
+    lut3d: $Lut3D.duotone(
+      { r: 0.0, g: 0.2, b: 0.1 },     // シャドウ: ダークグリーン
+      { r: 0.7, g: 0.3, b: 0.9 },     // ハイライト: パープル
+      1.0,
+      17
+    ),
+  },
+  {
+    id: 'lut3d-duotone-sepia',
+    name: 'Duo: Sepia',
+    category: 'vintage',
+    description: 'セピアデュオトーン（クラシック）',
+    aiDescription: 'Classic sepia tone duotone. Warm brown shadows with cream highlights. Timeless vintage photography look.',
+    suitableFor: ['vintage', 'classic', 'portrait', 'nostalgic', 'old-photo'],
+    characteristics: ['sepia', 'vintage', 'warm', 'classic', 'nostalgic'],
+    adjustment: {},
+    lut3d: $Lut3D.duotone(
+      { r: 0.2, g: 0.12, b: 0.05 },   // シャドウ: ダークブラウン
+      { r: 1.0, g: 0.95, b: 0.85 },   // ハイライト: クリーム
+      1.0,
+      17
+    ),
+  },
+  {
+    id: 'lut3d-tritone-sunset',
+    name: 'Tri: Sunset',
+    category: 'creative',
+    description: 'トライトーン: サンセット（紫→オレンジ→黄）',
+    aiDescription: 'Beautiful sunset gradient from purple shadows through orange to yellow highlights. Dramatic sky aesthetic.',
+    suitableFor: ['sunset', 'dramatic', 'creative', 'sky', 'landscape'],
+    characteristics: ['tritone', 'sunset', 'gradient', 'warm', 'dramatic'],
+    adjustment: {},
+    lut3d: $Lut3D.tritone(
+      { r: 0.25, g: 0.1, b: 0.35 },   // シャドウ: パープル
+      { r: 0.9, g: 0.4, b: 0.2 },     // ミッド: オレンジ
+      { r: 1.0, g: 0.95, b: 0.6 },    // ハイライト: イエロー
+      17
+    ),
+  },
+  {
+    id: 'lut3d-tritone-ocean',
+    name: 'Tri: Ocean',
+    category: 'creative',
+    description: 'トライトーン: オーシャン（ディープブルー→ティール→白）',
+    aiDescription: 'Ocean-inspired gradient from deep blue through teal to white foam. Cool, refreshing aquatic feel.',
+    suitableFor: ['ocean', 'water', 'cool', 'fresh', 'nature'],
+    characteristics: ['tritone', 'ocean', 'blue', 'teal', 'cool'],
+    adjustment: {},
+    lut3d: $Lut3D.tritone(
+      { r: 0.02, g: 0.08, b: 0.2 },   // シャドウ: ディープオーシャン
+      { r: 0.1, g: 0.5, b: 0.55 },    // ミッド: ティール
+      { r: 0.95, g: 1.0, b: 1.0 },    // ハイライト: ホワイトフォーム
+      17
+    ),
+  },
+  {
+    id: 'lut3d-tritone-neon',
+    name: 'Tri: Neon Night',
+    category: 'creative',
+    description: 'トライトーン: ネオンナイト（ブルー→マゼンタ→シアン）',
+    aiDescription: 'Cyberpunk neon aesthetic with electric blue, hot magenta, and cyan. Perfect for night city and electronic themes.',
+    suitableFor: ['cyberpunk', 'neon', 'night', 'electronic', 'urban'],
+    characteristics: ['tritone', 'neon', 'cyberpunk', 'vibrant', 'electric'],
+    adjustment: {},
+    lut3d: $Lut3D.tritone(
+      { r: 0.05, g: 0.05, b: 0.3 },   // シャドウ: エレクトリックブルー
+      { r: 0.8, g: 0.1, b: 0.6 },     // ミッド: ホットマゼンタ
+      { r: 0.3, g: 0.95, b: 1.0 },    // ハイライト: シアン
+      17
+    ),
+  },
 ]
 
 /** プリセット一覧を取得 */
