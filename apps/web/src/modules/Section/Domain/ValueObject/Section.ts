@@ -9,6 +9,8 @@ export type ThemeRef = {
   filterId?: string
   /** Custom filter (used when filterId is not set) */
   filter?: Filter
+  /** Font preset ID */
+  fontId?: string
 }
 
 export type Section = {
