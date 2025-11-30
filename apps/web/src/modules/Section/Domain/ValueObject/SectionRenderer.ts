@@ -1,4 +1,5 @@
 import type { ColorPalette } from '../../../ColorPalette/Domain/ValueObject'
+import type { FontPreset } from '../../../Font/Domain/ValueObject'
 import type { Section, SectionType, Page } from './Section'
 import { generateColorCssVariables, cssVariablesToStyleString } from './ColorCssVariables'
 
@@ -86,12 +87,34 @@ export const renderSection = (
 
 export type PageContents = Record<string, SectionContent>
 
+export type RenderPageOptions = {
+  page: Page
+  palette: ColorPalette
+  contents: PageContents
+  font?: FontPreset
+}
+
+const generateFontLinkTag = (font: FontPreset): string => {
+  if (font.source.vendor === 'google') {
+    return `<link rel="stylesheet" href="${font.source.url}">`
+  }
+  if (font.source.vendor === 'adobe') {
+    return `<link rel="stylesheet" href="https://use.typekit.net/${font.source.kitId}.css">`
+  }
+  // custom fonts would need different handling
+  return ''
+}
+
 export const renderPage = (
   page: Page,
   palette: ColorPalette,
-  contents: PageContents
+  contents: PageContents,
+  font?: FontPreset
 ): string => {
   const cssVars = cssVariablesToStyleString(generateColorCssVariables(palette))
+  const fontFamily = font ? `font-family: ${font.family};` : ''
+  const pageStyle = `${cssVars} ${fontFamily}`.trim()
+
   const sectionsHtml = page.sections
     .map(section => {
       const content = contents[section.id]
@@ -101,5 +124,6 @@ export const renderPage = (
     })
     .join('\n')
 
-  return `<div class="page" style="${cssVars}">\n${sectionsHtml}\n</div>`
+  const fontLink = font ? generateFontLinkTag(font) : ''
+  return `${fontLink}\n<div class="page" style="${pageStyle}">\n${sectionsHtml}\n</div>`
 }

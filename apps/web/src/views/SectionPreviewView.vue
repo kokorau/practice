@@ -45,6 +45,13 @@
             <span class="text-sm">Filter</span>
             <span class="text-xs text-black/40">{{ currentFilterLabel }}</span>
           </li>
+          <li
+            class="flex justify-between items-center px-3 py-2.5 text-black cursor-pointer hover:bg-black/5"
+            @click="currentView = 'font'"
+          >
+            <span class="text-sm">Font</span>
+            <span class="text-xs text-black/40">{{ currentFontLabel }}</span>
+          </li>
         </ul>
 
         <!-- Sections List -->
@@ -143,6 +150,20 @@
             <span>{{ preset.name }}</span>
           </li>
         </ul>
+
+        <!-- Font -->
+        <ul v-if="currentView === 'font'" class="space-y-0.5">
+          <li
+            v-for="font in GoogleFontPresets"
+            :key="font.id"
+            class="flex items-center gap-2 px-3 py-2 text-sm text-black cursor-pointer hover:bg-black/5"
+            @click="page.theme.fontId = font.id"
+          >
+            <span class="w-4 text-center">{{ page.theme.fontId === font.id ? '●' : '' }}</span>
+            <span>{{ font.name }}</span>
+            <span class="text-xs text-black/30">{{ font.category }}</span>
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -169,8 +190,9 @@ import { generateOklchPalette, PalettePresets, $ColorPalette } from '../modules/
 import type { Srgb } from '../modules/Color/Domain/ValueObject'
 import { $Filter, $Preset } from '../modules/Filter/Domain'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
+import { GoogleFontPresets } from '../assets/constants/GoogleFontPresets'
 
-type ViewId = 'home' | 'sections' | 'edit-section' | 'palette' | 'mode' | 'filter'
+type ViewId = 'home' | 'sections' | 'edit-section' | 'palette' | 'mode' | 'filter' | 'font'
 
 const currentView = ref<ViewId>('home')
 const editingIndex = ref<number | null>(null)
@@ -184,6 +206,7 @@ const page = reactive<Page>({
     paletteId: 'ocean',
     isDark: false,
     filterId: undefined,
+    fontId: 'inter',
   },
   sections: [
     { id: 'hero-1', type: 'hero' },
@@ -211,6 +234,14 @@ const currentFilterLabel = computed(() =>
     : 'None'
 )
 
+const currentFontLabel = computed(() =>
+  GoogleFontPresets.find(f => f.id === page.theme.fontId)?.name ?? 'System'
+)
+
+const currentFont = computed(() =>
+  GoogleFontPresets.find(f => f.id === page.theme.fontId)
+)
+
 const currentViewTitle = computed(() => {
   switch (currentView.value) {
     case 'home': return 'Page Preview'
@@ -219,6 +250,7 @@ const currentViewTitle = computed(() => {
     case 'palette': return 'Palette'
     case 'mode': return 'Mode'
     case 'filter': return 'Filter'
+    case 'font': return 'Font'
   }
 })
 
@@ -324,6 +356,6 @@ const dynamicContents = computed<PageContents>(() => {
 })
 
 const renderedHtml = computed(() => {
-  return renderPage(page, palette.value, dynamicContents.value)
+  return renderPage(page, palette.value, dynamicContents.value, currentFont.value)
 })
 </script>
