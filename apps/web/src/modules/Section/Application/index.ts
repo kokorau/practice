@@ -1,0 +1,1 @@
+export { getDefaultContent } from './getDefaultContent'
