@@ -5,7 +5,6 @@ import {
   leadingToCss,
   gapToMultiplier,
   paddingToMultiplier,
-  type StylePack,
   type RoundedSize,
   type SpacingSize,
 } from './StylePack'

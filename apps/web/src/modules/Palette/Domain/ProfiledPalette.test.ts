@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { $ProfiledPalette, type ProfiledPalette } from './ProfiledPalette'
+import { $ProfiledPalette } from './ProfiledPalette'
 import type { ColorProfile } from './ColorProfile'
-import { $Srgb, type Srgb } from '../../Color/Domain'
+import { $Srgb } from '../../Color/Domain'
 
 describe('$ProfiledPalette', () => {
   // Helper to create a color profile
@@ -17,6 +17,12 @@ describe('$ProfiledPalette', () => {
     role,
     weight,
     confidence,
+    metrics: {
+      edgeRatio: 0,
+      borderRatio: 0,
+      avgClusterSize: 0,
+      clusterCount: 0,
+    },
   })
 
   describe('create', () => {

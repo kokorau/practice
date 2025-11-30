@@ -255,7 +255,6 @@ describe('$Lut3D', () => {
 
       // Sample at exact grid points only (no interpolation)
       for (let i = 0; i < 17; i++) {
-        const v = i / 16
         // Use same value for all channels (grayscale input at grid points)
         const idx = (i + i * 17 + i * 17 * 17) * 3
         const r = lut.data[idx]!

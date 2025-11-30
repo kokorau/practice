@@ -89,9 +89,9 @@ describe('getDefaultContent', () => {
       const content = getDefaultContent('three-column-text') as ThreeColumnTextContent
 
       expect(content.columns).toHaveLength(3)
-      expect(content.columns[0].title).toBe('Mission')
-      expect(content.columns[1].title).toBe('Vision')
-      expect(content.columns[2].title).toBe('Values')
+      expect(content.columns[0]!.title).toBe('Mission')
+      expect(content.columns[1]!.title).toBe('Vision')
+      expect(content.columns[2]!.title).toBe('Values')
     })
   })
 

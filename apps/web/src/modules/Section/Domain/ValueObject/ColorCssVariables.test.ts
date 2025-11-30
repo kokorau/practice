@@ -5,11 +5,12 @@ import {
   type ColorCssVariables,
 } from './ColorCssVariables'
 import type { ColorPalette } from '../../../ColorPalette/Domain/ValueObject'
-import { $Srgb, type Srgb } from '../../../Color/Domain/ValueObject'
+import { $Srgb } from '../../../Color/Domain/ValueObject'
 
 describe('ColorCssVariables', () => {
   // Helper to create a color palette for testing
   const createPalette = (overrides?: Partial<ColorPalette>): ColorPalette => ({
+    id: 'test-palette',
     base: $Srgb.create(1, 1, 1),       // white
     onBase: $Srgb.create(0, 0, 0),     // black
     primary: $Srgb.create(0.2, 0.4, 0.8),

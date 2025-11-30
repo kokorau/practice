@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { $Tile, $TileGrid, type Tile, type TileGrid } from './Tile'
+import { $Tile, $TileGrid } from './Tile'
 
 describe('$Tile', () => {
   describe('create', () => {

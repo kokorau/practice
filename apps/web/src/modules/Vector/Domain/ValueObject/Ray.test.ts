@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { $Ray, type Ray } from './Ray'
+import { $Ray } from './Ray'
 import type { Vector3 } from './Vector3'
 
 describe('$Ray', () => {

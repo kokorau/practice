@@ -4,8 +4,8 @@ import type { Vector3 } from '../../../Vector/Domain/ValueObject'
 import type { Color } from './Color'
 
 describe('$Light', () => {
-  const white: Color = [1, 1, 1]
-  const red: Color = [1, 0, 0]
+  const white: Color = { r: 1, g: 1, b: 1 }
+  const red: Color = { r: 1, g: 0, b: 0 }
 
   describe('createAmbient', () => {
     it('should create ambient light', () => {
