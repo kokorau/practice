@@ -1,458 +1,382 @@
 <template>
   <div class="color-palette-view">
-    <div class="header">
-      <h1>Color Palette Presets</h1>
-      <p class="description">
-        ColorPaletteモジュールのプリセットパレットを閲覧できます
-      </p>
-    </div>
+    <div class="main-layout">
+      <!-- Left: Controls -->
+      <div class="controls-panel">
+        <h2>Color Palette Generator</h2>
 
-    <div class="palette-selector">
-      <label for="palette-select">パレットを選択:</label>
-      <select id="palette-select" v-model="selectedPaletteId" @change="onPaletteChange">
-        <option v-for="preset in presets" :key="preset.id" :value="preset.id">
-          {{ preset.name }}
-        </option>
-      </select>
-    </div>
-
-    <div v-if="selectedPalette" class="palette-display">
-      <h2>{{ selectedPalette.name || selectedPalette.id }}</h2>
-
-      <!-- Semantic Colors -->
-      <section class="color-section">
-        <h3>Semantic Colors</h3>
-        <div class="color-grid">
-          <div
-            v-for="(color, key) in selectedPalette.semantic"
-            :key="key"
-            class="color-item"
-          >
-            <template v-if="color">
-              <div
-                class="color-swatch"
-                :style="{
-                  backgroundColor: srgbToCssRgb(color),
-                  color: srgbToCssRgb(getContrastColor(color))
-                }"
-              >
-                {{ key }}
-              </div>
-              <div class="color-info">
-                <span class="color-name">{{ key }}</span>
-                <span class="color-hex">{{ srgbToHex(color) }}</span>
-                <span class="color-rgb">
-                  RGB({{ Math.round(color.r * 255) }},
-                  {{ Math.round(color.g * 255) }},
-                  {{ Math.round(color.b * 255) }})
-                </span>
-              </div>
-            </template>
+        <!-- Brand Selection -->
+        <div class="control-group">
+          <label>Brand</label>
+          <div class="brand-grid">
+            <button
+              v-for="brand in brandPresets"
+              :key="`${brand.hue}-${brand.lightness}`"
+              class="brand-button"
+              :class="{ active: generatorConfig.brandHue === brand.hue && generatorConfig.lightness === brand.lightness }"
+              :style="{ backgroundColor: `oklch(${brand.lightness} ${brand.chroma} ${brand.hue})` }"
+              :title="`H:${brand.hue}°`"
+              @click="selectBrand(brand)"
+            />
           </div>
         </div>
-      </section>
 
-      <!-- Gray Scale -->
-      <section class="color-section">
-        <h3>Gray Scale</h3>
-        <div class="grayscale-container">
-          <template
-            v-for="(color, key) in selectedPalette.grayScale"
-            :key="key"
-          >
-            <div
-              v-if="color"
-              class="grayscale-item"
-              :style="{
-                backgroundColor: srgbToCssRgb(color),
-              }"
-            >
-              <span
-                class="grayscale-label"
-                :style="{
-                  color: srgbToCssRgb(getContrastColor(color))
-                }"
-              >
-                {{ key }}
-              </span>
-            </div>
-          </template>
-        </div>
-      </section>
-
-      <!-- Brand Colors -->
-      <section v-if="selectedPalette.brand" class="color-section">
-        <h3>Brand Colors</h3>
-        <div class="color-grid">
-          <div
-            v-for="(color, key) in selectedPalette.brand"
-            :key="key"
-            class="color-item"
-          >
-            <template v-if="color && typeof color.r === 'number'">
-              <div
-                class="color-swatch large"
-                :style="{
-                  backgroundColor: srgbToCssRgb(color as Srgb),
-                  color: srgbToCssRgb(getContrastColor(color as Srgb))
-                }"
-              >
-                {{ key }}
-              </div>
-              <div class="color-info">
-                <span class="color-name">{{ key }}</span>
-                <span class="color-hex">{{ srgbToHex(color as Srgb) }}</span>
-              </div>
-            </template>
+        <!-- Primary Hue Offset -->
+        <div class="control-group">
+          <label>Primary</label>
+          <div class="offset-buttons">
+            <button
+              v-for="(preset, key) in hueOffsetPresets"
+              :key="key"
+              class="offset-button"
+              :class="{ active: generatorConfig.primaryHueOffset === key }"
+              :style="{ backgroundColor: getOffsetColor(preset.offset) }"
+              :title="preset.label"
+              @click="generatorConfig.primaryHueOffset = key"
+            />
           </div>
         </div>
-      </section>
 
-      <!-- Albedo Colors (if present) -->
-      <section v-if="selectedPalette.albedo" class="color-section">
-        <h3>Albedo Colors (LUT変換前の基準色)</h3>
-        <div class="color-grid">
-          <div
-            v-for="(color, key) in selectedPalette.albedo"
-            :key="key"
-            class="color-item"
-          >
-            <template v-if="color">
-              <div
-                class="color-swatch"
-                :style="{
-                  backgroundColor: srgbToCssRgb(color),
-                  color: srgbToCssRgb(getContrastColor(color))
-                }"
-              >
-                {{ key }}
-              </div>
-              <div class="color-info">
-                <span class="color-name">{{ key }}</span>
-                <span class="color-hex">{{ srgbToHex(color) }}</span>
-              </div>
-            </template>
+        <!-- Secondary Hue Offset -->
+        <div class="control-group">
+          <label>Secondary</label>
+          <div class="offset-buttons">
+            <button
+              v-for="(preset, key) in hueOffsetPresets"
+              :key="key"
+              class="offset-button"
+              :class="{ active: generatorConfig.secondaryHueOffset === key }"
+              :style="{ backgroundColor: getOffsetColor(preset.offset) }"
+              :title="preset.label"
+              @click="generatorConfig.secondaryHueOffset = key"
+            />
           </div>
         </div>
-      </section>
 
-      <!-- Color Combinations Preview -->
-      <section class="color-section">
-        <h3>Color Combinations</h3>
-        <div class="combination-examples">
+        <!-- Dark Mode -->
+        <div class="control-group">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="generatorConfig.isDark" />
+            Dark Mode
+          </label>
+        </div>
+      </div>
+
+      <!-- Right: Palette Display -->
+      <div class="palette-panel">
+        <!-- Color Swatches -->
+        <div class="color-swatches">
           <div
-            class="example-card"
+            v-for="item in paletteItems"
+            :key="item.name"
+            class="swatch-item"
             :style="{
-              backgroundColor: srgbToCssRgb(selectedPalette.semantic.surface),
-              borderColor: srgbToCssRgb(selectedPalette.semantic.outline),
+              backgroundColor: srgbToCssRgb(item.bg),
+              color: srgbToCssRgb(item.fg),
             }"
           >
-            <div
-              class="example-header"
-              :style="{
-                backgroundColor: srgbToCssRgb(selectedPalette.semantic.primary),
-                color: srgbToCssRgb(selectedPalette.semantic.onPrimary),
-              }"
-            >
-              Primary Surface
-            </div>
-            <div
-              class="example-content"
-              :style="{
-                color: srgbToCssRgb(selectedPalette.semantic.onSurface),
-              }"
-            >
-              <p>This is how text looks on surface</p>
-              <button
-                class="example-button"
-                :style="{
-                  backgroundColor: srgbToCssRgb(selectedPalette.semantic.secondary),
-                  color: srgbToCssRgb(selectedPalette.semantic.onSecondary),
-                }"
-              >
-                Secondary Button
-              </button>
-            </div>
-          </div>
-
-          <div
-            class="example-card"
-            :style="{
-              backgroundColor: srgbToCssRgb(selectedPalette.semantic.surfaceVariant),
-              borderColor: srgbToCssRgb(selectedPalette.semantic.outline),
-            }"
-          >
-            <div class="example-content">
-              <div class="status-examples">
-                <div
-                  class="status-item"
-                  :style="{
-                    backgroundColor: srgbToCssRgb(selectedPalette.semantic.success),
-                    color: srgbToCssRgb(getContrastColor(selectedPalette.semantic.success)),
-                  }"
-                >
-                  Success
-                </div>
-                <div
-                  class="status-item"
-                  :style="{
-                    backgroundColor: srgbToCssRgb(selectedPalette.semantic.warning),
-                    color: srgbToCssRgb(getContrastColor(selectedPalette.semantic.warning)),
-                  }"
-                >
-                  Warning
-                </div>
-                <div
-                  class="status-item"
-                  :style="{
-                    backgroundColor: srgbToCssRgb(selectedPalette.semantic.error),
-                    color: srgbToCssRgb(getContrastColor(selectedPalette.semantic.error)),
-                  }"
-                >
-                  Error
-                </div>
-                <div
-                  class="status-item"
-                  :style="{
-                    backgroundColor: srgbToCssRgb(selectedPalette.semantic.info),
-                    color: srgbToCssRgb(getContrastColor(selectedPalette.semantic.info)),
-                  }"
-                >
-                  Info
-                </div>
-              </div>
-            </div>
+            <span class="swatch-name">{{ item.name }}</span>
+            <span class="swatch-hex">{{ srgbToHex(item.bg) }}</span>
           </div>
         </div>
-      </section>
+
+        <!-- Preview -->
+        <div
+          class="preview-card"
+          :style="{ backgroundColor: srgbToCssRgb(palette.base) }"
+        >
+          <p :style="{ color: srgbToCssRgb(palette.onBase) }">
+            Sample text on base
+          </p>
+          <div class="preview-buttons">
+            <button
+              class="preview-btn"
+              :style="{
+                backgroundColor: srgbToCssRgb(palette.brand),
+                color: srgbToCssRgb(palette.onBrand),
+              }"
+            >Brand</button>
+            <button
+              class="preview-btn"
+              :style="{
+                backgroundColor: srgbToCssRgb(palette.primary),
+                color: srgbToCssRgb(palette.onPrimary),
+              }"
+            >Primary</button>
+            <button
+              class="preview-btn"
+              :style="{
+                backgroundColor: srgbToCssRgb(palette.secondary),
+                color: srgbToCssRgb(palette.onSecondary),
+              }"
+            >Secondary</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import type { ColorPalette } from '../modules/ColorPalette/Domain/ValueObject'
-import type { Srgb } from '../modules/Color/Domain/ValueObject'
-import { $ColorPalette } from '../modules/ColorPalette/Domain/ValueObject'
 import {
-  createMaterial3Palette,
-  createDarkPalette,
-  createPastelPalette,
-  createHighContrastPalette,
+  generateOklchPalette,
+  getDefaultGeneratorConfig,
+  HueOffsetPresets,
 } from '../modules/ColorPalette/Domain/ValueObject'
-import {
-  srgbToCssRgb,
-  srgbToHex,
-  getContrastColor,
-} from '../modules/ColorPalette/Application/colorHelpers'
+import type { PaletteGeneratorConfig } from '../modules/ColorPalette/Domain/ValueObject'
+import type { Srgb } from '../modules/Color/Domain/ValueObject'
 
-// プリセットパレットのリスト
-const presets = ref<ColorPalette[]>([
-  $ColorPalette.createDefault(),
-  createMaterial3Palette({ r: 0.4, g: 0.2, b: 0.8 }),
-  createDarkPalette(),
-  createPastelPalette(),
-  createHighContrastPalette(),
-])
+// Brand プリセット (40種類)
+type BrandPreset = { hue: number; lightness: number; chroma: number }
+const brandPresets: BrandPreset[] = (() => {
+  const presets: BrandPreset[] = []
+  for (let row = 0; row < 10; row++) {
+    const hue = row * 36
+    for (let col = 0; col < 4; col++) {
+      const lightness = 0.45 + (col * 0.1)
+      const chroma = 0.13 + (col * 0.015)
+      presets.push({ hue, lightness, chroma })
+    }
+  }
+  return presets
+})()
 
-// 選択中のパレットID
-const selectedPaletteId = ref<string>('default')
+// OKLCH生成設定
+const generatorConfig = reactive<PaletteGeneratorConfig>(getDefaultGeneratorConfig())
 
-// 選択中のパレットオブジェクト
-const selectedPalette = computed(() =>
-  presets.value.find(p => p.id === selectedPaletteId.value)
+// 生成されたパレット
+const palette = ref<ColorPalette>(generateOklchPalette(generatorConfig))
+
+// 設定変更時にパレットを再生成
+watch(
+  generatorConfig,
+  () => {
+    palette.value = generateOklchPalette(generatorConfig)
+  },
+  { deep: true }
 )
 
-// パレット変更時の処理
-const onPaletteChange = () => {
-  console.log('Selected palette:', selectedPaletteId.value)
+// 色相オフセットプリセット
+const hueOffsetPresets = HueOffsetPresets
+
+// パレット表示用アイテム
+const paletteItems = computed(() => [
+  { name: 'Base', bg: palette.value.base, fg: palette.value.onBase },
+  { name: 'Brand', bg: palette.value.brand, fg: palette.value.onBrand },
+  { name: 'Primary', bg: palette.value.primary, fg: palette.value.onPrimary },
+  { name: 'Secondary', bg: palette.value.secondary, fg: palette.value.onSecondary },
+])
+
+// Brand選択
+const selectBrand = (brand: BrandPreset) => {
+  generatorConfig.brandHue = brand.hue
+  generatorConfig.lightness = brand.lightness
+  generatorConfig.chromaRange = {
+    min: brand.chroma * 0.5,
+    max: brand.chroma,
+  }
+}
+
+// オフセット後の色を取得
+const getOffsetColor = (offset: number): string => {
+  const hue = ((generatorConfig.brandHue + offset) % 360 + 360) % 360
+  return `oklch(${generatorConfig.lightness} ${generatorConfig.chromaRange.max} ${hue})`
+}
+
+// ヘルパー関数
+const srgbToCssRgb = (color: Srgb): string => {
+  return `rgb(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)})`
+}
+
+const srgbToHex = (color: Srgb): string => {
+  const toHex = (v: number) => Math.round(v * 255).toString(16).padStart(2, '0')
+  return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`
 }
 </script>
 
 <style scoped>
 .color-palette-view {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  font-family: system-ui, -apple-system, sans-serif;
-}
-
-.header {
-  margin-bottom: 2rem;
-}
-
-.header h1 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-}
-
-.description {
-  color: #666;
-  margin: 0;
-}
-
-.palette-selector {
-  margin-bottom: 2rem;
   padding: 1rem;
-  background: #f5f5f5;
-  border-radius: 8px;
+  height: 100vh;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
-.palette-selector label {
-  margin-right: 1rem;
-  font-weight: 600;
-}
-
-.palette-selector select {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
-  background: white;
-  cursor: pointer;
-}
-
-.palette-display h2 {
-  color: #333;
-  margin-bottom: 2rem;
-}
-
-.color-section {
-  margin-bottom: 3rem;
-}
-
-.color-section h3 {
-  color: #555;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e0e0e0;
-}
-
-.color-grid {
+.main-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: auto 1fr;
   gap: 1rem;
+  height: 100%;
 }
 
-.color-item {
+/* Controls Panel */
+.controls-panel {
+  background: #f8f8f8;
+  border-radius: 12px;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+  width: fit-content;
 }
 
-.color-swatch {
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px 8px 0 0;
-  font-weight: 600;
-  font-size: 0.875rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.controls-panel h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #333;
 }
 
-.color-swatch.large {
-  height: 120px;
-}
-
-.color-info {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-top: none;
-  padding: 0.75rem;
-  border-radius: 0 0 8px 8px;
+.control-group {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.color-name {
+.control-group > label {
   font-weight: 600;
-  color: #333;
+  font-size: 0.75rem;
+  color: #666;
 }
 
-.color-hex {
-  font-family: monospace;
-  color: #666;
+/* Brand Grid */
+.brand-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 28px);
+  gap: 2px;
+}
+
+.brand-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.brand-button:hover {
+  transform: scale(1.15);
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.brand-button.active {
+  border-color: #333;
+  box-shadow: 0 0 0 2px white, 0 0 0 3px #333;
+}
+
+/* Offset Buttons */
+.offset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.offset-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.offset-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+.offset-button.active {
+  border-color: #333;
+  box-shadow: 0 0 0 2px white, 0 0 0 3px #333;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Palette Panel */
+.palette-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Color Swatches */
+.color-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.swatch-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border-radius: 8px;
+  min-height: 80px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.swatch-name {
+  font-weight: 600;
   font-size: 0.875rem;
 }
 
-.color-rgb {
+.swatch-hex {
   font-family: monospace;
-  color: #999;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  opacity: 0.8;
+  margin-top: 0.25rem;
 }
 
-.grayscale-container {
-  display: flex;
+/* Preview */
+.preview-card {
+  padding: 1rem;
   border-radius: 8px;
-  overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.grayscale-item {
-  flex: 1;
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.grayscale-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  transform: rotate(-45deg);
-}
-
-.combination-examples {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.example-card {
-  border-radius: 12px;
-  border: 2px solid;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.example-header {
-  padding: 1rem;
-  font-weight: 600;
-}
-
-.example-content {
-  padding: 1.5rem;
-}
-
-.example-content p {
-  margin: 0 0 1rem 0;
-}
-
-.example-button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.example-button:hover {
-  transform: translateY(-2px);
-}
-
-.status-examples {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.status-item {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-weight: 600;
+.preview-card p {
+  margin: 0 0 0.75rem 0;
   font-size: 0.875rem;
+}
+
+.preview-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.preview-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.preview-btn:hover {
+  transform: translateY(-1px);
 }
 </style>

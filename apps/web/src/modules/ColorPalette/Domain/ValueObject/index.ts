@@ -1,16 +1,10 @@
-export type {
-  ColorPalette,
-  SemanticColors,
-  GrayScale,
-  BrandColors,
-  AlbedoColors,
-} from './ColorPalette'
-
+export type { ColorPalette } from './ColorPalette'
 export { $ColorPalette } from './ColorPalette'
 
+export type { PaletteGeneratorConfig, HueOffsetKey } from './ColorPaletteGenerator'
 export {
-  createMaterial3Palette,
-  createDarkPalette,
-  createPastelPalette,
-  createHighContrastPalette,
-} from './ColorPalettePresets'
+  generateOklchPalette,
+  getDefaultGeneratorConfig,
+  ChromaRangePresets,
+  HueOffsetPresets,
+} from './ColorPaletteGenerator'
