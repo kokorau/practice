@@ -29,6 +29,11 @@ const router = createRouter({
       name: 'color-picker',
       component: () => import('../views/ColorPickerView.vue'),
     },
+    {
+      path: '/color-palette',
+      name: 'color-palette',
+      component: () => import('../views/ColorPaletteView.vue'),
+    },
   ],
 })
 

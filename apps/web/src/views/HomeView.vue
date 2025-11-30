@@ -20,6 +20,11 @@ const pages = [
     title: 'Color Picker',
     description: 'カラーピッカーで色を選択',
   },
+  {
+    to: '/color-palette',
+    title: 'Color Palette',
+    description: 'ColorPaletteモジュールのプリセットパレットを閲覧',
+  },
 ]
 </script>
 
