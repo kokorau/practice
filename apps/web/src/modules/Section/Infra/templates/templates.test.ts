@@ -16,7 +16,7 @@ import { AboutTemplate } from './AboutTemplate'
 import { getAllTemplates } from './index'
 import {
   validateTemplateOutput,
-  createTestCssVars,
+  createTestTheme,
   assertValidTemplate,
 } from './templateTestHelper'
 import type {
@@ -37,7 +37,7 @@ import type {
   SectionContent,
 } from '../../Domain/ValueObject/SectionTemplate'
 
-const cssVars = createTestCssVars()
+const theme = createTestTheme()
 
 describe('HeroSplitTemplate', () => {
   const content: HeroSplitContent = {
@@ -51,43 +51,43 @@ describe('HeroSplitTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = HeroSplitTemplate.render(content, cssVars)
+    const html = HeroSplitTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
     expect(result.hasSection).toBe(true)
   })
 
   it('uses 2-column grid layout', () => {
-    const html = HeroSplitTemplate.render(content, cssVars)
+    const html = HeroSplitTemplate.render(content, theme)
     expect(html).toContain('grid-template-columns: repeat(2, 1fr)')
   })
 
   it('has minimum height', () => {
-    const html = HeroSplitTemplate.render(content, cssVars)
+    const html = HeroSplitTemplate.render(content, theme)
     expect(html).toContain('min-height: 600px')
   })
 
   it('renders image with full height', () => {
-    const html = HeroSplitTemplate.render(content, cssVars)
+    const html = HeroSplitTemplate.render(content, theme)
     expect(html).toContain('src="https://example.com/hero.jpg"')
     expect(html).toContain('object-fit: cover')
   })
 
   it('renders title and subtitle', () => {
-    const html = HeroSplitTemplate.render(content, cssVars)
+    const html = HeroSplitTemplate.render(content, theme)
     expect(html).toContain(content.title)
     expect(html).toContain(content.subtitle)
   })
 
   it('renders button when provided', () => {
-    const html = HeroSplitTemplate.render(content, cssVars)
+    const html = HeroSplitTemplate.render(content, theme)
     expect(html).toContain('href="/start"')
     expect(html).toContain(content.buttonText)
   })
 
   it('supports left image position', () => {
     const leftContent: HeroSplitContent = { ...content, imagePosition: 'left' }
-    const html = HeroSplitTemplate.render(leftContent, cssVars)
+    const html = HeroSplitTemplate.render(leftContent, theme)
     expect(html).toContain(content.title)
     expect(html).toContain(content.imageUrl)
   })
@@ -104,19 +104,19 @@ describe('HeroBackgroundTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = HeroBackgroundTemplate.render(content, cssVars)
+    const html = HeroBackgroundTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('has background image', () => {
-    const html = HeroBackgroundTemplate.render(content, cssVars)
+    const html = HeroBackgroundTemplate.render(content, theme)
     expect(html).toContain("url('https://example.com/bg.jpg')")
     expect(html).toContain('background-size: cover')
   })
 
   it('has overlay with specified opacity', () => {
-    const html = HeroBackgroundTemplate.render(content, cssVars)
+    const html = HeroBackgroundTemplate.render(content, theme)
     expect(html).toContain('opacity: 0.6')
   })
 
@@ -125,17 +125,17 @@ describe('HeroBackgroundTemplate', () => {
       title: 'Title',
       backgroundUrl: 'https://example.com/bg.jpg',
     }
-    const html = HeroBackgroundTemplate.render(minimalContent, cssVars)
+    const html = HeroBackgroundTemplate.render(minimalContent, theme)
     expect(html).toContain('opacity: 0.5')
   })
 
   it('has minimum height', () => {
-    const html = HeroBackgroundTemplate.render(content, cssVars)
+    const html = HeroBackgroundTemplate.render(content, theme)
     expect(html).toContain('min-height: 600px')
   })
 
   it('renders title, subtitle, and button', () => {
-    const html = HeroBackgroundTemplate.render(content, cssVars)
+    const html = HeroBackgroundTemplate.render(content, theme)
     expect(html).toContain(content.title)
     expect(html).toContain(content.subtitle)
     expect(html).toContain(content.buttonText)
@@ -156,13 +156,13 @@ describe('HeroStatsTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = HeroStatsTemplate.render(content, cssVars)
+    const html = HeroStatsTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders all stats', () => {
-    const html = HeroStatsTemplate.render(content, cssVars)
+    const html = HeroStatsTemplate.render(content, theme)
     expect(html).toContain('100+')
     expect(html).toContain('Projects')
     expect(html).toContain('50K')
@@ -172,7 +172,7 @@ describe('HeroStatsTemplate', () => {
   })
 
   it('uses grid layout for stats', () => {
-    const html = HeroStatsTemplate.render(content, cssVars)
+    const html = HeroStatsTemplate.render(content, theme)
     expect(html).toContain('grid-template-columns: repeat(3, 1fr)')
   })
 
@@ -187,20 +187,20 @@ describe('HeroStatsTemplate', () => {
         { value: '5', label: 'Five' },
       ],
     }
-    const html = HeroStatsTemplate.render(manyStats, cssVars)
+    const html = HeroStatsTemplate.render(manyStats, theme)
     expect(html).toContain('1')
     expect(html).toContain('4')
     expect(html).not.toContain('>Five<')
   })
 
   it('renders title and button', () => {
-    const html = HeroStatsTemplate.render(content, cssVars)
+    const html = HeroStatsTemplate.render(content, theme)
     expect(html).toContain(content.title)
     expect(html).toContain(content.buttonText)
   })
 
   it('uses brand color for stat values', () => {
-    const html = HeroStatsTemplate.render(content, cssVars)
+    const html = HeroStatsTemplate.render(content, theme)
     expect(html).toMatch(/rgb\(var\(--color-brand\)\)/)
   })
 })
@@ -221,25 +221,25 @@ describe('HeroFormTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = HeroFormTemplate.render(content, cssVars)
+    const html = HeroFormTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders email input with placeholder', () => {
-    const html = HeroFormTemplate.render(content, cssVars)
+    const html = HeroFormTemplate.render(content, theme)
     expect(html).toContain('type="email"')
     expect(html).toContain('placeholder="Enter your email"')
   })
 
   it('renders submit button', () => {
-    const html = HeroFormTemplate.render(content, cssVars)
+    const html = HeroFormTemplate.render(content, theme)
     expect(html).toContain('<button')
     expect(html).toContain(content.buttonText)
   })
 
   it('renders trusted by section', () => {
-    const html = HeroFormTemplate.render(content, cssVars)
+    const html = HeroFormTemplate.render(content, theme)
     expect(html).toContain('Trusted by')
     expect(html).toContain('https://example.com/logo1.png')
     expect(html).toContain('https://example.com/logo2.png')
@@ -260,13 +260,13 @@ describe('HeroFormTemplate', () => {
         ],
       },
     }
-    const html = HeroFormTemplate.render(manyLogos, cssVars)
+    const html = HeroFormTemplate.render(manyLogos, theme)
     expect(html).toContain('https://example.com/5.png')
     expect(html).not.toContain('https://example.com/6.png')
   })
 
   it('uses 2-column grid layout', () => {
-    const html = HeroFormTemplate.render(content, cssVars)
+    const html = HeroFormTemplate.render(content, theme)
     expect(html).toContain('grid-template-columns: 1fr 1fr')
   })
 
@@ -275,7 +275,7 @@ describe('HeroFormTemplate', () => {
       title: 'Title',
       buttonText: 'Submit',
     }
-    const html = HeroFormTemplate.render(minimalContent, cssVars)
+    const html = HeroFormTemplate.render(minimalContent, theme)
     expect(html).toContain('Title')
     expect(html).not.toContain('Trusted by')
   })
@@ -292,27 +292,27 @@ describe('FeatureTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = FeatureTemplate.render(content, cssVars)
+    const html = FeatureTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
 
     expect(result.isValid).toBe(true)
   })
 
   it('uses CSS variables', () => {
-    const html = FeatureTemplate.render(content, cssVars)
+    const html = FeatureTemplate.render(content, theme)
     expect(html).toMatch(/rgb\(var\(--color-base\)\)/)
     expect(html).toMatch(/rgb\(var\(--color-secondary\)\)/)
   })
 
   it('renders all feature items', () => {
-    const html = FeatureTemplate.render(content, cssVars)
+    const html = FeatureTemplate.render(content, theme)
     expect(html).toContain('Feature 1')
     expect(html).toContain('Feature 2')
     expect(html).toContain('First feature description')
   })
 
   it('renders section title and description', () => {
-    const html = FeatureTemplate.render(content, cssVars)
+    const html = FeatureTemplate.render(content, theme)
     expect(html).toContain(content.title)
     expect(html).toContain(content.description)
   })
@@ -325,31 +325,31 @@ describe('TextTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = TextTemplate.render(content, cssVars)
+    const html = TextTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
 
     expect(result.isValid).toBe(true)
   })
 
   it('uses CSS variables', () => {
-    const html = TextTemplate.render(content, cssVars)
+    const html = TextTemplate.render(content, theme)
     expect(html).toMatch(/rgb\(var\(--color-base\)\)/)
   })
 
   it('renders title when provided', () => {
-    const html = TextTemplate.render(content, cssVars)
+    const html = TextTemplate.render(content, theme)
     expect(html).toContain('<h2')
     expect(html).toContain(content.title)
   })
 
   it('omits title when not provided', () => {
     const minimalContent: TextContent = { body: 'Just body text' }
-    const html = TextTemplate.render(minimalContent, cssVars)
+    const html = TextTemplate.render(minimalContent, theme)
     expect(html).not.toContain('<h2')
   })
 
   it('renders body content', () => {
-    const html = TextTemplate.render(content, cssVars)
+    const html = TextTemplate.render(content, theme)
     expect(html).toContain(content.body)
   })
 })
@@ -364,20 +364,20 @@ describe('ThreeColumnTextTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = ThreeColumnTextTemplate.render(content, cssVars)
+    const html = ThreeColumnTextTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders all three columns', () => {
-    const html = ThreeColumnTextTemplate.render(content, cssVars)
+    const html = ThreeColumnTextTemplate.render(content, theme)
     expect(html).toContain('Column 1')
     expect(html).toContain('Column 2')
     expect(html).toContain('Column 3')
   })
 
   it('uses grid layout', () => {
-    const html = ThreeColumnTextTemplate.render(content, cssVars)
+    const html = ThreeColumnTextTemplate.render(content, theme)
     expect(html).toContain('grid-template-columns: repeat(3, 1fr)')
   })
 })
@@ -392,24 +392,24 @@ describe('ImageTextTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = ImageTextTemplate.render(content, cssVars)
+    const html = ImageTextTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders image with correct src', () => {
-    const html = ImageTextTemplate.render(content, cssVars)
+    const html = ImageTextTemplate.render(content, theme)
     expect(html).toContain('src="https://example.com/image.jpg"')
   })
 
   it('renders title and text', () => {
-    const html = ImageTextTemplate.render(content, cssVars)
+    const html = ImageTextTemplate.render(content, theme)
     expect(html).toContain(content.title)
     expect(html).toContain(content.text)
   })
 
   it('uses 2-column grid', () => {
-    const html = ImageTextTemplate.render(content, cssVars)
+    const html = ImageTextTemplate.render(content, theme)
     expect(html).toContain('grid-template-columns: repeat(2, 1fr)')
   })
 })
@@ -423,25 +423,25 @@ describe('CTATemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = CTATemplate.render(content, cssVars)
+    const html = CTATemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders title and description', () => {
-    const html = CTATemplate.render(content, cssVars)
+    const html = CTATemplate.render(content, theme)
     expect(html).toContain(content.title)
     expect(html).toContain(content.description)
   })
 
   it('renders button with link', () => {
-    const html = CTATemplate.render(content, cssVars)
+    const html = CTATemplate.render(content, theme)
     expect(html).toContain('href="/signup"')
     expect(html).toContain(content.buttonText)
   })
 
   it('uses primary background', () => {
-    const html = CTATemplate.render(content, cssVars)
+    const html = CTATemplate.render(content, theme)
     expect(html).toMatch(/rgb\(var\(--color-primary\)\)/)
   })
 })
@@ -459,20 +459,20 @@ describe('GalleryTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = GalleryTemplate.render(content, cssVars)
+    const html = GalleryTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders all 6 images', () => {
-    const html = GalleryTemplate.render(content, cssVars)
+    const html = GalleryTemplate.render(content, theme)
     for (let i = 1; i <= 6; i++) {
       expect(html).toContain(`https://example.com/${i}.jpg`)
     }
   })
 
   it('uses 3-column grid', () => {
-    const html = GalleryTemplate.render(content, cssVars)
+    const html = GalleryTemplate.render(content, theme)
     expect(html).toContain('grid-template-columns: repeat(3, 1fr)')
   })
 })
@@ -488,25 +488,25 @@ describe('FeatureCardTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = FeatureCardTemplate.render(content, cssVars)
+    const html = FeatureCardTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders section title', () => {
-    const html = FeatureCardTemplate.render(content, cssVars)
+    const html = FeatureCardTemplate.render(content, theme)
     expect(html).toContain('Our Features')
   })
 
   it('renders all cards', () => {
-    const html = FeatureCardTemplate.render(content, cssVars)
+    const html = FeatureCardTemplate.render(content, theme)
     expect(html).toContain('Card 1')
     expect(html).toContain('Card 2')
     expect(html).toContain('Card 3')
   })
 
   it('uses secondary color for cards', () => {
-    const html = FeatureCardTemplate.render(content, cssVars)
+    const html = FeatureCardTemplate.render(content, theme)
     expect(html).toMatch(/rgb\(var\(--color-secondary\)\)/)
   })
 })
@@ -521,18 +521,18 @@ describe('HeaderTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = HeaderTemplate.render(content, cssVars)
+    const html = HeaderTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders logo text', () => {
-    const html = HeaderTemplate.render(content, cssVars)
+    const html = HeaderTemplate.render(content, theme)
     expect(html).toContain('Brand')
   })
 
   it('renders navigation links', () => {
-    const html = HeaderTemplate.render(content, cssVars)
+    const html = HeaderTemplate.render(content, theme)
     expect(html).toContain('href="/about"')
     expect(html).toContain('About')
     expect(html).toContain('href="/contact"')
@@ -540,7 +540,7 @@ describe('HeaderTemplate', () => {
   })
 
   it('uses header element', () => {
-    const html = HeaderTemplate.render(content, cssVars)
+    const html = HeaderTemplate.render(content, theme)
     expect(html).toContain('<header')
     expect(html).toContain('</header>')
   })
@@ -561,31 +561,31 @@ describe('FooterTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = FooterTemplate.render(content, cssVars)
+    const html = FooterTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders logo and links', () => {
-    const html = FooterTemplate.render(content, cssVars)
+    const html = FooterTemplate.render(content, theme)
     expect(html).toContain('Brand')
     expect(html).toContain('About')
     expect(html).toContain('Contact')
   })
 
   it('renders info', () => {
-    const html = FooterTemplate.render(content, cssVars)
+    const html = FooterTemplate.render(content, theme)
     expect(html).toContain('123 Main St')
     expect(html).toContain('555-1234')
   })
 
   it('renders copyright', () => {
-    const html = FooterTemplate.render(content, cssVars)
+    const html = FooterTemplate.render(content, theme)
     expect(html).toContain('© 2024 Brand')
   })
 
   it('uses footer element', () => {
-    const html = FooterTemplate.render(content, cssVars)
+    const html = FooterTemplate.render(content, theme)
     expect(html).toContain('<footer')
     expect(html).toContain('</footer>')
   })
@@ -600,25 +600,25 @@ describe('AboutTemplate', () => {
   }
 
   it('renders valid section HTML', () => {
-    const html = AboutTemplate.render(content, cssVars)
+    const html = AboutTemplate.render(content, theme)
     const result = validateTemplateOutput(html)
     expect(result.isValid).toBe(true)
   })
 
   it('renders title and description', () => {
-    const html = AboutTemplate.render(content, cssVars)
+    const html = AboutTemplate.render(content, theme)
     expect(html).toContain(content.title)
     expect(html).toContain(content.description)
   })
 
   it('renders button', () => {
-    const html = AboutTemplate.render(content, cssVars)
+    const html = AboutTemplate.render(content, theme)
     expect(html).toContain('href="/about"')
     expect(html).toContain('Learn More')
   })
 
   it('uses 2-column layout', () => {
-    const html = AboutTemplate.render(content, cssVars)
+    const html = AboutTemplate.render(content, theme)
     expect(html).toContain('grid-template-columns: 1fr 2fr')
   })
 })

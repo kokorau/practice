@@ -52,6 +52,13 @@
             <span class="text-sm">Font</span>
             <span class="text-xs text-black/40">{{ currentFontLabel }}</span>
           </li>
+          <li
+            class="flex justify-between items-center px-3 py-2.5 text-black cursor-pointer hover:bg-black/5"
+            @click="currentView = 'style'"
+          >
+            <span class="text-sm">Style</span>
+            <span class="text-xs text-black/40">{{ currentStylePackLabel }}</span>
+          </li>
         </ul>
 
         <!-- Sections List -->
@@ -164,6 +171,20 @@
             <span class="text-xs text-black/30">{{ font.category }}</span>
           </li>
         </ul>
+
+        <!-- Style -->
+        <ul v-if="currentView === 'style'" class="space-y-0.5">
+          <li
+            v-for="stylePack in StylePackPresets"
+            :key="stylePack.id"
+            class="flex items-center gap-2 px-3 py-2 text-sm text-black cursor-pointer hover:bg-black/5"
+            @click="selectedStylePackId = stylePack.id"
+          >
+            <span class="w-4 text-center">{{ selectedStylePackId === stylePack.id ? '●' : '' }}</span>
+            <span>{{ stylePack.name }}</span>
+            <span class="text-xs text-black/30">{{ stylePack.style.rounded }} / {{ stylePack.style.gap }}</span>
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -189,14 +210,17 @@ import type { Srgb } from '../modules/Color/Domain/ValueObject'
 import { $Filter, $Preset } from '../modules/Filter/Domain'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { GoogleFontPresets } from '../assets/constants/GoogleFontPresets'
+import { StylePackPresets } from '../modules/StylePack/Domain'
 
-type ViewId = 'home' | 'sections' | 'edit-section' | 'palette' | 'mode' | 'filter' | 'font'
+type ViewId = 'home' | 'sections' | 'edit-section' | 'palette' | 'mode' | 'filter' | 'font' | 'style'
 
 const currentView = ref<ViewId>('home')
 const editingIndex = ref<number | null>(null)
 
 // Filter presets
 const filterPresets = getPresets()
+
+const selectedStylePackId = ref('default')
 
 const page = reactive<Page>({
   id: 'preview-page',
@@ -256,6 +280,14 @@ const currentFont = computed(() =>
   GoogleFontPresets.find(f => f.id === page.theme.fontId)
 )
 
+const currentStylePackLabel = computed(() =>
+  StylePackPresets.find(s => s.id === selectedStylePackId.value)?.name ?? 'Default'
+)
+
+const currentStylePack = computed(() =>
+  StylePackPresets.find(s => s.id === selectedStylePackId.value)?.style ?? StylePackPresets[0]!.style
+)
+
 const currentViewTitle = computed(() => {
   switch (currentView.value) {
     case 'home': return 'Page Preview'
@@ -265,6 +297,7 @@ const currentViewTitle = computed(() => {
     case 'mode': return 'Mode'
     case 'filter': return 'Filter'
     case 'font': return 'Font'
+    case 'style': return 'Style'
   }
 })
 
@@ -338,6 +371,6 @@ const dynamicContents = computed<PageContents>(() => {
 })
 
 const renderedHtml = computed(() => {
-  return renderPage(page, palette.value, dynamicContents.value, currentFont.value)
+  return renderPage(page, palette.value, dynamicContents.value, currentFont.value, currentStylePack.value)
 })
 </script>

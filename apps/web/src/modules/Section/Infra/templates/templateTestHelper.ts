@@ -1,4 +1,6 @@
-import type { SectionTemplate, SectionContent } from '../../Domain/ValueObject/SectionTemplate'
+import type { SectionTemplate, SectionContent, RenderTheme } from '../../Domain/ValueObject/SectionTemplate'
+import type { ColorPalette } from '../../../ColorPalette/Domain/ValueObject'
+import { StylePackPresets } from '../../../StylePack/Domain'
 
 export type TemplateValidationResult = {
   isValid: boolean
@@ -37,26 +39,30 @@ export const validateTemplateOutput = (
   }
 }
 
-export const createTestCssVars = (): string => {
-  return [
-    '--color-base: 255, 255, 255',
-    '--color-on-base: 0, 0, 0',
-    '--color-primary: 59, 130, 246',
-    '--color-on-primary: 255, 255, 255',
-    '--color-secondary: 229, 231, 235',
-    '--color-on-secondary: 31, 41, 55',
-    '--color-brand: 139, 92, 246',
-    '--color-on-brand: 255, 255, 255',
-  ].join('; ')
-}
+const createTestPalette = (): ColorPalette => ({
+  id: 'test-palette',
+  base: { r: 1, g: 1, b: 1 },
+  onBase: { r: 0, g: 0, b: 0 },
+  primary: { r: 0.23, g: 0.51, b: 0.96 },
+  onPrimary: { r: 1, g: 1, b: 1 },
+  secondary: { r: 0.9, g: 0.91, b: 0.92 },
+  onSecondary: { r: 0.12, g: 0.16, b: 0.22 },
+  brand: { r: 0.55, g: 0.36, b: 0.96 },
+  onBrand: { r: 1, g: 1, b: 1 },
+})
+
+export const createTestTheme = (): RenderTheme => ({
+  palette: createTestPalette(),
+  stylePack: StylePackPresets[0]!.style,
+})
 
 export const assertValidTemplate = (
   template: SectionTemplate,
   content: SectionContent,
   expectedContent?: string
 ): void => {
-  const cssVars = createTestCssVars()
-  const html = template.render(content, cssVars)
+  const theme = createTestTheme()
+  const html = template.render(content, theme)
   const result = validateTemplateOutput(html, expectedContent)
 
   if (!result.isValid) {

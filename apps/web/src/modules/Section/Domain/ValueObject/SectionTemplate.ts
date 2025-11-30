@@ -1,4 +1,6 @@
 import type { SectionType } from './Section'
+import type { ColorPalette } from '../../../ColorPalette/Domain/ValueObject'
+import type { StylePack } from '../../../StylePack/Domain'
 
 export type HeroSplitContent = {
   title: string
@@ -140,9 +142,17 @@ export type SectionContent =
   | FooterContent
   | AboutContent
 
+/**
+ * Theme passed to template render functions
+ */
+export type RenderTheme = {
+  palette: ColorPalette
+  stylePack: StylePack
+}
+
 export type SectionTemplate = {
   type: SectionType
-  render: (content: SectionContent, cssVars: string) => string
+  render: (content: SectionContent, theme: RenderTheme) => string
 }
 
 export type PageContents = Record<string, SectionContent>

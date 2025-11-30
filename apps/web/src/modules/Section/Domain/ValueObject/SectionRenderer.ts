@@ -1,8 +1,10 @@
 import type { ColorPalette } from '../../../ColorPalette/Domain/ValueObject'
 import type { FontPreset } from '../../../Font/Domain/ValueObject'
+import type { StylePack } from '../../../StylePack/Domain'
+import { StylePackPresets } from '../../../StylePack/Domain'
 import type { Section, Page } from './Section'
-import { generateColorCssVariables, cssVariablesToStyleString } from './ColorCssVariables'
 import { getTemplate } from '../../Infra/templates'
+import type { RenderTheme } from './SectionTemplate'
 
 // Re-export types from SectionTemplate for backward compatibility
 export type {
@@ -14,14 +16,17 @@ export type {
 
 import type { SectionContent, PageContents } from './SectionTemplate'
 
+const defaultStylePack: StylePack = StylePackPresets[0]!.style
+
 export const renderSection = (
   section: Section,
   palette: ColorPalette,
-  content: SectionContent
+  content: SectionContent,
+  stylePack: StylePack = defaultStylePack
 ): string => {
-  const cssVars = cssVariablesToStyleString(generateColorCssVariables(palette))
   const template = getTemplate(section.type)
-  return template.render(content, cssVars)
+  const theme: RenderTheme = { palette, stylePack }
+  return template.render(content, theme)
 }
 
 export type RenderPageOptions = {
@@ -29,6 +34,7 @@ export type RenderPageOptions = {
   palette: ColorPalette
   contents: PageContents
   font?: FontPreset
+  stylePack?: StylePack
 }
 
 const generateFontLinkTag = (font: FontPreset): string => {
@@ -46,21 +52,21 @@ export const renderPage = (
   page: Page,
   palette: ColorPalette,
   contents: PageContents,
-  font?: FontPreset
+  font?: FontPreset,
+  stylePack: StylePack = defaultStylePack
 ): string => {
-  const cssVars = cssVariablesToStyleString(generateColorCssVariables(palette))
   const fontFamily = font ? `font-family: ${font.family};` : ''
-  const pageStyle = `${cssVars} ${fontFamily}`.trim()
+  const theme: RenderTheme = { palette, stylePack }
 
   const sectionsHtml = page.sections
     .map(section => {
       const content = contents[section.id]
       if (!content) return ''
       const template = getTemplate(section.type)
-      return template.render(content, cssVars)
+      return template.render(content, theme)
     })
     .join('\n')
 
   const fontLink = font ? generateFontLinkTag(font) : ''
-  return `${fontLink}\n<div class="page" style="${pageStyle}">\n${sectionsHtml}\n</div>`
+  return `${fontLink}\n<div class="page" style="${fontFamily}">\n${sectionsHtml}\n</div>`
 }

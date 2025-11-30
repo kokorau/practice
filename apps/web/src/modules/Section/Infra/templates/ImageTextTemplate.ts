@@ -1,11 +1,14 @@
-import type { SectionTemplate, ImageTextContent } from '../../Domain/ValueObject/SectionTemplate'
+import type { SectionTemplate, ImageTextContent, RenderTheme } from '../../Domain/ValueObject/SectionTemplate'
+import { themeToCssVars, sectionPadding, lineHeight } from './themeHelper'
 
 export type { ImageTextContent } from '../../Domain/ValueObject/SectionTemplate'
 
 export const ImageTextTemplate: SectionTemplate = {
   type: 'image-text',
-  render: (content, cssVars) => {
+  render: (content, theme: RenderTheme) => {
     const c = content as ImageTextContent
+    const s = theme.stylePack
+    const cssVars = themeToCssVars(theme)
     const isImageLeft = c.imagePosition === 'left'
 
     const imageBlock = `
@@ -14,9 +17,9 @@ export const ImageTextTemplate: SectionTemplate = {
       </div>`
 
     const textBlock = `
-      <div style="display: flex; flex-direction: column; justify-content: center; padding: 2rem;">
+      <div style="display: flex; flex-direction: column; justify-content: center; padding: ${sectionPadding(s.padding)};">
         <h2 style="margin: 0 0 1rem; font-size: 2rem; font-weight: 600;">${c.title}</h2>
-        ${c.text ? `<p style="margin: 0; opacity: 0.8; line-height: 1.7;">${c.text}</p>` : ''}
+        ${c.text ? `<p style="margin: 0; opacity: 0.8; line-height: ${lineHeight(s.leading)};">${c.text}</p>` : ''}
       </div>`
 
     const gridContent = isImageLeft ? `${imageBlock}${textBlock}` : `${textBlock}${imageBlock}`

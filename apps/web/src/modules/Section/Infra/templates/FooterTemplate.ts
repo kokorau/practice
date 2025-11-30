@@ -1,11 +1,15 @@
-import type { SectionTemplate, FooterContent } from '../../Domain/ValueObject/SectionTemplate'
+import type { SectionTemplate, FooterContent, RenderTheme } from '../../Domain/ValueObject/SectionTemplate'
+import { themeToCssVars, sectionPadding, cardGap } from './themeHelper'
 
 export type { FooterContent } from '../../Domain/ValueObject/SectionTemplate'
 
 export const FooterTemplate: SectionTemplate = {
   type: 'footer',
-  render: (content, cssVars) => {
+  render: (content, theme: RenderTheme) => {
     const c = content as FooterContent
+    const s = theme.stylePack
+    const cssVars = themeToCssVars(theme)
+
     const logo = c.logoUrl
       ? `<img src="${c.logoUrl}" alt="${c.logoAlt ?? ''}" style="height: 2rem;" />`
       : `<span style="font-size: 1.25rem; font-weight: 700;">${c.logoText ?? ''}</span>`
@@ -27,8 +31,8 @@ export const FooterTemplate: SectionTemplate = {
 
     return `
 <section class="section-footer" style="${cssVars} background: rgb(var(--color-secondary)); color: rgb(var(--color-on-secondary));">
-  <footer style="max-width: 1280px; margin: 0 auto; padding: 3rem 2rem;">
-    <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 4rem; align-items: start;">
+  <footer style="max-width: 1280px; margin: 0 auto; padding: ${sectionPadding(s.padding)};">
+    <div style="display: grid; grid-template-columns: 1fr auto auto; gap: ${cardGap(s.gap)}; align-items: start;">
       <div class="logo">
         ${logo}
       </div>

@@ -1,11 +1,14 @@
-import type { SectionTemplate, HeroFormContent } from '../../Domain/ValueObject/SectionTemplate'
+import type { SectionTemplate, HeroFormContent, RenderTheme } from '../../Domain/ValueObject/SectionTemplate'
+import { themeToCssVars, roundedToCss, sectionPadding, buttonPadding, inputPadding, cardPadding, gridGap, lineHeight } from './themeHelper'
 
 export type { HeroFormContent } from '../../Domain/ValueObject/SectionTemplate'
 
 export const HeroFormTemplate: SectionTemplate = {
   type: 'hero-form',
-  render: (content, cssVars) => {
+  render: (content, theme: RenderTheme) => {
     const c = content as HeroFormContent
+    const s = theme.stylePack
+    const cssVars = themeToCssVars(theme)
 
     const logosHtml = c.trustedBy?.logos
       ? c.trustedBy.logos
@@ -27,17 +30,17 @@ export const HeroFormTemplate: SectionTemplate = {
 
     return `
 <section class="section-hero-form" style="${cssVars} background: rgb(var(--color-base)); color: rgb(var(--color-on-base));">
-  <div style="max-width: 1280px; margin: 0 auto; padding: 5rem 2rem;">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; min-height: 400px;">
+  <div style="max-width: 1280px; margin: 0 auto; padding: ${sectionPadding(s.padding)};">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: ${gridGap(s.gap)}; align-items: center; min-height: 400px;">
       <div>
         <h1 style="margin: 0 0 1.5rem; font-size: 3rem; font-weight: 700; line-height: 1.1;">${c.title}</h1>
-        ${c.subtitle ? `<p style="margin: 0; font-size: 1.25rem; opacity: 0.8; line-height: 1.6;">${c.subtitle}</p>` : ''}
+        ${c.subtitle ? `<p style="margin: 0; font-size: 1.25rem; opacity: 0.8; line-height: ${lineHeight(s.leading)};">${c.subtitle}</p>` : ''}
       </div>
       <div>
-        <div style="background: rgb(var(--color-secondary)); padding: 2rem; border-radius: 8px;">
+        <div style="background: rgb(var(--color-secondary)); padding: ${cardPadding(s.padding)}; border-radius: ${roundedToCss(s.rounded)};">
           <div style="display: flex; gap: 0.5rem;">
-            <input type="email" placeholder="${c.placeholderText ?? 'Enter your email'}" style="flex: 1; padding: 1rem; border: 1px solid rgb(var(--color-on-secondary) / 0.2); border-radius: 4px; font-size: 1rem; background: rgb(var(--color-base)); color: rgb(var(--color-on-base));" />
-            <button style="background: rgb(var(--color-brand)); color: rgb(var(--color-on-brand)); padding: 1rem 1.5rem; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; white-space: nowrap;">${c.buttonText}</button>
+            <input type="email" placeholder="${c.placeholderText ?? 'Enter your email'}" style="flex: 1; padding: ${inputPadding(s.padding)}; border: 1px solid rgb(var(--color-on-secondary) / 0.2); border-radius: ${roundedToCss(s.rounded)}; font-size: 1rem; background: rgb(var(--color-base)); color: rgb(var(--color-on-base));" />
+            <button style="background: rgb(var(--color-brand)); color: rgb(var(--color-on-brand)); padding: ${buttonPadding(s.padding)}; border: none; border-radius: ${roundedToCss(s.rounded)}; font-weight: 600; cursor: pointer; white-space: nowrap;">${c.buttonText}</button>
           </div>
         </div>
         ${trustedByHtml}

@@ -1,11 +1,15 @@
-import type { SectionTemplate, HeaderContent } from '../../Domain/ValueObject/SectionTemplate'
+import type { SectionTemplate, HeaderContent, RenderTheme } from '../../Domain/ValueObject/SectionTemplate'
+import { themeToCssVars, cardGap } from './themeHelper'
 
 export type { HeaderContent } from '../../Domain/ValueObject/SectionTemplate'
 
 export const HeaderTemplate: SectionTemplate = {
   type: 'header',
-  render: (content, cssVars) => {
+  render: (content, theme: RenderTheme) => {
     const c = content as HeaderContent
+    const s = theme.stylePack
+    const cssVars = themeToCssVars(theme)
+
     const logo = c.logoUrl
       ? `<img src="${c.logoUrl}" alt="${c.logoAlt ?? ''}" style="height: 2rem;" />`
       : `<span style="font-size: 1.25rem; font-weight: 700;">${c.logoText ?? ''}</span>`
@@ -24,7 +28,7 @@ export const HeaderTemplate: SectionTemplate = {
       <div class="logo">
         ${logo}
       </div>
-      <div style="display: flex; gap: 2rem; font-size: 0.875rem;">
+      <div style="display: flex; gap: ${cardGap(s.gap)}; font-size: 0.875rem;">
         ${links}
       </div>
     </nav>
