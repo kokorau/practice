@@ -1,7 +1,7 @@
 <template>
-  <div class="grid grid-cols-[260px_1fr] h-screen bg-white">
+  <div class="grid grid-cols-[260px_1fr] h-screen bg-white overflow-hidden">
     <!-- Left Panel -->
-    <div class="border-r border-black/10 flex flex-col h-screen overflow-hidden">
+    <div class="border-r border-black/10 flex flex-col overflow-hidden">
       <!-- Header -->
       <div class="p-4 border-b border-black/10">
         <h2
@@ -168,18 +168,33 @@
     </div>
 
     <!-- Right Panel: Preview -->
-    <div class="p-6 flex flex-col gap-4 overflow-y-auto bg-black/[0.02]">
-      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div class="min-h-[200px]" v-html="renderedHtml"></div>
+    <div class="overflow-y-auto bg-black/[0.02]">
+      <div class="p-6">
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div v-html="renderedHtml"></div>
+        </div>
       </div>
-
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import type { Page, SectionType, HeroContent, FeatureContent, TextContent, PageContents } from '../modules/Section/Domain/ValueObject'
+import type { Page, SectionType, PageContents } from '../modules/Section/Domain/ValueObject'
+import type {
+  HeroContent,
+  FeatureContent,
+  TextContent,
+  ThreeColumnTextContent,
+  ImageTextContent,
+  CTAContent,
+  GalleryContent,
+  FeatureCardContent,
+  HeaderContent,
+  FooterContent,
+  AboutContent,
+  SectionContent,
+} from '../modules/Section/Domain/ValueObject/SectionTemplate'
 import { renderPage } from '../modules/Section/Domain/ValueObject'
 import type { PalettePreset } from '../modules/ColorPalette/Domain/ValueObject'
 import { generateOklchPalette, PalettePresets, $ColorPalette } from '../modules/ColorPalette/Domain/ValueObject'
@@ -205,16 +220,29 @@ const page = reactive<Page>({
     fontId: 'inter',
   },
   sections: [
+    { id: 'header-1', type: 'header' },
     { id: 'hero-1', type: 'hero' },
-    { id: 'feature-1', type: 'feature' },
-    { id: 'text-1', type: 'text' },
+    { id: 'about-1', type: 'about' },
+    { id: 'feature-card-1', type: 'feature-card' },
+    { id: 'image-text-1', type: 'image-text' },
+    { id: 'gallery-1', type: 'gallery' },
+    { id: 'cta-1', type: 'cta' },
+    { id: 'footer-1', type: 'footer' },
   ],
 })
 
-const sectionTypes = [
-  { id: 'hero' as SectionType, label: 'Hero' },
-  { id: 'feature' as SectionType, label: 'Feature' },
-  { id: 'text' as SectionType, label: 'Text' },
+const sectionTypes: { id: SectionType; label: string }[] = [
+  { id: 'header', label: 'Header' },
+  { id: 'hero', label: 'Hero' },
+  { id: 'about', label: 'About' },
+  { id: 'three-column-text', label: '3 Column Text' },
+  { id: 'image-text', label: 'Image + Text' },
+  { id: 'feature', label: 'Feature List' },
+  { id: 'feature-card', label: 'Feature Cards' },
+  { id: 'gallery', label: 'Gallery' },
+  { id: 'cta', label: 'CTA' },
+  { id: 'text', label: 'Text' },
+  { id: 'footer', label: 'Footer' },
 ]
 
 const getSectionLabel = (type: SectionType) =>
@@ -330,16 +358,104 @@ const contents: PageContents = {
   } as TextContent,
 }
 
-const getDefaultContent = (type: SectionType): HeroContent | FeatureContent | TextContent => {
+const getDefaultContent = (type: SectionType): SectionContent => {
   switch (type) {
+    case 'header':
+      return {
+        logoText: 'Brand',
+        links: [
+          { label: 'About', url: '#about' },
+          { label: 'Features', url: '#features' },
+          { label: 'Contact', url: '#contact' },
+        ],
+      } as HeaderContent
     case 'hero':
-    case 'cta':
-      return { title: 'New Section', subtitle: 'Add your content here', ctaText: 'Click' }
+      return {
+        title: 'Build Something Amazing',
+        subtitle: 'Create beautiful, responsive websites with our powerful design system.',
+        ctaText: 'Get Started',
+      } as HeroContent
+    case 'about':
+      return {
+        title: 'About Us',
+        description: 'We are a team of passionate developers and designers dedicated to creating the best possible experience for our users. Our mission is to make the web more beautiful and accessible.',
+        buttonText: 'Learn More',
+        buttonUrl: '#',
+      } as AboutContent
+    case 'three-column-text':
+      return {
+        columns: [
+          { title: 'Mission', text: 'To empower creators with the tools they need to build amazing digital experiences.' },
+          { title: 'Vision', text: 'A world where anyone can bring their ideas to life on the web.' },
+          { title: 'Values', text: 'Innovation, simplicity, and user-centric design guide everything we do.' },
+        ],
+      } as ThreeColumnTextContent
+    case 'image-text':
+      return {
+        imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800',
+        imageAlt: 'Team collaboration',
+        title: 'Work Together',
+        text: 'Collaboration is at the heart of what we do. Our platform makes it easy to work together on projects of any size.',
+        imagePosition: 'left',
+      } as ImageTextContent
     case 'feature':
+      return {
+        title: 'Features',
+        description: 'Everything you need to build modern web applications.',
+        items: [
+          { title: 'Fast', description: 'Optimized for speed and performance.' },
+          { title: 'Flexible', description: 'Customize everything to your needs.' },
+          { title: 'Beautiful', description: 'Stunning designs out of the box.' },
+        ],
+      } as FeatureContent
+    case 'feature-card':
+      return {
+        title: 'What We Offer',
+        cards: [
+          { imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400', title: 'Analytics', description: 'Track your performance with detailed analytics.' },
+          { imageUrl: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=400', title: 'Collaboration', description: 'Work together seamlessly with your team.' },
+          { imageUrl: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400', title: 'Integration', description: 'Connect with your favorite tools and services.' },
+        ],
+      } as FeatureCardContent
     case 'gallery':
-      return { title: 'Features', description: 'Description', items: [{ title: 'Item', description: 'Details' }] }
+      return {
+        images: [
+          { url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400', alt: 'Coding' },
+          { url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400', alt: 'Team' },
+          { url: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=400', alt: 'Tech' },
+          { url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400', alt: 'Work' },
+          { url: 'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=400', alt: 'Code' },
+          { url: 'https://images.unsplash.com/photo-1519241047957-be31d7379a5d?w=400', alt: 'Design' },
+        ],
+      } as GalleryContent
+    case 'cta':
+      return {
+        title: 'Ready to Get Started?',
+        description: 'Join thousands of satisfied customers who have transformed their workflow.',
+        buttonText: 'Start Free Trial',
+        buttonUrl: '#',
+      } as CTAContent
+    case 'footer':
+      return {
+        logoText: 'Brand',
+        links: [
+          { label: 'About', url: '#about' },
+          { label: 'Features', url: '#features' },
+          { label: 'Contact', url: '#contact' },
+        ],
+        info: {
+          address: '123 Main Street, City',
+          phone: '+1 (555) 123-4567',
+          email: 'hello@example.com',
+        },
+        copyright: '© 2024 Brand. All rights reserved.',
+      } as FooterContent
     case 'text':
-      return { title: 'Title', body: 'Your content here.' }
+    default:
+      return {
+        title: 'Section Title',
+        body: 'This is a text section. You can add any content here to describe your product, service, or story.',
+      } as TextContent
   }
 }
 

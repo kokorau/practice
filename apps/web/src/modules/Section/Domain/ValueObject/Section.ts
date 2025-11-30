@@ -1,6 +1,17 @@
 import type { Filter } from '../../../Filter/Domain'
 
-export type SectionType = 'hero' | 'feature' | 'gallery' | 'text' | 'cta'
+export type SectionType =
+  | 'hero'
+  | 'feature'
+  | 'gallery'
+  | 'text'
+  | 'cta'
+  | 'three-column-text'
+  | 'image-text'
+  | 'feature-card'
+  | 'header'
+  | 'footer'
+  | 'about'
 
 export type ThemeRef = {
   paletteId: string
