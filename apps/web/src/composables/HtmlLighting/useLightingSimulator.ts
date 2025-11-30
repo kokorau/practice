@@ -39,6 +39,7 @@ export interface UseLightingSimulatorOptions {
   enableTileRendering?: boolean
   tileHeight?: number
   enableFilter?: boolean
+  initialResolutionScale?: number
 }
 
 export function useLightingSimulator(options: UseLightingSimulatorOptions) {
@@ -49,7 +50,11 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     enableTileRendering = true,
     tileHeight = 200,
     enableFilter = true,
+    initialResolutionScale = 1,
   } = options
+
+  // Resolution scale (0.25 to 2.0)
+  const resolutionScale = ref(initialResolutionScale)
 
   // Tile rendering infrastructure (non-reactive)
   let tileRenderer: TileRenderer | null = null
@@ -156,6 +161,8 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     if (!htmlContainerRef.value || !sampleHtmlRef.value || !canvasRef.value) return
     if (!renderTilesUseCase) return
 
+    const scale = resolutionScale.value
+
     // Get container size (visible area) and content size (full scrollable area)
     const containerRect = htmlContainerRef.value.getBoundingClientRect()
     const viewportWidth = containerRect.width
@@ -163,10 +170,16 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     const contentHeight = sampleHtmlRef.value.scrollHeight
     const scrollY = htmlContainerRef.value.scrollTop
 
-    // Viewport for parsing elements - use full content size
+    // Scaled sizes for rendering
+    const scaledViewportWidth = Math.round(viewportWidth * scale)
+    const scaledViewportHeight = Math.round(viewportHeight * scale)
+    const scaledContentHeight = Math.round(contentHeight * scale)
+    const scaledScrollY = Math.round(scrollY * scale)
+
+    // Viewport for parsing elements - use full content size (scaled)
     const viewport: Viewport = {
-      width: viewportWidth,
-      height: contentHeight,
+      width: scaledViewportWidth,
+      height: scaledContentHeight,
       scrollX: 0,
       scrollY: 0,
     }
@@ -197,11 +210,11 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     renderTilesUseCase.updateScene(
       scene,
       camera,
-      viewportWidth,
-      contentHeight,
-      viewportWidth,
-      viewportHeight,
-      scrollY
+      scaledViewportWidth,
+      scaledContentHeight,
+      scaledViewportWidth,
+      scaledViewportHeight,
+      scaledScrollY
     )
 
     // Update debug info with tile stats
@@ -233,13 +246,16 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
   const onScroll = () => {
     if (!htmlContainerRef.value || !renderTilesUseCase) return
 
+    const scale = resolutionScale.value
     const containerRect = htmlContainerRef.value.getBoundingClientRect()
     const scrollY = htmlContainerRef.value.scrollTop
 
-    // Update viewport for tile rendering (re-composite visible tiles)
-    renderTilesUseCase.updateViewport(scrollY, containerRect.height)
+    // Update viewport for tile rendering (re-composite visible tiles) with scaled values
+    const scaledScrollY = Math.round(scrollY * scale)
+    const scaledViewportHeight = Math.round(containerRect.height * scale)
+    renderTilesUseCase.updateViewport(scaledScrollY, scaledViewportHeight)
 
-    // Update debug viewport info
+    // Update debug viewport info (unscaled for display)
     debugInfo.value.viewport = {
       width: containerRect.width,
       height: containerRect.height,
@@ -291,11 +307,19 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
   watch([lut, pixelEffects, filterEnabled], () => {
     // Re-composite tiles without re-rendering, then apply filter
     if (!renderTilesUseCase || !htmlContainerRef.value) return
+    const scale = resolutionScale.value
     const scrollY = htmlContainerRef.value.scrollTop
     const containerRect = htmlContainerRef.value.getBoundingClientRect()
-    renderTilesUseCase.updateViewport(scrollY, containerRect.height)
+    const scaledScrollY = Math.round(scrollY * scale)
+    const scaledViewportHeight = Math.round(containerRect.height * scale)
+    renderTilesUseCase.updateViewport(scaledScrollY, scaledViewportHeight)
     applyFilterToCanvas()
   }, { deep: true })
+
+  // Watch resolution scale changes to trigger re-render
+  watch(resolutionScale, () => {
+    updateScene()
+  })
 
   // Lifecycle
   onMounted(() => {
@@ -345,6 +369,9 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
 
     // Lighting Constants
     lightPresets,
+
+    // Resolution
+    resolutionScale,
 
     // Filter State
     filter,

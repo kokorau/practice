@@ -305,7 +305,7 @@ function updateLutGrid() {
 
   // Create new grid with LUT transform
   const transform = props.lut ? createLutTransform(props.lut) : undefined
-  lutGrid = createLutGrid(16, transform)
+  lutGrid = createLutGrid(8, transform)
   scene.add(lutGrid)
 }
 
