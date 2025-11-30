@@ -5,6 +5,22 @@
       <div class="controls-panel">
         <h2>Color Palette Generator</h2>
 
+        <!-- Presets -->
+        <div class="control-group">
+          <label>Presets</label>
+          <div class="preset-list">
+            <button
+              v-for="preset in palettePresets"
+              :key="preset.id"
+              class="preset-button"
+              :class="{ active: selectedPresetId === preset.id }"
+              :style="{ backgroundColor: getPresetColor(preset.config) }"
+              :title="preset.name"
+              @click="applyPreset(preset)"
+            />
+          </div>
+        </div>
+
         <!-- Brand Selection -->
         <div class="control-group">
           <label>Brand</label>
@@ -119,14 +135,19 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed, watch } from 'vue'
-import type { ColorPalette } from '../modules/ColorPalette/Domain/ValueObject'
+import type { ColorPalette, PalettePreset } from '../modules/ColorPalette/Domain/ValueObject'
 import {
   generateOklchPalette,
   getDefaultGeneratorConfig,
   HueOffsetPresets,
+  PalettePresets,
 } from '../modules/ColorPalette/Domain/ValueObject'
 import type { PaletteGeneratorConfig } from '../modules/ColorPalette/Domain/ValueObject'
 import type { Srgb } from '../modules/Color/Domain/ValueObject'
+
+// パレットプリセット
+const palettePresets = PalettePresets
+const selectedPresetId = ref<string | null>(null)
 
 // Brand プリセット (40種類)
 type BrandPreset = { hue: number; lightness: number; chroma: number }
@@ -169,8 +190,20 @@ const paletteItems = computed(() => [
   { name: 'Secondary', bg: palette.value.secondary, fg: palette.value.onSecondary },
 ])
 
+// プリセット適用
+const applyPreset = (preset: PalettePreset) => {
+  selectedPresetId.value = preset.id
+  Object.assign(generatorConfig, preset.config)
+}
+
+// プリセットの色を取得
+const getPresetColor = (config: PaletteGeneratorConfig): string => {
+  return `oklch(${config.lightness} ${config.chromaRange.max} ${config.brandHue})`
+}
+
 // Brand選択
 const selectBrand = (brand: BrandPreset) => {
+  selectedPresetId.value = null
   generatorConfig.brandHue = brand.hue
   generatorConfig.lightness = brand.lightness
   generatorConfig.chromaRange = {
@@ -240,6 +273,34 @@ const srgbToHex = (color: Srgb): string => {
   font-weight: 600;
   font-size: 0.75rem;
   color: #666;
+}
+
+/* Preset List */
+.preset-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.preset-button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.preset-button:hover {
+  transform: scale(1.2);
+  z-index: 1;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.preset-button.active {
+  border-color: #333;
+  box-shadow: 0 0 0 2px white, 0 0 0 3px #333;
 }
 
 /* Brand Grid */

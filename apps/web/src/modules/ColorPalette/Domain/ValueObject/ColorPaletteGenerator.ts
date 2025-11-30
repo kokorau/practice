@@ -141,3 +141,154 @@ export const getDefaultGeneratorConfig = (): PaletteGeneratorConfig => ({
   lightness: 0.6,
   isDark: false,
 })
+
+/**
+ * パレットプリセット
+ */
+export type PalettePreset = {
+  id: string
+  name: string
+  config: PaletteGeneratorConfig
+}
+
+export const PalettePresets: PalettePreset[] = [
+  // Blue系
+  {
+    id: 'ocean',
+    name: 'Ocean',
+    config: {
+      brandHue: 220,
+      primaryHueOffset: 'same',
+      secondaryHueOffset: 'analogous30',
+      chromaRange: { min: 0.065, max: 0.145 },
+      lightness: 0.55,
+    },
+  },
+  {
+    id: 'sky',
+    name: 'Sky',
+    config: {
+      brandHue: 200,
+      primaryHueOffset: 'same',
+      secondaryHueOffset: 'complementary',
+      chromaRange: { min: 0.065, max: 0.145 },
+      lightness: 0.65,
+    },
+  },
+  // Green系
+  {
+    id: 'forest',
+    name: 'Forest',
+    config: {
+      brandHue: 145,
+      primaryHueOffset: 'same',
+      secondaryHueOffset: 'analogousN30',
+      chromaRange: { min: 0.065, max: 0.145 },
+      lightness: 0.55,
+    },
+  },
+  {
+    id: 'mint',
+    name: 'Mint',
+    config: {
+      brandHue: 165,
+      primaryHueOffset: 'same',
+      secondaryHueOffset: 'triadic120',
+      chromaRange: { min: 0.065, max: 0.145 },
+      lightness: 0.7,
+    },
+  },
+  // Red/Orange系
+  {
+    id: 'sunset',
+    name: 'Sunset',
+    config: {
+      brandHue: 25,
+      primaryHueOffset: 'analogousN30',
+      secondaryHueOffset: 'complementary',
+      chromaRange: { min: 0.065, max: 0.16 },
+      lightness: 0.6,
+    },
+  },
+  {
+    id: 'coral',
+    name: 'Coral',
+    config: {
+      brandHue: 15,
+      primaryHueOffset: 'same',
+      secondaryHueOffset: 'triadic120',
+      chromaRange: { min: 0.065, max: 0.145 },
+      lightness: 0.65,
+    },
+  },
+  // Purple系
+  {
+    id: 'lavender',
+    name: 'Lavender',
+    config: {
+      brandHue: 280,
+      primaryHueOffset: 'same',
+      secondaryHueOffset: 'splitComp150',
+      chromaRange: { min: 0.065, max: 0.145 },
+      lightness: 0.65,
+    },
+  },
+  {
+    id: 'grape',
+    name: 'Grape',
+    config: {
+      brandHue: 300,
+      primaryHueOffset: 'analogousN30',
+      secondaryHueOffset: 'complementary',
+      chromaRange: { min: 0.065, max: 0.145 },
+      lightness: 0.55,
+    },
+  },
+  // Yellow系
+  {
+    id: 'honey',
+    name: 'Honey',
+    config: {
+      brandHue: 50,
+      primaryHueOffset: 'same',
+      secondaryHueOffset: 'triadicN120',
+      chromaRange: { min: 0.065, max: 0.145 },
+      lightness: 0.7,
+    },
+  },
+  // Neutral系
+  {
+    id: 'stone',
+    name: 'Stone',
+    config: {
+      brandHue: 40,
+      primaryHueOffset: 'same',
+      secondaryHueOffset: 'complementary',
+      chromaRange: { min: 0.03, max: 0.08 },
+      lightness: 0.55,
+    },
+  },
+  {
+    id: 'slate',
+    name: 'Slate',
+    config: {
+      brandHue: 220,
+      primaryHueOffset: 'same',
+      secondaryHueOffset: 'same',
+      chromaRange: { min: 0.02, max: 0.06 },
+      lightness: 0.5,
+    },
+  },
+  // Vibrant系
+  {
+    id: 'neon',
+    name: 'Neon',
+    config: {
+      brandHue: 320,
+      primaryHueOffset: 'triadic120',
+      secondaryHueOffset: 'triadicN120',
+      chromaRange: { min: 0.1, max: 0.175 },
+      lightness: 0.65,
+    },
+  },
+]

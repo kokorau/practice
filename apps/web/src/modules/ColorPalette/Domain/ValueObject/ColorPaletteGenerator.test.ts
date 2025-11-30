@@ -4,6 +4,7 @@ import {
   getDefaultGeneratorConfig,
   ChromaRangePresets,
   HueOffsetPresets,
+  PalettePresets,
   type PaletteGeneratorConfig,
 } from './ColorPaletteGenerator'
 
@@ -147,6 +148,39 @@ describe('ColorPaletteGenerator', () => {
       expect(config.isDark).toBe(false)
       expect(config.primaryHueOffset).toBeDefined()
       expect(config.secondaryHueOffset).toBeDefined()
+    })
+  })
+
+  describe('PalettePresets', () => {
+    it('should have multiple presets', () => {
+      expect(PalettePresets.length).toBeGreaterThan(0)
+    })
+
+    it('should have unique ids', () => {
+      const ids = PalettePresets.map((p) => p.id)
+      const uniqueIds = new Set(ids)
+      expect(uniqueIds.size).toBe(ids.length)
+    })
+
+    it('should generate valid palettes for all presets', () => {
+      PalettePresets.forEach((preset) => {
+        const palette = generateOklchPalette(preset.config)
+        expect(palette.base).toBeDefined()
+        expect(palette.brand).toBeDefined()
+        expect(palette.primary).toBeDefined()
+        expect(palette.secondary).toBeDefined()
+
+        // All colors should be in valid sRGB range
+        const colors = [palette.base, palette.brand, palette.primary, palette.secondary]
+        colors.forEach((color) => {
+          expect(color.r).toBeGreaterThanOrEqual(0)
+          expect(color.r).toBeLessThanOrEqual(1)
+          expect(color.g).toBeGreaterThanOrEqual(0)
+          expect(color.g).toBeLessThanOrEqual(1)
+          expect(color.b).toBeGreaterThanOrEqual(0)
+          expect(color.b).toBeLessThanOrEqual(1)
+        })
+      })
     })
   })
 })
