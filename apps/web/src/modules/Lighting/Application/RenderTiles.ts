@@ -96,9 +96,9 @@ export class RenderTilesUseCase {
    * @param camera - The camera for rendering
    * @param contentWidth - Full content width (for tile grid)
    * @param contentHeight - Full content height (for tile grid)
-   * @param viewportWidth - Visible viewport width (for display canvas)
-   * @param viewportHeight - Visible viewport height (for display canvas)
-   * @param scrollY - Current scroll position
+   * @param viewportWidth - Visible viewport width (internal resolution)
+   * @param viewportHeight - Visible viewport height (internal resolution)
+   * @param scrollY - Current scroll position (in internal resolution)
    */
   updateScene(
     scene: Scene,
@@ -184,7 +184,7 @@ export class RenderTilesUseCase {
     const { scrollY } = this.state.viewport
     const { viewportWidth, viewportHeight } = this.state
 
-    // Set display canvas to viewport size
+    // Set display canvas to viewport size (internal resolution only)
     this.compositor.setSize(viewportWidth, viewportHeight)
     this.compositor.clear()
 

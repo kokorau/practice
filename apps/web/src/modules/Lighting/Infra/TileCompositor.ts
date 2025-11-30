@@ -23,7 +23,10 @@ export class TileCompositor {
   }
 
   /**
-   * Update the display canvas size
+   * Update the display canvas size (internal resolution only)
+   * CSS display size should be controlled by CSS classes on the canvas element
+   * @param width - Internal resolution width
+   * @param height - Internal resolution height
    */
   setSize(width: number, height: number): void {
     if (this.displayCanvas.width !== width || this.displayCanvas.height !== height) {
