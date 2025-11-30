@@ -44,7 +44,8 @@ function hsvToPosition(h: number, s: number, v: number): THREE.Vector3 {
  */
 function hsvToColor(h: number, s: number, v: number): THREE.Color {
   const rgb = $Hsv.toSrgb({ h, s, v })
-  return new THREE.Color(rgb.r / 255, rgb.g / 255, rgb.b / 255)
+  // THREE.Color expects 0-1 values, toSrgb already returns 0-1
+  return new THREE.Color(rgb.r, rgb.g, rgb.b)
 }
 
 function createAxes(): THREE.Group {
@@ -165,11 +166,11 @@ function createLutGrid(
 
     if (transform) {
       // Apply LUT transform to RGB, then convert back to HSV for positioning
-      const [r1t, g1t, b1t] = transform(rgb1.r / 255, rgb1.g / 255, rgb1.b / 255)
-      const [r2t, g2t, b2t] = transform(rgb2.r / 255, rgb2.g / 255, rgb2.b / 255)
+      const [r1t, g1t, b1t] = transform(rgb1.r, rgb1.g, rgb1.b)  // rgb is already 0-1
+      const [r2t, g2t, b2t] = transform(rgb2.r, rgb2.g, rgb2.b)  // rgb is already 0-1
 
-      const hsv1t = $Hsv.fromSrgb({ r: Math.round(r1t * 255), g: Math.round(g1t * 255), b: Math.round(b1t * 255) })
-      const hsv2t = $Hsv.fromSrgb({ r: Math.round(r2t * 255), g: Math.round(g2t * 255), b: Math.round(b2t * 255) })
+      const hsv1t = $Hsv.fromSrgb({ r: r1t, g: g1t, b: b1t })  // fromSrgb expects 0-1
+      const hsv2t = $Hsv.fromSrgb({ r: r2t, g: g2t, b: b2t })  // fromSrgb expects 0-1
 
       pos1 = hsvToPosition(hsv1t.h, hsv1t.s, hsv1t.v)
       pos2 = hsvToPosition(hsv2t.h, hsv2t.s, hsv2t.v)
@@ -180,8 +181,8 @@ function createLutGrid(
       pos2 = hsvToPosition(h2, s2, v2)
 
       colors.push(
-        rgb1.r / 255, rgb1.g / 255, rgb1.b / 255,
-        rgb2.r / 255, rgb2.g / 255, rgb2.b / 255
+        rgb1.r, rgb1.g, rgb1.b,
+        rgb2.r, rgb2.g, rgb2.b
       )
     }
 
@@ -290,12 +291,8 @@ function updateColorPoint() {
   if (props.lut) {
     const rgb = $Hsv.toSrgb({ h: props.h, s: props.s, v: props.v })
     const transform = createLutTransform(props.lut)
-    const [rAfter, gAfter, bAfter] = transform(rgb.r / 255, rgb.g / 255, rgb.b / 255)
-    const hsvAfter = $Hsv.fromSrgb({
-      r: Math.round(rAfter * 255),
-      g: Math.round(gAfter * 255),
-      b: Math.round(bAfter * 255)
-    })
+    const [rAfter, gAfter, bAfter] = transform(rgb.r, rgb.g, rgb.b)  // rgb is already 0-1
+    const hsvAfter = $Hsv.fromSrgb({ r: rAfter, g: gAfter, b: bAfter })  // fromSrgb expects 0-1
     const posAfter = hsvToPosition(hsvAfter.h, hsvAfter.s, hsvAfter.v)
     colorPointAfter.position.copy(posAfter)
     ;(colorPointAfter.material as THREE.MeshBasicMaterial).color.setRGB(rAfter, gAfter, bAfter)

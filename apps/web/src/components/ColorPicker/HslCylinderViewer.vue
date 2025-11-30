@@ -42,7 +42,8 @@ function hslToPosition(h: number, s: number, l: number): THREE.Vector3 {
  */
 function hslToColor(h: number, s: number, l: number): THREE.Color {
   const rgb = $Hsl.toSrgb({ h, s, l })
-  return new THREE.Color(rgb.r / 255, rgb.g / 255, rgb.b / 255)
+  // THREE.Color expects 0-1 values, toSrgb already returns 0-1
+  return new THREE.Color(rgb.r, rgb.g, rgb.b)
 }
 
 function createAxes(): THREE.Group {
@@ -165,12 +166,12 @@ function createLutGrid(
     let pos1: THREE.Vector3, pos2: THREE.Vector3
 
     if (transform) {
-      // Apply LUT transform to RGB, then convert back to HSL for positioning
-      const [r1t, g1t, b1t] = transform(rgb1.r / 255, rgb1.g / 255, rgb1.b / 255)
-      const [r2t, g2t, b2t] = transform(rgb2.r / 255, rgb2.g / 255, rgb2.b / 255)
+      // Apply LUT transform to RGB (both expect 0-1), then convert back to HSL for positioning
+      const [r1t, g1t, b1t] = transform(rgb1.r, rgb1.g, rgb1.b)
+      const [r2t, g2t, b2t] = transform(rgb2.r, rgb2.g, rgb2.b)
 
-      const hsl1t = $Hsl.fromSrgb({ r: Math.round(r1t * 255), g: Math.round(g1t * 255), b: Math.round(b1t * 255) })
-      const hsl2t = $Hsl.fromSrgb({ r: Math.round(r2t * 255), g: Math.round(g2t * 255), b: Math.round(b2t * 255) })
+      const hsl1t = $Hsl.fromSrgb({ r: r1t, g: g1t, b: b1t })
+      const hsl2t = $Hsl.fromSrgb({ r: r2t, g: g2t, b: b2t })
 
       pos1 = hslToPosition(hsl1t.h, hsl1t.s, hsl1t.l)
       pos2 = hslToPosition(hsl2t.h, hsl2t.s, hsl2t.l)
@@ -181,8 +182,8 @@ function createLutGrid(
       pos2 = hslToPosition(h2, s2, l2)
 
       colors.push(
-        rgb1.r / 255, rgb1.g / 255, rgb1.b / 255,
-        rgb2.r / 255, rgb2.g / 255, rgb2.b / 255
+        rgb1.r, rgb1.g, rgb1.b,
+        rgb2.r, rgb2.g, rgb2.b
       )
     }
 
@@ -251,14 +252,17 @@ function createLutGrid(
  */
 function createLutTransform(lut: Lut): ColorTransform {
   if ($Lut3D.is(lut)) {
+    // 3D LUT expects and returns 0-1 values
     return (r: number, g: number, b: number): [number, number, number] => {
       return $Lut3D.lookup(lut, r, g, b)
     }
   } else {
+    // 1D LUT uses 0-255 indices, values are already 0-1
     return (r: number, g: number, b: number): [number, number, number] => {
       const ri = Math.round(r * 255)
       const gi = Math.round(g * 255)
       const bi = Math.round(b * 255)
+      // LUT values are already 0-1
       return [lut.r[ri]!, lut.g[gi]!, lut.b[bi]!]
     }
   }
@@ -291,12 +295,8 @@ function updateColorPoint() {
   if (props.lut) {
     const rgb = $Hsl.toSrgb({ h: props.h, s: props.s, l: props.l })
     const transform = createLutTransform(props.lut)
-    const [rAfter, gAfter, bAfter] = transform(rgb.r / 255, rgb.g / 255, rgb.b / 255)
-    const hslAfter = $Hsl.fromSrgb({
-      r: Math.round(rAfter * 255),
-      g: Math.round(gAfter * 255),
-      b: Math.round(bAfter * 255)
-    })
+    const [rAfter, gAfter, bAfter] = transform(rgb.r, rgb.g, rgb.b)  // rgb is already 0-1
+    const hslAfter = $Hsl.fromSrgb({ r: rAfter, g: gAfter, b: bAfter })  // fromSrgb expects 0-1
     const posAfter = hslToPosition(hslAfter.h, hslAfter.s, hslAfter.l)
     colorPointAfter.position.copy(posAfter)
     ;(colorPointAfter.material as THREE.MeshBasicMaterial).color.setRGB(rAfter, gAfter, bAfter)

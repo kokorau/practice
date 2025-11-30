@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { $Hsv } from '../../modules/Color/Domain/ValueObject'
+import { $Hsv, $Srgb } from '../../modules/Color/Domain/ValueObject'
 
 const props = defineProps<{
   hue: number // 0-360
@@ -172,7 +172,7 @@ onMounted(() => {
       :style="{
         left: `${saturation * 100}%`,
         top: `${(1 - value) * 100}%`,
-        backgroundColor: `rgb(${$Hsv.toSrgb({ h: hue, s: saturation, v: value }).r}, ${$Hsv.toSrgb({ h: hue, s: saturation, v: value }).g}, ${$Hsv.toSrgb({ h: hue, s: saturation, v: value }).b})`,
+        backgroundColor: $Srgb.toCssRgb($Hsv.toSrgb({ h: hue, s: saturation, v: value })),
       }"
     />
   </div>

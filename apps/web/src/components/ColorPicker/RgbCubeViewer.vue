@@ -6,9 +6,9 @@ import type { Lut } from '../../modules/Filter/Domain/ValueObject/Lut'
 import { $Lut3D } from '../../modules/Filter/Domain/ValueObject/Lut'
 
 const props = defineProps<{
-  r: number // 0-255
-  g: number // 0-255
-  b: number // 0-255
+  r: number // 0-1
+  g: number // 0-1
+  b: number // 0-1
   lut?: Lut // Optional LUT for color transform (1D or 3D)
 }>()
 
@@ -312,9 +312,10 @@ function updateLutGrid() {
 function updateColorPoint() {
   if (!colorPoint || !colorPointAfter) return
 
-  const rNorm = props.r / 255
-  const gNorm = props.g / 255
-  const bNorm = props.b / 255
+  // props.r, g, b are already 0-1
+  const rNorm = props.r
+  const gNorm = props.g
+  const bNorm = props.b
 
   // Before point
   colorPoint.position.set(rNorm, gNorm, bNorm)

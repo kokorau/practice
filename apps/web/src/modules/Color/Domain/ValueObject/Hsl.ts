@@ -15,10 +15,11 @@ export type Hsl = {
 export const $Hsl = {
   create: (h: number, s: number, l: number): Hsl => ({ h, s, l }),
 
+  /**
+   * Convert from sRGB (0-1 normalized) to HSL
+   */
   fromSrgb: (srgb: Srgb): Hsl => {
-    const r = srgb.r / 255
-    const g = srgb.g / 255
-    const b = srgb.b / 255
+    const { r, g, b } = srgb  // Already 0-1
 
     const max = Math.max(r, g, b)
     const min = Math.min(r, g, b)
@@ -45,12 +46,15 @@ export const $Hsl = {
     return { h, s, l }
   },
 
+  /**
+   * Convert from HSL to sRGB (0-1 normalized)
+   */
   toSrgb: (hsl: Hsl): Srgb => {
     const { h, s, l } = hsl
 
     if (s === 0) {
-      const gray = Math.round(l * 255)
-      return { r: gray, g: gray, b: gray }
+      // Grayscale
+      return { r: l, g: l, b: l }
     }
 
     const c = (1 - Math.abs(2 * l - 1)) * s
@@ -81,10 +85,11 @@ export const $Hsl = {
       b = x
     }
 
+    // Return 0-1 normalized values
     return {
-      r: Math.round((r + m) * 255),
-      g: Math.round((g + m) * 255),
-      b: Math.round((b + m) * 255),
+      r: r + m,
+      g: g + m,
+      b: b + m,
     }
   },
 

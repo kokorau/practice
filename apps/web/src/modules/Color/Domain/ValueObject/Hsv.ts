@@ -15,10 +15,11 @@ export type Hsv = {
 export const $Hsv = {
   create: (h: number, s: number, v: number): Hsv => ({ h, s, v }),
 
+  /**
+   * Convert from sRGB (0-1 normalized) to HSV
+   */
   fromSrgb: (srgb: Srgb): Hsv => {
-    const r = srgb.r / 255
-    const g = srgb.g / 255
-    const b = srgb.b / 255
+    const { r, g, b } = srgb  // Already 0-1
 
     const max = Math.max(r, g, b)
     const min = Math.min(r, g, b)
@@ -43,6 +44,9 @@ export const $Hsv = {
     return { h, s, v }
   },
 
+  /**
+   * Convert from HSV to sRGB (0-1 normalized)
+   */
   toSrgb: (hsv: Hsv): Srgb => {
     const { h, s, v } = hsv
     const c = v * s
@@ -73,10 +77,11 @@ export const $Hsv = {
       b = x
     }
 
+    // Return 0-1 normalized values
     return {
-      r: Math.round((r + m) * 255),
-      g: Math.round((g + m) * 255),
-      b: Math.round((b + m) * 255),
+      r: r + m,
+      g: g + m,
+      b: b + m,
     }
   },
 

@@ -1,31 +1,30 @@
 import type { Srgb } from '../../Color/Domain/ValueObject'
+import { $Srgb } from '../../Color/Domain/ValueObject'
 
 /**
  * SrgbをCSS RGB文字列に変換
+ * Note: Srgbは既に0-1に正規化されているため、$Srgb.toCssRgbを使用
  */
 export const srgbToCssRgb = (color: Srgb): string => {
-  const r = Math.round(color.r * 255)
-  const g = Math.round(color.g * 255)
-  const b = Math.round(color.b * 255)
-  return `rgb(${r}, ${g}, ${b})`
+  return $Srgb.toCssRgb(color)
 }
 
 /**
  * Srgbを16進数カラーコードに変換
+ * Note: Srgbは既に0-1に正規化されているため、$Srgb.toHexを使用
  */
 export const srgbToHex = (color: Srgb): string => {
-  const toHex = (value: number) => {
-    const hex = Math.round(value * 255).toString(16).padStart(2, '0')
-    return hex
-  }
-  return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`
+  return $Srgb.toHex(color)
 }
 
 /**
  * 色の明度を計算（相対輝度）
+ * ITU-R BT.709 の係数を使用
+ * Input: 0-1 normalized Srgb
+ * Output: 0-1 luminance value
  */
 export const getLuminance = (color: Srgb): number => {
-  // ITU-R BT.709 の係数を使用
+  // Already 0-1, no conversion needed
   return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b
 }
 

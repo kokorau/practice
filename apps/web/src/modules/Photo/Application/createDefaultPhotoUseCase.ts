@@ -1,4 +1,4 @@
-import { $Oklch } from '../../Color/Domain'
+import { $Oklch, $Srgb } from '../../Color/Domain'
 import { $Photo, $PhotoColorPalette, type Photo } from '../Domain'
 
 /**
@@ -30,6 +30,8 @@ export const createDefaultPhotoUseCase = (): Photo => {
     const shadeIndex = palette.shades.indexOf(color.shade)
 
     const srgb = $Oklch.toSrgb(color.oklch)
+    // Convert 0-1 to 0-255 for ImageData
+    const rgb255 = $Srgb.to255(srgb)
 
     // Fill the cell
     const startX = hueIndex * cellWidth
@@ -41,9 +43,9 @@ export const createDefaultPhotoUseCase = (): Photo => {
         const y = startY + dy
         const i = (y * width + x) * 4
 
-        data[i] = srgb.r
-        data[i + 1] = srgb.g
-        data[i + 2] = srgb.b
+        data[i] = rgb255.r
+        data[i + 1] = rgb255.g
+        data[i + 2] = rgb255.b
         data[i + 3] = 255
       }
     }

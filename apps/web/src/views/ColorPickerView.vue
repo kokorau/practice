@@ -7,7 +7,7 @@ import HslCylinderViewer from '../components/ColorPicker/HslCylinderViewer.vue'
 import HsvConeViewer from '../components/ColorPicker/HsvConeViewer.vue'
 import ColorGridViewer from '../components/ColorPicker/ColorGridViewer.vue'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
-import { $Hsv, $Hsl } from '../modules/Color/Domain/ValueObject'
+import { $Hsv, $Hsl, $Srgb } from '../modules/Color/Domain/ValueObject'
 import { useFilter } from '../composables/Filter/useFilter'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { $Lut3D } from '../modules/Filter/Domain/ValueObject/Lut'
@@ -23,26 +23,26 @@ const value = ref(1)
 
 const rgb = computed(() => $Hsv.toSrgb({ h: hue.value, s: saturation.value, v: value.value }))
 const hsl = computed(() => $Hsl.fromSrgb(rgb.value))
-const hexColor = computed(() => {
-  const { r, g, b } = rgb.value
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
-})
+const hexColor = computed(() => $Srgb.toHex(rgb.value))
 
 // LUT適用後の色
 const rgbAfter = computed(() => {
   if (!lut.value) return rgb.value
-  const { r, g, b } = rgb.value
+  const { r, g, b } = rgb.value  // Already 0-1
   if ($Lut3D.is(lut.value)) {
-    const [rt, gt, bt] = $Lut3D.lookup(lut.value, r / 255, g / 255, b / 255)
-    return { r: Math.round(rt * 255), g: Math.round(gt * 255), b: Math.round(bt * 255) }
+    // 3D LUT expects 0-1 input, returns 0-1
+    const [rt, gt, bt] = $Lut3D.lookup(lut.value, r, g, b)
+    return $Srgb.create(rt, gt, bt)
   } else {
-    return { r: Math.round(lut.value.r[r]! * 255), g: Math.round(lut.value.g[g]! * 255), b: Math.round(lut.value.b[b]! * 255) }
+    // 1D LUT uses 0-255 indices, values are already 0-1
+    const rgb255 = $Srgb.to255(rgb.value)
+    const rt = lut.value.r[rgb255.r]!  // Already 0-1
+    const gt = lut.value.g[rgb255.g]!  // Already 0-1
+    const bt = lut.value.b[rgb255.b]!  // Already 0-1
+    return $Srgb.create(rt, gt, bt)
   }
 })
-const hexColorAfter = computed(() => {
-  const { r, g, b } = rgbAfter.value
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
-})
+const hexColorAfter = computed(() => $Srgb.toHex(rgbAfter.value))
 
 function onSvChange(s: number, v: number) {
   saturation.value = s

@@ -3,7 +3,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import type { Lut } from '../../modules/Filter/Domain/ValueObject/Lut'
 import { $Lut3D } from '../../modules/Filter/Domain/ValueObject/Lut'
 import { $PhotoColorPalette } from '../../modules/Photo/Domain/ValueObject/PhotoColorPalette'
-import { $Oklch } from '../../modules/Color/Domain'
+import { $Oklch, $Srgb } from '../../modules/Color/Domain'
 
 const props = defineProps<{
   lut?: Lut
@@ -24,14 +24,17 @@ type ColorTransform = (r: number, g: number, b: number) => [number, number, numb
 
 function createLutTransform(lut: Lut): ColorTransform {
   if ($Lut3D.is(lut)) {
+    // 3D LUT expects and returns 0-1 values
     return (r: number, g: number, b: number): [number, number, number] => {
       return $Lut3D.lookup(lut, r, g, b)
     }
   } else {
+    // 1D LUT uses 0-255 indices, values are already 0-1
     return (r: number, g: number, b: number): [number, number, number] => {
       const ri = Math.round(r * 255)
       const gi = Math.round(g * 255)
       const bi = Math.round(b * 255)
+      // LUT values are already 0-1
       return [lut.r[ri]!, lut.g[gi]!, lut.b[bi]!]
     }
   }
@@ -52,23 +55,21 @@ function render() {
 
   for (let i = 0; i < palette.colors.length; i++) {
     const color = palette.colors[i]!
-    const rgb = paletteRgb.value[i]!
+    const rgb = paletteRgb.value[i]!  // Already 0-1
 
     const hueIndex = palette.hues.indexOf(color.hue)
     const shadeIndex = palette.shades.indexOf(color.shade)
 
-    let r = rgb.r
-    let g = rgb.g
-    let b = rgb.b
+    let finalRgb = rgb
 
     if (transform) {
-      const [rt, gt, bt] = transform(r / 255, g / 255, b / 255)
-      r = Math.round(rt * 255)
-      g = Math.round(gt * 255)
-      b = Math.round(bt * 255)
+      // LUT expects 0-1 input, returns 0-1
+      const [rt, gt, bt] = transform(rgb.r, rgb.g, rgb.b)
+      finalRgb = $Srgb.create(rt, gt, bt)
     }
 
-    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+    // Use the helper to convert to CSS
+    ctx.fillStyle = $Srgb.toCssRgb(finalRgb)
     ctx.fillRect(
       hueIndex * cellWidth,
       shadeIndex * cellHeight,

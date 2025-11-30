@@ -21,8 +21,8 @@ export type LightPreset = {
 export const lightPresets: LightPreset[] = [
   {
     name: 'Top Right',
-    primary: { x: 1, y: -1, z: 2, intensity: 0.6, colorHex: '#ffffff' },
-    secondary: { x: -1, y: 1, z: 2, intensity: 0.1, colorHex: '#ffffff' },
+    primary: { x: 1, y: -1, z: 2, intensity: 0.8, colorHex: '#ffffff' },
+    secondary: { x: -1, y: 1, z: 2, intensity: 0.2, colorHex: '#ffffff' },
     shadowBlur: 1.0,
   },
   {

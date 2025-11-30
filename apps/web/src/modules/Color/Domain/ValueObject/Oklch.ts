@@ -45,14 +45,14 @@ export const $Oklch = {
   },
 
   /**
-   * Create Oklch from sRGB values (0-255)
+   * Create Oklch from sRGB values (0-1 normalized)
    */
   fromSrgb: (srgb: Srgb): Oklch => {
     return $Oklch.fromOklab($Oklab.fromSrgb(srgb))
   },
 
   /**
-   * Convert Oklch to sRGB values (0-255)
+   * Convert Oklch to sRGB values (0-1 normalized)
    */
   toSrgb: (oklch: Oklch): Srgb => {
     return $Oklab.toSrgb($Oklch.toOklab(oklch))

@@ -13,27 +13,30 @@ export type Oklab = {
 }
 
 // sRGB to linear RGB (gamma expansion)
+// Input: 0-1 normalized sRGB value
+// Output: 0-1 linear RGB value
 const srgbToLinear = (c: number): number => {
-  const s = c / 255
-  return s <= 0.04045
-    ? s / 12.92
-    : Math.pow((s + 0.055) / 1.055, 2.4)
+  return c <= 0.04045
+    ? c / 12.92
+    : Math.pow((c + 0.055) / 1.055, 2.4)
 }
 
 // Linear RGB to sRGB (gamma compression)
+// Input: 0-1 linear RGB value
+// Output: 0-1 normalized sRGB value
 const linearToSrgb = (c: number): number => {
-  const s = c <= 0.0031308
+  const linear = c <= 0.0031308
     ? c * 12.92
     : 1.055 * Math.pow(c, 1 / 2.4) - 0.055
-  return Math.round(Math.max(0, Math.min(255, s * 255)))
+  return Math.max(0, Math.min(1, linear))
 }
 
 export const $Oklab = {
   /**
-   * Create Oklab from sRGB values (0-255)
+   * Create Oklab from sRGB values (0-1 normalized)
    */
   fromSrgb: (srgb: Srgb): Oklab => {
-    // sRGB to Linear RGB
+    // sRGB to Linear RGB (both 0-1)
     const lr = srgbToLinear(srgb.r)
     const lg = srgbToLinear(srgb.g)
     const lb = srgbToLinear(srgb.b)
@@ -56,7 +59,7 @@ export const $Oklab = {
   },
 
   /**
-   * Convert Oklab to sRGB values (0-255)
+   * Convert Oklab to sRGB values (0-1 normalized)
    */
   toSrgb: (oklab: Oklab): Srgb => {
     const { L, a, b } = oklab
@@ -76,6 +79,7 @@ export const $Oklab = {
     const lg = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s
     const lb = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
 
+    // Linear RGB to sRGB (both 0-1)
     return {
       r: linearToSrgb(lr),
       g: linearToSrgb(lg),
