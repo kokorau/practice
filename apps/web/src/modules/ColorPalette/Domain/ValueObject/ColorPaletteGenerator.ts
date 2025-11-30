@@ -169,7 +169,7 @@ export const PalettePresets: PalettePreset[] = [
     name: 'Sky',
     config: {
       brandHue: 200,
-      primaryHueOffset: 'same',
+      primaryHueOffset: 'analogous30',
       secondaryHueOffset: 'complementary',
       chromaRange: { min: 0.065, max: 0.145 },
       lightness: 0.65,
@@ -192,7 +192,7 @@ export const PalettePresets: PalettePreset[] = [
     name: 'Mint',
     config: {
       brandHue: 165,
-      primaryHueOffset: 'same',
+      primaryHueOffset: 'analogousN30',
       secondaryHueOffset: 'triadic120',
       chromaRange: { min: 0.065, max: 0.145 },
       lightness: 0.7,
@@ -262,7 +262,7 @@ export const PalettePresets: PalettePreset[] = [
     name: 'Stone',
     config: {
       brandHue: 40,
-      primaryHueOffset: 'same',
+      primaryHueOffset: 'analogous30',
       secondaryHueOffset: 'complementary',
       chromaRange: { min: 0.03, max: 0.08 },
       lightness: 0.55,
@@ -273,8 +273,8 @@ export const PalettePresets: PalettePreset[] = [
     name: 'Slate',
     config: {
       brandHue: 220,
-      primaryHueOffset: 'same',
-      secondaryHueOffset: 'same',
+      primaryHueOffset: 'analogous30',
+      secondaryHueOffset: 'analogousN30',
       chromaRange: { min: 0.02, max: 0.06 },
       lightness: 0.5,
     },
