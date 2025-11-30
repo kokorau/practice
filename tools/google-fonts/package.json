@@ -1,0 +1,26 @@
+{
+  "name": "@tools/google-fonts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "update-googlefonts-list": "./bin/fetch-fonts.js"
+  },
+  "exports": {
+    ".": "./src/fetch-fonts.ts",
+    "./types": "./src/types.ts",
+    "./convert": "./src/convert.ts"
+  },
+  "scripts": {
+    "fetch": "node --import tsx src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "dotenv": "^17.2.3"
+  }
+}

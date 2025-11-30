@@ -10,7 +10,8 @@
     "build:all": "pnpm --filter web --filter api build",
     "test": "pnpm --filter web test",
     "test:run": "pnpm --filter web test:run",
-    "typecheck": "pnpm --filter web typecheck"
+    "typecheck": "pnpm --filter web typecheck",
+    "fetch:fonts": "pnpm --filter @tools/google-fonts fetch"
   },
   "keywords": [],
   "author": "",
