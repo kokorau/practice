@@ -122,9 +122,9 @@ export const $Srgb = {
     if (!match) return null
 
     return $Srgb.from255(
-      parseInt(match[1], 16),
-      parseInt(match[2], 16),
-      parseInt(match[3], 16)
+      parseInt(match[1]!, 16),
+      parseInt(match[2]!, 16),
+      parseInt(match[3]!, 16)
     )
   },
 

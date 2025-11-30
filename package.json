@@ -9,7 +9,8 @@
     "build": "pnpm --filter web build",
     "build:all": "pnpm --filter web --filter api build",
     "test": "pnpm --filter web test",
-    "test:run": "pnpm --filter web test:run"
+    "test:run": "pnpm --filter web test:run",
+    "typecheck": "pnpm --filter web typecheck"
   },
   "keywords": [],
   "author": "",

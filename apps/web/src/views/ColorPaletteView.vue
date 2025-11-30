@@ -28,24 +28,26 @@
             :key="key"
             class="color-item"
           >
-            <div
-              class="color-swatch"
-              :style="{
-                backgroundColor: srgbToCssRgb(color),
-                color: srgbToCssRgb(getContrastColor(color))
-              }"
-            >
-              {{ key }}
-            </div>
-            <div class="color-info">
-              <span class="color-name">{{ key }}</span>
-              <span class="color-hex">{{ srgbToHex(color) }}</span>
-              <span class="color-rgb">
-                RGB({{ Math.round(color.r * 255) }},
-                {{ Math.round(color.g * 255) }},
-                {{ Math.round(color.b * 255) }})
-              </span>
-            </div>
+            <template v-if="color">
+              <div
+                class="color-swatch"
+                :style="{
+                  backgroundColor: srgbToCssRgb(color),
+                  color: srgbToCssRgb(getContrastColor(color))
+                }"
+              >
+                {{ key }}
+              </div>
+              <div class="color-info">
+                <span class="color-name">{{ key }}</span>
+                <span class="color-hex">{{ srgbToHex(color) }}</span>
+                <span class="color-rgb">
+                  RGB({{ Math.round(color.r * 255) }},
+                  {{ Math.round(color.g * 255) }},
+                  {{ Math.round(color.b * 255) }})
+                </span>
+              </div>
+            </template>
           </div>
         </div>
       </section>
@@ -54,23 +56,27 @@
       <section class="color-section">
         <h3>Gray Scale</h3>
         <div class="grayscale-container">
-          <div
+          <template
             v-for="(color, key) in selectedPalette.grayScale"
             :key="key"
-            class="grayscale-item"
-            :style="{
-              backgroundColor: srgbToCssRgb(color),
-            }"
           >
-            <span
-              class="grayscale-label"
+            <div
+              v-if="color"
+              class="grayscale-item"
               :style="{
-                color: srgbToCssRgb(getContrastColor(color))
+                backgroundColor: srgbToCssRgb(color),
               }"
             >
-              {{ key }}
-            </span>
-          </div>
+              <span
+                class="grayscale-label"
+                :style="{
+                  color: srgbToCssRgb(getContrastColor(color))
+                }"
+              >
+                {{ key }}
+              </span>
+            </div>
+          </template>
         </div>
       </section>
 
@@ -83,19 +89,21 @@
             :key="key"
             class="color-item"
           >
-            <div
-              class="color-swatch large"
-              :style="{
-                backgroundColor: srgbToCssRgb(color),
-                color: srgbToCssRgb(getContrastColor(color))
-              }"
-            >
-              {{ key }}
-            </div>
-            <div class="color-info">
-              <span class="color-name">{{ key }}</span>
-              <span class="color-hex">{{ srgbToHex(color) }}</span>
-            </div>
+            <template v-if="color && typeof color.r === 'number'">
+              <div
+                class="color-swatch large"
+                :style="{
+                  backgroundColor: srgbToCssRgb(color as Srgb),
+                  color: srgbToCssRgb(getContrastColor(color as Srgb))
+                }"
+              >
+                {{ key }}
+              </div>
+              <div class="color-info">
+                <span class="color-name">{{ key }}</span>
+                <span class="color-hex">{{ srgbToHex(color as Srgb) }}</span>
+              </div>
+            </template>
           </div>
         </div>
       </section>
@@ -109,19 +117,21 @@
             :key="key"
             class="color-item"
           >
-            <div
-              class="color-swatch"
-              :style="{
-                backgroundColor: srgbToCssRgb(color),
-                color: srgbToCssRgb(getContrastColor(color))
-              }"
-            >
-              {{ key }}
-            </div>
-            <div class="color-info">
-              <span class="color-name">{{ key }}</span>
-              <span class="color-hex">{{ srgbToHex(color) }}</span>
-            </div>
+            <template v-if="color">
+              <div
+                class="color-swatch"
+                :style="{
+                  backgroundColor: srgbToCssRgb(color),
+                  color: srgbToCssRgb(getContrastColor(color))
+                }"
+              >
+                {{ key }}
+              </div>
+              <div class="color-info">
+                <span class="color-name">{{ key }}</span>
+                <span class="color-hex">{{ srgbToHex(color) }}</span>
+              </div>
+            </template>
           </div>
         </div>
       </section>
@@ -222,6 +232,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { ColorPalette } from '../modules/ColorPalette/Domain/ValueObject'
+import type { Srgb } from '../modules/Color/Domain/ValueObject'
 import { $ColorPalette } from '../modules/ColorPalette/Domain/ValueObject'
 import {
   createMaterial3Palette,
