@@ -158,8 +158,8 @@ export const PalettePresets: PalettePreset[] = [
     name: 'Ocean',
     config: {
       brandHue: 220,
-      primaryHueOffset: 'same',
-      secondaryHueOffset: 'analogous30',
+      primaryHueOffset: 'analogous30',
+      secondaryHueOffset: 'analogousN30',
       chromaRange: { min: 0.065, max: 0.145 },
       lightness: 0.55,
     },
@@ -181,8 +181,8 @@ export const PalettePresets: PalettePreset[] = [
     name: 'Forest',
     config: {
       brandHue: 145,
-      primaryHueOffset: 'same',
-      secondaryHueOffset: 'analogousN30',
+      primaryHueOffset: 'analogousN30',
+      secondaryHueOffset: 'triadic120',
       chromaRange: { min: 0.065, max: 0.145 },
       lightness: 0.55,
     },
@@ -215,8 +215,8 @@ export const PalettePresets: PalettePreset[] = [
     name: 'Coral',
     config: {
       brandHue: 15,
-      primaryHueOffset: 'same',
-      secondaryHueOffset: 'triadic120',
+      primaryHueOffset: 'triadic120',
+      secondaryHueOffset: 'analogous30',
       chromaRange: { min: 0.065, max: 0.145 },
       lightness: 0.65,
     },
@@ -227,7 +227,7 @@ export const PalettePresets: PalettePreset[] = [
     name: 'Lavender',
     config: {
       brandHue: 280,
-      primaryHueOffset: 'same',
+      primaryHueOffset: 'analogous30',
       secondaryHueOffset: 'splitComp150',
       chromaRange: { min: 0.065, max: 0.145 },
       lightness: 0.65,
@@ -250,7 +250,7 @@ export const PalettePresets: PalettePreset[] = [
     name: 'Honey',
     config: {
       brandHue: 50,
-      primaryHueOffset: 'same',
+      primaryHueOffset: 'splitComp150',
       secondaryHueOffset: 'triadicN120',
       chromaRange: { min: 0.065, max: 0.145 },
       lightness: 0.7,

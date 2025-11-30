@@ -5,77 +5,110 @@
       <div class="controls-panel">
         <h2>Color Palette Generator</h2>
 
-        <!-- Presets -->
+        <!-- Presets List -->
         <div class="control-group">
           <label>Presets</label>
           <div class="preset-list">
-            <button
-              v-for="preset in palettePresets"
+            <div
+              v-for="preset in presetPalettes"
               :key="preset.id"
-              class="preset-button"
-              :class="{ active: selectedPresetId === preset.id }"
-              :style="{ backgroundColor: getPresetColor(preset.config) }"
-              :title="preset.name"
-              @click="applyPreset(preset)"
-            />
+              class="preset-row"
+            >
+              <span class="preset-name">{{ preset.name }}</span>
+              <div
+                class="preset-item"
+                :class="{ active: selectedPresetId === `${preset.id}-light` }"
+                @click="applyPreset(preset.light.config, `${preset.id}-light`)"
+              >
+                <div class="preset-colors">
+                  <span
+                    v-for="color in preset.light.colors"
+                    :key="color.name"
+                    class="preset-color"
+                    :style="{ backgroundColor: color.css }"
+                    :title="color.name"
+                  />
+                </div>
+              </div>
+              <div
+                class="preset-item"
+                :class="{ active: selectedPresetId === `${preset.id}-dark` }"
+                @click="applyPreset(preset.dark.config, `${preset.id}-dark`)"
+              >
+                <div class="preset-colors">
+                  <span
+                    v-for="color in preset.dark.colors"
+                    :key="color.name"
+                    class="preset-color"
+                    :style="{ backgroundColor: color.css }"
+                    :title="color.name"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Brand Selection -->
-        <div class="control-group">
-          <label>Brand</label>
-          <div class="brand-grid">
-            <button
-              v-for="brand in brandPresets"
-              :key="`${brand.hue}-${brand.lightness}`"
-              class="brand-button"
-              :class="{ active: generatorConfig.brandHue === brand.hue && generatorConfig.lightness === brand.lightness }"
-              :style="{ backgroundColor: `oklch(${brand.lightness} ${brand.chroma} ${brand.hue})` }"
-              :title="`H:${brand.hue}°`"
-              @click="selectBrand(brand)"
-            />
-          </div>
-        </div>
+        <!-- Collapsible Custom Settings -->
+        <details class="custom-settings">
+          <summary>Custom</summary>
 
-        <!-- Primary Hue Offset -->
-        <div class="control-group">
-          <label>Primary</label>
-          <div class="offset-buttons">
-            <button
-              v-for="(preset, key) in hueOffsetPresets"
-              :key="key"
-              class="offset-button"
-              :class="{ active: generatorConfig.primaryHueOffset === key }"
-              :style="{ backgroundColor: getOffsetColor(preset.offset) }"
-              :title="preset.label"
-              @click="generatorConfig.primaryHueOffset = key"
-            />
+          <!-- Brand Selection -->
+          <div class="control-group">
+            <label>Brand</label>
+            <div class="brand-grid">
+              <button
+                v-for="brand in brandPresets"
+                :key="`${brand.hue}-${brand.lightness}`"
+                class="brand-button"
+                :class="{ active: generatorConfig.brandHue === brand.hue && generatorConfig.lightness === brand.lightness }"
+                :style="{ backgroundColor: `oklch(${brand.lightness} ${brand.chroma} ${brand.hue})` }"
+                :title="`H:${brand.hue}°`"
+                @click="selectBrand(brand)"
+              />
+            </div>
           </div>
-        </div>
 
-        <!-- Secondary Hue Offset -->
-        <div class="control-group">
-          <label>Secondary</label>
-          <div class="offset-buttons">
-            <button
-              v-for="(preset, key) in hueOffsetPresets"
-              :key="key"
-              class="offset-button"
-              :class="{ active: generatorConfig.secondaryHueOffset === key }"
-              :style="{ backgroundColor: getOffsetColor(preset.offset) }"
-              :title="preset.label"
-              @click="generatorConfig.secondaryHueOffset = key"
-            />
+          <!-- Primary Hue Offset -->
+          <div class="control-group">
+            <label>Primary</label>
+            <div class="offset-buttons">
+              <button
+                v-for="(preset, key) in hueOffsetPresets"
+                :key="key"
+                class="offset-button"
+                :class="{ active: generatorConfig.primaryHueOffset === key }"
+                :style="{ backgroundColor: getOffsetColor(preset.offset) }"
+                :title="preset.label"
+                @click="selectOffset('primary', key)"
+              />
+            </div>
           </div>
-        </div>
 
-        <!-- Dark Mode -->
-        <div class="control-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="generatorConfig.isDark" />
-            Dark Mode
-          </label>
-        </div>
+          <!-- Secondary Hue Offset -->
+          <div class="control-group">
+            <label>Secondary</label>
+            <div class="offset-buttons">
+              <button
+                v-for="(preset, key) in hueOffsetPresets"
+                :key="key"
+                class="offset-button"
+                :class="{ active: generatorConfig.secondaryHueOffset === key }"
+                :style="{ backgroundColor: getOffsetColor(preset.offset) }"
+                :title="preset.label"
+                @click="selectOffset('secondary', key)"
+              />
+            </div>
+          </div>
+
+          <!-- Dark Mode -->
+          <div class="control-group">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="generatorConfig.isDark" />
+              Dark Mode
+            </label>
+          </div>
+        </details>
       </div>
 
       <!-- Right: Palette Display -->
@@ -135,7 +168,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed, watch } from 'vue'
-import type { ColorPalette, PalettePreset } from '../modules/ColorPalette/Domain/ValueObject'
+import type { ColorPalette, HueOffsetKey } from '../modules/ColorPalette/Domain/ValueObject'
 import {
   generateOklchPalette,
   getDefaultGeneratorConfig,
@@ -146,7 +179,6 @@ import type { PaletteGeneratorConfig } from '../modules/ColorPalette/Domain/Valu
 import type { Srgb } from '../modules/Color/Domain/ValueObject'
 
 // パレットプリセット
-const palettePresets = PalettePresets
 const selectedPresetId = ref<string | null>(null)
 
 // Brand プリセット (40種類)
@@ -190,15 +222,43 @@ const paletteItems = computed(() => [
   { name: 'Secondary', bg: palette.value.secondary, fg: palette.value.onSecondary },
 ])
 
-// プリセット適用
-const applyPreset = (preset: PalettePreset) => {
-  selectedPresetId.value = preset.id
-  Object.assign(generatorConfig, preset.config)
-}
+// プリセットのパレット一覧（Light/Dark 2列表示用）
+const presetPalettes = computed(() => {
+  return PalettePresets.map((preset) => {
+    const lightConfig = { ...preset.config, isDark: false }
+    const darkConfig = { ...preset.config, isDark: true }
+    const light = generateOklchPalette(lightConfig)
+    const dark = generateOklchPalette(darkConfig)
+    return {
+      id: preset.id,
+      name: preset.name,
+      preset,
+      light: {
+        config: lightConfig,
+        colors: [
+          { name: 'Base', css: srgbToCssRgb(light.base) },
+          { name: 'Brand', css: srgbToCssRgb(light.brand) },
+          { name: 'Primary', css: srgbToCssRgb(light.primary) },
+          { name: 'Secondary', css: srgbToCssRgb(light.secondary) },
+        ],
+      },
+      dark: {
+        config: darkConfig,
+        colors: [
+          { name: 'Base', css: srgbToCssRgb(dark.base) },
+          { name: 'Brand', css: srgbToCssRgb(dark.brand) },
+          { name: 'Primary', css: srgbToCssRgb(dark.primary) },
+          { name: 'Secondary', css: srgbToCssRgb(dark.secondary) },
+        ],
+      },
+    }
+  })
+})
 
-// プリセットの色を取得
-const getPresetColor = (config: PaletteGeneratorConfig): string => {
-  return `oklch(${config.lightness} ${config.chromaRange.max} ${config.brandHue})`
+// プリセット適用
+const applyPreset = (config: PaletteGeneratorConfig, id: string) => {
+  selectedPresetId.value = id
+  Object.assign(generatorConfig, config)
 }
 
 // Brand選択
@@ -209,6 +269,16 @@ const selectBrand = (brand: BrandPreset) => {
   generatorConfig.chromaRange = {
     min: brand.chroma * 0.5,
     max: brand.chroma,
+  }
+}
+
+// オフセット選択
+const selectOffset = (type: 'primary' | 'secondary', key: HueOffsetKey) => {
+  selectedPresetId.value = null
+  if (type === 'primary') {
+    generatorConfig.primaryHueOffset = key
+  } else {
+    generatorConfig.secondaryHueOffset = key
   }
 }
 
@@ -278,29 +348,78 @@ const srgbToHex = (color: Srgb): string => {
 /* Preset List */
 .preset-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.preset-button {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 2px solid transparent;
-  border-radius: 50%;
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preset-item {
+  padding: 4px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background-color 0.15s;
+  border: 2px solid transparent;
 }
 
-.preset-button:hover {
-  transform: scale(1.2);
-  z-index: 1;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+.preset-item:hover {
+  background-color: rgba(0,0,0,0.05);
 }
 
-.preset-button.active {
+.preset-item.active {
   border-color: #333;
-  box-shadow: 0 0 0 2px white, 0 0 0 3px #333;
+}
+
+.preset-name {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #333;
+  min-width: 55px;
+}
+
+.preset-colors {
+  display: flex;
+  gap: 2px;
+}
+
+.preset-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  outline: 1px solid rgba(0,0,0,0.15);
+}
+
+/* Custom Settings Collapsible */
+.custom-settings {
+  margin-top: 0.5rem;
+}
+
+.custom-settings summary {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.custom-settings summary:hover {
+  color: #333;
+}
+
+.custom-settings[open] summary {
+  margin-bottom: 0.75rem;
+}
+
+.custom-settings .control-group {
+  margin-top: 0.75rem;
+}
+
+.custom-settings .control-group:first-of-type {
+  margin-top: 0;
 }
 
 /* Brand Grid */
