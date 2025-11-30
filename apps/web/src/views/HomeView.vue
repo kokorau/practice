@@ -25,6 +25,11 @@ const pages = [
     title: 'Color Palette',
     description: 'ColorPaletteモジュールのプリセットパレットを閲覧',
   },
+  {
+    to: '/section-preview',
+    title: 'Section Preview',
+    description: 'セクションテンプレートとカラーパレットの統合プレビュー',
+  },
 ]
 </script>
 

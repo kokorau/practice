@@ -34,6 +34,11 @@ const router = createRouter({
       name: 'color-palette',
       component: () => import('../views/ColorPaletteView.vue'),
     },
+    {
+      path: '/section-preview',
+      name: 'section-preview',
+      component: () => import('../views/SectionPreviewView.vue'),
+    },
   ],
 })
 
