@@ -1,9 +1,44 @@
 import type { SectionType } from './Section'
 
-export type HeroContent = {
+export type HeroSplitContent = {
   title: string
   subtitle?: string
-  ctaText?: string
+  buttonText?: string
+  buttonUrl?: string
+  imageUrl: string
+  imageAlt?: string
+  imagePosition?: 'left' | 'right'
+}
+
+export type HeroBackgroundContent = {
+  title: string
+  subtitle?: string
+  buttonText?: string
+  buttonUrl?: string
+  backgroundUrl: string
+  overlayOpacity?: number // 0-1, default 0.5
+}
+
+export type HeroStatsContent = {
+  title: string
+  subtitle?: string
+  buttonText?: string
+  buttonUrl?: string
+  stats: {
+    value: string
+    label: string
+  }[]
+}
+
+export type HeroFormContent = {
+  title: string
+  subtitle?: string
+  buttonText: string
+  placeholderText?: string
+  trustedBy?: {
+    label: string
+    logos?: { url: string; alt: string }[]
+  }
 }
 
 export type FeatureContent = {
@@ -90,7 +125,10 @@ export type AboutContent = {
 }
 
 export type SectionContent =
-  | HeroContent
+  | HeroSplitContent
+  | HeroBackgroundContent
+  | HeroStatsContent
+  | HeroFormContent
   | FeatureContent
   | TextContent
   | ThreeColumnTextContent

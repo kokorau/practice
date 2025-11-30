@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { HeroTemplate } from './HeroTemplate'
+import { HeroSplitTemplate } from './HeroSplitTemplate'
+import { HeroBackgroundTemplate } from './HeroBackgroundTemplate'
+import { HeroStatsTemplate } from './HeroStatsTemplate'
+import { HeroFormTemplate } from './HeroFormTemplate'
 import { FeatureTemplate } from './FeatureTemplate'
 import { TextTemplate } from './TextTemplate'
 import { ThreeColumnTextTemplate } from './ThreeColumnTextTemplate'
@@ -17,7 +20,10 @@ import {
   assertValidTemplate,
 } from './templateTestHelper'
 import type {
-  HeroContent,
+  HeroSplitContent,
+  HeroBackgroundContent,
+  HeroStatsContent,
+  HeroFormContent,
   FeatureContent,
   TextContent,
   ThreeColumnTextContent,
@@ -33,48 +39,245 @@ import type {
 
 const cssVars = createTestCssVars()
 
-describe('HeroTemplate', () => {
-  const content: HeroContent = {
-    title: 'Test Hero Title',
-    subtitle: 'Test subtitle text',
-    ctaText: 'Click Me',
+describe('HeroSplitTemplate', () => {
+  const content: HeroSplitContent = {
+    title: 'Split Hero Title',
+    subtitle: 'Split hero subtitle text',
+    buttonText: 'Get Started',
+    buttonUrl: '/start',
+    imageUrl: 'https://example.com/hero.jpg',
+    imageAlt: 'Hero image',
+    imagePosition: 'right',
   }
 
   it('renders valid section HTML', () => {
-    const html = HeroTemplate.render(content, cssVars)
+    const html = HeroSplitTemplate.render(content, cssVars)
     const result = validateTemplateOutput(html)
-
     expect(result.isValid).toBe(true)
     expect(result.hasSection).toBe(true)
-    expect(result.hasClosingTag).toBe(true)
   })
 
-  it('uses CSS variables', () => {
-    const html = HeroTemplate.render(content, cssVars)
-    expect(html).toMatch(/rgb\(var\(--color-primary\)\)/)
-    expect(html).toMatch(/rgb\(var\(--color-brand\)\)/)
+  it('uses 2-column grid layout', () => {
+    const html = HeroSplitTemplate.render(content, cssVars)
+    expect(html).toContain('grid-template-columns: repeat(2, 1fr)')
   })
 
-  it('renders title content', () => {
-    const html = HeroTemplate.render(content, cssVars)
+  it('has minimum height', () => {
+    const html = HeroSplitTemplate.render(content, cssVars)
+    expect(html).toContain('min-height: 600px')
+  })
+
+  it('renders image with full height', () => {
+    const html = HeroSplitTemplate.render(content, cssVars)
+    expect(html).toContain('src="https://example.com/hero.jpg"')
+    expect(html).toContain('object-fit: cover')
+  })
+
+  it('renders title and subtitle', () => {
+    const html = HeroSplitTemplate.render(content, cssVars)
     expect(html).toContain(content.title)
-  })
-
-  it('renders optional subtitle when provided', () => {
-    const html = HeroTemplate.render(content, cssVars)
     expect(html).toContain(content.subtitle)
   })
 
-  it('omits subtitle when not provided', () => {
-    const minimalContent: HeroContent = { title: 'Only Title' }
-    const html = HeroTemplate.render(minimalContent, cssVars)
-    expect(html).not.toContain('<p')
+  it('renders button when provided', () => {
+    const html = HeroSplitTemplate.render(content, cssVars)
+    expect(html).toContain('href="/start"')
+    expect(html).toContain(content.buttonText)
   })
 
-  it('renders CTA button when provided', () => {
-    const html = HeroTemplate.render(content, cssVars)
+  it('supports left image position', () => {
+    const leftContent: HeroSplitContent = { ...content, imagePosition: 'left' }
+    const html = HeroSplitTemplate.render(leftContent, cssVars)
+    expect(html).toContain(content.title)
+    expect(html).toContain(content.imageUrl)
+  })
+})
+
+describe('HeroBackgroundTemplate', () => {
+  const content: HeroBackgroundContent = {
+    title: 'Background Hero Title',
+    subtitle: 'Hero with background image',
+    buttonText: 'Learn More',
+    buttonUrl: '/learn',
+    backgroundUrl: 'https://example.com/bg.jpg',
+    overlayOpacity: 0.6,
+  }
+
+  it('renders valid section HTML', () => {
+    const html = HeroBackgroundTemplate.render(content, cssVars)
+    const result = validateTemplateOutput(html)
+    expect(result.isValid).toBe(true)
+  })
+
+  it('has background image', () => {
+    const html = HeroBackgroundTemplate.render(content, cssVars)
+    expect(html).toContain("url('https://example.com/bg.jpg')")
+    expect(html).toContain('background-size: cover')
+  })
+
+  it('has overlay with specified opacity', () => {
+    const html = HeroBackgroundTemplate.render(content, cssVars)
+    expect(html).toContain('opacity: 0.6')
+  })
+
+  it('uses default overlay opacity of 0.5', () => {
+    const minimalContent: HeroBackgroundContent = {
+      title: 'Title',
+      backgroundUrl: 'https://example.com/bg.jpg',
+    }
+    const html = HeroBackgroundTemplate.render(minimalContent, cssVars)
+    expect(html).toContain('opacity: 0.5')
+  })
+
+  it('has minimum height', () => {
+    const html = HeroBackgroundTemplate.render(content, cssVars)
+    expect(html).toContain('min-height: 600px')
+  })
+
+  it('renders title, subtitle, and button', () => {
+    const html = HeroBackgroundTemplate.render(content, cssVars)
+    expect(html).toContain(content.title)
+    expect(html).toContain(content.subtitle)
+    expect(html).toContain(content.buttonText)
+  })
+})
+
+describe('HeroStatsTemplate', () => {
+  const content: HeroStatsContent = {
+    title: 'Stats Hero Title',
+    subtitle: 'We deliver results',
+    buttonText: 'See Results',
+    buttonUrl: '/results',
+    stats: [
+      { value: '100+', label: 'Projects' },
+      { value: '50K', label: 'Users' },
+      { value: '99%', label: 'Satisfaction' },
+    ],
+  }
+
+  it('renders valid section HTML', () => {
+    const html = HeroStatsTemplate.render(content, cssVars)
+    const result = validateTemplateOutput(html)
+    expect(result.isValid).toBe(true)
+  })
+
+  it('renders all stats', () => {
+    const html = HeroStatsTemplate.render(content, cssVars)
+    expect(html).toContain('100+')
+    expect(html).toContain('Projects')
+    expect(html).toContain('50K')
+    expect(html).toContain('Users')
+    expect(html).toContain('99%')
+    expect(html).toContain('Satisfaction')
+  })
+
+  it('uses grid layout for stats', () => {
+    const html = HeroStatsTemplate.render(content, cssVars)
+    expect(html).toContain('grid-template-columns: repeat(3, 1fr)')
+  })
+
+  it('limits stats to 4 items', () => {
+    const manyStats: HeroStatsContent = {
+      ...content,
+      stats: [
+        { value: '1', label: 'One' },
+        { value: '2', label: 'Two' },
+        { value: '3', label: 'Three' },
+        { value: '4', label: 'Four' },
+        { value: '5', label: 'Five' },
+      ],
+    }
+    const html = HeroStatsTemplate.render(manyStats, cssVars)
+    expect(html).toContain('1')
+    expect(html).toContain('4')
+    expect(html).not.toContain('>Five<')
+  })
+
+  it('renders title and button', () => {
+    const html = HeroStatsTemplate.render(content, cssVars)
+    expect(html).toContain(content.title)
+    expect(html).toContain(content.buttonText)
+  })
+
+  it('uses brand color for stat values', () => {
+    const html = HeroStatsTemplate.render(content, cssVars)
+    expect(html).toMatch(/rgb\(var\(--color-brand\)\)/)
+  })
+})
+
+describe('HeroFormTemplate', () => {
+  const content: HeroFormContent = {
+    title: 'Form Hero Title',
+    subtitle: 'Sign up for updates',
+    buttonText: 'Subscribe',
+    placeholderText: 'Enter your email',
+    trustedBy: {
+      label: 'Trusted by',
+      logos: [
+        { url: 'https://example.com/logo1.png', alt: 'Company 1' },
+        { url: 'https://example.com/logo2.png', alt: 'Company 2' },
+      ],
+    },
+  }
+
+  it('renders valid section HTML', () => {
+    const html = HeroFormTemplate.render(content, cssVars)
+    const result = validateTemplateOutput(html)
+    expect(result.isValid).toBe(true)
+  })
+
+  it('renders email input with placeholder', () => {
+    const html = HeroFormTemplate.render(content, cssVars)
+    expect(html).toContain('type="email"')
+    expect(html).toContain('placeholder="Enter your email"')
+  })
+
+  it('renders submit button', () => {
+    const html = HeroFormTemplate.render(content, cssVars)
     expect(html).toContain('<button')
-    expect(html).toContain(content.ctaText)
+    expect(html).toContain(content.buttonText)
+  })
+
+  it('renders trusted by section', () => {
+    const html = HeroFormTemplate.render(content, cssVars)
+    expect(html).toContain('Trusted by')
+    expect(html).toContain('https://example.com/logo1.png')
+    expect(html).toContain('https://example.com/logo2.png')
+  })
+
+  it('limits logos to 5', () => {
+    const manyLogos: HeroFormContent = {
+      ...content,
+      trustedBy: {
+        label: 'Trusted by',
+        logos: [
+          { url: 'https://example.com/1.png', alt: '1' },
+          { url: 'https://example.com/2.png', alt: '2' },
+          { url: 'https://example.com/3.png', alt: '3' },
+          { url: 'https://example.com/4.png', alt: '4' },
+          { url: 'https://example.com/5.png', alt: '5' },
+          { url: 'https://example.com/6.png', alt: '6' },
+        ],
+      },
+    }
+    const html = HeroFormTemplate.render(manyLogos, cssVars)
+    expect(html).toContain('https://example.com/5.png')
+    expect(html).not.toContain('https://example.com/6.png')
+  })
+
+  it('uses 2-column grid layout', () => {
+    const html = HeroFormTemplate.render(content, cssVars)
+    expect(html).toContain('grid-template-columns: 1fr 1fr')
+  })
+
+  it('renders without trusted by section', () => {
+    const minimalContent: HeroFormContent = {
+      title: 'Title',
+      buttonText: 'Submit',
+    }
+    const html = HeroFormTemplate.render(minimalContent, cssVars)
+    expect(html).toContain('Title')
+    expect(html).not.toContain('Trusted by')
   })
 })
 
@@ -425,7 +628,10 @@ describe('All Templates', () => {
     const templates = getAllTemplates()
 
     const sampleContents: Record<string, SectionContent> = {
-      hero: { title: 'Hero' } as HeroContent,
+      'hero-split': { title: 'Split', imageUrl: 'https://example.com/img.jpg' } as HeroSplitContent,
+      'hero-background': { title: 'Background', backgroundUrl: 'https://example.com/bg.jpg' } as HeroBackgroundContent,
+      'hero-stats': { title: 'Stats', stats: [{ value: '100', label: 'Users' }] } as HeroStatsContent,
+      'hero-form': { title: 'Form', buttonText: 'Submit' } as HeroFormContent,
       feature: { title: 'Features', description: 'Desc', items: [{ title: 'Item', description: 'Desc' }] } as FeatureContent,
       text: { body: 'Text content' } as TextContent,
       'three-column-text': { columns: [{ title: 'Col', text: 'Text' }] } as ThreeColumnTextContent,

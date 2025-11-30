@@ -6,7 +6,6 @@ import { getTemplate } from '../../Infra/templates'
 
 // Re-export types from SectionTemplate for backward compatibility
 export type {
-  HeroContent,
   FeatureContent,
   TextContent,
   SectionContent,

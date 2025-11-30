@@ -1,6 +1,9 @@
 import type { SectionType } from '../../Domain/ValueObject/Section'
 import type { SectionTemplate } from '../../Domain/ValueObject/SectionTemplate'
-import { HeroTemplate } from './HeroTemplate'
+import { HeroSplitTemplate } from './HeroSplitTemplate'
+import { HeroBackgroundTemplate } from './HeroBackgroundTemplate'
+import { HeroStatsTemplate } from './HeroStatsTemplate'
+import { HeroFormTemplate } from './HeroFormTemplate'
 import { FeatureTemplate } from './FeatureTemplate'
 import { TextTemplate } from './TextTemplate'
 import { ThreeColumnTextTemplate } from './ThreeColumnTextTemplate'
@@ -13,7 +16,10 @@ import { FooterTemplate } from './FooterTemplate'
 import { AboutTemplate } from './AboutTemplate'
 
 const templates: Record<SectionType, SectionTemplate> = {
-  hero: HeroTemplate,
+  'hero-split': HeroSplitTemplate,
+  'hero-background': HeroBackgroundTemplate,
+  'hero-stats': HeroStatsTemplate,
+  'hero-form': HeroFormTemplate,
   feature: FeatureTemplate,
   text: TextTemplate,
   gallery: GalleryTemplate,
@@ -32,7 +38,10 @@ export const getTemplate = (type: SectionType): SectionTemplate => {
 
 export const getAllTemplates = (): SectionTemplate[] => {
   return [
-    HeroTemplate,
+    HeroSplitTemplate,
+    HeroBackgroundTemplate,
+    HeroStatsTemplate,
+    HeroFormTemplate,
     FeatureTemplate,
     TextTemplate,
     ThreeColumnTextTemplate,
@@ -47,7 +56,10 @@ export const getAllTemplates = (): SectionTemplate[] => {
 }
 
 export {
-  HeroTemplate,
+  HeroSplitTemplate,
+  HeroBackgroundTemplate,
+  HeroStatsTemplate,
+  HeroFormTemplate,
   FeatureTemplate,
   TextTemplate,
   ThreeColumnTextTemplate,

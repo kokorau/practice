@@ -182,7 +182,10 @@
 import { ref, reactive, computed } from 'vue'
 import type { Page, SectionType, PageContents } from '../modules/Section/Domain/ValueObject'
 import type {
-  HeroContent,
+  HeroSplitContent,
+  HeroBackgroundContent,
+  HeroStatsContent,
+  HeroFormContent,
   FeatureContent,
   TextContent,
   ThreeColumnTextContent,
@@ -221,7 +224,7 @@ const page = reactive<Page>({
   },
   sections: [
     { id: 'header-1', type: 'header' },
-    { id: 'hero-1', type: 'hero' },
+    { id: 'hero-split-1', type: 'hero-split' },
     { id: 'about-1', type: 'about' },
     { id: 'feature-card-1', type: 'feature-card' },
     { id: 'image-text-1', type: 'image-text' },
@@ -233,7 +236,10 @@ const page = reactive<Page>({
 
 const sectionTypes: { id: SectionType; label: string }[] = [
   { id: 'header', label: 'Header' },
-  { id: 'hero', label: 'Hero' },
+  { id: 'hero-split', label: 'Hero Split' },
+  { id: 'hero-background', label: 'Hero Background' },
+  { id: 'hero-stats', label: 'Hero Stats' },
+  { id: 'hero-form', label: 'Hero Form' },
   { id: 'about', label: 'About' },
   { id: 'three-column-text', label: '3 Column Text' },
   { id: 'image-text', label: 'Image + Text' },
@@ -336,27 +342,8 @@ const setSectionType = (type: SectionType) => {
   }
 }
 
-// Sample contents
-const contents: PageContents = {
-  'hero-1': {
-    title: 'Build Something Amazing',
-    subtitle: 'Create beautiful, responsive websites with our powerful design system.',
-    ctaText: 'Get Started',
-  } as HeroContent,
-  'feature-1': {
-    title: 'Features',
-    description: 'Everything you need to build modern web applications.',
-    items: [
-      { title: 'Fast', description: 'Optimized for speed and performance.' },
-      { title: 'Flexible', description: 'Customize everything to your needs.' },
-      { title: 'Beautiful', description: 'Stunning designs out of the box.' },
-    ],
-  } as FeatureContent,
-  'text-1': {
-    title: 'About Us',
-    body: 'We are a team of passionate developers and designers dedicated to creating the best possible experience for our users.',
-  } as TextContent,
-}
+// Sample contents (override defaults if needed)
+const contents: PageContents = {}
 
 const getDefaultContent = (type: SectionType): SectionContent => {
   switch (type) {
@@ -369,12 +356,53 @@ const getDefaultContent = (type: SectionType): SectionContent => {
           { label: 'Contact', url: '#contact' },
         ],
       } as HeaderContent
-    case 'hero':
+    case 'hero-split':
       return {
-        title: 'Build Something Amazing',
-        subtitle: 'Create beautiful, responsive websites with our powerful design system.',
-        ctaText: 'Get Started',
-      } as HeroContent
+        title: 'Transform Your Business',
+        subtitle: 'Powerful tools and beautiful design to help you succeed in the digital age.',
+        buttonText: 'Get Started',
+        buttonUrl: '#',
+        imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800',
+        imageAlt: 'Team working together',
+        imagePosition: 'right',
+      } as HeroSplitContent
+    case 'hero-background':
+      return {
+        title: 'Discover the Future',
+        subtitle: 'Experience innovation like never before with our cutting-edge solutions.',
+        buttonText: 'Explore Now',
+        buttonUrl: '#',
+        backgroundUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1600',
+        overlayOpacity: 0.5,
+      } as HeroBackgroundContent
+    case 'hero-stats':
+      return {
+        title: 'Trusted by Thousands',
+        subtitle: 'Our platform has helped businesses of all sizes achieve their goals.',
+        buttonText: 'View Success Stories',
+        buttonUrl: '#',
+        stats: [
+          { value: '10K+', label: 'Active Users' },
+          { value: '99.9%', label: 'Uptime' },
+          { value: '24/7', label: 'Support' },
+          { value: '50+', label: 'Countries' },
+        ],
+      } as HeroStatsContent
+    case 'hero-form':
+      return {
+        title: 'Stay Ahead of the Curve',
+        subtitle: 'Get exclusive insights and updates delivered straight to your inbox.',
+        buttonText: 'Subscribe',
+        placeholderText: 'Enter your email',
+        trustedBy: {
+          label: 'Trusted by leading companies',
+          logos: [
+            { url: 'https://via.placeholder.com/100x30?text=Acme', alt: 'Acme Inc' },
+            { url: 'https://via.placeholder.com/100x30?text=TechCo', alt: 'TechCo' },
+            { url: 'https://via.placeholder.com/100x30?text=StartUp', alt: 'StartUp' },
+          ],
+        },
+      } as HeroFormContent
     case 'about':
       return {
         title: 'About Us',

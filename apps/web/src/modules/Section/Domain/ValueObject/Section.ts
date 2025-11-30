@@ -1,7 +1,10 @@
 import type { Filter } from '../../../Filter/Domain'
 
 export type SectionType =
-  | 'hero'
+  | 'hero-split'
+  | 'hero-background'
+  | 'hero-stats'
+  | 'hero-form'
   | 'feature'
   | 'gallery'
   | 'text'
