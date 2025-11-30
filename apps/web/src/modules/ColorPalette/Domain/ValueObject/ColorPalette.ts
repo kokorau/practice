@@ -1,4 +1,7 @@
 import type { Srgb } from '../../../Color/Domain/ValueObject'
+import { $Srgb } from '../../../Color/Domain/ValueObject'
+import type { Lut1D, Lut3D } from '../../../Filter/Domain'
+import { $Lut3D } from '../../../Filter/Domain'
 
 /**
  * シンプルなカラーパレット
@@ -61,6 +64,41 @@ export const $ColorPalette = {
     return {
       ...defaultPalette,
       ...params,
+    }
+  },
+
+  /**
+   * LUTを使用してSrgb色を変換
+   */
+  applyLutToColor: (color: Srgb, lut: Lut1D | Lut3D): Srgb => {
+    if ($Lut3D.is(lut)) {
+      const [r, g, b] = $Lut3D.lookup(lut, color.r, color.g, color.b)
+      return $Srgb.create(r, g, b)
+    } else {
+      // 1D LUT: 0-255インデックスでルックアップ
+      const rgb255 = $Srgb.to255(color)
+      const r = lut.r[rgb255.r]!
+      const g = lut.g[rgb255.g]!
+      const b = lut.b[rgb255.b]!
+      return $Srgb.create(r, g, b)
+    }
+  },
+
+  /**
+   * ColorPalette全体にLUTを適用
+   */
+  applyLut: (palette: ColorPalette, lut: Lut1D | Lut3D): ColorPalette => {
+    const applyColor = (color: Srgb) => $ColorPalette.applyLutToColor(color, lut)
+    return {
+      ...palette,
+      base: applyColor(palette.base),
+      onBase: applyColor(palette.onBase),
+      primary: applyColor(palette.primary),
+      onPrimary: applyColor(palette.onPrimary),
+      secondary: applyColor(palette.secondary),
+      onSecondary: applyColor(palette.onSecondary),
+      brand: applyColor(palette.brand),
+      onBrand: applyColor(palette.onBrand),
     }
   },
 }

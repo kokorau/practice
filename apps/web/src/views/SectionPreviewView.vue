@@ -1,7 +1,7 @@
 <template>
   <div class="grid grid-cols-[260px_1fr] h-screen bg-white">
     <!-- Left Panel -->
-    <div class="border-r border-black/10 flex flex-col">
+    <div class="border-r border-black/10 flex flex-col h-screen overflow-hidden">
       <!-- Header -->
       <div class="p-4 border-b border-black/10">
         <h2
@@ -37,6 +37,13 @@
           >
             <span class="text-sm">Mode</span>
             <span class="text-xs text-black/40">{{ page.theme.isDark ? 'Dark' : 'Light' }}</span>
+          </li>
+          <li
+            class="flex justify-between items-center px-3 py-2.5 text-black cursor-pointer hover:bg-black/5"
+            @click="currentView = 'filter'"
+          >
+            <span class="text-sm">Filter</span>
+            <span class="text-xs text-black/40">{{ currentFilterLabel }}</span>
           </li>
         </ul>
 
@@ -116,6 +123,26 @@
             <span>Dark</span>
           </li>
         </ul>
+
+        <!-- Filter -->
+        <ul v-if="currentView === 'filter'">
+          <li
+            class="flex items-center gap-2 px-3 py-2 text-sm text-black cursor-pointer hover:bg-black/5"
+            @click="page.theme.filterId = undefined"
+          >
+            <span class="w-4 text-center">{{ !page.theme.filterId ? '●' : '' }}</span>
+            <span>None</span>
+          </li>
+          <li
+            v-for="preset in filterPresets"
+            :key="preset.id"
+            class="flex items-center gap-2 px-3 py-2 text-sm text-black cursor-pointer hover:bg-black/5"
+            @click="page.theme.filterId = preset.id"
+          >
+            <span class="w-4 text-center">{{ page.theme.filterId === preset.id ? '●' : '' }}</span>
+            <span>{{ preset.name }}</span>
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -138,19 +165,25 @@ import { ref, reactive, computed } from 'vue'
 import type { Page, SectionType, HeroContent, FeatureContent, TextContent, PageContents } from '../modules/Section/Domain/ValueObject'
 import { renderPage } from '../modules/Section/Domain/ValueObject'
 import type { PalettePreset } from '../modules/ColorPalette/Domain/ValueObject'
-import { generateOklchPalette, PalettePresets } from '../modules/ColorPalette/Domain/ValueObject'
+import { generateOklchPalette, PalettePresets, $ColorPalette } from '../modules/ColorPalette/Domain/ValueObject'
 import type { Srgb } from '../modules/Color/Domain/ValueObject'
+import { $Filter, $Preset } from '../modules/Filter/Domain'
+import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 
-type ViewId = 'home' | 'sections' | 'edit-section' | 'palette' | 'mode'
+type ViewId = 'home' | 'sections' | 'edit-section' | 'palette' | 'mode' | 'filter'
 
 const currentView = ref<ViewId>('home')
 const editingIndex = ref<number | null>(null)
+
+// Filter presets
+const filterPresets = getPresets()
 
 const page = reactive<Page>({
   id: 'preview-page',
   theme: {
     paletteId: 'ocean',
     isDark: false,
+    filterId: undefined,
   },
   sections: [
     { id: 'hero-1', type: 'hero' },
@@ -172,6 +205,12 @@ const currentPresetLabel = computed(() =>
   PalettePresets.find(p => p.id === page.theme.paletteId)?.name ?? ''
 )
 
+const currentFilterLabel = computed(() =>
+  page.theme.filterId
+    ? filterPresets.find(p => p.id === page.theme.filterId)?.name ?? 'Custom'
+    : 'None'
+)
+
 const currentViewTitle = computed(() => {
   switch (currentView.value) {
     case 'home': return 'Page Preview'
@@ -179,6 +218,7 @@ const currentViewTitle = computed(() => {
     case 'edit-section': return 'Section Type'
     case 'palette': return 'Palette'
     case 'mode': return 'Mode'
+    case 'filter': return 'Filter'
   }
 })
 
@@ -198,9 +238,21 @@ const getPresetColors = (preset: PalettePreset) => {
   ]
 }
 
-const palette = computed(() => {
+const basePalette = computed(() => {
   const preset = presets.find(p => p.id === page.theme.paletteId) ?? presets[0]!
   return generateOklchPalette({ ...preset.config, isDark: page.theme.isDark })
+})
+
+const palette = computed(() => {
+  const base = basePalette.value
+  if (!page.theme.filterId) return base
+
+  const filterPreset = filterPresets.find(p => p.id === page.theme.filterId)
+  if (!filterPreset) return base
+
+  // Use 3D LUT if available, otherwise generate 1D LUT from filter
+  const lut = filterPreset.lut3d ?? $Filter.toLut($Preset.toFilter(filterPreset))
+  return $ColorPalette.applyLut(base, lut)
 })
 
 // Section management
