@@ -173,10 +173,6 @@
         <div class="min-h-[200px]" v-html="renderedHtml"></div>
       </div>
 
-      <details class="bg-black rounded-lg">
-        <summary class="px-4 py-2.5 text-xs text-white/60 cursor-pointer">HTML</summary>
-        <pre class="px-4 pb-4 overflow-x-auto text-xs leading-relaxed"><code class="text-white/80 whitespace-pre-wrap break-all">{{ renderedHtml }}</code></pre>
-      </details>
     </div>
   </div>
 </template>
