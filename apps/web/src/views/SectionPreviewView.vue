@@ -236,8 +236,9 @@ const page = reactive<Page>({
     { id: 'about-1', type: 'about' },
     { id: 'feature-card-1', type: 'feature-card' },
     { id: 'image-text-1', type: 'image-text' },
-    { id: 'gallery-1', type: 'gallery' },
+    { id: 'feature-1', type: 'feature' },
     { id: 'cta-1', type: 'cta' },
+    { id: 'gallery-1', type: 'gallery' },
     { id: 'footer-1', type: 'footer' },
   ],
 })
