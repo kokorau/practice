@@ -1,5 +1,5 @@
 import type { ColorPalette } from '../../../ColorPalette/Domain/ValueObject'
-import type { Section, SectionType } from './Section'
+import type { Section, SectionType, Page } from './Section'
 import { generateColorCssVariables, cssVariablesToStyleString } from './ColorCssVariables'
 
 export type HeroContent = {
@@ -82,4 +82,24 @@ export const renderSection = (
   const cssVars = cssVariablesToStyleString(generateColorCssVariables(palette))
   const renderer = renderers[section.type]
   return renderer(content, cssVars)
+}
+
+export type PageContents = Record<string, SectionContent>
+
+export const renderPage = (
+  page: Page,
+  palette: ColorPalette,
+  contents: PageContents
+): string => {
+  const cssVars = cssVariablesToStyleString(generateColorCssVariables(palette))
+  const sectionsHtml = page.sections
+    .map(section => {
+      const content = contents[section.id]
+      if (!content) return ''
+      const renderer = renderers[section.type]
+      return renderer(content, cssVars)
+    })
+    .join('\n')
+
+  return `<div class="page" style="${cssVars}">\n${sectionsHtml}\n</div>`
 }

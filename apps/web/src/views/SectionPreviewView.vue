@@ -6,50 +6,86 @@
       <div class="p-4 border-b border-black/10">
         <h2
           class="text-sm font-medium text-black"
-          :class="currentPage !== 'home' ? 'cursor-pointer hover:opacity-60' : ''"
-          @click="currentPage !== 'home' && (currentPage = 'home')"
+          :class="currentView !== 'home' ? 'cursor-pointer hover:opacity-60' : ''"
+          @click="currentView !== 'home' && (currentView = 'home')"
         >
-          <span v-if="currentPage !== 'home'">← </span>{{ currentPageTitle }}
+          <span v-if="currentView !== 'home'">← </span>{{ currentViewTitle }}
         </h2>
       </div>
 
-      <!-- Page Content -->
+      <!-- View Content -->
       <div class="flex-1 overflow-y-auto p-2">
         <!-- Home -->
-        <ul v-if="currentPage === 'home'">
+        <ul v-if="currentView === 'home'">
           <li
-            v-for="page in pages"
-            :key="page.id"
             class="flex justify-between items-center px-3 py-2.5 text-black cursor-pointer hover:bg-black/5"
-            @click="currentPage = page.id"
+            @click="currentView = 'sections'"
           >
-            <span class="text-sm">{{ page.label }}</span>
-            <span class="text-xs text-black/40">{{ page.value }}</span>
+            <span class="text-sm">Sections</span>
+            <span class="text-xs text-black/40">{{ page.sections.length }}</span>
+          </li>
+          <li
+            class="flex justify-between items-center px-3 py-2.5 text-black cursor-pointer hover:bg-black/5"
+            @click="currentView = 'palette'"
+          >
+            <span class="text-sm">Palette</span>
+            <span class="text-xs text-black/40">{{ currentPresetLabel }}</span>
+          </li>
+          <li
+            class="flex justify-between items-center px-3 py-2.5 text-black cursor-pointer hover:bg-black/5"
+            @click="currentView = 'mode'"
+          >
+            <span class="text-sm">Mode</span>
+            <span class="text-xs text-black/40">{{ page.theme.isDark ? 'Dark' : 'Light' }}</span>
           </li>
         </ul>
 
-        <!-- Section Type -->
-        <ul v-if="currentPage === 'section'">
+        <!-- Sections List -->
+        <div v-if="currentView === 'sections'">
+          <ul>
+            <li
+              v-for="(section, index) in page.sections"
+              :key="section.id"
+              class="flex items-center gap-2 px-3 py-2 text-sm text-black cursor-pointer hover:bg-black/5"
+              @click="editSection(index)"
+            >
+              <span class="flex-1">{{ getSectionLabel(section.type) }}</span>
+              <span
+                class="text-black/30 hover:text-black"
+                @click.stop="removeSection(index)"
+              >×</span>
+            </li>
+          </ul>
+          <div
+            class="px-3 py-2 text-sm text-black/50 cursor-pointer hover:text-black hover:bg-black/5"
+            @click="addSection"
+          >
+            + Add Section
+          </div>
+        </div>
+
+        <!-- Edit Section -->
+        <ul v-if="currentView === 'edit-section' && editingIndex !== null">
           <li
             v-for="type in sectionTypes"
             :key="type.id"
             class="flex items-center gap-2 px-3 py-2 text-sm text-black cursor-pointer hover:bg-black/5"
-            @click="sectionType = type.id"
+            @click="setSectionType(type.id)"
           >
-            <span class="w-4 text-center">{{ sectionType === type.id ? '●' : '' }}</span>
+            <span class="w-4 text-center">{{ page.sections[editingIndex]?.type === type.id ? '●' : '' }}</span>
             <span>{{ type.label }}</span>
           </li>
         </ul>
 
         <!-- Palette -->
-        <ul v-if="currentPage === 'palette'">
+        <ul v-if="currentView === 'palette'">
           <li
             v-for="preset in presets"
             :key="preset.id"
             class="flex items-center gap-2 px-3 py-2 text-black cursor-pointer hover:bg-black/5"
-            @click="selectedPresetId = preset.id"
+            @click="page.theme.paletteId = preset.id"
           >
-            <span class="w-4 text-center text-sm">{{ selectedPresetId === preset.id ? '●' : '' }}</span>
+            <span class="w-4 text-center text-sm">{{ page.theme.paletteId === preset.id ? '●' : '' }}</span>
             <div class="flex">
               <span
                 v-for="(color, i) in getPresetColors(preset)"
@@ -64,19 +100,19 @@
         </ul>
 
         <!-- Mode -->
-        <ul v-if="currentPage === 'mode'">
+        <ul v-if="currentView === 'mode'">
           <li
             class="flex items-center gap-2 px-3 py-2 text-sm text-black cursor-pointer hover:bg-black/5"
-            @click="isDark = false"
+            @click="page.theme.isDark = false"
           >
-            <span class="w-4 text-center">{{ !isDark ? '●' : '' }}</span>
+            <span class="w-4 text-center">{{ !page.theme.isDark ? '●' : '' }}</span>
             <span>Light</span>
           </li>
           <li
             class="flex items-center gap-2 px-3 py-2 text-sm text-black cursor-pointer hover:bg-black/5"
-            @click="isDark = true"
+            @click="page.theme.isDark = true"
           >
-            <span class="w-4 text-center">{{ isDark ? '●' : '' }}</span>
+            <span class="w-4 text-center">{{ page.theme.isDark ? '●' : '' }}</span>
             <span>Dark</span>
           </li>
         </ul>
@@ -98,19 +134,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { Section, SectionType, HeroContent, FeatureContent, TextContent } from '../modules/Section/Domain/ValueObject'
-import { renderSection } from '../modules/Section/Domain/ValueObject'
+import { ref, reactive, computed } from 'vue'
+import type { Page, SectionType, HeroContent, FeatureContent, TextContent, PageContents } from '../modules/Section/Domain/ValueObject'
+import { renderPage } from '../modules/Section/Domain/ValueObject'
 import type { PalettePreset } from '../modules/ColorPalette/Domain/ValueObject'
 import { generateOklchPalette, PalettePresets } from '../modules/ColorPalette/Domain/ValueObject'
 import type { Srgb } from '../modules/Color/Domain/ValueObject'
 
-type PageId = 'home' | 'section' | 'palette' | 'mode'
+type ViewId = 'home' | 'sections' | 'edit-section' | 'palette' | 'mode'
 
-const currentPage = ref<PageId>('home')
-const sectionType = ref<SectionType>('hero')
-const selectedPresetId = ref('ocean')
-const isDark = ref(false)
+const currentView = ref<ViewId>('home')
+const editingIndex = ref<number | null>(null)
+
+const page = reactive<Page>({
+  id: 'preview-page',
+  theme: {
+    paletteId: 'ocean',
+    isDark: false,
+  },
+  sections: [
+    { id: 'hero-1', type: 'hero' },
+    { id: 'feature-1', type: 'feature' },
+    { id: 'text-1', type: 'text' },
+  ],
+})
 
 const sectionTypes = [
   { id: 'hero' as SectionType, label: 'Hero' },
@@ -118,23 +165,21 @@ const sectionTypes = [
   { id: 'text' as SectionType, label: 'Text' },
 ]
 
-const currentSectionLabel = computed(() =>
-  sectionTypes.find(t => t.id === sectionType.value)?.label ?? ''
-)
+const getSectionLabel = (type: SectionType) =>
+  sectionTypes.find(t => t.id === type)?.label ?? type
 
 const currentPresetLabel = computed(() =>
-  PalettePresets.find(p => p.id === selectedPresetId.value)?.name ?? ''
+  PalettePresets.find(p => p.id === page.theme.paletteId)?.name ?? ''
 )
 
-const pages = computed(() => [
-  { id: 'section' as PageId, label: 'Section', value: currentSectionLabel.value },
-  { id: 'palette' as PageId, label: 'Palette', value: currentPresetLabel.value },
-  { id: 'mode' as PageId, label: 'Mode', value: isDark.value ? 'Dark' : 'Light' },
-])
-
-const currentPageTitle = computed(() => {
-  if (currentPage.value === 'home') return 'Section Preview'
-  return pages.value.find(p => p.id === currentPage.value)?.label ?? ''
+const currentViewTitle = computed(() => {
+  switch (currentView.value) {
+    case 'home': return 'Page Preview'
+    case 'sections': return 'Sections'
+    case 'edit-section': return 'Section Type'
+    case 'palette': return 'Palette'
+    case 'mode': return 'Mode'
+  }
 })
 
 const presets = PalettePresets
@@ -144,7 +189,7 @@ const srgbToCss = (color: Srgb): string => {
 }
 
 const getPresetColors = (preset: PalettePreset) => {
-  const p = generateOklchPalette({ ...preset.config, isDark: isDark.value })
+  const p = generateOklchPalette({ ...preset.config, isDark: page.theme.isDark })
   return [
     { name: 'base', css: srgbToCss(p.base) },
     { name: 'brand', css: srgbToCss(p.brand) },
@@ -154,51 +199,79 @@ const getPresetColors = (preset: PalettePreset) => {
 }
 
 const palette = computed(() => {
-  const preset = presets.find(p => p.id === selectedPresetId.value) ?? presets[0]!
-  return generateOklchPalette({ ...preset.config, isDark: isDark.value })
+  const preset = presets.find(p => p.id === page.theme.paletteId) ?? presets[0]!
+  return generateOklchPalette({ ...preset.config, isDark: page.theme.isDark })
 })
 
-const section = computed<Section>(() => ({
-  id: 'preview',
-  type: sectionType.value,
-}))
-
-const heroContent: HeroContent = {
-  title: 'Build Something Amazing',
-  subtitle: 'Create beautiful, responsive websites with our powerful design system.',
-  ctaText: 'Get Started',
+// Section management
+const addSection = () => {
+  const id = `section-${Date.now()}`
+  page.sections.push({ id, type: 'text' })
 }
 
-const featureContent: FeatureContent = {
-  title: 'Features',
-  description: 'Everything you need to build modern web applications.',
-  items: [
-    { title: 'Fast', description: 'Optimized for speed and performance.' },
-    { title: 'Flexible', description: 'Customize everything to your needs.' },
-    { title: 'Beautiful', description: 'Stunning designs out of the box.' },
-  ],
+const removeSection = (index: number) => {
+  page.sections.splice(index, 1)
 }
 
-const textContent: TextContent = {
-  title: 'About Us',
-  body: 'We are a team of passionate developers and designers dedicated to creating the best possible experience for our users. Our mission is to make web development accessible to everyone, regardless of their technical background.',
+const editSection = (index: number) => {
+  editingIndex.value = index
+  currentView.value = 'edit-section'
 }
 
-const content = computed(() => {
-  switch (sectionType.value) {
+const setSectionType = (type: SectionType) => {
+  const idx = editingIndex.value
+  if (idx !== null) {
+    const section = page.sections[idx]
+    if (section) {
+      section.type = type
+    }
+  }
+}
+
+// Sample contents
+const contents: PageContents = {
+  'hero-1': {
+    title: 'Build Something Amazing',
+    subtitle: 'Create beautiful, responsive websites with our powerful design system.',
+    ctaText: 'Get Started',
+  } as HeroContent,
+  'feature-1': {
+    title: 'Features',
+    description: 'Everything you need to build modern web applications.',
+    items: [
+      { title: 'Fast', description: 'Optimized for speed and performance.' },
+      { title: 'Flexible', description: 'Customize everything to your needs.' },
+      { title: 'Beautiful', description: 'Stunning designs out of the box.' },
+    ],
+  } as FeatureContent,
+  'text-1': {
+    title: 'About Us',
+    body: 'We are a team of passionate developers and designers dedicated to creating the best possible experience for our users.',
+  } as TextContent,
+}
+
+const getDefaultContent = (type: SectionType): HeroContent | FeatureContent | TextContent => {
+  switch (type) {
     case 'hero':
     case 'cta':
-      return heroContent
+      return { title: 'New Section', subtitle: 'Add your content here', ctaText: 'Click' }
     case 'feature':
     case 'gallery':
-      return featureContent
+      return { title: 'Features', description: 'Description', items: [{ title: 'Item', description: 'Details' }] }
     case 'text':
-      return textContent
+      return { title: 'Title', body: 'Your content here.' }
   }
+}
+
+const dynamicContents = computed<PageContents>(() => {
+  const result: PageContents = {}
+  for (const section of page.sections) {
+    result[section.id] = contents[section.id] ?? getDefaultContent(section.type)
+  }
+  return result
 })
 
 const renderedHtml = computed(() => {
-  return renderSection(section.value, palette.value, content.value)
+  return renderPage(page, palette.value, dynamicContents.value)
 })
 </script>
-
