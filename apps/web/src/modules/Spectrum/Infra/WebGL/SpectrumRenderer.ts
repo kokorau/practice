@@ -21,7 +21,7 @@ const VERTEX_SHADER = `
   }
 `
 
-// Fragment Shader - スペクトラムの描画
+// Fragment Shader - スペクトラムの描画（棒グラフ）
 const FRAGMENT_SHADER = `
   precision highp float;
 
@@ -64,19 +64,26 @@ const FRAGMENT_SHADER = `
     // 背景色（暗いグレー）
     vec3 bgColor = vec3(0.1, 0.1, 0.12);
 
-    // X座標から波長を計算
-    float wavelength = mix(u_minWavelength, u_maxWavelength, v_uv.x);
+    // 各サンプルの幅を計算
+    float barWidth = 1.0 / u_sampleCount;
+
+    // 現在のX座標がどのサンプルに属するかを計算
+    float sampleIndex = floor(v_uv.x * u_sampleCount);
+    float sampleCenter = (sampleIndex + 0.5) / u_sampleCount;
+
+    // サンプル中央の波長
+    float wavelength = mix(u_minWavelength, u_maxWavelength, sampleCenter);
 
     // 波長に対応する色
     vec3 spectrumColor = wavelengthToRgb(wavelength);
 
-    // スペクトラムの値をテクスチャから取得
-    float spectrumValue = texture2D(u_spectrumData, vec2(v_uv.x, 0.5)).r;
+    // このサンプルのスペクトラム値を取得（NEAREST的に）
+    float spectrumValue = texture2D(u_spectrumData, vec2(sampleCenter, 0.5)).r;
 
-    // 正規化（最大値で割る）
+    // 正規化
     float normalizedValue = u_maxValue > 0.0 ? spectrumValue / u_maxValue : 0.0;
 
-    // Y座標が正規化された値以下なら色を表示
+    // Y座標
     float y = v_uv.y;
 
     // グラフ領域（下から80%）
@@ -86,18 +93,19 @@ const FRAGMENT_SHADER = `
     vec3 color = bgColor;
 
     if (y < graphHeight) {
+      // 棒グラフ：Y座標が正規化された値以下なら色を表示
       if (graphY <= normalizedValue) {
-        // スペクトラム領域：波長に対応する色で塗りつぶし
-        color = spectrumColor * (0.6 + 0.4 * graphY);  // グラデーション効果
+        // 棒の色：波長に対応する色
+        color = spectrumColor;
       } else {
         // グラフ上部：薄い波長色の背景
-        color = mix(bgColor, spectrumColor, 0.1);
+        color = mix(bgColor, spectrumColor, 0.08);
       }
 
       // グリッドライン（10%ごと）
       float gridStep = 0.1;
       float gridLine = mod(graphY, gridStep);
-      if (gridLine < 0.003 || gridLine > gridStep - 0.003) {
+      if (gridLine < 0.002 || gridLine > gridStep - 0.002) {
         color = mix(color, vec3(0.3), 0.3);
       }
     } else {
@@ -208,8 +216,9 @@ export class SpectrumRenderer {
     gl.bindTexture(gl.TEXTURE_2D, texture)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    // 棒グラフなので補間なし（NEAREST）
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
     return texture
   }
 
