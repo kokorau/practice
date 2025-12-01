@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   createVisibleSpectrum,
   type Spectrum,
 } from '../modules/Spectrum/Domain/ValueObject/Spectrum'
+import { spectrumToSrgb, spectrumToXYZ } from '../modules/Spectrum/Domain/ValueObject/WavelengthToRgb'
 import { SpectrumRenderer } from '../modules/Spectrum/Infra/WebGL/SpectrumRenderer'
 
 const canvasRef = ref<HTMLCanvasElement>()
@@ -11,6 +12,17 @@ let renderer: SpectrumRenderer | null = null
 
 // サンプルスペクトラムを作成（テスト用）
 const spectrum = ref<Spectrum>(createVisibleSpectrum(81, 0))
+
+// スペクトラムから計算した色
+const computedColor = computed(() => spectrumToSrgb(spectrum.value))
+const computedXYZ = computed(() => spectrumToXYZ(spectrum.value))
+
+// RGB を CSS色文字列に変換
+const colorHex = computed(() => {
+  const { r, g, b } = computedColor.value
+  const toHex = (v: number) => Math.round(v * 255).toString(16).padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+})
 
 // スペクトラム編集用パラメータ
 const peakWavelength = ref(550) // nm
@@ -201,6 +213,35 @@ onUnmounted(() => {
                   class="w-full"
                 />
               </div>
+            </div>
+          </div>
+
+          <!-- 計算結果の色 -->
+          <div>
+            <h2 class="text-sm font-semibold text-gray-400 mb-2">Perceived Color</h2>
+            <div class="flex items-center gap-4">
+              <div
+                class="w-20 h-20 rounded-lg border border-gray-600 shadow-lg"
+                :style="{ backgroundColor: colorHex }"
+              />
+              <div class="text-xs space-y-1">
+                <p class="font-mono text-white">{{ colorHex }}</p>
+                <p class="text-gray-500">
+                  R: {{ (computedColor.r * 255).toFixed(0) }}
+                  G: {{ (computedColor.g * 255).toFixed(0) }}
+                  B: {{ (computedColor.b * 255).toFixed(0) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- XYZ値 -->
+          <div>
+            <h2 class="text-sm font-semibold text-gray-400 mb-2">CIE XYZ</h2>
+            <div class="text-xs text-gray-500 font-mono space-y-1">
+              <p>X: {{ computedXYZ.x.toFixed(4) }}</p>
+              <p>Y: {{ computedXYZ.y.toFixed(4) }}</p>
+              <p>Z: {{ computedXYZ.z.toFixed(4) }}</p>
             </div>
           </div>
 

@@ -4,6 +4,7 @@
  */
 
 import type { Srgb } from '../../../Color/Domain/ValueObject/Srgb'
+import type { Spectrum } from './Spectrum'
 
 /**
  * 波長（nm）からXYZ三刺激値を近似計算
@@ -105,4 +106,74 @@ export function generateSpectrumGradient(
   }
 
   return colors
+}
+
+/**
+ * スペクトラムをXYZ三刺激値に積分
+ * 各波長での強度と色マッチング関数の積を積分する
+ */
+export function spectrumToXYZ(spectrum: Spectrum): { x: number; y: number; z: number } {
+  let x = 0
+  let y = 0
+  let z = 0
+
+  const n = spectrum.wavelengths.length
+  if (n < 2) return { x: 0, y: 0, z: 0 }
+
+  // 台形積分
+  for (let i = 0; i < n - 1; i++) {
+    const wl0 = spectrum.wavelengths[i]!
+    const wl1 = spectrum.wavelengths[i + 1]!
+    const v0 = spectrum.values[i]!
+    const v1 = spectrum.values[i + 1]!
+
+    const xyz0 = wavelengthToXYZ(wl0)
+    const xyz1 = wavelengthToXYZ(wl1)
+
+    const dWl = wl1 - wl0
+
+    // 台形公式: (f(a) + f(b)) / 2 * (b - a)
+    x += ((v0 * xyz0.x + v1 * xyz1.x) / 2) * dWl
+    y += ((v0 * xyz0.y + v1 * xyz1.y) / 2) * dWl
+    z += ((v0 * xyz0.z + v1 * xyz1.z) / 2) * dWl
+  }
+
+  return { x, y, z }
+}
+
+/**
+ * スペクトラムをsRGB色に変換
+ * スペクトラムの強度分布を積分してXYZを求め、sRGBに変換する
+ * @param spectrum スペクトラム
+ * @param normalize trueの場合、最大輝度を1に正規化する（デフォルト: true）
+ * @returns sRGB色（0〜1の範囲にクランプ済み）
+ */
+export function spectrumToSrgb(spectrum: Spectrum, normalize: boolean = true): Srgb {
+  const xyz = spectrumToXYZ(spectrum)
+
+  // 正規化（Y=1 を白とする）
+  let { x, y, z } = xyz
+  if (normalize && y > 0) {
+    const scale = 1 / y
+    x *= scale
+    y *= scale
+    z *= scale
+  }
+
+  let rgb = xyzToSrgb({ x, y, z })
+
+  // ガマット外の色を扱う: 最大値でスケーリング
+  const maxComponent = Math.max(rgb.r, rgb.g, rgb.b)
+  if (maxComponent > 1) {
+    rgb.r /= maxComponent
+    rgb.g /= maxComponent
+    rgb.b /= maxComponent
+  }
+
+  // 負の値をクランプ
+  rgb.r = Math.max(0, rgb.r)
+  rgb.g = Math.max(0, rgb.g)
+  rgb.b = Math.max(0, rgb.b)
+
+  return rgb
 }
