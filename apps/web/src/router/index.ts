@@ -39,6 +39,11 @@ const router = createRouter({
       name: 'section-preview',
       component: () => import('../views/SectionPreviewView.vue'),
     },
+    {
+      path: '/spectrum',
+      name: 'spectrum',
+      component: () => import('../views/SpectrumView.vue'),
+    },
   ],
 })
 
