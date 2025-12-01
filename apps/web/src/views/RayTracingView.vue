@@ -6,6 +6,7 @@ import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let renderer: RayTracingRenderer | null = null
+let animationFrameId: number | null = null
 
 const WIDTH = 400
 const HEIGHT = 400
@@ -18,34 +19,54 @@ const camera = $Camera.createOrthographic(
   2
 )
 
-const scene = $Scene.add(
-  $Scene.create(),
-  $Light.createAmbient($Color.create(1.0, 1.0, 1.0), 0.2),
-  $Light.createDirectional($Vector3.create(1, -1, 2), $Color.create(1.0, 0.2, 0.1), 0.6),
-  $Light.createDirectional($Vector3.create(1, -2, 2), $Color.create(0.1, 0.3, 1.0), 0.6),
-  $SceneObject.createPlane(
-    $Geometry.createPlane($Vector3.create(0, 0, 5), $Vector3.create(0, 0, -1)),
-    $Color.fromRgb255(255, 255, 255)
-  ),
-  $SceneObject.createBox(
-    $Geometry.createBox(
-      $Vector3.create(0, 0.05, 4.5),
-      $Vector3.create(0.3, 0.3, 0.3),
-      $Vector3.create(Math.PI / 6, Math.PI / 4, 0)
+function createScene(rotationY: number) {
+  return $Scene.add(
+    $Scene.create(),
+    $Light.createAmbient($Color.create(1.0, 1.0, 1.0), 0.2),
+    $Light.createDirectional($Vector3.create(1, -1, 2), $Color.create(1.0, 0.2, 0.1), 0.6),
+    $Light.createDirectional($Vector3.create(1, -2, 2), $Color.create(0.1, 0.3, 1.0), 0.6),
+    $SceneObject.createPlane(
+      $Geometry.createPlane($Vector3.create(0, 0, 5), $Vector3.create(0, 0, -1)),
+      $Color.fromRgb255(255, 255, 255)
     ),
-    $Color.fromRgb255(100, 150, 255)
-  ),
-)
+    $SceneObject.createBox(
+      $Geometry.createBox(
+        $Vector3.create(0, 0.05, 4.5),
+        $Vector3.create(0.3, 0.3, 0.3),
+        $Vector3.create(Math.PI / 6, rotationY, 0)
+      ),
+      $Color.fromRgb255(100, 150, 255)
+    ),
+  )
+}
 
 onMounted(() => {
   const canvas = canvasRef.value
   if (!canvas) return
 
   renderer = new RayTracingRenderer(canvas)
-  renderer.render(scene, camera)
+
+  let startTime: number | null = null
+
+  function animate(timestamp: number) {
+    if (startTime === null) startTime = timestamp
+    const elapsed = timestamp - startTime
+
+    const rotationY = (elapsed / 1000) * Math.PI * 0.5
+    const scene = createScene(rotationY)
+    renderer?.render(scene, camera)
+
+    animationFrameId = requestAnimationFrame(animate)
+  }
+
+  animationFrameId = requestAnimationFrame(animate)
 })
 
 onUnmounted(() => {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
   renderer?.dispose()
   renderer = null
 })
