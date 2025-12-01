@@ -190,6 +190,20 @@ const applyEffects = (imageData: ImageData, vibrance: number, hueRotation: numbe
   }
 }
 
+// === ImageData 変換ヘルパー ===
+// postMessage で受け取った ImageData はプレーンオブジェクトになる場合がある
+const ensureImageData = (data: ImageData | { width: number; height: number; data: Uint8ClampedArray }): ImageData => {
+  if (data instanceof ImageData) {
+    return data
+  }
+  // プレーンオブジェクトから ImageData を再構築
+  return new ImageData(
+    new Uint8ClampedArray(data.data),
+    data.width,
+    data.height
+  )
+}
+
 // === ダウンサンプリング ===
 const downsample = (imageData: ImageData, scale: number): ImageData => {
   if (scale >= 1) return imageData
@@ -296,8 +310,11 @@ const inferRole = (color: RGB, weight: number): { role: ColorRole; confidence: n
 }
 
 self.onmessage = (e: MessageEvent<PaletteRequest>) => {
-  const { id, type, imageData, lut, vibrance, hueRotation, downsampleScale } = e.data
+  const { id, type, imageData: rawImageData, lut, vibrance, hueRotation, downsampleScale } = e.data
   if (type !== 'extract') return
+
+  // postMessage で受け取った ImageData はプレーンオブジェクトになる場合があるため変換
+  const imageData = ensureImageData(rawImageData)
 
   let processedData = imageData
 
@@ -318,12 +335,15 @@ self.onmessage = (e: MessageEvent<PaletteRequest>) => {
   const result = computeKmeans(processedData, K_CLUSTERS)
 
   // 5. プロファイル作成
+  // centroid は 0-255 だが、Srgb は 0-1 なので変換
   const profiles: ColorProfile[] = result.centroids.map((color, i) => {
     const weight = (result.counts[i] ?? 0) / result.totalSamples
     const metrics = computeSimpleMetrics()
+    // inferRole は元の 0-255 値で計算（HSL 変換時に /255 している）
     const { role, confidence } = inferRole(color, weight)
     return {
-      color,
+      // 0-1 に正規化
+      color: { r: color.r / 255, g: color.g / 255, b: color.b / 255 },
       weight,
       metrics,
       role,
