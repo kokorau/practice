@@ -2,13 +2,19 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   createVisibleSpectrum,
+  copySpectrum,
   type Spectrum,
 } from '../modules/Spectrum/Domain/ValueObject/Spectrum'
 import { spectrumToSrgb, spectrumToXYZ } from '../modules/Spectrum/Domain/ValueObject/WavelengthToRgb'
+import { getLightSpectrumPresets, type LightSpectrumPreset } from '../modules/Spectrum/Application/GetLightSpectrumPresets'
 import { SpectrumRenderer } from '../modules/Spectrum/Infra/WebGL/SpectrumRenderer'
 
 const canvasRef = ref<HTMLCanvasElement>()
 let renderer: SpectrumRenderer | null = null
+
+// プリセット一覧を取得
+const presets = getLightSpectrumPresets()
+const selectedPresetId = ref<string | null>(null)
 
 // サンプルスペクトラムを作成（テスト用）
 const spectrum = ref<Spectrum>(createVisibleSpectrum(81, 0))
@@ -41,53 +47,13 @@ function updateSpectrum() {
   }
 
   spectrum.value = s
+  selectedPresetId.value = null
 }
 
-// プリセットスペクトラム
-function setDaylightSpectrum() {
-  const s = createVisibleSpectrum(81, 0)
-  // D65 daylight approximation
-  for (let i = 0; i < s.wavelengths.length; i++) {
-    const wl = s.wavelengths[i]!
-    // Planck's law approximation for ~6500K
-    const t = 6500
-    const c1 = 3.74183e-16
-    const c2 = 1.4388e-2
-    const wlM = wl * 1e-9
-    s.values[i] = (c1 / Math.pow(wlM, 5)) / (Math.exp(c2 / (wlM * t)) - 1)
-  }
-  // 正規化
-  const max = Math.max(...s.values)
-  for (let i = 0; i < s.values.length; i++) {
-    s.values[i]! /= max
-  }
-  spectrum.value = s
-}
-
-function setRedLaserSpectrum() {
-  peakWavelength.value = 650
-  peakWidth.value = 5
-  peakIntensity.value = 1.0
-  updateSpectrum()
-}
-
-function setGreenLaserSpectrum() {
-  peakWavelength.value = 532
-  peakWidth.value = 5
-  peakIntensity.value = 1.0
-  updateSpectrum()
-}
-
-function setBlueLedSpectrum() {
-  peakWavelength.value = 460
-  peakWidth.value = 25
-  peakIntensity.value = 1.0
-  updateSpectrum()
-}
-
-function setFlatSpectrum() {
-  const s = createVisibleSpectrum(81, 1.0)
-  spectrum.value = s
+// プリセットを適用
+function applyPreset(preset: LightSpectrumPreset) {
+  spectrum.value = copySpectrum(preset.spectrum)
+  selectedPresetId.value = preset.id
 }
 
 // レンダリング
@@ -113,7 +79,14 @@ onMounted(() => {
     canvasRef.value.height = rect.height * window.devicePixelRatio
 
     renderer = new SpectrumRenderer({ canvas: canvasRef.value })
-    updateSpectrum()
+
+    // 初期プリセットを適用
+    const defaultPreset = presets.find(p => p.id === 'daylight-d65')
+    if (defaultPreset) {
+      applyPreset(defaultPreset)
+    } else {
+      updateSpectrum()
+    }
   }
 })
 
@@ -136,43 +109,30 @@ onUnmounted(() => {
           <!-- プリセット -->
           <div>
             <h2 class="text-sm font-semibold text-gray-400 mb-2">Presets</h2>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="flex flex-col gap-1">
               <button
-                class="px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded"
-                @click="setDaylightSpectrum"
+                v-for="preset in presets"
+                :key="preset.id"
+                class="flex items-center gap-2 px-3 py-2 text-sm text-left rounded transition-colors"
+                :class="selectedPresetId === preset.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 hover:bg-gray-600 text-gray-200'"
+                @click="applyPreset(preset)"
               >
-                Daylight (D65)
-              </button>
-              <button
-                class="px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded"
-                @click="setFlatSpectrum"
-              >
-                Flat White
-              </button>
-              <button
-                class="px-3 py-2 text-sm bg-red-900 hover:bg-red-800 rounded"
-                @click="setRedLaserSpectrum"
-              >
-                Red Laser
-              </button>
-              <button
-                class="px-3 py-2 text-sm bg-green-900 hover:bg-green-800 rounded"
-                @click="setGreenLaserSpectrum"
-              >
-                Green Laser
-              </button>
-              <button
-                class="px-3 py-2 text-sm bg-blue-900 hover:bg-blue-800 rounded"
-                @click="setBlueLedSpectrum"
-              >
-                Blue LED
+                <div
+                  class="w-4 h-4 rounded-sm border border-gray-500 flex-shrink-0"
+                  :style="{
+                    backgroundColor: `rgb(${Math.round(preset.color.r * 255)}, ${Math.round(preset.color.g * 255)}, ${Math.round(preset.color.b * 255)})`
+                  }"
+                />
+                {{ preset.name }}
               </button>
             </div>
           </div>
 
           <!-- ガウシアンピーク編集 -->
           <div>
-            <h2 class="text-sm font-semibold text-gray-400 mb-2">Gaussian Peak</h2>
+            <h2 class="text-sm font-semibold text-gray-400 mb-2">Custom Gaussian Peak</h2>
             <div class="space-y-4">
               <div>
                 <label class="block text-xs text-gray-500 mb-1">
