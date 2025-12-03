@@ -7,6 +7,7 @@
 
 import type { Tile, TileGrid } from '../Domain/ValueObject'
 import type { OrthographicCamera } from '../Domain/ValueObject'
+import { $Vector3 } from '../../Vector/Domain/ValueObject'
 import { RayTracingRenderer, type Scene } from './WebGL/RayTracingRenderer'
 
 export type TileCache = {
@@ -154,9 +155,9 @@ export class TileRenderer {
     const offsetX = tileCenterX - fullCenterX
     const offsetY = tileCenterY - fullCenterY
 
-    const forward = this.normalize(this.sub(fullCamera.lookAt, fullCamera.position))
-    const right = this.normalize(this.cross(fullCamera.up, forward))
-    const up = this.cross(forward, right)
+    const forward = $Vector3.normalize($Vector3.sub(fullCamera.lookAt, fullCamera.position))
+    const right = $Vector3.normalize($Vector3.cross(fullCamera.up, forward))
+    const up = $Vector3.cross(forward, right)
 
     const newPosition = {
       x: fullCamera.position.x + right.x * offsetX - up.x * offsetY,
@@ -178,24 +179,6 @@ export class TileRenderer {
       width: tile.width,
       height: tile.height,
     }
-  }
-
-  private normalize(v: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
-    const len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
-    if (len === 0) return { x: 0, y: 0, z: 0 }
-    return { x: v.x / len, y: v.y / len, z: v.z / len }
-  }
-
-  private cross(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
-    return {
-      x: a.y * b.z - a.z * b.y,
-      y: a.z * b.x - a.x * b.z,
-      z: a.x * b.y - a.y * b.x,
-    }
-  }
-
-  private sub(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
-    return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }
   }
 
   /**

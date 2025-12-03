@@ -8,6 +8,8 @@ import type {
   AmbientLight,
   DirectionalLight,
 } from '../../Domain/ValueObject'
+import { $Vector3 } from '../../../Vector/Domain/ValueObject'
+import { eulerToMat3x3f, eulerToMat3x3fInverse } from '../utils/matrix'
 import SHADER_CODE from './shaders/raytracing.wgsl?raw'
 import type { ScenePlane, SceneBox, SceneCapsule, Scene } from './types'
 
@@ -202,83 +204,6 @@ export class RayTracingRenderer {
     )
   }
 
-  private normalize(v: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
-    const len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
-    if (len === 0) return { x: 0, y: 0, z: 0 }
-    return { x: v.x / len, y: v.y / len, z: v.z / len }
-  }
-
-  private cross(
-    a: { x: number; y: number; z: number },
-    b: { x: number; y: number; z: number }
-  ): { x: number; y: number; z: number } {
-    return {
-      x: a.y * b.z - a.z * b.y,
-      y: a.z * b.x - a.x * b.z,
-      z: a.x * b.y - a.y * b.x,
-    }
-  }
-
-  private sub(
-    a: { x: number; y: number; z: number },
-    b: { x: number; y: number; z: number }
-  ): { x: number; y: number; z: number } {
-    return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }
-  }
-
-  // Create rotation matrix from Euler angles (XYZ order)
-  // Returns column-major mat3x3 for WGSL
-  private eulerToMatrix(euler: { x: number; y: number; z: number }): Float32Array {
-    const cx = Math.cos(euler.x),
-      sx = Math.sin(euler.x)
-    const cy = Math.cos(euler.y),
-      sy = Math.sin(euler.y)
-    const cz = Math.cos(euler.z),
-      sz = Math.sin(euler.z)
-
-    // mat3x3 in WGSL is column-major, each column is vec3f (padded to 16 bytes)
-    // So we need 3 columns × 4 floats = 12 floats (48 bytes)
-    return new Float32Array([
-      cy * cz,
-      cy * sz,
-      -sy,
-      0, // column 0 + padding
-      sx * sy * cz - cx * sz,
-      sx * sy * sz + cx * cz,
-      sx * cy,
-      0, // column 1 + padding
-      cx * sy * cz + sx * sz,
-      cx * sy * sz - sx * cz,
-      cx * cy,
-      0, // column 2 + padding
-    ])
-  }
-
-  private eulerToMatrixInverse(euler: { x: number; y: number; z: number }): Float32Array {
-    const cx = Math.cos(euler.x),
-      sx = Math.sin(euler.x)
-    const cy = Math.cos(euler.y),
-      sy = Math.sin(euler.y)
-    const cz = Math.cos(euler.z),
-      sz = Math.sin(euler.z)
-
-    // Transpose of rotation matrix (column-major with padding)
-    return new Float32Array([
-      cy * cz,
-      sx * sy * cz - cx * sz,
-      cx * sy * cz + sx * sz,
-      0,
-      cy * sz,
-      sx * sy * sz + cx * cz,
-      cx * sy * sz - sx * cz,
-      0,
-      -sy,
-      sx * cy,
-      cx * cy,
-      0,
-    ])
-  }
-
   render(scene: Scene, camera: OrthographicCamera): void {
     const {
       objects,
@@ -303,9 +228,9 @@ export class RayTracingRenderer {
     )
 
     // Calculate camera basis vectors
-    const forward = this.normalize(this.sub(camera.lookAt, camera.position))
-    const right = this.normalize(this.cross(camera.up, forward))
-    const up = this.cross(forward, right)
+    const forward = $Vector3.normalize($Vector3.sub(camera.lookAt, camera.position))
+    const right = $Vector3.normalize($Vector3.cross(camera.up, forward))
+    const up = $Vector3.cross(forward, right)
 
     // Build scene uniform buffer
     const sceneData = new Float32Array(36) // 144 bytes / 4 = 36 floats
@@ -426,14 +351,14 @@ export class RayTracingRenderer {
         boxData[base + 11] = box.geometry.radius ?? 0
         // rotation matrix (12 floats with padding)
         const euler = box.geometry.rotation ?? identityEuler
-        const rotMatrix = this.eulerToMatrix(euler)
+        const rotMatrix = eulerToMat3x3f(euler)
         boxData.set(rotMatrix, base + 12)
         // inverse rotation matrix (12 floats with padding)
-        const rotMatrixInv = this.eulerToMatrixInverse(euler)
+        const rotMatrixInv = eulerToMat3x3fInverse(euler)
         boxData.set(rotMatrixInv, base + 24)
       } else {
         // Identity matrices for unused boxes
-        const identity = this.eulerToMatrix(identityEuler)
+        const identity = eulerToMat3x3f(identityEuler)
         boxData.set(identity, base + 12)
         boxData.set(identity, base + 24)
       }
@@ -447,7 +372,7 @@ export class RayTracingRenderer {
       const light = directionalLights[i]!
       const base = i * 8
       // Normalize and negate direction (shader expects direction TO the light)
-      const dir = this.normalize(light.direction)
+      const dir = $Vector3.normalize(light.direction)
       lightData[base + 0] = -dir.x
       lightData[base + 1] = -dir.y
       lightData[base + 2] = -dir.z

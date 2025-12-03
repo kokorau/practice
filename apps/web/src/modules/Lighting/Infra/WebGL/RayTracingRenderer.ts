@@ -4,6 +4,8 @@
  */
 
 import type { OrthographicCamera, PlaneGeometry, BoxGeometry, Light, AmbientLight, DirectionalLight, Color } from '../../Domain/ValueObject'
+import { $Vector3 } from '../../../Vector/Domain/ValueObject'
+import { eulerToMat3, eulerToMat3Inverse } from '../utils/matrix'
 
 // Vertex Shader - フルスクリーンクワッド
 const VERTEX_SHADER = `
@@ -807,54 +809,6 @@ export class RayTracingRenderer {
     gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0)
   }
 
-  private normalize(v: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
-    const len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
-    if (len === 0) return { x: 0, y: 0, z: 0 }
-    return { x: v.x / len, y: v.y / len, z: v.z / len }
-  }
-
-  private cross(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
-    return {
-      x: a.y * b.z - a.z * b.y,
-      y: a.z * b.x - a.x * b.z,
-      z: a.x * b.y - a.y * b.x,
-    }
-  }
-
-  private sub(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) {
-    return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }
-  }
-
-  // Create rotation matrix from Euler angles (XYZ order)
-  // Returns column-major mat3 as Float32Array for WebGL
-  private eulerToMatrix(euler: { x: number; y: number; z: number }): Float32Array {
-    const cx = Math.cos(euler.x), sx = Math.sin(euler.x)
-    const cy = Math.cos(euler.y), sy = Math.sin(euler.y)
-    const cz = Math.cos(euler.z), sz = Math.sin(euler.z)
-
-    // Rotation matrix R = Rz * Ry * Rx (applied in order X, Y, Z)
-    // Column-major order for WebGL
-    return new Float32Array([
-      cy * cz,                      cy * sz,                      -sy,
-      sx * sy * cz - cx * sz,       sx * sy * sz + cx * cz,       sx * cy,
-      cx * sy * cz + sx * sz,       cx * sy * sz - sx * cz,       cx * cy,
-    ])
-  }
-
-  // Create inverse rotation matrix (transpose of rotation matrix)
-  private eulerToMatrixInverse(euler: { x: number; y: number; z: number }): Float32Array {
-    const cx = Math.cos(euler.x), sx = Math.sin(euler.x)
-    const cy = Math.cos(euler.y), sy = Math.sin(euler.y)
-    const cz = Math.cos(euler.z), sz = Math.sin(euler.z)
-
-    // Transpose of rotation matrix (column-major)
-    return new Float32Array([
-      cy * cz,                      sx * sy * cz - cx * sz,       cx * sy * cz + sx * sz,
-      cy * sz,                      sx * sy * sz + cx * cz,       cx * sy * sz - sx * cz,
-      -sy,                          sx * cy,                      cx * cy,
-    ])
-  }
-
   render(scene: Scene, camera: OrthographicCamera): void {
     const gl = this.gl
     const canvas = gl.canvas as HTMLCanvasElement
@@ -881,9 +835,9 @@ export class RayTracingRenderer {
     gl.viewport(0, 0, canvas.width, canvas.height)
 
     // Calculate camera basis vectors
-    const forward = this.normalize(this.sub(camera.lookAt, camera.position))
-    const right = this.normalize(this.cross(camera.up, forward))
-    const up = this.cross(forward, right)
+    const forward = $Vector3.normalize($Vector3.sub(camera.lookAt, camera.position))
+    const right = $Vector3.normalize($Vector3.cross(camera.up, forward))
+    const up = $Vector3.cross(forward, right)
 
     // Set camera uniforms
     gl.uniform3f(this.uniforms.cameraPosition, camera.position.x, camera.position.y, camera.position.z)
@@ -955,12 +909,12 @@ export class RayTracingRenderer {
         boxRadii[i] = box.geometry.radius ?? 0
 
         const euler = box.geometry.rotation ?? identityEuler
-        gl.uniformMatrix3fv(this.uniforms.boxRotations[i]!, false, this.eulerToMatrix(euler))
-        gl.uniformMatrix3fv(this.uniforms.boxRotationsInv[i]!, false, this.eulerToMatrixInverse(euler))
+        gl.uniformMatrix3fv(this.uniforms.boxRotations[i]!, false, eulerToMat3(euler))
+        gl.uniformMatrix3fv(this.uniforms.boxRotationsInv[i]!, false, eulerToMat3Inverse(euler))
       } else {
         // Set identity matrix for unused boxes
-        gl.uniformMatrix3fv(this.uniforms.boxRotations[i]!, false, this.eulerToMatrix(identityEuler))
-        gl.uniformMatrix3fv(this.uniforms.boxRotationsInv[i]!, false, this.eulerToMatrixInverse(identityEuler))
+        gl.uniformMatrix3fv(this.uniforms.boxRotations[i]!, false, eulerToMat3(identityEuler))
+        gl.uniformMatrix3fv(this.uniforms.boxRotationsInv[i]!, false, eulerToMat3Inverse(identityEuler))
       }
     }
 
@@ -990,7 +944,7 @@ export class RayTracingRenderer {
     for (let i = 0; i < lightCount; i++) {
       const light = directionalLights[i]!
       // Normalize and negate direction (shader expects direction TO the light)
-      const dir = this.normalize(light.direction)
+      const dir = $Vector3.normalize(light.direction)
       lightDirs[i * 3] = -dir.x
       lightDirs[i * 3 + 1] = -dir.y
       lightDirs[i * 3 + 2] = -dir.z
