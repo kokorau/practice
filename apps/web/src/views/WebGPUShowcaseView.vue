@@ -1,296 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import {
-  RayTracingRendererWebGPU,
-  $SceneWebGPU,
-  $SceneObjectWebGPU,
-  isWebGPUSupported,
-} from '../modules/Lighting/Infra'
-import type { SceneWebGPU } from '../modules/Lighting/Infra'
-import { $Camera, $Light, $Geometry, $Color } from '../modules/Lighting/Domain/ValueObject'
-import type { OrthographicCamera } from '../modules/Lighting/Domain/ValueObject'
-import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
+import { RayTracingRendererWebGPU, isWebGPUSupported } from '../modules/Lighting/Infra'
+import { SceneList, type SceneDefinition } from '../modules/Lighting/Showcase'
 
-// Scene definitions
-interface SceneDefinition {
-  id: string
-  name: string
-  description: string
-  createScene: (time: number) => SceneWebGPU
-  createCamera: (aspectRatio: number) => OrthographicCamera
-}
-
-// ============================================
-// Buildings Scene
-// ============================================
-function createBuildingsCamera(aspectRatio: number): OrthographicCamera {
-  // Base size for height, width adjusts based on aspect ratio
-  const baseSize = 2.5
-  const height = baseSize
-  const width = baseSize * aspectRatio
-  return $Camera.createOrthographic(
-    $Vector3.create(0, 2, -2),
-    $Vector3.create(0, 0, 5),
-    $Vector3.create(0, 1, 0),
-    width,
-    height
-  )
-}
-
-const buildings: [number, number, number, number, number][] = [
-  [0, 0, 0.12, 0.12, 0.7],
-  [0.22, -0.1, 0.09, 0.12, 0.55],
-  [0.18, 0.22, 0.1, 0.1, 0.5],
-  [0.35, -0.32, 0.08, 0.1, 0.45],
-  [-0.2, -0.15, 0.1, 0.1, 0.3],
-  [-0.15, 0.2, 0.11, 0.09, 0.28],
-  [-0.38, -0.1, 0.1, 0.14, 0.25],
-  [0.4, 0.05, 0.08, 0.12, 0.32],
-  [0.05, -0.38, 0.14, 0.08, 0.22],
-  [-0.05, 0.4, 0.12, 0.08, 0.26],
-  [-0.35, 0.3, 0.09, 0.09, 0.3],
-  [-0.42, 0.1, 0.07, 0.07, 0.28],
-  [0.44, -0.12, 0.06, 0.08, 0.24],
-  [-0.45, -0.35, 0.08, 0.08, 0.12],
-  [0.45, 0.38, 0.1, 0.08, 0.14],
-  [-0.1, -0.42, 0.12, 0.06, 0.1],
-  [0.12, 0.45, 0.08, 0.06, 0.11],
-]
-
-const buildingColors = [
-  $Color.fromRgb255(180, 180, 190),
-  $Color.fromRgb255(150, 160, 170),
-  $Color.fromRgb255(200, 195, 185),
-  $Color.fromRgb255(160, 170, 180),
-  $Color.fromRgb255(170, 165, 160),
-]
-
-function rotateY(x: number, z: number, angle: number): [number, number] {
-  const cos = Math.cos(angle)
-  const sin = Math.sin(angle)
-  return [x * cos - z * sin, x * sin + z * cos]
-}
-
-const BASE_Z = 4.5
-
-function createBuildingsScene(time: number): SceneWebGPU {
-  const rotationY = time * Math.PI * 0.25
-
-  const scene = $SceneWebGPU.create()
-
-  const withLights = $SceneWebGPU.add(
-    scene,
-    $Light.createAmbient($Color.create(1.0, 1.0, 1.0), 0.15),
-    $Light.createDirectional(
-      $Vector3.create(1, -1, 1),
-      $Color.create(1.0, 0.9, 0.8),
-      0.7
-    ),
-    $Light.createDirectional(
-      $Vector3.create(-0.5, -1, 0.5),
-      $Color.create(0.8, 0.85, 1.0),
-      0.3
-    )
-  )
-
-  const withGround = $SceneWebGPU.add(
-    withLights,
-    $SceneObjectWebGPU.createPlane(
-      $Geometry.createPlane($Vector3.create(0, -0.34, BASE_Z), $Vector3.create(0, 1, 0)),
-      $Color.fromRgb255(240, 240, 245)
-    ),
-    $SceneObjectWebGPU.createBox(
-      $Geometry.createBox(
-        $Vector3.create(0, -0.32, BASE_Z),
-        $Vector3.create(1.3, 0.04, 1.3),
-        $Vector3.create(0, rotationY, 0)
-      ),
-      $Color.fromRgb255(220, 215, 210)
-    )
-  )
-
-  const buildingObjects = buildings.map((b, i) => {
-    const [bx, bz, width, depth, height] = b
-    const color = buildingColors[i % buildingColors.length]!
-    const centerY = height / 2 - 0.3
-    const [rx, rz] = rotateY(bx, bz, rotationY)
-
-    return $SceneObjectWebGPU.createBox(
-      $Geometry.createBox(
-        $Vector3.create(rx, centerY, BASE_Z + rz),
-        $Vector3.create(width, height, depth),
-        $Vector3.create(0, rotationY, 0)
-      ),
-      color
-    )
-  })
-
-  return $SceneWebGPU.add(withGround, ...buildingObjects)
-}
-
-// ============================================
-// Sphere Space Scene (Capsules)
-// ============================================
-function createSphereSpaceCamera(aspectRatio: number): OrthographicCamera {
-  const baseSize = 3.5
-  const height = baseSize
-  const width = baseSize * aspectRatio
-  return $Camera.createOrthographic(
-    $Vector3.create(0, 0, -5),
-    $Vector3.create(0, 0, 5),
-    $Vector3.create(0, 1, 0),
-    width,
-    height
-  )
-}
-
-function createSphereSpaceScene(time: number): SceneWebGPU {
-  const scene = $SceneWebGPU.create()
-
-  const withLights = $SceneWebGPU.add(
-    scene,
-    $Light.createAmbient($Color.create(1.0, 1.0, 1.0), 0.2),
-    $Light.createDirectional(
-      $Vector3.create(0.5, -1, -0.5),
-      $Color.create(1.0, 0.95, 0.9),
-      0.8
-    ),
-    $Light.createDirectional(
-      $Vector3.create(-0.3, -0.5, 0.8),
-      $Color.create(0.8, 0.9, 1.0),
-      0.3
-    )
-  )
-
-  // Create capsules radiating from center
-  const capsuleObjects: ReturnType<typeof $SceneObjectWebGPU.createCapsule>[] = []
-  const sphereRadius = 1.2
-  const capsuleRadius = 0.015
-  const capsuleLength = 0.4
-
-  // Rotation
-  const rotY = time * 0.3
-  const rotX = time * 0.2
-
-  // Generate points on a sphere using Fibonacci lattice
-  const numLines = 60
-  const phi = (1 + Math.sqrt(5)) / 2 // Golden ratio
-
-  for (let i = 0; i < numLines; i++) {
-    // Fibonacci sphere point
-    const y = 1 - (i / (numLines - 1)) * 2 // y goes from 1 to -1
-    const radiusAtY = Math.sqrt(1 - y * y)
-    const theta = 2 * Math.PI * i / phi
-
-    // Direction from center
-    let dx = radiusAtY * Math.cos(theta)
-    let dy = y
-    let dz = radiusAtY * Math.sin(theta)
-
-    // Apply rotation
-    // Rotate around Y
-    const cosY = Math.cos(rotY)
-    const sinY = Math.sin(rotY)
-    const rx = dx * cosY - dz * sinY
-    const rz = dx * sinY + dz * cosY
-    dx = rx
-    dz = rz
-
-    // Rotate around X
-    const cosX = Math.cos(rotX)
-    const sinX = Math.sin(rotX)
-    const ry = dy * cosX - dz * sinX
-    const rz2 = dy * sinX + dz * cosX
-    dy = ry
-    dz = rz2
-
-    // Capsule start and end points
-    const startDist = sphereRadius - capsuleLength / 2
-    const endDist = sphereRadius + capsuleLength / 2
-
-    const startX = dx * startDist
-    const startY = dy * startDist
-    const startZ = dz * endDist + 5 // Offset Z into screen
-
-    const endX = dx * endDist
-    const endY = dy * endDist
-    const endZ = dz * startDist + 5
-
-    // Color based on position (hue varies with angle)
-    const hue = (theta / (2 * Math.PI) + rotY / (2 * Math.PI)) % 1
-    const saturation = 0.7
-    const lightness = 0.6
-    const color = hslToRgb(hue, saturation, lightness)
-
-    capsuleObjects.push(
-      $SceneObjectWebGPU.createCapsule(
-        $Geometry.createCapsule(
-          $Vector3.create(startX, startY, startZ),
-          $Vector3.create(endX, endY, endZ),
-          capsuleRadius
-        ),
-        color
-      )
-    )
-  }
-
-  return $SceneWebGPU.add(withLights, ...capsuleObjects)
-}
-
-// HSL to RGB conversion helper
-function hslToRgb(h: number, s: number, l: number): ReturnType<typeof $Color.create> {
-  let r: number, g: number, b: number
-
-  if (s === 0) {
-    r = g = b = l
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1
-      if (t > 1) t -= 1
-      if (t < 1/6) return p + (q - p) * 6 * t
-      if (t < 1/2) return q
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6
-      return p
-    }
-
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s
-    const p = 2 * l - q
-    r = hue2rgb(p, q, h + 1/3)
-    g = hue2rgb(p, q, h)
-    b = hue2rgb(p, q, h - 1/3)
-  }
-
-  return $Color.create(r, g, b)
-}
-
-// ============================================
-// Scene Registry
-// ============================================
-const scenes: SceneDefinition[] = [
-  {
-    id: 'buildings',
-    name: 'Cityscape',
-    description: 'Rotating city with buildings and two-point lighting',
-    createScene: createBuildingsScene,
-    createCamera: createBuildingsCamera,
-  },
-  {
-    id: 'sphere-space',
-    name: 'Sphere Space',
-    description: 'Capsules radiating from a spherical core',
-    createScene: createSphereSpaceScene,
-    createCamera: createSphereSpaceCamera,
-  },
-]
-
-// ============================================
-// Component State
-// ============================================
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 const webGPUSupported = ref(false)
 const webGPUError = ref<string | null>(null)
-const selectedSceneId = ref(scenes[0]!.id)
+const selectedSceneId = ref(SceneList[0]!.id)
 const canvasSize = ref({ width: 800, height: 600 })
 
 let renderer: RayTracingRendererWebGPU | null = null
@@ -298,7 +15,7 @@ let animationFrameId: number | null = null
 let resizeObserver: ResizeObserver | null = null
 
 function getSelectedScene(): SceneDefinition {
-  return scenes.find(s => s.id === selectedSceneId.value) ?? scenes[0]!
+  return SceneList.find(s => s.id === selectedSceneId.value) ?? SceneList[0]!
 }
 
 function updateCanvasSize() {
@@ -352,7 +69,6 @@ function stopAnimation() {
 }
 
 watch(selectedSceneId, async () => {
-  // Recreate renderer when scene changes (camera might have different aspect)
   if (renderer) {
     renderer.dispose()
     renderer = null
@@ -369,7 +85,6 @@ onMounted(async () => {
     return
   }
 
-  // Setup resize observer
   if (containerRef.value) {
     updateCanvasSize()
     resizeObserver = new ResizeObserver(() => {
@@ -397,7 +112,7 @@ onUnmounted(() => {
     <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
       <nav class="flex-1 overflow-y-auto p-2">
         <ul class="space-y-1">
-          <li v-for="scene in scenes" :key="scene.id">
+          <li v-for="scene in SceneList" :key="scene.id">
             <button
               @click="selectedSceneId = scene.id"
               class="w-full text-left px-3 py-2 rounded-lg transition-colors"
