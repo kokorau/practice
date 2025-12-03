@@ -1,3 +1,22 @@
+// =============================================================================
+// Constants
+// =============================================================================
+
+const EPSILON: f32 = 1e-6;           // General epsilon for comparisons
+const SHADOW_OFFSET: f32 = 0.001;    // Offset to avoid self-shadowing
+const MAX_DISTANCE: f32 = 1e10;      // Maximum ray distance
+const SDF_EPSILON: f32 = 0.0001;     // Epsilon for SDF normal calculation
+const RAY_MARCH_MAX_STEPS: i32 = 128; // Maximum steps for ray marching
+const RAY_MARCH_MIN_DIST: f32 = 0.0001; // Minimum distance for ray march hit
+const GAMMA: f32 = 2.2;              // sRGB gamma value
+const INV_GAMMA: f32 = 1.0 / 2.2;    // Inverse gamma for linear to sRGB
+const SAFE_INV_EPSILON: f32 = 1e-8;  // Epsilon for safe division
+const PCF_SAMPLE_COUNT: i32 = 9;     // 3x3 PCF samples
+
+// =============================================================================
+// Structs
+// =============================================================================
+
 // Camera uniforms (80 bytes)
 struct Camera {
   position: vec3f,      // 0-11, pad 12-15
@@ -79,6 +98,19 @@ struct SceneUniforms {
 @group(0) @binding(3) var<storage, read> lights: array<DirLight>;
 @group(0) @binding(4) var<storage, read> capsules: array<Capsule>;
 
+// =============================================================================
+// Utility Functions
+// =============================================================================
+
+// Safe inverse to avoid division by zero
+fn safeInverse(v: vec3f) -> vec3f {
+  return vec3f(
+    select(1.0 / v.x, sign(v.x) / SAFE_INV_EPSILON, abs(v.x) < SAFE_INV_EPSILON),
+    select(1.0 / v.y, sign(v.y) / SAFE_INV_EPSILON, abs(v.y) < SAFE_INV_EPSILON),
+    select(1.0 / v.z, sign(v.z) / SAFE_INV_EPSILON, abs(v.z) < SAFE_INV_EPSILON)
+  );
+}
+
 // Build orthonormal basis from normal
 fn buildBasis(normal: vec3f) -> mat3x3f {
   var tmp: vec3f;
@@ -94,12 +126,12 @@ fn buildBasis(normal: vec3f) -> mat3x3f {
 
 // sRGB to Linear conversion
 fn srgbToLinear(srgb: vec3f) -> vec3f {
-  return pow(srgb, vec3f(2.2));
+  return pow(srgb, vec3f(GAMMA));
 }
 
 // Linear to sRGB conversion
 fn linearToSrgb(linear: vec3f) -> vec3f {
-  return pow(linear, vec3f(1.0 / 2.2));
+  return pow(linear, vec3f(INV_GAMMA));
 }
 
 // Signed Distance Function for 2D rounded box (XY plane only)
@@ -123,20 +155,19 @@ fn sdRoundBox(p: vec3f, b: vec3f, r: f32) -> f32 {
   return sdRoundBox3D(p, b, r);
 }
 
-// Calculate normal from SDF
+// Calculate normal from SDF using gradient
 fn calcRoundBoxNormal(p: vec3f, halfSize: vec3f, radius: f32) -> vec3f {
-  let eps = 0.0001;
   return normalize(vec3f(
-    sdRoundBox(p + vec3f(eps, 0.0, 0.0), halfSize, radius) - sdRoundBox(p - vec3f(eps, 0.0, 0.0), halfSize, radius),
-    sdRoundBox(p + vec3f(0.0, eps, 0.0), halfSize, radius) - sdRoundBox(p - vec3f(0.0, eps, 0.0), halfSize, radius),
-    sdRoundBox(p + vec3f(0.0, 0.0, eps), halfSize, radius) - sdRoundBox(p - vec3f(0.0, 0.0, eps), halfSize, radius)
+    sdRoundBox(p + vec3f(SDF_EPSILON, 0.0, 0.0), halfSize, radius) - sdRoundBox(p - vec3f(SDF_EPSILON, 0.0, 0.0), halfSize, radius),
+    sdRoundBox(p + vec3f(0.0, SDF_EPSILON, 0.0), halfSize, radius) - sdRoundBox(p - vec3f(0.0, SDF_EPSILON, 0.0), halfSize, radius),
+    sdRoundBox(p + vec3f(0.0, 0.0, SDF_EPSILON), halfSize, radius) - sdRoundBox(p - vec3f(0.0, 0.0, SDF_EPSILON), halfSize, radius)
   ));
 }
 
 // Ray-plane intersection
 fn intersectPlane(rayOrigin: vec3f, rayDir: vec3f, plane: Plane) -> f32 {
   let denom = dot(rayDir, plane.normal);
-  if (abs(denom) < 1e-6) {
+  if (abs(denom) < EPSILON) {
     return -1.0;
   }
 
@@ -175,7 +206,7 @@ fn intersectBox(rayOrigin: vec3f, rayDir: vec3f, box: Box) -> vec2f {
   let localDir = box.rotation * rayDir;
 
   let halfSize = box.size * 0.5;
-  let invDir = 1.0 / localDir;
+  let invDir = safeInverse(localDir);
 
   let t1 = (-halfSize - localOrigin) * invDir;
   let t2 = (halfSize - localOrigin) * invDir;
@@ -226,7 +257,7 @@ fn intersectRoundBox(rayOrigin: vec3f, rayDir: vec3f, box: Box) -> vec2f {
   let radius = box.radius;
 
   // Quick AABB bounds check
-  let invDir = 1.0 / localDir;
+  let invDir = safeInverse(localDir);
   let t1 = (-halfSize - radius - localOrigin) * invDir;
   let t2 = (halfSize + radius - localOrigin) * invDir;
   let tMin = min(t1, t2);
@@ -239,15 +270,13 @@ fn intersectRoundBox(rayOrigin: vec3f, rayDir: vec3f, box: Box) -> vec2f {
   }
 
   // Ray marching
-  var t = max(tNear - 0.001, 0.0);
-  let MAX_STEPS = 128;
-  let MIN_DIST = 0.0001;
+  var t = max(tNear - SHADOW_OFFSET, 0.0);
 
-  for (var i = 0; i < MAX_STEPS; i++) {
+  for (var i = 0; i < RAY_MARCH_MAX_STEPS; i++) {
     let p = localOrigin + t * localDir;
     let d = sdRoundBox(p, halfSize, radius);
 
-    if (d < MIN_DIST) {
+    if (d < RAY_MARCH_MIN_DIST) {
       return vec2f(t, 1.0); // Hit, flag as rounded
     }
 
@@ -330,7 +359,7 @@ fn getCapsuleNormal(capsule: Capsule, hitPoint: vec3f) -> vec3f {
 
 // Shadow ray (simplified, returns distance or -1)
 fn traceShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
-  let shadowOrigin = hitPoint + lightDir * 0.001;
+  let shadowOrigin = hitPoint + lightDir * SHADOW_OFFSET;
 
   for (var i = 0u; i < scene.boxCount; i++) {
     let box = boxes[i];
@@ -376,33 +405,23 @@ fn calcShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
   let lightUp = basis[1];
 
   var hitCount = 0;
-  var d: f32;
 
-  // 3x3 PCF sampling
-  d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2f(-1.0, -1.0));
-  if (d > 0.0) { hitCount++; }
-  d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2f(0.0, -1.0));
-  if (d > 0.0) { hitCount++; }
-  d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2f(1.0, -1.0));
-  if (d > 0.0) { hitCount++; }
-  d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2f(-1.0, 0.0));
-  if (d > 0.0) { hitCount++; }
-  d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2f(0.0, 0.0));
-  if (d > 0.0) { hitCount++; }
-  d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2f(1.0, 0.0));
-  if (d > 0.0) { hitCount++; }
-  d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2f(-1.0, 1.0));
-  if (d > 0.0) { hitCount++; }
-  d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2f(0.0, 1.0));
-  if (d > 0.0) { hitCount++; }
-  d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, vec2f(1.0, 1.0));
-  if (d > 0.0) { hitCount++; }
+  // 3x3 PCF sampling loop
+  for (var y = -1; y <= 1; y++) {
+    for (var x = -1; x <= 1; x++) {
+      let offset = vec2f(f32(x), f32(y));
+      let d = sampleShadowAt(hitPoint, lightDir, lightRight, lightUp, offset);
+      if (d > 0.0) {
+        hitCount++;
+      }
+    }
+  }
 
   if (hitCount == 0) {
     return 1.0;
   }
 
-  return 1.0 - f32(hitCount) / 9.0;
+  return 1.0 - f32(hitCount) / f32(PCF_SAMPLE_COUNT);
 }
 
 struct VertexOutput {
@@ -443,7 +462,7 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
   let rayDir = scene.camera.forward;
 
   // Find closest intersection
-  var closestT: f32 = 1e10;
+  var closestT: f32 = MAX_DISTANCE;
   var hitColor = scene.backgroundColor;
   var hitSurfaceColor = vec3f(0.0);
   var hitNormal = vec3f(0.0);
