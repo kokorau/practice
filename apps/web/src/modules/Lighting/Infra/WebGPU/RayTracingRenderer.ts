@@ -373,7 +373,7 @@ const SHADER_CODE = /* wgsl */ `
   @fragment
   fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
     // DEBUG: Show UV gradient to verify rendering works
-    return vec4f(input.uv.x, input.uv.y, 0.5, 1.0);
+    // return vec4f(input.uv.x, input.uv.y, 0.5, 1.0);
 
     // Generate ray from orthographic camera
     let offsetU = input.uv.x - 0.5;
