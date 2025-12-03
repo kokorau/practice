@@ -10,17 +10,19 @@ import type {
 } from '../../Domain/ValueObject'
 import { $Vector3 } from '../../../Vector/Domain/ValueObject'
 import SHADER_CODE from './shaders/raytracing.wgsl?raw'
-import type { ScenePlane, SceneBox, SceneCapsule, Scene } from './types'
+import type { ScenePlane, SceneBox, SceneCapsule, SceneSphere, Scene } from './types'
 import {
   buildSceneUniform,
   buildPlaneBuffer,
   buildBoxBuffer,
   buildLightBuffer,
   buildCapsuleBuffer,
+  buildSphereBuffer,
   PLANE_STRIDE,
   BOX_STRIDE,
   LIGHT_STRIDE,
   CAPSULE_STRIDE,
+  SPHERE_STRIDE,
 } from './buffers'
 
 export type { ScenePlane, SceneBox, SceneCapsule, Scene } from './types'
@@ -56,12 +58,14 @@ export class RayTracingRenderer {
   private boxBuffer: GPUBuffer
   private lightBuffer: GPUBuffer
   private capsuleBuffer: GPUBuffer
+  private sphereBuffer: GPUBuffer
 
   // Dynamic capacity tracking
   private planeCapacity: number
   private boxCapacity: number
   private lightCapacity: number
   private capsuleCapacity: number
+  private sphereCapacity: number
 
   private constructor(
     device: GPUDevice,
@@ -73,10 +77,12 @@ export class RayTracingRenderer {
     boxBuffer: GPUBuffer,
     lightBuffer: GPUBuffer,
     capsuleBuffer: GPUBuffer,
+    sphereBuffer: GPUBuffer,
     planeCapacity: number,
     boxCapacity: number,
     lightCapacity: number,
-    capsuleCapacity: number
+    capsuleCapacity: number,
+    sphereCapacity: number
   ) {
     this.device = device
     this.context = context
@@ -87,10 +93,12 @@ export class RayTracingRenderer {
     this.boxBuffer = boxBuffer
     this.lightBuffer = lightBuffer
     this.capsuleBuffer = capsuleBuffer
+    this.sphereBuffer = sphereBuffer
     this.planeCapacity = planeCapacity
     this.boxCapacity = boxCapacity
     this.lightCapacity = lightCapacity
     this.capsuleCapacity = capsuleCapacity
+    this.sphereCapacity = sphereCapacity
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<RayTracingRenderer> {
@@ -150,6 +158,11 @@ export class RayTracingRenderer {
           visibility: GPUShaderStage.FRAGMENT,
           buffer: { type: 'read-only-storage' },
         },
+        {
+          binding: 5,
+          visibility: GPUShaderStage.FRAGMENT,
+          buffer: { type: 'read-only-storage' },
+        },
       ],
     })
 
@@ -192,6 +205,7 @@ export class RayTracingRenderer {
     const initialBoxCapacity = 16
     const initialLightCapacity = 4
     const initialCapsuleCapacity = 32
+    const initialSphereCapacity = 32
 
     // Plane buffer (64 bytes per plane)
     const planeBuffer = device.createBuffer({
@@ -217,6 +231,12 @@ export class RayTracingRenderer {
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     })
 
+    // Sphere buffer (32 bytes per sphere)
+    const sphereBuffer = device.createBuffer({
+      size: initialSphereCapacity * SPHERE_STRIDE * 4,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    })
+
     return new RayTracingRenderer(
       device,
       context,
@@ -227,10 +247,12 @@ export class RayTracingRenderer {
       boxBuffer,
       lightBuffer,
       capsuleBuffer,
+      sphereBuffer,
       initialPlaneCapacity,
       initialBoxCapacity,
       initialLightCapacity,
-      initialCapsuleCapacity
+      initialCapsuleCapacity,
+      initialSphereCapacity
     )
   }
 
@@ -275,6 +297,7 @@ export class RayTracingRenderer {
     const planes = objects.filter((o): o is ScenePlane => o.type === 'plane')
     const boxes = objects.filter((o): o is SceneBox => o.type === 'box')
     const capsules = objects.filter((o): o is SceneCapsule => o.type === 'capsule')
+    const spheres = objects.filter((o): o is SceneSphere => o.type === 'sphere')
 
     // Separate lights by type
     const ambientLight = lights.find((l): l is AmbientLight => l.type === 'ambient') ?? {
@@ -291,6 +314,7 @@ export class RayTracingRenderer {
     const boxCount = Math.max(boxes.length, MIN_CAPACITY)
     const lightCount = Math.max(directionalLights.length, MIN_CAPACITY)
     const capsuleCount = Math.max(capsules.length, MIN_CAPACITY)
+    const sphereCount = Math.max(spheres.length, MIN_CAPACITY)
 
     const planeResult = this.ensureBufferCapacity(
       this.planeBuffer, this.planeCapacity, planeCount, PLANE_STRIDE
@@ -316,6 +340,12 @@ export class RayTracingRenderer {
     this.capsuleBuffer = capsuleResult.buffer
     this.capsuleCapacity = capsuleResult.capacity
 
+    const sphereResult = this.ensureBufferCapacity(
+      this.sphereBuffer, this.sphereCapacity, sphereCount, SPHERE_STRIDE
+    )
+    this.sphereBuffer = sphereResult.buffer
+    this.sphereCapacity = sphereResult.capacity
+
     // Calculate camera basis vectors
     const forward = $Vector3.normalize($Vector3.sub(camera.lookAt, camera.position))
     const right = $Vector3.normalize($Vector3.cross(camera.up, forward))
@@ -339,6 +369,7 @@ export class RayTracingRenderer {
         boxes: boxes.length,
         lights: directionalLights.length,
         capsules: capsules.length,
+        spheres: spheres.length,
       },
     })
     this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, sceneData)
@@ -359,6 +390,10 @@ export class RayTracingRenderer {
     const capsuleData = buildCapsuleBuffer(capsules, this.capsuleCapacity)
     this.device.queue.writeBuffer(this.capsuleBuffer, 0, capsuleData)
 
+    // Build and write sphere buffer
+    const sphereData = buildSphereBuffer(spheres, this.sphereCapacity)
+    this.device.queue.writeBuffer(this.sphereBuffer, 0, sphereData)
+
     // Create bind group
     const bindGroup = this.device.createBindGroup({
       layout: this.bindGroupLayout,
@@ -368,6 +403,7 @@ export class RayTracingRenderer {
         { binding: 2, resource: { buffer: this.boxBuffer } },
         { binding: 3, resource: { buffer: this.lightBuffer } },
         { binding: 4, resource: { buffer: this.capsuleBuffer } },
+        { binding: 5, resource: { buffer: this.sphereBuffer } },
       ],
     })
 
@@ -400,5 +436,6 @@ export class RayTracingRenderer {
     this.boxBuffer.destroy()
     this.lightBuffer.destroy()
     this.capsuleBuffer.destroy()
+    this.sphereBuffer.destroy()
   }
 }

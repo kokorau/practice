@@ -35,9 +35,18 @@ export interface CapsuleGeometry {
 }
 
 /**
+ * Sphere defined by center point and radius
+ */
+export interface SphereGeometry {
+  readonly type: 'sphere'
+  readonly center: Vector3
+  readonly radius: number
+}
+
+/**
  * Union type for all geometry types
  */
-export type Geometry = PlaneGeometry | BoxGeometry | CapsuleGeometry
+export type Geometry = PlaneGeometry | BoxGeometry | CapsuleGeometry | SphereGeometry
 
 export const $Geometry = {
   createPlane: (
@@ -81,6 +90,12 @@ export const $Geometry = {
     type: 'capsule',
     pointA,
     pointB,
+    radius: Math.max(0, radius),
+  }),
+
+  createSphere: (center: Vector3, radius: number): SphereGeometry => ({
+    type: 'sphere',
+    center,
     radius: Math.max(0, radius),
   }),
 }

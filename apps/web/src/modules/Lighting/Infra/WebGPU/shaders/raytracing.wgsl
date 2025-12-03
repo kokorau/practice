@@ -67,6 +67,14 @@ struct Capsule {
   radius: f32,          // 44-47
 }
 
+// Sphere data (32 bytes)
+struct Sphere {
+  center: vec3f,        // 0-11, pad 12-15
+  _pad0: f32,
+  color: vec3f,         // 16-27
+  radius: f32,          // 28-31
+}
+
 // Directional light (32 bytes)
 struct DirLight {
   direction: vec3f,     // 0-11, pad 12-15
@@ -75,7 +83,7 @@ struct DirLight {
   intensity: f32,       // 28-31
 }
 
-// Scene uniforms (128 bytes -> 144 bytes with capsuleCount)
+// Scene uniforms (144 bytes)
 struct SceneUniforms {
   camera: Camera,           // 0-79
   backgroundColor: vec3f,   // 80-91, pad 92-95
@@ -87,9 +95,9 @@ struct SceneUniforms {
   boxCount: u32,            // 120-123
   lightCount: u32,          // 124-127
   capsuleCount: u32,        // 128-131
-  _pad1: u32,               // 132-135
-  _pad2: u32,               // 136-139
-  _pad3: u32,               // 140-143
+  sphereCount: u32,         // 132-135
+  _pad1: u32,               // 136-139
+  _pad2: u32,               // 140-143
 }
 
 @group(0) @binding(0) var<uniform> scene: SceneUniforms;
@@ -97,6 +105,7 @@ struct SceneUniforms {
 @group(0) @binding(2) var<storage, read> boxes: array<Box>;
 @group(0) @binding(3) var<storage, read> lights: array<DirLight>;
 @group(0) @binding(4) var<storage, read> capsules: array<Capsule>;
+@group(0) @binding(5) var<storage, read> spheres: array<Sphere>;
 
 // =============================================================================
 // Utility Functions
@@ -357,6 +366,36 @@ fn getCapsuleNormal(capsule: Capsule, hitPoint: vec3f) -> vec3f {
   return normalize(pa - h * ba);
 }
 
+// Ray-Sphere intersection
+fn intersectSphere(rayOrigin: vec3f, rayDir: vec3f, sphere: Sphere) -> f32 {
+  let oc = rayOrigin - sphere.center;
+  let a = dot(rayDir, rayDir);
+  let b = 2.0 * dot(oc, rayDir);
+  let c = dot(oc, oc) - sphere.radius * sphere.radius;
+  let discriminant = b * b - 4.0 * a * c;
+
+  if (discriminant < 0.0) {
+    return -1.0;
+  }
+
+  let t = (-b - sqrt(discriminant)) / (2.0 * a);
+  if (t > 0.0) {
+    return t;
+  }
+
+  // Check the far intersection
+  let t2 = (-b + sqrt(discriminant)) / (2.0 * a);
+  if (t2 > 0.0) {
+    return t2;
+  }
+
+  return -1.0;
+}
+
+fn getSphereNormal(sphere: Sphere, hitPoint: vec3f) -> vec3f {
+  return normalize(hitPoint - sphere.center);
+}
+
 // Shadow ray (simplified, returns distance or -1)
 fn traceShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
   let shadowOrigin = hitPoint + lightDir * SHADOW_OFFSET;
@@ -377,6 +416,14 @@ fn traceShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
   for (var i = 0u; i < scene.capsuleCount; i++) {
     let capsule = capsules[i];
     let t = intersectCapsule(shadowOrigin, lightDir, capsule);
+    if (t > 0.0) {
+      return t;
+    }
+  }
+
+  for (var i = 0u; i < scene.sphereCount; i++) {
+    let sphere = spheres[i];
+    let t = intersectSphere(shadowOrigin, lightDir, sphere);
     if (t > 0.0) {
       return t;
     }
@@ -519,6 +566,20 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
       hitSurfaceColor = capsule.color;
       let hitPoint = rayOrigin + t * rayDir;
       hitNormal = getCapsuleNormal(capsule, hitPoint);
+      hasHit = true;
+    }
+  }
+
+  // Check spheres
+  for (var i = 0u; i < scene.sphereCount; i++) {
+    let sphere = spheres[i];
+    let t = intersectSphere(rayOrigin, rayDir, sphere);
+
+    if (t > 0.0 && t < closestT) {
+      closestT = t;
+      hitSurfaceColor = sphere.color;
+      let hitPoint = rayOrigin + t * rayDir;
+      hitNormal = getSphereNormal(sphere, hitPoint);
       hasHit = true;
     }
   }

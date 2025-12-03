@@ -2,6 +2,7 @@ import type {
   PlaneGeometry,
   BoxGeometry,
   CapsuleGeometry,
+  SphereGeometry,
   Light,
   Color,
 } from '../../Domain/ValueObject'
@@ -24,7 +25,13 @@ export interface SceneCapsule {
   color: Color
 }
 
-export type SceneObject = ScenePlane | SceneBox | SceneCapsule
+export interface SceneSphere {
+  type: 'sphere'
+  geometry: SphereGeometry
+  color: Color
+}
+
+export type SceneObject = ScenePlane | SceneBox | SceneCapsule | SceneSphere
 
 export const $SceneObject = {
   createPlane: (geometry: PlaneGeometry, color: Color): ScenePlane => ({
@@ -39,6 +46,11 @@ export const $SceneObject = {
   }),
   createCapsule: (geometry: CapsuleGeometry, color: Color): SceneCapsule => ({
     type: 'capsule',
+    geometry,
+    color,
+  }),
+  createSphere: (geometry: SphereGeometry, color: Color): SceneSphere => ({
+    type: 'sphere',
     geometry,
     color,
   }),
@@ -57,7 +69,7 @@ const isLight = (item: SceneItem): item is Light =>
   item.type === 'ambient' || item.type === 'directional'
 
 const isSceneObject = (item: SceneItem): item is SceneObject =>
-  item.type === 'plane' || item.type === 'box' || item.type === 'capsule'
+  item.type === 'plane' || item.type === 'box' || item.type === 'capsule' || item.type === 'sphere'
 
 export const $Scene = {
   create: (params?: {
