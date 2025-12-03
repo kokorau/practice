@@ -7,6 +7,7 @@ import type {
   OrthographicCamera,
   PlaneGeometry,
   BoxGeometry,
+  CapsuleGeometry,
   Light,
   AmbientLight,
   DirectionalLight,
@@ -59,6 +60,16 @@ const SHADER_CODE = /* wgsl */ `
     rotationInv: mat3x3f, // 96-143
   }
 
+  // Capsule data (48 bytes)
+  struct Capsule {
+    pointA: vec3f,        // 0-11, pad 12-15
+    _pad0: f32,
+    pointB: vec3f,        // 16-27, pad 28-31
+    _pad1: f32,
+    color: vec3f,         // 32-43
+    radius: f32,          // 44-47
+  }
+
   // Directional light (32 bytes)
   struct DirLight {
     direction: vec3f,     // 0-11, pad 12-15
@@ -67,7 +78,7 @@ const SHADER_CODE = /* wgsl */ `
     intensity: f32,       // 28-31
   }
 
-  // Scene uniforms (128 bytes)
+  // Scene uniforms (128 bytes -> 144 bytes with capsuleCount)
   struct SceneUniforms {
     camera: Camera,           // 0-79
     backgroundColor: vec3f,   // 80-91, pad 92-95
@@ -78,12 +89,17 @@ const SHADER_CODE = /* wgsl */ `
     planeCount: u32,          // 116-119
     boxCount: u32,            // 120-123
     lightCount: u32,          // 124-127
+    capsuleCount: u32,        // 128-131
+    _pad1: u32,               // 132-135
+    _pad2: u32,               // 136-139
+    _pad3: u32,               // 140-143
   }
 
   @group(0) @binding(0) var<uniform> scene: SceneUniforms;
   @group(0) @binding(1) var<storage, read> planes: array<Plane>;
   @group(0) @binding(2) var<storage, read> boxes: array<Box>;
   @group(0) @binding(3) var<storage, read> lights: array<DirLight>;
+  @group(0) @binding(4) var<storage, read> capsules: array<Capsule>;
 
   // Build orthonormal basis from normal
   fn buildBasis(normal: vec3f) -> mat3x3f {
@@ -275,6 +291,65 @@ const SHADER_CODE = /* wgsl */ `
     return normalize(box.rotationInv * localNormal);
   }
 
+  // Ray-Capsule intersection (cylinder with hemispherical caps)
+  fn intersectCapsule(rayOrigin: vec3f, rayDir: vec3f, capsule: Capsule) -> f32 {
+    let pa = capsule.pointA;
+    let pb = capsule.pointB;
+    let r = capsule.radius;
+
+    let ba = pb - pa;
+    let oa = rayOrigin - pa;
+
+    let baba = dot(ba, ba);
+    let bard = dot(ba, rayDir);
+    let baoa = dot(ba, oa);
+    let rdoa = dot(rayDir, oa);
+    let oaoa = dot(oa, oa);
+
+    let a = baba - bard * bard;
+    let b = baba * rdoa - baoa * bard;
+    let c = baba * oaoa - baoa * baoa - r * r * baba;
+    let h = b * b - a * c;
+
+    if (h >= 0.0) {
+      let t = (-b - sqrt(h)) / a;
+      let y = baoa + t * bard;
+
+      // Cylinder body hit
+      if (y > 0.0 && y < baba && t > 0.0) {
+        return t;
+      }
+
+      // Hemisphere caps
+      var oc: vec3f;
+      if (y <= 0.0) {
+        oc = oa;
+      } else {
+        oc = rayOrigin - pb;
+      }
+
+      let b2 = dot(rayDir, oc);
+      let c2 = dot(oc, oc) - r * r;
+      let h2 = b2 * b2 - c2;
+
+      if (h2 > 0.0) {
+        let t2 = -b2 - sqrt(h2);
+        if (t2 > 0.0) {
+          return t2;
+        }
+      }
+    }
+
+    return -1.0;
+  }
+
+  fn getCapsuleNormal(capsule: Capsule, hitPoint: vec3f) -> vec3f {
+    let ba = capsule.pointB - capsule.pointA;
+    let pa = hitPoint - capsule.pointA;
+    let h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return normalize(pa - h * ba);
+  }
+
   // Shadow ray (simplified, returns distance or -1)
   fn traceShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
     let shadowOrigin = hitPoint + lightDir * 0.001;
@@ -289,6 +364,14 @@ const SHADER_CODE = /* wgsl */ `
       }
       if (result.x > 0.0) {
         return result.x;
+      }
+    }
+
+    for (var i = 0u; i < scene.capsuleCount; i++) {
+      let capsule = capsules[i];
+      let t = intersectCapsule(shadowOrigin, lightDir, capsule);
+      if (t > 0.0) {
+        return t;
       }
     }
 
@@ -435,6 +518,20 @@ const SHADER_CODE = /* wgsl */ `
       }
     }
 
+    // Check capsules
+    for (var i = 0u; i < scene.capsuleCount; i++) {
+      let capsule = capsules[i];
+      let t = intersectCapsule(rayOrigin, rayDir, capsule);
+
+      if (t > 0.0 && t < closestT) {
+        closestT = t;
+        hitSurfaceColor = capsule.color;
+        let hitPoint = rayOrigin + t * rayDir;
+        hitNormal = getCapsuleNormal(capsule, hitPoint);
+        hasHit = true;
+      }
+    }
+
     if (hasHit) {
       let hitPoint = rayOrigin + closestT * rayDir;
 
@@ -477,7 +574,13 @@ export interface SceneBox {
   color: Color
 }
 
-export type SceneObject = ScenePlane | SceneBox
+export interface SceneCapsule {
+  type: 'capsule'
+  geometry: CapsuleGeometry
+  color: Color
+}
+
+export type SceneObject = ScenePlane | SceneBox | SceneCapsule
 
 export const $SceneObject = {
   createPlane: (geometry: PlaneGeometry, color: Color): ScenePlane => ({
@@ -487,6 +590,11 @@ export const $SceneObject = {
   }),
   createBox: (geometry: BoxGeometry, color: Color): SceneBox => ({
     type: 'box',
+    geometry,
+    color,
+  }),
+  createCapsule: (geometry: CapsuleGeometry, color: Color): SceneCapsule => ({
+    type: 'capsule',
     geometry,
     color,
   }),
@@ -505,7 +613,7 @@ const isLight = (item: SceneItem): item is Light =>
   item.type === 'ambient' || item.type === 'directional'
 
 const isSceneObject = (item: SceneItem): item is SceneObject =>
-  item.type === 'plane' || item.type === 'box'
+  item.type === 'plane' || item.type === 'box' || item.type === 'capsule'
 
 export const $Scene = {
   create: (params?: {
@@ -554,10 +662,12 @@ export class RayTracingRenderer {
   private planeBuffer: GPUBuffer
   private boxBuffer: GPUBuffer
   private lightBuffer: GPUBuffer
+  private capsuleBuffer: GPUBuffer
 
   private readonly MAX_PLANES = 32
   private readonly MAX_BOXES = 64
   private readonly MAX_LIGHTS = 4
+  private readonly MAX_CAPSULES = 128
 
   private constructor(
     device: GPUDevice,
@@ -567,7 +677,8 @@ export class RayTracingRenderer {
     sceneUniformBuffer: GPUBuffer,
     planeBuffer: GPUBuffer,
     boxBuffer: GPUBuffer,
-    lightBuffer: GPUBuffer
+    lightBuffer: GPUBuffer,
+    capsuleBuffer: GPUBuffer
   ) {
     this.device = device
     this.context = context
@@ -577,6 +688,7 @@ export class RayTracingRenderer {
     this.planeBuffer = planeBuffer
     this.boxBuffer = boxBuffer
     this.lightBuffer = lightBuffer
+    this.capsuleBuffer = capsuleBuffer
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<RayTracingRenderer> {
@@ -631,6 +743,11 @@ export class RayTracingRenderer {
           visibility: GPUShaderStage.FRAGMENT,
           buffer: { type: 'read-only-storage' },
         },
+        {
+          binding: 4,
+          visibility: GPUShaderStage.FRAGMENT,
+          buffer: { type: 'read-only-storage' },
+        },
       ],
     })
 
@@ -661,9 +778,10 @@ export class RayTracingRenderer {
     // backgroundColor(12) + pad(4) = 16
     // ambientColor(12) + ambientIntensity(4) = 16
     // shadowBlur(4) + planeCount(4) + boxCount(4) + lightCount(4) = 16
-    // Total = 128 bytes
+    // capsuleCount(4) + pad(4) + pad(4) + pad(4) = 16
+    // Total = 144 bytes
     const sceneUniformBuffer = device.createBuffer({
-      size: 128,
+      size: 144,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
@@ -688,6 +806,13 @@ export class RayTracingRenderer {
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     })
 
+    // Capsule buffer: each capsule = pointA(12) + pad(4) + pointB(12) + pad(4) + color(12) + radius(4) = 48 bytes
+    const MAX_CAPSULES = 128
+    const capsuleBuffer = device.createBuffer({
+      size: MAX_CAPSULES * 48,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    })
+
     return new RayTracingRenderer(
       device,
       context,
@@ -696,7 +821,8 @@ export class RayTracingRenderer {
       sceneUniformBuffer,
       planeBuffer,
       boxBuffer,
-      lightBuffer
+      lightBuffer,
+      capsuleBuffer
     )
   }
 
@@ -788,6 +914,7 @@ export class RayTracingRenderer {
     // Separate objects by type
     const planes = objects.filter((o): o is ScenePlane => o.type === 'plane')
     const boxes = objects.filter((o): o is SceneBox => o.type === 'box')
+    const capsules = objects.filter((o): o is SceneCapsule => o.type === 'capsule')
 
     // Separate lights by type
     const ambientLight = lights.find((l): l is AmbientLight => l.type === 'ambient') ?? {
@@ -805,7 +932,7 @@ export class RayTracingRenderer {
     const up = this.cross(forward, right)
 
     // Build scene uniform buffer
-    const sceneData = new Float32Array(32) // 128 bytes / 4 = 32 floats
+    const sceneData = new Float32Array(36) // 144 bytes / 4 = 36 floats
     let offset = 0
 
     // Camera (80 bytes = 20 floats)
@@ -855,6 +982,16 @@ export class RayTracingRenderer {
       Math.min(directionalLights.length, this.MAX_LIGHTS),
       true
     )
+    offset++
+
+    // capsuleCount + padding (16 bytes = 4 u32)
+    sceneDataView.setUint32(offset * 4, Math.min(capsules.length, this.MAX_CAPSULES), true)
+    offset++
+    sceneDataView.setUint32(offset * 4, 0, true) // padding
+    offset++
+    sceneDataView.setUint32(offset * 4, 0, true) // padding
+    offset++
+    sceneDataView.setUint32(offset * 4, 0, true) // padding
 
     this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, sceneData)
 
@@ -947,6 +1084,30 @@ export class RayTracingRenderer {
     }
     this.device.queue.writeBuffer(this.lightBuffer, 0, lightData)
 
+    // Build capsule buffer (48 bytes per capsule = 12 floats)
+    const capsuleCount = Math.min(capsules.length, this.MAX_CAPSULES)
+    const capsuleData = new Float32Array(this.MAX_CAPSULES * 12)
+    for (let i = 0; i < capsuleCount; i++) {
+      const capsule = capsules[i]!
+      const base = i * 12
+      // pointA
+      capsuleData[base + 0] = capsule.geometry.pointA.x
+      capsuleData[base + 1] = capsule.geometry.pointA.y
+      capsuleData[base + 2] = capsule.geometry.pointA.z
+      capsuleData[base + 3] = 0 // padding
+      // pointB
+      capsuleData[base + 4] = capsule.geometry.pointB.x
+      capsuleData[base + 5] = capsule.geometry.pointB.y
+      capsuleData[base + 6] = capsule.geometry.pointB.z
+      capsuleData[base + 7] = 0 // padding
+      // color + radius
+      capsuleData[base + 8] = capsule.color.r
+      capsuleData[base + 9] = capsule.color.g
+      capsuleData[base + 10] = capsule.color.b
+      capsuleData[base + 11] = capsule.geometry.radius
+    }
+    this.device.queue.writeBuffer(this.capsuleBuffer, 0, capsuleData)
+
     // Create bind group
     const bindGroup = this.device.createBindGroup({
       layout: this.bindGroupLayout,
@@ -955,6 +1116,7 @@ export class RayTracingRenderer {
         { binding: 1, resource: { buffer: this.planeBuffer } },
         { binding: 2, resource: { buffer: this.boxBuffer } },
         { binding: 3, resource: { buffer: this.lightBuffer } },
+        { binding: 4, resource: { buffer: this.capsuleBuffer } },
       ],
     })
 
@@ -986,5 +1148,6 @@ export class RayTracingRenderer {
     this.planeBuffer.destroy()
     this.boxBuffer.destroy()
     this.lightBuffer.destroy()
+    this.capsuleBuffer.destroy()
   }
 }

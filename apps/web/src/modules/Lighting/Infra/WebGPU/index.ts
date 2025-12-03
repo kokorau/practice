@@ -7,4 +7,5 @@ export {
   type SceneObject,
   type ScenePlane,
   type SceneBox,
+  type SceneCapsule,
 } from './RayTracingRenderer'

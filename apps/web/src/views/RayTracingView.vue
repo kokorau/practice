@@ -76,8 +76,6 @@ function rotateY(x: number, z: number, angle: number): [number, number] {
   return [x * cos - z * sin, x * sin + z * cos]
 }
 
-// Ground plane Z position (background)
-const GROUND_Z = 5
 // Building base Z (how far forward buildings come from ground)
 const BASE_Z = 4.5
 
@@ -89,8 +87,9 @@ function createBuildings<T>(
   const result: T[] = []
 
   for (let i = 0; i < buildings.length; i++) {
-    const [bx, bz, width, depth, height] = buildings[i]
-    const color = buildingColors[i % buildingColors.length]
+    const b = buildings[i]!
+    const [bx, bz, width, depth, height] = b
+    const color = buildingColors[i % buildingColors.length]!
 
     // Building center Y is half the height (sitting on ground)
     const centerY = height / 2 - 0.3
