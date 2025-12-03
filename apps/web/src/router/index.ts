@@ -44,6 +44,11 @@ const router = createRouter({
       name: 'spectrum',
       component: () => import('../views/SpectrumView.vue'),
     },
+    {
+      path: '/webgpu-showcase',
+      name: 'webgpu-showcase',
+      component: () => import('../views/WebGPUShowcaseView.vue'),
+    },
   ],
 })
 

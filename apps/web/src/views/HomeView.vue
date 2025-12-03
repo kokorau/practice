@@ -30,6 +30,11 @@ const pages = [
     title: 'Section Preview',
     description: 'セクションテンプレートとカラーパレットの統合プレビュー',
   },
+  {
+    to: '/webgpu-showcase',
+    title: 'WebGPU Showcase',
+    description: 'WebGPUによるレイトレーシングシーンのショーケース',
+  },
 ]
 </script>
 
