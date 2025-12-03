@@ -5,12 +5,12 @@
 
 import type { SceneCapsule } from '../types'
 
-/** Floats per capsule (48 bytes / 4 = 12 floats) */
-export const CAPSULE_STRIDE = 12
+/** Floats per capsule (64 bytes / 4 = 16 floats) */
+export const CAPSULE_STRIDE = 16
 
 /**
  * Build capsule buffer
- * Each capsule: 48 bytes (pointA + pointB + color/radius)
+ * Each capsule: 64 bytes (pointA + pointB + color/radius + alpha/ior)
  */
 export const buildCapsuleBuffer = (
   capsules: readonly SceneCapsule[],
@@ -40,6 +40,12 @@ export const buildCapsuleBuffer = (
     data[base + 9] = capsule.color.g
     data[base + 10] = capsule.color.b
     data[base + 11] = capsule.geometry.radius
+
+    // alpha + ior + padding
+    data[base + 12] = capsule.alpha
+    data[base + 13] = capsule.ior
+    data[base + 14] = 0 // padding
+    data[base + 15] = 0 // padding
   }
 
   return data

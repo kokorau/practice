@@ -5,12 +5,12 @@
 
 import type { SceneSphere } from '../types'
 
-/** Floats per sphere (32 bytes / 4 = 8 floats) */
-export const SPHERE_STRIDE = 8
+/** Floats per sphere (48 bytes / 4 = 12 floats) */
+export const SPHERE_STRIDE = 12
 
 /**
  * Build sphere buffer
- * Each sphere: 32 bytes (center + padding + color + radius)
+ * Each sphere: 48 bytes (center + padding + color/radius + alpha/ior)
  */
 export const buildSphereBuffer = (
   spheres: readonly SceneSphere[],
@@ -34,6 +34,12 @@ export const buildSphereBuffer = (
     data[base + 5] = sphere.color.g
     data[base + 6] = sphere.color.b
     data[base + 7] = sphere.geometry.radius
+
+    // alpha + ior + padding
+    data[base + 8] = sphere.alpha
+    data[base + 9] = sphere.ior
+    data[base + 10] = 0 // padding
+    data[base + 11] = 0 // padding
   }
 
   return data

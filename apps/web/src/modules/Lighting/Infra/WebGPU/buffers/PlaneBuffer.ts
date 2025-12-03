@@ -35,16 +35,16 @@ export const buildPlaneBuffer = (
     data[base + 6] = plane.geometry.normal.z
     data[base + 7] = 0 // padding
 
-    // color (vec3f + padding)
+    // color (vec3f) + alpha (f32)
     data[base + 8] = plane.color.r
     data[base + 9] = plane.color.g
     data[base + 10] = plane.color.b
-    data[base + 11] = 0 // padding
+    data[base + 11] = plane.alpha
 
-    // size (vec2f + padding)
+    // size (vec2f) + ior + padding
     data[base + 12] = plane.geometry.width ?? -1
     data[base + 13] = plane.geometry.height ?? -1
-    data[base + 14] = 0 // padding
+    data[base + 14] = plane.ior
     data[base + 15] = 0 // padding
   }
 

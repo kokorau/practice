@@ -12,6 +12,8 @@ const GAMMA: f32 = 2.2;              // sRGB gamma value
 const INV_GAMMA: f32 = 1.0 / 2.2;    // Inverse gamma for linear to sRGB
 const SAFE_INV_EPSILON: f32 = 1e-8;  // Epsilon for safe division
 const PCF_SAMPLE_COUNT: i32 = 9;     // 3x3 PCF samples
+const MAX_BOUNCES: i32 = 4;          // Maximum ray bounces for transparency/refraction
+const AIR_IOR: f32 = 1.0;            // Index of refraction for air
 
 // =============================================================================
 // Structs
@@ -39,13 +41,14 @@ struct Plane {
   _pad0: f32,
   normal: vec3f,        // 16-27, pad 28-31
   _pad1: f32,
-  color: vec3f,         // 32-43, pad 44-47
-  _pad2: f32,
+  color: vec3f,         // 32-43
+  alpha: f32,           // 44-47 (0 = transparent, 1 = opaque)
   size: vec2f,          // 48-55
-  _pad3: vec2f,         // 56-63
+  ior: f32,             // 56-59 (index of refraction)
+  _pad2: f32,           // 60-63
 }
 
-// Box data (144 bytes)
+// Box data (160 bytes)
 struct Box {
   center: vec3f,        // 0-11, pad 12-15
   _pad0: f32,
@@ -53,11 +56,15 @@ struct Box {
   _pad1: f32,
   color: vec3f,         // 32-43
   radius: f32,          // 44-47
-  rotation: mat3x3f,    // 48-95 (3 x vec3f with padding = 48 bytes)
-  rotationInv: mat3x3f, // 96-143
+  alpha: f32,           // 48-51 (0 = transparent, 1 = opaque)
+  ior: f32,             // 52-55 (index of refraction)
+  _pad2: f32,           // 56-59
+  _pad3: f32,           // 60-63
+  rotation: mat3x3f,    // 64-111 (3 x vec3f with padding = 48 bytes)
+  rotationInv: mat3x3f, // 112-159
 }
 
-// Capsule data (48 bytes)
+// Capsule data (64 bytes)
 struct Capsule {
   pointA: vec3f,        // 0-11, pad 12-15
   _pad0: f32,
@@ -65,14 +72,22 @@ struct Capsule {
   _pad1: f32,
   color: vec3f,         // 32-43
   radius: f32,          // 44-47
+  alpha: f32,           // 48-51 (0 = transparent, 1 = opaque)
+  ior: f32,             // 52-55 (index of refraction)
+  _pad2: f32,           // 56-59
+  _pad3: f32,           // 60-63
 }
 
-// Sphere data (32 bytes)
+// Sphere data (48 bytes)
 struct Sphere {
   center: vec3f,        // 0-11, pad 12-15
   _pad0: f32,
   color: vec3f,         // 16-27
   radius: f32,          // 28-31
+  alpha: f32,           // 32-35 (0 = transparent, 1 = opaque)
+  ior: f32,             // 36-39 (index of refraction)
+  _pad1: f32,           // 40-43
+  _pad2: f32,           // 44-47
 }
 
 // Directional light (32 bytes)
@@ -141,6 +156,36 @@ fn srgbToLinear(srgb: vec3f) -> vec3f {
 // Linear to sRGB conversion
 fn linearToSrgb(linear: vec3f) -> vec3f {
   return pow(linear, vec3f(INV_GAMMA));
+}
+
+// Hit information structure for ray tracing
+struct HitInfo {
+  t: f32,
+  color: vec3f,
+  normal: vec3f,
+  alpha: f32,
+  ior: f32,
+}
+
+// Calculate refracted ray direction using Snell's law
+// Returns vec4f(refractedDir.xyz, 1.0) on success, vec4f(0) on total internal reflection
+fn calcRefraction(incident: vec3f, normal: vec3f, eta: f32) -> vec4f {
+  let cosi = dot(-incident, normal);
+  let k = 1.0 - eta * eta * (1.0 - cosi * cosi);
+
+  // Total internal reflection
+  if (k < 0.0) {
+    return vec4f(0.0);
+  }
+
+  let refracted = eta * incident + (eta * cosi - sqrt(k)) * normal;
+  return vec4f(normalize(refracted), 1.0);
+}
+
+// Fresnel reflectance using Schlick's approximation
+fn fresnelSchlick(cosTheta: f32, ior: f32) -> f32 {
+  let r0 = pow((1.0 - ior) / (1.0 + ior), 2.0);
+  return r0 + (1.0 - r0) * pow(1.0 - cosTheta, 5.0);
 }
 
 // Signed Distance Function for 2D rounded box (XY plane only)
@@ -396,6 +441,91 @@ fn getSphereNormal(sphere: Sphere, hitPoint: vec3f) -> vec3f {
   return normalize(hitPoint - sphere.center);
 }
 
+// Trace primary ray and find closest hit with full material info
+fn traceRay(rayOrigin: vec3f, rayDir: vec3f) -> HitInfo {
+  var hit: HitInfo;
+  hit.t = MAX_DISTANCE;
+  hit.color = scene.backgroundColor;
+  hit.normal = vec3f(0.0);
+  hit.alpha = 1.0;
+  hit.ior = AIR_IOR;
+
+  // Check planes
+  for (var i = 0u; i < scene.planeCount; i++) {
+    let plane = planes[i];
+    let t = intersectPlane(rayOrigin, rayDir, plane);
+
+    if (t > 0.0 && t < hit.t) {
+      hit.t = t;
+      hit.color = plane.color;
+      hit.normal = plane.normal;
+      hit.alpha = plane.alpha;
+      hit.ior = plane.ior;
+    }
+  }
+
+  // Check boxes
+  for (var i = 0u; i < scene.boxCount; i++) {
+    let box = boxes[i];
+    var result: vec2f;
+
+    if (box.radius > 0.0) {
+      result = intersectRoundBox(rayOrigin, rayDir, box);
+    } else {
+      result = intersectBox(rayOrigin, rayDir, box);
+    }
+
+    let t = result.x;
+    if (t > 0.0 && t < hit.t) {
+      hit.t = t;
+      hit.color = box.color;
+      hit.alpha = box.alpha;
+      hit.ior = box.ior;
+
+      if (box.radius > 0.0) {
+        hit.normal = getRoundBoxNormal(box, rayOrigin, rayDir, t);
+      } else {
+        let localOrigin = box.rotation * (rayOrigin - box.center);
+        let localDir = box.rotation * rayDir;
+        let localHit = localOrigin + t * localDir;
+        hit.normal = getBoxNormal(box, localHit, result.y);
+      }
+    }
+  }
+
+  // Check capsules
+  for (var i = 0u; i < scene.capsuleCount; i++) {
+    let capsule = capsules[i];
+    let t = intersectCapsule(rayOrigin, rayDir, capsule);
+
+    if (t > 0.0 && t < hit.t) {
+      hit.t = t;
+      hit.color = capsule.color;
+      hit.alpha = capsule.alpha;
+      hit.ior = capsule.ior;
+      let hitPoint = rayOrigin + t * rayDir;
+      hit.normal = getCapsuleNormal(capsule, hitPoint);
+    }
+  }
+
+  // Check spheres
+  for (var i = 0u; i < scene.sphereCount; i++) {
+    let sphere = spheres[i];
+    let t = intersectSphere(rayOrigin, rayDir, sphere);
+
+    if (t > 0.0 && t < hit.t) {
+      hit.t = t;
+      hit.color = sphere.color;
+      hit.alpha = sphere.alpha;
+      hit.ior = sphere.ior;
+      let hitPoint = rayOrigin + t * rayDir;
+      hit.normal = getSphereNormal(sphere, hitPoint);
+    }
+  }
+
+  return hit;
+}
+
 // Shadow ray (simplified, returns distance or -1)
 fn traceShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
   let shadowOrigin = hitPoint + lightDir * SHADOW_OFFSET;
@@ -497,118 +627,111 @@ fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
   return output;
 }
 
+// Calculate surface shading (ambient + diffuse with shadows)
+fn calcShading(hitPoint: vec3f, surfaceColor: vec3f, normal: vec3f) -> vec3f {
+  // Convert to linear space
+  let linearSurfaceColor = srgbToLinear(surfaceColor);
+  let linearAmbientColor = srgbToLinear(scene.ambientColor);
+
+  // Ambient lighting
+  var result = linearSurfaceColor * linearAmbientColor * scene.ambientIntensity;
+
+  // Diffuse from directional lights
+  for (var i = 0u; i < scene.lightCount; i++) {
+    let light = lights[i];
+    let NdotL = max(0.0, dot(normal, light.direction));
+
+    if (NdotL > 0.0) {
+      let linearLightColor = srgbToLinear(light.color);
+      let shadow = calcShadow(hitPoint, light.direction);
+      result += linearSurfaceColor * linearLightColor * light.intensity * NdotL * shadow;
+    }
+  }
+
+  return result;
+}
+
 @fragment
 fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
   // Generate ray from orthographic camera
   let offsetU = input.uv.x - 0.5;
   let offsetV = (1.0 - input.uv.y) - 0.5; // Flip back for ray calculation
 
-  let rayOrigin = scene.camera.position
+  var currentOrigin = scene.camera.position
     + scene.camera.right * offsetU * scene.camera.width
     + scene.camera.up * offsetV * scene.camera.height;
-  let rayDir = scene.camera.forward;
+  var currentDir = scene.camera.forward;
 
-  // Find closest intersection
-  var closestT: f32 = MAX_DISTANCE;
-  var hitColor = scene.backgroundColor;
-  var hitSurfaceColor = vec3f(0.0);
-  var hitNormal = vec3f(0.0);
-  var hasHit = false;
+  // Accumulated color and transmittance for transparency
+  var accumulatedColor = vec3f(0.0);
+  var transmittance = 1.0;
+  var currentIor = AIR_IOR;  // Track current medium's IOR
 
-  // Check planes
-  for (var i = 0u; i < scene.planeCount; i++) {
-    let plane = planes[i];
-    let t = intersectPlane(rayOrigin, rayDir, plane);
+  // Iterative ray tracing for transparency/refraction
+  for (var bounce = 0; bounce < MAX_BOUNCES; bounce++) {
+    let hit = traceRay(currentOrigin, currentDir);
 
-    if (t > 0.0 && t < closestT) {
-      closestT = t;
-      hitSurfaceColor = plane.color;
-      hitNormal = plane.normal;
-      hasHit = true;
+    // No hit - add background and exit
+    if (hit.t >= MAX_DISTANCE) {
+      accumulatedColor += transmittance * srgbToLinear(scene.backgroundColor);
+      break;
     }
-  }
 
-  // Check boxes
-  for (var i = 0u; i < scene.boxCount; i++) {
-    let box = boxes[i];
-    var result: vec2f;
+    let hitPoint = currentOrigin + hit.t * currentDir;
 
-    if (box.radius > 0.0) {
-      result = intersectRoundBox(rayOrigin, rayDir, box);
+    // Calculate surface shading
+    let surfaceShading = calcShading(hitPoint, hit.color, hit.normal);
+
+    // Opaque surface - add color and exit
+    if (hit.alpha >= 1.0) {
+      accumulatedColor += transmittance * surfaceShading;
+      break;
+    }
+
+    // Transparent surface - blend and continue
+    let surfaceContribution = hit.alpha;
+    accumulatedColor += transmittance * surfaceContribution * surfaceShading;
+    transmittance *= (1.0 - surfaceContribution);
+
+    // If transmittance is negligible, stop
+    if (transmittance < 0.01) {
+      break;
+    }
+
+    // Determine if entering or exiting the medium
+    let cosTheta = dot(-currentDir, hit.normal);
+    let entering = cosTheta > 0.0;
+
+    var refractNormal: vec3f;
+    var eta: f32;
+
+    if (entering) {
+      // Entering the medium (air -> material)
+      refractNormal = hit.normal;
+      eta = currentIor / hit.ior;
     } else {
-      result = intersectBox(rayOrigin, rayDir, box);
+      // Exiting the medium (material -> air)
+      refractNormal = -hit.normal;
+      eta = hit.ior / AIR_IOR;
     }
 
-    let t = result.x;
-    if (t > 0.0 && t < closestT) {
-      closestT = t;
-      hitSurfaceColor = box.color;
+    // Calculate refraction
+    let refractResult = calcRefraction(currentDir, refractNormal, eta);
 
-      if (box.radius > 0.0) {
-        hitNormal = getRoundBoxNormal(box, rayOrigin, rayDir, t);
-      } else {
-        let localOrigin = box.rotation * (rayOrigin - box.center);
-        let localDir = box.rotation * rayDir;
-        let localHit = localOrigin + t * localDir;
-        hitNormal = getBoxNormal(box, localHit, result.y);
-      }
-      hasHit = true;
+    if (refractResult.w > 0.5) {
+      // Refraction succeeded
+      currentDir = refractResult.xyz;
+      currentIor = select(hit.ior, AIR_IOR, entering);
+    } else {
+      // Total internal reflection - reflect instead
+      currentDir = reflect(currentDir, refractNormal);
     }
+
+    // Offset origin to avoid self-intersection
+    currentOrigin = hitPoint + currentDir * SHADOW_OFFSET;
   }
 
-  // Check capsules
-  for (var i = 0u; i < scene.capsuleCount; i++) {
-    let capsule = capsules[i];
-    let t = intersectCapsule(rayOrigin, rayDir, capsule);
-
-    if (t > 0.0 && t < closestT) {
-      closestT = t;
-      hitSurfaceColor = capsule.color;
-      let hitPoint = rayOrigin + t * rayDir;
-      hitNormal = getCapsuleNormal(capsule, hitPoint);
-      hasHit = true;
-    }
-  }
-
-  // Check spheres
-  for (var i = 0u; i < scene.sphereCount; i++) {
-    let sphere = spheres[i];
-    let t = intersectSphere(rayOrigin, rayDir, sphere);
-
-    if (t > 0.0 && t < closestT) {
-      closestT = t;
-      hitSurfaceColor = sphere.color;
-      let hitPoint = rayOrigin + t * rayDir;
-      hitNormal = getSphereNormal(sphere, hitPoint);
-      hasHit = true;
-    }
-  }
-
-  if (hasHit) {
-    let hitPoint = rayOrigin + closestT * rayDir;
-
-    // Convert to linear space
-    let linearSurfaceColor = srgbToLinear(hitSurfaceColor);
-    let linearAmbientColor = srgbToLinear(scene.ambientColor);
-
-    // Ambient lighting
-    var ambient = linearSurfaceColor * linearAmbientColor * scene.ambientIntensity;
-
-    // Diffuse from directional lights
-    var diffuse = vec3f(0.0);
-    for (var i = 0u; i < scene.lightCount; i++) {
-      let light = lights[i];
-      let NdotL = max(0.0, dot(hitNormal, light.direction));
-
-      if (NdotL > 0.0) {
-        let linearLightColor = srgbToLinear(light.color);
-        let shadow = calcShadow(hitPoint, light.direction);
-        diffuse += linearSurfaceColor * linearLightColor * light.intensity * NdotL * shadow;
-      }
-    }
-
-    hitColor = linearToSrgb(ambient + diffuse);
-  }
-
-  return vec4f(hitColor, 1.0);
+  // Convert back to sRGB
+  let finalColor = linearToSrgb(accumulatedColor);
+  return vec4f(finalColor, 1.0);
 }

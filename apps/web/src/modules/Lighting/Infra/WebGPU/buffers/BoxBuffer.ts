@@ -6,14 +6,14 @@
 import { eulerToMat3x3f, eulerToMat3x3fInverse } from '../../utils/matrix'
 import type { SceneBox } from '../types'
 
-/** Floats per box (144 bytes / 4 = 36 floats) */
-export const BOX_STRIDE = 36
+/** Floats per box (160 bytes / 4 = 40 floats) */
+export const BOX_STRIDE = 40
 
 const IDENTITY_EULER = { x: 0, y: 0, z: 0 }
 
 /**
  * Build box buffer
- * Each box: 144 bytes (center + size + color/radius + rotation + rotationInv)
+ * Each box: 160 bytes (center + size + color/radius + alpha/ior + rotation + rotationInv)
  */
 export const buildBoxBuffer = (
   boxes: readonly SceneBox[],
@@ -46,19 +46,25 @@ export const buildBoxBuffer = (
       data[base + 10] = box.color.b
       data[base + 11] = box.geometry.radius ?? 0
 
+      // alpha + ior + padding
+      data[base + 12] = box.alpha
+      data[base + 13] = box.ior
+      data[base + 14] = 0 // padding
+      data[base + 15] = 0 // padding
+
       // rotation matrix (mat3x3f = 12 floats with padding)
       const euler = box.geometry.rotation ?? IDENTITY_EULER
       const rotMatrix = eulerToMat3x3f(euler)
-      data.set(rotMatrix, base + 12)
+      data.set(rotMatrix, base + 16)
 
       // inverse rotation matrix (mat3x3f = 12 floats with padding)
       const rotMatrixInv = eulerToMat3x3fInverse(euler)
-      data.set(rotMatrixInv, base + 24)
+      data.set(rotMatrixInv, base + 28)
     } else {
       // Identity matrices for unused boxes
       const identity = eulerToMat3x3f(IDENTITY_EULER)
-      data.set(identity, base + 12)
-      data.set(identity, base + 24)
+      data.set(identity, base + 16)
+      data.set(identity, base + 28)
     }
   }
 

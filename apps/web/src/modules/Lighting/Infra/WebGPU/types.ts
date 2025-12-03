@@ -11,48 +11,84 @@ export interface ScenePlane {
   type: 'plane'
   geometry: PlaneGeometry
   color: Color
+  alpha: number // 0 = fully transparent, 1 = fully opaque
+  ior: number // Index of refraction (1.0 = air, 1.5 = glass, 2.4 = diamond)
 }
 
 export interface SceneBox {
   type: 'box'
   geometry: BoxGeometry
   color: Color
+  alpha: number
+  ior: number
 }
 
 export interface SceneCapsule {
   type: 'capsule'
   geometry: CapsuleGeometry
   color: Color
+  alpha: number
+  ior: number
 }
 
 export interface SceneSphere {
   type: 'sphere'
   geometry: SphereGeometry
   color: Color
+  alpha: number
+  ior: number
 }
 
 export type SceneObject = ScenePlane | SceneBox | SceneCapsule | SceneSphere
 
 export const $SceneObject = {
-  createPlane: (geometry: PlaneGeometry, color: Color): ScenePlane => ({
+  createPlane: (
+    geometry: PlaneGeometry,
+    color: Color,
+    alpha: number = 1,
+    ior: number = 1
+  ): ScenePlane => ({
     type: 'plane',
     geometry,
     color,
+    alpha,
+    ior,
   }),
-  createBox: (geometry: BoxGeometry, color: Color): SceneBox => ({
+  createBox: (
+    geometry: BoxGeometry,
+    color: Color,
+    alpha: number = 1,
+    ior: number = 1
+  ): SceneBox => ({
     type: 'box',
     geometry,
     color,
+    alpha,
+    ior,
   }),
-  createCapsule: (geometry: CapsuleGeometry, color: Color): SceneCapsule => ({
+  createCapsule: (
+    geometry: CapsuleGeometry,
+    color: Color,
+    alpha: number = 1,
+    ior: number = 1
+  ): SceneCapsule => ({
     type: 'capsule',
     geometry,
     color,
+    alpha,
+    ior,
   }),
-  createSphere: (geometry: SphereGeometry, color: Color): SceneSphere => ({
+  createSphere: (
+    geometry: SphereGeometry,
+    color: Color,
+    alpha: number = 1,
+    ior: number = 1
+  ): SceneSphere => ({
     type: 'sphere',
     geometry,
     color,
+    alpha,
+    ior,
   }),
 }
 

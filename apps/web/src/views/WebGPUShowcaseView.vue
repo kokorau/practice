@@ -9,6 +9,7 @@ const webGPUSupported = ref(false)
 const webGPUError = ref<string | null>(null)
 const selectedSceneId = ref(SceneList[0]!.id)
 const canvasSize = ref({ width: 800, height: 600 })
+const fps = ref(0)
 
 let renderer: RayTracingRendererWebGPU | null = null
 let animationFrameId: number | null = null
@@ -42,10 +43,21 @@ async function initRenderer() {
 
 function startAnimation() {
   let startTime: number | null = null
+  let lastFrameTime = performance.now()
+  let frameCount = 0
 
   function animate(timestamp: number) {
     if (startTime === null) startTime = timestamp
     const elapsed = (timestamp - startTime) / 1000
+
+    // FPS calculation
+    frameCount++
+    const now = performance.now()
+    if (now - lastFrameTime >= 500) {
+      fps.value = frameCount / ((now - lastFrameTime) / 1000)
+      frameCount = 0
+      lastFrameTime = now
+    }
 
     if (renderer) {
       const sceneDef = getSelectedScene()
@@ -138,6 +150,9 @@ onUnmounted(() => {
         </div>
         <div class="text-gray-600">
           {{ canvasSize.width }} x {{ canvasSize.height }}
+        </div>
+        <div class="text-gray-600">
+          {{ fps.toFixed(1) }} fps
         </div>
       </div>
     </aside>
