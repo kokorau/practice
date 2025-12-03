@@ -40,6 +40,11 @@ export async function isWebGPUSupported(): Promise<boolean> {
   }
 }
 
+/** Minimum buffer capacity (must be >= 1 for valid GPU buffer) */
+const MIN_CAPACITY = 1
+/** Growth factor when resizing buffers */
+const GROWTH_FACTOR = 2
+
 export class RayTracingRenderer {
   private device: GPUDevice
   private context: GPUCanvasContext
@@ -52,10 +57,11 @@ export class RayTracingRenderer {
   private lightBuffer: GPUBuffer
   private capsuleBuffer: GPUBuffer
 
-  private readonly MAX_PLANES = 32
-  private readonly MAX_BOXES = 64
-  private readonly MAX_LIGHTS = 4
-  private readonly MAX_CAPSULES = 128
+  // Dynamic capacity tracking
+  private planeCapacity: number
+  private boxCapacity: number
+  private lightCapacity: number
+  private capsuleCapacity: number
 
   private constructor(
     device: GPUDevice,
@@ -66,7 +72,11 @@ export class RayTracingRenderer {
     planeBuffer: GPUBuffer,
     boxBuffer: GPUBuffer,
     lightBuffer: GPUBuffer,
-    capsuleBuffer: GPUBuffer
+    capsuleBuffer: GPUBuffer,
+    planeCapacity: number,
+    boxCapacity: number,
+    lightCapacity: number,
+    capsuleCapacity: number
   ) {
     this.device = device
     this.context = context
@@ -77,6 +87,10 @@ export class RayTracingRenderer {
     this.boxBuffer = boxBuffer
     this.lightBuffer = lightBuffer
     this.capsuleBuffer = capsuleBuffer
+    this.planeCapacity = planeCapacity
+    this.boxCapacity = boxCapacity
+    this.lightCapacity = lightCapacity
+    this.capsuleCapacity = capsuleCapacity
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<RayTracingRenderer> {
@@ -173,31 +187,33 @@ export class RayTracingRenderer {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
+    // Initial capacities (will grow dynamically as needed)
+    const initialPlaneCapacity = 8
+    const initialBoxCapacity = 16
+    const initialLightCapacity = 4
+    const initialCapsuleCapacity = 32
+
     // Plane buffer (64 bytes per plane)
-    const MAX_PLANES = 32
     const planeBuffer = device.createBuffer({
-      size: MAX_PLANES * PLANE_STRIDE * 4,
+      size: initialPlaneCapacity * PLANE_STRIDE * 4,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     })
 
     // Box buffer (144 bytes per box)
-    const MAX_BOXES = 64
     const boxBuffer = device.createBuffer({
-      size: MAX_BOXES * BOX_STRIDE * 4,
+      size: initialBoxCapacity * BOX_STRIDE * 4,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     })
 
     // Light buffer (32 bytes per light)
-    const MAX_LIGHTS = 4
     const lightBuffer = device.createBuffer({
-      size: MAX_LIGHTS * LIGHT_STRIDE * 4,
+      size: initialLightCapacity * LIGHT_STRIDE * 4,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     })
 
     // Capsule buffer (48 bytes per capsule)
-    const MAX_CAPSULES = 128
     const capsuleBuffer = device.createBuffer({
-      size: MAX_CAPSULES * CAPSULE_STRIDE * 4,
+      size: initialCapsuleCapacity * CAPSULE_STRIDE * 4,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     })
 
@@ -210,8 +226,41 @@ export class RayTracingRenderer {
       planeBuffer,
       boxBuffer,
       lightBuffer,
-      capsuleBuffer
+      capsuleBuffer,
+      initialPlaneCapacity,
+      initialBoxCapacity,
+      initialLightCapacity,
+      initialCapsuleCapacity
     )
+  }
+
+  /**
+   * Ensure buffer has sufficient capacity, resizing if needed
+   */
+  private ensureBufferCapacity(
+    currentBuffer: GPUBuffer,
+    currentCapacity: number,
+    requiredCount: number,
+    strideFloats: number
+  ): { buffer: GPUBuffer; capacity: number } {
+    if (requiredCount <= currentCapacity) {
+      return { buffer: currentBuffer, capacity: currentCapacity }
+    }
+
+    // Calculate new capacity with growth factor
+    let newCapacity = Math.max(currentCapacity, MIN_CAPACITY)
+    while (newCapacity < requiredCount) {
+      newCapacity *= GROWTH_FACTOR
+    }
+
+    // Destroy old buffer and create new one
+    currentBuffer.destroy()
+    const newBuffer = this.device.createBuffer({
+      size: newCapacity * strideFloats * 4,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    })
+
+    return { buffer: newBuffer, capacity: newCapacity }
   }
 
   render(scene: Scene, camera: OrthographicCamera): void {
@@ -237,6 +286,36 @@ export class RayTracingRenderer {
       (l): l is DirectionalLight => l.type === 'directional'
     )
 
+    // Ensure buffer capacities (resize if needed)
+    const planeCount = Math.max(planes.length, MIN_CAPACITY)
+    const boxCount = Math.max(boxes.length, MIN_CAPACITY)
+    const lightCount = Math.max(directionalLights.length, MIN_CAPACITY)
+    const capsuleCount = Math.max(capsules.length, MIN_CAPACITY)
+
+    const planeResult = this.ensureBufferCapacity(
+      this.planeBuffer, this.planeCapacity, planeCount, PLANE_STRIDE
+    )
+    this.planeBuffer = planeResult.buffer
+    this.planeCapacity = planeResult.capacity
+
+    const boxResult = this.ensureBufferCapacity(
+      this.boxBuffer, this.boxCapacity, boxCount, BOX_STRIDE
+    )
+    this.boxBuffer = boxResult.buffer
+    this.boxCapacity = boxResult.capacity
+
+    const lightResult = this.ensureBufferCapacity(
+      this.lightBuffer, this.lightCapacity, lightCount, LIGHT_STRIDE
+    )
+    this.lightBuffer = lightResult.buffer
+    this.lightCapacity = lightResult.capacity
+
+    const capsuleResult = this.ensureBufferCapacity(
+      this.capsuleBuffer, this.capsuleCapacity, capsuleCount, CAPSULE_STRIDE
+    )
+    this.capsuleBuffer = capsuleResult.buffer
+    this.capsuleCapacity = capsuleResult.capacity
+
     // Calculate camera basis vectors
     const forward = $Vector3.normalize($Vector3.sub(camera.lookAt, camera.position))
     const right = $Vector3.normalize($Vector3.cross(camera.up, forward))
@@ -256,28 +335,28 @@ export class RayTracingRenderer {
       ambientLight,
       shadowBlur,
       counts: {
-        planes: Math.min(planes.length, this.MAX_PLANES),
-        boxes: Math.min(boxes.length, this.MAX_BOXES),
-        lights: Math.min(directionalLights.length, this.MAX_LIGHTS),
-        capsules: Math.min(capsules.length, this.MAX_CAPSULES),
+        planes: planes.length,
+        boxes: boxes.length,
+        lights: directionalLights.length,
+        capsules: capsules.length,
       },
     })
     this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, sceneData)
 
     // Build and write plane buffer
-    const planeData = buildPlaneBuffer(planes, this.MAX_PLANES)
+    const planeData = buildPlaneBuffer(planes, this.planeCapacity)
     this.device.queue.writeBuffer(this.planeBuffer, 0, planeData)
 
     // Build and write box buffer
-    const boxData = buildBoxBuffer(boxes, this.MAX_BOXES)
+    const boxData = buildBoxBuffer(boxes, this.boxCapacity)
     this.device.queue.writeBuffer(this.boxBuffer, 0, boxData)
 
     // Build and write light buffer
-    const lightData = buildLightBuffer(directionalLights, this.MAX_LIGHTS)
+    const lightData = buildLightBuffer(directionalLights, this.lightCapacity)
     this.device.queue.writeBuffer(this.lightBuffer, 0, lightData)
 
     // Build and write capsule buffer
-    const capsuleData = buildCapsuleBuffer(capsules, this.MAX_CAPSULES)
+    const capsuleData = buildCapsuleBuffer(capsules, this.capsuleCapacity)
     this.device.queue.writeBuffer(this.capsuleBuffer, 0, capsuleData)
 
     // Create bind group
