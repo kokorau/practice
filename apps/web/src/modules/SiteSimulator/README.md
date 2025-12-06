@@ -263,6 +263,67 @@ type PreviewElementTree = {
 }
 ```
 
+### 成果物系（Output Artifacts）
+
+#### CssOutput
+
+```typescript
+type BoxShadowOutput = {
+  readonly selector: string
+  readonly boxShadow: string
+}
+
+type CssOutput = {
+  readonly spec: LayoutCssSpec
+  readonly boxShadows: ReadonlyArray<BoxShadowOutput>
+  readonly raw: string  // 埋め込み用CSS文字列
+}
+```
+
+#### HtmlOutput
+
+```typescript
+type HtmlOutput = {
+  readonly templateId: string
+  readonly html: string           // レンダリング済みHTML
+  readonly inlineStyles?: string
+}
+```
+
+#### AssetOutput
+
+```typescript
+type ImageAsset = {
+  readonly src: string            // 元画像パス
+  readonly processed: string      // LUT適用後（data URL / blob URL）
+  readonly width: number
+  readonly height: number
+  readonly filterId?: string
+}
+
+type AssetOutput = {
+  readonly images: ReadonlyArray<ImageAsset>
+}
+```
+
+#### SiteArtifact
+
+```typescript
+type SiteArtifact = {
+  readonly palette: RenderedPalette   // レンダリング済みパレット（Display-P3）
+  readonly css: CssOutput
+  readonly html: HtmlOutput
+  readonly assets: AssetOutput
+  readonly metadata: {
+    readonly generatedAt: string
+    readonly brandColor: string
+    readonly accentColor: string
+    readonly lightSourceId: string
+    readonly filterId?: string
+  }
+}
+```
+
 ## Application層 ポート
 
 | ポート | 責務 |
