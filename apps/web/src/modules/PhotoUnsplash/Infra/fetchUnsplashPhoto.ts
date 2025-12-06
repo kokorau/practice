@@ -38,6 +38,8 @@ const extractImageData = (img: HTMLImageElement): ImageData => {
 
 export type FetchUnsplashPhotoOptions = {
   query?: string
+  /** Number of photos to fetch (1-30, default: 1) */
+  count?: number
 }
 
 export const fetchUnsplashPhoto = async (options: FetchUnsplashPhotoOptions = {}) => {
@@ -67,4 +69,46 @@ export const fetchUnsplashPhoto = async (options: FetchUnsplashPhotoOptions = {}
   const imageData = extractImageData(img)
 
   return $Photo.create(imageData)
+}
+
+/**
+ * Fetch multiple random photos from Unsplash
+ */
+export const fetchUnsplashPhotos = async (options: FetchUnsplashPhotoOptions = {}) => {
+  const accessKey = import.meta.env.VITE_UNSPLASH_ACCESS_KEY
+  if (!accessKey) {
+    throw new Error('VITE_UNSPLASH_ACCESS_KEY is not set')
+  }
+
+  const count = Math.min(30, Math.max(1, options.count ?? 5))
+
+  const params = new URLSearchParams()
+  params.set('count', count.toString())
+  if (options.query) {
+    params.set('query', options.query)
+  }
+
+  const url = `${UNSPLASH_API_BASE}/photos/random?${params.toString()}`
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Client-ID ${accessKey}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Unsplash API error: ${response.status}`)
+  }
+
+  const dataArray: UnsplashRandomResponse[] = await response.json()
+
+  // Load all images in parallel
+  const photos = await Promise.all(
+    dataArray.map(async (data) => {
+      const img = await loadImageFromUrl(data.urls.regular)
+      const imageData = extractImageData(img)
+      return $Photo.create(imageData)
+    })
+  )
+
+  return photos
 }
