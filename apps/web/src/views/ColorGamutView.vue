@@ -24,7 +24,7 @@ const XY_RANGE = { xMin: 0, xMax: 0.8, yMin: 0, yMax: 0.9 }
 const selectedXy = ref<{ x: number; y: number }>({ x: D65_WHITE[0], y: D65_WHITE[1] })
 
 // 輝度（Y）値
-const luminance = ref(0.5)
+const luminance = ref(1.0)
 
 // UseCaseを使った変換結果
 const conversionResult = computed(() => {
