@@ -36,8 +36,15 @@ const loadPhotos = async () => {
   try {
     const loaded = await fetchUnsplashPhotos({ count: 5 })
     photos.value = loaded
-    // Extract profiles for each photo
-    profiles.value = loaded.map((photo) => {
+
+    // Create display images and extract profiles
+    displayImages.value.clear()
+    profiles.value = loaded.map((photo, index) => {
+      // Cache display image
+      const displayImg = getDisplayImageData(photo)
+      displayImages.value.set(index, displayImg)
+
+      // Extract profile from small version
       const smallImageData = downsampleImageData(photo.imageData, 320)
       return $LuminanceProfile.extract(smallImageData, 1, 7)
     })
@@ -88,17 +95,42 @@ const createIdentityLut = (): Lut1D => {
   return { type: 'lut1d', r: identity, g: identity, b: identity }
 }
 
+// Downscale photo for display (max 400px width)
+const getDisplayImageData = (photo: Photo): ImageData => {
+  const maxWidth = 400
+  if (photo.width <= maxWidth) return photo.imageData
+
+  const scale = maxWidth / photo.width
+  const newWidth = Math.floor(photo.width * scale)
+  const newHeight = Math.floor(photo.height * scale)
+
+  const canvas = document.createElement('canvas')
+  canvas.width = newWidth
+  canvas.height = newHeight
+  const ctx = canvas.getContext('2d')!
+
+  const tempCanvas = document.createElement('canvas')
+  tempCanvas.width = photo.width
+  tempCanvas.height = photo.height
+  const tempCtx = tempCanvas.getContext('2d')!
+  tempCtx.putImageData(photo.imageData, 0, 0)
+
+  ctx.drawImage(tempCanvas, 0, 0, newWidth, newHeight)
+  return ctx.getImageData(0, 0, newWidth, newHeight)
+}
+
+// Cache downscaled images
+const displayImages = ref<Map<number, ImageData>>(new Map())
+
 // Render a photo to canvas with optional LUT
 const renderToCanvas = (
   canvas: HTMLCanvasElement,
-  photo: Photo,
+  imageData: ImageData,
   lut: Lut1D | null
 ) => {
   const renderer = getRenderer(canvas)
-  canvas.width = photo.width
-  canvas.height = photo.height
   const options: RenderOptions = { lut: lut ?? createIdentityLut() }
-  renderer.render(photo.imageData, options)
+  renderer.render(imageData, options)
 }
 
 // Store canvas ref
@@ -110,20 +142,22 @@ const setCanvasRef = (el: HTMLCanvasElement | null, photoIndex: number, type: 'o
 
 // Render all canvases when photos or filter changes
 const renderAllCanvases = () => {
-  photos.value.forEach((photo, index) => {
+  photos.value.forEach((_photo, index) => {
     const profile = profiles.value[index]
+    const imageData = displayImages.value.get(index)
+    if (!imageData) return
 
     // Original
     const originalCanvas = canvasRefs.value.get(`${index}-original`)
     if (originalCanvas) {
-      renderToCanvas(originalCanvas, photo, null)
+      renderToCanvas(originalCanvas, imageData, null)
     }
 
     // Flat (inverse LUT to neutralize)
     const flatCanvas = canvasRefs.value.get(`${index}-flat`)
     if (flatCanvas && profile) {
       const inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType.value)
-      renderToCanvas(flatCanvas, photo, {
+      renderToCanvas(flatCanvas, imageData, {
         type: 'lut1d',
         r: inverseLut,
         g: inverseLut,
@@ -133,38 +167,28 @@ const renderAllCanvases = () => {
 
     // Filter (inverse LUT + filter LUT)
     const filterCanvas = canvasRefs.value.get(`${index}-filter`)
-    if (filterCanvas && profile && filterLut.value) {
+    if (filterCanvas && profile) {
       const inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType.value)
 
-      // Only compose if filterLut is 1D LUT
-      if (filterLut.value.type === 'lut1d') {
-        const fLut = filterLut.value as Lut1D
-        const composedR = new Float32Array(256)
-        const composedG = new Float32Array(256)
-        const composedB = new Float32Array(256)
-        for (let i = 0; i < 256; i++) {
-          const flatVal = inverseLut[i]!
-          const flatIdx = Math.round(flatVal * 255)
-          composedR[i] = fLut.r[flatIdx]!
-          composedG[i] = fLut.g[flatIdx]!
-          composedB[i] = fLut.b[flatIdx]!
-        }
-        renderToCanvas(filterCanvas, photo, { type: 'lut1d', r: composedR, g: composedG, b: composedB })
-      } else {
-        // For 3D LUT, just apply inverse for now
-        renderToCanvas(filterCanvas, photo, {
-          type: 'lut1d',
-          r: inverseLut,
-          g: inverseLut,
-          b: inverseLut,
-        })
+      // Compose inverse + filter LUT
+      const fLut = filterLut.value?.type === 'lut1d' ? filterLut.value as Lut1D : createIdentityLut()
+      const composedR = new Float32Array(256)
+      const composedG = new Float32Array(256)
+      const composedB = new Float32Array(256)
+      for (let i = 0; i < 256; i++) {
+        const flatVal = inverseLut[i]!
+        const flatIdx = Math.min(255, Math.max(0, Math.round(flatVal * 255)))
+        composedR[i] = fLut.r[flatIdx]!
+        composedG[i] = fLut.g[flatIdx]!
+        composedB[i] = fLut.b[flatIdx]!
       }
+      renderToCanvas(filterCanvas, imageData, { type: 'lut1d', r: composedR, g: composedG, b: composedB })
     }
   })
 }
 
 // Watch for changes and re-render
-watch([photos, profiles, fitType, filterLut], () => {
+watch([photos, displayImages, profiles, fitType, filterLut], () => {
   nextTick(renderAllCanvases)
 }, { deep: true })
 </script>
