@@ -7,6 +7,7 @@ HTML/CSSに光とフィルター（LUT）の概念を追加し、統一感のあ
 - **Primitive Palette（ベース40色）** を土台に
 - **Brand Color** からプライマリ・アクセントを派生
 - **光源** と **フィルター（LUT）** を適用して最終色を決定
+- **data-* 属性** でHTMLにセマンティック情報を付与
 - 最終出力は Display-P3 の CSS変数
 
 ## アーキテクチャ
@@ -15,19 +16,23 @@ HTML/CSSに光とフィルター（LUT）の概念を追加し、統一感のあ
 apps/web/src/modules/SiteSimulator/
 ├── Domain/
 │   └── ValueObject/
-│       ├── PrimitivePalette.ts   # ベース40色
-│       ├── BrandPrimitive.ts     # ブランドカラー + variants
-│       ├── CorePalette.ts        # brand/accent/neutral
-│       ├── SemanticPalette.ts    # surface/text/brand/accent
-│       ├── PaletteOutput.ts      # 最終出力構造
-│       ├── LightSource.ts        # 光源
-│       ├── FilterPreset.ts       # フィルター（LUT）
-│       ├── RenderedColor.ts      # レンダリング結果
+│       ├── PrimitivePalette.ts     # ベース40色
+│       ├── BrandPrimitive.ts       # ブランドカラー + variants
+│       ├── CorePalette.ts          # brand/accent/neutral
+│       ├── SemanticPalette.ts      # surface/text/brand/accent + SemanticColorToken
+│       ├── PaletteOutput.ts        # 最終出力構造
+│       ├── LightSource.ts          # 光源
+│       ├── FilterPreset.ts         # フィルター（LUT）
+│       ├── RenderedColor.ts        # レンダリング結果
+│       ├── Material.ts             # マテリアル（default/plastic）
+│       ├── LayoutDataAttributes.ts # data-* 属性の型定義
+│       ├── LayoutHtml.ts           # HTMLテンプレート
+│       ├── LayoutCssSpec.ts        # CSS仕様（変数 + ルール）
 │       └── index.ts
 ├── Application/
-│   ├── ports.ts                  # DI用インターフェース
+│   ├── ports.ts                    # DI用インターフェース
 │   └── index.ts
-└── Infra/                        # レンダリング実装（未実装）
+└── Infra/                          # レンダリング実装（未実装）
 ```
 
 ## パレット階層
@@ -45,12 +50,16 @@ SemanticPalette (surface/text/brand/accent)
        ↓
 RenderedPalette (Display-P3)
        ↓
-CSS Variables
+LayoutCssSpec (CSS変数 + ルール)
+       ↓
+LayoutHtml (data-* 属性付きHTML)
 ```
 
 ## 型定義
 
-### PrimitiveColor / PrimitivePalette
+### パレット系
+
+#### PrimitiveColor / PrimitivePalette
 
 ```typescript
 type PrimitiveColor = {
@@ -63,7 +72,7 @@ type PrimitivePalette = {
 }
 ```
 
-### BrandPrimitive
+#### BrandPrimitive
 
 ```typescript
 type BrandPrimitive = {
@@ -77,7 +86,7 @@ type BrandPrimitive = {
 }
 ```
 
-### CorePalette
+#### CorePalette
 
 ```typescript
 type CorePalette = {
@@ -93,34 +102,27 @@ type CorePalette = {
 }
 ```
 
-### SemanticPalette
+#### SemanticPalette / SemanticColorToken
 
 ```typescript
 type SemanticPalette = {
-  readonly surface: {
-    readonly base: Oklch       // ページ背景
-    readonly elevated: Oklch   // カード・モーダル
-    readonly border: Oklch
-  }
-  readonly text: {
-    readonly primary: Oklch
-    readonly secondary: Oklch
-    readonly muted: Oklch
-    readonly onBrandPrimary: Oklch
-  }
-  readonly brand: {
-    readonly primary: Oklch
-    readonly hover: Oklch
-    readonly active: Oklch
-  }
-  readonly accent: {
-    readonly base: Oklch
-    readonly hover: Oklch
-  }
+  readonly surface: { base, elevated, border }
+  readonly text: { primary, secondary, muted, onBrandPrimary }
+  readonly brand: { primary, hover, active }
+  readonly accent: { base, hover }
 }
+
+// SemanticPaletteから自動導出されるトークン
+type SemanticColorToken =
+  | 'surface.base' | 'surface.elevated' | 'surface.border'
+  | 'text.primary' | 'text.secondary' | 'text.muted' | 'text.onBrandPrimary'
+  | 'brand.primary' | 'brand.hover' | 'brand.active'
+  | 'accent.base' | 'accent.hover'
 ```
 
-### LightSource
+### レンダリング系
+
+#### LightSource
 
 ```typescript
 type LightSource = {
@@ -132,7 +134,7 @@ type LightSource = {
 }
 ```
 
-### FilterPreset
+#### FilterPreset
 
 ```typescript
 type FilterPreset = {
@@ -142,17 +144,73 @@ type FilterPreset = {
 }
 ```
 
-### ColorSystemResult
+### レイアウト系
+
+#### Material
 
 ```typescript
-type ColorSystemResult = {
-  readonly input: {
-    readonly brandColor: string
-    readonly filterId?: string
-    readonly lightSourceId?: string
-  }
-  readonly palette: PaletteOutput
-  readonly cssVariables: Record<string, string>
+type MaterialId = 'default' | 'plastic'
+```
+
+#### LayoutDataAttributes
+
+HTMLテンプレートで使用可能な data-* 属性：
+
+```typescript
+type LayoutDataAttributes = {
+  'data-bg-color'?: SemanticColorToken      // 背景色
+  'data-text-color'?: SemanticColorToken    // テキスト色
+  'data-border-color'?: SemanticColorToken  // ボーダー色
+  'data-surface'?: 'base' | 'elevated'      // サーフェス種別
+  'data-material'?: MaterialId              // マテリアル
+  'data-thickness'?: number                 // 厚み (0, 1, 2+)
+  'data-elevation'?: number                 // 高さ (0, 1, 2+)
+  'data-layout'?: 'stack-vertical' | 'stack-horizontal' | 'inline'
+}
+```
+
+#### LayoutHtml
+
+```typescript
+type LayoutHtml = {
+  readonly id: string                    // テンプレートID
+  readonly description?: string          // 説明
+  readonly template: LayoutHtmlTemplate  // HTML文字列
+}
+```
+
+例:
+```html
+<section data-surface="base" data-layout="stack-horizontal">
+  <div data-surface="elevated" data-bg-color="surface.elevated" data-thickness="2">
+    <img data-material="plastic" src="/hero.jpg" />
+  </div>
+  <div data-layout="stack-vertical">
+    <h1 data-text-color="text.primary">Title</h1>
+    <button
+      data-material="plastic"
+      data-bg-color="brand.primary"
+      data-text-color="text.onBrandPrimary"
+    >
+      Action
+    </button>
+  </div>
+</section>
+```
+
+#### LayoutCssSpec
+
+```typescript
+type LayoutCssSpec = {
+  readonly themeRootSelector: string           // ":root" など
+  readonly colorVarMap: ColorVariableMap       // token → CSS変数名
+  readonly colorVarValues: CssVariableValues   // CSS変数 → 値
+  readonly rules: CssRuleTemplate[]            // data-* に対応するルール
+}
+
+type CssRuleTemplate = {
+  readonly selector: string                    // '[data-bg-color="brand.primary"]'
+  readonly declarations: Record<string, string>
 }
 ```
 
@@ -195,10 +253,11 @@ type ColorSystemResult = {
 - [ ] パレット表示 + 簡単なコンポーネント（ボタン1個とか）にプレビュー
 
 ### Phase 3: HTML/CSSへのマッピング
-**ゴール**: レンダリング済みパレットからCSS変数出力
+**ゴール**: レンダリング済みパレットからCSS変数出力 + HTMLテンプレート
 
-- [ ] SemanticPalette から CSS変数名へのマッピング
-- [ ] `:root { --color-surface-base: ... }` のようなCSS文字列を出力
+- [ ] SemanticPalette → LayoutCssSpec 変換
+- [ ] data-* 属性に対応するCSSルール生成
+- [ ] LayoutHtml テンプレート作成
 - [ ] デモHTMLで実際にそのCSSを読み込ませて簡単なUIを表示
 
 ### Phase 4以降: カスタマイズ性の作り込み
@@ -207,6 +266,7 @@ type ColorSystemResult = {
 - [ ] ComponentPalette（button/input/card）の追加
 - [ ] dark mode 対応
 - [ ] state色（error/success/warning）の追加
+- [ ] マテリアル追加（paper, glass）
 
 ---
 
@@ -220,3 +280,5 @@ type ColorSystemResult = {
 - Domain層は純粋な型とファクトリ関数のみ（外部依存なし）
 - Application層でポート（インターフェース）を定義
 - Infra層で具体的なレンダリング実装（将来的にDI可能）
+- HTMLテンプレートは文字列として扱い、パーサー不要
+- data-* 属性でセマンティック情報を付与、CSSルールで見た目を制御

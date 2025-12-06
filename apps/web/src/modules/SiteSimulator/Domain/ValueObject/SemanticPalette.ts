@@ -31,6 +31,17 @@ export type SemanticPalette = {
   }
 }
 
+/**
+ * SemanticColorToken is a string representation of SemanticPalette keys.
+ * Used in data-* attributes to reference semantic colors.
+ */
+export type SemanticColorToken =
+  | `surface.${keyof SemanticPalette['surface']}`
+  | `text.${keyof SemanticPalette['text']}`
+  | `brand.${keyof SemanticPalette['brand']}`
+  | `accent.${keyof SemanticPalette['accent']}`
+
 export const $SemanticPalette = {
   fromCorePalette: undefined as unknown as (core: import('./CorePalette').CorePalette) => SemanticPalette,
+  getColor: undefined as unknown as (palette: SemanticPalette, token: SemanticColorToken) => Oklch,
 }
