@@ -19,6 +19,9 @@ const profiles = ref<(LuminanceProfile | null)[]>([])
 // Curve fit type
 const fitType = ref<CurveFitType>('polynomial')
 
+// Flatten strength (0 = no change, 1 = full flatten)
+const flatStrength = ref(0.5)
+
 // Filter (shared for all images)
 const PRESETS = getPresets()
 const { filter, lut: filterLut, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)
@@ -33,7 +36,7 @@ const renderers = new Map<HTMLCanvasElement, LutRenderer>()
 const displayImages = ref<Map<number, ImageData>>(new Map())
 
 // Flattened images cache (Oklab-based, color-preserving)
-const flattenedImages = ref<Map<string, ImageData>>(new Map()) // key: `${index}-${fitType}`
+const flattenedImages = ref<Map<string, ImageData>>(new Map()) // key: `${index}-${fitType}-${strength}`
 
 // Load 5 random photos
 const loadPhotos = async () => {
@@ -92,7 +95,8 @@ const getDisplayImageData = (photo: Photo): ImageData => {
 
 // Get or create flattened image (Oklab color-preserving)
 const getFlattenedImage = (index: number): ImageData | null => {
-  const key = `${index}-${fitType.value}`
+  const strengthKey = Math.round(flatStrength.value * 100) // quantize for caching
+  const key = `${index}-${fitType.value}-${strengthKey}`
   const cached = flattenedImages.value.get(key)
   if (cached) return cached
 
@@ -100,9 +104,10 @@ const getFlattenedImage = (index: number): ImageData | null => {
   const displayImg = displayImages.value.get(index)
   if (!profile || !displayImg) return null
 
-  // Apply inverse LUT using Oklab (preserves colors)
+  // Apply inverse LUT with strength blending using Oklab (preserves colors)
   const inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType.value)
-  const flattened = $LuminanceProfile.applyLut(displayImg, inverseLut)
+  const blendedLut = $LuminanceProfile.blendLut(inverseLut, flatStrength.value)
+  const flattened = $LuminanceProfile.applyLut(displayImg, blendedLut)
   flattenedImages.value.set(key, flattened)
   return flattened
 }
@@ -175,13 +180,13 @@ const renderAllCanvases = () => {
   })
 }
 
-// Clear flattened cache when fitType changes
-watch(fitType, () => {
+// Clear flattened cache when fitType or strength changes
+watch([fitType, flatStrength], () => {
   flattenedImages.value.clear()
 })
 
 // Watch for changes and re-render
-watch([photos, displayImages, profiles, fitType, filterLut], () => {
+watch([photos, displayImages, profiles, fitType, flatStrength, filterLut], () => {
   nextTick(renderAllCanvases)
 }, { deep: true })
 </script>
@@ -225,21 +230,37 @@ watch([photos, displayImages, profiles, fitType, filterLut], () => {
           <div class="text-center">Flat</div>
           <div class="text-center">Filter</div>
         </div>
-        <!-- Fit Type Selector -->
-        <div class="flex items-center gap-2 ml-4">
-          <span class="text-xs text-gray-500">Fit:</span>
-          <div class="flex gap-1">
-            <button
-              v-for="ft in (['polynomial', 'spline', 'simple', 'raw'] as const)"
-              :key="ft"
-              @click="fitType = ft"
-              :class="[
-                'px-2 py-0.5 text-[10px] rounded',
-                fitType === ft ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-              ]"
-            >
-              {{ ft }}
-            </button>
+        <!-- Controls -->
+        <div class="flex items-center gap-4 ml-4">
+          <!-- Strength Slider -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Strength:</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              v-model.number="flatStrength"
+              class="w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+            <span class="text-xs text-gray-400 w-8">{{ Math.round(flatStrength * 100) }}%</span>
+          </div>
+          <!-- Fit Type Selector -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Fit:</span>
+            <div class="flex gap-1">
+              <button
+                v-for="ft in (['polynomial', 'spline', 'simple', 'raw'] as const)"
+                :key="ft"
+                @click="fitType = ft"
+                :class="[
+                  'px-2 py-0.5 text-[10px] rounded',
+                  fitType === ft ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                ]"
+              >
+                {{ ft }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
