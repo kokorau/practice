@@ -10,12 +10,14 @@ import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { $Media } from '../modules/Media'
 import { useSegmentation } from '../composables/Segmentation/useSegmentation'
 import { useColorLayers } from '../composables/Segmentation/useColorLayers'
+import { useToneProfile } from '../composables/Filter/useToneProfile'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 import PhotoStats from '../components/PhotoStats.vue'
 import ProfiledPaletteDisplay from '../components/ProfiledPaletteDisplay.vue'
 import SegmentationDisplay from '../components/SegmentationDisplay.vue'
 import LayerStackPreview from '../components/LayerStackPreview.vue'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
+import ToneProfilePanel from '../components/ToneProfilePanel.vue'
 
 // Media (Photo + Camera + ScreenCapture 統一)
 const {
@@ -73,6 +75,16 @@ const {
 // Color-based layers (k-means) - manual trigger, Photo モードのみ
 const numColorLayers = ref(6)
 const { colorLayerMap, originalImageData: colorLayerImageData, compute: computeColorLayers, isLoading: isColorLayersLoading } = useColorLayers(photo, numColorLayers)
+
+// ToneProfile extraction - manual trigger, Photo モードのみ
+const {
+  profile: toneProfile,
+  lut: toneProfileLut,
+  inverseLut: toneProfileInverseLut,
+  isExtracting: isToneProfileExtracting,
+  extract: extractToneProfile,
+  reset: resetToneProfile,
+} = useToneProfile(photo)
 
 // ファイル入力ハンドラ
 const handleFileChange = async (e: Event) => {
@@ -385,6 +397,19 @@ const handleLoadDefaultPalette = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Tone Profile Extraction -->
+      <div v-if="photo" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
+        <h2 class="text-xs text-gray-400 font-medium mb-2">Tone Profile</h2>
+        <ToneProfilePanel
+          :profile="toneProfile"
+          :is-extracting="isToneProfileExtracting"
+          @extract="extractToneProfile"
+          @reset="resetToneProfile"
+          @apply-lut="toneProfileLut && console.log('Apply LUT:', toneProfileLut)"
+          @apply-inverse-lut="toneProfileInverseLut && console.log('Apply Inverse LUT:', toneProfileInverseLut)"
+        />
       </div>
 
       <!-- Segmentation -->
