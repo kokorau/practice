@@ -49,6 +49,11 @@ const router = createRouter({
       name: 'webgpu-showcase',
       component: () => import('../views/WebGPUShowcaseView.vue'),
     },
+    {
+      path: '/tone-lab',
+      name: 'tone-lab',
+      component: () => import('../views/ToneLabView.vue'),
+    },
   ],
 })
 
