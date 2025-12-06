@@ -35,6 +35,11 @@ const pages = [
     title: 'WebGPU Showcase',
     description: 'WebGPUによるレイトレーシングシーンのショーケース',
   },
+  {
+    to: '/tone-lab',
+    title: 'Tone Lab',
+    description: 'Oklabベースの輝度プロファイル抽出とトーンカーブ解析',
+  },
 ]
 </script>
 
