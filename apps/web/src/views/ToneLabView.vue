@@ -16,8 +16,8 @@ const error = ref<string | null>(null)
 // Luminance profiles for each photo
 const profiles = ref<(LuminanceProfile | null)[]>([])
 
-// Curve fit type
-const fitType = ref<CurveFitType>('polynomial')
+// Curve fit type (default to 'normalize' for stability)
+const fitType = ref<CurveFitType>('normalize')
 
 // Flatten strength (0 = no change, 1 = full flatten)
 const flatStrength = ref(0.5)
@@ -269,7 +269,7 @@ watch([photos, displayImages, profiles, fitType, flatStrength, preserveMean, fil
             <span class="text-xs text-gray-500">Fit:</span>
             <div class="flex gap-1">
               <button
-                v-for="ft in (['polynomial', 'spline', 'simple', 'raw'] as const)"
+                v-for="ft in (['normalize', 'polynomial', 'spline', 'simple', 'raw'] as const)"
                 :key="ft"
                 @click="fitType = ft"
                 :class="[

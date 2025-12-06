@@ -42,7 +42,21 @@ export type ControlPoint = {
 export type LuminanceLut = Float32Array
 
 /** カーブフィッティングの種類 */
-export type CurveFitType = 'raw' | 'polynomial' | 'spline' | 'simple'
+export type CurveFitType = 'raw' | 'polynomial' | 'spline' | 'simple' | 'normalize'
+
+/** 正規化オプション */
+export type NormalizeOptions = {
+  /** 入力パーセンタイル下限 (デフォルト: 5) */
+  inputLowPercentile?: number
+  /** 入力パーセンタイル上限 (デフォルト: 95) */
+  inputHighPercentile?: number
+  /** 出力範囲下限 (デフォルト: 0.1) */
+  outputLow?: number
+  /** 出力範囲上限 (デフォルト: 0.9) */
+  outputHigh?: number
+  /** 目標ガンマ (デフォルト: 1.0 = リニア) */
+  targetGamma?: number
+}
 
 // ============================================
 // LuminanceProfile 操作
@@ -239,6 +253,7 @@ export const $LuminanceProfile = {
    *   - 'polynomial': 多項式フィット（滑らか）
    *   - 'spline': スプライン補間（コントロールポイントベース）
    *   - 'simple': ガンマ/黒点/白点のみ（穏やか）
+   *   - 'normalize': パーセンタイル正規化（安定・推奨）
    */
   toFittedInverseLut: (
     profile: LuminanceProfile,
@@ -253,6 +268,8 @@ export const $LuminanceProfile = {
         return invertPolynomialFit(profile.cdf, 5)
       case 'spline':
         return invertSplineFit(profile.controlPoints)
+      case 'normalize':
+        return $LuminanceProfile.toNormalizeLut(profile)
       default:
         return invertCdf(profile.cdf)
     }
@@ -281,6 +298,62 @@ export const $LuminanceProfile = {
     }
 
     return result
+  },
+
+  /**
+   * パーセンタイル正規化LUTを生成 (B+Cアプローチ)
+   *
+   * 1. 入力画像の指定パーセンタイル範囲を検出
+   * 2. それを目標出力範囲にマッピング
+   * 3. オプションでガンマカーブを適用
+   * 4. ソフトクリッピングで端点を滑らかに処理
+   *
+   * CDFベースの複雑なフィッティングより安定
+   */
+  toNormalizeLut: (
+    profile: LuminanceProfile,
+    options: NormalizeOptions = {}
+  ): LuminanceLut => {
+    const {
+      inputLowPercentile = 5,
+      inputHighPercentile = 95,
+      outputLow = 0.1,
+      outputHigh = 0.9,
+      targetGamma = 1.0,
+    } = options
+
+    // パーセンタイル位置を検出
+    const inputLow = findPercentileValue(profile.cdf, inputLowPercentile / 100)
+    const inputHigh = findPercentileValue(profile.cdf, inputHighPercentile / 100)
+
+    const lut = new Float32Array(256)
+    const inputRange = inputHigh - inputLow
+    const outputRange = outputHigh - outputLow
+
+    for (let i = 0; i < 256; i++) {
+      const input = i / 255
+
+      // 入力範囲を正規化 (0-1)
+      let normalized: number
+      if (inputRange <= 0.001) {
+        // 範囲がほぼない場合（単色画像など）
+        normalized = 0.5
+      } else {
+        normalized = (input - inputLow) / inputRange
+        // ソフトクリッピング: 端点で滑らかに0/1に収束
+        normalized = softClip(normalized)
+      }
+
+      // 目標ガンマを適用
+      const gammaCorrected = Math.pow(normalized, targetGamma)
+
+      // 出力範囲にマッピング
+      const output = outputLow + gammaCorrected * outputRange
+
+      lut[i] = Math.max(0, Math.min(1, output))
+    }
+
+    return lut
   },
 
   /**
@@ -406,6 +479,64 @@ function extractControlPoints(cdf: Float32Array, numPoints: number): ControlPoin
   }
 
   return points
+}
+
+/**
+ * ソフトクリッピング関数
+ * 0-1の範囲外を滑らかに0/1に収束させる
+ * -∞ → 0, +∞ → 1 に漸近するシグモイド的な関数
+ *
+ * 0-1の範囲内はほぼリニア、範囲外で徐々に曲がる
+ */
+function softClip(x: number): number {
+  // 範囲内（0.05-0.95）はほぼリニアに通す
+  if (x >= 0.05 && x <= 0.95) {
+    return x
+  }
+
+  // 範囲外はシグモイドで滑らかにクリップ
+  // スケール係数: 大きいほど急峻にクリップ
+  const k = 10
+
+  if (x < 0.05) {
+    // 下側: 0に向かって滑らかに収束
+    // x=0.05でほぼリニアと接続、x<0で0に漸近
+    const t = (x - 0.05) * k // t < 0
+    const sigmoid = 1 / (1 + Math.exp(-t))
+    return 0.05 * sigmoid / (1 / (1 + Math.exp(0))) // 0.05でx=0.05と接続
+  } else {
+    // 上側: 1に向かって滑らかに収束
+    // x=0.95でほぼリニアと接続、x>1で1に漸近
+    const t = (x - 0.95) * k // t > 0
+    const sigmoid = 1 / (1 + Math.exp(-t))
+    // 0.95 + (1-0.95) * normalized_sigmoid
+    const normalizedSigmoid = (sigmoid - 0.5) * 2 // 0 to 1
+    return 0.95 + 0.05 * normalizedSigmoid
+  }
+}
+
+/**
+ * CDFからパーセンタイル位置の輝度値を取得
+ * @param cdf 累積分布関数
+ * @param percentile パーセンタイル (0-1)
+ * @returns 輝度値 (0-1)
+ */
+function findPercentileValue(cdf: Float32Array, percentile: number): number {
+  for (let i = 0; i < 256; i++) {
+    if ((cdf[i] ?? 0) >= percentile) {
+      // 線形補間
+      if (i > 0) {
+        const prev = cdf[i - 1] ?? 0
+        const curr = cdf[i] ?? 0
+        if (curr > prev) {
+          const t = (percentile - prev) / (curr - prev)
+          return (i - 1 + t) / 255
+        }
+      }
+      return i / 255
+    }
+  }
+  return 1.0
 }
 
 /** CDFの逆関数を計算 */

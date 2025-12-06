@@ -26,5 +26,6 @@ export {
   type LuminanceLut,
   type ControlPoint as LuminanceControlPoint,
   type CurveFitType,
+  type NormalizeOptions,
   $LuminanceProfile,
 } from './LuminanceProfile'

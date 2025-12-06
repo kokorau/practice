@@ -281,4 +281,90 @@ describe('$LuminanceProfile', () => {
       expect(lut[127]).toBeCloseTo(profile.cdf[127]!, 5)
     })
   })
+
+  describe('toNormalizeLut (B+C approach)', () => {
+    it('should map percentile range to output range', () => {
+      // 50-200 の範囲を持つ画像
+      const imageData = createTestImageData(151, 1, (x) => {
+        const v = 50 + x
+        return [v, v, v, 255]
+      })
+      const profile = $LuminanceProfile.extract(imageData, 0)
+      const lut = $LuminanceProfile.toNormalizeLut(profile)
+
+      // デフォルトは outputLow=0.1, outputHigh=0.9
+      // LUTの端点
+      expect(lut[0]).toBeCloseTo(0.1, 1)
+      expect(lut[255]).toBeCloseTo(0.9, 1)
+    })
+
+    it('should be smooth and monotonic', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const profile = $LuminanceProfile.extract(imageData, 0)
+      const lut = $LuminanceProfile.toNormalizeLut(profile)
+
+      // 単調増加
+      for (let i = 1; i < 256; i++) {
+        expect(lut[i]).toBeGreaterThanOrEqual(lut[i - 1]! - 0.001)
+      }
+
+      // 滑らか（大きなジャンプがない）
+      let maxJump = 0
+      for (let i = 1; i < 256; i++) {
+        const jump = Math.abs((lut[i] ?? 0) - (lut[i - 1] ?? 0))
+        maxJump = Math.max(maxJump, jump)
+      }
+      expect(maxJump).toBeLessThan(0.02)
+    })
+
+    it('should handle custom percentile options', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const profile = $LuminanceProfile.extract(imageData, 0)
+      const lut = $LuminanceProfile.toNormalizeLut(profile, {
+        inputLowPercentile: 10,
+        inputHighPercentile: 90,
+        outputLow: 0.2,
+        outputHigh: 0.8,
+      })
+
+      // カスタム出力範囲
+      expect(lut[0]).toBeCloseTo(0.2, 1)
+      expect(lut[255]).toBeCloseTo(0.8, 1)
+    })
+
+    it('should apply target gamma', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const profile = $LuminanceProfile.extract(imageData, 0)
+
+      const linearLut = $LuminanceProfile.toNormalizeLut(profile, { targetGamma: 1.0 })
+      const gammaLut = $LuminanceProfile.toNormalizeLut(profile, { targetGamma: 2.2 })
+
+      // ガンマ2.2は中間が暗くなる
+      expect(gammaLut[127]).toBeLessThan(linearLut[127]!)
+    })
+
+    it('should handle narrow range images gracefully', () => {
+      // ほぼ単色の画像（128前後）
+      const imageData = createTestImageData(10, 1, () => [128, 128, 128, 255])
+      const profile = $LuminanceProfile.extract(imageData, 0)
+      const lut = $LuminanceProfile.toNormalizeLut(profile)
+
+      // 単色でも壊れない（すべて0.5付近にマップ）
+      for (let i = 0; i < 256; i++) {
+        expect(lut[i]).toBeGreaterThanOrEqual(0)
+        expect(lut[i]).toBeLessThanOrEqual(1)
+      }
+    })
+
+    it('should be accessible via toFittedInverseLut with normalize type', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const profile = $LuminanceProfile.extract(imageData, 0)
+
+      const lut = $LuminanceProfile.toFittedInverseLut(profile, 'normalize')
+
+      // normalize タイプで取得できる
+      expect(lut).toBeInstanceOf(Float32Array)
+      expect(lut.length).toBe(256)
+    })
+  })
 })
