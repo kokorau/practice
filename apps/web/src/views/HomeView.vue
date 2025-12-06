@@ -40,6 +40,11 @@ const pages = [
     title: 'Tone Lab',
     description: 'Oklabベースの輝度プロファイル抽出とトーンカーブ解析',
   },
+  {
+    to: '/color-gamut',
+    title: 'Color Gamut',
+    description: 'Rec.2020, Display-P3, ACESなど広色域の確認と比較',
+  },
 ]
 </script>
 

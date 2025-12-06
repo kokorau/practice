@@ -54,6 +54,11 @@ const router = createRouter({
       name: 'tone-lab',
       component: () => import('../views/ToneLabView.vue'),
     },
+    {
+      path: '/color-gamut',
+      name: 'color-gamut',
+      component: () => import('../views/ColorGamutView.vue'),
+    },
   ],
 })
 
