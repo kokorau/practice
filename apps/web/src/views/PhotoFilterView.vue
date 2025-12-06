@@ -11,6 +11,7 @@ import { $Media } from '../modules/Media'
 import { useSegmentation } from '../composables/Segmentation/useSegmentation'
 import { useColorLayers } from '../composables/Segmentation/useColorLayers'
 import { useToneProfile } from '../composables/Filter/useToneProfile'
+import { useLuminanceProfile } from '../composables/Filter/useLuminanceProfile'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 import PhotoStats from '../components/PhotoStats.vue'
 import ProfiledPaletteDisplay from '../components/ProfiledPaletteDisplay.vue'
@@ -18,6 +19,7 @@ import SegmentationDisplay from '../components/SegmentationDisplay.vue'
 import LayerStackPreview from '../components/LayerStackPreview.vue'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
 import ToneProfilePanel from '../components/ToneProfilePanel.vue'
+import LuminanceProfilePanel from '../components/LuminanceProfilePanel.vue'
 
 // Media (Photo + Camera + ScreenCapture 統一)
 const {
@@ -87,6 +89,14 @@ const {
   extract: extractToneProfile,
   reset: resetToneProfile,
 } = useToneProfile(photo)
+
+// LuminanceProfile extraction - auto trigger on photo change
+const {
+  profile: luminanceProfile,
+  fitType: luminanceFitType,
+  isExtracting: isLuminanceExtracting,
+  extractionTime: luminanceExtractionTime,
+} = useLuminanceProfile(photo)
 
 // ファイル入力ハンドラ
 const handleFileChange = async (e: Event) => {
@@ -401,9 +411,21 @@ const handleLoadDefaultPalette = () => {
         </div>
       </div>
 
-      <!-- Tone Profile Extraction -->
+      <!-- Luminance Profile (Oklab-based, auto-extract) -->
       <div v-if="photo" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
-        <h2 class="text-xs text-gray-400 font-medium mb-2">Tone Profile</h2>
+        <h2 class="text-xs text-gray-400 font-medium mb-2">Luminance Profile (Oklab)</h2>
+        <LuminanceProfilePanel
+          :profile="luminanceProfile"
+          :fit-type="luminanceFitType"
+          :extraction-time="luminanceExtractionTime"
+          :is-extracting="isLuminanceExtracting"
+          @update:fit-type="luminanceFitType = $event"
+        />
+      </div>
+
+      <!-- Tone Profile Extraction (RGB-based, manual) -->
+      <div v-if="photo" class="border border-gray-700 rounded-lg p-3 bg-gray-800 flex-shrink-0">
+        <h2 class="text-xs text-gray-400 font-medium mb-2">Tone Profile (RGB)</h2>
         <ToneProfilePanel
           :profile="toneProfile"
           :detailed-profile="toneProfileDetailed"
