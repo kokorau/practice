@@ -1,6 +1,12 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { Photo } from '../../modules/Photo/Domain'
-import { type ToneProfile, type ToneProfileDetailed, type Lut1D, $ToneProfile } from '../../modules/Filter/Domain'
+import {
+  type ToneProfile,
+  type ToneProfileDetailed,
+  type Lut1D,
+  type ImageAnalysis,
+  $ToneProfile,
+} from '../../modules/Filter/Domain'
 
 export type UseToneProfileOptions = {
   /** 黒点/白点検出のパーセンタイル (default: 1%) */
@@ -14,6 +20,8 @@ export type UseToneProfileReturn = {
   profile: ComputedRef<ToneProfile | null>
   /** 詳細プロファイル（CDF + コントロールポイント） */
   detailedProfile: Ref<ToneProfileDetailed | null>
+  /** 画像解析結果 */
+  analysis: Ref<ImageAnalysis | null>
   /** プロファイルを適用するLUT（詳細版、CDFベース） */
   lut: ComputedRef<Lut1D | null>
   /** プロファイルを除去する（元に戻す）LUT（詳細版） */
@@ -37,6 +45,7 @@ export const useToneProfile = (
   const { percentile = 1, numControlPoints = 7 } = options
 
   const detailedProfile = ref<ToneProfileDetailed | null>(null)
+  const analysis = ref<ImageAnalysis | null>(null)
   const isExtracting = ref(false)
 
   // 簡易プロファイル（詳細から変換）
@@ -62,6 +71,7 @@ export const useToneProfile = (
     const currentPhoto = photo.value
     if (!currentPhoto) {
       detailedProfile.value = null
+      analysis.value = null
       return
     }
 
@@ -74,14 +84,18 @@ export const useToneProfile = (
       const imageData = getImageDataFromPhoto(currentPhoto)
       if (!imageData) {
         detailedProfile.value = null
+        analysis.value = null
         return
       }
 
       // 詳細プロファイルを抽出
       detailedProfile.value = $ToneProfile.extractDetailed(imageData, percentile, numControlPoints)
+      // 画像解析を実行
+      analysis.value = $ToneProfile.analyze(imageData)
     } catch (e) {
       console.error('ToneProfile extraction failed:', e)
       detailedProfile.value = null
+      analysis.value = null
     } finally {
       isExtracting.value = false
     }
@@ -90,11 +104,13 @@ export const useToneProfile = (
   /** プロファイルをリセット */
   const reset = () => {
     detailedProfile.value = null
+    analysis.value = null
   }
 
   return {
     profile,
     detailedProfile,
+    analysis,
     lut,
     inverseLut,
     isExtracting,

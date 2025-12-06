@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, type Ref } from 'vue'
-import type { ToneProfile, ToneProfileDetailed, ChannelCurve } from '../modules/Filter/Domain'
+import type { ToneProfile, ToneProfileDetailed, ChannelCurve, ImageAnalysis } from '../modules/Filter/Domain'
 
 const props = defineProps<{
   profile: ToneProfile | null
   detailedProfile: ToneProfileDetailed | null
+  analysis: ImageAnalysis | null
   isExtracting: boolean
 }>()
 
@@ -139,6 +140,17 @@ watch(curveCanvasRef, drawToneCurve)
 const formatValue = (v: number, decimals: number = 0): string => {
   return v.toFixed(decimals)
 }
+
+// パーセント表示
+const formatPercent = (v: number): string => {
+  return (v * 100).toFixed(1) + '%'
+}
+
+// キーラベル
+const keyLabel = (key: 'low' | 'normal' | 'high'): string => {
+  const labels = { low: 'Low-key', normal: 'Normal', high: 'High-key' }
+  return labels[key]
+}
 </script>
 
 <template>
@@ -241,6 +253,93 @@ const formatValue = (v: number, decimals: number = 0): string => {
           </div>
         </div>
       </div>
+
+      <!-- 詳細解析結果 -->
+      <template v-if="analysis">
+        <div class="border-t border-gray-700 pt-2 mt-2">
+          <!-- ダイナミックレンジ & キー -->
+          <div class="grid grid-cols-2 gap-2 text-[10px] mb-2">
+            <div>
+              <div class="text-gray-500 mb-0.5">Dynamic Range</div>
+              <div class="text-gray-300 font-mono">{{ analysis.dynamicRange.range }} ({{ formatValue(analysis.dynamicRange.contrastRatio, 1) }}:1)</div>
+            </div>
+            <div>
+              <div class="text-gray-500 mb-0.5">Key</div>
+              <div :class="[
+                'font-mono',
+                analysis.dynamicRange.key === 'low' ? 'text-blue-400' :
+                analysis.dynamicRange.key === 'high' ? 'text-yellow-400' : 'text-gray-300'
+              ]">
+                {{ keyLabel(analysis.dynamicRange.key) }} ({{ formatPercent(analysis.dynamicRange.keyValue) }})
+              </div>
+            </div>
+          </div>
+
+          <!-- トーナルゾーン分布 -->
+          <div class="mb-2">
+            <div class="text-gray-500 text-[10px] mb-1">Tonal Zones</div>
+            <div class="flex h-2 rounded overflow-hidden">
+              <div
+                class="bg-gray-600"
+                :style="{ width: formatPercent(analysis.tonalZones.shadows.percentage) }"
+                :title="`Shadows: ${formatPercent(analysis.tonalZones.shadows.percentage)}`"
+              />
+              <div
+                class="bg-gray-400"
+                :style="{ width: formatPercent(analysis.tonalZones.midtones.percentage) }"
+                :title="`Midtones: ${formatPercent(analysis.tonalZones.midtones.percentage)}`"
+              />
+              <div
+                class="bg-gray-200"
+                :style="{ width: formatPercent(analysis.tonalZones.highlights.percentage) }"
+                :title="`Highlights: ${formatPercent(analysis.tonalZones.highlights.percentage)}`"
+              />
+            </div>
+            <div class="flex justify-between text-[9px] text-gray-500 mt-0.5">
+              <span>S: {{ formatPercent(analysis.tonalZones.shadows.percentage) }}</span>
+              <span>M: {{ formatPercent(analysis.tonalZones.midtones.percentage) }}</span>
+              <span>H: {{ formatPercent(analysis.tonalZones.highlights.percentage) }}</span>
+            </div>
+          </div>
+
+          <!-- 統計情報 -->
+          <div class="grid grid-cols-3 gap-2 text-[10px] mb-2">
+            <div>
+              <div class="text-gray-500 mb-0.5">Mean</div>
+              <div class="text-gray-300 font-mono">{{ formatValue(analysis.luminance.mean, 1) }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500 mb-0.5">Median</div>
+              <div class="text-gray-300 font-mono">{{ formatValue(analysis.luminance.median) }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500 mb-0.5">StdDev</div>
+              <div class="text-gray-300 font-mono">{{ formatValue(analysis.luminance.stdDev, 1) }}</div>
+            </div>
+          </div>
+
+          <!-- 彩度 & クリッピング -->
+          <div class="grid grid-cols-2 gap-2 text-[10px]">
+            <div>
+              <div class="text-gray-500 mb-0.5">Saturation</div>
+              <div class="text-gray-300 font-mono">{{ formatPercent(analysis.saturation.mean) }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500 mb-0.5">Clipping</div>
+              <div :class="[
+                'font-mono',
+                analysis.clipping.totalClippedPercent > 0.05 ? 'text-red-400' :
+                analysis.clipping.totalClippedPercent > 0.01 ? 'text-yellow-400' : 'text-gray-300'
+              ]">
+                <span v-if="analysis.clipping.totalClippedPercent > 0">
+                  B:{{ formatPercent(analysis.clipping.blackClippedPercent) }} W:{{ formatPercent(analysis.clipping.whiteClippedPercent) }}
+                </span>
+                <span v-else>None</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
     </template>
 
     <!-- 未抽出状態 -->

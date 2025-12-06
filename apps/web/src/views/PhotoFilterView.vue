@@ -80,6 +80,7 @@ const { colorLayerMap, originalImageData: colorLayerImageData, compute: computeC
 const {
   profile: toneProfile,
   detailedProfile: toneProfileDetailed,
+  analysis: toneProfileAnalysis,
   lut: toneProfileLut,
   inverseLut: toneProfileInverseLut,
   isExtracting: isToneProfileExtracting,
@@ -406,6 +407,7 @@ const handleLoadDefaultPalette = () => {
         <ToneProfilePanel
           :profile="toneProfile"
           :detailed-profile="toneProfileDetailed"
+          :analysis="toneProfileAnalysis"
           :is-extracting="isToneProfileExtracting"
           @extract="extractToneProfile"
           @reset="resetToneProfile"
