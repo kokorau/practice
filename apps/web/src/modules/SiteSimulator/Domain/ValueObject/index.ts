@@ -19,3 +19,17 @@ export {
   type LayoutCssSpec,
   $LayoutCssSpec,
 } from './LayoutCssSpec'
+
+// Preview (3D Scene)
+export {
+  type PreviewSceneConfig,
+  type PreviewScene,
+  type PreviewRenderOptions,
+  $PreviewScene,
+} from './PreviewScene'
+export {
+  type PreviewElement,
+  type PreviewElementTree,
+  $PreviewElement,
+  $PreviewElementTree,
+} from './PreviewElement'

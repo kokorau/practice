@@ -214,6 +214,55 @@ type CssRuleTemplate = {
 }
 ```
 
+### プレビュー系（3Dシーン）
+
+#### PreviewSceneConfig / PreviewScene
+
+```typescript
+type PreviewSceneConfig = {
+  readonly layout: LayoutHtml
+  readonly palette: SemanticPalette
+  readonly lightSource: LightSource
+  readonly filter?: FilterPreset
+}
+
+type PreviewScene = {
+  readonly space: Space              // Lighting モジュールの Space
+  readonly config: PreviewSceneConfig
+  readonly viewport: { width: number; height: number }
+}
+
+type PreviewRenderOptions = {
+  readonly shadows: boolean
+  readonly shadowBlur: number
+  readonly ambientOcclusion: boolean
+  readonly quality: 'low' | 'medium' | 'high'
+}
+```
+
+#### PreviewElement / PreviewElementTree
+
+```typescript
+type PreviewElement = {
+  readonly id: string
+  readonly bounds: { x, y, width, height }
+  readonly depth: number              // Z-depth (data-elevation)
+  readonly thickness: number          // data-thickness
+  readonly material: MaterialId
+  readonly bgColorToken?: SemanticColorToken
+  readonly textColorToken?: SemanticColorToken
+  readonly borderColorToken?: SemanticColorToken
+  readonly borderRadius?: number
+  readonly surface?: 'base' | 'elevated'
+}
+
+type PreviewElementTree = {
+  readonly elements: ReadonlyArray<PreviewElement>
+  readonly roots: ReadonlyArray<string>
+  readonly children: ReadonlyMap<string, ReadonlyArray<string>>
+}
+```
+
 ## Application層 ポート
 
 | ポート | 責務 |
@@ -274,6 +323,7 @@ type CssRuleTemplate = {
 
 - `Color`: Oklch, DisplayP3, Srgb などの色空間
 - `Filter`: Lut（1D/3D LUT）
+- `Lighting`: Space, SceneObject, Light, Camera（プレビュー用3Dレンダリング）
 
 ## 設計方針
 
