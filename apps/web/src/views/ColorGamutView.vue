@@ -24,7 +24,7 @@ const XY_RANGE = { xMin: 0, xMax: 0.8, yMin: 0, yMax: 0.9 }
 const selectedXy = ref<{ x: number; y: number }>({ x: D65_WHITE[0], y: D65_WHITE[1] })
 
 // 輝度（Y）値
-const luminance = ref(1.0)
+const luminance = ref(0.7)
 
 // UseCaseを使った変換結果
 const conversionResult = computed(() => {
@@ -261,6 +261,7 @@ const srgbHex = computed(() => {
                 <text x="15" y="39" fill="rgba(255,255,255,0.7)" font-size="10">Rec.2020</text>
               </g>
             </svg>
+            <p class="text-xs text-gray-500 mt-1">Y (luminance) = 0.7</p>
           </div>
 
         </div>
