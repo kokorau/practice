@@ -4,7 +4,7 @@ import type { Photo } from '../modules/Photo/Domain'
 import { fetchUnsplashPhotos } from '../modules/PhotoUnsplash/Infra/fetchUnsplashPhoto'
 import { useFilter } from '../composables/Filter/useFilter'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
-import { $LuminanceProfile, type LuminanceProfile, type CurveFitType, type Lut1D } from '../modules/Filter/Domain'
+import { $LuminanceProfile, $Lut, type LuminanceProfile, type CurveFitType, type Lut } from '../modules/Filter/Domain'
 import { LutRenderer, type RenderOptions } from '../modules/Filter/Infra/WebGL/LutRenderer'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
 
@@ -16,8 +16,8 @@ const error = ref<string | null>(null)
 // Luminance profiles for each photo
 const profiles = ref<(LuminanceProfile | null)[]>([])
 
-// Curve fit type (default to 'normalize' for stability)
-const fitType = ref<CurveFitType>('normalize')
+// Curve fit type (fixed to 'normalize' for stability)
+const fitType: CurveFitType = 'normalize'
 
 // Flatten strength (0 = no change, 1 = full flatten)
 const flatStrength = ref(0.5)
@@ -122,31 +122,28 @@ const getFlattenedImage = (index: number): ImageData | null => {
   return flattened
 }
 
+// Identity LUT (reusable)
+const identityLut = $Lut.identity()
+
 // Get or create LutRenderer for a canvas
 const getRenderer = (canvas: HTMLCanvasElement): LutRenderer => {
   let renderer = renderers.get(canvas)
   if (!renderer) {
-    renderer = new LutRenderer({ canvas })
+    // use3D: true で初期化し、1D/3D LUT 両方に対応
+    renderer = new LutRenderer({ canvas, use3D: true })
     renderers.set(canvas, renderer)
   }
   return renderer
-}
-
-// Create identity LUT
-const createIdentityLut = (): Lut1D => {
-  const identity = new Float32Array(256)
-  for (let i = 0; i < 256; i++) identity[i] = i / 255
-  return { type: 'lut1d', r: identity, g: identity, b: identity }
 }
 
 // Render ImageData to canvas with optional LUT (WebGL)
 const renderToCanvas = (
   canvas: HTMLCanvasElement,
   imageData: ImageData,
-  lut: Lut1D | null
+  lut: Lut | null
 ) => {
   const renderer = getRenderer(canvas)
-  const options: RenderOptions = { lut: lut ?? createIdentityLut() }
+  const options: RenderOptions = { lut: lut ?? identityLut }
   renderer.render(imageData, options)
 }
 
@@ -178,25 +175,24 @@ const renderAllCanvases = () => {
       }
     }
 
-    // Filter - apply filter LUT to flattened image
+    // Filter - apply filter LUT to flattened image (supports both 1D and 3D LUT)
     const filterCanvas = canvasRefs.value.get(`${index}-filter`)
     if (filterCanvas) {
       const flattenedImg = getFlattenedImage(index)
       if (flattenedImg) {
-        const fLut = filterLut.value?.type === 'lut1d' ? filterLut.value as Lut1D : createIdentityLut()
-        renderToCanvas(filterCanvas, flattenedImg, fLut)
+        renderToCanvas(filterCanvas, flattenedImg, filterLut.value)
       }
     }
   })
 }
 
-// Clear flattened cache when fitType, strength, or preserveMean changes
-watch([fitType, flatStrength, preserveMean], () => {
+// Clear flattened cache when strength or preserveMean changes
+watch([flatStrength, preserveMean], () => {
   flattenedImages.value.clear()
 })
 
 // Watch for changes and re-render
-watch([photos, displayImages, profiles, fitType, flatStrength, preserveMean, filterLut], () => {
+watch([photos, displayImages, profiles, flatStrength, preserveMean, filterLut], () => {
   nextTick(renderAllCanvases)
 }, { deep: true })
 </script>
@@ -264,23 +260,6 @@ watch([photos, displayImages, profiles, fitType, flatStrength, preserveMean, fil
             />
             <span class="text-xs text-gray-500">Keep Mean</span>
           </label>
-          <!-- Fit Type Selector -->
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-500">Fit:</span>
-            <div class="flex gap-1">
-              <button
-                v-for="ft in (['normalize', 'polynomial', 'spline', 'simple', 'raw'] as const)"
-                :key="ft"
-                @click="fitType = ft"
-                :class="[
-                  'px-2 py-0.5 text-[10px] rounded',
-                  fitType === ft ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-                ]"
-              >
-                {{ ft }}
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
