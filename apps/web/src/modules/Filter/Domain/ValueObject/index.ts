@@ -21,3 +21,9 @@ export {
   type ClippingInfo,
   $ImageAnalysis,
 } from './ImageAnalysis'
+export {
+  type LuminanceProfile,
+  type LuminanceLut,
+  type ControlPoint as LuminanceControlPoint,
+  $LuminanceProfile,
+} from './LuminanceProfile'
