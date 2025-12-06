@@ -259,6 +259,31 @@ export const $LuminanceProfile = {
   },
 
   /**
+   * LUTをシフトして平均輝度を保持
+   * フラット化後の平均輝度が元の平均輝度に近くなるようにシフト
+   * @param lut 入力LUT
+   * @param originalMean 元の平均輝度 (0-1)
+   * @param targetMean フラット化後の目標平均輝度 (通常0.5)
+   */
+  shiftLutToPreserveMean: (
+    lut: LuminanceLut,
+    originalMean: number,
+    targetMean: number = 0.5
+  ): LuminanceLut => {
+    // フラット化後の平均輝度は targetMean に向かう
+    // これを originalMean に戻すためにシフトが必要
+    const shift = originalMean - targetMean
+
+    const result = new Float32Array(256)
+    for (let i = 0; i < 256; i++) {
+      // LUTの出力値にシフトを適用
+      result[i] = Math.max(0, Math.min(1, (lut[i] ?? i / 255) + shift))
+    }
+
+    return result
+  },
+
+  /**
    * フィットしたカーブからLUTを生成
    */
   toFittedLut: (

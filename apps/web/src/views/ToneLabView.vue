@@ -22,6 +22,9 @@ const fitType = ref<CurveFitType>('polynomial')
 // Flatten strength (0 = no change, 1 = full flatten)
 const flatStrength = ref(0.5)
 
+// Preserve mean luminance (prevent dark/bright images from shifting too much)
+const preserveMean = ref(true)
+
 // Filter (shared for all images)
 const PRESETS = getPresets()
 const { filter, lut: filterLut, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)
@@ -96,7 +99,8 @@ const getDisplayImageData = (photo: Photo): ImageData => {
 // Get or create flattened image (Oklab color-preserving)
 const getFlattenedImage = (index: number): ImageData | null => {
   const strengthKey = Math.round(flatStrength.value * 100) // quantize for caching
-  const key = `${index}-${fitType.value}-${strengthKey}`
+  const preserveMeanKey = preserveMean.value ? 1 : 0
+  const key = `${index}-${fitType.value}-${strengthKey}-${preserveMeanKey}`
   const cached = flattenedImages.value.get(key)
   if (cached) return cached
 
@@ -105,7 +109,13 @@ const getFlattenedImage = (index: number): ImageData | null => {
   if (!profile || !displayImg) return null
 
   // Apply inverse LUT with strength blending using Oklab (preserves colors)
-  const inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType.value)
+  let inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType.value)
+
+  // Shift LUT to preserve original mean luminance (prevents dark/bright images from shifting too much)
+  if (preserveMean.value) {
+    inverseLut = $LuminanceProfile.shiftLutToPreserveMean(inverseLut, profile.meanLuminance)
+  }
+
   const blendedLut = $LuminanceProfile.blendLut(inverseLut, flatStrength.value)
   const flattened = $LuminanceProfile.applyLut(displayImg, blendedLut)
   flattenedImages.value.set(key, flattened)
@@ -180,13 +190,13 @@ const renderAllCanvases = () => {
   })
 }
 
-// Clear flattened cache when fitType or strength changes
-watch([fitType, flatStrength], () => {
+// Clear flattened cache when fitType, strength, or preserveMean changes
+watch([fitType, flatStrength, preserveMean], () => {
   flattenedImages.value.clear()
 })
 
 // Watch for changes and re-render
-watch([photos, displayImages, profiles, fitType, flatStrength, filterLut], () => {
+watch([photos, displayImages, profiles, fitType, flatStrength, preserveMean, filterLut], () => {
   nextTick(renderAllCanvases)
 }, { deep: true })
 </script>
@@ -245,6 +255,15 @@ watch([photos, displayImages, profiles, fitType, flatStrength, filterLut], () =>
             />
             <span class="text-xs text-gray-400 w-8">{{ Math.round(flatStrength * 100) }}%</span>
           </div>
+          <!-- Preserve Mean Toggle -->
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="preserveMean"
+              class="w-3.5 h-3.5 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+            />
+            <span class="text-xs text-gray-500">Keep Mean</span>
+          </label>
           <!-- Fit Type Selector -->
           <div class="flex items-center gap-2">
             <span class="text-xs text-gray-500">Fit:</span>
