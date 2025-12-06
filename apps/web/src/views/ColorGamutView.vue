@@ -6,6 +6,7 @@ import {
   COLOR_SPACE_INFO,
   type ColorSpaceId,
 } from '../modules/Color/Application/ConvertXyYToColorSpaces'
+import { $Srgb } from '../modules/Color/Domain/ValueObject/Srgb'
 
 // 色空間IDリスト（ACES除外）
 const colorSpaceIds: ColorSpaceId[] = ['srgb', 'display-p3', 'rec2020']
@@ -152,8 +153,7 @@ function formatRgb(v: number): string {
 // sRGB用のHEX値を計算
 const srgbHex = computed(() => {
   const gamma = conversionResult.value.colorSpaces.srgb.gamma
-  const toHex = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')
-  return `#${toHex(gamma.r)}${toHex(gamma.g)}${toHex(gamma.b)}`
+  return $Srgb.toHex($Srgb.create(gamma.r, gamma.g, gamma.b))
 })
 </script>
 
