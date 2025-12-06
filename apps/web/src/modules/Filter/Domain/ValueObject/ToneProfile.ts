@@ -3,11 +3,13 @@
  *
  * 統計ベースのアプローチで、各チャンネルの黒点・白点・ガンマを抽出し、
  * それを再現する1D LUTを生成する
+ *
+ * 詳細モードでは、CDFベースの完全なトーンカーブとコントロールポイントを抽出
  */
 
 import { type Lut1D, $Lut1D } from './Lut1D'
 
-/** 単一チャンネルの色調パラメータ */
+/** 単一チャンネルの色調パラメータ（簡易版） */
 export type ChannelTone = {
   /** 黒点 (0-255) - シャドウの切り詰め位置 */
   blackPoint: number
@@ -17,11 +19,36 @@ export type ChannelTone = {
   gamma: number
 }
 
-/** RGB各チャンネルの色調プロファイル */
+/** カーブ上のコントロールポイント */
+export type CurvePoint = {
+  /** 入力値 (0-1) */
+  input: number
+  /** 出力値 (0-1) */
+  output: number
+}
+
+/** 単一チャンネルの詳細カーブデータ */
+export type ChannelCurve = {
+  /** 簡易パラメータ */
+  tone: ChannelTone
+  /** 累積分布関数 (256点, 0-1) - 入力値→出力値のマッピング */
+  cdf: Float32Array
+  /** コントロールポイント (5-7点) */
+  controlPoints: CurvePoint[]
+}
+
+/** RGB各チャンネルの色調プロファイル（簡易版） */
 export type ToneProfile = {
   r: ChannelTone
   g: ChannelTone
   b: ChannelTone
+}
+
+/** RGB各チャンネルの詳細プロファイル */
+export type ToneProfileDetailed = {
+  r: ChannelCurve
+  g: ChannelCurve
+  b: ChannelCurve
 }
 
 /** ヒストグラム (各チャンネル256ビン) */
@@ -30,6 +57,9 @@ type Histogram = {
   g: Uint32Array
   b: Uint32Array
 }
+
+/** デフォルトのコントロールポイント数 */
+const DEFAULT_CONTROL_POINTS = 7
 
 /** ToneProfile 操作 */
 export const $ToneProfile = {
@@ -40,8 +70,30 @@ export const $ToneProfile = {
     b: { blackPoint: 0, whitePoint: 255, gamma: 1.0 },
   }),
 
+  /** ニュートラル（無変換）詳細プロファイル */
+  neutralDetailed: (): ToneProfileDetailed => {
+    const neutralCurve = (): ChannelCurve => {
+      const cdf = new Float32Array(256)
+      for (let i = 0; i < 256; i++) {
+        cdf[i] = i / 255
+      }
+      return {
+        tone: { blackPoint: 0, whitePoint: 255, gamma: 1.0 },
+        cdf,
+        controlPoints: [
+          { input: 0, output: 0 },
+          { input: 0.25, output: 0.25 },
+          { input: 0.5, output: 0.5 },
+          { input: 0.75, output: 0.75 },
+          { input: 1, output: 1 },
+        ],
+      }
+    }
+    return { r: neutralCurve(), g: neutralCurve(), b: neutralCurve() }
+  },
+
   /**
-   * ImageData から ToneProfile を抽出
+   * ImageData から ToneProfile を抽出（簡易版）
    * @param imageData 入力画像
    * @param percentile 黒点/白点のパーセンタイル (default: 1%)
    */
@@ -54,6 +106,58 @@ export const $ToneProfile = {
       g: extractChannelTone(histogram.g, totalPixels, percentile),
       b: extractChannelTone(histogram.b, totalPixels, percentile),
     }
+  },
+
+  /**
+   * ImageData から詳細プロファイルを抽出
+   * @param imageData 入力画像
+   * @param percentile 黒点/白点のパーセンタイル (default: 1%)
+   * @param numControlPoints コントロールポイント数 (default: 7)
+   */
+  extractDetailed: (
+    imageData: ImageData,
+    percentile: number = 1,
+    numControlPoints: number = DEFAULT_CONTROL_POINTS
+  ): ToneProfileDetailed => {
+    const histogram = computeHistogram(imageData)
+    const totalPixels = imageData.width * imageData.height
+
+    return {
+      r: extractChannelCurve(histogram.r, totalPixels, percentile, numControlPoints),
+      g: extractChannelCurve(histogram.g, totalPixels, percentile, numControlPoints),
+      b: extractChannelCurve(histogram.b, totalPixels, percentile, numControlPoints),
+    }
+  },
+
+  /** 詳細プロファイルから簡易プロファイルを取得 */
+  toSimple: (detailed: ToneProfileDetailed): ToneProfile => ({
+    r: detailed.r.tone,
+    g: detailed.g.tone,
+    b: detailed.b.tone,
+  }),
+
+  /**
+   * 詳細プロファイルのCDFから直接LUTを生成
+   * CDFそのものがLUTになる（より正確）
+   */
+  detailedToLut: (profile: ToneProfileDetailed): Lut1D => {
+    return $Lut1D.create(
+      profile.r.cdf.slice(),
+      profile.g.cdf.slice(),
+      profile.b.cdf.slice()
+    )
+  },
+
+  /**
+   * 詳細プロファイルの逆LUTを生成
+   * CDFの逆関数を計算
+   */
+  detailedToInverseLut: (profile: ToneProfileDetailed): Lut1D => {
+    return $Lut1D.create(
+      invertCdf(profile.r.cdf),
+      invertCdf(profile.g.cdf),
+      invertCdf(profile.b.cdf)
+    )
   },
 
   /**
@@ -220,4 +324,112 @@ function createInverseChannelLut(tone: ChannelTone): Float32Array {
   }
 
   return lut
+}
+
+/**
+ * 詳細なチャンネルカーブを抽出
+ * ヒストグラムからCDF、簡易パラメータ、コントロールポイントを計算
+ */
+function extractChannelCurve(
+  histogram: Uint32Array,
+  totalPixels: number,
+  percentile: number,
+  numControlPoints: number
+): ChannelCurve {
+  // 簡易パラメータを抽出
+  const tone = extractChannelTone(histogram, totalPixels, percentile)
+
+  // CDFを計算
+  const cdf = computeCdf(histogram, totalPixels)
+
+  // CDFからコントロールポイントを抽出
+  const controlPoints = extractControlPoints(cdf, numControlPoints)
+
+  return { tone, cdf, controlPoints }
+}
+
+/**
+ * ヒストグラムから累積分布関数(CDF)を計算
+ * 入力値 i に対して、値が i 以下のピクセルの割合を返す
+ * これを「入力→出力」マッピングとして使用
+ */
+function computeCdf(histogram: Uint32Array, totalPixels: number): Float32Array {
+  const cdf = new Float32Array(256)
+
+  if (totalPixels === 0) {
+    // 空の画像の場合はリニア
+    for (let i = 0; i < 256; i++) {
+      cdf[i] = i / 255
+    }
+    return cdf
+  }
+
+  // 累積和を計算
+  let cumulative = 0
+  for (let i = 0; i < 256; i++) {
+    cumulative += histogram[i] ?? 0
+    cdf[i] = cumulative / totalPixels
+  }
+
+  return cdf
+}
+
+/**
+ * CDFからコントロールポイントを抽出
+ * 等間隔の入力値に対する出力値を取得
+ */
+function extractControlPoints(cdf: Float32Array, numPoints: number): CurvePoint[] {
+  const points: CurvePoint[] = []
+
+  for (let i = 0; i < numPoints; i++) {
+    // 入力値: 0, 1/(n-1), 2/(n-1), ..., 1
+    const input = i / (numPoints - 1)
+    // CDFから出力値を補間取得
+    const idx = input * 255
+    const lo = Math.floor(idx)
+    const hi = Math.min(255, lo + 1)
+    const t = idx - lo
+    const output = (cdf[lo] ?? 0) * (1 - t) + (cdf[hi] ?? 0) * t
+
+    points.push({ input, output })
+  }
+
+  return points
+}
+
+/**
+ * CDFの逆関数を計算
+ * 出力値 y に対して、CDF(x) = y となる x を求める
+ */
+function invertCdf(cdf: Float32Array): Float32Array {
+  const inverse = new Float32Array(256)
+
+  for (let i = 0; i < 256; i++) {
+    const target = i / 255
+
+    // CDFで target 以上になる最初の位置を探す
+    let found = 255
+    for (let j = 0; j < 256; j++) {
+      if ((cdf[j] ?? 0) >= target) {
+        found = j
+        break
+      }
+    }
+
+    // 線形補間で精度を上げる
+    if (found > 0 && found < 255) {
+      const prevVal = cdf[found - 1] ?? 0
+      const currVal = cdf[found] ?? 0
+      if (currVal > prevVal) {
+        const t = (target - prevVal) / (currVal - prevVal)
+        inverse[i] = (found - 1 + t) / 255
+      } else {
+        inverse[i] = found / 255
+      }
+    } else {
+      inverse[i] = found / 255
+    }
+  }
+
+  return inverse
 }

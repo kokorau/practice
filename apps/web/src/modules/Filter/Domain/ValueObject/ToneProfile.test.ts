@@ -172,4 +172,93 @@ describe('$ToneProfile', () => {
       expect(transferLut.r[255]!).toBeCloseTo(directLut.r[255]!, 2)
     })
   })
+
+  describe('extractDetailed', () => {
+    it('should extract CDF from linear gradient', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const detailed = $ToneProfile.extractDetailed(imageData, 0, 5)
+
+      // CDFは累積分布なので、線形グラデーションでは線形になる
+      expect(detailed.r.cdf[0]).toBeCloseTo(1 / 256, 2) // 最初の1ピクセル
+      expect(detailed.r.cdf[127]).toBeCloseTo(128 / 256, 2)
+      expect(detailed.r.cdf[255]).toBeCloseTo(1, 2)
+    })
+
+    it('should extract control points', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const detailed = $ToneProfile.extractDetailed(imageData, 0, 5)
+
+      // 5つのコントロールポイント
+      expect(detailed.r.controlPoints).toHaveLength(5)
+      expect(detailed.r.controlPoints[0]!.input).toBe(0)
+      expect(detailed.r.controlPoints[2]!.input).toBe(0.5)
+      expect(detailed.r.controlPoints[4]!.input).toBe(1)
+    })
+
+    it('should include tone parameters', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const detailed = $ToneProfile.extractDetailed(imageData, 0, 7)
+
+      expect(detailed.r.tone.blackPoint).toBe(0)
+      expect(detailed.r.tone.whitePoint).toBe(255)
+      expect(detailed.r.tone.gamma).toBeCloseTo(1.0, 1)
+    })
+  })
+
+  describe('detailedToLut', () => {
+    it('should generate LUT from CDF', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const detailed = $ToneProfile.extractDetailed(imageData, 0, 7)
+      const lut = $ToneProfile.detailedToLut(detailed)
+
+      // CDFがそのままLUTになる
+      expect(lut.r[0]).toBeCloseTo(detailed.r.cdf[0]!, 5)
+      expect(lut.r[127]).toBeCloseTo(detailed.r.cdf[127]!, 5)
+      expect(lut.r[255]).toBeCloseTo(detailed.r.cdf[255]!, 5)
+    })
+  })
+
+  describe('detailedToInverseLut', () => {
+    it('should generate inverse LUT that approximately inverts CDF', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const detailed = $ToneProfile.extractDetailed(imageData, 0, 7)
+
+      const lut = $ToneProfile.detailedToLut(detailed)
+      const inverseLut = $ToneProfile.detailedToInverseLut(detailed)
+      const composed = $Lut1D.compose(lut, inverseLut)
+
+      // 適用 → 逆適用 で概ね元に戻る
+      expect(composed.r[50]!).toBeCloseTo(50 / 255, 1)
+      expect(composed.r[127]!).toBeCloseTo(127 / 255, 1)
+      expect(composed.r[200]!).toBeCloseTo(200 / 255, 1)
+    })
+  })
+
+  describe('neutralDetailed', () => {
+    it('should return identity detailed profile', () => {
+      const detailed = $ToneProfile.neutralDetailed()
+
+      // CDFは線形
+      expect(detailed.r.cdf[0]).toBe(0)
+      expect(detailed.r.cdf[127]).toBeCloseTo(127 / 255, 5)
+      expect(detailed.r.cdf[255]).toBe(1)
+
+      // コントロールポイントは対角線上
+      expect(detailed.r.controlPoints[0]).toEqual({ input: 0, output: 0 })
+      expect(detailed.r.controlPoints[2]).toEqual({ input: 0.5, output: 0.5 })
+      expect(detailed.r.controlPoints[4]).toEqual({ input: 1, output: 1 })
+    })
+  })
+
+  describe('toSimple', () => {
+    it('should convert detailed profile to simple profile', () => {
+      const imageData = createTestImageData(256, 1, (x) => [x, x, x, 255])
+      const detailed = $ToneProfile.extractDetailed(imageData, 0, 7)
+      const simple = $ToneProfile.toSimple(detailed)
+
+      expect(simple.r).toEqual(detailed.r.tone)
+      expect(simple.g).toEqual(detailed.g.tone)
+      expect(simple.b).toEqual(detailed.b.tone)
+    })
+  })
 })

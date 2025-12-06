@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, type Ref } from 'vue'
-import type { ToneProfile, ChannelTone } from '../modules/Filter/Domain'
+import type { ToneProfile, ToneProfileDetailed, ChannelCurve } from '../modules/Filter/Domain'
 
 const props = defineProps<{
   profile: ToneProfile | null
+  detailedProfile: ToneProfileDetailed | null
   isExtracting: boolean
 }>()
 
@@ -17,10 +18,67 @@ const emit = defineEmits<{
 // トーンカーブ描画用 canvas
 const curveCanvasRef: Ref<HTMLCanvasElement | null> = ref(null)
 
-// チャンネルカーブを描画
+// 表示モード: 'simple' = ガンマカーブ, 'cdf' = CDFカーブ
+type ViewMode = 'simple' | 'cdf'
+const viewMode = ref<ViewMode>('cdf')
+
+// CDFカーブを描画
+const drawCdfCurve = (ctx: CanvasRenderingContext2D, width: number, height: number, curve: ChannelCurve, color: string) => {
+  ctx.strokeStyle = color
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+
+  for (let i = 0; i < 256; i++) {
+    const x = (i / 255) * width
+    const y = height - (curve.cdf[i] ?? 0) * height
+
+    if (i === 0) {
+      ctx.moveTo(x, y)
+    } else {
+      ctx.lineTo(x, y)
+    }
+  }
+  ctx.stroke()
+
+  // コントロールポイントを描画
+  ctx.fillStyle = color
+  for (const point of curve.controlPoints) {
+    const x = point.input * width
+    const y = height - point.output * height
+    ctx.beginPath()
+    ctx.arc(x, y, 3, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+// 簡易カーブ（ガンマ）を描画
+const drawSimpleCurve = (ctx: CanvasRenderingContext2D, width: number, height: number, curve: ChannelCurve, color: string) => {
+  const { blackPoint, whitePoint, gamma } = curve.tone
+  ctx.strokeStyle = color
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+
+  for (let i = 0; i <= 255; i++) {
+    const input = i / 255
+    const gammaCorrected = Math.pow(input, gamma)
+    const output = blackPoint / 255 + gammaCorrected * (whitePoint - blackPoint) / 255
+
+    const x = (i / 255) * width
+    const y = height - output * height
+
+    if (i === 0) {
+      ctx.moveTo(x, y)
+    } else {
+      ctx.lineTo(x, y)
+    }
+  }
+  ctx.stroke()
+}
+
+// トーンカーブを描画
 const drawToneCurve = () => {
   const canvas = curveCanvasRef.value
-  if (!canvas || !props.profile) return
+  if (!canvas || !props.detailedProfile) return
 
   const ctx = canvas.getContext('2d')
   if (!ctx) return
@@ -49,7 +107,7 @@ const drawToneCurve = () => {
 
   // 対角線（リニア参照）
   ctx.strokeStyle = '#4b5563'
-  ctx.setLineDash([4, 4])
+  ctx.setLineDash([2, 2])
   ctx.beginPath()
   ctx.moveTo(0, height)
   ctx.lineTo(width, 0)
@@ -57,39 +115,24 @@ const drawToneCurve = () => {
   ctx.setLineDash([])
 
   // 各チャンネルのカーブを描画
-  const channels: { tone: ChannelTone; color: string }[] = [
-    { tone: props.profile.r, color: '#ef4444' },
-    { tone: props.profile.g, color: '#22c55e' },
-    { tone: props.profile.b, color: '#3b82f6' },
+  const channels: { curve: ChannelCurve; color: string }[] = [
+    { curve: props.detailedProfile.r, color: '#ef4444' },
+    { curve: props.detailedProfile.g, color: '#22c55e' },
+    { curve: props.detailedProfile.b, color: '#3b82f6' },
   ]
 
-  for (const { tone, color } of channels) {
-    ctx.strokeStyle = color
-    ctx.lineWidth = 2
-    ctx.beginPath()
-
-    for (let i = 0; i <= 255; i++) {
-      const input = i / 255
-      // ガンマ適用
-      const gammaCorrected = Math.pow(input, tone.gamma)
-      // 黒点・白点スケーリング
-      const output = tone.blackPoint / 255 + gammaCorrected * (tone.whitePoint - tone.blackPoint) / 255
-
-      const x = (i / 255) * width
-      const y = height - output * height
-
-      if (i === 0) {
-        ctx.moveTo(x, y)
-      } else {
-        ctx.lineTo(x, y)
-      }
+  for (const { curve, color } of channels) {
+    if (viewMode.value === 'cdf') {
+      drawCdfCurve(ctx, width, height, curve, color)
+    } else {
+      drawSimpleCurve(ctx, width, height, curve, color)
     }
-    ctx.stroke()
   }
 }
 
-// プロファイル変更時に再描画
-watch(() => props.profile, drawToneCurve, { immediate: true })
+// プロファイル/モード変更時に再描画
+watch(() => props.detailedProfile, drawToneCurve, { deep: true })
+watch(viewMode, drawToneCurve)
 watch(curveCanvasRef, drawToneCurve)
 
 // パラメータフォーマット
@@ -100,17 +143,33 @@ const formatValue = (v: number, decimals: number = 0): string => {
 
 <template>
   <div class="space-y-2">
-    <template v-if="profile">
+    <template v-if="detailedProfile && profile">
       <!-- 2カラムレイアウト: グラフ + パラメータ -->
       <div class="flex gap-3">
-        <!-- 左: トーンカーブ（コンパクト） -->
+        <!-- 左: トーンカーブ -->
         <div class="flex-shrink-0">
           <canvas
             ref="curveCanvasRef"
-            width="100"
-            height="80"
+            width="120"
+            height="90"
             class="rounded bg-gray-800"
           />
+          <!-- モード切替 -->
+          <div class="flex gap-0.5 mt-1">
+            <button
+              v-for="mode in (['cdf', 'simple'] as const)"
+              :key="mode"
+              @click="viewMode = mode"
+              :class="[
+                'flex-1 px-1 py-0.5 text-[9px] rounded transition-colors',
+                viewMode === mode
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+              ]"
+            >
+              {{ mode === 'cdf' ? 'CDF' : 'Gamma' }}
+            </button>
+          </div>
         </div>
 
         <!-- 右: パラメータ + ボタン -->
@@ -147,8 +206,13 @@ const formatValue = (v: number, decimals: number = 0): string => {
             <div class="text-gray-300 font-mono">{{ formatValue(profile.b.gamma, 2) }}</div>
           </div>
 
+          <!-- コントロールポイント表示 -->
+          <div class="text-[9px] text-gray-500 mb-2">
+            {{ detailedProfile.r.controlPoints.length }} control points
+          </div>
+
           <!-- ボタン -->
-          <div class="flex gap-1">
+          <div class="flex gap-1 flex-wrap">
             <button
               @click="emit('applyLut')"
               class="px-2 py-1 text-[10px] bg-purple-600 hover:bg-purple-700 rounded"

@@ -79,6 +79,7 @@ const { colorLayerMap, originalImageData: colorLayerImageData, compute: computeC
 // ToneProfile extraction - manual trigger, Photo モードのみ
 const {
   profile: toneProfile,
+  detailedProfile: toneProfileDetailed,
   lut: toneProfileLut,
   inverseLut: toneProfileInverseLut,
   isExtracting: isToneProfileExtracting,
@@ -404,6 +405,7 @@ const handleLoadDefaultPalette = () => {
         <h2 class="text-xs text-gray-400 font-medium mb-2">Tone Profile</h2>
         <ToneProfilePanel
           :profile="toneProfile"
+          :detailed-profile="toneProfileDetailed"
           :is-extracting="isToneProfileExtracting"
           @extract="extractToneProfile"
           @reset="resetToneProfile"
