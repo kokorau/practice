@@ -29,10 +29,17 @@ const canvasRefs = ref<Map<string, HTMLCanvasElement>>(new Map())
 // WebGL renderers cache
 const renderers = new Map<HTMLCanvasElement, LutRenderer>()
 
+// Display images cache (original, downscaled)
+const displayImages = ref<Map<number, ImageData>>(new Map())
+
+// Flattened images cache (Oklab-based, color-preserving)
+const flattenedImages = ref<Map<string, ImageData>>(new Map()) // key: `${index}-${fitType}`
+
 // Load 5 random photos
 const loadPhotos = async () => {
   isLoading.value = true
   error.value = null
+  flattenedImages.value.clear()
   try {
     const loaded = await fetchUnsplashPhotos({ count: 5 })
     photos.value = loaded
@@ -55,7 +62,7 @@ const loadPhotos = async () => {
   }
 }
 
-// Downsample ImageData for faster analysis
+// Downsample ImageData
 const downsampleImageData = (imageData: ImageData, maxWidth: number): ImageData => {
   if (imageData.width <= maxWidth) return imageData
 
@@ -78,6 +85,28 @@ const downsampleImageData = (imageData: ImageData, maxWidth: number): ImageData 
   return ctx.getImageData(0, 0, newWidth, newHeight)
 }
 
+// Downscale photo for display (max 400px width)
+const getDisplayImageData = (photo: Photo): ImageData => {
+  return downsampleImageData(photo.imageData, 400)
+}
+
+// Get or create flattened image (Oklab color-preserving)
+const getFlattenedImage = (index: number): ImageData | null => {
+  const key = `${index}-${fitType.value}`
+  const cached = flattenedImages.value.get(key)
+  if (cached) return cached
+
+  const profile = profiles.value[index]
+  const displayImg = displayImages.value.get(index)
+  if (!profile || !displayImg) return null
+
+  // Apply inverse LUT using Oklab (preserves colors)
+  const inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType.value)
+  const flattened = $LuminanceProfile.applyLut(displayImg, inverseLut)
+  flattenedImages.value.set(key, flattened)
+  return flattened
+}
+
 // Get or create LutRenderer for a canvas
 const getRenderer = (canvas: HTMLCanvasElement): LutRenderer => {
   let renderer = renderers.get(canvas)
@@ -95,34 +124,7 @@ const createIdentityLut = (): Lut1D => {
   return { type: 'lut1d', r: identity, g: identity, b: identity }
 }
 
-// Downscale photo for display (max 400px width)
-const getDisplayImageData = (photo: Photo): ImageData => {
-  const maxWidth = 400
-  if (photo.width <= maxWidth) return photo.imageData
-
-  const scale = maxWidth / photo.width
-  const newWidth = Math.floor(photo.width * scale)
-  const newHeight = Math.floor(photo.height * scale)
-
-  const canvas = document.createElement('canvas')
-  canvas.width = newWidth
-  canvas.height = newHeight
-  const ctx = canvas.getContext('2d')!
-
-  const tempCanvas = document.createElement('canvas')
-  tempCanvas.width = photo.width
-  tempCanvas.height = photo.height
-  const tempCtx = tempCanvas.getContext('2d')!
-  tempCtx.putImageData(photo.imageData, 0, 0)
-
-  ctx.drawImage(tempCanvas, 0, 0, newWidth, newHeight)
-  return ctx.getImageData(0, 0, newWidth, newHeight)
-}
-
-// Cache downscaled images
-const displayImages = ref<Map<number, ImageData>>(new Map())
-
-// Render a photo to canvas with optional LUT
+// Render ImageData to canvas with optional LUT (WebGL)
 const renderToCanvas = (
   canvas: HTMLCanvasElement,
   imageData: ImageData,
@@ -140,52 +142,43 @@ const setCanvasRef = (el: HTMLCanvasElement | null, photoIndex: number, type: 'o
   }
 }
 
-// Render all canvases when photos or filter changes
+// Render all canvases
 const renderAllCanvases = () => {
   photos.value.forEach((_photo, index) => {
-    const profile = profiles.value[index]
     const imageData = displayImages.value.get(index)
     if (!imageData) return
 
-    // Original
+    // Original - no LUT
     const originalCanvas = canvasRefs.value.get(`${index}-original`)
     if (originalCanvas) {
       renderToCanvas(originalCanvas, imageData, null)
     }
 
-    // Flat (inverse LUT to neutralize)
+    // Flat - pre-computed with Oklab (color-preserving)
     const flatCanvas = canvasRefs.value.get(`${index}-flat`)
-    if (flatCanvas && profile) {
-      const inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType.value)
-      renderToCanvas(flatCanvas, imageData, {
-        type: 'lut1d',
-        r: inverseLut,
-        g: inverseLut,
-        b: inverseLut,
-      })
+    if (flatCanvas) {
+      const flattenedImg = getFlattenedImage(index)
+      if (flattenedImg) {
+        renderToCanvas(flatCanvas, flattenedImg, null)
+      }
     }
 
-    // Filter (inverse LUT + filter LUT)
+    // Filter - apply filter LUT to flattened image
     const filterCanvas = canvasRefs.value.get(`${index}-filter`)
-    if (filterCanvas && profile) {
-      const inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType.value)
-
-      // Compose inverse + filter LUT
-      const fLut = filterLut.value?.type === 'lut1d' ? filterLut.value as Lut1D : createIdentityLut()
-      const composedR = new Float32Array(256)
-      const composedG = new Float32Array(256)
-      const composedB = new Float32Array(256)
-      for (let i = 0; i < 256; i++) {
-        const flatVal = inverseLut[i]!
-        const flatIdx = Math.min(255, Math.max(0, Math.round(flatVal * 255)))
-        composedR[i] = fLut.r[flatIdx]!
-        composedG[i] = fLut.g[flatIdx]!
-        composedB[i] = fLut.b[flatIdx]!
+    if (filterCanvas) {
+      const flattenedImg = getFlattenedImage(index)
+      if (flattenedImg) {
+        const fLut = filterLut.value?.type === 'lut1d' ? filterLut.value as Lut1D : createIdentityLut()
+        renderToCanvas(filterCanvas, flattenedImg, fLut)
       }
-      renderToCanvas(filterCanvas, imageData, { type: 'lut1d', r: composedR, g: composedG, b: composedB })
     }
   })
 }
+
+// Clear flattened cache when fitType changes
+watch(fitType, () => {
+  flattenedImages.value.clear()
+})
 
 // Watch for changes and re-render
 watch([photos, displayImages, profiles, fitType, filterLut], () => {
@@ -207,24 +200,6 @@ watch([photos, displayImages, profiles, fitType, filterLut], () => {
           {{ isLoading ? 'Loading...' : 'Load 5 Random Photos' }}
         </button>
         <p v-if="error" class="mt-2 text-xs text-red-400">{{ error }}</p>
-
-        <!-- Fit Type -->
-        <div class="mt-3 flex items-center gap-2">
-          <span class="text-xs text-gray-500">Fit:</span>
-          <div class="flex gap-1">
-            <button
-              v-for="ft in (['polynomial', 'spline', 'simple', 'raw'] as const)"
-              :key="ft"
-              @click="fitType = ft"
-              :class="[
-                'px-2 py-0.5 text-[10px] rounded',
-                fitType === ft ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-              ]"
-            >
-              {{ ft }}
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- Filter Panel -->
@@ -243,11 +218,30 @@ watch([photos, displayImages, profiles, fitType, filterLut], () => {
 
     <!-- Right Panel: Photo Grid -->
     <div class="flex-1 overflow-auto p-4">
-      <!-- Header -->
-      <div v-if="photos.length > 0" class="grid grid-cols-3 gap-2 mb-2 text-xs text-gray-400 font-medium">
-        <div class="text-center">Original</div>
-        <div class="text-center">Flat</div>
-        <div class="text-center">Filter</div>
+      <!-- Header with Fit Type -->
+      <div v-if="photos.length > 0" class="flex items-center justify-between mb-2">
+        <div class="grid grid-cols-3 gap-2 flex-1 text-xs text-gray-400 font-medium">
+          <div class="text-center">Original</div>
+          <div class="text-center">Flat</div>
+          <div class="text-center">Filter</div>
+        </div>
+        <!-- Fit Type Selector -->
+        <div class="flex items-center gap-2 ml-4">
+          <span class="text-xs text-gray-500">Fit:</span>
+          <div class="flex gap-1">
+            <button
+              v-for="ft in (['polynomial', 'spline', 'simple', 'raw'] as const)"
+              :key="ft"
+              @click="fitType = ft"
+              :class="[
+                'px-2 py-0.5 text-[10px] rounded',
+                fitType === ft ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+              ]"
+            >
+              {{ ft }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Photo Rows -->
