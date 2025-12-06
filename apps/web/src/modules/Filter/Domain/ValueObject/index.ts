@@ -9,6 +9,9 @@ export {
   type ChannelTone,
   type ChannelCurve,
   type CurvePoint,
+  $ToneProfile,
+} from './ToneProfile'
+export {
   type ImageAnalysis,
   type HistogramStats,
   type DynamicRange,
@@ -16,5 +19,5 @@ export {
   type ZoneStats,
   type SaturationStats,
   type ClippingInfo,
-  $ToneProfile,
-} from './ToneProfile'
+  $ImageAnalysis,
+} from './ImageAnalysis'

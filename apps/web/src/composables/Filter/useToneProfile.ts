@@ -6,6 +6,7 @@ import {
   type Lut1D,
   type ImageAnalysis,
   $ToneProfile,
+  $ImageAnalysis,
 } from '../../modules/Filter/Domain'
 
 export type UseToneProfileOptions = {
@@ -91,7 +92,7 @@ export const useToneProfile = (
       // 詳細プロファイルを抽出
       detailedProfile.value = $ToneProfile.extractDetailed(imageData, percentile, numControlPoints)
       // 画像解析を実行
-      analysis.value = $ToneProfile.analyze(imageData)
+      analysis.value = $ImageAnalysis.analyze(imageData)
     } catch (e) {
       console.error('ToneProfile extraction failed:', e)
       detailedProfile.value = null
