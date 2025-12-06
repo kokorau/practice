@@ -45,6 +45,11 @@ const pages = [
     title: 'Color Gamut',
     description: 'Rec.2020, Display-P3, ACESなど広色域の確認と比較',
   },
+  {
+    to: '/site-simulator',
+    title: 'Site Simulator',
+    description: 'ブランドカラーからパレット生成、光源とフィルターでサイトをシミュレート',
+  },
 ]
 </script>
 

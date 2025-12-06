@@ -100,7 +100,7 @@ const getDisplayImageData = (photo: Photo): ImageData => {
 const getFlattenedImage = (index: number): ImageData | null => {
   const strengthKey = Math.round(flatStrength.value * 100) // quantize for caching
   const preserveMeanKey = preserveMean.value ? 1 : 0
-  const key = `${index}-${fitType.value}-${strengthKey}-${preserveMeanKey}`
+  const key = `${index}-${fitType}-${strengthKey}-${preserveMeanKey}`
   const cached = flattenedImages.value.get(key)
   if (cached) return cached
 
@@ -109,7 +109,7 @@ const getFlattenedImage = (index: number): ImageData | null => {
   if (!profile || !displayImg) return null
 
   // Apply inverse LUT with strength blending using Oklab (preserves colors)
-  let inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType.value)
+  let inverseLut = $LuminanceProfile.toFittedInverseLut(profile, fitType)
 
   // Shift LUT to preserve original mean luminance (prevents dark/bright images from shifting too much)
   if (preserveMean.value) {

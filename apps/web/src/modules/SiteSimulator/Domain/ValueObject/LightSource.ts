@@ -14,3 +14,33 @@ export type LightSource = {
   /** Intensity multiplier (1.0 = neutral) */
   readonly intensity: number
 }
+
+export const $LightSource = {
+  /**
+   * Create a light source
+   */
+  create: (
+    id: string,
+    name: string,
+    temperature: number,
+    tint = 0,
+    intensity = 1
+  ): LightSource => ({
+    id,
+    name,
+    temperature,
+    tint,
+    intensity,
+  }),
+
+  /**
+   * Default daylight (D65)
+   */
+  daylight: (): LightSource => ({
+    id: 'daylight',
+    name: 'Daylight (D65)',
+    temperature: 6500,
+    tint: 0,
+    intensity: 1,
+  }),
+}

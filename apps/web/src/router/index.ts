@@ -59,6 +59,11 @@ const router = createRouter({
       name: 'color-gamut',
       component: () => import('../views/ColorGamutView.vue'),
     },
+    {
+      path: '/site-simulator',
+      name: 'site-simulator',
+      component: () => import('../views/SiteSimulatorView.vue'),
+    },
   ],
 })
 

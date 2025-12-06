@@ -1,4 +1,6 @@
 import type { Oklch } from '../../../Color/Domain/ValueObject/Oklch'
+import { $Oklch } from '../../../Color/Domain/ValueObject/Oklch'
+import type { BrandPrimitive } from './BrandPrimitive'
 
 /**
  * CorePalette is the essential palette with brand, accent, and neutral colors.
@@ -21,9 +23,53 @@ export type CorePalette = {
 }
 
 export const $CorePalette = {
-  create: undefined as unknown as (
+  /**
+   * Create CorePalette from brand primitives
+   */
+  fromBrandPrimitives: (
+    brandPrimitive: BrandPrimitive,
+    accentPrimitive: BrandPrimitive
+  ): CorePalette => {
+    // Use the normalized base variant as primary
+    const brandPrimary = brandPrimitive.variants.base
+    const accent = accentPrimitive.variants.base
+
+    // Extract hue from brand for subtle neutral tinting
+    const brandHue = brandPrimary.H
+
+    return {
+      brand: {
+        primary: brandPrimary,
+        accent: accent,
+      },
+      neutral: {
+        // Slightly tinted neutrals based on brand hue
+        base: $Oklch.create(0.25, 0.01, brandHue),     // Dark surface
+        strong: $Oklch.create(0.95, 0.005, brandHue),  // Light text (on dark)
+        weak: $Oklch.create(0.70, 0.01, brandHue),     // Secondary text
+      },
+    }
+  },
+
+  /**
+   * Create CorePalette with custom neutrals
+   */
+  create: (
     brandPrimary: Oklch,
     accent: Oklch,
     neutralBase: Oklch
-  ) => CorePalette,
+  ): CorePalette => {
+    const brandHue = brandPrimary.H
+    return {
+      brand: {
+        primary: brandPrimary,
+        accent: accent,
+      },
+      neutral: {
+        base: neutralBase,
+        strong: $Oklch.create(0.95, 0.005, brandHue),
+        weak: $Oklch.create(0.70, 0.01, brandHue),
+      },
+    }
+  },
 }
