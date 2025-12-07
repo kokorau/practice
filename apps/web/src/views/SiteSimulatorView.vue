@@ -77,7 +77,7 @@ const getCssColor = (token: SemanticColorToken): string => {
 const paletteGroups = computed(() => [
   {
     name: 'Surface',
-    tokens: ['surface.base', 'surface.elevated', 'surface.border'] as SemanticColorToken[],
+    tokens: ['surface.base', 'surface.elevated', 'surface.card', 'surface.border'] as SemanticColorToken[],
   },
   {
     name: 'Text',

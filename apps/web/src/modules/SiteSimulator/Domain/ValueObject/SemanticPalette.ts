@@ -9,8 +9,10 @@ export type SemanticPalette = {
   readonly surface: {
     /** Page background */
     readonly base: Oklch
-    /** Card, modal background */
+    /** Section, modal background */
     readonly elevated: Oklch
+    /** Card background (stronger than elevated) */
+    readonly card: Oklch
     /** Border color */
     readonly border: Oklch
   }
@@ -165,11 +167,14 @@ export const $SemanticPalette = {
     const surfaceBase = white
 
     // Elevated: white with a hint of brand color
-    const surfaceElevated = mixColors(white, brand.primary, 0.03)
+    const surfaceElevated = mixColors(white, brand.primary, 0.06)
 
-    // Border: dark with brand tint
-    const surfaceBorder = mixColors(black, brand.primary, 0.15)
-    const borderAdjusted = $Oklch.create(0.75, surfaceBorder.C, surfaceBorder.H)
+    // Card: stronger brand tint for smaller card elements
+    const surfaceCard = mixColors(white, brand.primary, 0.18)
+
+    // Border: light gray with brand tint
+    const surfaceBorder = mixColors(white, brand.primary, 0.12)
+    const borderAdjusted = $Oklch.create(0.88, surfaceBorder.C * 0.5, surfaceBorder.H)
 
     // === Text colors ===
     // Primary text: high contrast on white base
@@ -206,6 +211,7 @@ export const $SemanticPalette = {
       surface: {
         base: surfaceBase,
         elevated: surfaceElevated,
+        card: surfaceCard,
         border: borderAdjusted,
       },
       text: {
