@@ -14,7 +14,9 @@ const props = defineProps<{
 const highlightedCode = computed(() => {
   // Prismでは'html'は'markup'として扱う
   const lang = props.language === 'html' ? 'markup' : props.language
-  return Prism.highlight(props.code, Prism.languages[lang], lang)
+  const grammar = Prism.languages[lang]
+  if (!grammar) return props.code
+  return Prism.highlight(props.code, grammar, lang)
 })
 </script>
 

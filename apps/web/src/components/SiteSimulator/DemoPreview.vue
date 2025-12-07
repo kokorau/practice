@@ -65,7 +65,7 @@ watch(
 
       if (newArtifact.fonts) {
         const hrefMatch = newArtifact.fonts.match(/href="([^"]+)"/)
-        const newHref = hrefMatch ? hrefMatch[1] : ''
+        const newHref = hrefMatch?.[1] ?? ''
 
         if (fontLinkEl) {
           fontLinkEl.setAttribute('href', newHref)
