@@ -40,7 +40,7 @@ const {
 const PRESETS = getPresets()
 
 // Filter
-const { filter, lut, pixelEffects, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)
+const { filter, lut, intensity, setIntensity, pixelEffects, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)
 
 // Canvas描画 - Before (オリジナル) と After (フィルター適用) - WebGL 使用
 const { canvasRef: beforeCanvasRef, stats: renderStats, isProcessing } = useMediaCanvasWebGL(media)
@@ -316,8 +316,10 @@ const handleLoadDefaultPalette = () => {
           :presets="PRESETS"
           :current-preset-id="currentPresetId"
           :setters="setters"
+          :intensity="intensity"
           @apply-preset="applyPreset"
           @update:master-point="setMasterPoint"
+          @update:intensity="setIntensity"
           @reset="reset"
         />
       </div>

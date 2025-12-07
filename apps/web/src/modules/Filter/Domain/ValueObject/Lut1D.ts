@@ -225,6 +225,30 @@ export const $Lut1D = {
     return new ImageData(newData, width, height)
   },
 
+  /**
+   * LUT を Identity と線形補間してブレンド (強度調整)
+   * @param lut ソース LUT
+   * @param intensity 強度 (0.0 = Identity, 1.0 = 完全適用)
+   * @returns ブレンドされた新しい LUT
+   */
+  blend: (lut: Lut1D, intensity: number): Lut1D => {
+    if (intensity >= 0.999) return lut
+    if (intensity <= 0.001) return $Lut1D.identity()
+
+    const r = new Float32Array(256)
+    const g = new Float32Array(256)
+    const b = new Float32Array(256)
+
+    for (let i = 0; i < 256; i++) {
+      const t = i / 255  // identity value
+      r[i] = t * (1 - intensity) + lut.r[i]! * intensity
+      g[i] = t * (1 - intensity) + lut.g[i]! * intensity
+      b[i] = t * (1 - intensity) + lut.b[i]! * intensity
+    }
+
+    return { type: 'lut1d', r, g, b }
+  },
+
   /** 複数のLUTを合成 (順番に適用した結果と等価) */
   compose: (...luts: Lut1D[]): Lut1D => {
     if (luts.length === 0) {

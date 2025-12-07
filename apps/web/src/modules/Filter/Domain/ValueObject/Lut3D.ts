@@ -1201,6 +1201,38 @@ export const $Lut3D = {
   },
 
   /**
+   * LUT を Identity と線形補間してブレンド (強度調整)
+   * @param lut ソース LUT
+   * @param intensity 強度 (0.0 = Identity, 1.0 = 完全適用)
+   * @returns ブレンドされた新しい LUT
+   */
+  blend: (lut: Lut3D, intensity: number): Lut3D => {
+    if (intensity >= 0.999) return lut
+    if (intensity <= 0.001) return $Lut3D.identity(lut.size)
+
+    const { size, data } = lut
+    const newData = new Float32Array(data.length)
+
+    for (let b = 0; b < size; b++) {
+      for (let g = 0; g < size; g++) {
+        for (let r = 0; r < size; r++) {
+          const idx = (r + g * size + b * size * size) * 3
+          // Identity values
+          const identityR = r / (size - 1)
+          const identityG = g / (size - 1)
+          const identityB = b / (size - 1)
+          // Blend
+          newData[idx] = identityR * (1 - intensity) + data[idx]! * intensity
+          newData[idx + 1] = identityG * (1 - intensity) + data[idx + 1]! * intensity
+          newData[idx + 2] = identityB * (1 - intensity) + data[idx + 2]! * intensity
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data: newData }
+  },
+
+  /**
    * WebGL用に3Dテクスチャデータを生成
    * WebGL1では3Dテクスチャがないため、2Dテクスチャにパックする
    * レイアウト: size x (size * size) の2Dテクスチャ

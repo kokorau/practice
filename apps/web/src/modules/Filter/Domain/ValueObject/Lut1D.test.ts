@@ -164,6 +164,62 @@ describe('$Lut1D', () => {
     })
   })
 
+  describe('blend', () => {
+    it('should return same LUT when intensity is 1.0', () => {
+      const lut = $Lut1D.identity()
+      lut.r[128] = 0.8
+
+      const result = $Lut1D.blend(lut, 1.0)
+
+      expect(result.r[128]).toBeCloseTo(0.8, 5)
+    })
+
+    it('should return identity LUT when intensity is 0.0', () => {
+      const lut = $Lut1D.identity()
+      lut.r[128] = 0.8
+
+      const result = $Lut1D.blend(lut, 0.0)
+
+      expect(result.r[128]).toBeCloseTo(128 / 255, 5)
+    })
+
+    it('should blend with identity at 50% intensity', () => {
+      const lut = $Lut1D.identity()
+      // Make all channels output 1.0 (full white)
+      for (let i = 0; i < 256; i++) {
+        lut.r[i] = 1.0
+        lut.g[i] = 1.0
+        lut.b[i] = 1.0
+      }
+
+      const result = $Lut1D.blend(lut, 0.5)
+
+      // At 50%: (i/255) * 0.5 + 1.0 * 0.5
+      expect(result.r[0]).toBeCloseTo(0.5, 5)    // 0 * 0.5 + 1 * 0.5 = 0.5
+      expect(result.r[128]).toBeCloseTo((128 / 255) * 0.5 + 0.5, 5)
+      expect(result.r[255]).toBeCloseTo(1.0, 5)  // 1 * 0.5 + 1 * 0.5 = 1.0
+    })
+
+    it('should interpolate linearly', () => {
+      const lut = $Lut1D.identity()
+      // Invert: output = 1 - input
+      for (let i = 0; i < 256; i++) {
+        lut.r[i] = 1 - i / 255
+        lut.g[i] = 1 - i / 255
+        lut.b[i] = 1 - i / 255
+      }
+
+      const result25 = $Lut1D.blend(lut, 0.25)
+      const result75 = $Lut1D.blend(lut, 0.75)
+
+      // At i=128: identity = 0.502, inverted = 0.498
+      const identity128 = 128 / 255
+      const inverted128 = 1 - 128 / 255
+      expect(result25.r[128]).toBeCloseTo(identity128 * 0.75 + inverted128 * 0.25, 4)
+      expect(result75.r[128]).toBeCloseTo(identity128 * 0.25 + inverted128 * 0.75, 4)
+    })
+  })
+
   // Note: apply, applyInPlace, and applyWithEffects tests require ImageData
   // which is only available in browser environment. These are tested in Infra layer.
 })

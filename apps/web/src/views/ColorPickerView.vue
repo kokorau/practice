@@ -15,7 +15,7 @@ import { $Lut3D } from '../modules/Filter/Domain/ValueObject/Lut'
 const PRESETS = getPresets()
 
 // Filter / LUT
-const { filter, lut, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter()
+const { filter, lut, intensity, setIntensity, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter()
 
 const hue = ref(0)
 const saturation = ref(1)
@@ -65,8 +65,10 @@ function onHueChange(h: number) {
             :presets="PRESETS"
             :current-preset-id="currentPresetId"
             :setters="setters"
+            :intensity="intensity"
             @apply-preset="applyPreset"
             @update:master-point="setMasterPoint"
+            @update:intensity="setIntensity"
             @reset="reset"
           />
         </div>

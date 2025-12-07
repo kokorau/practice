@@ -1,5 +1,5 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
-import { type Filter, type Lut, type Lut3D, type Preset, $Filter, $Preset } from '../../modules/Filter/Domain'
+import { type Filter, type Lut, type Lut3D, type Preset, $Filter, $Preset, $Lut1D, $Lut3D } from '../../modules/Filter/Domain'
 
 /** LUTに焼けないピクセル単位エフェクト */
 export type PixelEffects = {
@@ -66,6 +66,10 @@ export type UseFilterReturn = {
   filter: Ref<Filter>
   /** LUT (1D or 3D depending on configuration) */
   lut: ComputedRef<Lut>
+  /** フィルター強度 (0.0〜1.0) */
+  intensity: Ref<number>
+  /** 強度を設定 */
+  setIntensity: (value: number) => void
   /** LUTに焼けないエフェクト (vibrance等) */
   pixelEffects: ComputedRef<PixelEffects>
   /** 現在適用中のプリセットID (null = カスタム) */
@@ -140,9 +144,28 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
   const currentPresetId = ref<string | null>(null)
   /** 現在適用中の3D LUT (プリセットで指定された場合) */
   const currentLut3d = ref<Lut3D | null>(null)
+  /** フィルター強度 (0.0〜1.0) */
+  const intensity = ref(1.0)
 
   // 3D LUTがある場合はそれを使用、なければ1D LUTを生成
-  const lut = computed<Lut>(() => currentLut3d.value ?? $Filter.toLut(filter.value))
+  // 強度が1未満の場合はIdentityとブレンド
+  const lut = computed<Lut>(() => {
+    const baseLut = currentLut3d.value ?? $Filter.toLut(filter.value)
+
+    // 強度が1.0ならそのまま返す
+    if (intensity.value >= 0.999) return baseLut
+
+    // 強度に応じてIdentityとブレンド
+    if ($Lut3D.is(baseLut)) {
+      return $Lut3D.blend(baseLut, intensity.value)
+    } else {
+      return $Lut1D.blend(baseLut, intensity.value)
+    }
+  })
+
+  const setIntensity = (value: number) => {
+    intensity.value = Math.max(0, Math.min(1, value))
+  }
 
   // LUTに焼けないエフェクト
   const pixelEffects = computed<PixelEffects>(() => ({
@@ -209,11 +232,14 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
     filter.value = $Filter.identity(pointCount)
     currentPresetId.value = null
     currentLut3d.value = null
+    intensity.value = 1.0
   }
 
   return {
     filter,
     lut,
+    intensity,
+    setIntensity,
     pixelEffects,
     currentPresetId,
     applyPreset,

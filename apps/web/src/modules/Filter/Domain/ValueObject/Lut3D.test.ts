@@ -308,6 +308,54 @@ describe('$Lut3D', () => {
     })
   })
 
+  describe('blend', () => {
+    it('should return same LUT when intensity is 1.0', () => {
+      const lut = $Lut3D.saturationAdjust(-1, 5) // A non-identity LUT
+
+      const result = $Lut3D.blend(lut, 1.0)
+
+      // Should be the same LUT
+      const [r1, g1, b1] = $Lut3D.lookup(lut, 1, 0, 0)
+      const [r2, g2, b2] = $Lut3D.lookup(result, 1, 0, 0)
+      expect(r1).toBeCloseTo(r2, 5)
+      expect(g1).toBeCloseTo(g2, 5)
+      expect(b1).toBeCloseTo(b2, 5)
+    })
+
+    it('should return identity LUT when intensity is 0.0', () => {
+      const lut = $Lut3D.saturationAdjust(-1, 5)
+
+      const result = $Lut3D.blend(lut, 0.0)
+
+      // Should be identity
+      const [r, g, b] = $Lut3D.lookup(result, 0.5, 0.3, 0.8)
+      expect(r).toBeCloseTo(0.5, 5)
+      expect(g).toBeCloseTo(0.3, 5)
+      expect(b).toBeCloseTo(0.8, 5)
+    })
+
+    it('should blend with identity at 50% intensity', () => {
+      // Use contrast adjustment for clear difference
+      const lut = $Lut3D.contrastAdjust(2.0, 5)
+
+      const result = $Lut3D.blend(lut, 0.5)
+
+      // At 0.75, contrast 2.0 would give: (0.75-0.5)*2+0.5 = 1.0
+      // At 50% blend with identity: 0.75*0.5 + 1.0*0.5 = 0.875
+      const [r1] = $Lut3D.lookup(result, 0.75, 0.5, 0.5)
+      expect(r1).toBeCloseTo(0.875, 2)
+    })
+
+    it('should preserve LUT size', () => {
+      const lut = $Lut3D.identity(33)
+
+      const result = $Lut3D.blend(lut, 0.5)
+
+      expect(result.size).toBe(33)
+      expect(result.data.length).toBe(33 * 33 * 33 * 3)
+    })
+  })
+
   describe('colorMatrix', () => {
     it('should apply identity matrix unchanged', () => {
       const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1]

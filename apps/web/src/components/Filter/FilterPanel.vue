@@ -11,11 +11,13 @@ const props = defineProps<{
   presets: readonly Preset[]
   currentPresetId: string | null
   setters: FilterSetters
+  intensity: number
 }>()
 
 const emit = defineEmits<{
   applyPreset: [preset: Preset]
   'update:masterPoint': [index: number, value: number]
+  'update:intensity': [value: number]
   reset: []
 }>()
 
@@ -77,68 +79,32 @@ const debouncedSetMasterPoint = useDebounceFn(
 const handlePointUpdate = (index: number, value: number) => {
   debouncedSetMasterPoint(index, value)
 }
+
+const debouncedSetIntensity = useDebounceFn(
+  (value: number) => emit('update:intensity', value),
+  DEBOUNCE_MS
+)
+const handleIntensityChange = (e: Event) => {
+  debouncedSetIntensity(parseFloat((e.target as HTMLInputElement).value))
+}
 </script>
 
 <template>
   <div class="space-y-1">
-    <!-- Presets -->
-    <div class="border border-gray-700 rounded-lg overflow-hidden">
-      <button
-        @click="presetsOpen = !presetsOpen"
-        class="w-full flex items-center justify-between px-3 py-2 bg-gray-800 hover:bg-gray-750 transition-colors"
-      >
-        <span class="text-xs text-gray-300 font-medium">Presets</span>
-        <svg
-          class="w-3 h-3 text-gray-500 transition-transform"
-          :class="{ 'rotate-180': presetsOpen }"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      <div v-show="presetsOpen" class="p-2 space-y-2">
-        <div v-for="[category, categoryPresets] in groupedPresets" :key="category">
-          <div class="text-xs text-gray-500 font-medium mb-1">{{ $Preset.categoryLabel(category) }}</div>
-          <div class="space-y-0.5">
-            <button
-              v-for="preset in categoryPresets"
-              :key="preset.id"
-              @click="emit('applyPreset', preset)"
-              :class="[
-                'w-full text-left px-2 py-1 rounded transition-colors',
-                currentPresetId === preset.id
-                  ? 'bg-blue-600/20 border border-blue-500'
-                  : 'bg-gray-800 border border-transparent hover:border-gray-600'
-              ]"
-            >
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-medium flex-shrink-0" :class="currentPresetId === preset.id ? 'text-blue-400' : 'text-gray-300'">
-                  {{ preset.name }}
-                </span>
-                <span v-if="preset.lut3d" class="text-cyan-500 flex-shrink-0" style="font-size: 8px;">3D</span>
-                <span v-if="preset.description" class="text-gray-500 truncate" style="font-size: 10px;">
-                  {{ preset.description }}
-                </span>
-              </div>
-              <div v-if="preset.suitableFor?.length || preset.characteristics?.length" class="flex gap-1 mt-0.5">
-                <span
-                  v-for="tag in (preset.suitableFor || []).slice(0, 2)"
-                  :key="'s-' + tag"
-                  class="px-1 bg-green-900/40 text-green-500 rounded"
-                  style="font-size: 7px;"
-                >{{ tag }}</span>
-                <span
-                  v-for="tag in (preset.characteristics || []).slice(0, 2)"
-                  :key="'c-' + tag"
-                  class="px-1 bg-purple-900/40 text-purple-500 rounded"
-                  style="font-size: 7px;"
-                >{{ tag }}</span>
-              </div>
-            </button>
-          </div>
-        </div>
+    <!-- Intensity Slider -->
+    <div class="border border-gray-700 rounded-lg overflow-hidden p-3">
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-gray-300 font-medium w-14 flex-shrink-0">Intensity</span>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="intensity"
+          @input="handleIntensityChange"
+          class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+        />
+        <span class="text-xs text-gray-500 w-10 text-right">{{ Math.round(intensity * 100) }}%</span>
       </div>
     </div>
 
@@ -349,6 +315,67 @@ const handlePointUpdate = (index: number, value: number) => {
             :height="120"
             @update:point="handlePointUpdate"
           />
+        </div>
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="border border-gray-700 rounded-lg overflow-hidden">
+      <button
+        @click="presetsOpen = !presetsOpen"
+        class="w-full flex items-center justify-between px-3 py-2 bg-gray-800 hover:bg-gray-750 transition-colors"
+      >
+        <span class="text-xs text-gray-300 font-medium">Presets</span>
+        <svg
+          class="w-3 h-3 text-gray-500 transition-transform"
+          :class="{ 'rotate-180': presetsOpen }"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div v-show="presetsOpen" class="p-2 space-y-2">
+        <div v-for="[category, categoryPresets] in groupedPresets" :key="category">
+          <div class="text-xs text-gray-500 font-medium mb-1">{{ $Preset.categoryLabel(category) }}</div>
+          <div class="space-y-0.5">
+            <button
+              v-for="preset in categoryPresets"
+              :key="preset.id"
+              @click="emit('applyPreset', preset)"
+              :class="[
+                'w-full text-left px-2 py-1 rounded transition-colors',
+                currentPresetId === preset.id
+                  ? 'bg-blue-600/20 border border-blue-500'
+                  : 'bg-gray-800 border border-transparent hover:border-gray-600'
+              ]"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-medium flex-shrink-0" :class="currentPresetId === preset.id ? 'text-blue-400' : 'text-gray-300'">
+                  {{ preset.name }}
+                </span>
+                <span v-if="preset.lut3d" class="text-cyan-500 flex-shrink-0" style="font-size: 8px;">3D</span>
+                <span v-if="preset.description" class="text-gray-500 truncate" style="font-size: 10px;">
+                  {{ preset.description }}
+                </span>
+              </div>
+              <div v-if="preset.suitableFor?.length || preset.characteristics?.length" class="flex gap-1 mt-0.5">
+                <span
+                  v-for="tag in (preset.suitableFor || []).slice(0, 2)"
+                  :key="'s-' + tag"
+                  class="px-1 bg-green-900/40 text-green-500 rounded"
+                  style="font-size: 7px;"
+                >{{ tag }}</span>
+                <span
+                  v-for="tag in (preset.characteristics || []).slice(0, 2)"
+                  :key="'c-' + tag"
+                  class="px-1 bg-purple-900/40 text-purple-500 rounded"
+                  style="font-size: 7px;"
+                >{{ tag }}</span>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     </div>

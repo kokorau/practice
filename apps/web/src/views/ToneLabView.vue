@@ -27,7 +27,7 @@ const preserveMean = ref(true)
 
 // Filter (shared for all images)
 const PRESETS = getPresets()
-const { filter, lut: filterLut, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)
+const { filter, lut: filterLut, intensity, setIntensity, currentPresetId, applyPreset, setters, setMasterPoint, reset } = useFilter(7)
 
 // Canvas refs for each photo (3 per photo: original, flat, filter)
 const canvasRefs = ref<Map<string, HTMLCanvasElement>>(new Map())
@@ -220,8 +220,10 @@ watch([photos, displayImages, profiles, flatStrength, preserveMean, filterLut], 
           :presets="PRESETS"
           :current-preset-id="currentPresetId"
           :setters="setters"
+          :intensity="intensity"
           @apply-preset="applyPreset"
           @update:master-point="setMasterPoint"
+          @update:intensity="setIntensity"
           @reset="reset"
         />
       </div>
