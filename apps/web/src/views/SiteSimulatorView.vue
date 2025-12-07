@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { Oklch } from '../modules/Color/Domain/ValueObject/Oklch'
+import { $Oklch } from '../modules/Color/Domain/ValueObject/Oklch'
+import { $Srgb } from '../modules/Color/Domain/ValueObject/Srgb'
 import {
   $BrandPrimitive,
   $CorePalette,
@@ -9,10 +12,34 @@ import {
   type SemanticPalette,
   type SemanticColorToken,
 } from '../modules/SiteSimulator/Domain/ValueObject'
+import BrandColorPicker from '../components/SiteSimulator/BrandColorPicker.vue'
+import AccentSelector from '../components/SiteSimulator/AccentSelector.vue'
 
 // Input state
 const brandColorHex = ref('#3B82F6')
-const accentColorHex = ref('#F59E0B')
+const selectedAccentOklch = ref<Oklch | null>(null)
+
+// Convert brand hex to OKLCH for AccentSelector
+const brandColorOklch = computed(() => {
+  const srgb = $Srgb.fromHex(brandColorHex.value)
+  if (!srgb) return $Oklch.create(0.5, 0.15, 250)
+  return $Oklch.fromSrgb(srgb)
+})
+
+// Accent color as hex (for display and palette generation)
+const accentColorHex = computed(() => {
+  if (!selectedAccentOklch.value) {
+    // Default accent
+    return '#F59E0B'
+  }
+  const srgb = $Oklch.toSrgb(selectedAccentOklch.value)
+  return $Srgb.toHex(srgb)
+})
+
+// Handle accent selection from AccentSelector
+const handleAccentSelect = (accent: Oklch) => {
+  selectedAccentOklch.value = accent
+}
 
 // Computed palette generation chain
 const brandPrimitive = computed(() => $BrandPrimitive.fromHex(brandColorHex.value))
@@ -80,44 +107,49 @@ const paletteGroups = computed(() => [
         ブランドカラーからパレットを生成し、光源とフィルターを適用してサイトをシミュレート
       </p>
 
-      <!-- Input Section -->
-      <div class="bg-gray-800 rounded-lg p-6 mb-8">
-        <h2 class="text-xl font-semibold mb-4">Input</h2>
-        <div class="flex gap-8">
-          <!-- Brand Color -->
-          <div>
-            <label class="block text-sm text-gray-400 mb-2">Brand Color</label>
-            <div class="flex items-center gap-3">
-              <input
-                type="color"
-                v-model="brandColorHex"
-                class="w-12 h-12 rounded cursor-pointer"
-              />
-              <input
-                type="text"
-                v-model="brandColorHex"
-                class="bg-gray-700 px-3 py-2 rounded text-sm font-mono w-28"
-              />
-            </div>
-          </div>
+      <!-- Color Selection Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Brand Color -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h2 class="text-xl font-semibold mb-4">Brand Color</h2>
+          <BrandColorPicker v-model="brandColorHex" />
+        </div>
 
-          <!-- Accent Color -->
-          <div>
-            <label class="block text-sm text-gray-400 mb-2">Accent Color</label>
-            <div class="flex items-center gap-3">
-              <input
-                type="color"
-                v-model="accentColorHex"
-                class="w-12 h-12 rounded cursor-pointer"
-              />
-              <input
-                type="text"
-                v-model="accentColorHex"
-                class="bg-gray-700 px-3 py-2 rounded text-sm font-mono w-28"
-              />
+        <!-- Selected Accent Preview -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h2 class="text-xl font-semibold mb-4">Selected Accent</h2>
+          <div class="flex items-center gap-4">
+            <div
+              class="w-14 h-14 rounded border border-gray-600"
+              :style="{ backgroundColor: accentColorHex }"
+            />
+            <div>
+              <div class="font-mono text-sm">{{ accentColorHex }}</div>
+              <div v-if="selectedAccentOklch" class="text-xs text-gray-500 font-mono mt-1">
+                L: {{ selectedAccentOklch.L.toFixed(2) }}
+                C: {{ selectedAccentOklch.C.toFixed(2) }}
+                H: {{ selectedAccentOklch.H.toFixed(0) }}°
+              </div>
+              <div v-else class="text-xs text-gray-500 mt-1">
+                下のパレットから選択してください
+              </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Accent Color Selection -->
+      <div class="bg-gray-800 rounded-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Accent Color Candidates</h2>
+        <p class="text-gray-400 text-sm mb-4">
+          Brand Colorに合う候補を表示。濃い色がおすすめ、薄い色は相性が低めです。
+        </p>
+        <AccentSelector
+          :brand-color="brandColorOklch"
+          :selected-accent="selectedAccentOklch"
+          :top-count="10"
+          @select="handleAccentSelect"
+        />
       </div>
 
       <!-- Palette Preview -->

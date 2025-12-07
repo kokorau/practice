@@ -1,5 +1,11 @@
 export { type PrimitiveColor, type PrimitivePalette, $PrimitivePalette } from './PrimitivePalette'
 export { type BrandPrimitive, $BrandPrimitive } from './BrandPrimitive'
+export {
+  type AccentCandidate,
+  type AccentCandidateOptions,
+  type AccentScore,
+  $AccentCandidate,
+} from './AccentCandidate'
 export { type CorePalette, $CorePalette } from './CorePalette'
 export { type SemanticPalette, type SemanticColorToken, $SemanticPalette } from './SemanticPalette'
 export { type PaletteOutput, type ColorSystemResult, $PaletteOutput, $ColorSystemResult } from './PaletteOutput'
