@@ -5,8 +5,15 @@ import { roundedToCss, gapToMultiplier, paddingToMultiplier } from '../../StyleP
 import { TemplateRepository } from './TemplateRepository'
 
 type RenderContext = {
-  getCssColor: (token: SemanticColorToken) => string
   stylePack: StylePack
+}
+
+/**
+ * SemanticColorTokenをCSS変数名に変換
+ * "brand.primary" → "--color-brand-primary"
+ */
+const tokenToCssVar = (token: SemanticColorToken): string => {
+  return `var(--color-${token.replace('.', '-')})`
 }
 
 /**
@@ -102,9 +109,12 @@ export const TemplateRenderer = {
 
   /**
    * data-* 属性をインラインスタイルに変換
+   *
+   * 色はCSS変数を参照するため、パレット変更時もHTMLは変わらない。
+   * 例: data-bg="brand.primary" → style="background-color: var(--color-brand-primary)"
    */
   applyDataAttributes(html: string, context: RenderContext): string {
-    const { getCssColor, stylePack } = context
+    const { stylePack } = context
 
     // DOMParser でパース
     const parser = new DOMParser()
@@ -121,21 +131,23 @@ export const TemplateRenderer = {
       if (bg) {
         // "primary" や "accent" は brand.primary / accent.base に変換
         const token = this.resolveColorToken(bg)
-        styles.push(`background-color: ${getCssColor(token)}`)
+        styles.push(`background-color: ${tokenToCssVar(token)}`)
         el.removeAttribute('data-bg')
       }
 
       // data-color
       const color = el.getAttribute('data-color')
       if (color) {
-        styles.push(`color: ${getCssColor(color as SemanticColorToken)}`)
+        const token = this.resolveColorToken(color)
+        styles.push(`color: ${tokenToCssVar(token)}`)
         el.removeAttribute('data-color')
       }
 
       // data-border
       const border = el.getAttribute('data-border')
       if (border) {
-        styles.push(`border: 1px solid ${getCssColor(border as SemanticColorToken)}`)
+        const token = this.resolveColorToken(border)
+        styles.push(`border: 1px solid ${tokenToCssVar(token)}`)
         el.removeAttribute('data-border')
       }
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { SemanticColorToken } from '../modules/SiteSimulator/Domain/ValueObject'
-import { $RenderedColor } from '../modules/SiteSimulator/Domain/ValueObject'
 import { useSiteBlueprint } from '../composables/SiteSimulator/useSiteBlueprint'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { GoogleFontPresets } from '../assets/constants/GoogleFontPresets'
@@ -35,12 +34,6 @@ const PRESETS = getPresets()
 // ============================================================
 // Helpers
 // ============================================================
-
-const getCssColor = (token: SemanticColorToken): string => {
-  const color = renderedPalette.value.colors.get(token)
-  if (!color) return 'transparent'
-  return $RenderedColor.toCssP3(color)
-}
 
 const sections = computed(() => blueprint.value.page.sections)
 
@@ -81,7 +74,6 @@ const paletteGroups = computed(() => [
 
     <PreviewPanel
       :sections="sections"
-      :get-css-color="getCssColor"
       :palette-groups="paletteGroups"
       :rendered-palette="renderedPalette"
       :font="currentFont"

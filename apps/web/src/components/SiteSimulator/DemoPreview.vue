@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
-import type { SemanticColorToken, SectionContent, RenderedPalette, FontConfig } from '../../modules/SiteSimulator/Domain/ValueObject'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import type { SectionContent, RenderedPalette, FontConfig } from '../../modules/SiteSimulator/Domain/ValueObject'
 import { $RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
 import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
 import { roundedToCss } from '../../modules/StylePack/Domain/ValueObject'
@@ -8,7 +8,6 @@ import { TemplateRenderer, TemplateRepository } from '../../modules/SiteSimulato
 
 const props = defineProps<{
   sections: readonly SectionContent[]
-  getCssColor: (token: SemanticColorToken) => string
   renderedPalette: RenderedPalette
   font: FontConfig
   stylePack: StylePack
@@ -21,11 +20,13 @@ const iframeHeight = ref(800) // default height
 const fontFamily = computed(() => props.font.family)
 const borderRadius = computed(() => roundedToCss[props.stylePack.rounded])
 
+// ============================================================
+// HTML構造（色はCSS変数を参照するため、パレット変更時も変わらない）
+// ============================================================
 const renderedHtml = computed(() => {
   return props.sections
     .map(section =>
       TemplateRenderer.render(section, {
-        getCssColor: props.getCssColor,
         stylePack: props.stylePack,
       })
     )
@@ -43,17 +44,18 @@ const googleFontLink = computed(() => {
   if (source.vendor === 'google') {
     return `<link href="${source.url}" rel="stylesheet">`
   }
-  // Other vendors not supported yet
   return ''
 })
 
 const baseTemplate = computed(() => TemplateRepository.getDefaultBase())
 
+// ============================================================
+// CSS（パレット・フォント・スタイルパック変更時に変わる）
+// ============================================================
 const combinedStyles = computed(() => {
   const cssVars = $RenderedPalette.toCssVariables(props.renderedPalette)
   const baseStyle = baseTemplate.value?.meta.style ?? ''
 
-  // CSS custom properties for dynamic values
   const dynamicVars = `:root {
   --font-family: ${fontFamily.value};
   --site-border-radius: ${borderRadius.value};
@@ -72,18 +74,49 @@ ${baseStyle}
 ${templateStyles.value}`
 })
 
-const iframeSrcdoc = computed(() => {
+// ============================================================
+// srcdoc管理（refで管理し、HTML変更時のみ更新）
+// ============================================================
+const srcdoc = ref('')
+
+const generateSrcdoc = (html: string, css: string, fonts: string): string => {
   const template = baseTemplate.value?.meta.template
   if (!template) {
-    // Fallback if no base template
     return `<!DOCTYPE html><html><body>No base template found</body></html>`
   }
 
   return template
-    .replace('{{fonts}}', googleFontLink.value)
-    .replace('{{styles}}', combinedStyles.value)
-    .replace('{{sections}}', renderedHtml.value)
-})
+    .replace('{{fonts}}', fonts)
+    .replace('{{styles}}', css)
+    .replace('{{sections}}', html)
+}
+
+// 初期srcdocを生成
+srcdoc.value = generateSrcdoc(renderedHtml.value, combinedStyles.value, googleFontLink.value)
+
+// HTML構造またはフォントが変わった場合のみsrcdocを更新（iframe reload）
+watch(
+  [renderedHtml, googleFontLink],
+  ([newHtml, newFonts]) => {
+    srcdoc.value = generateSrcdoc(newHtml, combinedStyles.value, newFonts)
+  }
+)
+
+// CSS変更時はcontentDocument経由でstyle要素を更新（no reload）
+watch(
+  combinedStyles,
+  async (newCss) => {
+    await nextTick()
+    const iframe = iframeRef.value
+    if (!iframe?.contentDocument) return
+
+    const styleEl = iframe.contentDocument.querySelector('#dynamic-styles')
+    if (styleEl) {
+      styleEl.textContent = newCss
+    }
+  },
+  { flush: 'post' }
+)
 
 // Resize observer for responsive preview
 const containerRef = ref<HTMLDivElement | null>(null)
@@ -166,7 +199,7 @@ const onIframeLoad = () => {
       >
         <iframe
           ref="iframeRef"
-          :srcdoc="iframeSrcdoc"
+          :srcdoc="srcdoc"
           :style="{
             width: iframeWidth + 'px',
             height: iframeHeight + 'px',

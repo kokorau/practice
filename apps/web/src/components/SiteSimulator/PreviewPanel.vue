@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { SemanticColorToken, RenderedPalette, SectionContent, FontConfig } from '../../modules/SiteSimulator/Domain/ValueObject'
-import { $RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
+import { $RenderedPalette, $RenderedColor } from '../../modules/SiteSimulator/Domain/ValueObject'
 import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
 import DemoPreview from './DemoPreview.vue'
 import PalettePreview from './PalettePreview.vue'
 
 type PreviewMode = 'demo' | 'palette' | 'css'
 
-defineProps<{
+const props = defineProps<{
   sections: readonly SectionContent[]
-  getCssColor: (token: SemanticColorToken) => string
   paletteGroups: Array<{
     name: string
     tokens: SemanticColorToken[]
@@ -19,6 +18,13 @@ defineProps<{
   font: FontConfig
   stylePack: StylePack
 }>()
+
+// PalettePreviewで使用するヘルパー（実際の色値を返す）
+const getCssColor = (token: SemanticColorToken): string => {
+  const color = props.renderedPalette.colors.get(token)
+  if (!color) return 'transparent'
+  return $RenderedColor.toCssP3(color)
+}
 
 const previewMode = ref<PreviewMode>('demo')
 
@@ -46,7 +52,7 @@ const previewModes = [
 
     <!-- Demo Preview -->
     <div v-if="previewMode === 'demo'" class="preview-content demo-mode">
-      <DemoPreview :sections="sections" :get-css-color="getCssColor" :rendered-palette="renderedPalette" :font="font" :style-pack="stylePack" />
+      <DemoPreview :sections="sections" :rendered-palette="renderedPalette" :font="font" :style-pack="stylePack" />
     </div>
 
     <!-- Palette Preview -->
