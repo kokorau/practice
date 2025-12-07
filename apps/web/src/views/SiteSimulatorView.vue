@@ -10,6 +10,8 @@ import {
   type SemanticPalette,
   type SemanticColorToken,
 } from '../modules/SiteSimulator/Domain/ValueObject'
+import { useFilter } from '../composables/Filter/useFilter'
+import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import ConfigPanel from '../components/SiteSimulator/ConfigPanel.vue'
 import PreviewPanel from '../components/SiteSimulator/PreviewPanel.vue'
 
@@ -17,7 +19,7 @@ import PreviewPanel from '../components/SiteSimulator/PreviewPanel.vue'
 // Config State
 // ============================================================
 
-type ConfigPage = 'list' | 'brand' | 'accent'
+type ConfigPage = 'list' | 'brand' | 'accent' | 'filter'
 const currentConfigPage = ref<ConfigPage>('list')
 
 // Input state - all in OKLCH (no HEX intermediate)
@@ -34,6 +36,13 @@ const accentOklch = computed(() => {
 })
 
 // ============================================================
+// Filter State
+// ============================================================
+
+const PRESETS = getPresets()
+const { lut, currentPresetId, applyPreset, reset: resetFilter } = useFilter(7)
+
+// ============================================================
 // Palette Generation
 // ============================================================
 
@@ -47,7 +56,7 @@ const corePalette = computed(() =>
 
 const semanticPalette = computed(() => $SemanticPalette.fromCorePalette(corePalette.value))
 
-// Render semantic palette to Display-P3
+// Render semantic palette to Display-P3 with LUT applied
 const renderedPalette = computed(() => {
   const colors = new Map<string, ReturnType<typeof $RenderedColor.fromOklch>>()
 
@@ -60,11 +69,12 @@ const renderedPalette = computed(() => {
     for (const key of Object.keys(group)) {
       const oklch = group[key as keyof typeof group]
       const token = `${category}.${key}` as SemanticColorToken
-      colors.set(token, $RenderedColor.fromOklch(oklch))
+      // Apply LUT if present, otherwise direct conversion
+      colors.set(token, $RenderedColor.fromOklchWithLut(oklch, lut.value))
     }
   }
 
-  return $RenderedPalette.create(colors, 'default', 'none')
+  return $RenderedPalette.create(colors, 'default', currentPresetId.value ?? 'none')
 })
 
 // Helper to get CSS color for a token
@@ -102,8 +112,12 @@ const paletteGroups = computed(() => [
       :brand-color="brandColorOklch"
       :accent-color="accentOklch"
       :selected-accent="selectedAccentOklch"
+      :presets="PRESETS"
+      :current-preset-id="currentPresetId"
       @update:brand-color="brandColorOklch = $event"
       @update:selected-accent="selectedAccentOklch = $event"
+      @apply-preset="applyPreset"
+      @reset-filter="resetFilter"
     />
 
     <PreviewPanel

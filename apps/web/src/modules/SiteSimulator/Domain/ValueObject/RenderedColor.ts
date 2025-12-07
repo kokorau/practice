@@ -3,6 +3,9 @@ import { $DisplayP3 } from '../../../Color/Domain/ValueObject/DisplayP3'
 import type { Oklch } from '../../../Color/Domain/ValueObject/Oklch'
 import { $Oklch } from '../../../Color/Domain/ValueObject/Oklch'
 import { $Srgb } from '../../../Color/Domain/ValueObject/Srgb'
+import type { Lut } from '../../../Filter/Domain/ValueObject/Lut'
+import { $Lut1D } from '../../../Filter/Domain/ValueObject/Lut1D'
+import { $Lut3D } from '../../../Filter/Domain/ValueObject/Lut3D'
 
 /**
  * RenderedColor represents the final output color after applying
@@ -68,6 +71,66 @@ export const $RenderedColor = {
     const srgb = $DisplayP3.toSrgb(color.p3)
     const srgbCss = $Srgb.toCssRgb(srgb)
     return { p3: p3Css, srgbFallback: srgbCss }
+  },
+
+  /**
+   * Convert OKLCH to RenderedColor with LUT applied
+   * Path: OKLCH → sRGB → LUT → Display-P3
+   *
+   * LUT is applied in sRGB space (as is standard for photo filters),
+   * then the result is converted to Display-P3 for wide gamut output.
+   */
+  fromOklchWithLut: (source: Oklch, lut: Lut | null): RenderedColor => {
+    // No LUT - use direct conversion
+    if (!lut) {
+      return $RenderedColor.fromOklch(source)
+    }
+
+    // OKLCH → sRGB (for LUT application)
+    const srgb = $Oklch.toSrgb(source)
+
+    // Clamp to 0-1 range for LUT lookup
+    const r = Math.max(0, Math.min(1, srgb.r))
+    const g = Math.max(0, Math.min(1, srgb.g))
+    const b = Math.max(0, Math.min(1, srgb.b))
+
+    let lutR: number, lutG: number, lutB: number
+
+    if ($Lut3D.is(lut)) {
+      // 3D LUT: trilinear interpolation
+      const [outR, outG, outB] = $Lut3D.lookup(lut, r, g, b)
+      lutR = outR
+      lutG = outG
+      lutB = outB
+    } else if ($Lut1D.is(lut)) {
+      // 1D LUT: channel-independent lookup
+      const ri = Math.round(r * 255)
+      const gi = Math.round(g * 255)
+      const bi = Math.round(b * 255)
+      lutR = lut.r[ri]!
+      lutG = lut.g[gi]!
+      lutB = lut.b[bi]!
+    } else {
+      // Fallback: identity
+      lutR = r
+      lutG = g
+      lutB = b
+    }
+
+    // Clamp LUT output
+    const clampedSrgb = $Srgb.create(
+      Math.max(0, Math.min(1, lutR)),
+      Math.max(0, Math.min(1, lutG)),
+      Math.max(0, Math.min(1, lutB))
+    )
+
+    // sRGB → Display-P3
+    const p3 = $DisplayP3.fromSrgb(clampedSrgb)
+
+    // Check if original was out of gamut
+    const wasClipped = !$Oklch.isInP3Gamut(source)
+
+    return { source, p3, wasClipped }
   },
 }
 

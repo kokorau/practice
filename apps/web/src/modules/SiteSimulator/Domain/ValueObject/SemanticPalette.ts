@@ -161,7 +161,7 @@ export const $SemanticPalette = {
 
     // === Surface colors (white-based) ===
     const white = $Oklch.create(0.99, 0, 0)
-    const black = $Oklch.create(0.15, 0, 0)
+    // const black = $Oklch.create(0.15, 0, 0) // Reserved for dark mode
 
     // Base: pure white
     const surfaceBase = white
