@@ -182,32 +182,62 @@ const paletteGroups = computed(() => [
       <!-- Demo Preview -->
       <div class="bg-gray-800 rounded-lg p-6 mt-8">
         <h2 class="text-xl font-semibold mb-4">Demo Preview</h2>
+        <!-- surface.base -->
         <div
           class="rounded-lg p-6"
           :style="{ backgroundColor: getCssColor('surface.base') }"
         >
-          <div
-            class="rounded-lg p-4 mb-4"
-            :style="{
-              backgroundColor: getCssColor('surface.elevated'),
-              borderColor: getCssColor('surface.border'),
-              borderWidth: '1px',
-              borderStyle: 'solid',
-            }"
+          <h3
+            class="text-xl font-semibold mb-2"
+            :style="{ color: getCssColor('text.primary') }"
           >
-            <h3
+            Page Title
+          </h3>
+          <p class="mb-6" :style="{ color: getCssColor('text.secondary') }">
+            This is a description on the base surface.
+          </p>
+
+          <!-- surface.elevated -->
+          <div
+            class="-mx-6 px-6 py-5 mb-6"
+            :style="{ backgroundColor: getCssColor('surface.elevated') }"
+          >
+            <h4
               class="text-lg font-semibold mb-2"
               :style="{ color: getCssColor('text.primary') }"
             >
-              Card Title
-            </h3>
+              Section Title
+            </h4>
             <p :style="{ color: getCssColor('text.secondary') }">
-              This is secondary text content.
+              This is a section using the elevated surface.
             </p>
-            <p class="mt-1" :style="{ color: getCssColor('text.muted') }">
-              Muted helper text
-            </p>
+
+            <!-- surface.card (3 columns) -->
+            <div class="grid grid-cols-3 gap-4 mt-4">
+              <div
+                v-for="i in 3"
+                :key="i"
+                class="rounded-lg p-4"
+                :style="{
+                  backgroundColor: getCssColor('surface.card'),
+                  borderColor: getCssColor('surface.border'),
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                }"
+              >
+                <h5
+                  class="font-semibold mb-1"
+                  :style="{ color: getCssColor('text.primary') }"
+                >
+                  Card {{ i }}
+                </h5>
+                <p class="text-sm" :style="{ color: getCssColor('text.secondary') }">
+                  Card description text.
+                </p>
+              </div>
+            </div>
           </div>
+
           <div class="flex gap-3">
             <button
               class="px-4 py-2 rounded font-medium"
