@@ -3,12 +3,14 @@ import { computed } from 'vue'
 import type { Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
 import { $Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
 import type { Filter, Preset } from '../../modules/Filter/Domain'
+import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
+import type { StylePack, StylePackPreset } from '../../modules/StylePack/Domain/ValueObject'
 import BrandColorPicker from './BrandColorPicker.vue'
 import AccentSelector from './AccentSelector.vue'
 import FilterPanel from '../Filter/FilterPanel.vue'
 import type { FilterSetters } from '../../composables/Filter/useFilter'
 
-type ConfigPage = 'list' | 'brand' | 'accent' | 'filter'
+export type ConfigPage = 'list' | 'brand' | 'accent' | 'filter' | 'font' | 'style'
 
 const props = defineProps<{
   currentPage: ConfigPage
@@ -21,6 +23,12 @@ const props = defineProps<{
   currentPresetId: string | null
   setters: FilterSetters
   intensity: number
+  // Font props
+  fontPresets: readonly FontPreset[]
+  selectedFontId: string
+  // StylePack props
+  stylePackPresets: readonly StylePackPreset[]
+  selectedStylePackId: string
 }>()
 
 const emit = defineEmits<{
@@ -31,12 +39,16 @@ const emit = defineEmits<{
   'update:masterPoint': [index: number, value: number]
   'update:intensity': [value: number]
   'reset-filter': []
+  'update:selectedFontId': [id: string]
+  'update:selectedStylePackId': [id: string]
 }>()
 
 const configItems = [
   { id: 'brand' as const, label: 'Brand Color', icon: '🎨' },
   { id: 'accent' as const, label: 'Accent Color', icon: '✨' },
   { id: 'filter' as const, label: 'Color Filter', icon: '🔮' },
+  { id: 'font' as const, label: 'Font', icon: '🔤' },
+  { id: 'style' as const, label: 'Style', icon: '🎛️' },
 ]
 
 // Get current preset name for list view
@@ -44,6 +56,18 @@ const currentPresetName = computed(() => {
   if (!props.currentPresetId) return 'No Filter'
   const preset = props.presets.find(p => p.id === props.currentPresetId)
   return preset?.name ?? 'Custom'
+})
+
+// Get current font name
+const currentFontName = computed(() => {
+  const font = props.fontPresets.find(f => f.id === props.selectedFontId)
+  return font?.name ?? 'System'
+})
+
+// Get current style pack name
+const currentStylePackName = computed(() => {
+  const stylePack = props.stylePackPresets.find(s => s.id === props.selectedStylePackId)
+  return stylePack?.name ?? 'Default'
 })
 
 const navigateToConfig = (page: ConfigPage) => {
@@ -84,6 +108,18 @@ const navigateToList = () => {
             class="text-xs text-gray-400 truncate max-w-[120px]"
           >
             {{ currentPresetName }}
+          </span>
+          <span
+            v-if="item.id === 'font'"
+            class="text-xs text-gray-400 truncate max-w-[120px]"
+          >
+            {{ currentFontName }}
+          </span>
+          <span
+            v-if="item.id === 'style'"
+            class="text-xs text-gray-400 truncate max-w-[120px]"
+          >
+            {{ currentStylePackName }}
           </span>
         </div>
         <span class="config-item-arrow">›</span>
@@ -151,6 +187,50 @@ const navigateToList = () => {
         @update:intensity="emit('update:intensity', $event)"
         @reset="emit('reset-filter')"
       />
+    </div>
+
+    <!-- Font Config -->
+    <div v-else-if="currentPage === 'font'" class="config-page">
+      <button class="back-button" @click="navigateToList">
+        ‹ Back
+      </button>
+      <h2 class="text-lg font-semibold mb-4">Font</h2>
+
+      <div class="font-list">
+        <button
+          v-for="font in fontPresets"
+          :key="font.id"
+          class="font-item"
+          :class="{ active: selectedFontId === font.id }"
+          @click="emit('update:selectedFontId', font.id)"
+        >
+          <span class="font-radio">{{ selectedFontId === font.id ? '●' : '○' }}</span>
+          <span class="font-name">{{ font.name }}</span>
+          <span class="font-category">{{ font.category }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Style Config -->
+    <div v-else-if="currentPage === 'style'" class="config-page">
+      <button class="back-button" @click="navigateToList">
+        ‹ Back
+      </button>
+      <h2 class="text-lg font-semibold mb-4">Style</h2>
+
+      <div class="style-list">
+        <button
+          v-for="stylePack in stylePackPresets"
+          :key="stylePack.id"
+          class="style-item"
+          :class="{ active: selectedStylePackId === stylePack.id }"
+          @click="emit('update:selectedStylePackId', stylePack.id)"
+        >
+          <span class="style-radio">{{ selectedStylePackId === stylePack.id ? '●' : '○' }}</span>
+          <span class="style-name">{{ stylePack.name }}</span>
+          <span class="style-preview">{{ stylePack.style.rounded }} / {{ stylePack.style.gap }}</span>
+        </button>
+      </div>
     </div>
   </aside>
 </template>
@@ -249,5 +329,59 @@ const navigateToList = () => {
 
 .back-button:hover {
   color: white;
+}
+
+.font-list,
+.style-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+
+.font-item,
+.style-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  color: #d1d5db;
+  cursor: pointer;
+  font-size: 0.875rem;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.font-item:hover,
+.style-item:hover {
+  background: #374151;
+}
+
+.font-item.active,
+.style-item.active {
+  background: #374151;
+  color: white;
+}
+
+.font-radio,
+.style-radio {
+  width: 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.font-name,
+.style-name {
+  flex: 1;
+}
+
+.font-category,
+.style-preview {
+  font-size: 0.75rem;
+  color: #6b7280;
 }
 </style>

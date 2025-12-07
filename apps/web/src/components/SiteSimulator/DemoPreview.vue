@@ -1,16 +1,33 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { SemanticColorToken } from '../../modules/SiteSimulator/Domain/ValueObject'
+import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
+import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
+import { roundedToCss, gapToMultiplier, paddingToMultiplier } from '../../modules/StylePack/Domain/ValueObject'
 
-defineProps<{
+const props = defineProps<{
   getCssColor: (token: SemanticColorToken) => string
+  font: FontPreset | undefined
+  stylePack: StylePack
 }>()
+
+// Computed CSS values from StylePack
+const borderRadius = computed(() => roundedToCss[props.stylePack.rounded])
+const gapValue = computed(() => `${gapToMultiplier[props.stylePack.gap]}rem`)
+const paddingValue = computed(() => `${paddingToMultiplier[props.stylePack.padding] * 1.5}rem`)
+
+// Font family
+const fontFamily = computed(() => props.font?.family ?? 'inherit')
 </script>
 
 <template>
-  <div class="demo-preview">
+  <div class="demo-preview" :style="{ fontFamily }">
     <div
-      class="rounded-lg p-6"
-      :style="{ backgroundColor: getCssColor('surface.base') }"
+      :style="{
+        backgroundColor: getCssColor('surface.base'),
+        borderRadius,
+        padding: paddingValue,
+      }"
     >
       <h3
         class="text-xl font-semibold mb-2"
@@ -24,8 +41,12 @@ defineProps<{
 
       <!-- surface.elevated -->
       <div
-        class="-mx-6 px-6 py-5 mb-6"
-        :style="{ backgroundColor: getCssColor('surface.elevated') }"
+        :style="{
+          backgroundColor: getCssColor('surface.elevated'),
+          margin: `0 -${paddingValue}`,
+          padding: paddingValue,
+          marginBottom: paddingValue,
+        }"
       >
         <h4
           class="text-lg font-semibold mb-2"
@@ -38,16 +59,20 @@ defineProps<{
         </p>
 
         <!-- surface.card (3 columns) -->
-        <div class="grid grid-cols-3 gap-4 mt-4">
+        <div
+          class="grid grid-cols-3 mt-4"
+          :style="{ gap: gapValue }"
+        >
           <div
             v-for="i in 3"
             :key="i"
-            class="rounded-lg p-4"
             :style="{
               backgroundColor: getCssColor('surface.card'),
               borderColor: getCssColor('surface.border'),
               borderWidth: '1px',
               borderStyle: 'solid',
+              borderRadius,
+              padding: paddingValue,
             }"
           >
             <h5
@@ -63,21 +88,23 @@ defineProps<{
         </div>
       </div>
 
-      <div class="flex gap-3">
+      <div class="flex" :style="{ gap: gapValue }">
         <button
-          class="px-4 py-2 rounded font-medium"
+          class="px-4 py-2 font-medium"
           :style="{
             backgroundColor: getCssColor('brand.primary'),
             color: getCssColor('text.onBrandPrimary'),
+            borderRadius,
           }"
         >
           Primary Button
         </button>
         <button
-          class="px-4 py-2 rounded font-medium"
+          class="px-4 py-2 font-medium"
           :style="{
             backgroundColor: getCssColor('accent.base'),
             color: getCssColor('text.onAccent'),
+            borderRadius,
           }"
         >
           Accent Button

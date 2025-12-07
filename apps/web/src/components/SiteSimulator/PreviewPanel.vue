@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 import type { SemanticColorToken, RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
 import { $RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
+import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
+import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
 import DemoPreview from './DemoPreview.vue'
 import PalettePreview from './PalettePreview.vue'
 
@@ -14,6 +16,8 @@ defineProps<{
     tokens: SemanticColorToken[]
   }>
   renderedPalette: RenderedPalette
+  font: FontPreset | undefined
+  stylePack: StylePack
 }>()
 
 const previewMode = ref<PreviewMode>('demo')
@@ -42,7 +46,7 @@ const previewModes = [
 
     <!-- Demo Preview -->
     <div v-if="previewMode === 'demo'" class="preview-content">
-      <DemoPreview :get-css-color="getCssColor" />
+      <DemoPreview :get-css-color="getCssColor" :font="font" :style-pack="stylePack" />
     </div>
 
     <!-- Palette Preview -->

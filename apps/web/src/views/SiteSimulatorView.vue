@@ -12,14 +12,15 @@ import {
 } from '../modules/SiteSimulator/Domain/ValueObject'
 import { useFilter } from '../composables/Filter/useFilter'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
-import ConfigPanel from '../components/SiteSimulator/ConfigPanel.vue'
+import { GoogleFontPresets } from '../assets/constants/GoogleFontPresets'
+import { StylePackPresets, defaultStylePack } from '../modules/StylePack/Domain/ValueObject'
+import ConfigPanel, { type ConfigPage } from '../components/SiteSimulator/ConfigPanel.vue'
 import PreviewPanel from '../components/SiteSimulator/PreviewPanel.vue'
 
 // ============================================================
 // Config State
 // ============================================================
 
-type ConfigPage = 'list' | 'brand' | 'accent' | 'filter'
 const currentConfigPage = ref<ConfigPage>('list')
 
 // Input state - all in OKLCH (no HEX intermediate)
@@ -51,6 +52,21 @@ const {
   setMasterPoint,
   reset: resetFilter,
 } = useFilter(7)
+
+// ============================================================
+// Font & Style State
+// ============================================================
+
+const selectedFontId = ref('inter')
+const selectedStylePackId = ref('default')
+
+const currentFont = computed(() =>
+  GoogleFontPresets.find(f => f.id === selectedFontId.value)
+)
+
+const currentStylePack = computed(() =>
+  StylePackPresets.find(s => s.id === selectedStylePackId.value)?.style ?? defaultStylePack
+)
 
 // ============================================================
 // Palette Generation
@@ -127,18 +143,26 @@ const paletteGroups = computed(() => [
       :current-preset-id="currentPresetId"
       :setters="setters"
       :intensity="intensity"
+      :font-presets="GoogleFontPresets"
+      :selected-font-id="selectedFontId"
+      :style-pack-presets="StylePackPresets"
+      :selected-style-pack-id="selectedStylePackId"
       @update:brand-color="brandColorOklch = $event"
       @update:selected-accent="selectedAccentOklch = $event"
       @apply-preset="applyPreset"
       @update:master-point="setMasterPoint"
       @update:intensity="setIntensity"
       @reset-filter="resetFilter"
+      @update:selected-font-id="selectedFontId = $event"
+      @update:selected-style-pack-id="selectedStylePackId = $event"
     />
 
     <PreviewPanel
       :get-css-color="getCssColor"
       :palette-groups="paletteGroups"
       :rendered-palette="renderedPalette"
+      :font="currentFont"
+      :style-pack="currentStylePack"
     />
   </div>
 </template>
