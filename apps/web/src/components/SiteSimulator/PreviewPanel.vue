@@ -4,6 +4,7 @@ import type { SemanticColorToken, RenderedPalette, PreviewArtifact, ArtifactChan
 import { $RenderedColor } from '../../modules/SiteSimulator/Domain/ValueObject'
 import DemoPreview from './DemoPreview.vue'
 import PalettePreview from './PalettePreview.vue'
+import CodeHighlight from './CodeHighlight.vue'
 
 type PreviewMode = 'demo' | 'palette' | 'css' | 'html'
 
@@ -64,12 +65,12 @@ const previewModes = [
 
     <!-- CSS Output -->
     <div v-else-if="previewMode === 'css'" class="preview-content">
-      <pre class="bg-gray-900 p-4 rounded text-sm text-gray-300 overflow-x-auto whitespace-pre-wrap">{{ artifact?.css ?? '' }}</pre>
+      <CodeHighlight :code="artifact?.css ?? ''" language="css" />
     </div>
 
     <!-- HTML Output -->
     <div v-else-if="previewMode === 'html'" class="preview-content">
-      <pre class="bg-gray-900 p-4 rounded text-sm text-gray-300 overflow-x-auto whitespace-pre-wrap">{{ artifact?.html ?? '' }}</pre>
+      <CodeHighlight :code="artifact?.html ?? ''" language="html" />
     </div>
   </main>
 </template>
