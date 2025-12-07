@@ -132,7 +132,8 @@ const paletteGroups = computed(() => [
 .site-simulator {
   display: grid;
   grid-template-columns: 480px 1fr;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: #111827;
   color: white;
 }
