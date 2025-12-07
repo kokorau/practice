@@ -4,7 +4,6 @@ import type { Oklch } from '../modules/Color/Domain/ValueObject/Oklch'
 import { $Oklch } from '../modules/Color/Domain/ValueObject/Oklch'
 import { $Srgb } from '../modules/Color/Domain/ValueObject/Srgb'
 import {
-  $BrandPrimitive,
   $CorePalette,
   $SemanticPalette,
   $RenderedColor,
@@ -15,48 +14,31 @@ import {
 import BrandColorPicker from '../components/SiteSimulator/BrandColorPicker.vue'
 import AccentSelector from '../components/SiteSimulator/AccentSelector.vue'
 
-// Input state
-const brandColorHex = ref('#3B82F6')
+// Input state - all in OKLCH (no HEX intermediate)
+const brandColorOklch = ref<Oklch>($Oklch.create(0.59, 0.18, 250)) // Default blue
 const selectedAccentOklch = ref<Oklch | null>(null)
 
-// Convert brand hex to OKLCH for AccentSelector
-const brandColorOklch = computed(() => {
-  const srgb = $Srgb.fromHex(brandColorHex.value)
-  if (!srgb) return $Oklch.create(0.5, 0.15, 250)
-  return $Oklch.fromSrgb(srgb)
+// Accent OKLCH (with default)
+const accentOklch = computed(() => {
+  if (selectedAccentOklch.value) {
+    return selectedAccentOklch.value
+  }
+  // Default accent (orange)
+  return $Oklch.create(0.75, 0.15, 70)
 })
 
-// Accent color as hex (for display and palette generation)
-const accentColorHex = computed(() => {
-  if (!selectedAccentOklch.value) {
-    // Default accent
-    return '#F59E0B'
-  }
-  const srgb = $Oklch.toSrgb(selectedAccentOklch.value)
-  return $Srgb.toHex(srgb)
-})
+// CSS colors for display (P3)
+const brandCssP3 = computed(() => $Oklch.toCssP3(brandColorOklch.value))
+const accentCssP3 = computed(() => $Oklch.toCssP3(accentOklch.value))
 
 // Handle accent selection from AccentSelector
 const handleAccentSelect = (accent: Oklch) => {
   selectedAccentOklch.value = accent
 }
 
-// Computed palette generation chain
-const brandPrimitive = computed(() => $BrandPrimitive.fromHex(brandColorHex.value))
-
-// Use OKLCH directly for accent to avoid conversion loss
-const accentOklch = computed(() => {
-  if (selectedAccentOklch.value) {
-    return selectedAccentOklch.value
-  }
-  // Default accent from hex
-  const srgb = $Srgb.fromHex('#F59E0B')
-  return srgb ? $Oklch.fromSrgb(srgb) : $Oklch.create(0.75, 0.15, 70)
-})
-
 const corePalette = computed(() =>
   $CorePalette.create(
-    brandPrimitive.value.original,
+    brandColorOklch.value,
     accentOklch.value,
     $Oklch.create(0.99, 0, 0) // white base (not used in SemanticPalette now)
   )
@@ -125,7 +107,7 @@ const paletteGroups = computed(() => [
         <!-- Brand Color -->
         <div class="bg-gray-800 rounded-lg p-6">
           <h2 class="text-xl font-semibold mb-4">Brand Color</h2>
-          <BrandColorPicker v-model="brandColorHex" />
+          <BrandColorPicker v-model="brandColorOklch" />
         </div>
 
         <!-- Selected Accent Preview -->
@@ -134,16 +116,15 @@ const paletteGroups = computed(() => [
           <div class="flex items-center gap-4">
             <div
               class="w-14 h-14 rounded border border-gray-600"
-              :style="{ backgroundColor: accentColorHex }"
+              :style="{ backgroundColor: accentCssP3 }"
             />
             <div>
-              <div class="font-mono text-sm">{{ accentColorHex }}</div>
-              <div v-if="selectedAccentOklch" class="text-xs text-gray-500 font-mono mt-1">
-                L: {{ selectedAccentOklch.L.toFixed(2) }}
-                C: {{ selectedAccentOklch.C.toFixed(2) }}
-                H: {{ selectedAccentOklch.H.toFixed(0) }}°
+              <div class="text-xs text-gray-500 font-mono">
+                L: {{ accentOklch.L.toFixed(2) }}
+                C: {{ accentOklch.C.toFixed(2) }}
+                H: {{ accentOklch.H.toFixed(0) }}°
               </div>
-              <div v-else class="text-xs text-gray-500 mt-1">
+              <div v-if="!selectedAccentOklch" class="text-xs text-gray-500 mt-1">
                 下のパレットから選択してください
               </div>
             </div>

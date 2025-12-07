@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import type { Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
 import { $Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
-import { $Srgb } from '../../modules/Color/Domain/ValueObject/Srgb'
 import {
   $AccentCandidate,
   type AccentCandidate,
@@ -42,10 +41,9 @@ const neutralScores = computed(() =>
     .sort((a, b) => a.candidate.oklch.L - b.candidate.oklch.L)
 )
 
-// Helper to convert OKLCH to CSS color
+// Helper to convert OKLCH to CSS color (Display-P3)
 const toCssColor = (oklch: Oklch): string => {
-  const srgb = $Oklch.toSrgb(oklch)
-  return $Srgb.toHex(srgb)
+  return $Oklch.toCssP3(oklch)
 }
 
 // Check if this candidate is currently selected

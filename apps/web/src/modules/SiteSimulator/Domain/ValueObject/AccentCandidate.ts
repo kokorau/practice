@@ -129,16 +129,16 @@ const analyzeBrand = (brand: Oklch): BrandCharacteristics => ({
 
 export const $AccentCandidate = {
   /**
-   * Default options for generating 68 candidates
-   * 12 hues × 5 L steps = 60 chromatic + 8 neutral = 68 total
+   * Default options for generating 56 candidates
+   * 12 hues × 4 L steps = 48 chromatic + 8 neutral = 56 total
    */
   defaultOptions: (): AccentCandidateOptions => ({
     chromatic: {
-      lMin: 0.25,
-      lMax: 0.85,
-      chroma: 0.15,
+      lMin: 0.60,
+      lMax: 0.95,
+      chroma: 0.12,
       hueCount: 12,
-      lSteps: 5,
+      lSteps: 4,
     },
     neutral: {
       steps: [0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95],
