@@ -31,9 +31,9 @@ export const TemplateRenderer = {
     // 3. data-* 属性をインラインスタイルに変換
     html = this.applyDataAttributes(html, context)
 
-    // 4. ルート要素にスコープクラスを付与
+    // 4. スコープ用のdivでラップ
     const scopeClass = $ScopedStyle.scopeClass(section.id)
-    html = $ScopedStyle.addScopeClass(html, scopeClass)
+    html = $ScopedStyle.wrapHtml(html, scopeClass)
 
     return html
   },

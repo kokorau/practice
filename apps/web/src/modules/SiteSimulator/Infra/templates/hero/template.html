@@ -1,7 +1,9 @@
-<section data-bg="surface.base" data-padding="xl" class="text-center">
-  <h1 data-color="text.primary" class="text-4xl font-bold mb-4">{{title}}</h1>
-  <p data-color="text.secondary" class="text-xl mb-8">{{subtitle}}</p>
-  <button data-bg="{{cta.variant}}" data-color="text.onBrandPrimary" data-radius class="px-6 py-3 font-medium text-lg">
-    {{cta.label}}
-  </button>
+<section class="hero" style="background-image: url('{{backgroundImage.src}}');">
+    <div class="hero-content">
+    <h1 class="hero-title">{{title}}</h1>
+    <p class="hero-description">{{description}}</p>
+    <button data-bg="{{cta.variant}}" data-color="text.onBrandPrimary" data-radius class="hero-cta">
+      {{cta.label}}
+    </button>
+  </div>
 </section>

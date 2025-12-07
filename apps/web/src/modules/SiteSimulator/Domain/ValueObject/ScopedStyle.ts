@@ -1,15 +1,18 @@
 /**
  * ScopedStyle - CSSネスティングでスコープを付与
  *
- * セクションのルート要素にユニークなクラスを付与し、
+ * セクションのHTMLをスコープ用のdivでラップし、
  * CSSをそのクラスでネストすることでスコープを実現。
  *
  * 例:
- *   CSS: .title { color: red; }
- *   → .s-abc123 { .title { color: red; } }
+ *   CSS: .hero { ... }
+ *   → .s-abc123 { .hero { ... } }
  *
- *   HTML: <section>...</section>
- *   → <section class="s-abc123">...</section>
+ *   HTML: <section class="hero">...</section>
+ *   → <div class="s-abc123"><section class="hero">...</section></div>
+ *
+ * この方式により、テンプレートのCSSは通常の子孫セレクタで記述でき、
+ * ルート要素に &.class のような特殊な記法が不要になる。
  */
 
 export const $ScopedStyle = {
@@ -30,31 +33,10 @@ export const $ScopedStyle = {
   },
 
   /**
-   * HTMLのルート要素にスコープクラスを付与
+   * HTMLをスコープ用のdivでラップ
    */
-  addScopeClass(html: string, scopeClass: string): string {
+  wrapHtml(html: string, scopeClass: string): string {
     if (!html.trim()) return html
-
-    // 既存のclass属性があるかチェック
-    const hasClass = /^(\s*<\w+[^>]*)\bclass\s*=\s*["']/.test(html)
-
-    if (hasClass) {
-      // 既存のclass属性がある場合は拡張
-      return html.replace(
-        /^(\s*<\w+[^>]*)\bclass\s*=\s*["']([^"']*)["']/,
-        (_, before: string, existingClasses: string) => {
-          const classes = existingClasses ? `${scopeClass} ${existingClasses}` : scopeClass
-          return `${before}class="${classes}"`
-        }
-      )
-    } else {
-      // class属性がなければ追加
-      return html.replace(
-        /^(\s*<\w+)(\s|>)/,
-        (_, tagStart: string, rest: string) => {
-          return `${tagStart} class="${scopeClass}"${rest}`
-        }
-      )
-    }
+    return `<div class="${scopeClass}">${html}</div>`
   },
 }

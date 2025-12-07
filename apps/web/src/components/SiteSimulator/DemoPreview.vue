@@ -132,12 +132,24 @@ const updateIframeHeight = () => {
 }
 
 const onIframeLoad = () => {
-  updateIframeHeight()
-
-  // Also observe for content changes
   const iframe = iframeRef.value
   if (!iframe?.contentDocument?.body) return
 
+  // Wait for images to load before calculating height
+  const images = iframe.contentDocument.querySelectorAll('img')
+  const imagePromises = Array.from(images).map(img => {
+    if (img.complete) return Promise.resolve()
+    return new Promise<void>(resolve => {
+      img.onload = () => resolve()
+      img.onerror = () => resolve()
+    })
+  })
+
+  Promise.all(imagePromises).then(() => {
+    updateIframeHeight()
+  })
+
+  // Also observe for content changes
   const resizeObserver = new ResizeObserver(() => {
     updateIframeHeight()
   })
