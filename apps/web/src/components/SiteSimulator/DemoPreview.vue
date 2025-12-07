@@ -45,49 +45,42 @@ const googleFontLink = computed(() => {
   return `<link href="https://fonts.googleapis.com/css2?family=${family}:wght@400;500;600;700&display=swap" rel="stylesheet">`
 })
 
-const iframeSrcdoc = computed(() => {
+const baseTemplate = computed(() => TemplateRepository.getDefaultBase())
+
+const combinedStyles = computed(() => {
   const cssVars = $RenderedPalette.toCssVariables(props.renderedPalette)
+  const baseStyle = baseTemplate.value?.meta.style ?? ''
 
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  ${googleFontLink.value}
-  <style>
-    /* === Color Variables === */
-    ${cssVars}
+  // CSS custom properties for dynamic values
+  const dynamicVars = `:root {
+  --font-family: ${fontFamily.value};
+  --site-border-radius: ${borderRadius.value};
+}`
 
-    /* === Base Reset === */
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
+  return `/* === Dynamic Variables === */
+${dynamicVars}
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: ${fontFamily.value}, system-ui, sans-serif;
-      background-color: var(--color-surface-base);
-      color: var(--color-text-primary);
-      line-height: 1.5;
-    }
+/* === Color Variables === */
+${cssVars}
 
-    .site-container {
-      border-radius: ${borderRadius.value};
-      overflow: hidden;
-      min-height: 100vh;
-    }
+/* === Base Template Styles === */
+${baseStyle}
 
-    /* === Template Styles === */
-    ${templateStyles.value}
-  </style>
-</head>
-<body>
-  <div class="site-container">
-    ${renderedHtml.value}
-  </div>
-</body>
-</html>`
+/* === Section Styles === */
+${templateStyles.value}`
+})
+
+const iframeSrcdoc = computed(() => {
+  const template = baseTemplate.value?.meta.template
+  if (!template) {
+    // Fallback if no base template
+    return `<!DOCTYPE html><html><body>No base template found</body></html>`
+  }
+
+  return template
+    .replace('{{fonts}}', googleFontLink.value)
+    .replace('{{styles}}', combinedStyles.value)
+    .replace('{{sections}}', renderedHtml.value)
 })
 
 // Resize observer for responsive preview

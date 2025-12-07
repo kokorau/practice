@@ -37,34 +37,16 @@ describe('$ScopedStyle', () => {
     })
   })
 
-  describe('addScopeClass', () => {
-    it('should add class to element without class', () => {
+  describe('wrapHtml', () => {
+    it('should wrap html with scope div', () => {
       const html = '<section>content</section>'
-      const result = $ScopedStyle.addScopeClass(html, 's-abc123')
-      expect(result).toBe('<section class="s-abc123">content</section>')
-    })
-
-    it('should prepend to existing class', () => {
-      const html = '<section class="hero">content</section>'
-      const result = $ScopedStyle.addScopeClass(html, 's-abc123')
-      expect(result).toBe('<section class="s-abc123 hero">content</section>')
-    })
-
-    it('should handle multiple existing classes', () => {
-      const html = '<div class="card active">content</div>'
-      const result = $ScopedStyle.addScopeClass(html, 's-abc123')
-      expect(result).toBe('<div class="s-abc123 card active">content</div>')
-    })
-
-    it('should preserve other attributes', () => {
-      const html = '<section id="main" data-test="value">content</section>'
-      const result = $ScopedStyle.addScopeClass(html, 's-abc123')
-      expect(result).toBe('<section class="s-abc123" id="main" data-test="value">content</section>')
+      const result = $ScopedStyle.wrapHtml(html, 's-abc123')
+      expect(result).toBe('<div class="s-abc123"><section>content</section></div>')
     })
 
     it('should handle empty html', () => {
-      expect($ScopedStyle.addScopeClass('', 's-abc123')).toBe('')
-      expect($ScopedStyle.addScopeClass('  ', 's-abc123')).toBe('  ')
+      expect($ScopedStyle.wrapHtml('', 's-abc123')).toBe('')
+      expect($ScopedStyle.wrapHtml('  ', 's-abc123')).toBe('  ')
     })
   })
 })

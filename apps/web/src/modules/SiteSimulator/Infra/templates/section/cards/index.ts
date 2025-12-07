@@ -1,4 +1,4 @@
-import { $SectionMeta, $SectionContent, type SectionTemplate } from '../../../Domain/ValueObject'
+import { $SectionMeta, $SectionContent, type SectionTemplate } from '../../../../Domain/ValueObject'
 import template from './template.html?raw'
 import style from './style.css?raw'
 

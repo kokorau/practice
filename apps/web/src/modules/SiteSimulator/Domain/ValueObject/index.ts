@@ -39,6 +39,7 @@ export {
   $SectionContent,
 } from './SectionContent'
 export { type SectionTemplate } from './SectionTemplate'
+export { type BaseTemplateMeta, type BaseTemplate, $BaseTemplateMeta } from './BaseTemplateMeta'
 export { $ScopedStyle } from './ScopedStyle'
 
 // Layout
