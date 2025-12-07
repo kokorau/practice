@@ -2,7 +2,6 @@
 import { ref, computed } from 'vue'
 import type { Oklch } from '../modules/Color/Domain/ValueObject/Oklch'
 import { $Oklch } from '../modules/Color/Domain/ValueObject/Oklch'
-import { $Srgb } from '../modules/Color/Domain/ValueObject/Srgb'
 import {
   $CorePalette,
   $SemanticPalette,
@@ -11,8 +10,15 @@ import {
   type SemanticPalette,
   type SemanticColorToken,
 } from '../modules/SiteSimulator/Domain/ValueObject'
-import BrandColorPicker from '../components/SiteSimulator/BrandColorPicker.vue'
-import AccentSelector from '../components/SiteSimulator/AccentSelector.vue'
+import ConfigPanel from '../components/SiteSimulator/ConfigPanel.vue'
+import PreviewPanel from '../components/SiteSimulator/PreviewPanel.vue'
+
+// ============================================================
+// Config State
+// ============================================================
+
+type ConfigPage = 'list' | 'brand' | 'accent'
+const currentConfigPage = ref<ConfigPage>('list')
 
 // Input state - all in OKLCH (no HEX intermediate)
 const brandColorOklch = ref<Oklch>($Oklch.create(0.59, 0.18, 250)) // Default blue
@@ -27,14 +33,9 @@ const accentOklch = computed(() => {
   return $Oklch.create(0.75, 0.15, 70)
 })
 
-// CSS colors for display (P3)
-const brandCssP3 = computed(() => $Oklch.toCssP3(brandColorOklch.value))
-const accentCssP3 = computed(() => $Oklch.toCssP3(accentOklch.value))
-
-// Handle accent selection from AccentSelector
-const handleAccentSelect = (accent: Oklch) => {
-  selectedAccentOklch.value = accent
-}
+// ============================================================
+// Palette Generation
+// ============================================================
 
 const corePalette = computed(() =>
   $CorePalette.create(
@@ -95,179 +96,30 @@ const paletteGroups = computed(() => [
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 text-white p-8">
-    <div class="max-w-6xl mx-auto">
-      <h1 class="text-3xl font-bold mb-8">Site Simulator</h1>
-      <p class="text-gray-400 mb-8">
-        ブランドカラーからパレットを生成し、光源とフィルターを適用してサイトをシミュレート
-      </p>
+  <div class="site-simulator">
+    <ConfigPanel
+      v-model:current-page="currentConfigPage"
+      :brand-color="brandColorOklch"
+      :accent-color="accentOklch"
+      :selected-accent="selectedAccentOklch"
+      @update:brand-color="brandColorOklch = $event"
+      @update:selected-accent="selectedAccentOklch = $event"
+    />
 
-      <!-- Color Selection Section -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <!-- Brand Color -->
-        <div class="bg-gray-800 rounded-lg p-6">
-          <h2 class="text-xl font-semibold mb-4">Brand Color</h2>
-          <BrandColorPicker v-model="brandColorOklch" />
-        </div>
-
-        <!-- Selected Accent Preview -->
-        <div class="bg-gray-800 rounded-lg p-6">
-          <h2 class="text-xl font-semibold mb-4">Selected Accent</h2>
-          <div class="flex items-center gap-4">
-            <div
-              class="w-14 h-14 rounded border border-gray-600"
-              :style="{ backgroundColor: accentCssP3 }"
-            />
-            <div>
-              <div class="text-xs text-gray-500 font-mono">
-                L: {{ accentOklch.L.toFixed(2) }}
-                C: {{ accentOklch.C.toFixed(2) }}
-                H: {{ accentOklch.H.toFixed(0) }}°
-              </div>
-              <div v-if="!selectedAccentOklch" class="text-xs text-gray-500 mt-1">
-                下のパレットから選択してください
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Accent Color Selection -->
-      <div class="bg-gray-800 rounded-lg p-6 mb-8">
-        <h2 class="text-xl font-semibold mb-4">Accent Color Candidates</h2>
-        <p class="text-gray-400 text-sm mb-4">
-          Brand Colorに合う候補を表示。濃い色がおすすめ、薄い色は相性が低めです。
-        </p>
-        <AccentSelector
-          :brand-color="brandColorOklch"
-          :selected-accent="selectedAccentOklch"
-          :top-count="10"
-          @select="handleAccentSelect"
-        />
-      </div>
-
-      <!-- Palette Preview -->
-      <div class="grid grid-cols-2 gap-8">
-        <div class="bg-gray-800 rounded-lg p-6">
-          <h2 class="text-xl font-semibold mb-4">Semantic Palette</h2>
-          <div class="space-y-4">
-            <div v-for="group in paletteGroups" :key="group.name">
-              <h3 class="text-sm text-gray-400 mb-2">{{ group.name }}</h3>
-              <div class="flex gap-2">
-                <div
-                  v-for="token in group.tokens"
-                  :key="token"
-                  class="flex flex-col items-center"
-                >
-                  <div
-                    class="w-12 h-12 rounded border border-gray-600"
-                    :style="{ backgroundColor: getCssColor(token) }"
-                  />
-                  <span class="text-xs text-gray-500 mt-1">
-                    {{ token.split('.')[1] }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Light & Filter (placeholder) -->
-        <div class="bg-gray-800 rounded-lg p-6">
-          <h2 class="text-xl font-semibold mb-4">Light & Filter</h2>
-          <p class="text-gray-500 text-sm">光源・フィルター選択は Phase 2 で実装</p>
-        </div>
-      </div>
-
-      <!-- Demo Preview -->
-      <div class="bg-gray-800 rounded-lg p-6 mt-8">
-        <h2 class="text-xl font-semibold mb-4">Demo Preview</h2>
-        <!-- surface.base -->
-        <div
-          class="rounded-lg p-6"
-          :style="{ backgroundColor: getCssColor('surface.base') }"
-        >
-          <h3
-            class="text-xl font-semibold mb-2"
-            :style="{ color: getCssColor('text.primary') }"
-          >
-            Page Title
-          </h3>
-          <p class="mb-6" :style="{ color: getCssColor('text.secondary') }">
-            This is a description on the base surface.
-          </p>
-
-          <!-- surface.elevated -->
-          <div
-            class="-mx-6 px-6 py-5 mb-6"
-            :style="{ backgroundColor: getCssColor('surface.elevated') }"
-          >
-            <h4
-              class="text-lg font-semibold mb-2"
-              :style="{ color: getCssColor('text.primary') }"
-            >
-              Section Title
-            </h4>
-            <p :style="{ color: getCssColor('text.secondary') }">
-              This is a section using the elevated surface.
-            </p>
-
-            <!-- surface.card (3 columns) -->
-            <div class="grid grid-cols-3 gap-4 mt-4">
-              <div
-                v-for="i in 3"
-                :key="i"
-                class="rounded-lg p-4"
-                :style="{
-                  backgroundColor: getCssColor('surface.card'),
-                  borderColor: getCssColor('surface.border'),
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                }"
-              >
-                <h5
-                  class="font-semibold mb-1"
-                  :style="{ color: getCssColor('text.primary') }"
-                >
-                  Card {{ i }}
-                </h5>
-                <p class="text-sm" :style="{ color: getCssColor('text.secondary') }">
-                  Card description text.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex gap-3">
-            <button
-              class="px-4 py-2 rounded font-medium"
-              :style="{
-                backgroundColor: getCssColor('brand.primary'),
-                color: getCssColor('text.onBrandPrimary'),
-              }"
-            >
-              Primary Button
-            </button>
-            <button
-              class="px-4 py-2 rounded font-medium"
-              :style="{
-                backgroundColor: getCssColor('accent.base'),
-                color: getCssColor('text.onAccent'),
-              }"
-            >
-              Accent Button
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- CSS Output -->
-      <div class="bg-gray-800 rounded-lg p-6 mt-8">
-        <h2 class="text-xl font-semibold mb-4">CSS Variables</h2>
-        <pre class="bg-gray-900 p-4 rounded text-sm text-gray-300 overflow-x-auto">{{
-          $RenderedPalette.toCssVariables(renderedPalette)
-        }}</pre>
-      </div>
-    </div>
+    <PreviewPanel
+      :get-css-color="getCssColor"
+      :palette-groups="paletteGroups"
+      :rendered-palette="renderedPalette"
+    />
   </div>
 </template>
+
+<style scoped>
+.site-simulator {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  min-height: 100vh;
+  background: #111827;
+  color: white;
+}
+</style>
