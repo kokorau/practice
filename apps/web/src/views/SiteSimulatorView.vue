@@ -1,116 +1,47 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Oklch } from '../modules/Color/Domain/ValueObject/Oklch'
-import { $Oklch } from '../modules/Color/Domain/ValueObject/Oklch'
-import {
-  $CorePalette,
-  $SemanticPalette,
-  $RenderedColor,
-  $RenderedPalette,
-  type SemanticPalette,
-  type SemanticColorToken,
-} from '../modules/SiteSimulator/Domain/ValueObject'
-import { useFilter } from '../composables/Filter/useFilter'
+import type { SemanticColorToken } from '../modules/SiteSimulator/Domain/ValueObject'
+import { $RenderedColor } from '../modules/SiteSimulator/Domain/ValueObject'
+import { useSiteBlueprint } from '../composables/SiteSimulator/useSiteBlueprint'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { GoogleFontPresets } from '../assets/constants/GoogleFontPresets'
-import { StylePackPresets, defaultStylePack } from '../modules/StylePack/Domain/ValueObject'
+import { StylePackPresets } from '../modules/StylePack/Domain/ValueObject'
 import ConfigPanel, { type ConfigPage } from '../components/SiteSimulator/ConfigPanel.vue'
 import PreviewPanel from '../components/SiteSimulator/PreviewPanel.vue'
 
 // ============================================================
-// Config State
+// SiteBlueprint State (single source of truth)
+// ============================================================
+
+const {
+  blueprint,
+  renderedPalette,
+  currentFont,
+  currentStylePack,
+  // Filter actions (complex logic)
+  applyPreset,
+  setMasterPoint,
+  resetFilter,
+  setters,
+} = useSiteBlueprint()
+
+// ============================================================
+// UI State (not part of SiteBlueprint)
 // ============================================================
 
 const currentConfigPage = ref<ConfigPage>('list')
-
-// Input state - all in OKLCH (no HEX intermediate)
-const brandColorOklch = ref<Oklch>($Oklch.create(0.59, 0.18, 250)) // Default blue
-const selectedAccentOklch = ref<Oklch | null>(null)
-
-// Accent OKLCH (with default)
-const accentOklch = computed(() => {
-  if (selectedAccentOklch.value) {
-    return selectedAccentOklch.value
-  }
-  // Default accent (orange)
-  return $Oklch.create(0.75, 0.15, 70)
-})
-
-// ============================================================
-// Filter State
-// ============================================================
-
 const PRESETS = getPresets()
-const {
-  filter,
-  lut,
-  intensity,
-  setIntensity,
-  currentPresetId,
-  applyPreset,
-  setters,
-  setMasterPoint,
-  reset: resetFilter,
-} = useFilter(7)
 
 // ============================================================
-// Font & Style State
+// Helpers
 // ============================================================
 
-const selectedFontId = ref('inter')
-const selectedStylePackId = ref('default')
-
-const currentFont = computed(() =>
-  GoogleFontPresets.find(f => f.id === selectedFontId.value)
-)
-
-const currentStylePack = computed(() =>
-  StylePackPresets.find(s => s.id === selectedStylePackId.value)?.style ?? defaultStylePack
-)
-
-// ============================================================
-// Palette Generation
-// ============================================================
-
-const corePalette = computed(() =>
-  $CorePalette.create(
-    brandColorOklch.value,
-    accentOklch.value,
-    $Oklch.create(0.99, 0, 0) // white base (not used in SemanticPalette now)
-  )
-)
-
-const semanticPalette = computed(() => $SemanticPalette.fromCorePalette(corePalette.value))
-
-// Render semantic palette to Display-P3 with LUT applied
-const renderedPalette = computed(() => {
-  const colors = new Map<string, ReturnType<typeof $RenderedColor.fromOklch>>()
-
-  // Flatten SemanticPalette into token -> RenderedColor map
-  const palette = semanticPalette.value
-  const categories: (keyof SemanticPalette)[] = ['surface', 'text', 'brand', 'accent']
-
-  for (const category of categories) {
-    const group = palette[category]
-    for (const key of Object.keys(group)) {
-      const oklch = group[key as keyof typeof group]
-      const token = `${category}.${key}` as SemanticColorToken
-      // Apply LUT if present, otherwise direct conversion
-      colors.set(token, $RenderedColor.fromOklchWithLut(oklch, lut.value))
-    }
-  }
-
-  return $RenderedPalette.create(colors, 'default', currentPresetId.value ?? 'none')
-})
-
-// Helper to get CSS color for a token
 const getCssColor = (token: SemanticColorToken): string => {
   const color = renderedPalette.value.colors.get(token)
   if (!color) return 'transparent'
   return $RenderedColor.toCssP3(color)
 }
 
-// Palette display groups
 const paletteGroups = computed(() => [
   {
     name: 'Surface',
@@ -135,26 +66,15 @@ const paletteGroups = computed(() => [
   <div class="site-simulator">
     <ConfigPanel
       v-model:current-page="currentConfigPage"
-      :brand-color="brandColorOklch"
-      :accent-color="accentOklch"
-      :selected-accent="selectedAccentOklch"
-      :filter="filter"
+      :blueprint="blueprint"
       :presets="PRESETS"
-      :current-preset-id="currentPresetId"
-      :setters="setters"
-      :intensity="intensity"
       :font-presets="GoogleFontPresets"
-      :selected-font-id="selectedFontId"
       :style-pack-presets="StylePackPresets"
-      :selected-style-pack-id="selectedStylePackId"
-      @update:brand-color="brandColorOklch = $event"
-      @update:selected-accent="selectedAccentOklch = $event"
+      :setters="setters"
+      @update:blueprint="blueprint = $event"
       @apply-preset="applyPreset"
       @update:master-point="setMasterPoint"
-      @update:intensity="setIntensity"
       @reset-filter="resetFilter"
-      @update:selected-font-id="selectedFontId = $event"
-      @update:selected-style-pack-id="selectedStylePackId = $event"
     />
 
     <PreviewPanel

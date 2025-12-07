@@ -17,6 +17,7 @@ export { type RenderedColor, type RenderedPalette, $RenderedColor, $RenderedPale
 // Site Blueprint (Editor State)
 export { type FontConfig, $FontConfig } from './FontConfig'
 export { type StyleConfig, $StyleConfig } from './StyleConfig'
+export { type FilterState, $FilterState } from './FilterState'
 export { type SiteBlueprint, type SiteBlueprintParams, $SiteBlueprint } from './SiteBlueprint'
 
 // Layout

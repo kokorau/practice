@@ -2,9 +2,11 @@
 import { computed } from 'vue'
 import type { Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
 import { $Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
-import type { Filter, Preset } from '../../modules/Filter/Domain'
+import type { Preset } from '../../modules/Filter/Domain'
 import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
-import type { StylePack, StylePackPreset } from '../../modules/StylePack/Domain/ValueObject'
+import type { StylePackPreset } from '../../modules/StylePack/Domain/ValueObject'
+import type { SiteBlueprint } from '../../modules/SiteSimulator/Domain/ValueObject'
+import { $SiteBlueprint, $FilterState } from '../../modules/SiteSimulator/Domain/ValueObject'
 import BrandColorPicker from './BrandColorPicker.vue'
 import AccentSelector from './AccentSelector.vue'
 import FilterPanel from '../Filter/FilterPanel.vue'
@@ -14,34 +16,40 @@ export type ConfigPage = 'list' | 'brand' | 'accent' | 'filter' | 'font' | 'styl
 
 const props = defineProps<{
   currentPage: ConfigPage
-  brandColor: Oklch
-  accentColor: Oklch
-  selectedAccent: Oklch | null
-  // Filter props
-  filter: Filter
+  blueprint: SiteBlueprint
+  // Constants (not part of blueprint)
   presets: readonly Preset[]
-  currentPresetId: string | null
-  setters: FilterSetters
-  intensity: number
-  // Font props
   fontPresets: readonly FontPreset[]
-  selectedFontId: string
-  // StylePack props
   stylePackPresets: readonly StylePackPreset[]
-  selectedStylePackId: string
+  // Filter setters (for FilterPanel compatibility)
+  setters: FilterSetters
 }>()
 
 const emit = defineEmits<{
   'update:currentPage': [page: ConfigPage]
-  'update:brandColor': [color: Oklch]
-  'update:selectedAccent': [color: Oklch]
+  'update:blueprint': [blueprint: SiteBlueprint]
+  // Filter-specific events (complex logic handled by parent)
   'apply-preset': [preset: Preset]
   'update:masterPoint': [index: number, value: number]
-  'update:intensity': [value: number]
   'reset-filter': []
-  'update:selectedFontId': [id: string]
-  'update:selectedStylePackId': [id: string]
 }>()
+
+// ============================================================
+// Computed from Blueprint
+// ============================================================
+
+const brandColor = computed(() => props.blueprint.brandColor)
+const selectedAccent = computed(() => props.blueprint.accentColor)
+const accentColor = computed(() => props.blueprint.accentColor ?? $Oklch.create(0.75, 0.15, 70))
+const filter = computed(() => props.blueprint.filterState.filter)
+const currentPresetId = computed(() => props.blueprint.filterState.presetId)
+const intensity = computed(() => props.blueprint.filterState.intensity)
+const selectedFontId = computed(() => props.blueprint.font.fontId)
+const selectedStylePackId = computed(() => props.blueprint.style.stylePackId)
+
+// ============================================================
+// Display Helpers
+// ============================================================
 
 const configItems = [
   { id: 'brand' as const, label: 'Brand Color', icon: '🎨' },
@@ -51,24 +59,25 @@ const configItems = [
   { id: 'style' as const, label: 'Style', icon: '🎛️' },
 ]
 
-// Get current preset name for list view
 const currentPresetName = computed(() => {
-  if (!props.currentPresetId) return 'No Filter'
-  const preset = props.presets.find(p => p.id === props.currentPresetId)
+  if (!currentPresetId.value) return 'No Filter'
+  const preset = props.presets.find(p => p.id === currentPresetId.value)
   return preset?.name ?? 'Custom'
 })
 
-// Get current font name
 const currentFontName = computed(() => {
-  const font = props.fontPresets.find(f => f.id === props.selectedFontId)
+  const font = props.fontPresets.find(f => f.id === selectedFontId.value)
   return font?.name ?? 'System'
 })
 
-// Get current style pack name
 const currentStylePackName = computed(() => {
-  const stylePack = props.stylePackPresets.find(s => s.id === props.selectedStylePackId)
+  const stylePack = props.stylePackPresets.find(s => s.id === selectedStylePackId.value)
   return stylePack?.name ?? 'Default'
 })
+
+// ============================================================
+// Update Handlers
+// ============================================================
 
 const navigateToConfig = (page: ConfigPage) => {
   emit('update:currentPage', page)
@@ -78,6 +87,26 @@ const navigateToList = () => {
   emit('update:currentPage', 'list')
 }
 
+const updateBrandColor = (color: Oklch) => {
+  emit('update:blueprint', $SiteBlueprint.setBrandColor(props.blueprint, color))
+}
+
+const updateAccentColor = (color: Oklch) => {
+  emit('update:blueprint', $SiteBlueprint.setAccentColor(props.blueprint, color))
+}
+
+const updateIntensity = (value: number) => {
+  const newFilterState = $FilterState.setIntensity(props.blueprint.filterState, value)
+  emit('update:blueprint', $SiteBlueprint.setFilterState(props.blueprint, newFilterState))
+}
+
+const updateFontId = (id: string) => {
+  emit('update:blueprint', $SiteBlueprint.setFontId(props.blueprint, id))
+}
+
+const updateStylePackId = (id: string) => {
+  emit('update:blueprint', $SiteBlueprint.setStylePackId(props.blueprint, id))
+}
 </script>
 
 <template>
@@ -134,7 +163,7 @@ const navigateToList = () => {
       <h2 class="text-lg font-semibold mb-4">Brand Color</h2>
       <BrandColorPicker
         :model-value="brandColor"
-        @update:model-value="emit('update:brandColor', $event)"
+        @update:model-value="updateBrandColor"
       />
     </div>
 
@@ -165,7 +194,7 @@ const navigateToList = () => {
         :brand-color="brandColor"
         :selected-accent="selectedAccent"
         :top-count="10"
-        @select="emit('update:selectedAccent', $event)"
+        @select="updateAccentColor"
       />
     </div>
 
@@ -184,7 +213,7 @@ const navigateToList = () => {
         :intensity="intensity"
         @apply-preset="emit('apply-preset', $event)"
         @update:master-point="(index, value) => emit('update:masterPoint', index, value)"
-        @update:intensity="emit('update:intensity', $event)"
+        @update:intensity="updateIntensity"
         @reset="emit('reset-filter')"
       />
     </div>
@@ -202,7 +231,7 @@ const navigateToList = () => {
           :key="font.id"
           class="font-item"
           :class="{ active: selectedFontId === font.id }"
-          @click="emit('update:selectedFontId', font.id)"
+          @click="updateFontId(font.id)"
         >
           <span class="font-radio">{{ selectedFontId === font.id ? '●' : '○' }}</span>
           <span class="font-name">{{ font.name }}</span>
@@ -224,7 +253,7 @@ const navigateToList = () => {
           :key="stylePack.id"
           class="style-item"
           :class="{ active: selectedStylePackId === stylePack.id }"
-          @click="emit('update:selectedStylePackId', stylePack.id)"
+          @click="updateStylePackId(stylePack.id)"
         >
           <span class="style-radio">{{ selectedStylePackId === stylePack.id ? '●' : '○' }}</span>
           <span class="style-name">{{ stylePack.name }}</span>

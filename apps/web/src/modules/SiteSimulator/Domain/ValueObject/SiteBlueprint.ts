@@ -4,6 +4,8 @@ import type { FontConfig } from './FontConfig'
 import { $FontConfig } from './FontConfig'
 import type { StyleConfig } from './StyleConfig'
 import { $StyleConfig } from './StyleConfig'
+import type { FilterState } from './FilterState'
+import { $FilterState } from './FilterState'
 
 /**
  * SiteBlueprint - サイト設定の基礎データ
@@ -19,23 +21,23 @@ import { $StyleConfig } from './StyleConfig'
  */
 export type SiteBlueprint = {
   // Color
-  brandColor: Oklch
-  accentColor: Oklch | null
-  filterPresetId: string | null
-  filterIntensity: number
+  readonly brandColor: Oklch
+  readonly accentColor: Oklch | null
+
+  // Filter (カーブ＋Adjustment＋強度＋プリセット)
+  readonly filterState: FilterState
 
   // Font
-  font: FontConfig
+  readonly font: FontConfig
 
   // Style
-  style: StyleConfig
+  readonly style: StyleConfig
 }
 
 export type SiteBlueprintParams = {
   brandColor?: Oklch
   accentColor?: Oklch | null
-  filterPresetId?: string | null
-  filterIntensity?: number
+  filterState?: FilterState
   fontId?: string
   stylePackId?: string
 }
@@ -45,8 +47,7 @@ export const $SiteBlueprint = {
     return {
       brandColor: params.brandColor ?? $Oklch.create(0.59, 0.18, 250), // Default blue
       accentColor: params.accentColor ?? null,
-      filterPresetId: params.filterPresetId ?? null,
-      filterIntensity: params.filterIntensity ?? 1,
+      filterState: params.filterState ?? $FilterState.identity(7),
       font: $FontConfig.create(params.fontId ?? 'inter'),
       style: $StyleConfig.create(params.stylePackId ?? 'default'),
     }
@@ -54,5 +55,27 @@ export const $SiteBlueprint = {
 
   default(): SiteBlueprint {
     return $SiteBlueprint.create()
+  },
+
+  // === Updaters ===
+
+  setBrandColor(blueprint: SiteBlueprint, brandColor: Oklch): SiteBlueprint {
+    return { ...blueprint, brandColor }
+  },
+
+  setAccentColor(blueprint: SiteBlueprint, accentColor: Oklch | null): SiteBlueprint {
+    return { ...blueprint, accentColor }
+  },
+
+  setFilterState(blueprint: SiteBlueprint, filterState: FilterState): SiteBlueprint {
+    return { ...blueprint, filterState }
+  },
+
+  setFontId(blueprint: SiteBlueprint, fontId: string): SiteBlueprint {
+    return { ...blueprint, font: $FontConfig.create(fontId) }
+  },
+
+  setStylePackId(blueprint: SiteBlueprint, stylePackId: string): SiteBlueprint {
+    return { ...blueprint, style: $StyleConfig.create(stylePackId) }
   },
 }
