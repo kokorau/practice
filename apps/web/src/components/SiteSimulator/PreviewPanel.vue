@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { SemanticColorToken, RenderedPalette, PreviewArtifact, ArtifactChangeType } from '../../modules/SiteSimulator/Domain'
-import { $RenderedPalette, $RenderedColor } from '../../modules/SiteSimulator/Domain/ValueObject'
+import { $RenderedColor } from '../../modules/SiteSimulator/Domain/ValueObject'
 import DemoPreview from './DemoPreview.vue'
 import PalettePreview from './PalettePreview.vue'
 
-type PreviewMode = 'demo' | 'palette' | 'css'
+type PreviewMode = 'demo' | 'palette' | 'css' | 'html'
 
 const props = defineProps<{
   artifact: PreviewArtifact | null
@@ -30,6 +30,7 @@ const previewModes = [
   { id: 'demo' as const, label: 'Demo' },
   { id: 'palette' as const, label: 'Palette' },
   { id: 'css' as const, label: 'CSS' },
+  { id: 'html' as const, label: 'HTML' },
 ]
 </script>
 
@@ -63,9 +64,12 @@ const previewModes = [
 
     <!-- CSS Output -->
     <div v-else-if="previewMode === 'css'" class="preview-content">
-      <pre class="bg-gray-900 p-4 rounded text-sm text-gray-300 overflow-x-auto whitespace-pre-wrap">{{
-        $RenderedPalette.toCssVariables(renderedPalette)
-      }}</pre>
+      <pre class="bg-gray-900 p-4 rounded text-sm text-gray-300 overflow-x-auto whitespace-pre-wrap">{{ artifact?.css ?? '' }}</pre>
+    </div>
+
+    <!-- HTML Output -->
+    <div v-else-if="previewMode === 'html'" class="preview-content">
+      <pre class="bg-gray-900 p-4 rounded text-sm text-gray-300 overflow-x-auto whitespace-pre-wrap">{{ artifact?.html ?? '' }}</pre>
     </div>
   </main>
 </template>
