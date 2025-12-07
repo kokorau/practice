@@ -1,24 +1,17 @@
-import type { SectionMeta, SectionContent } from '../Domain/ValueObject'
-import { heroTemplate, cardsTemplate, ctaTemplate, contentTemplate } from './templates'
-
-/**
- * SectionTemplate - テンプレート定義（Meta + デフォルトコンテンツ）
- */
-export type SectionTemplate = {
-  readonly meta: SectionMeta
-  readonly defaultContent: () => SectionContent
-}
+import type { SectionMeta, SectionContent, SectionTemplate } from '../Domain/ValueObject'
 
 // ============================================================
-// Template Registry
+// Template Registry (auto-loaded from templates folder)
 // ============================================================
 
-const templates = new Map<string, SectionTemplate>([
-  ['hero', heroTemplate],
-  ['cards', cardsTemplate],
-  ['cta', ctaTemplate],
-  ['content', contentTemplate],
-])
+const templateModules = import.meta.glob<{ default: SectionTemplate }>(
+  './templates/*/index.ts',
+  { eager: true }
+)
+
+const templates = new Map<string, SectionTemplate>(
+  Object.values(templateModules).map(mod => [mod.default.meta.templateId, mod.default])
+)
 
 // ============================================================
 // Repository
@@ -50,10 +43,9 @@ export const TemplateRepository = {
   },
 
   getDefaultSections(): SectionContent[] {
-    return [
-      heroTemplate.defaultContent(),
-      cardsTemplate.defaultContent(),
-      ctaTemplate.defaultContent(),
-    ]
+    const defaultOrder = ['hero', 'cards', 'cta']
+    return defaultOrder
+      .map(id => templates.get(id)?.defaultContent())
+      .filter((c): c is SectionContent => c !== undefined)
   },
 }

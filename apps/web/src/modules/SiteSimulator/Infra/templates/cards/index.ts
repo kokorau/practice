@@ -1,8 +1,7 @@
-import { $SectionMeta, $SectionContent } from '../../../Domain/ValueObject'
-import type { SectionTemplate } from '../../TemplateRepository'
+import { $SectionMeta, $SectionContent, type SectionTemplate } from '../../../Domain/ValueObject'
 import template from './template.html?raw'
 
-export const cardsTemplate: SectionTemplate = {
+export default {
   meta: $SectionMeta.create(
     'cards',
     'Cards',
@@ -22,4 +21,4 @@ export const cardsTemplate: SectionTemplate = {
         $SectionContent.listItem('c3', 'Card 3', 'Card description text'),
       ]),
     }),
-}
+} satisfies SectionTemplate

@@ -1,8 +1,7 @@
-import { $SectionMeta, $SectionContent } from '../../../Domain/ValueObject'
-import type { SectionTemplate } from '../../TemplateRepository'
+import { $SectionMeta, $SectionContent, type SectionTemplate } from '../../../Domain/ValueObject'
 import template from './template.html?raw'
 
-export const contentTemplate: SectionTemplate = {
+export default {
   meta: $SectionMeta.create(
     'content',
     'Content',
@@ -18,4 +17,4 @@ export const contentTemplate: SectionTemplate = {
       title: $SectionContent.text('About Us'),
       body: $SectionContent.richtext('Lorem ipsum dolor sit amet, consectetur adipiscing elit.'),
     }),
-}
+} satisfies SectionTemplate

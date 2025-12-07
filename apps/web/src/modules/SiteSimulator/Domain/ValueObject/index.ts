@@ -38,6 +38,7 @@ export {
   type SectionContent,
   $SectionContent,
 } from './SectionContent'
+export { type SectionTemplate } from './SectionTemplate'
 
 // Layout
 export { type MaterialId, $Material } from './Material'
