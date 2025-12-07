@@ -18,7 +18,14 @@ export { type RenderedColor, type RenderedPalette, $RenderedColor, $RenderedPale
 export { type FontConfig, $FontConfig } from './FontConfig'
 export { type StyleConfig, $StyleConfig } from './StyleConfig'
 export { type FilterState, $FilterState } from './FilterState'
-export { type SiteBlueprint, type SiteBlueprintParams, $SiteBlueprint } from './SiteBlueprint'
+export {
+  type SiteBlueprint,
+  type SiteBlueprintParams,
+  type PageData,
+  type DesignData,
+  type PaletteData,
+  $SiteBlueprint,
+} from './SiteBlueprint'
 
 // Section (Meta + Content)
 export {

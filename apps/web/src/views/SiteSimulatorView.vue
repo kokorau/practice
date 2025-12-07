@@ -42,7 +42,7 @@ const getCssColor = (token: SemanticColorToken): string => {
   return $RenderedColor.toCssP3(color)
 }
 
-const sections = computed(() => blueprint.value.sections)
+const sections = computed(() => blueprint.value.page.sections)
 
 const paletteGroups = computed(() => [
   {

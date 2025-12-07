@@ -68,19 +68,36 @@ const POINT_COUNT = 7
 
 export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
   // === Core State ===
+  // 初期化時にTemplateRepositoryからデザインデータを取得
+  const defaultSections = TemplateRepository.getDefaultSections()
+  const baseTemplate = TemplateRepository.getDefaultBase()?.meta
+  const utilityStyles = TemplateRepository.getUtilityStyle()
+
+  // 使用中のセクションテンプレートを収集
+  const sectionTemplates = new Map<string, ReturnType<typeof TemplateRepository.getMeta>>()
+  for (const section of defaultSections) {
+    const meta = TemplateRepository.getMeta(section.templateId)
+    if (meta) {
+      sectionTemplates.set(section.templateId, meta)
+    }
+  }
+
   const blueprint = ref<SiteBlueprint>(
     $SiteBlueprint.create({
-      sections: TemplateRepository.getDefaultSections(),
+      sections: defaultSections,
+      baseTemplate,
+      sectionTemplates: sectionTemplates as Map<string, NonNullable<ReturnType<typeof TemplateRepository.getMeta>>>,
+      utilityStyles,
     })
   )
 
   // === Convenience Accessors ===
-  const brandColor = computed(() => blueprint.value.brandColor)
-  const selectedAccentOklch = computed(() => blueprint.value.accentColor)
+  const brandColor = computed(() => blueprint.value.palette.brandColor)
+  const selectedAccentOklch = computed(() => blueprint.value.palette.accentColor)
 
   // Accent color with default fallback
   const accentColor = computed(() => {
-    return blueprint.value.accentColor ?? $Oklch.create(0.75, 0.15, 70)
+    return blueprint.value.palette.accentColor ?? $Oklch.create(0.75, 0.15, 70)
   })
 
   const filterState = computed(() => blueprint.value.filterState)

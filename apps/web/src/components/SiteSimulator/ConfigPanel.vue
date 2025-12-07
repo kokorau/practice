@@ -38,9 +38,9 @@ const emit = defineEmits<{
 // Computed from Blueprint
 // ============================================================
 
-const brandColor = computed(() => props.blueprint.brandColor)
-const selectedAccent = computed(() => props.blueprint.accentColor)
-const accentColor = computed(() => props.blueprint.accentColor ?? $Oklch.create(0.75, 0.15, 70))
+const brandColor = computed(() => props.blueprint.palette.brandColor)
+const selectedAccent = computed(() => props.blueprint.palette.accentColor)
+const accentColor = computed(() => props.blueprint.palette.accentColor ?? $Oklch.create(0.75, 0.15, 70))
 const filter = computed(() => props.blueprint.filterState.filter)
 const currentPresetId = computed(() => props.blueprint.filterState.presetId)
 const intensity = computed(() => props.blueprint.filterState.intensity)
