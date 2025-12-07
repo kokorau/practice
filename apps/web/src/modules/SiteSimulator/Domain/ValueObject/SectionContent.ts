@@ -64,12 +64,10 @@ export type SectionContent = {
 // Factory
 // ============================================================
 
-let sectionIdCounter = 0
-
 export const $SectionContent = {
   create(templateId: string, slots: Record<string, SlotValue> = {}): SectionContent {
     return {
-      id: `section-${++sectionIdCounter}`,
+      id: crypto.randomUUID(),
       templateId,
       slots,
     }

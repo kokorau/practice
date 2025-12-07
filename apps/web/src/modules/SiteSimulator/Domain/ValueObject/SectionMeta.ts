@@ -42,6 +42,7 @@ export type SectionMeta = {
   readonly name: string
   readonly description: string
   readonly template: string
+  readonly style: string
   readonly slots: readonly SlotMeta[]
 }
 
@@ -51,9 +52,10 @@ export const $SectionMeta = {
     name: string,
     description: string,
     template: string,
+    style: string,
     slots: SlotMeta[]
   ): SectionMeta {
-    return { templateId, name, description, template, slots }
+    return { templateId, name, description, template, style, slots }
   },
 
   getSlot(meta: SectionMeta, slotId: string): SlotMeta | undefined {

@@ -1,5 +1,6 @@
 import { $SectionMeta, $SectionContent, type SectionTemplate } from '../../../Domain/ValueObject'
 import template from './template.html?raw'
+import style from './style.css?raw'
 
 export default {
   meta: $SectionMeta.create(
@@ -7,6 +8,7 @@ export default {
     'Hero',
     'Large hero section with title and CTA',
     template,
+    style,
     [
       { id: 'title', type: 'text', label: 'Title', required: true },
       { id: 'subtitle', type: 'text', label: 'Subtitle', required: false },

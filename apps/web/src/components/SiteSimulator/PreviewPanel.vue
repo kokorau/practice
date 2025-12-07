@@ -46,8 +46,8 @@ const previewModes = [
     </div>
 
     <!-- Demo Preview -->
-    <div v-if="previewMode === 'demo'" class="preview-content">
-      <DemoPreview :sections="sections" :get-css-color="getCssColor" :font="font" :style-pack="stylePack" />
+    <div v-if="previewMode === 'demo'" class="preview-content demo-mode">
+      <DemoPreview :sections="sections" :get-css-color="getCssColor" :rendered-palette="renderedPalette" :font="font" :style-pack="stylePack" />
     </div>
 
     <!-- Palette Preview -->
@@ -111,5 +111,11 @@ const previewModes = [
 
 .preview-content {
   padding-top: 2rem;
+}
+
+.preview-content.demo-mode {
+  height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
 }
 </style>

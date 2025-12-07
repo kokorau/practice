@@ -1,4 +1,5 @@
 import type { SectionContent, SlotValue, ListSlotValue, SemanticColorToken } from '../Domain/ValueObject'
+import { $ScopedStyle } from '../Domain/ValueObject'
 import type { StylePack } from '../../StylePack/Domain/ValueObject'
 import { roundedToCss, gapToMultiplier, paddingToMultiplier } from '../../StylePack/Domain/ValueObject'
 import { TemplateRepository } from './TemplateRepository'
@@ -29,6 +30,10 @@ export const TemplateRenderer = {
 
     // 3. data-* 属性をインラインスタイルに変換
     html = this.applyDataAttributes(html, context)
+
+    // 4. ルート要素にスコープクラスを付与
+    const scopeClass = $ScopedStyle.scopeClass(section.id)
+    html = $ScopedStyle.addScopeClass(html, scopeClass)
 
     return html
   },

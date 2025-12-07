@@ -39,6 +39,7 @@ export {
   $SectionContent,
 } from './SectionContent'
 export { type SectionTemplate } from './SectionTemplate'
+export { $ScopedStyle } from './ScopedStyle'
 
 // Layout
 export { type MaterialId, $Material } from './Material'
