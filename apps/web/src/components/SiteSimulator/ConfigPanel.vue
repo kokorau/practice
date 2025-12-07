@@ -44,8 +44,8 @@ const accentColor = computed(() => props.blueprint.accentColor ?? $Oklch.create(
 const filter = computed(() => props.blueprint.filterState.filter)
 const currentPresetId = computed(() => props.blueprint.filterState.presetId)
 const intensity = computed(() => props.blueprint.filterState.intensity)
-const selectedFontId = computed(() => props.blueprint.font.fontId)
-const selectedStylePackId = computed(() => props.blueprint.style.stylePackId)
+const selectedFontPresetId = computed(() => props.blueprint.font.presetId)
+const selectedStylePresetId = computed(() => props.blueprint.style.presetId)
 
 // ============================================================
 // Display Helpers
@@ -65,13 +65,12 @@ const currentPresetName = computed(() => {
   return preset?.name ?? 'Custom'
 })
 
-const currentFontName = computed(() => {
-  const font = props.fontPresets.find(f => f.id === selectedFontId.value)
-  return font?.name ?? 'System'
-})
+// Font and style names are stored directly in blueprint
+const currentFontName = computed(() => props.blueprint.font.name)
 
 const currentStylePackName = computed(() => {
-  const stylePack = props.stylePackPresets.find(s => s.id === selectedStylePackId.value)
+  // Find preset name by ID for display
+  const stylePack = props.stylePackPresets.find(s => s.id === selectedStylePresetId.value)
   return stylePack?.name ?? 'Default'
 })
 
@@ -100,12 +99,12 @@ const updateIntensity = (value: number) => {
   emit('update:blueprint', $SiteBlueprint.setFilterState(props.blueprint, newFilterState))
 }
 
-const updateFontId = (id: string) => {
-  emit('update:blueprint', $SiteBlueprint.setFontId(props.blueprint, id))
+const updateFont = (fontPreset: FontPreset) => {
+  emit('update:blueprint', $SiteBlueprint.setFont(props.blueprint, fontPreset))
 }
 
-const updateStylePackId = (id: string) => {
-  emit('update:blueprint', $SiteBlueprint.setStylePackId(props.blueprint, id))
+const updateStylePack = (stylePreset: StylePackPreset) => {
+  emit('update:blueprint', $SiteBlueprint.setStyle(props.blueprint, stylePreset))
 }
 </script>
 
@@ -230,10 +229,10 @@ const updateStylePackId = (id: string) => {
           v-for="font in fontPresets"
           :key="font.id"
           class="font-item"
-          :class="{ active: selectedFontId === font.id }"
-          @click="updateFontId(font.id)"
+          :class="{ active: selectedFontPresetId === font.id }"
+          @click="updateFont(font)"
         >
-          <span class="font-radio">{{ selectedFontId === font.id ? '●' : '○' }}</span>
+          <span class="font-radio">{{ selectedFontPresetId === font.id ? '●' : '○' }}</span>
           <span class="font-name">{{ font.name }}</span>
           <span class="font-category">{{ font.category }}</span>
         </button>
@@ -252,10 +251,10 @@ const updateStylePackId = (id: string) => {
           v-for="stylePack in stylePackPresets"
           :key="stylePack.id"
           class="style-item"
-          :class="{ active: selectedStylePackId === stylePack.id }"
-          @click="updateStylePackId(stylePack.id)"
+          :class="{ active: selectedStylePresetId === stylePack.id }"
+          @click="updateStylePack(stylePack)"
         >
-          <span class="style-radio">{{ selectedStylePackId === stylePack.id ? '●' : '○' }}</span>
+          <span class="style-radio">{{ selectedStylePresetId === stylePack.id ? '●' : '○' }}</span>
           <span class="style-name">{{ stylePack.name }}</span>
           <span class="style-preview">{{ stylePack.style.rounded }} / {{ stylePack.style.gap }}</span>
         </button>

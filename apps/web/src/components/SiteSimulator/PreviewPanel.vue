@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { SemanticColorToken, RenderedPalette, SectionContent } from '../../modules/SiteSimulator/Domain/ValueObject'
+import type { SemanticColorToken, RenderedPalette, SectionContent, FontConfig } from '../../modules/SiteSimulator/Domain/ValueObject'
 import { $RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
-import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
 import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
 import DemoPreview from './DemoPreview.vue'
 import PalettePreview from './PalettePreview.vue'
@@ -17,7 +16,7 @@ defineProps<{
     tokens: SemanticColorToken[]
   }>
   renderedPalette: RenderedPalette
-  font: FontPreset | undefined
+  font: FontConfig
   stylePack: StylePack
 }>()
 

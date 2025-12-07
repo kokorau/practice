@@ -4,6 +4,7 @@ import { $Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
 import {
   type SiteBlueprint,
   type FilterState,
+  type FontConfig,
   $SiteBlueprint,
   $FilterState,
   $CorePalette,
@@ -18,8 +19,8 @@ import { TemplateRepository } from '../../modules/SiteSimulator/Infra'
 import type { Filter, Preset, Lut } from '../../modules/Filter/Domain'
 import { $Filter, $Preset } from '../../modules/Filter/Domain'
 import type { FilterSetters } from '../Filter/useFilter'
-import { GoogleFontPresets } from '../../assets/constants/GoogleFontPresets'
-import { StylePackPresets, defaultStylePack } from '../../modules/StylePack/Domain/ValueObject'
+import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
+import type { StylePackPreset, StylePack } from '../../modules/StylePack/Domain/ValueObject'
 
 /**
  * useSiteBlueprint - SiteBlueprint をベースにした状態管理
@@ -44,10 +45,10 @@ export type UseSiteBlueprintReturn = {
   filter: ComputedRef<Filter>
   intensity: ComputedRef<number>
   currentPresetId: ComputedRef<string | null>
-  fontId: ComputedRef<string>
-  stylePackId: ComputedRef<string>
-  currentFont: ComputedRef<typeof GoogleFontPresets[number] | undefined>
-  currentStylePack: ComputedRef<typeof defaultStylePack>
+  fontPresetId: ComputedRef<string>
+  stylePresetId: ComputedRef<string>
+  currentFont: ComputedRef<FontConfig>
+  currentStylePack: ComputedRef<StylePack>
 
   // === Updaters ===
   setBrandColor: (color: Oklch) => void
@@ -56,8 +57,8 @@ export type UseSiteBlueprintReturn = {
   applyPreset: (preset: Preset) => void
   setMasterPoint: (index: number, value: number) => void
   resetFilter: () => void
-  setFontId: (id: string) => void
-  setStylePackId: (id: string) => void
+  setFont: (fontPreset: FontPreset) => void
+  setStyle: (stylePreset: StylePackPreset) => void
 
   // === FilterSetters (for ConfigPanel compatibility) ===
   setters: FilterSetters
@@ -86,16 +87,14 @@ export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
   const filter = computed(() => blueprint.value.filterState.filter)
   const intensity = computed(() => blueprint.value.filterState.intensity)
   const currentPresetId = computed(() => blueprint.value.filterState.presetId)
-  const fontId = computed(() => blueprint.value.font.fontId)
-  const stylePackId = computed(() => blueprint.value.style.stylePackId)
+  const fontPresetId = computed(() => blueprint.value.font.presetId)
+  const stylePresetId = computed(() => blueprint.value.style.presetId)
 
-  const currentFont = computed(() =>
-    GoogleFontPresets.find(f => f.id === fontId.value)
-  )
+  // Blueprint内のfontは実体を持つ（FontConfig）
+  const currentFont = computed(() => blueprint.value.font)
 
-  const currentStylePack = computed(() =>
-    StylePackPresets.find(s => s.id === stylePackId.value)?.style ?? defaultStylePack
-  )
+  // Blueprint内のstyleは実体を持つ（StyleConfig.style = StylePack）
+  const currentStylePack = computed(() => blueprint.value.style.style)
 
   // === Derived Data ===
   const lut = computed<Lut>(() => $FilterState.toLut(filterState.value))
@@ -164,12 +163,12 @@ export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
     )
   }
 
-  const setFontId = (id: string) => {
-    blueprint.value = $SiteBlueprint.setFontId(blueprint.value, id)
+  const setFont = (fontPreset: FontPreset) => {
+    blueprint.value = $SiteBlueprint.setFont(blueprint.value, fontPreset)
   }
 
-  const setStylePackId = (id: string) => {
-    blueprint.value = $SiteBlueprint.setStylePackId(blueprint.value, id)
+  const setStyle = (stylePreset: StylePackPreset) => {
+    blueprint.value = $SiteBlueprint.setStyle(blueprint.value, stylePreset)
   }
 
   // === FilterSetters (for ConfigPanel compatibility) ===
@@ -235,8 +234,8 @@ export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
     filter,
     intensity,
     currentPresetId,
-    fontId,
-    stylePackId,
+    fontPresetId,
+    stylePresetId,
     currentFont,
     currentStylePack,
     setBrandColor,
@@ -245,8 +244,8 @@ export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
     applyPreset,
     setMasterPoint,
     resetFilter,
-    setFontId,
-    setStylePackId,
+    setFont,
+    setStyle,
     setters,
   }
 }

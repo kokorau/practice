@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
-import type { SemanticColorToken, SectionContent, RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
+import type { SemanticColorToken, SectionContent, RenderedPalette, FontConfig } from '../../modules/SiteSimulator/Domain/ValueObject'
 import { $RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
-import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
 import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
 import { roundedToCss } from '../../modules/StylePack/Domain/ValueObject'
 import { TemplateRenderer, TemplateRepository } from '../../modules/SiteSimulator/Infra'
@@ -11,7 +10,7 @@ const props = defineProps<{
   sections: readonly SectionContent[]
   getCssColor: (token: SemanticColorToken) => string
   renderedPalette: RenderedPalette
-  font: FontPreset | undefined
+  font: FontConfig
   stylePack: StylePack
 }>()
 
@@ -19,7 +18,7 @@ const iframeRef = ref<HTMLIFrameElement | null>(null)
 const previewWidth = ref(1280)
 const iframeHeight = ref(800) // default height
 
-const fontFamily = computed(() => props.font?.family ?? 'system-ui, sans-serif')
+const fontFamily = computed(() => props.font.family)
 const borderRadius = computed(() => roundedToCss[props.stylePack.rounded])
 
 const renderedHtml = computed(() => {
@@ -40,9 +39,12 @@ const templateStyles = computed(() => {
 })
 
 const googleFontLink = computed(() => {
-  if (!props.font) return ''
-  const family = props.font.family.replace(/ /g, '+')
-  return `<link href="https://fonts.googleapis.com/css2?family=${family}:wght@400;500;600;700&display=swap" rel="stylesheet">`
+  const source = props.font.source
+  if (source.vendor === 'google') {
+    return `<link href="${source.url}" rel="stylesheet">`
+  }
+  // Other vendors not supported yet
+  return ''
 })
 
 const baseTemplate = computed(() => TemplateRepository.getDefaultBase())

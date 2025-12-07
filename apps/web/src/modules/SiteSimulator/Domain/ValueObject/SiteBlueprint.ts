@@ -1,5 +1,7 @@
 import type { Oklch } from '../../../Color/Domain/ValueObject/Oklch'
 import { $Oklch } from '../../../Color/Domain/ValueObject/Oklch'
+import type { FontPreset } from '../../../Font/Domain/ValueObject'
+import type { StylePackPreset } from '../../../StylePack/Domain/ValueObject'
 import type { FontConfig } from './FontConfig'
 import { $FontConfig } from './FontConfig'
 import type { StyleConfig } from './StyleConfig'
@@ -77,10 +79,20 @@ export const $SiteBlueprint = {
     return { ...blueprint, filterState }
   },
 
+  setFont(blueprint: SiteBlueprint, fontPreset: FontPreset): SiteBlueprint {
+    return { ...blueprint, font: $FontConfig.fromPreset(fontPreset) }
+  },
+
+  setStyle(blueprint: SiteBlueprint, stylePreset: StylePackPreset): SiteBlueprint {
+    return { ...blueprint, style: $StyleConfig.fromPreset(stylePreset) }
+  },
+
+  /** @deprecated Use setFont instead */
   setFontId(blueprint: SiteBlueprint, fontId: string): SiteBlueprint {
     return { ...blueprint, font: $FontConfig.create(fontId) }
   },
 
+  /** @deprecated Use setStyle instead */
   setStylePackId(blueprint: SiteBlueprint, stylePackId: string): SiteBlueprint {
     return { ...blueprint, style: $StyleConfig.create(stylePackId) }
   },
