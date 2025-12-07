@@ -52,6 +52,15 @@ export const TemplateRenderer = {
       return listSlot.items
         .map(item => {
           let itemHtml = itemTemplate
+          // {{prop.subprop}} 形式（ネストされたプロパティ）
+          itemHtml = itemHtml.replace(/\{\{(\w+)\.(\w+)\}\}/g, (_match: string, prop: string, subprop: string) => {
+            const obj = item[prop as keyof typeof item]
+            if (obj && typeof obj === 'object') {
+              const value = (obj as Record<string, unknown>)[subprop]
+              return value != null ? String(value) : ''
+            }
+            return ''
+          })
           // {{title}}, {{description}} などを展開
           itemHtml = itemHtml.replace(/\{\{(\w+)\}\}/g, (_match: string, prop: string) => {
             const value = item[prop as keyof typeof item]

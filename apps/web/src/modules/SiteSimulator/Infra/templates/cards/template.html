@@ -1,11 +1,21 @@
-<section data-bg="surface.elevated" data-padding="lg">
-  <h2 data-color="text.primary" class="text-2xl font-semibold mb-6">{{title}}</h2>
-  <div class="grid grid-cols-3" data-gap="md">
-    {{#each items}}
-    <div data-bg="surface.card" data-border="surface.border" data-radius data-padding="lg">
-      <h3 data-color="text.primary" class="font-semibold mb-1">{{title}}</h3>
-      <p data-color="text.secondary" class="text-sm">{{description}}</p>
+<section class="cards-section" data-bg="surface.elevated" data-padding="lg">
+  <div class="cards-container">
+    <div class="section-header">
+      <h2 data-color="text.primary" class="text-2xl font-semibold">{{title}}</h2>
+      <p data-color="text.secondary" class="section-description">{{description}}</p>
     </div>
-    {{/each}}
+    <div class="grid grid-cols-3" data-gap="md">
+      {{#each items}}
+      <div class="card" data-bg="surface.card" data-border="surface.border" data-radius>
+        <div class="card-image">
+          <img src="{{image.src}}" alt="{{image.alt}}" />
+        </div>
+        <div class="card-content" data-padding="lg">
+          <h3 data-color="text.primary" class="font-semibold mb-1">{{title}}</h3>
+          <p data-color="text.secondary" class="text-sm">{{description}}</p>
+        </div>
+      </div>
+      {{/each}}
+    </div>
   </div>
 </section>

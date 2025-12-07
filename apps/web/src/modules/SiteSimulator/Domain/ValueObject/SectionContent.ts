@@ -41,6 +41,7 @@ export type ListItem = {
   readonly title: string
   readonly description?: string
   readonly icon?: string
+  readonly image?: ImageSlotValue
 }
 
 export type SlotValue =
@@ -117,7 +118,7 @@ export const $SectionContent = {
     return { type: 'list', items }
   },
 
-  listItem(id: string, title: string, description?: string): ListItem {
-    return { id, title, description }
+  listItem(id: string, title: string, description?: string, image?: ImageSlotValue): ListItem {
+    return { id, title, description, image }
   },
 }

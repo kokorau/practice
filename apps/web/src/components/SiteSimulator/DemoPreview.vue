@@ -110,16 +110,17 @@ type WidthPreset = 'desktop' | 'tablet' | 'mobile'
 const widthPreset = ref<WidthPreset>('desktop')
 
 const widthPresets: Record<WidthPreset, number> = {
-  desktop: 1280,
+  desktop: 1440,
   tablet: 768,
   mobile: 375,
 }
 
 const iframeWidth = computed(() => widthPresets[widthPreset.value])
 const scale = computed(() => {
-  const maxWidth = previewWidth.value - 32 // padding
-  if (iframeWidth.value <= maxWidth) return 1
-  return maxWidth / iframeWidth.value
+  const targetWidth = previewWidth.value
+  if (targetWidth <= 0) return 0.5 // 最小スケール
+  if (iframeWidth.value <= targetWidth) return 1
+  return targetWidth / iframeWidth.value
 })
 
 const updateIframeHeight = () => {
@@ -161,19 +162,26 @@ const onIframeLoad = () => {
   <div ref="containerRef" class="demo-preview">
     <!-- iframe container -->
     <div class="iframe-container">
-      <iframe
-        ref="iframeRef"
-        :srcdoc="iframeSrcdoc"
+      <div
+        class="iframe-wrapper"
         :style="{
-          width: iframeWidth + 'px',
-          height: iframeHeight + 'px',
-          transform: `scale(${scale})`,
-          transformOrigin: 'top center',
+          width: iframeWidth * scale + 'px',
+          height: iframeHeight * scale + 'px',
         }"
-        class="preview-iframe"
-        sandbox="allow-same-origin"
-        @load="onIframeLoad"
-      />
+      >
+        <iframe
+          ref="iframeRef"
+          :srcdoc="iframeSrcdoc"
+          :style="{
+            width: iframeWidth + 'px',
+            height: iframeHeight + 'px',
+            transform: `scale(${scale})`,
+          }"
+          class="preview-iframe"
+          sandbox="allow-same-origin"
+          @load="onIframeLoad"
+        />
+      </div>
     </div>
 
     <!-- Width selector (bottom center) -->
@@ -253,10 +261,16 @@ const onIframeLoad = () => {
   padding: 1rem;
 }
 
+.iframe-wrapper {
+  position: relative;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
 .preview-iframe {
   border: none;
   background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  transform-origin: top left;
 }
 </style>
