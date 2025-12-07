@@ -1,12 +1,6 @@
 import type { SectionContent, SlotValue, ListSlotValue, SemanticColorToken } from '../Domain/ValueObject'
 import { $ScopedStyle } from '../Domain/ValueObject'
-import type { StylePack } from '../../StylePack/Domain/ValueObject'
-import { roundedToCss, gapToMultiplier, paddingToMultiplier } from '../../StylePack/Domain/ValueObject'
 import { TemplateRepository } from './TemplateRepository'
-
-type RenderContext = {
-  stylePack: StylePack
-}
 
 /**
  * SemanticColorTokenをCSS変数名に変換
@@ -22,8 +16,11 @@ const tokenToCssVar = (token: SemanticColorToken): string => {
 export const TemplateRenderer = {
   /**
    * セクションをレンダリング
+   *
+   * 色・スタイルはすべてCSS変数を参照するため、
+   * パレット/フォント/スタイルパック変更時もHTMLは変わらない。
    */
-  render(section: SectionContent, context: RenderContext): string {
+  render(section: SectionContent): string {
     const meta = TemplateRepository.getMeta(section.templateId)
     if (!meta) return `<div>Unknown template: ${section.templateId}</div>`
 
@@ -35,8 +32,8 @@ export const TemplateRenderer = {
     // 2. {{slotId}} や {{slotId.property}} を展開
     html = this.expandSlots(html, section.slots)
 
-    // 3. data-* 属性をインラインスタイルに変換
-    html = this.applyDataAttributes(html, context)
+    // 3. data-* 属性をインラインスタイルに変換（CSS変数を参照）
+    html = this.applyDataAttributes(html)
 
     // 4. スコープ用のdivでラップ
     const scopeClass = $ScopedStyle.scopeClass(section.id)
@@ -110,12 +107,15 @@ export const TemplateRenderer = {
   /**
    * data-* 属性をインラインスタイルに変換
    *
-   * 色はCSS変数を参照するため、パレット変更時もHTMLは変わらない。
-   * 例: data-bg="brand.primary" → style="background-color: var(--color-brand-primary)"
+   * 色・スタイルはすべてCSS変数を参照するため、
+   * パレット/スタイルパック変更時もHTMLは変わらない。
+   *
+   * 例:
+   * - data-bg="brand.primary" → style="background-color: var(--color-brand-primary)"
+   * - data-radius → style="border-radius: var(--site-border-radius)"
+   * - data-padding="lg" → style="padding: calc(var(--site-padding-base) * 1.5)"
    */
-  applyDataAttributes(html: string, context: RenderContext): string {
-    const { stylePack } = context
-
+  applyDataAttributes(html: string): string {
     // DOMParser でパース
     const parser = new DOMParser()
     const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html')
@@ -129,7 +129,6 @@ export const TemplateRenderer = {
       // data-bg
       const bg = el.getAttribute('data-bg')
       if (bg) {
-        // "primary" や "accent" は brand.primary / accent.base に変換
         const token = this.resolveColorToken(bg)
         styles.push(`background-color: ${tokenToCssVar(token)}`)
         el.removeAttribute('data-bg')
@@ -151,24 +150,24 @@ export const TemplateRenderer = {
         el.removeAttribute('data-border')
       }
 
-      // data-radius
+      // data-radius → CSS変数を参照
       if (el.hasAttribute('data-radius')) {
-        styles.push(`border-radius: ${roundedToCss[stylePack.rounded]}`)
+        styles.push(`border-radius: var(--site-border-radius)`)
         el.removeAttribute('data-radius')
       }
 
-      // data-padding
+      // data-padding → CSS変数 * multiplier
       const padding = el.getAttribute('data-padding')
       if (padding) {
-        const multiplier = this.getPaddingMultiplier(padding, stylePack)
-        styles.push(`padding: ${multiplier}rem`)
+        const multiplier = this.getPaddingMultiplier(padding)
+        styles.push(`padding: calc(var(--site-padding-base) * ${multiplier})`)
         el.removeAttribute('data-padding')
       }
 
-      // data-gap
+      // data-gap → CSS変数を参照
       const gap = el.getAttribute('data-gap')
       if (gap) {
-        styles.push(`gap: ${gapToMultiplier[stylePack.gap]}rem`)
+        styles.push(`gap: var(--site-gap)`)
         el.removeAttribute('data-gap')
       }
 
@@ -184,7 +183,6 @@ export const TemplateRenderer = {
   },
 
   resolveColorToken(value: string): SemanticColorToken {
-    // "primary" → "brand.primary", "accent" → "accent.base"
     const shortcuts: Record<string, SemanticColorToken> = {
       primary: 'brand.primary',
       accent: 'accent.base',
@@ -193,14 +191,13 @@ export const TemplateRenderer = {
     return (shortcuts[value] || value) as SemanticColorToken
   },
 
-  getPaddingMultiplier(size: string, stylePack: StylePack): number {
-    const base = paddingToMultiplier[stylePack.padding]
+  getPaddingMultiplier(size: string): number {
     const sizeMultipliers: Record<string, number> = {
       sm: 0.5,
       md: 1,
       lg: 1.5,
       xl: 2,
     }
-    return base * (sizeMultipliers[size] || 1)
+    return sizeMultipliers[size] || 1
   },
 }

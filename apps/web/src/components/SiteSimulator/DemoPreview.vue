@@ -3,7 +3,7 @@ import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import type { SectionContent, RenderedPalette, FontConfig } from '../../modules/SiteSimulator/Domain/ValueObject'
 import { $RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
 import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
-import { roundedToCss } from '../../modules/StylePack/Domain/ValueObject'
+import { roundedToCss, gapToMultiplier, paddingToMultiplier } from '../../modules/StylePack/Domain/ValueObject'
 import { TemplateRenderer, TemplateRepository } from '../../modules/SiteSimulator/Infra'
 
 const props = defineProps<{
@@ -17,19 +17,12 @@ const iframeRef = ref<HTMLIFrameElement | null>(null)
 const previewWidth = ref(1280)
 const iframeHeight = ref(800) // default height
 
-const fontFamily = computed(() => props.font.family)
-const borderRadius = computed(() => roundedToCss[props.stylePack.rounded])
-
 // ============================================================
-// HTML構造（色はCSS変数を参照するため、パレット変更時も変わらない）
+// HTML構造（セクション内容のみに依存、パレット/スタイル変更時も変わらない）
 // ============================================================
 const renderedHtml = computed(() => {
   return props.sections
-    .map(section =>
-      TemplateRenderer.render(section, {
-        stylePack: props.stylePack,
-      })
-    )
+    .map(section => TemplateRenderer.render(section))
     .join('\n')
 })
 
@@ -56,9 +49,12 @@ const combinedStyles = computed(() => {
   const cssVars = $RenderedPalette.toCssVariables(props.renderedPalette)
   const baseStyle = baseTemplate.value?.meta.style ?? ''
 
+  // スタイルパックの値をCSS変数として定義
   const dynamicVars = `:root {
-  --font-family: ${fontFamily.value};
-  --site-border-radius: ${borderRadius.value};
+  --font-family: ${props.font.family};
+  --site-border-radius: ${roundedToCss[props.stylePack.rounded]};
+  --site-padding-base: ${paddingToMultiplier[props.stylePack.padding]}rem;
+  --site-gap: ${gapToMultiplier[props.stylePack.gap]}rem;
 }`
 
   return `/* === Dynamic Variables === */
@@ -94,11 +90,11 @@ const generateSrcdoc = (html: string, css: string, fonts: string): string => {
 // 初期srcdocを生成
 srcdoc.value = generateSrcdoc(renderedHtml.value, combinedStyles.value, googleFontLink.value)
 
-// HTML構造またはフォントが変わった場合のみsrcdocを更新（iframe reload）
+// HTML構造が変わった場合のみsrcdocを更新（iframe reload）
 watch(
-  [renderedHtml, googleFontLink],
-  ([newHtml, newFonts]) => {
-    srcdoc.value = generateSrcdoc(newHtml, combinedStyles.value, newFonts)
+  renderedHtml,
+  (newHtml) => {
+    srcdoc.value = generateSrcdoc(newHtml, combinedStyles.value, googleFontLink.value)
   }
 )
 
@@ -113,6 +109,40 @@ watch(
     const styleEl = iframe.contentDocument.querySelector('#dynamic-styles')
     if (styleEl) {
       styleEl.textContent = newCss
+    }
+  },
+  { flush: 'post' }
+)
+
+// フォント変更時はcontentDocument経由でlinkタグを更新（no reload）
+watch(
+  googleFontLink,
+  async (newFontLink) => {
+    await nextTick()
+    const iframe = iframeRef.value
+    if (!iframe?.contentDocument) return
+
+    // 既存のGoogle Fontリンクを探して更新、なければ追加
+    const head = iframe.contentDocument.head
+    let fontLinkEl = head.querySelector('link[href*="fonts.googleapis.com"]')
+
+    if (newFontLink) {
+      // 新しいURLを抽出
+      const hrefMatch = newFontLink.match(/href="([^"]+)"/)
+      const newHref = hrefMatch ? hrefMatch[1] : ''
+
+      if (fontLinkEl) {
+        fontLinkEl.setAttribute('href', newHref)
+      } else {
+        // 新しいlinkタグを作成
+        const newLink = iframe.contentDocument.createElement('link')
+        newLink.rel = 'stylesheet'
+        newLink.href = newHref
+        head.appendChild(newLink)
+      }
+    } else if (fontLinkEl) {
+      // フォントリンクが不要になった場合は削除
+      fontLinkEl.remove()
     }
   },
   { flush: 'post' }

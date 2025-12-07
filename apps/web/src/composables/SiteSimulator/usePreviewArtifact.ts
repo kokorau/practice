@@ -50,13 +50,9 @@ export const usePreviewArtifact = (
     _blueprint: SiteBlueprint,
     palette: RenderedPalette
   ): PreviewArtifact => {
-    // HTMLを生成（色はCSS変数を参照するため、パレット変更時もHTMLは変わらない）
+    // HTMLを生成（色・スタイルはCSS変数を参照するため、変更時もHTMLは変わらない）
     const html = sections.value
-      .map(section =>
-        TemplateRenderer.render(section, {
-          stylePack: currentStylePack.value,
-        })
-      )
+      .map(section => TemplateRenderer.render(section))
       .join('\n')
 
     // CSSを生成
