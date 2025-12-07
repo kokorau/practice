@@ -6,6 +6,7 @@ import type { StyleConfig } from './StyleConfig'
 import { $StyleConfig } from './StyleConfig'
 import type { FilterState } from './FilterState'
 import { $FilterState } from './FilterState'
+import type { SectionContent } from './SectionContent'
 
 /**
  * SiteBlueprint - サイト設定の基礎データ
@@ -32,6 +33,9 @@ export type SiteBlueprint = {
 
   // Style
   readonly style: StyleConfig
+
+  // Sections (ページコンテンツ)
+  readonly sections: readonly SectionContent[]
 }
 
 export type SiteBlueprintParams = {
@@ -40,6 +44,7 @@ export type SiteBlueprintParams = {
   filterState?: FilterState
   fontId?: string
   stylePackId?: string
+  sections?: SectionContent[]
 }
 
 export const $SiteBlueprint = {
@@ -50,6 +55,7 @@ export const $SiteBlueprint = {
       filterState: params.filterState ?? $FilterState.identity(7),
       font: $FontConfig.create(params.fontId ?? 'inter'),
       style: $StyleConfig.create(params.stylePackId ?? 'default'),
+      sections: params.sections ?? [],
     }
   },
 
@@ -77,5 +83,45 @@ export const $SiteBlueprint = {
 
   setStylePackId(blueprint: SiteBlueprint, stylePackId: string): SiteBlueprint {
     return { ...blueprint, style: $StyleConfig.create(stylePackId) }
+  },
+
+  // === Section Updaters ===
+
+  setSections(blueprint: SiteBlueprint, sections: SectionContent[]): SiteBlueprint {
+    return { ...blueprint, sections }
+  },
+
+  addSection(blueprint: SiteBlueprint, section: SectionContent): SiteBlueprint {
+    return { ...blueprint, sections: [...blueprint.sections, section] }
+  },
+
+  updateSection(blueprint: SiteBlueprint, sectionId: string, section: SectionContent): SiteBlueprint {
+    return {
+      ...blueprint,
+      sections: blueprint.sections.map(s => s.id === sectionId ? section : s),
+    }
+  },
+
+  removeSection(blueprint: SiteBlueprint, sectionId: string): SiteBlueprint {
+    return {
+      ...blueprint,
+      sections: blueprint.sections.filter(s => s.id !== sectionId),
+    }
+  },
+
+  moveSection(blueprint: SiteBlueprint, sectionId: string, newIndex: number): SiteBlueprint {
+    const sections = [...blueprint.sections]
+    const currentIndex = sections.findIndex(s => s.id === sectionId)
+    if (currentIndex === -1) return blueprint
+
+    const section = sections[currentIndex]
+    if (!section) return blueprint
+    sections.splice(currentIndex, 1)
+    sections.splice(newIndex, 0, section)
+    return { ...blueprint, sections }
+  },
+
+  getSection(blueprint: SiteBlueprint, sectionId: string): SectionContent | undefined {
+    return blueprint.sections.find(s => s.id === sectionId)
   },
 }

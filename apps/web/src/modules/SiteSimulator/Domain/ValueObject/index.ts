@@ -20,6 +20,25 @@ export { type StyleConfig, $StyleConfig } from './StyleConfig'
 export { type FilterState, $FilterState } from './FilterState'
 export { type SiteBlueprint, type SiteBlueprintParams, $SiteBlueprint } from './SiteBlueprint'
 
+// Section (Meta + Content)
+export {
+  type SlotType,
+  type SlotMeta,
+  type SectionMeta,
+  $SectionMeta,
+} from './SectionMeta'
+export {
+  type TextSlotValue,
+  type RichtextSlotValue,
+  type ImageSlotValue,
+  type ButtonSlotValue,
+  type ListSlotValue,
+  type ListItem,
+  type SlotValue,
+  type SectionContent,
+  $SectionContent,
+} from './SectionContent'
+
 // Layout
 export { type MaterialId, $Material } from './Material'
 export { type LayoutDataAttributes, type LayoutDataAttributeName } from './LayoutDataAttributes'

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { SemanticColorToken, RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
+import type { SemanticColorToken, RenderedPalette, SectionContent } from '../../modules/SiteSimulator/Domain/ValueObject'
 import { $RenderedPalette } from '../../modules/SiteSimulator/Domain/ValueObject'
 import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
 import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
@@ -10,6 +10,7 @@ import PalettePreview from './PalettePreview.vue'
 type PreviewMode = 'demo' | 'palette' | 'css'
 
 defineProps<{
+  sections: readonly SectionContent[]
   getCssColor: (token: SemanticColorToken) => string
   paletteGroups: Array<{
     name: string
@@ -46,7 +47,7 @@ const previewModes = [
 
     <!-- Demo Preview -->
     <div v-if="previewMode === 'demo'" class="preview-content">
-      <DemoPreview :get-css-color="getCssColor" :font="font" :style-pack="stylePack" />
+      <DemoPreview :sections="sections" :get-css-color="getCssColor" :font="font" :style-pack="stylePack" />
     </div>
 
     <!-- Palette Preview -->

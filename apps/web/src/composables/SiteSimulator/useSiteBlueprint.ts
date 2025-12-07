@@ -14,6 +14,7 @@ import {
   type SemanticColorToken,
   type RenderedPalette,
 } from '../../modules/SiteSimulator/Domain/ValueObject'
+import { TemplateRepository } from '../../modules/SiteSimulator/Infra'
 import type { Filter, Preset, Lut } from '../../modules/Filter/Domain'
 import { $Filter, $Preset } from '../../modules/Filter/Domain'
 import type { FilterSetters } from '../Filter/useFilter'
@@ -66,7 +67,11 @@ const POINT_COUNT = 7
 
 export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
   // === Core State ===
-  const blueprint = ref<SiteBlueprint>($SiteBlueprint.default())
+  const blueprint = ref<SiteBlueprint>(
+    $SiteBlueprint.create({
+      sections: TemplateRepository.getDefaultSections(),
+    })
+  )
 
   // === Convenience Accessors ===
   const brandColor = computed(() => blueprint.value.brandColor)

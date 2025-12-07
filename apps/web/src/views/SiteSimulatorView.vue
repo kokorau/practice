@@ -42,6 +42,8 @@ const getCssColor = (token: SemanticColorToken): string => {
   return $RenderedColor.toCssP3(color)
 }
 
+const sections = computed(() => blueprint.value.sections)
+
 const paletteGroups = computed(() => [
   {
     name: 'Surface',
@@ -78,6 +80,7 @@ const paletteGroups = computed(() => [
     />
 
     <PreviewPanel
+      :sections="sections"
       :get-css-color="getCssColor"
       :palette-groups="paletteGroups"
       :rendered-palette="renderedPalette"
