@@ -30,9 +30,9 @@ export const $CorePalette = {
     brandPrimitive: BrandPrimitive,
     accentPrimitive: BrandPrimitive
   ): CorePalette => {
-    // Use the normalized base variant as primary
-    const brandPrimary = brandPrimitive.variants.base
-    const accent = accentPrimitive.variants.base
+    // Use original colors (no normalization) to preserve user's chosen colors
+    const brandPrimary = brandPrimitive.original
+    const accent = accentPrimitive.original
 
     // Extract hue from brand for subtle neutral tinting
     const brandHue = brandPrimary.H

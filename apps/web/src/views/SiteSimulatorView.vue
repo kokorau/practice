@@ -43,10 +43,23 @@ const handleAccentSelect = (accent: Oklch) => {
 
 // Computed palette generation chain
 const brandPrimitive = computed(() => $BrandPrimitive.fromHex(brandColorHex.value))
-const accentPrimitive = computed(() => $BrandPrimitive.fromHex(accentColorHex.value))
+
+// Use OKLCH directly for accent to avoid conversion loss
+const accentOklch = computed(() => {
+  if (selectedAccentOklch.value) {
+    return selectedAccentOklch.value
+  }
+  // Default accent from hex
+  const srgb = $Srgb.fromHex('#F59E0B')
+  return srgb ? $Oklch.fromSrgb(srgb) : $Oklch.create(0.75, 0.15, 70)
+})
 
 const corePalette = computed(() =>
-  $CorePalette.fromBrandPrimitives(brandPrimitive.value, accentPrimitive.value)
+  $CorePalette.create(
+    brandPrimitive.value.original,
+    accentOklch.value,
+    $Oklch.create(0.99, 0, 0) // white base (not used in SemanticPalette now)
+  )
 )
 
 const semanticPalette = computed(() => $SemanticPalette.fromCorePalette(corePalette.value))
@@ -86,7 +99,7 @@ const paletteGroups = computed(() => [
   },
   {
     name: 'Text',
-    tokens: ['text.primary', 'text.secondary', 'text.muted', 'text.onBrandPrimary'] as SemanticColorToken[],
+    tokens: ['text.primary', 'text.secondary', 'text.muted', 'text.onBrandPrimary', 'text.onAccent'] as SemanticColorToken[],
   },
   {
     name: 'Brand',
@@ -228,7 +241,7 @@ const paletteGroups = computed(() => [
               class="px-4 py-2 rounded font-medium"
               :style="{
                 backgroundColor: getCssColor('accent.base'),
-                color: getCssColor('text.onBrandPrimary'),
+                color: getCssColor('text.onAccent'),
               }"
             >
               Accent Button

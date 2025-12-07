@@ -1,3 +1,4 @@
+import type { DisplayP3 } from './DisplayP3'
 import type { Oklab } from './Oklab'
 import { $Oklab } from './Oklab'
 import type { Srgb } from './Srgb'
@@ -101,5 +102,72 @@ export const $Oklch = {
     }
 
     return { L, C: low, H }
+  },
+
+  // ============================================
+  // Display P3 conversions (wider gamut)
+  // ============================================
+
+  /**
+   * Create Oklch from Display P3 values (linear, 0-1)
+   */
+  fromDisplayP3: (p3: DisplayP3): Oklch => {
+    return $Oklch.fromOklab($Oklab.fromDisplayP3(p3))
+  },
+
+  /**
+   * Convert Oklch to Display P3 values (linear, 0-1)
+   * Returns values that may be outside 0-1 for out-of-gamut colors.
+   */
+  toDisplayP3: (oklch: Oklch): DisplayP3 => {
+    return $Oklab.toDisplayP3($Oklch.toOklab(oklch))
+  },
+
+  /**
+   * Convert Oklch to Display P3 with gamut clipping
+   */
+  toDisplayP3Clipped: (oklch: Oklch): DisplayP3 => {
+    return $Oklab.toDisplayP3Clipped($Oklch.toOklab(oklch))
+  },
+
+  /**
+   * Check if Oklch color is within Display P3 gamut
+   */
+  isInP3Gamut: (oklch: Oklch): boolean => {
+    const p3 = $Oklch.toDisplayP3(oklch)
+    return p3.r >= -0.0001 && p3.r <= 1.0001 &&
+           p3.g >= -0.0001 && p3.g <= 1.0001 &&
+           p3.b >= -0.0001 && p3.b <= 1.0001
+  },
+
+  /**
+   * Clamp chroma to fit within Display P3 gamut while preserving L and H
+   */
+  clampToP3Gamut: (oklch: Oklch): Oklch => {
+    if ($Oklch.isInP3Gamut(oklch)) return oklch
+
+    // Binary search for maximum chroma within P3 gamut
+    let low = 0
+    let high = oklch.C
+    const { L, H } = oklch
+
+    for (let i = 0; i < 20; i++) {
+      const mid = (low + high) / 2
+      if ($Oklch.isInP3Gamut({ L, C: mid, H })) {
+        low = mid
+      } else {
+        high = mid
+      }
+    }
+
+    return { L, C: low, H }
+  },
+
+  /**
+   * Convert Oklch to CSS color(display-p3 r g b) string
+   */
+  toCssP3: (oklch: Oklch): string => {
+    const p3 = $Oklch.toDisplayP3Clipped(oklch)
+    return `color(display-p3 ${p3.r.toFixed(4)} ${p3.g.toFixed(4)} ${p3.b.toFixed(4)})`
   },
 }

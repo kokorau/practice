@@ -34,6 +34,17 @@ export type AccentCandidateOptions = {
 }
 
 /**
+ * Harmony pattern types based on color wheel relationships.
+ */
+export type HarmonyType =
+  | 'analogous'           // 0-30°: Similar hues, unified feel
+  | 'complementary'       // 150-180°: Opposite hues, high contrast
+  | 'triadic'             // 110-130°: Three-way balance
+  | 'split-complementary' // 130-150°: Contrast with harmony
+  | 'neutral'             // Neutral colors (low chroma)
+  | 'other'               // 30-110°: Moderate contrast
+
+/**
  * Scoring result for accent candidates.
  */
 export type AccentScore = {
@@ -42,6 +53,8 @@ export type AccentScore = {
   readonly score: number
   /** Whether this candidate is recommended */
   readonly recommended: boolean
+  /** Detected harmony pattern with brand color */
+  readonly harmonyType: HarmonyType
 }
 
 // Hue names for display
@@ -78,6 +91,41 @@ const getLightnessName = (l: number): string => {
   if (l < 0.6) return 'Mid'
   return 'Light'
 }
+
+/**
+ * Detect harmony type based on hue difference.
+ */
+const detectHarmonyType = (accent: Oklch, brand: Oklch): HarmonyType => {
+  // Neutral accent
+  if (accent.C < 0.02) return 'neutral'
+
+  // Calculate normalized hue difference (0-180)
+  const hueDiff = Math.abs(accent.H - brand.H)
+  const normalizedHueDiff = Math.min(hueDiff, 360 - hueDiff)
+
+  if (normalizedHueDiff <= 30) return 'analogous'
+  if (normalizedHueDiff >= 150) return 'complementary'
+  if (normalizedHueDiff >= 110 && normalizedHueDiff < 130) return 'triadic'
+  if (normalizedHueDiff >= 130 && normalizedHueDiff < 150) return 'split-complementary'
+  return 'other'
+}
+
+/**
+ * Brand color characteristics for scoring adjustments.
+ */
+type BrandCharacteristics = {
+  readonly isNeutral: boolean      // C < 0.03
+  readonly isDark: boolean         // L < 0.4
+  readonly isLight: boolean        // L > 0.7
+  readonly isHighChroma: boolean   // C > 0.2
+}
+
+const analyzeBrand = (brand: Oklch): BrandCharacteristics => ({
+  isNeutral: brand.C < 0.03,
+  isDark: brand.L < 0.4,
+  isLight: brand.L > 0.7,
+  isHighChroma: brand.C > 0.2,
+})
 
 export const $AccentCandidate = {
   /**
@@ -153,9 +201,17 @@ export const $AccentCandidate = {
     brandColor: Oklch,
     topCount = 10
   ): AccentScore[] => {
+    const brandChars = analyzeBrand(brandColor)
+
     const scores: AccentScore[] = candidates.map((candidate) => {
-      const score = $AccentCandidate.calculateCompatibility(candidate.oklch, brandColor)
-      return { candidate, score, recommended: false }
+      const harmonyType = detectHarmonyType(candidate.oklch, brandColor)
+      const score = $AccentCandidate.calculateCompatibility(
+        candidate.oklch,
+        brandColor,
+        brandChars,
+        harmonyType
+      )
+      return { candidate, score, recommended: false, harmonyType }
     })
 
     // Sort by score descending
@@ -172,51 +228,83 @@ export const $AccentCandidate = {
    * Calculate compatibility score between accent and brand color.
    * Higher score = better complement.
    */
-  calculateCompatibility: (accent: Oklch, brand: Oklch): number => {
-    // Factors to consider:
-    // 1. Hue contrast (complementary/triadic hues score higher)
-    // 2. Lightness contrast (different lightness is better)
-    // 3. Chroma balance (similar or complementary saturation)
-
-    // Neutral colors get special treatment
-    if (accent.C < 0.02) {
-      // Neutrals are always somewhat compatible
-      // Score based on lightness contrast
+  calculateCompatibility: (
+    accent: Oklch,
+    brand: Oklch,
+    brandChars: BrandCharacteristics,
+    harmonyType: HarmonyType
+  ): number => {
+    // === Handle neutral accent ===
+    if (harmonyType === 'neutral') {
       const lContrast = Math.abs(accent.L - brand.L)
-      return 0.3 + lContrast * 0.5
+      let baseScore = 0.3 + lContrast * 0.5
+
+      // Boost neutral accents when brand is also neutral
+      if (brandChars.isNeutral) {
+        baseScore += 0.3
+      }
+
+      return Math.min(baseScore, 1)
     }
 
-    // Hue difference (0-180 degrees)
-    const hueDiff = Math.abs(accent.H - brand.H)
-    const normalizedHueDiff = Math.min(hueDiff, 360 - hueDiff)
-
-    // Complementary hues (around 180°) score highest
-    // Analogous hues (0-30°) score lower (too similar)
-    // Triadic (around 120°) also good
-    let hueScore: number
-    if (normalizedHueDiff < 30) {
-      // Too similar - low score
-      hueScore = 0.2 + normalizedHueDiff / 30 * 0.3
-    } else if (normalizedHueDiff >= 150) {
-      // Complementary - high score
-      hueScore = 0.8 + (normalizedHueDiff - 150) / 30 * 0.2
-    } else if (normalizedHueDiff >= 90 && normalizedHueDiff < 150) {
-      // Triadic range - good score
-      hueScore = 0.6 + (normalizedHueDiff - 90) / 60 * 0.2
-    } else {
-      // 30-90 range - moderate score
-      hueScore = 0.5 + (normalizedHueDiff - 30) / 60 * 0.1
+    // === Handle neutral brand (any chromatic accent is viable) ===
+    if (brandChars.isNeutral) {
+      // When brand is neutral, all chromatic colors work
+      // Prefer mid-range lightness for balance
+      const lBalance = 1 - Math.abs(accent.L - 0.55) * 0.5
+      // Prefer moderate chroma
+      const cBalance = accent.C > 0.1 && accent.C < 0.2 ? 1 : 0.8
+      return 0.6 + lBalance * 0.2 + cBalance * 0.2
     }
 
-    // Lightness contrast (different is better for visibility)
+    // === Harmony-based scoring for chromatic brand ===
+    let harmonyScore: number
+    switch (harmonyType) {
+      case 'analogous':
+        // Similar hues: good for unified feel
+        harmonyScore = 0.7
+        break
+      case 'complementary':
+        // Opposite hues: maximum contrast
+        harmonyScore = 0.9
+        break
+      case 'triadic':
+        // 120° apart: balanced and vibrant
+        harmonyScore = 0.85
+        break
+      case 'split-complementary':
+        // Near-complementary: contrast with nuance
+        harmonyScore = 0.85
+        break
+      default:
+        // Other angles: moderate compatibility
+        harmonyScore = 0.5
+    }
+
+    // === Lightness contrast scoring ===
     const lContrast = Math.abs(accent.L - brand.L)
-    const lScore = 0.3 + lContrast * 0.7
+    let lScore = 0.3 + lContrast * 0.7
 
-    // Chroma similarity (not too different)
+    // Adjust based on brand lightness
+    if (brandChars.isDark && accent.L > 0.6) {
+      // Dark brand + light accent = good contrast
+      lScore += 0.15
+    } else if (brandChars.isLight && accent.L < 0.5) {
+      // Light brand + dark accent = good contrast
+      lScore += 0.15
+    }
+
+    // === Chroma balance ===
     const cDiff = Math.abs(accent.C - brand.C)
-    const cScore = 1 - Math.min(cDiff / 0.2, 1) * 0.3
+    let cScore = 1 - Math.min(cDiff / 0.2, 1) * 0.3
 
-    // Weighted combination
-    return hueScore * 0.5 + lScore * 0.3 + cScore * 0.2
+    // High chroma brand benefits from moderate accent chroma
+    if (brandChars.isHighChroma && accent.C < 0.15) {
+      cScore += 0.1
+    }
+
+    // === Weighted combination ===
+    const finalScore = harmonyScore * 0.5 + lScore * 0.3 + cScore * 0.2
+    return Math.min(finalScore, 1)
   },
 }

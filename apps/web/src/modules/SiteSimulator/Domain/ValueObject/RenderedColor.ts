@@ -39,15 +39,15 @@ export const $RenderedColor = {
   }),
 
   /**
-   * Convert OKLCH to RenderedColor via sRGB -> Display-P3
-   * In future phases, this will apply light source and filter
+   * Convert OKLCH to RenderedColor directly to Display-P3 (no sRGB intermediate)
+   * This preserves wider gamut colors that would be clipped in sRGB.
    */
   fromOklch: (source: Oklch): RenderedColor => {
-    const srgb = $Oklch.toSrgb(source)
-    const p3 = $DisplayP3.fromSrgb(srgb)
+    // Direct OKLCH -> Display-P3 conversion (no sRGB intermediate)
+    const p3 = $Oklch.toDisplayP3Clipped(source)
 
-    // Check if any values were clipped during sRGB conversion
-    const wasClipped = !$Oklch.isInGamut(source)
+    // Check if any values were clipped during P3 conversion
+    const wasClipped = !$Oklch.isInP3Gamut(source)
 
     return { source, p3, wasClipped }
   },

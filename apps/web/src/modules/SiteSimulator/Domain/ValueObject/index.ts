@@ -4,6 +4,7 @@ export {
   type AccentCandidate,
   type AccentCandidateOptions,
   type AccentScore,
+  type HarmonyType,
   $AccentCandidate,
 } from './AccentCandidate'
 export { type CorePalette, $CorePalette } from './CorePalette'
