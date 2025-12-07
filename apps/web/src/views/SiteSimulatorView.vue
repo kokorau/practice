@@ -40,7 +40,17 @@ const accentOklch = computed(() => {
 // ============================================================
 
 const PRESETS = getPresets()
-const { lut, currentPresetId, applyPreset, reset: resetFilter } = useFilter(7)
+const {
+  filter,
+  lut,
+  intensity,
+  setIntensity,
+  currentPresetId,
+  applyPreset,
+  setters,
+  setMasterPoint,
+  reset: resetFilter,
+} = useFilter(7)
 
 // ============================================================
 // Palette Generation
@@ -112,11 +122,16 @@ const paletteGroups = computed(() => [
       :brand-color="brandColorOklch"
       :accent-color="accentOklch"
       :selected-accent="selectedAccentOklch"
+      :filter="filter"
       :presets="PRESETS"
       :current-preset-id="currentPresetId"
+      :setters="setters"
+      :intensity="intensity"
       @update:brand-color="brandColorOklch = $event"
       @update:selected-accent="selectedAccentOklch = $event"
       @apply-preset="applyPreset"
+      @update:master-point="setMasterPoint"
+      @update:intensity="setIntensity"
       @reset-filter="resetFilter"
     />
 
