@@ -1,6 +1,5 @@
-import { ref, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
+import { ref, watch, onUnmounted, type Ref, type ComputedRef } from 'vue'
 import type {
-  SiteBlueprint,
   RenderedPalette,
   FontConfig,
   SectionContent,
@@ -9,29 +8,34 @@ import type {
 } from '../../modules/SiteSimulator/Domain'
 import { $RenderedPalette, $PreviewArtifact } from '../../modules/SiteSimulator/Domain'
 import {
-  blueprintRepository,
-  outputArtifactRepository,
   TemplateRenderer,
   TemplateRepository,
+  outputArtifactRepository,
+  blueprintRepository,
 } from '../../modules/SiteSimulator/Infra'
+import { createUpdateBlueprintUseCase, createRenderArtifactUseCase } from '../../modules/SiteSimulator/Application'
 import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
-import { roundedToCss } from '../../modules/StylePack/Domain/ValueObject'
+import { roundedToCss, gapToMultiplier, paddingToMultiplier } from '../../modules/StylePack/Domain/ValueObject'
+
+// UseCase instances (singleton)
+const blueprintUseCase = createUpdateBlueprintUseCase(blueprintRepository)
+const renderArtifactUseCase = createRenderArtifactUseCase(outputArtifactRepository)
 
 export type UsePreviewArtifactReturn = {
   /** 現在のPreviewArtifact（リアクティブ） */
   artifact: Ref<PreviewArtifact | null>
   /** 直近の変更の種類 */
   lastChangeType: Ref<ArtifactChangeType | null>
-  /** Artifact生成用のヘルパー（直接呼び出しも可能） */
-  generateArtifact: (blueprint: SiteBlueprint, renderedPalette: RenderedPalette) => PreviewArtifact
+  /** UseCase（外部からsubscribe可能） */
+  useCase: typeof renderArtifactUseCase
 }
 
 /**
  * usePreviewArtifact - Blueprint変更を監視してPreviewArtifactを生成
  *
- * BlueprintRepositoryをsubscribeし、変更時に：
+ * 変更時に：
  * 1. PreviewArtifactを生成
- * 2. OutputArtifactRepositoryに保存
+ * 2. UseCase経由でOutputArtifactRepositoryに保存
  * 3. 変更の種類（html/css/both）を検出
  */
 export const usePreviewArtifact = (
@@ -46,10 +50,7 @@ export const usePreviewArtifact = (
   /**
    * PreviewArtifactを生成
    */
-  const generateArtifact = (
-    _blueprint: SiteBlueprint,
-    palette: RenderedPalette
-  ): PreviewArtifact => {
+  const generateArtifact = (palette: RenderedPalette): PreviewArtifact => {
     // HTMLを生成（色・スタイルはCSS変数を参照するため、変更時もHTMLは変わらない）
     const html = sections.value
       .map(section => TemplateRenderer.render(section))
@@ -62,12 +63,11 @@ export const usePreviewArtifact = (
       sections.value.map(s => ({ id: s.id, templateId: s.templateId }))
     )
 
-    const fontFamily = currentFont.value.family
-    const borderRadius = roundedToCss[currentStylePack.value.rounded]
-
     const dynamicVars = `:root {
-  --font-family: ${fontFamily};
-  --site-border-radius: ${borderRadius};
+  --font-family: ${currentFont.value.family};
+  --site-border-radius: ${roundedToCss[currentStylePack.value.rounded]};
+  --site-padding-base: ${paddingToMultiplier[currentStylePack.value.padding]}rem;
+  --site-gap: ${gapToMultiplier[currentStylePack.value.gap]}rem;
 }`
 
     const css = `/* === Dynamic Variables === */
@@ -92,19 +92,15 @@ ${templateStyles}`
   }
 
   /**
-   * OutputArtifactRepositoryからの変更通知を受け取る
+   * UseCase経由で変更通知を受け取る（onMountedより前にsubscribeが必要）
    */
-  let unsubscribeArtifact: (() => void) | null = null
-
-  onMounted(() => {
-    unsubscribeArtifact = outputArtifactRepository.subscribe((newArtifact, changeType) => {
-      artifact.value = newArtifact
-      lastChangeType.value = changeType
-    })
+  const unsubscribe = renderArtifactUseCase.subscribe((newArtifact, changeType) => {
+    artifact.value = newArtifact
+    lastChangeType.value = changeType
   })
 
   onUnmounted(() => {
-    unsubscribeArtifact?.()
+    unsubscribe()
   })
 
   /**
@@ -113,11 +109,11 @@ ${templateStyles}`
   watch(
     [renderedPalette, sections, currentFont, currentStylePack],
     () => {
-      const blueprint = blueprintRepository.get()
+      const blueprint = blueprintUseCase.get()
       if (!blueprint) return
 
-      const newArtifact = generateArtifact(blueprint, renderedPalette.value)
-      outputArtifactRepository.save(newArtifact)
+      const newArtifact = generateArtifact(renderedPalette.value)
+      renderArtifactUseCase.save(newArtifact)
     },
     { immediate: true, deep: true }
   )
@@ -125,6 +121,6 @@ ${templateStyles}`
   return {
     artifact,
     lastChangeType,
-    generateArtifact,
+    useCase: renderArtifactUseCase,
   }
 }

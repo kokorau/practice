@@ -1,22 +1,20 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { SemanticColorToken, RenderedPalette, SectionContent, FontConfig } from '../../modules/SiteSimulator/Domain/ValueObject'
+import type { SemanticColorToken, RenderedPalette, PreviewArtifact, ArtifactChangeType } from '../../modules/SiteSimulator/Domain'
 import { $RenderedPalette, $RenderedColor } from '../../modules/SiteSimulator/Domain/ValueObject'
-import type { StylePack } from '../../modules/StylePack/Domain/ValueObject'
 import DemoPreview from './DemoPreview.vue'
 import PalettePreview from './PalettePreview.vue'
 
 type PreviewMode = 'demo' | 'palette' | 'css'
 
 const props = defineProps<{
-  sections: readonly SectionContent[]
+  artifact: PreviewArtifact | null
+  lastChangeType: ArtifactChangeType | null
   paletteGroups: Array<{
     name: string
     tokens: SemanticColorToken[]
   }>
   renderedPalette: RenderedPalette
-  font: FontConfig
-  stylePack: StylePack
 }>()
 
 // PalettePreviewで使用するヘルパー（実際の色値を返す）
@@ -52,7 +50,7 @@ const previewModes = [
 
     <!-- Demo Preview -->
     <div v-if="previewMode === 'demo'" class="preview-content demo-mode">
-      <DemoPreview :sections="sections" :rendered-palette="renderedPalette" :font="font" :style-pack="stylePack" />
+      <DemoPreview :artifact="artifact" :last-change-type="lastChangeType" />
     </div>
 
     <!-- Palette Preview -->

@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import type { SemanticColorToken } from '../modules/SiteSimulator/Domain/ValueObject'
 import { useSiteBlueprint } from '../composables/SiteSimulator/useSiteBlueprint'
+import { usePreviewArtifact } from '../composables/SiteSimulator/usePreviewArtifact'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { GoogleFontPresets } from '../assets/constants/GoogleFontPresets'
 import { StylePackPresets } from '../modules/StylePack/Domain/ValueObject'
@@ -25,17 +26,22 @@ const {
 } = useSiteBlueprint()
 
 // ============================================================
+// Preview Artifact (Blueprint → rendered output)
+// ============================================================
+
+const sections = computed(() => blueprint.value.page.sections)
+
+const {
+  artifact: previewArtifact,
+  lastChangeType,
+} = usePreviewArtifact(renderedPalette, currentFont, currentStylePack, sections)
+
+// ============================================================
 // UI State (not part of SiteBlueprint)
 // ============================================================
 
 const currentConfigPage = ref<ConfigPage>('list')
 const PRESETS = getPresets()
-
-// ============================================================
-// Helpers
-// ============================================================
-
-const sections = computed(() => blueprint.value.page.sections)
 
 const paletteGroups = computed(() => [
   {
@@ -73,11 +79,10 @@ const paletteGroups = computed(() => [
     />
 
     <PreviewPanel
-      :sections="sections"
+      :artifact="previewArtifact"
+      :last-change-type="lastChangeType"
       :palette-groups="paletteGroups"
       :rendered-palette="renderedPalette"
-      :font="currentFont"
-      :style-pack="currentStylePack"
     />
   </div>
 </template>
