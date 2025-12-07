@@ -1,2 +1,2 @@
 export * from './ValueObject'
-export type { BlueprintRepository } from './BlueprintRepository'
+export type { BlueprintRepository, BlueprintListener } from './BlueprintRepository'

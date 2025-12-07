@@ -1,4 +1,4 @@
-import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import { ref, computed, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
 import type { Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
 import { $Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
 import {
@@ -15,12 +15,16 @@ import {
   type SemanticColorToken,
   type RenderedPalette,
 } from '../../modules/SiteSimulator/Domain/ValueObject'
-import { TemplateRepository } from '../../modules/SiteSimulator/Infra'
+import { TemplateRepository, blueprintRepository } from '../../modules/SiteSimulator/Infra'
+import { createUpdateBlueprintUseCase } from '../../modules/SiteSimulator/Application'
 import type { Filter, Preset, Lut } from '../../modules/Filter/Domain'
 import { $Filter, $Preset } from '../../modules/Filter/Domain'
 import type { FilterSetters } from '../Filter/useFilter'
 import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
 import type { StylePackPreset, StylePack } from '../../modules/StylePack/Domain/ValueObject'
+
+// UseCase instance (singleton)
+const useCase = createUpdateBlueprintUseCase(blueprintRepository)
 
 /**
  * useSiteBlueprint - SiteBlueprint をベースにした状態管理
@@ -66,14 +70,14 @@ export type UseSiteBlueprintReturn = {
 
 const POINT_COUNT = 7
 
-export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
-  // === Core State ===
-  // 初期化時にTemplateRepositoryからデザインデータを取得
+/**
+ * Create default blueprint with template data
+ */
+const createDefaultBlueprint = (): SiteBlueprint => {
   const defaultSections = TemplateRepository.getDefaultSections()
   const baseTemplate = TemplateRepository.getDefaultBase()?.meta
   const utilityStyles = TemplateRepository.getUtilityStyle()
 
-  // 使用中のセクションテンプレートを収集
   const sectionTemplates = new Map<string, ReturnType<typeof TemplateRepository.getMeta>>()
   for (const section of defaultSections) {
     const meta = TemplateRepository.getMeta(section.templateId)
@@ -82,14 +86,47 @@ export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
     }
   }
 
-  const blueprint = ref<SiteBlueprint>(
-    $SiteBlueprint.create({
-      sections: defaultSections,
-      baseTemplate,
-      sectionTemplates: sectionTemplates as Map<string, NonNullable<ReturnType<typeof TemplateRepository.getMeta>>>,
-      utilityStyles,
+  return $SiteBlueprint.create({
+    sections: defaultSections,
+    baseTemplate,
+    sectionTemplates: sectionTemplates as Map<string, NonNullable<ReturnType<typeof TemplateRepository.getMeta>>>,
+    utilityStyles,
+  })
+}
+
+export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
+  // === Core State ===
+  // Repository から取得、なければデフォルト作成
+  const initialBlueprint = useCase.get() ?? createDefaultBlueprint()
+  const blueprint = ref<SiteBlueprint>(initialBlueprint)
+
+  // 初期状態を Repository に保存
+  if (!useCase.get()) {
+    useCase.update(initialBlueprint)
+  }
+
+  // === Subscription ===
+  // 外部からの変更（他の composable、共同編集等）を検知して ref を更新
+  let unsubscribe: (() => void) | null = null
+
+  onMounted(() => {
+    unsubscribe = blueprintRepository.subscribe((updated) => {
+      // 外部からの更新を ref に反映
+      blueprint.value = updated
     })
-  )
+  })
+
+  onUnmounted(() => {
+    unsubscribe?.()
+  })
+
+  /**
+   * Blueprint を更新し、Repository に永続化
+   * Repository が listener に通知するため、他の subscriber も更新される
+   */
+  const updateBlueprint = (newBlueprint: SiteBlueprint) => {
+    useCase.update(newBlueprint)
+  }
 
   // === Convenience Accessors ===
   const brandColor = computed(() => blueprint.value.palette.brandColor)
@@ -143,18 +180,18 @@ export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
     return $RenderedPalette.create(colors, 'default', currentPresetId.value ?? 'none')
   })
 
-  // === Updaters ===
+  // === Updaters (all go through updateBlueprint → UseCase → Repository) ===
   const setBrandColor = (color: Oklch) => {
-    blueprint.value = $SiteBlueprint.setBrandColor(blueprint.value, color)
+    updateBlueprint($SiteBlueprint.setBrandColor(blueprint.value, color))
   }
 
   const setAccentColor = (color: Oklch | null) => {
-    blueprint.value = $SiteBlueprint.setAccentColor(blueprint.value, color)
+    updateBlueprint($SiteBlueprint.setAccentColor(blueprint.value, color))
   }
 
   const setIntensity = (value: number) => {
     const newFilterState = $FilterState.setIntensity(filterState.value, value)
-    blueprint.value = $SiteBlueprint.setFilterState(blueprint.value, newFilterState)
+    updateBlueprint($SiteBlueprint.setFilterState(blueprint.value, newFilterState))
   }
 
   const applyPreset = (preset: Preset) => {
@@ -165,27 +202,24 @@ export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
       newFilter,
       preset.lut3d ?? null
     )
-    blueprint.value = $SiteBlueprint.setFilterState(blueprint.value, newFilterState)
+    updateBlueprint($SiteBlueprint.setFilterState(blueprint.value, newFilterState))
   }
 
   const setMasterPoint = (index: number, value: number) => {
     const newFilterState = $FilterState.setMasterPoint(filterState.value, index, value)
-    blueprint.value = $SiteBlueprint.setFilterState(blueprint.value, newFilterState)
+    updateBlueprint($SiteBlueprint.setFilterState(blueprint.value, newFilterState))
   }
 
   const resetFilter = () => {
-    blueprint.value = $SiteBlueprint.setFilterState(
-      blueprint.value,
-      $FilterState.identity(POINT_COUNT)
-    )
+    updateBlueprint($SiteBlueprint.setFilterState(blueprint.value, $FilterState.identity(POINT_COUNT)))
   }
 
   const setFont = (fontPreset: FontPreset) => {
-    blueprint.value = $SiteBlueprint.setFont(blueprint.value, fontPreset)
+    updateBlueprint($SiteBlueprint.setFont(blueprint.value, fontPreset))
   }
 
   const setStyle = (stylePreset: StylePackPreset) => {
-    blueprint.value = $SiteBlueprint.setStyle(blueprint.value, stylePreset)
+    updateBlueprint($SiteBlueprint.setStyle(blueprint.value, stylePreset))
   }
 
   // === FilterSetters (for ConfigPanel compatibility) ===
@@ -195,7 +229,7 @@ export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
   ) => (value: Filter['adjustment'][K]) => {
     const newFilter = filterFn(filter.value, value)
     const newFilterState = $FilterState.setFilter(filterState.value, newFilter)
-    blueprint.value = $SiteBlueprint.setFilterState(blueprint.value, newFilterState)
+    updateBlueprint($SiteBlueprint.setFilterState(blueprint.value, newFilterState))
   }
 
   const setters: FilterSetters = {
@@ -230,7 +264,7 @@ export const useSiteBlueprint = (): UseSiteBlueprintReturn => {
     selectiveColorEnabled: (value: boolean) => {
       const newFilter = $Filter.setSelectiveColorEnabled(filter.value, value)
       const newFilterState = $FilterState.setFilter(filterState.value, newFilter)
-      blueprint.value = $SiteBlueprint.setFilterState(blueprint.value, newFilterState)
+      updateBlueprint($SiteBlueprint.setFilterState(blueprint.value, newFilterState))
     },
     selectiveHue: createFilterSetter('selectiveHue', $Filter.setSelectiveHue),
     selectiveRange: createFilterSetter('selectiveRange', $Filter.setSelectiveRange),
