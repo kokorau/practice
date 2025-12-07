@@ -63,70 +63,60 @@ const handleSelect = (candidate: AccentCandidate) => {
   emit('select', candidate.oklch)
 }
 
-// Organize chromatic candidates into a grid (hue x lightness)
-const chromaticGrid = computed(() => {
+// Organize chromatic candidates into a flat array (row by row: lightness x hue)
+const chromaticFlat = computed(() => {
   const options = $AccentCandidate.defaultOptions()
-  const grid: AccentScore[][] = []
+  const flat: AccentScore[] = []
 
-  // Build grid: rows = lightness steps, cols = hues
+  // Build flat array: rows = lightness steps, cols = hues
   for (let li = 0; li < options.chromatic.lSteps; li++) {
-    const row: AccentScore[] = []
     for (let hi = 0; hi < options.chromatic.hueCount; hi++) {
       const id = `chromatic-${hi}-${li}`
       const score = scoredCandidates.value.find((s) => s.candidate.id === id)
-      if (score) row.push(score)
+      if (score) flat.push(score)
     }
-    grid.push(row)
   }
 
-  return grid
+  return flat
 })
 </script>
 
 <template>
   <div class="accent-selector">
-    <!-- Chromatic Colors Grid -->
-    <div class="mb-4">
-      <h4 class="text-sm text-gray-400 mb-2">Chromatic ({{ chromaticScores.length }} colors)</h4>
-      <div class="chromatic-grid">
-        <div
-          v-for="(row, rowIndex) in chromaticGrid"
-          :key="rowIndex"
-          class="flex gap-1 mb-1"
-        >
-          <button
-            v-for="score in row"
-            :key="score.candidate.id"
-            class="color-chip"
-            :class="{
-              'ring-2 ring-white': isSelected(score.candidate),
-              'opacity-30': !score.recommended,
-            }"
-            :style="{ backgroundColor: toCssColor(score.candidate.oklch) }"
-            :title="`${score.candidate.name} (score: ${score.score.toFixed(2)})`"
-            @click="handleSelect(score.candidate)"
-          />
-        </div>
-      </div>
-    </div>
+    <div class="color-grid">
+      <!-- Chromatic Title -->
+      <h4 class="grid-title">Chromatic ({{ chromaticScores.length }} colors)</h4>
 
-    <!-- Neutral Colors Row -->
-    <div>
-      <h4 class="text-sm text-gray-400 mb-2">Neutral ({{ neutralScores.length }} colors)</h4>
-      <div class="flex gap-1">
-        <button
-          v-for="score in neutralScores"
-          :key="score.candidate.id"
-          class="color-chip"
-          :class="{
-            'ring-2 ring-white': isSelected(score.candidate),
-            'opacity-30': !score.recommended,
-          }"
-          :style="{ backgroundColor: toCssColor(score.candidate.oklch) }"
-          :title="`${score.candidate.name} (score: ${score.score.toFixed(2)})`"
-          @click="handleSelect(score.candidate)"
-        />
-      </div>
+      <!-- Chromatic Colors -->
+      <button
+        v-for="score in chromaticFlat"
+        :key="score.candidate.id"
+        class="color-chip"
+        :class="{
+          'ring-2 ring-white': isSelected(score.candidate),
+          'opacity-30': !score.recommended,
+        }"
+        :style="{ backgroundColor: toCssColor(score.candidate.oklch) }"
+        :title="`${score.candidate.name} (score: ${score.score.toFixed(2)})`"
+        @click="handleSelect(score.candidate)"
+      />
+
+      <!-- Neutral Title -->
+      <h4 class="grid-title">Neutral ({{ neutralScores.length }} colors)</h4>
+
+      <!-- Neutral Colors -->
+      <button
+        v-for="score in neutralScores"
+        :key="score.candidate.id"
+        class="color-chip"
+        :class="{
+          'ring-2 ring-white': isSelected(score.candidate),
+          'opacity-30': !score.recommended,
+        }"
+        :style="{ backgroundColor: toCssColor(score.candidate.oklch) }"
+        :title="`${score.candidate.name} (score: ${score.score.toFixed(2)})`"
+        @click="handleSelect(score.candidate)"
+      />
     </div>
 
     <!-- Legend -->
@@ -140,22 +130,47 @@ const chromaticGrid = computed(() => {
 </template>
 
 <style scoped>
+.accent-selector {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.grid-title {
+  grid-column: 1 / -1;
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.grid-title:first-child {
+  padding-top: 0;
+}
+
 .color-chip {
-  width: 28px;
-  height: 28px;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition: opacity 0.15s, transform 0.1s;
+  padding: 0;
 }
 
 .color-chip:hover {
   transform: scale(1.15);
   z-index: 1;
-}
-
-.chromatic-grid {
-  display: flex;
-  flex-direction: column;
 }
 </style>
