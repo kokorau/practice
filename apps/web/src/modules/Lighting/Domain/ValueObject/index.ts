@@ -33,3 +33,5 @@ export type {
   Scene,
 } from './Scene'
 export { $RenderableObject, $Scene } from './Scene'
+export type { AABB } from './AABB'
+export { $AABB } from './AABB'

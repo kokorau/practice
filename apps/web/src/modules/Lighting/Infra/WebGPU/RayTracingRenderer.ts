@@ -287,9 +287,10 @@ export class RayTracingRenderer {
   /**
    * Render a Scene (convenience method)
    * Compiles the scene internally before rendering.
+   * Applies frustum culling to remove objects outside the camera view.
    */
   render(scene: Scene, camera: OrthographicCamera): void {
-    const renderScene = compileScene(scene)
+    const renderScene = compileScene(scene, camera)
     this.renderCompiled(renderScene, camera)
   }
 
