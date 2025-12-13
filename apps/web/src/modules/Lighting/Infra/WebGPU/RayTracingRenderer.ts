@@ -9,7 +9,7 @@ import type {
   DirectionalLight,
 } from '../../Domain/ValueObject'
 import { $Vector3 } from '../../../Vector/Domain/ValueObject'
-import SHADER_CODE from './shaders/raytracing.wgsl?raw'
+import { SHADER_CODE } from './shaders'
 import type { ScenePlane, SceneBox, SceneCapsule, SceneSphere, Scene } from './types'
 import {
   buildSceneUniform,
