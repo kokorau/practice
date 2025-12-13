@@ -3,14 +3,9 @@
  * GPU でレイトレーシングを行う (WebGPU版)
  */
 
-import type {
-  OrthographicCamera,
-  AmbientLight,
-  DirectionalLight,
-} from '../../Domain/ValueObject'
+import type { OrthographicCamera, Scene } from '../../Domain/ValueObject'
 import { $Vector3 } from '../../../Vector/Domain/ValueObject'
 import { SHADER_CODE } from './shaders'
-import type { ScenePlane, SceneBox, SceneCapsule, SceneSphere, Scene } from './types'
 import {
   buildSceneUniform,
   buildPlaneBuffer,
@@ -24,10 +19,14 @@ import {
   CAPSULE_STRIDE,
   SPHERE_STRIDE,
 } from './buffers'
+import type { RenderScene } from './RenderScene'
+import { compileScene } from '../../Application/CompileScene'
 
-export type { ScenePlane, SceneBox, SceneCapsule, Scene } from './types'
+// Re-export for backward compatibility
+export type { ScenePlane, SceneBox, SceneCapsule, SceneSphere, Scene, SceneObject } from './types'
 export { $SceneObject, $Scene } from './types'
-export type { SceneObject } from './types'
+export type { RenderScene } from './RenderScene'
+export { compileScene } from '../../Application/CompileScene'
 
 // Check WebGPU support
 export async function isWebGPUSupported(): Promise<boolean> {
@@ -285,29 +284,30 @@ export class RayTracingRenderer {
     return { buffer: newBuffer, capacity: newCapacity }
   }
 
+  /**
+   * Render a Scene (convenience method)
+   * Compiles the scene internally before rendering.
+   */
   render(scene: Scene, camera: OrthographicCamera): void {
+    const renderScene = compileScene(scene)
+    this.renderCompiled(renderScene, camera)
+  }
+
+  /**
+   * Render a pre-compiled RenderScene
+   * Use this for better performance when rendering the same scene multiple times.
+   */
+  renderCompiled(renderScene: RenderScene, camera: OrthographicCamera): void {
     const {
-      objects,
-      lights,
-      backgroundColor = { r: 20 / 255, g: 20 / 255, b: 40 / 255 },
-      shadowBlur = 0,
-    } = scene
-
-    // Separate objects by type
-    const planes = objects.filter((o): o is ScenePlane => o.type === 'plane')
-    const boxes = objects.filter((o): o is SceneBox => o.type === 'box')
-    const capsules = objects.filter((o): o is SceneCapsule => o.type === 'capsule')
-    const spheres = objects.filter((o): o is SceneSphere => o.type === 'sphere')
-
-    // Separate lights by type
-    const ambientLight = lights.find((l): l is AmbientLight => l.type === 'ambient') ?? {
-      type: 'ambient' as const,
-      color: { r: 1, g: 1, b: 1 },
-      intensity: 1,
-    }
-    const directionalLights = lights.filter(
-      (l): l is DirectionalLight => l.type === 'directional'
-    )
+      planes,
+      boxes,
+      capsules,
+      spheres,
+      ambientLight,
+      directionalLights,
+      backgroundColor,
+      shadowBlur,
+    } = renderScene
 
     // Ensure buffer capacities (resize if needed)
     const planeCount = Math.max(planes.length, MIN_CAPACITY)
