@@ -14,3 +14,18 @@ export type {
 } from './SemanticColorPalette'
 
 export { $SemanticColorPalette } from './SemanticColorPalette'
+
+export type {
+  ContextName,
+  ComponentName,
+  StatefulComponentName,
+  StateName,
+} from './SemanticNames'
+
+export {
+  CONTEXT_NAMES,
+  COMPONENT_NAMES,
+  STATEFUL_COMPONENT_NAMES,
+  STATE_NAMES,
+  SEMANTIC_NAMES,
+} from './SemanticNames'
