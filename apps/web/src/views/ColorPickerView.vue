@@ -2,12 +2,9 @@
 import { ref, computed } from 'vue'
 import SvPlane from '../components/ColorPicker/SvPlane.vue'
 import HueSlider from '../components/ColorPicker/HueSlider.vue'
-import RgbCubeViewer from '../components/ColorPicker/RgbCubeViewer.vue'
-import HslCylinderViewer from '../components/ColorPicker/HslCylinderViewer.vue'
-import HsvConeViewer from '../components/ColorPicker/HsvConeViewer.vue'
-import RgbCubeViewerGpu from '../components/ColorPicker/RgbCubeViewerGpu.vue'
-import HslCylinderViewerGpu from '../components/ColorPicker/HslCylinderViewerGpu.vue'
-import HsvConeViewerGpu from '../components/ColorPicker/HsvConeViewerGpu.vue'
+import RgbCubeViewer from '../components/ColorPicker/RgbCubeViewerGpu.vue'
+import HslCylinderViewer from '../components/ColorPicker/HslCylinderViewerGpu.vue'
+import HsvConeViewer from '../components/ColorPicker/HsvConeViewerGpu.vue'
 import ColorGridViewer from '../components/ColorPicker/ColorGridViewer.vue'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
 import { $Hsv, $Hsl, $Srgb } from '@practice/color'
@@ -124,11 +121,11 @@ function onHueChange(h: number) {
           </div>
         </div>
 
-        <!-- Section 2: RGB Cube + HSL Cylinder + HSV Cone (Three.js) -->
+        <!-- Section 2: RGB Cube + HSL Cylinder + HSV Cone -->
         <div class="flex gap-4 flex-wrap">
           <!-- RGB Cube Viewer -->
           <div class="flex flex-col gap-1 flex-1 min-w-48">
-            <div class="text-xs text-gray-500 text-center">RGB Cube (Three.js)</div>
+            <div class="text-xs text-gray-500 text-center">RGB Cube</div>
             <div class="aspect-square border border-gray-600 rounded-lg overflow-hidden">
               <RgbCubeViewer :r="rgb.r" :g="rgb.g" :b="rgb.b" :lut="lut" />
             </div>
@@ -136,7 +133,7 @@ function onHueChange(h: number) {
 
           <!-- HSL Cylinder Viewer -->
           <div class="flex flex-col gap-1 flex-1 min-w-48">
-            <div class="text-xs text-gray-500 text-center">HSL Cylinder (Three.js)</div>
+            <div class="text-xs text-gray-500 text-center">HSL Cylinder</div>
             <div class="aspect-square border border-gray-600 rounded-lg overflow-hidden">
               <HslCylinderViewer :h="hsl.h" :s="hsl.s" :l="hsl.l" :lut="lut" />
             </div>
@@ -144,36 +141,9 @@ function onHueChange(h: number) {
 
           <!-- HSV Cone Viewer -->
           <div class="flex flex-col gap-1 flex-1 min-w-48">
-            <div class="text-xs text-gray-500 text-center">HSV Cone (Three.js)</div>
+            <div class="text-xs text-gray-500 text-center">HSV Cone</div>
             <div class="aspect-square border border-gray-600 rounded-lg overflow-hidden">
               <HsvConeViewer :h="hue" :s="saturation" :v="value" :lut="lut" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Section 3: RGB Cube + HSL Cylinder + HSV Cone (WebGPU) -->
-        <div class="flex gap-4 flex-wrap">
-          <!-- RGB Cube Viewer (WebGPU) -->
-          <div class="flex flex-col gap-1 flex-1 min-w-48">
-            <div class="text-xs text-gray-500 text-center">RGB Cube (WebGPU)</div>
-            <div class="aspect-square border border-gray-600 rounded-lg overflow-hidden">
-              <RgbCubeViewerGpu :r="rgb.r" :g="rgb.g" :b="rgb.b" :lut="lut" />
-            </div>
-          </div>
-
-          <!-- HSL Cylinder Viewer (WebGPU) -->
-          <div class="flex flex-col gap-1 flex-1 min-w-48">
-            <div class="text-xs text-gray-500 text-center">HSL Cylinder (WebGPU)</div>
-            <div class="aspect-square border border-gray-600 rounded-lg overflow-hidden">
-              <HslCylinderViewerGpu :h="hsl.h" :s="hsl.s" :l="hsl.l" :lut="lut" />
-            </div>
-          </div>
-
-          <!-- HSV Cone Viewer (WebGPU) -->
-          <div class="flex flex-col gap-1 flex-1 min-w-48">
-            <div class="text-xs text-gray-500 text-center">HSV Cone (WebGPU)</div>
-            <div class="aspect-square border border-gray-600 rounded-lg overflow-hidden">
-              <HsvConeViewerGpu :h="hue" :s="saturation" :v="value" :lut="lut" />
             </div>
           </div>
         </div>
