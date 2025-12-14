@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { RayTracingRendererWebGPU, LineRenderer, isWebGPUSupported } from '@practice/lighting/Infra'
+import { OrbitControls } from '@practice/lighting/Application'
+import { $Vector3 } from '@practice/vector'
 import { SceneList, type AnySceneDefinition, type LineSceneDefinition } from '../modules/LightingShowcase'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -13,6 +15,7 @@ const fps = ref(0)
 
 let rayTracingRenderer: RayTracingRendererWebGPU | null = null
 let lineRenderer: LineRenderer | null = null
+let orbitControls: OrbitControls | null = null
 let animationFrameId: number | null = null
 let resizeObserver: ResizeObserver | null = null
 
@@ -43,6 +46,18 @@ async function initRenderer() {
   try {
     if (isLineScene(sceneDef)) {
       lineRenderer = await LineRenderer.create(canvasRef.value)
+      // Initialize OrbitControls for line scenes
+      orbitControls = new OrbitControls(
+        canvasRef.value,
+        $Vector3.create(2, 2, 2),  // Initial position
+        {
+          target: $Vector3.create(0.5, 0.5, 0.5),  // Center of RGB cube
+          minDistance: 0.5,
+          maxDistance: 10,
+          enableDamping: true,
+          dampingFactor: 0.1,
+        }
+      )
     } else {
       rayTracingRenderer = await RayTracingRendererWebGPU.create(canvasRef.value)
     }
@@ -72,12 +87,20 @@ function startAnimation() {
 
     const sceneDef = getSelectedScene()
     const aspectRatio = canvasSize.value.width / canvasSize.value.height
-    const camera = sceneDef.createCamera(aspectRatio)
 
     if (isLineScene(sceneDef) && lineRenderer) {
+      // Update orbit controls and get camera
+      orbitControls?.update()
+      const baseSize = 2.5
+      const camera = orbitControls?.createOrthographicCamera(
+        baseSize * aspectRatio,
+        baseSize
+      ) ?? sceneDef.createCamera(aspectRatio)
+
       const scene = sceneDef.createScene(elapsed)
       lineRenderer.render(scene, camera)
     } else if (!isLineScene(sceneDef) && rayTracingRenderer) {
+      const camera = sceneDef.createCamera(aspectRatio)
       const scene = sceneDef.createScene(elapsed)
       rayTracingRenderer.render(scene, camera)
     }
@@ -103,6 +126,10 @@ watch(selectedSceneId, async () => {
   if (lineRenderer) {
     lineRenderer.dispose()
     lineRenderer = null
+  }
+  if (orbitControls) {
+    orbitControls.dispose()
+    orbitControls = null
   }
   await nextTick()
   await initRenderer()
@@ -135,6 +162,8 @@ onUnmounted(() => {
   rayTracingRenderer = null
   lineRenderer?.dispose()
   lineRenderer = null
+  orbitControls?.dispose()
+  orbitControls = null
   resizeObserver?.disconnect()
 })
 </script>
