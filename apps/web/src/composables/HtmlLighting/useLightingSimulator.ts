@@ -1,13 +1,24 @@
 import { ref, reactive, watch, onMounted, onUnmounted, type Ref } from 'vue'
-import { HTMLToSceneAdapter, $Scene, createPCFShadowShader, TileRenderer, TileCompositor } from '../../modules/Lighting/Infra'
+import { $Scene, createPCFShadowShader } from '../../modules/Lighting/Infra'
 import { $Light, $Color } from '../../modules/Lighting/Domain/ValueObject'
 import { $Vector3 } from '@practice/vector'
-import { computeBoxShadows, RenderTilesUseCase, type Viewport, type BoxShadowResult } from '../../modules/Lighting/Application'
+import {
+  HTMLToSceneAdapter,
+  TileRenderer,
+  TileCompositor,
+  computeBoxShadows,
+  RenderTilesUseCase,
+  lightPresets,
+  type Viewport,
+  type BoxShadowResult,
+  type LightPreset,
+  type LightSetting,
+} from '../../modules/HtmlLighting'
 import { $Hex } from '@practice/color'
-import { lightPresets, type LightPreset, type LightSetting } from '../../modules/Lighting/constant/Preset'
 import { useFilter } from '../Filter/useFilter'
 import { getPresets } from '../../modules/Filter/Infra/PresetRepository'
 import type { Preset } from '../../modules/Filter/Domain'
+import { $Lut, $Lut3D } from '../../modules/Filter/Domain/ValueObject'
 
 const PRESETS = getPresets()
 
@@ -227,7 +238,25 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
   // Apply filter to the canvas
   const applyFilterToCanvas = () => {
     if (!filterEnabled.value || !tileCompositor) return
-    tileCompositor.applyFilter(lut.value, pixelEffects.value)
+
+    const imageData = tileCompositor.getImageData()
+    if (!imageData) return
+
+    // Apply LUT (1D or 3D) with optional pixel effects
+    let filteredData: ImageData
+    const currentLut = lut.value
+    if ($Lut3D.is(currentLut)) {
+      // 3D LUT: apply without pixel effects (not yet supported for 3D)
+      filteredData = $Lut3D.apply(imageData, currentLut)
+    } else {
+      // 1D LUT: apply with or without pixel effects
+      const effects = pixelEffects.value
+      filteredData = effects
+        ? $Lut.applyWithEffects(imageData, currentLut, effects)
+        : $Lut.apply(imageData, currentLut)
+    }
+
+    tileCompositor.putImageData(filteredData)
   }
 
   // Handle scroll - only update viewport, tiles are cached

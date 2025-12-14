@@ -1,6 +1,5 @@
-import type { Scene } from '../Infra'
-import type { OrthographicCamera } from '../Domain/ValueObject'
-import type { Color } from '../Domain/ValueObject'
+import type { Scene } from '../../Lighting/Infra'
+import type { OrthographicCamera, Color } from '../../Lighting/Domain/ValueObject'
 
 /**
  * Viewport configuration for HTML to Scene conversion

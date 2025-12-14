@@ -162,7 +162,7 @@ describe('HTMLToSceneAdapter', () => {
       // Check Z decreases with depth (deeper nesting = closer to camera)
       // maxDepth = 2, DEPTH_UNIT = 2
       // z = (maxDepth - depth) * DEPTH_UNIT
-      const boxes = result.scene.objects.filter((o): o is import('./WebGL').SceneBox => o.type === 'box')
+      const boxes = result.scene.objects.filter((o): o is import('../../Lighting/Infra/WebGL').SceneBox => o.type === 'box')
       expect(boxes[0]!.geometry.center.z).toBe(4)  // (2 - 0) * 2 = 4 (root, furthest back)
       expect(boxes[1]!.geometry.center.z).toBe(2)  // (2 - 1) * 2 = 2
       expect(boxes[2]!.geometry.center.z).toBe(0)  // (2 - 2) * 2 = 0 (deepest, closest to camera)

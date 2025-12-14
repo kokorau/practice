@@ -5,9 +5,6 @@
  */
 
 import type { Tile, TileGrid } from '../Domain/ValueObject'
-import type { Lut } from '../../Filter/Domain/ValueObject'
-import type { PixelEffects } from '../../../composables/Filter/useFilter'
-import { $Lut, $Lut3D } from '../../Filter/Domain/ValueObject'
 
 export class TileCompositor {
   private displayCanvas: HTMLCanvasElement
@@ -98,32 +95,6 @@ export class TileCompositor {
 
     // Draw all clean tiles (they're cached anyway)
     this.compositeTiles(grid.tiles as Tile[], getCanvas)
-  }
-
-  /**
-   * Apply LUT filter to the current display canvas content
-   * @param lut - The LUT to apply (1D or 3D)
-   * @param pixelEffects - Optional pixel effects (vibrance, etc.)
-   */
-  applyFilter(lut: Lut, pixelEffects?: PixelEffects): void {
-    const { width, height } = this.displayCanvas
-    if (width === 0 || height === 0) return
-
-    const imageData = this.ctx.getImageData(0, 0, width, height)
-
-    // Apply LUT (1D or 3D) with optional pixel effects
-    let filteredData: ImageData
-    if ($Lut3D.is(lut)) {
-      // 3D LUT: apply without pixel effects (not yet supported for 3D)
-      filteredData = $Lut3D.apply(imageData, lut)
-    } else {
-      // 1D LUT: apply with or without pixel effects
-      filteredData = pixelEffects
-        ? $Lut.applyWithEffects(imageData, lut, pixelEffects)
-        : $Lut.apply(imageData, lut)
-    }
-
-    this.ctx.putImageData(filteredData, 0, 0)
   }
 
   /**

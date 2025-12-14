@@ -22,8 +22,6 @@ export type {
 export { $Light } from './Light'
 export type { Space } from './Space'
 export { $Space } from './Space'
-export type { Tile, TileState, TileGrid } from './Tile'
-export { $Tile, $TileGrid } from './Tile'
 export type {
   ScenePlane,
   SceneBox,

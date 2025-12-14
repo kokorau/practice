@@ -1,5 +1,5 @@
-import type { SceneWebGPU } from '../Infra'
-import type { OrthographicCamera } from '../Domain/ValueObject'
+import type { SceneWebGPU } from '../Lighting/Infra'
+import type { OrthographicCamera } from '../Lighting/Domain/ValueObject'
 
 export interface SceneDefinition {
   readonly id: string

@@ -4,11 +4,11 @@ import type {
   HTMLToSceneResult,
   HTMLToScenePort,
 } from '../Application'
-import type { OrthographicCamera, Color } from '../Domain/ValueObject'
-import { $Camera, $Color } from '../Domain/ValueObject'
+import type { OrthographicCamera, Color } from '../../Lighting/Domain/ValueObject'
+import { $Camera, $Color } from '../../Lighting/Domain/ValueObject'
 import { $Vector3 } from '@practice/vector'
-import { $Scene, $SceneObject } from './WebGL'
-import { $Geometry } from '../Domain/ValueObject'
+import { $Scene, $SceneObject } from '../../Lighting/Infra/WebGL'
+import { $Geometry } from '../../Lighting/Domain/ValueObject'
 
 /**
  * Depth unit: how much Z distance per nesting level
