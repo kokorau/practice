@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { RayTracingRendererWebGPU, isWebGPUSupported } from '@practice/lighting/Infra'
-import { SceneList, type SceneDefinition } from '../modules/LightingShowcase'
+import { RayTracingRendererWebGPU, LineRenderer, isWebGPUSupported } from '@practice/lighting/Infra'
+import { SceneList, type AnySceneDefinition, type LineSceneDefinition } from '../modules/LightingShowcase'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
@@ -11,11 +11,16 @@ const selectedSceneId = ref(SceneList[0]!.id)
 const canvasSize = ref({ width: 800, height: 600 })
 const fps = ref(0)
 
-let renderer: RayTracingRendererWebGPU | null = null
+let rayTracingRenderer: RayTracingRendererWebGPU | null = null
+let lineRenderer: LineRenderer | null = null
 let animationFrameId: number | null = null
 let resizeObserver: ResizeObserver | null = null
 
-function getSelectedScene(): SceneDefinition {
+function isLineScene(scene: AnySceneDefinition): scene is LineSceneDefinition {
+  return 'rendererType' in scene && scene.rendererType === 'line'
+}
+
+function getSelectedScene(): AnySceneDefinition {
   return SceneList.find(s => s.id === selectedSceneId.value) ?? SceneList[0]!
 }
 
@@ -33,8 +38,14 @@ function updateCanvasSize() {
 async function initRenderer() {
   if (!canvasRef.value) return
 
+  const sceneDef = getSelectedScene()
+
   try {
-    renderer = await RayTracingRendererWebGPU.create(canvasRef.value)
+    if (isLineScene(sceneDef)) {
+      lineRenderer = await LineRenderer.create(canvasRef.value)
+    } else {
+      rayTracingRenderer = await RayTracingRendererWebGPU.create(canvasRef.value)
+    }
   } catch (e) {
     webGPUError.value = e instanceof Error ? e.message : 'Unknown error'
     webGPUSupported.value = false
@@ -59,12 +70,16 @@ function startAnimation() {
       lastFrameTime = now
     }
 
-    if (renderer) {
-      const sceneDef = getSelectedScene()
+    const sceneDef = getSelectedScene()
+    const aspectRatio = canvasSize.value.width / canvasSize.value.height
+    const camera = sceneDef.createCamera(aspectRatio)
+
+    if (isLineScene(sceneDef) && lineRenderer) {
       const scene = sceneDef.createScene(elapsed)
-      const aspectRatio = canvasSize.value.width / canvasSize.value.height
-      const camera = sceneDef.createCamera(aspectRatio)
-      renderer.render(scene, camera)
+      lineRenderer.render(scene, camera)
+    } else if (!isLineScene(sceneDef) && rayTracingRenderer) {
+      const scene = sceneDef.createScene(elapsed)
+      rayTracingRenderer.render(scene, camera)
     }
 
     animationFrameId = requestAnimationFrame(animate)
@@ -81,9 +96,13 @@ function stopAnimation() {
 }
 
 watch(selectedSceneId, async () => {
-  if (renderer) {
-    renderer.dispose()
-    renderer = null
+  if (rayTracingRenderer) {
+    rayTracingRenderer.dispose()
+    rayTracingRenderer = null
+  }
+  if (lineRenderer) {
+    lineRenderer.dispose()
+    lineRenderer = null
   }
   await nextTick()
   await initRenderer()
@@ -112,8 +131,10 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopAnimation()
-  renderer?.dispose()
-  renderer = null
+  rayTracingRenderer?.dispose()
+  rayTracingRenderer = null
+  lineRenderer?.dispose()
+  lineRenderer = null
   resizeObserver?.disconnect()
 })
 </script>

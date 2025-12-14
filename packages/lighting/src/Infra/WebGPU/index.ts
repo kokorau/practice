@@ -8,3 +8,5 @@ export {
   type ScenePlane,
   type SceneBox,
 } from './RayTracingRenderer'
+
+export { LineRenderer, $LineScene, type LineScene } from './LineRenderer'

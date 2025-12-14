@@ -16,10 +16,13 @@ export {
   $Scene as $SceneWebGPU,
   $SceneObject as $SceneObjectWebGPU,
   isWebGPUSupported,
+  LineRenderer,
+  $LineScene,
 } from './WebGPU'
 export type {
   Scene as SceneWebGPU,
   SceneObject as SceneObjectWebGPU,
   ScenePlane as ScenePlaneWebGPU,
   SceneBox as SceneBoxWebGPU,
+  LineScene,
 } from './WebGPU'
