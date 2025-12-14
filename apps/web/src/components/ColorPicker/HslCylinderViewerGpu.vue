@@ -6,10 +6,11 @@ import {
   $LineSegment,
   $LineSegments,
   $Point,
-  $MeshGeometry,
+  $Mesh,
   type LineSegment,
   type Point,
   type Mesh,
+  type MeshVertex,
 } from '@practice/lighting'
 import { $Vector3, type Vector3 } from '@practice/vector'
 import { $Hsl } from '@practice/color'
@@ -168,26 +169,133 @@ function createLutGrid(
 }
 
 /**
- * Create cylinder shell mesh
+ * Create HSL cylinder mesh with proper coloring
+ * - Shell: S=1, H varies by angle, L varies by height
+ * - Caps: L fixed (0 or 1), S varies from center to edge, H varies by angle
  */
-function createCylinderShell(): Mesh {
-  return $MeshGeometry.cylinder(
-    0.5, // radius
-    1.0, // height
-    48,  // segments
-    (pos) => {
-      // pos is in cylinder space, center at origin
-      // Convert back to HSL for coloring
-      const x = pos.x
-      const z = pos.z
-      const y = pos.y + 0.5 // shift to 0-1 range
-      const angle = Math.atan2(z, x)
-      const h = ((angle / Math.PI) * 180 + 360) % 360
-      const l = y
-      return hslToColor(h, 1, l)
-    },
-    0.2 // opacity
-  )
+function createHslCylinderMesh(): Mesh[] {
+  const meshes: Mesh[] = []
+  const resolution = 48
+  const ringCount = 8
+
+  // === Shell (side surface) ===
+  {
+    const vertices: MeshVertex[] = []
+    const indices: number[] = []
+
+    for (let li = 0; li <= resolution; li++) {
+      const l = li / resolution
+      for (let hi = 0; hi <= resolution; hi++) {
+        const h = (hi / resolution) * 360
+        const pos = hslToPosition(h, 1, l)
+        const color = hslToColor(h, 1, l)
+        vertices.push({ position: pos, color })
+      }
+    }
+
+    for (let li = 0; li < resolution; li++) {
+      for (let hi = 0; hi < resolution; hi++) {
+        const a = li * (resolution + 1) + hi
+        const b = a + 1
+        const c = a + (resolution + 1)
+        const d = c + 1
+        indices.push(a, b, c)
+        indices.push(b, d, c)
+      }
+    }
+
+    meshes.push($Mesh.create(vertices, indices, 0.2))
+  }
+
+  // === Bottom cap (L=0) ===
+  {
+    const vertices: MeshVertex[] = []
+    const indices: number[] = []
+    const l = 0
+
+    // Center vertex
+    const centerPos = hslToPosition(0, 0, l)
+    const centerColor = hslToColor(0, 0, l)
+    vertices.push({ position: centerPos, color: centerColor })
+
+    // Concentric rings
+    for (let ri = 1; ri <= ringCount; ri++) {
+      const s = ri / ringCount
+      for (let hi = 0; hi <= resolution; hi++) {
+        const h = (hi / resolution) * 360
+        const pos = hslToPosition(h, s, l)
+        const color = hslToColor(h, s, l)
+        vertices.push({ position: pos, color })
+      }
+    }
+
+    // Triangles from center
+    for (let hi = 0; hi < resolution; hi++) {
+      indices.push(0, 1 + hi + 1, 1 + hi) // Reverse winding for bottom
+    }
+
+    // Triangles between rings
+    for (let ri = 0; ri < ringCount - 1; ri++) {
+      const ringStart = 1 + ri * (resolution + 1)
+      const nextRingStart = 1 + (ri + 1) * (resolution + 1)
+      for (let hi = 0; hi < resolution; hi++) {
+        const a = ringStart + hi
+        const b = ringStart + hi + 1
+        const c = nextRingStart + hi
+        const d = nextRingStart + hi + 1
+        indices.push(a, c, b)
+        indices.push(b, c, d)
+      }
+    }
+
+    meshes.push($Mesh.create(vertices, indices, 0.2))
+  }
+
+  // === Top cap (L=1) ===
+  {
+    const vertices: MeshVertex[] = []
+    const indices: number[] = []
+    const l = 1
+
+    // Center vertex
+    const centerPos = hslToPosition(0, 0, l)
+    const centerColor = hslToColor(0, 0, l)
+    vertices.push({ position: centerPos, color: centerColor })
+
+    // Concentric rings
+    for (let ri = 1; ri <= ringCount; ri++) {
+      const s = ri / ringCount
+      for (let hi = 0; hi <= resolution; hi++) {
+        const h = (hi / resolution) * 360
+        const pos = hslToPosition(h, s, l)
+        const color = hslToColor(h, s, l)
+        vertices.push({ position: pos, color })
+      }
+    }
+
+    // Triangles from center
+    for (let hi = 0; hi < resolution; hi++) {
+      indices.push(0, 1 + hi, 1 + hi + 1)
+    }
+
+    // Triangles between rings
+    for (let ri = 0; ri < ringCount - 1; ri++) {
+      const ringStart = 1 + ri * (resolution + 1)
+      const nextRingStart = 1 + (ri + 1) * (resolution + 1)
+      for (let hi = 0; hi < resolution; hi++) {
+        const a = ringStart + hi
+        const b = ringStart + hi + 1
+        const c = nextRingStart + hi
+        const d = nextRingStart + hi + 1
+        indices.push(a, b, c)
+        indices.push(b, d, c)
+      }
+    }
+
+    meshes.push($Mesh.create(vertices, indices, 0.2))
+  }
+
+  return meshes
 }
 
 /**
@@ -231,22 +339,14 @@ function buildScene(): LineScene {
     points.push($Point.create(posAfter, { r: rAfter, g: gAfter, b: bAfter }, 0.03))
   }
 
-  // Cylinder mesh (translated to center at 0.5, 0.5, 0.5)
-  const cylinderMesh = createCylinderShell()
-  // Translate vertices
-  const translatedMesh = {
-    ...cylinderMesh,
-    vertices: cylinderMesh.vertices.map(v => ({
-      ...v,
-      position: $Vector3.create(v.position.x + 0.5, v.position.y + 0.5, v.position.z + 0.5)
-    }))
-  }
+  // HSL cylinder meshes (shell + caps)
+  const meshes = createHslCylinderMesh()
 
   return $LineScene.create(
     $LineSegments.create(allSegments),
     BACKGROUND_COLOR,
     points,
-    [translatedMesh]
+    meshes
   )
 }
 

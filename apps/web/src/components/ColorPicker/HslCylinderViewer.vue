@@ -96,7 +96,7 @@ function createCylinderShell(resolution: number = 32): THREE.Mesh {
     }
   }
 
-  // Create triangles
+  // Create triangles for shell
   for (let li = 0; li < resolution; li++) {
     for (let hi = 0; hi < resolution; hi++) {
       const a = li * (resolution + 1) + hi
@@ -128,11 +128,95 @@ function createCylinderShell(resolution: number = 32): THREE.Mesh {
   return mesh
 }
 
+/**
+ * Create a disc cap for the cylinder (top or bottom)
+ * L=0 (bottom) shows gradient from black center to colored edge
+ * L=1 (top) shows gradient from white center to colored edge
+ */
+function createCylinderCap(l: number, resolution: number = 32): THREE.Mesh {
+  const positions: number[] = []
+  const colors: number[] = []
+  const indices: number[] = []
+
+  // Center vertex
+  const centerPos = hslToPosition(0, 0, l)
+  positions.push(centerPos.x, centerPos.y, centerPos.z)
+  const centerColor = hslToColor(0, 0, l) // S=0 at center
+  colors.push(centerColor.r, centerColor.g, centerColor.b)
+
+  // Concentric rings for gradient
+  const ringCount = 8
+  for (let ri = 1; ri <= ringCount; ri++) {
+    const s = ri / ringCount
+    for (let hi = 0; hi <= resolution; hi++) {
+      const h = (hi / resolution) * 360
+      const pos = hslToPosition(h, s, l)
+      positions.push(pos.x, pos.y, pos.z)
+
+      const color = hslToColor(h, s, l)
+      colors.push(color.r, color.g, color.b)
+    }
+  }
+
+  // Triangles from center to first ring
+  for (let hi = 0; hi < resolution; hi++) {
+    const a = 0 // center
+    const b = 1 + hi
+    const c = 1 + hi + 1
+    if (l === 0) {
+      // Bottom cap: reverse winding
+      indices.push(a, c, b)
+    } else {
+      // Top cap: normal winding
+      indices.push(a, b, c)
+    }
+  }
+
+  // Triangles between rings
+  for (let ri = 0; ri < ringCount - 1; ri++) {
+    const ringStart = 1 + ri * (resolution + 1)
+    const nextRingStart = 1 + (ri + 1) * (resolution + 1)
+    for (let hi = 0; hi < resolution; hi++) {
+      const a = ringStart + hi
+      const b = ringStart + hi + 1
+      const c = nextRingStart + hi
+      const d = nextRingStart + hi + 1
+      if (l === 0) {
+        indices.push(a, c, b)
+        indices.push(b, c, d)
+      } else {
+        indices.push(a, b, c)
+        indices.push(b, d, c)
+      }
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geometry.setIndex(indices)
+
+  const material = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.2,
+    depthWrite: false,
+    depthTest: false,
+  })
+
+  const mesh = new THREE.Mesh(geometry, material)
+  mesh.renderOrder = -1
+  return mesh
+}
+
 function createHslCylinder(): THREE.Group {
   const group = new THREE.Group()
 
-  // Only shell, no caps for better visibility of internal structure
-  group.add(createCylinderShell(48))
+  const resolution = 48
+  group.add(createCylinderShell(resolution))
+  group.add(createCylinderCap(0, resolution)) // Bottom cap (L=0, black center)
+  group.add(createCylinderCap(1, resolution)) // Top cap (L=1, white center)
 
   return group
 }
