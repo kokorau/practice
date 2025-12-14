@@ -8,7 +8,7 @@ export const createDefaultLightPalette = (): SemanticColorPalette => {
     context: {
       canvas: {
         surface: 'oklch(0.98 0.005 260)',
-        tintSurface: 'oklch(0.97 0.01 260)',
+        tintSurface: 'oklch(0.95 0.01 260)',
         title: 'oklch(0.20 0.02 260)',
         body: 'oklch(0.30 0.02 260)',
         meta: 'oklch(0.50 0.02 260)',
@@ -150,7 +150,7 @@ export const createDefaultDarkPalette = (): SemanticColorPalette => {
     context: {
       canvas: {
         surface: 'oklch(0.15 0.02 260)',
-        tintSurface: 'oklch(0.18 0.02 260)',
+        tintSurface: 'oklch(0.20 0.02 260)',
         title: 'oklch(0.95 0.01 260)',
         body: 'oklch(0.85 0.01 260)',
         meta: 'oklch(0.60 0.02 260)',

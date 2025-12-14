@@ -38,8 +38,8 @@ const ALL_ROLES: (keyof typeof TOKEN_CSS_PROPERTY_MAP)[] = [
   'accent',
 ]
 
-/** Roles to include in stateless rule sets */
-const STATELESS_ROLES: (keyof typeof TOKEN_CSS_PROPERTY_MAP)[] = [
+/** Roles to include in stateless rule sets (CSS properties) */
+const STATELESS_PROPERTY_ROLES: (keyof typeof TOKEN_CSS_PROPERTY_MAP)[] = [
   'surface',
   'body',
   'border',
@@ -65,7 +65,7 @@ const generateContextRuleSet = (contextKey: string): CSSRuleSet => {
   const varPrefix = `--context-${toKebab(contextKey)}`
 
   // CSS property declarations (surface, body, border)
-  const propertyDeclarations = STATELESS_ROLES.map((role) => ({
+  const propertyDeclarations = STATELESS_PROPERTY_ROLES.map((role) => ({
     property: TOKEN_CSS_PROPERTY_MAP[role],
     value: `var(${varPrefix}-${ROLE_CSS_NAMES[role]})`,
   }))
@@ -87,13 +87,13 @@ const generateStatelessComponentRuleSet = (componentKey: string): CSSRuleSet => 
   const varPrefix = `--component-${toKebab(componentKey)}`
 
   // CSS property declarations (surface, body, border)
-  const propertyDeclarations = STATELESS_ROLES.map((role) => ({
+  const propertyDeclarations = STATELESS_PROPERTY_ROLES.map((role) => ({
     property: TOKEN_CSS_PROPERTY_MAP[role],
     value: `var(${varPrefix}-${ROLE_CSS_NAMES[role]})`,
   }))
 
-  // Alias declarations (override parent context's aliases)
-  const aliasDeclarations = STATELESS_ROLES.map((role) => ({
+  // Alias declarations (override parent context's aliases with all roles)
+  const aliasDeclarations = ALL_ROLES.map((role) => ({
     property: `--${ROLE_CSS_NAMES[role]}`,
     value: `var(${varPrefix}-${ROLE_CSS_NAMES[role]})`,
   }))
