@@ -91,10 +91,9 @@ function startAnimation() {
     if (isLineScene(sceneDef) && lineRenderer) {
       // Update orbit controls and get camera
       orbitControls?.update()
-      const baseSize = 2.5
-      const camera = orbitControls?.createOrthographicCamera(
-        baseSize * aspectRatio,
-        baseSize
+      const camera = orbitControls?.createPerspectiveCamera(
+        45,  // FOV in degrees
+        aspectRatio
       ) ?? sceneDef.createCamera(aspectRatio)
 
       const scene = sceneDef.createScene(elapsed)
