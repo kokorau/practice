@@ -6,6 +6,14 @@
 // Plane Intersection
 // -----------------------------------------------------------------------------
 
+fn getPlaneNormal(plane: Plane, rayDir: vec3f) -> vec3f {
+  // Flip normal if ray is hitting from behind
+  if (dot(rayDir, plane.normal) > 0.0) {
+    return -plane.normal;
+  }
+  return plane.normal;
+}
+
 fn intersectPlane(rayOrigin: vec3f, rayDir: vec3f, plane: Plane) -> f32 {
   let denom = dot(rayDir, plane.normal);
   if (abs(denom) < EPSILON) {

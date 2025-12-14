@@ -153,8 +153,8 @@ describe('FrustumCulling', () => {
       const culled = cullObjects(spheres, frustum)
 
       expect(culled).toHaveLength(2)
-      expect(culled[0].color.r).toBe(1) // Red sphere (inside)
-      expect(culled[1].color.b).toBe(1) // Blue sphere (inside)
+      expect(culled[0]!.color.r).toBe(1) // Red sphere (inside)
+      expect(culled[1]!.color.b).toBe(1) // Blue sphere (inside)
     })
 
     it('should return all objects when all are inside', () => {

@@ -13,17 +13,18 @@ import {
   buildLightBuffer,
   buildCapsuleBuffer,
   buildSphereBuffer,
-  buildGridUniform,
-  buildCellBuffer,
-  buildObjectIndicesBuffer,
   PLANE_STRIDE,
   BOX_STRIDE,
   LIGHT_STRIDE,
   CAPSULE_STRIDE,
   SPHERE_STRIDE,
-  GRID_UNIFORM_SIZE,
-  CELL_STRIDE,
 } from './buffers'
+import {
+  buildBVHUniform,
+  buildBVHNodeBuffer,
+  BVH_UNIFORM_SIZE,
+  BVH_NODE_STRIDE,
+} from './buffers/BVHBuffer'
 import type { RenderScene } from './RenderScene'
 import { compileScene } from '../../Application/CompileScene'
 
@@ -63,9 +64,8 @@ export class RayTracingRenderer {
   private lightBuffer: GPUBuffer
   private capsuleBuffer: GPUBuffer
   private sphereBuffer: GPUBuffer
-  private gridUniformBuffer: GPUBuffer
-  private gridCellBuffer: GPUBuffer
-  private gridIndicesBuffer: GPUBuffer
+  private bvhUniformBuffer: GPUBuffer
+  private bvhNodeBuffer: GPUBuffer
 
   // Dynamic capacity tracking
   private planeCapacity: number
@@ -73,8 +73,7 @@ export class RayTracingRenderer {
   private lightCapacity: number
   private capsuleCapacity: number
   private sphereCapacity: number
-  private gridCellCapacity: number
-  private gridIndicesCapacity: number
+  private bvhNodeCapacity: number
 
   private constructor(
     device: GPUDevice,
@@ -87,16 +86,14 @@ export class RayTracingRenderer {
     lightBuffer: GPUBuffer,
     capsuleBuffer: GPUBuffer,
     sphereBuffer: GPUBuffer,
-    gridUniformBuffer: GPUBuffer,
-    gridCellBuffer: GPUBuffer,
-    gridIndicesBuffer: GPUBuffer,
+    bvhUniformBuffer: GPUBuffer,
+    bvhNodeBuffer: GPUBuffer,
     planeCapacity: number,
     boxCapacity: number,
     lightCapacity: number,
     capsuleCapacity: number,
     sphereCapacity: number,
-    gridCellCapacity: number,
-    gridIndicesCapacity: number
+    bvhNodeCapacity: number
   ) {
     this.device = device
     this.context = context
@@ -108,16 +105,14 @@ export class RayTracingRenderer {
     this.lightBuffer = lightBuffer
     this.capsuleBuffer = capsuleBuffer
     this.sphereBuffer = sphereBuffer
-    this.gridUniformBuffer = gridUniformBuffer
-    this.gridCellBuffer = gridCellBuffer
-    this.gridIndicesBuffer = gridIndicesBuffer
+    this.bvhUniformBuffer = bvhUniformBuffer
+    this.bvhNodeBuffer = bvhNodeBuffer
     this.planeCapacity = planeCapacity
     this.boxCapacity = boxCapacity
     this.lightCapacity = lightCapacity
     this.capsuleCapacity = capsuleCapacity
     this.sphereCapacity = sphereCapacity
-    this.gridCellCapacity = gridCellCapacity
-    this.gridIndicesCapacity = gridIndicesCapacity
+    this.bvhNodeCapacity = bvhNodeCapacity
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<RayTracingRenderer> {
@@ -189,11 +184,6 @@ export class RayTracingRenderer {
         },
         {
           binding: 7,
-          visibility: GPUShaderStage.FRAGMENT,
-          buffer: { type: 'read-only-storage' },
-        },
-        {
-          binding: 8,
           visibility: GPUShaderStage.FRAGMENT,
           buffer: { type: 'read-only-storage' },
         },
@@ -271,25 +261,18 @@ export class RayTracingRenderer {
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     })
 
-    // Grid uniform buffer (32 bytes)
-    const gridUniformBuffer = device.createBuffer({
-      size: GRID_UNIFORM_SIZE,
+    // BVH uniform buffer (16 bytes)
+    const bvhUniformBuffer = device.createBuffer({
+      size: BVH_UNIFORM_SIZE,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
-    // Initial grid capacities
-    const initialGridCellCapacity = 64 // 8x8 grid
-    const initialGridIndicesCapacity = 256
+    // Initial BVH node capacity
+    const initialBVHNodeCapacity = 128
 
-    // Grid cell buffer
-    const gridCellBuffer = device.createBuffer({
-      size: initialGridCellCapacity * CELL_STRIDE * 4,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    })
-
-    // Grid indices buffer
-    const gridIndicesBuffer = device.createBuffer({
-      size: initialGridIndicesCapacity * 4,
+    // BVH node buffer (64 bytes per node)
+    const bvhNodeBuffer = device.createBuffer({
+      size: initialBVHNodeCapacity * BVH_NODE_STRIDE * 4,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     })
 
@@ -304,16 +287,14 @@ export class RayTracingRenderer {
       lightBuffer,
       capsuleBuffer,
       sphereBuffer,
-      gridUniformBuffer,
-      gridCellBuffer,
-      gridIndicesBuffer,
+      bvhUniformBuffer,
+      bvhNodeBuffer,
       initialPlaneCapacity,
       initialBoxCapacity,
       initialLightCapacity,
       initialCapsuleCapacity,
       initialSphereCapacity,
-      initialGridCellCapacity,
-      initialGridIndicesCapacity
+      initialBVHNodeCapacity
     )
   }
 
@@ -370,7 +351,7 @@ export class RayTracingRenderer {
       directionalLights,
       backgroundColor,
       shadowBlur,
-      boxGrid,
+      bvh,
     } = renderScene
 
     // Ensure buffer capacities (resize if needed)
@@ -379,8 +360,7 @@ export class RayTracingRenderer {
     const lightCount = Math.max(directionalLights.length, MIN_CAPACITY)
     const capsuleCount = Math.max(capsules.length, MIN_CAPACITY)
     const sphereCount = Math.max(spheres.length, MIN_CAPACITY)
-    const gridCellCount = Math.max(boxGrid?.cells.length ?? 0, MIN_CAPACITY)
-    const gridIndicesCount = Math.max(boxGrid?.objectIndices.length ?? 0, MIN_CAPACITY)
+    const bvhNodeCount = Math.max(bvh?.nodes.length ?? 0, MIN_CAPACITY)
 
     const planeResult = this.ensureBufferCapacity(
       this.planeBuffer, this.planeCapacity, planeCount, PLANE_STRIDE
@@ -412,17 +392,11 @@ export class RayTracingRenderer {
     this.sphereBuffer = sphereResult.buffer
     this.sphereCapacity = sphereResult.capacity
 
-    const gridCellResult = this.ensureBufferCapacity(
-      this.gridCellBuffer, this.gridCellCapacity, gridCellCount, CELL_STRIDE
+    const bvhNodeResult = this.ensureBufferCapacity(
+      this.bvhNodeBuffer, this.bvhNodeCapacity, bvhNodeCount, BVH_NODE_STRIDE
     )
-    this.gridCellBuffer = gridCellResult.buffer
-    this.gridCellCapacity = gridCellResult.capacity
-
-    const gridIndicesResult = this.ensureBufferCapacity(
-      this.gridIndicesBuffer, this.gridIndicesCapacity, gridIndicesCount, 1
-    )
-    this.gridIndicesBuffer = gridIndicesResult.buffer
-    this.gridIndicesCapacity = gridIndicesResult.capacity
+    this.bvhNodeBuffer = bvhNodeResult.buffer
+    this.bvhNodeCapacity = bvhNodeResult.capacity
 
     // Calculate camera basis vectors
     const forward = $Vector3.normalize($Vector3.sub(camera.lookAt, camera.position))
@@ -472,15 +446,12 @@ export class RayTracingRenderer {
     const sphereData = buildSphereBuffer(spheres, this.sphereCapacity)
     this.device.queue.writeBuffer(this.sphereBuffer, 0, sphereData)
 
-    // Build and write grid buffers
-    const gridUniformData = buildGridUniform(boxGrid)
-    this.device.queue.writeBuffer(this.gridUniformBuffer, 0, gridUniformData)
+    // Build and write BVH buffers
+    const bvhUniformData = buildBVHUniform(bvh)
+    this.device.queue.writeBuffer(this.bvhUniformBuffer, 0, bvhUniformData)
 
-    const gridCellData = buildCellBuffer(boxGrid, this.gridCellCapacity)
-    this.device.queue.writeBuffer(this.gridCellBuffer, 0, gridCellData)
-
-    const gridIndicesData = buildObjectIndicesBuffer(boxGrid, this.gridIndicesCapacity)
-    this.device.queue.writeBuffer(this.gridIndicesBuffer, 0, gridIndicesData)
+    const bvhNodeData = buildBVHNodeBuffer(bvh, this.bvhNodeCapacity)
+    this.device.queue.writeBuffer(this.bvhNodeBuffer, 0, bvhNodeData)
 
     // Create bind group
     const bindGroup = this.device.createBindGroup({
@@ -492,9 +463,8 @@ export class RayTracingRenderer {
         { binding: 3, resource: { buffer: this.lightBuffer } },
         { binding: 4, resource: { buffer: this.capsuleBuffer } },
         { binding: 5, resource: { buffer: this.sphereBuffer } },
-        { binding: 6, resource: { buffer: this.gridUniformBuffer } },
-        { binding: 7, resource: { buffer: this.gridCellBuffer } },
-        { binding: 8, resource: { buffer: this.gridIndicesBuffer } },
+        { binding: 6, resource: { buffer: this.bvhUniformBuffer } },
+        { binding: 7, resource: { buffer: this.bvhNodeBuffer } },
       ],
     })
 
@@ -528,8 +498,7 @@ export class RayTracingRenderer {
     this.lightBuffer.destroy()
     this.capsuleBuffer.destroy()
     this.sphereBuffer.destroy()
-    this.gridUniformBuffer.destroy()
-    this.gridCellBuffer.destroy()
-    this.gridIndicesBuffer.destroy()
+    this.bvhUniformBuffer.destroy()
+    this.bvhNodeBuffer.destroy()
   }
 }

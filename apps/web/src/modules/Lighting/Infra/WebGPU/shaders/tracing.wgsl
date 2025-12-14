@@ -1,18 +1,6 @@
 // =============================================================================
-// Grid Helper Functions
+// Box Helper Functions
 // =============================================================================
-
-// Get cell index for a position (-1 if outside grid)
-fn getCellIndex(x: f32, y: f32) -> i32 {
-  let cellX = i32((x - grid.minX) / grid.cellSize);
-  let cellY = i32((y - grid.minY) / grid.cellSize);
-
-  if (cellX < 0 || cellX >= i32(grid.cellsX) || cellY < 0 || cellY >= i32(grid.cellsY)) {
-    return -1;
-  }
-
-  return cellY * i32(grid.cellsX) + cellX;
-}
 
 // Check a single box and update hit info if closer
 fn checkBox(boxIndex: u32, rayOrigin: vec3f, rayDir: vec3f, hit: ptr<function, HitInfo>) {
@@ -70,65 +58,58 @@ fn traceRay(rayOrigin: vec3f, rayDir: vec3f) -> HitInfo {
   hit.alpha = 1.0;
   hit.ior = AIR_IOR;
 
-  // Check planes
-  for (var i = 0u; i < scene.planeCount; i++) {
-    let plane = planes[i];
-    let t = intersectPlane(rayOrigin, rayDir, plane);
+  // Use BVH traversal if available (handles boxes, spheres, capsules, finite planes)
+  traceRayBVH(rayOrigin, rayDir, &hit);
 
-    if (t > 0.0 && t < hit.t) {
-      hit.t = t;
-      hit.color = plane.color;
-      hit.normal = plane.normal;
-      hit.alpha = plane.alpha;
-      hit.ior = plane.ior;
-    }
-  }
+  // Fallback: check all objects if BVH is not available
+  if (bvh.useBVH == 0u) {
+    // Check planes
+    for (var i = 0u; i < scene.planeCount; i++) {
+      let plane = planes[i];
+      let t = intersectPlane(rayOrigin, rayDir, plane);
 
-  // Check boxes (using grid if available)
-  if (grid.useGrid == 1u) {
-    // Grid-based traversal: only check boxes in the cell
-    let cellIdx = getCellIndex(rayOrigin.x, rayOrigin.y);
-    if (cellIdx >= 0) {
-      let cell = gridCells[cellIdx];
-      for (var j = 0u; j < cell.count; j++) {
-        let boxIndex = gridIndices[cell.startIndex + j];
-        checkBox(boxIndex, rayOrigin, rayDir, &hit);
+      if (t > 0.0 && t < hit.t) {
+        hit.t = t;
+        hit.color = plane.color;
+        hit.normal = getPlaneNormal(plane, rayDir);
+        hit.alpha = plane.alpha;
+        hit.ior = plane.ior;
       }
     }
-  } else {
-    // Full scan fallback
+
+    // Check boxes
     for (var i = 0u; i < scene.boxCount; i++) {
       checkBox(i, rayOrigin, rayDir, &hit);
     }
-  }
 
-  // Check capsules
-  for (var i = 0u; i < scene.capsuleCount; i++) {
-    let capsule = capsules[i];
-    let t = intersectCapsule(rayOrigin, rayDir, capsule);
+    // Check capsules
+    for (var i = 0u; i < scene.capsuleCount; i++) {
+      let capsule = capsules[i];
+      let t = intersectCapsule(rayOrigin, rayDir, capsule);
 
-    if (t > 0.0 && t < hit.t) {
-      hit.t = t;
-      hit.color = capsule.color;
-      hit.alpha = capsule.alpha;
-      hit.ior = capsule.ior;
-      let hitPoint = rayOrigin + t * rayDir;
-      hit.normal = getCapsuleNormal(capsule, hitPoint);
+      if (t > 0.0 && t < hit.t) {
+        hit.t = t;
+        hit.color = capsule.color;
+        hit.alpha = capsule.alpha;
+        hit.ior = capsule.ior;
+        let hitPoint = rayOrigin + t * rayDir;
+        hit.normal = getCapsuleNormal(capsule, hitPoint);
+      }
     }
-  }
 
-  // Check spheres
-  for (var i = 0u; i < scene.sphereCount; i++) {
-    let sphere = spheres[i];
-    let t = intersectSphere(rayOrigin, rayDir, sphere);
+    // Check spheres
+    for (var i = 0u; i < scene.sphereCount; i++) {
+      let sphere = spheres[i];
+      let t = intersectSphere(rayOrigin, rayDir, sphere);
 
-    if (t > 0.0 && t < hit.t) {
-      hit.t = t;
-      hit.color = sphere.color;
-      hit.alpha = sphere.alpha;
-      hit.ior = sphere.ior;
-      let hitPoint = rayOrigin + t * rayDir;
-      hit.normal = getSphereNormal(sphere, hitPoint);
+      if (t > 0.0 && t < hit.t) {
+        hit.t = t;
+        hit.color = sphere.color;
+        hit.alpha = sphere.alpha;
+        hit.ior = sphere.ior;
+        let hitPoint = rayOrigin + t * rayDir;
+        hit.normal = getSphereNormal(sphere, hitPoint);
+      }
     }
   }
 
@@ -143,41 +124,44 @@ fn traceRay(rayOrigin: vec3f, rayDir: vec3f) -> HitInfo {
 fn traceShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
   let shadowOrigin = hitPoint + lightDir * SHADOW_OFFSET;
 
-  // Check boxes (using grid if available)
-  if (grid.useGrid == 1u) {
-    let cellIdx = getCellIndex(shadowOrigin.x, shadowOrigin.y);
-    if (cellIdx >= 0) {
-      let cell = gridCells[cellIdx];
-      for (var j = 0u; j < cell.count; j++) {
-        let boxIndex = gridIndices[cell.startIndex + j];
-        let t = checkBoxShadow(boxIndex, shadowOrigin, lightDir);
-        if (t > 0.0) {
-          return t;
-        }
+  // Use BVH traversal if available
+  let bvhResult = traceShadowBVH(shadowOrigin, lightDir);
+  if (bvhResult > 0.0) {
+    return bvhResult;
+  }
+
+  // Fallback: check all objects if BVH is not available
+  if (bvh.useBVH == 0u) {
+    // Check planes
+    for (var i = 0u; i < scene.planeCount; i++) {
+      let t = intersectPlane(shadowOrigin, lightDir, planes[i]);
+      if (t > 0.0) {
+        return t;
       }
     }
-  } else {
+
+    // Check boxes
     for (var i = 0u; i < scene.boxCount; i++) {
       let t = checkBoxShadow(i, shadowOrigin, lightDir);
       if (t > 0.0) {
         return t;
       }
     }
-  }
 
-  for (var i = 0u; i < scene.capsuleCount; i++) {
-    let capsule = capsules[i];
-    let t = intersectCapsule(shadowOrigin, lightDir, capsule);
-    if (t > 0.0) {
-      return t;
+    // Check capsules
+    for (var i = 0u; i < scene.capsuleCount; i++) {
+      let t = intersectCapsule(shadowOrigin, lightDir, capsules[i]);
+      if (t > 0.0) {
+        return t;
+      }
     }
-  }
 
-  for (var i = 0u; i < scene.sphereCount; i++) {
-    let sphere = spheres[i];
-    let t = intersectSphere(shadowOrigin, lightDir, sphere);
-    if (t > 0.0) {
-      return t;
+    // Check spheres
+    for (var i = 0u; i < scene.sphereCount; i++) {
+      let t = intersectSphere(shadowOrigin, lightDir, spheres[i]);
+      if (t > 0.0) {
+        return t;
+      }
     }
   }
 

@@ -171,6 +171,45 @@ const intersects = (a: AABB, b: AABB): boolean => {
   )
 }
 
+/**
+ * Combine two AABBs into one that contains both
+ */
+const combine = (a: AABB | null, b: AABB | null): AABB | null => {
+  if (!a) return b
+  if (!b) return a
+  return {
+    min: {
+      x: Math.min(a.min.x, b.min.x),
+      y: Math.min(a.min.y, b.min.y),
+      z: Math.min(a.min.z, b.min.z),
+    },
+    max: {
+      x: Math.max(a.max.x, b.max.x),
+      y: Math.max(a.max.y, b.max.y),
+      z: Math.max(a.max.z, b.max.z),
+    },
+  }
+}
+
+/**
+ * Calculate the surface area of an AABB
+ */
+const surfaceArea = (aabb: AABB): number => {
+  const dx = aabb.max.x - aabb.min.x
+  const dy = aabb.max.y - aabb.min.y
+  const dz = aabb.max.z - aabb.min.z
+  return 2 * (dx * dy + dy * dz + dz * dx)
+}
+
+/**
+ * Calculate the centroid of an AABB
+ */
+const centroid = (aabb: AABB): Vector3 => ({
+  x: (aabb.min.x + aabb.max.x) / 2,
+  y: (aabb.min.y + aabb.max.y) / 2,
+  z: (aabb.min.z + aabb.max.z) / 2,
+})
+
 export const $AABB = {
   fromSphere,
   fromBox,
@@ -178,4 +217,7 @@ export const $AABB = {
   fromPlane,
   fromGeometry,
   intersects,
+  combine,
+  surfaceArea,
+  centroid,
 }

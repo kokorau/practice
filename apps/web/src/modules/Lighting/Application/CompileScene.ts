@@ -6,6 +6,7 @@
  * - Separating objects by type (plane, box, capsule, sphere)
  * - Categorizing lights (ambient, directional)
  * - Applying frustum culling when camera is provided
+ * - Building BVH for spatial partitioning
  * - Applying defaults for missing values
  */
 
@@ -18,15 +19,9 @@ import type {
   OrthographicCamera,
 } from '../Domain/ValueObject'
 import type { AmbientLight, DirectionalLight } from '../Domain/ValueObject'
-import { $Grid2D } from '../Domain/ValueObject'
 import type { RenderScene } from '../Infra/WebGPU/RenderScene'
 import { calculateFrustum, calculateShadowFrustum, cullObjects } from './FrustumCulling'
-
-/** Minimum box count to enable grid acceleration */
-const GRID_MIN_BOXES = 16
-
-/** Minimum |forward.z| to consider camera Z-aligned for grid usage */
-const GRID_Z_ALIGNMENT_THRESHOLD = 0.99
+import { buildBVH } from './BuildBVH'
 
 /** Default ambient light when none specified */
 const DEFAULT_AMBIENT_LIGHT: AmbientLight = {
@@ -76,15 +71,14 @@ export const compileScene = (scene: Scene, camera?: OrthographicCamera): RenderS
     spheres = cullObjects(spheres, frustum)
   }
 
-  // Build 2D grid for boxes if there are enough to benefit
-  // Grid only works when camera is aligned with Z-axis (orthographic top-down view)
-  const isCameraZAligned = camera
-    ? Math.abs(camera.forward.z) >= GRID_Z_ALIGNMENT_THRESHOLD
-    : false
-
-  const boxGrid = boxes.length >= GRID_MIN_BOXES && isCameraZAligned
-    ? $Grid2D.build(boxes) ?? undefined
-    : undefined
+  // Build BVH for spatial partitioning
+  // Includes all objects (boxes, spheres, capsules, finite planes)
+  const bvhResult = buildBVH({
+    boxes,
+    spheres,
+    capsules,
+    planes,
+  })
 
   return {
     planes,
@@ -95,6 +89,7 @@ export const compileScene = (scene: Scene, camera?: OrthographicCamera): RenderS
     directionalLights,
     backgroundColor: backgroundColor ?? DEFAULT_BACKGROUND_COLOR,
     shadowBlur: shadowBlur ?? 0,
-    boxGrid,
+    bvh: bvhResult.bvh,
+    infinitePlaneIndices: bvhResult.infinitePlaneIndices,
   }
 }

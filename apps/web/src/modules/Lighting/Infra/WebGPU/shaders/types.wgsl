@@ -117,23 +117,35 @@ struct VertexOutput {
 // Bindings
 // =============================================================================
 
-// 2D Grid for spatial partitioning (32 bytes)
-struct Grid2D {
-  minX: f32,            // 0-3
-  minY: f32,            // 4-7
-  minZ: f32,            // 8-11
-  _pad0: f32,           // 12-15
-  cellSize: f32,        // 16-19
-  cellsX: u32,          // 20-23
-  cellsY: u32,          // 24-27
-  useGrid: u32,         // 28-31 (0 = disabled, 1 = enabled)
+// BVH uniform (16 bytes)
+struct BVHUniform {
+  nodeCount: u32,       // 0-3
+  useBVH: u32,          // 4-7 (0 = disabled, 1 = enabled)
+  _pad0: u32,           // 8-11
+  _pad1: u32,           // 12-15
 }
 
-// Cell data (8 bytes per cell)
-struct CellData {
-  startIndex: u32,      // Start index in object indices array
-  count: u32,           // Number of objects in this cell
+// BVH node (64 bytes)
+struct BVHNode {
+  aabbMin: vec3f,       // 0-11
+  leftChild: i32,       // 12-15 (-1 if leaf)
+  aabbMax: vec3f,       // 16-27
+  rightChild: i32,      // 28-31 (-1 if leaf)
+  objectIndex: i32,     // 32-35 (-1 if internal node)
+  objectType: u32,      // 36-39 (0=box, 1=sphere, 2=capsule, 3=plane)
+  _pad0: f32,           // 40-43
+  _pad1: f32,           // 44-47
+  _pad2: f32,           // 48-51
+  _pad3: f32,           // 52-55
+  _pad4: f32,           // 56-59
+  _pad5: f32,           // 60-63
 }
+
+// Object type constants
+const OBJ_TYPE_BOX: u32 = 0u;
+const OBJ_TYPE_SPHERE: u32 = 1u;
+const OBJ_TYPE_CAPSULE: u32 = 2u;
+const OBJ_TYPE_PLANE: u32 = 3u;
 
 @group(0) @binding(0) var<uniform> scene: SceneUniforms;
 @group(0) @binding(1) var<storage, read> planes: array<Plane>;
@@ -141,6 +153,5 @@ struct CellData {
 @group(0) @binding(3) var<storage, read> lights: array<DirLight>;
 @group(0) @binding(4) var<storage, read> capsules: array<Capsule>;
 @group(0) @binding(5) var<storage, read> spheres: array<Sphere>;
-@group(0) @binding(6) var<uniform> grid: Grid2D;
-@group(0) @binding(7) var<storage, read> gridCells: array<CellData>;
-@group(0) @binding(8) var<storage, read> gridIndices: array<u32>;
+@group(0) @binding(6) var<uniform> bvh: BVHUniform;
+@group(0) @binding(7) var<storage, read> bvhNodes: array<BVHNode>;
