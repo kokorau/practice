@@ -25,6 +25,9 @@ import { calculateFrustum, calculateShadowFrustum, cullObjects } from './Frustum
 /** Minimum box count to enable grid acceleration */
 const GRID_MIN_BOXES = 16
 
+/** Minimum |forward.z| to consider camera Z-aligned for grid usage */
+const GRID_Z_ALIGNMENT_THRESHOLD = 0.99
+
 /** Default ambient light when none specified */
 const DEFAULT_AMBIENT_LIGHT: AmbientLight = {
   type: 'ambient',
@@ -74,7 +77,12 @@ export const compileScene = (scene: Scene, camera?: OrthographicCamera): RenderS
   }
 
   // Build 2D grid for boxes if there are enough to benefit
-  const boxGrid = boxes.length >= GRID_MIN_BOXES
+  // Grid only works when camera is aligned with Z-axis (orthographic top-down view)
+  const isCameraZAligned = camera
+    ? Math.abs(camera.forward.z) >= GRID_Z_ALIGNMENT_THRESHOLD
+    : false
+
+  const boxGrid = boxes.length >= GRID_MIN_BOXES && isCameraZAligned
     ? $Grid2D.build(boxes) ?? undefined
     : undefined
 
