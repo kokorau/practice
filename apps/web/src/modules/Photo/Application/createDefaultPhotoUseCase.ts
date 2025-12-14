@@ -1,4 +1,4 @@
-import { $Oklch, $Srgb } from '../../Color/Domain'
+import { $Oklch, $Srgb } from '@practice/color'
 import { $Photo, $PhotoColorPalette, type Photo } from '../Domain'
 
 /**

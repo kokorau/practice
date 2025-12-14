@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { $ProfiledPalette } from './ProfiledPalette'
 import type { ColorProfile } from './ColorProfile'
-import { $Srgb } from '../../Color/Domain'
+import { $Srgb } from '@practice/color'
 
 describe('$ProfiledPalette', () => {
   // Helper to create a color profile

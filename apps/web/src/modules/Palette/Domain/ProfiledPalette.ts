@@ -1,4 +1,4 @@
-import { $Hex, type Hex } from '../../Color/Domain'
+import { $Hex, type Hex } from '@practice/color'
 import type { ColorProfile } from './ColorProfile'
 
 /**

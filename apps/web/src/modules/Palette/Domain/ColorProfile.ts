@@ -1,4 +1,4 @@
-import type { Srgb } from '../../Color/Domain'
+import type { Srgb } from '@practice/color'
 
 /**
  * Color role in the image

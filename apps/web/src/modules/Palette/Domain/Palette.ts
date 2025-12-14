@@ -1,4 +1,4 @@
-import { $Hex, type Srgb, type Hex } from '../../Color/Domain'
+import { $Hex, type Srgb, type Hex } from '@practice/color'
 
 /**
  * A color with its weight (pixel count ratio)

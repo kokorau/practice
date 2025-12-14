@@ -1,4 +1,4 @@
-import type { Srgb } from '../../Color/Domain'
+import type { Srgb } from '@practice/color'
 
 /**
  * 画像内の1つのセグメント（領域）

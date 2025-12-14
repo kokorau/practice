@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { $Palette, type PaletteColor } from './Palette'
-import type { Srgb } from '../../Color/Domain'
+import type { Srgb } from '@practice/color'
 
 describe('$Palette', () => {
   const createTestColor = (r: number, g: number, b: number, weight: number): PaletteColor => ({

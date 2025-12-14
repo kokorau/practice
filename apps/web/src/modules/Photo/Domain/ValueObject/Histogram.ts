@@ -1,5 +1,5 @@
 import type { Photo } from './Photo'
-import { $Oklab } from '../../../Color/Domain'
+import { $Oklab } from '@practice/color'
 
 export type Histogram = {
   r: Uint32Array         // length: 256

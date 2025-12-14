@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { $ColorProfile, type ColorMetrics } from './ColorProfile'
-import type { Srgb } from '../../Color/Domain'
+import type { Srgb } from '@practice/color'
 
 describe('$ColorProfile', () => {
   const testColor: Srgb = { r: 0.5, g: 0.5, b: 0.5 }

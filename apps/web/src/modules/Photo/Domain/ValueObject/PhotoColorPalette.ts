@@ -1,4 +1,4 @@
-import { $Oklch, type Oklch } from '../../../Color/Domain'
+import { $Oklch, type Oklch } from '@practice/color'
 
 /**
  * Shade levels for palette colors (Tailwind-like naming)
