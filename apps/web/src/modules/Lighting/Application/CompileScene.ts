@@ -18,8 +18,12 @@ import type {
   OrthographicCamera,
 } from '../Domain/ValueObject'
 import type { AmbientLight, DirectionalLight } from '../Domain/ValueObject'
+import { $Grid2D } from '../Domain/ValueObject'
 import type { RenderScene } from '../Infra/WebGPU/RenderScene'
 import { calculateFrustum, calculateShadowFrustum, cullObjects } from './FrustumCulling'
+
+/** Minimum box count to enable grid acceleration */
+const GRID_MIN_BOXES = 16
 
 /** Default ambient light when none specified */
 const DEFAULT_AMBIENT_LIGHT: AmbientLight = {
@@ -69,6 +73,11 @@ export const compileScene = (scene: Scene, camera?: OrthographicCamera): RenderS
     spheres = cullObjects(spheres, frustum)
   }
 
+  // Build 2D grid for boxes if there are enough to benefit
+  const boxGrid = boxes.length >= GRID_MIN_BOXES
+    ? $Grid2D.build(boxes) ?? undefined
+    : undefined
+
   return {
     planes,
     boxes,
@@ -78,5 +87,6 @@ export const compileScene = (scene: Scene, camera?: OrthographicCamera): RenderS
     directionalLights,
     backgroundColor: backgroundColor ?? DEFAULT_BACKGROUND_COLOR,
     shadowBlur: shadowBlur ?? 0,
+    boxGrid,
   }
 }

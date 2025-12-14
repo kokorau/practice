@@ -1,4 +1,63 @@
 // =============================================================================
+// Grid Helper Functions
+// =============================================================================
+
+// Get cell index for a position (-1 if outside grid)
+fn getCellIndex(x: f32, y: f32) -> i32 {
+  let cellX = i32((x - grid.minX) / grid.cellSize);
+  let cellY = i32((y - grid.minY) / grid.cellSize);
+
+  if (cellX < 0 || cellX >= i32(grid.cellsX) || cellY < 0 || cellY >= i32(grid.cellsY)) {
+    return -1;
+  }
+
+  return cellY * i32(grid.cellsX) + cellX;
+}
+
+// Check a single box and update hit info if closer
+fn checkBox(boxIndex: u32, rayOrigin: vec3f, rayDir: vec3f, hit: ptr<function, HitInfo>) {
+  let box = boxes[boxIndex];
+  var result: vec2f;
+
+  if (box.radius > 0.0) {
+    result = intersectRoundBox(rayOrigin, rayDir, box);
+  } else {
+    result = intersectBox(rayOrigin, rayDir, box);
+  }
+
+  let t = result.x;
+  if (t > 0.0 && t < (*hit).t) {
+    (*hit).t = t;
+    (*hit).color = box.color;
+    (*hit).alpha = box.alpha;
+    (*hit).ior = box.ior;
+
+    if (box.radius > 0.0) {
+      (*hit).normal = getRoundBoxNormal(box, rayOrigin, rayDir, t);
+    } else {
+      let localOrigin = box.rotation * (rayOrigin - box.center);
+      let localDir = box.rotation * rayDir;
+      let localHit = localOrigin + t * localDir;
+      (*hit).normal = getBoxNormal(box, localHit, result.y);
+    }
+  }
+}
+
+// Check box for shadow (returns true if hit)
+fn checkBoxShadow(boxIndex: u32, shadowOrigin: vec3f, lightDir: vec3f) -> f32 {
+  let box = boxes[boxIndex];
+  var result: vec2f;
+
+  if (box.radius > 0.0) {
+    result = intersectRoundBox(shadowOrigin, lightDir, box);
+  } else {
+    result = intersectBox(shadowOrigin, lightDir, box);
+  }
+
+  return result.x;
+}
+
+// =============================================================================
 // Ray Tracing Core Functions
 // =============================================================================
 
@@ -25,32 +84,21 @@ fn traceRay(rayOrigin: vec3f, rayDir: vec3f) -> HitInfo {
     }
   }
 
-  // Check boxes
-  for (var i = 0u; i < scene.boxCount; i++) {
-    let box = boxes[i];
-    var result: vec2f;
-
-    if (box.radius > 0.0) {
-      result = intersectRoundBox(rayOrigin, rayDir, box);
-    } else {
-      result = intersectBox(rayOrigin, rayDir, box);
-    }
-
-    let t = result.x;
-    if (t > 0.0 && t < hit.t) {
-      hit.t = t;
-      hit.color = box.color;
-      hit.alpha = box.alpha;
-      hit.ior = box.ior;
-
-      if (box.radius > 0.0) {
-        hit.normal = getRoundBoxNormal(box, rayOrigin, rayDir, t);
-      } else {
-        let localOrigin = box.rotation * (rayOrigin - box.center);
-        let localDir = box.rotation * rayDir;
-        let localHit = localOrigin + t * localDir;
-        hit.normal = getBoxNormal(box, localHit, result.y);
+  // Check boxes (using grid if available)
+  if (grid.useGrid == 1u) {
+    // Grid-based traversal: only check boxes in the cell
+    let cellIdx = getCellIndex(rayOrigin.x, rayOrigin.y);
+    if (cellIdx >= 0) {
+      let cell = gridCells[cellIdx];
+      for (var j = 0u; j < cell.count; j++) {
+        let boxIndex = gridIndices[cell.startIndex + j];
+        checkBox(boxIndex, rayOrigin, rayDir, &hit);
       }
+    }
+  } else {
+    // Full scan fallback
+    for (var i = 0u; i < scene.boxCount; i++) {
+      checkBox(i, rayOrigin, rayDir, &hit);
     }
   }
 
@@ -95,16 +143,25 @@ fn traceRay(rayOrigin: vec3f, rayDir: vec3f) -> HitInfo {
 fn traceShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
   let shadowOrigin = hitPoint + lightDir * SHADOW_OFFSET;
 
-  for (var i = 0u; i < scene.boxCount; i++) {
-    let box = boxes[i];
-    var result: vec2f;
-    if (box.radius > 0.0) {
-      result = intersectRoundBox(shadowOrigin, lightDir, box);
-    } else {
-      result = intersectBox(shadowOrigin, lightDir, box);
+  // Check boxes (using grid if available)
+  if (grid.useGrid == 1u) {
+    let cellIdx = getCellIndex(shadowOrigin.x, shadowOrigin.y);
+    if (cellIdx >= 0) {
+      let cell = gridCells[cellIdx];
+      for (var j = 0u; j < cell.count; j++) {
+        let boxIndex = gridIndices[cell.startIndex + j];
+        let t = checkBoxShadow(boxIndex, shadowOrigin, lightDir);
+        if (t > 0.0) {
+          return t;
+        }
+      }
     }
-    if (result.x > 0.0) {
-      return result.x;
+  } else {
+    for (var i = 0u; i < scene.boxCount; i++) {
+      let t = checkBoxShadow(i, shadowOrigin, lightDir);
+      if (t > 0.0) {
+        return t;
+      }
     }
   }
 

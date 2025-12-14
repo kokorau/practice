@@ -117,9 +117,30 @@ struct VertexOutput {
 // Bindings
 // =============================================================================
 
+// 2D Grid for spatial partitioning (32 bytes)
+struct Grid2D {
+  minX: f32,            // 0-3
+  minY: f32,            // 4-7
+  minZ: f32,            // 8-11
+  _pad0: f32,           // 12-15
+  cellSize: f32,        // 16-19
+  cellsX: u32,          // 20-23
+  cellsY: u32,          // 24-27
+  useGrid: u32,         // 28-31 (0 = disabled, 1 = enabled)
+}
+
+// Cell data (8 bytes per cell)
+struct CellData {
+  startIndex: u32,      // Start index in object indices array
+  count: u32,           // Number of objects in this cell
+}
+
 @group(0) @binding(0) var<uniform> scene: SceneUniforms;
 @group(0) @binding(1) var<storage, read> planes: array<Plane>;
 @group(0) @binding(2) var<storage, read> boxes: array<Box>;
 @group(0) @binding(3) var<storage, read> lights: array<DirLight>;
 @group(0) @binding(4) var<storage, read> capsules: array<Capsule>;
 @group(0) @binding(5) var<storage, read> spheres: array<Sphere>;
+@group(0) @binding(6) var<uniform> grid: Grid2D;
+@group(0) @binding(7) var<storage, read> gridCells: array<CellData>;
+@group(0) @binding(8) var<storage, read> gridIndices: array<u32>;

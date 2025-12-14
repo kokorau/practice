@@ -11,6 +11,7 @@ import type {
   SceneCapsule,
   SceneSphere,
   Color,
+  Grid2D,
 } from '../../Domain/ValueObject'
 import type { AmbientLight, DirectionalLight } from '../../Domain/ValueObject'
 
@@ -34,6 +35,8 @@ export interface RenderScene {
   readonly backgroundColor: Color
   /** Shadow blur amount */
   readonly shadowBlur: number
+  /** 2D grid for box spatial partitioning (optional) */
+  readonly boxGrid?: Grid2D
 }
 
 /** Default ambient light when none specified */

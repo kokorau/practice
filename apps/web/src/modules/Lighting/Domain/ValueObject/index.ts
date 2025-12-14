@@ -35,3 +35,5 @@ export type {
 export { $RenderableObject, $Scene } from './Scene'
 export type { AABB } from './AABB'
 export { $AABB } from './AABB'
+export type { Grid2D, CellData } from './Grid2D'
+export { $Grid2D } from './Grid2D'
