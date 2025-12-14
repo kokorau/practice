@@ -58,25 +58,26 @@ fn traceRay(rayOrigin: vec3f, rayDir: vec3f) -> HitInfo {
   hit.alpha = 1.0;
   hit.ior = AIR_IOR;
 
-  // Use BVH traversal if available (handles boxes, spheres, capsules, finite planes)
-  traceRayBVH(rayOrigin, rayDir, &hit);
+  // Always check planes (infinite planes are not in BVH)
+  // This is O(N) but planes are usually few
+  for (var i = 0u; i < scene.planeCount; i++) {
+    let plane = planes[i];
+    let t = intersectPlane(rayOrigin, rayDir, plane);
 
-  // Fallback: check all objects if BVH is not available
-  if (bvh.useBVH == 0u) {
-    // Check planes
-    for (var i = 0u; i < scene.planeCount; i++) {
-      let plane = planes[i];
-      let t = intersectPlane(rayOrigin, rayDir, plane);
-
-      if (t > 0.0 && t < hit.t) {
-        hit.t = t;
-        hit.color = plane.color;
-        hit.normal = getPlaneNormal(plane, rayDir);
-        hit.alpha = plane.alpha;
-        hit.ior = plane.ior;
-      }
+    if (t > 0.0 && t < hit.t) {
+      hit.t = t;
+      hit.color = plane.color;
+      hit.normal = getPlaneNormal(plane, rayDir);
+      hit.alpha = plane.alpha;
+      hit.ior = plane.ior;
     }
+  }
 
+  // Use BVH traversal if available (handles boxes, spheres, capsules)
+  if (bvh.useBVH != 0u) {
+    traceRayBVH(rayOrigin, rayDir, &hit);
+  } else {
+    // Fallback: check all objects if BVH is not available
     // Check boxes
     for (var i = 0u; i < scene.boxCount; i++) {
       checkBox(i, rayOrigin, rayDir, &hit);
@@ -124,22 +125,22 @@ fn traceRay(rayOrigin: vec3f, rayDir: vec3f) -> HitInfo {
 fn traceShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
   let shadowOrigin = hitPoint + lightDir * SHADOW_OFFSET;
 
-  // Use BVH traversal if available
-  let bvhResult = traceShadowBVH(shadowOrigin, lightDir);
-  if (bvhResult > 0.0) {
-    return bvhResult;
+  // Always check planes (infinite planes are not in BVH)
+  for (var i = 0u; i < scene.planeCount; i++) {
+    let t = intersectPlane(shadowOrigin, lightDir, planes[i]);
+    if (t > 0.0) {
+      return t;
+    }
   }
 
-  // Fallback: check all objects if BVH is not available
-  if (bvh.useBVH == 0u) {
-    // Check planes
-    for (var i = 0u; i < scene.planeCount; i++) {
-      let t = intersectPlane(shadowOrigin, lightDir, planes[i]);
-      if (t > 0.0) {
-        return t;
-      }
+  // Use BVH traversal if available
+  if (bvh.useBVH != 0u) {
+    let bvhResult = traceShadowBVH(shadowOrigin, lightDir);
+    if (bvhResult > 0.0) {
+      return bvhResult;
     }
-
+  } else {
+    // Fallback: check all objects if BVH is not available
     // Check boxes
     for (var i = 0u; i < scene.boxCount; i++) {
       let t = checkBoxShadow(i, shadowOrigin, lightDir);

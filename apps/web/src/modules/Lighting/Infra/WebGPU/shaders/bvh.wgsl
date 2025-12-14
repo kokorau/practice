@@ -43,46 +43,48 @@ fn testObjectIntersection(
 
   let idx = u32(objectIndex);
 
-  switch (objectType) {
-    case OBJ_TYPE_BOX: {
-      checkBox(idx, rayOrigin, rayDir, hit);
+  // DEBUG: Test only BOX type, skip switch for now
+  if (objectType == OBJ_TYPE_BOX) {
+    checkBox(idx, rayOrigin, rayDir, hit);
+    return;
+  }
+  if (objectType == OBJ_TYPE_SPHERE) {
+    let sphere = spheres[idx];
+    let t = intersectSphere(rayOrigin, rayDir, sphere);
+    if (t > 0.0 && t < (*hit).t) {
+      (*hit).t = t;
+      (*hit).color = sphere.color;
+      (*hit).alpha = sphere.alpha;
+      (*hit).ior = sphere.ior;
+      let hitPoint = rayOrigin + t * rayDir;
+      (*hit).normal = getSphereNormal(sphere, hitPoint);
     }
-    case OBJ_TYPE_SPHERE: {
-      let sphere = spheres[idx];
-      let t = intersectSphere(rayOrigin, rayDir, sphere);
-      if (t > 0.0 && t < (*hit).t) {
-        (*hit).t = t;
-        (*hit).color = sphere.color;
-        (*hit).alpha = sphere.alpha;
-        (*hit).ior = sphere.ior;
-        let hitPoint = rayOrigin + t * rayDir;
-        (*hit).normal = getSphereNormal(sphere, hitPoint);
-      }
+    return;
+  }
+  if (objectType == OBJ_TYPE_CAPSULE) {
+    let capsule = capsules[idx];
+    let t = intersectCapsule(rayOrigin, rayDir, capsule);
+    if (t > 0.0 && t < (*hit).t) {
+      (*hit).t = t;
+      (*hit).color = capsule.color;
+      (*hit).alpha = capsule.alpha;
+      (*hit).ior = capsule.ior;
+      let hitPoint = rayOrigin + t * rayDir;
+      (*hit).normal = getCapsuleNormal(capsule, hitPoint);
     }
-    case OBJ_TYPE_CAPSULE: {
-      let capsule = capsules[idx];
-      let t = intersectCapsule(rayOrigin, rayDir, capsule);
-      if (t > 0.0 && t < (*hit).t) {
-        (*hit).t = t;
-        (*hit).color = capsule.color;
-        (*hit).alpha = capsule.alpha;
-        (*hit).ior = capsule.ior;
-        let hitPoint = rayOrigin + t * rayDir;
-        (*hit).normal = getCapsuleNormal(capsule, hitPoint);
-      }
+    return;
+  }
+  if (objectType == OBJ_TYPE_PLANE) {
+    let plane = planes[idx];
+    let t = intersectPlane(rayOrigin, rayDir, plane);
+    if (t > 0.0 && t < (*hit).t) {
+      (*hit).t = t;
+      (*hit).color = plane.color;
+      (*hit).alpha = plane.alpha;
+      (*hit).ior = plane.ior;
+      (*hit).normal = getPlaneNormal(plane, rayDir);
     }
-    case OBJ_TYPE_PLANE: {
-      let plane = planes[idx];
-      let t = intersectPlane(rayOrigin, rayDir, plane);
-      if (t > 0.0 && t < (*hit).t) {
-        (*hit).t = t;
-        (*hit).color = plane.color;
-        (*hit).alpha = plane.alpha;
-        (*hit).ior = plane.ior;
-        (*hit).normal = getPlaneNormal(plane, rayDir);
-      }
-    }
-    default: {}
+    return;
   }
 }
 
@@ -133,7 +135,6 @@ fn traceRayBVH(rayOrigin: vec3f, rayDir: vec3f, hit: ptr<function, HitInfo>) {
   var stack: array<u32, BVH_MAX_STACK_SIZE>;
   var stackPtr: u32 = 0u;
 
-  // Push root node
   stack[stackPtr] = 0u;
   stackPtr++;
 
@@ -142,58 +143,41 @@ fn traceRayBVH(rayOrigin: vec3f, rayDir: vec3f, hit: ptr<function, HitInfo>) {
     let nodeIdx = stack[stackPtr];
     let node = bvhNodes[nodeIdx];
 
-    // Check AABB intersection
     let aabbT = intersectAABB(rayOrigin, rayDirInv, node.aabbMin, node.aabbMax);
-
-    // Skip if AABB miss or AABB is farther than current hit
-    if (aabbT < 0.0 || aabbT > (*hit).t) {
+    if (aabbT < 0.0 || aabbT >= (*hit).t) {
       continue;
     }
 
-    // Leaf node - test object intersection
+    // Leaf node
     if (node.leftChild < 0) {
       testObjectIntersection(node.objectIndex, node.objectType, rayOrigin, rayDir, hit);
       continue;
     }
 
-    // Internal node - push children
-    // Order children by distance for better early-out (push far first, pop near first)
-    let leftNode = bvhNodes[node.leftChild];
-    let rightNode = bvhNodes[node.rightChild];
-
+    // Internal node: push children with distance ordering (closer node last = processed first)
+    let leftNode = bvhNodes[u32(node.leftChild)];
+    let rightNode = bvhNodes[u32(node.rightChild)];
     let leftT = intersectAABB(rayOrigin, rayDirInv, leftNode.aabbMin, leftNode.aabbMax);
     let rightT = intersectAABB(rayOrigin, rayDirInv, rightNode.aabbMin, rightNode.aabbMax);
 
-    // Push farther child first so closer child is processed first
-    if (leftT >= 0.0 && rightT >= 0.0) {
-      if (leftT < rightT) {
-        // Left is closer - push right first
-        if (stackPtr < BVH_MAX_STACK_SIZE - 1u) {
+    if (stackPtr < BVH_MAX_STACK_SIZE - 1u) {
+      if (leftT >= 0.0 && rightT >= 0.0) {
+        // Both children hit - push farther first, closer last
+        if (leftT < rightT) {
+          stack[stackPtr] = u32(node.rightChild);
+          stackPtr++;
+          stack[stackPtr] = u32(node.leftChild);
+          stackPtr++;
+        } else {
+          stack[stackPtr] = u32(node.leftChild);
+          stackPtr++;
           stack[stackPtr] = u32(node.rightChild);
           stackPtr++;
         }
-        if (stackPtr < BVH_MAX_STACK_SIZE) {
-          stack[stackPtr] = u32(node.leftChild);
-          stackPtr++;
-        }
-      } else {
-        // Right is closer - push left first
-        if (stackPtr < BVH_MAX_STACK_SIZE - 1u) {
-          stack[stackPtr] = u32(node.leftChild);
-          stackPtr++;
-        }
-        if (stackPtr < BVH_MAX_STACK_SIZE) {
-          stack[stackPtr] = u32(node.rightChild);
-          stackPtr++;
-        }
-      }
-    } else if (leftT >= 0.0) {
-      if (stackPtr < BVH_MAX_STACK_SIZE) {
+      } else if (leftT >= 0.0) {
         stack[stackPtr] = u32(node.leftChild);
         stackPtr++;
-      }
-    } else if (rightT >= 0.0) {
-      if (stackPtr < BVH_MAX_STACK_SIZE) {
+      } else if (rightT >= 0.0) {
         stack[stackPtr] = u32(node.rightChild);
         stackPtr++;
       }

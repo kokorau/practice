@@ -3,11 +3,13 @@
 // =============================================================================
 
 // Safe inverse to avoid division by zero
+// Returns large value with same sign as input; defaults to positive for exact zero
 fn safeInverse(v: vec3f) -> vec3f {
+  let large = 1.0 / SAFE_INV_EPSILON; // 1e8
   return vec3f(
-    select(1.0 / v.x, sign(v.x) / SAFE_INV_EPSILON, abs(v.x) < SAFE_INV_EPSILON),
-    select(1.0 / v.y, sign(v.y) / SAFE_INV_EPSILON, abs(v.y) < SAFE_INV_EPSILON),
-    select(1.0 / v.z, sign(v.z) / SAFE_INV_EPSILON, abs(v.z) < SAFE_INV_EPSILON)
+    select(1.0 / v.x, select(large, -large, v.x < 0.0), abs(v.x) < SAFE_INV_EPSILON),
+    select(1.0 / v.y, select(large, -large, v.y < 0.0), abs(v.y) < SAFE_INV_EPSILON),
+    select(1.0 / v.z, select(large, -large, v.z < 0.0), abs(v.z) < SAFE_INV_EPSILON)
   );
 }
 
