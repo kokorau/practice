@@ -1,7 +1,7 @@
-import { $LineSegments, $LineSegment, $Color, $Camera, $Point } from '@practice/lighting'
+import { $LineSegments, $LineSegment, $Color, $Camera, $Point, $Mesh } from '@practice/lighting'
 import { $LineScene, type LineScene } from '@practice/lighting/Infra'
 import { $Vector3 } from '@practice/vector'
-import type { OrthographicCamera, Point } from '@practice/lighting'
+import type { OrthographicCamera, Point, Mesh } from '@practice/lighting'
 
 /**
  * RGB Cube wireframe scene
@@ -38,6 +38,33 @@ function createCubeEdges() {
     const c1 = corners[i]!
     const c2 = corners[j]!
     return $LineSegment.create(c1.pos, c2.pos, c1.color, c2.color)
+  })
+}
+
+/**
+ * Create transparent cube faces
+ * Each face has 4 vertices with RGB colors matching the corners
+ */
+function createCubeFaces(opacity: number = 0.3): Mesh[] {
+  // Face definitions: [vertex indices, normal direction]
+  // Using corners array indices
+  const faces: { vertices: number[]; name: string }[] = [
+    { vertices: [0, 1, 3, 2], name: 'bottom' },  // Z=0 face
+    { vertices: [4, 6, 7, 5], name: 'top' },     // Z=1 face
+    { vertices: [0, 4, 5, 1], name: 'front' },   // Y=0 face
+    { vertices: [2, 3, 7, 6], name: 'back' },    // Y=1 face
+    { vertices: [0, 2, 6, 4], name: 'left' },    // X=0 face
+    { vertices: [1, 5, 7, 3], name: 'right' },   // X=1 face
+  ]
+
+  return faces.map(face => {
+    const v = face.vertices.map(i => ({
+      position: corners[i]!.pos,
+      color: corners[i]!.color,
+    }))
+
+    // Two triangles per quad
+    return $Mesh.create(v, [0, 1, 2, 0, 2, 3], opacity)
   })
 }
 
@@ -113,6 +140,7 @@ export const RgbCube: LineSceneDefinition = {
   createScene(time) {
     const edgeSegments = createCubeEdges()
     const gridSegments = createCubeGrid(8)
+    const cubeFaces = createCubeFaces(0.2) // 20% opacity
 
     // Animated color point that moves through the cube
     const t = time * 0.3
@@ -129,6 +157,6 @@ export const RgbCube: LineSceneDefinition = {
     ]
 
     const lines = $LineSegments.create([...edgeSegments, ...gridSegments])
-    return $LineScene.create(lines, { r: 0.1, g: 0.1, b: 0.12 }, points)
+    return $LineScene.create(lines, { r: 0.1, g: 0.1, b: 0.12 }, points, cubeFaces)
   },
 }

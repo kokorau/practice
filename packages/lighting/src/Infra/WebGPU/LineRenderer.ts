@@ -3,17 +3,19 @@
  * Renders line segments and points with vertex colors using rasterization
  */
 
-import type { LineSegments, Point } from '../../Domain/ValueObject'
+import type { LineSegments, Point, Mesh } from '../../Domain/ValueObject'
 import type { PerspectiveCamera, OrthographicCamera } from '../../Domain/ValueObject'
 import { $Vector3 } from '@practice/vector'
 import lineShader from './shaders/line.wgsl?raw'
 import pointShader from './shaders/point.wgsl?raw'
+import meshShader from './shaders/mesh.wgsl?raw'
 
 type Camera = PerspectiveCamera | OrthographicCamera
 
 export interface LineScene {
   readonly lines: LineSegments
   readonly points?: readonly Point[]
+  readonly meshes?: readonly Mesh[]
   readonly backgroundColor?: { r: number; g: number; b: number }
 }
 
@@ -21,11 +23,13 @@ export const $LineScene = {
   create: (
     lines: LineSegments,
     backgroundColor?: { r: number; g: number; b: number },
-    points?: readonly Point[]
+    points?: readonly Point[],
+    meshes?: readonly Mesh[]
   ): LineScene => ({
     lines,
     backgroundColor,
     points,
+    meshes,
   }),
 }
 
@@ -108,6 +112,10 @@ export class LineRenderer {
   private pointUniformBuffer: GPUBuffer
   private pointBindGroup: GPUBindGroup
 
+  // Mesh rendering
+  private meshPipeline: GPURenderPipeline
+  private meshBindGroupLayout: GPUBindGroupLayout
+
   private depthTexture: GPUTexture | null = null
   private depthTextureView: GPUTextureView | null = null
   private lastWidth = 0
@@ -121,7 +129,9 @@ export class LineRenderer {
     lineBindGroup: GPUBindGroup,
     pointPipeline: GPURenderPipeline,
     pointUniformBuffer: GPUBuffer,
-    pointBindGroup: GPUBindGroup
+    pointBindGroup: GPUBindGroup,
+    meshPipeline: GPURenderPipeline,
+    meshBindGroupLayout: GPUBindGroupLayout
   ) {
     this.device = device
     this.context = context
@@ -131,6 +141,8 @@ export class LineRenderer {
     this.pointPipeline = pointPipeline
     this.pointUniformBuffer = pointUniformBuffer
     this.pointBindGroup = pointBindGroup
+    this.meshPipeline = meshPipeline
+    this.meshBindGroupLayout = meshBindGroupLayout
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<LineRenderer> {
@@ -296,10 +308,75 @@ export class LineRenderer {
       ],
     })
 
+    // === Mesh Pipeline ===
+    const meshShaderModule = device.createShaderModule({
+      code: meshShader,
+    })
+
+    const meshBindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: 'uniform' },
+        },
+      ],
+    })
+
+    const meshPipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [meshBindGroupLayout],
+    })
+
+    const meshPipeline = device.createRenderPipeline({
+      layout: meshPipelineLayout,
+      vertex: {
+        module: meshShaderModule,
+        entryPoint: 'vertexMain',
+        buffers: [
+          {
+            arrayStride: 24, // 6 floats * 4 bytes (position(3) + color(3))
+            attributes: [
+              { shaderLocation: 0, offset: 0, format: 'float32x3' },   // position
+              { shaderLocation: 1, offset: 12, format: 'float32x3' },  // color
+            ],
+          },
+        ],
+      },
+      fragment: {
+        module: meshShaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [{
+          format,
+          blend: {
+            color: {
+              srcFactor: 'src-alpha',
+              dstFactor: 'one-minus-src-alpha',
+              operation: 'add',
+            },
+            alpha: {
+              srcFactor: 'one',
+              dstFactor: 'one-minus-src-alpha',
+              operation: 'add',
+            },
+          },
+        }],
+      },
+      primitive: {
+        topology: 'triangle-list',
+        cullMode: 'none',  // Draw both sides for transparent surfaces
+      },
+      depthStencil: {
+        format: 'depth24plus',
+        depthWriteEnabled: false,  // Don't write depth for transparent objects
+        depthCompare: 'less',
+      },
+    })
+
     return new LineRenderer(
       device, context,
       linePipeline, lineUniformBuffer, lineBindGroup,
-      pointPipeline, pointUniformBuffer, pointBindGroup
+      pointPipeline, pointUniformBuffer, pointBindGroup,
+      meshPipeline, meshBindGroupLayout
     )
   }
 
@@ -323,7 +400,7 @@ export class LineRenderer {
   }
 
   render(scene: LineScene, camera: Camera): void {
-    const { lines, points, backgroundColor } = scene
+    const { lines, points, meshes, backgroundColor } = scene
 
     // Get canvas size
     const canvas = this.context.canvas as HTMLCanvasElement
@@ -471,6 +548,74 @@ export class LineRenderer {
       renderPass.draw(pointVertexCount)
     }
 
+    // Draw meshes (transparent, draw last)
+    const meshResources: { vertexBuffer: GPUBuffer; indexBuffer: GPUBuffer; uniformBuffer: GPUBuffer; bindGroup: GPUBindGroup; indexCount: number }[] = []
+    if (meshes && meshes.length > 0) {
+      renderPass.setPipeline(this.meshPipeline)
+
+      for (const mesh of meshes) {
+        // Build mesh vertex buffer
+        const meshVertexData = new Float32Array(mesh.vertices.length * 6) // position(3) + color(3)
+        let mOffset = 0
+        for (const v of mesh.vertices) {
+          meshVertexData[mOffset++] = v.position.x
+          meshVertexData[mOffset++] = v.position.y
+          meshVertexData[mOffset++] = v.position.z
+          meshVertexData[mOffset++] = v.color.r
+          meshVertexData[mOffset++] = v.color.g
+          meshVertexData[mOffset++] = v.color.b
+        }
+
+        const meshVertexBuffer = this.device.createBuffer({
+          size: meshVertexData.byteLength,
+          usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        })
+        this.device.queue.writeBuffer(meshVertexBuffer, 0, meshVertexData)
+
+        // Build mesh index buffer
+        const meshIndexData = new Uint16Array(mesh.indices)
+        const meshIndexBuffer = this.device.createBuffer({
+          size: meshIndexData.byteLength,
+          usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+        })
+        this.device.queue.writeBuffer(meshIndexBuffer, 0, meshIndexData)
+
+        // Create per-mesh uniform buffer (MVP + opacity)
+        // WGSL struct alignment: mat4x4f(64) + f32(4) + implicit padding(12) + vec3f(12) + final padding(4) = 96
+        const meshUniformData = new Float32Array(24) // 96 bytes / 4 = 24 floats
+        meshUniformData.set(mvp, 0)
+        meshUniformData[16] = mesh.opacity
+        // indices 17-23 are padding
+
+        const meshUniformBuffer = this.device.createBuffer({
+          size: 96, // mat4x4f(64) + f32 with padding to vec3f alignment(16) + vec3f(12) + struct alignment padding(4)
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        })
+        this.device.queue.writeBuffer(meshUniformBuffer, 0, meshUniformData)
+
+        const meshBindGroup = this.device.createBindGroup({
+          layout: this.meshBindGroupLayout,
+          entries: [
+            { binding: 0, resource: { buffer: meshUniformBuffer } },
+          ],
+        })
+
+        // Draw mesh
+        renderPass.setBindGroup(0, meshBindGroup)
+        renderPass.setVertexBuffer(0, meshVertexBuffer)
+        renderPass.setIndexBuffer(meshIndexBuffer, 'uint16')
+        renderPass.drawIndexed(mesh.indices.length)
+
+        meshResources.push({
+          vertexBuffer: meshVertexBuffer,
+          indexBuffer: meshIndexBuffer,
+          uniformBuffer: meshUniformBuffer,
+          bindGroup: meshBindGroup,
+          indexCount: mesh.indices.length,
+        })
+      }
+    }
+
     renderPass.end()
 
     this.device.queue.submit([commandEncoder.finish()])
@@ -478,6 +623,11 @@ export class LineRenderer {
     // Clean up vertex buffers
     lineVertexBuffer.destroy()
     pointVertexBuffer?.destroy()
+    for (const res of meshResources) {
+      res.vertexBuffer.destroy()
+      res.indexBuffer.destroy()
+      res.uniformBuffer.destroy()
+    }
   }
 
   dispose(): void {

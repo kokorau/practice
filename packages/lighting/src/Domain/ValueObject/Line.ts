@@ -73,3 +73,32 @@ export const $Point = {
     size,
   }),
 }
+
+/**
+ * A vertex with position and color
+ */
+export interface MeshVertex {
+  readonly position: Vector3
+  readonly color: Color
+}
+
+/**
+ * A triangle mesh with vertex colors and transparency
+ */
+export interface Mesh {
+  readonly vertices: readonly MeshVertex[]
+  readonly indices: readonly number[]  // Triangle indices (3 per triangle)
+  readonly opacity: number  // 0-1
+}
+
+export const $Mesh = {
+  create: (
+    vertices: readonly MeshVertex[],
+    indices: readonly number[],
+    opacity: number = 1.0
+  ): Mesh => ({
+    vertices,
+    indices,
+    opacity: Math.max(0, Math.min(1, opacity)),
+  }),
+}
