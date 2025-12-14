@@ -1,5 +1,5 @@
-import type { Scene, SceneBox } from '../../Lighting/Infra'
-import type { DirectionalLight } from '../../Lighting/Domain/ValueObject'
+import type { Scene, SceneBox } from '@practice/lighting/Infra'
+import type { DirectionalLight } from '@practice/lighting'
 
 /**
  * Result of box-shadow computation for a single element

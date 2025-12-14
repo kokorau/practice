@@ -1,6 +1,6 @@
 import { ref, reactive, watch, onMounted, onUnmounted, type Ref } from 'vue'
-import { $Scene, createPCFShadowShader } from '../../modules/Lighting/Infra'
-import { $Light, $Color } from '../../modules/Lighting/Domain/ValueObject'
+import { $Scene, createPCFShadowShader } from '@practice/lighting/Infra'
+import { $Light, $Color } from '@practice/lighting'
 import { $Vector3 } from '@practice/vector'
 import {
   HTMLToSceneAdapter,

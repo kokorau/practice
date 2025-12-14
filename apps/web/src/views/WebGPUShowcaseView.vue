@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { RayTracingRendererWebGPU, isWebGPUSupported } from '../modules/Lighting/Infra'
+import { RayTracingRendererWebGPU, isWebGPUSupported } from '@practice/lighting/Infra'
 import { SceneList, type SceneDefinition } from '../modules/LightingShowcase'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)

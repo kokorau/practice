@@ -8,8 +8,8 @@ import {
   $SceneWebGPU,
   $SceneObjectWebGPU,
   isWebGPUSupported,
-} from '../modules/Lighting/Infra'
-import { $Camera, $Light, $Geometry, $Color } from '../modules/Lighting/Domain/ValueObject'
+} from '@practice/lighting/Infra'
+import { $Camera, $Light, $Geometry, $Color } from '@practice/lighting'
 import { $Vector3 } from '@practice/vector'
 
 const canvasRefWebGL = ref<HTMLCanvasElement | null>(null)

@@ -1,5 +1,5 @@
-import { $SceneWebGPU, $SceneObjectWebGPU } from '../../Lighting/Infra'
-import { $Camera, $Light, $Geometry, $Color } from '../../Lighting/Domain/ValueObject'
+import { $SceneWebGPU, $SceneObjectWebGPU } from '@practice/lighting/Infra'
+import { $Camera, $Light, $Geometry, $Color } from '@practice/lighting'
 import { $Vector3 } from '@practice/vector'
 import type { SceneDefinition } from '../SceneDefinition'
 

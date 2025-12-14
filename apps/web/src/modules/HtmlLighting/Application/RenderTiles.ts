@@ -9,8 +9,8 @@
 
 import type { Tile, TileGrid } from '../Domain/ValueObject'
 import { $Tile, $TileGrid } from '../Domain/ValueObject'
-import type { OrthographicCamera } from '../../Lighting/Domain/ValueObject'
-import type { Scene } from '../../Lighting/Infra/WebGL/RayTracingRenderer'
+import type { OrthographicCamera } from '@practice/lighting'
+import type { Scene } from '@practice/lighting/Infra/WebGL/RayTracingRenderer'
 
 // Render priority levels
 export type RenderPriority = 'immediate' | 'high' | 'low'

@@ -1,4 +1,4 @@
-import type { Space } from '../../../Lighting/Domain/ValueObject/Space'
+import type { Space } from '@practice/lighting'
 import type { FilterPreset } from './FilterPreset'
 import type { LayoutHtml } from './LayoutHtml'
 import type { LightSource } from './LightSource'

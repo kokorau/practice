@@ -6,9 +6,9 @@
  */
 
 import type { Tile, TileGrid } from '../Domain/ValueObject'
-import type { OrthographicCamera } from '../../Lighting/Domain/ValueObject'
+import type { OrthographicCamera } from '@practice/lighting'
 import { $Vector3 } from '@practice/vector'
-import { RayTracingRenderer, type Scene } from '../../Lighting/Infra/WebGL/RayTracingRenderer'
+import { RayTracingRenderer, type Scene } from '@practice/lighting/Infra/WebGL/RayTracingRenderer'
 
 export type TileCache = {
   readonly imageData: ImageData
