@@ -1,3 +1,5 @@
 export { Cityscape } from './Cityscape'
 export { GlassSpheres } from './GlassSpheres'
 export { RgbCube, type LineSceneDefinition } from './RgbCube'
+export { HslCylinder } from './HslCylinder'
+export { HsvCone } from './HsvCone'
