@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { toCSSVariables, toCSSText } from './CSSVariables'
-import { $SemanticColorPalette } from '../Domain'
+import { createDefaultLightPalette } from './DefaultPalettes'
 
 describe('CSSVariables', () => {
-  const palette = $SemanticColorPalette.createDefaultLight()
+  const palette = createDefaultLightPalette()
 
   describe('toCSSVariables', () => {
     it('generates context token variables', () => {

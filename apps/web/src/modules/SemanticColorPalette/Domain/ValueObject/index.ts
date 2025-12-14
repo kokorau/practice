@@ -8,6 +8,8 @@ export type {
   ComponentTokens,
   StatefulComponentTokens,
   ContextTokensCollection,
+  StatelessComponentTokensCollection,
+  StatefulComponentTokensCollection,
   ComponentTokensCollection,
   SemanticColorPalette,
   SemanticColorPaletteInput,
