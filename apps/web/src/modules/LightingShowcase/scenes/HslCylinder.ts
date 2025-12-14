@@ -1,7 +1,6 @@
-import { $LineSegments, $LineSegment, $Color, $Camera, $MeshGeometry } from '@practice/lighting'
-import { $LineScene, type LineScene } from '@practice/lighting/Infra'
+import { $LineSegments, $LineSegment, $Color, $Camera, $MeshGeometry, type Color } from '@practice/lighting'
+import { $LineScene } from '@practice/lighting/Infra'
 import { $Vector3 } from '@practice/vector'
-import type { OrthographicCamera, Color } from '@practice/lighting'
 import type { LineSceneDefinition } from './RgbCube'
 
 /**
