@@ -3,7 +3,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import type { Lut } from '../../modules/Filter/Domain/ValueObject/Lut'
 import { $Lut3D } from '../../modules/Filter/Domain/ValueObject/Lut'
 import { $PhotoColorPalette } from '../../modules/Photo/Domain/ValueObject/PhotoColorPalette'
-import { $Oklch, $Srgb } from '../../modules/Color/Domain'
+import { $Oklch, $Srgb } from '@practice/color'
 
 const props = defineProps<{
   lut?: Lut

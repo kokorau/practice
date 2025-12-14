@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { type ProfiledPalette, type ColorRole } from '../modules/Palette/Domain'
-import { $Hex } from '../modules/Color/Domain'
+import { $Hex } from '@practice/color'
 
 const props = defineProps<{
   original: ProfiledPalette | null
