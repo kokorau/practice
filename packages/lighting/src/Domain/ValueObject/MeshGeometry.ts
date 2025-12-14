@@ -10,6 +10,94 @@ type ColorFn = (position: Vector3) => Color
  */
 export const $MeshGeometry = {
   /**
+   * Create a box mesh with vertex colors
+   * @param center - Center of the box
+   * @param size - Size of the box (width, height, depth)
+   * @param resolution - Number of subdivisions per face edge (higher = smoother gradients)
+   * @param colorFn - Function to compute vertex color from position
+   * @param opacity - Mesh opacity (0-1)
+   */
+  box: (
+    center: Vector3,
+    size: Vector3,
+    resolution: number,
+    colorFn: ColorFn,
+    opacity: number = 0.3
+  ): Mesh => {
+    const vertices: MeshVertex[] = []
+    const indices: number[] = []
+
+    const halfSize = $Vector3.scale(size, 0.5)
+
+    // Helper to add a face with subdivisions
+    const addFace = (
+      axis: 'x' | 'y' | 'z',
+      value: -1 | 1, // -1 = min side, 1 = max side
+      res: number
+    ) => {
+      const baseIndex = vertices.length
+
+      // Generate vertices in a grid
+      for (let i = 0; i <= res; i++) {
+        for (let j = 0; j <= res; j++) {
+          const u = i / res
+          const v = j / res
+
+          let pos: Vector3
+          if (axis === 'x') {
+            // X fixed: YZ plane
+            pos = $Vector3.create(
+              center.x + halfSize.x * value,
+              center.y + halfSize.y * (u * 2 - 1),
+              center.z + halfSize.z * (v * 2 - 1)
+            )
+          } else if (axis === 'y') {
+            // Y fixed: XZ plane
+            pos = $Vector3.create(
+              center.x + halfSize.x * (u * 2 - 1),
+              center.y + halfSize.y * value,
+              center.z + halfSize.z * (v * 2 - 1)
+            )
+          } else {
+            // Z fixed: XY plane
+            pos = $Vector3.create(
+              center.x + halfSize.x * (u * 2 - 1),
+              center.y + halfSize.y * (v * 2 - 1),
+              center.z + halfSize.z * value
+            )
+          }
+
+          vertices.push({ position: pos, color: colorFn(pos) })
+        }
+      }
+
+      // Generate triangles
+      for (let i = 0; i < res; i++) {
+        for (let j = 0; j < res; j++) {
+          const a = baseIndex + i * (res + 1) + j
+          const b = a + 1
+          const c = a + (res + 1)
+          const d = c + 1
+
+          // Two triangles per quad
+          indices.push(a, b, c)
+          indices.push(b, d, c)
+        }
+      }
+    }
+
+    // 6 faces of the box
+    addFace('x', -1, resolution) // left
+    addFace('x', 1, resolution)  // right
+    addFace('y', -1, resolution) // bottom
+    addFace('y', 1, resolution)  // top
+    addFace('z', -1, resolution) // back
+    addFace('z', 1, resolution)  // front
+
+    return $Mesh.create(vertices, indices, opacity)
+  },
+
+  /**
    * Create a cylinder mesh
    * @param radius - Radius of the cylinder
    * @param height - Height of the cylinder (along Y axis)
