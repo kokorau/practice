@@ -44,7 +44,7 @@ const DEFAULT_BACKGROUND_COLOR = {
  * @returns GPU-ready RenderScene
  */
 export const compileScene = (scene: Scene, camera?: OrthographicCamera): RenderScene => {
-  const { objects, lights, backgroundColor, shadowBlur } = scene
+  const { objects, lights, backgroundColor, shadowBlur, sampleCount } = scene
 
   // Separate lights by type (needed for shadow frustum calculation)
   const ambientLight =
@@ -84,6 +84,7 @@ export const compileScene = (scene: Scene, camera?: OrthographicCamera): RenderS
     directionalLights,
     backgroundColor: backgroundColor ?? DEFAULT_BACKGROUND_COLOR,
     shadowBlur: shadowBlur ?? 0,
+    sampleCount: sampleCount ?? 1,
     bvh: bvhResult.bvh,
     infinitePlaneIndices: bvhResult.infinitePlaneIndices,
   }

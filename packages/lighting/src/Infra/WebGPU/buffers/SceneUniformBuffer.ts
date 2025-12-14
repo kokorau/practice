@@ -18,6 +18,7 @@ export interface SceneUniformParams {
   backgroundColor: Color
   ambientLight: AmbientLight
   shadowBlur: number
+  sampleCount: number
   counts: {
     planes: number
     boxes: number
@@ -39,6 +40,7 @@ export const buildSceneUniform = (params: SceneUniformParams): Float32Array<Arra
     backgroundColor,
     ambientLight,
     shadowBlur,
+    sampleCount,
     counts,
   } = params
 
@@ -90,10 +92,10 @@ export const buildSceneUniform = (params: SceneUniformParams): Float32Array<Arra
   view.setUint32(offset * 4, counts.lights, true)
   offset++
 
-  // sphereCount + padding (16 bytes = 4 u32)
+  // sphereCount + sampleCount + padding (16 bytes = 4 u32)
   view.setUint32(offset * 4, counts.spheres, true)
   offset++
-  view.setUint32(offset * 4, 0, true) // padding
+  view.setUint32(offset * 4, sampleCount, true)
   offset++
   view.setUint32(offset * 4, 0, true) // padding
 

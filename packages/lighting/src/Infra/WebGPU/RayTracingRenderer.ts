@@ -328,6 +328,7 @@ export class RayTracingRenderer {
       directionalLights,
       backgroundColor,
       shadowBlur,
+      sampleCount,
       bvh,
     } = renderScene
 
@@ -386,6 +387,7 @@ export class RayTracingRenderer {
       backgroundColor,
       ambientLight,
       shadowBlur,
+      sampleCount,
       counts: {
         planes: planes.length,
         boxes: boxes.length,

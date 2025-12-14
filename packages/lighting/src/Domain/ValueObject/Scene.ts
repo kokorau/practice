@@ -86,6 +86,7 @@ export interface Scene {
   readonly lights: readonly Light[]
   readonly backgroundColor?: Color
   readonly shadowBlur?: number
+  readonly sampleCount?: number // SSAA samples (1, 4, 8, 16)
 }
 
 type SceneItem = RenderableObject | Light
@@ -102,11 +103,13 @@ export const $Scene = {
     lights?: Light[]
     backgroundColor?: Color
     shadowBlur?: number
+    sampleCount?: number
   }): Scene => ({
     objects: params?.objects ?? [],
     lights: params?.lights ?? [],
     backgroundColor: params?.backgroundColor,
     shadowBlur: params?.shadowBlur,
+    sampleCount: params?.sampleCount,
   }),
 
   add: (scene: Scene, ...items: SceneItem[]): Scene => {

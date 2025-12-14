@@ -79,7 +79,7 @@ struct SceneUniforms {
   boxCount: u32,            // 120-123
   lightCount: u32,          // 124-127
   sphereCount: u32,         // 128-131
-  _pad1: u32,               // 132-135
+  sampleCount: u32,         // 132-135 (SSAA samples: 1, 4, 8, 16)
   _pad2: u32,               // 136-139
   _pad3: u32,               // 140-143
 }

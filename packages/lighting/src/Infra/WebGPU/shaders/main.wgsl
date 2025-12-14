@@ -59,16 +59,10 @@ fn calcShading(hitPoint: vec3f, surfaceColor: vec3f, normal: vec3f) -> vec3f {
 // Fragment Shader
 // -----------------------------------------------------------------------------
 
-@fragment
-fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-  // Generate ray from orthographic camera
-  let offsetU = input.uv.x - 0.5;
-  let offsetV = (1.0 - input.uv.y) - 0.5; // Flip back for ray calculation
-
-  var currentOrigin = scene.camera.position
-    + scene.camera.right * offsetU * scene.camera.width
-    + scene.camera.up * offsetV * scene.camera.height;
-  var currentDir = scene.camera.forward;
+// Trace a single ray and return the final linear color
+fn tracePixelRay(rayOrigin: vec3f, rayDir: vec3f) -> vec3f {
+  var currentOrigin = rayOrigin;
+  var currentDir = rayDir;
 
   // Accumulated color and transmittance for transparency
   var accumulatedColor = vec3f(0.0);
@@ -139,7 +133,44 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
     currentOrigin = hitPoint + currentDir * SHADOW_OFFSET;
   }
 
-  // Convert back to sRGB
-  let finalColor = linearToSrgb(accumulatedColor);
+  return accumulatedColor;
+}
+
+@fragment
+fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
+  // Calculate pixel size in UV space using screen-space derivatives
+  let pixelSizeU = dpdx(input.uv.x);
+  let pixelSizeV = dpdy(input.uv.y);
+
+  // Base UV offset from pixel center
+  let baseOffsetU = input.uv.x - 0.5;
+  let baseOffsetV = (1.0 - input.uv.y) - 0.5; // Flip back for ray calculation
+
+  // Determine effective sample count (clamp to valid range)
+  let sampleCount = clamp(scene.sampleCount, 1u, MAX_SSAA_SAMPLES);
+
+  // Accumulate samples
+  var totalColor = vec3f(0.0);
+
+  for (var s = 0u; s < sampleCount; s++) {
+    // Get sub-pixel jitter offset (-0.5 to 0.5 in pixel space)
+    let jitter = getJitterOffset(s, sampleCount);
+
+    // Apply jitter in UV space
+    let offsetU = baseOffsetU + jitter.x * pixelSizeU;
+    let offsetV = baseOffsetV + jitter.y * pixelSizeV;
+
+    // Generate ray from orthographic camera
+    let rayOrigin = scene.camera.position
+      + scene.camera.right * offsetU * scene.camera.width
+      + scene.camera.up * offsetV * scene.camera.height;
+    let rayDir = scene.camera.forward;
+
+    // Trace ray and accumulate
+    totalColor += tracePixelRay(rayOrigin, rayDir);
+  }
+
+  // Average samples and convert to sRGB
+  let finalColor = linearToSrgb(totalColor / f32(sampleCount));
   return vec4f(finalColor, 1.0);
 }

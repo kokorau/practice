@@ -32,6 +32,8 @@ export interface RenderScene {
   readonly backgroundColor: Color
   /** Shadow blur amount */
   readonly shadowBlur: number
+  /** SSAA sample count (1, 4, 8, 16) */
+  readonly sampleCount: number
   /** BVH for spatial partitioning (optional) */
   readonly bvh?: BVH
   /** Indices of infinite planes (not in BVH) */
@@ -74,5 +76,6 @@ export const $RenderScene = {
     directionalLights: [],
     backgroundColor: DEFAULT_BACKGROUND_COLOR,
     shadowBlur: 0,
+    sampleCount: 1,
   }),
 }
