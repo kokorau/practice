@@ -4,7 +4,6 @@ import {
   type SemanticColorPalette,
   type ContextTokens,
   type ComponentTokens,
-  type StatefulComponentTokens,
   type ActionState,
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
@@ -47,27 +46,6 @@ const actionStates: ActionState[] = ['default', 'hover', 'active', 'disabled']
 // Get token entries for display (excluding optional undefined values)
 const getTokenEntries = (tokens: ContextTokens | ComponentTokens) => {
   return Object.entries(tokens).filter(([, value]) => value !== undefined)
-}
-
-// Get stateful token entries
-const getStatefulTokenEntries = (tokens: StatefulComponentTokens) => {
-  const required = ['surface', 'tintSurface', 'border', 'title', 'linkText'] as const
-  const optional = ['body', 'meta', 'accent', 'divider'] as const
-
-  const entries: { key: string; states: Record<ActionState, string> }[] = []
-
-  for (const key of required) {
-    entries.push({ key, states: tokens[key] as Record<ActionState, string> })
-  }
-
-  for (const key of optional) {
-    const value = tokens[key]
-    if (value) {
-      entries.push({ key, states: value as Record<ActionState, string> })
-    }
-  }
-
-  return entries
 }
 
 // Dynamic CSS injection for CSS variables and rule sets
@@ -150,29 +128,17 @@ watch(palette, updateStyles)
 
     <!-- Components Section -->
     <section class="section">
-      <h2 class="section-heading">Components (Stateless)</h2>
-      <div class="surfaces-grid">
+      <h2 class="section-heading">Components</h2>
+      <div class="components-grid">
+        <!-- Stateless components -->
         <div
           v-for="comp in components"
           :key="comp.name"
-          class="surface-card"
+          class="component-card"
           :class="comp.className"
         >
-          <h3 class="surface-title scp-title">{{ comp.label }}</h3>
-
-          <div class="tokens-list">
-            <div
-              v-for="[key, value] in getTokenEntries(comp.tokens)"
-              :key="key"
-              class="token-row"
-            >
-              <span class="token-name scp-body">{{ key }}</span>
-              <div class="token-preview">
-                <span class="color-swatch" :style="{ backgroundColor: value }" />
-                <code class="token-value scp-meta">{{ value }}</code>
-              </div>
-            </div>
-          </div>
+          <h3 class="component-title scp-title">{{ comp.label }}</h3>
+          <span class="component-badge scp-meta">Stateless</span>
 
           <!-- Preview section -->
           <div class="preview-section scp-divider">
@@ -186,78 +152,40 @@ watch(palette, updateStyles)
             <div v-if="comp.tokens.accent" class="accent-preview scp-accent">Accent</div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Actions Section (Stateful) -->
-    <section class="section">
-      <h2 class="section-heading">Actions (Stateful Components)</h2>
-      <div class="actions-grid">
+        <!-- Stateful action components -->
         <div
           v-for="action in actions"
           :key="action.name"
-          class="action-card"
+          class="component-card action-component"
         >
-          <h3 class="action-title">{{ action.label }}</h3>
+          <h3 class="component-title">{{ action.label }}</h3>
+          <span class="component-badge">Stateful</span>
 
-          <!-- Interactive button using CSS variables -->
-          <div class="interactive-preview">
-            <span class="preview-label">Interactive (CSS Variables)</span>
-            <div class="interactive-buttons">
-              <button :class="action.className">Click me</button>
-              <button :class="action.className" disabled>Disabled</button>
-            </div>
+          <!-- Interactive buttons -->
+          <div class="action-buttons">
+            <button :class="action.className">Click me</button>
+            <button :class="action.className" disabled>Disabled</button>
           </div>
 
-          <!-- State preview buttons (static display) -->
+          <!-- State preview -->
           <div class="state-previews">
-            <span class="preview-label">State Preview (static)</span>
-            <div class="state-buttons">
-              <div
-                v-for="state in actionStates"
-                :key="state"
-                class="state-preview"
-              >
-                <span class="state-label">{{ state }}</span>
-                <button
-                  class="action-button"
-                  :style="{
-                    backgroundColor: action.tokens.surface[state],
-                    borderColor: action.tokens.border[state],
-                    color: action.tokens.title[state],
-                  }"
-                >
-                  Button
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Token table -->
-          <div class="token-table">
-            <div class="token-table-header">
-              <span class="token-table-cell">Role</span>
-              <span v-for="state in actionStates" :key="state" class="token-table-cell">
-                {{ state }}
-              </span>
-            </div>
             <div
-              v-for="entry in getStatefulTokenEntries(action.tokens)"
-              :key="entry.key"
-              class="token-table-row"
+              v-for="state in actionStates"
+              :key="state"
+              class="state-preview"
             >
-              <span class="token-table-cell token-name">{{ entry.key }}</span>
-              <span
-                v-for="state in actionStates"
-                :key="state"
-                class="token-table-cell"
+              <span class="state-label">{{ state }}</span>
+              <button
+                class="action-button"
+                :style="{
+                  backgroundColor: action.tokens.surface[state],
+                  borderColor: action.tokens.border[state],
+                  color: action.tokens.title[state],
+                }"
               >
-                <span
-                  class="color-swatch small"
-                  :style="{ backgroundColor: entry.states[state] }"
-                  :title="entry.states[state]"
-                />
-              </span>
+                Btn
+              </button>
             </div>
           </div>
         </div>
@@ -384,11 +312,6 @@ h1 {
   flex-shrink: 0;
 }
 
-.color-swatch.small {
-  width: 16px;
-  height: 16px;
-}
-
 .token-value {
   font-size: 0.65rem;
   font-family: 'SF Mono', Monaco, monospace;
@@ -428,53 +351,96 @@ h1 {
   text-align: center;
 }
 
-/* Actions Section */
-.actions-grid {
+/* Components Section (4-column grid) */
+.components-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
-.action-card {
+.component-card {
   border-radius: 12px;
   padding: 1rem;
-  background: oklch(0.99 0.005 260);
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-.dark .action-card {
+.action-component {
+  background: oklch(0.99 0.005 260);
+}
+
+.dark .action-component {
   background: oklch(0.18 0.02 260);
 }
 
-.action-title {
-  margin: 0 0 1rem;
-  font-size: 1rem;
+.component-title {
+  margin: 0;
+  font-size: 0.9rem;
   font-weight: 600;
   color: oklch(0.25 0.02 260);
 }
 
-.dark .action-title {
+.dark .component-title {
   color: oklch(0.90 0.01 260);
+}
+
+.component-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(0.50 0.02 260);
+  margin-bottom: 0.75rem;
+}
+
+.dark .component-badge {
+  color: oklch(0.60 0.02 260);
+}
+
+/* Action component specific */
+.action-component {
+  display: flex;
+  flex-direction: column;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.action-buttons button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.action-buttons button:disabled {
+  cursor: not-allowed;
 }
 
 .state-previews {
   display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .state-preview {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .state-label {
-  font-size: 0.65rem;
+  font-size: 0.55rem;
   color: oklch(0.50 0.02 260);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
 }
 
 .dark .state-label {
@@ -482,91 +448,11 @@ h1 {
 }
 
 .action-button {
-  padding: 0.5rem 1rem;
+  padding: 0.3rem 0.5rem;
   border: 1px solid;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.token-table {
-  font-size: 0.7rem;
-  border-top: 1px solid rgba(128,128,128,0.15);
-  padding-top: 1rem;
-}
-
-.token-table-header,
-.token-table-row {
-  display: grid;
-  grid-template-columns: 80px repeat(4, 1fr);
-  gap: 0.5rem;
-  padding: 0.25rem 0;
-}
-
-.token-table-header {
-  font-weight: 600;
-  color: oklch(0.50 0.02 260);
-  border-bottom: 1px solid rgba(128,128,128,0.15);
-  margin-bottom: 0.25rem;
-}
-
-.dark .token-table-header {
-  color: oklch(0.60 0.02 260);
-}
-
-.token-table-cell {
-  display: flex;
-  align-items: center;
-}
-
-.token-table-cell.token-name {
-  color: oklch(0.35 0.02 260);
-}
-
-.dark .token-table-cell.token-name {
-  color: oklch(0.75 0.02 260);
-}
-
-/* Interactive preview for stateful components */
-.interactive-preview {
-  margin-bottom: 1rem;
-}
-
-.preview-label {
-  display: block;
+  border-radius: 4px;
   font-size: 0.65rem;
-  color: oklch(0.50 0.02 260);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
-}
-
-.dark .preview-label {
-  color: oklch(0.60 0.02 260);
-}
-
-.interactive-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.interactive-buttons button {
-  padding: 0.5rem 1.25rem;
-  border: 1px solid;
-  border-radius: 6px;
-  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.interactive-buttons button:disabled {
-  cursor: not-allowed;
-}
-
-.state-buttons {
-  display: flex;
-  gap: 0.75rem;
 }
 </style>
