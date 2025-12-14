@@ -121,6 +121,50 @@ export type ActionState = keyof typeof STATE_NAMES
 export type StateName = (typeof STATE_NAMES)[keyof typeof STATE_NAMES]
 
 // ============================================================================
+// CSS Class Name Definitions
+// ============================================================================
+
+/** Convert camelCase to kebab-case */
+const toKebab = (str: string): string =>
+  str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
+
+/** CSS class name prefixes */
+export const CSS_CLASS_PREFIX = {
+  context: 'context',
+  component: 'component',
+} as const
+
+/** Context CSS class names (derived from CONTEXT_NAMES) */
+export const CONTEXT_CLASS_NAMES = Object.fromEntries(
+  Object.keys(CONTEXT_NAMES).map((key) => [key, `${CSS_CLASS_PREFIX.context}-${toKebab(key)}`])
+) as Readonly<Record<keyof typeof CONTEXT_NAMES, string>>
+
+/** Component CSS class names (derived from COMPONENT_NAMES) */
+export const COMPONENT_CLASS_NAMES = Object.fromEntries(
+  Object.keys(COMPONENT_NAMES).map((key) => [key, `${CSS_CLASS_PREFIX.component}-${toKebab(key)}`])
+) as Readonly<Record<keyof typeof COMPONENT_NAMES, string>>
+
+/** Token role to CSS property mapping */
+export const TOKEN_CSS_PROPERTY_MAP = {
+  // Surface roles
+  surface: 'background-color',
+  tintSurface: 'background-color',
+  // Text roles
+  title: 'color',
+  body: 'color',
+  meta: 'color',
+  linkText: 'color',
+  // Line roles
+  border: 'border-color',
+  divider: 'border-color',
+  // Accent
+  accent: 'color',
+} as const
+
+export type TokenCSSProperty =
+  (typeof TOKEN_CSS_PROPERTY_MAP)[keyof typeof TOKEN_CSS_PROPERTY_MAP]
+
+// ============================================================================
 // Aggregated Export
 // ============================================================================
 
@@ -131,4 +175,11 @@ export const SEMANTIC_NAMES = {
   statelessComponent: STATELESS_COMPONENT_NAMES,
   statefulComponent: STATEFUL_COMPONENT_NAMES,
   state: STATE_NAMES,
+} as const
+
+export const CSS_NAMES = {
+  prefix: CSS_CLASS_PREFIX,
+  context: CONTEXT_CLASS_NAMES,
+  component: COMPONENT_CLASS_NAMES,
+  property: TOKEN_CSS_PROPERTY_MAP,
 } as const
