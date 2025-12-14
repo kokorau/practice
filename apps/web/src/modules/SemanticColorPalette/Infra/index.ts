@@ -9,4 +9,6 @@ export { collectCSSRuleSets, toCSSRuleSetsText } from './CSSRuleSets'
 export {
   createDefaultLightPalette,
   createDefaultDarkPalette,
+  getPaletteEntries,
+  type PaletteEntry,
 } from './DefaultPalettes'

@@ -1,6 +1,15 @@
 import { $SemanticColorPalette, type SemanticColorPalette } from '../Domain'
 
 /**
+ * Palette entry with id, name, and palette
+ */
+export type PaletteEntry = {
+  id: string
+  name: string
+  palette: SemanticColorPalette
+}
+
+/**
  * Create a default light theme palette
  */
 export const createDefaultLightPalette = (): SemanticColorPalette => {
@@ -283,3 +292,11 @@ export const createDefaultDarkPalette = (): SemanticColorPalette => {
     },
   })
 }
+
+/**
+ * Get all available palette entries
+ */
+export const getPaletteEntries = (): PaletteEntry[] => [
+  { id: 'default-light', name: 'Default Light', palette: createDefaultLightPalette() },
+  { id: 'default-dark', name: 'Default Dark', palette: createDefaultDarkPalette() },
+]

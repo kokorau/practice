@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
-  type SemanticColorPalette,
   type ContextTokens,
   type ComponentTokens,
   type ActionState,
@@ -9,17 +8,19 @@ import {
   COMPONENT_CLASS_NAMES,
 } from '../modules/SemanticColorPalette/Domain'
 import {
-  createDefaultLightPalette,
-  createDefaultDarkPalette,
+  getPaletteEntries,
   toCSSText,
   toCSSRuleSetsText,
 } from '../modules/SemanticColorPalette/Infra'
 
-const isDark = ref(false)
+const paletteEntries = getPaletteEntries()
+const selectedPaletteId = ref(paletteEntries[0]?.id ?? '')
 
-const palette = computed<SemanticColorPalette>(() =>
-  isDark.value ? createDefaultDarkPalette() : createDefaultLightPalette()
+const selectedEntry = computed(() =>
+  paletteEntries.find((e) => e.id === selectedPaletteId.value) ?? paletteEntries[0]
 )
+const palette = computed(() => selectedEntry.value.palette)
+const isDark = computed(() => selectedPaletteId.value.includes('dark'))
 
 // Context surfaces with CSS class names
 const contexts = computed(() => [
@@ -77,13 +78,28 @@ watch(palette, updateStyles)
 
 <template>
   <div class="semantic-color-palette-view" :class="{ dark: isDark }">
-    <header class="header">
-      <h1>Semantic Color Palette</h1>
-      <label class="theme-toggle">
-        <input type="checkbox" v-model="isDark" />
-        <span>Dark Mode</span>
-      </label>
-    </header>
+    <!-- Left Sidebar: Palette Selector -->
+    <aside class="palette-sidebar">
+      <h2 class="sidebar-title">Palettes</h2>
+      <ul class="palette-list">
+        <li
+          v-for="entry in paletteEntries"
+          :key="entry.id"
+          class="palette-item"
+          :class="{ selected: entry.id === selectedPaletteId }"
+          @click="selectedPaletteId = entry.id"
+        >
+          {{ entry.name }}
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <h1>Semantic Color Palette</h1>
+        <span class="current-palette">{{ selectedEntry.name }}</span>
+      </header>
 
     <!-- Contexts Section -->
     <section class="section">
@@ -191,12 +207,13 @@ watch(palette, updateStyles)
         </div>
       </div>
     </section>
+    </main>
   </div>
 </template>
 
 <style scoped>
 .semantic-color-palette-view {
-  padding: 1.5rem;
+  display: flex;
   min-height: 100vh;
   box-sizing: border-box;
   font-family: system-ui, -apple-system, sans-serif;
@@ -206,6 +223,80 @@ watch(palette, updateStyles)
 
 .semantic-color-palette-view.dark {
   background: oklch(0.12 0.02 260);
+}
+
+/* Sidebar */
+.palette-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  padding: 1.5rem 1rem;
+  background: oklch(0.94 0.01 260);
+  border-right: 1px solid oklch(0.88 0.01 260);
+}
+
+.dark .palette-sidebar {
+  background: oklch(0.10 0.02 260);
+  border-right-color: oklch(0.20 0.02 260);
+}
+
+.sidebar-title {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .sidebar-title {
+  color: oklch(0.60 0.02 260);
+}
+
+.palette-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.palette-item {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: oklch(0.35 0.02 260);
+  transition: background 0.15s, color 0.15s;
+}
+
+.dark .palette-item {
+  color: oklch(0.75 0.01 260);
+}
+
+.palette-item:hover {
+  background: oklch(0.90 0.01 260);
+}
+
+.dark .palette-item:hover {
+  background: oklch(0.18 0.02 260);
+}
+
+.palette-item.selected {
+  background: oklch(0.55 0.18 250);
+  color: oklch(0.98 0.01 260);
+  font-weight: 500;
+}
+
+.dark .palette-item.selected {
+  background: oklch(0.55 0.16 250);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
 }
 
 .header {
@@ -226,22 +317,13 @@ h1 {
   color: oklch(0.90 0.01 260);
 }
 
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  color: oklch(0.40 0.02 260);
+.current-palette {
+  font-size: 0.875rem;
+  color: oklch(0.50 0.02 260);
 }
 
-.dark .theme-toggle {
-  color: oklch(0.70 0.02 260);
-}
-
-.theme-toggle input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
+.dark .current-palette {
+  color: oklch(0.60 0.02 260);
 }
 
 .section {
