@@ -1,277 +1,80 @@
 /**
- * Semantic Color System (vNext)
- *
- * Key idea:
- * - Context (Canvas / Section) defines the "place" (non-nestable for Section).
- * - Components (Card / Action) define nested UI objects (nestable).
- * - State belongs to Components and can affect internal roles (e.g. action.title changes on hover).
- *
- * Resolution rule (conceptual):
- * 1) If a node is inside a component, use the nearest component tokens.
- * 2) Otherwise use the nearest context tokens (section -> canvas).
- * 3) Canvas is the implicit base context.
- */
-
-export type ColorValue = string
-export type ActionState = 'default' | 'hover' | 'active' | 'disabled'
-
-/** Common text roles used across contexts/components. */
-export type TextRoles = {
-  /** Headings, card titles, button labels. */
-  readonly title: ColorValue
-  /** Paragraph text. */
-  readonly body: ColorValue
-  /** Captions, notes, dates, tags, low-emphasis text. */
-  readonly meta: ColorValue
-  /** Inline anchors. */
-  readonly linkText: ColorValue
-}
-
-/** Structural and decorative roles. */
-export type LineRoles = {
-  /** Structure outlines, separators that define layout. */
-  readonly border: ColorValue
-  /** Decorative separators / rhythm rules. */
-  readonly divider: ColorValue
-}
-
-/** Surface roles. */
-export type SurfaceRoles = {
-  /** The surface fill color itself (the "plate"). */
-  readonly surface: ColorValue
-  /**
-   * A gentle tinted fill used on top of a surface:
-   * badges, highlight rows, soft callouts, (and for actions: hover bg, etc.)
-   */
-  readonly tintSurface: ColorValue
-}
-
-/** Context tokens: define places. No states. */
-export type ContextTokens = TextRoles &
-  LineRoles &
-  SurfaceRoles & {
-    /** Optional emphasis color available within this context. */
-    readonly accent?: ColorValue
-  }
-
-/**
- * Component tokens: define nestable objects.
- * Base (stateless) component tokens, good for card-like components.
- */
-export type ComponentTokens = TextRoles &
-  LineRoles &
-  SurfaceRoles & {
-    /** Emphasis color used inside the component (CTAs, highlights). */
-    readonly accent?: ColorValue
-  }
-
-/**
- * Stateful component tokens: per-role state maps.
- * (We avoid making state the 3rd segment globally; it's per-role here.)
- */
-export type StatefulComponentTokens = {
-  readonly surface: Readonly<Record<ActionState, ColorValue>>
-  readonly tintSurface: Readonly<Record<ActionState, ColorValue>>
-  readonly border: Readonly<Record<ActionState, ColorValue>>
-
-  readonly title: Readonly<Record<ActionState, ColorValue>>
-  readonly linkText: Readonly<Record<ActionState, ColorValue>>
-
-  /**
-   * Optional: Some designs change these too, but keep optional to avoid bloat.
-   * If you don't need them, omit and fall back to title/linkText.
-   */
-  readonly body?: Readonly<Record<ActionState, ColorValue>>
-  readonly meta?: Readonly<Record<ActionState, ColorValue>>
-
-  /** Emphasis color for the action; may vary by state. */
-  readonly accent?: Readonly<Record<ActionState, ColorValue>>
-
-  /** Decorative divider is rarely needed on actions, keep optional. */
-  readonly divider?: Readonly<Record<ActionState, ColorValue>>
-}
-
-/** --------- The system --------- */
-
-export type ContextTokensCollection = {
-  /**
-   * Canvas = world / ground / air.
-   * Can be omitted in markup; it is assumed as the base context.
-   */
-  readonly canvas: ContextTokens
-
-  /**
-   * Section = chapter / meaningful grouping.
-   * NOTE: Section should not nest inside Section.
-   */
-  /** SectionNeutral: Same or near-same as canvas. */
-  readonly sectionNeutral: ContextTokens
-
-  /** Section with gentle mood (colored underlay). */
-  readonly sectionTint: ContextTokens
-
-  /** Section with strong transition (hero bands / scene changes). */
-  readonly sectionContrast: ContextTokens
-}
-
-export type StatelessComponentTokensCollection = {
-  /**
-   * Card = emphasized / contained object.
-   * Can contain other components (e.g. card -> action).
-   */
-  readonly card: ComponentTokens
-
-  /**
-   * CardFlat = quiet / blended object.
-   * Primary differentiation comes from border + spacing rather than fill.
-   */
-  readonly cardFlat: ComponentTokens
-}
-
-export type StatefulComponentTokensCollection = {
-  /**
-   * Action = emphasized action (CTA).
-   * Stateful: label color and bg can change with state.
-   */
-  readonly action: StatefulComponentTokens
-
-  /**
-   * ActionQuiet = quiet action (secondary/ghost/outline).
-   * Stateful as well, but tends to rely more on border + tintSurface for affordance.
-   */
-  readonly actionQuiet: StatefulComponentTokens
-}
-
-export type ComponentTokensCollection = StatelessComponentTokensCollection &
-  StatefulComponentTokensCollection
-
-/**
  * Semantic Color Palette
- * Complete set of semantic color tokens for design-forward websites.
+ *
+ * Main entry point for the semantic color system.
+ * Re-exports all types for convenient access.
  */
+
+import type {
+  ContextTokensCollection,
+  ComponentTokensCollection,
+} from './Tokens'
+
+// ============================================================================
+// SemanticColorPalette
+// ============================================================================
+
 export interface SemanticColorPalette {
   readonly context: ContextTokensCollection
   readonly component: ComponentTokensCollection
 }
 
-/**
- * Input types for creating SemanticColorPalette (mutable version)
- */
-type ContextTokensInput = {
-  surface: ColorValue
-  tintSurface: ColorValue
-  title: ColorValue
-  body: ColorValue
-  meta: ColorValue
-  linkText: ColorValue
-  border: ColorValue
-  divider: ColorValue
-  accent?: ColorValue
-}
+// ============================================================================
+// Re-exports
+// ============================================================================
 
-type ComponentTokensInput = {
-  surface: ColorValue
-  tintSurface: ColorValue
-  title: ColorValue
-  body: ColorValue
-  meta: ColorValue
-  linkText: ColorValue
-  border: ColorValue
-  divider: ColorValue
-  accent?: ColorValue
-}
+// Names
+export type { ActionState } from './SemanticNames'
+export {
+  TEXT_TOKEN_NAMES,
+  LINE_TOKEN_NAMES,
+  SURFACE_TOKEN_NAMES,
+  BASE_TOKEN_NAMES,
+  TOKEN_NAMES,
+  ACCENT_TOKEN_NAME,
+  CONTEXT_NAMES,
+  COMPONENT_NAMES,
+  STATELESS_COMPONENT_NAMES,
+  STATEFUL_COMPONENT_NAMES,
+  STATE_NAMES,
+  SEMANTIC_NAMES,
+  type TextTokenName,
+  type LineTokenName,
+  type SurfaceTokenName,
+  type BaseTokenName,
+  type TokenName,
+  type AccentTokenName,
+  type ContextName,
+  type ComponentName,
+  type StatelessComponentName,
+  type StatefulComponentName,
+  type StateName,
+} from './SemanticNames'
 
-type StateMap<T> = Record<ActionState, T>
+// Token Roles
+export type {
+  ColorValue,
+  TextRoles,
+  LineRoles,
+  SurfaceRoles,
+  BaseTokens,
+} from './TokenRoles'
 
-type StatefulComponentTokensInput = {
-  surface: StateMap<ColorValue>
-  tintSurface: StateMap<ColorValue>
-  border: StateMap<ColorValue>
-  title: StateMap<ColorValue>
-  linkText: StateMap<ColorValue>
-  body?: StateMap<ColorValue>
-  meta?: StateMap<ColorValue>
-  accent?: StateMap<ColorValue>
-  divider?: StateMap<ColorValue>
-}
+// Tokens
+export type {
+  ContextTokens,
+  ComponentTokens,
+  StatefulComponentTokens,
+  ContextTokensCollection,
+  StatelessComponentTokensCollection,
+  StatefulComponentTokensCollection,
+  ComponentTokensCollection,
+} from './Tokens'
 
-export type SemanticColorPaletteInput = {
-  context: {
-    canvas: ContextTokensInput
-    sectionNeutral: ContextTokensInput
-    sectionTint: ContextTokensInput
-    sectionContrast: ContextTokensInput
-  }
-  component: {
-    card: ComponentTokensInput
-    cardFlat: ComponentTokensInput
-    action: StatefulComponentTokensInput
-    actionQuiet: StatefulComponentTokensInput
-  }
-}
-
-/**
- * Helper to freeze state maps
- */
-const freezeStateMap = <T>(map: StateMap<T>): Readonly<Record<ActionState, T>> =>
-  Object.freeze({ ...map })
-
-/**
- * Helper to freeze stateful component tokens
- */
-const freezeStatefulComponent = (
-  input: StatefulComponentTokensInput
-): StatefulComponentTokens => {
-  const result: StatefulComponentTokens = {
-    surface: freezeStateMap(input.surface),
-    tintSurface: freezeStateMap(input.tintSurface),
-    border: freezeStateMap(input.border),
-    title: freezeStateMap(input.title),
-    linkText: freezeStateMap(input.linkText),
-  }
-
-  // Add optional properties if present
-  if (input.body) {
-    ;(result as { body: Readonly<Record<ActionState, ColorValue>> }).body =
-      freezeStateMap(input.body)
-  }
-  if (input.meta) {
-    ;(result as { meta: Readonly<Record<ActionState, ColorValue>> }).meta =
-      freezeStateMap(input.meta)
-  }
-  if (input.accent) {
-    ;(result as { accent: Readonly<Record<ActionState, ColorValue>> }).accent =
-      freezeStateMap(input.accent)
-  }
-  if (input.divider) {
-    ;(result as { divider: Readonly<Record<ActionState, ColorValue>> }).divider =
-      freezeStateMap(input.divider)
-  }
-
-  return Object.freeze(result)
-}
-
-/**
- * SemanticColorPalette Factory
- */
-export const $SemanticColorPalette = {
-  /**
-   * Create a readonly SemanticColorPalette from input
-   */
-  create: (input: SemanticColorPaletteInput): SemanticColorPalette => {
-    return Object.freeze({
-      context: Object.freeze({
-        canvas: Object.freeze({ ...input.context.canvas }),
-        sectionNeutral: Object.freeze({ ...input.context.sectionNeutral }),
-        sectionTint: Object.freeze({ ...input.context.sectionTint }),
-        sectionContrast: Object.freeze({ ...input.context.sectionContrast }),
-      }),
-      component: Object.freeze({
-        card: Object.freeze({ ...input.component.card }),
-        cardFlat: Object.freeze({ ...input.component.cardFlat }),
-        action: freezeStatefulComponent(input.component.action),
-        actionQuiet: freezeStatefulComponent(input.component.actionQuiet),
-      }),
-    })
-  },
-}
+// Factory
+export {
+  $SemanticColorPalette,
+  type BaseTokensInput,
+  type StatefulComponentTokensInput,
+  type SemanticColorPaletteInput,
+} from './SemanticColorPaletteFactory'
