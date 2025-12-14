@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import {
-  $SemanticColorPalette,
   type SemanticColorPalette,
   type ContextTokens,
   type ComponentTokens,
   type StatefulComponentTokens,
   type ActionState,
 } from '../modules/SemanticColorPalette/Domain'
+import {
+  createDefaultLightPalette,
+  createDefaultDarkPalette,
+} from '../modules/SemanticColorPalette/Infra'
 
 const isDark = ref(false)
 
 const palette = computed<SemanticColorPalette>(() =>
-  isDark.value
-    ? $SemanticColorPalette.createDefaultDark()
-    : $SemanticColorPalette.createDefaultLight()
+  isDark.value ? createDefaultDarkPalette() : createDefaultLightPalette()
 )
 
 // Context surfaces
