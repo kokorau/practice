@@ -61,19 +61,6 @@ fn testObjectIntersection(
     }
     return;
   }
-  if (objectType == OBJ_TYPE_CAPSULE) {
-    let capsule = capsules[idx];
-    let t = intersectCapsule(rayOrigin, rayDir, capsule);
-    if (t > 0.0 && t < (*hit).t) {
-      (*hit).t = t;
-      (*hit).color = capsule.color;
-      (*hit).alpha = capsule.alpha;
-      (*hit).ior = capsule.ior;
-      let hitPoint = rayOrigin + t * rayDir;
-      (*hit).normal = getCapsuleNormal(capsule, hitPoint);
-    }
-    return;
-  }
   if (objectType == OBJ_TYPE_PLANE) {
     let plane = planes[idx];
     let t = intersectPlane(rayOrigin, rayDir, plane);
@@ -108,9 +95,6 @@ fn testShadowIntersection(
     }
     case OBJ_TYPE_SPHERE: {
       return intersectSphere(shadowOrigin, lightDir, spheres[idx]);
-    }
-    case OBJ_TYPE_CAPSULE: {
-      return intersectCapsule(shadowOrigin, lightDir, capsules[idx]);
     }
     case OBJ_TYPE_PLANE: {
       return intersectPlane(shadowOrigin, lightDir, planes[idx]);

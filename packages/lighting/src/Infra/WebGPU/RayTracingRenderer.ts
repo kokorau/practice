@@ -11,12 +11,10 @@ import {
   buildPlaneBuffer,
   buildBoxBuffer,
   buildLightBuffer,
-  buildCapsuleBuffer,
   buildSphereBuffer,
   PLANE_STRIDE,
   BOX_STRIDE,
   LIGHT_STRIDE,
-  CAPSULE_STRIDE,
   SPHERE_STRIDE,
 } from './buffers'
 import {
@@ -29,7 +27,7 @@ import type { RenderScene } from './RenderScene'
 import { compileScene } from '../../Application/CompileScene'
 
 // Re-export for backward compatibility
-export type { ScenePlane, SceneBox, SceneCapsule, SceneSphere, Scene, SceneObject } from './types'
+export type { ScenePlane, SceneBox, SceneSphere, Scene, SceneObject } from './types'
 export { $SceneObject, $Scene } from './types'
 export type { RenderScene } from './RenderScene'
 export { compileScene } from '../../Application/CompileScene'
@@ -62,7 +60,6 @@ export class RayTracingRenderer {
   private planeBuffer: GPUBuffer
   private boxBuffer: GPUBuffer
   private lightBuffer: GPUBuffer
-  private capsuleBuffer: GPUBuffer
   private sphereBuffer: GPUBuffer
   private bvhUniformBuffer: GPUBuffer
   private bvhNodeBuffer: GPUBuffer
@@ -71,7 +68,6 @@ export class RayTracingRenderer {
   private planeCapacity: number
   private boxCapacity: number
   private lightCapacity: number
-  private capsuleCapacity: number
   private sphereCapacity: number
   private bvhNodeCapacity: number
 
@@ -84,14 +80,12 @@ export class RayTracingRenderer {
     planeBuffer: GPUBuffer,
     boxBuffer: GPUBuffer,
     lightBuffer: GPUBuffer,
-    capsuleBuffer: GPUBuffer,
     sphereBuffer: GPUBuffer,
     bvhUniformBuffer: GPUBuffer,
     bvhNodeBuffer: GPUBuffer,
     planeCapacity: number,
     boxCapacity: number,
     lightCapacity: number,
-    capsuleCapacity: number,
     sphereCapacity: number,
     bvhNodeCapacity: number
   ) {
@@ -103,14 +97,12 @@ export class RayTracingRenderer {
     this.planeBuffer = planeBuffer
     this.boxBuffer = boxBuffer
     this.lightBuffer = lightBuffer
-    this.capsuleBuffer = capsuleBuffer
     this.sphereBuffer = sphereBuffer
     this.bvhUniformBuffer = bvhUniformBuffer
     this.bvhNodeBuffer = bvhNodeBuffer
     this.planeCapacity = planeCapacity
     this.boxCapacity = boxCapacity
     this.lightCapacity = lightCapacity
-    this.capsuleCapacity = capsuleCapacity
     this.sphereCapacity = sphereCapacity
     this.bvhNodeCapacity = bvhNodeCapacity
   }
@@ -175,15 +167,10 @@ export class RayTracingRenderer {
         {
           binding: 5,
           visibility: GPUShaderStage.FRAGMENT,
-          buffer: { type: 'read-only-storage' },
-        },
-        {
-          binding: 6,
-          visibility: GPUShaderStage.FRAGMENT,
           buffer: { type: 'uniform' },
         },
         {
-          binding: 7,
+          binding: 6,
           visibility: GPUShaderStage.FRAGMENT,
           buffer: { type: 'read-only-storage' },
         },
@@ -217,7 +204,7 @@ export class RayTracingRenderer {
     // backgroundColor(12) + pad(4) = 16
     // ambientColor(12) + ambientIntensity(4) = 16
     // shadowBlur(4) + planeCount(4) + boxCount(4) + lightCount(4) = 16
-    // capsuleCount(4) + pad(4) + pad(4) + pad(4) = 16
+    // sphereCount(4) + pad(4) + pad(4) + pad(4) = 16
     // Total = 144 bytes
     const sceneUniformBuffer = device.createBuffer({
       size: 144,
@@ -228,7 +215,6 @@ export class RayTracingRenderer {
     const initialPlaneCapacity = 8
     const initialBoxCapacity = 16
     const initialLightCapacity = 4
-    const initialCapsuleCapacity = 32
     const initialSphereCapacity = 32
 
     // Plane buffer (64 bytes per plane)
@@ -246,12 +232,6 @@ export class RayTracingRenderer {
     // Light buffer (32 bytes per light)
     const lightBuffer = device.createBuffer({
       size: initialLightCapacity * LIGHT_STRIDE * 4,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    })
-
-    // Capsule buffer (48 bytes per capsule)
-    const capsuleBuffer = device.createBuffer({
-      size: initialCapsuleCapacity * CAPSULE_STRIDE * 4,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     })
 
@@ -285,14 +265,12 @@ export class RayTracingRenderer {
       planeBuffer,
       boxBuffer,
       lightBuffer,
-      capsuleBuffer,
       sphereBuffer,
       bvhUniformBuffer,
       bvhNodeBuffer,
       initialPlaneCapacity,
       initialBoxCapacity,
       initialLightCapacity,
-      initialCapsuleCapacity,
       initialSphereCapacity,
       initialBVHNodeCapacity
     )
@@ -345,7 +323,6 @@ export class RayTracingRenderer {
     const {
       planes,
       boxes,
-      capsules,
       spheres,
       ambientLight,
       directionalLights,
@@ -358,7 +335,6 @@ export class RayTracingRenderer {
     const planeCount = Math.max(planes.length, MIN_CAPACITY)
     const boxCount = Math.max(boxes.length, MIN_CAPACITY)
     const lightCount = Math.max(directionalLights.length, MIN_CAPACITY)
-    const capsuleCount = Math.max(capsules.length, MIN_CAPACITY)
     const sphereCount = Math.max(spheres.length, MIN_CAPACITY)
     const bvhNodeCount = Math.max(bvh?.nodes.length ?? 0, MIN_CAPACITY)
 
@@ -379,12 +355,6 @@ export class RayTracingRenderer {
     )
     this.lightBuffer = lightResult.buffer
     this.lightCapacity = lightResult.capacity
-
-    const capsuleResult = this.ensureBufferCapacity(
-      this.capsuleBuffer, this.capsuleCapacity, capsuleCount, CAPSULE_STRIDE
-    )
-    this.capsuleBuffer = capsuleResult.buffer
-    this.capsuleCapacity = capsuleResult.capacity
 
     const sphereResult = this.ensureBufferCapacity(
       this.sphereBuffer, this.sphereCapacity, sphereCount, SPHERE_STRIDE
@@ -420,7 +390,6 @@ export class RayTracingRenderer {
         planes: planes.length,
         boxes: boxes.length,
         lights: directionalLights.length,
-        capsules: capsules.length,
         spheres: spheres.length,
       },
     })
@@ -437,10 +406,6 @@ export class RayTracingRenderer {
     // Build and write light buffer
     const lightData = buildLightBuffer(directionalLights, this.lightCapacity)
     this.device.queue.writeBuffer(this.lightBuffer, 0, lightData)
-
-    // Build and write capsule buffer
-    const capsuleData = buildCapsuleBuffer(capsules, this.capsuleCapacity)
-    this.device.queue.writeBuffer(this.capsuleBuffer, 0, capsuleData)
 
     // Build and write sphere buffer
     const sphereData = buildSphereBuffer(spheres, this.sphereCapacity)
@@ -461,10 +426,9 @@ export class RayTracingRenderer {
         { binding: 1, resource: { buffer: this.planeBuffer } },
         { binding: 2, resource: { buffer: this.boxBuffer } },
         { binding: 3, resource: { buffer: this.lightBuffer } },
-        { binding: 4, resource: { buffer: this.capsuleBuffer } },
-        { binding: 5, resource: { buffer: this.sphereBuffer } },
-        { binding: 6, resource: { buffer: this.bvhUniformBuffer } },
-        { binding: 7, resource: { buffer: this.bvhNodeBuffer } },
+        { binding: 4, resource: { buffer: this.sphereBuffer } },
+        { binding: 5, resource: { buffer: this.bvhUniformBuffer } },
+        { binding: 6, resource: { buffer: this.bvhNodeBuffer } },
       ],
     })
 
@@ -496,7 +460,6 @@ export class RayTracingRenderer {
     this.planeBuffer.destroy()
     this.boxBuffer.destroy()
     this.lightBuffer.destroy()
-    this.capsuleBuffer.destroy()
     this.sphereBuffer.destroy()
     this.bvhUniformBuffer.destroy()
     this.bvhNodeBuffer.destroy()

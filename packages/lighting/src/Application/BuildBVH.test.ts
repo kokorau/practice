@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildBVH, $BuildBVH } from './BuildBVH'
-import type { SceneBox, SceneSphere, SceneCapsule, ScenePlane } from '../Domain/ValueObject/Scene'
+import type { SceneBox, SceneSphere, ScenePlane } from '../Domain/ValueObject/Scene'
 import { BVH_OBJECT_TYPE } from '../Domain/ValueObject/BVH'
 
 const createBox = (x: number, y: number, z: number): SceneBox => ({
@@ -24,19 +24,6 @@ const createSphere = (x: number, y: number, z: number): SceneSphere => ({
     radius: 0.5,
   },
   color: { r: 0, g: 1, b: 0 },
-  alpha: 1,
-  ior: 1,
-})
-
-const createCapsule = (x: number, y: number, z: number): SceneCapsule => ({
-  type: 'capsule',
-  geometry: {
-    type: 'capsule',
-    pointA: { x, y, z },
-    pointB: { x, y: y + 1, z },
-    radius: 0.3,
-  },
-  color: { r: 0, g: 0, b: 1 },
   alpha: 1,
   ior: 1,
 })
@@ -79,7 +66,6 @@ describe('buildBVH', () => {
       const result = buildBVH({
         boxes: [],
         spheres: [],
-        capsules: [],
         planes: [],
       })
       expect(result.bvh).toBeUndefined()
@@ -91,7 +77,6 @@ describe('buildBVH', () => {
       const result = buildBVH({
         boxes: [createBox(0, 0, 0), createBox(2, 0, 0)],
         spheres: [createSphere(4, 0, 0)],
-        capsules: [],
         planes: [],
       })
       expect(result.bvh).toBeUndefined()
@@ -103,7 +88,6 @@ describe('buildBVH', () => {
       const result = buildBVH({
         boxes: [createBox(0, 0, 0), createBox(2, 0, 0)],
         spheres: [createSphere(4, 0, 0), createSphere(6, 0, 0)],
-        capsules: [],
         planes: [],
       })
       expect(result.bvh).toBeDefined()
@@ -113,9 +97,8 @@ describe('buildBVH', () => {
 
     it('includes all object types in BVH', () => {
       const result = buildBVH({
-        boxes: [createBox(0, 0, 0)],
-        spheres: [createSphere(2, 0, 0)],
-        capsules: [createCapsule(4, 0, 0)],
+        boxes: [createBox(0, 0, 0), createBox(2, 0, 0)],
+        spheres: [createSphere(4, 0, 0)],
         planes: [createFinitePlane(6, 0, 0)],
       })
       expect(result.bvh).toBeDefined()
@@ -127,7 +110,6 @@ describe('buildBVH', () => {
       )
       expect(objectTypes.has(BVH_OBJECT_TYPE.BOX)).toBe(true)
       expect(objectTypes.has(BVH_OBJECT_TYPE.SPHERE)).toBe(true)
-      expect(objectTypes.has(BVH_OBJECT_TYPE.CAPSULE)).toBe(true)
       expect(objectTypes.has(BVH_OBJECT_TYPE.PLANE)).toBe(true)
     })
   })
@@ -137,7 +119,6 @@ describe('buildBVH', () => {
       const result = buildBVH({
         boxes: [createBox(0, 0, 0), createBox(2, 0, 0)],
         spheres: [],
-        capsules: [],
         planes: [createFinitePlane(4, 0, 0), createFinitePlane(6, 0, 0)],
       })
       expect(result.bvhPlaneIndices).toEqual([0, 1])
@@ -148,7 +129,6 @@ describe('buildBVH', () => {
       const result = buildBVH({
         boxes: [createBox(0, 0, 0), createBox(2, 0, 0), createBox(4, 0, 0), createBox(6, 0, 0)],
         spheres: [],
-        capsules: [],
         planes: [createInfinitePlane(0), createInfinitePlane(-1)],
       })
       expect(result.bvhPlaneIndices).toEqual([])
@@ -159,7 +139,6 @@ describe('buildBVH', () => {
       const result = buildBVH({
         boxes: [createBox(0, 0, 0), createBox(2, 0, 0)],
         spheres: [],
-        capsules: [],
         planes: [
           createFinitePlane(4, 0, 0),
           createInfinitePlane(0),
@@ -181,7 +160,6 @@ describe('buildBVH', () => {
           createBox(30, 0, 0),
         ],
         spheres: [],
-        capsules: [],
         planes: [],
       })
 

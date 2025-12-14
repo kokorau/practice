@@ -2,7 +2,7 @@ export type { Color } from './Color'
 export { $Color } from './Color'
 export type { Material } from './Material'
 export { $Material } from './Material'
-export type { PlaneGeometry, BoxGeometry, CapsuleGeometry, SphereGeometry, Geometry } from './Geometry'
+export type { PlaneGeometry, BoxGeometry, SphereGeometry, Geometry } from './Geometry'
 export { $Geometry } from './Geometry'
 export type { SceneObject } from './Object'
 export { $SceneObject } from './Object'
@@ -25,7 +25,6 @@ export { $Space } from './Space'
 export type {
   ScenePlane,
   SceneBox,
-  SceneCapsule,
   SceneSphere,
   RenderableObject,
   Scene,

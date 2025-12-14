@@ -8,7 +8,6 @@
 import type {
   ScenePlane,
   SceneBox,
-  SceneCapsule,
   SceneSphere,
   Color,
 } from '../../Domain/ValueObject'
@@ -23,8 +22,6 @@ export interface RenderScene {
   readonly planes: readonly ScenePlane[]
   /** Box objects */
   readonly boxes: readonly SceneBox[]
-  /** Capsule objects */
-  readonly capsules: readonly SceneCapsule[]
   /** Sphere objects */
   readonly spheres: readonly SceneSphere[]
   /** Ambient light settings */
@@ -62,7 +59,6 @@ export const $RenderScene = {
   getCounts: (renderScene: RenderScene) => ({
     planes: renderScene.planes.length,
     boxes: renderScene.boxes.length,
-    capsules: renderScene.capsules.length,
     spheres: renderScene.spheres.length,
     lights: renderScene.directionalLights.length,
   }),
@@ -73,7 +69,6 @@ export const $RenderScene = {
   empty: (): RenderScene => ({
     planes: [],
     boxes: [],
-    capsules: [],
     spheres: [],
     ambientLight: DEFAULT_AMBIENT_LIGHT,
     directionalLights: [],

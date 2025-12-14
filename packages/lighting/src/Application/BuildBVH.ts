@@ -5,7 +5,6 @@ import type { BVH, BVHNode, BVHObjectType } from '../Domain/ValueObject/BVH'
 import { BVH_OBJECT_TYPE } from '../Domain/ValueObject/BVH'
 import type {
   SceneBox,
-  SceneCapsule,
   SceneSphere,
   ScenePlane,
 } from '../Domain/ValueObject/Scene'
@@ -303,22 +302,6 @@ const primitiveFromSphere = (
 }
 
 /**
- * Create build primitive from capsule
- */
-const primitiveFromCapsule = (
-  capsule: SceneCapsule,
-  index: number
-): BuildPrimitive => {
-  const aabb = $AABB.fromCapsule(capsule.geometry)
-  return {
-    aabb,
-    centroid: $AABB.centroid(aabb),
-    objectIndex: index,
-    objectType: BVH_OBJECT_TYPE.CAPSULE,
-  }
-}
-
-/**
  * Create build primitive from plane (only for finite planes)
  */
 const primitiveFromPlane = (
@@ -341,7 +324,6 @@ const primitiveFromPlane = (
 export interface BVHBuildInput {
   readonly boxes: readonly SceneBox[]
   readonly spheres: readonly SceneSphere[]
-  readonly capsules: readonly SceneCapsule[]
   readonly planes: readonly ScenePlane[]
 }
 
@@ -359,7 +341,7 @@ export interface BVHBuildResult {
 /**
  * Build BVH from scene objects
  *
- * Includes all boxes, spheres, capsules, and finite planes.
+ * Includes all boxes, spheres, and finite planes.
  * Infinite planes (without width/height) are excluded.
  */
 export const buildBVH = (input: BVHBuildInput): BVHBuildResult => {
@@ -380,14 +362,6 @@ export const buildBVH = (input: BVHBuildInput): BVHBuildResult => {
     const sphere = input.spheres[i]
     if (sphere) {
       primitives.push(primitiveFromSphere(sphere, i))
-    }
-  }
-
-  // Add capsules
-  for (let i = 0; i < input.capsules.length; i++) {
-    const capsule = input.capsules[i]
-    if (capsule) {
-      primitives.push(primitiveFromCapsule(capsule, i))
     }
   }
 

@@ -22,7 +22,6 @@ export interface SceneUniformParams {
     planes: number
     boxes: number
     lights: number
-    capsules: number
     spheres: number
   }
 }
@@ -91,9 +90,7 @@ export const buildSceneUniform = (params: SceneUniformParams): Float32Array<Arra
   view.setUint32(offset * 4, counts.lights, true)
   offset++
 
-  // capsuleCount + sphereCount + padding (16 bytes = 4 u32)
-  view.setUint32(offset * 4, counts.capsules, true)
-  offset++
+  // sphereCount + padding (16 bytes = 4 u32)
   view.setUint32(offset * 4, counts.spheres, true)
   offset++
   view.setUint32(offset * 4, 0, true) // padding

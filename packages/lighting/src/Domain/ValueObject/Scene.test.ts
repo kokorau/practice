@@ -44,23 +44,6 @@ describe('$RenderableObject', () => {
     })
   })
 
-  describe('createCapsule', () => {
-    it('creates capsule with defaults', () => {
-      const capsule = $RenderableObject.createCapsule(
-        {
-          type: 'capsule',
-          pointA: { x: 0, y: 0, z: 0 },
-          pointB: { x: 0, y: 2, z: 0 },
-          radius: 0.5,
-        },
-        { r: 0, g: 1, b: 0 }
-      )
-      expect(capsule.type).toBe('capsule')
-      expect(capsule.alpha).toBe(1)
-      expect(capsule.ior).toBe(1)
-    })
-  })
-
   describe('createSphere', () => {
     it('creates sphere with defaults', () => {
       const sphere = $RenderableObject.createSphere(

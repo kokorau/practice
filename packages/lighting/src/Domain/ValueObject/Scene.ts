@@ -1,7 +1,6 @@
 import type {
   PlaneGeometry,
   BoxGeometry,
-  CapsuleGeometry,
   SphereGeometry,
 } from './Geometry'
 import type { Light } from './Light'
@@ -27,14 +26,6 @@ export interface SceneBox {
   readonly ior: number
 }
 
-export interface SceneCapsule {
-  readonly type: 'capsule'
-  readonly geometry: CapsuleGeometry
-  readonly color: Color
-  readonly alpha: number
-  readonly ior: number
-}
-
 export interface SceneSphere {
   readonly type: 'sphere'
   readonly geometry: SphereGeometry
@@ -43,7 +34,7 @@ export interface SceneSphere {
   readonly ior: number
 }
 
-export type RenderableObject = ScenePlane | SceneBox | SceneCapsule | SceneSphere
+export type RenderableObject = ScenePlane | SceneBox | SceneSphere
 
 export const $RenderableObject = {
   createPlane: (
@@ -66,19 +57,6 @@ export const $RenderableObject = {
     ior: number = 1
   ): SceneBox => ({
     type: 'box',
-    geometry,
-    color,
-    alpha,
-    ior,
-  }),
-
-  createCapsule: (
-    geometry: CapsuleGeometry,
-    color: Color,
-    alpha: number = 1,
-    ior: number = 1
-  ): SceneCapsule => ({
-    type: 'capsule',
     geometry,
     color,
     alpha,
@@ -116,7 +94,7 @@ const isLight = (item: SceneItem): item is Light =>
   item.type === 'ambient' || item.type === 'directional'
 
 const isRenderableObject = (item: SceneItem): item is RenderableObject =>
-  item.type === 'plane' || item.type === 'box' || item.type === 'capsule' || item.type === 'sphere'
+  item.type === 'plane' || item.type === 'box' || item.type === 'sphere'
 
 export const $Scene = {
   create: (params?: {

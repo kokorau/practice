@@ -81,8 +81,6 @@ const getGeometry = (obj: RenderableObject) => {
       return { ...obj.geometry, type: 'plane' as const }
     case 'box':
       return { ...obj.geometry, type: 'box' as const }
-    case 'capsule':
-      return { ...obj.geometry, type: 'capsule' as const }
     case 'sphere':
       return { ...obj.geometry, type: 'sphere' as const }
   }

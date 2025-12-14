@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { $AABB } from './AABB'
-import type { SphereGeometry, BoxGeometry, CapsuleGeometry, PlaneGeometry } from './Geometry'
+import type { SphereGeometry, BoxGeometry, PlaneGeometry } from './Geometry'
 
 describe('$AABB', () => {
   describe('fromSphere', () => {
@@ -63,22 +63,6 @@ describe('$AABB', () => {
       expect(aabb.max.x).toBeCloseTo(sqrt2, 5)
       expect(aabb.max.y).toBeCloseTo(sqrt2, 5)
       expect(aabb.max.z).toBeCloseTo(1, 5)
-    })
-  })
-
-  describe('fromCapsule', () => {
-    it('should calculate AABB for capsule', () => {
-      const capsule: CapsuleGeometry = {
-        type: 'capsule',
-        pointA: { x: 0, y: 0, z: 0 },
-        pointB: { x: 0, y: 10, z: 0 },
-        radius: 2,
-      }
-
-      const aabb = $AABB.fromCapsule(capsule)
-
-      expect(aabb.min).toEqual({ x: -2, y: -2, z: -2 })
-      expect(aabb.max).toEqual({ x: 2, y: 12, z: 2 })
     })
   })
 

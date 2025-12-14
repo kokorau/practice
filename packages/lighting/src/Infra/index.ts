@@ -22,5 +22,4 @@ export type {
   SceneObject as SceneObjectWebGPU,
   ScenePlane as ScenePlaneWebGPU,
   SceneBox as SceneBoxWebGPU,
-  SceneCapsule as SceneCapsuleWebGPU,
 } from './WebGPU'

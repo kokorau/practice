@@ -47,20 +47,6 @@ struct Box {
   rotationInv: mat3x3f, // 112-159
 }
 
-// Capsule data (64 bytes)
-struct Capsule {
-  pointA: vec3f,        // 0-11, pad 12-15
-  _pad0: f32,
-  pointB: vec3f,        // 16-27, pad 28-31
-  _pad1: f32,
-  color: vec3f,         // 32-43
-  radius: f32,          // 44-47
-  alpha: f32,           // 48-51 (0 = transparent, 1 = opaque)
-  ior: f32,             // 52-55 (index of refraction)
-  _pad2: f32,           // 56-59
-  _pad3: f32,           // 60-63
-}
-
 // Sphere data (48 bytes)
 struct Sphere {
   center: vec3f,        // 0-11, pad 12-15
@@ -92,10 +78,10 @@ struct SceneUniforms {
   planeCount: u32,          // 116-119
   boxCount: u32,            // 120-123
   lightCount: u32,          // 124-127
-  capsuleCount: u32,        // 128-131
-  sphereCount: u32,         // 132-135
-  _pad1: u32,               // 136-139
-  _pad2: u32,               // 140-143
+  sphereCount: u32,         // 128-131
+  _pad1: u32,               // 132-135
+  _pad2: u32,               // 136-139
+  _pad3: u32,               // 140-143
 }
 
 // Hit information structure for ray tracing
@@ -132,7 +118,7 @@ struct BVHNode {
   aabbMax: vec3f,       // 16-27
   rightChild: i32,      // 28-31 (-1 if leaf)
   objectIndex: i32,     // 32-35 (-1 if internal node)
-  objectType: u32,      // 36-39 (0=box, 1=sphere, 2=capsule, 3=plane)
+  objectType: u32,      // 36-39 (0=box, 1=sphere, 2=plane)
   _pad0: f32,           // 40-43
   _pad1: f32,           // 44-47
   _pad2: f32,           // 48-51
@@ -144,14 +130,12 @@ struct BVHNode {
 // Object type constants
 const OBJ_TYPE_BOX: u32 = 0u;
 const OBJ_TYPE_SPHERE: u32 = 1u;
-const OBJ_TYPE_CAPSULE: u32 = 2u;
-const OBJ_TYPE_PLANE: u32 = 3u;
+const OBJ_TYPE_PLANE: u32 = 2u;
 
 @group(0) @binding(0) var<uniform> scene: SceneUniforms;
 @group(0) @binding(1) var<storage, read> planes: array<Plane>;
 @group(0) @binding(2) var<storage, read> boxes: array<Box>;
 @group(0) @binding(3) var<storage, read> lights: array<DirLight>;
-@group(0) @binding(4) var<storage, read> capsules: array<Capsule>;
-@group(0) @binding(5) var<storage, read> spheres: array<Sphere>;
-@group(0) @binding(6) var<uniform> bvh: BVHUniform;
-@group(0) @binding(7) var<storage, read> bvhNodes: array<BVHNode>;
+@group(0) @binding(4) var<storage, read> spheres: array<Sphere>;
+@group(0) @binding(5) var<uniform> bvh: BVHUniform;
+@group(0) @binding(6) var<storage, read> bvhNodes: array<BVHNode>;

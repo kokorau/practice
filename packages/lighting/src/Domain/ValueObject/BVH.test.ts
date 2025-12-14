@@ -7,8 +7,7 @@ describe('$BVH', () => {
     it('has correct type constants', () => {
       expect($BVH.OBJECT_TYPE.BOX).toBe(0)
       expect($BVH.OBJECT_TYPE.SPHERE).toBe(1)
-      expect($BVH.OBJECT_TYPE.CAPSULE).toBe(2)
-      expect($BVH.OBJECT_TYPE.PLANE).toBe(3)
+      expect($BVH.OBJECT_TYPE.PLANE).toBe(2)
     })
 
     it('matches BVH_OBJECT_TYPE export', () => {

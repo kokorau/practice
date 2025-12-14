@@ -155,68 +155,6 @@ fn getRoundBoxNormal(box: Box, rayOrigin: vec3f, rayDir: vec3f, t: f32) -> vec3f
 }
 
 // -----------------------------------------------------------------------------
-// Capsule Intersection
-// -----------------------------------------------------------------------------
-
-fn intersectCapsule(rayOrigin: vec3f, rayDir: vec3f, capsule: Capsule) -> f32 {
-  let pa = capsule.pointA;
-  let pb = capsule.pointB;
-  let r = capsule.radius;
-
-  let ba = pb - pa;
-  let oa = rayOrigin - pa;
-
-  let baba = dot(ba, ba);
-  let bard = dot(ba, rayDir);
-  let baoa = dot(ba, oa);
-  let rdoa = dot(rayDir, oa);
-  let oaoa = dot(oa, oa);
-
-  let a = baba - bard * bard;
-  let b = baba * rdoa - baoa * bard;
-  let c = baba * oaoa - baoa * baoa - r * r * baba;
-  let h = b * b - a * c;
-
-  if (h >= 0.0) {
-    let t = (-b - sqrt(h)) / a;
-    let y = baoa + t * bard;
-
-    // Cylinder body hit
-    if (y > 0.0 && y < baba && t > 0.0) {
-      return t;
-    }
-
-    // Hemisphere caps
-    var oc: vec3f;
-    if (y <= 0.0) {
-      oc = oa;
-    } else {
-      oc = rayOrigin - pb;
-    }
-
-    let b2 = dot(rayDir, oc);
-    let c2 = dot(oc, oc) - r * r;
-    let h2 = b2 * b2 - c2;
-
-    if (h2 > 0.0) {
-      let t2 = -b2 - sqrt(h2);
-      if (t2 > 0.0) {
-        return t2;
-      }
-    }
-  }
-
-  return -1.0;
-}
-
-fn getCapsuleNormal(capsule: Capsule, hitPoint: vec3f) -> vec3f {
-  let ba = capsule.pointB - capsule.pointA;
-  let pa = hitPoint - capsule.pointA;
-  let h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
-  return normalize(pa - h * ba);
-}
-
-// -----------------------------------------------------------------------------
 // Sphere Intersection
 // -----------------------------------------------------------------------------
 

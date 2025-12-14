@@ -140,18 +140,6 @@ export const GlassSpheres: SceneDefinition = {
       ),
     ]
 
-    // Semi-transparent capsule
-    const capsule = $SceneObjectWebGPU.createCapsule(
-      $Geometry.createCapsule(
-        $Vector3.create(-1.8, -0.6, -0.5),
-        $Vector3.create(-1.8, 0.4, -0.5),
-        0.15
-      ),
-      $Color.create(0.6, 0.9, 0.7), // Mint green
-      0.25,
-      1.45
-    )
-
     // Solid metallic sphere for contrast
     const solidSphere = $SceneObjectWebGPU.createSphere(
       $Geometry.createSphere($Vector3.create(1.8, -0.4, -0.3), 0.35),
@@ -165,7 +153,6 @@ export const GlassSpheres: SceneDefinition = {
       ...boxes,
       centralSphere,
       ...orbitingSpheres,
-      capsule,
       solidSphere
     )
   },

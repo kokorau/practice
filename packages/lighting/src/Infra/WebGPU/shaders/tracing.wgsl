@@ -73,7 +73,7 @@ fn traceRay(rayOrigin: vec3f, rayDir: vec3f) -> HitInfo {
     }
   }
 
-  // Use BVH traversal if available (handles boxes, spheres, capsules)
+  // Use BVH traversal if available (handles boxes, spheres)
   if (bvh.useBVH != 0u) {
     traceRayBVH(rayOrigin, rayDir, &hit);
   } else {
@@ -81,21 +81,6 @@ fn traceRay(rayOrigin: vec3f, rayDir: vec3f) -> HitInfo {
     // Check boxes
     for (var i = 0u; i < scene.boxCount; i++) {
       checkBox(i, rayOrigin, rayDir, &hit);
-    }
-
-    // Check capsules
-    for (var i = 0u; i < scene.capsuleCount; i++) {
-      let capsule = capsules[i];
-      let t = intersectCapsule(rayOrigin, rayDir, capsule);
-
-      if (t > 0.0 && t < hit.t) {
-        hit.t = t;
-        hit.color = capsule.color;
-        hit.alpha = capsule.alpha;
-        hit.ior = capsule.ior;
-        let hitPoint = rayOrigin + t * rayDir;
-        hit.normal = getCapsuleNormal(capsule, hitPoint);
-      }
     }
 
     // Check spheres
@@ -144,14 +129,6 @@ fn traceShadow(hitPoint: vec3f, lightDir: vec3f) -> f32 {
     // Check boxes
     for (var i = 0u; i < scene.boxCount; i++) {
       let t = checkBoxShadow(i, shadowOrigin, lightDir);
-      if (t > 0.0) {
-        return t;
-      }
-    }
-
-    // Check capsules
-    for (var i = 0u; i < scene.capsuleCount; i++) {
-      let t = intersectCapsule(shadowOrigin, lightDir, capsules[i]);
       if (t > 0.0) {
         return t;
       }

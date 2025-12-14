@@ -24,17 +24,6 @@ export interface BoxGeometry {
 }
 
 /**
- * Capsule (cylinder with hemispherical caps)
- * Defined by two endpoints and a radius
- */
-export interface CapsuleGeometry {
-  readonly type: 'capsule'
-  readonly pointA: Vector3 // First endpoint
-  readonly pointB: Vector3 // Second endpoint
-  readonly radius: number // Capsule radius
-}
-
-/**
  * Sphere defined by center point and radius
  */
 export interface SphereGeometry {
@@ -46,7 +35,7 @@ export interface SphereGeometry {
 /**
  * Union type for all geometry types
  */
-export type Geometry = PlaneGeometry | BoxGeometry | CapsuleGeometry | SphereGeometry
+export type Geometry = PlaneGeometry | BoxGeometry | SphereGeometry
 
 export const $Geometry = {
   createPlane: (
@@ -81,17 +70,6 @@ export const $Geometry = {
       ...(clampedRadius !== undefined && clampedRadius > 0 && { radius: clampedRadius }),
     }
   },
-
-  createCapsule: (
-    pointA: Vector3,
-    pointB: Vector3,
-    radius: number
-  ): CapsuleGeometry => ({
-    type: 'capsule',
-    pointA,
-    pointB,
-    radius: Math.max(0, radius),
-  }),
 
   createSphere: (center: Vector3, radius: number): SphereGeometry => ({
     type: 'sphere',

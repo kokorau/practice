@@ -2,7 +2,6 @@ import type { Vector3 } from '@practice/vector'
 import type {
   PlaneGeometry,
   BoxGeometry,
-  CapsuleGeometry,
   SphereGeometry,
   Geometry,
 } from './Geometry'
@@ -71,25 +70,6 @@ const fromBox = (geometry: BoxGeometry): AABB => {
 }
 
 /**
- * Calculate AABB for a capsule
- */
-const fromCapsule = (geometry: CapsuleGeometry): AABB => {
-  const { pointA, pointB, radius } = geometry
-  return {
-    min: {
-      x: Math.min(pointA.x, pointB.x) - radius,
-      y: Math.min(pointA.y, pointB.y) - radius,
-      z: Math.min(pointA.z, pointB.z) - radius,
-    },
-    max: {
-      x: Math.max(pointA.x, pointB.x) + radius,
-      y: Math.max(pointA.y, pointB.y) + radius,
-      z: Math.max(pointA.z, pointB.z) + radius,
-    },
-  }
-}
-
-/**
  * Calculate AABB for a plane (returns null for infinite planes)
  */
 const fromPlane = (geometry: PlaneGeometry): AABB | null => {
@@ -153,8 +133,6 @@ const fromGeometry = (geometry: Geometry): AABB | null => {
       return fromSphere(geometry)
     case 'box':
       return fromBox(geometry)
-    case 'capsule':
-      return fromCapsule(geometry)
     case 'plane':
       return fromPlane(geometry)
   }
@@ -213,7 +191,6 @@ const centroid = (aabb: AABB): Vector3 => ({
 export const $AABB = {
   fromSphere,
   fromBox,
-  fromCapsule,
   fromPlane,
   fromGeometry,
   intersects,

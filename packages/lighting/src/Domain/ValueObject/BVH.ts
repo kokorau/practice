@@ -6,8 +6,7 @@ import type { AABB } from './AABB'
 export const BVH_OBJECT_TYPE = {
   BOX: 0,
   SPHERE: 1,
-  CAPSULE: 2,
-  PLANE: 3,
+  PLANE: 2,
 } as const
 
 export type BVHObjectType = (typeof BVH_OBJECT_TYPE)[keyof typeof BVH_OBJECT_TYPE]
@@ -27,7 +26,7 @@ export interface BVHNode {
   readonly rightChild: number
   /** Object index for leaf nodes (-1 if internal node) */
   readonly objectIndex: number
-  /** Object type for leaf nodes (0=box, 1=sphere, 2=capsule, 3=plane) */
+  /** Object type for leaf nodes (0=box, 1=sphere, 2=plane) */
   readonly objectType: BVHObjectType
 }
 

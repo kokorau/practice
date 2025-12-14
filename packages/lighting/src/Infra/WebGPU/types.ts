@@ -9,7 +9,6 @@
 export type {
   ScenePlane,
   SceneBox,
-  SceneCapsule,
   SceneSphere,
   RenderableObject,
   Scene,

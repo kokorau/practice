@@ -3,7 +3,7 @@
  *
  * Transforms domain Scene into GPU-ready RenderScene by:
  * - Filtering out fully transparent objects (alpha = 0)
- * - Separating objects by type (plane, box, capsule, sphere)
+ * - Separating objects by type (plane, box, sphere)
  * - Categorizing lights (ambient, directional)
  * - Applying frustum culling when camera is provided
  * - Building BVH for spatial partitioning
@@ -14,7 +14,6 @@ import type {
   Scene,
   ScenePlane,
   SceneBox,
-  SceneCapsule,
   SceneSphere,
   OrthographicCamera,
 } from '../Domain/ValueObject'
@@ -57,7 +56,6 @@ export const compileScene = (scene: Scene, camera?: OrthographicCamera): RenderS
   // Filter out fully transparent objects and separate by type
   let planes = objects.filter((o): o is ScenePlane => o.type === 'plane' && o.alpha > 0)
   let boxes = objects.filter((o): o is SceneBox => o.type === 'box' && o.alpha > 0)
-  let capsules = objects.filter((o): o is SceneCapsule => o.type === 'capsule' && o.alpha > 0)
   let spheres = objects.filter((o): o is SceneSphere => o.type === 'sphere' && o.alpha > 0)
 
   // Apply frustum culling if camera is provided
@@ -67,23 +65,20 @@ export const compileScene = (scene: Scene, camera?: OrthographicCamera): RenderS
     const frustum = calculateShadowFrustum(baseFrustum, directionalLights)
     planes = cullObjects(planes, frustum)
     boxes = cullObjects(boxes, frustum)
-    capsules = cullObjects(capsules, frustum)
     spheres = cullObjects(spheres, frustum)
   }
 
   // Build BVH for spatial partitioning
-  // Includes all objects (boxes, spheres, capsules, finite planes)
+  // Includes all objects (boxes, spheres, finite planes)
   const bvhResult = buildBVH({
     boxes,
     spheres,
-    capsules,
     planes,
   })
 
   return {
     planes,
     boxes,
-    capsules,
     spheres,
     ambientLight,
     directionalLights,
