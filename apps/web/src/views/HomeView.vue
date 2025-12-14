@@ -48,7 +48,7 @@ const pages = [
   {
     to: '/site-simulator',
     title: 'Site Simulator',
-    description: 'ブランドカラーからパレット生成、光源とフィルターでサイトをシミュレート',
+    description: 'ブランドカラーと照明効果でサイトをプレビュー',
   },
   {
     to: '/semantic-color-palette',
@@ -60,14 +60,14 @@ const pages = [
 
 <template>
   <div class="w-screen min-h-screen bg-gray-900 text-white p-8 flex justify-center">
-    <div class="w-full max-w-3xl">
+    <div class="w-full max-w-5xl">
       <h1 class="text-3xl font-bold mb-8">Practice</h1>
       <nav>
-        <ul class="space-y-4">
+        <ul class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <li v-for="page in pages" :key="page.to">
             <RouterLink
               :to="page.to"
-              class="block p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+              class="block h-full p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
             >
               <h2 class="text-lg font-semibold text-blue-400">{{ page.title }}</h2>
               <p class="text-sm text-gray-400 mt-1">{{ page.description }}</p>
