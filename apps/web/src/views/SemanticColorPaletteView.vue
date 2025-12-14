@@ -16,7 +16,9 @@ const palette = computed<SemanticColorPalette>(() =>
 // Surface groups for display
 const surfaces = computed(() => [
   { name: 'canvas', label: 'Canvas', tokens: palette.value.canvas },
-  { name: 'section', label: 'Section', tokens: palette.value.section },
+  { name: 'sectionNeutral', label: 'Section Neutral', tokens: palette.value.sectionNeutral },
+  { name: 'sectionTint', label: 'Section Tint', tokens: palette.value.sectionTint },
+  { name: 'sectionContrast', label: 'Section Contrast', tokens: palette.value.sectionContrast },
   { name: 'card', label: 'Card', tokens: palette.value.card },
   { name: 'cardFlat', label: 'Card Flat', tokens: palette.value.cardFlat },
   { name: 'interactive', label: 'Interactive', tokens: palette.value.interactive },
@@ -28,15 +30,21 @@ const getSurfaceBg = (name: string): string => {
   if (name === 'interactive') {
     return palette.value.interactive.action
   }
+  // SectionContrast uses inverted background
+  if (name === 'sectionContrast') {
+    return isDark.value ? 'oklch(0.95 0.01 260)' : 'oklch(0.20 0.02 260)'
+  }
   if (isDark.value) {
     return name === 'canvas' ? 'oklch(0.15 0.02 260)' :
-           name === 'section' ? 'oklch(0.20 0.02 260)' :
+           name === 'sectionNeutral' ? 'oklch(0.15 0.02 260)' :
+           name === 'sectionTint' ? 'oklch(0.22 0.02 260)' :
            name === 'card' ? 'oklch(0.25 0.02 260)' :
            name === 'cardFlat' ? 'oklch(0.18 0.02 260)' :
            'oklch(0.15 0.02 260)'
   }
   return name === 'canvas' ? 'oklch(0.99 0.005 260)' :
-         name === 'section' ? 'oklch(0.96 0.01 260)' :
+         name === 'sectionNeutral' ? 'oklch(0.99 0.005 260)' :
+         name === 'sectionTint' ? 'oklch(0.95 0.01 260)' :
          name === 'card' ? 'oklch(0.99 0.005 260)' :
          name === 'cardFlat' ? 'oklch(0.97 0.01 260)' :
          'oklch(0.99 0.005 260)'

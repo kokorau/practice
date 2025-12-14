@@ -43,7 +43,7 @@ export interface CanvasTokens {
 }
 
 /**
- * Section surface tokens.
+ * Section surface tokens (base interface).
  * A wide "underlay" for grouping content.
  * Used to create rhythm and section switching.
  */
@@ -57,11 +57,29 @@ export interface SectionTokens {
   readonly action: string
   /** Quieter action color for secondary buttons on section. */
   readonly actionQuiet: string
-  /** Tinted section background fill (bands, panels, callouts). */
+  /** Tinted fill for nested highlights within section. */
   readonly tintSurface: string
   /** Inline link color inside section content. */
   readonly linkText: string
 }
+
+/**
+ * SectionNeutral - Same or near-same as canvas.
+ * Minimal visual separation, relies on spacing/content grouping.
+ */
+export type SectionNeutralTokens = SectionTokens
+
+/**
+ * SectionTint - Subtle tinted background.
+ * Creates gentle rhythm between sections without strong contrast.
+ */
+export type SectionTintTokens = SectionTokens
+
+/**
+ * SectionContrast - High contrast section (dark bg in light mode, light bg in dark mode).
+ * For hero sections, footers, or strong visual breaks.
+ */
+export type SectionContrastTokens = SectionTokens
 
 /**
  * Card surface tokens.
@@ -154,7 +172,9 @@ export interface InteractiveTokens {
  */
 export interface SemanticColorPalette {
   readonly canvas: CanvasTokens
-  readonly section: SectionTokens
+  readonly sectionNeutral: SectionNeutralTokens
+  readonly sectionTint: SectionTintTokens
+  readonly sectionContrast: SectionContrastTokens
   readonly card: CardTokens
   readonly cardFlat: CardFlatTokens
   readonly interactive: InteractiveTokens
@@ -163,6 +183,18 @@ export interface SemanticColorPalette {
 /**
  * Input type for creating SemanticColorPalette (mutable version)
  */
+type SectionInput = {
+  titleText: string
+  bodyText: string
+  metaText: string
+  border: string
+  divider: string
+  action: string
+  actionQuiet: string
+  tintSurface: string
+  linkText: string
+}
+
 export type SemanticColorPaletteInput = {
   canvas: {
     titleText: string
@@ -175,17 +207,9 @@ export type SemanticColorPaletteInput = {
     tintSurface: string
     linkText: string
   }
-  section: {
-    titleText: string
-    bodyText: string
-    metaText: string
-    border: string
-    divider: string
-    action: string
-    actionQuiet: string
-    tintSurface: string
-    linkText: string
-  }
+  sectionNeutral: SectionInput
+  sectionTint: SectionInput
+  sectionContrast: SectionInput
   card: {
     titleText: string
     bodyText: string
@@ -227,7 +251,9 @@ export const $SemanticColorPalette = {
   create: (input: SemanticColorPaletteInput): SemanticColorPalette => {
     return Object.freeze({
       canvas: Object.freeze({ ...input.canvas }),
-      section: Object.freeze({ ...input.section }),
+      sectionNeutral: Object.freeze({ ...input.sectionNeutral }),
+      sectionTint: Object.freeze({ ...input.sectionTint }),
+      sectionContrast: Object.freeze({ ...input.sectionContrast }),
       card: Object.freeze({ ...input.card }),
       cardFlat: Object.freeze({ ...input.cardFlat }),
       interactive: Object.freeze({ ...input.interactive }),
@@ -250,16 +276,41 @@ export const $SemanticColorPalette = {
         tintSurface: 'oklch(0.97 0.01 260)',
         linkText: 'oklch(0.45 0.15 250)',
       },
-      section: {
+      // SectionNeutral: same as canvas, minimal visual break
+      sectionNeutral: {
         titleText: 'oklch(0.20 0.02 260)',
         bodyText: 'oklch(0.30 0.02 260)',
         metaText: 'oklch(0.50 0.02 260)',
-        border: 'oklch(0.82 0.01 260)',
+        border: 'oklch(0.85 0.01 260)',
+        divider: 'oklch(0.90 0.01 260)',
+        action: 'oklch(0.55 0.20 250)',
+        actionQuiet: 'oklch(0.65 0.10 250)',
+        tintSurface: 'oklch(0.96 0.01 260)',
+        linkText: 'oklch(0.45 0.15 250)',
+      },
+      // SectionTint: subtle tinted background for rhythm
+      sectionTint: {
+        titleText: 'oklch(0.20 0.02 260)',
+        bodyText: 'oklch(0.30 0.02 260)',
+        metaText: 'oklch(0.50 0.02 260)',
+        border: 'oklch(0.82 0.02 260)',
         divider: 'oklch(0.88 0.01 260)',
         action: 'oklch(0.55 0.20 250)',
         actionQuiet: 'oklch(0.65 0.10 250)',
-        tintSurface: 'oklch(0.94 0.02 260)',
+        tintSurface: 'oklch(0.92 0.02 260)',
         linkText: 'oklch(0.45 0.15 250)',
+      },
+      // SectionContrast: dark background in light mode
+      sectionContrast: {
+        titleText: 'oklch(0.95 0.01 260)',
+        bodyText: 'oklch(0.88 0.01 260)',
+        metaText: 'oklch(0.70 0.02 260)',
+        border: 'oklch(0.35 0.02 260)',
+        divider: 'oklch(0.30 0.02 260)',
+        action: 'oklch(0.75 0.15 250)',
+        actionQuiet: 'oklch(0.60 0.08 250)',
+        tintSurface: 'oklch(0.25 0.02 260)',
+        linkText: 'oklch(0.70 0.15 250)',
       },
       card: {
         titleText: 'oklch(0.20 0.02 260)',
@@ -309,16 +360,41 @@ export const $SemanticColorPalette = {
         tintSurface: 'oklch(0.18 0.02 260)',
         linkText: 'oklch(0.70 0.15 250)',
       },
-      section: {
+      // SectionNeutral: same as canvas, minimal visual break
+      sectionNeutral: {
         titleText: 'oklch(0.95 0.01 260)',
         bodyText: 'oklch(0.85 0.01 260)',
         metaText: 'oklch(0.60 0.02 260)',
-        border: 'oklch(0.32 0.02 260)',
-        divider: 'oklch(0.28 0.02 260)',
+        border: 'oklch(0.30 0.02 260)',
+        divider: 'oklch(0.25 0.02 260)',
         action: 'oklch(0.65 0.18 250)',
         actionQuiet: 'oklch(0.55 0.10 250)',
-        tintSurface: 'oklch(0.22 0.02 260)',
+        tintSurface: 'oklch(0.20 0.02 260)',
         linkText: 'oklch(0.70 0.15 250)',
+      },
+      // SectionTint: subtle tinted background for rhythm
+      sectionTint: {
+        titleText: 'oklch(0.95 0.01 260)',
+        bodyText: 'oklch(0.85 0.01 260)',
+        metaText: 'oklch(0.60 0.02 260)',
+        border: 'oklch(0.35 0.02 260)',
+        divider: 'oklch(0.30 0.02 260)',
+        action: 'oklch(0.65 0.18 250)',
+        actionQuiet: 'oklch(0.55 0.10 250)',
+        tintSurface: 'oklch(0.25 0.02 260)',
+        linkText: 'oklch(0.70 0.15 250)',
+      },
+      // SectionContrast: light background in dark mode
+      sectionContrast: {
+        titleText: 'oklch(0.20 0.02 260)',
+        bodyText: 'oklch(0.30 0.02 260)',
+        metaText: 'oklch(0.50 0.02 260)',
+        border: 'oklch(0.80 0.01 260)',
+        divider: 'oklch(0.85 0.01 260)',
+        action: 'oklch(0.50 0.20 250)',
+        actionQuiet: 'oklch(0.60 0.10 250)',
+        tintSurface: 'oklch(0.92 0.01 260)',
+        linkText: 'oklch(0.45 0.15 250)',
       },
       card: {
         titleText: 'oklch(0.95 0.01 260)',
