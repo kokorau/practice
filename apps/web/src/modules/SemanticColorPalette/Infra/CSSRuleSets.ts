@@ -25,6 +25,19 @@ const ROLE_CSS_NAMES: Record<keyof typeof TOKEN_CSS_PROPERTY_MAP, string> = {
   accent: 'accent',
 }
 
+/** All roles for alias generation */
+const ALL_ROLES: (keyof typeof TOKEN_CSS_PROPERTY_MAP)[] = [
+  'surface',
+  'tintSurface',
+  'title',
+  'body',
+  'meta',
+  'linkText',
+  'border',
+  'divider',
+  'accent',
+]
+
 /** Roles to include in stateless rule sets */
 const STATELESS_ROLES: (keyof typeof TOKEN_CSS_PROPERTY_MAP)[] = [
   'surface',
@@ -45,33 +58,47 @@ type CSSDeclaration = { property: string; value: string }
 type CSSRuleSet = { selector: string; declarations: CSSDeclaration[] }
 
 /**
- * Generate CSS rule set for a context
+ * Generate CSS rule set for a context (CSS properties + all role aliases)
  */
 const generateContextRuleSet = (contextKey: string): CSSRuleSet => {
   const className = CONTEXT_CLASS_NAMES[contextKey as keyof typeof CONTEXT_CLASS_NAMES]
   const varPrefix = `--context-${toKebab(contextKey)}`
 
-  const declarations = STATELESS_ROLES.map((role) => ({
+  // CSS property declarations (surface, body, border)
+  const propertyDeclarations = STATELESS_ROLES.map((role) => ({
     property: TOKEN_CSS_PROPERTY_MAP[role],
     value: `var(${varPrefix}-${ROLE_CSS_NAMES[role]})`,
   }))
 
-  return { selector: `.${className}`, declarations }
+  // Alias declarations (all roles: --title, --body, etc.)
+  const aliasDeclarations = ALL_ROLES.map((role) => ({
+    property: `--${ROLE_CSS_NAMES[role]}`,
+    value: `var(${varPrefix}-${ROLE_CSS_NAMES[role]})`,
+  }))
+
+  return { selector: `.${className}`, declarations: [...propertyDeclarations, ...aliasDeclarations] }
 }
 
 /**
- * Generate CSS rule set for a stateless component
+ * Generate CSS rule set for a stateless component (CSS properties + role aliases for overrides)
  */
 const generateStatelessComponentRuleSet = (componentKey: string): CSSRuleSet => {
   const className = COMPONENT_CLASS_NAMES[componentKey as keyof typeof COMPONENT_CLASS_NAMES]
   const varPrefix = `--component-${toKebab(componentKey)}`
 
-  const declarations = STATELESS_ROLES.map((role) => ({
+  // CSS property declarations (surface, body, border)
+  const propertyDeclarations = STATELESS_ROLES.map((role) => ({
     property: TOKEN_CSS_PROPERTY_MAP[role],
     value: `var(${varPrefix}-${ROLE_CSS_NAMES[role]})`,
   }))
 
-  return { selector: `.${className}`, declarations }
+  // Alias declarations (override parent context's aliases)
+  const aliasDeclarations = STATELESS_ROLES.map((role) => ({
+    property: `--${ROLE_CSS_NAMES[role]}`,
+    value: `var(${varPrefix}-${ROLE_CSS_NAMES[role]})`,
+  }))
+
+  return { selector: `.${className}`, declarations: [...propertyDeclarations, ...aliasDeclarations] }
 }
 
 /**
@@ -97,6 +124,36 @@ const generateStatefulComponentRuleSets = (componentKey: string): CSSRuleSet[] =
     return { selector, declarations }
   })
 }
+
+/**
+ * Generate CSS rule sets for generic child element classes
+ * These classes can be used inside any context/component to apply role-based styling
+ */
+const generateChildElementRuleSets = (): CSSRuleSet[] => [
+  // Text colors
+  { selector: '.scp-title', declarations: [{ property: 'color', value: 'var(--title)' }] },
+  { selector: '.scp-body', declarations: [{ property: 'color', value: 'var(--body)' }] },
+  { selector: '.scp-meta', declarations: [{ property: 'color', value: 'var(--meta)' }] },
+  { selector: '.scp-link', declarations: [{ property: 'color', value: 'var(--link-text)' }] },
+  // Line colors
+  { selector: '.scp-border', declarations: [{ property: 'border-color', value: 'var(--border)' }] },
+  { selector: '.scp-divider', declarations: [{ property: 'border-color', value: 'var(--divider)' }] },
+  // Surface backgrounds
+  {
+    selector: '.scp-tint-surface',
+    declarations: [
+      { property: 'background-color', value: 'var(--tint-surface)' },
+      { property: 'color', value: 'var(--body)' },
+    ],
+  },
+  {
+    selector: '.scp-accent',
+    declarations: [
+      { property: 'background-color', value: 'var(--accent)' },
+      { property: 'color', value: 'var(--surface)' },
+    ],
+  },
+]
 
 /**
  * Format a single rule set to CSS text
@@ -129,6 +186,9 @@ export const collectCSSRuleSets = (): CSSRuleSet[] => {
   for (const key of Object.keys(STATEFUL_COMPONENT_NAMES)) {
     ruleSets.push(...generateStatefulComponentRuleSets(key))
   }
+
+  // Generic child element classes
+  ruleSets.push(...generateChildElementRuleSets())
 
   return ruleSets
 }

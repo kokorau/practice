@@ -70,34 +70,6 @@ const getStatefulTokenEntries = (tokens: StatefulComponentTokens) => {
   return entries
 }
 
-// Convert camelCase to kebab-case
-const toKebab = (str: string): string =>
-  str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
-
-// Generate CSS variable aliases for each context/component
-const generateAliasRules = (): string => {
-  const roles = ['surface', 'tint-surface', 'title', 'body', 'meta', 'link-text', 'border', 'divider', 'accent']
-  const rules: string[] = []
-
-  // Context aliases
-  for (const key of Object.keys(CONTEXT_CLASS_NAMES)) {
-    const className = CONTEXT_CLASS_NAMES[key as keyof typeof CONTEXT_CLASS_NAMES]
-    const prefix = `--context-${toKebab(key)}`
-    const aliases = roles.map(role => `  --${role}: var(${prefix}-${role});`).join('\n')
-    rules.push(`.${className} {\n${aliases}\n}`)
-  }
-
-  // Component aliases (stateless)
-  for (const key of ['card', 'cardFlat']) {
-    const className = COMPONENT_CLASS_NAMES[key as keyof typeof COMPONENT_CLASS_NAMES]
-    const prefix = `--component-${toKebab(key)}`
-    const aliases = roles.map(role => `  --${role}: var(${prefix}-${role});`).join('\n')
-    rules.push(`.${className} {\n${aliases}\n}`)
-  }
-
-  return rules.join('\n\n')
-}
-
 // Dynamic CSS injection for CSS variables and rule sets
 let styleElement: HTMLStyleElement | null = null
 
@@ -105,8 +77,7 @@ const updateStyles = () => {
   if (!styleElement) return
   const cssVariables = toCSSText(palette.value, '.semantic-color-palette-view')
   const cssRuleSets = toCSSRuleSetsText()
-  const aliasRules = generateAliasRules()
-  styleElement.textContent = `${cssVariables}\n\n${cssRuleSets}\n\n${aliasRules}`
+  styleElement.textContent = `${cssVariables}\n\n${cssRuleSets}`
 }
 
 onMounted(() => {
@@ -146,7 +117,7 @@ watch(palette, updateStyles)
           class="surface-card"
           :class="ctx.className"
         >
-          <h3 class="surface-title">{{ ctx.label }}</h3>
+          <h3 class="surface-title scp-title">{{ ctx.label }}</h3>
 
           <div class="tokens-list">
             <div
@@ -154,24 +125,24 @@ watch(palette, updateStyles)
               :key="key"
               class="token-row"
             >
-              <span class="token-name">{{ key }}</span>
+              <span class="token-name scp-body">{{ key }}</span>
               <div class="token-preview">
                 <span class="color-swatch" :style="{ backgroundColor: value }" />
-                <code class="token-value">{{ value }}</code>
+                <code class="token-value scp-meta">{{ value }}</code>
               </div>
             </div>
           </div>
 
           <!-- Preview section -->
-          <div class="preview-section">
-            <p class="preview-title">Title text sample</p>
-            <p class="preview-body">Body text sample</p>
-            <p class="preview-meta">Meta text sample</p>
-            <a href="#" class="preview-link" @click.prevent>Link text sample</a>
-            <div class="tint-preview">
+          <div class="preview-section scp-divider">
+            <p class="preview-title scp-title">Title text sample</p>
+            <p class="preview-body scp-body">Body text sample</p>
+            <p class="preview-meta scp-meta">Meta text sample</p>
+            <a href="#" class="preview-link scp-link" @click.prevent>Link text sample</a>
+            <div class="tint-preview scp-tint-surface">
               <span>Tint surface</span>
             </div>
-            <div v-if="ctx.tokens.accent" class="accent-preview">Accent</div>
+            <div v-if="ctx.tokens.accent" class="accent-preview scp-accent">Accent</div>
           </div>
         </div>
       </div>
@@ -187,7 +158,7 @@ watch(palette, updateStyles)
           class="surface-card"
           :class="comp.className"
         >
-          <h3 class="surface-title">{{ comp.label }}</h3>
+          <h3 class="surface-title scp-title">{{ comp.label }}</h3>
 
           <div class="tokens-list">
             <div
@@ -195,24 +166,24 @@ watch(palette, updateStyles)
               :key="key"
               class="token-row"
             >
-              <span class="token-name">{{ key }}</span>
+              <span class="token-name scp-body">{{ key }}</span>
               <div class="token-preview">
                 <span class="color-swatch" :style="{ backgroundColor: value }" />
-                <code class="token-value">{{ value }}</code>
+                <code class="token-value scp-meta">{{ value }}</code>
               </div>
             </div>
           </div>
 
           <!-- Preview section -->
-          <div class="preview-section">
-            <p class="preview-title">Title text sample</p>
-            <p class="preview-body">Body text sample</p>
-            <p class="preview-meta">Meta text sample</p>
-            <a href="#" class="preview-link" @click.prevent>Link text sample</a>
-            <div class="tint-preview">
+          <div class="preview-section scp-divider">
+            <p class="preview-title scp-title">Title text sample</p>
+            <p class="preview-body scp-body">Body text sample</p>
+            <p class="preview-meta scp-meta">Meta text sample</p>
+            <a href="#" class="preview-link scp-link" @click.prevent>Link text sample</a>
+            <div class="tint-preview scp-tint-surface">
               <span>Tint surface</span>
             </div>
-            <div v-if="comp.tokens.accent" class="accent-preview">Accent</div>
+            <div v-if="comp.tokens.accent" class="accent-preview scp-accent">Accent</div>
           </div>
         </div>
       </div>
@@ -597,73 +568,5 @@ h1 {
 .state-buttons {
   display: flex;
   gap: 0.75rem;
-}
-</style>
-
-<!-- CSS Variable based styles (unscoped to work with dynamic class names) -->
-<style>
-/* Context and Component cards - use CSS variables for colors */
-.semantic-color-palette-view [class^="context-"],
-.semantic-color-palette-view [class^="component-card"] {
-  /* surface, body, border are applied by CSSRuleSets */
-}
-
-/* Title styling using CSS variables */
-.semantic-color-palette-view [class^="context-"] .surface-title,
-.semantic-color-palette-view [class^="component-card"] .surface-title {
-  color: var(--title, inherit);
-}
-
-/* Token name uses body color */
-.semantic-color-palette-view [class^="context-"] .token-name,
-.semantic-color-palette-view [class^="component-card"] .token-name {
-  color: var(--body, inherit);
-}
-
-/* Token value uses meta color */
-.semantic-color-palette-view [class^="context-"] .token-value,
-.semantic-color-palette-view [class^="component-card"] .token-value {
-  color: var(--meta, inherit);
-}
-
-/* Preview section divider */
-.semantic-color-palette-view [class^="context-"] .preview-section,
-.semantic-color-palette-view [class^="component-card"] .preview-section {
-  border-color: var(--divider, rgba(128,128,128,0.15));
-}
-
-/* Preview text colors */
-.semantic-color-palette-view [class^="context-"] .preview-title,
-.semantic-color-palette-view [class^="component-card"] .preview-title {
-  color: var(--title, inherit);
-}
-
-.semantic-color-palette-view [class^="context-"] .preview-body,
-.semantic-color-palette-view [class^="component-card"] .preview-body {
-  color: var(--body, inherit);
-}
-
-.semantic-color-palette-view [class^="context-"] .preview-meta,
-.semantic-color-palette-view [class^="component-card"] .preview-meta {
-  color: var(--meta, inherit);
-}
-
-.semantic-color-palette-view [class^="context-"] .preview-link,
-.semantic-color-palette-view [class^="component-card"] .preview-link {
-  color: var(--link-text, inherit);
-}
-
-/* Tint surface */
-.semantic-color-palette-view [class^="context-"] .tint-preview,
-.semantic-color-palette-view [class^="component-card"] .tint-preview {
-  background-color: var(--tint-surface, inherit);
-  color: var(--body, inherit);
-}
-
-/* Accent */
-.semantic-color-palette-view [class^="context-"] .accent-preview,
-.semantic-color-palette-view [class^="component-card"] .accent-preview {
-  background-color: var(--accent, inherit);
-  color: var(--surface, inherit);
 }
 </style>
