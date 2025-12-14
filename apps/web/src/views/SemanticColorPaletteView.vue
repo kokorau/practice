@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   type SemanticColorPalette,
   type ContextTokens,
   type ComponentTokens,
   type StatefulComponentTokens,
   type ActionState,
+  CONTEXT_CLASS_NAMES,
+  COMPONENT_CLASS_NAMES,
 } from '../modules/SemanticColorPalette/Domain'
 import {
   createDefaultLightPalette,
   createDefaultDarkPalette,
+  toCSSText,
+  toCSSRuleSetsText,
 } from '../modules/SemanticColorPalette/Infra'
 
 const isDark = ref(false)
@@ -18,24 +22,24 @@ const palette = computed<SemanticColorPalette>(() =>
   isDark.value ? createDefaultDarkPalette() : createDefaultLightPalette()
 )
 
-// Context surfaces
+// Context surfaces with CSS class names
 const contexts = computed(() => [
-  { name: 'canvas', label: 'Canvas', tokens: palette.value.context.canvas },
-  { name: 'sectionNeutral', label: 'Section Neutral', tokens: palette.value.context.sectionNeutral },
-  { name: 'sectionTint', label: 'Section Tint', tokens: palette.value.context.sectionTint },
-  { name: 'sectionContrast', label: 'Section Contrast', tokens: palette.value.context.sectionContrast },
+  { name: 'canvas', label: 'Canvas', className: CONTEXT_CLASS_NAMES.canvas, tokens: palette.value.context.canvas },
+  { name: 'sectionNeutral', label: 'Section Neutral', className: CONTEXT_CLASS_NAMES.sectionNeutral, tokens: palette.value.context.sectionNeutral },
+  { name: 'sectionTint', label: 'Section Tint', className: CONTEXT_CLASS_NAMES.sectionTint, tokens: palette.value.context.sectionTint },
+  { name: 'sectionContrast', label: 'Section Contrast', className: CONTEXT_CLASS_NAMES.sectionContrast, tokens: palette.value.context.sectionContrast },
 ])
 
-// Stateless components
+// Stateless components with CSS class names
 const components = computed(() => [
-  { name: 'card', label: 'Card', tokens: palette.value.component.card },
-  { name: 'cardFlat', label: 'Card Flat', tokens: palette.value.component.cardFlat },
+  { name: 'card', label: 'Card', className: COMPONENT_CLASS_NAMES.card, tokens: palette.value.component.card },
+  { name: 'cardFlat', label: 'Card Flat', className: COMPONENT_CLASS_NAMES.cardFlat, tokens: palette.value.component.cardFlat },
 ])
 
-// Stateful components (actions)
+// Stateful components with CSS class names
 const actions = computed(() => [
-  { name: 'action', label: 'Action (CTA)', tokens: palette.value.component.action },
-  { name: 'actionQuiet', label: 'Action Quiet', tokens: palette.value.component.actionQuiet },
+  { name: 'action', label: 'Action (CTA)', className: COMPONENT_CLASS_NAMES.action, tokens: palette.value.component.action },
+  { name: 'actionQuiet', label: 'Action Quiet', className: COMPONENT_CLASS_NAMES.actionQuiet, tokens: palette.value.component.actionQuiet },
 ])
 
 const actionStates: ActionState[] = ['default', 'hover', 'active', 'disabled']
@@ -65,6 +69,61 @@ const getStatefulTokenEntries = (tokens: StatefulComponentTokens) => {
 
   return entries
 }
+
+// Convert camelCase to kebab-case
+const toKebab = (str: string): string =>
+  str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
+
+// Generate CSS variable aliases for each context/component
+const generateAliasRules = (): string => {
+  const roles = ['surface', 'tint-surface', 'title', 'body', 'meta', 'link-text', 'border', 'divider', 'accent']
+  const rules: string[] = []
+
+  // Context aliases
+  for (const key of Object.keys(CONTEXT_CLASS_NAMES)) {
+    const className = CONTEXT_CLASS_NAMES[key as keyof typeof CONTEXT_CLASS_NAMES]
+    const prefix = `--context-${toKebab(key)}`
+    const aliases = roles.map(role => `  --${role}: var(${prefix}-${role});`).join('\n')
+    rules.push(`.${className} {\n${aliases}\n}`)
+  }
+
+  // Component aliases (stateless)
+  for (const key of ['card', 'cardFlat']) {
+    const className = COMPONENT_CLASS_NAMES[key as keyof typeof COMPONENT_CLASS_NAMES]
+    const prefix = `--component-${toKebab(key)}`
+    const aliases = roles.map(role => `  --${role}: var(${prefix}-${role});`).join('\n')
+    rules.push(`.${className} {\n${aliases}\n}`)
+  }
+
+  return rules.join('\n\n')
+}
+
+// Dynamic CSS injection for CSS variables and rule sets
+let styleElement: HTMLStyleElement | null = null
+
+const updateStyles = () => {
+  if (!styleElement) return
+  const cssVariables = toCSSText(palette.value, '.semantic-color-palette-view')
+  const cssRuleSets = toCSSRuleSetsText()
+  const aliasRules = generateAliasRules()
+  styleElement.textContent = `${cssVariables}\n\n${cssRuleSets}\n\n${aliasRules}`
+}
+
+onMounted(() => {
+  styleElement = document.createElement('style')
+  styleElement.setAttribute('data-semantic-palette', '')
+  document.head.appendChild(styleElement)
+  updateStyles()
+})
+
+onUnmounted(() => {
+  if (styleElement) {
+    document.head.removeChild(styleElement)
+    styleElement = null
+  }
+})
+
+watch(palette, updateStyles)
 </script>
 
 <template>
@@ -85,11 +144,9 @@ const getStatefulTokenEntries = (tokens: StatefulComponentTokens) => {
           v-for="ctx in contexts"
           :key="ctx.name"
           class="surface-card"
-          :style="{ backgroundColor: ctx.tokens.surface }"
+          :class="ctx.className"
         >
-          <h3 class="surface-title" :style="{ color: ctx.tokens.title }">
-            {{ ctx.label }}
-          </h3>
+          <h3 class="surface-title">{{ ctx.label }}</h3>
 
           <div class="tokens-list">
             <div
@@ -97,42 +154,24 @@ const getStatefulTokenEntries = (tokens: StatefulComponentTokens) => {
               :key="key"
               class="token-row"
             >
-              <span class="token-name" :style="{ color: ctx.tokens.body }">
-                {{ key }}
-              </span>
+              <span class="token-name">{{ key }}</span>
               <div class="token-preview">
-                <span
-                  class="color-swatch"
-                  :style="{ backgroundColor: value }"
-                />
-                <code class="token-value" :style="{ color: ctx.tokens.meta }">
-                  {{ value }}
-                </code>
+                <span class="color-swatch" :style="{ backgroundColor: value }" />
+                <code class="token-value">{{ value }}</code>
               </div>
             </div>
           </div>
 
           <!-- Preview section -->
-          <div class="preview-section" :style="{ borderColor: ctx.tokens.divider }">
-            <p :style="{ color: ctx.tokens.title }">Title text sample</p>
-            <p :style="{ color: ctx.tokens.body }">Body text sample</p>
-            <p :style="{ color: ctx.tokens.meta }">Meta text sample</p>
-            <a href="#" :style="{ color: ctx.tokens.linkText }" @click.prevent>
-              Link text sample
-            </a>
-            <div
-              class="tint-preview"
-              :style="{ backgroundColor: ctx.tokens.tintSurface }"
-            >
-              <span :style="{ color: ctx.tokens.body }">Tint surface</span>
+          <div class="preview-section">
+            <p class="preview-title">Title text sample</p>
+            <p class="preview-body">Body text sample</p>
+            <p class="preview-meta">Meta text sample</p>
+            <a href="#" class="preview-link" @click.prevent>Link text sample</a>
+            <div class="tint-preview">
+              <span>Tint surface</span>
             </div>
-            <div
-              v-if="ctx.tokens.accent"
-              class="accent-preview"
-              :style="{ backgroundColor: ctx.tokens.accent, color: ctx.tokens.surface }"
-            >
-              Accent
-            </div>
+            <div v-if="ctx.tokens.accent" class="accent-preview">Accent</div>
           </div>
         </div>
       </div>
@@ -146,11 +185,9 @@ const getStatefulTokenEntries = (tokens: StatefulComponentTokens) => {
           v-for="comp in components"
           :key="comp.name"
           class="surface-card"
-          :style="{ backgroundColor: comp.tokens.surface, borderColor: comp.tokens.border }"
+          :class="comp.className"
         >
-          <h3 class="surface-title" :style="{ color: comp.tokens.title }">
-            {{ comp.label }}
-          </h3>
+          <h3 class="surface-title">{{ comp.label }}</h3>
 
           <div class="tokens-list">
             <div
@@ -158,42 +195,24 @@ const getStatefulTokenEntries = (tokens: StatefulComponentTokens) => {
               :key="key"
               class="token-row"
             >
-              <span class="token-name" :style="{ color: comp.tokens.body }">
-                {{ key }}
-              </span>
+              <span class="token-name">{{ key }}</span>
               <div class="token-preview">
-                <span
-                  class="color-swatch"
-                  :style="{ backgroundColor: value }"
-                />
-                <code class="token-value" :style="{ color: comp.tokens.meta }">
-                  {{ value }}
-                </code>
+                <span class="color-swatch" :style="{ backgroundColor: value }" />
+                <code class="token-value">{{ value }}</code>
               </div>
             </div>
           </div>
 
           <!-- Preview section -->
-          <div class="preview-section" :style="{ borderColor: comp.tokens.divider }">
-            <p :style="{ color: comp.tokens.title }">Title text sample</p>
-            <p :style="{ color: comp.tokens.body }">Body text sample</p>
-            <p :style="{ color: comp.tokens.meta }">Meta text sample</p>
-            <a href="#" :style="{ color: comp.tokens.linkText }" @click.prevent>
-              Link text sample
-            </a>
-            <div
-              class="tint-preview"
-              :style="{ backgroundColor: comp.tokens.tintSurface }"
-            >
-              <span :style="{ color: comp.tokens.body }">Tint surface</span>
+          <div class="preview-section">
+            <p class="preview-title">Title text sample</p>
+            <p class="preview-body">Body text sample</p>
+            <p class="preview-meta">Meta text sample</p>
+            <a href="#" class="preview-link" @click.prevent>Link text sample</a>
+            <div class="tint-preview">
+              <span>Tint surface</span>
             </div>
-            <div
-              v-if="comp.tokens.accent"
-              class="accent-preview"
-              :style="{ backgroundColor: comp.tokens.accent, color: isDark ? 'oklch(0.15 0.02 260)' : 'oklch(0.98 0.01 260)' }"
-            >
-              Accent
-            </div>
+            <div v-if="comp.tokens.accent" class="accent-preview">Accent</div>
           </div>
         </div>
       </div>
@@ -210,24 +229,36 @@ const getStatefulTokenEntries = (tokens: StatefulComponentTokens) => {
         >
           <h3 class="action-title">{{ action.label }}</h3>
 
-          <!-- State preview buttons -->
+          <!-- Interactive button using CSS variables -->
+          <div class="interactive-preview">
+            <span class="preview-label">Interactive (CSS Variables)</span>
+            <div class="interactive-buttons">
+              <button :class="action.className">Click me</button>
+              <button :class="action.className" disabled>Disabled</button>
+            </div>
+          </div>
+
+          <!-- State preview buttons (static display) -->
           <div class="state-previews">
-            <div
-              v-for="state in actionStates"
-              :key="state"
-              class="state-preview"
-            >
-              <span class="state-label">{{ state }}</span>
-              <button
-                class="action-button"
-                :style="{
-                  backgroundColor: action.tokens.surface[state],
-                  borderColor: action.tokens.border[state],
-                  color: action.tokens.title[state],
-                }"
+            <span class="preview-label">State Preview (static)</span>
+            <div class="state-buttons">
+              <div
+                v-for="state in actionStates"
+                :key="state"
+                class="state-preview"
               >
-                Button
-              </button>
+                <span class="state-label">{{ state }}</span>
+                <button
+                  class="action-button"
+                  :style="{
+                    backgroundColor: action.tokens.surface[state],
+                    borderColor: action.tokens.border[state],
+                    color: action.tokens.title[state],
+                  }"
+                >
+                  Button
+                </button>
+              </div>
             </div>
           </div>
 
@@ -524,5 +555,115 @@ h1 {
 
 .dark .token-table-cell.token-name {
   color: oklch(0.75 0.02 260);
+}
+
+/* Interactive preview for stateful components */
+.interactive-preview {
+  margin-bottom: 1rem;
+}
+
+.preview-label {
+  display: block;
+  font-size: 0.65rem;
+  color: oklch(0.50 0.02 260);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.dark .preview-label {
+  color: oklch(0.60 0.02 260);
+}
+
+.interactive-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.interactive-buttons button {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.interactive-buttons button:disabled {
+  cursor: not-allowed;
+}
+
+.state-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+</style>
+
+<!-- CSS Variable based styles (unscoped to work with dynamic class names) -->
+<style>
+/* Context and Component cards - use CSS variables for colors */
+.semantic-color-palette-view [class^="context-"],
+.semantic-color-palette-view [class^="component-card"] {
+  /* surface, body, border are applied by CSSRuleSets */
+}
+
+/* Title styling using CSS variables */
+.semantic-color-palette-view [class^="context-"] .surface-title,
+.semantic-color-palette-view [class^="component-card"] .surface-title {
+  color: var(--title, inherit);
+}
+
+/* Token name uses body color */
+.semantic-color-palette-view [class^="context-"] .token-name,
+.semantic-color-palette-view [class^="component-card"] .token-name {
+  color: var(--body, inherit);
+}
+
+/* Token value uses meta color */
+.semantic-color-palette-view [class^="context-"] .token-value,
+.semantic-color-palette-view [class^="component-card"] .token-value {
+  color: var(--meta, inherit);
+}
+
+/* Preview section divider */
+.semantic-color-palette-view [class^="context-"] .preview-section,
+.semantic-color-palette-view [class^="component-card"] .preview-section {
+  border-color: var(--divider, rgba(128,128,128,0.15));
+}
+
+/* Preview text colors */
+.semantic-color-palette-view [class^="context-"] .preview-title,
+.semantic-color-palette-view [class^="component-card"] .preview-title {
+  color: var(--title, inherit);
+}
+
+.semantic-color-palette-view [class^="context-"] .preview-body,
+.semantic-color-palette-view [class^="component-card"] .preview-body {
+  color: var(--body, inherit);
+}
+
+.semantic-color-palette-view [class^="context-"] .preview-meta,
+.semantic-color-palette-view [class^="component-card"] .preview-meta {
+  color: var(--meta, inherit);
+}
+
+.semantic-color-palette-view [class^="context-"] .preview-link,
+.semantic-color-palette-view [class^="component-card"] .preview-link {
+  color: var(--link-text, inherit);
+}
+
+/* Tint surface */
+.semantic-color-palette-view [class^="context-"] .tint-preview,
+.semantic-color-palette-view [class^="component-card"] .tint-preview {
+  background-color: var(--tint-surface, inherit);
+  color: var(--body, inherit);
+}
+
+/* Accent */
+.semantic-color-palette-view [class^="context-"] .accent-preview,
+.semantic-color-palette-view [class^="component-card"] .accent-preview {
+  background-color: var(--accent, inherit);
+  color: var(--surface, inherit);
 }
 </style>
