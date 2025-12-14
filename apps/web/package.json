@@ -13,6 +13,8 @@
     "fetch:fonts": "update-googlefonts-list -o src/assets/constants/GoogleFontPresets.ts -l 100"
   },
   "dependencies": {
+    "@practice/color": "workspace:^",
+    "@practice/vector": "workspace:^",
     "@tailwindcss/vite": "^4.1.17",
     "@types/three": "^0.181.0",
     "@vueuse/core": "^14.0.0",

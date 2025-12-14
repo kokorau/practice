@@ -1,5 +1,5 @@
-import type { Srgb } from '../../../Color/Domain/ValueObject'
-import { $Srgb } from '../../../Color/Domain/ValueObject'
+import type { Srgb } from '@practice/color'
+import { $Srgb } from '@practice/color'
 import type { Lut1D, Lut3D } from '../../../Filter/Domain'
 import { $Lut3D } from '../../../Filter/Domain'
 

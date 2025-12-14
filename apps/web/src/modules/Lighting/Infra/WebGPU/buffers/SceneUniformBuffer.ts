@@ -3,7 +3,7 @@
  * Builds the 144-byte scene uniform buffer
  */
 
-import type { Vector3 } from '../../../../Vector/Domain/ValueObject'
+import type { Vector3 } from '@practice/vector'
 import type { Color, AmbientLight } from '../../../Domain/ValueObject'
 
 export interface SceneUniformParams {

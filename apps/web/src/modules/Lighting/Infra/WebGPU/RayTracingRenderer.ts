@@ -4,7 +4,7 @@
  */
 
 import type { OrthographicCamera, Scene } from '../../Domain/ValueObject'
-import { $Vector3 } from '../../../Vector/Domain/ValueObject'
+import { $Vector3 } from '@practice/vector'
 import { SHADER_CODE } from './shaders'
 import {
   buildSceneUniform,

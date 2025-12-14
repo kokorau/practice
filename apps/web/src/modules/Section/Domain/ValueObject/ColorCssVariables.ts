@@ -1,5 +1,5 @@
 import type { ColorPalette } from '../../../ColorPalette/Domain/ValueObject'
-import type { Srgb } from '../../../Color/Domain/ValueObject'
+import type { Srgb } from '@practice/color'
 
 const srgbToCss = (color: Srgb): string => {
   const r = Math.round(color.r * 255)

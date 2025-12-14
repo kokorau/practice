@@ -1,6 +1,6 @@
-import type { Oklch } from '../../../Color/Domain/ValueObject/Oklch'
-import { $Oklch } from '../../../Color/Domain/ValueObject/Oklch'
-import { $Srgb } from '../../../Color/Domain/ValueObject/Srgb'
+import type { Oklch } from '@practice/color'
+import { $Oklch } from '@practice/color'
+import { $Srgb } from '@practice/color'
 
 // Albedo-safe constraints
 const ALBEDO_L_MIN = 0.25

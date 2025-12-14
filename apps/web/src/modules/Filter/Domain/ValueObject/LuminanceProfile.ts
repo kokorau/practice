@@ -5,8 +5,8 @@
  * 分析・処理することで、色ズレを防ぎつつ正確なトーンカーブを抽出する
  */
 
-import { $Oklab, type Oklab } from '../../../Color/Domain/ValueObject/Oklab'
-import type { Srgb } from '../../../Color/Domain/ValueObject/Srgb'
+import { $Oklab, type Oklab } from '@practice/color'
+import type { Srgb } from '@practice/color'
 
 // ============================================
 // 型定義

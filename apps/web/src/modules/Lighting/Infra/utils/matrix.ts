@@ -3,7 +3,7 @@
  * Provides rotation matrix creation from Euler angles
  */
 
-import type { Vector3 } from '../../../Vector/Domain/ValueObject'
+import type { Vector3 } from '@practice/vector'
 
 /**
  * Create rotation matrix from Euler angles (XYZ order)

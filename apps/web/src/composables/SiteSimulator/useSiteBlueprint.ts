@@ -1,6 +1,6 @@
 import { ref, computed, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
-import type { Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
-import { $Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
+import type { Oklch } from '@practice/color'
+import { $Oklch } from '@practice/color'
 import {
   type SiteBlueprint,
   type FilterState,

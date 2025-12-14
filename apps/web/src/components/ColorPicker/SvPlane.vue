@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { $Hsv, $Srgb } from '../../modules/Color/Domain/ValueObject'
+import { $Hsv, $Srgb } from '@practice/color'
 
 const props = defineProps<{
   hue: number // 0-360

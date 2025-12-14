@@ -1,6 +1,6 @@
 import { $SceneWebGPU, $SceneObjectWebGPU } from '../../Infra'
 import { $Camera, $Light, $Geometry, $Color } from '../../Domain/ValueObject'
-import { $Vector3 } from '../../../Vector/Domain/ValueObject'
+import { $Vector3 } from '@practice/vector'
 import type { SceneDefinition } from '../SceneDefinition'
 
 function hslToRgb(h: number, s: number, l: number): ReturnType<typeof $Color.create> {

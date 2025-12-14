@@ -1,4 +1,4 @@
-import { $Vector3, type Vector3 } from '../../../Vector/Domain/ValueObject'
+import { $Vector3, type Vector3 } from '@practice/vector'
 
 /**
  * Base camera properties

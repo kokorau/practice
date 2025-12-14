@@ -5,7 +5,7 @@ import {
   type ColorCssVariables,
 } from './ColorCssVariables'
 import type { ColorPalette } from '../../../ColorPalette/Domain/ValueObject'
-import { $Srgb } from '../../../Color/Domain/ValueObject'
+import { $Srgb } from '@practice/color'
 
 describe('ColorCssVariables', () => {
   // Helper to create a color palette for testing

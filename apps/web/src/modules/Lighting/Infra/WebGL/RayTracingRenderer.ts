@@ -4,7 +4,7 @@
  */
 
 import type { OrthographicCamera, PlaneGeometry, BoxGeometry, Light, AmbientLight, DirectionalLight, Color } from '../../Domain/ValueObject'
-import { $Vector3 } from '../../../Vector/Domain/ValueObject'
+import { $Vector3 } from '@practice/vector'
 import { eulerToMat3, eulerToMat3Inverse } from '../utils/matrix'
 
 // Vertex Shader - フルスクリーンクワッド

@@ -6,7 +6,7 @@ import type {
 } from '../Application'
 import type { OrthographicCamera, Color } from '../Domain/ValueObject'
 import { $Camera, $Color } from '../Domain/ValueObject'
-import { $Vector3 } from '../../Vector/Domain/ValueObject'
+import { $Vector3 } from '@practice/vector'
 import { $Scene, $SceneObject } from './WebGL'
 import { $Geometry } from '../Domain/ValueObject'
 

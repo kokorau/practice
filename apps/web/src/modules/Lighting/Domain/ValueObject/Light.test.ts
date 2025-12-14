@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { $Light } from './Light'
-import type { Vector3 } from '../../../Vector/Domain/ValueObject'
+import type { Vector3 } from '@practice/vector'
 import type { Color } from './Color'
 
 describe('$Light', () => {

@@ -1,6 +1,6 @@
 import { createVisibleSpectrum, type Spectrum } from '../Domain/ValueObject/Spectrum'
 import { spectrumToSrgb } from '../Domain/ValueObject/WavelengthToRgb'
-import type { Srgb } from '../../Color/Domain/ValueObject/Srgb'
+import type { Srgb } from '@practice/color'
 
 export interface LightSpectrumPreset {
   id: string

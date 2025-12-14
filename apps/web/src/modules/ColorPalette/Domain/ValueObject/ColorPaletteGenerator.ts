@@ -1,7 +1,7 @@
 import type { ColorPalette } from './ColorPalette'
-import type { Srgb } from '../../../Color/Domain/ValueObject'
-import type { Oklch } from '../../../Color/Domain/ValueObject/Oklch'
-import { $Oklch } from '../../../Color/Domain/ValueObject/Oklch'
+import type { Srgb } from '@practice/color'
+import type { Oklch } from '@practice/color'
+import { $Oklch } from '@practice/color'
 
 /**
  * 色相オフセットの選択肢

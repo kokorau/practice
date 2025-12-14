@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { $Geometry } from './Geometry'
-import type { Vector3 } from '../../../Vector/Domain/ValueObject'
+import type { Vector3 } from '@practice/vector'
 
 describe('$Geometry', () => {
   describe('createPlane', () => {

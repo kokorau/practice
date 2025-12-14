@@ -3,7 +3,7 @@
  * Builds storage buffer for directional light data
  */
 
-import { $Vector3, type Vector3 } from '../../../../Vector/Domain/ValueObject'
+import { $Vector3, type Vector3 } from '@practice/vector'
 import type { Color } from '../../../Domain/ValueObject'
 
 export interface SceneLight {

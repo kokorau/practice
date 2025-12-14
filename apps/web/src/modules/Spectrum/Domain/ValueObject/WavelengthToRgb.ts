@@ -3,7 +3,7 @@
  * CIE 1931 XYZ色空間を経由して変換
  */
 
-import type { Srgb } from '../../../Color/Domain/ValueObject/Srgb'
+import type { Srgb } from '@practice/color'
 import type { Spectrum } from './Spectrum'
 
 /**

@@ -1,4 +1,4 @@
-import { $Vector3, type Vector3 } from '../../../Vector/Domain/ValueObject'
+import { $Vector3, type Vector3 } from '@practice/vector'
 
 /**
  * Finite rectangular plane defined by center, normal, and size

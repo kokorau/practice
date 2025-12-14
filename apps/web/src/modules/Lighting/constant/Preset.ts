@@ -1,4 +1,4 @@
-import type { Hex } from '../../Color/Domain/ValueObject'
+import type { Hex } from '@practice/color'
 
 // Light setting type
 export type LightSetting = {

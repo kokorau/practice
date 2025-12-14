@@ -1,4 +1,4 @@
-import type { Srgb } from '../../../Color/Domain/ValueObject'
+import type { Srgb } from '@practice/color'
 
 export type ColorPair = {
   color: Srgb

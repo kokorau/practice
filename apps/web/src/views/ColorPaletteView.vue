@@ -176,7 +176,7 @@ import {
   PalettePresets,
 } from '../modules/ColorPalette/Domain/ValueObject'
 import type { PaletteGeneratorConfig } from '../modules/ColorPalette/Domain/ValueObject'
-import type { Srgb } from '../modules/Color/Domain/ValueObject'
+import type { Srgb } from '@practice/color'
 
 // パレットプリセット
 const selectedPresetId = ref<string | null>(null)

@@ -3,8 +3,8 @@
  * 似た色のセグメントをマージしてレイヤー数を削減
  */
 
-import { $Oklab } from '../../../Color/Domain/ValueObject/Oklab'
-import type { Srgb } from '../../../Color/Domain/ValueObject/Srgb'
+import { $Oklab } from '@practice/color'
+import type { Srgb } from '@practice/color'
 import type { Segment, SegmentationResult } from './segmentationService'
 
 export type MergedSegment = {

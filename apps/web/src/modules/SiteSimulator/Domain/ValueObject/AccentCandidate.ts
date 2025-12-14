@@ -1,5 +1,5 @@
-import type { Oklch } from '../../../Color/Domain/ValueObject/Oklch'
-import { $Oklch } from '../../../Color/Domain/ValueObject/Oklch'
+import type { Oklch } from '@practice/color'
+import { $Oklch } from '@practice/color'
 
 /**
  * AccentCandidate represents a candidate color for accent selection.

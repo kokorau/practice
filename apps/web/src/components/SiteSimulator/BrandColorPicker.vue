@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
-import { $Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
-import { $Srgb } from '../../modules/Color/Domain/ValueObject/Srgb'
+import type { Oklch } from '@practice/color'
+import { $Oklch } from '@practice/color'
+import { $Srgb } from '@practice/color'
 
 const props = defineProps<{
   modelValue: Oklch

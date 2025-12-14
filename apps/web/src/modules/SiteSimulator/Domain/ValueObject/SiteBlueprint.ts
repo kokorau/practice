@@ -1,5 +1,5 @@
-import type { Oklch } from '../../../Color/Domain/ValueObject/Oklch'
-import { $Oklch } from '../../../Color/Domain/ValueObject/Oklch'
+import type { Oklch } from '@practice/color'
+import { $Oklch } from '@practice/color'
 import type { FontPreset } from '../../../Font/Domain/ValueObject'
 import type { StylePackPreset } from '../../../StylePack/Domain/ValueObject'
 import type { FontConfig } from './FontConfig'

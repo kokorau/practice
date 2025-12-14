@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
-import { $Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
+import type { Oklch } from '@practice/color'
+import { $Oklch } from '@practice/color'
 import type { Preset } from '../../modules/Filter/Domain'
 import type { FontPreset } from '../../modules/Font/Domain/ValueObject'
 import type { StylePackPreset } from '../../modules/StylePack/Domain/ValueObject'

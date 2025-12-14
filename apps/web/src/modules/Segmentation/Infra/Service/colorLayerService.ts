@@ -3,7 +3,7 @@
  * k-meansで色をクラスタリングし、同じ色のピクセルを1つのレイヤーとしてグルーピング
  */
 
-import type { Srgb } from '../../../Color/Domain/ValueObject/Srgb'
+import type { Srgb } from '@practice/color'
 
 export type ColorLayer = {
   id: number

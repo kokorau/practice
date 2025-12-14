@@ -7,7 +7,7 @@
 
 import type { Tile, TileGrid } from '../Domain/ValueObject'
 import type { OrthographicCamera } from '../Domain/ValueObject'
-import { $Vector3 } from '../../Vector/Domain/ValueObject'
+import { $Vector3 } from '@practice/vector'
 import { RayTracingRenderer, type Scene } from './WebGL/RayTracingRenderer'
 
 export type TileCache = {

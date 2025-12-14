@@ -1,4 +1,4 @@
-import type { Vector3 } from '../../../Vector/Domain/ValueObject'
+import type { Vector3 } from '@practice/vector'
 import type {
   PlaneGeometry,
   BoxGeometry,

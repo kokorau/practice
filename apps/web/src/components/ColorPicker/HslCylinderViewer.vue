@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { Lut } from '../../modules/Filter/Domain/ValueObject/Lut'
 import { $Lut3D } from '../../modules/Filter/Domain/ValueObject/Lut'
-import { $Hsl } from '../../modules/Color/Domain/ValueObject'
+import { $Hsl } from '@practice/color'
 
 const props = defineProps<{
   h: number // 0-360 (hue)

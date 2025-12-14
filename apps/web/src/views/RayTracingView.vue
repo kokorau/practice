@@ -10,7 +10,7 @@ import {
   isWebGPUSupported,
 } from '../modules/Lighting/Infra'
 import { $Camera, $Light, $Geometry, $Color } from '../modules/Lighting/Domain/ValueObject'
-import { $Vector3 } from '../modules/Vector/Domain/ValueObject'
+import { $Vector3 } from '@practice/vector'
 
 const canvasRefWebGL = ref<HTMLCanvasElement | null>(null)
 const canvasRefWebGPU = ref<HTMLCanvasElement | null>(null)

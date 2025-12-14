@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
-import { $Oklch } from '../../modules/Color/Domain/ValueObject/Oklch'
+import type { Oklch } from '@practice/color'
+import { $Oklch } from '@practice/color'
 import {
   $AccentCandidate,
   type AccentCandidate,

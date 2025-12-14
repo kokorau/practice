@@ -6,7 +6,7 @@
  * Shadow casters outside the view but casting shadows into the view are preserved.
  */
 
-import { $Vector3, type Vector3 } from '../../Vector/Domain/ValueObject'
+import { $Vector3, type Vector3 } from '@practice/vector'
 import type { OrthographicCamera, DirectionalLight } from '../Domain/ValueObject'
 import type { AABB } from '../Domain/ValueObject/AABB'
 import { $AABB } from '../Domain/ValueObject/AABB'

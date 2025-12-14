@@ -5,8 +5,8 @@ import {
   GAMUT_VERTICES,
   COLOR_SPACE_INFO,
   type ColorSpaceId,
-} from '../modules/Color/Application/ConvertXyYToColorSpaces'
-import { $Srgb } from '../modules/Color/Domain/ValueObject/Srgb'
+} from '@practice/color'
+import { $Srgb } from '@practice/color'
 
 // 色空間IDリスト（ACES除外）
 const colorSpaceIds: ColorSpaceId[] = ['srgb', 'display-p3', 'rec2020']

@@ -1,4 +1,4 @@
-import type { Vector3 } from '../../Vector/Domain/ValueObject'
+import type { Vector3 } from '@practice/vector'
 import type { AABB } from '../Domain/ValueObject/AABB'
 import { $AABB } from '../Domain/ValueObject/AABB'
 import type { BVH, BVHNode, BVHObjectType } from '../Domain/ValueObject/BVH'
