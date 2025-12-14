@@ -1,24 +1,31 @@
 /**
  * WebGPU Line Renderer
- * Renders line segments with vertex colors using rasterization
+ * Renders line segments and points with vertex colors using rasterization
  */
 
-import type { LineSegments } from '../../Domain/ValueObject'
+import type { LineSegments, Point } from '../../Domain/ValueObject'
 import type { PerspectiveCamera, OrthographicCamera } from '../../Domain/ValueObject'
 import { $Vector3 } from '@practice/vector'
 import lineShader from './shaders/line.wgsl?raw'
+import pointShader from './shaders/point.wgsl?raw'
 
 type Camera = PerspectiveCamera | OrthographicCamera
 
 export interface LineScene {
   readonly lines: LineSegments
+  readonly points?: readonly Point[]
   readonly backgroundColor?: { r: number; g: number; b: number }
 }
 
 export const $LineScene = {
-  create: (lines: LineSegments, backgroundColor?: { r: number; g: number; b: number }): LineScene => ({
+  create: (
+    lines: LineSegments,
+    backgroundColor?: { r: number; g: number; b: number },
+    points?: readonly Point[]
+  ): LineScene => ({
     lines,
     backgroundColor,
+    points,
   }),
 }
 
@@ -90,9 +97,17 @@ function multiplyMat4(a: Float32Array, b: Float32Array): Float32Array {
 export class LineRenderer {
   private device: GPUDevice
   private context: GPUCanvasContext
-  private pipeline: GPURenderPipeline
-  private uniformBuffer: GPUBuffer
-  private bindGroup: GPUBindGroup
+
+  // Line rendering
+  private linePipeline: GPURenderPipeline
+  private lineUniformBuffer: GPUBuffer
+  private lineBindGroup: GPUBindGroup
+
+  // Point rendering
+  private pointPipeline: GPURenderPipeline
+  private pointUniformBuffer: GPUBuffer
+  private pointBindGroup: GPUBindGroup
+
   private depthTexture: GPUTexture | null = null
   private depthTextureView: GPUTextureView | null = null
   private lastWidth = 0
@@ -101,15 +116,21 @@ export class LineRenderer {
   private constructor(
     device: GPUDevice,
     context: GPUCanvasContext,
-    pipeline: GPURenderPipeline,
-    uniformBuffer: GPUBuffer,
-    bindGroup: GPUBindGroup
+    linePipeline: GPURenderPipeline,
+    lineUniformBuffer: GPUBuffer,
+    lineBindGroup: GPUBindGroup,
+    pointPipeline: GPURenderPipeline,
+    pointUniformBuffer: GPUBuffer,
+    pointBindGroup: GPUBindGroup
   ) {
     this.device = device
     this.context = context
-    this.pipeline = pipeline
-    this.uniformBuffer = uniformBuffer
-    this.bindGroup = bindGroup
+    this.linePipeline = linePipeline
+    this.lineUniformBuffer = lineUniformBuffer
+    this.lineBindGroup = lineBindGroup
+    this.pointPipeline = pointPipeline
+    this.pointUniformBuffer = pointUniformBuffer
+    this.pointBindGroup = pointBindGroup
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<LineRenderer> {
@@ -133,14 +154,15 @@ export class LineRenderer {
     context.configure({
       device,
       format,
-      alphaMode: 'opaque',
+      alphaMode: 'premultiplied',
     })
 
-    const shaderModule = device.createShaderModule({
+    // === Line Pipeline ===
+    const lineShaderModule = device.createShaderModule({
       code: lineShader,
     })
 
-    const bindGroupLayout = device.createBindGroupLayout({
+    const lineBindGroupLayout = device.createBindGroupLayout({
       entries: [
         {
           binding: 0,
@@ -150,14 +172,14 @@ export class LineRenderer {
       ],
     })
 
-    const pipelineLayout = device.createPipelineLayout({
-      bindGroupLayouts: [bindGroupLayout],
+    const linePipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [lineBindGroupLayout],
     })
 
-    const pipeline = device.createRenderPipeline({
-      layout: pipelineLayout,
+    const linePipeline = device.createRenderPipeline({
+      layout: linePipelineLayout,
       vertex: {
-        module: shaderModule,
+        module: lineShaderModule,
         entryPoint: 'vertexMain',
         buffers: [
           {
@@ -170,7 +192,7 @@ export class LineRenderer {
         ],
       },
       fragment: {
-        module: shaderModule,
+        module: lineShaderModule,
         entryPoint: 'fragmentMain',
         targets: [{ format }],
       },
@@ -184,20 +206,101 @@ export class LineRenderer {
       },
     })
 
-    // Uniform buffer: mat4x4f (64 bytes) + vec2f (8 bytes) + padding (8 bytes) = 80 bytes
-    const uniformBuffer = device.createBuffer({
+    // Line uniform buffer: mat4x4f (64 bytes) + vec2f (8 bytes) + padding (8 bytes) = 80 bytes
+    const lineUniformBuffer = device.createBuffer({
       size: 80,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
-    const bindGroup = device.createBindGroup({
-      layout: bindGroupLayout,
+    const lineBindGroup = device.createBindGroup({
+      layout: lineBindGroupLayout,
       entries: [
-        { binding: 0, resource: { buffer: uniformBuffer } },
+        { binding: 0, resource: { buffer: lineUniformBuffer } },
       ],
     })
 
-    return new LineRenderer(device, context, pipeline, uniformBuffer, bindGroup)
+    // === Point Pipeline ===
+    const pointShaderModule = device.createShaderModule({
+      code: pointShader,
+    })
+
+    const pointBindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: { type: 'uniform' },
+        },
+      ],
+    })
+
+    const pointPipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [pointBindGroupLayout],
+    })
+
+    const pointPipeline = device.createRenderPipeline({
+      layout: pointPipelineLayout,
+      vertex: {
+        module: pointShaderModule,
+        entryPoint: 'vertexMain',
+        buffers: [
+          {
+            arrayStride: 36, // 9 floats * 4 bytes (position(3) + color(3) + sizeAndCorner(3))
+            attributes: [
+              { shaderLocation: 0, offset: 0, format: 'float32x3' },   // position
+              { shaderLocation: 1, offset: 12, format: 'float32x3' },  // color
+              { shaderLocation: 2, offset: 24, format: 'float32x3' },  // sizeAndCorner
+            ],
+          },
+        ],
+      },
+      fragment: {
+        module: pointShaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [{
+          format,
+          blend: {
+            color: {
+              srcFactor: 'src-alpha',
+              dstFactor: 'one-minus-src-alpha',
+              operation: 'add',
+            },
+            alpha: {
+              srcFactor: 'one',
+              dstFactor: 'one-minus-src-alpha',
+              operation: 'add',
+            },
+          },
+        }],
+      },
+      primitive: {
+        topology: 'triangle-list',
+      },
+      depthStencil: {
+        format: 'depth24plus',
+        depthWriteEnabled: true,
+        depthCompare: 'less',
+      },
+    })
+
+    // Point uniform buffer: mat4x4f (64 bytes) + cameraRight(12) + pad(4) + cameraUp(12) + pad(4) = 96 bytes
+    const pointUniformBuffer = device.createBuffer({
+      size: 96,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    const pointBindGroup = device.createBindGroup({
+      layout: pointBindGroupLayout,
+      entries: [
+        { binding: 0, resource: { buffer: pointUniformBuffer } },
+      ],
+    })
+
+    return new LineRenderer(
+      device, context,
+      linePipeline, lineUniformBuffer, lineBindGroup,
+      pointPipeline, pointUniformBuffer, pointBindGroup
+    )
   }
 
   private ensureDepthTexture(width: number, height: number): void {
@@ -220,12 +323,17 @@ export class LineRenderer {
   }
 
   render(scene: LineScene, camera: Camera): void {
-    const { lines, backgroundColor } = scene
+    const { lines, points, backgroundColor } = scene
 
     // Get canvas size
     const canvas = this.context.canvas as HTMLCanvasElement
     const width = canvas.width
     const height = canvas.height
+
+    // Build camera vectors
+    const forward = $Vector3.normalize($Vector3.sub(camera.lookAt, camera.position))
+    const right = $Vector3.normalize($Vector3.cross(forward, camera.up))
+    const up = $Vector3.cross(right, forward)
 
     // Build MVP matrix
     const view = buildViewMatrix(camera.position, camera.lookAt, camera.up)
@@ -237,40 +345,92 @@ export class LineRenderer {
     }
     const mvp = multiplyMat4(projection, view)
 
-    // Write uniforms
-    const uniformData = new Float32Array(20) // 16 (mvp) + 2 (resolution) + 2 (padding)
-    uniformData.set(mvp, 0)
-    uniformData[16] = width
-    uniformData[17] = height
-    this.device.queue.writeBuffer(this.uniformBuffer, 0, uniformData)
+    // Write line uniforms
+    const lineUniformData = new Float32Array(20) // 16 (mvp) + 2 (resolution) + 2 (padding)
+    lineUniformData.set(mvp, 0)
+    lineUniformData[16] = width
+    lineUniformData[17] = height
+    this.device.queue.writeBuffer(this.lineUniformBuffer, 0, lineUniformData)
 
-    // Build vertex buffer
-    const vertexCount = lines.segments.length * 2
-    const vertexData = new Float32Array(vertexCount * 6) // position(3) + color(3)
+    // Write point uniforms
+    const pointUniformData = new Float32Array(24) // 16 (mvp) + 4 (right + pad) + 4 (up + pad)
+    pointUniformData.set(mvp, 0)
+    pointUniformData[16] = right.x
+    pointUniformData[17] = right.y
+    pointUniformData[18] = right.z
+    pointUniformData[19] = 0 // padding
+    pointUniformData[20] = up.x
+    pointUniformData[21] = up.y
+    pointUniformData[22] = up.z
+    pointUniformData[23] = 0 // padding
+    this.device.queue.writeBuffer(this.pointUniformBuffer, 0, pointUniformData)
+
+    // Build line vertex buffer
+    const lineVertexCount = lines.segments.length * 2
+    const lineVertexData = new Float32Array(lineVertexCount * 6) // position(3) + color(3)
 
     let offset = 0
     for (const seg of lines.segments) {
       // Start vertex
-      vertexData[offset++] = seg.start.x
-      vertexData[offset++] = seg.start.y
-      vertexData[offset++] = seg.start.z
-      vertexData[offset++] = seg.startColor.r
-      vertexData[offset++] = seg.startColor.g
-      vertexData[offset++] = seg.startColor.b
+      lineVertexData[offset++] = seg.start.x
+      lineVertexData[offset++] = seg.start.y
+      lineVertexData[offset++] = seg.start.z
+      lineVertexData[offset++] = seg.startColor.r
+      lineVertexData[offset++] = seg.startColor.g
+      lineVertexData[offset++] = seg.startColor.b
       // End vertex
-      vertexData[offset++] = seg.end.x
-      vertexData[offset++] = seg.end.y
-      vertexData[offset++] = seg.end.z
-      vertexData[offset++] = seg.endColor.r
-      vertexData[offset++] = seg.endColor.g
-      vertexData[offset++] = seg.endColor.b
+      lineVertexData[offset++] = seg.end.x
+      lineVertexData[offset++] = seg.end.y
+      lineVertexData[offset++] = seg.end.z
+      lineVertexData[offset++] = seg.endColor.r
+      lineVertexData[offset++] = seg.endColor.g
+      lineVertexData[offset++] = seg.endColor.b
     }
 
-    const vertexBuffer = this.device.createBuffer({
-      size: vertexData.byteLength,
+    const lineVertexBuffer = this.device.createBuffer({
+      size: lineVertexData.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     })
-    this.device.queue.writeBuffer(vertexBuffer, 0, vertexData)
+    this.device.queue.writeBuffer(lineVertexBuffer, 0, lineVertexData)
+
+    // Build point vertex buffer (6 vertices per point for 2 triangles)
+    let pointVertexBuffer: GPUBuffer | null = null
+    let pointVertexCount = 0
+
+    if (points && points.length > 0) {
+      // Quad corners: 2 triangles (6 vertices)
+      const corners = [
+        [-1, -1], [1, -1], [1, 1],  // Triangle 1
+        [-1, -1], [1, 1], [-1, 1],  // Triangle 2
+      ]
+
+      pointVertexCount = points.length * 6
+      const pointVertexData = new Float32Array(pointVertexCount * 9) // position(3) + color(3) + sizeAndCorner(3)
+
+      let pOffset = 0
+      for (const point of points) {
+        for (const [cx, cy] of corners) {
+          // position
+          pointVertexData[pOffset++] = point.position.x
+          pointVertexData[pOffset++] = point.position.y
+          pointVertexData[pOffset++] = point.position.z
+          // color
+          pointVertexData[pOffset++] = point.color.r
+          pointVertexData[pOffset++] = point.color.g
+          pointVertexData[pOffset++] = point.color.b
+          // sizeAndCorner
+          pointVertexData[pOffset++] = point.size
+          pointVertexData[pOffset++] = cx!
+          pointVertexData[pOffset++] = cy!
+        }
+      }
+
+      pointVertexBuffer = this.device.createBuffer({
+        size: pointVertexData.byteLength,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      })
+      this.device.queue.writeBuffer(pointVertexBuffer, 0, pointVertexData)
+    }
 
     // Ensure depth texture
     this.ensureDepthTexture(width, height)
@@ -297,20 +457,32 @@ export class LineRenderer {
       },
     })
 
-    renderPass.setPipeline(this.pipeline)
-    renderPass.setBindGroup(0, this.bindGroup)
-    renderPass.setVertexBuffer(0, vertexBuffer)
-    renderPass.draw(vertexCount)
+    // Draw lines
+    renderPass.setPipeline(this.linePipeline)
+    renderPass.setBindGroup(0, this.lineBindGroup)
+    renderPass.setVertexBuffer(0, lineVertexBuffer)
+    renderPass.draw(lineVertexCount)
+
+    // Draw points
+    if (pointVertexBuffer && pointVertexCount > 0) {
+      renderPass.setPipeline(this.pointPipeline)
+      renderPass.setBindGroup(0, this.pointBindGroup)
+      renderPass.setVertexBuffer(0, pointVertexBuffer)
+      renderPass.draw(pointVertexCount)
+    }
+
     renderPass.end()
 
     this.device.queue.submit([commandEncoder.finish()])
 
-    // Clean up vertex buffer
-    vertexBuffer.destroy()
+    // Clean up vertex buffers
+    lineVertexBuffer.destroy()
+    pointVertexBuffer?.destroy()
   }
 
   dispose(): void {
-    this.uniformBuffer.destroy()
+    this.lineUniformBuffer.destroy()
+    this.pointUniformBuffer.destroy()
     this.depthTexture?.destroy()
   }
 }

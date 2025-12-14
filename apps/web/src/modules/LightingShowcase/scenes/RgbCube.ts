@@ -1,7 +1,7 @@
-import { $LineSegments, $LineSegment, $Color, $Camera } from '@practice/lighting'
+import { $LineSegments, $LineSegment, $Color, $Camera, $Point } from '@practice/lighting'
 import { $LineScene, type LineScene } from '@practice/lighting/Infra'
 import { $Vector3 } from '@practice/vector'
-import type { OrthographicCamera } from '@practice/lighting'
+import type { OrthographicCamera, Point } from '@practice/lighting'
 
 /**
  * RGB Cube wireframe scene
@@ -110,11 +110,25 @@ export const RgbCube: LineSceneDefinition = {
     )
   },
 
-  createScene(_time) {
+  createScene(time) {
     const edgeSegments = createCubeEdges()
     const gridSegments = createCubeGrid(8)
 
+    // Animated color point that moves through the cube
+    const t = time * 0.3
+    const r = (Math.sin(t) + 1) / 2
+    const g = (Math.sin(t * 1.3 + 1) + 1) / 2
+    const b = (Math.sin(t * 0.7 + 2) + 1) / 2
+
+    const points: Point[] = [
+      $Point.create(
+        $Vector3.create(r, g, b),
+        $Color.create(r, g, b),
+        0.08  // Size
+      ),
+    ]
+
     const lines = $LineSegments.create([...edgeSegments, ...gridSegments])
-    return $LineScene.create(lines, { r: 0.1, g: 0.1, b: 0.12 })
+    return $LineScene.create(lines, { r: 0.1, g: 0.1, b: 0.12 }, points)
   },
 }

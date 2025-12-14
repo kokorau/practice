@@ -19,6 +19,15 @@ export interface LineSegments {
   readonly segments: readonly LineSegment[]
 }
 
+/**
+ * A point with position, color, and size
+ */
+export interface Point {
+  readonly position: Vector3
+  readonly color: Color
+  readonly size: number  // Size in world units
+}
+
 export const $LineSegment = {
   create: (
     start: Vector3,
@@ -55,4 +64,12 @@ export const $LineSegments = {
     }
     return { type: 'lines', segments }
   },
+}
+
+export const $Point = {
+  create: (position: Vector3, color: Color, size: number = 0.05): Point => ({
+    position,
+    color,
+    size,
+  }),
 }
