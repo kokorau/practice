@@ -1,169 +1,143 @@
 /**
- * Semantic color tokens for design-forward websites.
+ * Semantic Color System (vNext)
  *
- * Naming rule:
- *   color.<surface>.<role>.<state?>
+ * Key idea:
+ * - Context (Canvas / Section) defines the "place" (non-nestable for Section).
+ * - Components (Card / Action) define nested UI objects (nestable).
+ * - State belongs to Components and can affect internal roles (e.g. action.title changes on hover).
  *
- * - surface: where the color lives (context / background plane)
- * - role: what the color is used for on that surface
- * - state: optional interaction state (default/hover/active/disabled)
+ * Resolution rule (conceptual):
+ * 1) If a node is inside a component, use the nearest component tokens.
+ * 2) Otherwise use the nearest context tokens (section -> canvas).
+ * 3) Canvas is the implicit base context.
  */
 
-/**
- * Canvas surface tokens.
- * The page "ground". The farthest back layer.
- * - Light mode: usually pure/near-white or very low chroma tint.
- * - Dark mode: deep neutral.
- */
-export interface CanvasTokens {
-  /** Title text placed on the page background (headline / key labels). */
-  readonly titleText: string
-  /** Body text placed on the page background (paragraphs). */
-  readonly bodyText: string
-  /** Meta text placed on the page background (captions, meta). */
-  readonly metaText: string
-  /** Structural border/outline on canvas context (rare; mainly layout edges). */
-  readonly border: string
-  /** Decorative divider lines on canvas context (section separators, rules). */
-  readonly divider: string
-  /** Primary action color for CTA buttons on canvas. */
-  readonly action: string
-  /** Quieter action color for secondary buttons on canvas. */
-  readonly actionQuiet: string
-  /**
-   * A gentle tinted fill used on canvas (highlight bands, soft background accents).
-   * Use to avoid "everything is flat white" in light mode without feeling UI-ish.
-   */
-  readonly tintSurface: string
-  /**
-   * Link color for inline anchors on canvas (blog-like pages, editorial).
-   * Often a calmer variant than accent to avoid over-shouting.
-   */
-  readonly linkText: string
+export type ColorValue = string
+export type ActionState = 'default' | 'hover' | 'active' | 'disabled'
+
+/** Common text roles used across contexts/components. */
+export type TextRoles = {
+  /** Headings, card titles, button labels. */
+  readonly title: ColorValue
+  /** Paragraph text. */
+  readonly body: ColorValue
+  /** Captions, notes, dates, tags, low-emphasis text. */
+  readonly meta: ColorValue
+  /** Inline anchors. */
+  readonly linkText: ColorValue
 }
 
-/**
- * Section surface tokens (base interface).
- * A wide "underlay" for grouping content.
- * Used to create rhythm and section switching.
- */
-export interface SectionTokens {
-  readonly titleText: string
-  readonly bodyText: string
-  readonly metaText: string
-  readonly border: string
-  readonly divider: string
-  /** Primary action color for CTA buttons on section. */
-  readonly action: string
-  /** Quieter action color for secondary buttons on section. */
-  readonly actionQuiet: string
-  /** Tinted fill for nested highlights within section. */
-  readonly tintSurface: string
-  /** Inline link color inside section content. */
-  readonly linkText: string
+/** Structural and decorative roles. */
+export type LineRoles = {
+  /** Structure outlines, separators that define layout. */
+  readonly border: ColorValue
+  /** Decorative separators / rhythm rules. */
+  readonly divider: ColorValue
 }
 
-/**
- * SectionNeutral - Same or near-same as canvas.
- * Minimal visual separation, relies on spacing/content grouping.
- */
-export type SectionNeutralTokens = SectionTokens
-
-/**
- * SectionTint - Subtle tinted background.
- * Creates gentle rhythm between sections without strong contrast.
- */
-export type SectionTintTokens = SectionTokens
-
-/**
- * SectionContrast - High contrast section (dark bg in light mode, light bg in dark mode).
- * For hero sections, footers, or strong visual breaks.
- */
-export type SectionContrastTokens = SectionTokens
-
-/**
- * Card surface tokens.
- * A contained / emphasized card (the "stand-out" card).
- * This is the card you *want to pop* (via surface contrast and/or elevation).
- */
-export interface CardTokens {
-  readonly titleText: string
-  readonly bodyText: string
-  readonly metaText: string
-  readonly border: string
-  readonly divider: string
+/** Surface roles. */
+export type SurfaceRoles = {
+  /** The surface fill color itself (the "plate"). */
+  readonly surface: ColorValue
   /**
-   * Primary action color used within the card.
-   * CTA button fill, strong highlights, key numbers, tags.
+   * A gentle tinted fill used on top of a surface:
+   * badges, highlight rows, soft callouts, (and for actions: hover bg, etc.)
    */
-  readonly action: string
-  /**
-   * Quieter action color for secondary buttons, less prominent actions.
-   */
-  readonly actionQuiet: string
-  /** Light tint fill used inside card (badges, subtle highlights, nested blocks). */
-  readonly tintSurface: string
-  /** Inline link color inside card content (article card, teaser). */
-  readonly linkText: string
+  readonly tintSurface: ColorValue
 }
 
-/**
- * CardFlat surface tokens.
- * A blended / quiet card (the "fade into layout" card).
- * - Often same or near-same as section/canvas surface.
- * - Differentiation comes from border/divider and spacing, not heavy fill.
- */
-export interface CardFlatTokens {
-  readonly titleText: string
-  readonly bodyText: string
-  readonly metaText: string
-  /**
-   * Important for cardFlat:
-   * border is often the main way to show structure without "adding color".
-   */
-  readonly border: string
-  readonly divider: string
-  /**
-   * Primary action color, typically used sparingly in flat cards.
-   */
-  readonly action: string
-  /**
-   * Quieter action color for secondary buttons, less prominent actions.
-   */
-  readonly actionQuiet: string
-  /** Very soft tint for quiet callouts inside a flat card. */
-  readonly tintSurface: string
-  /** Inline link color inside cardFlat content. */
-  readonly linkText: string
-}
+/** Context tokens: define places. No states. */
+export type ContextTokens = TextRoles &
+  LineRoles &
+  SurfaceRoles & {
+    /** Optional emphasis color available within this context. */
+    readonly accent?: ColorValue
+  }
 
 /**
- * Interactive surface tokens.
- * The "action plane": should read as clickable.
- * Interactive surfaces (buttons, links-as-buttons, chips).
+ * Component tokens: define nestable objects.
+ * Base (stateless) component tokens, good for card-like components.
  */
-export interface InteractiveTokens {
+export type ComponentTokens = TextRoles &
+  LineRoles &
+  SurfaceRoles & {
+    /** Emphasis color used inside the component (CTAs, highlights). */
+    readonly accent?: ColorValue
+  }
+
+/**
+ * Stateful component tokens: per-role state maps.
+ * (We avoid making state the 3rd segment globally; it's per-role here.)
+ */
+export type StatefulComponentTokens = {
+  readonly surface: Readonly<Record<ActionState, ColorValue>>
+  readonly tintSurface: Readonly<Record<ActionState, ColorValue>>
+  readonly border: Readonly<Record<ActionState, ColorValue>>
+
+  readonly title: Readonly<Record<ActionState, ColorValue>>
+  readonly linkText: Readonly<Record<ActionState, ColorValue>>
+
   /**
-   * Text on interactive elements (button label).
-   * Often differs from canvas/section text due to contrast needs.
+   * Optional: Some designs change these too, but keep optional to avoid bloat.
+   * If you don't need them, omit and fall back to title/linkText.
    */
-  readonly titleText: string
+  readonly body?: Readonly<Record<ActionState, ColorValue>>
+  readonly meta?: Readonly<Record<ActionState, ColorValue>>
+
+  /** Emphasis color for the action; may vary by state. */
+  readonly accent?: Readonly<Record<ActionState, ColorValue>>
+
+  /** Decorative divider is rarely needed on actions, keep optional. */
+  readonly divider?: Readonly<Record<ActionState, ColorValue>>
+}
+
+/** --------- The system --------- */
+
+export type ContextTokensCollection = {
   /**
-   * Primary action color for interactive elements.
-   * Typical usage:
-   * - button background
-   * - active states
-   * - primary CTA
+   * Canvas = world / ground / air.
+   * Can be omitted in markup; it is assumed as the base context.
    */
-  readonly action: string
+  readonly canvas: ContextTokens
+
   /**
-   * Quieter action color for secondary buttons, less prominent actions.
+   * Section = chapter / meaningful grouping.
+   * NOTE: Section should not nest inside Section.
    */
-  readonly actionQuiet: string
-  /** Tinted fill used for hover backgrounds, subtle chips, soft buttons. */
-  readonly tintSurface: string
-  /** Link color when used as interaction (non-button links, nav links). */
-  readonly linkText: string
+  /** SectionNeutral: Same or near-same as canvas. */
+  readonly sectionNeutral: ContextTokens
+
+  /** Section with gentle mood (colored underlay). */
+  readonly sectionTint: ContextTokens
+
+  /** Section with strong transition (hero bands / scene changes). */
+  readonly sectionContrast: ContextTokens
+}
+
+export type ComponentTokensCollection = {
+  /**
+   * Card = emphasized / contained object.
+   * Can contain other components (e.g. card -> action).
+   */
+  readonly card: ComponentTokens
+
+  /**
+   * CardFlat = quiet / blended object.
+   * Primary differentiation comes from border + spacing rather than fill.
+   */
+  readonly cardFlat: ComponentTokens
+
+  /**
+   * Action = emphasized action (CTA).
+   * Stateful: label color and bg can change with state.
+   */
+  readonly action: StatefulComponentTokens
+
+  /**
+   * ActionQuiet = quiet action (secondary/ghost/outline).
+   * Stateful as well, but tends to rely more on border + tintSurface for affordance.
+   */
+  readonly actionQuiet: StatefulComponentTokens
 }
 
 /**
@@ -171,74 +145,105 @@ export interface InteractiveTokens {
  * Complete set of semantic color tokens for design-forward websites.
  */
 export interface SemanticColorPalette {
-  readonly canvas: CanvasTokens
-  readonly sectionNeutral: SectionNeutralTokens
-  readonly sectionTint: SectionTintTokens
-  readonly sectionContrast: SectionContrastTokens
-  readonly card: CardTokens
-  readonly cardFlat: CardFlatTokens
-  readonly interactive: InteractiveTokens
+  readonly context: ContextTokensCollection
+  readonly component: ComponentTokensCollection
 }
 
 /**
- * Input type for creating SemanticColorPalette (mutable version)
+ * Input types for creating SemanticColorPalette (mutable version)
  */
-type SectionInput = {
-  titleText: string
-  bodyText: string
-  metaText: string
-  border: string
-  divider: string
-  action: string
-  actionQuiet: string
-  tintSurface: string
-  linkText: string
+type ContextTokensInput = {
+  surface: ColorValue
+  tintSurface: ColorValue
+  title: ColorValue
+  body: ColorValue
+  meta: ColorValue
+  linkText: ColorValue
+  border: ColorValue
+  divider: ColorValue
+  accent?: ColorValue
+}
+
+type ComponentTokensInput = {
+  surface: ColorValue
+  tintSurface: ColorValue
+  title: ColorValue
+  body: ColorValue
+  meta: ColorValue
+  linkText: ColorValue
+  border: ColorValue
+  divider: ColorValue
+  accent?: ColorValue
+}
+
+type StateMap<T> = Record<ActionState, T>
+
+type StatefulComponentTokensInput = {
+  surface: StateMap<ColorValue>
+  tintSurface: StateMap<ColorValue>
+  border: StateMap<ColorValue>
+  title: StateMap<ColorValue>
+  linkText: StateMap<ColorValue>
+  body?: StateMap<ColorValue>
+  meta?: StateMap<ColorValue>
+  accent?: StateMap<ColorValue>
+  divider?: StateMap<ColorValue>
 }
 
 export type SemanticColorPaletteInput = {
-  canvas: {
-    titleText: string
-    bodyText: string
-    metaText: string
-    border: string
-    divider: string
-    action: string
-    actionQuiet: string
-    tintSurface: string
-    linkText: string
+  context: {
+    canvas: ContextTokensInput
+    sectionNeutral: ContextTokensInput
+    sectionTint: ContextTokensInput
+    sectionContrast: ContextTokensInput
   }
-  sectionNeutral: SectionInput
-  sectionTint: SectionInput
-  sectionContrast: SectionInput
-  card: {
-    titleText: string
-    bodyText: string
-    metaText: string
-    border: string
-    divider: string
-    action: string
-    actionQuiet: string
-    tintSurface: string
-    linkText: string
+  component: {
+    card: ComponentTokensInput
+    cardFlat: ComponentTokensInput
+    action: StatefulComponentTokensInput
+    actionQuiet: StatefulComponentTokensInput
   }
-  cardFlat: {
-    titleText: string
-    bodyText: string
-    metaText: string
-    border: string
-    divider: string
-    action: string
-    actionQuiet: string
-    tintSurface: string
-    linkText: string
+}
+
+/**
+ * Helper to freeze state maps
+ */
+const freezeStateMap = <T>(map: StateMap<T>): Readonly<Record<ActionState, T>> =>
+  Object.freeze({ ...map })
+
+/**
+ * Helper to freeze stateful component tokens
+ */
+const freezeStatefulComponent = (
+  input: StatefulComponentTokensInput
+): StatefulComponentTokens => {
+  const result: StatefulComponentTokens = {
+    surface: freezeStateMap(input.surface),
+    tintSurface: freezeStateMap(input.tintSurface),
+    border: freezeStateMap(input.border),
+    title: freezeStateMap(input.title),
+    linkText: freezeStateMap(input.linkText),
   }
-  interactive: {
-    titleText: string
-    action: string
-    actionQuiet: string
-    tintSurface: string
-    linkText: string
+
+  // Add optional properties if present
+  if (input.body) {
+    ;(result as { body: Readonly<Record<ActionState, ColorValue>> }).body =
+      freezeStateMap(input.body)
   }
+  if (input.meta) {
+    ;(result as { meta: Readonly<Record<ActionState, ColorValue>> }).meta =
+      freezeStateMap(input.meta)
+  }
+  if (input.accent) {
+    ;(result as { accent: Readonly<Record<ActionState, ColorValue>> }).accent =
+      freezeStateMap(input.accent)
+  }
+  if (input.divider) {
+    ;(result as { divider: Readonly<Record<ActionState, ColorValue>> }).divider =
+      freezeStateMap(input.divider)
+  }
+
+  return Object.freeze(result)
 }
 
 /**
@@ -250,13 +255,18 @@ export const $SemanticColorPalette = {
    */
   create: (input: SemanticColorPaletteInput): SemanticColorPalette => {
     return Object.freeze({
-      canvas: Object.freeze({ ...input.canvas }),
-      sectionNeutral: Object.freeze({ ...input.sectionNeutral }),
-      sectionTint: Object.freeze({ ...input.sectionTint }),
-      sectionContrast: Object.freeze({ ...input.sectionContrast }),
-      card: Object.freeze({ ...input.card }),
-      cardFlat: Object.freeze({ ...input.cardFlat }),
-      interactive: Object.freeze({ ...input.interactive }),
+      context: Object.freeze({
+        canvas: Object.freeze({ ...input.context.canvas }),
+        sectionNeutral: Object.freeze({ ...input.context.sectionNeutral }),
+        sectionTint: Object.freeze({ ...input.context.sectionTint }),
+        sectionContrast: Object.freeze({ ...input.context.sectionContrast }),
+      }),
+      component: Object.freeze({
+        card: Object.freeze({ ...input.component.card }),
+        cardFlat: Object.freeze({ ...input.component.cardFlat }),
+        action: freezeStatefulComponent(input.component.action),
+        actionQuiet: freezeStatefulComponent(input.component.actionQuiet),
+      }),
     })
   },
 
@@ -265,81 +275,139 @@ export const $SemanticColorPalette = {
    */
   createDefaultLight: (): SemanticColorPalette => {
     return $SemanticColorPalette.create({
-      canvas: {
-        titleText: 'oklch(0.20 0.02 260)',
-        bodyText: 'oklch(0.30 0.02 260)',
-        metaText: 'oklch(0.50 0.02 260)',
-        border: 'oklch(0.85 0.01 260)',
-        divider: 'oklch(0.90 0.01 260)',
-        action: 'oklch(0.55 0.20 250)',
-        actionQuiet: 'oklch(0.65 0.10 250)',
-        tintSurface: 'oklch(0.97 0.01 260)',
-        linkText: 'oklch(0.45 0.15 250)',
+      context: {
+        canvas: {
+          surface: 'oklch(0.98 0.005 260)',
+          tintSurface: 'oklch(0.97 0.01 260)',
+          title: 'oklch(0.20 0.02 260)',
+          body: 'oklch(0.30 0.02 260)',
+          meta: 'oklch(0.50 0.02 260)',
+          linkText: 'oklch(0.45 0.15 250)',
+          border: 'oklch(0.85 0.01 260)',
+          divider: 'oklch(0.90 0.01 260)',
+          accent: 'oklch(0.55 0.20 250)',
+        },
+        sectionNeutral: {
+          surface: 'oklch(0.98 0.005 260)',
+          tintSurface: 'oklch(0.96 0.01 260)',
+          title: 'oklch(0.20 0.02 260)',
+          body: 'oklch(0.30 0.02 260)',
+          meta: 'oklch(0.50 0.02 260)',
+          linkText: 'oklch(0.45 0.15 250)',
+          border: 'oklch(0.85 0.01 260)',
+          divider: 'oklch(0.90 0.01 260)',
+          accent: 'oklch(0.55 0.20 250)',
+        },
+        sectionTint: {
+          surface: 'oklch(0.95 0.02 260)',
+          tintSurface: 'oklch(0.92 0.02 260)',
+          title: 'oklch(0.20 0.02 260)',
+          body: 'oklch(0.30 0.02 260)',
+          meta: 'oklch(0.50 0.02 260)',
+          linkText: 'oklch(0.45 0.15 250)',
+          border: 'oklch(0.82 0.02 260)',
+          divider: 'oklch(0.88 0.01 260)',
+          accent: 'oklch(0.55 0.20 250)',
+        },
+        sectionContrast: {
+          surface: 'oklch(0.20 0.02 260)',
+          tintSurface: 'oklch(0.25 0.02 260)',
+          title: 'oklch(0.95 0.01 260)',
+          body: 'oklch(0.88 0.01 260)',
+          meta: 'oklch(0.70 0.02 260)',
+          linkText: 'oklch(0.70 0.15 250)',
+          border: 'oklch(0.35 0.02 260)',
+          divider: 'oklch(0.30 0.02 260)',
+          accent: 'oklch(0.75 0.15 250)',
+        },
       },
-      // SectionNeutral: same as canvas, minimal visual break
-      sectionNeutral: {
-        titleText: 'oklch(0.20 0.02 260)',
-        bodyText: 'oklch(0.30 0.02 260)',
-        metaText: 'oklch(0.50 0.02 260)',
-        border: 'oklch(0.85 0.01 260)',
-        divider: 'oklch(0.90 0.01 260)',
-        action: 'oklch(0.55 0.20 250)',
-        actionQuiet: 'oklch(0.65 0.10 250)',
-        tintSurface: 'oklch(0.96 0.01 260)',
-        linkText: 'oklch(0.45 0.15 250)',
-      },
-      // SectionTint: subtle tinted background for rhythm
-      sectionTint: {
-        titleText: 'oklch(0.20 0.02 260)',
-        bodyText: 'oklch(0.30 0.02 260)',
-        metaText: 'oklch(0.50 0.02 260)',
-        border: 'oklch(0.82 0.02 260)',
-        divider: 'oklch(0.88 0.01 260)',
-        action: 'oklch(0.55 0.20 250)',
-        actionQuiet: 'oklch(0.65 0.10 250)',
-        tintSurface: 'oklch(0.92 0.02 260)',
-        linkText: 'oklch(0.45 0.15 250)',
-      },
-      // SectionContrast: dark background in light mode
-      sectionContrast: {
-        titleText: 'oklch(0.95 0.01 260)',
-        bodyText: 'oklch(0.88 0.01 260)',
-        metaText: 'oklch(0.70 0.02 260)',
-        border: 'oklch(0.35 0.02 260)',
-        divider: 'oklch(0.30 0.02 260)',
-        action: 'oklch(0.75 0.15 250)',
-        actionQuiet: 'oklch(0.60 0.08 250)',
-        tintSurface: 'oklch(0.25 0.02 260)',
-        linkText: 'oklch(0.70 0.15 250)',
-      },
-      card: {
-        titleText: 'oklch(0.20 0.02 260)',
-        bodyText: 'oklch(0.30 0.02 260)',
-        metaText: 'oklch(0.50 0.02 260)',
-        border: 'oklch(0.85 0.02 260)',
-        divider: 'oklch(0.90 0.01 260)',
-        action: 'oklch(0.55 0.20 250)',
-        actionQuiet: 'oklch(0.65 0.10 250)',
-        tintSurface: 'oklch(0.96 0.02 250)',
-        linkText: 'oklch(0.45 0.15 250)',
-      },
-      cardFlat: {
-        titleText: 'oklch(0.20 0.02 260)',
-        bodyText: 'oklch(0.30 0.02 260)',
-        metaText: 'oklch(0.50 0.02 260)',
-        border: 'oklch(0.80 0.02 260)',
-        divider: 'oklch(0.88 0.01 260)',
-        action: 'oklch(0.55 0.15 250)',
-        actionQuiet: 'oklch(0.65 0.08 250)',
-        tintSurface: 'oklch(0.95 0.01 260)',
-        linkText: 'oklch(0.45 0.15 250)',
-      },
-      interactive: {
-        titleText: 'oklch(0.98 0.01 260)',
-        action: 'oklch(0.55 0.20 250)',
-        actionQuiet: 'oklch(0.65 0.10 250)',
-        tintSurface: 'oklch(0.92 0.04 250)',
-        linkText: 'oklch(0.45 0.18 250)',
+      component: {
+        card: {
+          surface: 'oklch(1.00 0 0)',
+          tintSurface: 'oklch(0.96 0.02 250)',
+          title: 'oklch(0.20 0.02 260)',
+          body: 'oklch(0.30 0.02 260)',
+          meta: 'oklch(0.50 0.02 260)',
+          linkText: 'oklch(0.45 0.15 250)',
+          border: 'oklch(0.85 0.02 260)',
+          divider: 'oklch(0.90 0.01 260)',
+          accent: 'oklch(0.55 0.20 250)',
+        },
+        cardFlat: {
+          surface: 'transparent',
+          tintSurface: 'oklch(0.95 0.01 260)',
+          title: 'oklch(0.20 0.02 260)',
+          body: 'oklch(0.30 0.02 260)',
+          meta: 'oklch(0.50 0.02 260)',
+          linkText: 'oklch(0.45 0.15 250)',
+          border: 'oklch(0.80 0.02 260)',
+          divider: 'oklch(0.88 0.01 260)',
+          accent: 'oklch(0.55 0.15 250)',
+        },
+        action: {
+          surface: {
+            default: 'oklch(0.55 0.20 250)',
+            hover: 'oklch(0.50 0.22 250)',
+            active: 'oklch(0.45 0.24 250)',
+            disabled: 'oklch(0.80 0.02 260)',
+          },
+          tintSurface: {
+            default: 'oklch(0.92 0.04 250)',
+            hover: 'oklch(0.88 0.06 250)',
+            active: 'oklch(0.85 0.08 250)',
+            disabled: 'oklch(0.92 0.01 260)',
+          },
+          border: {
+            default: 'oklch(0.55 0.20 250)',
+            hover: 'oklch(0.50 0.22 250)',
+            active: 'oklch(0.45 0.24 250)',
+            disabled: 'oklch(0.75 0.02 260)',
+          },
+          title: {
+            default: 'oklch(0.98 0.01 260)',
+            hover: 'oklch(0.98 0.01 260)',
+            active: 'oklch(0.98 0.01 260)',
+            disabled: 'oklch(0.60 0.02 260)',
+          },
+          linkText: {
+            default: 'oklch(0.98 0.01 260)',
+            hover: 'oklch(0.98 0.01 260)',
+            active: 'oklch(0.98 0.01 260)',
+            disabled: 'oklch(0.60 0.02 260)',
+          },
+        },
+        actionQuiet: {
+          surface: {
+            default: 'transparent',
+            hover: 'oklch(0.95 0.02 260)',
+            active: 'oklch(0.92 0.03 260)',
+            disabled: 'transparent',
+          },
+          tintSurface: {
+            default: 'oklch(0.95 0.01 260)',
+            hover: 'oklch(0.92 0.02 260)',
+            active: 'oklch(0.88 0.03 260)',
+            disabled: 'oklch(0.95 0.005 260)',
+          },
+          border: {
+            default: 'oklch(0.75 0.02 260)',
+            hover: 'oklch(0.65 0.04 260)',
+            active: 'oklch(0.55 0.06 260)',
+            disabled: 'oklch(0.85 0.01 260)',
+          },
+          title: {
+            default: 'oklch(0.35 0.02 260)',
+            hover: 'oklch(0.25 0.02 260)',
+            active: 'oklch(0.20 0.02 260)',
+            disabled: 'oklch(0.60 0.02 260)',
+          },
+          linkText: {
+            default: 'oklch(0.45 0.15 250)',
+            hover: 'oklch(0.40 0.18 250)',
+            active: 'oklch(0.35 0.20 250)',
+            disabled: 'oklch(0.60 0.05 250)',
+          },
+        },
       },
     })
   },
@@ -349,81 +417,139 @@ export const $SemanticColorPalette = {
    */
   createDefaultDark: (): SemanticColorPalette => {
     return $SemanticColorPalette.create({
-      canvas: {
-        titleText: 'oklch(0.95 0.01 260)',
-        bodyText: 'oklch(0.85 0.01 260)',
-        metaText: 'oklch(0.60 0.02 260)',
-        border: 'oklch(0.30 0.02 260)',
-        divider: 'oklch(0.25 0.02 260)',
-        action: 'oklch(0.65 0.18 250)',
-        actionQuiet: 'oklch(0.55 0.10 250)',
-        tintSurface: 'oklch(0.18 0.02 260)',
-        linkText: 'oklch(0.70 0.15 250)',
+      context: {
+        canvas: {
+          surface: 'oklch(0.15 0.02 260)',
+          tintSurface: 'oklch(0.18 0.02 260)',
+          title: 'oklch(0.95 0.01 260)',
+          body: 'oklch(0.85 0.01 260)',
+          meta: 'oklch(0.60 0.02 260)',
+          linkText: 'oklch(0.70 0.15 250)',
+          border: 'oklch(0.30 0.02 260)',
+          divider: 'oklch(0.25 0.02 260)',
+          accent: 'oklch(0.65 0.18 250)',
+        },
+        sectionNeutral: {
+          surface: 'oklch(0.15 0.02 260)',
+          tintSurface: 'oklch(0.20 0.02 260)',
+          title: 'oklch(0.95 0.01 260)',
+          body: 'oklch(0.85 0.01 260)',
+          meta: 'oklch(0.60 0.02 260)',
+          linkText: 'oklch(0.70 0.15 250)',
+          border: 'oklch(0.30 0.02 260)',
+          divider: 'oklch(0.25 0.02 260)',
+          accent: 'oklch(0.65 0.18 250)',
+        },
+        sectionTint: {
+          surface: 'oklch(0.20 0.03 260)',
+          tintSurface: 'oklch(0.25 0.02 260)',
+          title: 'oklch(0.95 0.01 260)',
+          body: 'oklch(0.85 0.01 260)',
+          meta: 'oklch(0.60 0.02 260)',
+          linkText: 'oklch(0.70 0.15 250)',
+          border: 'oklch(0.35 0.02 260)',
+          divider: 'oklch(0.30 0.02 260)',
+          accent: 'oklch(0.65 0.18 250)',
+        },
+        sectionContrast: {
+          surface: 'oklch(0.95 0.01 260)',
+          tintSurface: 'oklch(0.92 0.01 260)',
+          title: 'oklch(0.20 0.02 260)',
+          body: 'oklch(0.30 0.02 260)',
+          meta: 'oklch(0.50 0.02 260)',
+          linkText: 'oklch(0.45 0.15 250)',
+          border: 'oklch(0.80 0.01 260)',
+          divider: 'oklch(0.85 0.01 260)',
+          accent: 'oklch(0.50 0.20 250)',
+        },
       },
-      // SectionNeutral: same as canvas, minimal visual break
-      sectionNeutral: {
-        titleText: 'oklch(0.95 0.01 260)',
-        bodyText: 'oklch(0.85 0.01 260)',
-        metaText: 'oklch(0.60 0.02 260)',
-        border: 'oklch(0.30 0.02 260)',
-        divider: 'oklch(0.25 0.02 260)',
-        action: 'oklch(0.65 0.18 250)',
-        actionQuiet: 'oklch(0.55 0.10 250)',
-        tintSurface: 'oklch(0.20 0.02 260)',
-        linkText: 'oklch(0.70 0.15 250)',
-      },
-      // SectionTint: subtle tinted background for rhythm
-      sectionTint: {
-        titleText: 'oklch(0.95 0.01 260)',
-        bodyText: 'oklch(0.85 0.01 260)',
-        metaText: 'oklch(0.60 0.02 260)',
-        border: 'oklch(0.35 0.02 260)',
-        divider: 'oklch(0.30 0.02 260)',
-        action: 'oklch(0.65 0.18 250)',
-        actionQuiet: 'oklch(0.55 0.10 250)',
-        tintSurface: 'oklch(0.25 0.02 260)',
-        linkText: 'oklch(0.70 0.15 250)',
-      },
-      // SectionContrast: light background in dark mode
-      sectionContrast: {
-        titleText: 'oklch(0.20 0.02 260)',
-        bodyText: 'oklch(0.30 0.02 260)',
-        metaText: 'oklch(0.50 0.02 260)',
-        border: 'oklch(0.80 0.01 260)',
-        divider: 'oklch(0.85 0.01 260)',
-        action: 'oklch(0.50 0.20 250)',
-        actionQuiet: 'oklch(0.60 0.10 250)',
-        tintSurface: 'oklch(0.92 0.01 260)',
-        linkText: 'oklch(0.45 0.15 250)',
-      },
-      card: {
-        titleText: 'oklch(0.95 0.01 260)',
-        bodyText: 'oklch(0.85 0.01 260)',
-        metaText: 'oklch(0.60 0.02 260)',
-        border: 'oklch(0.35 0.02 260)',
-        divider: 'oklch(0.30 0.02 260)',
-        action: 'oklch(0.65 0.18 250)',
-        actionQuiet: 'oklch(0.55 0.10 250)',
-        tintSurface: 'oklch(0.25 0.03 250)',
-        linkText: 'oklch(0.70 0.15 250)',
-      },
-      cardFlat: {
-        titleText: 'oklch(0.95 0.01 260)',
-        bodyText: 'oklch(0.85 0.01 260)',
-        metaText: 'oklch(0.60 0.02 260)',
-        border: 'oklch(0.35 0.02 260)',
-        divider: 'oklch(0.28 0.02 260)',
-        action: 'oklch(0.65 0.15 250)',
-        actionQuiet: 'oklch(0.55 0.08 250)',
-        tintSurface: 'oklch(0.20 0.02 260)',
-        linkText: 'oklch(0.70 0.15 250)',
-      },
-      interactive: {
-        titleText: 'oklch(0.98 0.01 260)',
-        action: 'oklch(0.65 0.18 250)',
-        actionQuiet: 'oklch(0.55 0.10 250)',
-        tintSurface: 'oklch(0.30 0.05 250)',
-        linkText: 'oklch(0.72 0.18 250)',
+      component: {
+        card: {
+          surface: 'oklch(0.22 0.02 260)',
+          tintSurface: 'oklch(0.25 0.03 250)',
+          title: 'oklch(0.95 0.01 260)',
+          body: 'oklch(0.85 0.01 260)',
+          meta: 'oklch(0.60 0.02 260)',
+          linkText: 'oklch(0.70 0.15 250)',
+          border: 'oklch(0.35 0.02 260)',
+          divider: 'oklch(0.30 0.02 260)',
+          accent: 'oklch(0.65 0.18 250)',
+        },
+        cardFlat: {
+          surface: 'transparent',
+          tintSurface: 'oklch(0.20 0.02 260)',
+          title: 'oklch(0.95 0.01 260)',
+          body: 'oklch(0.85 0.01 260)',
+          meta: 'oklch(0.60 0.02 260)',
+          linkText: 'oklch(0.70 0.15 250)',
+          border: 'oklch(0.35 0.02 260)',
+          divider: 'oklch(0.28 0.02 260)',
+          accent: 'oklch(0.65 0.15 250)',
+        },
+        action: {
+          surface: {
+            default: 'oklch(0.65 0.18 250)',
+            hover: 'oklch(0.70 0.20 250)',
+            active: 'oklch(0.60 0.22 250)',
+            disabled: 'oklch(0.30 0.02 260)',
+          },
+          tintSurface: {
+            default: 'oklch(0.30 0.05 250)',
+            hover: 'oklch(0.35 0.07 250)',
+            active: 'oklch(0.28 0.08 250)',
+            disabled: 'oklch(0.22 0.01 260)',
+          },
+          border: {
+            default: 'oklch(0.65 0.18 250)',
+            hover: 'oklch(0.70 0.20 250)',
+            active: 'oklch(0.60 0.22 250)',
+            disabled: 'oklch(0.35 0.02 260)',
+          },
+          title: {
+            default: 'oklch(0.98 0.01 260)',
+            hover: 'oklch(0.98 0.01 260)',
+            active: 'oklch(0.98 0.01 260)',
+            disabled: 'oklch(0.50 0.02 260)',
+          },
+          linkText: {
+            default: 'oklch(0.98 0.01 260)',
+            hover: 'oklch(0.98 0.01 260)',
+            active: 'oklch(0.98 0.01 260)',
+            disabled: 'oklch(0.50 0.02 260)',
+          },
+        },
+        actionQuiet: {
+          surface: {
+            default: 'transparent',
+            hover: 'oklch(0.25 0.02 260)',
+            active: 'oklch(0.28 0.03 260)',
+            disabled: 'transparent',
+          },
+          tintSurface: {
+            default: 'oklch(0.22 0.01 260)',
+            hover: 'oklch(0.28 0.02 260)',
+            active: 'oklch(0.32 0.03 260)',
+            disabled: 'oklch(0.20 0.005 260)',
+          },
+          border: {
+            default: 'oklch(0.40 0.02 260)',
+            hover: 'oklch(0.50 0.04 260)',
+            active: 'oklch(0.55 0.06 260)',
+            disabled: 'oklch(0.30 0.01 260)',
+          },
+          title: {
+            default: 'oklch(0.85 0.01 260)',
+            hover: 'oklch(0.90 0.01 260)',
+            active: 'oklch(0.95 0.01 260)',
+            disabled: 'oklch(0.50 0.02 260)',
+          },
+          linkText: {
+            default: 'oklch(0.70 0.15 250)',
+            hover: 'oklch(0.75 0.18 250)',
+            active: 'oklch(0.80 0.20 250)',
+            disabled: 'oklch(0.50 0.05 250)',
+          },
+        },
       },
     })
   },
