@@ -50,6 +50,11 @@ const pages = [
     title: 'Site Simulator',
     description: 'ブランドカラーからパレット生成、光源とフィルターでサイトをシミュレート',
   },
+  {
+    to: '/semantic-color-palette',
+    title: 'Semantic Color Palette',
+    description: 'セマンティックカラーパレットの生成と管理',
+  },
 ]
 </script>
 

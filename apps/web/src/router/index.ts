@@ -64,6 +64,11 @@ const router = createRouter({
       name: 'site-simulator',
       component: () => import('../views/SiteSimulatorView.vue'),
     },
+    {
+      path: '/semantic-color-palette',
+      name: 'semantic-color-palette',
+      component: () => import('../views/SemanticColorPaletteView.vue'),
+    },
   ],
 })
 
