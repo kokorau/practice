@@ -179,8 +179,8 @@ const SURFACE_KEYS_LIGHT: SurfaceKeys = {
   sectionNeutral: 'F1',
   sectionTint: 'Bt',
   sectionContrast: 'Bf',
-  card: 'F0',
-  cardFlat: 'F2',
+  card: 'Bt',       // Same as sectionTint
+  cardFlat: 'F2',   // One step inside from canvas
 }
 
 const SURFACE_KEYS_DARK: SurfaceKeys = {
@@ -188,8 +188,8 @@ const SURFACE_KEYS_DARK: SurfaceKeys = {
   sectionNeutral: 'F8',
   sectionTint: 'Bs',
   sectionContrast: 'Bf',
-  card: 'F9',
-  cardFlat: 'F7',
+  card: 'Bs',       // Same as sectionTint
+  cardFlat: 'F7',   // One step inside from canvas
 }
 
 // ============================================================================
