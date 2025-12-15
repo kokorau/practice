@@ -55,6 +55,11 @@ const pages = [
     title: 'Semantic Color Palette',
     description: 'セマンティックカラーパレットの生成と管理',
   },
+  {
+    to: '/semantic-color-palette-generator',
+    title: 'Semantic Color Palette Generator',
+    description: 'ベースカラーからセマンティックカラーパレットを自動生成',
+  },
 ]
 </script>
 

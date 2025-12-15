@@ -69,6 +69,11 @@ const router = createRouter({
       name: 'semantic-color-palette',
       component: () => import('../views/SemanticColorPaletteView.vue'),
     },
+    {
+      path: '/semantic-color-palette-generator',
+      name: 'semantic-color-palette-generator',
+      component: () => import('../views/SemanticColorPaletteGeneratorView.vue'),
+    },
   ],
 })
 
