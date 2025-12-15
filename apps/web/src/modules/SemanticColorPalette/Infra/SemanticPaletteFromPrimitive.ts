@@ -180,7 +180,7 @@ const SURFACE_KEYS_LIGHT: SurfaceKeys = {
   sectionTint: 'Bt',
   sectionContrast: 'Bf',
   card: 'B',             // Brand color
-  cardFlat: 'F3',        // Two steps inside from canvas
+  cardFlat: 'N3',        // Two steps inside from canvas (Neutral)
 }
 
 const SURFACE_KEYS_DARK: SurfaceKeys = {
@@ -189,7 +189,7 @@ const SURFACE_KEYS_DARK: SurfaceKeys = {
   sectionTint: 'Bs',
   sectionContrast: 'Bf',
   card: 'B',             // Brand color
-  cardFlat: 'F6',        // Two steps inside from canvas
+  cardFlat: 'N6',        // Two steps inside from canvas (Neutral)
 }
 
 // ============================================================================
