@@ -1,6 +1,6 @@
 import type { Oklch } from '@practice/color'
 import { $Oklch } from '@practice/color'
-import type { NeutralKey, FoundationKey, BrandKey, PrimitivePalette } from '../Domain/ValueObject/PrimitivePalette'
+import type { NeutralKey, FoundationKey, BrandKey, PrimitivePalette, PaletteTheme } from '../Domain/ValueObject/PrimitivePalette'
 import { NEUTRAL_KEYS, FOUNDATION_KEYS } from '../Domain/ValueObject/PrimitivePalette'
 
 // Light theme: N0/F0 = lightest (0.985), N9/F9 = darkest (0.12)
@@ -152,6 +152,9 @@ export const generateBrandDerivatives = (brand: Oklch): Record<Exclude<BrandKey,
   }
 }
 
+// Threshold for determining light/dark theme (L > 0.5 = light)
+const THEME_LIGHTNESS_THRESHOLD = 0.5
+
 export const createPrimitivePalette = (params: PrimitivePaletteParams): PrimitivePalette => {
   const {
     brand,
@@ -171,8 +174,9 @@ export const createPrimitivePalette = (params: PrimitivePaletteParams): Primitiv
 
   // If foundation is provided, generate foundation ramp from it
   // Otherwise, derive from brand (fallback for backwards compatibility)
+  const resolvedFoundation = foundation ?? { L: 0.97, C: 0, H: brand.H }
   const foundationRamp = generateFoundationRamp({
-    foundation: foundation ?? { L: 0.97, C: 0, H: brand.H },
+    foundation: resolvedFoundation,
     lightnessSteps,
     chromaRatio: foundationChromaRatio,
   })
@@ -180,5 +184,8 @@ export const createPrimitivePalette = (params: PrimitivePaletteParams): Primitiv
   // Generate brand derivative colors (Bt, Bs, Bf)
   const brandDerivatives = generateBrandDerivatives(brand)
 
-  return { ...neutralRamp, ...foundationRamp, B: brand, ...brandDerivatives }
+  // Determine theme based on foundation lightness
+  const theme: PaletteTheme = resolvedFoundation.L > THEME_LIGHTNESS_THRESHOLD ? 'light' : 'dark'
+
+  return { ...neutralRamp, ...foundationRamp, B: brand, ...brandDerivatives, theme }
 }

@@ -21,6 +21,7 @@ export type {
 export { $SemanticColorPalette } from './SemanticColorPalette'
 
 export type {
+  PaletteTheme,
   NeutralKey,
   FoundationKey,
   BrandKey,

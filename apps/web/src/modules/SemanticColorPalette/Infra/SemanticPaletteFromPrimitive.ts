@@ -60,7 +60,7 @@ const DISABLED_CONTRAST_TARGETS: ContrastTargets = {
 
 // Helper: convert Oklch to CSS string
 const css = (color: Oklch): string => $Oklch.toCss(color)
-const cssKey = (p: PrimitivePalette, key: keyof PrimitivePalette): string => css(p[key])
+const cssKey = (p: PrimitivePalette, key: PrimitiveKey): string => css(p[key])
 
 // Determine if palette is light or dark based on F1 (reference foundation)
 const isLightMode = (p: PrimitivePalette): boolean => p.F1.L > 0.5
@@ -169,12 +169,12 @@ const buildInkForSurface = (
 // ============================================================================
 
 type SurfaceKeys = {
-  canvas: keyof PrimitivePalette
-  sectionNeutral: keyof PrimitivePalette
-  sectionTint: keyof PrimitivePalette
-  sectionContrast: keyof PrimitivePalette
-  card: keyof PrimitivePalette
-  cardFlat: keyof PrimitivePalette
+  canvas: PrimitiveKey
+  sectionNeutral: PrimitiveKey
+  sectionTint: PrimitiveKey
+  sectionContrast: PrimitiveKey
+  card: PrimitiveKey
+  cardFlat: PrimitiveKey
 }
 
 const SURFACE_KEYS_LIGHT: SurfaceKeys = {
@@ -202,7 +202,7 @@ const SURFACE_KEYS_DARK: SurfaceKeys = {
 // Build base tokens (surface + ink) with contrast-based ink selection
 const buildBaseTokens = (
   p: PrimitivePalette,
-  surfaceKey: keyof PrimitivePalette,
+  surfaceKey: PrimitiveKey,
   isLight: boolean
 ) => {
   const surface = p[surfaceKey]
@@ -217,7 +217,7 @@ const buildBaseTokens = (
  */
 const buildActionSurface = (p: PrimitivePalette, isLight: boolean) => {
   const bf = p.Bf
-  const disabledKey: keyof PrimitivePalette = isLight ? 'N2' : 'N7'
+  const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
 
   // Adjust lightness for hover/active states
   const hoverL = isLight ? bf.L - 0.05 : bf.L + 0.05
@@ -235,8 +235,8 @@ const buildActionSurface = (p: PrimitivePalette, isLight: boolean) => {
  * Action quiet button surface states
  */
 const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) => {
-  const hoverKey: keyof PrimitivePalette = isLight ? 'F2' : 'F7'
-  const activeKey: keyof PrimitivePalette = isLight ? 'F3' : 'F6'
+  const hoverKey: PrimitiveKey = isLight ? 'F2' : 'F7'
+  const activeKey: PrimitiveKey = isLight ? 'F3' : 'F6'
 
   return {
     default: 'transparent',
@@ -434,7 +434,7 @@ const buildInkRefsForSurface = (
 // Helper: Build base token refs
 const buildBaseTokenRefs = (
   p: PrimitivePalette,
-  surfaceKey: keyof PrimitivePalette,
+  surfaceKey: PrimitiveKey,
   isLight: boolean
 ): BaseTokenRefs => {
   const surface = p[surfaceKey]

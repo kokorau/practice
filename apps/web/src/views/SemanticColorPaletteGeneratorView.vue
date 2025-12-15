@@ -582,7 +582,12 @@ watch(palette, updateStyles)
         </section>
 
         <section class="section">
-          <h2 class="section-heading">Primitive Palette</h2>
+          <div class="section-header">
+            <h2 class="section-heading">Primitive Palette</h2>
+            <span class="theme-badge" :class="primitivePalette.theme">
+              {{ primitivePalette.theme }}
+            </span>
+          </div>
 
           <!-- Neutral (N0-N9) -->
           <div class="primitive-group">
@@ -1235,6 +1240,17 @@ h1 {
   margin: 0 auto 2rem;
 }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.section-header .section-heading {
+  margin-bottom: 0;
+}
+
 .section-heading {
   font-size: 1.1rem;
   font-weight: 600;
@@ -1244,6 +1260,29 @@ h1 {
 
 .dark .section-heading {
   color: oklch(0.75 0.02 260);
+}
+
+.theme-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.theme-badge.light {
+  background: oklch(0.96 0.02 80);
+  color: oklch(0.45 0.08 80);
+  border: 1px solid oklch(0.88 0.04 80);
+}
+
+.theme-badge.dark {
+  background: oklch(0.25 0.02 260);
+  color: oklch(0.75 0.02 260);
+  border: 1px solid oklch(0.35 0.02 260);
 }
 
 .surfaces-grid {
