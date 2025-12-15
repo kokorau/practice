@@ -389,7 +389,7 @@ watch(palette, updateStyles)
             <button
               v-for="preset in darkPresets"
               :key="preset.id"
-              class="preset-button"
+              class="preset-button preset-button--dark"
               :class="{
                 selected: selectedBaseId === preset.id,
                 warning: !preset.meetsMinContrast,
@@ -1398,16 +1398,12 @@ h1 {
   font-size: 0.6rem;
   font-weight: 600;
   text-align: center;
-}
-
-/* Light preset labels need dark text */
-.preset-options .preset-button:nth-child(-n+4) .preset-label {
   color: oklch(0.25 0.02 260);
 }
 
 /* Dark preset labels need light text */
-.preset-group:last-of-type .preset-button .preset-label {
-  color: oklch(0.90 0.01 260);
+.preset-button--dark .preset-label {
+  color: white;
 }
 
 .preset-warning-icon {
