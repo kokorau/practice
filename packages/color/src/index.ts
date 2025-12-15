@@ -16,3 +16,13 @@ export {
   COLOR_SPACE_INFO,
   GAMUT_VERTICES,
 } from './ConvertXyYToColorSpaces'
+export {
+  contrastRatio,
+  meetsWcagAA,
+  meetsWcagAAA,
+  $Contrast,
+  WCAG_CONTRAST_AA,
+  WCAG_CONTRAST_AA_LARGE,
+  WCAG_CONTRAST_AAA,
+  WCAG_CONTRAST_AAA_LARGE,
+} from './Contrast'

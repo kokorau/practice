@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { $Oklch } from '@practice/color'
+import { $Oklch, contrastRatio } from '@practice/color'
+import type { Oklch } from '@practice/color'
 import {
   type ContextTokens,
   type ComponentTokens,
@@ -10,6 +11,8 @@ import {
   COMPONENT_CLASS_NAMES,
   NEUTRAL_KEYS,
   PRIMITIVE_KEYS,
+  $BrandColor,
+  $ColorPairValidation,
 } from '../modules/SemanticColorPalette/Domain'
 import {
   getPaletteEntries,
@@ -18,7 +21,85 @@ import {
   createPrimitivePalette,
 } from '../modules/SemanticColorPalette/Infra'
 
-// HSV Color Picker state
+// ============================================================
+// Base Color State (the "paper") - Preset Selection
+// ============================================================
+
+// Base color presets with tint variations
+type BasePreset = {
+  id: string
+  label: string
+  L: number
+  C: number  // Chroma for tint
+  H: number | 'brand'  // Hue: fixed or inherit from brand
+  description: string
+}
+
+const BASE_PRESETS: BasePreset[] = [
+  // Light theme bases
+  { id: 'white', label: 'White', L: 0.97, C: 0, H: 0, description: 'Pure neutral' },
+  { id: 'cream', label: 'Cream', L: 0.96, C: 0.02, H: 80, description: 'Warm yellow' },
+  { id: 'gray-light', label: 'Gray', L: 0.94, C: 0.008, H: 'brand', description: 'Cool neutral' },
+  // Dark theme bases
+  { id: 'charcoal', label: 'Charcoal', L: 0.16, C: 0.008, H: 'brand', description: 'Dark neutral' },
+  { id: 'warm-dark', label: 'Warm', L: 0.14, C: 0.015, H: 50, description: 'Warm dark' },
+  { id: 'ink', label: 'Ink', L: 0.10, C: 0, H: 0, description: 'Pure black' },
+]
+
+const selectedBaseId = ref('white')
+
+// Get the selected preset
+const selectedBasePreset = computed(() =>
+  BASE_PRESETS.find((p) => p.id === selectedBaseId.value) ?? BASE_PRESETS[0]!
+)
+
+// Compute base color from selected preset
+const baseColor = computed((): { oklch: Oklch; css: string; hex: string } => {
+  const preset = selectedBasePreset.value
+  const presetHue = preset.H === 'brand' ? hue.value : preset.H
+  const oklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
+  return {
+    oklch,
+    css: $Oklch.toCss(oklch),
+    hex: (() => {
+      const srgb = $Oklch.toSrgb(oklch)
+      const toHex = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')
+      return `#${toHex(srgb.r)}${toHex(srgb.g)}${toHex(srgb.b)}`
+    })(),
+  }
+})
+
+// Minimum contrast ratio for Base + Brand combination
+const MIN_BASE_BRAND_CONTRAST = 2.5
+
+// Check contrast for each preset against current brand
+const basePresetsWithContrast = computed(() => {
+  const brandText = $ColorPairValidation.deriveBrandText(brandColor.value.oklch)
+  return BASE_PRESETS.map((preset) => {
+    const presetHue = preset.H === 'brand' ? hue.value : preset.H
+    const presetOklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
+    const ratio = contrastRatio(brandText, presetOklch)
+    const meetsMinContrast = ratio >= MIN_BASE_BRAND_CONTRAST
+    return {
+      ...preset,
+      resolvedH: presetHue,
+      contrastRatio: ratio,
+      meetsMinContrast,
+    }
+  })
+})
+
+// Group presets by theme
+const lightPresets = computed(() =>
+  basePresetsWithContrast.value.filter((p) => p.L > 0.5)
+)
+const darkPresets = computed(() =>
+  basePresetsWithContrast.value.filter((p) => p.L <= 0.5)
+)
+
+// ============================================================
+// Brand Color State (HSV Color Picker - the "ink")
+// ============================================================
 const hue = ref(210)
 const saturation = ref(80)
 const value = ref(70)
@@ -121,6 +202,21 @@ const brandColor = computed(() => {
 })
 
 // ============================================================
+// Validation
+// ============================================================
+
+// Brand validation
+const brandValidation = computed(() => $BrandColor.validate(brandColor.value.oklch))
+
+// Computed contrast ratio for display
+const currentContrastRatio = computed(() =>
+  contrastRatio($ColorPairValidation.deriveBrandText(brandColor.value.oklch), baseColor.value.oklch)
+)
+
+// Overall validity (contrast check)
+const isValidColorPair = computed(() => currentContrastRatio.value >= MIN_BASE_BRAND_CONTRAST)
+
+// ============================================================
 // Primitive Palette Generation
 // ============================================================
 
@@ -211,55 +307,131 @@ watch(palette, updateStyles)
 
 <template>
   <div class="semantic-color-palette-generator" :class="{ dark: isDark }">
-    <!-- Left Sidebar: Color Picker -->
+    <!-- Left Sidebar: Color Pickers -->
     <aside class="palette-sidebar">
-      <h2 class="sidebar-title">Base Color</h2>
+      <!-- Brand Color Section -->
+      <section class="sidebar-section">
+        <h2 class="sidebar-title">Brand Color</h2>
 
-      <!-- SV Picker (Saturation-Value) -->
-      <div
-        ref="svPickerRef"
-        class="sv-picker"
-        :style="{ backgroundColor: hueColor }"
-        @mousedown="handleSVMouseDown"
-      >
-        <div class="sv-picker-white" />
-        <div class="sv-picker-black" />
+        <!-- SV Picker (Saturation-Value) -->
         <div
-          class="sv-picker-cursor"
-          :style="{
-            left: `${saturation}%`,
-            top: `${100 - value}%`,
-          }"
-        />
-      </div>
+          ref="svPickerRef"
+          class="sv-picker"
+          :style="{ backgroundColor: hueColor }"
+          @mousedown="handleSVMouseDown"
+        >
+          <div class="sv-picker-white" />
+          <div class="sv-picker-black" />
+          <div
+            class="sv-picker-cursor"
+            :style="{
+              left: `${saturation}%`,
+              top: `${100 - value}%`,
+            }"
+          />
+        </div>
 
-      <!-- Hue Slider -->
-      <div
-        ref="hueSliderRef"
-        class="hue-slider"
-        @mousedown="handleHueMouseDown"
-      >
+        <!-- Hue Slider -->
         <div
-          class="hue-slider-cursor"
-          :style="{ left: `${(hue / 360) * 100}%` }"
-        />
-      </div>
+          ref="hueSliderRef"
+          class="hue-slider"
+          @mousedown="handleHueMouseDown"
+        >
+          <div
+            class="hue-slider-cursor"
+            :style="{ left: `${(hue / 360) * 100}%` }"
+          />
+        </div>
 
-      <!-- Color Preview & Values -->
-      <div class="color-preview-section">
-        <div
-          class="color-preview"
-          :style="{ backgroundColor: selectedHex }"
-        />
-        <div class="color-values">
-          <code class="hex-value">{{ selectedHex }}</code>
-          <div class="hsv-values">
-            <span>H: {{ hue }}°</span>
-            <span>S: {{ saturation }}%</span>
-            <span>V: {{ value }}%</span>
+        <!-- Brand Color Preview -->
+        <div class="color-preview-section">
+          <div
+            class="color-preview"
+            :style="{ backgroundColor: selectedHex }"
+          />
+          <div class="color-values">
+            <code class="hex-value">{{ selectedHex }}</code>
+            <div class="hsv-values">
+              <span>H: {{ hue }}°</span>
+              <span>S: {{ saturation }}%</span>
+              <span>V: {{ value }}%</span>
+            </div>
           </div>
         </div>
-      </div>
+
+        <!-- Brand Validation -->
+        <div v-if="!brandValidation.valid" class="validation-warning">
+          <span class="warning-icon">!</span>
+          <span class="warning-text">Brand out of range</span>
+        </div>
+      </section>
+
+      <!-- Base Color Section -->
+      <section class="sidebar-section">
+        <h2 class="sidebar-title">Base Color</h2>
+
+        <!-- Light Theme Presets -->
+        <div class="preset-group">
+          <span class="preset-group-label">Light</span>
+          <div class="preset-options">
+            <button
+              v-for="preset in lightPresets"
+              :key="preset.id"
+              class="preset-button"
+              :class="{
+                selected: selectedBaseId === preset.id,
+                warning: !preset.meetsMinContrast,
+              }"
+              :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
+              @click="selectedBaseId = preset.id"
+            >
+              <span class="preset-label">{{ preset.label }}</span>
+              <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dark Theme Presets -->
+        <div class="preset-group">
+          <span class="preset-group-label">Dark</span>
+          <div class="preset-options">
+            <button
+              v-for="preset in darkPresets"
+              :key="preset.id"
+              class="preset-button"
+              :class="{
+                selected: selectedBaseId === preset.id,
+                warning: !preset.meetsMinContrast,
+              }"
+              :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
+              @click="selectedBaseId = preset.id"
+            >
+              <span class="preset-label">{{ preset.label }}</span>
+              <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Selected Base Preview -->
+        <div class="color-preview-section">
+          <div
+            class="color-preview"
+            :style="{ backgroundColor: baseColor.hex }"
+          />
+          <div class="color-values">
+            <code class="hex-value">{{ baseColor.hex }}</code>
+            <div class="hsv-values">
+              <span>{{ selectedBasePreset.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contrast Warning for selected base -->
+        <div v-if="!isValidColorPair" class="validation-warning">
+          <span class="warning-icon">!</span>
+          <span class="warning-text">Low contrast ({{ currentContrastRatio.toFixed(1) }}:1)</span>
+        </div>
+      </section>
     </aside>
 
     <!-- Main Content -->
@@ -1037,4 +1209,147 @@ h1 {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Sidebar Sections */
+.sidebar-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+}
+
+.sidebar-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.dark .sidebar-section {
+  border-bottom-color: oklch(0.20 0.02 260);
+}
+
+/* Base Color Presets */
+.preset-group {
+  margin-bottom: 0.75rem;
+}
+
+.preset-group-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(0.50 0.02 260);
+  margin-bottom: 0.375rem;
+}
+
+.dark .preset-group-label {
+  color: oklch(0.60 0.02 260);
+}
+
+.preset-options {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.preset-button {
+  position: relative;
+  flex: 1;
+  padding: 0.5rem 0.25rem;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.preset-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.preset-button.selected {
+  border-color: oklch(0.55 0.18 250);
+  box-shadow: 0 0 0 2px oklch(0.55 0.18 250 / 0.3);
+}
+
+.preset-button.warning {
+  opacity: 0.6;
+}
+
+.preset-button.warning:not(.selected) {
+  border-color: oklch(0.70 0.15 30);
+}
+
+.preset-label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Light preset labels need dark text */
+.preset-options .preset-button:nth-child(-n+4) .preset-label {
+  color: oklch(0.25 0.02 260);
+}
+
+/* Dark preset labels need light text */
+.preset-group:last-of-type .preset-button .preset-label {
+  color: oklch(0.90 0.01 260);
+}
+
+.preset-warning-icon {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  background: oklch(0.65 0.20 30);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.55rem;
+  font-weight: 700;
+}
+
+/* Validation Warning */
+.validation-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: oklch(0.95 0.05 30);
+  border-radius: 6px;
+  border: 1px solid oklch(0.80 0.12 30);
+}
+
+.dark .validation-warning {
+  background: oklch(0.20 0.05 30);
+  border-color: oklch(0.40 0.12 30);
+}
+
+.warning-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: oklch(0.65 0.20 30);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.warning-text {
+  font-size: 0.7rem;
+  color: oklch(0.40 0.10 30);
+}
+
+.dark .warning-text {
+  color: oklch(0.75 0.10 30);
+}
+
 </style>

@@ -27,6 +27,30 @@ export type {
 export { NEUTRAL_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
 
 export type {
+  BaseColorValidationResult,
+  BaseColorValidationError,
+} from './BaseColor'
+
+export { BASE_COLOR_CONSTRAINTS, $BaseColor } from './BaseColor'
+
+export type {
+  BrandColorValidationResult,
+  BrandColorValidationError,
+} from './BrandColor'
+
+export { BRAND_COLOR_CONSTRAINTS, $BrandColor } from './BrandColor'
+
+export type {
+  ColorPairValidationResult,
+  ColorPairValidationError,
+} from './ColorPairValidation'
+
+export {
+  REQUIRED_CONTRAST_RATIO,
+  $ColorPairValidation,
+} from './ColorPairValidation'
+
+export type {
   ContextName,
   ComponentName,
   StatefulComponentName,
