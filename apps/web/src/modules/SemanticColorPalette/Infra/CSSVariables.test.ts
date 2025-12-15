@@ -9,15 +9,13 @@ describe('CSSVariables', () => {
     it('generates context token variables', () => {
       const vars = toCSSVariables(palette)
 
-      // Canvas context
+      // Canvas context - surface
       expect(vars).toContain(
         `--context-canvas-surface: ${palette.context.canvas.surface};`
       )
+      // Canvas context - ink
       expect(vars).toContain(
-        `--context-canvas-title: ${palette.context.canvas.title};`
-      )
-      expect(vars).toContain(
-        `--context-canvas-tint-surface: ${palette.context.canvas.tintSurface};`
+        `--context-canvas-title: ${palette.context.canvas.ink.title};`
       )
 
       // Section contexts (kebab-case conversion)
@@ -35,12 +33,13 @@ describe('CSSVariables', () => {
     it('generates component token variables (stateless)', () => {
       const vars = toCSSVariables(palette)
 
-      // Card component
+      // Card component - surface
       expect(vars).toContain(
         `--component-card-surface: ${palette.component.card.surface};`
       )
+      // Card component - ink
       expect(vars).toContain(
-        `--component-card-title: ${palette.component.card.title};`
+        `--component-card-title: ${palette.component.card.ink.title};`
       )
 
       // CardFlat component (kebab-case conversion)
@@ -52,7 +51,7 @@ describe('CSSVariables', () => {
     it('generates stateful component token variables', () => {
       const vars = toCSSVariables(palette)
 
-      // Action component with states
+      // Action component - surface with states
       expect(vars).toContain(
         `--component-action-surface-default: ${palette.component.action.surface.default};`
       )
@@ -66,23 +65,9 @@ describe('CSSVariables', () => {
         `--component-action-surface-disabled: ${palette.component.action.surface.disabled};`
       )
 
-      // ActionQuiet component (kebab-case conversion)
+      // ActionQuiet component - ink with states (kebab-case conversion)
       expect(vars).toContain(
-        `--component-action-quiet-title-default: ${palette.component.actionQuiet.title.default};`
-      )
-    })
-
-    it('includes accent when present', () => {
-      const vars = toCSSVariables(palette)
-
-      // Context accent
-      expect(vars).toContain(
-        `--context-canvas-accent: ${palette.context.canvas.accent};`
-      )
-
-      // Component accent
-      expect(vars).toContain(
-        `--component-card-accent: ${palette.component.card.accent};`
+        `--component-action-quiet-title-default: ${palette.component.actionQuiet.ink.title.default};`
       )
     })
   })

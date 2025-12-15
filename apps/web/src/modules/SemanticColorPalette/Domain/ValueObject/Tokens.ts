@@ -10,7 +10,7 @@ import {
   STATEFUL_COMPONENT_NAMES,
   type ActionState,
 } from './SemanticNames'
-import { type BaseTokens, type ColorValue } from './TokenRoles'
+import { type BaseTokens, type InkRoles, type ColorValue } from './TokenRoles'
 
 // ============================================================================
 // Token Types
@@ -22,11 +22,15 @@ export type ContextTokens = BaseTokens
 /** Component tokens: define nestable UI objects (cards). No states. */
 export type ComponentTokens = BaseTokens
 
-/** Stateful component tokens: each role has per-state values */
+/** Stateful ink tokens: each ink role has per-state values */
+export type StatefulInkTokens = Readonly<{
+  [K in keyof InkRoles]: Readonly<Record<ActionState, ColorValue>>
+}>
+
+/** Stateful component tokens: surface and ink have per-state values */
 export type StatefulComponentTokens = Readonly<{
-  [K in keyof BaseTokens]-?: K extends 'accent'
-    ? Readonly<Record<ActionState, ColorValue>> | undefined
-    : Readonly<Record<ActionState, ColorValue>>
+  surface: Readonly<Record<ActionState, ColorValue>>
+  ink: StatefulInkTokens
 }>
 
 // ============================================================================

@@ -15,27 +15,23 @@ const toKebab = (str: string): string =>
 /** CSS variable name for role suffix */
 const ROLE_CSS_NAMES: Record<keyof typeof TOKEN_CSS_PROPERTY_MAP, string> = {
   surface: 'surface',
-  tintSurface: 'tint-surface',
   title: 'title',
   body: 'body',
   meta: 'meta',
   linkText: 'link-text',
   border: 'border',
   divider: 'divider',
-  accent: 'accent',
 }
 
 /** All roles for alias generation */
 const ALL_ROLES: (keyof typeof TOKEN_CSS_PROPERTY_MAP)[] = [
   'surface',
-  'tintSurface',
   'title',
   'body',
   'meta',
   'linkText',
   'border',
   'divider',
-  'accent',
 ]
 
 /** Roles to include in stateless rule sets (CSS properties) */
@@ -130,29 +126,14 @@ const generateStatefulComponentRuleSets = (componentKey: string): CSSRuleSet[] =
  * These classes can be used inside any context/component to apply role-based styling
  */
 const generateChildElementRuleSets = (): CSSRuleSet[] => [
-  // Text colors
+  // Text colors (ink)
   { selector: '.scp-title', declarations: [{ property: 'color', value: 'var(--title)' }] },
   { selector: '.scp-body', declarations: [{ property: 'color', value: 'var(--body)' }] },
   { selector: '.scp-meta', declarations: [{ property: 'color', value: 'var(--meta)' }] },
   { selector: '.scp-link', declarations: [{ property: 'color', value: 'var(--link-text)' }] },
-  // Line colors
+  // Line colors (ink)
   { selector: '.scp-border', declarations: [{ property: 'border-color', value: 'var(--border)' }] },
   { selector: '.scp-divider', declarations: [{ property: 'border-color', value: 'var(--divider)' }] },
-  // Surface backgrounds
-  {
-    selector: '.scp-tint-surface',
-    declarations: [
-      { property: 'background-color', value: 'var(--tint-surface)' },
-      { property: 'color', value: 'var(--body)' },
-    ],
-  },
-  {
-    selector: '.scp-accent',
-    declarations: [
-      { property: 'background-color', value: 'var(--accent)' },
-      { property: 'color', value: 'var(--surface)' },
-    ],
-  },
 ]
 
 /**

@@ -29,9 +29,8 @@ export {
   TEXT_TOKEN_NAMES,
   LINE_TOKEN_NAMES,
   SURFACE_TOKEN_NAMES,
-  BASE_TOKEN_NAMES,
+  INK_TOKEN_NAMES,
   TOKEN_NAMES,
-  ACCENT_TOKEN_NAME,
   CONTEXT_NAMES,
   COMPONENT_NAMES,
   STATELESS_COMPONENT_NAMES,
@@ -47,9 +46,8 @@ export {
   type TextTokenName,
   type LineTokenName,
   type SurfaceTokenName,
-  type BaseTokenName,
+  type InkTokenName,
   type TokenName,
-  type AccentTokenName,
   type ContextName,
   type ComponentName,
   type StatelessComponentName,
@@ -61,9 +59,7 @@ export {
 // Token Roles
 export type {
   ColorValue,
-  TextRoles,
-  LineRoles,
-  SurfaceRoles,
+  InkRoles,
   BaseTokens,
 } from './TokenRoles'
 
@@ -71,6 +67,7 @@ export type {
 export type {
   ContextTokens,
   ComponentTokens,
+  StatefulInkTokens,
   StatefulComponentTokens,
   ContextTokensCollection,
   StatelessComponentTokensCollection,
@@ -81,7 +78,9 @@ export type {
 // Factory
 export {
   $SemanticColorPalette,
+  type InkRolesInput,
   type BaseTokensInput,
+  type StatefulInkTokensInput,
   type StatefulComponentTokensInput,
   type SemanticColorPaletteInput,
 } from './SemanticColorPaletteFactory'

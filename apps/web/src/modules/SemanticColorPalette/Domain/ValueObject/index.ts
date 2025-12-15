@@ -1,17 +1,20 @@
 export type {
   ColorValue,
   ActionState,
-  TextRoles,
-  LineRoles,
-  SurfaceRoles,
+  InkRoles,
   ContextTokens,
   ComponentTokens,
+  StatefulInkTokens,
   StatefulComponentTokens,
   ContextTokensCollection,
   StatelessComponentTokensCollection,
   StatefulComponentTokensCollection,
   ComponentTokensCollection,
   SemanticColorPalette,
+  InkRolesInput,
+  BaseTokensInput,
+  StatefulInkTokensInput,
+  StatefulComponentTokensInput,
   SemanticColorPaletteInput,
 } from './SemanticColorPalette'
 
@@ -58,6 +61,7 @@ export type {
 } from './SemanticNames'
 
 export {
+  INK_TOKEN_NAMES,
   CONTEXT_NAMES,
   COMPONENT_NAMES,
   STATEFUL_COMPONENT_NAMES,

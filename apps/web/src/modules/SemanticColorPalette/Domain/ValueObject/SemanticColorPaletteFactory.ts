@@ -10,26 +10,40 @@ import {
   STATEFUL_COMPONENT_NAMES,
   type ActionState,
 } from './SemanticNames'
-import type { BaseTokens, ColorValue } from './TokenRoles'
-import type { StatefulComponentTokens } from './Tokens'
+import type { BaseTokens, InkRoles, ColorValue } from './TokenRoles'
+import type { StatefulComponentTokens, StatefulInkTokens } from './Tokens'
 import type { SemanticColorPalette } from './SemanticColorPalette'
 
 // ============================================================================
 // Input Types
 // ============================================================================
 
-type Mutable<T> = { -readonly [K in keyof T]: T[K] }
-
-type MutableDeep<T> = {
-  -readonly [K in keyof T]: T[K] extends Readonly<Record<string, infer V>>
-    ? Record<string, V>
-    : T[K]
+export type InkRolesInput = {
+  title: ColorValue
+  body: ColorValue
+  meta: ColorValue
+  linkText: ColorValue
+  border: ColorValue
+  divider: ColorValue
 }
 
-export type BaseTokensInput = Mutable<BaseTokens>
+export type BaseTokensInput = {
+  surface: ColorValue
+  ink: InkRolesInput
+}
 
-export type StatefulComponentTokensInput = Omit<MutableDeep<StatefulComponentTokens>, 'accent'> & {
-  accent?: Record<ActionState, ColorValue>
+export type StatefulInkTokensInput = {
+  title: Record<ActionState, ColorValue>
+  body: Record<ActionState, ColorValue>
+  meta: Record<ActionState, ColorValue>
+  linkText: Record<ActionState, ColorValue>
+  border: Record<ActionState, ColorValue>
+  divider: Record<ActionState, ColorValue>
+}
+
+export type StatefulComponentTokensInput = {
+  surface: Record<ActionState, ColorValue>
+  ink: StatefulInkTokensInput
 }
 
 export type SemanticColorPaletteInput = {
@@ -49,34 +63,52 @@ const freezeStateMap = (
   map: Record<ActionState, ColorValue>
 ): Readonly<Record<ActionState, ColorValue>> => Object.freeze({ ...map })
 
+const freezeInk = (ink: InkRolesInput): InkRoles =>
+  Object.freeze({
+    title: ink.title,
+    body: ink.body,
+    meta: ink.meta,
+    linkText: ink.linkText,
+    border: ink.border,
+    divider: ink.divider,
+  })
+
+const freezeBaseTokens = (input: BaseTokensInput): BaseTokens =>
+  Object.freeze({
+    surface: input.surface,
+    ink: freezeInk(input.ink),
+  })
+
+const freezeStatefulInk = (ink: StatefulInkTokensInput): StatefulInkTokens =>
+  Object.freeze({
+    title: freezeStateMap(ink.title),
+    body: freezeStateMap(ink.body),
+    meta: freezeStateMap(ink.meta),
+    linkText: freezeStateMap(ink.linkText),
+    border: freezeStateMap(ink.border),
+    divider: freezeStateMap(ink.divider),
+  })
+
 const freezeStatefulComponent = (
   input: StatefulComponentTokensInput
-): StatefulComponentTokens => {
-  return Object.freeze({
-    title: freezeStateMap(input.title),
-    body: freezeStateMap(input.body),
-    meta: freezeStateMap(input.meta),
-    linkText: freezeStateMap(input.linkText),
-    border: freezeStateMap(input.border),
-    divider: freezeStateMap(input.divider),
+): StatefulComponentTokens =>
+  Object.freeze({
     surface: freezeStateMap(input.surface),
-    tintSurface: freezeStateMap(input.tintSurface),
-    accent: input.accent ? freezeStateMap(input.accent) : undefined,
-  }) as StatefulComponentTokens
-}
+    ink: freezeStatefulInk(input.ink),
+  })
 
 export const $SemanticColorPalette = {
   create: (input: SemanticColorPaletteInput): SemanticColorPalette => {
     return Object.freeze({
       context: Object.freeze({
-        canvas: Object.freeze({ ...input.context.canvas }),
-        sectionNeutral: Object.freeze({ ...input.context.sectionNeutral }),
-        sectionTint: Object.freeze({ ...input.context.sectionTint }),
-        sectionContrast: Object.freeze({ ...input.context.sectionContrast }),
+        canvas: freezeBaseTokens(input.context.canvas),
+        sectionNeutral: freezeBaseTokens(input.context.sectionNeutral),
+        sectionTint: freezeBaseTokens(input.context.sectionTint),
+        sectionContrast: freezeBaseTokens(input.context.sectionContrast),
       }),
       component: Object.freeze({
-        card: Object.freeze({ ...input.component.card }),
-        cardFlat: Object.freeze({ ...input.component.cardFlat }),
+        card: freezeBaseTokens(input.component.card),
+        cardFlat: freezeBaseTokens(input.component.cardFlat),
         action: freezeStatefulComponent(input.component.action),
         actionQuiet: freezeStatefulComponent(input.component.actionQuiet),
       }),

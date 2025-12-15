@@ -44,9 +44,14 @@ const actions = computed(() => [
 
 const actionStates: ActionState[] = ['default', 'hover', 'active', 'disabled']
 
-// Get token entries for display (excluding optional undefined values)
+// Get token entries for display (flattened for easier viewing)
 const getTokenEntries = (tokens: ContextTokens | ComponentTokens) => {
-  return Object.entries(tokens).filter(([, value]) => value !== undefined)
+  const entries: [string, string][] = []
+  entries.push(['surface', tokens.surface])
+  for (const [key, value] of Object.entries(tokens.ink)) {
+    entries.push([`ink.${key}`, value])
+  }
+  return entries
 }
 
 // Dynamic CSS injection for CSS variables and rule sets
@@ -133,10 +138,6 @@ watch(palette, updateStyles)
             <p class="preview-body scp-body">Body text sample</p>
             <p class="preview-meta scp-meta">Meta text sample</p>
             <a href="#" class="preview-link scp-link" @click.prevent>Link text sample</a>
-            <div class="tint-preview scp-tint-surface">
-              <span>Tint surface</span>
-            </div>
-            <div v-if="ctx.tokens.accent" class="accent-preview scp-accent">Accent</div>
           </div>
         </div>
       </div>
@@ -162,10 +163,6 @@ watch(palette, updateStyles)
             <p class="preview-body scp-body">Body text sample</p>
             <p class="preview-meta scp-meta">Meta text sample</p>
             <a href="#" class="preview-link scp-link" @click.prevent>Link text sample</a>
-            <div class="tint-preview scp-tint-surface">
-              <span>Tint surface</span>
-            </div>
-            <div v-if="comp.tokens.accent" class="accent-preview scp-accent">Accent</div>
           </div>
         </div>
 
@@ -196,8 +193,8 @@ watch(palette, updateStyles)
                 class="action-button"
                 :style="{
                   backgroundColor: action.tokens.surface[state],
-                  borderColor: action.tokens.border[state],
-                  color: action.tokens.title[state],
+                  borderColor: action.tokens.ink.border[state],
+                  color: action.tokens.ink.title[state],
                 }"
               >
                 Btn

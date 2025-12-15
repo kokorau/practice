@@ -10,44 +10,20 @@ import type {
 type CSSVarEntry = readonly [key: string, value: ColorValue]
 
 /**
- * Role name to CSS variable suffix mapping
+ * Ink role name to CSS variable suffix mapping
  */
-const ROLE_CSS_NAMES = {
-  surface: 'surface',
-  tintSurface: 'tint-surface',
+const INK_CSS_NAMES = {
   title: 'title',
   body: 'body',
   meta: 'meta',
   linkText: 'link-text',
   border: 'border',
   divider: 'divider',
-  accent: 'accent',
 } as const
 
-type RoleKey = keyof typeof ROLE_CSS_NAMES
+type InkRoleKey = keyof typeof INK_CSS_NAMES
 
-/** Stateless token roles */
-const STATELESS_REQUIRED: RoleKey[] = [
-  'surface',
-  'tintSurface',
-  'title',
-  'body',
-  'meta',
-  'linkText',
-  'border',
-  'divider',
-]
-const STATELESS_OPTIONAL: RoleKey[] = ['accent']
-
-/** Stateful token roles */
-const STATEFUL_REQUIRED: RoleKey[] = [
-  'surface',
-  'tintSurface',
-  'border',
-  'title',
-  'linkText',
-]
-const STATEFUL_OPTIONAL: RoleKey[] = ['body', 'meta', 'accent', 'divider']
+const INK_ROLES: InkRoleKey[] = ['title', 'body', 'meta', 'linkText', 'border', 'divider']
 
 const ACTION_STATES: ActionState[] = ['default', 'hover', 'active', 'disabled']
 
@@ -64,15 +40,12 @@ const collectStatelessEntries = (
 ): CSSVarEntry[] => {
   const entries: CSSVarEntry[] = []
 
-  for (const role of STATELESS_REQUIRED) {
-    entries.push([`${prefix}-${ROLE_CSS_NAMES[role]}`, tokens[role] as ColorValue])
-  }
+  // Surface
+  entries.push([`${prefix}-surface`, tokens.surface])
 
-  for (const role of STATELESS_OPTIONAL) {
-    const value = tokens[role]
-    if (value) {
-      entries.push([`${prefix}-${ROLE_CSS_NAMES[role]}`, value])
-    }
+  // Ink roles
+  for (const role of INK_ROLES) {
+    entries.push([`${prefix}-${INK_CSS_NAMES[role]}`, tokens.ink[role]])
   }
 
   return entries
@@ -85,21 +58,16 @@ const collectStatefulEntries = (
 ): CSSVarEntry[] => {
   const entries: CSSVarEntry[] = []
 
-  for (const role of STATEFUL_REQUIRED) {
-    const stateMap = tokens[role] as Readonly<Record<ActionState, ColorValue>>
-    for (const state of ACTION_STATES) {
-      entries.push([`${prefix}-${ROLE_CSS_NAMES[role]}-${state}`, stateMap[state]])
-    }
+  // Surface (stateful)
+  for (const state of ACTION_STATES) {
+    entries.push([`${prefix}-surface-${state}`, tokens.surface[state]])
   }
 
-  for (const role of STATEFUL_OPTIONAL) {
-    const stateMap = tokens[role] as
-      | Readonly<Record<ActionState, ColorValue>>
-      | undefined
-    if (stateMap) {
-      for (const state of ACTION_STATES) {
-        entries.push([`${prefix}-${ROLE_CSS_NAMES[role]}-${state}`, stateMap[state]])
-      }
+  // Ink roles (stateful)
+  for (const role of INK_ROLES) {
+    const stateMap = tokens.ink[role]
+    for (const state of ACTION_STATES) {
+      entries.push([`${prefix}-${INK_CSS_NAMES[role]}-${state}`, stateMap[state]])
     }
   }
 

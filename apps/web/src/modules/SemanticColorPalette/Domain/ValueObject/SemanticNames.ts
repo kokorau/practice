@@ -32,31 +32,24 @@ export type LineTokenName =
 /** Surface token names */
 export const SURFACE_TOKEN_NAMES = {
   surface: 'surface',
-  tintSurface: 'tintSurface',
 } as const
 
 export type SurfaceTokenName =
   (typeof SURFACE_TOKEN_NAMES)[keyof typeof SURFACE_TOKEN_NAMES]
 
-/** Accent token name (optional in most contexts) */
-export const ACCENT_TOKEN_NAME = 'accent' as const
-
-export type AccentTokenName = typeof ACCENT_TOKEN_NAME
-
-/** All base token names (without accent) */
-export const BASE_TOKEN_NAMES = {
+/** Ink token names (text + line roles) */
+export const INK_TOKEN_NAMES = {
   ...TEXT_TOKEN_NAMES,
   ...LINE_TOKEN_NAMES,
-  ...SURFACE_TOKEN_NAMES,
 } as const
 
-export type BaseTokenName =
-  (typeof BASE_TOKEN_NAMES)[keyof typeof BASE_TOKEN_NAMES]
+export type InkTokenName =
+  (typeof INK_TOKEN_NAMES)[keyof typeof INK_TOKEN_NAMES]
 
-/** All token names (including accent) */
+/** All token names */
 export const TOKEN_NAMES = {
-  ...BASE_TOKEN_NAMES,
-  accent: ACCENT_TOKEN_NAME,
+  ...SURFACE_TOKEN_NAMES,
+  ...INK_TOKEN_NAMES,
 } as const
 
 export type TokenName = (typeof TOKEN_NAMES)[keyof typeof TOKEN_NAMES]
@@ -148,17 +141,14 @@ export const COMPONENT_CLASS_NAMES = Object.fromEntries(
 export const TOKEN_CSS_PROPERTY_MAP = {
   // Surface roles
   surface: 'background-color',
-  tintSurface: 'background-color',
-  // Text roles
+  // Text roles (ink)
   title: 'color',
   body: 'color',
   meta: 'color',
   linkText: 'color',
-  // Line roles
+  // Line roles (ink)
   border: 'border-color',
   divider: 'border-color',
-  // Accent
-  accent: 'color',
 } as const
 
 export type TokenCSSProperty =
@@ -170,6 +160,8 @@ export type TokenCSSProperty =
 
 export const SEMANTIC_NAMES = {
   token: TOKEN_NAMES,
+  ink: INK_TOKEN_NAMES,
+  surface: SURFACE_TOKEN_NAMES,
   context: CONTEXT_NAMES,
   component: COMPONENT_NAMES,
   statelessComponent: STATELESS_COMPONENT_NAMES,
