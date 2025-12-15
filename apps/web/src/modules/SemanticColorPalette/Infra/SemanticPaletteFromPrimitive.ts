@@ -62,9 +62,6 @@ const DISABLED_CONTRAST_TARGETS: ContrastTargets = {
 const css = (color: Oklch): string => $Oklch.toCss(color)
 const cssKey = (p: PrimitivePalette, key: PrimitiveKey): string => css(p[key])
 
-// Determine if palette is light or dark based on F1 (reference foundation)
-const isLightMode = (p: PrimitivePalette): boolean => p.F1.L > 0.5
-
 /**
  * Find the best neutral (N0-N9) that meets or exceeds target contrast.
  *
@@ -324,7 +321,7 @@ const buildActionQuietStatefulInk = (
 export const createSemanticFromPrimitive = (
   p: PrimitivePalette
 ): SemanticColorPalette => {
-  const isLight = isLightMode(p)
+  const isLight = p.theme === 'light'
   const surfaceKeys = isLight ? SURFACE_KEYS_LIGHT : SURFACE_KEYS_DARK
 
   const input: SemanticColorPaletteInput = {
@@ -534,7 +531,7 @@ const buildActionQuietStatefulInkRefs = (
 export const createPrimitiveRefMap = (
   p: PrimitivePalette
 ): PrimitiveRefMap => {
-  const isLight = isLightMode(p)
+  const isLight = p.theme === 'light'
   const surfaceKeys = isLight ? SURFACE_KEYS_LIGHT : SURFACE_KEYS_DARK
 
   return {
