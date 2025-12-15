@@ -19,6 +19,9 @@ import {
   toCSSRuleSetsText,
   createPrimitivePalette,
   createSemanticFromPrimitive,
+  createPrimitiveRefMap,
+  type BaseTokenRefs,
+  type PrimitiveRef,
 } from '../modules/SemanticColorPalette/Infra'
 
 // ============================================================
@@ -250,24 +253,27 @@ const foundationRampDisplay = computed(() => {
 // Generate SemanticColorPalette from primitivePalette
 const generatedPalette = computed(() => createSemanticFromPrimitive(primitivePalette.value))
 
+// Generate PrimitiveRefMap to track which primitive keys are used
+const primitiveRefMap = computed(() => createPrimitiveRefMap(primitivePalette.value))
+
 // Use generated palette for preview
 const palette = computed(() => generatedPalette.value)
 
 // Determine dark mode based on foundation lightness
 const isDark = computed(() => foundationColor.value.oklch.L <= 0.5)
 
-// Context surfaces with CSS class names
+// Context surfaces with CSS class names and primitive refs
 const contexts = computed(() => [
-  { name: 'canvas', label: 'Canvas', className: CONTEXT_CLASS_NAMES.canvas, tokens: palette.value.context.canvas },
-  { name: 'sectionNeutral', label: 'Section Neutral', className: CONTEXT_CLASS_NAMES.sectionNeutral, tokens: palette.value.context.sectionNeutral },
-  { name: 'sectionTint', label: 'Section Tint', className: CONTEXT_CLASS_NAMES.sectionTint, tokens: palette.value.context.sectionTint },
-  { name: 'sectionContrast', label: 'Section Contrast', className: CONTEXT_CLASS_NAMES.sectionContrast, tokens: palette.value.context.sectionContrast },
+  { name: 'canvas', label: 'Canvas', className: CONTEXT_CLASS_NAMES.canvas, tokens: palette.value.context.canvas, refs: primitiveRefMap.value.context.canvas },
+  { name: 'sectionNeutral', label: 'Section Neutral', className: CONTEXT_CLASS_NAMES.sectionNeutral, tokens: palette.value.context.sectionNeutral, refs: primitiveRefMap.value.context.sectionNeutral },
+  { name: 'sectionTint', label: 'Section Tint', className: CONTEXT_CLASS_NAMES.sectionTint, tokens: palette.value.context.sectionTint, refs: primitiveRefMap.value.context.sectionTint },
+  { name: 'sectionContrast', label: 'Section Contrast', className: CONTEXT_CLASS_NAMES.sectionContrast, tokens: palette.value.context.sectionContrast, refs: primitiveRefMap.value.context.sectionContrast },
 ])
 
-// Stateless components with CSS class names
+// Stateless components with CSS class names and primitive refs
 const components = computed(() => [
-  { name: 'card', label: 'Card', className: COMPONENT_CLASS_NAMES.card, tokens: palette.value.component.card },
-  { name: 'cardFlat', label: 'Card Flat', className: COMPONENT_CLASS_NAMES.cardFlat, tokens: palette.value.component.cardFlat },
+  { name: 'card', label: 'Card', className: COMPONENT_CLASS_NAMES.card, tokens: palette.value.component.card, refs: primitiveRefMap.value.component.card },
+  { name: 'cardFlat', label: 'Card Flat', className: COMPONENT_CLASS_NAMES.cardFlat, tokens: palette.value.component.cardFlat, refs: primitiveRefMap.value.component.cardFlat },
 ])
 
 // Stateful components with CSS class names
@@ -279,11 +285,13 @@ const actions = computed(() => [
 const actionStates: ActionState[] = ['default', 'hover', 'active', 'disabled']
 
 // Get token entries for display (flattened for easier viewing)
-const getTokenEntries = (tokens: ContextTokens | ComponentTokens) => {
-  const entries: [string, string][] = []
-  entries.push(['surface', tokens.surface])
+// Returns [key, cssValue, primitiveRef] tuples
+const getTokenEntries = (tokens: ContextTokens | ComponentTokens, refs: BaseTokenRefs) => {
+  const entries: [string, string, PrimitiveRef][] = []
+  entries.push(['surface', tokens.surface, refs.surface])
   for (const [key, value] of Object.entries(tokens.ink)) {
-    entries.push([`ink.${key}`, value])
+    const inkKey = key as keyof typeof refs.ink
+    entries.push([`ink.${key}`, value, refs.ink[inkKey]])
   }
   return entries
 }
@@ -648,14 +656,14 @@ watch(palette, updateStyles)
 
           <div class="tokens-list">
             <div
-              v-for="[key, value] in getTokenEntries(ctx.tokens)"
+              v-for="[key, value, ref] in getTokenEntries(ctx.tokens, ctx.refs)"
               :key="key"
               class="token-row"
             >
               <span class="token-name scp-body">{{ key }}</span>
               <div class="token-preview">
                 <span class="color-swatch" :style="{ backgroundColor: value }" />
-                <code class="token-value scp-meta">{{ value }}</code>
+                <code class="token-ref">{{ ref }}</code>
               </div>
             </div>
           </div>
@@ -684,6 +692,20 @@ watch(palette, updateStyles)
         >
           <h3 class="component-title scp-title">{{ comp.label }}</h3>
           <span class="component-badge scp-meta">Stateless</span>
+
+          <div class="tokens-list">
+            <div
+              v-for="[key, value, ref] in getTokenEntries(comp.tokens, comp.refs)"
+              :key="key"
+              class="token-row"
+            >
+              <span class="token-name scp-body">{{ key }}</span>
+              <div class="token-preview">
+                <span class="color-swatch" :style="{ backgroundColor: value }" />
+                <code class="token-ref">{{ ref }}</code>
+              </div>
+            </div>
+          </div>
 
           <!-- Preview section -->
           <div class="preview-section scp-divider">
@@ -1280,6 +1302,21 @@ h1 {
   font-size: 0.65rem;
   font-family: 'SF Mono', Monaco, monospace;
   opacity: 0.8;
+}
+
+.token-ref {
+  font-size: 0.75rem;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  background: oklch(0.92 0.01 260);
+  border-radius: 4px;
+  color: oklch(0.35 0.02 260);
+}
+
+.dark .token-ref {
+  background: oklch(0.22 0.02 260);
+  color: oklch(0.75 0.02 260);
 }
 
 .preview-section {

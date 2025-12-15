@@ -1,9 +1,10 @@
 import { $Oklch, contrastRatio } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import type { PrimitivePalette, NeutralKey } from '../Domain/ValueObject/PrimitivePalette'
+import type { PrimitivePalette, NeutralKey, PrimitiveKey } from '../Domain/ValueObject/PrimitivePalette'
 import { NEUTRAL_KEYS } from '../Domain/ValueObject/PrimitivePalette'
 import type { SemanticColorPalette, SemanticColorPaletteInput } from '../Domain/ValueObject/SemanticColorPalette'
 import { $SemanticColorPalette } from '../Domain/ValueObject/SemanticColorPalette'
+import type { ActionState } from '../Domain/ValueObject/SemanticNames'
 
 /**
  * SemanticPaletteFromPrimitive
@@ -348,4 +349,212 @@ export const createSemanticFromPrimitive = (
   }
 
   return $SemanticColorPalette.create(input)
+}
+
+// ============================================================================
+// Primitive Reference Map (for debugging / visualization)
+// ============================================================================
+
+/**
+ * Primitive reference: tracks which primitive key was used for each token.
+ * Special values: 'computed' for dynamically calculated colors, 'transparent' for transparent.
+ */
+export type PrimitiveRef = PrimitiveKey | 'computed' | 'transparent'
+
+/** Ink references (which primitive was used for each ink role) */
+export type InkRefs = {
+  title: PrimitiveRef
+  body: PrimitiveRef
+  meta: PrimitiveRef
+  linkText: PrimitiveRef
+  border: PrimitiveRef
+  divider: PrimitiveRef
+}
+
+/** Base token references */
+export type BaseTokenRefs = {
+  surface: PrimitiveRef
+  ink: InkRefs
+}
+
+/** Stateful surface references */
+export type StatefulSurfaceRefs = Record<ActionState, PrimitiveRef>
+
+/** Stateful ink references */
+export type StatefulInkRefs = {
+  [K in keyof InkRefs]: Record<ActionState, PrimitiveRef>
+}
+
+/** Stateful token references */
+export type StatefulTokenRefs = {
+  surface: StatefulSurfaceRefs
+  ink: StatefulInkRefs
+}
+
+/** Complete primitive reference map */
+export type PrimitiveRefMap = {
+  context: {
+    canvas: BaseTokenRefs
+    sectionNeutral: BaseTokenRefs
+    sectionTint: BaseTokenRefs
+    sectionContrast: BaseTokenRefs
+  }
+  component: {
+    card: BaseTokenRefs
+    cardFlat: BaseTokenRefs
+    action: StatefulTokenRefs
+    actionQuiet: StatefulTokenRefs
+  }
+}
+
+// Helper: Build ink refs for a given surface
+const buildInkRefsForSurface = (
+  p: PrimitivePalette,
+  surface: Oklch,
+  isLight: boolean,
+  targets = INK_CONTRAST_TARGETS
+): InkRefs => {
+  const titleKey = findNeutralByContrast(p, surface, targets.title, isLight)
+  const bodyKey = findNeutralByContrast(p, surface, targets.body, isLight)
+  const metaKey = findNeutralByContrast(p, surface, targets.meta, isLight)
+  const linkTextKey = findNeutralByContrast(p, surface, targets.linkText, isLight)
+  const borderKey = findNeutralClosestToContrast(p, surface, targets.border)
+  const dividerKey = findNeutralClosestToContrast(p, surface, targets.divider)
+
+  return {
+    title: titleKey,
+    body: bodyKey,
+    meta: metaKey,
+    linkText: linkTextKey,
+    border: borderKey,
+    divider: dividerKey,
+  }
+}
+
+// Helper: Build base token refs
+const buildBaseTokenRefs = (
+  p: PrimitivePalette,
+  surfaceKey: keyof PrimitivePalette,
+  isLight: boolean
+): BaseTokenRefs => {
+  const surface = p[surfaceKey]
+  return {
+    surface: surfaceKey,
+    ink: buildInkRefsForSurface(p, surface, isLight),
+  }
+}
+
+// Helper: Build action surface refs
+const buildActionSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs => {
+  const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
+  return {
+    default: 'Bf',
+    hover: 'computed', // Bf with adjusted lightness
+    active: 'computed', // Bf with adjusted lightness
+    disabled: disabledKey,
+  }
+}
+
+// Helper: Build action quiet surface refs
+const buildActionQuietSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs => {
+  const hoverKey: PrimitiveKey = isLight ? 'F2' : 'F7'
+  const activeKey: PrimitiveKey = isLight ? 'F3' : 'F6'
+  return {
+    default: 'transparent',
+    hover: hoverKey,
+    active: activeKey,
+    disabled: 'transparent',
+  }
+}
+
+// Helper: Build action stateful ink refs
+const buildActionStatefulInkRefs = (
+  p: PrimitivePalette,
+  isLight: boolean
+): StatefulInkRefs => {
+  const bf = p.Bf
+  const disabledSurface = isLight ? p.N2 : p.N7
+  const bfIsLight = bf.L > 0.5
+
+  const defaultInkRefs = buildInkRefsForSurface(p, bf, bfIsLight)
+  const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, DISABLED_CONTRAST_TARGETS)
+
+  const buildStateMap = (defaultVal: PrimitiveRef, disabledVal: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
+    default: defaultVal,
+    hover: defaultVal,
+    active: defaultVal,
+    disabled: disabledVal,
+  })
+
+  return {
+    title: buildStateMap(defaultInkRefs.title, disabledInkRefs.title),
+    body: buildStateMap(defaultInkRefs.body, disabledInkRefs.body),
+    meta: buildStateMap(defaultInkRefs.meta, disabledInkRefs.meta),
+    linkText: buildStateMap(defaultInkRefs.linkText, disabledInkRefs.linkText),
+    border: buildStateMap(defaultInkRefs.border, disabledInkRefs.border),
+    divider: buildStateMap(defaultInkRefs.divider, disabledInkRefs.divider),
+  }
+}
+
+// Helper: Build action quiet stateful ink refs
+const buildActionQuietStatefulInkRefs = (
+  p: PrimitivePalette,
+  isLight: boolean
+): StatefulInkRefs => {
+  const canvasSurface = isLight ? p.F1 : p.F8
+  const hoverSurface = isLight ? p.F2 : p.F7
+  const activeSurface = isLight ? p.F3 : p.F6
+
+  const defaultInkRefs = buildInkRefsForSurface(p, canvasSurface, isLight)
+  const hoverInkRefs = buildInkRefsForSurface(p, hoverSurface, isLight)
+  const activeInkRefs = buildInkRefsForSurface(p, activeSurface, isLight)
+  const disabledInkRefs = buildInkRefsForSurface(p, canvasSurface, isLight, DISABLED_CONTRAST_TARGETS)
+
+  const buildStateMap = (d: PrimitiveRef, h: PrimitiveRef, a: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
+    default: d,
+    hover: h,
+    active: a,
+    disabled: dis,
+  })
+
+  return {
+    title: buildStateMap(defaultInkRefs.title, hoverInkRefs.title, activeInkRefs.title, disabledInkRefs.title),
+    body: buildStateMap(defaultInkRefs.body, hoverInkRefs.body, activeInkRefs.body, disabledInkRefs.body),
+    meta: buildStateMap(defaultInkRefs.meta, hoverInkRefs.meta, activeInkRefs.meta, disabledInkRefs.meta),
+    linkText: buildStateMap(defaultInkRefs.linkText, hoverInkRefs.linkText, activeInkRefs.linkText, disabledInkRefs.linkText),
+    border: buildStateMap(defaultInkRefs.border, hoverInkRefs.border, activeInkRefs.border, disabledInkRefs.border),
+    divider: buildStateMap(defaultInkRefs.divider, hoverInkRefs.divider, activeInkRefs.divider, disabledInkRefs.divider),
+  }
+}
+
+/**
+ * Create PrimitiveRefMap from PrimitivePalette
+ * Shows which primitive key is used for each semantic token
+ */
+export const createPrimitiveRefMap = (
+  p: PrimitivePalette
+): PrimitiveRefMap => {
+  const isLight = isLightMode(p)
+  const surfaceKeys = isLight ? SURFACE_KEYS_LIGHT : SURFACE_KEYS_DARK
+
+  return {
+    context: {
+      canvas: buildBaseTokenRefs(p, surfaceKeys.canvas, isLight),
+      sectionNeutral: buildBaseTokenRefs(p, surfaceKeys.sectionNeutral, isLight),
+      sectionTint: buildBaseTokenRefs(p, surfaceKeys.sectionTint, isLight),
+      sectionContrast: buildBaseTokenRefs(p, surfaceKeys.sectionContrast, isLight),
+    },
+    component: {
+      card: buildBaseTokenRefs(p, surfaceKeys.card, isLight),
+      cardFlat: buildBaseTokenRefs(p, surfaceKeys.cardFlat, isLight),
+      action: {
+        surface: buildActionSurfaceRefs(isLight),
+        ink: buildActionStatefulInkRefs(p, isLight),
+      },
+      actionQuiet: {
+        surface: buildActionQuietSurfaceRefs(isLight),
+        ink: buildActionQuietStatefulInkRefs(p, isLight),
+      },
+    },
+  }
 }

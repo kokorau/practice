@@ -31,4 +31,14 @@ export {
   type PrimitivePaletteParams,
 } from './PrimitivePaletteFactory'
 
-export { createSemanticFromPrimitive } from './SemanticPaletteFromPrimitive'
+export {
+  createSemanticFromPrimitive,
+  createPrimitiveRefMap,
+  type PrimitiveRef,
+  type InkRefs,
+  type BaseTokenRefs,
+  type StatefulSurfaceRefs,
+  type StatefulInkRefs,
+  type StatefulTokenRefs,
+  type PrimitiveRefMap,
+} from './SemanticPaletteFromPrimitive'
