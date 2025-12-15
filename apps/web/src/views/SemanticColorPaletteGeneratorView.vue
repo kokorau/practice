@@ -11,7 +11,6 @@ import {
   COMPONENT_CLASS_NAMES,
   NEUTRAL_KEYS,
   PRIMITIVE_KEYS,
-  $BrandColor,
   $ColorPairValidation,
 } from '../modules/SemanticColorPalette/Domain'
 import {
@@ -205,9 +204,6 @@ const brandColor = computed(() => {
 // Validation
 // ============================================================
 
-// Brand validation
-const brandValidation = computed(() => $BrandColor.validate(brandColor.value.oklch))
-
 // Computed contrast ratio for display
 const currentContrastRatio = computed(() =>
   contrastRatio($ColorPairValidation.deriveBrandText(brandColor.value.oklch), baseColor.value.oklch)
@@ -359,11 +355,6 @@ watch(palette, updateStyles)
           </div>
         </div>
 
-        <!-- Brand Validation -->
-        <div v-if="!brandValidation.valid" class="validation-warning">
-          <span class="warning-icon">!</span>
-          <span class="warning-text">Brand out of range</span>
-        </div>
       </section>
 
       <!-- Base Color Section -->
