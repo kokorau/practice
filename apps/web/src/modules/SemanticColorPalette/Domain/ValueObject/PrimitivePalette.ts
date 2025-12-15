@@ -8,7 +8,12 @@ export type NeutralKey = (typeof NEUTRAL_KEYS)[number]
 export const FOUNDATION_KEYS = ['F0', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9'] as const
 export type FoundationKey = (typeof FOUNDATION_KEYS)[number]
 
-export const BRAND_KEYS = ['B'] as const
+// Brand-derived keys:
+// B: Brand (input color)
+// Bt: Brand Tint (light surface)
+// Bs: Brand Shade (dark surface)
+// Bf: Brand Fill (strong surface for buttons/badges)
+export const BRAND_KEYS = ['B', 'Bt', 'Bs', 'Bf'] as const
 export type BrandKey = (typeof BRAND_KEYS)[number]
 
 export const PRIMITIVE_KEYS = [...NEUTRAL_KEYS, ...FOUNDATION_KEYS, ...BRAND_KEYS] as const

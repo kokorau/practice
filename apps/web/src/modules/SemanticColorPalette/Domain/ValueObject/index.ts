@@ -28,7 +28,7 @@ export type {
   PrimitivePalette,
 } from './PrimitivePalette'
 
-export { NEUTRAL_KEYS, FOUNDATION_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
+export { NEUTRAL_KEYS, FOUNDATION_KEYS, BRAND_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
 
 export type {
   FoundationColorValidationResult,

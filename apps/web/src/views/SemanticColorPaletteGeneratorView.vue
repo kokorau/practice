@@ -11,6 +11,7 @@ import {
   COMPONENT_CLASS_NAMES,
   NEUTRAL_KEYS,
   FOUNDATION_KEYS,
+  BRAND_KEYS,
   $ColorPairValidation,
 } from '../modules/SemanticColorPalette/Domain'
 import {
@@ -607,16 +608,20 @@ watch(palette, updateStyles)
             </div>
           </div>
 
-          <!-- Brand (B) -->
+          <!-- Brand (B, Bt, Bs, Bf) -->
           <div class="primitive-group">
-            <h3 class="primitive-group-label">Brand</h3>
+            <h3 class="primitive-group-label">Brand (B + derivatives)</h3>
             <div class="primitive-palette-grid">
-              <div class="primitive-item">
+              <div
+                v-for="key in BRAND_KEYS"
+                :key="key"
+                class="primitive-item"
+              >
                 <div
                   class="primitive-swatch"
-                  :style="{ backgroundColor: $Oklch.toCss(primitivePalette.B) }"
+                  :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
                 />
-                <span class="primitive-key">B</span>
+                <span class="primitive-key">{{ key }}</span>
               </div>
             </div>
           </div>
