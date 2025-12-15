@@ -721,14 +721,15 @@ watch(palette, updateStyles)
           </div>
         </div>
 
-        <!-- Stateful action components -->
+        <!-- Stateful action components (on Canvas) -->
         <div
           v-for="action in actions"
           :key="action.name"
           class="component-card action-component"
+          :class="CONTEXT_CLASS_NAMES.canvas"
         >
-          <h3 class="component-title">{{ action.label }}</h3>
-          <span class="component-badge">Stateful</span>
+          <h3 class="component-title scp-title">{{ action.label }}</h3>
+          <span class="component-badge scp-meta">Stateful</span>
 
           <!-- Interactive buttons -->
           <div class="action-buttons">
@@ -743,7 +744,7 @@ watch(palette, updateStyles)
               :key="state"
               class="state-preview"
             >
-              <span class="state-label">{{ state }}</span>
+              <span class="state-label scp-meta">{{ state }}</span>
               <button
                 class="action-button"
                 :style="{
@@ -1401,13 +1402,7 @@ h1 {
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-.action-component {
-  background: oklch(0.99 0.005 260);
-}
-
-.dark .action-component {
-  background: oklch(0.18 0.02 260);
-}
+/* .action-component background is set by canvas context class */
 
 .component-title {
   margin: 0;
@@ -1467,13 +1462,9 @@ h1 {
 
 .state-label {
   font-size: 0.55rem;
-  color: oklch(0.50 0.02 260);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-}
-
-.dark .state-label {
-  color: oklch(0.60 0.02 260);
+  /* color is set by .scp-meta via var(--meta) */
 }
 
 .action-button {
