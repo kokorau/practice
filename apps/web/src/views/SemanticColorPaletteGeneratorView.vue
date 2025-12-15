@@ -10,7 +10,7 @@ import {
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
   NEUTRAL_KEYS,
-  PRIMITIVE_KEYS,
+  FOUNDATION_KEYS,
   $ColorPairValidation,
 } from '../modules/SemanticColorPalette/Domain'
 import {
@@ -21,11 +21,11 @@ import {
 } from '../modules/SemanticColorPalette/Infra'
 
 // ============================================================
-// Base Color State (the "paper") - Preset Selection
+// Foundation Color State (the "paper") - Preset Selection
 // ============================================================
 
-// Base color presets with tint variations
-type BasePreset = {
+// Foundation color presets with tint variations
+type FoundationPreset = {
   id: string
   label: string
   L: number
@@ -34,27 +34,27 @@ type BasePreset = {
   description: string
 }
 
-const BASE_PRESETS: BasePreset[] = [
-  // Light theme bases
-  { id: 'white', label: 'White', L: 0.97, C: 0, H: 0, description: 'Pure neutral' },
-  { id: 'cream', label: 'Cream', L: 0.96, C: 0.02, H: 80, description: 'Warm yellow' },
-  { id: 'gray-light', label: 'Gray', L: 0.94, C: 0.008, H: 'brand', description: 'Cool neutral' },
-  // Dark theme bases
-  { id: 'charcoal', label: 'Charcoal', L: 0.16, C: 0.008, H: 'brand', description: 'Dark neutral' },
-  { id: 'warm-dark', label: 'Warm', L: 0.14, C: 0.015, H: 50, description: 'Warm dark' },
-  { id: 'ink', label: 'Ink', L: 0.10, C: 0, H: 0, description: 'Pure black' },
+const FOUNDATION_PRESETS: FoundationPreset[] = [
+  // Light theme foundations (based on F1: L=0.955)
+  { id: 'white', label: 'White', L: 0.955, C: 0, H: 0, description: 'Pure neutral' },
+  { id: 'cream', label: 'Cream', L: 0.955, C: 0.02, H: 80, description: 'Warm yellow' },
+  { id: 'gray-light', label: 'Gray', L: 0.955, C: 0.008, H: 'brand', description: 'Cool neutral' },
+  // Dark theme foundations (based on F8: L=0.28)
+  { id: 'charcoal', label: 'Charcoal', L: 0.28, C: 0.008, H: 'brand', description: 'Dark neutral' },
+  { id: 'warm-dark', label: 'Warm', L: 0.28, C: 0.015, H: 50, description: 'Warm dark' },
+  { id: 'ink', label: 'Ink', L: 0.28, C: 0, H: 0, description: 'Pure black' },
 ]
 
-const selectedBaseId = ref('white')
+const selectedFoundationId = ref('white')
 
 // Get the selected preset
-const selectedBasePreset = computed(() =>
-  BASE_PRESETS.find((p) => p.id === selectedBaseId.value) ?? BASE_PRESETS[0]!
+const selectedFoundationPreset = computed(() =>
+  FOUNDATION_PRESETS.find((p) => p.id === selectedFoundationId.value) ?? FOUNDATION_PRESETS[0]!
 )
 
-// Compute base color from selected preset
-const baseColor = computed((): { oklch: Oklch; css: string; hex: string } => {
-  const preset = selectedBasePreset.value
+// Compute foundation color from selected preset
+const foundationColor = computed((): { oklch: Oklch; css: string; hex: string } => {
+  const preset = selectedFoundationPreset.value
   const presetHue = preset.H === 'brand' ? hue.value : preset.H
   const oklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
   return {
@@ -68,17 +68,17 @@ const baseColor = computed((): { oklch: Oklch; css: string; hex: string } => {
   }
 })
 
-// Minimum contrast ratio for Base + Brand combination
-const MIN_BASE_BRAND_CONTRAST = 2.5
+// Minimum contrast ratio for Foundation + Brand combination
+const MIN_FOUNDATION_BRAND_CONTRAST = 2
 
 // Check contrast for each preset against current brand
-const basePresetsWithContrast = computed(() => {
+const foundationPresetsWithContrast = computed(() => {
   const brandText = $ColorPairValidation.deriveBrandText(brandColor.value.oklch)
-  return BASE_PRESETS.map((preset) => {
+  return FOUNDATION_PRESETS.map((preset) => {
     const presetHue = preset.H === 'brand' ? hue.value : preset.H
     const presetOklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
     const ratio = contrastRatio(brandText, presetOklch)
-    const meetsMinContrast = ratio >= MIN_BASE_BRAND_CONTRAST
+    const meetsMinContrast = ratio >= MIN_FOUNDATION_BRAND_CONTRAST
     return {
       ...preset,
       resolvedH: presetHue,
@@ -90,10 +90,10 @@ const basePresetsWithContrast = computed(() => {
 
 // Group presets by theme
 const lightPresets = computed(() =>
-  basePresetsWithContrast.value.filter((p) => p.L > 0.5)
+  foundationPresetsWithContrast.value.filter((p) => p.L > 0.5)
 )
 const darkPresets = computed(() =>
-  basePresetsWithContrast.value.filter((p) => p.L <= 0.5)
+  foundationPresetsWithContrast.value.filter((p) => p.L <= 0.5)
 )
 
 // ============================================================
@@ -206,24 +206,36 @@ const brandColor = computed(() => {
 
 // Computed contrast ratio for display
 const currentContrastRatio = computed(() =>
-  contrastRatio($ColorPairValidation.deriveBrandText(brandColor.value.oklch), baseColor.value.oklch)
+  contrastRatio($ColorPairValidation.deriveBrandText(brandColor.value.oklch), foundationColor.value.oklch)
 )
 
 // Overall validity (contrast check)
-const isValidColorPair = computed(() => currentContrastRatio.value >= MIN_BASE_BRAND_CONTRAST)
+const isValidColorPair = computed(() => currentContrastRatio.value >= MIN_FOUNDATION_BRAND_CONTRAST)
 
 // ============================================================
 // Primitive Palette Generation
 // ============================================================
 
-// Generate PrimitivePalette from brand color (uses default params)
+// Generate PrimitivePalette from brand + foundation colors
 const primitivePalette = computed((): PrimitivePalette => {
-  return createPrimitivePalette({ brand: brandColor.value.oklch })
+  return createPrimitivePalette({
+    brand: brandColor.value.oklch,
+    foundation: foundationColor.value.oklch,
+  })
 })
 
 // Neutral ramp for display (extracted from primitivePalette)
 const neutralRampDisplay = computed(() => {
   return NEUTRAL_KEYS.map((key) => ({
+    key,
+    color: primitivePalette.value[key],
+    css: $Oklch.toCss(primitivePalette.value[key]),
+  }))
+})
+
+// Foundation ramp for display (extracted from primitivePalette)
+const foundationRampDisplay = computed(() => {
+  return FOUNDATION_KEYS.map((key) => ({
     key,
     color: primitivePalette.value[key],
     css: $Oklch.toCss(primitivePalette.value[key]),
@@ -362,9 +374,9 @@ watch(palette, updateStyles)
 
       </section>
 
-      <!-- Base Color Section -->
+      <!-- Foundation Color Section -->
       <section class="sidebar-section">
-        <h2 class="sidebar-title">Base Color</h2>
+        <h2 class="sidebar-title">Foundation Color</h2>
 
         <!-- Light Theme Presets -->
         <div class="preset-group">
@@ -375,11 +387,11 @@ watch(palette, updateStyles)
               :key="preset.id"
               class="preset-button"
               :class="{
-                selected: selectedBaseId === preset.id,
+                selected: selectedFoundationId === preset.id,
                 warning: !preset.meetsMinContrast,
               }"
               :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
-              @click="selectedBaseId = preset.id"
+              @click="selectedFoundationId = preset.id"
             >
               <span class="preset-label">{{ preset.label }}</span>
               <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
@@ -396,11 +408,11 @@ watch(palette, updateStyles)
               :key="preset.id"
               class="preset-button preset-button--dark"
               :class="{
-                selected: selectedBaseId === preset.id,
+                selected: selectedFoundationId === preset.id,
                 warning: !preset.meetsMinContrast,
               }"
               :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
-              @click="selectedBaseId = preset.id"
+              @click="selectedFoundationId = preset.id"
             >
               <span class="preset-label">{{ preset.label }}</span>
               <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
@@ -408,21 +420,21 @@ watch(palette, updateStyles)
           </div>
         </div>
 
-        <!-- Selected Base Preview -->
+        <!-- Selected Foundation Preview -->
         <div class="color-preview-section">
           <div
             class="color-preview"
-            :style="{ backgroundColor: baseColor.hex }"
+            :style="{ backgroundColor: foundationColor.hex }"
           />
           <div class="color-values">
-            <code class="hex-value">{{ baseColor.hex }}</code>
+            <code class="hex-value">{{ foundationColor.hex }}</code>
             <div class="hsv-values">
-              <span>{{ selectedBasePreset.label }}</span>
+              <span>{{ selectedFoundationPreset.label }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Contrast Warning for selected base -->
+        <!-- Contrast Warning for selected foundation -->
         <div v-if="!isValidColorPair" class="validation-warning">
           <span class="warning-icon">!</span>
           <span class="warning-text">Low contrast ({{ currentContrastRatio.toFixed(1) }}:1)</span>
@@ -476,26 +488,26 @@ watch(palette, updateStyles)
               </div>
             </div>
 
-            <!-- Base Color -->
+            <!-- Foundation Color -->
             <div class="color-card">
-              <h2 class="section-heading">Base Color</h2>
+              <h2 class="section-heading">Foundation Color</h2>
               <div class="color-display">
                 <div
                   class="color-large"
-                  :style="{ backgroundColor: baseColor.hex }"
+                  :style="{ backgroundColor: foundationColor.hex }"
                 />
                 <div class="color-info">
                   <div class="color-row">
                     <span class="color-label">HEX</span>
-                    <code class="color-value">{{ baseColor.hex }}</code>
+                    <code class="color-value">{{ foundationColor.hex }}</code>
                   </div>
                   <div class="color-row">
                     <span class="color-label">OKLCH</span>
-                    <code class="color-value">{{ baseColor.css }}</code>
+                    <code class="color-value">{{ foundationColor.css }}</code>
                   </div>
                   <div class="color-row">
                     <span class="color-label">Preset</span>
-                    <code class="color-value">{{ selectedBasePreset.label }}</code>
+                    <code class="color-value">{{ selectedFoundationPreset.label }}</code>
                   </div>
                 </div>
               </div>
@@ -511,9 +523,9 @@ watch(palette, updateStyles)
         </section>
 
         <section class="section">
-          <h2 class="section-heading">Neutral Ramp (Light Theme)</h2>
+          <h2 class="section-heading">Neutral Ramp (Brand-derived)</h2>
           <p class="section-description">
-            Brand hue with minimal chroma ({{ primitivePalette.N0.C.toFixed(4) }}) for cohesive grayscale
+            Brand hue with minimal chroma ({{ primitivePalette.N0.C.toFixed(4) }}) for ink colors
           </p>
           <div class="neutral-ramp">
             <div
@@ -534,18 +546,78 @@ watch(palette, updateStyles)
         </section>
 
         <section class="section">
-          <h2 class="section-heading">Primitive Palette</h2>
-          <div class="primitive-palette-grid">
+          <h2 class="section-heading">Foundation Ramp (Foundation-derived)</h2>
+          <p class="section-description">
+            Foundation hue with minimal chroma ({{ primitivePalette.F0.C.toFixed(4) }}) for surface colors
+          </p>
+          <div class="neutral-ramp">
             <div
-              v-for="key in PRIMITIVE_KEYS"
-              :key="key"
-              class="primitive-item"
+              v-for="step in foundationRampDisplay"
+              :key="step.key"
+              class="neutral-step"
             >
               <div
-                class="primitive-swatch"
-                :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+                class="neutral-swatch"
+                :style="{ backgroundColor: step.css }"
               />
-              <span class="primitive-key">{{ key }}</span>
+              <div class="neutral-info">
+                <span class="neutral-index">{{ step.key }}</span>
+                <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-heading">Primitive Palette</h2>
+
+          <!-- Neutral (N0-N9) -->
+          <div class="primitive-group">
+            <h3 class="primitive-group-label">Neutral (Brand-derived)</h3>
+            <div class="primitive-palette-grid">
+              <div
+                v-for="key in NEUTRAL_KEYS"
+                :key="key"
+                class="primitive-item"
+              >
+                <div
+                  class="primitive-swatch"
+                  :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+                />
+                <span class="primitive-key">{{ key }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Foundation (F0-F9) -->
+          <div class="primitive-group">
+            <h3 class="primitive-group-label">Foundation (Foundation-derived)</h3>
+            <div class="primitive-palette-grid">
+              <div
+                v-for="key in FOUNDATION_KEYS"
+                :key="key"
+                class="primitive-item"
+              >
+                <div
+                  class="primitive-swatch"
+                  :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+                />
+                <span class="primitive-key">{{ key }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Brand (B) -->
+          <div class="primitive-group">
+            <h3 class="primitive-group-label">Brand</h3>
+            <div class="primitive-palette-grid">
+              <div class="primitive-item">
+                <div
+                  class="primitive-swatch"
+                  :style="{ backgroundColor: $Oklch.toCss(primitivePalette.B) }"
+                />
+                <span class="primitive-key">B</span>
+              </div>
             </div>
           </div>
         </section>
@@ -1097,6 +1169,25 @@ h1 {
   border: 1px solid rgba(128, 128, 128, 0.15);
 }
 
+.primitive-group {
+  margin-bottom: 1.5rem;
+}
+
+.primitive-group:last-child {
+  margin-bottom: 0;
+}
+
+.primitive-group-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .primitive-group-label {
+  color: oklch(0.60 0.02 260);
+}
+
 .primitive-key {
   font-size: 0.7rem;
   font-weight: 600;
@@ -1337,7 +1428,7 @@ h1 {
   border-bottom-color: oklch(0.20 0.02 260);
 }
 
-/* Base Color Presets */
+/* Foundation Color Presets */
 .preset-group {
   margin-bottom: 0.75rem;
 }

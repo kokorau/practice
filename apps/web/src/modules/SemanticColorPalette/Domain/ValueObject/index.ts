@@ -22,19 +22,20 @@ export { $SemanticColorPalette } from './SemanticColorPalette'
 
 export type {
   NeutralKey,
+  FoundationKey,
   BrandKey,
   PrimitiveKey,
   PrimitivePalette,
 } from './PrimitivePalette'
 
-export { NEUTRAL_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
+export { NEUTRAL_KEYS, FOUNDATION_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
 
 export type {
-  BaseColorValidationResult,
-  BaseColorValidationError,
-} from './BaseColor'
+  FoundationColorValidationResult,
+  FoundationColorValidationError,
+} from './FoundationColor'
 
-export { BASE_COLOR_CONSTRAINTS, $BaseColor } from './BaseColor'
+export { FOUNDATION_COLOR_CONSTRAINTS, $FoundationColor } from './FoundationColor'
 
 export type {
   BrandColorValidationResult,

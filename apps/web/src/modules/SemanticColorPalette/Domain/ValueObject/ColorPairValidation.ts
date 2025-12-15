@@ -1,10 +1,10 @@
 import type { Oklch } from '@practice/color'
 import { contrastRatio, WCAG_CONTRAST_AA } from '@practice/color'
-import { validateBaseColor, type BaseColorValidationError } from './BaseColor'
+import { validateFoundationColor, type FoundationColorValidationError } from './FoundationColor'
 import { validateBrandColor, type BrandColorValidationError } from './BrandColor'
 
 /**
- * Required contrast ratio between brandText and base for WCAG AA compliance
+ * Required contrast ratio between brandText and foundation for WCAG AA compliance
  */
 export const REQUIRED_CONTRAST_RATIO = WCAG_CONTRAST_AA // 4.5
 
@@ -23,26 +23,26 @@ export type ColorPairValidationResult =
   | { valid: false; errors: ColorPairValidationError[]; contrastRatio: number }
 
 export type ColorPairValidationError =
-  | { type: 'BASE_INVALID'; errors: BaseColorValidationError[] }
+  | { type: 'FOUNDATION_INVALID'; errors: FoundationColorValidationError[] }
   | { type: 'BRAND_INVALID'; errors: BrandColorValidationError[] }
   | { type: 'INSUFFICIENT_CONTRAST'; actual: number; required: number }
 
 /**
- * Validate both Base and Brand colors individually and their combination
+ * Validate both Foundation and Brand colors individually and their combination
  *
  * The combination must satisfy:
- * - brandText (derived from brand) must have contrast ratio >= 4.5 against base
+ * - brandText (derived from brand) must have contrast ratio >= 4.5 against foundation
  */
 export const validateColorPair = (
-  base: Oklch,
+  foundation: Oklch,
   brand: Oklch
 ): ColorPairValidationResult => {
   const errors: ColorPairValidationError[] = []
 
   // Validate individual colors
-  const baseResult = validateBaseColor(base)
-  if (!baseResult.valid) {
-    errors.push({ type: 'BASE_INVALID', errors: baseResult.errors })
+  const foundationResult = validateFoundationColor(foundation)
+  if (!foundationResult.valid) {
+    errors.push({ type: 'FOUNDATION_INVALID', errors: foundationResult.errors })
   }
 
   const brandResult = validateBrandColor(brand)
@@ -50,9 +50,9 @@ export const validateColorPair = (
     errors.push({ type: 'BRAND_INVALID', errors: brandResult.errors })
   }
 
-  // Check contrast ratio between brandText and base
+  // Check contrast ratio between brandText and foundation
   const brandText = deriveBrandText(brand)
-  const ratio = contrastRatio(brandText, base)
+  const ratio = contrastRatio(brandText, foundation)
 
   if (ratio < REQUIRED_CONTRAST_RATIO) {
     errors.push({
@@ -70,28 +70,28 @@ export const validateColorPair = (
 }
 
 /**
- * Calculate the allowable Base L range for a given Brand color
- * Returns [Lmin, Lmax] where any Base.L in this range will meet contrast requirements
+ * Calculate the allowable Foundation L range for a given Brand color
+ * Returns [Lmin, Lmax] where any Foundation.L in this range will meet contrast requirements
  *
  * Due to how contrast works:
- * - If brand is dark -> valid bases are on the LIGHT side (high L)
- * - If brand is light -> valid bases are on the DARK side (low L)
+ * - If brand is dark -> valid foundations are on the LIGHT side (high L)
+ * - If brand is light -> valid foundations are on the DARK side (low L)
  *
  * The returned range represents the continuous region of valid L values.
  */
-export const getAllowableBaseLRange = (
+export const getAllowableFoundationLRange = (
   brand: Oklch,
   requiredRatio: number = REQUIRED_CONTRAST_RATIO
 ): { min: number; max: number } | null => {
   const brandText = deriveBrandText(brand)
-  const BASE_L_MIN = 0.08
-  const BASE_L_MAX = 0.98
+  const FOUNDATION_L_MIN = 0.08
+  const FOUNDATION_L_MAX = 0.98
 
   // Check contrast at both extremes
-  const baseAtMin: Oklch = { L: BASE_L_MIN, C: 0, H: brand.H }
-  const baseAtMax: Oklch = { L: BASE_L_MAX, C: 0, H: brand.H }
-  const ratioAtMin = contrastRatio(brandText, baseAtMin)
-  const ratioAtMax = contrastRatio(brandText, baseAtMax)
+  const foundationAtMin: Oklch = { L: FOUNDATION_L_MIN, C: 0, H: brand.H }
+  const foundationAtMax: Oklch = { L: FOUNDATION_L_MAX, C: 0, H: brand.H }
+  const ratioAtMin = contrastRatio(brandText, foundationAtMin)
+  const ratioAtMax = contrastRatio(brandText, foundationAtMax)
 
   // Determine which side(s) have valid contrast
   const validAtDarkEnd = ratioAtMin >= requiredRatio
@@ -106,94 +106,94 @@ export const getAllowableBaseLRange = (
   // If brand is dark (low L), valid range is on light side
   // If brand is light (high L), valid range is on dark side
   if (validAtLightEnd && !validAtDarkEnd) {
-    // Valid range is on the LIGHT side: [threshold, BASE_L_MAX]
+    // Valid range is on the LIGHT side: [threshold, FOUNDATION_L_MAX]
     // Binary search for the threshold (lowest L that meets contrast)
-    let low = BASE_L_MIN
-    let high = BASE_L_MAX
+    let low = FOUNDATION_L_MIN
+    let high = FOUNDATION_L_MAX
     for (let i = 0; i < 30; i++) {
       const mid = (low + high) / 2
-      const testBase: Oklch = { L: mid, C: 0, H: brand.H }
-      const ratio = contrastRatio(brandText, testBase)
+      const testFoundation: Oklch = { L: mid, C: 0, H: brand.H }
+      const ratio = contrastRatio(brandText, testFoundation)
       if (ratio >= requiredRatio) {
         high = mid
       } else {
         low = mid
       }
     }
-    return { min: high, max: BASE_L_MAX }
+    return { min: high, max: FOUNDATION_L_MAX }
   }
 
   if (validAtDarkEnd && !validAtLightEnd) {
-    // Valid range is on the DARK side: [BASE_L_MIN, threshold]
+    // Valid range is on the DARK side: [FOUNDATION_L_MIN, threshold]
     // Binary search for the threshold (highest L that meets contrast)
-    let low = BASE_L_MIN
-    let high = BASE_L_MAX
+    let low = FOUNDATION_L_MIN
+    let high = FOUNDATION_L_MAX
     for (let i = 0; i < 30; i++) {
       const mid = (low + high) / 2
-      const testBase: Oklch = { L: mid, C: 0, H: brand.H }
-      const ratio = contrastRatio(brandText, testBase)
+      const testFoundation: Oklch = { L: mid, C: 0, H: brand.H }
+      const ratio = contrastRatio(brandText, testFoundation)
       if (ratio >= requiredRatio) {
         low = mid
       } else {
         high = mid
       }
     }
-    return { min: BASE_L_MIN, max: low }
+    return { min: FOUNDATION_L_MIN, max: low }
   }
 
   // Both ends are valid - this means brand is very close to mid and we have
-  // two separate valid ranges (very dark AND very light bases work)
+  // two separate valid ranges (very dark AND very light foundations work)
   // For simplicity, return the larger range based on brand lightness
   if (brand.L > 0.5) {
-    // Brand is light, prefer dark bases
-    let low = BASE_L_MIN
-    let high = BASE_L_MAX
+    // Brand is light, prefer dark foundations
+    let low = FOUNDATION_L_MIN
+    let high = FOUNDATION_L_MAX
     for (let i = 0; i < 30; i++) {
       const mid = (low + high) / 2
-      const testBase: Oklch = { L: mid, C: 0, H: brand.H }
-      const ratio = contrastRatio(brandText, testBase)
+      const testFoundation: Oklch = { L: mid, C: 0, H: brand.H }
+      const ratio = contrastRatio(brandText, testFoundation)
       if (ratio >= requiredRatio) {
         low = mid
       } else {
         high = mid
       }
     }
-    return { min: BASE_L_MIN, max: low }
+    return { min: FOUNDATION_L_MIN, max: low }
   } else {
-    // Brand is dark, prefer light bases
-    let low = BASE_L_MIN
-    let high = BASE_L_MAX
+    // Brand is dark, prefer light foundations
+    let low = FOUNDATION_L_MIN
+    let high = FOUNDATION_L_MAX
     for (let i = 0; i < 30; i++) {
       const mid = (low + high) / 2
-      const testBase: Oklch = { L: mid, C: 0, H: brand.H }
-      const ratio = contrastRatio(brandText, testBase)
+      const testFoundation: Oklch = { L: mid, C: 0, H: brand.H }
+      const ratio = contrastRatio(brandText, testFoundation)
       if (ratio >= requiredRatio) {
         high = mid
       } else {
         low = mid
       }
     }
-    return { min: high, max: BASE_L_MAX }
+    return { min: high, max: FOUNDATION_L_MAX }
   }
 }
 
 /**
- * Check if a Base L value is within the allowable range for a Brand
+ * Check if a Foundation L value is within the allowable range for a Brand
  */
-export const isBaseLInAllowableRange = (
-  baseL: number,
+export const isFoundationLInAllowableRange = (
+  foundationL: number,
   brand: Oklch,
   requiredRatio: number = REQUIRED_CONTRAST_RATIO
 ): boolean => {
-  const range = getAllowableBaseLRange(brand, requiredRatio)
+  const range = getAllowableFoundationLRange(brand, requiredRatio)
   if (!range) return false
-  return baseL >= range.min && baseL <= range.max
+  return foundationL >= range.min && foundationL <= range.max
 }
 
 export const $ColorPairValidation = {
   requiredContrastRatio: REQUIRED_CONTRAST_RATIO,
   deriveBrandText,
   validate: validateColorPair,
-  getAllowableBaseLRange,
-  isBaseLInAllowableRange,
+  getAllowableFoundationLRange,
+  isFoundationLInAllowableRange,
 }
