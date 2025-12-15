@@ -445,26 +445,63 @@ watch(palette, updateStyles)
       <!-- Primitive Tab -->
       <div v-if="activeTab === 'primitive'" class="tab-content">
         <section class="section">
-          <h2 class="section-heading">Brand Color</h2>
-          <div class="brand-color-display">
-            <div
-              class="brand-color-large"
-              :style="{ backgroundColor: brandColor.hex }"
-            />
-            <div class="brand-color-info">
-              <div class="brand-color-row">
-                <span class="brand-color-label">HEX</span>
-                <code class="brand-color-value">{{ brandColor.hex }}</code>
-              </div>
-              <div class="brand-color-row">
-                <span class="brand-color-label">OKLCH</span>
-                <code class="brand-color-value">{{ brandColor.cssOklch }}</code>
-              </div>
-              <div class="brand-color-row">
-                <span class="brand-color-label">Display-P3</span>
-                <code class="brand-color-value">{{ brandColor.cssP3 }}</code>
+          <div class="color-pair-grid">
+            <!-- Brand Color -->
+            <div class="color-card">
+              <h2 class="section-heading">Brand Color</h2>
+              <div class="color-display">
+                <div
+                  class="color-large"
+                  :style="{ backgroundColor: brandColor.hex }"
+                />
+                <div class="color-info">
+                  <div class="color-row">
+                    <span class="color-label">HEX</span>
+                    <code class="color-value">{{ brandColor.hex }}</code>
+                  </div>
+                  <div class="color-row">
+                    <span class="color-label">OKLCH</span>
+                    <code class="color-value">{{ brandColor.cssOklch }}</code>
+                  </div>
+                  <div class="color-row">
+                    <span class="color-label">Display-P3</span>
+                    <code class="color-value">{{ brandColor.cssP3 }}</code>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <!-- Base Color -->
+            <div class="color-card">
+              <h2 class="section-heading">Base Color</h2>
+              <div class="color-display">
+                <div
+                  class="color-large"
+                  :style="{ backgroundColor: baseColor.hex }"
+                />
+                <div class="color-info">
+                  <div class="color-row">
+                    <span class="color-label">HEX</span>
+                    <code class="color-value">{{ baseColor.hex }}</code>
+                  </div>
+                  <div class="color-row">
+                    <span class="color-label">OKLCH</span>
+                    <code class="color-value">{{ baseColor.css }}</code>
+                  </div>
+                  <div class="color-row">
+                    <span class="color-label">Preset</span>
+                    <code class="color-value">{{ selectedBasePreset.label }}</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contrast Ratio -->
+          <div class="contrast-info" :class="{ warning: !isValidColorPair }">
+            <span class="contrast-label">Contrast Ratio</span>
+            <span class="contrast-value">{{ currentContrastRatio.toFixed(2) }}:1</span>
+            <span v-if="!isValidColorPair" class="contrast-warning">Low contrast</span>
           </div>
         </section>
 
@@ -846,55 +883,140 @@ h1 {
   to { opacity: 1; }
 }
 
-/* Brand Color Display */
-.brand-color-display {
-  display: flex;
+/* Color Pair Grid */
+.color-pair-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.color-card {
+  background: oklch(0.99 0.005 260);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.dark .color-card {
+  background: oklch(0.16 0.02 260);
+}
+
+.color-card .section-heading {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.color-display {
+  display: flex;
+  gap: 1.5rem;
   align-items: flex-start;
 }
 
-.brand-color-large {
-  width: 200px;
-  height: 200px;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+.color-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(128, 128, 128, 0.15);
   flex-shrink: 0;
 }
 
-.brand-color-info {
+.color-info {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding-top: 0.5rem;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
 }
 
-.brand-color-row {
+.color-row {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
-.brand-color-label {
-  font-size: 0.7rem;
+.color-label {
+  font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: oklch(0.50 0.02 260);
 }
 
-.dark .brand-color-label {
+.dark .color-label {
   color: oklch(0.60 0.02 260);
 }
 
-.brand-color-value {
-  font-size: 1rem;
+.color-value {
+  font-size: 0.85rem;
   font-family: 'SF Mono', Monaco, monospace;
   font-weight: 500;
   color: oklch(0.25 0.02 260);
 }
 
-.dark .brand-color-value {
+.dark .color-value {
   color: oklch(0.90 0.01 260);
+}
+
+/* Contrast Info */
+.contrast-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: oklch(0.96 0.01 260);
+  border-radius: 8px;
+  border: 1px solid oklch(0.90 0.01 260);
+}
+
+.dark .contrast-info {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.25 0.02 260);
+}
+
+.contrast-info.warning {
+  background: oklch(0.95 0.05 30);
+  border-color: oklch(0.80 0.12 30);
+}
+
+.dark .contrast-info.warning {
+  background: oklch(0.20 0.05 30);
+  border-color: oklch(0.40 0.12 30);
+}
+
+.contrast-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .contrast-label {
+  color: oklch(0.60 0.02 260);
+}
+
+.contrast-value {
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'SF Mono', Monaco, monospace;
+  color: oklch(0.30 0.02 260);
+}
+
+.dark .contrast-value {
+  color: oklch(0.85 0.01 260);
+}
+
+.contrast-warning {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: oklch(0.45 0.15 30);
+  padding: 0.25rem 0.5rem;
+  background: oklch(0.90 0.08 30);
+  border-radius: 4px;
+}
+
+.dark .contrast-warning {
+  color: oklch(0.80 0.12 30);
+  background: oklch(0.25 0.08 30);
 }
 
 /* Section description */
