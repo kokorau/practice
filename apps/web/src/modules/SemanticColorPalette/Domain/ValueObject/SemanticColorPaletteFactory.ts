@@ -28,7 +28,9 @@ type MutableDeep<T> = {
 
 export type BaseTokensInput = Mutable<BaseTokens>
 
-export type StatefulComponentTokensInput = MutableDeep<StatefulComponentTokens>
+export type StatefulComponentTokensInput = Omit<MutableDeep<StatefulComponentTokens>, 'accent'> & {
+  accent?: Record<ActionState, ColorValue>
+}
 
 export type SemanticColorPaletteInput = {
   context: Record<keyof typeof CONTEXT_NAMES, BaseTokensInput>

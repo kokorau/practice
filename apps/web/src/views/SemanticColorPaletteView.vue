@@ -17,7 +17,7 @@ const paletteEntries = getPaletteEntries()
 const selectedPaletteId = ref(paletteEntries[0]?.id ?? '')
 
 const selectedEntry = computed(() =>
-  paletteEntries.find((e) => e.id === selectedPaletteId.value) ?? paletteEntries[0]
+  paletteEntries.find((e) => e.id === selectedPaletteId.value) ?? paletteEntries[0]!
 )
 const palette = computed(() => selectedEntry.value.palette)
 const isDark = computed(() => selectedPaletteId.value.includes('dark'))

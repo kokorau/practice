@@ -65,7 +65,7 @@ const collectStatelessEntries = (
   const entries: CSSVarEntry[] = []
 
   for (const role of STATELESS_REQUIRED) {
-    entries.push([`${prefix}-${ROLE_CSS_NAMES[role]}`, tokens[role]])
+    entries.push([`${prefix}-${ROLE_CSS_NAMES[role]}`, tokens[role] as ColorValue])
   }
 
   for (const role of STATELESS_OPTIONAL) {
