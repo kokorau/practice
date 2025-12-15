@@ -721,12 +721,12 @@ watch(palette, updateStyles)
           </div>
         </div>
 
-        <!-- Stateful action components (on Canvas) -->
+        <!-- Stateful action components (on CardFlat) -->
         <div
           v-for="action in actions"
           :key="action.name"
           class="component-card action-component"
-          :class="CONTEXT_CLASS_NAMES.canvas"
+          :class="COMPONENT_CLASS_NAMES.cardFlat"
         >
           <h3 class="component-title scp-title">{{ action.label }}</h3>
           <span class="component-badge scp-meta">Stateful</span>
