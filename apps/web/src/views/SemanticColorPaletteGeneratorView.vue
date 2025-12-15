@@ -1348,18 +1348,15 @@ h1 {
   font-family: 'SF Mono', Monaco, monospace;
   font-weight: 600;
   padding: 0.125rem 0.375rem;
-  background: oklch(0.92 0.01 260);
+  background: color-mix(in oklch, var(--border) 30%, transparent);
   border-radius: 4px;
-  color: oklch(0.35 0.02 260);
-}
-
-.dark .token-ref {
-  background: oklch(0.22 0.02 260);
-  color: oklch(0.75 0.02 260);
+  color: var(--meta);
 }
 
 .preview-section {
-  border-top: 1px solid rgba(128,128,128,0.15);
+  border-top-width: 1px;
+  border-top-style: solid;
+  /* border-color is set by .scp-divider via var(--divider) */
   padding-top: 1rem;
   margin-top: 0.5rem;
   display: flex;
@@ -1416,11 +1413,7 @@ h1 {
   margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
-  color: oklch(0.25 0.02 260);
-}
-
-.dark .component-title {
-  color: oklch(0.90 0.01 260);
+  /* color is set by .scp-title via var(--title) */
 }
 
 .component-badge {
@@ -1428,12 +1421,8 @@ h1 {
   font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: oklch(0.50 0.02 260);
   margin-bottom: 0.75rem;
-}
-
-.dark .component-badge {
-  color: oklch(0.60 0.02 260);
+  /* color is set by .scp-meta via var(--meta) */
 }
 
 /* Action component specific */
