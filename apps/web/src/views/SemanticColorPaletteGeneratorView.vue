@@ -15,10 +15,10 @@ import {
   $ColorPairValidation,
 } from '../modules/SemanticColorPalette/Domain'
 import {
-  getPaletteEntries,
   toCSSText,
   toCSSRuleSetsText,
   createPrimitivePalette,
+  createSemanticFromPrimitive,
 } from '../modules/SemanticColorPalette/Infra'
 
 // ============================================================
@@ -243,14 +243,18 @@ const foundationRampDisplay = computed(() => {
   }))
 })
 
-const paletteEntries = getPaletteEntries()
-const selectedPaletteId = ref(paletteEntries[0]?.id ?? '')
+// ============================================================
+// Generated Semantic Palette from Primitive
+// ============================================================
 
-const selectedEntry = computed(() =>
-  paletteEntries.find((e) => e.id === selectedPaletteId.value) ?? paletteEntries[0]!
-)
-const palette = computed(() => selectedEntry.value.palette)
-const isDark = computed(() => selectedPaletteId.value.includes('dark'))
+// Generate SemanticColorPalette from primitivePalette
+const generatedPalette = computed(() => createSemanticFromPrimitive(primitivePalette.value))
+
+// Use generated palette for preview
+const palette = computed(() => generatedPalette.value)
+
+// Determine dark mode based on foundation lightness
+const isDark = computed(() => foundationColor.value.oklch.L <= 0.5)
 
 // Context surfaces with CSS class names
 const contexts = computed(() => [

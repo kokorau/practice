@@ -30,3 +30,5 @@ export {
   type FoundationRampParams,
   type PrimitivePaletteParams,
 } from './PrimitivePaletteFactory'
+
+export { createSemanticFromPrimitive } from './SemanticPaletteFromPrimitive'
