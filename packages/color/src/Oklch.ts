@@ -170,4 +170,11 @@ export const $Oklch = {
     const p3 = $Oklch.toDisplayP3Clipped(oklch)
     return `color(display-p3 ${p3.r.toFixed(4)} ${p3.g.toFixed(4)} ${p3.b.toFixed(4)})`
   },
+
+  /**
+   * Convert Oklch to CSS oklch() string
+   */
+  toCss: (oklch: Oklch): string => {
+    return `oklch(${(oklch.L * 100).toFixed(1)}% ${oklch.C.toFixed(4)} ${oklch.H.toFixed(1)})`
+  },
 }

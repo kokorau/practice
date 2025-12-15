@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { $Oklch } from '@practice/color'
 import {
   type ContextTokens,
   type ComponentTokens,
   type ActionState,
+  type PrimitivePalette,
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
+  NEUTRAL_KEYS,
+  PRIMITIVE_KEYS,
 } from '../modules/SemanticColorPalette/Domain'
 import {
   getPaletteEntries,
   toCSSText,
   toCSSRuleSetsText,
+  createPrimitivePalette,
 } from '../modules/SemanticColorPalette/Infra'
 
 // HSV Color Picker state
@@ -103,85 +108,34 @@ const tabs: { id: TabId; label: string }[] = [
   { id: 'palette', label: 'Palette Preview' },
 ]
 
-// Convert RGB to OKLCH
-const rgbToOklch = (r: number, g: number, b: number): { l: number; c: number; h: number } => {
-  // Normalize RGB to 0-1
-  const rLin = r / 255
-  const gLin = g / 255
-  const bLin = b / 255
-
-  // sRGB to linear
-  const toLinear = (c: number) => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
-  const rL = toLinear(rLin)
-  const gL = toLinear(gLin)
-  const bL = toLinear(bLin)
-
-  // Linear RGB to OKLab
-  const l_ = 0.4122214708 * rL + 0.5363325363 * gL + 0.0514459929 * bL
-  const m_ = 0.2119034982 * rL + 0.6806995451 * gL + 0.1073969566 * bL
-  const s_ = 0.0883024619 * rL + 0.2817188376 * gL + 0.6299787005 * bL
-
-  const l_3 = Math.cbrt(l_)
-  const m_3 = Math.cbrt(m_)
-  const s_3 = Math.cbrt(s_)
-
-  const L = 0.2104542553 * l_3 + 0.7936177850 * m_3 - 0.0040720468 * s_3
-  const a = 1.9779984951 * l_3 - 2.4285922050 * m_3 + 0.4505937099 * s_3
-  const bOk = 0.0259040371 * l_3 + 0.7827717662 * m_3 - 0.8086757660 * s_3
-
-  // OKLab to OKLCH
-  const C = Math.sqrt(a * a + bOk * bOk)
-  let H = Math.atan2(bOk, a) * 180 / Math.PI
-  if (H < 0) H += 360
-
-  return { l: L, c: C, h: H }
-}
-
-// Convert RGB to Display-P3
-const rgbToDisplayP3 = (r: number, g: number, b: number): { r: number; g: number; b: number } => {
-  // sRGB to linear
-  const toLinear = (c: number) => {
-    c = c / 255
-    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
-  }
-
-  const rL = toLinear(r)
-  const gL = toLinear(g)
-  const bL = toLinear(b)
-
-  // sRGB linear to XYZ D65
-  const x = 0.4124564 * rL + 0.3575761 * gL + 0.1804375 * bL
-  const y = 0.2126729 * rL + 0.7151522 * gL + 0.0721750 * bL
-  const z = 0.0193339 * rL + 0.1191920 * gL + 0.9503041 * bL
-
-  // XYZ to Display-P3 linear
-  const rP3L =  2.4934969 * x - 0.9313836 * y - 0.4027108 * z
-  const gP3L = -0.8294890 * x + 1.7626641 * y + 0.0236247 * z
-  const bP3L =  0.0358458 * x - 0.0761724 * y + 0.9568845 * z
-
-  // Linear to gamma (Display-P3 uses same gamma as sRGB)
-  const toGamma = (c: number) => {
-    c = Math.max(0, Math.min(1, c))
-    return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055
-  }
-
-  return {
-    r: toGamma(rP3L),
-    g: toGamma(gP3L),
-    b: toGamma(bP3L),
-  }
-}
-
-// Brand color computed (alias for clarity)
+// Brand color computed
 const brandColor = computed(() => {
-  const rgb = selectedRgb.value
-  const oklch = rgbToOklch(...rgb)
-  const p3 = rgbToDisplayP3(...rgb)
+  const [r, g, b] = selectedRgb.value
+  const oklch = $Oklch.fromSrgb({ r: r / 255, g: g / 255, b: b / 255 })
   return {
     hex: selectedHex.value,
     oklch,
-    displayP3: p3,
+    cssOklch: $Oklch.toCss(oklch),
+    cssP3: $Oklch.toCssP3(oklch),
   }
+})
+
+// ============================================================
+// Primitive Palette Generation
+// ============================================================
+
+// Generate PrimitivePalette from brand color (uses default params)
+const primitivePalette = computed((): PrimitivePalette => {
+  return createPrimitivePalette({ brand: brandColor.value.oklch })
+})
+
+// Neutral ramp for display (extracted from primitivePalette)
+const neutralRampDisplay = computed(() => {
+  return NEUTRAL_KEYS.map((key) => ({
+    key,
+    color: primitivePalette.value[key],
+    css: $Oklch.toCss(primitivePalette.value[key]),
+  }))
 })
 
 const paletteEntries = getPaletteEntries()
@@ -341,12 +295,52 @@ watch(palette, updateStyles)
               </div>
               <div class="brand-color-row">
                 <span class="brand-color-label">OKLCH</span>
-                <code class="brand-color-value">oklch({{ (brandColor.oklch.l * 100).toFixed(1) }}% {{ brandColor.oklch.c.toFixed(3) }} {{ brandColor.oklch.h.toFixed(1) }})</code>
+                <code class="brand-color-value">{{ brandColor.cssOklch }}</code>
               </div>
               <div class="brand-color-row">
                 <span class="brand-color-label">Display-P3</span>
-                <code class="brand-color-value">color(display-p3 {{ brandColor.displayP3.r.toFixed(3) }} {{ brandColor.displayP3.g.toFixed(3) }} {{ brandColor.displayP3.b.toFixed(3) }})</code>
+                <code class="brand-color-value">{{ brandColor.cssP3 }}</code>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-heading">Neutral Ramp (Light Theme)</h2>
+          <p class="section-description">
+            Brand hue with minimal chroma ({{ primitivePalette.N0.C.toFixed(4) }}) for cohesive grayscale
+          </p>
+          <div class="neutral-ramp">
+            <div
+              v-for="step in neutralRampDisplay"
+              :key="step.key"
+              class="neutral-step"
+            >
+              <div
+                class="neutral-swatch"
+                :style="{ backgroundColor: step.css }"
+              />
+              <div class="neutral-info">
+                <span class="neutral-index">{{ step.key }}</span>
+                <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-heading">Primitive Palette</h2>
+          <div class="primitive-palette-grid">
+            <div
+              v-for="key in PRIMITIVE_KEYS"
+              :key="key"
+              class="primitive-item"
+            >
+              <div
+                class="primitive-swatch"
+                :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+              />
+              <span class="primitive-key">{{ key }}</span>
             </div>
           </div>
         </section>
@@ -738,6 +732,98 @@ h1 {
 
 .dark .brand-color-value {
   color: oklch(0.90 0.01 260);
+}
+
+/* Section description */
+.section-description {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .section-description {
+  color: oklch(0.60 0.02 260);
+}
+
+/* Neutral Ramp */
+.neutral-ramp {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.neutral-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.neutral-swatch {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+.neutral-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.neutral-index {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.35 0.02 260);
+}
+
+.dark .neutral-index {
+  color: oklch(0.75 0.02 260);
+}
+
+.neutral-l {
+  font-size: 0.65rem;
+  font-family: 'SF Mono', Monaco, monospace;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .neutral-l {
+  color: oklch(0.60 0.02 260);
+}
+
+/* Primitive Palette Grid */
+.primitive-palette-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.primitive-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.primitive-swatch {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+.primitive-key {
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: 'SF Mono', Monaco, monospace;
+  color: oklch(0.40 0.02 260);
+}
+
+.dark .primitive-key {
+  color: oklch(0.70 0.02 260);
 }
 
 .section {

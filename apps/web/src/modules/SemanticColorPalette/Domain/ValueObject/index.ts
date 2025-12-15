@@ -18,6 +18,15 @@ export type {
 export { $SemanticColorPalette } from './SemanticColorPalette'
 
 export type {
+  NeutralKey,
+  BrandKey,
+  PrimitiveKey,
+  PrimitivePalette,
+} from './PrimitivePalette'
+
+export { NEUTRAL_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
+
+export type {
   ContextName,
   ComponentName,
   StatefulComponentName,
