@@ -841,9 +841,9 @@ watch(palette, updateStyles)
               <div class="demo-feature-card" :class="COMPONENT_CLASS_NAMES.card">
                 <div class="demo-feature-visual">
                   <svg viewBox="0 0 120 80" class="demo-feature-svg">
-                    <circle cx="30" cy="40" r="25" :fill="'var(--link)'" opacity="0.8" />
-                    <circle cx="60" cy="40" r="25" :fill="'var(--link)'" opacity="0.5" />
-                    <circle cx="90" cy="40" r="25" :fill="'var(--link)'" opacity="0.2" />
+                    <circle cx="30" cy="40" r="25" :fill="'var(--link-text)'" opacity="0.8" />
+                    <circle cx="60" cy="40" r="25" :fill="'var(--link-text)'" opacity="0.5" />
+                    <circle cx="90" cy="40" r="25" :fill="'var(--link-text)'" opacity="0.2" />
                   </svg>
                 </div>
                 <h3 class="demo-feature-title scp-title">OKLCH Colors</h3>
@@ -853,8 +853,8 @@ watch(palette, updateStyles)
                 <div class="demo-feature-visual">
                   <svg viewBox="0 0 120 80" class="demo-feature-svg">
                     <rect x="10" y="20" width="40" height="40" rx="4" :fill="'var(--title)'" opacity="0.2" />
-                    <rect x="35" y="20" width="40" height="40" rx="4" :fill="'var(--link)'" opacity="0.6" />
-                    <path d="M85 25 L105 40 L85 55" :stroke="'var(--link)'" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <rect x="35" y="20" width="40" height="40" rx="4" :fill="'var(--link-text)'" opacity="0.6" />
+                    <path d="M85 25 L105 40 L85 55" :stroke="'var(--link-text)'" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </div>
                 <h3 class="demo-feature-title scp-title">Auto Contrast</h3>
@@ -863,8 +863,8 @@ watch(palette, updateStyles)
               <div class="demo-feature-card" :class="COMPONENT_CLASS_NAMES.card">
                 <div class="demo-feature-visual">
                   <svg viewBox="0 0 120 80" class="demo-feature-svg">
-                    <circle cx="40" cy="40" r="28" :fill="'var(--link)'" opacity="0.15" />
-                    <path d="M40 12 L40 40 L60 40" :stroke="'var(--link)'" stroke-width="3" fill="none" stroke-linecap="round" />
+                    <circle cx="40" cy="40" r="28" :fill="'var(--link-text)'" opacity="0.15" />
+                    <path d="M40 12 L40 40 L60 40" :stroke="'var(--link-text)'" stroke-width="3" fill="none" stroke-linecap="round" />
                     <circle cx="80" cy="40" r="28" :fill="'var(--title)'" opacity="0.15" />
                     <path d="M80 12 L80 40 L100 40" :stroke="'var(--title)'" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6" />
                   </svg>
@@ -2016,7 +2016,7 @@ h1 {
   align-items: center;
   gap: 0.5rem;
   padding: 0.375rem 0.75rem;
-  background: color-mix(in oklch, var(--link) 15%, transparent);
+  background: color-mix(in oklch, var(--link-text) 15%, transparent);
   border-radius: 9999px;
   font-size: 0.7rem;
   font-weight: 600;
@@ -2026,7 +2026,7 @@ h1 {
 .demo-hero-badge-dot {
   width: 6px;
   height: 6px;
-  background: var(--link);
+  background: var(--link-text);
   border-radius: 50%;
   animation: pulse 2s infinite;
 }
@@ -2106,7 +2106,7 @@ h1 {
   inset: -20px;
   background: radial-gradient(
     circle at 50% 50%,
-    color-mix(in oklch, var(--link) 30%, transparent) 0%,
+    color-mix(in oklch, var(--title) 25%, transparent) 0%,
     transparent 70%
   );
   filter: blur(30px);
@@ -2123,8 +2123,8 @@ h1 {
   position: absolute;
   inset: 10px;
   background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    linear-gradient(color-mix(in oklch, var(--title) 20%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklch, var(--title) 20%, transparent) 1px, transparent 1px);
   background-size: 20px 20px;
   opacity: 0.5;
   mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 70%);
@@ -2148,8 +2148,8 @@ h1 {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, var(--link) 0%, color-mix(in oklch, var(--link) 60%, var(--title)) 100%);
-  box-shadow: 0 25px 50px color-mix(in oklch, var(--link) 40%, transparent);
+  background: linear-gradient(135deg, var(--title) 0%, color-mix(in oklch, var(--title) 60%, var(--surface)) 100%);
+  box-shadow: 0 25px 50px color-mix(in oklch, var(--title) 30%, transparent);
 }
 
 .demo-shape-2 {
@@ -2157,7 +2157,7 @@ h1 {
   height: 60px;
   top: 10%;
   left: 8%;
-  background: var(--link);
+  background: color-mix(in oklch, var(--title) 80%, var(--surface));
   opacity: 0.6;
   animation: float1 6s ease-in-out infinite;
 }
@@ -2167,8 +2167,8 @@ h1 {
   height: 40px;
   top: 15%;
   right: 12%;
-  background: var(--title);
-  opacity: 0.3;
+  background: color-mix(in oklch, var(--title) 50%, var(--surface));
+  opacity: 0.4;
   animation: float2 5s ease-in-out infinite;
 }
 
@@ -2177,8 +2177,8 @@ h1 {
   height: 25px;
   bottom: 20%;
   left: 12%;
-  background: var(--link);
-  opacity: 0.4;
+  background: color-mix(in oklch, var(--title) 60%, var(--surface));
+  opacity: 0.5;
   animation: float3 7s ease-in-out infinite;
 }
 
@@ -2187,7 +2187,7 @@ h1 {
   height: 50px;
   bottom: 10%;
   right: 8%;
-  background: linear-gradient(45deg, var(--link), var(--title));
+  background: linear-gradient(45deg, var(--title), color-mix(in oklch, var(--title) 40%, var(--surface)));
   opacity: 0.5;
   animation: float1 8s ease-in-out infinite reverse;
 }
@@ -2213,9 +2213,9 @@ h1 {
   position: absolute;
   top: 50%;
   left: 50%;
-  border: 1px solid var(--link);
+  border: 1px solid var(--title);
   border-radius: 50%;
-  opacity: 0.3;
+  opacity: 0.25;
 }
 
 .demo-hero-ring-1 {
@@ -2250,13 +2250,13 @@ h1 {
   border-radius: 50%;
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, var(--surface) 80%, var(--link)) 0%,
-    color-mix(in oklch, var(--surface) 60%, var(--link)) 100%
+    color-mix(in oklch, var(--surface) 85%, var(--title)) 0%,
+    color-mix(in oklch, var(--surface) 70%, var(--title)) 100%
   );
-  border: 1px solid color-mix(in oklch, var(--link) 30%, transparent);
+  border: 1px solid color-mix(in oklch, var(--title) 25%, transparent);
   box-shadow:
-    inset 0 -20px 40px color-mix(in oklch, var(--link) 20%, transparent),
-    0 10px 30px color-mix(in oklch, var(--link) 30%, transparent);
+    inset 0 -20px 40px color-mix(in oklch, var(--title) 15%, transparent),
+    0 10px 30px color-mix(in oklch, var(--title) 20%, transparent);
 }
 
 .demo-hero-orb::before {
@@ -2373,7 +2373,7 @@ h1 {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: color-mix(in oklch, var(--link) 15%, transparent);
+  background: color-mix(in oklch, var(--link-text) 15%, transparent);
   font-size: 1rem;
   font-weight: 700;
   margin-bottom: 1rem;
@@ -2396,7 +2396,7 @@ h1 {
   flex: 0 0 40px;
   height: 2px;
   margin-top: 20px;
-  background: linear-gradient(90deg, var(--border), var(--link), var(--border));
+  background: linear-gradient(90deg, var(--border), var(--link-text), var(--border));
   opacity: 0.5;
 }
 
@@ -2433,7 +2433,7 @@ h1 {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--link), var(--title));
+  background: linear-gradient(135deg, var(--title), color-mix(in oklch, var(--title) 50%, var(--surface)));
   opacity: 0.6;
 }
 
@@ -2480,7 +2480,7 @@ h1 {
 }
 
 .demo-pricing-featured {
-  border: 2px solid var(--link);
+  border: 2px solid var(--link-text);
 }
 
 .demo-pricing-badge {
@@ -2489,7 +2489,7 @@ h1 {
   left: 50%;
   transform: translateX(-50%);
   padding: 0.25rem 0.75rem;
-  background: var(--link);
+  background: var(--link-text);
   color: var(--surface);
   border-radius: 9999px;
   font-size: 0.65rem;
@@ -2647,7 +2647,7 @@ h1 {
 
 .demo-cta-input:focus {
   outline: none;
-  border-color: var(--link);
+  border-color: var(--link-text);
 }
 
 .demo-cta-form button {
