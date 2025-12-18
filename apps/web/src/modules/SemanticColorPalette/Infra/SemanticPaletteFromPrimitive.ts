@@ -150,16 +150,19 @@ const SURFACE_KEYS_DARK: SurfaceKeys = {
 // Token Builders
 // ============================================================================
 
-// Build base tokens (surface + ink) with contrast-based ink selection
+// Build base tokens (surface + ink) with APCA-based ink selection
+// Uses surface lightness (not global theme) for search direction
 const buildBaseTokens = (
   p: PrimitivePalette,
   surfaceKey: PrimitiveKey,
-  isLight: boolean
+  _isLight: boolean  // Kept for API compatibility, but not used for ink selection
 ) => {
   const surface = p[surfaceKey]
+  // Use surface's actual lightness to determine search direction
+  const surfaceIsLight = surface.L > 0.5
   return {
     surface: css(surface),
-    ink: buildInkForSurface(p, surface, isLight),
+    ink: buildInkForSurface(p, surface, surfaceIsLight),
   }
 }
 
@@ -382,16 +385,17 @@ const buildInkRefsForSurface = (
   }
 }
 
-// Helper: Build base token refs
+// Helper: Build base token refs (uses surface lightness for search direction)
 const buildBaseTokenRefs = (
   p: PrimitivePalette,
   surfaceKey: PrimitiveKey,
-  isLight: boolean
+  _isLight: boolean  // Kept for API compatibility
 ): BaseTokenRefs => {
   const surface = p[surfaceKey]
+  const surfaceIsLight = surface.L > 0.5
   return {
     surface: surfaceKey,
-    ink: buildInkRefsForSurface(p, surface, isLight),
+    ink: buildInkRefsForSurface(p, surface, surfaceIsLight),
   }
 }
 
