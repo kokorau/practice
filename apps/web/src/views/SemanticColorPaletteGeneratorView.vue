@@ -1092,7 +1092,7 @@ watch(palette, updateStyles)
 <style scoped>
 .semantic-color-palette-generator {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   box-sizing: border-box;
   font-family: system-ui, -apple-system, sans-serif;
   background: oklch(0.97 0.005 260);
@@ -1110,6 +1110,7 @@ watch(palette, updateStyles)
   padding: 1.5rem 1rem;
   background: oklch(0.94 0.01 260);
   border-right: 1px solid oklch(0.88 0.01 260);
+  overflow-y: auto;
 }
 
 .dark .palette-sidebar {
