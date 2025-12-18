@@ -184,12 +184,13 @@ const handleMouseUp = () => {
 }
 
 // Tab state
-type TabId = 'primitive' | 'palette'
+type TabId = 'primitive' | 'palette' | 'demo'
 const activeTab = ref<TabId>('primitive')
 
 const tabs: { id: TabId; label: string }[] = [
   { id: 'primitive', label: 'Primitive' },
   { id: 'palette', label: 'Palette Preview' },
+  { id: 'demo', label: 'Demo' },
 ]
 
 // Brand color computed
@@ -760,6 +761,329 @@ watch(palette, updateStyles)
         </div>
       </div>
     </section>
+      </div>
+
+      <!-- Demo Tab -->
+      <div v-if="activeTab === 'demo'" class="tab-content">
+        <div class="demo-page" :class="CONTEXT_CLASS_NAMES.canvas">
+          <!-- Header -->
+          <header class="demo-header" :class="CONTEXT_CLASS_NAMES.canvas">
+            <div class="demo-header-inner">
+              <div class="demo-logo scp-title">PaletteGen</div>
+              <nav class="demo-nav">
+                <a href="#" class="demo-nav-link scp-body" @click.prevent>Features</a>
+                <a href="#" class="demo-nav-link scp-body" @click.prevent>Pricing</a>
+                <a href="#" class="demo-nav-link scp-body" @click.prevent>Docs</a>
+              </nav>
+              <div class="demo-header-actions">
+                <button :class="COMPONENT_CLASS_NAMES.actionQuiet">Log in</button>
+                <button :class="COMPONENT_CLASS_NAMES.action">Sign up</button>
+              </div>
+            </div>
+          </header>
+
+          <!-- Hero Section -->
+          <section class="demo-hero" :class="CONTEXT_CLASS_NAMES.sectionTint">
+            <div class="demo-hero-content">
+              <span class="demo-hero-badge scp-meta">
+                <span class="demo-hero-badge-dot" />
+                Now in Public Beta
+              </span>
+              <h1 class="demo-hero-title scp-title">
+                Design with<br />
+                <span class="demo-hero-highlight scp-link">Perfect Colors</span>
+              </h1>
+              <p class="demo-hero-subtitle scp-body">
+                Create beautiful, accessible color palettes for your next project. Powered by OKLCH for perceptually uniform results.
+              </p>
+              <div class="demo-hero-actions">
+                <button :class="COMPONENT_CLASS_NAMES.action">Start Free</button>
+                <button :class="COMPONENT_CLASS_NAMES.actionQuiet">
+                  <span class="demo-play-icon">&#9654;</span>
+                  Watch Demo
+                </button>
+              </div>
+              <div class="demo-hero-stats">
+                <div class="demo-hero-stat">
+                  <span class="demo-hero-stat-value scp-title">10K+</span>
+                  <span class="demo-hero-stat-label scp-meta">Designers</span>
+                </div>
+                <div class="demo-hero-stat">
+                  <span class="demo-hero-stat-value scp-title">50K+</span>
+                  <span class="demo-hero-stat-label scp-meta">Palettes</span>
+                </div>
+                <div class="demo-hero-stat">
+                  <span class="demo-hero-stat-value scp-title">4.9</span>
+                  <span class="demo-hero-stat-label scp-meta">Rating</span>
+                </div>
+              </div>
+            </div>
+            <div class="demo-hero-visual">
+              <div class="demo-hero-glow" />
+              <div class="demo-hero-grid" />
+              <div class="demo-hero-shapes">
+                <div class="demo-shape demo-shape-1" />
+                <div class="demo-shape demo-shape-2" />
+                <div class="demo-shape demo-shape-3" />
+                <div class="demo-shape demo-shape-4" />
+                <div class="demo-shape demo-shape-5" />
+              </div>
+              <div class="demo-hero-ring demo-hero-ring-1" />
+              <div class="demo-hero-ring demo-hero-ring-2" />
+              <div class="demo-hero-orb" />
+            </div>
+          </section>
+
+          <!-- Features Section -->
+          <section class="demo-features" :class="CONTEXT_CLASS_NAMES.canvas">
+            <h2 class="demo-section-title scp-title">Features</h2>
+            <div class="demo-features-grid">
+              <div class="demo-feature-card" :class="COMPONENT_CLASS_NAMES.card">
+                <div class="demo-feature-visual">
+                  <svg viewBox="0 0 120 80" class="demo-feature-svg">
+                    <circle cx="30" cy="40" r="25" :fill="'var(--link)'" opacity="0.8" />
+                    <circle cx="60" cy="40" r="25" :fill="'var(--link)'" opacity="0.5" />
+                    <circle cx="90" cy="40" r="25" :fill="'var(--link)'" opacity="0.2" />
+                  </svg>
+                </div>
+                <h3 class="demo-feature-title scp-title">OKLCH Colors</h3>
+                <p class="demo-feature-desc scp-body">Perceptually uniform color space for consistent results.</p>
+              </div>
+              <div class="demo-feature-card" :class="COMPONENT_CLASS_NAMES.card">
+                <div class="demo-feature-visual">
+                  <svg viewBox="0 0 120 80" class="demo-feature-svg">
+                    <rect x="10" y="20" width="40" height="40" rx="4" :fill="'var(--title)'" opacity="0.2" />
+                    <rect x="35" y="20" width="40" height="40" rx="4" :fill="'var(--link)'" opacity="0.6" />
+                    <path d="M85 25 L105 40 L85 55" :stroke="'var(--link)'" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <h3 class="demo-feature-title scp-title">Auto Contrast</h3>
+                <p class="demo-feature-desc scp-body">Automatically ensures accessible contrast ratios.</p>
+              </div>
+              <div class="demo-feature-card" :class="COMPONENT_CLASS_NAMES.card">
+                <div class="demo-feature-visual">
+                  <svg viewBox="0 0 120 80" class="demo-feature-svg">
+                    <circle cx="40" cy="40" r="28" :fill="'var(--link)'" opacity="0.15" />
+                    <path d="M40 12 L40 40 L60 40" :stroke="'var(--link)'" stroke-width="3" fill="none" stroke-linecap="round" />
+                    <circle cx="80" cy="40" r="28" :fill="'var(--title)'" opacity="0.15" />
+                    <path d="M80 12 L80 40 L100 40" :stroke="'var(--title)'" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6" />
+                  </svg>
+                </div>
+                <h3 class="demo-feature-title scp-title">Light & Dark</h3>
+                <p class="demo-feature-desc scp-body">Seamless theme switching built right in.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Logos Section -->
+          <section class="demo-logos" :class="CONTEXT_CLASS_NAMES.sectionNeutral">
+            <p class="demo-logos-label scp-meta">Trusted by teams at</p>
+            <div class="demo-logos-grid">
+              <div class="demo-logo-item scp-title">Acme Inc</div>
+              <div class="demo-logo-item scp-title">Globex</div>
+              <div class="demo-logo-item scp-title">Stark</div>
+              <div class="demo-logo-item scp-title">Wayne</div>
+              <div class="demo-logo-item scp-title">Umbrella</div>
+            </div>
+          </section>
+
+          <!-- How it works Section -->
+          <section class="demo-how" :class="CONTEXT_CLASS_NAMES.canvas">
+            <h2 class="demo-section-title scp-title">How it works</h2>
+            <div class="demo-how-steps">
+              <div class="demo-how-step">
+                <div class="demo-how-number scp-link">1</div>
+                <h3 class="demo-how-title scp-title">Pick a brand color</h3>
+                <p class="demo-how-desc scp-body">Choose your primary brand color using our intuitive color picker.</p>
+              </div>
+              <div class="demo-how-connector" />
+              <div class="demo-how-step">
+                <div class="demo-how-number scp-link">2</div>
+                <h3 class="demo-how-title scp-title">Adjust parameters</h3>
+                <p class="demo-how-desc scp-body">Fine-tune lightness, chroma, and contrast to match your vision.</p>
+              </div>
+              <div class="demo-how-connector" />
+              <div class="demo-how-step">
+                <div class="demo-how-number scp-link">3</div>
+                <h3 class="demo-how-title scp-title">Export & use</h3>
+                <p class="demo-how-desc scp-body">Export as CSS variables, Tailwind config, or design tokens.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Testimonials Section -->
+          <section class="demo-testimonials" :class="CONTEXT_CLASS_NAMES.sectionTint">
+            <h2 class="demo-section-title scp-title">What people are saying</h2>
+            <div class="demo-testimonials-grid">
+              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.card">
+                <p class="demo-testimonial-text scp-body">"Finally, a color tool that understands accessibility. The auto-contrast feature alone saves us hours every week."</p>
+                <div class="demo-testimonial-author">
+                  <div class="demo-testimonial-avatar" />
+                  <div class="demo-testimonial-info">
+                    <span class="demo-testimonial-name scp-title">Sarah Chen</span>
+                    <span class="demo-testimonial-role scp-meta">Design Lead, Figma</span>
+                  </div>
+                </div>
+              </div>
+              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.card">
+                <p class="demo-testimonial-text scp-body">"We switched from HSL to OKLCH thanks to this tool. The perceptual uniformity makes such a difference."</p>
+                <div class="demo-testimonial-author">
+                  <div class="demo-testimonial-avatar" />
+                  <div class="demo-testimonial-info">
+                    <span class="demo-testimonial-name scp-title">Marcus Johnson</span>
+                    <span class="demo-testimonial-role scp-meta">Senior Engineer, Vercel</span>
+                  </div>
+                </div>
+              </div>
+              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.card">
+                <p class="demo-testimonial-text scp-body">"The best palette generator I've used. Dark mode support out of the box is a game changer."</p>
+                <div class="demo-testimonial-author">
+                  <div class="demo-testimonial-avatar" />
+                  <div class="demo-testimonial-info">
+                    <span class="demo-testimonial-name scp-title">Emily Park</span>
+                    <span class="demo-testimonial-role scp-meta">Product Designer, Linear</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Pricing Section -->
+          <section class="demo-pricing" :class="CONTEXT_CLASS_NAMES.canvas">
+            <h2 class="demo-section-title scp-title">Simple pricing</h2>
+            <p class="demo-pricing-subtitle scp-body">Start free, upgrade when you need more.</p>
+            <div class="demo-pricing-grid">
+              <div class="demo-pricing-card" :class="COMPONENT_CLASS_NAMES.card">
+                <h3 class="demo-pricing-name scp-title">Free</h3>
+                <div class="demo-pricing-price">
+                  <span class="demo-pricing-amount scp-title">$0</span>
+                  <span class="demo-pricing-period scp-meta">/month</span>
+                </div>
+                <ul class="demo-pricing-features">
+                  <li class="scp-body">5 palettes</li>
+                  <li class="scp-body">CSS export</li>
+                  <li class="scp-body">Basic support</li>
+                </ul>
+                <button :class="COMPONENT_CLASS_NAMES.actionQuiet">Get Started</button>
+              </div>
+              <div class="demo-pricing-card demo-pricing-featured" :class="COMPONENT_CLASS_NAMES.card">
+                <span class="demo-pricing-badge scp-meta">Popular</span>
+                <h3 class="demo-pricing-name scp-title">Pro</h3>
+                <div class="demo-pricing-price">
+                  <span class="demo-pricing-amount scp-title">$12</span>
+                  <span class="demo-pricing-period scp-meta">/month</span>
+                </div>
+                <ul class="demo-pricing-features">
+                  <li class="scp-body">Unlimited palettes</li>
+                  <li class="scp-body">All export formats</li>
+                  <li class="scp-body">Team sharing</li>
+                  <li class="scp-body">Priority support</li>
+                </ul>
+                <button :class="COMPONENT_CLASS_NAMES.action">Start Free Trial</button>
+              </div>
+              <div class="demo-pricing-card" :class="COMPONENT_CLASS_NAMES.card">
+                <h3 class="demo-pricing-name scp-title">Enterprise</h3>
+                <div class="demo-pricing-price">
+                  <span class="demo-pricing-amount scp-title">Custom</span>
+                </div>
+                <ul class="demo-pricing-features">
+                  <li class="scp-body">Everything in Pro</li>
+                  <li class="scp-body">SSO & SAML</li>
+                  <li class="scp-body">Dedicated support</li>
+                  <li class="scp-body">Custom integrations</li>
+                </ul>
+                <button :class="COMPONENT_CLASS_NAMES.actionQuiet">Contact Sales</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- FAQ Section -->
+          <section class="demo-faq" :class="CONTEXT_CLASS_NAMES.sectionNeutral">
+            <h2 class="demo-section-title scp-title">Frequently asked questions</h2>
+            <div class="demo-faq-list">
+              <details class="demo-faq-item" :class="COMPONENT_CLASS_NAMES.cardFlat">
+                <summary class="demo-faq-question scp-title">What is OKLCH and why should I use it?</summary>
+                <p class="demo-faq-answer scp-body">OKLCH is a perceptually uniform color space. Unlike HSL, colors with the same lightness value actually appear equally bright to human eyes, making it ideal for creating consistent design systems.</p>
+              </details>
+              <details class="demo-faq-item" :class="COMPONENT_CLASS_NAMES.cardFlat">
+                <summary class="demo-faq-question scp-title">Can I export to Tailwind CSS?</summary>
+                <p class="demo-faq-answer scp-body">Yes! Pro users can export palettes directly to Tailwind config format, including CSS variables and theme extensions.</p>
+              </details>
+              <details class="demo-faq-item" :class="COMPONENT_CLASS_NAMES.cardFlat">
+                <summary class="demo-faq-question scp-title">How does auto-contrast work?</summary>
+                <p class="demo-faq-answer scp-body">Our algorithm automatically calculates WCAG-compliant contrast ratios and adjusts text colors to ensure readability on any background.</p>
+              </details>
+              <details class="demo-faq-item" :class="COMPONENT_CLASS_NAMES.cardFlat">
+                <summary class="demo-faq-question scp-title">Is there a Figma plugin?</summary>
+                <p class="demo-faq-answer scp-body">We're currently developing a Figma plugin. Join our waitlist to be notified when it's ready.</p>
+              </details>
+            </div>
+          </section>
+
+          <!-- CTA Section -->
+          <section class="demo-cta" :class="CONTEXT_CLASS_NAMES.sectionContrast">
+            <h2 class="demo-cta-title scp-title">Ready to Start?</h2>
+            <p class="demo-cta-desc scp-body">Join thousands of designers using our palette generator.</p>
+
+            <div class="demo-cta-benefits">
+              <span class="demo-cta-benefit scp-body">&#10003; Free forever</span>
+              <span class="demo-cta-benefit scp-body">&#10003; No credit card</span>
+              <span class="demo-cta-benefit scp-body">&#10003; Instant access</span>
+            </div>
+
+            <div class="demo-cta-form" :class="COMPONENT_CLASS_NAMES.cardFlat">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                class="demo-cta-input scp-body"
+              />
+              <button :class="COMPONENT_CLASS_NAMES.action">Get Started</button>
+            </div>
+
+            <p class="demo-cta-note scp-meta">
+              By signing up, you agree to our Terms and Privacy Policy.
+            </p>
+          </section>
+
+          <!-- Footer -->
+          <footer class="demo-footer" :class="CONTEXT_CLASS_NAMES.sectionNeutral">
+            <div class="demo-footer-main">
+              <div class="demo-footer-brand">
+                <div class="demo-footer-logo scp-title">PaletteGen</div>
+                <p class="demo-footer-tagline scp-body">Beautiful colors for everyone.</p>
+              </div>
+
+              <div class="demo-footer-columns">
+                <div class="demo-footer-column">
+                  <h4 class="demo-footer-heading scp-title">Product</h4>
+                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Features</a>
+                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Pricing</a>
+                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Changelog</a>
+                </div>
+                <div class="demo-footer-column">
+                  <h4 class="demo-footer-heading scp-title">Resources</h4>
+                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Documentation</a>
+                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Guides</a>
+                  <a href="#" class="demo-footer-link scp-body" @click.prevent>API</a>
+                </div>
+                <div class="demo-footer-column">
+                  <h4 class="demo-footer-heading scp-title">Company</h4>
+                  <a href="#" class="demo-footer-link scp-body" @click.prevent>About</a>
+                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Blog</a>
+                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Careers</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="demo-footer-bottom scp-divider">
+              <p class="demo-footer-copyright scp-meta">&copy; 2024 PaletteGen. All rights reserved.</p>
+              <div class="demo-footer-legal">
+                <a href="#" class="scp-meta" @click.prevent>Privacy</a>
+                <a href="#" class="scp-meta" @click.prevent>Terms</a>
+              </div>
+            </div>
+          </footer>
+        </div>
       </div>
     </main>
   </div>
@@ -1612,6 +1936,813 @@ h1 {
 
 .dark .warning-text {
   color: oklch(0.75 0.10 30);
+}
+
+/* Demo Page */
+.demo-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.demo-page > * {
+  --content-width: 980px;
+  --content-padding: max(2rem, calc((100% - var(--content-width)) / 2));
+}
+
+/* Demo Header */
+.demo-header {
+  padding: 0.75rem var(--content-padding);
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.demo-logo {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.demo-nav {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.demo-nav-link {
+  font-size: 0.85rem;
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+
+.demo-nav-link:hover {
+  opacity: 1;
+}
+
+.demo-header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.demo-header-actions button {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* Demo Hero Section */
+.demo-hero {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  padding: 4rem var(--content-padding);
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-hero-content {
+  flex: 1;
+  text-align: left;
+}
+
+.demo-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: color-mix(in oklch, var(--link) 15%, transparent);
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.demo-hero-badge-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--link);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.demo-hero-title {
+  margin: 0 0 1.25rem;
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.demo-hero-highlight {
+  display: inline;
+}
+
+.demo-hero-subtitle {
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+.demo-hero-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.demo-hero-actions button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.85rem;
+}
+
+.demo-play-icon {
+  font-size: 0.65rem;
+}
+
+.demo-hero-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.demo-hero-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-hero-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.demo-hero-stat-label {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+/* Hero Visual */
+.demo-hero-visual {
+  flex: 0 0 280px;
+  height: 280px;
+  position: relative;
+}
+
+/* Background glow */
+.demo-hero-glow {
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklch, var(--link) 30%, transparent) 0%,
+    transparent 70%
+  );
+  filter: blur(30px);
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* Grid pattern */
+.demo-hero-grid {
+  position: absolute;
+  inset: 10px;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.5;
+  mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 70%);
+}
+
+/* Floating shapes container */
+.demo-hero-shapes {
+  position: absolute;
+  inset: 0;
+}
+
+.demo-shape {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.demo-shape-1 {
+  width: 130px;
+  height: 130px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, var(--link) 0%, color-mix(in oklch, var(--link) 60%, var(--title)) 100%);
+  box-shadow: 0 25px 50px color-mix(in oklch, var(--link) 40%, transparent);
+}
+
+.demo-shape-2 {
+  width: 60px;
+  height: 60px;
+  top: 10%;
+  left: 8%;
+  background: var(--link);
+  opacity: 0.6;
+  animation: float1 6s ease-in-out infinite;
+}
+
+.demo-shape-3 {
+  width: 40px;
+  height: 40px;
+  top: 15%;
+  right: 12%;
+  background: var(--title);
+  opacity: 0.3;
+  animation: float2 5s ease-in-out infinite;
+}
+
+.demo-shape-4 {
+  width: 25px;
+  height: 25px;
+  bottom: 20%;
+  left: 12%;
+  background: var(--link);
+  opacity: 0.4;
+  animation: float3 7s ease-in-out infinite;
+}
+
+.demo-shape-5 {
+  width: 50px;
+  height: 50px;
+  bottom: 10%;
+  right: 8%;
+  background: linear-gradient(45deg, var(--link), var(--title));
+  opacity: 0.5;
+  animation: float1 8s ease-in-out infinite reverse;
+}
+
+@keyframes float1 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(10deg); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(10px) scale(1.1); }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(8px, -8px); }
+  66% { transform: translate(-5px, 5px); }
+}
+
+/* Orbital rings */
+.demo-hero-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 1px solid var(--link);
+  border-radius: 50%;
+  opacity: 0.3;
+}
+
+.demo-hero-ring-1 {
+  width: 180px;
+  height: 180px;
+  margin: -90px 0 0 -90px;
+  animation: spin 20s linear infinite;
+}
+
+.demo-hero-ring-2 {
+  width: 230px;
+  height: 230px;
+  margin: -115px 0 0 -115px;
+  border-style: dashed;
+  opacity: 0.2;
+  animation: spin 30s linear infinite reverse;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Center orb with glass effect */
+.demo-hero-orb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--surface) 80%, var(--link)) 0%,
+    color-mix(in oklch, var(--surface) 60%, var(--link)) 100%
+  );
+  border: 1px solid color-mix(in oklch, var(--link) 30%, transparent);
+  box-shadow:
+    inset 0 -20px 40px color-mix(in oklch, var(--link) 20%, transparent),
+    0 10px 30px color-mix(in oklch, var(--link) 30%, transparent);
+}
+
+.demo-hero-orb::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  width: 28px;
+  height: 16px;
+  background: color-mix(in oklch, var(--surface) 90%, transparent);
+  border-radius: 50%;
+  filter: blur(5px);
+}
+
+/* Demo Features Section */
+.demo-features {
+  padding: 3rem var(--content-padding);
+}
+
+.demo-section-title {
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.demo-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.demo-feature-card {
+  padding: 1.25rem;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.demo-feature-visual {
+  height: 80px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.demo-feature-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.demo-feature-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.demo-feature-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+/* Demo Logos Section */
+.demo-logos {
+  padding: 2rem var(--content-padding);
+  text-align: center;
+}
+
+.demo-logos-label {
+  margin: 0 0 1.25rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.demo-logos-grid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+
+.demo-logo-item {
+  font-size: 1.1rem;
+  font-weight: 700;
+  opacity: 0.4;
+  letter-spacing: -0.02em;
+}
+
+/* Demo How it works Section */
+.demo-how {
+  padding: 3rem var(--content-padding);
+}
+
+.demo-how-steps {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.demo-how-step {
+  flex: 1;
+  text-align: center;
+}
+
+.demo-how-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--link) 15%, transparent);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.demo-how-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.demo-how-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.demo-how-connector {
+  flex: 0 0 40px;
+  height: 2px;
+  margin-top: 20px;
+  background: linear-gradient(90deg, var(--border), var(--link), var(--border));
+  opacity: 0.5;
+}
+
+/* Demo Testimonials Section */
+.demo-testimonials {
+  padding: 3rem var(--content-padding);
+}
+
+.demo-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.demo-testimonial {
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.demo-testimonial-text {
+  margin: 0 0 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.demo-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.demo-testimonial-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--link), var(--title));
+  opacity: 0.6;
+}
+
+.demo-testimonial-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.demo-testimonial-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.demo-testimonial-role {
+  font-size: 0.7rem;
+}
+
+/* Demo Pricing Section */
+.demo-pricing {
+  padding: 3rem var(--content-padding);
+  text-align: center;
+}
+
+.demo-pricing-subtitle {
+  margin: 0 0 2rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.demo-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  text-align: left;
+}
+
+.demo-pricing-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.demo-pricing-featured {
+  border: 2px solid var(--link);
+}
+
+.demo-pricing-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.75rem;
+  background: var(--link);
+  color: var(--surface);
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.demo-pricing-name {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.demo-pricing-price {
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.demo-pricing-amount {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.demo-pricing-period {
+  font-size: 0.8rem;
+}
+
+.demo-pricing-features {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  flex: 1;
+}
+
+.demo-pricing-features li {
+  padding: 0.375rem 0;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-pricing-features li:last-child {
+  border-bottom: none;
+}
+
+.demo-pricing-card button {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* Demo FAQ Section */
+.demo-faq {
+  padding: 3rem var(--content-padding);
+}
+
+.demo-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.demo-faq-item {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+}
+
+.demo-faq-question {
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.demo-faq-question::-webkit-details-marker {
+  display: none;
+}
+
+.demo-faq-question::after {
+  content: '+';
+  font-size: 1.25rem;
+  font-weight: 400;
+  opacity: 0.5;
+  transition: transform 0.2s;
+}
+
+.demo-faq-item[open] .demo-faq-question::after {
+  transform: rotate(45deg);
+}
+
+.demo-faq-answer {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+/* Demo CTA Section */
+.demo-cta {
+  padding: 3rem var(--content-padding);
+  text-align: center;
+}
+
+.demo-cta-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.demo-cta-desc {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+}
+
+.demo-cta-benefits {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.demo-cta-benefit {
+  font-size: 0.8rem;
+}
+
+.demo-cta-form {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 400px;
+  margin: 0 auto 1rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.demo-cta-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--body);
+  font-size: 0.85rem;
+}
+
+.demo-cta-input::placeholder {
+  color: var(--meta);
+}
+
+.demo-cta-input:focus {
+  outline: none;
+  border-color: var(--link);
+}
+
+.demo-cta-form button {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.demo-cta-note {
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+/* Demo Footer */
+.demo-footer {
+  padding: 2.5rem var(--content-padding) 1.5rem;
+}
+
+.demo-footer-main {
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.demo-footer-brand {
+  flex: 1;
+}
+
+.demo-footer-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.demo-footer-tagline {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.demo-footer-columns {
+  display: flex;
+  gap: 2rem;
+}
+
+.demo-footer-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-footer-heading {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.demo-footer-link {
+  font-size: 0.75rem;
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.demo-footer-link:hover {
+  opacity: 1;
+}
+
+.demo-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top-width: 1px;
+  border-top-style: solid;
+}
+
+.demo-footer-copyright {
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+.demo-footer-legal {
+  display: flex;
+  gap: 1rem;
+}
+
+.demo-footer-legal a {
+  font-size: 0.7rem;
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+.demo-footer-legal a:hover {
+  opacity: 1;
 }
 
 </style>
