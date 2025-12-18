@@ -2042,10 +2042,10 @@ h1 {
 
 .demo-hero-title {
   margin: 0 0 1.25rem;
-  font-size: 2.75rem;
+  font-size: 3.25rem;
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
 }
 
 .demo-hero-highlight {
@@ -2054,9 +2054,9 @@ h1 {
 
 .demo-hero-subtitle {
   margin: 0 0 1.5rem;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  opacity: 0.85;
+  font-size: 1rem;
+  line-height: 1.7;
+  opacity: 0.75;
 }
 
 .demo-hero-actions {
@@ -2088,13 +2088,16 @@ h1 {
 }
 
 .demo-hero-stat-value {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .demo-hero-stat-label {
-  font-size: 0.7rem;
-  opacity: 0.7;
+  font-size: 0.65rem;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* Hero Visual */
@@ -2281,11 +2284,11 @@ h1 {
 }
 
 .demo-section-title {
-  margin: 0 0 1.5rem;
-  font-size: 1.5rem;
+  margin: 0 0 2rem;
+  font-size: 2rem;
   font-weight: 700;
   text-align: center;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 .demo-features-grid {
@@ -2315,15 +2318,16 @@ h1 {
 
 .demo-feature-title {
   margin: 0 0 0.5rem;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .demo-feature-desc {
   margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  opacity: 0.8;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  opacity: 0.7;
 }
 
 /* Demo Logos Section */
@@ -2348,9 +2352,9 @@ h1 {
 }
 
 .demo-logo-item {
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  opacity: 0.4;
+  opacity: 0.35;
   letter-spacing: -0.02em;
 }
 
@@ -2374,26 +2378,27 @@ h1 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: color-mix(in oklch, var(--link-text) 15%, transparent);
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 1rem;
 }
 
 .demo-how-title {
   margin: 0 0 0.5rem;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .demo-how-desc {
   margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  opacity: 0.8;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  opacity: 0.7;
 }
 
 .demo-how-connector {
@@ -2422,8 +2427,8 @@ h1 {
 
 .demo-testimonial-text {
   margin: 0 0 1.25rem;
-  font-size: 0.85rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.65;
   font-style: italic;
 }
 
@@ -2448,12 +2453,13 @@ h1 {
 }
 
 .demo-testimonial-name {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
 .demo-testimonial-role {
   font-size: 0.7rem;
+  opacity: 0.7;
 }
 
 /* Demo Pricing Section */
@@ -2503,8 +2509,9 @@ h1 {
 
 .demo-pricing-name {
   margin: 0 0 0.5rem;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .demo-pricing-price {
@@ -2515,8 +2522,9 @@ h1 {
 }
 
 .demo-pricing-amount {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
 .demo-pricing-period {
@@ -2531,8 +2539,8 @@ h1 {
 }
 
 .demo-pricing-features li {
-  padding: 0.375rem 0;
-  font-size: 0.8rem;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
   border-bottom: 1px solid var(--border);
 }
 
@@ -2566,8 +2574,9 @@ h1 {
 
 .demo-faq-question {
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   list-style: none;
   display: flex;
   justify-content: space-between;
@@ -2592,9 +2601,9 @@ h1 {
 
 .demo-faq-answer {
   margin: 1rem 0 0;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  opacity: 0.85;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  opacity: 0.75;
 }
 
 /* Demo CTA Section */
@@ -2605,14 +2614,15 @@ h1 {
 
 .demo-cta-title {
   margin: 0 0 0.75rem;
-  font-size: 1.75rem;
+  font-size: 2.25rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 .demo-cta-desc {
   margin: 0 0 1.25rem;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  opacity: 0.8;
 }
 
 .demo-cta-benefits {
@@ -2681,8 +2691,9 @@ h1 {
 }
 
 .demo-footer-logo {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
 }
 
@@ -2704,9 +2715,11 @@ h1 {
 }
 
 .demo-footer-heading {
-  margin: 0 0 0.25rem;
-  font-size: 0.75rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .demo-footer-link {
