@@ -213,17 +213,17 @@ const buildBaseTokens = (
  * Action button surface states
  */
 const buildActionSurface = (p: PrimitivePalette, isLight: boolean) => {
-  const bf = p.Bf
+  const b = p.B
   const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
 
-  // Adjust lightness for hover/active states
-  const hoverL = isLight ? bf.L - 0.05 : bf.L + 0.05
-  const activeL = isLight ? bf.L - 0.10 : bf.L + 0.10
+  // Adjust lightness for hover/active states (ΔL = 0.03)
+  const hoverL = isLight ? b.L - 0.03 : b.L + 0.03
+  const activeL = isLight ? b.L - 0.06 : b.L + 0.06
 
   return {
-    default: css(bf),
-    hover: css({ ...bf, L: Math.max(0, Math.min(1, hoverL)) }),
-    active: css({ ...bf, L: Math.max(0, Math.min(1, activeL)) }),
+    default: css(b),
+    hover: css({ ...b, L: Math.max(0, Math.min(1, hoverL)) }),
+    active: css({ ...b, L: Math.max(0, Math.min(1, activeL)) }),
     disabled: cssKey(p, disabledKey),
   }
 }
@@ -245,19 +245,19 @@ const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) => {
 
 /**
  * Build stateful ink for action buttons.
- * Uses Bf surface for default/hover/active, and calculates disabled separately.
+ * Uses B surface for default/hover/active, and calculates disabled separately.
  */
 const buildActionStatefulInk = (
   p: PrimitivePalette,
   isLight: boolean
 ) => {
-  const bf = p.Bf
+  const b = p.B
   const disabledSurface = isLight ? p.N2 : p.N7
 
-  // Determine if Bf is light or dark for ink selection
-  const bfIsLight = bf.L > 0.5
+  // Determine if B is light or dark for ink selection
+  const bIsLight = b.L > 0.5
 
-  const defaultInk = buildInkForSurface(p, bf, bfIsLight)
+  const defaultInk = buildInkForSurface(p, b, bIsLight)
   const disabledInk = buildInkForSurface(p, disabledSurface, isLight, DISABLED_CONTRAST_TARGETS)
 
   const buildStateMap = (defaultVal: string, disabledVal: string) => ({
@@ -445,9 +445,9 @@ const buildBaseTokenRefs = (
 const buildActionSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs => {
   const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
   return {
-    default: 'Bf',
-    hover: 'computed', // Bf with adjusted lightness
-    active: 'computed', // Bf with adjusted lightness
+    default: 'B',
+    hover: 'computed', // B with adjusted lightness
+    active: 'computed', // B with adjusted lightness
     disabled: disabledKey,
   }
 }
@@ -469,11 +469,11 @@ const buildActionStatefulInkRefs = (
   p: PrimitivePalette,
   isLight: boolean
 ): StatefulInkRefs => {
-  const bf = p.Bf
+  const b = p.B
   const disabledSurface = isLight ? p.N2 : p.N7
-  const bfIsLight = bf.L > 0.5
+  const bIsLight = b.L > 0.5
 
-  const defaultInkRefs = buildInkRefsForSurface(p, bf, bfIsLight)
+  const defaultInkRefs = buildInkRefsForSurface(p, b, bIsLight)
   const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, DISABLED_CONTRAST_TARGETS)
 
   const buildStateMap = (defaultVal: PrimitiveRef, disabledVal: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
