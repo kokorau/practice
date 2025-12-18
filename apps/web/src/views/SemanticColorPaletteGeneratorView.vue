@@ -1958,7 +1958,7 @@ h1 {
 
 /* Demo Header */
 .demo-header {
-  padding: 0.75rem var(--content-padding);
+  padding: 1rem var(--content-padding);
   border-bottom: 1px solid var(--border);
 }
 
@@ -1992,7 +1992,7 @@ h1 {
 
 .demo-header-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .demo-header-actions button {
@@ -2004,8 +2004,8 @@ h1 {
 .demo-hero {
   display: flex;
   align-items: center;
-  gap: 3rem;
-  padding: 4rem var(--content-padding);
+  gap: 4rem;
+  padding: 5rem var(--content-padding);
   position: relative;
   overflow: hidden;
 }
@@ -2019,12 +2019,12 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem 1rem;
   background: color-mix(in oklch, var(--link-text) 15%, transparent);
   border-radius: 9999px;
   font-size: 0.7rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .demo-hero-badge-dot {
@@ -2041,7 +2041,7 @@ h1 {
 }
 
 .demo-hero-title {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.5rem;
   font-size: 3.25rem;
   font-weight: 800;
   line-height: 1.05;
@@ -2053,7 +2053,7 @@ h1 {
 }
 
 .demo-hero-subtitle {
-  margin: 0 0 1.5rem;
+  margin: 0 0 2rem;
   font-size: 1rem;
   line-height: 1.7;
   opacity: 0.75;
@@ -2061,8 +2061,8 @@ h1 {
 
 .demo-hero-actions {
   display: flex;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
 }
 
 .demo-hero-actions button {
@@ -2079,7 +2079,7 @@ h1 {
 
 .demo-hero-stats {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
 .demo-hero-stat {
@@ -2280,11 +2280,11 @@ h1 {
 
 /* Demo Features Section */
 .demo-features {
-  padding: 3rem var(--content-padding);
+  padding: 4rem var(--content-padding);
 }
 
 .demo-section-title {
-  margin: 0 0 2rem;
+  margin: 0 0 2.5rem;
   font-size: 2rem;
   font-weight: 700;
   text-align: center;
@@ -2294,11 +2294,11 @@ h1 {
 .demo-features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .demo-feature-card {
-  padding: 1.25rem;
+  padding: 1.75rem;
   border-radius: 12px;
   text-align: center;
 }
@@ -2317,7 +2317,7 @@ h1 {
 }
 
 .demo-feature-title {
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.75rem;
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -2332,12 +2332,12 @@ h1 {
 
 /* Demo Logos Section */
 .demo-logos {
-  padding: 2rem var(--content-padding);
+  padding: 3rem var(--content-padding);
   text-align: center;
 }
 
 .demo-logos-label {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.5rem;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -2360,13 +2360,13 @@ h1 {
 
 /* Demo How it works Section */
 .demo-how {
-  padding: 3rem var(--content-padding);
+  padding: 4rem var(--content-padding);
 }
 
 .demo-how-steps {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .demo-how-step {
@@ -2384,11 +2384,11 @@ h1 {
   background: color-mix(in oklch, var(--link-text) 15%, transparent);
   font-size: 1.25rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .demo-how-title {
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.75rem;
   font-size: 1.2rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -2411,22 +2411,22 @@ h1 {
 
 /* Demo Testimonials Section */
 .demo-testimonials {
-  padding: 3rem var(--content-padding);
+  padding: 4rem var(--content-padding);
 }
 
 .demo-testimonials-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .demo-testimonial {
-  padding: 1.5rem;
+  padding: 2rem;
   border-radius: 12px;
 }
 
 .demo-testimonial-text {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.5rem;
   font-size: 0.9rem;
   line-height: 1.65;
   font-style: italic;
@@ -2435,7 +2435,7 @@ h1 {
 .demo-testimonial-author {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .demo-testimonial-avatar {
@@ -2464,12 +2464,12 @@ h1 {
 
 /* Demo Pricing Section */
 .demo-pricing {
-  padding: 3rem var(--content-padding);
+  padding: 4rem var(--content-padding);
   text-align: center;
 }
 
 .demo-pricing-subtitle {
-  margin: 0 0 2rem;
+  margin: 0 0 2.5rem;
   font-size: 0.9rem;
   opacity: 0.8;
 }
@@ -2477,12 +2477,12 @@ h1 {
 .demo-pricing-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  gap: 1.5rem;
   text-align: left;
 }
 
 .demo-pricing-card {
-  padding: 1.5rem;
+  padding: 2rem;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -2508,14 +2508,14 @@ h1 {
 }
 
 .demo-pricing-name {
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.75rem;
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .demo-pricing-price {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: baseline;
   gap: 0.25rem;
@@ -2533,13 +2533,13 @@ h1 {
 
 .demo-pricing-features {
   list-style: none;
-  margin: 0 0 1.5rem;
+  margin: 0 0 2rem;
   padding: 0;
   flex: 1;
 }
 
 .demo-pricing-features li {
-  padding: 0.5rem 0;
+  padding: 0.625rem 0;
   font-size: 0.85rem;
   border-bottom: 1px solid var(--border);
 }
@@ -2556,19 +2556,19 @@ h1 {
 
 /* Demo FAQ Section */
 .demo-faq {
-  padding: 3rem var(--content-padding);
+  padding: 4rem var(--content-padding);
 }
 
 .demo-faq-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
   max-width: 700px;
   margin: 0 auto;
 }
 
 .demo-faq-item {
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   border-radius: 8px;
 }
 
@@ -2608,19 +2608,19 @@ h1 {
 
 /* Demo CTA Section */
 .demo-cta {
-  padding: 3rem var(--content-padding);
+  padding: 4.5rem var(--content-padding);
   text-align: center;
 }
 
 .demo-cta-title {
-  margin: 0 0 0.75rem;
+  margin: 0 0 1rem;
   font-size: 2.25rem;
   font-weight: 700;
   letter-spacing: -0.03em;
 }
 
 .demo-cta-desc {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.5rem;
   font-size: 1rem;
   opacity: 0.8;
 }
@@ -2628,8 +2628,8 @@ h1 {
 .demo-cta-benefits {
   display: flex;
   justify-content: center;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: 2rem;
+  margin-bottom: 2rem;
 }
 
 .demo-cta-benefit {
@@ -2638,16 +2638,16 @@ h1 {
 
 .demo-cta-form {
   display: flex;
-  gap: 0.5rem;
-  max-width: 400px;
-  margin: 0 auto 1rem;
-  padding: 0.5rem;
+  gap: 0.75rem;
+  max-width: 420px;
+  margin: 0 auto 1.25rem;
+  padding: 0.625rem;
   border-radius: 8px;
 }
 
 .demo-cta-input {
   flex: 1;
-  padding: 0.5rem 0.75rem;
+  padding: 0.625rem 1rem;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface);
@@ -2665,8 +2665,8 @@ h1 {
 }
 
 .demo-cta-form button {
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.85rem;
   white-space: nowrap;
 }
 
@@ -2677,13 +2677,13 @@ h1 {
 
 /* Demo Footer */
 .demo-footer {
-  padding: 2.5rem var(--content-padding) 1.5rem;
+  padding: 3rem var(--content-padding) 2rem;
 }
 
 .demo-footer-main {
   display: flex;
-  gap: 3rem;
-  margin-bottom: 1.5rem;
+  gap: 4rem;
+  margin-bottom: 2rem;
 }
 
 .demo-footer-brand {
@@ -2705,13 +2705,13 @@ h1 {
 
 .demo-footer-columns {
   display: flex;
-  gap: 2rem;
+  gap: 3rem;
 }
 
 .demo-footer-column {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
 .demo-footer-heading {
@@ -2737,7 +2737,7 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 1rem;
+  padding-top: 1.5rem;
   border-top-width: 1px;
   border-top-style: solid;
 }
