@@ -1759,7 +1759,9 @@ h1 {
 
 .action-buttons button {
   padding: 0.4rem 0.75rem;
-  border: 1px solid;
+  border-width: 1px;
+  border-style: solid;
+  /* border-color is set by semantic class (.scp-action, .scp-action-quiet) */
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -1793,7 +1795,9 @@ h1 {
 
 .action-button {
   padding: 0.3rem 0.5rem;
-  border: 1px solid;
+  border-width: 1px;
+  border-style: solid;
+  /* border-color is set by semantic class (.scp-action, .scp-action-quiet) */
   border-radius: 4px;
   font-size: 0.65rem;
   font-weight: 600;
