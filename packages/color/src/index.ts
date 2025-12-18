@@ -26,3 +26,16 @@ export {
   WCAG_CONTRAST_AAA,
   WCAG_CONTRAST_AAA_LARGE,
 } from './Contrast'
+export {
+  type APCAResult,
+  apcaFromSrgb,
+  apcaFromDisplayP3,
+  apcaFromOklch,
+  apcaFromY,
+  meetsBodyText,
+  meetsLargeText,
+  meetsHeadline,
+  meetsNonText,
+  APCA_THRESHOLD,
+  $APCA,
+} from './APCA'

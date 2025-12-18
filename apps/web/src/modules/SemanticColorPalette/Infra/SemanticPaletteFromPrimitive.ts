@@ -69,7 +69,8 @@ const cssKey = (p: PrimitivePalette, key: PrimitiveKey): string => css(p[key])
  * - Light mode: search from darkest (N9) to lightest (N0)
  * - Dark mode: search from lightest (N0) to darkest (N9)
  *
- * Returns the first neutral that meets the target, or the extreme if none meet it.
+ * Returns the last neutral that still meets the target (just before contrast drops below).
+ * If none meet the target, returns the neutral with highest contrast.
  */
 const findNeutralByContrast = (
   p: PrimitivePalette,
@@ -82,16 +83,35 @@ const findNeutralByContrast = (
     ? [...NEUTRAL_KEYS].reverse() // N9, N8, ..., N0
     : [...NEUTRAL_KEYS]           // N0, N1, ..., N9
 
+  let lastPassingKey: NeutralKey | null = null
+  let bestKey: NeutralKey = searchOrder[0]!
+  let bestRatio = 0
+
   for (const key of searchOrder) {
     const neutral = p[key]
     const ratio = contrastRatio(neutral, surface)
+
+    // Track the best contrast found (for fallback)
+    if (ratio > bestRatio) {
+      bestRatio = ratio
+      bestKey = key
+    }
+
     if (ratio >= targetContrast) {
-      return key
+      lastPassingKey = key
+    } else if (lastPassingKey !== null) {
+      // Found first failure after some passes - return last passing
+      return lastPassingKey
     }
   }
 
-  // Fallback: return the extreme (most contrasting)
-  return isLight ? 'N9' : 'N0'
+  // If we found any passing key, return the last one
+  if (lastPassingKey !== null) {
+    return lastPassingKey
+  }
+
+  // Fallback: return the neutral with highest contrast
+  return bestKey
 }
 
 /**
