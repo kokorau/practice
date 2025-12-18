@@ -187,16 +187,21 @@ const buildActionSurface = (p: PrimitivePalette, isLight: boolean) => {
 
 /**
  * Action quiet button surface states
+ * Uses N3/N7 as base (same as cardFlat) with ΔL adjustment for hover/active
  */
 const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) => {
-  const hoverKey: PrimitiveKey = isLight ? 'F2' : 'F7'
-  const activeKey: PrimitiveKey = isLight ? 'F3' : 'F6'
+  const base = isLight ? p.N3 : p.N7
+  const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
+
+  // Adjust lightness for hover/active states (ΔL = 0.03, same as Action)
+  const hoverL = isLight ? base.L - 0.03 : base.L + 0.03
+  const activeL = isLight ? base.L - 0.06 : base.L + 0.06
 
   return {
-    default: 'transparent',
-    hover: cssKey(p, hoverKey),
-    active: cssKey(p, activeKey),
-    disabled: 'transparent',
+    default: css(base),
+    hover: css({ ...base, L: Math.max(0, Math.min(1, hoverL)) }),
+    active: css({ ...base, L: Math.max(0, Math.min(1, activeL)) }),
+    disabled: cssKey(p, disabledKey),
   }
 }
 
@@ -236,20 +241,31 @@ const buildActionStatefulInk = (
 
 /**
  * Build stateful ink for quiet action buttons.
- * Uses canvas surface for default, F2/F7 for hover/active.
+ * Uses N3/N7 as base surface with ΔL-adjusted surfaces for hover/active.
+ * Ink search direction is based on each surface's actual lightness.
  */
 const buildActionQuietStatefulInk = (
   p: PrimitivePalette,
   isLight: boolean
 ) => {
-  const canvasSurface = isLight ? p.F1 : p.F8
-  const hoverSurface = isLight ? p.F2 : p.F7
-  const activeSurface = isLight ? p.F3 : p.F6
+  const base = isLight ? p.N3 : p.N7
+  const disabledSurface = isLight ? p.N2 : p.N7
 
-  const defaultInk = buildInkForSurface(p, canvasSurface, isLight)
-  const hoverInk = buildInkForSurface(p, hoverSurface, isLight)
-  const activeInk = buildInkForSurface(p, activeSurface, isLight)
-  const disabledInk = buildInkForSurface(p, canvasSurface, isLight, APCA_DISABLED_TARGETS)
+  // Same ΔL adjustment as buildActionQuietSurface
+  const hoverL = isLight ? base.L - 0.03 : base.L + 0.03
+  const activeL = isLight ? base.L - 0.06 : base.L + 0.06
+  const hoverSurface: Oklch = { ...base, L: Math.max(0, Math.min(1, hoverL)) }
+  const activeSurface: Oklch = { ...base, L: Math.max(0, Math.min(1, activeL)) }
+
+  // Use each surface's actual lightness for ink search direction
+  const baseIsLight = base.L > 0.5
+  const hoverIsLight = hoverSurface.L > 0.5
+  const activeIsLight = activeSurface.L > 0.5
+
+  const defaultInk = buildInkForSurface(p, base, baseIsLight)
+  const hoverInk = buildInkForSurface(p, hoverSurface, hoverIsLight)
+  const activeInk = buildInkForSurface(p, activeSurface, activeIsLight)
+  const disabledInk = buildInkForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
 
   const buildStateMap = (d: string, h: string, a: string, dis: string) => ({
     default: d,
@@ -412,13 +428,13 @@ const buildActionSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs => {
 
 // Helper: Build action quiet surface refs
 const buildActionQuietSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs => {
-  const hoverKey: PrimitiveKey = isLight ? 'F2' : 'F7'
-  const activeKey: PrimitiveKey = isLight ? 'F3' : 'F6'
+  const baseKey: PrimitiveKey = isLight ? 'N3' : 'N7'
+  const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
   return {
-    default: 'transparent',
-    hover: hoverKey,
-    active: activeKey,
-    disabled: 'transparent',
+    default: baseKey,
+    hover: 'computed', // N3/N7 with ΔL adjustment
+    active: 'computed', // N3/N7 with ΔL adjustment
+    disabled: disabledKey,
   }
 }
 
@@ -456,14 +472,24 @@ const buildActionQuietStatefulInkRefs = (
   p: PrimitivePalette,
   isLight: boolean
 ): StatefulInkRefs => {
-  const canvasSurface = isLight ? p.F1 : p.F8
-  const hoverSurface = isLight ? p.F2 : p.F7
-  const activeSurface = isLight ? p.F3 : p.F6
+  const base = isLight ? p.N3 : p.N7
+  const disabledSurface = isLight ? p.N2 : p.N7
 
-  const defaultInkRefs = buildInkRefsForSurface(p, canvasSurface, isLight)
-  const hoverInkRefs = buildInkRefsForSurface(p, hoverSurface, isLight)
-  const activeInkRefs = buildInkRefsForSurface(p, activeSurface, isLight)
-  const disabledInkRefs = buildInkRefsForSurface(p, canvasSurface, isLight, APCA_DISABLED_TARGETS)
+  // Same ΔL adjustment as buildActionQuietStatefulInk
+  const hoverL = isLight ? base.L - 0.03 : base.L + 0.03
+  const activeL = isLight ? base.L - 0.06 : base.L + 0.06
+  const hoverSurface: Oklch = { ...base, L: Math.max(0, Math.min(1, hoverL)) }
+  const activeSurface: Oklch = { ...base, L: Math.max(0, Math.min(1, activeL)) }
+
+  // Use each surface's actual lightness for ink search direction
+  const baseIsLight = base.L > 0.5
+  const hoverIsLight = hoverSurface.L > 0.5
+  const activeIsLight = activeSurface.L > 0.5
+
+  const defaultInkRefs = buildInkRefsForSurface(p, base, baseIsLight)
+  const hoverInkRefs = buildInkRefsForSurface(p, hoverSurface, hoverIsLight)
+  const activeInkRefs = buildInkRefsForSurface(p, activeSurface, activeIsLight)
+  const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
 
   const buildStateMap = (d: PrimitiveRef, h: PrimitiveRef, a: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
     default: d,
