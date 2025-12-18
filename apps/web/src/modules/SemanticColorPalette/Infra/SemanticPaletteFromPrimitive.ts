@@ -1,58 +1,25 @@
-import { $Oklch, contrastRatio } from '@practice/color'
+import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette, NeutralKey, PrimitiveKey } from '../Domain/ValueObject/PrimitivePalette'
 import { NEUTRAL_KEYS } from '../Domain/ValueObject/PrimitivePalette'
 import type { SemanticColorPalette, SemanticColorPaletteInput } from '../Domain/ValueObject/SemanticColorPalette'
 import { $SemanticColorPalette } from '../Domain/ValueObject/SemanticColorPalette'
 import type { ActionState } from '../Domain/ValueObject/SemanticNames'
+import {
+  selectNeutralByApca,
+  selectNeutralClosestToApca,
+  APCA_INK_TARGETS,
+  APCA_DISABLED_TARGETS,
+  type NeutralEntry,
+  type SearchOrder,
+} from '../Domain/NeutralSelection'
 
 /**
  * SemanticPaletteFromPrimitive
  *
  * Generates a SemanticColorPalette from a PrimitivePalette.
- * Ink colors are selected based on WCAG contrast ratios against surfaces.
+ * Ink colors are selected based on APCA (Advanced Perceptual Contrast Algorithm).
  */
-
-// ============================================================================
-// Target Contrast Ratios (WCAG-based)
-// ============================================================================
-
-/**
- * Ink contrast targets:
- * - title: AA Large (3:1) - strong emphasis
- * - body: AAA (7:1) - maximum readability
- * - meta: AA (4.5:1) - secondary text, can be weaker than body
- * - linkText: same as body (7:1) - underline provides affordance, hue = N
- * - border: ~2:1 - low contrast for subtle UI elements
- * - divider: ~1.5:1 - even more subtle than border
- */
-type ContrastTargets = {
-  title: number
-  body: number
-  meta: number
-  linkText: number
-  border: number
-  divider: number
-}
-
-const INK_CONTRAST_TARGETS: ContrastTargets = {
-  title: 3.0,      // AA Large
-  body: 7.0,       // AAA
-  meta: 4.5,       // AA
-  linkText: 7.0,   // Same as body
-  border: 2.0,     // Low contrast
-  divider: 1.5,    // Very subtle
-}
-
-// For disabled states, use much lower contrast
-const DISABLED_CONTRAST_TARGETS: ContrastTargets = {
-  title: 2.5,
-  body: 2.5,
-  meta: 2.0,
-  linkText: 2.5,
-  border: 1.5,
-  divider: 1.3,
-}
 
 // ============================================================================
 // Helpers
@@ -63,84 +30,42 @@ const css = (color: Oklch): string => $Oklch.toCss(color)
 const cssKey = (p: PrimitivePalette, key: PrimitiveKey): string => css(p[key])
 
 /**
- * Find the best neutral (N0-N9) that meets or exceeds target contrast.
- *
- * Strategy:
- * - Light mode: search from darkest (N9) to lightest (N0)
- * - Dark mode: search from lightest (N0) to darkest (N9)
- *
- * Returns the last neutral that still meets the target (just before contrast drops below).
- * If none meet the target, returns the neutral with highest contrast.
+ * Convert PrimitivePalette neutrals to NeutralEntry array for APCA selection
  */
-const findNeutralByContrast = (
+const toNeutralEntries = (p: PrimitivePalette): NeutralEntry[] =>
+  NEUTRAL_KEYS.map(key => ({ key, color: p[key] }))
+
+/**
+ * Find the best neutral using APCA contrast algorithm.
+ * Wrapper that converts PrimitivePalette to the Domain function interface.
+ */
+const findNeutralByApca = (
   p: PrimitivePalette,
   surface: Oklch,
-  targetContrast: number,
+  targetLc: number,
   isLight: boolean
 ): NeutralKey => {
-  // Search order: dark mode searches light→dark, light mode searches dark→light
-  const searchOrder: NeutralKey[] = isLight
-    ? [...NEUTRAL_KEYS].reverse() // N9, N8, ..., N0
-    : [...NEUTRAL_KEYS]           // N0, N1, ..., N9
-
-  let lastPassingKey: NeutralKey | null = null
-  let bestKey: NeutralKey = searchOrder[0]!
-  let bestRatio = 0
-
-  for (const key of searchOrder) {
-    const neutral = p[key]
-    const ratio = contrastRatio(neutral, surface)
-
-    // Track the best contrast found (for fallback)
-    if (ratio > bestRatio) {
-      bestRatio = ratio
-      bestKey = key
-    }
-
-    if (ratio >= targetContrast) {
-      lastPassingKey = key
-    } else if (lastPassingKey !== null) {
-      // Found first failure after some passes - return last passing
-      return lastPassingKey
-    }
-  }
-
-  // If we found any passing key, return the last one
-  if (lastPassingKey !== null) {
-    return lastPassingKey
-  }
-
-  // Fallback: return the neutral with highest contrast
-  return bestKey
+  const neutrals = toNeutralEntries(p)
+  const order: SearchOrder = isLight ? 'dark-first' : 'light-first'
+  const result = selectNeutralByApca(neutrals, surface, targetLc, order)
+  return result.key as NeutralKey
 }
 
 /**
- * Find neutral that is closest to target contrast (for subtle elements).
- * Used for border/divider where we want exactly the target, not maximum.
+ * Find neutral closest to target APCA Lc value (for subtle elements).
  */
-const findNeutralClosestToContrast = (
+const findNeutralClosestToApca = (
   p: PrimitivePalette,
   surface: Oklch,
-  targetContrast: number
+  targetLc: number
 ): NeutralKey => {
-  let bestKey: NeutralKey = 'N5'
-  let bestDiff = Infinity
-
-  for (const key of NEUTRAL_KEYS) {
-    const neutral = p[key]
-    const ratio = contrastRatio(neutral, surface)
-    const diff = Math.abs(ratio - targetContrast)
-    if (diff < bestDiff) {
-      bestDiff = diff
-      bestKey = key
-    }
-  }
-
-  return bestKey
+  const neutrals = toNeutralEntries(p)
+  const result = selectNeutralClosestToApca(neutrals, surface, targetLc)
+  return result.key as NeutralKey
 }
 
 // ============================================================================
-// Ink Selection (Contrast-based)
+// Ink Selection (APCA-based)
 // ============================================================================
 
 type InkColors = {
@@ -152,24 +77,33 @@ type InkColors = {
   divider: string
 }
 
+type ApcaTargets = {
+  readonly title: number
+  readonly body: number
+  readonly meta: number
+  readonly linkText: number
+  readonly border: number
+  readonly divider: number
+}
+
 /**
- * Build ink colors for a given surface using contrast-based selection.
+ * Build ink colors for a given surface using APCA contrast selection.
  */
 const buildInkForSurface = (
   p: PrimitivePalette,
   surface: Oklch,
   isLight: boolean,
-  targets = INK_CONTRAST_TARGETS
+  targets: ApcaTargets = APCA_INK_TARGETS
 ): InkColors => {
-  // Text inks: find neutrals that meet or exceed target contrast
-  const titleKey = findNeutralByContrast(p, surface, targets.title, isLight)
-  const bodyKey = findNeutralByContrast(p, surface, targets.body, isLight)
-  const metaKey = findNeutralByContrast(p, surface, targets.meta, isLight)
-  const linkTextKey = findNeutralByContrast(p, surface, targets.linkText, isLight)
+  // Text inks: find neutrals that meet or exceed target APCA Lc
+  const titleKey = findNeutralByApca(p, surface, targets.title, isLight)
+  const bodyKey = findNeutralByApca(p, surface, targets.body, isLight)
+  const metaKey = findNeutralByApca(p, surface, targets.meta, isLight)
+  const linkTextKey = findNeutralByApca(p, surface, targets.linkText, isLight)
 
-  // Line inks: find neutrals closest to target (not exceeding)
-  const borderKey = findNeutralClosestToContrast(p, surface, targets.border)
-  const dividerKey = findNeutralClosestToContrast(p, surface, targets.divider)
+  // Line inks: find neutrals closest to target Lc (not exceeding)
+  const borderKey = findNeutralClosestToApca(p, surface, targets.border)
+  const dividerKey = findNeutralClosestToApca(p, surface, targets.divider)
 
   return {
     title: css(p[titleKey]),
@@ -278,7 +212,7 @@ const buildActionStatefulInk = (
   const bIsLight = b.L > 0.5
 
   const defaultInk = buildInkForSurface(p, b, bIsLight)
-  const disabledInk = buildInkForSurface(p, disabledSurface, isLight, DISABLED_CONTRAST_TARGETS)
+  const disabledInk = buildInkForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
 
   const buildStateMap = (defaultVal: string, disabledVal: string) => ({
     default: defaultVal,
@@ -312,7 +246,7 @@ const buildActionQuietStatefulInk = (
   const defaultInk = buildInkForSurface(p, canvasSurface, isLight)
   const hoverInk = buildInkForSurface(p, hoverSurface, isLight)
   const activeInk = buildInkForSurface(p, activeSurface, isLight)
-  const disabledInk = buildInkForSurface(p, canvasSurface, isLight, DISABLED_CONTRAST_TARGETS)
+  const disabledInk = buildInkForSurface(p, canvasSurface, isLight, APCA_DISABLED_TARGETS)
 
   const buildStateMap = (d: string, h: string, a: string, dis: string) => ({
     default: d,
@@ -424,19 +358,19 @@ export type PrimitiveRefMap = {
   }
 }
 
-// Helper: Build ink refs for a given surface
+// Helper: Build ink refs for a given surface using APCA
 const buildInkRefsForSurface = (
   p: PrimitivePalette,
   surface: Oklch,
   isLight: boolean,
-  targets = INK_CONTRAST_TARGETS
+  targets: ApcaTargets = APCA_INK_TARGETS
 ): InkRefs => {
-  const titleKey = findNeutralByContrast(p, surface, targets.title, isLight)
-  const bodyKey = findNeutralByContrast(p, surface, targets.body, isLight)
-  const metaKey = findNeutralByContrast(p, surface, targets.meta, isLight)
-  const linkTextKey = findNeutralByContrast(p, surface, targets.linkText, isLight)
-  const borderKey = findNeutralClosestToContrast(p, surface, targets.border)
-  const dividerKey = findNeutralClosestToContrast(p, surface, targets.divider)
+  const titleKey = findNeutralByApca(p, surface, targets.title, isLight)
+  const bodyKey = findNeutralByApca(p, surface, targets.body, isLight)
+  const metaKey = findNeutralByApca(p, surface, targets.meta, isLight)
+  const linkTextKey = findNeutralByApca(p, surface, targets.linkText, isLight)
+  const borderKey = findNeutralClosestToApca(p, surface, targets.border)
+  const dividerKey = findNeutralClosestToApca(p, surface, targets.divider)
 
   return {
     title: titleKey,
@@ -494,7 +428,7 @@ const buildActionStatefulInkRefs = (
   const bIsLight = b.L > 0.5
 
   const defaultInkRefs = buildInkRefsForSurface(p, b, bIsLight)
-  const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, DISABLED_CONTRAST_TARGETS)
+  const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
 
   const buildStateMap = (defaultVal: PrimitiveRef, disabledVal: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
     default: defaultVal,
@@ -525,7 +459,7 @@ const buildActionQuietStatefulInkRefs = (
   const defaultInkRefs = buildInkRefsForSurface(p, canvasSurface, isLight)
   const hoverInkRefs = buildInkRefsForSurface(p, hoverSurface, isLight)
   const activeInkRefs = buildInkRefsForSurface(p, activeSurface, isLight)
-  const disabledInkRefs = buildInkRefsForSurface(p, canvasSurface, isLight, DISABLED_CONTRAST_TARGETS)
+  const disabledInkRefs = buildInkRefsForSurface(p, canvasSurface, isLight, APCA_DISABLED_TARGETS)
 
   const buildStateMap = (d: PrimitiveRef, h: PrimitiveRef, a: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
     default: d,
