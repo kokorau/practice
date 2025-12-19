@@ -23,8 +23,8 @@ import {
   type BaseTokenRefs,
   type PrimitiveRef,
 } from '../modules/SemanticColorPalette/Infra'
-import type { Preset, Lut1D } from '../modules/Filter/Domain'
-import { $Filter, $Lut1D } from '../modules/Filter/Domain'
+import type { Preset, Lut } from '../modules/Filter/Domain'
+import { $Lut3D } from '../modules/Filter/Domain'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { useFilter } from '../composables/Filter/useFilter'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
@@ -236,6 +236,7 @@ const FILTER_PRESETS: readonly Preset[] = getPresets()
 
 const {
   filter,
+  lut: filterLut,
   intensity,
   currentPresetId,
   applyPreset,
@@ -251,34 +252,38 @@ const currentFilterName = computed(() => {
   return preset?.name ?? 'Custom'
 })
 
-// Generate LUT from filter (with intensity applied)
-const filterLut = computed(() => {
-  const baseLut = $Filter.toLut(filter.value)
-  if (intensity.value >= 0.999) return baseLut
-  return $Lut1D.blend(baseLut, intensity.value)
-})
-
-// Apply LUT to a single Oklch color
-const applyLutToOklch = (color: Oklch, lut: Lut1D): Oklch => {
+// Apply LUT to a single Oklch color (supports both 1D and 3D LUTs)
+const applyLutToOklch = (color: Oklch, lut: Lut): Oklch => {
   // Convert Oklch to sRGB (0-1 range)
   const srgb = $Oklch.toSrgb(color)
+  const r = Math.max(0, Math.min(1, srgb.r))
+  const g = Math.max(0, Math.min(1, srgb.g))
+  const b = Math.max(0, Math.min(1, srgb.b))
 
-  // Convert to 0-255 indices for LUT lookup
-  const rIdx = Math.round(Math.max(0, Math.min(1, srgb.r)) * 255)
-  const gIdx = Math.round(Math.max(0, Math.min(1, srgb.g)) * 255)
-  const bIdx = Math.round(Math.max(0, Math.min(1, srgb.b)) * 255)
+  let newR: number, newG: number, newB: number
 
-  // Apply LUT (output is 0-1)
-  const newR = lut.r[rIdx]!
-  const newG = lut.g[gIdx]!
-  const newB = lut.b[bIdx]!
+  if ($Lut3D.is(lut)) {
+    // 3D LUT: trilinear interpolation with channel mixing
+    const [outR, outG, outB] = $Lut3D.lookup(lut, r, g, b)
+    newR = outR
+    newG = outG
+    newB = outB
+  } else {
+    // 1D LUT: per-channel lookup
+    const rIdx = Math.round(r * 255)
+    const gIdx = Math.round(g * 255)
+    const bIdx = Math.round(b * 255)
+    newR = lut.r[rIdx]!
+    newG = lut.g[gIdx]!
+    newB = lut.b[bIdx]!
+  }
 
   // Convert back to Oklch
   return $Oklch.fromSrgb({ r: newR, g: newG, b: newB })
 }
 
-// Apply LUT to entire PrimitivePalette
-const applyLutToPalette = (palette: PrimitivePalette, lut: Lut1D): PrimitivePalette => {
+// Apply LUT to entire PrimitivePalette (supports both 1D and 3D LUTs)
+const applyLutToPalette = (palette: PrimitivePalette, lut: Lut): PrimitivePalette => {
   const result = { ...palette }
 
   // Apply to Neutral keys (N0-N9)
