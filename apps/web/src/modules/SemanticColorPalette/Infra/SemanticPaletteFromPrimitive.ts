@@ -163,33 +163,15 @@ const buildBaseTokens = (
 }
 
 /**
- * Action button surface states
+ * Generic stateful surface builder for action buttons.
+ * Creates default/hover/active/disabled states with ΔL adjustments.
  */
-const buildActionSurface = (p: PrimitivePalette, isLight: boolean) => {
-  const b = p.B
-  const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
-
+const buildStatefulSurface = (
+  base: Oklch,
+  disabledColor: string,
+  isLight: boolean
+) => {
   // Adjust lightness for hover/active states (ΔL = 0.03)
-  const hoverL = isLight ? b.L - 0.03 : b.L + 0.03
-  const activeL = isLight ? b.L - 0.06 : b.L + 0.06
-
-  return {
-    default: css(b),
-    hover: css({ ...b, L: Math.max(0, Math.min(1, hoverL)) }),
-    active: css({ ...b, L: Math.max(0, Math.min(1, activeL)) }),
-    disabled: cssKey(p, disabledKey),
-  }
-}
-
-/**
- * Action quiet button surface states
- * Uses N0/N9 as base (extreme neutrals) with ΔL adjustment for hover/active
- */
-const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) => {
-  const base = isLight ? p.N0 : p.N9
-  const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
-
-  // Adjust lightness for hover/active states (ΔL = 0.03, same as Action)
   const hoverL = isLight ? base.L - 0.03 : base.L + 0.03
   const activeL = isLight ? base.L - 0.06 : base.L + 0.06
 
@@ -197,27 +179,33 @@ const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) => {
     default: css(base),
     hover: css({ ...base, L: Math.max(0, Math.min(1, hoverL)) }),
     active: css({ ...base, L: Math.max(0, Math.min(1, activeL)) }),
-    disabled: cssKey(p, disabledKey),
+    disabled: disabledColor,
   }
 }
 
+/** Action button surface states */
+const buildActionSurface = (p: PrimitivePalette, isLight: boolean) =>
+  buildStatefulSurface(p.B, cssKey(p, isLight ? 'N2' : 'N7'), isLight)
+
+/** Action quiet button surface states (uses N0/N9 as base) */
+const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) =>
+  buildStatefulSurface(isLight ? p.N0 : p.N9, cssKey(p, isLight ? 'N2' : 'N7'), isLight)
+
 /**
- * Build stateful ink for action buttons.
- * Ink is fixed based on default surface (B) - does not change for hover/active.
+ * Generic stateful ink builder for action buttons.
+ * Ink is fixed based on default surface - does not change for hover/active.
  * Only disabled state has different ink.
  */
-const buildActionStatefulInk = (
+const buildStatefulInk = (
   p: PrimitivePalette,
+  defaultSurface: Oklch,
+  disabledSurface: Oklch,
   isLight: boolean
 ) => {
-  const b = p.B
-  const disabledSurface = isLight ? p.N2 : p.N7
+  // Use surface's actual lightness for ink search direction
+  const defaultIsLight = defaultSurface.L > 0.5
 
-  // Use default surface's lightness for ink search direction
-  const bIsLight = b.L > 0.5
-
-  // Ink is fixed based on default surface
-  const defaultInk = buildInkForSurface(p, b, bIsLight)
+  const defaultInk = buildInkForSurface(p, defaultSurface, defaultIsLight)
   const disabledInk = buildInkForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
 
   const buildStateMap = (base: string, dis: string) => ({
@@ -237,41 +225,13 @@ const buildActionStatefulInk = (
   }
 }
 
-/**
- * Build stateful ink for quiet action buttons.
- * Ink is fixed based on default surface (N0/N9) - does not change for hover/active.
- * Only disabled state has different ink.
- */
-const buildActionQuietStatefulInk = (
-  p: PrimitivePalette,
-  isLight: boolean
-) => {
-  const base = isLight ? p.N0 : p.N9
-  const disabledSurface = isLight ? p.N2 : p.N7
+/** Stateful ink for action buttons (based on brand color B) */
+const buildActionStatefulInk = (p: PrimitivePalette, isLight: boolean) =>
+  buildStatefulInk(p, p.B, isLight ? p.N2 : p.N7, isLight)
 
-  // Use default surface's lightness for ink search direction
-  const baseIsLight = base.L > 0.5
-
-  // Ink is fixed based on default surface
-  const defaultInk = buildInkForSurface(p, base, baseIsLight)
-  const disabledInk = buildInkForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
-
-  const buildStateMap = (base: string, dis: string) => ({
-    default: base,
-    hover: base,
-    active: base,
-    disabled: dis,
-  })
-
-  return {
-    title: buildStateMap(defaultInk.title, disabledInk.title),
-    body: buildStateMap(defaultInk.body, disabledInk.body),
-    meta: buildStateMap(defaultInk.meta, disabledInk.meta),
-    linkText: buildStateMap(defaultInk.linkText, disabledInk.linkText),
-    border: buildStateMap(defaultInk.border, disabledInk.border),
-    divider: buildStateMap(defaultInk.divider, disabledInk.divider),
-  }
-}
+/** Stateful ink for quiet action buttons (based on N0/N9) */
+const buildActionQuietStatefulInk = (p: PrimitivePalette, isLight: boolean) =>
+  buildStatefulInk(p, isLight ? p.N0 : p.N9, isLight ? p.N2 : p.N7, isLight)
 
 // ============================================================================
 // Main Factory
@@ -404,90 +364,62 @@ const buildBaseTokenRefs = (
   }
 }
 
+// Helper: Build stateful surface refs (generic)
+const buildStatefulSurfaceRefs = (
+  defaultKey: PrimitiveKey,
+  disabledKey: PrimitiveKey
+): StatefulSurfaceRefs => ({
+  default: defaultKey,
+  hover: 'computed',
+  active: 'computed',
+  disabled: disabledKey,
+})
+
 // Helper: Build action surface refs
-const buildActionSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs => {
-  const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
-  return {
-    default: 'B',
-    hover: 'computed', // B with adjusted lightness
-    active: 'computed', // B with adjusted lightness
-    disabled: disabledKey,
-  }
-}
+const buildActionSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs =>
+  buildStatefulSurfaceRefs('B', isLight ? 'N2' : 'N7')
 
 // Helper: Build action quiet surface refs
-const buildActionQuietSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs => {
-  const baseKey: PrimitiveKey = isLight ? 'N0' : 'N9'
-  const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
+const buildActionQuietSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs =>
+  buildStatefulSurfaceRefs(isLight ? 'N0' : 'N9', isLight ? 'N2' : 'N7')
+
+// Helper: Build stateful ink refs (generic)
+// Ink refs are fixed based on default surface - does not change for hover/active
+const buildStatefulInkRefs = (
+  p: PrimitivePalette,
+  defaultSurface: Oklch,
+  disabledSurface: Oklch,
+  isLight: boolean
+): StatefulInkRefs => {
+  const defaultIsLight = defaultSurface.L > 0.5
+
+  const defaultInkRefs = buildInkRefsForSurface(p, defaultSurface, defaultIsLight)
+  const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
+
+  const buildStateMap = (base: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
+    default: base,
+    hover: base,
+    active: base,
+    disabled: dis,
+  })
+
   return {
-    default: baseKey,
-    hover: 'computed', // N0/N9 with ΔL adjustment
-    active: 'computed', // N0/N9 with ΔL adjustment
-    disabled: disabledKey,
+    title: buildStateMap(defaultInkRefs.title, disabledInkRefs.title),
+    body: buildStateMap(defaultInkRefs.body, disabledInkRefs.body),
+    meta: buildStateMap(defaultInkRefs.meta, disabledInkRefs.meta),
+    linkText: buildStateMap(defaultInkRefs.linkText, disabledInkRefs.linkText),
+    border: buildStateMap(defaultInkRefs.border, disabledInkRefs.border),
+    divider: buildStateMap(defaultInkRefs.divider, disabledInkRefs.divider),
   }
 }
 
 // Helper: Build action stateful ink refs
-// Ink refs are fixed based on default surface (B)
-const buildActionStatefulInkRefs = (
-  p: PrimitivePalette,
-  isLight: boolean
-): StatefulInkRefs => {
-  const b = p.B
-  const disabledSurface = isLight ? p.N2 : p.N7
-
-  const bIsLight = b.L > 0.5
-
-  const defaultInkRefs = buildInkRefsForSurface(p, b, bIsLight)
-  const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
-
-  const buildStateMap = (base: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
-    default: base,
-    hover: base,
-    active: base,
-    disabled: dis,
-  })
-
-  return {
-    title: buildStateMap(defaultInkRefs.title, disabledInkRefs.title),
-    body: buildStateMap(defaultInkRefs.body, disabledInkRefs.body),
-    meta: buildStateMap(defaultInkRefs.meta, disabledInkRefs.meta),
-    linkText: buildStateMap(defaultInkRefs.linkText, disabledInkRefs.linkText),
-    border: buildStateMap(defaultInkRefs.border, disabledInkRefs.border),
-    divider: buildStateMap(defaultInkRefs.divider, disabledInkRefs.divider),
-  }
-}
+const buildActionStatefulInkRefs = (p: PrimitivePalette, isLight: boolean): StatefulInkRefs =>
+  buildStatefulInkRefs(p, p.B, isLight ? p.N2 : p.N7, isLight)
 
 // Helper: Build action quiet stateful ink refs
-// Ink refs are fixed based on default surface (N0/N9)
-const buildActionQuietStatefulInkRefs = (
-  p: PrimitivePalette,
-  isLight: boolean
-): StatefulInkRefs => {
-  const base = isLight ? p.N0 : p.N9
-  const disabledSurface = isLight ? p.N2 : p.N7
-
-  const baseIsLight = base.L > 0.5
-
-  const defaultInkRefs = buildInkRefsForSurface(p, base, baseIsLight)
-  const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
-
-  const buildStateMap = (base: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
-    default: base,
-    hover: base,
-    active: base,
-    disabled: dis,
-  })
-
-  return {
-    title: buildStateMap(defaultInkRefs.title, disabledInkRefs.title),
-    body: buildStateMap(defaultInkRefs.body, disabledInkRefs.body),
-    meta: buildStateMap(defaultInkRefs.meta, disabledInkRefs.meta),
-    linkText: buildStateMap(defaultInkRefs.linkText, disabledInkRefs.linkText),
-    border: buildStateMap(defaultInkRefs.border, disabledInkRefs.border),
-    divider: buildStateMap(defaultInkRefs.divider, disabledInkRefs.divider),
-  }
-}
+const buildActionQuietStatefulInkRefs = (p: PrimitivePalette, isLight: boolean): StatefulInkRefs =>
+  buildStatefulInkRefs(p, isLight ? p.N0 : p.N9, isLight ? p.N2 : p.N7, isLight)
 
 /**
  * Create PrimitiveRefMap from PrimitivePalette
