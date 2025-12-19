@@ -7,7 +7,6 @@ import { $SemanticColorPalette } from '../Domain/ValueObject/SemanticColorPalett
 import type { ActionState } from '../Domain/ValueObject/SemanticNames'
 import {
   selectNeutralByApca,
-  selectNeutralClosestToApca,
   APCA_INK_TARGETS,
   APCA_DISABLED_TARGETS,
   type NeutralEntry,
@@ -51,19 +50,6 @@ const findNeutralByApca = (
   return result.key as NeutralKey
 }
 
-/**
- * Find neutral closest to target APCA Lc value (for subtle elements).
- */
-const findNeutralClosestToApca = (
-  p: PrimitivePalette,
-  surface: Oklch,
-  targetLc: number
-): NeutralKey => {
-  const neutrals = toNeutralEntries(p)
-  const result = selectNeutralClosestToApca(neutrals, surface, targetLc)
-  return result.key as NeutralKey
-}
-
 // ============================================================================
 // Ink Selection (APCA-based)
 // ============================================================================
@@ -88,6 +74,7 @@ type ApcaTargets = {
 
 /**
  * Build ink colors for a given surface using APCA contrast selection.
+ * All ink roles use the same search order based on surface lightness.
  */
 const buildInkForSurface = (
   p: PrimitivePalette,
@@ -95,15 +82,13 @@ const buildInkForSurface = (
   isLight: boolean,
   targets: ApcaTargets = APCA_INK_TARGETS
 ): InkColors => {
-  // Text inks: find neutrals that meet or exceed target APCA Lc
+  // All inks: find neutrals that just meet target APCA Lc (last-passing)
   const titleKey = findNeutralByApca(p, surface, targets.title, isLight)
   const bodyKey = findNeutralByApca(p, surface, targets.body, isLight)
   const metaKey = findNeutralByApca(p, surface, targets.meta, isLight)
   const linkTextKey = findNeutralByApca(p, surface, targets.linkText, isLight)
-
-  // Line inks: find neutrals closest to target Lc (not exceeding)
-  const borderKey = findNeutralClosestToApca(p, surface, targets.border)
-  const dividerKey = findNeutralClosestToApca(p, surface, targets.divider)
+  const borderKey = findNeutralByApca(p, surface, targets.border, isLight)
+  const dividerKey = findNeutralByApca(p, surface, targets.divider, isLight)
 
   return {
     title: css(p[titleKey]),
@@ -371,6 +356,7 @@ export type PrimitiveRefMap = {
 }
 
 // Helper: Build ink refs for a given surface using APCA
+// All ink roles use the same search order based on surface lightness
 const buildInkRefsForSurface = (
   p: PrimitivePalette,
   surface: Oklch,
@@ -381,8 +367,8 @@ const buildInkRefsForSurface = (
   const bodyKey = findNeutralByApca(p, surface, targets.body, isLight)
   const metaKey = findNeutralByApca(p, surface, targets.meta, isLight)
   const linkTextKey = findNeutralByApca(p, surface, targets.linkText, isLight)
-  const borderKey = findNeutralClosestToApca(p, surface, targets.border)
-  const dividerKey = findNeutralClosestToApca(p, surface, targets.divider)
+  const borderKey = findNeutralByApca(p, surface, targets.border, isLight)
+  const dividerKey = findNeutralByApca(p, surface, targets.divider, isLight)
 
   return {
     title: titleKey,
