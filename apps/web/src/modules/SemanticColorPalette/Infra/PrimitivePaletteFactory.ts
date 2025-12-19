@@ -13,11 +13,13 @@ export const PRIMITIVE_PALETTE_CONFIG = {
   themeLightnessThreshold: 0.5,
 
   // Lightness ramps for neutral/foundation scales (10 steps: N0-N9 / F0-F9)
+  // Consistent semantic: 0 = lightest (white), 9 = darkest (black)
+  // Both themes use the same ordering for predictable primitive key references
   lightnessRamp: {
     // Light theme: N0/F0 = lightest (0.985), N9/F9 = darkest (0.12)
     light: [0.985, 0.955, 0.915, 0.86, 0.78, 0.68, 0.56, 0.42, 0.28, 0.12] as const,
-    // Dark theme: N0/F0 = darkest (0.10), N9/F9 = lightest (0.94)
-    dark: [0.10, 0.16, 0.24, 0.34, 0.46, 0.58, 0.70, 0.80, 0.88, 0.94] as const,
+    // Dark theme: N0/F0 = lightest (0.94), N9/F9 = darkest (0.10)
+    dark: [0.94, 0.88, 0.80, 0.70, 0.58, 0.46, 0.34, 0.24, 0.16, 0.10] as const,
   },
 
   // Neutral ramp (N0-N9): subtle brand-tinted grays
