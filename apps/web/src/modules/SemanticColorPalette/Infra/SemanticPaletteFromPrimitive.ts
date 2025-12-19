@@ -76,6 +76,10 @@ type ApcaTargets = {
  * Build ink colors for a given surface using APCA contrast selection.
  * All ink roles use the same search order based on surface lightness.
  */
+/** ΔL adjustment for border/divider (shift toward surface for subtlety) */
+const BORDER_DELTA_L = 0.05
+const DIVIDER_DELTA_L = 0.1
+
 const buildInkForSurface = (
   p: PrimitivePalette,
   surface: Oklch,
@@ -90,13 +94,20 @@ const buildInkForSurface = (
   const borderKey = findNeutralByApca(p, surface, targets.border, isLight)
   const dividerKey = findNeutralByApca(p, surface, targets.divider, isLight)
 
+  // Adjust border/divider L toward surface (more subtle)
+  const direction = isLight ? 1 : -1
+  const adjustL = (color: Oklch, delta: number): Oklch => ({
+    ...color,
+    L: Math.max(0, Math.min(1, color.L + delta * direction)),
+  })
+
   return {
     title: css(p[titleKey]),
     body: css(p[bodyKey]),
     meta: css(p[metaKey]),
     linkText: css(p[linkTextKey]),
-    border: css(p[borderKey]),
-    divider: css(p[dividerKey]),
+    border: css(adjustL(p[borderKey], BORDER_DELTA_L)),
+    divider: css(adjustL(p[dividerKey], DIVIDER_DELTA_L)),
   }
 }
 
@@ -367,16 +378,15 @@ const buildInkRefsForSurface = (
   const bodyKey = findNeutralByApca(p, surface, targets.body, isLight)
   const metaKey = findNeutralByApca(p, surface, targets.meta, isLight)
   const linkTextKey = findNeutralByApca(p, surface, targets.linkText, isLight)
-  const borderKey = findNeutralByApca(p, surface, targets.border, isLight)
-  const dividerKey = findNeutralByApca(p, surface, targets.divider, isLight)
+  // border/divider use APCA selection + ΔL adjustment, so they're computed
 
   return {
     title: titleKey,
     body: bodyKey,
     meta: metaKey,
     linkText: linkTextKey,
-    border: borderKey,
-    divider: dividerKey,
+    border: 'computed',
+    divider: 'computed',
   }
 }
 

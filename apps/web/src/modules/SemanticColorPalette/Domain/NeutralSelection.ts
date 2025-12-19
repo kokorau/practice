@@ -58,8 +58,8 @@ export const APCA_INK_TARGETS = {
   linkText: 75,    // Body text
   /** Border - subtle UI element */
   border: 30,      // Non-text
-  /** Divider - very subtle */
-  divider: 15,     // Minimum perceivable
+  /** Divider - subtle separator */
+  divider: 30,     // Same as border
 } as const
 
 /**

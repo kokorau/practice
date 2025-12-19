@@ -157,7 +157,7 @@ describe('NeutralSelection', () => {
       const result = selectNeutralClosestToApca(neutrals, whiteSurface, 15)
 
       expect(Math.abs(result.absLc - 15)).toBeLessThan(15)
-      console.log(`Divider (target 15): ${result.key} → Lc ${result.absLc.toFixed(1)}`)
+      console.log(`Divider (target 30): ${result.key} → Lc ${result.absLc.toFixed(1)}`)
     })
   })
 
@@ -168,7 +168,7 @@ describe('NeutralSelection', () => {
       expect(APCA_INK_TARGETS.meta).toBe(60)
       expect(APCA_INK_TARGETS.linkText).toBe(75)
       expect(APCA_INK_TARGETS.border).toBe(30)
-      expect(APCA_INK_TARGETS.divider).toBe(15)
+      expect(APCA_INK_TARGETS.divider).toBe(30)
     })
   })
 })
