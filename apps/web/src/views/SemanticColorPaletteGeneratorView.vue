@@ -1997,8 +1997,8 @@ h1 {
 }
 
 .demo-header-actions button {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
 }
 
 /* Demo Hero Section */
@@ -2070,8 +2070,8 @@ h1 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  font-size: 0.85rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
 }
 
 .demo-play-icon {
@@ -2551,8 +2551,8 @@ h1 {
 
 .demo-pricing-card button {
   width: 100%;
-  padding: 0.625rem 1rem;
-  font-size: 0.85rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
 }
 
 /* Demo FAQ Section */
@@ -2666,8 +2666,8 @@ h1 {
 }
 
 .demo-cta-form button {
-  padding: 0.625rem 1.25rem;
-  font-size: 0.85rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
   white-space: nowrap;
 }
 
