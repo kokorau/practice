@@ -23,6 +23,11 @@ import {
   type BaseTokenRefs,
   type PrimitiveRef,
 } from '../modules/SemanticColorPalette/Infra'
+import type { Preset, Lut1D } from '../modules/Filter/Domain'
+import { $Filter, $Lut1D } from '../modules/Filter/Domain'
+import { getPresets } from '../modules/Filter/Infra/PresetRepository'
+import { useFilter } from '../composables/Filter/useFilter'
+import FilterPanel from '../components/Filter/FilterPanel.vue'
 
 // ============================================================
 // Foundation Color State (the "paper") - Preset Selection
@@ -186,6 +191,87 @@ const handleMouseUp = () => {
 type TabId = 'primitive' | 'palette' | 'demo'
 const activeTab = ref<TabId>('primitive')
 
+// Sidebar mini-pager state
+type SidebarPage = 'list' | 'brand' | 'foundation' | 'filter'
+const currentSidebarPage = ref<SidebarPage>('list')
+
+const sidebarItems = [
+  { id: 'brand' as const, label: 'Brand Color', icon: '🎨' },
+  { id: 'foundation' as const, label: 'Foundation', icon: '📄' },
+  { id: 'filter' as const, label: 'Color Filter', icon: '🔮' },
+]
+
+// ============================================================
+// Filter State
+// ============================================================
+
+const FILTER_PRESETS: readonly Preset[] = getPresets()
+
+const {
+  filter,
+  intensity,
+  currentPresetId,
+  applyPreset,
+  setters: filterSetters,
+  setMasterPoint,
+  reset: resetFilter,
+} = useFilter()
+
+// Current preset name for display in list view
+const currentFilterName = computed(() => {
+  if (!currentPresetId.value) return 'No Filter'
+  const preset = FILTER_PRESETS.find(p => p.id === currentPresetId.value)
+  return preset?.name ?? 'Custom'
+})
+
+// Generate LUT from filter (with intensity applied)
+const filterLut = computed(() => {
+  const baseLut = $Filter.toLut(filter.value)
+  if (intensity.value >= 0.999) return baseLut
+  return $Lut1D.blend(baseLut, intensity.value)
+})
+
+// Apply LUT to a single Oklch color
+const applyLutToOklch = (color: Oklch, lut: Lut1D): Oklch => {
+  // Convert Oklch to sRGB (0-1 range)
+  const srgb = $Oklch.toSrgb(color)
+
+  // Convert to 0-255 indices for LUT lookup
+  const rIdx = Math.round(Math.max(0, Math.min(1, srgb.r)) * 255)
+  const gIdx = Math.round(Math.max(0, Math.min(1, srgb.g)) * 255)
+  const bIdx = Math.round(Math.max(0, Math.min(1, srgb.b)) * 255)
+
+  // Apply LUT (output is 0-1)
+  const newR = lut.r[rIdx]!
+  const newG = lut.g[gIdx]!
+  const newB = lut.b[bIdx]!
+
+  // Convert back to Oklch
+  return $Oklch.fromSrgb({ r: newR, g: newG, b: newB })
+}
+
+// Apply LUT to entire PrimitivePalette
+const applyLutToPalette = (palette: PrimitivePalette, lut: Lut1D): PrimitivePalette => {
+  const result = { ...palette }
+
+  // Apply to Neutral keys (N0-N9)
+  for (const key of NEUTRAL_KEYS) {
+    result[key] = applyLutToOklch(palette[key], lut)
+  }
+
+  // Apply to Foundation keys (F0-F9)
+  for (const key of FOUNDATION_KEYS) {
+    result[key] = applyLutToOklch(palette[key], lut)
+  }
+
+  // Apply to Brand keys (B, Bt, Bs, Bf)
+  for (const key of BRAND_KEYS) {
+    result[key] = applyLutToOklch(palette[key], lut)
+  }
+
+  return result
+}
+
 const tabs: { id: TabId; label: string }[] = [
   { id: 'primitive', label: 'Primitive' },
   { id: 'palette', label: 'Palette Preview' },
@@ -208,12 +294,17 @@ const brandColor = computed(() => {
 // Primitive Palette Generation
 // ============================================================
 
-// Generate PrimitivePalette from brand + foundation colors
-const primitivePalette = computed((): PrimitivePalette => {
+// Generate base PrimitivePalette from brand + foundation colors
+const basePrimitivePalette = computed((): PrimitivePalette => {
   return createPrimitivePalette({
     brand: brandColor.value.oklch,
     foundation: foundationColor.value.oklch,
   })
+})
+
+// Apply filter to PrimitivePalette
+const primitivePalette = computed((): PrimitivePalette => {
+  return applyLutToPalette(basePrimitivePalette.value, filterLut.value)
 })
 
 // Neutral ramp for display (extracted from primitivePalette)
@@ -321,10 +412,45 @@ watch(palette, updateStyles)
 
 <template>
   <div class="semantic-color-palette-generator" :class="{ dark: isDark }">
-    <!-- Left Sidebar: Color Pickers -->
+    <!-- Left Sidebar: Mini-Pager Navigation -->
     <aside class="palette-sidebar">
-      <!-- Brand Color Section -->
-      <section class="sidebar-section">
+      <!-- List View -->
+      <div v-if="currentSidebarPage === 'list'" class="sidebar-list">
+        <button
+          v-for="item in sidebarItems"
+          :key="item.id"
+          class="sidebar-item"
+          @click="currentSidebarPage = item.id"
+        >
+          <span class="sidebar-item-icon">{{ item.icon }}</span>
+          <span class="sidebar-item-label">{{ item.label }}</span>
+          <div class="sidebar-item-preview">
+            <div
+              v-if="item.id === 'brand'"
+              class="color-swatch-mini"
+              :style="{ backgroundColor: selectedHex }"
+            />
+            <div
+              v-if="item.id === 'foundation'"
+              class="color-swatch-mini"
+              :style="{ backgroundColor: foundationColor.hex }"
+            />
+            <span
+              v-if="item.id === 'filter'"
+              class="sidebar-item-value"
+            >
+              {{ currentFilterName }}
+            </span>
+          </div>
+          <span class="sidebar-item-arrow">›</span>
+        </button>
+      </div>
+
+      <!-- Brand Color Page -->
+      <div v-else-if="currentSidebarPage === 'brand'" class="sidebar-page">
+        <button class="back-button" @click="currentSidebarPage = 'list'">
+          ‹ Back
+        </button>
         <h2 class="sidebar-title">Brand Color</h2>
 
         <!-- SV Picker (Saturation-Value) -->
@@ -372,11 +498,13 @@ watch(palette, updateStyles)
             </div>
           </div>
         </div>
+      </div>
 
-      </section>
-
-      <!-- Foundation Color Section -->
-      <section class="sidebar-section">
+      <!-- Foundation Color Page -->
+      <div v-else-if="currentSidebarPage === 'foundation'" class="sidebar-page">
+        <button class="back-button" @click="currentSidebarPage = 'list'">
+          ‹ Back
+        </button>
         <h2 class="sidebar-title">Foundation Color</h2>
 
         <!-- Light Theme Presets -->
@@ -434,8 +562,27 @@ watch(palette, updateStyles)
             </div>
           </div>
         </div>
+      </div>
 
-      </section>
+      <!-- Filter Page -->
+      <div v-else-if="currentSidebarPage === 'filter'" class="sidebar-page">
+        <button class="back-button" @click="currentSidebarPage = 'list'">
+          ‹ Back
+        </button>
+        <h2 class="sidebar-title">Color Filter</h2>
+
+        <FilterPanel
+          :filter="filter"
+          :presets="FILTER_PRESETS"
+          :current-preset-id="currentPresetId"
+          :setters="filterSetters"
+          :intensity="intensity"
+          @apply-preset="applyPreset"
+          @update:master-point="setMasterPoint"
+          @update:intensity="intensity = $event"
+          @reset="resetFilter"
+        />
+      </div>
     </aside>
 
     <!-- Main Content -->
@@ -1080,7 +1227,7 @@ watch(palette, updateStyles)
 
 /* Sidebar */
 .palette-sidebar {
-  width: 240px;
+  width: 400px;
   flex-shrink: 0;
   padding: 1.5rem 1rem;
   background: oklch(0.94 0.01 260);
@@ -1091,6 +1238,137 @@ watch(palette, updateStyles)
 .dark .palette-sidebar {
   background: oklch(0.10 0.02 260);
   border-right-color: oklch(0.20 0.02 260);
+}
+
+/* Sidebar List View */
+.sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: oklch(0.99 0.005 260);
+  border: none;
+  border-radius: 0.5rem;
+  color: oklch(0.25 0.02 260);
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.dark .sidebar-item {
+  background: oklch(0.16 0.02 260);
+  color: oklch(0.90 0.01 260);
+}
+
+.sidebar-item:hover {
+  background: oklch(0.96 0.01 260);
+}
+
+.dark .sidebar-item:hover {
+  background: oklch(0.20 0.02 260);
+}
+
+.sidebar-item-icon {
+  font-size: 1.25rem;
+}
+
+.sidebar-item-label {
+  flex: 1;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.sidebar-item-preview {
+  display: flex;
+  align-items: center;
+}
+
+.color-swatch-mini {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.sidebar-item-value {
+  font-size: 0.75rem;
+  color: oklch(0.50 0.02 260);
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .sidebar-item-value {
+  color: oklch(0.60 0.02 260);
+}
+
+.sidebar-item-arrow {
+  color: oklch(0.60 0.02 260);
+  font-size: 1.25rem;
+}
+
+.dark .sidebar-item-arrow {
+  color: oklch(0.50 0.02 260);
+}
+
+/* Sidebar Page View */
+.sidebar-page {
+  animation: sidebarSlideIn 0.15s ease-out;
+}
+
+@keyframes sidebarSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  background: none;
+  border: none;
+  color: oklch(0.50 0.02 260);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.dark .back-button {
+  color: oklch(0.60 0.02 260);
+}
+
+.back-button:hover {
+  color: oklch(0.30 0.02 260);
+}
+
+.dark .back-button:hover {
+  color: oklch(0.80 0.02 260);
+}
+
+.sidebar-placeholder {
+  color: oklch(0.50 0.02 260);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.dark .sidebar-placeholder {
+  color: oklch(0.60 0.02 260);
 }
 
 .sidebar-title {
