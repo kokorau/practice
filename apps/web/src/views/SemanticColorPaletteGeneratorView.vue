@@ -915,7 +915,7 @@ watch(palette, updateStyles)
           <section class="demo-testimonials" :class="CONTEXT_CLASS_NAMES.sectionTint">
             <h2 class="demo-section-title scp-title">What people are saying</h2>
             <div class="demo-testimonials-grid">
-              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.card">
+              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.cardFlat">
                 <p class="demo-testimonial-text scp-body">"Finally, a color tool that understands accessibility. The auto-contrast feature alone saves us hours every week."</p>
                 <div class="demo-testimonial-author">
                   <div class="demo-testimonial-avatar" />
@@ -925,7 +925,7 @@ watch(palette, updateStyles)
                   </div>
                 </div>
               </div>
-              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.card">
+              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.cardFlat">
                 <p class="demo-testimonial-text scp-body">"We switched from HSL to OKLCH thanks to this tool. The perceptual uniformity makes such a difference."</p>
                 <div class="demo-testimonial-author">
                   <div class="demo-testimonial-avatar" />
@@ -935,7 +935,7 @@ watch(palette, updateStyles)
                   </div>
                 </div>
               </div>
-              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.card">
+              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.cardFlat">
                 <p class="demo-testimonial-text scp-body">"The best palette generator I've used. Dark mode support out of the box is a game changer."</p>
                 <div class="demo-testimonial-author">
                   <div class="demo-testimonial-avatar" />
@@ -953,7 +953,7 @@ watch(palette, updateStyles)
             <h2 class="demo-section-title scp-title">Simple pricing</h2>
             <p class="demo-pricing-subtitle scp-body">Start free, upgrade when you need more.</p>
             <div class="demo-pricing-grid">
-              <div class="demo-pricing-card" :class="COMPONENT_CLASS_NAMES.card">
+              <div class="demo-pricing-card" :class="COMPONENT_CLASS_NAMES.cardFlat">
                 <h3 class="demo-pricing-name scp-title">Free</h3>
                 <div class="demo-pricing-price">
                   <span class="demo-pricing-amount scp-title">$0</span>
@@ -981,7 +981,7 @@ watch(palette, updateStyles)
                 </ul>
                 <button :class="COMPONENT_CLASS_NAMES.action">Start Free Trial</button>
               </div>
-              <div class="demo-pricing-card" :class="COMPONENT_CLASS_NAMES.card">
+              <div class="demo-pricing-card" :class="COMPONENT_CLASS_NAMES.cardFlat">
                 <h3 class="demo-pricing-name scp-title">Enterprise</h3>
                 <div class="demo-pricing-price">
                   <span class="demo-pricing-amount scp-title">Custom</span>
