@@ -12,12 +12,12 @@ export const PRIMITIVE_PALETTE_CONFIG = {
   // Theme detection threshold (L > threshold = light theme)
   themeLightnessThreshold: 0.5,
 
-  // Lightness ramps for neutral/foundation scales
+  // Lightness ramps for neutral/foundation scales (10 steps: N0-N9 / F0-F9)
   lightnessRamp: {
     // Light theme: N0/F0 = lightest (0.985), N9/F9 = darkest (0.12)
-    light: [0.985, 0.955, 0.915, 0.86, 0.78, 0.68, 0.56, 0.42, 0.28, 0.12] as readonly number[],
+    light: [0.985, 0.955, 0.915, 0.86, 0.78, 0.68, 0.56, 0.42, 0.28, 0.12] as const,
     // Dark theme: N0/F0 = darkest (0.10), N9/F9 = lightest (0.94)
-    dark: [0.10, 0.16, 0.24, 0.34, 0.46, 0.58, 0.70, 0.80, 0.88, 0.94] as readonly number[],
+    dark: [0.10, 0.16, 0.24, 0.34, 0.46, 0.58, 0.70, 0.80, 0.88, 0.94] as const,
   },
 
   // Neutral ramp (N0-N9): subtle brand-tinted grays
@@ -63,70 +63,82 @@ export const PRIMITIVE_PALETTE_CONFIG = {
 
 export type PrimitivePaletteConfig = typeof PRIMITIVE_PALETTE_CONFIG
 
-// Shorthand aliases for config access
-const cfg = PRIMITIVE_PALETTE_CONFIG
+// 10-element tuple type matching NEUTRAL_KEYS/FOUNDATION_KEYS length
+type LightnessRamp = readonly [number, number, number, number, number, number, number, number, number, number]
+
+type NeutralConfig = typeof PRIMITIVE_PALETTE_CONFIG.neutral
+type FoundationConfig = typeof PRIMITIVE_PALETTE_CONFIG.foundation
+type BrandConfig = typeof PRIMITIVE_PALETTE_CONFIG.brand
 
 export type PrimitivePaletteParams = {
   brand: Oklch
   foundation: Oklch
 }
 
-const generateNeutralRamp = (brand: Oklch, lightnessSteps: readonly number[]): Record<NeutralKey, Oklch> => {
-  const chroma = Math.min(brand.C * cfg.neutral.chromaRatio, cfg.neutral.chromaMax)
+// Helper: clamp value between min and max
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max)
+
+const generateNeutralRamp = (
+  brand: Oklch,
+  lightnessSteps: LightnessRamp,
+  config: NeutralConfig,
+): Record<NeutralKey, Oklch> => {
+  const chroma = Math.min(brand.C * config.chromaRatio, config.chromaMax)
   const hue = brand.H
 
-  const entries = NEUTRAL_KEYS.map((key, index) => [
-    key,
-    { L: lightnessSteps[index], C: chroma, H: hue },
+  const entries = lightnessSteps.map((L, index) => [
+    NEUTRAL_KEYS[index],
+    $Oklch.create(L, chroma, hue),
   ])
 
   return Object.fromEntries(entries) as Record<NeutralKey, Oklch>
 }
 
-const generateFoundationRamp = (foundation: Oklch, lightnessSteps: readonly number[]): Record<FoundationKey, Oklch> => {
-  const chroma = foundation.C * cfg.foundation.chromaRatio
+const generateFoundationRamp = (
+  foundation: Oklch,
+  lightnessSteps: LightnessRamp,
+  config: FoundationConfig,
+): Record<FoundationKey, Oklch> => {
+  const chroma = foundation.C * config.chromaRatio
   const hue = foundation.H
 
-  const entries = FOUNDATION_KEYS.map((key, index) => [
-    key,
-    { L: lightnessSteps[index], C: chroma, H: hue },
+  const entries = lightnessSteps.map((L, index) => [
+    FOUNDATION_KEYS[index],
+    $Oklch.create(L, chroma, hue),
   ])
 
   return Object.fromEntries(entries) as Record<FoundationKey, Oklch>
 }
 
-// Helper: clamp value between min and max
-const clamp = (value: number, min: number, max: number): number =>
-  Math.min(Math.max(value, min), max)
-
 /**
  * Generate brand derivative colors (Bt, Bs, Bf) from brand color
  * All derivatives preserve hue, adjust L and C, then clamp to P3 gamut
  */
-const generateBrandDerivatives = (brand: Oklch): Record<Exclude<BrandKey, 'B'>, Oklch> => {
+const generateBrandDerivatives = (brand: Oklch, config: BrandConfig): Record<Exclude<BrandKey, 'B'>, Oklch> => {
   const { L, C, H } = brand
-  const { tint, shade, fill } = cfg.brand
+  const { tint, shade, fill } = config
 
   // Bt (Brand Tint) - light surface
-  const btRaw: Oklch = {
-    L: clamp(L + tint.lightnessOffset, tint.lightnessMin, tint.lightnessMax),
-    C: Math.min(C * tint.chromaRatio, tint.chromaMax),
+  const btRaw = $Oklch.create(
+    clamp(L + tint.lightnessOffset, tint.lightnessMin, tint.lightnessMax),
+    Math.min(C * tint.chromaRatio, tint.chromaMax),
     H,
-  }
+  )
 
   // Bs (Brand Shade) - dark surface
-  const bsRaw: Oklch = {
-    L: clamp(L + shade.lightnessOffset, shade.lightnessMin, shade.lightnessMax),
-    C: Math.min(C * shade.chromaRatio, shade.chromaMax),
+  const bsRaw = $Oklch.create(
+    clamp(L + shade.lightnessOffset, shade.lightnessMin, shade.lightnessMax),
+    Math.min(C * shade.chromaRatio, shade.chromaMax),
     H,
-  }
+  )
 
   // Bf (Brand Fill) - strong surface
-  const bfRaw: Oklch = {
-    L: clamp(L + fill.lightnessOffset, fill.lightnessMin, fill.lightnessMax),
-    C: clamp(C * fill.chromaRatio, fill.chromaMin, fill.chromaMax),
+  const bfRaw = $Oklch.create(
+    clamp(L + fill.lightnessOffset, fill.lightnessMin, fill.lightnessMax),
+    clamp(C * fill.chromaRatio, fill.chromaMin, fill.chromaMax),
     H,
-  }
+  )
 
   // Clamp to P3 gamut (reduce chroma if out of gamut)
   return {
@@ -136,16 +148,19 @@ const generateBrandDerivatives = (brand: Oklch): Record<Exclude<BrandKey, 'B'>, 
   }
 }
 
-export const createPrimitivePalette = (params: PrimitivePaletteParams): PrimitivePalette => {
+export const createPrimitivePalette = (
+  params: PrimitivePaletteParams,
+  config: PrimitivePaletteConfig = PRIMITIVE_PALETTE_CONFIG,
+): PrimitivePalette => {
   const { brand, foundation } = params
 
   // Determine theme based on foundation lightness
-  const theme: PaletteTheme = foundation.L > cfg.themeLightnessThreshold ? 'light' : 'dark'
-  const lightnessSteps = theme === 'light' ? cfg.lightnessRamp.light : cfg.lightnessRamp.dark
+  const theme: PaletteTheme = foundation.L > config.themeLightnessThreshold ? 'light' : 'dark'
+  const lightnessSteps = theme === 'light' ? config.lightnessRamp.light : config.lightnessRamp.dark
 
-  const neutralRamp = generateNeutralRamp(brand, lightnessSteps)
-  const foundationRamp = generateFoundationRamp(foundation, lightnessSteps)
-  const brandDerivatives = generateBrandDerivatives(brand)
+  const neutralRamp = generateNeutralRamp(brand, lightnessSteps, config.neutral)
+  const foundationRamp = generateFoundationRamp(foundation, lightnessSteps, config.foundation)
+  const brandDerivatives = generateBrandDerivatives(brand, config.brand)
 
   return { ...neutralRamp, ...foundationRamp, B: brand, ...brandDerivatives, theme }
 }
