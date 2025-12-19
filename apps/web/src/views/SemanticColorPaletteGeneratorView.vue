@@ -86,7 +86,6 @@ const foundationPresetsWithContrast = computed(() => {
     return {
       ...preset,
       resolvedH: presetHue,
-      contrastRatio: ratio,
       meetsMinContrast,
     }
   })
@@ -204,18 +203,6 @@ const brandColor = computed(() => {
     cssP3: $Oklch.toCssP3(oklch),
   }
 })
-
-// ============================================================
-// Validation
-// ============================================================
-
-// Computed contrast ratio for display
-const currentContrastRatio = computed(() =>
-  contrastRatio($ColorPairValidation.deriveBrandText(brandColor.value.oklch), foundationColor.value.oklch)
-)
-
-// Overall validity (contrast check)
-const isValidColorPair = computed(() => currentContrastRatio.value >= MIN_FOUNDATION_BRAND_CONTRAST)
 
 // ============================================================
 // Primitive Palette Generation
@@ -448,11 +435,6 @@ watch(palette, updateStyles)
           </div>
         </div>
 
-        <!-- Contrast Warning for selected foundation -->
-        <div v-if="!isValidColorPair" class="validation-warning">
-          <span class="warning-icon">!</span>
-          <span class="warning-text">Low contrast ({{ currentContrastRatio.toFixed(1) }}:1)</span>
-        </div>
       </section>
     </aside>
 
@@ -526,13 +508,6 @@ watch(palette, updateStyles)
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Contrast Ratio -->
-          <div class="contrast-info" :class="{ warning: !isValidColorPair }">
-            <span class="contrast-label">Contrast Ratio</span>
-            <span class="contrast-value">{{ currentContrastRatio.toFixed(2) }}:1</span>
-            <span v-if="!isValidColorPair" class="contrast-warning">Low contrast</span>
           </div>
         </section>
 
