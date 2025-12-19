@@ -14,20 +14,9 @@ export {
 } from './DefaultPalettes'
 
 export {
-  NEUTRAL_L_LIGHT,
-  NEUTRAL_L_DARK,
-  DEFAULT_CHROMA_RATIO,
-  DEFAULT_MAX_CHROMA,
-  DEFAULT_FOUNDATION_CHROMA_RATIO,
-  BRAND_TINT_CONFIG,
-  BRAND_SHADE_CONFIG,
-  BRAND_FILL_CONFIG,
-  generateNeutralRamp,
-  generateFoundationRamp,
-  generateBrandDerivatives,
+  PRIMITIVE_PALETTE_CONFIG,
   createPrimitivePalette,
-  type NeutralRampParams,
-  type FoundationRampParams,
+  type PrimitivePaletteConfig,
   type PrimitivePaletteParams,
 } from './PrimitivePaletteFactory'
 
