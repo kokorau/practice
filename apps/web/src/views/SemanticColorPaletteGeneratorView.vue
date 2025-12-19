@@ -191,9 +191,36 @@ const handleMouseUp = () => {
 type TabId = 'primitive' | 'palette' | 'demo'
 const activeTab = ref<TabId>('primitive')
 
-// Sidebar mini-pager state
-type SidebarPage = 'list' | 'brand' | 'foundation' | 'filter'
-const currentSidebarPage = ref<SidebarPage>('list')
+// Sidebar popup state
+type PopupType = 'brand' | 'foundation' | 'filter' | null
+const activePopup = ref<PopupType>(null)
+const popupRef = ref<HTMLDivElement | null>(null)
+
+const openPopup = (type: PopupType) => {
+  activePopup.value = type
+}
+
+const closePopup = () => {
+  activePopup.value = null
+}
+
+// Close popup on escape key
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && activePopup.value) {
+    closePopup()
+  }
+}
+
+// Close popup on click outside
+const handleClickOutside = (e: MouseEvent) => {
+  if (activePopup.value && popupRef.value && !popupRef.value.contains(e.target as Node)) {
+    // Check if click is on sidebar item (to allow switching between popups)
+    const target = e.target as HTMLElement
+    if (!target.closest('.sidebar-item')) {
+      closePopup()
+    }
+  }
+}
 
 const sidebarItems = [
   { id: 'brand' as const, label: 'Brand Color', icon: '🎨' },
@@ -394,6 +421,10 @@ onMounted(() => {
   // Add global mouse event listeners for color picker
   window.addEventListener('mousemove', handleMouseMove)
   window.addEventListener('mouseup', handleMouseUp)
+
+  // Add global event listeners for popup
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('mousedown', handleClickOutside)
 })
 
 onUnmounted(() => {
@@ -405,6 +436,10 @@ onUnmounted(() => {
   // Remove global mouse event listeners
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('mouseup', handleMouseUp)
+
+  // Remove global event listeners for popup
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('mousedown', handleClickOutside)
 })
 
 watch(palette, updateStyles)
@@ -412,177 +447,176 @@ watch(palette, updateStyles)
 
 <template>
   <div class="semantic-color-palette-generator" :class="{ dark: isDark }">
-    <!-- Left Sidebar: Mini-Pager Navigation -->
+    <!-- Left Sidebar: List with Popup -->
     <aside class="palette-sidebar">
-      <!-- List View -->
-      <div v-if="currentSidebarPage === 'list'" class="sidebar-list">
+      <div class="sidebar-list">
         <button
           v-for="item in sidebarItems"
           :key="item.id"
           class="sidebar-item"
-          @click="currentSidebarPage = item.id"
+          :class="{ active: activePopup === item.id }"
+          @click="openPopup(item.id)"
         >
-          <span class="sidebar-item-icon">{{ item.icon }}</span>
-          <span class="sidebar-item-label">{{ item.label }}</span>
+          <div class="sidebar-item-main">
+            <span class="sidebar-item-icon">{{ item.icon }}</span>
+            <span class="sidebar-item-label">{{ item.label }}</span>
+          </div>
           <div class="sidebar-item-preview">
-            <div
-              v-if="item.id === 'brand'"
-              class="color-swatch-mini"
-              :style="{ backgroundColor: selectedHex }"
-            />
-            <div
-              v-if="item.id === 'foundation'"
-              class="color-swatch-mini"
-              :style="{ backgroundColor: foundationColor.hex }"
-            />
-            <span
-              v-if="item.id === 'filter'"
-              class="sidebar-item-value"
-            >
-              {{ currentFilterName }}
-            </span>
+            <template v-if="item.id === 'brand'">
+              <div
+                class="color-swatch-mini"
+                :style="{ backgroundColor: selectedHex }"
+              />
+              <span class="sidebar-item-value">{{ selectedHex }}</span>
+            </template>
+            <template v-else-if="item.id === 'foundation'">
+              <div
+                class="color-swatch-mini"
+                :style="{ backgroundColor: foundationColor.hex }"
+              />
+              <span class="sidebar-item-value">{{ selectedFoundationPreset.label }}</span>
+            </template>
+            <template v-else-if="item.id === 'filter'">
+              <span class="sidebar-item-value">{{ currentFilterName }}</span>
+            </template>
           </div>
-          <span class="sidebar-item-arrow">›</span>
         </button>
       </div>
 
-      <!-- Brand Color Page -->
-      <div v-else-if="currentSidebarPage === 'brand'" class="sidebar-page">
-        <button class="back-button" @click="currentSidebarPage = 'list'">
-          ‹ Back
-        </button>
-        <h2 class="sidebar-title">Brand Color</h2>
+      <!-- Popup Panel -->
+      <Transition name="popup">
+        <div v-if="activePopup" ref="popupRef" class="sidebar-popup">
+          <div class="popup-header">
+            <h2 class="popup-title">
+              {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'foundation' ? 'Foundation' : 'Color Filter' }}
+            </h2>
+            <button class="popup-close" @click="closePopup">×</button>
+          </div>
 
-        <!-- SV Picker (Saturation-Value) -->
-        <div
-          ref="svPickerRef"
-          class="sv-picker"
-          :style="{ backgroundColor: hueColor }"
-          @mousedown="handleSVMouseDown"
-        >
-          <div class="sv-picker-white" />
-          <div class="sv-picker-black" />
-          <div
-            class="sv-picker-cursor"
-            :style="{
-              left: `${saturation}%`,
-              top: `${100 - value}%`,
-            }"
-          />
-        </div>
+          <!-- Brand Color Content -->
+          <div v-if="activePopup === 'brand'" class="popup-content">
+            <!-- SV Picker (Saturation-Value) -->
+            <div
+              ref="svPickerRef"
+              class="sv-picker"
+              :style="{ backgroundColor: hueColor }"
+              @mousedown="handleSVMouseDown"
+            >
+              <div class="sv-picker-white" />
+              <div class="sv-picker-black" />
+              <div
+                class="sv-picker-cursor"
+                :style="{
+                  left: `${saturation}%`,
+                  top: `${100 - value}%`,
+                }"
+              />
+            </div>
 
-        <!-- Hue Slider -->
-        <div
-          ref="hueSliderRef"
-          class="hue-slider"
-          @mousedown="handleHueMouseDown"
-        >
-          <div
-            class="hue-slider-cursor"
-            :style="{ left: `${(hue / 360) * 100}%` }"
-          />
-        </div>
+            <!-- Hue Slider -->
+            <div
+              ref="hueSliderRef"
+              class="hue-slider"
+              @mousedown="handleHueMouseDown"
+            >
+              <div
+                class="hue-slider-cursor"
+                :style="{ left: `${(hue / 360) * 100}%` }"
+              />
+            </div>
 
-        <!-- Brand Color Preview -->
-        <div class="color-preview-section">
-          <div
-            class="color-preview"
-            :style="{ backgroundColor: selectedHex }"
-          />
-          <div class="color-values">
-            <code class="hex-value">{{ selectedHex }}</code>
-            <div class="hsv-values">
-              <span>H: {{ hue }}°</span>
-              <span>S: {{ saturation }}%</span>
-              <span>V: {{ value }}%</span>
+            <!-- Brand Color Preview -->
+            <div class="color-preview-section">
+              <div
+                class="color-preview"
+                :style="{ backgroundColor: selectedHex }"
+              />
+              <div class="color-values">
+                <code class="hex-value">{{ selectedHex }}</code>
+                <div class="hsv-values">
+                  <span>H: {{ hue }}°</span>
+                  <span>S: {{ saturation }}%</span>
+                  <span>V: {{ value }}%</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Foundation Color Page -->
-      <div v-else-if="currentSidebarPage === 'foundation'" class="sidebar-page">
-        <button class="back-button" @click="currentSidebarPage = 'list'">
-          ‹ Back
-        </button>
-        <h2 class="sidebar-title">Foundation Color</h2>
+          <!-- Foundation Color Content -->
+          <div v-else-if="activePopup === 'foundation'" class="popup-content">
+            <!-- Light Theme Presets -->
+            <div class="preset-group">
+              <span class="preset-group-label">Light</span>
+              <div class="preset-options">
+                <button
+                  v-for="preset in lightPresets"
+                  :key="preset.id"
+                  class="preset-button"
+                  :class="{
+                    selected: selectedFoundationId === preset.id,
+                    warning: !preset.meetsMinContrast,
+                  }"
+                  :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
+                  @click="selectedFoundationId = preset.id"
+                >
+                  <span class="preset-label">{{ preset.label }}</span>
+                  <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
+                </button>
+              </div>
+            </div>
 
-        <!-- Light Theme Presets -->
-        <div class="preset-group">
-          <span class="preset-group-label">Light</span>
-          <div class="preset-options">
-            <button
-              v-for="preset in lightPresets"
-              :key="preset.id"
-              class="preset-button"
-              :class="{
-                selected: selectedFoundationId === preset.id,
-                warning: !preset.meetsMinContrast,
-              }"
-              :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
-              @click="selectedFoundationId = preset.id"
-            >
-              <span class="preset-label">{{ preset.label }}</span>
-              <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
-            </button>
-          </div>
-        </div>
+            <!-- Dark Theme Presets -->
+            <div class="preset-group">
+              <span class="preset-group-label">Dark</span>
+              <div class="preset-options">
+                <button
+                  v-for="preset in darkPresets"
+                  :key="preset.id"
+                  class="preset-button preset-button--dark"
+                  :class="{
+                    selected: selectedFoundationId === preset.id,
+                    warning: !preset.meetsMinContrast,
+                  }"
+                  :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
+                  @click="selectedFoundationId = preset.id"
+                >
+                  <span class="preset-label">{{ preset.label }}</span>
+                  <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
+                </button>
+              </div>
+            </div>
 
-        <!-- Dark Theme Presets -->
-        <div class="preset-group">
-          <span class="preset-group-label">Dark</span>
-          <div class="preset-options">
-            <button
-              v-for="preset in darkPresets"
-              :key="preset.id"
-              class="preset-button preset-button--dark"
-              :class="{
-                selected: selectedFoundationId === preset.id,
-                warning: !preset.meetsMinContrast,
-              }"
-              :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
-              @click="selectedFoundationId = preset.id"
-            >
-              <span class="preset-label">{{ preset.label }}</span>
-              <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Selected Foundation Preview -->
-        <div class="color-preview-section">
-          <div
-            class="color-preview"
-            :style="{ backgroundColor: foundationColor.hex }"
-          />
-          <div class="color-values">
-            <code class="hex-value">{{ foundationColor.hex }}</code>
-            <div class="hsv-values">
-              <span>{{ selectedFoundationPreset.label }}</span>
+            <!-- Selected Foundation Preview -->
+            <div class="color-preview-section">
+              <div
+                class="color-preview"
+                :style="{ backgroundColor: foundationColor.hex }"
+              />
+              <div class="color-values">
+                <code class="hex-value">{{ foundationColor.hex }}</code>
+                <div class="hsv-values">
+                  <span>{{ selectedFoundationPreset.label }}</span>
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- Filter Content -->
+          <div v-else-if="activePopup === 'filter'" class="popup-content">
+            <FilterPanel
+              :filter="filter"
+              :presets="FILTER_PRESETS"
+              :current-preset-id="currentPresetId"
+              :setters="filterSetters"
+              :intensity="intensity"
+              @apply-preset="applyPreset"
+              @update:master-point="setMasterPoint"
+              @update:intensity="intensity = $event"
+              @reset="resetFilter"
+            />
+          </div>
         </div>
-      </div>
-
-      <!-- Filter Page -->
-      <div v-else-if="currentSidebarPage === 'filter'" class="sidebar-page">
-        <button class="back-button" @click="currentSidebarPage = 'list'">
-          ‹ Back
-        </button>
-        <h2 class="sidebar-title">Color Filter</h2>
-
-        <FilterPanel
-          :filter="filter"
-          :presets="FILTER_PRESETS"
-          :current-preset-id="currentPresetId"
-          :setters="filterSetters"
-          :intensity="intensity"
-          @apply-preset="applyPreset"
-          @update:master-point="setMasterPoint"
-          @update:intensity="intensity = $event"
-          @reset="resetFilter"
-        />
-      </div>
+      </Transition>
     </aside>
 
     <!-- Main Content -->
@@ -1227,17 +1261,108 @@ watch(palette, updateStyles)
 
 /* Sidebar */
 .palette-sidebar {
-  width: 400px;
+  position: relative;
+  width: 200px;
   flex-shrink: 0;
-  padding: 1.5rem 1rem;
+  padding: 1rem 0.75rem;
   background: oklch(0.94 0.01 260);
   border-right: 1px solid oklch(0.88 0.01 260);
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .dark .palette-sidebar {
   background: oklch(0.10 0.02 260);
   border-right-color: oklch(0.20 0.02 260);
+}
+
+/* Sidebar Popup */
+.sidebar-popup {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 320px;
+  max-height: 100vh;
+  background: oklch(0.97 0.005 260);
+  border-left: 1px solid oklch(0.88 0.01 260);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
+  overflow-y: auto;
+  z-index: 100;
+  border-radius: 0 8px 8px 0;
+}
+
+.dark .sidebar-popup {
+  background: oklch(0.14 0.02 260);
+  border-left-color: oklch(0.20 0.02 260);
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+  position: sticky;
+  top: 0;
+  background: oklch(0.97 0.005 260);
+  z-index: 1;
+}
+
+.dark .popup-header {
+  background: oklch(0.14 0.02 260);
+  border-bottom-color: oklch(0.20 0.02 260);
+}
+
+.popup-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: oklch(0.25 0.02 260);
+}
+
+.dark .popup-title {
+  color: oklch(0.90 0.01 260);
+}
+
+.popup-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: oklch(0.50 0.02 260);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.popup-close:hover {
+  background: oklch(0.90 0.01 260);
+  color: oklch(0.30 0.02 260);
+}
+
+.dark .popup-close:hover {
+  background: oklch(0.22 0.02 260);
+  color: oklch(0.80 0.02 260);
+}
+
+.popup-content {
+  padding: 1rem;
+}
+
+/* Popup Transition */
+.popup-enter-active,
+.popup-leave-active {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.popup-enter-from,
+.popup-leave-to {
+  transform: translateX(-8px);
+  opacity: 0;
 }
 
 /* Sidebar List View */
@@ -1249,9 +1374,9 @@ watch(palette, updateStyles)
 
 .sidebar-item {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.5rem 0.625rem;
   background: oklch(0.99 0.005 260);
   border: none;
   border-radius: 0.5rem;
@@ -1275,114 +1400,56 @@ watch(palette, updateStyles)
   background: oklch(0.20 0.02 260);
 }
 
+.sidebar-item.active {
+  background: oklch(0.96 0.01 260);
+  border-left: 3px solid oklch(0.55 0.18 250);
+  padding-left: calc(0.625rem - 3px);
+}
+
+.dark .sidebar-item.active {
+  background: oklch(0.20 0.02 260);
+  border-left-color: oklch(0.55 0.16 250);
+}
+
+.sidebar-item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .sidebar-item-icon {
-  font-size: 1.25rem;
+  font-size: 0.875rem;
 }
 
 .sidebar-item-label {
-  flex: 1;
-  font-weight: 500;
-  font-size: 0.875rem;
+  font-weight: 600;
+  font-size: 0.7rem;
 }
 
 .sidebar-item-preview {
   display: flex;
   align-items: center;
+  gap: 0.375rem;
+  padding-left: 1.375rem;
 }
 
 .color-swatch-mini {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.1875rem;
   border: 1px solid rgba(128, 128, 128, 0.2);
 }
 
 .sidebar-item-value {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: oklch(0.50 0.02 260);
-  max-width: 100px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-family: 'SF Mono', Monaco, monospace;
 }
 
 .dark .sidebar-item-value {
   color: oklch(0.60 0.02 260);
 }
 
-.sidebar-item-arrow {
-  color: oklch(0.60 0.02 260);
-  font-size: 1.25rem;
-}
-
-.dark .sidebar-item-arrow {
-  color: oklch(0.50 0.02 260);
-}
-
-/* Sidebar Page View */
-.sidebar-page {
-  animation: sidebarSlideIn 0.15s ease-out;
-}
-
-@keyframes sidebarSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0;
-  margin-bottom: 1rem;
-  background: none;
-  border: none;
-  color: oklch(0.50 0.02 260);
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-.dark .back-button {
-  color: oklch(0.60 0.02 260);
-}
-
-.back-button:hover {
-  color: oklch(0.30 0.02 260);
-}
-
-.dark .back-button:hover {
-  color: oklch(0.80 0.02 260);
-}
-
-.sidebar-placeholder {
-  color: oklch(0.50 0.02 260);
-  font-size: 0.85rem;
-  text-align: center;
-  padding: 2rem 1rem;
-}
-
-.dark .sidebar-placeholder {
-  color: oklch(0.60 0.02 260);
-}
-
-.sidebar-title {
-  margin: 0 0 1rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: oklch(0.50 0.02 260);
-}
-
-.dark .sidebar-title {
-  color: oklch(0.60 0.02 260);
-}
 
 /* SV Picker */
 .sv-picker {
