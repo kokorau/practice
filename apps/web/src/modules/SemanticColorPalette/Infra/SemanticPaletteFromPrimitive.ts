@@ -134,7 +134,7 @@ const SURFACE_KEYS_LIGHT: SurfaceKeys = {
   sectionTint: 'Bt',
   sectionContrast: 'Bf',
   card: 'B',             // Brand color
-  cardFlat: 'N3',        // Two steps inside from canvas (Neutral)
+  cardFlat: 'N2',        // Light neutral surface
 }
 
 const SURFACE_KEYS_DARK: SurfaceKeys = {
@@ -143,7 +143,7 @@ const SURFACE_KEYS_DARK: SurfaceKeys = {
   sectionTint: 'Bs',
   sectionContrast: 'Bf',
   card: 'B',             // Brand color
-  cardFlat: 'N6',        // Two steps inside from canvas (Neutral)
+  cardFlat: 'N7',        // Dark neutral surface
 }
 
 // ============================================================================
@@ -187,10 +187,10 @@ const buildActionSurface = (p: PrimitivePalette, isLight: boolean) => {
 
 /**
  * Action quiet button surface states
- * Uses N3/N7 as base (same as cardFlat) with ΔL adjustment for hover/active
+ * Uses N0/N9 as base (extreme neutrals) with ΔL adjustment for hover/active
  */
 const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) => {
-  const base = isLight ? p.N3 : p.N7
+  const base = isLight ? p.N0 : p.N9
   const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
 
   // Adjust lightness for hover/active states (ΔL = 0.03, same as Action)
@@ -207,8 +207,8 @@ const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) => {
 
 /**
  * Build stateful ink for action buttons.
- * Uses B surface with ΔL-adjusted surfaces for hover/active.
- * Ink search direction is based on each surface's actual lightness.
+ * Ink is fixed based on default surface (B) - does not change for hover/active.
+ * Only disabled state has different ink.
  */
 const buildActionStatefulInk = (
   p: PrimitivePalette,
@@ -217,81 +217,63 @@ const buildActionStatefulInk = (
   const b = p.B
   const disabledSurface = isLight ? p.N2 : p.N7
 
-  // Same ΔL adjustment as buildActionSurface
-  const hoverL = isLight ? b.L - 0.03 : b.L + 0.03
-  const activeL = isLight ? b.L - 0.06 : b.L + 0.06
-  const hoverSurface: Oklch = { ...b, L: Math.max(0, Math.min(1, hoverL)) }
-  const activeSurface: Oklch = { ...b, L: Math.max(0, Math.min(1, activeL)) }
-
-  // Use each surface's actual lightness for ink search direction
+  // Use default surface's lightness for ink search direction
   const bIsLight = b.L > 0.5
-  const hoverIsLight = hoverSurface.L > 0.5
-  const activeIsLight = activeSurface.L > 0.5
 
+  // Ink is fixed based on default surface
   const defaultInk = buildInkForSurface(p, b, bIsLight)
-  const hoverInk = buildInkForSurface(p, hoverSurface, hoverIsLight)
-  const activeInk = buildInkForSurface(p, activeSurface, activeIsLight)
   const disabledInk = buildInkForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
 
-  const buildStateMap = (d: string, h: string, a: string, dis: string) => ({
-    default: d,
-    hover: h,
-    active: a,
+  const buildStateMap = (base: string, dis: string) => ({
+    default: base,
+    hover: base,
+    active: base,
     disabled: dis,
   })
 
   return {
-    title: buildStateMap(defaultInk.title, hoverInk.title, activeInk.title, disabledInk.title),
-    body: buildStateMap(defaultInk.body, hoverInk.body, activeInk.body, disabledInk.body),
-    meta: buildStateMap(defaultInk.meta, hoverInk.meta, activeInk.meta, disabledInk.meta),
-    linkText: buildStateMap(defaultInk.linkText, hoverInk.linkText, activeInk.linkText, disabledInk.linkText),
-    border: buildStateMap(defaultInk.border, hoverInk.border, activeInk.border, disabledInk.border),
-    divider: buildStateMap(defaultInk.divider, hoverInk.divider, activeInk.divider, disabledInk.divider),
+    title: buildStateMap(defaultInk.title, disabledInk.title),
+    body: buildStateMap(defaultInk.body, disabledInk.body),
+    meta: buildStateMap(defaultInk.meta, disabledInk.meta),
+    linkText: buildStateMap(defaultInk.linkText, disabledInk.linkText),
+    border: buildStateMap(defaultInk.border, disabledInk.border),
+    divider: buildStateMap(defaultInk.divider, disabledInk.divider),
   }
 }
 
 /**
  * Build stateful ink for quiet action buttons.
- * Uses N3/N7 as base surface with ΔL-adjusted surfaces for hover/active.
- * Ink search direction is based on each surface's actual lightness.
+ * Ink is fixed based on default surface (N0/N9) - does not change for hover/active.
+ * Only disabled state has different ink.
  */
 const buildActionQuietStatefulInk = (
   p: PrimitivePalette,
   isLight: boolean
 ) => {
-  const base = isLight ? p.N3 : p.N7
+  const base = isLight ? p.N0 : p.N9
   const disabledSurface = isLight ? p.N2 : p.N7
 
-  // Same ΔL adjustment as buildActionQuietSurface
-  const hoverL = isLight ? base.L - 0.03 : base.L + 0.03
-  const activeL = isLight ? base.L - 0.06 : base.L + 0.06
-  const hoverSurface: Oklch = { ...base, L: Math.max(0, Math.min(1, hoverL)) }
-  const activeSurface: Oklch = { ...base, L: Math.max(0, Math.min(1, activeL)) }
-
-  // Use each surface's actual lightness for ink search direction
+  // Use default surface's lightness for ink search direction
   const baseIsLight = base.L > 0.5
-  const hoverIsLight = hoverSurface.L > 0.5
-  const activeIsLight = activeSurface.L > 0.5
 
+  // Ink is fixed based on default surface
   const defaultInk = buildInkForSurface(p, base, baseIsLight)
-  const hoverInk = buildInkForSurface(p, hoverSurface, hoverIsLight)
-  const activeInk = buildInkForSurface(p, activeSurface, activeIsLight)
   const disabledInk = buildInkForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
 
-  const buildStateMap = (d: string, h: string, a: string, dis: string) => ({
-    default: d,
-    hover: h,
-    active: a,
+  const buildStateMap = (base: string, dis: string) => ({
+    default: base,
+    hover: base,
+    active: base,
     disabled: dis,
   })
 
   return {
-    title: buildStateMap(defaultInk.title, hoverInk.title, activeInk.title, disabledInk.title),
-    body: buildStateMap(defaultInk.body, hoverInk.body, activeInk.body, disabledInk.body),
-    meta: buildStateMap(defaultInk.meta, hoverInk.meta, activeInk.meta, disabledInk.meta),
-    linkText: buildStateMap(defaultInk.linkText, hoverInk.linkText, activeInk.linkText, disabledInk.linkText),
-    border: buildStateMap(defaultInk.border, hoverInk.border, activeInk.border, disabledInk.border),
-    divider: buildStateMap(defaultInk.divider, hoverInk.divider, activeInk.divider, disabledInk.divider),
+    title: buildStateMap(defaultInk.title, disabledInk.title),
+    body: buildStateMap(defaultInk.body, disabledInk.body),
+    meta: buildStateMap(defaultInk.meta, disabledInk.meta),
+    linkText: buildStateMap(defaultInk.linkText, disabledInk.linkText),
+    border: buildStateMap(defaultInk.border, disabledInk.border),
+    divider: buildStateMap(defaultInk.divider, disabledInk.divider),
   }
 }
 
@@ -439,17 +421,18 @@ const buildActionSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs => {
 
 // Helper: Build action quiet surface refs
 const buildActionQuietSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs => {
-  const baseKey: PrimitiveKey = isLight ? 'N3' : 'N7'
+  const baseKey: PrimitiveKey = isLight ? 'N0' : 'N9'
   const disabledKey: PrimitiveKey = isLight ? 'N2' : 'N7'
   return {
     default: baseKey,
-    hover: 'computed', // N3/N7 with ΔL adjustment
-    active: 'computed', // N3/N7 with ΔL adjustment
+    hover: 'computed', // N0/N9 with ΔL adjustment
+    active: 'computed', // N0/N9 with ΔL adjustment
     disabled: disabledKey,
   }
 }
 
 // Helper: Build action stateful ink refs
+// Ink refs are fixed based on default surface (B)
 const buildActionStatefulInkRefs = (
   p: PrimitivePalette,
   isLight: boolean
@@ -457,77 +440,56 @@ const buildActionStatefulInkRefs = (
   const b = p.B
   const disabledSurface = isLight ? p.N2 : p.N7
 
-  // Same ΔL adjustment as buildActionStatefulInk
-  const hoverL = isLight ? b.L - 0.03 : b.L + 0.03
-  const activeL = isLight ? b.L - 0.06 : b.L + 0.06
-  const hoverSurface: Oklch = { ...b, L: Math.max(0, Math.min(1, hoverL)) }
-  const activeSurface: Oklch = { ...b, L: Math.max(0, Math.min(1, activeL)) }
-
-  // Use each surface's actual lightness for ink search direction
   const bIsLight = b.L > 0.5
-  const hoverIsLight = hoverSurface.L > 0.5
-  const activeIsLight = activeSurface.L > 0.5
 
   const defaultInkRefs = buildInkRefsForSurface(p, b, bIsLight)
-  const hoverInkRefs = buildInkRefsForSurface(p, hoverSurface, hoverIsLight)
-  const activeInkRefs = buildInkRefsForSurface(p, activeSurface, activeIsLight)
   const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
 
-  const buildStateMap = (d: PrimitiveRef, h: PrimitiveRef, a: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
-    default: d,
-    hover: h,
-    active: a,
+  const buildStateMap = (base: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
+    default: base,
+    hover: base,
+    active: base,
     disabled: dis,
   })
 
   return {
-    title: buildStateMap(defaultInkRefs.title, hoverInkRefs.title, activeInkRefs.title, disabledInkRefs.title),
-    body: buildStateMap(defaultInkRefs.body, hoverInkRefs.body, activeInkRefs.body, disabledInkRefs.body),
-    meta: buildStateMap(defaultInkRefs.meta, hoverInkRefs.meta, activeInkRefs.meta, disabledInkRefs.meta),
-    linkText: buildStateMap(defaultInkRefs.linkText, hoverInkRefs.linkText, activeInkRefs.linkText, disabledInkRefs.linkText),
-    border: buildStateMap(defaultInkRefs.border, hoverInkRefs.border, activeInkRefs.border, disabledInkRefs.border),
-    divider: buildStateMap(defaultInkRefs.divider, hoverInkRefs.divider, activeInkRefs.divider, disabledInkRefs.divider),
+    title: buildStateMap(defaultInkRefs.title, disabledInkRefs.title),
+    body: buildStateMap(defaultInkRefs.body, disabledInkRefs.body),
+    meta: buildStateMap(defaultInkRefs.meta, disabledInkRefs.meta),
+    linkText: buildStateMap(defaultInkRefs.linkText, disabledInkRefs.linkText),
+    border: buildStateMap(defaultInkRefs.border, disabledInkRefs.border),
+    divider: buildStateMap(defaultInkRefs.divider, disabledInkRefs.divider),
   }
 }
 
 // Helper: Build action quiet stateful ink refs
+// Ink refs are fixed based on default surface (N0/N9)
 const buildActionQuietStatefulInkRefs = (
   p: PrimitivePalette,
   isLight: boolean
 ): StatefulInkRefs => {
-  const base = isLight ? p.N3 : p.N7
+  const base = isLight ? p.N0 : p.N9
   const disabledSurface = isLight ? p.N2 : p.N7
 
-  // Same ΔL adjustment as buildActionQuietStatefulInk
-  const hoverL = isLight ? base.L - 0.03 : base.L + 0.03
-  const activeL = isLight ? base.L - 0.06 : base.L + 0.06
-  const hoverSurface: Oklch = { ...base, L: Math.max(0, Math.min(1, hoverL)) }
-  const activeSurface: Oklch = { ...base, L: Math.max(0, Math.min(1, activeL)) }
-
-  // Use each surface's actual lightness for ink search direction
   const baseIsLight = base.L > 0.5
-  const hoverIsLight = hoverSurface.L > 0.5
-  const activeIsLight = activeSurface.L > 0.5
 
   const defaultInkRefs = buildInkRefsForSurface(p, base, baseIsLight)
-  const hoverInkRefs = buildInkRefsForSurface(p, hoverSurface, hoverIsLight)
-  const activeInkRefs = buildInkRefsForSurface(p, activeSurface, activeIsLight)
   const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
 
-  const buildStateMap = (d: PrimitiveRef, h: PrimitiveRef, a: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
-    default: d,
-    hover: h,
-    active: a,
+  const buildStateMap = (base: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
+    default: base,
+    hover: base,
+    active: base,
     disabled: dis,
   })
 
   return {
-    title: buildStateMap(defaultInkRefs.title, hoverInkRefs.title, activeInkRefs.title, disabledInkRefs.title),
-    body: buildStateMap(defaultInkRefs.body, hoverInkRefs.body, activeInkRefs.body, disabledInkRefs.body),
-    meta: buildStateMap(defaultInkRefs.meta, hoverInkRefs.meta, activeInkRefs.meta, disabledInkRefs.meta),
-    linkText: buildStateMap(defaultInkRefs.linkText, hoverInkRefs.linkText, activeInkRefs.linkText, disabledInkRefs.linkText),
-    border: buildStateMap(defaultInkRefs.border, hoverInkRefs.border, activeInkRefs.border, disabledInkRefs.border),
-    divider: buildStateMap(defaultInkRefs.divider, hoverInkRefs.divider, activeInkRefs.divider, disabledInkRefs.divider),
+    title: buildStateMap(defaultInkRefs.title, disabledInkRefs.title),
+    body: buildStateMap(defaultInkRefs.body, disabledInkRefs.body),
+    meta: buildStateMap(defaultInkRefs.meta, disabledInkRefs.meta),
+    linkText: buildStateMap(defaultInkRefs.linkText, disabledInkRefs.linkText),
+    border: buildStateMap(defaultInkRefs.border, disabledInkRefs.border),
+    divider: buildStateMap(defaultInkRefs.divider, disabledInkRefs.divider),
   }
 }
 
