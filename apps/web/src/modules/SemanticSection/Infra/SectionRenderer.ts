@@ -1,8 +1,7 @@
 /**
  * SectionRenderer - Renders sections to HTML
  *
- * Main pipeline for rendering pages from sections.
- * Supports both legacy function-based and new string-based templates.
+ * Main pipeline for rendering pages from sections using string templates.
  */
 
 import type {
@@ -12,11 +11,9 @@ import type {
   PageContents,
   RenderTheme,
 } from '../Domain'
-import { isLegacyTemplate } from '../Domain'
 import { toCSSText, toCSSRuleSetsText } from '../../SemanticColorPalette/Infra'
-import { getTemplate } from './templates'
 import { evaluateTemplate } from './templateEvaluator'
-import { getPreprocessor } from './stringTemplates'
+import { getStringTemplate, getPreprocessor } from './stringTemplates'
 
 // ============================================================================
 // Section Rendering
@@ -24,21 +21,13 @@ import { getPreprocessor } from './stringTemplates'
 
 /**
  * Render a single section to HTML
- * Supports both legacy (function) and string templates
  */
 export const renderSection = (
   section: Section,
   content: SectionContent,
   theme: RenderTheme
 ): string => {
-  const template = getTemplate(section.type)
-
-  // Legacy template: use render function
-  if (isLegacyTemplate(template)) {
-    return template.render(content, theme)
-  }
-
-  // String template: preprocess + evaluate
+  const template = getStringTemplate(section.type)
   const preprocessor = getPreprocessor(section.type)
   const vars = preprocessor(content, theme)
   return evaluateTemplate(template.template, vars)

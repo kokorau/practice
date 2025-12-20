@@ -1,44 +1,46 @@
 /**
  * String Templates - DB-storable template definitions
- *
- * Each template has:
- * - template: The template string with ${variable} placeholders
- * - preprocessor: Function to prepare variables from content + theme
  */
 
-import type { SectionType, SectionContent, RenderTheme, TemplateVars } from '../../Domain'
-import { headerTemplate, preprocessHeader } from './HeaderStringTemplate'
+import type { SectionType, SectionContent, RenderTheme, TemplateVars, StringSectionTemplate } from '../../Domain'
+import { STRING_TEMPLATES, PREPROCESSORS } from './allTemplates'
+
+export type { StringSectionTemplate }
 
 // ============================================================================
-// Preprocessor Type
+// Template Access
 // ============================================================================
 
 /**
- * Preprocessor function that converts content + theme to template variables
+ * Get string template by section type
  */
-export type Preprocessor = (content: SectionContent, theme: RenderTheme) => TemplateVars
-
-// ============================================================================
-// Preprocessor Registry
-// ============================================================================
-
-/**
- * Map of section type to preprocessor function
- * Only string-based templates have preprocessors
- */
-const preprocessors: Partial<Record<SectionType, Preprocessor>> = {
-  // Add preprocessors as templates are converted
-  // header: preprocessHeader as Preprocessor,
+export const getStringTemplate = (type: SectionType): StringSectionTemplate => {
+  const template = STRING_TEMPLATES[type]
+  if (!template) {
+    throw new Error(`No string template found for section type: ${type}`)
+  }
+  return template
 }
 
 /**
+ * Get all string templates
+ */
+export const getAllStringTemplates = (): readonly StringSectionTemplate[] =>
+  Object.values(STRING_TEMPLATES)
+
+// ============================================================================
+// Preprocessor Access
+// ============================================================================
+
+export type Preprocessor = (content: SectionContent, theme: RenderTheme) => TemplateVars
+
+/**
  * Get preprocessor for a section type
- * Throws if no preprocessor is registered (section still uses legacy template)
  */
 export const getPreprocessor = (type: SectionType): Preprocessor => {
-  const preprocessor = preprocessors[type]
+  const preprocessor = PREPROCESSORS[type]
   if (!preprocessor) {
-    throw new Error(`No preprocessor registered for section type: ${type}. Template may still be using legacy format.`)
+    throw new Error(`No preprocessor found for section type: ${type}`)
   }
   return preprocessor
 }
@@ -47,10 +49,4 @@ export const getPreprocessor = (type: SectionType): Preprocessor => {
  * Check if a section type has a string template
  */
 export const hasStringTemplate = (type: SectionType): boolean =>
-  type in preprocessors
-
-// ============================================================================
-// Template Exports
-// ============================================================================
-
-export { headerTemplate, preprocessHeader }
+  type in STRING_TEMPLATES
