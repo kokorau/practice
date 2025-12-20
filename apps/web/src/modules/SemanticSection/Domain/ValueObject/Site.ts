@@ -12,7 +12,7 @@ import type { SectionSchema } from './SectionSchema'
 import type { SemanticColorPalette } from '../../../SemanticColorPalette/Domain'
 import { DEFAULT_STYLE_PACK } from './RenderTheme'
 import { $Page } from './Section'
-import { getDefaultContent } from '../../Application/getDefaultContent'
+import { getDefaultContent } from '../../Infra/getDefaultContent'
 import { DEFAULT_SCHEMAS } from '../../Application/defaultSchemas'
 
 // ============================================================================

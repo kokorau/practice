@@ -16,3 +16,6 @@ export {
   CTATemplate,
   FooterTemplate,
 } from './templates'
+
+// Default Content
+export { getDefaultContent, getAllDefaultContents } from './getDefaultContent'

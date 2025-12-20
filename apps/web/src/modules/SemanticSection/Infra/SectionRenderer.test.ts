@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { renderPage, renderSection } from './SectionRenderer'
 import { $Page, DEFAULT_STYLE_PACK } from '../Domain'
 import type { RenderTheme, PageContents, HeaderContent, HeroContent } from '../Domain'
-import { getDefaultContent } from '../Application'
+import { getDefaultContent } from './getDefaultContent'
 import { createSemanticFromPrimitive, createPrimitivePalette } from '../../SemanticColorPalette/Infra'
 
 // Create a test theme
