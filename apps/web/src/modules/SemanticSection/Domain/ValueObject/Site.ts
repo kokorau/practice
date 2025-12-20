@@ -9,10 +9,11 @@ import type { Page } from './Section'
 import type { PageContents } from './SectionContent'
 import type { RenderTheme, StylePack } from './RenderTheme'
 import type { SectionSchema } from './SectionSchema'
+import type { StringSectionTemplate } from './SectionTemplate'
 import type { SemanticColorPalette } from '../../../SemanticColorPalette/Domain'
 import { DEFAULT_STYLE_PACK } from './RenderTheme'
 import { $Page } from './Section'
-import { getDefaultContent } from '../../Infra/getDefaultContent'
+import { getDefaultContent, DEFAULT_TEMPLATES } from '../../Infra'
 import { DEFAULT_SCHEMAS } from '../../Application/defaultSchemas'
 
 // ============================================================================
@@ -36,14 +37,18 @@ export interface SiteMeta {
 /**
  * Complete site data structure
  *
- * Phase 2: Added schemas for content validation and AI generation
- * Future phases will add:
- * - templates: SectionTemplate[] (Pug-based)
- * - assets
+ * Contains all data needed to render a site:
+ * - meta: Site metadata
+ * - theme: Color palette and style settings
+ * - templates: Section templates (DB-storable strings)
+ * - schemas: Content validation schemas
+ * - pages: Page definitions with sections
+ * - contents: Actual content for each section
  */
 export interface Site {
   readonly meta: SiteMeta
   readonly theme: RenderTheme
+  readonly templates: readonly StringSectionTemplate[]
   readonly schemas: readonly SectionSchema[]
   readonly pages: readonly Page[]
   readonly contents: PageContents
@@ -61,6 +66,7 @@ export const $Site = {
     meta: SiteMeta
     palette: SemanticColorPalette
     style?: StylePack
+    templates?: readonly StringSectionTemplate[]
     schemas?: readonly SectionSchema[]
     pages: readonly Page[]
     contents: PageContents
@@ -70,6 +76,7 @@ export const $Site = {
       palette: params.palette,
       style: params.style ?? DEFAULT_STYLE_PACK,
     },
+    templates: params.templates ?? DEFAULT_TEMPLATES,
     schemas: params.schemas ?? DEFAULT_SCHEMAS,
     pages: params.pages,
     contents: params.contents,
@@ -98,6 +105,7 @@ export const $Site = {
         palette,
         style: DEFAULT_STYLE_PACK,
       },
+      templates: DEFAULT_TEMPLATES,
       schemas: DEFAULT_SCHEMAS,
       pages: [page],
       contents,
@@ -114,4 +122,10 @@ export const $Site = {
    */
   getSchema: (site: Site, type: string): SectionSchema | undefined =>
     site.schemas.find((s) => s.type === type),
+
+  /**
+   * Get template for a section type
+   */
+  getTemplate: (site: Site, type: string): StringSectionTemplate | undefined =>
+    site.templates.find((t) => t.type === type),
 } as const

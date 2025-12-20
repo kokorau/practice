@@ -9,4 +9,4 @@ export { getDefaultContent, getAllDefaultContents } from './getDefaultContent'
 export { evaluateTemplate, escapeHtml, mapToHtml, when, ifElse } from './templateEvaluator'
 
 // String Templates
-export { getStringTemplate, getPreprocessor, hasStringTemplate } from './stringTemplates'
+export { getStringTemplate, getPreprocessor, hasStringTemplate, DEFAULT_TEMPLATES } from './stringTemplates'

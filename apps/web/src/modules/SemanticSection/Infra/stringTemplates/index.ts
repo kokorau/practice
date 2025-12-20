@@ -3,7 +3,9 @@
  */
 
 import type { SectionType, SectionContent, RenderTheme, TemplateVars, StringSectionTemplate } from '../../Domain'
-import { STRING_TEMPLATES, PREPROCESSORS } from './allTemplates'
+import { STRING_TEMPLATES, PREPROCESSORS, DEFAULT_TEMPLATES } from './allTemplates'
+
+export { DEFAULT_TEMPLATES }
 
 export type { StringSectionTemplate }
 

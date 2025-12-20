@@ -74,7 +74,7 @@ export const heroTemplate: StringSectionTemplate = {
       \${badge}
     </span>
     <h1 class="scp-title" style="font-size: 3.5rem; font-weight: 700; line-height: 1.1; margin: 1rem 0;">
-      \${titleHtml}
+      \${title}
     </h1>
     <p class="scp-body" style="font-size: 1.25rem; max-width: 600px; margin: 0 auto 2rem;">\${subtitle}</p>
     <div style="display: flex; gap: 1rem; justify-content: center;">
@@ -91,28 +91,19 @@ export const heroTemplate: StringSectionTemplate = {
 </section>`.trim(),
 }
 
-export const preprocessHero = (content: HeroContent): TemplateVars => {
-  const titleHtml = content.highlight
-    ? escapeHtml(content.title).replace(
-        escapeHtml(content.highlight),
-        `</span><br /><span class="scp-link">${escapeHtml(content.highlight)}</span><span class="scp-title">`
-      )
-    : escapeHtml(content.title)
-
-  return {
-    badge: escapeHtml(content.badge ?? ''),
-    titleHtml,
-    subtitle: escapeHtml(content.subtitle),
-    primaryCtaLabel: escapeHtml(content.primaryCtaLabel),
-    secondaryCtaLabel: escapeHtml(content.secondaryCtaLabel ?? ''),
-    statsHtml: mapToHtml(content.stats ?? [], (stat) =>
-      `<div style="text-align: center;">
-        <span class="scp-title" style="font-size: 2rem; font-weight: 700;">${escapeHtml(stat.value)}</span>
-        <span class="scp-meta" style="display: block; font-size: 0.875rem;">${escapeHtml(stat.label)}</span>
-      </div>`
-    ),
-  }
-}
+export const preprocessHero = (content: HeroContent): TemplateVars => ({
+  badge: escapeHtml(content.badge ?? ''),
+  title: escapeHtml(content.title),
+  subtitle: escapeHtml(content.subtitle),
+  primaryCtaLabel: escapeHtml(content.primaryCtaLabel),
+  secondaryCtaLabel: escapeHtml(content.secondaryCtaLabel ?? ''),
+  statsHtml: mapToHtml(content.stats ?? [], (stat) =>
+    `<div style="text-align: center;">
+      <span class="scp-title" style="font-size: 2rem; font-weight: 700;">${escapeHtml(stat.value)}</span>
+      <span class="scp-meta" style="display: block; font-size: 0.875rem;">${escapeHtml(stat.label)}</span>
+    </div>`
+  ),
+})
 
 // ============================================================================
 // Features
@@ -187,19 +178,13 @@ export const howItWorksTemplate: StringSectionTemplate = {
 
 export const preprocessHowItWorks = (content: HowItWorksContent): TemplateVars => ({
   title: escapeHtml(content.title),
-  stepsHtml: content.steps.map((step, i) => {
-    const connector = i < content.steps.length - 1
-      ? `<div style="flex: 0 0 40px; height: 2px; margin-top: 20px; background: linear-gradient(90deg, var(--border), var(--link-text), var(--border)); opacity: 0.5;"></div>`
-      : ''
-    return `
-      <div style="flex: 1; text-align: center;">
-        <span class="scp-link" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: color-mix(in oklch, var(--link-text) 15%, transparent); font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;">${i + 1}</span>
-        <h3 class="scp-title" style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.75rem;">${escapeHtml(step.title)}</h3>
-        <p class="scp-body" style="font-size: 0.85rem; line-height: 1.6; opacity: 0.7;">${escapeHtml(step.description)}</p>
-      </div>
-      ${connector}
-    `
-  }).join(''),
+  stepsHtml: mapToHtml(content.steps, (step, i) =>
+    `<div style="flex: 1; text-align: center;">
+      <span class="scp-link" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: color-mix(in oklch, var(--link-text) 15%, transparent); font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;">${i + 1}</span>
+      <h3 class="scp-title" style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.75rem;">${escapeHtml(step.title)}</h3>
+      <p class="scp-body" style="font-size: 0.85rem; line-height: 1.6; opacity: 0.7;">${escapeHtml(step.description)}</p>
+    </div>`
+  ),
 })
 
 // ============================================================================
@@ -262,20 +247,15 @@ export const preprocessPricing = (content: PricingContent): TemplateVars => ({
     const featuresHtml = mapToHtml(plan.features, (f) =>
       `<li style="padding: 0.625rem 0; font-size: 0.85rem; border-bottom: 1px solid var(--border);">${escapeHtml(f.text)}</li>`
     )
-    const featured = plan.isFeatured ? 'border: 2px solid var(--link-text);' : ''
-    const badge = plan.badge
-      ? `<span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 0.25rem 0.75rem; background: var(--link-text); color: var(--surface); border-radius: 9999px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">${escapeHtml(plan.badge)}</span>`
-      : ''
     return `
-      <div class="${cmp.card}" style="padding: 2rem; border-radius: 12px; display: flex; flex-direction: column; position: relative; ${featured}">
-        ${badge}
+      <div class="${cmp.card}" style="padding: 2rem; border-radius: 12px; display: flex; flex-direction: column;">
         <h3 class="scp-title" style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.75rem;">${escapeHtml(plan.name)}</h3>
         <div style="margin-bottom: 1.5rem; display: flex; align-items: baseline; gap: 0.25rem;">
           <span class="scp-title" style="font-size: 2.5rem; font-weight: 700;">${escapeHtml(plan.price)}</span>
-          ${plan.period ? `<span class="scp-body" style="font-size: 0.8rem;">/${escapeHtml(plan.period)}</span>` : ''}
+          <span class="scp-body" style="font-size: 0.8rem;">/${escapeHtml(plan.period ?? '')}</span>
         </div>
         <ul style="list-style: none; margin: 0 0 2rem; padding: 0; flex: 1;">${featuresHtml}</ul>
-        <button class="${plan.isFeatured ? cmp.action : cmp.actionQuiet}" style="width: 100%; padding: 0.75rem 1.25rem; font-size: 0.9rem; border-radius: 6px; border: none; cursor: pointer;">${escapeHtml(plan.ctaLabel)}</button>
+        <button class="${cmp.actionQuiet}" style="width: 100%; padding: 0.75rem 1.25rem; font-size: 0.9rem; border-radius: 6px; border: none; cursor: pointer;">${escapeHtml(plan.ctaLabel)}</button>
       </div>
     `
   }),
@@ -409,6 +389,22 @@ export const STRING_TEMPLATES: Record<string, StringSectionTemplate> = {
   cta: ctaTemplate,
   footer: footerTemplate,
 }
+
+/**
+ * Default templates as array for Site.templates
+ */
+export const DEFAULT_TEMPLATES: readonly StringSectionTemplate[] = [
+  headerTemplate,
+  heroTemplate,
+  featuresTemplate,
+  logosTemplate,
+  howItWorksTemplate,
+  testimonialsTemplate,
+  pricingTemplate,
+  faqTemplate,
+  ctaTemplate,
+  footerTemplate,
+] as const
 
 type PreprocessorFn = (content: SectionContent, theme: RenderTheme) => TemplateVars
 
