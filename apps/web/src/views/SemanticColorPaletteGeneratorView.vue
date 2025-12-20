@@ -28,6 +28,15 @@ import { $Lut3D } from '../modules/Filter/Domain'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { useFilter } from '../composables/Filter/useFilter'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
+// SemanticSection module for Demo tab
+import {
+  $Page,
+  DEFAULT_STYLE_PACK,
+  renderPage,
+  getDefaultContent,
+  type PageContents,
+  type RenderTheme,
+} from '../modules/SemanticSection'
 
 // ============================================================
 // Foundation Color State (the "paper") - Preset Selection
@@ -448,6 +457,36 @@ onUnmounted(() => {
 })
 
 watch(palette, updateStyles)
+
+// ============================================================
+// Demo Tab - Section-based Page Rendering
+// ============================================================
+
+// Create demo page structure
+const demoPage = $Page.createDemo()
+
+// Create contents for demo page
+const demoContents = computed((): PageContents => {
+  const contents: Record<string, ReturnType<typeof getDefaultContent>> = {}
+  for (const section of demoPage.sections) {
+    contents[section.id] = getDefaultContent(section.type)
+  }
+  return contents
+})
+
+// Create render theme from current palette
+const demoRenderTheme = computed((): RenderTheme => ({
+  palette: palette.value,
+  style: DEFAULT_STYLE_PACK,
+}))
+
+// Generate demo HTML
+const demoHtml = computed(() => {
+  return renderPage(demoPage, demoContents.value, demoRenderTheme.value, {
+    includeCSS: false, // CSS is already injected via updateStyles
+    wrapperClass: 'demo-page',
+  })
+})
 </script>
 
 <template>
@@ -926,325 +965,8 @@ watch(palette, updateStyles)
 
       <!-- Demo Tab -->
       <div v-if="activeTab === 'demo'" class="tab-content">
-        <div class="demo-page" :class="CONTEXT_CLASS_NAMES.canvas">
-          <!-- Header -->
-          <header class="demo-header" :class="CONTEXT_CLASS_NAMES.canvas">
-            <div class="demo-header-inner">
-              <div class="demo-logo scp-title">PaletteGen</div>
-              <nav class="demo-nav">
-                <a href="#" class="demo-nav-link scp-body" @click.prevent>Features</a>
-                <a href="#" class="demo-nav-link scp-body" @click.prevent>Pricing</a>
-                <a href="#" class="demo-nav-link scp-body" @click.prevent>Docs</a>
-              </nav>
-              <div class="demo-header-actions">
-                <button :class="COMPONENT_CLASS_NAMES.actionQuiet">Log in</button>
-                <button :class="COMPONENT_CLASS_NAMES.action">Sign up</button>
-              </div>
-            </div>
-          </header>
-
-          <!-- Hero Section -->
-          <section class="demo-hero" :class="CONTEXT_CLASS_NAMES.sectionTint">
-            <div class="demo-hero-content">
-              <span class="demo-hero-badge scp-meta">
-                <span class="demo-hero-badge-dot" />
-                Now in Public Beta
-              </span>
-              <h1 class="demo-hero-title scp-title">
-                Design with<br />
-                <span class="demo-hero-highlight scp-link">Perfect Colors</span>
-              </h1>
-              <p class="demo-hero-subtitle scp-body">
-                Create beautiful, accessible color palettes for your next project. Powered by OKLCH for perceptually uniform results.
-              </p>
-              <div class="demo-hero-actions">
-                <button :class="COMPONENT_CLASS_NAMES.action">Start Free</button>
-                <button :class="COMPONENT_CLASS_NAMES.actionQuiet">
-                  <span class="demo-play-icon">&#9654;</span>
-                  Watch Demo
-                </button>
-              </div>
-              <div class="demo-hero-stats">
-                <div class="demo-hero-stat">
-                  <span class="demo-hero-stat-value scp-title">10K+</span>
-                  <span class="demo-hero-stat-label scp-meta">Designers</span>
-                </div>
-                <div class="demo-hero-stat">
-                  <span class="demo-hero-stat-value scp-title">50K+</span>
-                  <span class="demo-hero-stat-label scp-meta">Palettes</span>
-                </div>
-                <div class="demo-hero-stat">
-                  <span class="demo-hero-stat-value scp-title">4.9</span>
-                  <span class="demo-hero-stat-label scp-meta">Rating</span>
-                </div>
-              </div>
-            </div>
-            <div class="demo-hero-visual">
-              <div class="demo-hero-glow" />
-              <div class="demo-hero-grid" />
-              <div class="demo-hero-shapes">
-                <div class="demo-shape demo-shape-1" />
-                <div class="demo-shape demo-shape-2" />
-                <div class="demo-shape demo-shape-3" />
-                <div class="demo-shape demo-shape-4" />
-                <div class="demo-shape demo-shape-5" />
-              </div>
-              <div class="demo-hero-ring demo-hero-ring-1" />
-              <div class="demo-hero-ring demo-hero-ring-2" />
-              <div class="demo-hero-orb" />
-            </div>
-          </section>
-
-          <!-- Features Section -->
-          <section class="demo-features" :class="CONTEXT_CLASS_NAMES.canvas">
-            <h2 class="demo-section-title scp-title">Features</h2>
-            <div class="demo-features-grid">
-              <div class="demo-feature-card" :class="COMPONENT_CLASS_NAMES.card">
-                <div class="demo-feature-visual">
-                  <svg viewBox="0 0 120 80" class="demo-feature-svg">
-                    <circle cx="30" cy="40" r="25" :fill="'var(--link-text)'" opacity="0.8" />
-                    <circle cx="60" cy="40" r="25" :fill="'var(--link-text)'" opacity="0.5" />
-                    <circle cx="90" cy="40" r="25" :fill="'var(--link-text)'" opacity="0.2" />
-                  </svg>
-                </div>
-                <h3 class="demo-feature-title scp-title">OKLCH Colors</h3>
-                <p class="demo-feature-desc scp-body">Perceptually uniform color space for consistent results.</p>
-              </div>
-              <div class="demo-feature-card" :class="COMPONENT_CLASS_NAMES.card">
-                <div class="demo-feature-visual">
-                  <svg viewBox="0 0 120 80" class="demo-feature-svg">
-                    <rect x="10" y="20" width="40" height="40" rx="4" :fill="'var(--title)'" opacity="0.2" />
-                    <rect x="35" y="20" width="40" height="40" rx="4" :fill="'var(--link-text)'" opacity="0.6" />
-                    <path d="M85 25 L105 40 L85 55" :stroke="'var(--link-text)'" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-                <h3 class="demo-feature-title scp-title">Auto Contrast</h3>
-                <p class="demo-feature-desc scp-body">Automatically ensures accessible contrast ratios.</p>
-              </div>
-              <div class="demo-feature-card" :class="COMPONENT_CLASS_NAMES.card">
-                <div class="demo-feature-visual">
-                  <svg viewBox="0 0 120 80" class="demo-feature-svg">
-                    <circle cx="40" cy="40" r="28" :fill="'var(--link-text)'" opacity="0.15" />
-                    <path d="M40 12 L40 40 L60 40" :stroke="'var(--link-text)'" stroke-width="3" fill="none" stroke-linecap="round" />
-                    <circle cx="80" cy="40" r="28" :fill="'var(--title)'" opacity="0.15" />
-                    <path d="M80 12 L80 40 L100 40" :stroke="'var(--title)'" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6" />
-                  </svg>
-                </div>
-                <h3 class="demo-feature-title scp-title">Light & Dark</h3>
-                <p class="demo-feature-desc scp-body">Seamless theme switching built right in.</p>
-              </div>
-            </div>
-          </section>
-
-          <!-- Logos Section -->
-          <section class="demo-logos" :class="CONTEXT_CLASS_NAMES.sectionNeutral">
-            <p class="demo-logos-label scp-meta">Trusted by teams at</p>
-            <div class="demo-logos-grid">
-              <div class="demo-logo-item scp-title">Acme Inc</div>
-              <div class="demo-logo-item scp-title">Globex</div>
-              <div class="demo-logo-item scp-title">Stark</div>
-              <div class="demo-logo-item scp-title">Wayne</div>
-              <div class="demo-logo-item scp-title">Umbrella</div>
-            </div>
-          </section>
-
-          <!-- How it works Section -->
-          <section class="demo-how" :class="CONTEXT_CLASS_NAMES.canvas">
-            <h2 class="demo-section-title scp-title">How it works</h2>
-            <div class="demo-how-steps">
-              <div class="demo-how-step">
-                <div class="demo-how-number scp-link">1</div>
-                <h3 class="demo-how-title scp-title">Pick a brand color</h3>
-                <p class="demo-how-desc scp-body">Choose your primary brand color using our intuitive color picker.</p>
-              </div>
-              <div class="demo-how-connector" />
-              <div class="demo-how-step">
-                <div class="demo-how-number scp-link">2</div>
-                <h3 class="demo-how-title scp-title">Adjust parameters</h3>
-                <p class="demo-how-desc scp-body">Fine-tune lightness, chroma, and contrast to match your vision.</p>
-              </div>
-              <div class="demo-how-connector" />
-              <div class="demo-how-step">
-                <div class="demo-how-number scp-link">3</div>
-                <h3 class="demo-how-title scp-title">Export & use</h3>
-                <p class="demo-how-desc scp-body">Export as CSS variables, Tailwind config, or design tokens.</p>
-              </div>
-            </div>
-          </section>
-
-          <!-- Testimonials Section -->
-          <section class="demo-testimonials" :class="CONTEXT_CLASS_NAMES.sectionTint">
-            <h2 class="demo-section-title scp-title">What people are saying</h2>
-            <div class="demo-testimonials-grid">
-              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.cardFlat">
-                <p class="demo-testimonial-text scp-body">"Finally, a color tool that understands accessibility. The auto-contrast feature alone saves us hours every week."</p>
-                <div class="demo-testimonial-author">
-                  <div class="demo-testimonial-avatar" />
-                  <div class="demo-testimonial-info">
-                    <span class="demo-testimonial-name scp-title">Sarah Chen</span>
-                    <span class="demo-testimonial-role scp-meta">Design Lead, Figma</span>
-                  </div>
-                </div>
-              </div>
-              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.cardFlat">
-                <p class="demo-testimonial-text scp-body">"We switched from HSL to OKLCH thanks to this tool. The perceptual uniformity makes such a difference."</p>
-                <div class="demo-testimonial-author">
-                  <div class="demo-testimonial-avatar" />
-                  <div class="demo-testimonial-info">
-                    <span class="demo-testimonial-name scp-title">Marcus Johnson</span>
-                    <span class="demo-testimonial-role scp-meta">Senior Engineer, Vercel</span>
-                  </div>
-                </div>
-              </div>
-              <div class="demo-testimonial" :class="COMPONENT_CLASS_NAMES.cardFlat">
-                <p class="demo-testimonial-text scp-body">"The best palette generator I've used. Dark mode support out of the box is a game changer."</p>
-                <div class="demo-testimonial-author">
-                  <div class="demo-testimonial-avatar" />
-                  <div class="demo-testimonial-info">
-                    <span class="demo-testimonial-name scp-title">Emily Park</span>
-                    <span class="demo-testimonial-role scp-meta">Product Designer, Linear</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Pricing Section -->
-          <section class="demo-pricing" :class="CONTEXT_CLASS_NAMES.canvas">
-            <h2 class="demo-section-title scp-title">Simple pricing</h2>
-            <p class="demo-pricing-subtitle scp-body">Start free, upgrade when you need more.</p>
-            <div class="demo-pricing-grid">
-              <div class="demo-pricing-card" :class="COMPONENT_CLASS_NAMES.cardFlat">
-                <h3 class="demo-pricing-name scp-title">Free</h3>
-                <div class="demo-pricing-price">
-                  <span class="demo-pricing-amount scp-title">$0</span>
-                  <span class="demo-pricing-period scp-meta">/month</span>
-                </div>
-                <ul class="demo-pricing-features">
-                  <li class="scp-body">5 palettes</li>
-                  <li class="scp-body">CSS export</li>
-                  <li class="scp-body">Basic support</li>
-                </ul>
-                <button :class="COMPONENT_CLASS_NAMES.actionQuiet">Get Started</button>
-              </div>
-              <div class="demo-pricing-card demo-pricing-featured" :class="COMPONENT_CLASS_NAMES.card">
-                <span class="demo-pricing-badge scp-meta">Popular</span>
-                <h3 class="demo-pricing-name scp-title">Pro</h3>
-                <div class="demo-pricing-price">
-                  <span class="demo-pricing-amount scp-title">$12</span>
-                  <span class="demo-pricing-period scp-meta">/month</span>
-                </div>
-                <ul class="demo-pricing-features">
-                  <li class="scp-body">Unlimited palettes</li>
-                  <li class="scp-body">All export formats</li>
-                  <li class="scp-body">Team sharing</li>
-                  <li class="scp-body">Priority support</li>
-                </ul>
-                <button :class="COMPONENT_CLASS_NAMES.action">Start Free Trial</button>
-              </div>
-              <div class="demo-pricing-card" :class="COMPONENT_CLASS_NAMES.cardFlat">
-                <h3 class="demo-pricing-name scp-title">Enterprise</h3>
-                <div class="demo-pricing-price">
-                  <span class="demo-pricing-amount scp-title">Custom</span>
-                </div>
-                <ul class="demo-pricing-features">
-                  <li class="scp-body">Everything in Pro</li>
-                  <li class="scp-body">SSO & SAML</li>
-                  <li class="scp-body">Dedicated support</li>
-                  <li class="scp-body">Custom integrations</li>
-                </ul>
-                <button :class="COMPONENT_CLASS_NAMES.actionQuiet">Contact Sales</button>
-              </div>
-            </div>
-          </section>
-
-          <!-- FAQ Section -->
-          <section class="demo-faq" :class="CONTEXT_CLASS_NAMES.sectionNeutral">
-            <h2 class="demo-section-title scp-title">Frequently asked questions</h2>
-            <div class="demo-faq-list">
-              <details class="demo-faq-item" :class="COMPONENT_CLASS_NAMES.cardFlat">
-                <summary class="demo-faq-question scp-title">What is OKLCH and why should I use it?</summary>
-                <p class="demo-faq-answer scp-body">OKLCH is a perceptually uniform color space. Unlike HSL, colors with the same lightness value actually appear equally bright to human eyes, making it ideal for creating consistent design systems.</p>
-              </details>
-              <details class="demo-faq-item" :class="COMPONENT_CLASS_NAMES.cardFlat">
-                <summary class="demo-faq-question scp-title">Can I export to Tailwind CSS?</summary>
-                <p class="demo-faq-answer scp-body">Yes! Pro users can export palettes directly to Tailwind config format, including CSS variables and theme extensions.</p>
-              </details>
-              <details class="demo-faq-item" :class="COMPONENT_CLASS_NAMES.cardFlat">
-                <summary class="demo-faq-question scp-title">How does auto-contrast work?</summary>
-                <p class="demo-faq-answer scp-body">Our algorithm automatically calculates WCAG-compliant contrast ratios and adjusts text colors to ensure readability on any background.</p>
-              </details>
-              <details class="demo-faq-item" :class="COMPONENT_CLASS_NAMES.cardFlat">
-                <summary class="demo-faq-question scp-title">Is there a Figma plugin?</summary>
-                <p class="demo-faq-answer scp-body">We're currently developing a Figma plugin. Join our waitlist to be notified when it's ready.</p>
-              </details>
-            </div>
-          </section>
-
-          <!-- CTA Section -->
-          <section class="demo-cta" :class="CONTEXT_CLASS_NAMES.sectionContrast">
-            <h2 class="demo-cta-title scp-title">Ready to Start?</h2>
-            <p class="demo-cta-desc scp-body">Join thousands of designers using our palette generator.</p>
-
-            <div class="demo-cta-benefits">
-              <span class="demo-cta-benefit scp-body">&#10003; Free forever</span>
-              <span class="demo-cta-benefit scp-body">&#10003; No credit card</span>
-              <span class="demo-cta-benefit scp-body">&#10003; Instant access</span>
-            </div>
-
-            <div class="demo-cta-form" :class="COMPONENT_CLASS_NAMES.cardFlat">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                class="demo-cta-input scp-body"
-              />
-              <button :class="COMPONENT_CLASS_NAMES.action">Get Started</button>
-            </div>
-
-            <p class="demo-cta-note scp-meta">
-              By signing up, you agree to our Terms and Privacy Policy.
-            </p>
-          </section>
-
-          <!-- Footer -->
-          <footer class="demo-footer" :class="CONTEXT_CLASS_NAMES.sectionNeutral">
-            <div class="demo-footer-main">
-              <div class="demo-footer-brand">
-                <div class="demo-footer-logo scp-title">PaletteGen</div>
-                <p class="demo-footer-tagline scp-body">Beautiful colors for everyone.</p>
-              </div>
-
-              <div class="demo-footer-columns">
-                <div class="demo-footer-column">
-                  <h4 class="demo-footer-heading scp-title">Product</h4>
-                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Features</a>
-                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Pricing</a>
-                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Changelog</a>
-                </div>
-                <div class="demo-footer-column">
-                  <h4 class="demo-footer-heading scp-title">Resources</h4>
-                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Documentation</a>
-                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Guides</a>
-                  <a href="#" class="demo-footer-link scp-body" @click.prevent>API</a>
-                </div>
-                <div class="demo-footer-column">
-                  <h4 class="demo-footer-heading scp-title">Company</h4>
-                  <a href="#" class="demo-footer-link scp-body" @click.prevent>About</a>
-                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Blog</a>
-                  <a href="#" class="demo-footer-link scp-body" @click.prevent>Careers</a>
-                </div>
-              </div>
-            </div>
-
-            <div class="demo-footer-bottom scp-divider">
-              <p class="demo-footer-copyright scp-meta">&copy; 2024 PaletteGen. All rights reserved.</p>
-              <div class="demo-footer-legal">
-                <a href="#" class="scp-meta" @click.prevent>Privacy</a>
-                <a href="#" class="scp-meta" @click.prevent>Terms</a>
-              </div>
-            </div>
-          </footer>
-        </div>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div v-html="demoHtml" />
       </div>
     </main>
   </div>
@@ -2268,18 +1990,13 @@ h1 {
   color: oklch(0.75 0.10 30);
 }
 
-/* Demo Page */
-.demo-page {
+/* Demo Page - use :deep() for v-html content */
+:deep(.demo-page) {
   max-width: 1200px;
   margin: 0 auto;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-}
-
-.demo-page > * {
-  --content-width: 980px;
-  --content-padding: max(2rem, calc((100% - var(--content-width)) / 2));
 }
 
 /* Demo Header */
