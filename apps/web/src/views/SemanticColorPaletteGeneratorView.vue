@@ -30,12 +30,9 @@ import { useFilter } from '../composables/Filter/useFilter'
 import FilterPanel from '../components/Filter/FilterPanel.vue'
 // SemanticSection module for Demo tab
 import {
-  $Page,
-  DEFAULT_STYLE_PACK,
+  $Site,
   renderPage,
-  getDefaultContent,
-  type PageContents,
-  type RenderTheme,
+  type Site,
 } from '../modules/SemanticSection'
 
 // ============================================================
@@ -462,27 +459,16 @@ watch(palette, updateStyles)
 // Demo Tab - Section-based Page Rendering
 // ============================================================
 
-// Create demo page structure
-const demoPage = $Page.createDemo()
-
-// Create contents for demo page
-const demoContents = computed((): PageContents => {
-  const contents: Record<string, ReturnType<typeof getDefaultContent>> = {}
-  for (const section of demoPage.sections) {
-    contents[section.id] = getDefaultContent(section.type)
-  }
-  return contents
-})
-
-// Create render theme from current palette
-const demoRenderTheme = computed((): RenderTheme => ({
-  palette: palette.value,
-  style: DEFAULT_STYLE_PACK,
-}))
+// Create demo site from current palette
+const demoSite = computed((): Site => $Site.createDemo(palette.value))
 
 // Generate demo HTML
 const demoHtml = computed(() => {
-  return renderPage(demoPage, demoContents.value, demoRenderTheme.value, {
+  const site = demoSite.value
+  const page = $Site.getFirstPage(site)
+  if (!page) return ''
+
+  return renderPage(page, site.contents, site.theme, {
     includeCSS: false, // CSS is already injected via updateStyles
     wrapperClass: 'demo-page',
   })

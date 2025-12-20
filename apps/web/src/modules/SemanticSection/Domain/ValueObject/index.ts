@@ -37,3 +37,7 @@ export { DEFAULT_STYLE_PACK, $StylePack } from './RenderTheme'
 
 // Template
 export type { SectionTemplate, TemplateRegistry } from './SectionTemplate'
+
+// Site
+export type { SiteMeta, Site } from './Site'
+export { $Site } from './Site'
