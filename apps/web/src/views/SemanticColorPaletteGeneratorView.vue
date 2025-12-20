@@ -31,6 +31,7 @@ import FilterPanel from '../components/Filter/FilterPanel.vue'
 // SemanticSection module for Demo tab
 import {
   $Site,
+  createDemoSite,
   renderPage,
   type Site,
 } from '../modules/SemanticSection'
@@ -460,7 +461,7 @@ watch(palette, updateStyles)
 // ============================================================
 
 // Create demo site from current palette
-const demoSite = computed((): Site => $Site.createDemo(palette.value))
+const demoSite = computed((): Site => createDemoSite(palette.value))
 
 // Generate demo HTML
 const demoHtml = computed(() => {
