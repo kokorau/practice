@@ -61,3 +61,7 @@ export type {
   SectionSchema,
 } from './SectionSchema'
 export { $FieldSchema } from './SectionSchema'
+
+// Validation
+export type { ValidationError, ValidationResult } from './ContentValidator'
+export { validateContent, formatErrors, hasErrorAt, getErrorsAt } from './ContentValidator'
