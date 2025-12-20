@@ -8,10 +8,12 @@
 import type { Page } from './Section'
 import type { PageContents } from './SectionContent'
 import type { RenderTheme, StylePack } from './RenderTheme'
+import type { SectionSchema } from './SectionSchema'
 import type { SemanticColorPalette } from '../../../SemanticColorPalette/Domain'
 import { DEFAULT_STYLE_PACK } from './RenderTheme'
 import { $Page } from './Section'
 import { getDefaultContent } from '../../Application/getDefaultContent'
+import { DEFAULT_SCHEMAS } from '../../Application/defaultSchemas'
 
 // ============================================================================
 // SiteMeta
@@ -34,15 +36,15 @@ export interface SiteMeta {
 /**
  * Complete site data structure
  *
- * Phase 1: Wraps existing types without breaking changes
+ * Phase 2: Added schemas for content validation and AI generation
  * Future phases will add:
- * - templates: SectionTemplate[]
- * - schemas: SectionSchema[]
+ * - templates: SectionTemplate[] (Pug-based)
  * - assets
  */
 export interface Site {
   readonly meta: SiteMeta
   readonly theme: RenderTheme
+  readonly schemas: readonly SectionSchema[]
   readonly pages: readonly Page[]
   readonly contents: PageContents
 }
@@ -59,6 +61,7 @@ export const $Site = {
     meta: SiteMeta
     palette: SemanticColorPalette
     style?: StylePack
+    schemas?: readonly SectionSchema[]
     pages: readonly Page[]
     contents: PageContents
   }): Site => ({
@@ -67,6 +70,7 @@ export const $Site = {
       palette: params.palette,
       style: params.style ?? DEFAULT_STYLE_PACK,
     },
+    schemas: params.schemas ?? DEFAULT_SCHEMAS,
     pages: params.pages,
     contents: params.contents,
   }),
@@ -94,6 +98,7 @@ export const $Site = {
         palette,
         style: DEFAULT_STYLE_PACK,
       },
+      schemas: DEFAULT_SCHEMAS,
       pages: [page],
       contents,
     }
@@ -103,4 +108,10 @@ export const $Site = {
    * Get the first page of a site (convenience helper)
    */
   getFirstPage: (site: Site): Page | undefined => site.pages[0],
+
+  /**
+   * Get schema for a section type
+   */
+  getSchema: (site: Site, type: string): SectionSchema | undefined =>
+    site.schemas.find((s) => s.type === type),
 } as const

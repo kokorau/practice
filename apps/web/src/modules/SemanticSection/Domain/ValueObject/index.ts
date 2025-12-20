@@ -41,3 +41,16 @@ export type { SectionTemplate, TemplateRegistry } from './SectionTemplate'
 // Site
 export type { SiteMeta, Site } from './Site'
 export { $Site } from './Site'
+
+// Schema
+export type {
+  PrimitiveFieldType,
+  FieldType,
+  FieldConstraints,
+  TextFieldSchema,
+  ListFieldSchema,
+  ObjectFieldSchema,
+  FieldSchema,
+  SectionSchema,
+} from './SectionSchema'
+export { $FieldSchema } from './SectionSchema'
