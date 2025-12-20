@@ -36,7 +36,14 @@ export type {
 export { DEFAULT_STYLE_PACK, $StylePack } from './RenderTheme'
 
 // Template
-export type { SectionTemplate, TemplateRegistry } from './SectionTemplate'
+export type {
+  LegacySectionTemplate,
+  StringSectionTemplate,
+  SectionTemplate,
+  TemplateVars,
+  TemplateRegistry,
+} from './SectionTemplate'
+export { isStringTemplate, isLegacyTemplate } from './SectionTemplate'
 
 // Site
 export type { SiteMeta, Site } from './Site'

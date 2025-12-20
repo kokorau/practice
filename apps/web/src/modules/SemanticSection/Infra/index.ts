@@ -19,3 +19,9 @@ export {
 
 // Default Content
 export { getDefaultContent, getAllDefaultContents } from './getDefaultContent'
+
+// Template Evaluator
+export { evaluateTemplate, escapeHtml, mapToHtml, when, ifElse } from './templateEvaluator'
+
+// String Templates
+export { getPreprocessor, hasStringTemplate } from './stringTemplates'
