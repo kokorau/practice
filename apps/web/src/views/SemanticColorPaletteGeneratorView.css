@@ -1,0 +1,94 @@
+.semantic-color-palette-generator {
+  display: flex;
+  height: 100vh;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: oklch(0.97 0.005 260);
+  transition: background 0.3s;
+}
+
+.semantic-color-palette-generator.dark {
+  background: oklch(0.12 0.02 260);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto 1.5rem;
+}
+
+.semantic-color-palette-generator h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: oklch(0.25 0.02 260);
+}
+
+.semantic-color-palette-generator.dark h1 {
+  color: oklch(0.90 0.01 260);
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tab-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: oklch(0.50 0.02 260);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.semantic-color-palette-generator.dark .tab-button {
+  color: oklch(0.60 0.02 260);
+}
+
+.tab-button:hover {
+  background: oklch(0.92 0.01 260);
+}
+
+.semantic-color-palette-generator.dark .tab-button:hover {
+  background: oklch(0.18 0.02 260);
+}
+
+.tab-button.active {
+  background: oklch(0.55 0.18 250);
+  color: white;
+}
+
+.semantic-color-palette-generator.dark .tab-button.active {
+  background: oklch(0.55 0.16 250);
+}
+
+.tab-content {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Demo Page */
+.demo-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
