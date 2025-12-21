@@ -34,7 +34,9 @@ import {
   createDemoSite,
   renderPage,
   exportToHTML,
+  SECTION_TYPES,
   type Site,
+  type SectionType,
 } from '../modules/SemanticSection'
 
 // ============================================================
@@ -200,7 +202,7 @@ type TabId = 'primitive' | 'palette' | 'demo'
 const activeTab = ref<TabId>('primitive')
 
 // Sidebar popup state
-type PopupType = 'brand' | 'foundation' | 'filter' | null
+type PopupType = 'brand' | 'foundation' | 'filter' | 'sections' | null
 const activePopup = ref<PopupType>(null)
 const popupRef = ref<HTMLDivElement | null>(null)
 
@@ -234,6 +236,7 @@ const sidebarItems = [
   { id: 'brand' as const, label: 'Brand Color', icon: '🎨' },
   { id: 'foundation' as const, label: 'Foundation', icon: '📄' },
   { id: 'filter' as const, label: 'Color Filter', icon: '🔮' },
+  { id: 'sections' as const, label: 'Sections', icon: '📑' },
 ]
 
 // ============================================================
@@ -464,6 +467,31 @@ watch(palette, updateStyles)
 // Create demo site from current palette
 const demoSite = computed((): Site => createDemoSite(palette.value))
 
+// Section type labels for display
+const SECTION_TYPE_LABELS: Record<SectionType, string> = {
+  header: 'Header',
+  hero: 'Hero',
+  features: 'Features',
+  logos: 'Logos',
+  howItWorks: 'How It Works',
+  testimonials: 'Testimonials',
+  pricing: 'Pricing',
+  faq: 'FAQ',
+  cta: 'CTA',
+  footer: 'Footer',
+}
+
+// Current sections list from demo site
+const currentSections = computed(() => {
+  const page = $Site.getFirstPage(demoSite.value)
+  if (!page) return []
+  return page.sections.map((section) => ({
+    id: section.id,
+    type: section.type,
+    label: SECTION_TYPE_LABELS[section.type],
+  }))
+})
+
 // Generate demo HTML
 const demoHtml = computed(() => {
   const site = demoSite.value
@@ -530,6 +558,9 @@ const downloadHTML = () => {
             <template v-else-if="item.id === 'filter'">
               <span class="sidebar-item-value">{{ currentFilterName }}</span>
             </template>
+            <template v-else-if="item.id === 'sections'">
+              <span class="sidebar-item-value">{{ currentSections.length }} sections</span>
+            </template>
           </div>
         </button>
       </div>
@@ -546,9 +577,13 @@ const downloadHTML = () => {
       <Transition name="popup">
         <div v-if="activePopup" ref="popupRef" class="sidebar-popup">
           <div class="popup-header">
-            <h2 class="popup-title">
-              {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'foundation' ? 'Foundation' : 'Color Filter' }}
-            </h2>
+            <div class="popup-breadcrumb">
+              <span class="popup-breadcrumb-item">Home</span>
+              <span class="popup-breadcrumb-separator">›</span>
+              <h2 class="popup-title">
+                {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'foundation' ? 'Foundation' : activePopup === 'filter' ? 'Color Filter' : 'Sections' }}
+              </h2>
+            </div>
             <button class="popup-close" @click="closePopup">×</button>
           </div>
 
@@ -673,6 +708,26 @@ const downloadHTML = () => {
               @update:intensity="intensity = $event"
               @reset="resetFilter"
             />
+          </div>
+
+          <!-- Sections Content -->
+          <div v-else-if="activePopup === 'sections'" class="popup-content">
+            <div class="sections-list">
+              <div
+                v-for="(section, index) in currentSections"
+                :key="section.id"
+                class="section-item"
+              >
+                <span class="section-number">{{ index + 1 }}</span>
+                <div class="section-info">
+                  <span class="section-label">{{ section.label }}</span>
+                  <code class="section-type">{{ section.type }}</code>
+                </div>
+              </div>
+            </div>
+            <p class="sections-hint">
+              Section editing coming soon...
+            </p>
           </div>
         </div>
       </Transition>
@@ -1108,6 +1163,39 @@ const downloadHTML = () => {
   border-bottom-color: oklch(0.20 0.02 260);
 }
 
+.popup-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.popup-breadcrumb-item {
+  font-size: 0.75rem;
+  color: oklch(0.50 0.02 260);
+  cursor: pointer;
+}
+
+.popup-breadcrumb-item:hover {
+  color: oklch(0.35 0.02 260);
+}
+
+.dark .popup-breadcrumb-item {
+  color: oklch(0.60 0.02 260);
+}
+
+.dark .popup-breadcrumb-item:hover {
+  color: oklch(0.80 0.02 260);
+}
+
+.popup-breadcrumb-separator {
+  font-size: 0.75rem;
+  color: oklch(0.60 0.02 260);
+}
+
+.dark .popup-breadcrumb-separator {
+  color: oklch(0.50 0.02 260);
+}
+
 .popup-title {
   margin: 0;
   font-size: 0.9rem;
@@ -1147,6 +1235,97 @@ const downloadHTML = () => {
 
 .popup-content {
   padding: 1rem;
+}
+
+/* Sections List */
+.sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.section-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: oklch(0.96 0.005 260);
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.dark .section-item {
+  background: oklch(0.18 0.02 260);
+}
+
+.section-item:hover {
+  background: oklch(0.94 0.01 260);
+}
+
+.dark .section-item:hover {
+  background: oklch(0.22 0.02 260);
+}
+
+.section-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: oklch(0.90 0.01 260);
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: oklch(0.40 0.02 260);
+  flex-shrink: 0;
+}
+
+.dark .section-number {
+  background: oklch(0.28 0.02 260);
+  color: oklch(0.70 0.02 260);
+}
+
+.section-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.section-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: oklch(0.25 0.02 260);
+}
+
+.dark .section-label {
+  color: oklch(0.90 0.01 260);
+}
+
+.section-type {
+  font-size: 0.65rem;
+  font-family: 'SF Mono', Monaco, monospace;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .section-type {
+  color: oklch(0.60 0.02 260);
+}
+
+.sections-hint {
+  margin: 1rem 0 0;
+  padding: 0.75rem;
+  background: oklch(0.96 0.01 260);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: oklch(0.50 0.02 260);
+  text-align: center;
+}
+
+.dark .sections-hint {
+  background: oklch(0.18 0.02 260);
+  color: oklch(0.60 0.02 260);
 }
 
 /* Popup Transition */
