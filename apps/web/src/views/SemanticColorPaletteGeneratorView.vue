@@ -560,6 +560,104 @@ const updateContentField = (sectionId: string, fieldKey: string, value: string) 
   }
 }
 
+// Track expanded array fields
+const expandedArrayFields = ref<Set<string>>(new Set())
+
+const toggleArrayField = (fieldKey: string) => {
+  const newSet = new Set(expandedArrayFields.value)
+  if (newSet.has(fieldKey)) {
+    newSet.delete(fieldKey)
+  } else {
+    newSet.add(fieldKey)
+  }
+  expandedArrayFields.value = newSet
+}
+
+const isArrayExpanded = (fieldKey: string) => expandedArrayFields.value.has(fieldKey)
+
+// Update an item in an array field
+const updateArrayItem = (
+  sectionId: string,
+  fieldKey: string,
+  index: number,
+  itemKey: string,
+  value: string
+) => {
+  const currentContent = siteContents.value[sectionId]
+  if (!currentContent) return
+
+  const array = (currentContent as Record<string, unknown>)[fieldKey]
+  if (!Array.isArray(array)) return
+
+  const newArray = [...array]
+  if (typeof newArray[index] === 'string') {
+    // For string arrays (like logos, benefits)
+    newArray[index] = value
+  } else if (typeof newArray[index] === 'object' && newArray[index] !== null) {
+    // For object arrays
+    newArray[index] = { ...newArray[index], [itemKey]: value }
+  }
+
+  siteContents.value = {
+    ...siteContents.value,
+    [sectionId]: {
+      ...currentContent,
+      [fieldKey]: newArray,
+    },
+  }
+}
+
+// Add item to array field
+const addArrayItem = (sectionId: string, fieldKey: string) => {
+  const currentContent = siteContents.value[sectionId]
+  if (!currentContent) return
+
+  const array = (currentContent as Record<string, unknown>)[fieldKey]
+  if (!Array.isArray(array)) return
+
+  let newItem: unknown
+  if (array.length > 0) {
+    const sample = array[0]
+    if (typeof sample === 'string') {
+      newItem = ''
+    } else if (typeof sample === 'object' && sample !== null) {
+      // Create empty object with same keys
+      newItem = Object.fromEntries(
+        Object.keys(sample).map(k => [k, ''])
+      )
+    }
+  } else {
+    newItem = ''
+  }
+
+  siteContents.value = {
+    ...siteContents.value,
+    [sectionId]: {
+      ...currentContent,
+      [fieldKey]: [...array, newItem],
+    },
+  }
+}
+
+// Remove item from array field
+const removeArrayItem = (sectionId: string, fieldKey: string, index: number) => {
+  const currentContent = siteContents.value[sectionId]
+  if (!currentContent) return
+
+  const array = (currentContent as Record<string, unknown>)[fieldKey]
+  if (!Array.isArray(array)) return
+
+  const newArray = array.filter((_, i) => i !== index)
+
+  siteContents.value = {
+    ...siteContents.value,
+    [sectionId]: {
+      ...currentContent,
+      [fieldKey]: newArray,
+    },
+  }
+}
+
 // Current sections list from demo page
 const currentSections = computed(() => {
   return demoPage.sections.map((section) => ({
@@ -836,11 +934,74 @@ const downloadHTML = () => {
                       />
                     </div>
 
-                    <!-- Array field (show count) -->
-                    <div v-else-if="Array.isArray(value)" class="content-field">
-                      <label class="content-field-label">{{ key }}</label>
-                      <div class="content-field-array">
-                        <span class="content-field-array-count">{{ value.length }} items</span>
+                    <!-- Array field -->
+                    <div v-else-if="Array.isArray(value)" class="content-field content-field--array">
+                      <button
+                        class="content-field-array-header"
+                        @click="toggleArrayField(key as string)"
+                      >
+                        <span class="content-field-label">{{ key }}</span>
+                        <span class="content-field-array-meta">
+                          <span class="content-field-array-count">{{ value.length }}</span>
+                          <span class="content-field-array-toggle" :class="{ expanded: isArrayExpanded(key as string) }">›</span>
+                        </span>
+                      </button>
+
+                      <!-- Expanded array items -->
+                      <div v-if="isArrayExpanded(key as string)" class="content-field-array-items">
+                        <div
+                          v-for="(item, itemIndex) in value"
+                          :key="itemIndex"
+                          class="array-item"
+                        >
+                          <div class="array-item-header">
+                            <span class="array-item-index">{{ itemIndex + 1 }}</span>
+                            <button
+                              class="array-item-remove"
+                              @click="removeArrayItem(selectedSection.id, key as string, itemIndex)"
+                              title="Remove item"
+                            >×</button>
+                          </div>
+
+                          <!-- String item -->
+                          <template v-if="typeof item === 'string'">
+                            <input
+                              type="text"
+                              class="content-field-input"
+                              :value="item"
+                              @input="updateArrayItem(selectedSection.id, key as string, itemIndex, '', ($event.target as HTMLInputElement).value)"
+                            />
+                          </template>
+
+                          <!-- Object item -->
+                          <template v-else-if="typeof item === 'object' && item !== null">
+                            <div class="array-item-fields">
+                              <div
+                                v-for="(fieldValue, fieldKey) in item"
+                                :key="fieldKey"
+                                class="array-item-field"
+                              >
+                                <label class="array-item-field-label">{{ fieldKey }}</label>
+                                <input
+                                  v-if="typeof fieldValue === 'string'"
+                                  type="text"
+                                  class="content-field-input content-field-input--small"
+                                  :value="fieldValue"
+                                  @input="updateArrayItem(selectedSection.id, key as string, itemIndex, fieldKey as string, ($event.target as HTMLInputElement).value)"
+                                />
+                                <span v-else class="array-item-field-value">{{ typeof fieldValue }}</span>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+
+                        <!-- Add button -->
+                        <button
+                          class="array-item-add"
+                          @click="addArrayItem(selectedSection.id, key as string)"
+                        >
+                          + Add item
+                        </button>
                       </div>
                     </div>
                   </template>
@@ -1528,25 +1689,199 @@ const downloadHTML = () => {
   box-shadow: 0 0 0 3px oklch(0.55 0.16 250 / 0.2);
 }
 
-.content-field-array {
+.content-field--array {
+  gap: 0;
+}
+
+.content-field-array-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
   padding: 0.5rem 0.625rem;
   background: oklch(0.96 0.005 260);
   border: 1px solid oklch(0.90 0.01 260);
   border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
-.dark .content-field-array {
+.content-field-array-header:hover {
+  background: oklch(0.94 0.01 260);
+}
+
+.dark .content-field-array-header {
   background: oklch(0.18 0.02 260);
   border-color: oklch(0.26 0.02 260);
 }
 
+.dark .content-field-array-header:hover {
+  background: oklch(0.20 0.02 260);
+}
+
+.content-field-array-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .content-field-array-count {
-  font-size: 0.75rem;
-  color: oklch(0.50 0.02 260);
+  font-size: 0.7rem;
+  padding: 0.125rem 0.375rem;
+  background: oklch(0.90 0.01 260);
+  border-radius: 4px;
+  color: oklch(0.45 0.02 260);
 }
 
 .dark .content-field-array-count {
+  background: oklch(0.26 0.02 260);
+  color: oklch(0.65 0.02 260);
+}
+
+.content-field-array-toggle {
+  font-size: 0.9rem;
+  color: oklch(0.55 0.02 260);
+  transition: transform 0.15s;
+}
+
+.content-field-array-toggle.expanded {
+  transform: rotate(90deg);
+}
+
+.dark .content-field-array-toggle {
+  color: oklch(0.55 0.02 260);
+}
+
+/* Array Items */
+.content-field-array-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid oklch(0.90 0.01 260);
+}
+
+.dark .content-field-array-items {
+  border-left-color: oklch(0.26 0.02 260);
+}
+
+.array-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  background: oklch(0.98 0.005 260);
+  border-radius: 6px;
+}
+
+.dark .array-item {
+  background: oklch(0.15 0.02 260);
+}
+
+.array-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.array-item-index {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: oklch(0.55 0.02 260);
+}
+
+.dark .array-item-index {
+  color: oklch(0.55 0.02 260);
+}
+
+.array-item-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: oklch(0.55 0.02 260);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.array-item-remove:hover {
+  background: oklch(0.65 0.15 25);
+  color: white;
+}
+
+.dark .array-item-remove:hover {
+  background: oklch(0.55 0.15 25);
+}
+
+.array-item-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.array-item-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.array-item-field-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: oklch(0.55 0.02 260);
+  text-transform: capitalize;
+}
+
+.dark .array-item-field-label {
+  color: oklch(0.55 0.02 260);
+}
+
+.content-field-input--small {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.array-item-field-value {
+  font-size: 0.7rem;
   color: oklch(0.60 0.02 260);
+  font-style: italic;
+}
+
+.array-item-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px dashed oklch(0.85 0.01 260);
+  border-radius: 6px;
+  color: oklch(0.55 0.02 260);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.array-item-add:hover {
+  background: oklch(0.96 0.01 260);
+  border-color: oklch(0.75 0.01 260);
+}
+
+.dark .array-item-add {
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.60 0.02 260);
+}
+
+.dark .array-item-add:hover {
+  background: oklch(0.20 0.02 260);
+  border-color: oklch(0.40 0.02 260);
 }
 
 /* Popup Transition */
