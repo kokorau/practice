@@ -31,12 +31,17 @@ import FilterPanel from '../components/Filter/FilterPanel.vue'
 // SemanticSection module for Demo tab
 import {
   $Site,
-  createDemoSite,
+  $Page,
+  createSite,
   renderPage,
   exportToHTML,
+  getDefaultContent,
   SECTION_TYPES,
   type Site,
+  type Section,
   type SectionType,
+  type SectionContent,
+  type PageContents,
 } from '../modules/SemanticSection'
 
 // ============================================================
@@ -207,11 +212,15 @@ const activePopup = ref<PopupType>(null)
 const popupRef = ref<HTMLDivElement | null>(null)
 
 const openPopup = (type: PopupType) => {
+  if (activePopup.value !== type) {
+    selectedSectionId.value = null
+  }
   activePopup.value = type
 }
 
 const closePopup = () => {
   activePopup.value = null
+  selectedSectionId.value = null
 }
 
 // Close popup on escape key
@@ -464,9 +473,6 @@ watch(palette, updateStyles)
 // Demo Tab - Section-based Page Rendering
 // ============================================================
 
-// Create demo site from current palette
-const demoSite = computed((): Site => createDemoSite(palette.value))
-
 // Section type labels for display
 const SECTION_TYPE_LABELS: Record<SectionType, string> = {
   header: 'Header',
@@ -481,11 +487,82 @@ const SECTION_TYPE_LABELS: Record<SectionType, string> = {
   footer: 'Footer',
 }
 
-// Current sections list from demo site
+// Demo page sections (fixed structure for now)
+const demoPage = $Page.createDemo()
+
+// Editable contents (initialized with defaults)
+const initializeContents = (): Record<string, SectionContent> => {
+  const contents: Record<string, SectionContent> = {}
+  for (const section of demoPage.sections) {
+    contents[section.id] = getDefaultContent(section.type)
+  }
+  return contents
+}
+
+const siteContents = ref<Record<string, SectionContent>>(initializeContents())
+
+// Create site from current palette + editable contents
+const demoSite = computed((): Site => createSite({
+  meta: {
+    id: 'demo-site',
+    name: 'Demo Site',
+    description: 'A demo site for previewing semantic color palettes',
+  },
+  palette: palette.value,
+  pages: [demoPage],
+  contents: siteContents.value,
+}))
+
+// Selected section for detail view (null = list view)
+const selectedSectionId = ref<string | null>(null)
+
+// Get selected section info
+const selectedSection = computed(() => {
+  if (!selectedSectionId.value) return null
+  const section = demoPage.sections.find(s => s.id === selectedSectionId.value)
+  if (!section) return null
+  return {
+    ...section,
+    label: SECTION_TYPE_LABELS[section.type],
+    content: siteContents.value[section.id],
+  }
+})
+
+// Navigate to section detail
+const selectSection = (sectionId: string) => {
+  selectedSectionId.value = sectionId
+}
+
+// Navigate back to list
+const backToList = () => {
+  selectedSectionId.value = null
+}
+
+// Update content for a section
+const updateSectionContent = (sectionId: string, content: SectionContent) => {
+  siteContents.value = {
+    ...siteContents.value,
+    [sectionId]: content,
+  }
+}
+
+// Update a single field in section content
+const updateContentField = (sectionId: string, fieldKey: string, value: string) => {
+  const currentContent = siteContents.value[sectionId]
+  if (!currentContent) return
+
+  siteContents.value = {
+    ...siteContents.value,
+    [sectionId]: {
+      ...currentContent,
+      [fieldKey]: value,
+    },
+  }
+}
+
+// Current sections list from demo page
 const currentSections = computed(() => {
-  const page = $Site.getFirstPage(demoSite.value)
-  if (!page) return []
-  return page.sections.map((section) => ({
+  return demoPage.sections.map((section) => ({
     id: section.id,
     type: section.type,
     label: SECTION_TYPE_LABELS[section.type],
@@ -578,10 +655,17 @@ const downloadHTML = () => {
         <div v-if="activePopup" ref="popupRef" class="sidebar-popup">
           <div class="popup-header">
             <div class="popup-breadcrumb">
-              <span class="popup-breadcrumb-item">Home</span>
+              <span class="popup-breadcrumb-item" @click="activePopup === 'sections' && selectedSectionId ? backToList() : closePopup()">
+                {{ activePopup === 'sections' && selectedSectionId ? 'Sections' : 'Home' }}
+              </span>
               <span class="popup-breadcrumb-separator">›</span>
               <h2 class="popup-title">
-                {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'foundation' ? 'Foundation' : activePopup === 'filter' ? 'Color Filter' : 'Sections' }}
+                <template v-if="activePopup === 'sections' && selectedSection">
+                  {{ selectedSection.label }}
+                </template>
+                <template v-else>
+                  {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'foundation' ? 'Foundation' : activePopup === 'filter' ? 'Color Filter' : 'Sections' }}
+                </template>
               </h2>
             </div>
             <button class="popup-close" @click="closePopup">×</button>
@@ -712,22 +796,57 @@ const downloadHTML = () => {
 
           <!-- Sections Content -->
           <div v-else-if="activePopup === 'sections'" class="popup-content">
-            <div class="sections-list">
-              <div
-                v-for="(section, index) in currentSections"
-                :key="section.id"
-                class="section-item"
-              >
-                <span class="section-number">{{ index + 1 }}</span>
-                <div class="section-info">
-                  <span class="section-label">{{ section.label }}</span>
-                  <code class="section-type">{{ section.type }}</code>
+            <!-- List View -->
+            <template v-if="!selectedSection">
+              <div class="sections-list">
+                <button
+                  v-for="(section, index) in currentSections"
+                  :key="section.id"
+                  class="section-item section-item--clickable"
+                  @click="selectSection(section.id)"
+                >
+                  <span class="section-number">{{ index + 1 }}</span>
+                  <div class="section-info">
+                    <span class="section-label">{{ section.label }}</span>
+                    <code class="section-type">{{ section.type }}</code>
+                  </div>
+                  <span class="section-arrow">›</span>
+                </button>
+              </div>
+            </template>
+
+            <!-- Detail View -->
+            <template v-else>
+              <div class="section-detail">
+                <div class="section-detail-header">
+                  <span class="section-detail-type">{{ selectedSection.type }}</span>
+                </div>
+
+                <!-- Content Fields -->
+                <div class="content-fields">
+                  <template v-for="(value, key) in selectedSection.content" :key="key">
+                    <!-- String field -->
+                    <div v-if="typeof value === 'string'" class="content-field">
+                      <label class="content-field-label">{{ key }}</label>
+                      <input
+                        type="text"
+                        class="content-field-input"
+                        :value="value"
+                        @input="updateContentField(selectedSection.id, key as string, ($event.target as HTMLInputElement).value)"
+                      />
+                    </div>
+
+                    <!-- Array field (show count) -->
+                    <div v-else-if="Array.isArray(value)" class="content-field">
+                      <label class="content-field-label">{{ key }}</label>
+                      <div class="content-field-array">
+                        <span class="content-field-array-count">{{ value.length }} items</span>
+                      </div>
+                    </div>
+                  </template>
                 </div>
               </div>
-            </div>
-            <p class="sections-hint">
-              Section editing coming soon...
-            </p>
+            </template>
           </div>
         </div>
       </Transition>
@@ -1313,18 +1432,120 @@ const downloadHTML = () => {
   color: oklch(0.60 0.02 260);
 }
 
-.sections-hint {
-  margin: 1rem 0 0;
-  padding: 0.75rem;
-  background: oklch(0.96 0.01 260);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  color: oklch(0.50 0.02 260);
-  text-align: center;
+.section-item--clickable {
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  text-align: left;
 }
 
-.dark .sections-hint {
+.section-arrow {
+  font-size: 1rem;
+  color: oklch(0.60 0.02 260);
+  margin-left: auto;
+}
+
+.dark .section-arrow {
+  color: oklch(0.50 0.02 260);
+}
+
+/* Section Detail View */
+.section-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-detail-type {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: oklch(0.92 0.01 260);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: 'SF Mono', Monaco, monospace;
+  color: oklch(0.45 0.02 260);
+}
+
+.dark .section-detail-type {
+  background: oklch(0.22 0.02 260);
+  color: oklch(0.65 0.02 260);
+}
+
+/* Content Fields */
+.content-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.content-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.content-field-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: oklch(0.45 0.02 260);
+  text-transform: capitalize;
+}
+
+.dark .content-field-label {
+  color: oklch(0.65 0.02 260);
+}
+
+.content-field-input {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid oklch(0.88 0.01 260);
+  border-radius: 6px;
+  background: oklch(0.99 0.005 260);
+  color: oklch(0.20 0.02 260);
+  font-size: 0.8rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.content-field-input:focus {
+  outline: none;
+  border-color: oklch(0.55 0.18 250);
+  box-shadow: 0 0 0 3px oklch(0.55 0.18 250 / 0.15);
+}
+
+.dark .content-field-input {
+  background: oklch(0.16 0.02 260);
+  border-color: oklch(0.28 0.02 260);
+  color: oklch(0.90 0.01 260);
+}
+
+.dark .content-field-input:focus {
+  border-color: oklch(0.55 0.16 250);
+  box-shadow: 0 0 0 3px oklch(0.55 0.16 250 / 0.2);
+}
+
+.content-field-array {
+  padding: 0.5rem 0.625rem;
+  background: oklch(0.96 0.005 260);
+  border: 1px solid oklch(0.90 0.01 260);
+  border-radius: 6px;
+}
+
+.dark .content-field-array {
   background: oklch(0.18 0.02 260);
+  border-color: oklch(0.26 0.02 260);
+}
+
+.content-field-array-count {
+  font-size: 0.75rem;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .content-field-array-count {
   color: oklch(0.60 0.02 260);
 }
 
