@@ -8,7 +8,7 @@ import {
   BRAND_KEYS,
 } from '../../modules/SemanticColorPalette/Domain'
 
-const props = defineProps<{
+defineProps<{
   brandColor: {
     hex: string
     oklch: Oklch

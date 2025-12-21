@@ -28,7 +28,7 @@ const SECTION_TYPE_LABELS: Record<SectionType, string> = {
 }
 
 const props = defineProps<{
-  sections: Section[]
+  sections: readonly Section[]
   contents: Record<string, SectionContent>
   selectedSectionId: string | null
 }>()
@@ -82,7 +82,7 @@ const selectedSchema = computed((): SectionSchema | null => {
 
 // Get validation result for selected section
 const validationResult = computed((): ValidationResult | null => {
-  if (!selectedSection.value || !selectedSchema.value) return null
+  if (!selectedSection.value || !selectedSchema.value || !selectedSection.value.content) return null
   return validateContent(selectedSection.value.content, selectedSchema.value)
 })
 
@@ -136,7 +136,7 @@ const updateArrayItem = (
   const currentContent = props.contents[sectionId]
   if (!currentContent) return
 
-  const array = (currentContent as Record<string, unknown>)[fieldKey]
+  const array = (currentContent as unknown as Record<string, unknown>)[fieldKey]
   if (!Array.isArray(array)) return
 
   const newArray = [...array]
@@ -149,7 +149,7 @@ const updateArrayItem = (
   emit('update:content', sectionId, {
     ...currentContent,
     [fieldKey]: newArray,
-  })
+  } as SectionContent)
 }
 
 // Add item to array field
@@ -157,7 +157,7 @@ const addArrayItem = (sectionId: string, fieldKey: string) => {
   const currentContent = props.contents[sectionId]
   if (!currentContent) return
 
-  const array = (currentContent as Record<string, unknown>)[fieldKey]
+  const array = (currentContent as unknown as Record<string, unknown>)[fieldKey]
   if (!Array.isArray(array)) return
 
   let newItem: unknown
@@ -167,7 +167,7 @@ const addArrayItem = (sectionId: string, fieldKey: string) => {
       newItem = ''
     } else if (typeof sample === 'object' && sample !== null) {
       newItem = Object.fromEntries(
-        Object.keys(sample).map(k => [k, ''])
+        Object.keys(sample as object).map(k => [k, ''])
       )
     }
   } else {
@@ -177,7 +177,7 @@ const addArrayItem = (sectionId: string, fieldKey: string) => {
   emit('update:content', sectionId, {
     ...currentContent,
     [fieldKey]: [...array, newItem],
-  })
+  } as SectionContent)
 }
 
 // Remove item from array field
@@ -185,7 +185,7 @@ const removeArrayItem = (sectionId: string, fieldKey: string, index: number) => 
   const currentContent = props.contents[sectionId]
   if (!currentContent) return
 
-  const array = (currentContent as Record<string, unknown>)[fieldKey]
+  const array = (currentContent as unknown as Record<string, unknown>)[fieldKey]
   if (!Array.isArray(array)) return
 
   const newArray = array.filter((_, i) => i !== index)
@@ -193,7 +193,7 @@ const removeArrayItem = (sectionId: string, fieldKey: string, index: number) => 
   emit('update:content', sectionId, {
     ...currentContent,
     [fieldKey]: newArray,
-  })
+  } as SectionContent)
 }
 
 // Expose for parent
@@ -277,7 +277,7 @@ defineExpose({
                   </span>
                 </div>
                 <span class="content-field-array-meta">
-                  <span class="content-field-array-count">{{ value.length }}</span>
+                  <span class="content-field-array-count">{{ (value as unknown[]).length }}</span>
                   <span class="content-field-array-toggle" :class="{ expanded: isArrayExpanded(key as string) }">›</span>
                 </span>
               </button>
@@ -325,7 +325,7 @@ defineExpose({
                           type="text"
                           class="content-field-input content-field-input--small"
                           :value="fieldValue"
-                          @input="updateArrayItem(selectedSection.id, key as string, itemIndex, fieldKey as string, ($event.target as HTMLInputElement).value)"
+                          @input="updateArrayItem(selectedSection.id, key as string, itemIndex, String(fieldKey), ($event.target as HTMLInputElement).value)"
                         />
                         <span v-else class="array-item-field-value">{{ typeof fieldValue }}</span>
                       </div>

@@ -16,14 +16,13 @@ import type {
 } from '../Domain'
 import type { SemanticColorPalette } from '../../SemanticColorPalette/Domain'
 import { DEFAULT_STYLE_PACK } from '../Domain'
-import { $Page, SECTION_TYPES } from '../Domain'
-import { DEFAULT_SCHEMAS, getSchemaByType } from './defaultSchemas'
+import { $Page } from '../Domain'
+import { DEFAULT_SCHEMAS } from './defaultSchemas'
 import {
   DEFAULT_TEMPLATES,
   getDefaultContent,
   renderPage,
   generateCSS,
-  type RenderPageOptions,
 } from '../Infra'
 
 // ============================================================================

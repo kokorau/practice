@@ -37,7 +37,8 @@ describe('SiteService', () => {
 
     it('creates a site with pages and contents', () => {
       const page = $Page.createDemo()
-      const contents = { 'section-1': { title: 'Test' } }
+      // Use type assertion for test flexibility
+      const contents = { 'section-1': { title: 'Test' } } as unknown as Record<string, import('../Domain').SectionContent>
 
       const site = createSite({
         palette,
@@ -86,7 +87,8 @@ describe('SiteService', () => {
       const site = createDemoSite(palette)
       const page = getFirstPage(site)!
       const sectionId = page.sections[0]!.id
-      const newContent = { title: 'Updated Title' }
+      // Use type assertion for test flexibility
+      const newContent = { title: 'Updated Title' } as import('../Domain').SectionContent
 
       const updated = updateSectionContent(site, sectionId, newContent)
 

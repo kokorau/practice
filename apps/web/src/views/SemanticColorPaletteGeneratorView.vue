@@ -4,9 +4,6 @@ import '../components/SemanticColorPaletteGenerator/demo-styles.css'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import {
-  type ContextTokens,
-  type ComponentTokens,
-  type ActionState,
   type PrimitivePalette,
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
@@ -20,8 +17,6 @@ import {
   createPrimitivePalette,
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
-  type BaseTokenRefs,
-  type PrimitiveRef,
 } from '../modules/SemanticColorPalette/Infra'
 import type { Preset, Lut } from '../modules/Filter/Domain'
 import { $Lut3D } from '../modules/Filter/Domain'
