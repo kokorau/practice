@@ -33,6 +33,7 @@ import {
   $Site,
   createDemoSite,
   renderPage,
+  exportToHTML,
   type Site,
 } from '../modules/SemanticSection'
 
@@ -474,6 +475,25 @@ const demoHtml = computed(() => {
     wrapperClass: 'demo-page',
   })
 })
+
+// ============================================================
+// Export Functions
+// ============================================================
+
+const downloadHTML = () => {
+  const html = exportToHTML(demoSite.value, {
+    title: 'Semantic Color Palette Demo',
+    fullDocument: true,
+  })
+
+  const blob = new Blob([html], { type: 'text/html' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'palette-demo.html'
+  a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -511,6 +531,14 @@ const demoHtml = computed(() => {
               <span class="sidebar-item-value">{{ currentFilterName }}</span>
             </template>
           </div>
+        </button>
+      </div>
+
+      <!-- Export Button -->
+      <div class="sidebar-export">
+        <button class="export-button" @click="downloadHTML">
+          <span class="export-icon">📥</span>
+          <span class="export-label">Export HTML</span>
         </button>
       </div>
 
@@ -976,6 +1004,8 @@ const demoHtml = computed(() => {
 /* Sidebar */
 .palette-sidebar {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 200px;
   flex-shrink: 0;
   padding: 1rem 0.75rem;
@@ -987,6 +1017,58 @@ const demoHtml = computed(() => {
 .dark .palette-sidebar {
   background: oklch(0.10 0.02 260);
   border-right-color: oklch(0.20 0.02 260);
+}
+
+/* Export Button */
+.sidebar-export {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid oklch(0.88 0.01 260);
+}
+
+.dark .sidebar-export {
+  border-top-color: oklch(0.20 0.02 260);
+}
+
+.export-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: oklch(0.55 0.18 250);
+  border: none;
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.export-button:hover {
+  background: oklch(0.50 0.18 250);
+}
+
+.export-button:active {
+  transform: scale(0.98);
+}
+
+.dark .export-button {
+  background: oklch(0.50 0.16 250);
+}
+
+.dark .export-button:hover {
+  background: oklch(0.55 0.16 250);
+}
+
+.export-icon {
+  font-size: 1rem;
+}
+
+.export-label {
+  flex: 1;
+  text-align: left;
 }
 
 /* Sidebar Popup */
