@@ -208,7 +208,7 @@ const {
   selectedSectionId,
   updateSectionContent,
   downloadHTML,
-} = useDemoSite(palette)
+} = useDemoSite({ palette })
 
 // Handle master point update from sidebar
 const handleUpdateMasterPoint = (index: number, val: number) => {

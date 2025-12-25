@@ -12,10 +12,10 @@ import type {
   SectionContent,
   SectionType,
   RenderTheme,
-  StylePack,
 } from '../Domain'
 import type { SemanticColorPalette } from '../../SemanticColorPalette/Domain'
-import { DEFAULT_STYLE_PACK } from '../Domain'
+import type { DesignTokens } from '../../DesignTokens/Domain'
+import { DEFAULT_TOKENS } from '../Domain'
 import { $Page } from '../Domain'
 import { DEFAULT_SCHEMAS } from './defaultSchemas'
 import {
@@ -32,7 +32,7 @@ import {
 export interface CreateSiteParams {
   meta?: Partial<SiteMeta>
   palette: SemanticColorPalette
-  style?: StylePack
+  tokens?: DesignTokens
   pages?: readonly Page[]
   contents?: PageContents
 }
@@ -51,7 +51,7 @@ export const createSite = (params: CreateSiteParams): Site => {
     meta,
     theme: {
       palette: params.palette,
-      style: params.style ?? DEFAULT_STYLE_PACK,
+      tokens: params.tokens ?? DEFAULT_TOKENS,
     },
     templates: DEFAULT_TEMPLATES,
     schemas: DEFAULT_SCHEMAS,
@@ -90,7 +90,7 @@ export const createDemoSite = (palette: SemanticColorPalette): Site => {
 // ============================================================================
 
 /**
- * Update site theme (palette and/or style)
+ * Update site theme (palette and/or tokens)
  */
 export const updateSiteTheme = (
   site: Site,
@@ -99,7 +99,7 @@ export const updateSiteTheme = (
   ...site,
   theme: {
     palette: theme.palette ?? site.theme.palette,
-    style: theme.style ?? site.theme.style,
+    tokens: theme.tokens ?? site.theme.tokens,
   },
 })
 

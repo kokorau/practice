@@ -27,13 +27,8 @@ export type {
 } from './SectionContent'
 
 // RenderTheme
-export type {
-  RoundedSize,
-  SpacingSize,
-  StylePack,
-  RenderTheme,
-} from './RenderTheme'
-export { DEFAULT_STYLE_PACK, $StylePack } from './RenderTheme'
+export type { RenderTheme } from './RenderTheme'
+export { DEFAULT_TOKENS } from './RenderTheme'
 
 // Template
 export type {

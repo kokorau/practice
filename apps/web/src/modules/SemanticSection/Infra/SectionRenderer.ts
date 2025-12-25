@@ -12,6 +12,7 @@ import type {
   RenderTheme,
 } from '../Domain'
 import { toCSSText, toCSSRuleSetsText } from '../../SemanticColorPalette/Infra'
+import { toCSSText as toDesignTokensCSSText } from '../../DesignTokens/Infra'
 import { eta } from './etaConfig'
 import { getEtaTemplate } from './etaTemplates'
 
@@ -103,11 +104,14 @@ export const generateCSS = (
   theme: RenderTheme,
   selector: string = '.semantic-page'
 ): string => {
-  const cssVariables = toCSSText(theme.palette, selector)
+  const colorVariables = toCSSText(theme.palette, selector)
+  const tokenVariables = toDesignTokensCSSText(theme.tokens, selector)
   const cssRuleSets = toCSSRuleSetsText()
 
   return `<style>
-${cssVariables}
+${colorVariables}
+
+${tokenVariables}
 
 ${cssRuleSets}
 </style>`

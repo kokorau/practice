@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderPage, renderSection } from './SectionRenderer'
-import { $Page, DEFAULT_STYLE_PACK } from '../Domain'
+import { $Page, DEFAULT_TOKENS } from '../Domain'
 import type { RenderTheme, PageContents, HeaderContent, HeroContent } from '../Domain'
 import { getDefaultContent } from './getDefaultContent'
 import { createSemanticFromPrimitive, createPrimitivePalette } from '../../SemanticColorPalette/Infra'
@@ -15,7 +15,7 @@ const createTestTheme = (): RenderTheme => {
 
   return {
     palette: semanticPalette,
-    style: DEFAULT_STYLE_PACK,
+    tokens: DEFAULT_TOKENS,
   }
 }
 
