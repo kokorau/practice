@@ -15,7 +15,7 @@ describe('CSSVariables', () => {
 
       // Check title entries
       expect(typographyEntries).toContainEqual(['--dt-typography-title-family', 'system-ui, -apple-system, sans-serif'])
-      expect(typographyEntries).toContainEqual(['--dt-typography-title-size', '1.25rem'])
+      expect(typographyEntries).toContainEqual(['--dt-typography-title-size', '1rem'])
       expect(typographyEntries).toContainEqual(['--dt-typography-title-weight', '600'])
       expect(typographyEntries).toContainEqual(['--dt-typography-title-line-height', '1.3'])
       expect(typographyEntries).toContainEqual(['--dt-typography-title-letter-spacing', '-0.01em'])
@@ -66,7 +66,7 @@ describe('CSSVariables', () => {
 
       expect(css).toMatch(/^:root \{/)
       expect(css).toMatch(/\}$/)
-      expect(css).toContain('--dt-typography-title-size: 1.25rem;')
+      expect(css).toContain('--dt-typography-title-size: 1rem;')
       expect(css).toContain('--dt-radius-md: 0.5rem;')
       expect(css).toContain('--dt-spacing-md: 1rem;')
     })
