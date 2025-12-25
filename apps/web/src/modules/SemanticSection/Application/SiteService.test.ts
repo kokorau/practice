@@ -78,7 +78,7 @@ describe('SiteService', () => {
       const updated = updateSiteTheme(site, { palette: newPalette })
 
       expect(updated.theme.palette).toBe(newPalette)
-      expect(updated.theme.style).toBe(site.theme.style)
+      expect(updated.theme.tokens).toBe(site.theme.tokens)
     })
   })
 
