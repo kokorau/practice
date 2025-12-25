@@ -1,7 +1,7 @@
 /**
  * SectionRenderer - Renders sections to HTML
  *
- * Main pipeline for rendering pages from sections using string templates.
+ * Main pipeline for rendering pages from sections using Eta templates.
  */
 
 import type {
@@ -12,8 +12,8 @@ import type {
   RenderTheme,
 } from '../Domain'
 import { toCSSText, toCSSRuleSetsText } from '../../SemanticColorPalette/Infra'
-import { evaluateTemplate } from './templateEvaluator'
-import { getStringTemplate, getPreprocessor } from './stringTemplates'
+import { eta } from './etaConfig'
+import { getEtaTemplate } from './etaTemplates'
 
 // ============================================================================
 // Section Rendering
@@ -25,12 +25,10 @@ import { getStringTemplate, getPreprocessor } from './stringTemplates'
 export const renderSection = (
   section: Section,
   content: SectionContent,
-  theme: RenderTheme
+  _theme: RenderTheme
 ): string => {
-  const template = getStringTemplate(section.type)
-  const preprocessor = getPreprocessor(section.type)
-  const vars = preprocessor(content, theme)
-  return evaluateTemplate(template.template, vars)
+  const template = getEtaTemplate(section.type)
+  return eta.renderString(template.template, { content })
 }
 
 // ============================================================================
