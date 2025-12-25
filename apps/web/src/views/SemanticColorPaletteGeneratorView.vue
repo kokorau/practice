@@ -17,8 +17,10 @@ import {
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
 } from '../modules/SemanticColorPalette/Infra'
+import { toCSSText as toDesignTokensCSSText } from '../modules/DesignTokens/Infra'
 import type { Preset } from '../modules/Filter/Domain'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
+import { getTokenPresetEntries } from '../modules/DesignTokens/Infra'
 import { useFilter } from '../composables/Filter/useFilter'
 import { useDemoSite } from '../composables/SemanticColorPalette/useDemoSite'
 import { hsvToRgb, rgbToHex, applyLutToPalette } from '../components/SemanticColorPaletteGenerator/utils'
@@ -45,6 +47,17 @@ const activeTab = ref<TabId>('primitive')
 // Foundation preset state
 const selectedFoundationId = ref('white')
 const sidebarRef = ref<InstanceType<typeof PaletteSidebar> | null>(null)
+
+// ============================================================
+// Design Tokens State
+// ============================================================
+const tokenPresets = getTokenPresetEntries()
+const selectedTokensId = ref(tokenPresets[0]?.id ?? 'default')
+
+const currentTokensPreset = computed(() =>
+  tokenPresets.find((p) => p.id === selectedTokensId.value) ?? tokenPresets[0]!
+)
+const currentTokens = computed(() => currentTokensPreset.value.tokens)
 
 const tabs: { id: TabId; label: string }[] = [
   { id: 'primitive', label: 'Primitive' },
@@ -176,9 +189,10 @@ let styleElement: HTMLStyleElement | null = null
 
 const updateStyles = () => {
   if (!styleElement) return
-  const cssVariables = toCSSText(palette.value, '.semantic-color-palette-generator')
+  const colorVariables = toCSSText(palette.value, '.semantic-color-palette-generator')
+  const tokenVariables = toDesignTokensCSSText(currentTokens.value, '.semantic-color-palette-generator')
   const cssRuleSets = toCSSRuleSetsText()
-  styleElement.textContent = `${cssVariables}\n\n${cssRuleSets}`
+  styleElement.textContent = `${colorVariables}\n\n${tokenVariables}\n\n${cssRuleSets}`
 }
 
 onMounted(() => {
@@ -195,7 +209,7 @@ onUnmounted(() => {
   }
 })
 
-watch(palette, updateStyles)
+watch([palette, currentTokens], updateStyles)
 
 // ============================================================
 // Demo Tab - Section-based Page Rendering
@@ -208,7 +222,7 @@ const {
   selectedSectionId,
   updateSectionContent,
   downloadHTML,
-} = useDemoSite({ palette })
+} = useDemoSite({ palette, tokens: currentTokens })
 
 // Handle master point update from sidebar
 const handleUpdateMasterPoint = (index: number, val: number) => {
@@ -235,6 +249,8 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
       :filter-setters="filterSetters"
       :intensity="intensity"
       :current-filter-name="currentFilterName"
+      :selected-tokens-id="selectedTokensId"
+      :current-tokens-name="currentTokensPreset.name"
       :sections="currentSections"
       :section-contents="siteContents"
       :selected-section-id="selectedSectionId"
@@ -243,6 +259,7 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
       @update:value="value = $event"
       @update:selected-foundation-id="selectedFoundationId = $event"
       @update:intensity="intensity = $event"
+      @update:selected-tokens-id="selectedTokensId = $event"
       @update:selected-section-id="selectedSectionId = $event"
       @update-section-content="updateSectionContent"
       @apply-preset="applyPreset"

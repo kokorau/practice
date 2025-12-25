@@ -8,14 +8,15 @@ import BrandColorPicker from './BrandColorPicker.vue'
 import FoundationPresets from './FoundationPresets.vue'
 import SectionsEditor from './SectionsEditor.vue'
 import FilterPanel from '../Filter/FilterPanel.vue'
+import DesignTokensPresets from './DesignTokensPresets.vue'
 
 export interface SidebarItem {
-  id: 'brand' | 'foundation' | 'filter' | 'sections'
+  id: 'brand' | 'foundation' | 'filter' | 'tokens' | 'sections'
   label: string
   icon: string
 }
 
-type PopupType = 'brand' | 'foundation' | 'filter' | 'sections' | null
+type PopupType = 'brand' | 'foundation' | 'filter' | 'tokens' | 'sections' | null
 
 defineProps<{
   // Brand color
@@ -35,6 +36,9 @@ defineProps<{
   filterSetters: FilterSetters
   intensity: number
   currentFilterName: string
+  // Design Tokens
+  selectedTokensId: string
+  currentTokensName: string
   // Sections
   sections: readonly Section[]
   sectionContents: Record<string, SectionContent>
@@ -47,6 +51,7 @@ const emit = defineEmits<{
   'update:value': [value: number]
   'update:selectedFoundationId': [value: string]
   'update:intensity': [value: number]
+  'update:selectedTokensId': [value: string]
   'update:selectedSectionId': [value: string | null]
   'updateSectionContent': [sectionId: string, content: SectionContent]
   'applyPreset': [preset: Preset]
@@ -64,6 +69,7 @@ const sidebarItems: SidebarItem[] = [
   { id: 'brand', label: 'Brand Color', icon: '🎨' },
   { id: 'foundation', label: 'Foundation', icon: '📄' },
   { id: 'filter', label: 'Color Filter', icon: '🔮' },
+  { id: 'tokens', label: 'Style', icon: '✨' },
   { id: 'sections', label: 'Sections', icon: '📑' },
 ]
 
@@ -146,6 +152,9 @@ watch(
           <template v-else-if="item.id === 'filter'">
             <span class="sidebar-item-value">{{ currentFilterName }}</span>
           </template>
+          <template v-else-if="item.id === 'tokens'">
+            <span class="sidebar-item-value">{{ currentTokensName }}</span>
+          </template>
           <template v-else-if="item.id === 'sections'">
             <span class="sidebar-item-value">{{ sections.length }} sections</span>
           </template>
@@ -171,7 +180,7 @@ watch(
             </span>
             <span class="popup-breadcrumb-separator">›</span>
             <h2 class="popup-title">
-              {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'foundation' ? 'Foundation' : activePopup === 'filter' ? 'Color Filter' : 'Sections' }}
+              {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'foundation' ? 'Foundation' : activePopup === 'filter' ? 'Color Filter' : activePopup === 'tokens' ? 'Style' : 'Sections' }}
             </h2>
           </div>
           <button class="popup-close" @click="closePopup">×</button>
@@ -212,6 +221,14 @@ watch(
             @update:master-point="(index, value) => $emit('updateMasterPoint', index, value)"
             @update:intensity="$emit('update:intensity', $event)"
             @reset="$emit('resetFilter')"
+          />
+        </div>
+
+        <!-- Design Tokens Content -->
+        <div v-else-if="activePopup === 'tokens'" class="popup-content">
+          <DesignTokensPresets
+            :selected-id="selectedTokensId"
+            @update:selected-id="$emit('update:selectedTokensId', $event)"
           />
         </div>
 
