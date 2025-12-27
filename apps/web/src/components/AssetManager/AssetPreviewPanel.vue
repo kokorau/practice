@@ -17,15 +17,20 @@ const props = defineProps<{
 
 const previewUrl = ref<string | null>(null)
 const textContent = ref<string | null>(null)
+const fontFamily = ref<string | null>(null)
 const isLoading = ref(false)
 
+/** フォントカウンター（一意なフォント名生成用） */
+let fontCounter = 0
+
 /** MIMEタイプからプレビュータイプを判定 */
-type PreviewType = 'image' | 'markdown' | 'code' | 'text' | 'video' | 'audio' | 'none'
+type PreviewType = 'image' | 'markdown' | 'code' | 'text' | 'font' | 'video' | 'audio' | 'none'
 
 const getPreviewType = (mimeType: string, fileName: string): PreviewType => {
   if (mimeType.startsWith('image/')) return 'image'
   if (mimeType.startsWith('video/')) return 'video'
   if (mimeType.startsWith('audio/')) return 'audio'
+  if (mimeType.startsWith('font/') || fileName.match(/\.(woff2?|ttf|otf|eot)$/i)) return 'font'
 
   // Markdown
   if (mimeType === 'text/markdown' || fileName.endsWith('.md')) return 'markdown'
@@ -104,11 +109,30 @@ const revokeUrl = () => {
   previewUrl.value = null
 }
 
+/** フォントを動的に読み込む */
+const loadFont = async (url: string, name: string): Promise<string> => {
+  const familyName = `preview-font-${++fontCounter}-${name.replace(/[^a-zA-Z0-9]/g, '-')}`
+  const fontFace = new FontFace(familyName, `url(${url})`)
+  await fontFace.load()
+  document.fonts.add(fontFace)
+  return familyName
+}
+
+/** フォントサンプルテキスト */
+const fontSamples = [
+  { label: 'English', text: 'The quick brown fox jumps over the lazy dog.' },
+  { label: 'Numbers', text: '0123456789' },
+  { label: 'Japanese', text: 'あいうえお かきくけこ 日本語テスト' },
+]
+
+const fontSizes = [12, 16, 24, 32, 48]
+
 watch(
   () => props.asset,
   async (asset) => {
     revokeUrl()
     textContent.value = null
+    fontFamily.value = null
 
     if (!asset) return
 
@@ -118,6 +142,10 @@ watch(
 
       if (type === 'image') {
         previewUrl.value = await $Asset.toObjectUrl(asset)
+      } else if (type === 'font') {
+        const url = await $Asset.toObjectUrl(asset)
+        previewUrl.value = url
+        fontFamily.value = await loadFont(url, asset.name)
       } else if (type === 'markdown' || type === 'code' || type === 'text') {
         const blob = await $Asset.toBlob(asset)
         textContent.value = await blob.text()
@@ -159,6 +187,47 @@ onUnmounted(() => {
               :alt="asset.name"
               class="max-w-full max-h-full object-contain"
             />
+          </div>
+        </template>
+
+        <!-- Font preview -->
+        <template v-else-if="previewType === 'font' && fontFamily">
+          <div class="p-6 space-y-6">
+            <!-- Size samples -->
+            <div
+              v-for="size in fontSizes"
+              :key="size"
+              class="border-b border-gray-700 pb-4"
+            >
+              <div class="text-xs text-gray-500 mb-1">{{ size }}px</div>
+              <div
+                class="text-white"
+                :style="{ fontFamily: fontFamily, fontSize: `${size}px` }"
+              >
+                ABCDEFGHIJKLMNOPQRSTUVWXYZ
+              </div>
+              <div
+                class="text-white"
+                :style="{ fontFamily: fontFamily, fontSize: `${size}px` }"
+              >
+                abcdefghijklmnopqrstuvwxyz
+              </div>
+            </div>
+
+            <!-- Sample texts -->
+            <div
+              v-for="sample in fontSamples"
+              :key="sample.label"
+              class="border-b border-gray-700 pb-4"
+            >
+              <div class="text-xs text-gray-500 mb-1">{{ sample.label }}</div>
+              <div
+                class="text-white text-2xl"
+                :style="{ fontFamily: fontFamily }"
+              >
+                {{ sample.text }}
+              </div>
+            </div>
           </div>
         </template>
 

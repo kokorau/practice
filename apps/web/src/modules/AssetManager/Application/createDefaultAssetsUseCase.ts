@@ -23,6 +23,7 @@ import photoNatureUrl from './constants/files/photo-nature.jpg'
 import photoAbstractUrl from './constants/files/photo-abstract.jpg'
 import interRegularUrl from './constants/files/inter-regular.woff2'
 import interMediumUrl from './constants/files/inter-medium.woff2'
+import bbhBartleUrl from './constants/files/BBHBartle-Regular.ttf'
 
 export type DefaultAssetsResult = {
   tree: AssetTree
@@ -169,6 +170,15 @@ const sampleFiles: SampleFileDef[] = [
     folder: 'Fonts',
     description: 'Inter Medium (500)',
     tags: ['font', 'inter', 'medium'],
+  },
+  {
+    type: 'url',
+    name: 'BBHBartle-Regular.ttf',
+    url: bbhBartleUrl,
+    mimeType: 'font/ttf',
+    folder: 'Fonts',
+    description: 'BBH Bartle Regular',
+    tags: ['font', 'bbh-bartle', 'display'],
   },
   // Data
   {
