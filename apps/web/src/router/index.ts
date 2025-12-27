@@ -35,11 +35,6 @@ const router = createRouter({
       component: () => import('../views/ColorPaletteView.vue'),
     },
     {
-      path: '/section-preview',
-      name: 'section-preview',
-      component: () => import('../views/SectionPreviewView.vue'),
-    },
-    {
       path: '/spectrum',
       name: 'spectrum',
       component: () => import('../views/SpectrumView.vue'),
@@ -58,11 +53,6 @@ const router = createRouter({
       path: '/color-gamut',
       name: 'color-gamut',
       component: () => import('../views/ColorGamutView.vue'),
-    },
-    {
-      path: '/site-simulator',
-      name: 'site-simulator',
-      component: () => import('../views/SiteSimulatorView.vue'),
     },
     {
       path: '/semantic-color-palette',
