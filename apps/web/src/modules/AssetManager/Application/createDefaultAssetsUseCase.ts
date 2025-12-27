@@ -7,113 +7,114 @@ import { $Asset, $AssetSource } from '../../Asset'
 import type { AssetTree } from '../Domain'
 import { $AssetTree, ROOT_NODE_ID } from '../Domain'
 
-/** サンプルSVG画像を生成 */
-const createSampleSvg = (color: string, label: string): Blob => {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
-  <rect width="200" height="200" fill="${color}"/>
-  <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" fill="white" font-family="system-ui" font-size="24">${label}</text>
-</svg>`
-  return new Blob([svg], { type: 'image/svg+xml' })
-}
-
-/** サンプルテキストを生成 */
-const createSampleText = (content: string): Blob => {
-  return new Blob([content], { type: 'text/plain' })
-}
-
-/** サンプルJSONを生成 */
-const createSampleJson = (data: object): Blob => {
-  return new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-}
+// ファイルを ?raw でインポート
+import sampleRedSvg from './constants/files/sample-red.svg?raw'
+import sampleBlueSvg from './constants/files/sample-blue.svg?raw'
+import sampleGreenSvg from './constants/files/sample-green.svg?raw'
+import readmeContent from './constants/files/README.md?raw'
+import configJson from './constants/files/config.json?raw'
 
 export type DefaultAssetsResult = {
   tree: AssetTree
   assets: Map<AssetId, Asset>
 }
 
+/** 文字列からBlobを生成 */
+const createBlob = (content: string, mimeType: string): Blob => {
+  return new Blob([content], { type: mimeType })
+}
+
+/** デフォルトフォルダ */
+const defaultFolders = ['Images', 'Documents', 'Fonts', 'Data'] as const
+
+/** サンプルファイル定義 */
+type SampleFileDef = {
+  name: string
+  content: string
+  mimeType: string
+  folder: string
+  description: string
+  tags: string[]
+}
+
+const sampleFiles: SampleFileDef[] = [
+  // Images
+  {
+    name: 'sample-red.svg',
+    content: sampleRedSvg,
+    mimeType: 'image/svg+xml',
+    folder: 'Images',
+    description: 'Sample Red image',
+    tags: ['sample', 'svg', 'red'],
+  },
+  {
+    name: 'sample-blue.svg',
+    content: sampleBlueSvg,
+    mimeType: 'image/svg+xml',
+    folder: 'Images',
+    description: 'Sample Blue image',
+    tags: ['sample', 'svg', 'blue'],
+  },
+  {
+    name: 'sample-green.svg',
+    content: sampleGreenSvg,
+    mimeType: 'image/svg+xml',
+    folder: 'Images',
+    description: 'Sample Green image',
+    tags: ['sample', 'svg', 'green'],
+  },
+  // Documents
+  {
+    name: 'README.md',
+    content: readmeContent,
+    mimeType: 'text/markdown',
+    folder: 'Documents',
+    description: 'Project readme file',
+    tags: ['documentation', 'readme'],
+  },
+  // Data
+  {
+    name: 'config.json',
+    content: configJson,
+    mimeType: 'application/json',
+    folder: 'Data',
+    description: 'Configuration file',
+    tags: ['config', 'json'],
+  },
+]
+
 export const createDefaultAssetsUseCase = (): DefaultAssetsResult => {
-  let t = $AssetTree.create()
+  let tree = $AssetTree.create()
   const assetMap = new Map<AssetId, Asset>()
 
   // フォルダ作成
-  t = $AssetTree.addFolder(t, 'Images', ROOT_NODE_ID)
-  t = $AssetTree.addFolder(t, 'Documents', ROOT_NODE_ID)
-  t = $AssetTree.addFolder(t, 'Fonts', ROOT_NODE_ID)
-  t = $AssetTree.addFolder(t, 'Data', ROOT_NODE_ID)
+  for (const folderName of defaultFolders) {
+    tree = $AssetTree.addFolder(tree, folderName, ROOT_NODE_ID)
+  }
 
-  // フォルダIDを取得
-  const folders = $AssetTree.getChildren(t, ROOT_NODE_ID)
-  const imagesFolder = folders.find((n) => n.name === 'Images')!
-  const documentsFolder = folders.find((n) => n.name === 'Documents')!
-  const dataFolder = folders.find((n) => n.name === 'Data')!
+  // フォルダIDマップを作成
+  const folders = $AssetTree.getChildren(tree, ROOT_NODE_ID)
+  const folderMap = new Map(folders.map((f) => [f.name, f.id]))
 
-  // サンプル画像
-  const sampleImages = [
-    { name: 'sample-red.svg', color: '#e53935', label: 'Red' },
-    { name: 'sample-blue.svg', color: '#1e88e5', label: 'Blue' },
-    { name: 'sample-green.svg', color: '#43a047', label: 'Green' },
-  ]
+  // サンプルファイルを追加
+  for (const file of sampleFiles) {
+    const folderId = folderMap.get(file.folder)
+    if (!folderId) continue
 
-  for (const img of sampleImages) {
-    const blob = createSampleSvg(img.color, img.label)
+    const blob = createBlob(file.content, file.mimeType)
     const asset = $Asset.create({
-      name: img.name,
+      name: file.name,
       source: $AssetSource.fromBlob(blob),
       meta: {
-        mimeType: 'image/svg+xml',
+        mimeType: file.mimeType,
         size: blob.size,
-        description: `Sample ${img.label} image`,
-        tags: ['sample', 'svg', img.label.toLowerCase()],
+        description: file.description,
+        tags: file.tags,
       },
     })
     assetMap.set(asset.id, asset)
-    t = $AssetTree.addAssetRef(t, asset.name, imagesFolder.id, asset.id)
+    tree = $AssetTree.addAssetRef(tree, asset.name, folderId, asset.id)
   }
 
-  // サンプルテキスト
-  const readmeBlob = createSampleText(`# Asset Manager
-
-This is a sample README file.
-
-## Features
-- Tree-based file management
-- Image preview
-- Metadata support
-`)
-  const readmeAsset = $Asset.create({
-    name: 'README.md',
-    source: $AssetSource.fromBlob(readmeBlob),
-    meta: {
-      mimeType: 'text/markdown',
-      size: readmeBlob.size,
-      description: 'Project readme file',
-      tags: ['documentation', 'readme'],
-    },
-  })
-  assetMap.set(readmeAsset.id, readmeAsset)
-  t = $AssetTree.addAssetRef(t, readmeAsset.name, documentsFolder.id, readmeAsset.id)
-
-  // サンプルJSON
-  const configBlob = createSampleJson({
-    name: 'My Project',
-    version: '1.0.0',
-    settings: {
-      theme: 'dark',
-      language: 'ja',
-    },
-  })
-  const configAsset = $Asset.create({
-    name: 'config.json',
-    source: $AssetSource.fromBlob(configBlob),
-    meta: {
-      mimeType: 'application/json',
-      size: configBlob.size,
-      description: 'Configuration file',
-      tags: ['config', 'json'],
-    },
-  })
-  assetMap.set(configAsset.id, configAsset)
-  t = $AssetTree.addAssetRef(t, configAsset.name, dataFolder.id, configAsset.id)
-
-  return { tree: t, assets: assetMap }
+  return { tree, assets: assetMap }
 }
