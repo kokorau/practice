@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, computed, onUnmounted } from 'vue'
+import { marked } from 'marked'
+import Prism from 'prismjs'
+import 'prismjs/themes/prism-tomorrow.css'
+import 'prismjs/components/prism-typescript'
+import 'prismjs/components/prism-javascript'
+import 'prismjs/components/prism-json'
+import 'prismjs/components/prism-css'
+import 'prismjs/components/prism-markup'
 import type { Asset } from '../../modules/Asset'
 import { $Asset } from '../../modules/Asset'
 
@@ -8,7 +16,74 @@ const props = defineProps<{
 }>()
 
 const previewUrl = ref<string | null>(null)
+const textContent = ref<string | null>(null)
 const isLoading = ref(false)
+
+/** MIMEタイプからプレビュータイプを判定 */
+type PreviewType = 'image' | 'markdown' | 'code' | 'text' | 'video' | 'audio' | 'none'
+
+const getPreviewType = (mimeType: string, fileName: string): PreviewType => {
+  if (mimeType.startsWith('image/')) return 'image'
+  if (mimeType.startsWith('video/')) return 'video'
+  if (mimeType.startsWith('audio/')) return 'audio'
+
+  // Markdown
+  if (mimeType === 'text/markdown' || fileName.endsWith('.md')) return 'markdown'
+
+  // Code files
+  const codeExtensions = ['.ts', '.js', '.tsx', '.jsx', '.vue', '.json', '.css', '.html', '.xml']
+  const codeMimeTypes = ['application/json', 'application/javascript', 'text/javascript']
+  if (codeExtensions.some((ext) => fileName.endsWith(ext)) || codeMimeTypes.includes(mimeType)) {
+    return 'code'
+  }
+
+  // Plain text
+  if (mimeType.startsWith('text/')) return 'text'
+
+  return 'none'
+}
+
+/** 拡張子からPrism言語を取得 */
+const getPrismLanguage = (fileName: string): string => {
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  const langMap: Record<string, string> = {
+    ts: 'typescript',
+    tsx: 'typescript',
+    js: 'javascript',
+    jsx: 'javascript',
+    json: 'json',
+    css: 'css',
+    html: 'markup',
+    xml: 'markup',
+    vue: 'markup',
+  }
+  return langMap[ext ?? ''] ?? 'plaintext'
+}
+
+const previewType = computed<PreviewType>(() => {
+  if (!props.asset) return 'none'
+  return getPreviewType(props.asset.meta.mimeType, props.asset.name)
+})
+
+const highlightedCode = computed(() => {
+  if (!textContent.value || previewType.value !== 'code') return ''
+  const lang = getPrismLanguage(props.asset?.name ?? '')
+  const grammar = Prism.languages[lang]
+  if (!grammar) return escapeHtml(textContent.value)
+  return Prism.highlight(textContent.value, grammar, lang)
+})
+
+const renderedMarkdown = computed(() => {
+  if (!textContent.value || previewType.value !== 'markdown') return ''
+  return marked(textContent.value)
+})
+
+const escapeHtml = (text: string): string => {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
 
 const formatSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`
@@ -33,17 +108,22 @@ watch(
   () => props.asset,
   async (asset) => {
     revokeUrl()
+    textContent.value = null
 
     if (!asset) return
 
-    // Only load preview for images
-    if (asset.meta.type === 'image') {
-      isLoading.value = true
-      try {
+    isLoading.value = true
+    try {
+      const type = getPreviewType(asset.meta.mimeType, asset.name)
+
+      if (type === 'image') {
         previewUrl.value = await $Asset.toObjectUrl(asset)
-      } finally {
-        isLoading.value = false
+      } else if (type === 'markdown' || type === 'code' || type === 'text') {
+        const blob = await $Asset.toBlob(asset)
+        textContent.value = await blob.text()
       }
+    } finally {
+      isLoading.value = false
     }
   },
   { immediate: true }
@@ -64,31 +144,59 @@ onUnmounted(() => {
     <!-- Asset selected -->
     <template v-else>
       <!-- Preview area -->
-      <div class="flex-1 flex items-center justify-center p-4 overflow-hidden bg-gray-900">
+      <div class="flex-1 overflow-auto bg-gray-900">
+        <!-- Loading -->
+        <div v-if="isLoading" class="flex items-center justify-center h-full text-gray-500">
+          Loading...
+        </div>
+
         <!-- Image preview -->
-        <template v-if="asset.meta.type === 'image'">
-          <div v-if="isLoading" class="text-gray-500">Loading...</div>
-          <img
-            v-else-if="previewUrl"
-            :src="previewUrl"
-            :alt="asset.name"
-            class="max-w-full max-h-full object-contain"
+        <template v-else-if="previewType === 'image'">
+          <div class="flex items-center justify-center h-full p-4">
+            <img
+              v-if="previewUrl"
+              :src="previewUrl"
+              :alt="asset.name"
+              class="max-w-full max-h-full object-contain"
+            />
+          </div>
+        </template>
+
+        <!-- Markdown preview -->
+        <template v-else-if="previewType === 'markdown'">
+          <div
+            class="p-6 prose prose-invert prose-sm max-w-none"
+            v-html="renderedMarkdown"
           />
         </template>
 
+        <!-- Code preview -->
+        <template v-else-if="previewType === 'code'">
+          <pre class="p-4 text-sm overflow-auto h-full"><code v-html="highlightedCode" /></pre>
+        </template>
+
+        <!-- Plain text preview -->
+        <template v-else-if="previewType === 'text'">
+          <pre class="p-4 text-sm text-gray-300 whitespace-pre-wrap">{{ textContent }}</pre>
+        </template>
+
         <!-- Video preview -->
-        <template v-else-if="asset.meta.type === 'video'">
-          <div class="text-gray-500 text-sm">Video preview not implemented</div>
+        <template v-else-if="previewType === 'video'">
+          <div class="flex items-center justify-center h-full text-gray-500 text-sm">
+            Video preview not implemented
+          </div>
         </template>
 
         <!-- Audio preview -->
-        <template v-else-if="asset.meta.type === 'audio'">
-          <div class="text-gray-500 text-sm">Audio preview not implemented</div>
+        <template v-else-if="previewType === 'audio'">
+          <div class="flex items-center justify-center h-full text-gray-500 text-sm">
+            Audio preview not implemented
+          </div>
         </template>
 
         <!-- Other types -->
         <template v-else>
-          <div class="text-center text-gray-500">
+          <div class="flex flex-col items-center justify-center h-full text-gray-500">
             <div class="text-4xl mb-2">{{ asset.meta.type }}</div>
             <div class="text-sm">No preview available</div>
           </div>
@@ -96,7 +204,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Info panel -->
-      <div class="border-t border-gray-700 p-4 space-y-2">
+      <div class="flex-shrink-0 border-t border-gray-700 p-4 space-y-2">
         <h3 class="font-medium text-white truncate" :title="asset.name">{{ asset.name }}</h3>
 
         <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
@@ -135,3 +243,11 @@ onUnmounted(() => {
     </template>
   </div>
 </template>
+
+<style>
+/* Prism.js overrides for dark theme */
+pre[class*='language-'],
+code[class*='language-'] {
+  background: transparent;
+}
+</style>
