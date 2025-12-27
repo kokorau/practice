@@ -45,6 +45,11 @@ const pages = [
     title: 'Semantic Color Palette Generator',
     description: 'ベースカラーからセマンティックカラーパレットを自動生成',
   },
+  {
+    to: '/asset-manager',
+    title: 'Asset Manager',
+    description: 'ローカルファイルのアセット管理',
+  },
 ]
 </script>
 

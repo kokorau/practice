@@ -59,6 +59,11 @@ const router = createRouter({
       name: 'semantic-color-palette-generator',
       component: () => import('../views/SemanticColorPaletteGeneratorView.vue'),
     },
+    {
+      path: '/asset-manager',
+      name: 'asset-manager',
+      component: () => import('../views/AssetManagerView.vue'),
+    },
   ],
 })
 
