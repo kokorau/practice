@@ -172,7 +172,7 @@ onUnmounted(() => {
     <!-- Asset selected -->
     <template v-else>
       <!-- Preview area -->
-      <div class="flex-1 overflow-auto bg-gray-900">
+      <div class="flex-1 min-h-0 overflow-auto bg-gray-900">
         <!-- Loading -->
         <div v-if="isLoading" class="flex items-center justify-center h-full text-gray-500">
           Loading...
@@ -273,18 +273,18 @@ onUnmounted(() => {
       </div>
 
       <!-- Info panel -->
-      <div class="flex-shrink-0 border-t border-gray-700 p-4 space-y-2">
+      <div class="flex-shrink-0 min-w-0 overflow-hidden border-t border-gray-700 p-4 space-y-2">
         <h3 class="font-medium text-white truncate" :title="asset.name">{{ asset.name }}</h3>
 
-        <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+        <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm w-full">
           <span class="text-gray-500">Type</span>
-          <span class="text-gray-300">{{ asset.meta.mimeType }}</span>
+          <span class="text-gray-300 min-w-0 break-all">{{ asset.meta.mimeType }}</span>
 
           <span class="text-gray-500">Size</span>
-          <span class="text-gray-300">{{ formatSize(asset.meta.size) }}</span>
+          <span class="text-gray-300 min-w-0">{{ formatSize(asset.meta.size) }}</span>
 
           <span class="text-gray-500">Created</span>
-          <span class="text-gray-300">{{ formatDate(asset.meta.createdAt) }}</span>
+          <span class="text-gray-300 min-w-0">{{ formatDate(asset.meta.createdAt) }}</span>
         </div>
 
         <!-- Title & Description -->

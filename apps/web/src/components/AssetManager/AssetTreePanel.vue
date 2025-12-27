@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import type { AssetNode, NodeId, AssetTree } from '../../modules/AssetManager'
 import { $AssetTree } from '../../modules/AssetManager'
 import type { Asset } from '../../modules/Asset'
@@ -17,17 +17,10 @@ const emit = defineEmits<{
   pickFiles: []
 }>()
 
-const isCreatingFolder = ref(false)
-const newFolderName = ref('')
-
 const rootChildren = computed(() => $AssetTree.getChildren(props.tree, props.tree.rootId))
 
 const handleCreateFolder = () => {
-  if (newFolderName.value.trim()) {
-    emit('createFolder', newFolderName.value.trim())
-    newFolderName.value = ''
-    isCreatingFolder.value = false
-  }
+  emit('createFolder', 'New Folder')
 }
 </script>
 
@@ -38,32 +31,24 @@ const handleCreateFolder = () => {
       <span class="text-xs font-medium text-gray-400 uppercase tracking-wide">Assets</span>
       <div class="flex gap-1">
         <button
-          class="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded text-xs"
+          class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
           title="New Folder"
-          @click="isCreatingFolder = true"
+          @click="handleCreateFolder"
         >
-          [+D]
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-5L9 4H4zm7 5a1 1 0 10-2 0v1H8a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V9z" clip-rule="evenodd" />
+          </svg>
         </button>
         <button
-          class="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded text-xs"
+          class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded"
           title="Add Files"
           @click="emit('pickFiles')"
         >
-          [+F]
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clip-rule="evenodd" />
+          </svg>
         </button>
       </div>
-    </div>
-
-    <!-- New Folder Input -->
-    <div v-if="isCreatingFolder" class="px-2 py-2 border-b border-gray-700">
-      <input
-        v-model="newFolderName"
-        type="text"
-        placeholder="Folder name..."
-        class="w-full px-2 py-1 text-sm bg-gray-800 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
-        @keyup.enter="handleCreateFolder"
-        @keyup.escape="isCreatingFolder = false"
-      />
     </div>
 
     <!-- Tree -->
