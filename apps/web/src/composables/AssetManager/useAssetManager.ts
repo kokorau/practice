@@ -2,16 +2,25 @@ import { ref, computed, shallowRef } from 'vue'
 import type { Asset, AssetId } from '../../modules/Asset'
 import { $Asset } from '../../modules/Asset'
 import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/AssetManager'
-import { $AssetTree, ROOT_NODE_ID, $AssetNode } from '../../modules/AssetManager'
+import {
+  $AssetTree,
+  ROOT_NODE_ID,
+  $AssetNode,
+  createDefaultAssetsUseCase,
+} from '../../modules/AssetManager'
+
+const defaultData = createDefaultAssetsUseCase()
 
 /** アセットストレージ（id -> Asset） */
-const assets = shallowRef<Map<AssetId, Asset>>(new Map())
+const assets = shallowRef<Map<AssetId, Asset>>(defaultData.assets)
 
-/** ツリー構造 */
-const tree = shallowRef<AssetTree>($AssetTree.create())
+const tree = shallowRef<AssetTree>(defaultData.tree)
 
 /** 現在のフォルダID */
 const currentFolderId = ref<NodeId>(ROOT_NODE_ID)
+
+/** 選択中のノードID */
+const selectedNodeId = ref<NodeId | null>(null)
 
 export const useAssetManager = () => {
   /** 現在のフォルダ */
@@ -42,6 +51,19 @@ export const useAssetManager = () => {
     return undefined
   }
 
+  /** 選択中のアセットを取得 */
+  const selectedAsset = computed<Asset | null>(() => {
+    if (!selectedNodeId.value) return null
+    const node = $AssetTree.getNode(tree.value, selectedNodeId.value)
+    if (!node || !$AssetNode.isAssetRef(node)) return null
+    return assets.value.get(node.assetId) ?? null
+  })
+
+  /** ノードを選択 */
+  const selectNode = (node: AssetNode) => {
+    selectedNodeId.value = node.id
+  }
+
   /** フォルダに移動 */
   const navigateTo = (folderId: NodeId) => {
     const folder = $AssetTree.getFolder(tree.value, folderId)
@@ -65,12 +87,12 @@ export const useAssetManager = () => {
     }
   }
 
-  /** 新しいフォルダを作成 */
+  /** 新しいフォルダを作成（ルートに追加） */
   const createFolder = (name: string) => {
-    tree.value = $AssetTree.addFolder(tree.value, name, currentFolderId.value)
+    tree.value = $AssetTree.addFolder(tree.value, name, ROOT_NODE_ID)
   }
 
-  /** ファイルを追加 */
+  /** ファイルを追加（ルートに追加） */
   const addFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files)
     const newAssets = new Map(assets.value)
@@ -78,13 +100,13 @@ export const useAssetManager = () => {
     for (const file of fileArray) {
       const asset = $Asset.fromFile(file)
       newAssets.set(asset.id, asset)
-      tree.value = $AssetTree.addAssetRef(tree.value, asset.name, currentFolderId.value, asset.id)
+      tree.value = $AssetTree.addAssetRef(tree.value, asset.name, ROOT_NODE_ID, asset.id)
     }
 
     assets.value = newAssets
   }
 
-  /** File System Access APIでファイルを選択して追加 */
+  /** File System Access APIでファイルを選択して追加（ルートに追加） */
   const pickFiles = async () => {
     try {
       const handles = await window.showOpenFilePicker({
@@ -96,12 +118,7 @@ export const useAssetManager = () => {
       for (const handle of handles) {
         const asset = await $Asset.fromFileHandle(handle)
         newAssets.set(asset.id, asset)
-        tree.value = $AssetTree.addAssetRef(
-          tree.value,
-          asset.name,
-          currentFolderId.value,
-          asset.id
-        )
+        tree.value = $AssetTree.addAssetRef(tree.value, asset.name, ROOT_NODE_ID, asset.id)
       }
 
       assets.value = newAssets
@@ -143,9 +160,12 @@ export const useAssetManager = () => {
     currentNodes,
     currentPath,
     breadcrumbs,
+    selectedNodeId,
+    selectedAsset,
 
     // Actions
     getAsset,
+    selectNode,
     navigateTo,
     navigateUp,
     handleNodeClick,
