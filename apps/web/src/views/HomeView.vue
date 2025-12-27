@@ -21,16 +21,6 @@ const pages = [
     description: 'カラーピッカーで色を選択',
   },
   {
-    to: '/color-palette',
-    title: 'Color Palette',
-    description: 'ColorPaletteモジュールのプリセットパレットを閲覧',
-  },
-  {
-    to: '/section-preview',
-    title: 'Section Preview',
-    description: 'セクションテンプレートとカラーパレットの統合プレビュー',
-  },
-  {
     to: '/webgpu-showcase',
     title: 'WebGPU Showcase',
     description: 'WebGPUによるレイトレーシングシーンのショーケース',
@@ -44,11 +34,6 @@ const pages = [
     to: '/color-gamut',
     title: 'Color Gamut',
     description: 'Rec.2020, Display-P3, ACESなど広色域の確認と比較',
-  },
-  {
-    to: '/site-simulator',
-    title: 'Site Simulator',
-    description: 'ブランドカラーと照明効果でサイトをプレビュー',
   },
   {
     to: '/semantic-color-palette',
