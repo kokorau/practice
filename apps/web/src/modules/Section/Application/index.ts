@@ -1,1 +1,0 @@
-export { getDefaultContent } from './getDefaultContent'
