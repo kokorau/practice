@@ -8,8 +8,8 @@
 import { ref, shallowRef, computed, onMounted, onUnmounted } from 'vue'
 import type { Asset, AssetId } from '../../modules/Asset'
 import { $Asset } from '../../modules/Asset'
-import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/AssetManager'
-import { $AssetTree, ROOT_NODE_ID, $AssetNode } from '../../modules/AssetManager'
+import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/AssetRepository'
+import { $AssetTree, ROOT_NODE_ID, $AssetNode } from '../../modules/AssetRepository'
 import {
   getSiteBuilderRepository,
   initializeSiteBuilderUseCase,
@@ -54,7 +54,7 @@ const selectedNodeId = ref<NodeId | null>(null)
 let initialized = false
 
 /** assetsMap を更新するヘルパー */
-const refreshAssetsMap = (repository: import('../../modules/AssetManager').AssetRepository) => {
+const refreshAssetsMap = (repository: import('../../modules/AssetRepository').AssetRepository) => {
   // ツリー内の全アセット参照を取得して Map を再構築
   const allRefs = $AssetTree.getAllAssetRefs(tree.value)
   const newMap = new Map<AssetId, Asset>()

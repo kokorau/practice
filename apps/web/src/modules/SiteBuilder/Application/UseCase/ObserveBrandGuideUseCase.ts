@@ -2,7 +2,7 @@
  * ObserveBrandGuideUseCase - Brand Guide の変更を監視する
  */
 
-import type { AssetRepository, Unsubscribe } from '../../../AssetManager/Infra/AssetRepository'
+import type { AssetRepository, Unsubscribe } from '../../../AssetRepository/Infra/AssetRepository'
 import { $Asset } from '../../../Asset'
 import { BRAND_GUIDE_ASSET_ID, DEFAULT_BRAND_GUIDE_CONTENT } from '../../Domain/constants/defaultBrandGuide'
 

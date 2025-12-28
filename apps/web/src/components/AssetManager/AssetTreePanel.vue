@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { AssetNode, NodeId, AssetTree } from '../../modules/AssetManager'
-import { $AssetTree } from '../../modules/AssetManager'
+import type { AssetNode, NodeId, AssetTree } from '../../modules/AssetRepository'
+import { $AssetTree } from '../../modules/AssetRepository'
 import type { Asset } from '../../modules/Asset'
 import AssetTreeNode from './AssetTreeNode.vue'
 

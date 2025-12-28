@@ -4,7 +4,7 @@
  * シングルトンとして管理し、アプリケーション全体で共有する
  */
 
-import { createAssetRepository, type AssetRepository } from '../../AssetManager/Infra/AssetRepository'
+import { createAssetRepository, type AssetRepository } from '../../AssetRepository/Infra/AssetRepository'
 
 /** SiteBuilder 用の AssetRepository インスタンス */
 let repository: AssetRepository | null = null

@@ -2,7 +2,7 @@
  * UpdateBrandGuideUseCase - Brand Guide を更新する
  */
 
-import type { AssetRepository } from '../../../AssetManager/Infra/AssetRepository'
+import type { AssetRepository } from '../../../AssetRepository/Infra/AssetRepository'
 import { $Asset } from '../../../Asset'
 import { BRAND_GUIDE_ASSET_ID } from '../../Domain/constants/defaultBrandGuide'
 

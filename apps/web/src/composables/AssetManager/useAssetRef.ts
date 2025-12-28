@@ -8,8 +8,8 @@
 import { ref, watch, onUnmounted, type Ref } from 'vue'
 import type { Asset, AssetId } from '../../modules/Asset'
 import { $Asset } from '../../modules/Asset'
-import type { AssetRepository } from '../../modules/AssetManager'
-import { observeAssetUseCase } from '../../modules/AssetManager'
+import type { AssetRepository } from '../../modules/AssetRepository'
+import { observeAssetUseCase } from '../../modules/AssetRepository'
 
 /** useAssetRef のオプション */
 export interface UseAssetRefOptions<T> {

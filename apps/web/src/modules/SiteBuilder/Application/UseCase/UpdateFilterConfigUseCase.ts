@@ -2,7 +2,7 @@
  * UpdateFilterConfigUseCase - FilterConfig を更新する
  */
 
-import type { AssetRepository } from '../../../AssetManager/Infra/AssetRepository'
+import type { AssetRepository } from '../../../AssetRepository/Infra/AssetRepository'
 import { $Asset } from '../../../Asset'
 import {
   type FilterConfig,

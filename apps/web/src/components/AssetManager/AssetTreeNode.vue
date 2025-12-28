@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { AssetNode, NodeId, AssetTree } from '../../modules/AssetManager'
-import { $AssetNode, $AssetTree } from '../../modules/AssetManager'
+import type { AssetNode, NodeId, AssetTree } from '../../modules/AssetRepository'
+import { $AssetNode, $AssetTree } from '../../modules/AssetRepository'
 import type { Asset } from '../../modules/Asset'
 
 const props = defineProps<{

@@ -1,13 +1,13 @@
 import { ref, computed, shallowRef } from 'vue'
 import type { Asset, AssetId } from '../../modules/Asset'
 import { $Asset } from '../../modules/Asset'
-import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/AssetManager'
+import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/AssetRepository'
 import {
   $AssetTree,
   ROOT_NODE_ID,
   $AssetNode,
   createDefaultAssetsUseCase,
-} from '../../modules/AssetManager'
+} from '../../modules/AssetRepository'
 
 const defaultData = createDefaultAssetsUseCase()
 

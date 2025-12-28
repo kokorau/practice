@@ -4,7 +4,7 @@
  * AssetRepository にデフォルトアセットを登録する
  */
 
-import type { AssetRepository } from '../../../AssetManager/Infra/AssetRepository'
+import type { AssetRepository } from '../../../AssetRepository/Infra/AssetRepository'
 import type { Asset } from '../../../Asset'
 import { $Asset, $AssetSource } from '../../../Asset'
 import {

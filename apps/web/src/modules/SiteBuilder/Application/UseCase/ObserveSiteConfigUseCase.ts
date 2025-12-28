@@ -2,7 +2,7 @@
  * ObserveSiteConfigUseCase - SiteConfig の変更を監視する
  */
 
-import type { AssetRepository, Unsubscribe } from '../../../AssetManager/Infra/AssetRepository'
+import type { AssetRepository, Unsubscribe } from '../../../AssetRepository/Infra/AssetRepository'
 import { $Asset } from '../../../Asset'
 import {
   type SiteConfig,
