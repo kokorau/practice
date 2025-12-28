@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { usePaletteAssets } from '../../composables/SemanticColorPalette/usePaletteAssets'
+import { useSiteBuilderAssets } from '../../composables/SiteBuilder'
 import AssetTreePanel from '../AssetManager/AssetTreePanel.vue'
 import AssetPreviewPanel from '../AssetManager/AssetPreviewPanel.vue'
 
@@ -11,7 +11,7 @@ const {
   selectNode,
   createFolder,
   pickFiles,
-} = usePaletteAssets()
+} = useSiteBuilderAssets()
 </script>
 
 <template>

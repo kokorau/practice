@@ -1,28 +1,29 @@
 /**
- * SiteBuilder専用のAssetManager
- * グローバル状態ではなく、このView専用のローカル状態を持つ
+ * useSiteBuilderAssets - SiteBuilder のアセット管理 composable
+ *
+ * AssetRepository と UseCase を使って、アセットの CRUD と監視を行う。
+ * Vue のリアクティブシステムと統合。
  */
-import { ref, computed, shallowRef } from 'vue'
+
+import { ref, shallowRef, computed, onMounted, onUnmounted } from 'vue'
 import type { Asset, AssetId } from '../../modules/Asset'
 import { $Asset } from '../../modules/Asset'
 import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/AssetManager'
+import { $AssetTree, ROOT_NODE_ID, $AssetNode } from '../../modules/AssetManager'
 import {
-  $AssetTree,
-  ROOT_NODE_ID,
-  $AssetNode,
-} from '../../modules/AssetManager'
-import {
-  DEFAULT_BRAND_GUIDE_CONTENT,
+  getSiteBuilderRepository,
+  initializeSiteBuilderUseCase,
+  updateBrandGuideUseCase,
+  getBrandGuideContentUseCase,
+  observeBrandGuideUseCase,
   BRAND_GUIDE_ASSET_ID,
-} from '../../modules/SemanticColorPalette/Domain/constants/defaultBrandGuide'
-import { createPaletteAssetsUseCase } from '../../modules/SemanticColorPalette/Application'
+} from '../../modules/SiteBuilder'
 
-/** 初期アセット（UseCase から生成） */
-const { tree: initialTree, assets: initialAssets } = createPaletteAssetsUseCase()
+/** アセットツリーの状態（将来的にこれも AssetRepository で管理する可能性あり） */
+const tree = shallowRef<AssetTree>($AssetTree.create())
 
-/** アセットストレージ */
-const assets = shallowRef<Map<AssetId, Asset>>(initialAssets)
-const tree = shallowRef<AssetTree>(initialTree)
+/** アセットマップの状態（Repository の変更を反映するためのリアクティブな Map） */
+const assetsMap = shallowRef<Map<AssetId, Asset>>(new Map())
 
 /** 現在のフォルダID */
 const currentFolderId = ref<NodeId>(ROOT_NODE_ID)
@@ -30,7 +31,36 @@ const currentFolderId = ref<NodeId>(ROOT_NODE_ID)
 /** 選択中のノードID */
 const selectedNodeId = ref<NodeId | null>(null)
 
-export const usePaletteAssets = () => {
+/** 初期化済みフラグ */
+let initialized = false
+
+/** assetsMap を更新するヘルパー */
+const refreshAssetsMap = (repository: import('../../modules/AssetManager').AssetRepository) => {
+  // ツリー内の全アセット参照を取得して Map を再構築
+  const allRefs = $AssetTree.getAllAssetRefs(tree.value)
+  const newMap = new Map<AssetId, Asset>()
+  for (const ref of allRefs) {
+    const asset = repository.get(ref.assetId)
+    if (asset) {
+      newMap.set(ref.assetId, asset)
+    }
+  }
+  assetsMap.value = newMap
+}
+
+export function useSiteBuilderAssets() {
+  const repository = getSiteBuilderRepository()
+
+  // 初期化（一度だけ実行）
+  if (!initialized) {
+    initializeSiteBuilderUseCase(repository)
+    // ツリーに Brand Guide を追加
+    tree.value = $AssetTree.addAssetRef(tree.value, 'brand-guide.md', ROOT_NODE_ID, BRAND_GUIDE_ASSET_ID)
+    // assetsMap を初期化
+    refreshAssetsMap(repository)
+    initialized = true
+  }
+
   /** 現在のフォルダ */
   const currentFolder = computed<FolderNode>(() => {
     return $AssetTree.getFolder(tree.value, currentFolderId.value) ?? $AssetTree.getRoot(tree.value)
@@ -54,7 +84,7 @@ export const usePaletteAssets = () => {
   /** ノードに関連するアセットを取得 */
   const getAsset = (node: AssetNode): Asset | undefined => {
     if ($AssetNode.isAssetRef(node)) {
-      return assets.value.get(node.assetId)
+      return repository.get(node.assetId)
     }
     return undefined
   }
@@ -64,7 +94,7 @@ export const usePaletteAssets = () => {
     if (!selectedNodeId.value) return null
     const node = $AssetTree.getNode(tree.value, selectedNodeId.value)
     if (!node || !$AssetNode.isAssetRef(node)) return null
-    return assets.value.get(node.assetId) ?? null
+    return repository.get(node.assetId) ?? null
   })
 
   /** ノードを選択 */
@@ -103,15 +133,13 @@ export const usePaletteAssets = () => {
   /** ファイルを追加（ルートに追加） */
   const addFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files)
-    const newAssets = new Map(assets.value)
 
     for (const file of fileArray) {
       const asset = $Asset.fromFile(file)
-      newAssets.set(asset.id, asset)
+      repository.set(asset.id, asset)
       tree.value = $AssetTree.addAssetRef(tree.value, asset.name, ROOT_NODE_ID, asset.id)
     }
-
-    assets.value = newAssets
+    refreshAssetsMap(repository)
   }
 
   /** File System Access APIでファイルを選択して追加（ルートに追加） */
@@ -121,15 +149,12 @@ export const usePaletteAssets = () => {
         multiple: true,
       })
 
-      const newAssets = new Map(assets.value)
-
       for (const handle of handles) {
         const asset = await $Asset.fromFileHandle(handle)
-        newAssets.set(asset.id, asset)
+        repository.set(asset.id, asset)
         tree.value = $AssetTree.addAssetRef(tree.value, asset.name, ROOT_NODE_ID, asset.id)
       }
-
-      assets.value = newAssets
+      refreshAssetsMap(repository)
     } catch (e) {
       // ユーザーがキャンセルした場合は何もしない
       if (e instanceof DOMException && e.name === 'AbortError') {
@@ -141,40 +166,19 @@ export const usePaletteAssets = () => {
 
   /** アセットを直接追加（Blobから） */
   const addAsset = (asset: Asset) => {
-    const newAssets = new Map(assets.value)
-    newAssets.set(asset.id, asset)
+    repository.set(asset.id, asset)
     tree.value = $AssetTree.addAssetRef(tree.value, asset.name, ROOT_NODE_ID, asset.id)
-    assets.value = newAssets
+    refreshAssetsMap(repository)
   }
 
   /** アセットを更新（既存のアセットのソースを更新） */
   const updateAsset = (assetId: AssetId, blob: Blob) => {
-    const existing = assets.value.get(assetId)
+    const existing = repository.get(assetId)
     if (!existing) return
 
     const updated = $Asset.updateSource(existing, blob)
-    const newAssets = new Map(assets.value)
-    newAssets.set(assetId, updated)
-    assets.value = newAssets
-  }
-
-  /** Brand Guideアセットを取得 */
-  const getBrandGuideAsset = (): Asset | undefined => {
-    return assets.value.get(BRAND_GUIDE_ASSET_ID)
-  }
-
-  /** Brand Guideの内容を更新 */
-  const updateBrandGuide = (content: string) => {
-    const blob = new Blob([content], { type: 'text/markdown' })
-    updateAsset(BRAND_GUIDE_ASSET_ID, blob)
-  }
-
-  /** Brand Guideの内容を取得 */
-  const getBrandGuideContent = async (): Promise<string> => {
-    const asset = getBrandGuideAsset()
-    if (!asset) return DEFAULT_BRAND_GUIDE_CONTENT
-    const blob = await $Asset.toBlob(asset)
-    return blob.text()
+    repository.set(assetId, updated)
+    refreshAssetsMap(repository)
   }
 
   /** ノードを削除 */
@@ -184,12 +188,11 @@ export const usePaletteAssets = () => {
 
     // アセット参照の場合、アセット本体も削除
     if ($AssetNode.isAssetRef(node)) {
-      const newAssets = new Map(assets.value)
-      newAssets.delete(node.assetId)
-      assets.value = newAssets
+      repository.delete(node.assetId)
     }
 
     tree.value = $AssetTree.removeNode(tree.value, nodeId)
+    refreshAssetsMap(repository)
   }
 
   /** ノードをリネーム */
@@ -197,10 +200,34 @@ export const usePaletteAssets = () => {
     tree.value = $AssetTree.renameNode(tree.value, nodeId, name)
   }
 
+  // ============================================================
+  // Brand Guide 関連
+  // ============================================================
+
+  /** Brand Guideアセットを取得 */
+  const getBrandGuideAsset = (): Asset | undefined => {
+    return repository.get(BRAND_GUIDE_ASSET_ID)
+  }
+
+  /** Brand Guideの内容を更新 */
+  const updateBrandGuide = (content: string) => {
+    updateBrandGuideUseCase(repository, content)
+  }
+
+  /** Brand Guideの内容を取得 */
+  const getBrandGuideContent = (): Promise<string> => {
+    return getBrandGuideContentUseCase(repository)
+  }
+
+  /** Brand Guide の変更を監視 */
+  const observeBrandGuide = (callback: (content: string) => void) => {
+    return observeBrandGuideUseCase(repository, callback)
+  }
+
   return {
     // State
     tree,
-    assets,
+    assets: assetsMap,
     currentFolderId,
     currentFolder,
     currentNodes,
@@ -227,6 +254,7 @@ export const usePaletteAssets = () => {
     getBrandGuideAsset,
     updateBrandGuide,
     getBrandGuideContent,
+    observeBrandGuide,
     BRAND_GUIDE_ASSET_ID,
   }
 }

@@ -24,7 +24,7 @@ import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { getTokenPresetEntries } from '../modules/DesignTokens/Infra'
 import { useFilter } from '../composables/Filter/useFilter'
 import { useDemoSite } from '../composables/SemanticColorPalette/useDemoSite'
-import { usePaletteAssets } from '../composables/SemanticColorPalette/usePaletteAssets'
+import { useSiteBuilderAssets } from '../composables/SiteBuilder'
 import { hsvToRgb, rgbToHex, applyLutToPalette } from '../components/SiteBuilder/utils'
 // Child components
 import PaletteSidebar from '../components/SiteBuilder/PaletteSidebar.vue'
@@ -54,7 +54,7 @@ const activeTab = ref<TabId>('primitive')
 const {
   getBrandGuideContent,
   updateBrandGuide,
-} = usePaletteAssets()
+} = useSiteBuilderAssets()
 
 // Brand Guide state (synced with Asset)
 const brandGuideMarkdown = ref('')
