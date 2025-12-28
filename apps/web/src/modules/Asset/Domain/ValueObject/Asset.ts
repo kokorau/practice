@@ -105,6 +105,18 @@ export const $Asset = {
   removeTag: (asset: Asset, tag: string): Asset =>
     $Asset.updateMeta(asset, (meta) => $AssetMeta.removeTag(meta, tag)),
 
+  /** ソースを更新（新しいBlobで置き換え） */
+  updateSource: (asset: Asset, blob: Blob): Asset => ({
+    ...asset,
+    source: $AssetSource.fromBlob(blob),
+    meta: {
+      ...asset.meta,
+      size: blob.size,
+      mimeType: blob.type || asset.meta.mimeType,
+      updatedAt: new Date(),
+    },
+  }),
+
   /** Blobを取得 */
   toBlob: (asset: Asset): Promise<Blob> => $AssetSource.toBlob(asset.source),
 
