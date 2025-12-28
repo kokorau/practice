@@ -60,6 +60,11 @@ const pages = [
     title: 'Semantic Color Palette Generator',
     description: 'ベースカラーからセマンティックカラーパレットを自動生成',
   },
+  {
+    to: '/image-auto-correction',
+    title: 'Image Auto Correction',
+    description: '画像の色調補正を分析してノーマライズ・LUT適用',
+  },
 ]
 </script>
 

@@ -1259,4 +1259,26 @@ export const $Lut3D = {
 
     return { width, height, data: texData }
   },
+
+  /**
+   * 3D LUT を 1D LUT に変換（近似）
+   * 対角線上（r=g=b）の値を使用してチャンネル独立の1D LUTを生成
+   * 注意: 色相シフトなどのクロスチャンネル効果は失われる
+   */
+  toLut1D: (lut3d: Lut3D): Lut1D => {
+    const r = new Float32Array(256)
+    const g = new Float32Array(256)
+    const b = new Float32Array(256)
+
+    for (let i = 0; i < 256; i++) {
+      const normalized = i / 255
+      // 対角線上の値をルックアップ（r=g=b）
+      const [outR, outG, outB] = $Lut3D.lookup(lut3d, normalized, normalized, normalized)
+      r[i] = outR
+      g[i] = outG
+      b[i] = outB
+    }
+
+    return { type: 'lut1d', r, g, b }
+  },
 }

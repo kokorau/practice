@@ -29,3 +29,4 @@ export {
   type NormalizeOptions,
   $LuminanceProfile,
 } from './LuminanceProfile'
+export { type Stage, type Pipeline, $Stage, $Pipeline } from './Pipeline'

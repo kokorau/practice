@@ -11,3 +11,8 @@ export {
   SHADE_LEVELS,
   $PhotoColorPalette,
 } from './PhotoColorPalette'
+export {
+  type ColorGradingEstimate,
+  type NormalizationParams,
+  $ColorCorrection,
+} from './ColorCorrection'
