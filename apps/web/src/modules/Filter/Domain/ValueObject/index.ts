@@ -37,3 +37,8 @@ export {
   type ExposureCorrectionResult,
   $ExposureCorrection,
 } from './ExposureCorrection'
+export {
+  type ContrastCorrectionParams,
+  type ContrastCorrectionResult,
+  $ContrastCorrection,
+} from './ContrastCorrection'

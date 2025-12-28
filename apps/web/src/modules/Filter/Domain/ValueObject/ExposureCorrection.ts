@@ -29,6 +29,8 @@ export type LuminanceStats = {
   clipWhite: number
   /** ダイナミックレンジ (p90 - p10) */
   range: number
+  /** 中間調比率 (Y ∈ [0.3, 0.7] の割合, 0-1) */
+  midRatio: number
 }
 
 /** 画像の分類 */
@@ -98,6 +100,7 @@ export const $ExposureCorrection = {
         clipBlack: 0,
         clipWhite: 0,
         range: 1,
+        midRatio: 0.4,
       }
     }
 
@@ -123,6 +126,16 @@ export const $ExposureCorrection = {
     const clipBlack = (histogram[0] ?? 0) / total
     const clipWhite = (histogram[255] ?? 0) / total
 
+    // 中間調比率を計算 (Y ∈ [0.3, 0.7])
+    // ビン77 (0.3*255≈77) からビン179 (0.7*255≈179) までの合計
+    const midLow = Math.round(0.3 * 255)
+    const midHigh = Math.round(0.7 * 255)
+    let midCount = 0
+    for (let i = midLow; i <= midHigh; i++) {
+      midCount += histogram[i] ?? 0
+    }
+    const midRatio = midCount / total
+
     return {
       p01,
       p10,
@@ -132,6 +145,7 @@ export const $ExposureCorrection = {
       clipBlack,
       clipWhite,
       range: p90 - p10,
+      midRatio,
     }
   },
 

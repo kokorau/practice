@@ -17,8 +17,10 @@ import {
   $Preset,
   $Filter,
   $ExposureCorrection,
+  $ContrastCorrection,
   type LuminanceStats,
   type ExposureCorrectionResult,
+  type ContrastCorrectionResult,
 } from '../modules/Filter/Domain'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 
@@ -44,10 +46,11 @@ const handleLoadUnsplash = async () => {
 // プリセット一覧
 const PRESETS = getPresets()
 
-// パイプライン: void_input -> lut -> void_output の固定構造
+// パイプライン: void_input -> contrast -> lut -> void_output の固定構造
 const createInitialPipeline = (): Pipeline => ({
   stages: [
     $Stage.create('void_input', 'Input', $Lut1D.identity()),
+    $Stage.create('contrast', 'Contrast', $Lut1D.identity()),
     $Stage.create('lut', 'LUT', $Lut1D.identity()),
     $Stage.create('void_output', 'Output', $Lut1D.identity()),
   ],
@@ -59,6 +62,9 @@ const pipeline = ref<Pipeline>(createInitialPipeline())
 const afterVoidInputLut = computed(() =>
   $Pipeline.composeUpTo(pipeline.value, 'void_input')
 )
+const afterContrastLut = computed(() =>
+  $Pipeline.composeUpTo(pipeline.value, 'contrast')
+)
 const afterLutLut = computed(() =>
   $Pipeline.composeUpTo(pipeline.value, 'lut')
 )
@@ -68,6 +74,9 @@ const composedLut = computed(() => $Pipeline.compose(pipeline.value))
 const { canvasRef: originalCanvasRef } = useMediaCanvasWebGL(media)
 const { canvasRef: afterVoidInputCanvasRef } = useMediaCanvasWebGL(media, {
   lut: afterVoidInputLut,
+})
+const { canvasRef: afterContrastCanvasRef } = useMediaCanvasWebGL(media, {
+  lut: afterContrastLut,
 })
 const { canvasRef: afterLutCanvasRef } = useMediaCanvasWebGL(media, {
   lut: afterLutLut,
@@ -79,6 +88,7 @@ const { canvasRef: outputCanvasRef } = useMediaCanvasWebGL(media, {
 // Analysis - 各ステージ
 const { analysis: originalAnalysis } = useMediaAnalysis(media, { sampleRate: 5 })
 const { analysis: afterVoidInputAnalysis } = useMediaAnalysis(media, { lut: afterVoidInputLut, sampleRate: 5 })
+const { analysis: afterContrastAnalysis } = useMediaAnalysis(media, { lut: afterContrastLut, sampleRate: 5 })
 const { analysis: afterLutAnalysis } = useMediaAnalysis(media, { lut: afterLutLut, sampleRate: 5 })
 const { analysis: outputAnalysis } = useMediaAnalysis(media, { lut: composedLut, sampleRate: 5 })
 
@@ -96,6 +106,22 @@ const exposureResult = computed<ExposureCorrectionResult | null>(() => {
 
 // 露出補正が有効か
 const isExposureCorrectionEnabled = ref(true)
+
+// コントラスト補正: 露出補正後のヒストグラムから統計を計算
+const contrastStats = computed<LuminanceStats | null>(() => {
+  if (!afterVoidInputAnalysis.value) return null
+  return $ExposureCorrection.computeStats(afterVoidInputAnalysis.value.histogram.luminance)
+})
+
+// コントラスト補正結果
+const contrastResult = computed<ContrastCorrectionResult | null>(() => {
+  if (!contrastStats.value) return null
+  const classification = $ExposureCorrection.classify(contrastStats.value)
+  return $ContrastCorrection.compute(contrastStats.value, classification)
+})
+
+// コントラスト補正が有効か
+const isContrastCorrectionEnabled = ref(true)
 
 // 選択中のプリセット
 const selectedPresetId = computed(() => {
@@ -182,6 +208,26 @@ watch([exposureResult, isExposureCorrectionEnabled], () => {
 const toggleExposureCorrection = () => {
   isExposureCorrectionEnabled.value = !isExposureCorrectionEnabled.value
 }
+
+// コントラスト補正を適用
+const applyContrastCorrection = () => {
+  if (!contrastResult.value || !isContrastCorrectionEnabled.value) {
+    updateStageLut('contrast', $Lut1D.identity(), 'Contrast')
+    return
+  }
+  const lut = $ContrastCorrection.toLut(contrastResult.value)
+  updateStageLut('contrast', lut, 'Contrast')
+}
+
+// コントラスト補正結果が変わったら適用
+watch([contrastResult, isContrastCorrectionEnabled], () => {
+  applyContrastCorrection()
+}, { immediate: true })
+
+// コントラスト補正のトグル
+const toggleContrastCorrection = () => {
+  isContrastCorrectionEnabled.value = !isContrastCorrectionEnabled.value
+}
 </script>
 
 <template>
@@ -231,6 +277,33 @@ const toggleExposureCorrection = () => {
             <div v-if="exposureResult" class="flex justify-between">
               <span>Gain</span>
               <span class="font-mono">{{ exposureResult.gain.toFixed(3) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Contrast Stats -->
+        <section v-if="contrastStats">
+          <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Contrast</h2>
+          <div class="text-[11px] text-gray-500 space-y-1">
+            <div class="flex justify-between">
+              <span>Range (p90-p10)</span>
+              <span class="font-mono">{{ (contrastStats.range * 100).toFixed(0) }}%</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Mid Ratio</span>
+              <span class="font-mono">{{ (contrastStats.midRatio * 100).toFixed(0) }}%</span>
+            </div>
+            <div v-if="contrastResult" class="flex justify-between">
+              <span>Delta</span>
+              <span class="font-mono">{{ contrastResult.delta > 0 ? '+' : '' }}{{ (contrastResult.delta * 100).toFixed(1) }}%</span>
+            </div>
+            <div v-if="contrastResult" class="flex justify-between">
+              <span>Amount</span>
+              <span class="font-mono">{{ contrastResult.amount > 0 ? '+' : '' }}{{ (contrastResult.amount * 100).toFixed(2) }}%</span>
+            </div>
+            <div v-if="contrastResult && contrastResult.guardApplied" class="flex justify-between text-yellow-500">
+              <span>Guard</span>
+              <span class="font-mono">{{ contrastResult.guardType }}</span>
             </div>
           </div>
         </section>
@@ -291,6 +364,40 @@ const toggleExposureCorrection = () => {
           </div>
           <div v-if="afterVoidInputAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
             <HistogramCanvas :data="afterVoidInputAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage: Contrast -->
+      <section>
+        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Contrast</h2>
+        <div class="flex items-center gap-3 mb-3">
+          <button
+            @click="toggleContrastCorrection"
+            class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs transition-colors"
+            :class="isContrastCorrectionEnabled
+              ? 'border-gray-600 text-gray-200 hover:border-gray-500'
+              : 'border-gray-700 text-gray-500 hover:border-gray-600'"
+          >
+            Contrast
+            <span v-if="isContrastCorrectionEnabled" class="px-1.5 py-0.5 rounded bg-gray-700 text-[10px] text-gray-400">ON</span>
+          </button>
+          <span v-if="contrastResult && isContrastCorrectionEnabled" class="text-[11px] text-gray-500">
+            {{ contrastResult.amount > 0 ? '+' : '' }}{{ (contrastResult.amount * 100).toFixed(1) }}%
+            <span v-if="contrastResult.guardApplied" class="text-yellow-500">({{ contrastResult.guardType }})</span>
+          </span>
+          <span v-else class="text-[11px] text-gray-500">Identity LUT (no change)</span>
+        </div>
+        <div class="flex gap-4 items-start">
+          <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-1 border border-gray-800" style="aspect-ratio: 3/2;">
+            <canvas
+              ref="afterContrastCanvasRef"
+              :class="{ 'opacity-0': !media }"
+              class="absolute inset-0 w-full h-full object-contain"
+            />
+          </div>
+          <div v-if="afterContrastAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
+            <HistogramCanvas :data="afterContrastAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
           </div>
         </div>
       </section>
