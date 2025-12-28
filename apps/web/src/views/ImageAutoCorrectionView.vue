@@ -10,17 +10,26 @@ import {
   type Preset,
   type Pipeline,
   type Stage,
+  type Lut,
   $Pipeline,
   $Stage,
   $Adjustment,
   $Lut1D,
+  $Lut3D,
   $Preset,
   $Filter,
   $ExposureCorrection,
   $ContrastCorrection,
+  $WhiteBalanceCorrection,
+  $SaturationCorrection,
+  $AutoCorrectionStats,
   type LuminanceStats,
+  type SaturationStats,
   type ExposureCorrectionResult,
   type ContrastCorrectionResult,
+  type WhiteBalanceCorrectionResult,
+  type SaturationCorrectionResult,
+  type AutoCorrectionStats,
 } from '../modules/Filter/Domain'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 
@@ -46,11 +55,14 @@ const handleLoadUnsplash = async () => {
 // プリセット一覧
 const PRESETS = getPresets()
 
-// パイプライン: void_input -> contrast -> lut -> void_output の固定構造
+// パイプライン: void_input -> contrast -> wb -> saturation -> lut -> void_output の固定構造
+// Note: saturationは3D LUTなので、Creative LUT(lut)と合成して適用する
 const createInitialPipeline = (): Pipeline => ({
   stages: [
     $Stage.create('void_input', 'Input', $Lut1D.identity()),
     $Stage.create('contrast', 'Contrast', $Lut1D.identity()),
+    $Stage.create('wb', 'WB', $Lut1D.identity()),
+    $Stage.create('saturation', 'Saturation', $Lut3D.identity(17)),
     $Stage.create('lut', 'LUT', $Lut1D.identity()),
     $Stage.create('void_output', 'Output', $Lut1D.identity()),
   ],
@@ -58,17 +70,66 @@ const createInitialPipeline = (): Pipeline => ({
 
 const pipeline = ref<Pipeline>(createInitialPipeline())
 
-// 各ステージのLUT（中間結果用）
+// 各ステージのLUT（中間結果用）- 1D LUT部分
 const afterVoidInputLut = computed(() =>
   $Pipeline.composeUpTo(pipeline.value, 'void_input')
 )
 const afterContrastLut = computed(() =>
   $Pipeline.composeUpTo(pipeline.value, 'contrast')
 )
-const afterLutLut = computed(() =>
-  $Pipeline.composeUpTo(pipeline.value, 'lut')
+const afterWbLut = computed(() =>
+  $Pipeline.composeUpTo(pipeline.value, 'wb')
 )
-const composedLut = computed(() => $Pipeline.compose(pipeline.value))
+
+// 1D LUT部分の合成（exposure + contrast + wb）
+const composed1DLut = computed(() =>
+  $Pipeline.composeUpTo(pipeline.value, 'wb')
+)
+
+// Saturation 3D LUT
+const saturationLut = computed(() => {
+  const stage = pipeline.value.stages.find(s => s.id === 'saturation')
+  if (!stage || !$Lut3D.is(stage.lut)) return $Lut3D.identity(17)
+  return stage.lut
+})
+
+// Creative LUT (プリセット)
+const creativeLut = computed(() => {
+  const stage = pipeline.value.stages.find(s => s.id === 'lut')
+  if (!stage) return $Lut3D.identity(17)
+  // 1D LUTなら3Dに変換
+  if ($Lut1D.is(stage.lut)) {
+    return $Lut3D.fromLut1D(stage.lut, 17)
+  }
+  return stage.lut
+})
+
+// Saturation + Creative の合成3D LUT
+const composedSaturationAndCreativeLut = computed(() =>
+  $Lut3D.compose(saturationLut.value, creativeLut.value)
+)
+
+// 中間表示用: WB後 + Saturation適用
+const afterSaturationLut = computed(() => {
+  // 1D LUT (wb まで) を 3D に変換し、saturation と合成
+  const lut1D = $Pipeline.composeUpTo(pipeline.value, 'wb')
+  const lut3D = $Lut3D.fromLut1D(lut1D, 17)
+  return $Lut3D.compose(lut3D, saturationLut.value)
+})
+
+// 中間表示用: LUT後（saturation + creative）
+const afterLutLut = computed(() => {
+  const lut1D = $Pipeline.composeUpTo(pipeline.value, 'wb')
+  const lut3D = $Lut3D.fromLut1D(lut1D, 17)
+  return $Lut3D.compose(lut3D, composedSaturationAndCreativeLut.value)
+})
+
+// 最終出力用のLUT（1D LUT + saturation 3D + creative 3D）
+const composedLut = computed(() => {
+  const lut1D = composed1DLut.value
+  const lut3D = $Lut3D.fromLut1D(lut1D, 17)
+  return $Lut3D.compose(lut3D, composedSaturationAndCreativeLut.value)
+})
 
 // Canvas描画 - 各ステージ
 const { canvasRef: originalCanvasRef } = useMediaCanvasWebGL(media)
@@ -78,17 +139,22 @@ const { canvasRef: afterVoidInputCanvasRef } = useMediaCanvasWebGL(media, {
 const { canvasRef: afterContrastCanvasRef } = useMediaCanvasWebGL(media, {
   lut: afterContrastLut,
 })
+const { canvasRef: afterWbCanvasRef } = useMediaCanvasWebGL(media, {
+  lut: afterWbLut,
+})
+const { canvasRef: afterSaturationCanvasRef } = useMediaCanvasWebGL(media, {
+  lut: afterSaturationLut,
+})
 const { canvasRef: afterLutCanvasRef } = useMediaCanvasWebGL(media, {
   lut: afterLutLut,
-})
-const { canvasRef: outputCanvasRef } = useMediaCanvasWebGL(media, {
-  lut: composedLut,
 })
 
 // Analysis - 各ステージ
 const { analysis: originalAnalysis } = useMediaAnalysis(media, { sampleRate: 5 })
 const { analysis: afterVoidInputAnalysis } = useMediaAnalysis(media, { lut: afterVoidInputLut, sampleRate: 5 })
 const { analysis: afterContrastAnalysis } = useMediaAnalysis(media, { lut: afterContrastLut, sampleRate: 5 })
+const { analysis: afterWbAnalysis } = useMediaAnalysis(media, { lut: afterWbLut, sampleRate: 5 })
+const { analysis: afterSaturationAnalysis } = useMediaAnalysis(media, { lut: afterSaturationLut, sampleRate: 5 })
 const { analysis: afterLutAnalysis } = useMediaAnalysis(media, { lut: afterLutLut, sampleRate: 5 })
 const { analysis: outputAnalysis } = useMediaAnalysis(media, { lut: composedLut, sampleRate: 5 })
 
@@ -123,6 +189,118 @@ const contrastResult = computed<ContrastCorrectionResult | null>(() => {
 // コントラスト補正が有効か
 const isContrastCorrectionEnabled = ref(true)
 
+// WB補正: コントラスト補正後のヒストグラムから統計を計算
+// Note: WB補正は本来ニュートラルピクセルの検出が必要だが、
+// 現在のuseMediaAnalysisではRGBヒストグラムからの簡易推定を行う
+const wbResult = computed<WhiteBalanceCorrectionResult | null>(() => {
+  if (!afterContrastAnalysis.value || !contrastStats.value) return null
+  // RGB ヒストグラムの中央値からニュートラルを推定
+  const rHist = afterContrastAnalysis.value.histogram.r
+  const gHist = afterContrastAnalysis.value.histogram.g
+  const bHist = afterContrastAnalysis.value.histogram.b
+
+  // 各チャンネルの中央値を計算
+  const getMedian = (hist: number[]): number => {
+    const total = hist.reduce((a, b) => a + b, 0)
+    let cumsum = 0
+    for (let i = 0; i < hist.length; i++) {
+      cumsum += hist[i]!
+      if (cumsum >= total / 2) {
+        return i / 255
+      }
+    }
+    return 0.5
+  }
+
+  const medR = getMedian(rHist)
+  const medG = getMedian(gHist)
+  const medB = getMedian(bHist)
+
+  // 簡易的なNeutralStats（本来は低彩度ピクセルから抽出するが、ここでは全体中央値で代用）
+  const neutralStats = {
+    count: 1000,
+    ratio: 0.1,
+    medianRGB: [medR, medG, medB] as [number, number, number],
+    confidence: 'medium' as const,
+  }
+
+  // LuminanceStats はコントラスト補正時のものを使用
+  return $WhiteBalanceCorrection.compute(neutralStats, contrastStats.value)
+})
+
+// WB補正が有効か
+const isWbCorrectionEnabled = ref(true)
+
+// 彩度補正: WB補正後のヒストグラムから統計を計算
+// 彩度統計の計算（RGB ヒストグラムから推定）
+const saturationStats = computed<SaturationStats | null>(() => {
+  if (!afterWbAnalysis.value) return null
+
+  const rHist = afterWbAnalysis.value.histogram.r
+  const gHist = afterWbAnalysis.value.histogram.g
+  const bHist = afterWbAnalysis.value.histogram.b
+
+  // 各チャンネルのパーセンタイルを計算
+  const getPercentile = (hist: number[], p: number): number => {
+    const total = hist.reduce((a, b) => a + b, 0)
+    let cumsum = 0
+    for (let i = 0; i < hist.length; i++) {
+      cumsum += hist[i]!
+      if (cumsum >= total * p) {
+        return i / 255
+      }
+    }
+    return 0.5
+  }
+
+  // 各パーセンタイルでのRGB値を取得
+  const r50 = getPercentile(rHist, 0.5)
+  const g50 = getPercentile(gHist, 0.5)
+  const b50 = getPercentile(bHist, 0.5)
+
+  const r95 = getPercentile(rHist, 0.95)
+  const g95 = getPercentile(gHist, 0.95)
+  const b95 = getPercentile(bHist, 0.95)
+
+  const r99 = getPercentile(rHist, 0.99)
+  const g99 = getPercentile(gHist, 0.99)
+  const b99 = getPercentile(bHist, 0.99)
+
+  // 彩度プロキシ: max - min の推定
+  // p50での彩度
+  const sat50 = Math.max(r50, g50, b50) - Math.min(r50, g50, b50)
+  // p95での彩度（高彩度ピクセルの代表値）
+  const sat95 = Math.max(r95, g95, b95) - Math.min(r95, g95, b95)
+  // p99での彩度
+  const sat99 = Math.max(r99, g99, b99) - Math.min(r99, g99, b99)
+
+  return {
+    p95Proxy: sat95,
+    p99Proxy: sat99,
+    meanProxy: sat50,
+  }
+})
+
+// WB補正後のLuminanceStats（彩度補正のガード条件に使用）
+const saturationLuminanceStats = computed<LuminanceStats | null>(() => {
+  if (!afterWbAnalysis.value) return null
+  return $ExposureCorrection.computeStats(afterWbAnalysis.value.histogram.luminance)
+})
+
+// 彩度補正結果
+const saturationResult = computed<SaturationCorrectionResult | null>(() => {
+  if (!saturationStats.value || !saturationLuminanceStats.value) return null
+  return $SaturationCorrection.compute(saturationStats.value, saturationLuminanceStats.value)
+})
+
+// 彩度補正が有効か
+const isSaturationCorrectionEnabled = ref(true)
+
+// Output Canvas
+const { canvasRef: outputCanvasRef } = useMediaCanvasWebGL(media, {
+  lut: composedLut,
+})
+
 // 選択中のプリセット
 const selectedPresetId = computed(() => {
   const lutStage = pipeline.value.stages.find(s => s.id === 'lut')
@@ -139,8 +317,16 @@ const handleFileChange = async (e: Event) => {
   }
 }
 
-// ステージのLUTを更新
+// ステージのLUTを更新（1D LUT）
 const updateStageLut = (stageId: string, lut: ReturnType<typeof $Lut1D.identity>, name?: string) => {
+  pipeline.value = $Pipeline.updateStage(pipeline.value, stageId, {
+    lut,
+    ...(name ? { name } : {}),
+  })
+}
+
+// ステージのLUTを更新（3D LUT）
+const updateStageLut3D = (stageId: string, lut: ReturnType<typeof $Lut3D.identity>, name?: string) => {
   pipeline.value = $Pipeline.updateStage(pipeline.value, stageId, {
     lut,
     ...(name ? { name } : {}),
@@ -228,6 +414,46 @@ watch([contrastResult, isContrastCorrectionEnabled], () => {
 const toggleContrastCorrection = () => {
   isContrastCorrectionEnabled.value = !isContrastCorrectionEnabled.value
 }
+
+// WB補正を適用
+const applyWbCorrection = () => {
+  if (!wbResult.value || !isWbCorrectionEnabled.value) {
+    updateStageLut('wb', $Lut1D.identity(), 'WB')
+    return
+  }
+  const lut = $WhiteBalanceCorrection.toLut(wbResult.value)
+  updateStageLut('wb', lut, 'WB')
+}
+
+// WB補正結果が変わったら適用
+watch([wbResult, isWbCorrectionEnabled], () => {
+  applyWbCorrection()
+}, { immediate: true })
+
+// WB補正のトグル
+const toggleWbCorrection = () => {
+  isWbCorrectionEnabled.value = !isWbCorrectionEnabled.value
+}
+
+// 彩度補正を適用
+const applySaturationCorrection = () => {
+  if (!saturationResult.value || !isSaturationCorrectionEnabled.value) {
+    updateStageLut3D('saturation', $Lut3D.identity(17), 'Saturation')
+    return
+  }
+  const lut = $SaturationCorrection.toLut3D(saturationResult.value, 17)
+  updateStageLut3D('saturation', lut, 'Saturation')
+}
+
+// 彩度補正結果が変わったら適用
+watch([saturationResult, isSaturationCorrectionEnabled], () => {
+  applySaturationCorrection()
+}, { immediate: true })
+
+// 彩度補正のトグル
+const toggleSaturationCorrection = () => {
+  isSaturationCorrectionEnabled.value = !isSaturationCorrectionEnabled.value
+}
 </script>
 
 <template>
@@ -304,6 +530,60 @@ const toggleContrastCorrection = () => {
             <div v-if="contrastResult && contrastResult.guardApplied" class="flex justify-between text-yellow-500">
               <span>Guard</span>
               <span class="font-mono">{{ contrastResult.guardType }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- WB Stats -->
+        <section v-if="wbResult">
+          <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">White Balance</h2>
+          <div class="text-[11px] text-gray-500 space-y-1">
+            <div class="flex justify-between">
+              <span>Raw Kr (G/R)</span>
+              <span class="font-mono">{{ wbResult.rawKr.toFixed(3) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Raw Kb (G/B)</span>
+              <span class="font-mono">{{ wbResult.rawKb.toFixed(3) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Final R</span>
+              <span class="font-mono">{{ wbResult.gainR.toFixed(3) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Final B</span>
+              <span class="font-mono">{{ wbResult.gainB.toFixed(3) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Strength</span>
+              <span class="font-mono">{{ (wbResult.effectiveStrength * 100).toFixed(1) }}%</span>
+            </div>
+            <div v-if="wbResult.guardApplied" class="flex justify-between text-yellow-500">
+              <span>Guards</span>
+              <span class="font-mono">{{ wbResult.guards.join(', ') }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Saturation Stats -->
+        <section v-if="saturationResult">
+          <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Saturation</h2>
+          <div class="text-[11px] text-gray-500 space-y-1">
+            <div class="flex justify-between">
+              <span>Current (p95)</span>
+              <span class="font-mono">{{ saturationStats ? (saturationStats.p95Proxy * 100).toFixed(1) : '-' }}%</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Delta</span>
+              <span class="font-mono">{{ saturationResult.delta > 0 ? '+' : '' }}{{ (saturationResult.delta * 100).toFixed(1) }}%</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Compression</span>
+              <span class="font-mono">{{ (saturationResult.compressionBase * 100).toFixed(1) }}%</span>
+            </div>
+            <div v-if="saturationResult.guardApplied" class="flex justify-between text-yellow-500">
+              <span>Guard</span>
+              <span class="font-mono">{{ saturationResult.guardType }}</span>
             </div>
           </div>
         </section>
@@ -402,6 +682,74 @@ const toggleContrastCorrection = () => {
         </div>
       </section>
 
+      <!-- Stage: WB -->
+      <section>
+        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">White Balance</h2>
+        <div class="flex items-center gap-3 mb-3">
+          <button
+            @click="toggleWbCorrection"
+            class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs transition-colors"
+            :class="isWbCorrectionEnabled
+              ? 'border-gray-600 text-gray-200 hover:border-gray-500'
+              : 'border-gray-700 text-gray-500 hover:border-gray-600'"
+          >
+            WB
+            <span v-if="isWbCorrectionEnabled" class="px-1.5 py-0.5 rounded bg-gray-700 text-[10px] text-gray-400">ON</span>
+          </button>
+          <span v-if="wbResult && isWbCorrectionEnabled" class="text-[11px] text-gray-500">
+            R:{{ wbResult.gainR.toFixed(2) }} B:{{ wbResult.gainB.toFixed(2) }} ({{ (wbResult.effectiveStrength * 100).toFixed(0) }}%)
+            <span v-if="wbResult.guardApplied" class="text-yellow-500">({{ wbResult.guards.join(', ') }})</span>
+          </span>
+          <span v-else class="text-[11px] text-gray-500">Identity LUT (no change)</span>
+        </div>
+        <div class="flex gap-4 items-start">
+          <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-1 border border-gray-800" style="aspect-ratio: 3/2;">
+            <canvas
+              ref="afterWbCanvasRef"
+              :class="{ 'opacity-0': !media }"
+              class="absolute inset-0 w-full h-full object-contain"
+            />
+          </div>
+          <div v-if="afterWbAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
+            <HistogramCanvas :data="afterWbAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage: Saturation -->
+      <section>
+        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Saturation</h2>
+        <div class="flex items-center gap-3 mb-3">
+          <button
+            @click="toggleSaturationCorrection"
+            class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs transition-colors"
+            :class="isSaturationCorrectionEnabled
+              ? 'border-gray-600 text-gray-200 hover:border-gray-500'
+              : 'border-gray-700 text-gray-500 hover:border-gray-600'"
+          >
+            Saturation
+            <span v-if="isSaturationCorrectionEnabled" class="px-1.5 py-0.5 rounded bg-gray-700 text-[10px] text-gray-400">ON</span>
+          </button>
+          <span v-if="saturationResult && isSaturationCorrectionEnabled" class="text-[11px] text-gray-500">
+            Compression: {{ (saturationResult.compressionBase * 100).toFixed(1) }}%
+            <span v-if="saturationResult.guardApplied" class="text-yellow-500">({{ saturationResult.guardType }})</span>
+          </span>
+          <span v-else class="text-[11px] text-gray-500">Identity LUT (no change)</span>
+        </div>
+        <div class="flex gap-4 items-start">
+          <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-1 border border-gray-800" style="aspect-ratio: 3/2;">
+            <canvas
+              ref="afterSaturationCanvasRef"
+              :class="{ 'opacity-0': !media }"
+              class="absolute inset-0 w-full h-full object-contain"
+            />
+          </div>
+          <div v-if="afterSaturationAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
+            <HistogramCanvas :data="afterSaturationAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
+          </div>
+        </div>
+      </section>
+
       <!-- Stage: LUT -->
       <section>
         <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">LUT</h2>
@@ -446,12 +794,12 @@ const toggleContrastCorrection = () => {
         </div>
       </section>
 
-      <!-- Stage: Void Output -->
+      <!-- Stage: Output -->
       <section>
-        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Void Output</h2>
+        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Output</h2>
         <div class="flex items-center gap-3 mb-3">
           <span class="text-[11px] text-gray-500">
-            {{ pipeline.stages.map(s => s.name).join(' → ') }}
+            {{ pipeline.stages.filter(s => !s.id.startsWith('void_')).map(s => s.name).join(' → ') }}
           </span>
         </div>
         <div class="flex gap-4 items-start">

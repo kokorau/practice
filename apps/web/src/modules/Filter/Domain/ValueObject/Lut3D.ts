@@ -1261,6 +1261,50 @@ export const $Lut3D = {
   },
 
   /**
+   * 複数の 3D LUT を合成（順次適用）
+   * lut1 → lut2 → ... の順で適用した結果と等価な LUT を生成
+   * @param luts 合成する LUT の配列（適用順）
+   * @param size 出力 LUT のサイズ（デフォルト: 最初の LUT のサイズ）
+   */
+  compose: (...luts: Lut3D[]): Lut3D => {
+    if (luts.length === 0) {
+      return $Lut3D.identity(17)
+    }
+    if (luts.length === 1) {
+      return luts[0]!
+    }
+
+    const size = luts[0]!.size
+    const totalSize = size * size * size * 3
+    const data = new Float32Array(totalSize)
+
+    for (let bi = 0; bi < size; bi++) {
+      for (let gi = 0; gi < size; gi++) {
+        for (let ri = 0; ri < size; ri++) {
+          const idx = (ri + gi * size + bi * size * size) * 3
+          let r = ri / (size - 1)
+          let g = gi / (size - 1)
+          let b = bi / (size - 1)
+
+          // 各 LUT を順次適用
+          for (const lut of luts) {
+            const [outR, outG, outB] = $Lut3D.lookup(lut, r, g, b)
+            r = outR
+            g = outG
+            b = outB
+          }
+
+          data[idx] = r
+          data[idx + 1] = g
+          data[idx + 2] = b
+        }
+      }
+    }
+
+    return { type: 'lut3d', size, data }
+  },
+
+  /**
    * 3D LUT を 1D LUT に変換（近似）
    * 対角線上（r=g=b）の値を使用してチャンネル独立の1D LUTを生成
    * 注意: 色相シフトなどのクロスチャンネル効果は失われる

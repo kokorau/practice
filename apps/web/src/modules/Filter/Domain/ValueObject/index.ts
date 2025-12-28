@@ -42,3 +42,25 @@ export {
   type ContrastCorrectionResult,
   $ContrastCorrection,
 } from './ContrastCorrection'
+export {
+  type AutoCorrectionStats,
+  type LuminanceStats as AutoLuminanceStats,
+  type NeutralStats,
+  type SaturationStats,
+  type ImageClassification as AutoImageClassification,
+  type AnalysisParams,
+  type ImageDataLike,
+  DEFAULT_ANALYSIS_PARAMS,
+  $AutoCorrectionStats,
+} from './AutoCorrectionStats'
+export {
+  type WhiteBalanceCorrectionParams,
+  type WhiteBalanceCorrectionResult,
+  type WbGuardType,
+  $WhiteBalanceCorrection,
+} from './WhiteBalanceCorrection'
+export {
+  type SaturationCorrectionParams,
+  type SaturationCorrectionResult,
+  $SaturationCorrection,
+} from './SaturationCorrection'
