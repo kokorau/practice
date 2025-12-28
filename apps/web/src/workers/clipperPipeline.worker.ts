@@ -42,7 +42,7 @@ const applyErode = (
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = y * width + x
-      let minConf = mask[i]
+      let minConf = mask[i] ?? 0
 
       for (let dy = -radius; dy <= radius; dy++) {
         for (let dx = -radius; dx <= radius; dx++) {
@@ -50,7 +50,7 @@ const applyErode = (
           const ny = y + dy
           if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue
           const ni = ny * width + nx
-          minConf = Math.min(minConf, mask[ni])
+          minConf = Math.min(minConf, mask[ni] ?? 0)
         }
       }
 
@@ -81,7 +81,7 @@ const applyFeather = (
     sum += val
   }
   for (let i = 0; i < kernelSize; i++) {
-    kernel[i] /= sum
+    kernel[i] = (kernel[i] ?? 0) / sum
   }
 
   // 水平方向のぼかし
@@ -91,7 +91,7 @@ const applyFeather = (
       let val = 0
       for (let k = -radius; k <= radius; k++) {
         const nx = Math.min(Math.max(x + k, 0), width - 1)
-        val += mask[y * width + nx] * kernel[k + radius]
+        val += (mask[y * width + nx] ?? 0) * (kernel[k + radius] ?? 0)
       }
       temp[y * width + x] = val
     }
@@ -103,7 +103,7 @@ const applyFeather = (
       let val = 0
       for (let k = -radius; k <= radius; k++) {
         const ny = Math.min(Math.max(y + k, 0), height - 1)
-        val += temp[ny * width + x] * kernel[k + radius]
+        val += (temp[ny * width + x] ?? 0) * (kernel[k + radius] ?? 0)
       }
       result[y * width + x] = val
     }
@@ -126,10 +126,10 @@ const applyDecontaminate = (
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = y * width + x
-      const confidence = mask[i]
+      const confidence = mask[i] ?? 0
 
       // 髪部分は広めのエッジ範囲と探索半径を使用
-      const isHair = hairMask && hairMask[i] > 0.5
+      const isHair = hairMask && (hairMask[i] ?? 0) > 0.5
       const effectiveEdgeLow = isHair ? Math.max(0.05, edgeLow - 0.1) : edgeLow
       const effectiveEdgeHigh = isHair ? Math.min(0.95, edgeHigh + 0.05) : edgeHigh
       const effectiveRadius = isHair ? searchRadius + 2 : searchRadius
@@ -144,13 +144,13 @@ const applyDecontaminate = (
             if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue
 
             const ni = ny * width + nx
-            const nConf = mask[ni]
+            const nConf = mask[ni] ?? 0
 
             if (nConf >= effectiveEdgeHigh) {
               const pi = ni * 4
-              sumR += pixels[pi]
-              sumG += pixels[pi + 1]
-              sumB += pixels[pi + 2]
+              sumR += pixels[pi] ?? 0
+              sumG += pixels[pi + 1] ?? 0
+              sumB += pixels[pi + 2] ?? 0
               count++
             }
           }
@@ -176,12 +176,13 @@ const applyHairRefine = (
   const result = new Float32Array(mask.length)
 
   for (let i = 0; i < mask.length; i++) {
-    const isHair = hairMask[i] > 0.5
+    const isHair = (hairMask[i] ?? 0) > 0.5
+    const maskVal = mask[i] ?? 0
     if (isHair) {
       // 髪部分は透明度を調整（エッジをよりソフトに）
-      result[i] = mask[i] * opacity
+      result[i] = maskVal * opacity
     } else {
-      result[i] = mask[i]
+      result[i] = maskVal
     }
   }
 
@@ -194,7 +195,7 @@ const applyMaskToAlpha = (
   mask: Float32Array
 ): void => {
   for (let i = 0; i < mask.length; i++) {
-    pixels[i * 4 + 3] = Math.round(mask[i] * 255)
+    pixels[i * 4 + 3] = Math.round((mask[i] ?? 0) * 255)
   }
 }
 
@@ -247,5 +248,5 @@ const runPipeline = (input: PipelineInput): PipelineOutput => {
 // Worker message handler
 self.onmessage = (e: MessageEvent<PipelineInput>) => {
   const result = runPipeline(e.data)
-  self.postMessage(result, [result.pixels.buffer])
+  self.postMessage(result, { transfer: [result.pixels.buffer] })
 }

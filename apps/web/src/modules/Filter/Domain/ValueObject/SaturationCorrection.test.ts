@@ -211,7 +211,7 @@ describe('$SaturationCorrection', () => {
 
       // 中程度の彩度 (R=0.7, G=0.5, B=0.5)
       // satProxy = 0.7 - 0.5 = 0.2
-      const [outR, outG, outB] = $Lut3D.lookup(lut, 0.7, 0.5, 0.5)
+      const [outR] = $Lut3D.lookup(lut, 0.7, 0.5, 0.5)
 
       // 元の値と完全なグレーの間のどこかにあるはず
       expect(outR).toBeLessThan(0.7)

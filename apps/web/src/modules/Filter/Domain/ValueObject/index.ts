@@ -17,7 +17,7 @@ export {
   type DynamicRange,
   type TonalZoneStats,
   type ZoneStats,
-  type SaturationStats,
+  type SaturationStats as ImageSaturationStats,
   type ClippingInfo,
   $ImageAnalysis,
 } from './ImageAnalysis'

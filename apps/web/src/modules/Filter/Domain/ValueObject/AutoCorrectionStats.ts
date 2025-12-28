@@ -165,7 +165,8 @@ export const $AutoCorrectionStats = {
       // 輝度 (Rec.709)
       const y = 0.2126 * r + 0.7152 * g + 0.0722 * b
       const yBin = Math.round(y * 255)
-      luminanceHist[Math.min(255, Math.max(0, yBin))]++
+      const clampedYBin = Math.min(255, Math.max(0, yBin))
+      luminanceHist[clampedYBin] = (luminanceHist[clampedYBin] ?? 0) + 1
 
       // 中間調カウント
       if (yBin >= midLoBin && yBin <= midHiBin) {
@@ -177,7 +178,8 @@ export const $AutoCorrectionStats = {
       const minRGB = Math.min(r, g, b)
       const satProxy = maxRGB - minRGB
       const satProxyBin = Math.round(satProxy * 255)
-      satProxyHist[Math.min(255, Math.max(0, satProxyBin))]++
+      const clampedSatBin = Math.min(255, Math.max(0, satProxyBin))
+      satProxyHist[clampedSatBin] = (satProxyHist[clampedSatBin] ?? 0) + 1
       satProxySum += satProxy
 
       // 無彩色候補の収集

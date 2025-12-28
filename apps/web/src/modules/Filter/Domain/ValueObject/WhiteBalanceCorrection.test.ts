@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { $WhiteBalanceCorrection } from './WhiteBalanceCorrection'
+import { $WhiteBalanceCorrection, type WbGuardType } from './WhiteBalanceCorrection'
 import type { NeutralStats, LuminanceStats } from './AutoCorrectionStats'
 
 describe('$WhiteBalanceCorrection', () => {
@@ -220,7 +220,7 @@ describe('$WhiteBalanceCorrection', () => {
         gainB: 0.95,
         effectiveStrength: 0.4,
         guardApplied: false,
-        guards: [] as const,
+        guards: [] as WbGuardType[],
       }
       const lut = $WhiteBalanceCorrection.toLut(result)
 
@@ -241,7 +241,7 @@ describe('$WhiteBalanceCorrection', () => {
         gainB: 1.0,
         effectiveStrength: 0.4,
         guardApplied: false,
-        guards: [] as const,
+        guards: [] as WbGuardType[],
       }
       const lut = $WhiteBalanceCorrection.toLut(result)
 
@@ -261,7 +261,7 @@ describe('$WhiteBalanceCorrection', () => {
         gainB: 0.96,
         effectiveStrength: 0.4,
         guardApplied: false,
-        guards: [] as const,
+        guards: [] as WbGuardType[],
       }
       const lut = $WhiteBalanceCorrection.toLut(result)
 
@@ -282,7 +282,7 @@ describe('$WhiteBalanceCorrection', () => {
         gainB: 1.0,
         effectiveStrength: 0.4,
         guardApplied: false,
-        guards: [] as const,
+        guards: [] as WbGuardType[],
       }
       const lut = $WhiteBalanceCorrection.toLut(result)
 

@@ -12,7 +12,6 @@ import { $Lut1D, type Lut1D } from './Lut1D'
 import { $Lut3D, type Lut3D } from './Lut3D'
 import {
   $ExposureCorrection,
-  type LuminanceStats,
   type ExposureCorrectionResult,
 } from './ExposureCorrection'
 import {
@@ -36,9 +35,9 @@ import type { NeutralStats, SaturationStats } from './AutoCorrectionStats'
 /** ヒストグラムデータ（useMediaAnalysis からの入力） */
 export type HistogramData = {
   luminance: Uint32Array
-  r: number[]
-  g: number[]
-  b: number[]
+  r: Uint32Array | number[]
+  g: Uint32Array | number[]
+  b: Uint32Array | number[]
 }
 
 /** 自動補正の入力（Phase1 用） */
@@ -69,8 +68,8 @@ export type AutoCorrectionResult = {
 // ============================================
 
 /** RGB ヒストグラムから中央値を計算 */
-const getMedianFromHist = (hist: number[]): number => {
-  const total = hist.reduce((a, b) => a + b, 0)
+const getMedianFromHist = (hist: Uint32Array | number[]): number => {
+  const total = Array.from(hist).reduce((a, b) => a + b, 0)
   if (total === 0) return 0.5
   let cumsum = 0
   for (let i = 0; i < hist.length; i++) {
@@ -83,8 +82,8 @@ const getMedianFromHist = (hist: number[]): number => {
 }
 
 /** RGB ヒストグラムからパーセンタイルを計算 */
-const getPercentileFromHist = (hist: number[], p: number): number => {
-  const total = hist.reduce((a, b) => a + b, 0)
+const getPercentileFromHist = (hist: Uint32Array | number[], p: number): number => {
+  const total = Array.from(hist).reduce((a, b) => a + b, 0)
   if (total === 0) return 0.5
   let cumsum = 0
   for (let i = 0; i < hist.length; i++) {

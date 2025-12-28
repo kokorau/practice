@@ -74,7 +74,7 @@ describe('$ExposureCorrection', () => {
     it('ローキー画像を検出', () => {
       const stats = {
         p01: 0.01, p10: 0.05, p50: 0.2, p90: 0.4, p99: 0.5,
-        clipBlack: 0.01, clipWhite: 0, range: 0.35,
+        clipBlack: 0.01, clipWhite: 0, range: 0.35, midRatio: 0.3,
       }
       const classification = $ExposureCorrection.classify(stats)
 
@@ -85,7 +85,7 @@ describe('$ExposureCorrection', () => {
     it('ハイキー画像を検出', () => {
       const stats = {
         p01: 0.4, p10: 0.5, p50: 0.8, p90: 0.95, p99: 0.99,
-        clipBlack: 0, clipWhite: 0.01, range: 0.45,
+        clipBlack: 0, clipWhite: 0.01, range: 0.45, midRatio: 0.3,
       }
       const classification = $ExposureCorrection.classify(stats)
 
@@ -96,7 +96,7 @@ describe('$ExposureCorrection', () => {
     it('通常画像は両方false', () => {
       const stats = {
         p01: 0.05, p10: 0.15, p50: 0.45, p90: 0.75, p99: 0.9,
-        clipBlack: 0, clipWhite: 0, range: 0.6,
+        clipBlack: 0, clipWhite: 0, range: 0.6, midRatio: 0.4,
       }
       const classification = $ExposureCorrection.classify(stats)
 
@@ -109,7 +109,7 @@ describe('$ExposureCorrection', () => {
     it('暗い画像は明るく補正（gain > 1）', () => {
       const stats = {
         p01: 0.01, p10: 0.05, p50: 0.2, p90: 0.4, p99: 0.5,
-        clipBlack: 0, clipWhite: 0, range: 0.35,
+        clipBlack: 0, clipWhite: 0, range: 0.35, midRatio: 0.3,
       }
       const result = $ExposureCorrection.compute(stats)
 
@@ -120,7 +120,7 @@ describe('$ExposureCorrection', () => {
     it('明るい画像は暗く補正（gain < 1）', () => {
       const stats = {
         p01: 0.3, p10: 0.4, p50: 0.7, p90: 0.9, p99: 0.95,
-        clipBlack: 0, clipWhite: 0, range: 0.5,
+        clipBlack: 0, clipWhite: 0, range: 0.5, midRatio: 0.3,
       }
       const result = $ExposureCorrection.compute(stats)
 
@@ -131,7 +131,7 @@ describe('$ExposureCorrection', () => {
     it('目標値に近い画像はほぼ補正なし（gain ≈ 1）', () => {
       const stats = {
         p01: 0.1, p10: 0.2, p50: 0.45, p90: 0.7, p99: 0.85,
-        clipBlack: 0, clipWhite: 0, range: 0.5,
+        clipBlack: 0, clipWhite: 0, range: 0.5, midRatio: 0.4,
       }
       const result = $ExposureCorrection.compute(stats)
 
@@ -142,7 +142,7 @@ describe('$ExposureCorrection', () => {
     it('非線形抑制: 大きなズレでもmaxEVを超えない', () => {
       const stats = {
         p01: 0.01, p10: 0.02, p50: 0.05, p90: 0.1, p99: 0.15,
-        clipBlack: 0, clipWhite: 0, range: 0.08,
+        clipBlack: 0, clipWhite: 0, range: 0.08, midRatio: 0.2,
       }
       const result = $ExposureCorrection.compute(stats, { maxEV: 0.7 })
 
@@ -154,12 +154,12 @@ describe('$ExposureCorrection', () => {
       // ローキー: p50 < 0.25 かつ p90 < 0.55
       const lowKeyStats = {
         p01: 0.01, p10: 0.05, p50: 0.2, p90: 0.4, p99: 0.5,
-        clipBlack: 0, clipWhite: 0, range: 0.35,
+        clipBlack: 0, clipWhite: 0, range: 0.35, midRatio: 0.3,
       }
       // 通常画像: p50 は同じだが p90 > 0.55 なのでローキーではない
       const normalStats = {
         p01: 0.05, p10: 0.1, p50: 0.2, p90: 0.6, p99: 0.75,
-        clipBlack: 0, clipWhite: 0, range: 0.5,
+        clipBlack: 0, clipWhite: 0, range: 0.5, midRatio: 0.4,
       }
 
       const lowKeyResult = $ExposureCorrection.compute(lowKeyStats)

@@ -275,7 +275,9 @@ const runPipeline = async () => {
     processingTime.value = workerResult.duration
 
     // 結果を描画
-    const finalData = new ImageData(workerResult.pixels, width, height)
+    // Note: 転送されたバッファはSharedArrayBufferの可能性があるため、新しいUint8ClampedArrayを作成
+    const pixelData = new Uint8ClampedArray(workerResult.pixels)
+    const finalData = new ImageData(pixelData, width, height)
     ctx.putImageData(finalData, 0, 0)
 
     // リソース解放

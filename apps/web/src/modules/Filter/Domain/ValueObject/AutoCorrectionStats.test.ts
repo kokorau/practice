@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { $AutoCorrectionStats, type AutoCorrectionStats, type ImageDataLike } from './AutoCorrectionStats'
+import { $AutoCorrectionStats, type ImageDataLike } from './AutoCorrectionStats'
 
 describe('$AutoCorrectionStats', () => {
   // テスト用画像データ生成ヘルパー

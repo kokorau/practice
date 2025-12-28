@@ -74,7 +74,7 @@ export const $ContrastCorrection = {
    */
   compute: (
     stats: LuminanceStats,
-    classification: ImageClassification,
+    _classification: ImageClassification,
     params: Partial<ContrastCorrectionParams> = {}
   ): ContrastCorrectionResult => {
     const fullParams = { ...DEFAULT_PARAMS, ...params }

@@ -200,4 +200,4 @@ export const DEFAULT_BRAND_GUIDE_CONTENT = `# はっぱノート｜ブランド 
 export const BRAND_GUIDE_FILENAME = 'brand-guide.md'
 
 /** Brand Guide の固定AssetId */
-export const BRAND_GUIDE_ASSET_ID = 'brand-guide' as const
+export const BRAND_GUIDE_ASSET_ID = 'brand-guide' as import('../../../Asset/Domain/ValueObject/AssetId').AssetId

@@ -4,16 +4,12 @@ import { useMedia, useMediaCanvasWebGL, useMediaAnalysis } from '../composables/
 import { photoRepository } from '../modules/Photo/Infra/photoRepository'
 import { createDefaultPhotoUseCase } from '../modules/Photo/Application/createDefaultPhotoUseCase'
 import { loadUnsplashPhoto } from '../modules/PhotoUnsplash/Application/loadUnsplashPhoto'
-import { $ColorCorrection } from '../modules/Photo/Domain/ValueObject/ColorCorrection'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import {
-  type Preset,
   type Pipeline,
   type Stage,
-  type Lut,
   $Pipeline,
   $Stage,
-  $Adjustment,
   $Lut1D,
   $Lut3D,
   $Preset,
@@ -22,7 +18,6 @@ import {
   $ContrastCorrection,
   $WhiteBalanceCorrection,
   $SaturationCorrection,
-  $AutoCorrectionStats,
   $AutoCorrection,
   type LuminanceStats,
   type SaturationStats,
@@ -30,7 +25,6 @@ import {
   type ContrastCorrectionResult,
   type WhiteBalanceCorrectionResult,
   type SaturationCorrectionResult,
-  type AutoCorrectionStats,
   type AutoCorrectionResult,
 } from '../modules/Filter/Domain'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
@@ -202,8 +196,8 @@ const wbResult = computed<WhiteBalanceCorrectionResult | null>(() => {
   const bHist = afterContrastAnalysis.value.histogram.b
 
   // 各チャンネルの中央値を計算
-  const getMedian = (hist: number[]): number => {
-    const total = hist.reduce((a, b) => a + b, 0)
+  const getMedian = (hist: Uint32Array | number[]): number => {
+    const total = Array.from(hist).reduce((a, b) => a + b, 0)
     let cumsum = 0
     for (let i = 0; i < hist.length; i++) {
       cumsum += hist[i]!
@@ -243,8 +237,8 @@ const saturationStats = computed<SaturationStats | null>(() => {
   const bHist = afterWbAnalysis.value.histogram.b
 
   // 各チャンネルのパーセンタイルを計算
-  const getPercentile = (hist: number[], p: number): number => {
-    const total = hist.reduce((a, b) => a + b, 0)
+  const getPercentile = (hist: Uint32Array | number[], p: number): number => {
+    const total = Array.from(hist).reduce((a, b) => a + b, 0)
     let cumsum = 0
     for (let i = 0; i < hist.length; i++) {
       cumsum += hist[i]!
