@@ -64,6 +64,11 @@ const router = createRouter({
       name: 'image-auto-correction',
       component: () => import('../views/ImageAutoCorrectionView.vue'),
     },
+    {
+      path: '/image-clipper',
+      name: 'image-clipper',
+      component: () => import('../views/ImageClipperView.vue'),
+    },
   ],
 })
 

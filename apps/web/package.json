@@ -13,6 +13,7 @@
     "fetch:fonts": "update-googlefonts-list -o src/assets/constants/GoogleFontPresets.ts -l 100"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.22-rc.20250304",
     "@practice/color": "workspace:^",
     "@practice/lighting": "workspace:^",
     "@practice/vector": "workspace:^",

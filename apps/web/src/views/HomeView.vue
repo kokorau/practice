@@ -50,6 +50,11 @@ const pages = [
     title: 'Image Auto Correction',
     description: '画像の色調補正を分析してノーマライズ・LUT適用',
   },
+  {
+    to: '/image-clipper',
+    title: 'Image Clipper',
+    description: '画像の切り抜きとクロッピングを試す',
+  },
 ]
 </script>
 
