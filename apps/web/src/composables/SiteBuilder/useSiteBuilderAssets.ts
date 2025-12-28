@@ -5,7 +5,7 @@
  * Vue のリアクティブシステムと統合。
  */
 
-import { ref, shallowRef, computed, onMounted, onUnmounted } from 'vue'
+import { ref, shallowRef, computed, watch, onUnmounted } from 'vue'
 import type { Asset, AssetId } from '../../modules/Asset'
 import { $Asset } from '../../modules/Asset'
 import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/AssetRepository'
@@ -49,6 +49,12 @@ const currentFolderId = ref<NodeId>(ROOT_NODE_ID)
 
 /** 選択中のノードID */
 const selectedNodeId = ref<NodeId | null>(null)
+
+/** 選択中のアセット（リアクティブ用） */
+const selectedAssetRef = shallowRef<Asset | null>(null)
+
+/** 選択中アセットの購読解除関数 */
+let selectedAssetUnsubscribe: (() => void) | null = null
 
 /** 初期化済みフラグ */
 let initialized = false
@@ -138,13 +144,41 @@ export function useSiteBuilderAssets() {
     return undefined
   }
 
-  /** 選択中のアセットを取得 */
-  const selectedAsset = computed<Asset | null>(() => {
-    if (!selectedNodeId.value) return null
+  /** 選択中のアセットを取得（リアクティブに購読） */
+  const selectedAsset = computed<Asset | null>(() => selectedAssetRef.value)
+
+  /**
+   * 選択中のノードIDが変わったら、対応するアセットを購読する
+   */
+  const setupSelectedAssetSubscription = () => {
+    // 既存の購読を解除
+    if (selectedAssetUnsubscribe) {
+      selectedAssetUnsubscribe()
+      selectedAssetUnsubscribe = null
+    }
+
+    if (!selectedNodeId.value) {
+      selectedAssetRef.value = null
+      return
+    }
+
     const node = $AssetTree.getNode(tree.value, selectedNodeId.value)
-    if (!node || !$AssetNode.isAssetRef(node)) return null
-    return repository.get(node.assetId) ?? null
-  })
+    if (!node || !$AssetNode.isAssetRef(node)) {
+      selectedAssetRef.value = null
+      return
+    }
+
+    // 初期値を設定
+    selectedAssetRef.value = repository.get(node.assetId) ?? null
+
+    // 変更を購読
+    selectedAssetUnsubscribe = repository.subscribe(node.assetId, (asset) => {
+      selectedAssetRef.value = asset ?? null
+    })
+  }
+
+  // selectedNodeId の変更を監視して購読を設定
+  watch(selectedNodeId, setupSelectedAssetSubscription, { immediate: true })
 
   /** ノードを選択 */
   const selectNode = (node: AssetNode) => {
