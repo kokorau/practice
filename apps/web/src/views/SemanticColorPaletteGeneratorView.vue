@@ -4,6 +4,7 @@ import '../components/SemanticColorPaletteGenerator/demo-styles.css'
 import './SemanticColorPaletteGeneratorView.css'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
+import { FOUNDATION_PRESETS } from '../components/SemanticColorPaletteGenerator/foundationPresets'
 import {
   type PrimitivePalette,
   CONTEXT_CLASS_NAMES,
@@ -107,26 +108,18 @@ const brandColor = computed(() => {
   }
 })
 
-// Foundation color from FoundationPresets component via PaletteSidebar
+// Foundation color computed from selected preset ID (not dependent on FoundationPresets component)
 const foundationColor = computed(() => {
-  const presetsRef = sidebarRef.value?.foundationPresetsRef
-  if (presetsRef) {
-    const fc = presetsRef.foundationColor
-    const preset = presetsRef.selectedPreset
-    return {
-      oklch: fc.oklch,
-      css: fc.css,
-      hex: fc.hex,
-      label: preset.label,
-    }
-  }
-  // Fallback
-  const oklch: Oklch = { L: 0.955, C: 0, H: 0 }
+  const preset = FOUNDATION_PRESETS.find((p) => p.id === selectedFoundationId.value) ?? FOUNDATION_PRESETS[0]!
+  const presetHue = preset.H === 'brand' ? hue.value : preset.H
+  const oklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
+  const srgb = $Oklch.toSrgb(oklch)
+  const toHex = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')
   return {
     oklch,
     css: $Oklch.toCss(oklch),
-    hex: '#f2f2f2',
-    label: 'White',
+    hex: `#${toHex(srgb.r)}${toHex(srgb.g)}${toHex(srgb.b)}`,
+    label: preset.label,
   }
 })
 
