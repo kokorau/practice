@@ -1,4 +1,4 @@
-.semantic-color-palette-generator {
+.site-builder {
   display: flex;
   height: 100vh;
   box-sizing: border-box;
@@ -7,7 +7,7 @@
   transition: background 0.3s;
 }
 
-.semantic-color-palette-generator.dark {
+.site-builder.dark {
   background: oklch(0.12 0.02 260);
 }
 
@@ -26,13 +26,13 @@
   margin: 0 auto 1.5rem;
 }
 
-.semantic-color-palette-generator h1 {
+.site-builder h1 {
   margin: 0;
   font-size: 1.5rem;
   color: oklch(0.25 0.02 260);
 }
 
-.semantic-color-palette-generator.dark h1 {
+.site-builder.dark h1 {
   color: oklch(0.90 0.01 260);
 }
 
@@ -54,7 +54,7 @@
   transition: all 0.15s ease;
 }
 
-.semantic-color-palette-generator.dark .tab-button {
+.site-builder.dark .tab-button {
   color: oklch(0.60 0.02 260);
 }
 
@@ -62,7 +62,7 @@
   background: oklch(0.92 0.01 260);
 }
 
-.semantic-color-palette-generator.dark .tab-button:hover {
+.site-builder.dark .tab-button:hover {
   background: oklch(0.18 0.02 260);
 }
 
@@ -71,7 +71,7 @@
   color: white;
 }
 
-.semantic-color-palette-generator.dark .tab-button.active {
+.site-builder.dark .tab-button.active {
   background: oklch(0.55 0.16 250);
 }
 

@@ -55,9 +55,9 @@ const router = createRouter({
       component: () => import('../views/SemanticColorPaletteView.vue'),
     },
     {
-      path: '/semantic-color-palette-generator',
-      name: 'semantic-color-palette-generator',
-      component: () => import('../views/SemanticColorPaletteGeneratorView.vue'),
+      path: '/site-builder',
+      name: 'site-builder',
+      component: () => import('../views/SiteBuilderView.vue'),
     },
     {
       path: '/image-auto-correction',

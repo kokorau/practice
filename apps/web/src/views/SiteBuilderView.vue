@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import '../components/SemanticColorPaletteGenerator/demo-styles.css'
-import './SemanticColorPaletteGeneratorView.css'
+import '../components/SiteBuilder/demo-styles.css'
+import './SiteBuilderView.css'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import { FOUNDATION_PRESETS } from '../components/SemanticColorPaletteGenerator/foundationPresets'
+import { FOUNDATION_PRESETS } from '../components/SiteBuilder/foundationPresets'
 import {
   type PrimitivePalette,
   CONTEXT_CLASS_NAMES,
@@ -25,13 +25,13 @@ import { getTokenPresetEntries } from '../modules/DesignTokens/Infra'
 import { useFilter } from '../composables/Filter/useFilter'
 import { useDemoSite } from '../composables/SemanticColorPalette/useDemoSite'
 import { usePaletteAssets } from '../composables/SemanticColorPalette/usePaletteAssets'
-import { hsvToRgb, rgbToHex, applyLutToPalette } from '../components/SemanticColorPaletteGenerator/utils'
+import { hsvToRgb, rgbToHex, applyLutToPalette } from '../components/SiteBuilder/utils'
 // Child components
-import PaletteSidebar from '../components/SemanticColorPaletteGenerator/PaletteSidebar.vue'
-import PrimitiveTab from '../components/SemanticColorPaletteGenerator/PrimitiveTab.vue'
-import PalettePreviewTab from '../components/SemanticColorPaletteGenerator/PalettePreviewTab.vue'
-import BrandGuideTab from '../components/SemanticColorPaletteGenerator/BrandGuideTab.vue'
-import AssetsTab from '../components/SemanticColorPaletteGenerator/AssetsTab.vue'
+import PaletteSidebar from '../components/SiteBuilder/PaletteSidebar.vue'
+import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'
+import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
+import BrandGuideTab from '../components/SiteBuilder/BrandGuideTab.vue'
+import AssetsTab from '../components/SiteBuilder/AssetsTab.vue'
 
 // ============================================================
 // Brand Color State (HSV Color Picker - the "ink")
@@ -212,15 +212,15 @@ let styleElement: HTMLStyleElement | null = null
 
 const updateStyles = () => {
   if (!styleElement) return
-  const colorVariables = toCSSText(palette.value, '.semantic-color-palette-generator')
-  const tokenVariables = toDesignTokensCSSText(currentTokens.value, '.semantic-color-palette-generator')
+  const colorVariables = toCSSText(palette.value, '.site-builder')
+  const tokenVariables = toDesignTokensCSSText(currentTokens.value, '.site-builder')
   const cssRuleSets = toCSSRuleSetsText()
   styleElement.textContent = `${colorVariables}\n\n${tokenVariables}\n\n${cssRuleSets}`
 }
 
 onMounted(() => {
   styleElement = document.createElement('style')
-  styleElement.setAttribute('data-semantic-palette-generator', '')
+  styleElement.setAttribute('data-site-builder', '')
   document.head.appendChild(styleElement)
   updateStyles()
 })
@@ -254,7 +254,7 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
 </script>
 
 <template>
-  <div class="semantic-color-palette-generator" :class="{ dark: isDark }">
+  <div class="site-builder" :class="{ dark: isDark }">
     <!-- Left Sidebar -->
     <PaletteSidebar
       ref="sidebarRef"
@@ -294,7 +294,7 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
     <!-- Main Content -->
     <main class="main-content">
       <header class="header">
-        <h1>Semantic Color Palette Generator</h1>
+        <h1>Site Builder</h1>
         <nav class="tab-nav">
           <button
             v-for="tab in tabs"

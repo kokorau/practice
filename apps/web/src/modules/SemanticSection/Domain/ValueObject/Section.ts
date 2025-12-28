@@ -10,7 +10,7 @@
 
 /**
  * Available section types for the page builder
- * Based on the Demo in SemanticColorPaletteGeneratorView
+ * Based on the Demo in SiteBuilderView
  */
 export const SECTION_TYPES = {
   header: 'header',

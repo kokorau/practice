@@ -1,5 +1,5 @@
 /**
- * createPaletteAssetsUseCase - SemanticColorPaletteGenerator用のデフォルトアセットを作成
+ * createPaletteAssetsUseCase - SiteBuilder用のデフォルトアセットを作成
  */
 
 import type { Asset, AssetId } from '../../Asset'
@@ -32,7 +32,7 @@ const createBrandGuideAsset = (content: string): Asset => {
 }
 
 /**
- * SemanticColorPaletteGenerator用のデフォルトアセットとツリー構造を作成
+ * SiteBuilder用のデフォルトアセットとツリー構造を作成
  */
 export const createPaletteAssetsUseCase = (): PaletteAssetsResult => {
   let tree = $AssetTree.create()

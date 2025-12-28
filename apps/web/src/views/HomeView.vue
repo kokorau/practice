@@ -41,8 +41,8 @@ const pages = [
     description: 'セマンティックカラーパレットの生成と管理',
   },
   {
-    to: '/semantic-color-palette-generator',
-    title: 'Semantic Color Palette Generator',
+    to: '/site-builder',
+    title: 'Site Builder',
     description: 'ベースカラーからセマンティックカラーパレットを自動生成',
   },
   {

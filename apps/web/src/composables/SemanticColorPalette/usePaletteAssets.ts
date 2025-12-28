@@ -1,5 +1,5 @@
 /**
- * SemanticColorPaletteGenerator専用のAssetManager
+ * SiteBuilder専用のAssetManager
  * グローバル状態ではなく、このView専用のローカル状態を持つ
  */
 import { ref, computed, shallowRef } from 'vue'
