@@ -55,6 +55,16 @@ const pages = [
     title: 'Image Clipper',
     description: '画像の切り抜きとクロッピングを試す',
   },
+  {
+    to: '/spectrum',
+    title: 'Spectrum Viewer',
+    description: '可視光スペクトラムの可視化とXYZ/sRGB変換',
+  },
+  {
+    to: '/asset-manager',
+    title: 'Asset Manager',
+    description: 'ファイルツリー形式でアセットを管理・プレビュー',
+  },
 ]
 </script>
 

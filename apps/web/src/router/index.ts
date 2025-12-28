@@ -69,6 +69,11 @@ const router = createRouter({
       name: 'image-clipper',
       component: () => import('../views/ImageClipperView.vue'),
     },
+    {
+      path: '/asset-manager',
+      name: 'asset-manager',
+      component: () => import('../views/AssetManagerView.vue'),
+    },
   ],
 })
 
