@@ -16,6 +16,9 @@ import {
   $Lut1D,
   $Preset,
   $Filter,
+  $ExposureCorrection,
+  type LuminanceStats,
+  type ExposureCorrectionResult,
 } from '../modules/Filter/Domain'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 
@@ -79,17 +82,20 @@ const { analysis: afterVoidInputAnalysis } = useMediaAnalysis(media, { lut: afte
 const { analysis: afterLutAnalysis } = useMediaAnalysis(media, { lut: afterLutLut, sampleRate: 5 })
 const { analysis: outputAnalysis } = useMediaAnalysis(media, { lut: composedLut, sampleRate: 5 })
 
-// 推定された色調補正パラメータ
-const colorGradingEstimate = computed(() => {
+// 露出補正: ヒストグラムから統計を計算
+const exposureStats = computed<LuminanceStats | null>(() => {
   if (!originalAnalysis.value) return null
-  return $ColorCorrection.estimateFromStats(originalAnalysis.value.stats)
+  return $ExposureCorrection.computeStats(originalAnalysis.value.histogram.luminance)
 })
 
-// ノーマライズパラメータ
-const normalizationParams = computed(() => {
-  if (!colorGradingEstimate.value) return null
-  return $ColorCorrection.toNormalizationParams(colorGradingEstimate.value)
+// 露出補正結果
+const exposureResult = computed<ExposureCorrectionResult | null>(() => {
+  if (!exposureStats.value) return null
+  return $ExposureCorrection.compute(exposureStats.value)
 })
+
+// 露出補正が有効か
+const isExposureCorrectionEnabled = ref(true)
 
 // 選択中のプリセット
 const selectedPresetId = computed(() => {
@@ -157,6 +163,25 @@ onMounted(() => {
   }
 })
 
+// 露出補正を適用
+const applyExposureCorrection = () => {
+  if (!exposureResult.value || !isExposureCorrectionEnabled.value) {
+    updateStageLut('void_input', $Lut1D.identity(), 'Input')
+    return
+  }
+  const lut = $ExposureCorrection.toLut(exposureResult.value)
+  updateStageLut('void_input', lut, 'Exposure')
+}
+
+// 露出補正結果が変わったら適用
+watch([exposureResult, isExposureCorrectionEnabled], () => {
+  applyExposureCorrection()
+}, { immediate: true })
+
+// 露出補正のトグル
+const toggleExposureCorrection = () => {
+  isExposureCorrectionEnabled.value = !isExposureCorrectionEnabled.value
+}
 </script>
 
 <template>
@@ -187,23 +212,25 @@ onMounted(() => {
           </div>
         </section>
 
-        <!-- Detected Info -->
-        <section v-if="colorGradingEstimate">
-          <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Detected</h2>
+        <!-- Exposure Stats -->
+        <section v-if="exposureStats">
+          <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Exposure</h2>
           <div class="text-[11px] text-gray-500 space-y-1">
             <div class="flex justify-between">
-              <span>Cast</span>
-              <span class="font-mono">
-                <span class="text-red-400">{{ colorGradingEstimate.colorCast.r.toFixed(0) }}</span>
-                <span class="text-gray-600">/</span>
-                <span class="text-green-400">{{ colorGradingEstimate.colorCast.g.toFixed(0) }}</span>
-                <span class="text-gray-600">/</span>
-                <span class="text-blue-400">{{ colorGradingEstimate.colorCast.b.toFixed(0) }}</span>
-              </span>
+              <span>Median (p50)</span>
+              <span class="font-mono">{{ (exposureStats.p50 * 100).toFixed(0) }}%</span>
             </div>
             <div class="flex justify-between">
-              <span>Brightness</span>
-              <span class="font-mono">{{ colorGradingEstimate.brightnessOffset > 0 ? '+' : '' }}{{ colorGradingEstimate.brightnessOffset.toFixed(0) }}</span>
+              <span>Range (p10-p90)</span>
+              <span class="font-mono">{{ (exposureStats.p10 * 100).toFixed(0) }}-{{ (exposureStats.p90 * 100).toFixed(0) }}%</span>
+            </div>
+            <div v-if="exposureResult" class="flex justify-between">
+              <span>EV Delta</span>
+              <span class="font-mono">{{ exposureResult.evDelta > 0 ? '+' : '' }}{{ exposureResult.evDelta.toFixed(2) }} EV</span>
+            </div>
+            <div v-if="exposureResult" class="flex justify-between">
+              <span>Gain</span>
+              <span class="font-mono">{{ exposureResult.gain.toFixed(3) }}</span>
             </div>
           </div>
         </section>
@@ -234,11 +261,25 @@ onMounted(() => {
         </div>
       </section>
 
-      <!-- Stage: Void Input -->
+      <!-- Stage: Exposure -->
       <section>
-        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Void Input</h2>
+        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Exposure</h2>
         <div class="flex items-center gap-3 mb-3">
-          <span class="text-[11px] text-gray-500">Identity LUT (no change)</span>
+          <button
+            @click="toggleExposureCorrection"
+            class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs transition-colors"
+            :class="isExposureCorrectionEnabled
+              ? 'border-gray-600 text-gray-200 hover:border-gray-500'
+              : 'border-gray-700 text-gray-500 hover:border-gray-600'"
+          >
+            Exposure
+            <span v-if="isExposureCorrectionEnabled" class="px-1.5 py-0.5 rounded bg-gray-700 text-[10px] text-gray-400">ON</span>
+          </button>
+          <span v-if="exposureResult && isExposureCorrectionEnabled" class="text-[11px] text-gray-500">
+            {{ exposureResult.evDelta > 0 ? '+' : '' }}{{ exposureResult.appliedEvDelta.toFixed(2) }} EV
+            (gain {{ exposureResult.gain.toFixed(2) }})
+          </span>
+          <span v-else class="text-[11px] text-gray-500">Identity LUT (no change)</span>
         </div>
         <div class="flex gap-4 items-start">
           <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-1 border border-gray-800" style="aspect-ratio: 3/2;">

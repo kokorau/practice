@@ -30,3 +30,10 @@ export {
   $LuminanceProfile,
 } from './LuminanceProfile'
 export { type Stage, type Pipeline, $Stage, $Pipeline } from './Pipeline'
+export {
+  type LuminanceStats,
+  type ImageClassification,
+  type ExposureCorrectionParams,
+  type ExposureCorrectionResult,
+  $ExposureCorrection,
+} from './ExposureCorrection'
