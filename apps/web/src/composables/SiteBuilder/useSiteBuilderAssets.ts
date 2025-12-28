@@ -73,11 +73,38 @@ export function useSiteBuilderAssets() {
   // 初期化（一度だけ実行）
   if (!initialized) {
     initializeSiteBuilderUseCase(repository)
-    // ツリーに全アセットを追加
-    tree.value = $AssetTree.addAssetRef(tree.value, 'brand-guide.md', ROOT_NODE_ID, BRAND_GUIDE_ASSET_ID)
-    tree.value = $AssetTree.addAssetRef(tree.value, 'site-config.json', ROOT_NODE_ID, SITE_CONFIG_ASSET_ID)
-    tree.value = $AssetTree.addAssetRef(tree.value, 'filter-config.json', ROOT_NODE_ID, FILTER_CONFIG_ASSET_ID)
-    tree.value = $AssetTree.addAssetRef(tree.value, 'site-contents.json', ROOT_NODE_ID, SITE_CONTENTS_ASSET_ID)
+
+    // ============================================================
+    // フォルダ構造の初期化
+    // ============================================================
+
+    // 1. config/ フォルダを作成し、設定ファイルを配置
+    tree.value = $AssetTree.addFolder(tree.value, 'config', ROOT_NODE_ID)
+    const configFolder = $AssetTree.getChildren(tree.value, ROOT_NODE_ID).find(
+      (node) => $AssetNode.isFolder(node) && node.name === 'config'
+    )
+    const configFolderId = configFolder?.id ?? ROOT_NODE_ID
+
+    tree.value = $AssetTree.addAssetRef(tree.value, 'brand-guide.md', configFolderId, BRAND_GUIDE_ASSET_ID)
+    tree.value = $AssetTree.addAssetRef(tree.value, 'site-config.json', configFolderId, SITE_CONFIG_ASSET_ID)
+    tree.value = $AssetTree.addAssetRef(tree.value, 'filter-config.json', configFolderId, FILTER_CONFIG_ASSET_ID)
+    tree.value = $AssetTree.addAssetRef(tree.value, 'site-contents.json', configFolderId, SITE_CONTENTS_ASSET_ID)
+
+    // 2. assets/ フォルダを作成（サブフォルダ付き）
+    tree.value = $AssetTree.addFolder(tree.value, 'assets', ROOT_NODE_ID)
+    const assetsFolder = $AssetTree.getChildren(tree.value, ROOT_NODE_ID).find(
+      (node) => $AssetNode.isFolder(node) && node.name === 'assets'
+    )
+    const assetsFolderId = assetsFolder?.id ?? ROOT_NODE_ID
+
+    tree.value = $AssetTree.addFolder(tree.value, 'images', assetsFolderId)
+    tree.value = $AssetTree.addFolder(tree.value, 'icons', assetsFolderId)
+    tree.value = $AssetTree.addFolder(tree.value, 'fonts', assetsFolderId)
+    tree.value = $AssetTree.addFolder(tree.value, 'documents', assetsFolderId)
+
+    // 3. dist/ フォルダを作成（ビルド出力用）
+    tree.value = $AssetTree.addFolder(tree.value, 'dist', ROOT_NODE_ID)
+
     // assetsMap を初期化
     refreshAssetsMap(repository)
     initialized = true
