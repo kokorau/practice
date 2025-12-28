@@ -1,5 +1,6 @@
 import { ref, reactive, watch, onMounted, onUnmounted, type Ref } from 'vue'
 import { $Scene, createPCFShadowShader } from '@practice/lighting/Infra'
+import { RayTracingRenderer } from '@practice/lighting/Infra/WebGL/RayTracingRenderer'
 import { $Light, $Color } from '@practice/lighting'
 import { $Vector3 } from '@practice/vector'
 import {
@@ -51,6 +52,7 @@ export interface UseLightingSimulatorOptions {
   enableTileRendering?: boolean
   tileHeight?: number
   enableFilter?: boolean
+  enableDirectRendering?: boolean // Skip tile system, render directly to canvas
 }
 
 export function useLightingSimulator(options: UseLightingSimulatorOptions) {
@@ -61,12 +63,16 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     enableTileRendering = true,
     tileHeight = 200,
     enableFilter = true,
+    enableDirectRendering = false,
   } = options
 
   // Tile rendering infrastructure (non-reactive)
   let tileRenderer: TileRenderer | null = null
   let tileCompositor: TileCompositor | null = null
   let renderTilesUseCase: RenderTilesUseCase | null = null
+
+  // Direct rendering infrastructure (non-reactive)
+  let directRenderer: RayTracingRenderer | null = null
 
   // Current preset
   const currentPreset = ref<string | null>('Default')
@@ -166,7 +172,6 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
   // Update scene and render (full re-render, called when scene content changes)
   const updateScene = () => {
     if (!htmlContainerRef.value || !sampleHtmlRef.value || !canvasRef.value) return
-    if (!renderTilesUseCase) return
 
     // Get container size (visible area) and content size (full scrollable area)
     const containerRect = htmlContainerRef.value.getBoundingClientRect()
@@ -203,25 +208,42 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
       cameraSize: { width: camera.width, height: camera.height },
     }
 
-    // Use tile rendering system
-    // - Content size for tile grid (covers all content)
-    // - Viewport size for display canvas
-    renderTilesUseCase.updateScene(
-      scene,
-      camera,
-      viewportWidth,
-      contentHeight,
-      viewportWidth,
-      viewportHeight,
-      scrollY
-    )
+    if (enableDirectRendering && directRenderer) {
+      // Direct rendering mode - render entire scene to canvas
+      const canvas = canvasRef.value
+      canvas.width = viewportWidth
+      canvas.height = viewportHeight
 
-    // Update debug info with tile stats
-    const tileDebug = renderTilesUseCase.getDebugInfo()
-    debugInfo.value.tiles = {
-      total: tileDebug.totalTiles,
-      pending: tileDebug.pendingTiles,
-      clean: tileDebug.cleanTiles,
+      // Adjust camera for visible viewport
+      const viewportCamera = {
+        ...camera,
+        position: { ...camera.position, y: camera.position.y + scrollY },
+        lookAt: { ...camera.lookAt, y: camera.lookAt.y + scrollY },
+        height: viewportHeight,
+      }
+
+      directRenderer.render(scene, viewportCamera)
+    } else if (renderTilesUseCase) {
+      // Use tile rendering system
+      // - Content size for tile grid (covers all content)
+      // - Viewport size for display canvas
+      renderTilesUseCase.updateScene(
+        scene,
+        camera,
+        viewportWidth,
+        contentHeight,
+        viewportWidth,
+        viewportHeight,
+        scrollY
+      )
+
+      // Update debug info with tile stats
+      const tileDebug = renderTilesUseCase.getDebugInfo()
+      debugInfo.value.tiles = {
+        total: tileDebug.totalTiles,
+        pending: tileDebug.pendingTiles,
+        clean: tileDebug.cleanTiles,
+      }
     }
 
     // Compute box shadows from scene
@@ -261,13 +283,10 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
 
   // Handle scroll - only update viewport, tiles are cached
   const onScroll = () => {
-    if (!htmlContainerRef.value || !renderTilesUseCase) return
+    if (!htmlContainerRef.value) return
 
     const containerRect = htmlContainerRef.value.getBoundingClientRect()
     const scrollY = htmlContainerRef.value.scrollTop
-
-    // Update viewport for tile rendering (re-composite visible tiles)
-    renderTilesUseCase.updateViewport(scrollY, containerRect.height)
 
     // Update debug viewport info (unscaled for display)
     debugInfo.value.viewport = {
@@ -277,16 +296,24 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
       scrollY,
     }
 
-    // Update tile debug info
-    const tileDebug = renderTilesUseCase.getDebugInfo()
-    debugInfo.value.tiles = {
-      total: tileDebug.totalTiles,
-      pending: tileDebug.pendingTiles,
-      clean: tileDebug.cleanTiles,
-    }
+    if (enableDirectRendering) {
+      // Direct rendering mode - re-render on scroll
+      updateScene()
+    } else if (renderTilesUseCase) {
+      // Update viewport for tile rendering (re-composite visible tiles)
+      renderTilesUseCase.updateViewport(scrollY, containerRect.height)
 
-    // Apply filter after scroll
-    applyFilterToCanvas()
+      // Update tile debug info
+      const tileDebug = renderTilesUseCase.getDebugInfo()
+      debugInfo.value.tiles = {
+        total: tileDebug.totalTiles,
+        pending: tileDebug.pendingTiles,
+        clean: tileDebug.cleanTiles,
+      }
+
+      // Apply filter after scroll
+      applyFilterToCanvas()
+    }
   }
 
   // Handle resize - need full re-render
@@ -319,25 +346,34 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
 
   // Watch filter changes to re-apply (without re-rendering tiles)
   watch([lut, pixelEffects, filterEnabled], () => {
-    // Re-composite tiles without re-rendering, then apply filter
-    if (!renderTilesUseCase || !htmlContainerRef.value) return
-    const scrollY = htmlContainerRef.value.scrollTop
-    const containerRect = htmlContainerRef.value.getBoundingClientRect()
-    renderTilesUseCase.updateViewport(scrollY, containerRect.height)
-    applyFilterToCanvas()
+    if (enableDirectRendering) {
+      // Direct rendering: filters not yet supported, just re-render
+      updateScene()
+    } else if (renderTilesUseCase && htmlContainerRef.value) {
+      // Re-composite tiles without re-rendering, then apply filter
+      const scrollY = htmlContainerRef.value.scrollTop
+      const containerRect = htmlContainerRef.value.getBoundingClientRect()
+      renderTilesUseCase.updateViewport(scrollY, containerRect.height)
+      applyFilterToCanvas()
+    }
   }, { deep: true })
 
   // Lifecycle
   onMounted(() => {
     if (!canvasRef.value) return
 
-    // Initialize tile rendering system
-    tileRenderer = new TileRenderer()
-    tileCompositor = new TileCompositor(canvasRef.value)
-    renderTilesUseCase = new RenderTilesUseCase(tileRenderer, tileCompositor, {
-      tileHeight,
-      enableIdleRendering: enableTileRendering,
-    })
+    if (enableDirectRendering) {
+      // Initialize direct renderer
+      directRenderer = new RayTracingRenderer(canvasRef.value)
+    } else {
+      // Initialize tile rendering system
+      tileRenderer = new TileRenderer()
+      tileCompositor = new TileCompositor(canvasRef.value)
+      renderTilesUseCase = new RenderTilesUseCase(tileRenderer, tileCompositor, {
+        tileHeight,
+        enableIdleRendering: enableTileRendering,
+      })
+    }
 
     // Add event listeners
     window.addEventListener('resize', onResize)
@@ -354,12 +390,17 @@ export function useLightingSimulator(options: UseLightingSimulatorOptions) {
     window.removeEventListener('resize', onResize)
     htmlContainerRef.value?.removeEventListener('scroll', onScroll)
 
-    // Dispose tile rendering system
-    renderTilesUseCase?.dispose()
-    tileRenderer?.dispose()
-    renderTilesUseCase = null
-    tileRenderer = null
-    tileCompositor = null
+    // Dispose rendering resources
+    if (directRenderer) {
+      directRenderer.dispose()
+      directRenderer = null
+    } else {
+      renderTilesUseCase?.dispose()
+      tileRenderer?.dispose()
+      renderTilesUseCase = null
+      tileRenderer = null
+      tileCompositor = null
+    }
   })
 
   return {

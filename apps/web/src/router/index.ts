@@ -60,9 +60,9 @@ const router = createRouter({
       component: () => import('../views/SemanticColorPaletteGeneratorView.vue'),
     },
     {
-      path: '/asset-manager',
-      name: 'asset-manager',
-      component: () => import('../views/AssetManagerView.vue'),
+      path: '/image-auto-correction',
+      name: 'image-auto-correction',
+      component: () => import('../views/ImageAutoCorrectionView.vue'),
     },
   ],
 })

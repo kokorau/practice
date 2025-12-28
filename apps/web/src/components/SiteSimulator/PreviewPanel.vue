@@ -1,0 +1,129 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import type { SemanticColorToken, RenderedPalette, PreviewArtifact, ArtifactChangeType } from '../../modules/SiteSimulator/Domain'
+import { $RenderedColor } from '../../modules/SiteSimulator/Domain/ValueObject'
+import DemoPreview from './DemoPreview.vue'
+import PalettePreview from './PalettePreview.vue'
+import CodeHighlight from './CodeHighlight.vue'
+
+type PreviewMode = 'demo' | 'palette' | 'css' | 'html'
+
+const props = defineProps<{
+  artifact: PreviewArtifact | null
+  lastChangeType: ArtifactChangeType | null
+  paletteGroups: Array<{
+    name: string
+    tokens: SemanticColorToken[]
+  }>
+  renderedPalette: RenderedPalette
+}>()
+
+// PalettePreviewで使用するヘルパー（実際の色値を返す）
+const getCssColor = (token: SemanticColorToken): string => {
+  const color = props.renderedPalette.colors.get(token)
+  if (!color) return 'transparent'
+  return $RenderedColor.toCssP3(color)
+}
+
+const previewMode = ref<PreviewMode>('demo')
+
+const previewModes = [
+  { id: 'demo' as const, label: 'Demo' },
+  { id: 'palette' as const, label: 'Palette' },
+  { id: 'css' as const, label: 'CSS' },
+  { id: 'html' as const, label: 'HTML' },
+]
+</script>
+
+<template>
+  <main class="preview-panel">
+    <!-- Floating Preview Switcher -->
+    <div class="preview-switcher">
+      <button
+        v-for="mode in previewModes"
+        :key="mode.id"
+        class="preview-tab"
+        :class="{ active: previewMode === mode.id }"
+        @click="previewMode = mode.id"
+      >
+        {{ mode.label }}
+      </button>
+    </div>
+
+    <!-- Demo Preview -->
+    <div v-if="previewMode === 'demo'" class="preview-content demo-mode">
+      <DemoPreview :artifact="artifact" :last-change-type="lastChangeType" />
+    </div>
+
+    <!-- Palette Preview -->
+    <div v-else-if="previewMode === 'palette'" class="preview-content">
+      <PalettePreview
+        :get-css-color="getCssColor"
+        :palette-groups="paletteGroups"
+      />
+    </div>
+
+    <!-- CSS Output -->
+    <div v-else-if="previewMode === 'css'" class="preview-content">
+      <CodeHighlight :code="artifact?.css ?? ''" language="css" />
+    </div>
+
+    <!-- HTML Output -->
+    <div v-else-if="previewMode === 'html'" class="preview-content">
+      <CodeHighlight :code="artifact?.html ?? ''" language="html" />
+    </div>
+  </main>
+</template>
+
+<style scoped>
+.preview-panel {
+  position: relative;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.preview-switcher {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: rgba(31, 41, 55, 0.95);
+  border-radius: 0.5rem;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.preview-tab {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.preview-tab:hover {
+  color: white;
+}
+
+.preview-tab.active {
+  background: #374151;
+  color: white;
+}
+
+.preview-content {
+  padding-top: 2rem;
+}
+
+.preview-content.demo-mode {
+  height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+}
+</style>

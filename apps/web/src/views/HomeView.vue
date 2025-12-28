@@ -46,9 +46,9 @@ const pages = [
     description: 'ベースカラーからセマンティックカラーパレットを自動生成',
   },
   {
-    to: '/asset-manager',
-    title: 'Asset Manager',
-    description: 'ローカルファイルのアセット管理',
+    to: '/image-auto-correction',
+    title: 'Image Auto Correction',
+    description: '画像の色調補正を分析してノーマライズ・LUT適用',
   },
 ]
 </script>
