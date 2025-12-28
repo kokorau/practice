@@ -34,45 +34,41 @@ import BrandGuideTab from '../components/SiteBuilder/BrandGuideTab.vue'
 import AssetsTab from '../components/SiteBuilder/AssetsTab.vue'
 
 // ============================================================
+// SiteBuilder Assets (Single Source of Truth)
+// ============================================================
+const {
+  isLoaded,
+  loadInitialData,
+  updateBrandGuide,
+  updateSiteConfig,
+  updateFilterConfig,
+  updateSiteContents,
+} = useSiteBuilderAssets()
+
+// ============================================================
 // Brand Color State (HSV Color Picker - the "ink")
 // ============================================================
-const hue = ref(210)
-const saturation = ref(80)
-const value = ref(70)
+// 初期値は loadInitialData で設定される（undefined -> 実際の値）
+const hue = ref<number | undefined>(undefined)
+const saturation = ref<number | undefined>(undefined)
+const value = ref<number | undefined>(undefined)
 
-// Computed color values
-const selectedRgb = computed(() => hsvToRgb(hue.value, saturation.value, value.value))
+// Computed color values（ロード前は仮の値を使用）
+const selectedRgb = computed(() => hsvToRgb(hue.value ?? 0, saturation.value ?? 0, value.value ?? 0))
 const selectedHex = computed(() => rgbToHex(...selectedRgb.value))
 
 // Tab state
 type TabId = 'primitive' | 'palette' | 'demo' | 'brand-guide' | 'assets'
 const activeTab = ref<TabId>('primitive')
 
-// ============================================================
-// SiteBuilder Assets
-// ============================================================
-const {
-  getBrandGuideContent,
-  updateBrandGuide,
-  getSiteConfig,
-  updateSiteConfig,
-  getFilterConfig,
-  updateFilterConfig,
-  getSiteContents,
-  updateSiteContents,
-} = useSiteBuilderAssets()
-
 // Brand Guide state (synced with Asset)
 const brandGuideMarkdown = ref('')
-
-// Initialize Brand Guide from Asset
-getBrandGuideContent().then((content) => {
-  brandGuideMarkdown.value = content
-})
 
 // Sync Brand Guide back to Asset when changed (debounced)
 let brandGuideSyncTimeout: ReturnType<typeof setTimeout> | null = null
 watch(brandGuideMarkdown, (newContent) => {
+  // ロード完了前は同期しない
+  if (!isLoaded.value) return
   if (brandGuideSyncTimeout) clearTimeout(brandGuideSyncTimeout)
   brandGuideSyncTimeout = setTimeout(() => {
     updateBrandGuide(newContent)
@@ -80,41 +76,34 @@ watch(brandGuideMarkdown, (newContent) => {
 })
 
 // Foundation preset state
-const selectedFoundationId = ref('white')
+const selectedFoundationId = ref<string | undefined>(undefined)
 const sidebarRef = ref<InstanceType<typeof PaletteSidebar> | null>(null)
 
 // ============================================================
 // Design Tokens State
 // ============================================================
 const tokenPresets = getTokenPresetEntries()
-const selectedTokensId = ref(tokenPresets[0]?.id ?? 'default')
-
-// ============================================================
-// SiteConfig 初期化 & 同期
-// ============================================================
-
-// Initialize from SiteConfig Asset
-getSiteConfig().then((config) => {
-  hue.value = config.brandHSV.hue
-  saturation.value = config.brandHSV.saturation
-  value.value = config.brandHSV.value
-  selectedFoundationId.value = config.foundationId
-  selectedTokensId.value = config.tokensId
-})
+const selectedTokensId = ref<string | undefined>(undefined)
 
 // Sync SiteConfig back to Asset when changed (debounced)
 let siteConfigSyncTimeout: ReturnType<typeof setTimeout> | null = null
 const syncSiteConfig = () => {
+  // ロード完了前は同期しない
+  if (!isLoaded.value) return
+  // undefined の値がある場合は同期しない
+  if (hue.value === undefined || saturation.value === undefined || value.value === undefined) return
+  if (selectedFoundationId.value === undefined || selectedTokensId.value === undefined) return
+
   if (siteConfigSyncTimeout) clearTimeout(siteConfigSyncTimeout)
   siteConfigSyncTimeout = setTimeout(() => {
     updateSiteConfig({
       brandHSV: {
-        hue: hue.value,
-        saturation: saturation.value,
-        value: value.value,
+        hue: hue.value!,
+        saturation: saturation.value!,
+        value: value.value!,
       },
-      foundationId: selectedFoundationId.value,
-      tokensId: selectedTokensId.value,
+      foundationId: selectedFoundationId.value!,
+      tokensId: selectedTokensId.value!,
     })
   }, 500)
 }
@@ -149,7 +138,7 @@ const brandColor = computed(() => {
 // Foundation color computed from selected preset ID (not dependent on FoundationPresets component)
 const foundationColor = computed(() => {
   const preset = FOUNDATION_PRESETS.find((p) => p.id === selectedFoundationId.value) ?? FOUNDATION_PRESETS[0]!
-  const presetHue = preset.H === 'brand' ? hue.value : preset.H
+  const presetHue = preset.H === 'brand' ? (hue.value ?? 0) : preset.H
   const oklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
   const srgb = $Oklch.toSrgb(oklch)
   const toHex = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')
@@ -186,19 +175,15 @@ const currentFilterName = computed(() => {
 })
 
 // ============================================================
-// FilterConfig 初期化 & 同期
+// FilterConfig 同期
 // ============================================================
-
-// Initialize from FilterConfig Asset
-getFilterConfig().then((config) => {
-  filter.value = config.filter
-  intensity.value = config.intensity
-  currentPresetId.value = config.presetId
-})
 
 // Sync FilterConfig back to Asset when changed (debounced)
 let filterConfigSyncTimeout: ReturnType<typeof setTimeout> | null = null
 const syncFilterConfig = () => {
+  // ロード完了前は同期しない
+  if (!isLoaded.value) return
+
   if (filterConfigSyncTimeout) clearTimeout(filterConfigSyncTimeout)
   filterConfigSyncTimeout = setTimeout(() => {
     updateFilterConfig({
@@ -282,10 +267,34 @@ const updateStyles = () => {
   styleElement.textContent = `${colorVariables}\n\n${tokenVariables}\n\n${cssRuleSets}`
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // スタイル要素を先に作成
   styleElement = document.createElement('style')
   styleElement.setAttribute('data-site-builder', '')
   document.head.appendChild(styleElement)
+
+  // Asset から初期データをロード
+  const initialData = await loadInitialData()
+
+  // SiteConfig の値を設定
+  hue.value = initialData.siteConfig.brandHSV.hue
+  saturation.value = initialData.siteConfig.brandHSV.saturation
+  value.value = initialData.siteConfig.brandHSV.value
+  selectedFoundationId.value = initialData.siteConfig.foundationId
+  selectedTokensId.value = initialData.siteConfig.tokensId
+
+  // FilterConfig の値を設定
+  filter.value = initialData.filterConfig.filter
+  intensity.value = initialData.filterConfig.intensity
+  currentPresetId.value = initialData.filterConfig.presetId
+
+  // BrandGuide の値を設定
+  brandGuideMarkdown.value = initialData.brandGuideContent
+
+  // SiteContents の値を設定（既存のデフォルト値とマージ）
+  siteContents.value = { ...siteContents.value, ...initialData.siteContents }
+
+  // スタイルを更新
   updateStyles()
 })
 
@@ -311,15 +320,12 @@ const {
   downloadHTML,
 } = useDemoSite({ palette, tokens: currentTokens })
 
-// Initialize siteContents from Asset
-getSiteContents().then((contents) => {
-  // Merge with default contents to ensure all sections have content
-  siteContents.value = { ...siteContents.value, ...contents }
-})
-
 // Sync SiteContents back to Asset when changed (debounced)
 let siteContentsSyncTimeout: ReturnType<typeof setTimeout> | null = null
 watch(siteContents, (newContents) => {
+  // ロード完了前は同期しない
+  if (!isLoaded.value) return
+
   if (siteContentsSyncTimeout) clearTimeout(siteContentsSyncTimeout)
   siteContentsSyncTimeout = setTimeout(() => {
     updateSiteContents(newContents)
@@ -333,15 +339,22 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
 </script>
 
 <template>
-  <div class="site-builder" :class="{ dark: isDark }">
+  <!-- Loading State -->
+  <div v-if="!isLoaded" class="site-builder-loading">
+    <div class="loading-spinner" />
+    <p>Loading...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div v-else class="site-builder" :class="{ dark: isDark }">
     <!-- Left Sidebar -->
     <PaletteSidebar
       ref="sidebarRef"
-      :hue="hue"
-      :saturation="saturation"
-      :value="value"
+      :hue="hue ?? 0"
+      :saturation="saturation ?? 0"
+      :value="value ?? 0"
       :selected-hex="selectedHex"
-      :selected-foundation-id="selectedFoundationId"
+      :selected-foundation-id="selectedFoundationId ?? ''"
       :foundation-label="foundationColor.label"
       :foundation-hex="foundationColor.hex"
       :brand-oklch="brandColor.oklch"
@@ -351,7 +364,7 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
       :filter-setters="filterSetters"
       :intensity="intensity"
       :current-filter-name="currentFilterName"
-      :selected-tokens-id="selectedTokensId"
+      :selected-tokens-id="selectedTokensId ?? ''"
       :current-tokens-name="currentTokensPreset.name"
       :sections="currentSections"
       :section-contents="siteContents"

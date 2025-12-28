@@ -56,8 +56,23 @@ const selectedAssetRef = shallowRef<Asset | null>(null)
 /** 選択中アセットの購読解除関数 */
 let selectedAssetUnsubscribe: (() => void) | null = null
 
-/** 初期化済みフラグ */
+/** 初期化済みフラグ（同期的な Repository 初期化） */
 let initialized = false
+
+/** 初期データロード完了フラグ（リアクティブ） */
+const isLoaded = ref(false)
+
+/** 初期データロード中フラグ */
+let isLoading = false
+
+/** ロード済みの初期データをキャッシュ */
+type InitialData = {
+  siteConfig: SiteConfig
+  filterConfig: FilterConfig
+  siteContents: SiteContents
+  brandGuideContent: string
+}
+let cachedInitialData: InitialData | null = null
 
 /** assetsMap を更新するヘルパー */
 const refreshAssetsMap = (repository: import('../../modules/AssetRepository').AssetRepository) => {
@@ -367,7 +382,68 @@ export function useSiteBuilderAssets() {
     return observeSiteContentsUseCase(repository, callback)
   }
 
+  // ============================================================
+  // 一括ロード（初期化）
+  // ============================================================
+
+  /**
+   * 全ての初期データを一括でロードする
+   *
+   * View側で loading 状態を管理し、ロード完了後にデータを使用できるようにする。
+   * 既にロード済みの場合はキャッシュを返す。
+   */
+  const loadInitialData = async (): Promise<InitialData> => {
+    // 既にロード済みならキャッシュを返す
+    if (cachedInitialData) {
+      return cachedInitialData
+    }
+
+    // ロード中なら待機（競合防止）
+    if (isLoading) {
+      // 簡易的なポーリングで待機
+      await new Promise<void>((resolve) => {
+        const check = () => {
+          if (cachedInitialData) {
+            resolve()
+          } else {
+            setTimeout(check, 10)
+          }
+        }
+        check()
+      })
+      return cachedInitialData!
+    }
+
+    isLoading = true
+
+    try {
+      // 並列でロード
+      const [siteConfig, filterConfig, siteContents, brandGuideContent] = await Promise.all([
+        getSiteConfig(),
+        getFilterConfig(),
+        getSiteContents(),
+        getBrandGuideContent(),
+      ])
+
+      cachedInitialData = {
+        siteConfig,
+        filterConfig,
+        siteContents,
+        brandGuideContent,
+      }
+
+      isLoaded.value = true
+      return cachedInitialData
+    } finally {
+      isLoading = false
+    }
+  }
+
   return {
+    // Initialization State
+    isLoaded,
+    loadInitialData,
+
     // State
     tree,
     assets: assetsMap,
