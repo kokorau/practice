@@ -49,26 +49,32 @@ type TabId = 'primitive' | 'palette' | 'demo' | 'brand-guide' | 'assets'
 const activeTab = ref<TabId>('primitive')
 
 // ============================================================
-// Palette Assets (including Brand Guide)
+// SiteBuilder Assets
 // ============================================================
 const {
   getBrandGuideContent,
   updateBrandGuide,
+  getSiteConfig,
+  updateSiteConfig,
+  getFilterConfig,
+  updateFilterConfig,
+  getSiteContents,
+  updateSiteContents,
 } = useSiteBuilderAssets()
 
 // Brand Guide state (synced with Asset)
 const brandGuideMarkdown = ref('')
 
-// Initialize from Asset
+// Initialize Brand Guide from Asset
 getBrandGuideContent().then((content) => {
   brandGuideMarkdown.value = content
 })
 
-// Sync back to Asset when changed (debounced)
-let syncTimeout: ReturnType<typeof setTimeout> | null = null
+// Sync Brand Guide back to Asset when changed (debounced)
+let brandGuideSyncTimeout: ReturnType<typeof setTimeout> | null = null
 watch(brandGuideMarkdown, (newContent) => {
-  if (syncTimeout) clearTimeout(syncTimeout)
-  syncTimeout = setTimeout(() => {
+  if (brandGuideSyncTimeout) clearTimeout(brandGuideSyncTimeout)
+  brandGuideSyncTimeout = setTimeout(() => {
     updateBrandGuide(newContent)
   }, 500)
 })
@@ -82,6 +88,38 @@ const sidebarRef = ref<InstanceType<typeof PaletteSidebar> | null>(null)
 // ============================================================
 const tokenPresets = getTokenPresetEntries()
 const selectedTokensId = ref(tokenPresets[0]?.id ?? 'default')
+
+// ============================================================
+// SiteConfig 初期化 & 同期
+// ============================================================
+
+// Initialize from SiteConfig Asset
+getSiteConfig().then((config) => {
+  hue.value = config.brandHSV.hue
+  saturation.value = config.brandHSV.saturation
+  value.value = config.brandHSV.value
+  selectedFoundationId.value = config.foundationId
+  selectedTokensId.value = config.tokensId
+})
+
+// Sync SiteConfig back to Asset when changed (debounced)
+let siteConfigSyncTimeout: ReturnType<typeof setTimeout> | null = null
+const syncSiteConfig = () => {
+  if (siteConfigSyncTimeout) clearTimeout(siteConfigSyncTimeout)
+  siteConfigSyncTimeout = setTimeout(() => {
+    updateSiteConfig({
+      brandHSV: {
+        hue: hue.value,
+        saturation: saturation.value,
+        value: value.value,
+      },
+      foundationId: selectedFoundationId.value,
+      tokensId: selectedTokensId.value,
+    })
+  }, 500)
+}
+
+watch([hue, saturation, value, selectedFoundationId, selectedTokensId], syncSiteConfig)
 
 const currentTokensPreset = computed(() =>
   tokenPresets.find((p) => p.id === selectedTokensId.value) ?? tokenPresets[0]!
@@ -146,6 +184,32 @@ const currentFilterName = computed(() => {
   const preset = FILTER_PRESETS.find(p => p.id === currentPresetId.value)
   return preset?.name ?? 'Custom'
 })
+
+// ============================================================
+// FilterConfig 初期化 & 同期
+// ============================================================
+
+// Initialize from FilterConfig Asset
+getFilterConfig().then((config) => {
+  filter.value = config.filter
+  intensity.value = config.intensity
+  currentPresetId.value = config.presetId
+})
+
+// Sync FilterConfig back to Asset when changed (debounced)
+let filterConfigSyncTimeout: ReturnType<typeof setTimeout> | null = null
+const syncFilterConfig = () => {
+  if (filterConfigSyncTimeout) clearTimeout(filterConfigSyncTimeout)
+  filterConfigSyncTimeout = setTimeout(() => {
+    updateFilterConfig({
+      filter: filter.value,
+      intensity: intensity.value,
+      presetId: currentPresetId.value,
+    })
+  }, 500)
+}
+
+watch([filter, intensity, currentPresetId], syncFilterConfig, { deep: true })
 
 // ============================================================
 // Primitive Palette Generation
@@ -246,6 +310,21 @@ const {
   updateSectionContent,
   downloadHTML,
 } = useDemoSite({ palette, tokens: currentTokens })
+
+// Initialize siteContents from Asset
+getSiteContents().then((contents) => {
+  // Merge with default contents to ensure all sections have content
+  siteContents.value = { ...siteContents.value, ...contents }
+})
+
+// Sync SiteContents back to Asset when changed (debounced)
+let siteContentsSyncTimeout: ReturnType<typeof setTimeout> | null = null
+watch(siteContents, (newContents) => {
+  if (siteContentsSyncTimeout) clearTimeout(siteContentsSyncTimeout)
+  siteContentsSyncTimeout = setTimeout(() => {
+    updateSiteContents(newContents)
+  }, 500)
+}, { deep: true })
 
 // Handle master point update from sidebar
 const handleUpdateMasterPoint = (index: number, val: number) => {

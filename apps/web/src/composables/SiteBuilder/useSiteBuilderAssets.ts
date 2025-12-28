@@ -13,10 +13,29 @@ import { $AssetTree, ROOT_NODE_ID, $AssetNode } from '../../modules/AssetManager
 import {
   getSiteBuilderRepository,
   initializeSiteBuilderUseCase,
+  // Brand Guide
   updateBrandGuideUseCase,
   getBrandGuideContentUseCase,
   observeBrandGuideUseCase,
   BRAND_GUIDE_ASSET_ID,
+  // SiteConfig
+  type SiteConfig,
+  updateSiteConfigUseCase,
+  getSiteConfigUseCase,
+  observeSiteConfigUseCase,
+  SITE_CONFIG_ASSET_ID,
+  // FilterConfig
+  type FilterConfig,
+  updateFilterConfigUseCase,
+  getFilterConfigUseCase,
+  observeFilterConfigUseCase,
+  FILTER_CONFIG_ASSET_ID,
+  // SiteContents
+  type SiteContents,
+  updateSiteContentsUseCase,
+  getSiteContentsUseCase,
+  observeSiteContentsUseCase,
+  SITE_CONTENTS_ASSET_ID,
 } from '../../modules/SiteBuilder'
 
 /** アセットツリーの状態（将来的にこれも AssetRepository で管理する可能性あり） */
@@ -54,8 +73,11 @@ export function useSiteBuilderAssets() {
   // 初期化（一度だけ実行）
   if (!initialized) {
     initializeSiteBuilderUseCase(repository)
-    // ツリーに Brand Guide を追加
+    // ツリーに全アセットを追加
     tree.value = $AssetTree.addAssetRef(tree.value, 'brand-guide.md', ROOT_NODE_ID, BRAND_GUIDE_ASSET_ID)
+    tree.value = $AssetTree.addAssetRef(tree.value, 'site-config.json', ROOT_NODE_ID, SITE_CONFIG_ASSET_ID)
+    tree.value = $AssetTree.addAssetRef(tree.value, 'filter-config.json', ROOT_NODE_ID, FILTER_CONFIG_ASSET_ID)
+    tree.value = $AssetTree.addAssetRef(tree.value, 'site-contents.json', ROOT_NODE_ID, SITE_CONTENTS_ASSET_ID)
     // assetsMap を初期化
     refreshAssetsMap(repository)
     initialized = true
@@ -224,6 +246,66 @@ export function useSiteBuilderAssets() {
     return observeBrandGuideUseCase(repository, callback)
   }
 
+  // ============================================================
+  // SiteConfig 関連
+  // ============================================================
+
+  /** SiteConfig を更新 */
+  const updateSiteConfig = (config: SiteConfig) => {
+    updateSiteConfigUseCase(repository, config)
+    refreshAssetsMap(repository)
+  }
+
+  /** SiteConfig を取得 */
+  const getSiteConfig = (): Promise<SiteConfig> => {
+    return getSiteConfigUseCase(repository)
+  }
+
+  /** SiteConfig の変更を監視 */
+  const observeSiteConfig = (callback: (config: SiteConfig) => void) => {
+    return observeSiteConfigUseCase(repository, callback)
+  }
+
+  // ============================================================
+  // FilterConfig 関連
+  // ============================================================
+
+  /** FilterConfig を更新 */
+  const updateFilterConfig = (config: FilterConfig) => {
+    updateFilterConfigUseCase(repository, config)
+    refreshAssetsMap(repository)
+  }
+
+  /** FilterConfig を取得 */
+  const getFilterConfig = (): Promise<FilterConfig> => {
+    return getFilterConfigUseCase(repository)
+  }
+
+  /** FilterConfig の変更を監視 */
+  const observeFilterConfig = (callback: (config: FilterConfig) => void) => {
+    return observeFilterConfigUseCase(repository, callback)
+  }
+
+  // ============================================================
+  // SiteContents 関連
+  // ============================================================
+
+  /** SiteContents を更新 */
+  const updateSiteContents = (contents: SiteContents) => {
+    updateSiteContentsUseCase(repository, contents)
+    refreshAssetsMap(repository)
+  }
+
+  /** SiteContents を取得 */
+  const getSiteContents = (): Promise<SiteContents> => {
+    return getSiteContentsUseCase(repository)
+  }
+
+  /** SiteContents の変更を監視 */
+  const observeSiteContents = (callback: (contents: SiteContents) => void) => {
+    return observeSiteContentsUseCase(repository, callback)
+  }
+
   return {
     // State
     tree,
@@ -256,5 +338,23 @@ export function useSiteBuilderAssets() {
     getBrandGuideContent,
     observeBrandGuide,
     BRAND_GUIDE_ASSET_ID,
+
+    // SiteConfig
+    updateSiteConfig,
+    getSiteConfig,
+    observeSiteConfig,
+    SITE_CONFIG_ASSET_ID,
+
+    // FilterConfig
+    updateFilterConfig,
+    getFilterConfig,
+    observeFilterConfig,
+    FILTER_CONFIG_ASSET_ID,
+
+    // SiteContents
+    updateSiteContents,
+    getSiteContents,
+    observeSiteContents,
+    SITE_CONTENTS_ASSET_ID,
   }
 }
