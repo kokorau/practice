@@ -163,51 +163,51 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-gray-800">
+  <div class="preview-container">
     <!-- No selection -->
-    <div v-if="!asset" class="flex-1 flex items-center justify-center text-gray-500">
-      <p class="text-sm">Select a file to preview</p>
+    <div v-if="!asset" class="preview-empty">
+      <p class="preview-empty-text">Select a file to preview</p>
     </div>
 
     <!-- Asset selected -->
     <template v-else>
       <!-- Preview area -->
-      <div class="flex-1 min-h-0 overflow-auto bg-gray-900">
+      <div class="preview-area">
         <!-- Loading -->
-        <div v-if="isLoading" class="flex items-center justify-center h-full text-gray-500">
+        <div v-if="isLoading" class="preview-loading">
           Loading...
         </div>
 
         <!-- Image preview -->
         <template v-else-if="previewType === 'image'">
-          <div class="flex items-center justify-center h-full p-4">
+          <div class="preview-image-wrapper">
             <img
               v-if="previewUrl"
               :src="previewUrl"
               :alt="asset.name"
-              class="max-w-full max-h-full object-contain"
+              class="preview-image"
             />
           </div>
         </template>
 
         <!-- Font preview -->
         <template v-else-if="previewType === 'font' && fontFamily">
-          <div class="p-6 space-y-6">
+          <div class="preview-font">
             <!-- Size samples -->
             <div
               v-for="size in fontSizes"
               :key="size"
-              class="border-b border-gray-700 pb-4"
+              class="font-sample"
             >
-              <div class="text-xs text-gray-500 mb-1">{{ size }}px</div>
+              <div class="font-sample-label">{{ size }}px</div>
               <div
-                class="text-white"
+                class="font-sample-text"
                 :style="{ fontFamily: fontFamily, fontSize: `${size}px` }"
               >
                 ABCDEFGHIJKLMNOPQRSTUVWXYZ
               </div>
               <div
-                class="text-white"
+                class="font-sample-text"
                 :style="{ fontFamily: fontFamily, fontSize: `${size}px` }"
               >
                 abcdefghijklmnopqrstuvwxyz
@@ -218,11 +218,11 @@ onUnmounted(() => {
             <div
               v-for="sample in fontSamples"
               :key="sample.label"
-              class="border-b border-gray-700 pb-4"
+              class="font-sample"
             >
-              <div class="text-xs text-gray-500 mb-1">{{ sample.label }}</div>
+              <div class="font-sample-label">{{ sample.label }}</div>
               <div
-                class="text-white text-2xl"
+                class="font-sample-text font-sample-text-lg"
                 :style="{ fontFamily: fontFamily }"
               >
                 {{ sample.text }}
@@ -234,76 +234,76 @@ onUnmounted(() => {
         <!-- Markdown preview -->
         <template v-else-if="previewType === 'markdown'">
           <div
-            class="p-6 prose prose-invert prose-sm max-w-none"
+            class="preview-markdown prose prose-sm max-w-none"
             v-html="renderedMarkdown"
           />
         </template>
 
         <!-- Code preview -->
         <template v-else-if="previewType === 'code'">
-          <pre class="p-4 text-sm overflow-auto h-full"><code v-html="highlightedCode" /></pre>
+          <pre class="preview-code"><code v-html="highlightedCode" /></pre>
         </template>
 
         <!-- Plain text preview -->
         <template v-else-if="previewType === 'text'">
-          <pre class="p-4 text-sm text-gray-300 whitespace-pre-wrap">{{ textContent }}</pre>
+          <pre class="preview-text">{{ textContent }}</pre>
         </template>
 
         <!-- Video preview -->
         <template v-else-if="previewType === 'video'">
-          <div class="flex items-center justify-center h-full text-gray-500 text-sm">
+          <div class="preview-unsupported">
             Video preview not implemented
           </div>
         </template>
 
         <!-- Audio preview -->
         <template v-else-if="previewType === 'audio'">
-          <div class="flex items-center justify-center h-full text-gray-500 text-sm">
+          <div class="preview-unsupported">
             Audio preview not implemented
           </div>
         </template>
 
         <!-- Other types -->
         <template v-else>
-          <div class="flex flex-col items-center justify-center h-full text-gray-500">
-            <div class="text-4xl mb-2">{{ asset.meta.type }}</div>
-            <div class="text-sm">No preview available</div>
+          <div class="preview-unsupported">
+            <div class="preview-unsupported-type">{{ asset.meta.type }}</div>
+            <div class="preview-unsupported-text">No preview available</div>
           </div>
         </template>
       </div>
 
       <!-- Info panel -->
-      <div class="flex-shrink-0 min-w-0 overflow-hidden border-t border-gray-700 p-4 space-y-2">
-        <h3 class="font-medium text-white truncate" :title="asset.name">{{ asset.name }}</h3>
+      <div class="info-panel">
+        <h3 class="info-filename" :title="asset.name">{{ asset.name }}</h3>
 
-        <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm w-full">
-          <span class="text-gray-500">Type</span>
-          <span class="text-gray-300 min-w-0 break-all">{{ asset.meta.mimeType }}</span>
+        <div class="info-grid">
+          <span class="info-label">Type</span>
+          <span class="info-value info-value-break">{{ asset.meta.mimeType }}</span>
 
-          <span class="text-gray-500">Size</span>
-          <span class="text-gray-300 min-w-0">{{ formatSize(asset.meta.size) }}</span>
+          <span class="info-label">Size</span>
+          <span class="info-value">{{ formatSize(asset.meta.size) }}</span>
 
-          <span class="text-gray-500">Created</span>
-          <span class="text-gray-300 min-w-0">{{ formatDate(asset.meta.createdAt) }}</span>
+          <span class="info-label">Created</span>
+          <span class="info-value">{{ formatDate(asset.meta.createdAt) }}</span>
         </div>
 
         <!-- Title & Description -->
-        <div v-if="asset.meta.title || asset.meta.description" class="pt-2 border-t border-gray-700">
-          <div v-if="asset.meta.title && asset.meta.title !== asset.name" class="text-sm">
-            <span class="text-gray-500">Title: </span>
-            <span class="text-gray-300">{{ asset.meta.title }}</span>
+        <div v-if="asset.meta.title || asset.meta.description" class="info-extra">
+          <div v-if="asset.meta.title && asset.meta.title !== asset.name" class="info-extra-row">
+            <span class="info-label">Title: </span>
+            <span class="info-value">{{ asset.meta.title }}</span>
           </div>
-          <div v-if="asset.meta.description" class="text-sm text-gray-400 mt-1">
+          <div v-if="asset.meta.description" class="info-description">
             {{ asset.meta.description }}
           </div>
         </div>
 
         <!-- Tags -->
-        <div v-if="asset.meta.tags.length > 0" class="flex flex-wrap gap-1 pt-2">
+        <div v-if="asset.meta.tags.length > 0" class="info-tags">
           <span
             v-for="tag in asset.meta.tags"
             :key="tag"
-            class="px-2 py-0.5 text-xs bg-gray-700 text-gray-300 rounded"
+            class="info-tag"
           >
             {{ tag }}
           </span>
@@ -312,6 +312,259 @@ onUnmounted(() => {
     </template>
   </div>
 </template>
+
+<style scoped>
+.preview-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-empty-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .preview-empty-text {
+  color: oklch(0.55 0.02 260);
+}
+
+.preview-area {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .preview-loading {
+  color: oklch(0.55 0.02 260);
+}
+
+.preview-image-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 1rem;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.preview-font {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.font-sample {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid oklch(0.85 0.01 260);
+}
+
+:global(.dark) .font-sample {
+  border-bottom-color: oklch(0.30 0.02 260);
+}
+
+.font-sample-label {
+  font-size: 0.75rem;
+  color: oklch(0.50 0.02 260);
+  margin-bottom: 0.25rem;
+}
+
+:global(.dark) .font-sample-label {
+  color: oklch(0.55 0.02 260);
+}
+
+.font-sample-text {
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .font-sample-text {
+  color: oklch(0.90 0.01 260);
+}
+
+.font-sample-text-lg {
+  font-size: 1.5rem;
+}
+
+.preview-markdown {
+  padding: 1.5rem;
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .preview-markdown {
+  color: oklch(0.90 0.01 260);
+}
+
+.preview-code {
+  padding: 1rem;
+  font-size: 0.875rem;
+  overflow: auto;
+  height: 100%;
+  margin: 0;
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .preview-code {
+  color: oklch(0.90 0.01 260);
+}
+
+.preview-text {
+  padding: 1rem;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+  margin: 0;
+  color: oklch(0.35 0.02 260);
+}
+
+:global(.dark) .preview-text {
+  color: oklch(0.80 0.02 260);
+}
+
+.preview-unsupported {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: oklch(0.50 0.02 260);
+  font-size: 0.875rem;
+}
+
+:global(.dark) .preview-unsupported {
+  color: oklch(0.55 0.02 260);
+}
+
+.preview-unsupported-type {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.preview-unsupported-text {
+  font-size: 0.875rem;
+}
+
+.info-panel {
+  flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-top: 1px solid oklch(0.85 0.01 260);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+:global(.dark) .info-panel {
+  border-top-color: oklch(0.30 0.02 260);
+}
+
+.info-filename {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: oklch(0.25 0.02 260);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:global(.dark) .info-filename {
+  color: oklch(0.90 0.01 260);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  font-size: 0.8rem;
+  width: 100%;
+}
+
+.info-label {
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .info-label {
+  color: oklch(0.55 0.02 260);
+}
+
+.info-value {
+  color: oklch(0.35 0.02 260);
+  min-width: 0;
+}
+
+:global(.dark) .info-value {
+  color: oklch(0.80 0.02 260);
+}
+
+.info-value-break {
+  word-break: break-all;
+}
+
+.info-extra {
+  padding-top: 0.5rem;
+  border-top: 1px solid oklch(0.85 0.01 260);
+}
+
+:global(.dark) .info-extra {
+  border-top-color: oklch(0.30 0.02 260);
+}
+
+.info-extra-row {
+  font-size: 0.8rem;
+}
+
+.info-description {
+  font-size: 0.8rem;
+  color: oklch(0.45 0.02 260);
+  margin-top: 0.25rem;
+}
+
+:global(.dark) .info-description {
+  color: oklch(0.60 0.02 260);
+}
+
+.info-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding-top: 0.5rem;
+}
+
+.info-tag {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.7rem;
+  background: oklch(0.94 0.005 260);
+  color: oklch(0.40 0.02 260);
+  border-radius: 4px;
+}
+
+:global(.dark) .info-tag {
+  background: oklch(0.22 0.02 260);
+  color: oklch(0.70 0.02 260);
+}
+</style>
 
 <style>
 /* Prism.js overrides for dark theme */

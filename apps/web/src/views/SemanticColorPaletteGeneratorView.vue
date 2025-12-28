@@ -350,9 +350,7 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
 
       <!-- Assets Tab -->
       <div v-if="activeTab === 'assets'" class="tab-content">
-        <AssetsTab
-          @load-brand-guide="brandGuideMarkdown = $event"
-        />
+        <AssetsTab />
       </div>
     </main>
   </div>
