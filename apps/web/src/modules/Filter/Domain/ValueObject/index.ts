@@ -64,3 +64,10 @@ export {
   type SaturationCorrectionResult,
   $SaturationCorrection,
 } from './SaturationCorrection'
+export {
+  type HistogramData,
+  type AutoCorrectionInput,
+  type Phase2Input,
+  type AutoCorrectionResult,
+  $AutoCorrection,
+} from './AutoCorrection'

@@ -23,6 +23,7 @@ import {
   $WhiteBalanceCorrection,
   $SaturationCorrection,
   $AutoCorrectionStats,
+  $AutoCorrection,
   type LuminanceStats,
   type SaturationStats,
   type ExposureCorrectionResult,
@@ -30,6 +31,7 @@ import {
   type WhiteBalanceCorrectionResult,
   type SaturationCorrectionResult,
   type AutoCorrectionStats,
+  type AutoCorrectionResult,
 } from '../modules/Filter/Domain'
 import HistogramCanvas from '../components/HistogramCanvas.vue'
 
@@ -295,6 +297,56 @@ const saturationResult = computed<SaturationCorrectionResult | null>(() => {
 
 // 彩度補正が有効か
 const isSaturationCorrectionEnabled = ref(true)
+
+// ========================================
+// 統合版自動補正（2フェーズ設計）
+// ========================================
+
+// 統合版が有効か
+const isIntegratedCorrectionEnabled = ref(true)
+
+// 統合版の結果（オリジナルから一発で計算）
+const integratedResult = computed<AutoCorrectionResult | null>(() => {
+  if (!originalAnalysis.value) return null
+
+  const input = {
+    histogram: {
+      luminance: originalAnalysis.value.histogram.luminance,
+      r: originalAnalysis.value.histogram.r,
+      g: originalAnalysis.value.histogram.g,
+      b: originalAnalysis.value.histogram.b,
+    },
+  }
+
+  return $AutoCorrection.compute(input)
+})
+
+// 統合版 LUT
+const integratedLut = computed(() => {
+  if (!integratedResult.value || !isIntegratedCorrectionEnabled.value) {
+    return $Lut3D.identity(17)
+  }
+  return $AutoCorrection.toLut3D(integratedResult.value, 17)
+})
+
+// 統合版 Canvas
+const { canvasRef: integratedCanvasRef } = useMediaCanvasWebGL(media, {
+  lut: integratedLut,
+})
+
+// 統合版 Analysis
+const { analysis: integratedAnalysis } = useMediaAnalysis(media, { lut: integratedLut, sampleRate: 5 })
+
+// 統合版のサマリー
+const integratedSummary = computed(() => {
+  if (!integratedResult.value) return 'No correction'
+  return $AutoCorrection.getSummary(integratedResult.value)
+})
+
+// 統合版のトグル
+const toggleIntegratedCorrection = () => {
+  isIntegratedCorrectionEnabled.value = !isIntegratedCorrectionEnabled.value
+}
 
 // Output Canvas
 const { canvasRef: outputCanvasRef } = useMediaCanvasWebGL(media, {
@@ -796,7 +848,7 @@ const toggleSaturationCorrection = () => {
 
       <!-- Stage: Output -->
       <section>
-        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Output</h2>
+        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Output (Pipeline)</h2>
         <div class="flex items-center gap-3 mb-3">
           <span class="text-[11px] text-gray-500">
             {{ pipeline.stages.filter(s => !s.id.startsWith('void_')).map(s => s.name).join(' → ') }}
@@ -815,6 +867,89 @@ const toggleSaturationCorrection = () => {
           </div>
           <div v-if="outputAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
             <HistogramCanvas :data="outputAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Integrated Auto Correction -->
+      <section class="border-t border-gray-700 pt-5">
+        <h2 class="text-[11px] text-emerald-400 uppercase tracking-wider mb-2">Integrated Auto Correction</h2>
+        <div class="flex items-center gap-3 mb-3">
+          <button
+            @click="toggleIntegratedCorrection"
+            class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs transition-colors"
+            :class="isIntegratedCorrectionEnabled
+              ? 'border-emerald-600 text-emerald-200 hover:border-emerald-500'
+              : 'border-gray-700 text-gray-500 hover:border-gray-600'"
+          >
+            Integrated
+            <span v-if="isIntegratedCorrectionEnabled" class="px-1.5 py-0.5 rounded bg-emerald-900 text-[10px] text-emerald-400">ON</span>
+          </button>
+          <span v-if="integratedResult && isIntegratedCorrectionEnabled" class="text-[11px] text-gray-400">
+            {{ integratedSummary }}
+          </span>
+          <span v-else class="text-[11px] text-gray-500">Identity LUT (no change)</span>
+        </div>
+        <div class="flex gap-4 items-start">
+          <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-1 border border-emerald-900" style="aspect-ratio: 3/2;">
+            <canvas
+              ref="integratedCanvasRef"
+              :class="{ 'opacity-0': !media }"
+              class="absolute inset-0 w-full h-full object-contain"
+            />
+            <p v-if="!media" class="absolute inset-0 flex items-center justify-center text-gray-600 text-sm">
+              -
+            </p>
+          </div>
+          <div v-if="integratedAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
+            <HistogramCanvas :data="integratedAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
+          </div>
+        </div>
+        <!-- 統合版の詳細 -->
+        <div v-if="integratedResult && isIntegratedCorrectionEnabled" class="mt-3 grid grid-cols-4 gap-4">
+          <div class="text-[11px] text-gray-500 space-y-1">
+            <div class="text-emerald-400 font-medium">Exposure</div>
+            <div class="flex justify-between">
+              <span>EV</span>
+              <span class="font-mono">{{ integratedResult.exposure.appliedEvDelta > 0 ? '+' : '' }}{{ integratedResult.exposure.appliedEvDelta.toFixed(2) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Gain</span>
+              <span class="font-mono">{{ integratedResult.exposure.gain.toFixed(3) }}</span>
+            </div>
+          </div>
+          <div class="text-[11px] text-gray-500 space-y-1">
+            <div class="text-emerald-400 font-medium">Contrast</div>
+            <div class="flex justify-between">
+              <span>Amount</span>
+              <span class="font-mono">{{ integratedResult.contrast.amount > 0 ? '+' : '' }}{{ (integratedResult.contrast.amount * 100).toFixed(1) }}%</span>
+            </div>
+            <div v-if="integratedResult.contrast.guardApplied" class="flex justify-between text-yellow-500">
+              <span>Guard</span>
+              <span class="font-mono">{{ integratedResult.contrast.guardType }}</span>
+            </div>
+          </div>
+          <div class="text-[11px] text-gray-500 space-y-1">
+            <div class="text-emerald-400 font-medium">White Balance</div>
+            <div class="flex justify-between">
+              <span>R</span>
+              <span class="font-mono">{{ integratedResult.wb.gainR.toFixed(3) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>B</span>
+              <span class="font-mono">{{ integratedResult.wb.gainB.toFixed(3) }}</span>
+            </div>
+          </div>
+          <div class="text-[11px] text-gray-500 space-y-1">
+            <div class="text-emerald-400 font-medium">Saturation</div>
+            <div class="flex justify-between">
+              <span>Compression</span>
+              <span class="font-mono">{{ (integratedResult.saturation.compressionBase * 100).toFixed(1) }}%</span>
+            </div>
+            <div v-if="integratedResult.saturation.guardApplied" class="flex justify-between text-yellow-500">
+              <span>Guard</span>
+              <span class="font-mono">{{ integratedResult.saturation.guardType }}</span>
+            </div>
           </div>
         </div>
       </section>
