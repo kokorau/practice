@@ -13,33 +13,12 @@ import {
 } from '../../modules/AssetManager'
 import {
   DEFAULT_BRAND_GUIDE_CONTENT,
-  BRAND_GUIDE_FILENAME,
   BRAND_GUIDE_ASSET_ID,
 } from '../../modules/SemanticColorPalette/Domain/constants/defaultBrandGuide'
+import { createPaletteAssetsUseCase } from '../../modules/SemanticColorPalette/Application'
 
-/** Brand Guide アセットを作成 */
-const createBrandGuideAsset = (content: string): Asset => {
-  const blob = new Blob([content], { type: 'text/markdown' })
-  return $Asset.create({
-    id: BRAND_GUIDE_ASSET_ID,
-    name: BRAND_GUIDE_FILENAME,
-    source: { type: 'blob', blob },
-    meta: {
-      mimeType: 'text/markdown',
-      size: blob.size,
-    },
-  })
-}
-
-/** 初期アセット（Brand Guide） */
-const initialBrandGuide = createBrandGuideAsset(DEFAULT_BRAND_GUIDE_CONTENT)
-const initialAssets = new Map<AssetId, Asset>([[initialBrandGuide.id, initialBrandGuide]])
-const initialTree = $AssetTree.addAssetRef(
-  $AssetTree.create(),
-  BRAND_GUIDE_FILENAME,
-  ROOT_NODE_ID,
-  BRAND_GUIDE_ASSET_ID
-)
+/** 初期アセット（UseCase から生成） */
+const { tree: initialTree, assets: initialAssets } = createPaletteAssetsUseCase()
 
 /** アセットストレージ */
 const assets = shallowRef<Map<AssetId, Asset>>(initialAssets)
