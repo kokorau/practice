@@ -41,35 +41,33 @@ const handleLoadUnsplash = async () => {
 // プリセット一覧
 const PRESETS = getPresets()
 
-// パイプライン
-const pipeline = ref<Pipeline>($Pipeline.empty())
-
-// ノーマライズStageが存在するか
-const hasNormalizeStage = computed(() =>
-  pipeline.value.stages.some(s => s.id === 'normalize')
-)
-
-// LUT Stageが存在するか
-const hasLutStage = computed(() =>
-  pipeline.value.stages.some(s => s.id === 'lut')
-)
-
-// 合成されたLUT
-const composedLut = computed(() => $Pipeline.compose(pipeline.value))
-
-// 中間LUT（各ステージ適用後）
-const normalizeLut = computed(() => {
-  if (!hasNormalizeStage.value) return $Lut1D.identity()
-  return $Pipeline.composeUpTo(pipeline.value, 'normalize')
+// パイプライン: void_input -> lut -> void_output の固定構造
+const createInitialPipeline = (): Pipeline => ({
+  stages: [
+    $Stage.create('void_input', 'Input', $Lut1D.identity()),
+    $Stage.create('lut', 'LUT', $Lut1D.identity()),
+    $Stage.create('void_output', 'Output', $Lut1D.identity()),
+  ],
 })
+
+const pipeline = ref<Pipeline>(createInitialPipeline())
+
+// 各ステージのLUT（中間結果用）
+const afterVoidInputLut = computed(() =>
+  $Pipeline.composeUpTo(pipeline.value, 'void_input')
+)
+const afterLutLut = computed(() =>
+  $Pipeline.composeUpTo(pipeline.value, 'lut')
+)
+const composedLut = computed(() => $Pipeline.compose(pipeline.value))
 
 // Canvas描画 - 各ステージ
 const { canvasRef: originalCanvasRef } = useMediaCanvasWebGL(media)
-const { canvasRef: afterNormalizeCanvasRef } = useMediaCanvasWebGL(media, {
-  lut: normalizeLut,
+const { canvasRef: afterVoidInputCanvasRef } = useMediaCanvasWebGL(media, {
+  lut: afterVoidInputLut,
 })
-const { canvasRef: afterFilterCanvasRef } = useMediaCanvasWebGL(media, {
-  lut: composedLut,
+const { canvasRef: afterLutCanvasRef } = useMediaCanvasWebGL(media, {
+  lut: afterLutLut,
 })
 const { canvasRef: outputCanvasRef } = useMediaCanvasWebGL(media, {
   lut: composedLut,
@@ -77,7 +75,8 @@ const { canvasRef: outputCanvasRef } = useMediaCanvasWebGL(media, {
 
 // Analysis - 各ステージ
 const { analysis: originalAnalysis } = useMediaAnalysis(media, { sampleRate: 5 })
-const { analysis: afterNormalizeAnalysis } = useMediaAnalysis(media, { lut: normalizeLut, sampleRate: 5 })
+const { analysis: afterVoidInputAnalysis } = useMediaAnalysis(media, { lut: afterVoidInputLut, sampleRate: 5 })
+const { analysis: afterLutAnalysis } = useMediaAnalysis(media, { lut: afterLutLut, sampleRate: 5 })
 const { analysis: outputAnalysis } = useMediaAnalysis(media, { lut: composedLut, sampleRate: 5 })
 
 // 推定された色調補正パラメータ
@@ -108,86 +107,37 @@ const handleFileChange = async (e: Event) => {
   }
 }
 
-// ノーマライズStageを作成
-const createNormalizeStage = (): Stage | null => {
-  if (!normalizationParams.value) return null
-
-  const params = normalizationParams.value
-  // AdjustmentからLUTを生成
-  const adjustment = {
-    ...$Adjustment.identity(),
-    temperature: params.temperature,
-    tint: params.tint,
-    brightness: params.brightness,
-    contrast: params.contrast,
-  }
-  const lutRGB = $Adjustment.toLutFloatRGB(adjustment)
-  const lut = $Lut1D.create(lutRGB.r, lutRGB.g, lutRGB.b)
-
-  return $Stage.create('normalize', 'Normalize', lut)
-}
-
-// LUT Stageを作成
-const createLutStage = (preset: Preset): Stage => {
-  const filter = $Preset.toFilter(preset, 7)
-  const lut = preset.lut3d ?? $Filter.toLut(filter)
-
-  const stage = $Stage.create('lut', preset.name, lut)
-  // presetIdを保持（UI用）
-  return { ...stage, presetId: preset.id } as Stage & { presetId: string }
-}
-
-// ノーマライズを適用
-const applyNormalization = () => {
-  const stage = createNormalizeStage()
-  if (!stage) return
-
-  // 既存のnormalizeステージがあれば置換、なければ先頭に追加
-  if (hasNormalizeStage.value) {
-    pipeline.value = $Pipeline.updateStage(pipeline.value, 'normalize', {
-      lut: stage.lut,
-    })
-  } else {
-    // normalizeは常に最初
-    pipeline.value = {
-      stages: [stage, ...pipeline.value.stages],
-    }
-  }
-}
-
-// ノーマライズをリセット
-const resetNormalization = () => {
-  pipeline.value = $Pipeline.removeStage(pipeline.value, 'normalize')
+// ステージのLUTを更新
+const updateStageLut = (stageId: string, lut: ReturnType<typeof $Lut1D.identity>, name?: string) => {
+  pipeline.value = $Pipeline.updateStage(pipeline.value, stageId, {
+    lut,
+    ...(name ? { name } : {}),
+  })
 }
 
 // プリセットを選択
 const selectPreset = (presetId: string | null) => {
   if (!presetId) {
-    // LUTステージを削除
-    pipeline.value = $Pipeline.removeStage(pipeline.value, 'lut')
+    updateStageLut('lut', $Lut1D.identity(), 'LUT')
     return
   }
 
   const preset = PRESETS.find(p => p.id === presetId)
   if (!preset) return
 
-  const stage = createLutStage(preset)
+  const filter = $Preset.toFilter(preset, 7)
+  const lut = preset.lut3d ?? $Filter.toLut(filter)
 
-  // 既存のlutステージがあれば置換、なければ末尾に追加
-  if (hasLutStage.value) {
-    pipeline.value = $Pipeline.updateStage(pipeline.value, 'lut', {
-      name: stage.name,
-      lut: stage.lut,
-      presetId: preset.id,
-    } as Partial<Stage & { presetId: string }>)
-  } else {
-    pipeline.value = $Pipeline.addStage(pipeline.value, stage)
-  }
+  pipeline.value = $Pipeline.updateStage(pipeline.value, 'lut', {
+    name: preset.name,
+    lut,
+    presetId: preset.id,
+  } as Partial<Stage & { presetId: string }>)
 }
 
 // 全てリセット
 const resetAll = () => {
-  pipeline.value = $Pipeline.empty()
+  pipeline.value = createInitialPipeline()
 }
 
 // 画像が変わったらリセット
@@ -207,12 +157,6 @@ onMounted(() => {
   }
 })
 
-// Normalizeをデフォルトでオンにする
-watch(normalizationParams, (params) => {
-  if (params && !hasNormalizeStage.value) {
-    applyNormalization()
-  }
-}, { immediate: true })
 </script>
 
 <template>
@@ -290,55 +234,36 @@ watch(normalizationParams, (params) => {
         </div>
       </section>
 
-      <!-- Stage: Normalize -->
+      <!-- Stage: Void Input -->
       <section>
-        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Normalize</h2>
+        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Void Input</h2>
         <div class="flex items-center gap-3 mb-3">
-          <button
-            @click="hasNormalizeStage ? resetNormalization() : applyNormalization()"
-            :disabled="!normalizationParams && !hasNormalizeStage"
-            class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs transition-colors disabled:opacity-30"
-            :class="hasNormalizeStage
-              ? 'border-gray-600 text-gray-200 hover:border-gray-500'
-              : 'border-gray-700 text-gray-500 hover:border-gray-600'"
-          >
-            Normalize
-            <span v-if="hasNormalizeStage" class="px-1.5 py-0.5 rounded bg-gray-700 text-[10px] text-gray-400">ON</span>
-          </button>
-          <span v-if="normalizationParams && hasNormalizeStage" class="text-[11px] text-gray-500">
-            temp {{ normalizationParams.temperature > 0 ? '+' : '' }}{{ (normalizationParams.temperature * 100).toFixed(0) }}
-            / bright {{ normalizationParams.brightness > 0 ? '+' : '' }}{{ (normalizationParams.brightness * 100).toFixed(0) }}
-          </span>
+          <span class="text-[11px] text-gray-500">Identity LUT (no change)</span>
         </div>
-        <div v-if="hasNormalizeStage" class="flex gap-4 items-start">
+        <div class="flex gap-4 items-start">
           <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-1 border border-gray-800" style="aspect-ratio: 3/2;">
             <canvas
-              ref="afterNormalizeCanvasRef"
+              ref="afterVoidInputCanvasRef"
               :class="{ 'opacity-0': !media }"
               class="absolute inset-0 w-full h-full object-contain"
             />
           </div>
-          <div v-if="afterNormalizeAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
-            <HistogramCanvas :data="afterNormalizeAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
+          <div v-if="afterVoidInputAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
+            <HistogramCanvas :data="afterVoidInputAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
           </div>
         </div>
       </section>
 
-      <!-- Stage: Filter -->
+      <!-- Stage: LUT -->
       <section>
-        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Filter</h2>
+        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">LUT</h2>
         <div class="flex items-center gap-3 mb-3">
-          <div
-            class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs transition-colors"
-            :class="hasLutStage
-              ? 'border-gray-600 text-gray-200'
-              : 'border-gray-700 text-gray-500'"
-          >
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs transition-colors border-gray-700 text-gray-500">
             <select
               :value="selectedPresetId ?? ''"
               @change="selectPreset(($event.target as HTMLSelectElement).value || null)"
               class="bg-transparent border-none focus:outline-none cursor-pointer text-xs"
-              :class="hasLutStage ? 'text-gray-200' : 'text-gray-500'"
+              :class="selectedPresetId ? 'text-gray-200' : 'text-gray-500'"
             >
               <option value="" class="bg-gray-900 text-gray-400">None</option>
               <optgroup label="Film" class="bg-gray-900">
@@ -359,26 +284,26 @@ watch(normalizationParams, (params) => {
             </select>
           </div>
         </div>
-        <div v-if="hasLutStage" class="flex gap-4 items-start">
+        <div class="flex gap-4 items-start">
           <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-1 border border-gray-800" style="aspect-ratio: 3/2;">
             <canvas
-              ref="afterFilterCanvasRef"
+              ref="afterLutCanvasRef"
               :class="{ 'opacity-0': !media }"
               class="absolute inset-0 w-full h-full object-contain"
             />
           </div>
-          <div v-if="outputAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
-            <HistogramCanvas :data="outputAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
+          <div v-if="afterLutAnalysis" class="flex-1 bg-gray-900 rounded-lg p-4 h-[200px]">
+            <HistogramCanvas :data="afterLutAnalysis.histogram" :width="320" :height="160" class="w-full h-full" />
           </div>
         </div>
       </section>
 
-      <!-- Output (always shown) -->
+      <!-- Stage: Void Output -->
       <section>
-        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Output</h2>
+        <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Void Output</h2>
         <div class="flex items-center gap-3 mb-3">
           <span class="text-[11px] text-gray-500">
-            {{ pipeline.stages.length === 0 ? 'No processing' : pipeline.stages.map(s => s.name).join(' → ') }}
+            {{ pipeline.stages.map(s => s.name).join(' → ') }}
           </span>
         </div>
         <div class="flex gap-4 items-start">
