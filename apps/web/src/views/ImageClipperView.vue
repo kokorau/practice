@@ -18,30 +18,41 @@ type PipelineStage = {
   enabled: boolean
 }
 
+// パイプライン適用順に定義
 type PipelineParams = {
-  erode: { radius: number }
-  decontaminate: {
+  erode: { radius: number }           // 1. マスク収縮
+  feather: { radius: number }         // 2. エッジぼかし
+  decontaminate: {                    // 3. 色汚染除去
     edgeLow: number
     edgeHigh: number
     searchRadius: number
   }
+  hairRefine: { opacity: number }     // 4. 髪透明度調整
+  applyAlpha: Record<string, never>   // 5. アルファ適用
 }
 
 // ============================================
 // Pipeline State
 // ============================================
+// パイプライン適用順
 const stages = reactive<PipelineStage[]>([
-  { id: 'erode', name: 'Erode', enabled: true },
-  { id: 'decontaminate', name: 'Decontaminate', enabled: true },
+  { id: 'erode', name: '1. Erode', enabled: true },
+  { id: 'feather', name: '2. Feather', enabled: false },
+  { id: 'decontaminate', name: '3. Decontaminate', enabled: true },
+  { id: 'hairRefine', name: '4. Hair Refine', enabled: false },
+  { id: 'applyAlpha', name: '5. Apply Alpha', enabled: true },
 ])
 
 const params = reactive<PipelineParams>({
   erode: { radius: 1 },
+  feather: { radius: 2 },
   decontaminate: {
     edgeLow: 0.2,
     edgeHigh: 0.8,
     searchRadius: 3,
   },
+  hairRefine: { opacity: 0.8 },
+  applyAlpha: {},
 })
 
 const toggleStage = (id: string) => {
@@ -95,9 +106,10 @@ const { canvasRef: originalCanvasRef } = useMediaCanvasWebGL(media)
 const resultCanvasRef = ref<HTMLCanvasElement | null>(null)
 
 // ============================================
-// ImageSegmenter
+// ImageSegmenter (2モデル: Selfie + Multiclass)
 // ============================================
-let imageSegmenter: ImageSegmenter | null = null
+let selfieSegmenter: ImageSegmenter | null = null
+let multiclassSegmenter: ImageSegmenter | null = null
 const isSegmenterReady = ref(false)
 const isSegmenting = ref(false)
 const segmentError = ref<string | null>(null)
@@ -107,15 +119,31 @@ const initSegmenter = async () => {
     const vision = await FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
     )
-    imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath:
-          'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
-      },
-      outputCategoryMask: false,
-      outputConfidenceMasks: true,
-      runningMode: 'IMAGE',
-    })
+
+    // 並列で両モデルを初期化
+    const [selfie, multiclass] = await Promise.all([
+      ImageSegmenter.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
+        },
+        outputCategoryMask: false,
+        outputConfidenceMasks: true,
+        runningMode: 'IMAGE',
+      }),
+      ImageSegmenter.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite',
+        },
+        outputCategoryMask: true,
+        outputConfidenceMasks: false,
+        runningMode: 'IMAGE',
+      }),
+    ])
+
+    selfieSegmenter = selfie
+    multiclassSegmenter = multiclass
     isSegmenterReady.value = true
   } catch (e) {
     segmentError.value = e instanceof Error ? e.message : 'Failed to init segmenter'
@@ -126,7 +154,7 @@ const initSegmenter = async () => {
 // Main Pipeline Execution
 // ============================================
 const runPipeline = async () => {
-  if (!imageSegmenter || !media.value || !resultCanvasRef.value || !worker) return
+  if (!selfieSegmenter || !multiclassSegmenter || !media.value || !resultCanvasRef.value || !worker) return
 
   const photo = $Media.getPhoto(media.value)
   if (!photo) return
@@ -143,22 +171,54 @@ const runPipeline = async () => {
     // ImageBitmap作成
     const imageBitmap = await createImageBitmap(imageData)
 
-    // セグメンテーション実行
+    // セグメンテーション実行（両モデル）
     const segStartTime = performance.now()
-    const offscreen = new OffscreenCanvas(width, height)
-    const offCtx = offscreen.getContext('2d')!
-    offCtx.drawImage(imageBitmap, 0, 0)
 
-    const result = imageSegmenter.segment(offscreen as unknown as HTMLCanvasElement)
-    const confidenceMasks = result.confidenceMasks
+    // Selfie用キャンバス
+    const selfieCanvas = new OffscreenCanvas(width, height)
+    const selfieCtx = selfieCanvas.getContext('2d')!
+    selfieCtx.drawImage(imageBitmap, 0, 0)
+
+    // Multiclass用キャンバス（256x256にリサイズ）
+    const multiclassCanvas = new OffscreenCanvas(256, 256)
+    const multiclassCtx = multiclassCanvas.getContext('2d')!
+    multiclassCtx.drawImage(imageBitmap, 0, 0, 256, 256)
+
+    // 両モデルを実行
+    const selfieResult = selfieSegmenter.segment(selfieCanvas as unknown as HTMLCanvasElement)
+    const multiclassResult = multiclassSegmenter.segment(multiclassCanvas as unknown as HTMLCanvasElement)
+
+    // Selfie: confidence mask
+    const confidenceMasks = selfieResult.confidenceMasks
     if (!confidenceMasks || confidenceMasks.length === 0) {
       segmentError.value = 'No confidence mask returned'
       return
     }
+
+    // Multiclass: category mask (髪 = 1)
+    const categoryMask = multiclassResult.categoryMask
+    if (!categoryMask) {
+      segmentError.value = 'No category mask returned'
+      return
+    }
+
     segmentationTime.value = performance.now() - segStartTime
 
-    // マスクとピクセルデータを取得
-    const mask = confidenceMasks[0]!.getAsFloat32Array()
+    // マスクを取得
+    const personMask = confidenceMasks[0]!.getAsFloat32Array()
+    const categoryData = categoryMask.getAsUint8Array()
+
+    // 髪マスクを元画像サイズにスケールアップ
+    const hairMask = new Float32Array(width * height)
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const srcX = Math.floor((x / width) * 256)
+        const srcY = Math.floor((y / height) * 256)
+        const srcIdx = srcY * 256 + srcX
+        // カテゴリ1 = 髪
+        hairMask[y * width + x] = categoryData[srcIdx] === 1 ? 1.0 : 0.0
+      }
+    }
 
     // キャンバス準備
     const canvas = resultCanvasRef.value
@@ -171,24 +231,35 @@ const runPipeline = async () => {
     const pixels = new Uint8ClampedArray(outputData.data)
 
     // Worker にパイプライン処理を依頼
-    const erodeStage = stages.find(s => s.id === 'erode')
-    const decontaminateStage = stages.find(s => s.id === 'decontaminate')
+    const getStageEnabled = (id: string) => stages.find(s => s.id === id)?.enabled ?? false
 
     const input: PipelineInput = {
-      mask,
+      mask: personMask,
+      hairMask,
       pixels,
       width,
       height,
       params: {
         erode: {
           radius: params.erode.radius,
-          enabled: erodeStage?.enabled ?? false,
+          enabled: getStageEnabled('erode'),
+        },
+        feather: {
+          radius: params.feather.radius,
+          enabled: getStageEnabled('feather'),
         },
         decontaminate: {
           edgeLow: params.decontaminate.edgeLow,
           edgeHigh: params.decontaminate.edgeHigh,
           searchRadius: params.decontaminate.searchRadius,
-          enabled: decontaminateStage?.enabled ?? false,
+          enabled: getStageEnabled('decontaminate'),
+        },
+        hairRefine: {
+          opacity: params.hairRefine.opacity,
+          enabled: getStageEnabled('hairRefine'),
+        },
+        applyAlpha: {
+          enabled: getStageEnabled('applyAlpha'),
         },
       },
     }
@@ -198,7 +269,7 @@ const runPipeline = async () => {
       worker!.onmessage = (e: MessageEvent<PipelineOutput>) => {
         resolve(e.data)
       }
-      worker!.postMessage(input, [mask.buffer, pixels.buffer])
+      worker!.postMessage(input, [personMask.buffer, hairMask.buffer, pixels.buffer])
     })
 
     processingTime.value = workerResult.duration
@@ -209,6 +280,7 @@ const runPipeline = async () => {
 
     // リソース解放
     confidenceMasks.forEach(m => m.close())
+    categoryMask.close()
     imageBitmap.close()
   } catch (e) {
     segmentError.value = e instanceof Error ? e.message : 'Segmentation failed'
@@ -232,6 +304,16 @@ watch(media, () => {
     runPipeline()
   }
 })
+
+// パラメータやステージが変わったら自動実行
+watch(
+  [() => JSON.stringify(stages), () => JSON.stringify(params)],
+  () => {
+    if (media.value && isSegmenterReady.value && !isSegmenting.value) {
+      runPipeline()
+    }
+  }
+)
 
 // 初期化
 onMounted(async () => {
@@ -277,36 +359,30 @@ onMounted(async () => {
             </div>
           </section>
 
-          <!-- Pipeline -->
+          <!-- Status -->
           <section>
-            <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Pipeline</h2>
-            <div class="space-y-3">
-              <button
-                @click="runPipeline"
-                :disabled="!isSegmenterReady || isSegmenting || !media"
-                class="w-full py-1.5 px-3 rounded text-xs bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-              >
-                <svg v-if="isSegmenting" class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Status</h2>
+            <div class="text-[11px] text-gray-500 space-y-1">
+              <div v-if="!isSegmenterReady" class="text-yellow-500">Loading model...</div>
+              <div v-else-if="isSegmenting" class="text-blue-400 flex items-center gap-2">
+                <svg class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {{ isSegmenting ? 'Processing...' : 'Run Pipeline' }}
-              </button>
-              <div class="text-[11px] text-gray-500 space-y-1">
-                <div v-if="!isSegmenterReady" class="text-yellow-500">Loading model...</div>
-                <div v-else class="text-green-500">Model ready</div>
-                <div v-if="segmentationTime !== null" class="flex justify-between">
-                  <span>Segmentation</span>
-                  <span class="font-mono">{{ segmentationTime.toFixed(0) }}ms</span>
-                </div>
-                <div v-if="processingTime !== null" class="flex justify-between">
-                  <span>Post-process</span>
-                  <span class="font-mono">{{ processingTime.toFixed(0) }}ms</span>
-                </div>
-                <div v-if="segmentationTime !== null && processingTime !== null" class="flex justify-between font-medium text-gray-400">
-                  <span>Total</span>
-                  <span class="font-mono">{{ (segmentationTime + processingTime).toFixed(0) }}ms</span>
-                </div>
+                Processing...
+              </div>
+              <div v-else class="text-green-500">Ready</div>
+              <div v-if="segmentationTime !== null" class="flex justify-between">
+                <span>Segmentation</span>
+                <span class="font-mono">{{ segmentationTime.toFixed(0) }}ms</span>
+              </div>
+              <div v-if="processingTime !== null" class="flex justify-between">
+                <span>Post-process</span>
+                <span class="font-mono">{{ processingTime.toFixed(0) }}ms</span>
+              </div>
+              <div v-if="segmentationTime !== null && processingTime !== null" class="flex justify-between font-medium text-gray-400">
+                <span>Total</span>
+                <span class="font-mono">{{ (segmentationTime + processingTime).toFixed(0) }}ms</span>
               </div>
             </div>
           </section>
@@ -315,42 +391,40 @@ onMounted(async () => {
           <section>
             <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Stages</h2>
             <div class="space-y-3">
-              <!-- Erode -->
-              <div class="space-y-1">
+              <!-- Stage items dynamically rendered -->
+              <div v-for="stage in stages" :key="stage.id" class="space-y-1">
                 <button
-                  @click="toggleStage('erode')"
+                  @click="toggleStage(stage.id)"
                   class="flex items-center gap-2 text-xs"
-                  :class="stages.find(s => s.id === 'erode')?.enabled ? 'text-gray-200' : 'text-gray-500'"
+                  :class="stage.enabled ? 'text-gray-200' : 'text-gray-500'"
                 >
                   <span class="w-3 h-3 rounded border flex items-center justify-center"
-                    :class="stages.find(s => s.id === 'erode')?.enabled ? 'border-blue-500 bg-blue-500' : 'border-gray-600'">
-                    <span v-if="stages.find(s => s.id === 'erode')?.enabled" class="text-[8px]">✓</span>
+                    :class="stage.enabled ? 'border-blue-500 bg-blue-500' : 'border-gray-600'">
+                    <span v-if="stage.enabled" class="text-[8px]">✓</span>
                   </span>
-                  Erode
+                  {{ stage.name }}
                 </button>
-                <div v-if="stages.find(s => s.id === 'erode')?.enabled" class="pl-5 space-y-1">
+
+                <!-- Erode params -->
+                <div v-if="stage.id === 'erode' && stage.enabled" class="pl-5 space-y-1">
                   <label class="flex items-center justify-between text-[11px] text-gray-500">
                     <span>Radius</span>
                     <input type="number" v-model.number="params.erode.radius" min="0" max="10" step="1"
                       class="w-16 px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-300 text-right" />
                   </label>
                 </div>
-              </div>
 
-              <!-- Decontaminate -->
-              <div class="space-y-1">
-                <button
-                  @click="toggleStage('decontaminate')"
-                  class="flex items-center gap-2 text-xs"
-                  :class="stages.find(s => s.id === 'decontaminate')?.enabled ? 'text-gray-200' : 'text-gray-500'"
-                >
-                  <span class="w-3 h-3 rounded border flex items-center justify-center"
-                    :class="stages.find(s => s.id === 'decontaminate')?.enabled ? 'border-blue-500 bg-blue-500' : 'border-gray-600'">
-                    <span v-if="stages.find(s => s.id === 'decontaminate')?.enabled" class="text-[8px]">✓</span>
-                  </span>
-                  Decontaminate
-                </button>
-                <div v-if="stages.find(s => s.id === 'decontaminate')?.enabled" class="pl-5 space-y-1">
+                <!-- Feather params -->
+                <div v-if="stage.id === 'feather' && stage.enabled" class="pl-5 space-y-1">
+                  <label class="flex items-center justify-between text-[11px] text-gray-500">
+                    <span>Radius</span>
+                    <input type="number" v-model.number="params.feather.radius" min="1" max="10" step="1"
+                      class="w-16 px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-300 text-right" />
+                  </label>
+                </div>
+
+                <!-- Decontaminate params -->
+                <div v-if="stage.id === 'decontaminate' && stage.enabled" class="pl-5 space-y-1">
                   <label class="flex items-center justify-between text-[11px] text-gray-500">
                     <span>Edge Low</span>
                     <input type="number" v-model.number="params.decontaminate.edgeLow" min="0" max="1" step="0.05"
@@ -364,6 +438,15 @@ onMounted(async () => {
                   <label class="flex items-center justify-between text-[11px] text-gray-500">
                     <span>Search Radius</span>
                     <input type="number" v-model.number="params.decontaminate.searchRadius" min="1" max="20" step="1"
+                      class="w-16 px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-300 text-right" />
+                  </label>
+                </div>
+
+                <!-- Hair Refine params -->
+                <div v-if="stage.id === 'hairRefine' && stage.enabled" class="pl-5 space-y-1">
+                  <label class="flex items-center justify-between text-[11px] text-gray-500">
+                    <span>Opacity</span>
+                    <input type="number" v-model.number="params.hairRefine.opacity" min="0" max="1" step="0.1"
                       class="w-16 px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-300 text-right" />
                   </label>
                 </div>

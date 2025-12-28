@@ -5,16 +5,20 @@
 
 export type PipelineParams = {
   erode: { radius: number; enabled: boolean }
+  feather: { radius: number; enabled: boolean }
   decontaminate: {
     edgeLow: number
     edgeHigh: number
     searchRadius: number
     enabled: boolean
   }
+  hairRefine: { opacity: number; enabled: boolean }
+  applyAlpha: { enabled: boolean }
 }
 
 export type PipelineInput = {
   mask: Float32Array
+  hairMask?: Float32Array  // 髪マスク（オプション）
   pixels: Uint8ClampedArray
   width: number
   height: number
@@ -57,6 +61,57 @@ const applyErode = (
   return result
 }
 
+/** マスクエッジのぼかし（Feather） */
+const applyFeather = (
+  mask: Float32Array,
+  width: number,
+  height: number,
+  radius: number
+): Float32Array => {
+  const result = new Float32Array(mask.length)
+
+  // ガウシアンカーネル生成
+  const kernelSize = radius * 2 + 1
+  const kernel: number[] = []
+  let sum = 0
+  for (let i = 0; i < kernelSize; i++) {
+    const x = i - radius
+    const val = Math.exp(-(x * x) / (2 * radius * radius))
+    kernel.push(val)
+    sum += val
+  }
+  for (let i = 0; i < kernelSize; i++) {
+    kernel[i] /= sum
+  }
+
+  // 水平方向のぼかし
+  const temp = new Float32Array(mask.length)
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let val = 0
+      for (let k = -radius; k <= radius; k++) {
+        const nx = Math.min(Math.max(x + k, 0), width - 1)
+        val += mask[y * width + nx] * kernel[k + radius]
+      }
+      temp[y * width + x] = val
+    }
+  }
+
+  // 垂直方向のぼかし
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let val = 0
+      for (let k = -radius; k <= radius; k++) {
+        const ny = Math.min(Math.max(y + k, 0), height - 1)
+        val += temp[ny * width + x] * kernel[k + radius]
+      }
+      result[y * width + x] = val
+    }
+  }
+
+  return result
+}
+
 /** カラーデコンタミネーション */
 const applyDecontaminate = (
   pixels: Uint8ClampedArray,
@@ -65,18 +120,25 @@ const applyDecontaminate = (
   height: number,
   edgeLow: number,
   edgeHigh: number,
-  searchRadius: number
+  searchRadius: number,
+  hairMask?: Float32Array
 ): void => {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = y * width + x
       const confidence = mask[i]
 
-      if (confidence > edgeLow && confidence < edgeHigh) {
+      // 髪部分は広めのエッジ範囲と探索半径を使用
+      const isHair = hairMask && hairMask[i] > 0.5
+      const effectiveEdgeLow = isHair ? Math.max(0.05, edgeLow - 0.1) : edgeLow
+      const effectiveEdgeHigh = isHair ? Math.min(0.95, edgeHigh + 0.05) : edgeHigh
+      const effectiveRadius = isHair ? searchRadius + 2 : searchRadius
+
+      if (confidence > effectiveEdgeLow && confidence < effectiveEdgeHigh) {
         let sumR = 0, sumG = 0, sumB = 0, count = 0
 
-        for (let dy = -searchRadius; dy <= searchRadius; dy++) {
-          for (let dx = -searchRadius; dx <= searchRadius; dx++) {
+        for (let dy = -effectiveRadius; dy <= effectiveRadius; dy++) {
+          for (let dx = -effectiveRadius; dx <= effectiveRadius; dx++) {
             const nx = x + dx
             const ny = y + dy
             if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue
@@ -84,7 +146,7 @@ const applyDecontaminate = (
             const ni = ny * width + nx
             const nConf = mask[ni]
 
-            if (nConf >= edgeHigh) {
+            if (nConf >= effectiveEdgeHigh) {
               const pi = ni * 4
               sumR += pixels[pi]
               sumG += pixels[pi + 1]
@@ -105,6 +167,27 @@ const applyDecontaminate = (
   }
 }
 
+/** 髪マスクのリファイン（透明度調整） */
+const applyHairRefine = (
+  mask: Float32Array,
+  hairMask: Float32Array,
+  opacity: number
+): Float32Array => {
+  const result = new Float32Array(mask.length)
+
+  for (let i = 0; i < mask.length; i++) {
+    const isHair = hairMask[i] > 0.5
+    if (isHair) {
+      // 髪部分は透明度を調整（エッジをよりソフトに）
+      result[i] = mask[i] * opacity
+    } else {
+      result[i] = mask[i]
+    }
+  }
+
+  return result
+}
+
 /** マスクをアルファに適用 */
 const applyMaskToAlpha = (
   pixels: Uint8ClampedArray,
@@ -119,7 +202,7 @@ const applyMaskToAlpha = (
 const runPipeline = (input: PipelineInput): PipelineOutput => {
   const startTime = performance.now()
 
-  const { mask, pixels, width, height, params } = input
+  const { mask, hairMask, pixels, width, height, params } = input
   let currentMask = mask
 
   // Stage 1: Erode
@@ -127,7 +210,12 @@ const runPipeline = (input: PipelineInput): PipelineOutput => {
     currentMask = applyErode(currentMask, width, height, params.erode.radius)
   }
 
-  // Stage 2: Decontaminate
+  // Stage 2: Feather
+  if (params.feather.enabled && params.feather.radius > 0) {
+    currentMask = applyFeather(currentMask, width, height, params.feather.radius)
+  }
+
+  // Stage 3: Decontaminate（髪マスクを渡す）
   if (params.decontaminate.enabled) {
     applyDecontaminate(
       pixels,
@@ -136,12 +224,20 @@ const runPipeline = (input: PipelineInput): PipelineOutput => {
       height,
       params.decontaminate.edgeLow,
       params.decontaminate.edgeHigh,
-      params.decontaminate.searchRadius
+      params.decontaminate.searchRadius,
+      hairMask
     )
   }
 
-  // Apply mask to alpha
-  applyMaskToAlpha(pixels, currentMask)
+  // Stage 4: Hair Refine
+  if (params.hairRefine.enabled && hairMask) {
+    currentMask = applyHairRefine(currentMask, hairMask, params.hairRefine.opacity)
+  }
+
+  // Stage 5: Apply Alpha
+  if (params.applyAlpha.enabled) {
+    applyMaskToAlpha(pixels, currentMask)
+  }
 
   const duration = performance.now() - startTime
 
