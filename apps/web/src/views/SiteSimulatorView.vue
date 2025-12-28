@@ -50,7 +50,7 @@ const paletteGroups = computed(() => [
   },
   {
     name: 'Text',
-    tokens: ['text.primary', 'text.secondary', 'text.muted', 'text.onBrandPrimary', 'text.onAccent'] as SemanticColorToken[],
+    tokens: ['text.primary', 'text.secondary', 'text.muted', 'text.onBrandPrimary', 'text.onAccent', 'text.onOverlay', 'text.onOverlayMuted'] as SemanticColorToken[],
   },
   {
     name: 'Brand',

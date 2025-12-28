@@ -24,6 +24,10 @@ export type SemanticPalette = {
     readonly onBrandPrimary: Oklch
     /** Text color on accent background */
     readonly onAccent: Oklch
+    /** Text color on image/overlay backgrounds (hero sections) */
+    readonly onOverlay: Oklch
+    /** Muted text color on image/overlay backgrounds */
+    readonly onOverlayMuted: Oklch
   }
   readonly brand: {
     /** Primary brand UI elements (buttons, etc.) */
@@ -187,6 +191,10 @@ export const $SemanticPalette = {
     const textOnBrand = chooseTextColor(brand.primary)
     // On accent: choose based on accent lightness
     const textOnAccent = chooseTextColor(brand.accent)
+    // On overlay: white for dark image backgrounds (hero sections)
+    const textOnOverlay = $Oklch.create(0.99, 0, 0)
+    // On overlay muted: slightly transparent white
+    const textOnOverlayMuted = $Oklch.create(0.92, 0, 0)
 
     // === Brand colors ===
     const brandHover = $Oklch.create(
@@ -220,6 +228,8 @@ export const $SemanticPalette = {
         muted: textMuted,
         onBrandPrimary: textOnBrand,
         onAccent: textOnAccent,
+        onOverlay: textOnOverlay,
+        onOverlayMuted: textOnOverlayMuted,
       },
       brand: {
         primary: brand.primary,
