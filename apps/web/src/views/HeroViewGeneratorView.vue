@@ -166,6 +166,22 @@ const selectedBackgroundIndex = ref(4) // Grid
 const selectedMaskIndex = ref<number | null>(1) // Circle Large
 const activeSection = ref<'background' | 'midground' | 'foreground' | null>(null)
 
+// レイアウトパターン定義 (3x3 grid)
+const layoutPatterns = [
+  { id: 'top-left', label: '左上', icon: '◰' },
+  { id: 'top-center', label: '上中央', icon: '◱' },
+  { id: 'top-right', label: '右上', icon: '◳' },
+  { id: 'center-left', label: '左中央', icon: '◧' },
+  { id: 'center', label: '中央', icon: '◉' },
+  { id: 'center-right', label: '右中央', icon: '◨' },
+  { id: 'bottom-left', label: '左下', icon: '◲' },
+  { id: 'bottom-center', label: '下中央', icon: '◱' },
+  { id: 'bottom-right', label: '右下', icon: '◳' },
+] as const
+
+type LayoutId = typeof layoutPatterns[number]['id']
+const selectedLayout = ref<LayoutId>('center')
+
 // プレビュー用
 const previewCanvasRef = ref<HTMLCanvasElement | null>(null)
 let previewRenderer: TextureRenderer | null = null
@@ -387,7 +403,7 @@ const toggleColorPopup = (popup: ColorPopup) => {
             @click="openSection('foreground')"
           >
             <span class="layer-name">前景 (Foreground)</span>
-            <span class="layer-value">未設定</span>
+            <span class="layer-value">{{ layoutPatterns.find(l => l.id === selectedLayout)?.label }}</span>
           </button>
         </div>
       </template>
@@ -488,10 +504,19 @@ const toggleColorPopup = (popup: ColorPopup) => {
           </div>
         </template>
 
-        <!-- 前景 -->
+        <!-- 前景: レイアウト選択 -->
         <template v-else-if="activeSection === 'foreground'">
-          <div class="empty-state">
-            <p>前景は未実装です</p>
+          <div class="layout-grid">
+            <button
+              v-for="layout in layoutPatterns"
+              :key="layout.id"
+              class="layout-button"
+              :class="{ active: selectedLayout === layout.id }"
+              @click="selectedLayout = layout.id"
+            >
+              <span class="layout-icon">{{ layout.icon }}</span>
+              <span class="layout-label">{{ layout.label }}</span>
+            </button>
           </div>
         </template>
       </div>
@@ -520,8 +545,23 @@ const toggleColorPopup = (popup: ColorPopup) => {
       <!-- Generator タブ: プレビュー -->
       <div v-if="activeTab === 'generator'" class="hero-tab-content hero-preview-container">
         <div class="hero-preview-wrapper">
-          <div class="hero-preview-frame">
-            <canvas ref="previewCanvasRef" />
+          <div class="hero-preview-frame hero-palette-preview context-canvas">
+            <!-- 後景: テクスチャ -->
+            <canvas ref="previewCanvasRef" class="layer-background" />
+
+            <!-- 中景: グラフィック（後で実装） -->
+            <div class="layer-midground">
+              <!-- 画像やグラフィックテキスト -->
+            </div>
+
+            <!-- 前景: CTA + テキスト -->
+            <div class="layer-foreground">
+              <div class="hero-content" :class="`layout-${selectedLayout}`">
+                <h1 class="hero-title scp-title">Build Something Amazing</h1>
+                <p class="hero-subtitle scp-body">Create beautiful, responsive websites with our intuitive design system.</p>
+                <button class="hero-cta component-action">Get Started</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -767,5 +807,46 @@ const toggleColorPopup = (popup: ColorPopup) => {
   justify-content: center;
   padding: 2rem;
   color: oklch(0.50 0.02 260);
+}
+
+/* Layout Grid */
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.375rem;
+}
+
+.layout-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.625rem 0.5rem;
+  border: 2px solid oklch(0.30 0.02 260);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: oklch(0.70 0.02 260);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.layout-button:hover {
+  border-color: oklch(0.40 0.02 260);
+  background: oklch(0.20 0.02 260);
+}
+
+.layout-button.active {
+  border-color: oklch(0.55 0.20 250);
+  background: oklch(0.55 0.20 250 / 0.15);
+  color: oklch(0.90 0.02 260);
+}
+
+.layout-icon {
+  font-size: 1.25rem;
+}
+
+.layout-label {
+  font-size: 0.625rem;
+  font-weight: 500;
 }
 </style>
