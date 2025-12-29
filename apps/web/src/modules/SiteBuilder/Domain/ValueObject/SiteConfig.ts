@@ -29,31 +29,20 @@ export const SITE_CONFIG_ASSET_ID = 'site-config' as AssetId
 /** SiteConfig のファイル名 */
 export const SITE_CONFIG_FILENAME = 'site-config.json'
 
-/** デフォルトの SiteConfig */
-export const DEFAULT_SITE_CONFIG: SiteConfig = {
-  brandHSV: {
-    hue: 210,
-    saturation: 80,
-    value: 70,
-  },
-  foundationId: 'white',
-  tokensId: 'default',
-}
-
 export const $SiteConfig = {
-  /** SiteConfig を作成 */
-  create: (partial?: Partial<SiteConfig>): SiteConfig => ({
-    ...DEFAULT_SITE_CONFIG,
+  /** SiteConfig を作成（デフォルト値とマージ） */
+  create: (defaults: SiteConfig, partial?: Partial<SiteConfig>): SiteConfig => ({
+    ...defaults,
     ...partial,
   }),
 
-  /** JSON 文字列からパース */
-  fromJSON: (json: string): SiteConfig => {
+  /** JSON 文字列からパース（失敗時はデフォルト値を返す） */
+  fromJSON: (json: string, defaults: SiteConfig): SiteConfig => {
     try {
       const parsed = JSON.parse(json)
-      return $SiteConfig.create(parsed)
+      return $SiteConfig.create(defaults, parsed)
     } catch {
-      return DEFAULT_SITE_CONFIG
+      return defaults
     }
   },
 

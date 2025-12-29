@@ -7,11 +7,7 @@
 import type { AssetRepository } from '../../../AssetRepository/Infra/AssetRepository'
 import type { Asset } from '../../../Asset'
 import { $Asset, $AssetSource } from '../../../Asset'
-import {
-  DEFAULT_BRAND_GUIDE_CONTENT,
-  BRAND_GUIDE_FILENAME,
-  BRAND_GUIDE_ASSET_ID,
-} from '../../Domain/constants/defaultBrandGuide'
+import { BRAND_GUIDE_FILENAME, BRAND_GUIDE_ASSET_ID } from '../../Domain/constants/defaultBrandGuide'
 import {
   type SiteConfig,
   $SiteConfig,
@@ -31,6 +27,7 @@ import {
   SITE_CONTENTS_FILENAME,
   createDefaultSiteContents,
 } from '../../Domain/ValueObject/SiteContents'
+import { DEFAULT_BRAND_GUIDE_CONTENT, DEFAULT_SITE_CONFIG } from '../../Infra/MockData'
 
 /** 初期化オプション */
 export interface InitializeSiteBuilderOptions {
@@ -125,7 +122,7 @@ export function initializeSiteBuilderUseCase(
   // SiteConfig の初期化
   const existingSiteConfig = repository.get(SITE_CONFIG_ASSET_ID)
   if (!existingSiteConfig || overwrite) {
-    const config = $SiteConfig.create(initialSiteConfig)
+    const config = $SiteConfig.create(DEFAULT_SITE_CONFIG, initialSiteConfig)
     const siteConfigAsset = createSiteConfigAsset(config)
     repository.set(SITE_CONFIG_ASSET_ID, siteConfigAsset)
   }

@@ -4,12 +4,8 @@
 
 import type { AssetRepository, Unsubscribe } from '../../../AssetRepository/Infra/AssetRepository'
 import { $Asset } from '../../../Asset'
-import {
-  type SiteConfig,
-  $SiteConfig,
-  SITE_CONFIG_ASSET_ID,
-  DEFAULT_SITE_CONFIG,
-} from '../../Domain/ValueObject/SiteConfig'
+import { type SiteConfig, $SiteConfig, SITE_CONFIG_ASSET_ID } from '../../Domain/ValueObject/SiteConfig'
+import { DEFAULT_SITE_CONFIG } from '../../Infra/MockData'
 
 /** SiteConfig 変更時のコールバック */
 export type SiteConfigObserver = (config: SiteConfig) => void
@@ -40,7 +36,7 @@ export function observeSiteConfigUseCase(
     try {
       const blob = await $Asset.toBlob(asset)
       const text = await blob.text()
-      const config = $SiteConfig.fromJSON(text)
+      const config = $SiteConfig.fromJSON(text, DEFAULT_SITE_CONFIG)
       observer(config)
     } catch {
       observer(DEFAULT_SITE_CONFIG)
@@ -67,7 +63,7 @@ export async function getSiteConfigUseCase(
   try {
     const blob = await $Asset.toBlob(asset)
     const text = await blob.text()
-    return $SiteConfig.fromJSON(text)
+    return $SiteConfig.fromJSON(text, DEFAULT_SITE_CONFIG)
   } catch {
     return DEFAULT_SITE_CONFIG
   }

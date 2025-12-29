@@ -4,7 +4,8 @@
 
 import type { AssetRepository, Unsubscribe } from '../../../AssetRepository/Infra/AssetRepository'
 import { $Asset } from '../../../Asset'
-import { BRAND_GUIDE_ASSET_ID, DEFAULT_BRAND_GUIDE_CONTENT } from '../../Domain/constants/defaultBrandGuide'
+import { BRAND_GUIDE_ASSET_ID } from '../../Domain/constants/defaultBrandGuide'
+import { DEFAULT_BRAND_GUIDE_CONTENT } from '../../Infra/MockData'
 
 /** Brand Guide 変更時のコールバック */
 export type BrandGuideObserver = (content: string) => void
