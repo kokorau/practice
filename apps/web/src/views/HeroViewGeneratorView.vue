@@ -20,9 +20,12 @@ import {
   createPrimitivePalette,
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
+  toCSSText,
+  toCSSRuleSetsText,
 } from '../modules/SemanticColorPalette/Infra'
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
+import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 
 // ============================================================
 // Brand Color State (HSV Color Picker)
@@ -253,7 +256,28 @@ watch([selectedBackgroundIndex, selectedMaskIndex, textureColor1, textureColor2,
 // 色変更時にサムネイルも更新
 watch([textureColor1, textureColor2], renderThumbnails)
 
+// ============================================================
+// Dynamic CSS Injection for Palette Preview
+// ============================================================
+let paletteStyleElement: HTMLStyleElement | null = null
+
+const updatePaletteStyles = () => {
+  if (!paletteStyleElement) return
+  const colorVariables = toCSSText(semanticPalette.value, '.hero-palette-preview')
+  const cssRuleSets = toCSSRuleSetsText()
+  paletteStyleElement.textContent = `${colorVariables}\n\n${cssRuleSets}`
+}
+
+watch(semanticPalette, updatePaletteStyles)
+
 onMounted(async () => {
+  // Palette用スタイル要素を作成
+  paletteStyleElement = document.createElement('style')
+  paletteStyleElement.setAttribute('data-hero-palette', '')
+  document.head.appendChild(paletteStyleElement)
+  updatePaletteStyles()
+
+  // テクスチャプレビュー用キャンバス初期化
   if (previewCanvasRef.value) {
     previewCanvasRef.value.width = 1280
     previewCanvasRef.value.height = 720
@@ -269,6 +293,10 @@ onMounted(async () => {
 onUnmounted(() => {
   previewRenderer?.destroy()
   destroyThumbnailRenderers()
+  if (paletteStyleElement) {
+    document.head.removeChild(paletteStyleElement)
+    paletteStyleElement = null
+  }
 })
 
 // ============================================================
@@ -501,89 +529,12 @@ const toggleColorPopup = (popup: ColorPopup) => {
       </div>
 
       <!-- Palette タブ: Semantic Palette プレビュー -->
-      <div v-if="activeTab === 'palette'" class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-8">
-          <!-- Context Surfaces -->
-          <section>
-            <h2 class="text-lg font-bold mb-4 text-white">Context Surfaces</h2>
-            <div class="grid grid-cols-2 gap-4">
-              <div
-                v-for="ctx in contexts"
-                :key="ctx.name"
-                class="rounded-lg p-4 border"
-                :style="{ backgroundColor: ctx.tokens.surface, borderColor: ctx.tokens.ink.border }"
-              >
-                <p class="text-sm font-semibold mb-2" :style="{ color: ctx.tokens.ink.title }">
-                  {{ ctx.label }}
-                </p>
-                <p class="text-xs mb-3" :style="{ color: ctx.tokens.ink.meta }">
-                  {{ ctx.refs.surface }} surface
-                </p>
-                <div class="flex gap-2">
-                  <div
-                    class="w-8 h-8 rounded border"
-                    :style="{ backgroundColor: ctx.tokens.ink.title, borderColor: ctx.tokens.ink.border }"
-                    :title="`title: ${ctx.refs.ink.title}`"
-                  />
-                  <div
-                    class="w-8 h-8 rounded border"
-                    :style="{ backgroundColor: ctx.tokens.ink.body, borderColor: ctx.tokens.ink.border }"
-                    :title="`body: ${ctx.refs.ink.body}`"
-                  />
-                  <div
-                    class="w-8 h-8 rounded border"
-                    :style="{ backgroundColor: ctx.tokens.ink.meta, borderColor: ctx.tokens.ink.border }"
-                    :title="`meta: ${ctx.refs.ink.meta}`"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Components -->
-          <section>
-            <h2 class="text-lg font-bold mb-4 text-white">Components</h2>
-            <div class="grid grid-cols-2 gap-4">
-              <div
-                v-for="comp in components"
-                :key="comp.name"
-                class="rounded-lg p-4"
-                :style="{
-                  backgroundColor: comp.tokens.surface,
-                  borderWidth: '1px',
-                  borderColor: comp.tokens.ink.border,
-                }"
-              >
-                <p class="text-sm font-semibold mb-1" :style="{ color: comp.tokens.ink.title }">
-                  {{ comp.label }}
-                </p>
-                <p class="text-xs" :style="{ color: comp.tokens.ink.meta }">
-                  {{ comp.refs.surface }} surface
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <!-- Actions -->
-          <section>
-            <h2 class="text-lg font-bold mb-4 text-white">Actions</h2>
-            <div class="flex gap-4">
-              <button
-                v-for="action in actions"
-                :key="action.name"
-                class="px-4 py-2 rounded-lg font-semibold text-sm transition-all"
-                :style="{
-                  backgroundColor: action.tokens.surface.default,
-                  color: action.tokens.ink.title.default,
-                  borderWidth: '1px',
-                  borderColor: action.tokens.ink.border.default,
-                }"
-              >
-                {{ action.label }}
-              </button>
-            </div>
-          </section>
-        </div>
+      <div v-if="activeTab === 'palette'" class="flex-1 overflow-y-auto p-6 hero-palette-preview" :class="{ dark: isDark }">
+        <PalettePreviewTab
+          :contexts="contexts"
+          :components="components"
+          :actions="actions"
+        />
       </div>
     </div>
   </div>
