@@ -1,10 +1,10 @@
+import { type Vector2, $Vector2 } from '@practice/vector'
+
 /**
  * 2D Vector in UV space (0..1)
+ * @deprecated Use Vector2 from @practice/vector directly
  */
-export type Vec2 = {
-  readonly x: number
-  readonly y: number
-}
+export type Vec2 = Vector2
 
 /**
  * Display-P3 color with alpha (all values 0..1)
@@ -148,8 +148,11 @@ export const $P3Color = {
   }),
 }
 
+/**
+ * @deprecated Use $Vector2 from @practice/vector directly
+ */
 export const $Vec2 = {
-  create: (x: number, y: number): Vec2 => ({ x, y }),
-  zero: (): Vec2 => ({ x: 0, y: 0 }),
-  center: (): Vec2 => ({ x: 0.5, y: 0.5 }),
+  create: $Vector2.create,
+  zero: $Vector2.zero,
+  center: $Vector2.center,
 }

@@ -19,6 +19,7 @@
   },
   "files": ["src"],
   "dependencies": {
-    "@practice/color": "workspace:*"
+    "@practice/color": "workspace:*",
+    "@practice/vector": "workspace:*"
   }
 }

@@ -116,6 +116,9 @@ importers:
       '@practice/color':
         specifier: workspace:*
         version: link:../color
+      '@practice/vector':
+        specifier: workspace:*
+        version: link:../vector
 
   packages/lighting:
     dependencies:
