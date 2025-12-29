@@ -7,6 +7,7 @@ import {
   circleMaskShader,
   rectMaskShader,
   halfMaskShader,
+  blobMaskShader,
   type SolidTextureParams,
   type StripeTextureParams,
   type GridTextureParams,
@@ -16,6 +17,7 @@ import {
   type RectMaskParams,
   type HalfMaskParams,
   type HalfMaskDirection,
+  type BlobMaskParams,
 } from './shaders'
 
 /**
@@ -65,6 +67,11 @@ export class TextureRenderer {
   private halfMaskPipeline: GPURenderPipeline | null = null
   private halfMaskBuffer: GPUBuffer | null = null
   private halfMaskBindGroup: GPUBindGroup | null = null
+
+  // Blob Mask
+  private blobMaskPipeline: GPURenderPipeline | null = null
+  private blobMaskBuffer: GPUBuffer | null = null
+  private blobMaskBindGroup: GPUBindGroup | null = null
 
   private constructor(
     device: GPUDevice,
@@ -586,6 +593,91 @@ export class TextureRenderer {
     this.render(this.halfMaskPipeline, this.halfMaskBindGroup!, options)
   }
 
+  renderBlobMask(params: BlobMaskParams, options?: { clear?: boolean }): void {
+    if (!this.blobMaskPipeline) {
+      const shaderModule = this.device.createShaderModule({
+        code: blobMaskShader,
+      })
+
+      this.blobMaskPipeline = this.device.createRenderPipeline({
+        layout: 'auto',
+        vertex: {
+          module: shaderModule,
+          entryPoint: 'vertexMain',
+        },
+        fragment: {
+          module: shaderModule,
+          entryPoint: 'fragmentMain',
+          targets: [
+            {
+              format: this.format,
+              blend: {
+                color: {
+                  srcFactor: 'src-alpha',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+                alpha: {
+                  srcFactor: 'one',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+              },
+            },
+          ],
+        },
+        primitive: {
+          topology: 'triangle-list',
+        },
+      })
+
+      // BlobMaskParams: innerColor(16) + outerColor(16) + centerX(4) + centerY(4) + baseRadius(4) + amplitude(4) + frequency(4) + octaves(4) + seed(4) + aspectRatio(4) + viewport(8) = 72 bytes -> 80 (16-byte aligned)
+      this.blobMaskBuffer = this.device.createBuffer({
+        size: 80,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      })
+
+      this.blobMaskBindGroup = this.device.createBindGroup({
+        layout: this.blobMaskPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.blobMaskBuffer },
+          },
+        ],
+      })
+    }
+
+    const canvas = this.context.canvas as HTMLCanvasElement
+    const aspectRatio = canvas.width / canvas.height
+
+    // Float32 for most params, but octaves is u32
+    const floatData = new Float32Array([
+      ...params.innerColor,
+      ...params.outerColor,
+      params.centerX,
+      params.centerY,
+      params.baseRadius,
+      params.amplitude,
+      params.frequency,
+    ])
+
+    // octaves(u32) + seed(f32) + aspectRatio(f32) + viewportWidth(f32) + viewportHeight(f32)
+    const mixedData = new ArrayBuffer(20)
+    const uintView = new Uint32Array(mixedData, 0, 1)
+    const floatView = new Float32Array(mixedData, 4, 4)
+    uintView[0] = params.octaves
+    floatView[0] = params.seed
+    floatView[1] = aspectRatio
+    floatView[2] = canvas.width
+    floatView[3] = canvas.height
+
+    this.device.queue.writeBuffer(this.blobMaskBuffer!, 0, floatData)
+    this.device.queue.writeBuffer(this.blobMaskBuffer!, 52, new Uint8Array(mixedData))
+
+    this.render(this.blobMaskPipeline, this.blobMaskBindGroup!, options)
+  }
+
   private render(
     pipeline: GPURenderPipeline,
     bindGroup: GPUBindGroup,
@@ -622,5 +714,6 @@ export class TextureRenderer {
     this.circleMaskBuffer?.destroy()
     this.rectMaskBuffer?.destroy()
     this.halfMaskBuffer?.destroy()
+    this.blobMaskBuffer?.destroy()
   }
 }

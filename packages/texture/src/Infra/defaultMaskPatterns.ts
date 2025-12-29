@@ -97,6 +97,78 @@ const defaultMaskPatterns: TexturePattern[] = [
         opts
       ),
   },
+  {
+    label: 'Blob Center',
+    render: (r, c1, c2, opts) =>
+      r.renderBlobMask(
+        {
+          centerX: 0.5,
+          centerY: 0.5,
+          baseRadius: 0.35,
+          amplitude: 0.15,
+          frequency: 4,
+          octaves: 3,
+          seed: 42,
+          innerColor: c1,
+          outerColor: c2,
+        },
+        opts
+      ),
+  },
+  {
+    label: 'Blob Large',
+    render: (r, c1, c2, opts) =>
+      r.renderBlobMask(
+        {
+          centerX: 0.5,
+          centerY: 0.5,
+          baseRadius: 0.5,
+          amplitude: 0.12,
+          frequency: 5,
+          octaves: 3,
+          seed: 123,
+          innerColor: c1,
+          outerColor: c2,
+        },
+        opts
+      ),
+  },
+  {
+    label: 'Blob Subtle',
+    render: (r, c1, c2, opts) =>
+      r.renderBlobMask(
+        {
+          centerX: 0.5,
+          centerY: 0.5,
+          baseRadius: 0.4,
+          amplitude: 0.08,
+          frequency: 3,
+          octaves: 2,
+          seed: 777,
+          innerColor: c1,
+          outerColor: c2,
+        },
+        opts
+      ),
+  },
+  {
+    label: 'Blob Wild',
+    render: (r, c1, c2, opts) =>
+      r.renderBlobMask(
+        {
+          centerX: 0.5,
+          centerY: 0.5,
+          baseRadius: 0.35,
+          amplitude: 0.25,
+          frequency: 6,
+          octaves: 4,
+          seed: 999,
+          innerColor: c1,
+          outerColor: c2,
+        },
+        opts
+      ),
+  },
 ]
 
 /**

@@ -13,3 +13,4 @@ export {
   type HalfMaskParams,
   type HalfMaskDirection,
 } from './mask'
+export { blobMaskShader, type BlobMaskParams } from './blob'
