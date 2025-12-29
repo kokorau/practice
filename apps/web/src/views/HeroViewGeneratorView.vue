@@ -75,6 +75,31 @@ const patterns: Omit<TexturePreview, 'canvasRef' | 'renderer'>[] = [
     render: (r, c1, c2) =>
       r.renderGrid({ lineWidth: 12, cellSize: 120, lineColor: c1, bgColor: c2 }),
   },
+  {
+    label: 'Polka Dot',
+    render: (r, c1, c2) =>
+      r.renderPolkaDot({ dotRadius: 10, spacing: 40, rowOffset: 0.5, dotColor: c1, bgColor: c2 }),
+  },
+  {
+    label: 'Polka Small',
+    render: (r, c1, c2) =>
+      r.renderPolkaDot({ dotRadius: 5, spacing: 20, rowOffset: 0.5, dotColor: c1, bgColor: c2 }),
+  },
+  {
+    label: 'Polka Large',
+    render: (r, c1, c2) =>
+      r.renderPolkaDot({ dotRadius: 20, spacing: 60, rowOffset: 0.5, dotColor: c1, bgColor: c2 }),
+  },
+  {
+    label: 'Polka Grid',
+    render: (r, c1, c2) =>
+      r.renderPolkaDot({ dotRadius: 2, spacing: 12, rowOffset: 0, dotColor: c1, bgColor: c2 }),
+  },
+  {
+    label: 'Polka Dense',
+    render: (r, c1, c2) =>
+      r.renderPolkaDot({ dotRadius: 2, spacing: 8, rowOffset: 0.5, dotColor: c1, bgColor: c2 }),
+  },
 ]
 
 const previews: TexturePreview[] = patterns.map((p) => ({

@@ -2,9 +2,11 @@ import {
   solidShader,
   stripeShader,
   gridShader,
+  polkaDotShader,
   type SolidTextureParams,
   type StripeTextureParams,
   type GridTextureParams,
+  type PolkaDotTextureParams,
 } from './shaders'
 
 /**
@@ -29,6 +31,11 @@ export class TextureRenderer {
   private gridPipeline: GPURenderPipeline | null = null
   private gridBuffer: GPUBuffer | null = null
   private gridBindGroup: GPUBindGroup | null = null
+
+  // PolkaDot
+  private polkaDotPipeline: GPURenderPipeline | null = null
+  private polkaDotBuffer: GPUBuffer | null = null
+  private polkaDotBindGroup: GPUBindGroup | null = null
 
   private constructor(
     device: GPUDevice,
@@ -218,6 +225,58 @@ export class TextureRenderer {
     this.render(this.gridPipeline, this.gridBindGroup!)
   }
 
+  renderPolkaDot(params: PolkaDotTextureParams): void {
+    if (!this.polkaDotPipeline) {
+      const shaderModule = this.device.createShaderModule({
+        code: polkaDotShader,
+      })
+
+      this.polkaDotPipeline = this.device.createRenderPipeline({
+        layout: 'auto',
+        vertex: {
+          module: shaderModule,
+          entryPoint: 'vertexMain',
+        },
+        fragment: {
+          module: shaderModule,
+          entryPoint: 'fragmentMain',
+          targets: [{ format: this.format }],
+        },
+        primitive: {
+          topology: 'triangle-list',
+        },
+      })
+
+      // PolkaDotParams: dotColor(16) + bgColor(16) + dotRadius(4) + spacing(4) + rowOffset(4) + padding(4) = 48 bytes
+      this.polkaDotBuffer = this.device.createBuffer({
+        size: 48,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      })
+
+      this.polkaDotBindGroup = this.device.createBindGroup({
+        layout: this.polkaDotPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.polkaDotBuffer },
+          },
+        ],
+      })
+    }
+
+    const data = new Float32Array([
+      ...params.dotColor,
+      ...params.bgColor,
+      params.dotRadius,
+      params.spacing,
+      params.rowOffset,
+      0, // padding
+    ])
+    this.device.queue.writeBuffer(this.polkaDotBuffer!, 0, data)
+
+    this.render(this.polkaDotPipeline, this.polkaDotBindGroup!)
+  }
+
   private render(pipeline: GPURenderPipeline, bindGroup: GPUBindGroup): void {
     const commandEncoder = this.device.createCommandEncoder()
     const renderPass = commandEncoder.beginRenderPass({
@@ -243,5 +302,6 @@ export class TextureRenderer {
     this.solidBuffer?.destroy()
     this.stripeBuffer?.destroy()
     this.gridBuffer?.destroy()
+    this.polkaDotBuffer?.destroy()
   }
 }
