@@ -74,6 +74,11 @@ const router = createRouter({
       name: 'asset-manager',
       component: () => import('../views/AssetManagerView.vue'),
     },
+    {
+      path: '/hero-view-generator',
+      name: 'hero-view-generator',
+      component: () => import('../views/HeroViewGeneratorView.vue'),
+    },
   ],
 })
 

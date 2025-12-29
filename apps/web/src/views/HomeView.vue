@@ -65,6 +65,11 @@ const pages = [
     title: 'Asset Manager',
     description: 'ファイルツリー形式でアセットを管理・プレビュー',
   },
+  {
+    to: '/hero-view-generator',
+    title: 'Hero View Generator',
+    description: 'ヒーローセクションを視覚的にデザイン・生成',
+  },
 ]
 </script>
 
