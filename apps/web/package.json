@@ -15,6 +15,7 @@
   "dependencies": {
     "@mediapipe/tasks-vision": "0.10.22-rc.20250304",
     "@practice/color": "workspace:^",
+    "@practice/gradient": "workspace:^",
     "@practice/lighting": "workspace:^",
     "@practice/vector": "workspace:^",
     "@tailwindcss/vite": "^4.1.17",

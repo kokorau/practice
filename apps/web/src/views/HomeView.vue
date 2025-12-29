@@ -65,6 +65,11 @@ const pages = [
     title: 'Asset Manager',
     description: 'ファイルツリー形式でアセットを管理・プレビュー',
   },
+  {
+    to: '/gradient-lab',
+    title: 'Gradient Lab',
+    description: '2Dアンビエントグラデーションの生成とFBM warp効果',
+  },
 ]
 </script>
 

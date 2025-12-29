@@ -74,6 +74,11 @@ const router = createRouter({
       name: 'asset-manager',
       component: () => import('../views/AssetManagerView.vue'),
     },
+    {
+      path: '/gradient-lab',
+      name: 'gradient-lab',
+      component: () => import('../views/GradientLabView.vue'),
+    },
   ],
 })
 
