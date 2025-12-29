@@ -4,7 +4,6 @@ import type { LayoutId } from '../SiteBuilder/layoutPatterns'
 
 defineProps<{
   selectedLayout: LayoutId
-  customBackgroundImage?: string | null
 }>()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -18,15 +17,8 @@ defineExpose({
   <div class="hero-preview-container">
     <div class="hero-preview-wrapper">
       <div class="hero-preview-frame hero-palette-preview context-canvas">
-        <!-- 後景: テクスチャ -->
-        <canvas ref="canvasRef" class="layer-background" :class="{ hidden: customBackgroundImage }" />
-        <!-- 後景: カスタム画像 -->
-        <img
-          v-if="customBackgroundImage"
-          :src="customBackgroundImage"
-          class="layer-background-image"
-          alt="Custom background"
-        />
+        <!-- 後景: テクスチャ or カスタム画像 (Canvas に描画) -->
+        <canvas ref="canvasRef" class="layer-background" />
 
         <!-- 中景: グラフィック（後で実装） -->
         <div class="layer-midground">

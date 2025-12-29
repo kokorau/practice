@@ -1,9 +1,16 @@
 import type { TextureRenderSpec } from './Domain'
+import { imageShader } from './shaders/image'
 
 interface PipelineCache {
   pipeline: GPURenderPipeline
   buffer: GPUBuffer
   bindGroup: GPUBindGroup
+}
+
+interface ImagePipelineCache {
+  pipeline: GPURenderPipeline
+  sampler: GPUSampler
+  uniformBuffer: GPUBuffer
 }
 
 /**
@@ -15,6 +22,7 @@ export class TextureRenderer {
   private context: GPUCanvasContext
   private format: GPUTextureFormat
   private cache: Map<string, PipelineCache> = new Map()
+  private imagePipelineCache: ImagePipelineCache | null = null
 
   private constructor(
     device: GPUDevice,
@@ -75,6 +83,97 @@ export class TextureRenderer {
     )
 
     this.executeRender(cached.pipeline, cached.bindGroup, options)
+  }
+
+  /**
+   * Render an image to the canvas with cover fit
+   */
+  async renderImage(
+    source: ImageBitmap | HTMLImageElement,
+    options?: { clear?: boolean }
+  ): Promise<void> {
+    const cache = this.getOrCreateImagePipeline()
+    const viewport = this.getViewport()
+
+    // Create texture from image source
+    const texture = this.device.createTexture({
+      size: [source.width, source.height],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    })
+
+    // Copy image to texture
+    this.device.queue.copyExternalImageToTexture(
+      { source },
+      { texture },
+      [source.width, source.height]
+    )
+
+    // Write uniform data
+    const uniformData = new Float32Array([
+      viewport.width,
+      viewport.height,
+      source.width,
+      source.height,
+    ])
+    this.device.queue.writeBuffer(cache.uniformBuffer, 0, uniformData)
+
+    // Create bind group for this image
+    const bindGroup = this.device.createBindGroup({
+      layout: cache.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: cache.sampler },
+        { binding: 1, resource: texture.createView() },
+        { binding: 2, resource: { buffer: cache.uniformBuffer } },
+      ],
+    })
+
+    this.executeRender(cache.pipeline, bindGroup, options)
+
+    // Clean up texture
+    texture.destroy()
+  }
+
+  private getOrCreateImagePipeline(): ImagePipelineCache {
+    if (this.imagePipelineCache) {
+      return this.imagePipelineCache
+    }
+
+    const shaderModule = this.device.createShaderModule({
+      code: imageShader,
+    })
+
+    const pipeline = this.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: shaderModule,
+        entryPoint: 'vertexMain',
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [{ format: this.format }],
+      },
+      primitive: {
+        topology: 'triangle-list',
+      },
+    })
+
+    const sampler = this.device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+    })
+
+    const uniformBuffer = this.device.createBuffer({
+      size: 16, // 4 floats
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    this.imagePipelineCache = { pipeline, sampler, uniformBuffer }
+    return this.imagePipelineCache
   }
 
   private getOrCreatePipeline(spec: TextureRenderSpec): PipelineCache {
@@ -161,5 +260,10 @@ export class TextureRenderer {
       cached.buffer.destroy()
     }
     this.cache.clear()
+
+    if (this.imagePipelineCache) {
+      this.imagePipelineCache.uniformBuffer.destroy()
+      this.imagePipelineCache = null
+    }
   }
 }

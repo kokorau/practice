@@ -319,7 +319,6 @@ const activeTab = ref<TabId>('generator')
         v-if="activeTab === 'generator'"
         ref="heroPreviewRef"
         :selected-layout="selectedLayout"
-        :custom-background-image="customBackgroundImage"
         class="hero-tab-content"
       />
 

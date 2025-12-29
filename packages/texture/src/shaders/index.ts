@@ -1,4 +1,5 @@
 export { fullscreenVertex, aaUtils, maskBlendState } from './common'
+export { imageShader } from './image'
 export { solidShader, createSolidSpec, type SolidTextureParams } from './solid'
 export { stripeShader, createStripeSpec, type StripeTextureParams } from './stripe'
 export { gridShader, createGridSpec, type GridTextureParams } from './grid'

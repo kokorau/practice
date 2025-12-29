@@ -98,6 +98,7 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   // Custom background image state
   const customBackgroundImage = ref<string | null>(null)
   const customBackgroundFile = ref<File | null>(null)
+  let customBackgroundBitmap: ImageBitmap | null = null
 
   // Canvas refs and renderers
   const previewCanvasRef = ref<HTMLCanvasElement | null>(null)
@@ -327,16 +328,22 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   }
 
   // Update main preview
-  const updatePreview = () => {
+  const updatePreview = async () => {
     if (!previewRenderer) return
 
     const viewport = previewRenderer.getViewport()
 
-    // 1. Render background
-    const bgPattern = texturePatterns[selectedBackgroundIndex.value]
-    if (bgPattern) {
-      const spec = bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
-      previewRenderer.render(spec)
+    // 1. Render background (image or texture pattern)
+    if (customBackgroundBitmap) {
+      // Use custom image as background
+      await previewRenderer.renderImage(customBackgroundBitmap)
+    } else {
+      // Use texture pattern
+      const bgPattern = texturePatterns[selectedBackgroundIndex.value]
+      if (bgPattern) {
+        const spec = bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
+        previewRenderer.render(spec)
+      }
     }
 
     // 2. Composite midground (mask + optional texture)
@@ -391,13 +398,24 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   }
 
   // Set custom background image from file
-  const setBackgroundImage = (file: File) => {
-    // Revoke previous ObjectURL if exists
+  const setBackgroundImage = async (file: File) => {
+    // Clean up previous resources
     if (customBackgroundImage.value) {
       URL.revokeObjectURL(customBackgroundImage.value)
     }
+    if (customBackgroundBitmap) {
+      customBackgroundBitmap.close()
+      customBackgroundBitmap = null
+    }
+
     customBackgroundFile.value = file
     customBackgroundImage.value = URL.createObjectURL(file)
+
+    // Create ImageBitmap for WebGPU rendering
+    customBackgroundBitmap = await createImageBitmap(file)
+
+    // Update preview with new image
+    updatePreview()
   }
 
   // Clear custom background image
@@ -405,8 +423,15 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
     if (customBackgroundImage.value) {
       URL.revokeObjectURL(customBackgroundImage.value)
     }
+    if (customBackgroundBitmap) {
+      customBackgroundBitmap.close()
+      customBackgroundBitmap = null
+    }
     customBackgroundFile.value = null
     customBackgroundImage.value = null
+
+    // Update preview to show texture pattern again
+    updatePreview()
   }
 
   // Watch for changes
