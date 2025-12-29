@@ -18,6 +18,7 @@ export type {
   TextureType,
   CircleMaskConfig,
   RectMaskConfig,
+  BlobMaskConfig,
   MaskConfig,
   StripeTextureConfig,
   GridTextureConfig,
@@ -42,6 +43,9 @@ export {
   createRectStripeSpec,
   createRectGridSpec,
   createRectPolkaDotSpec,
+  createBlobStripeSpec,
+  createBlobGridSpec,
+  createBlobPolkaDotSpec,
 } from './shaders'
 
 // Domain

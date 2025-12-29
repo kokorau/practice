@@ -9,11 +9,15 @@ import {
   createRectStripeSpec,
   createRectGridSpec,
   createRectPolkaDotSpec,
+  createBlobStripeSpec,
+  createBlobGridSpec,
+  createBlobPolkaDotSpec,
   type TexturePattern,
   type MaskPattern,
   type RGBA,
   type CircleMaskShapeConfig,
   type RectMaskShapeConfig,
+  type BlobMaskShapeConfig,
   type Viewport,
   type TextureRenderSpec,
 } from '@practice/texture'
@@ -271,7 +275,50 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
       }
     }
 
-    // Blob mask: not yet supported for masked textures, fallback to solid
+    // Blob mask
+    if (maskConfig.type === 'blob') {
+      const blobMask: BlobMaskShapeConfig = maskConfig
+      if (textureType === 'stripe') {
+        return createBlobStripeSpec(
+          color1, color2,
+          {
+            type: 'blob',
+            centerX: blobMask.centerX, centerY: blobMask.centerY,
+            baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude,
+            octaves: blobMask.octaves, seed: blobMask.seed,
+          },
+          { type: 'stripe', width1: config.width1!, width2: config.width2!, angle: config.angle! },
+          viewport
+        )
+      }
+      if (textureType === 'grid') {
+        return createBlobGridSpec(
+          color1, color2,
+          {
+            type: 'blob',
+            centerX: blobMask.centerX, centerY: blobMask.centerY,
+            baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude,
+            octaves: blobMask.octaves, seed: blobMask.seed,
+          },
+          { type: 'grid', lineWidth: config.lineWidth!, cellSize: config.cellSize! },
+          viewport
+        )
+      }
+      if (textureType === 'polkaDot') {
+        return createBlobPolkaDotSpec(
+          color1, color2,
+          {
+            type: 'blob',
+            centerX: blobMask.centerX, centerY: blobMask.centerY,
+            baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude,
+            octaves: blobMask.octaves, seed: blobMask.seed,
+          },
+          { type: 'polkaDot', dotRadius: config.dotRadius!, spacing: config.spacing!, rowOffset: config.rowOffset! },
+          viewport
+        )
+      }
+    }
+
     return null
   }
 
