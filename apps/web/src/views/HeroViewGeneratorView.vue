@@ -26,6 +26,7 @@ import {
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
+import './HeroViewGeneratorView.css'
 
 // ============================================================
 // Brand Color State (HSV Color Picker)
@@ -192,7 +193,10 @@ async function renderThumbnails() {
 
   const patterns = getPatterns(section)
   for (let i = 0; i < thumbnailRenderers.length; i++) {
-    patterns[i]?.render(thumbnailRenderers[i], textureColor1.value, textureColor2.value)
+    const renderer = thumbnailRenderers[i]
+    if (renderer) {
+      patterns[i]?.render(renderer, textureColor1.value, textureColor2.value)
+    }
   }
 }
 
@@ -214,6 +218,7 @@ function openSection(section: 'background' | 'midground' | 'foreground') {
 
     for (let i = 0; i < canvases.length; i++) {
       const canvas = canvases[i]
+      if (!canvas) continue
       // 16:9のアスペクト比でサムネイル描画
       canvas.width = 256
       canvas.height = 144
@@ -313,120 +318,101 @@ const toggleColorPopup = (popup: ColorPopup) => {
 </script>
 
 <template>
-  <div class="w-screen h-screen text-white flex bg-gray-900">
+  <div class="hero-generator">
     <!-- 左パネル: カラー設定 & セクション一覧 -->
-    <div class="w-64 flex-shrink-0 bg-gray-800 p-4 flex flex-col relative">
-      <p class="text-xl font-bold mb-4">Hero View Generator</p>
-
-      <!-- タブ切り替え -->
-      <div class="flex gap-1 mb-4 bg-gray-900 p-1 rounded-lg">
-        <button
-          class="flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-all"
-          :class="activeTab === 'generator' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'"
-          @click="activeTab = 'generator'"
-        >Generator</button>
-        <button
-          class="flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-all"
-          :class="activeTab === 'palette' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'"
-          @click="activeTab = 'palette'"
-        >Palette</button>
-      </div>
-
+    <aside class="hero-sidebar">
       <!-- カラー設定セクション -->
-      <div class="mb-4 pb-4 border-b border-gray-700">
-        <p class="text-xs text-gray-500 uppercase font-semibold mb-2">Color Settings</p>
+      <div class="sidebar-section">
+        <p class="sidebar-label">Color Settings</p>
 
         <!-- Brand Color -->
         <button
-          class="w-full text-left p-2 rounded-lg mb-2 transition-all flex items-center gap-2"
-          :class="activeColorPopup === 'brand' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'"
+          class="color-button"
+          :class="{ active: activeColorPopup === 'brand' }"
           @click="toggleColorPopup('brand')"
         >
-          <div class="w-6 h-6 rounded border border-gray-500 flex-shrink-0" :style="{ backgroundColor: selectedHex }" />
-          <div>
-            <p class="text-xs font-semibold">Brand</p>
-            <p class="text-[10px] text-gray-400 font-mono">{{ selectedHex }}</p>
-          </div>
+          <span class="color-swatch" :style="{ backgroundColor: selectedHex }" />
+          <span class="color-info">
+            <span class="color-name">Brand</span>
+            <span class="color-value">{{ selectedHex }}</span>
+          </span>
         </button>
 
         <!-- Foundation -->
         <button
-          class="w-full text-left p-2 rounded-lg transition-all flex items-center gap-2"
-          :class="activeColorPopup === 'foundation' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'"
+          class="color-button"
+          :class="{ active: activeColorPopup === 'foundation' }"
           @click="toggleColorPopup('foundation')"
         >
-          <div class="w-6 h-6 rounded border border-gray-500 flex-shrink-0" :style="{ backgroundColor: foundationColor.hex }" />
-          <div>
-            <p class="text-xs font-semibold">Foundation</p>
-            <p class="text-[10px] text-gray-400">{{ foundationColor.label }}</p>
-          </div>
+          <span class="color-swatch" :style="{ backgroundColor: foundationColor.hex }" />
+          <span class="color-info">
+            <span class="color-name">Foundation</span>
+            <span class="color-value">{{ foundationColor.label }}</span>
+          </span>
         </button>
       </div>
 
       <!-- レイヤーセクション (Generator タブのみ) -->
       <template v-if="activeTab === 'generator'">
-        <p class="text-xs text-gray-500 uppercase font-semibold mb-2">Layers</p>
+        <div class="sidebar-section">
+          <p class="sidebar-label">Layers</p>
 
-        <!-- 後景 -->
-        <button
-          class="w-full text-left p-3 rounded-lg mb-2 transition-all"
-          :class="activeSection === 'background' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'"
-          @click="openSection('background')"
-        >
-          <p class="text-sm font-semibold">後景 (Background)</p>
-          <p class="text-xs text-gray-300 mt-1">{{ texturePatterns[selectedBackgroundIndex].label }}</p>
-        </button>
+          <!-- 後景 -->
+          <button
+            class="layer-button"
+            :class="{ active: activeSection === 'background' }"
+            @click="openSection('background')"
+          >
+            <span class="layer-name">後景 (Background)</span>
+            <span class="layer-value">{{ texturePatterns[selectedBackgroundIndex]?.label }}</span>
+          </button>
 
-        <!-- 中景 -->
-        <button
-          class="w-full text-left p-3 rounded-lg mb-2 transition-all"
-          :class="activeSection === 'midground' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'"
-          @click="openSection('midground')"
-        >
-          <p class="text-sm font-semibold">中景 (Midground)</p>
-          <p class="text-xs text-gray-300 mt-1">
-            {{ selectedMaskIndex !== null ? maskPatterns[selectedMaskIndex].label : 'なし' }}
-          </p>
-        </button>
+          <!-- 中景 -->
+          <button
+            class="layer-button"
+            :class="{ active: activeSection === 'midground' }"
+            @click="openSection('midground')"
+          >
+            <span class="layer-name">中景 (Midground)</span>
+            <span class="layer-value">{{ selectedMaskIndex !== null ? maskPatterns[selectedMaskIndex]?.label : 'なし' }}</span>
+          </button>
 
-        <!-- 前景 -->
-        <button
-          class="w-full text-left p-3 rounded-lg transition-all"
-          :class="activeSection === 'foreground' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'"
-          @click="openSection('foreground')"
-        >
-          <p class="text-sm font-semibold">前景 (Foreground)</p>
-          <p class="text-xs text-gray-300 mt-1">未設定</p>
-        </button>
+          <!-- 前景 -->
+          <button
+            class="layer-button"
+            :class="{ active: activeSection === 'foreground' }"
+            @click="openSection('foreground')"
+          >
+            <span class="layer-name">前景 (Foreground)</span>
+            <span class="layer-value">未設定</span>
+          </button>
+        </div>
       </template>
 
       <!-- Palette タブ: Neutral Ramp -->
       <template v-if="activeTab === 'palette'">
-        <p class="text-xs text-gray-500 uppercase font-semibold mb-2">Neutral Ramp</p>
-        <div class="flex gap-0.5 mb-4">
-          <div
-            v-for="item in neutralRampDisplay"
-            :key="item.key"
-            class="flex-1 h-8 first:rounded-l last:rounded-r"
-            :style="{ backgroundColor: item.css }"
-            :title="`${item.key}: ${item.css}`"
-          />
+        <div class="sidebar-section">
+          <p class="sidebar-label">Neutral Ramp</p>
+          <div class="neutral-ramp">
+            <span
+              v-for="item in neutralRampDisplay"
+              :key="item.key"
+              class="ramp-step"
+              :style="{ backgroundColor: item.css }"
+              :title="`${item.key}: ${item.css}`"
+            />
+          </div>
         </div>
       </template>
 
       <!-- カラーポップアップ -->
       <Transition name="popup">
-        <div
-          v-if="activeColorPopup"
-          class="absolute left-full top-0 ml-1 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden"
-        >
-          <div class="flex items-center justify-between p-3 border-b border-gray-700">
-            <h2 class="text-sm font-semibold">
-              {{ activeColorPopup === 'brand' ? 'Brand Color' : 'Foundation' }}
-            </h2>
-            <button class="text-gray-400 hover:text-white text-lg leading-none" @click="activeColorPopup = null">×</button>
+        <div v-if="activeColorPopup" class="color-popup">
+          <div class="popup-header">
+            <h2>{{ activeColorPopup === 'brand' ? 'Brand Color' : 'Foundation' }}</h2>
+            <button class="popup-close" @click="activeColorPopup = null">×</button>
           </div>
-          <div class="p-4">
+          <div class="popup-content">
             <BrandColorPicker
               v-if="activeColorPopup === 'brand'"
               :hue="hue"
@@ -446,108 +432,335 @@ const toggleColorPopup = (popup: ColorPopup) => {
           </div>
         </div>
       </Transition>
-    </div>
+    </aside>
 
     <!-- サブパネル: パターン選択 (Generator タブのみ) -->
-    <div
-      v-if="activeSection && activeTab === 'generator'"
-      class="w-72 flex-shrink-0 border-l border-gray-700 overflow-y-auto flex flex-col"
-      style="background-color: #1a1f2e;"
-    >
-      <div class="flex items-center justify-between p-3 border-b border-gray-700">
-        <h2 class="text-sm font-semibold text-gray-300">
-          {{ activeSection === 'background' ? 'テクスチャ選択' : activeSection === 'midground' ? 'マスク選択' : '前景設定' }}
-        </h2>
-        <button class="text-gray-400 hover:text-white text-lg leading-none" @click="activeSection = null">
-          ×
-        </button>
+    <aside v-if="activeSection && activeTab === 'generator'" class="hero-subpanel">
+      <div class="hero-subpanel-header">
+        <h2>{{ activeSection === 'background' ? 'テクスチャ選択' : activeSection === 'midground' ? 'マスク選択' : '前景設定' }}</h2>
+        <button class="hero-subpanel-close" @click="activeSection = null">×</button>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-2">
+      <div class="hero-subpanel-content">
         <!-- 後景: テクスチャ選択 -->
         <template v-if="activeSection === 'background'">
-          <div class="space-y-2">
+          <div class="pattern-grid">
             <button
               v-for="(pattern, i) in texturePatterns"
               :key="i"
-              class="w-full rounded-lg overflow-hidden border-2 transition-all"
-              :class="selectedBackgroundIndex === i ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-gray-500'"
+              class="pattern-button"
+              :class="{ active: selectedBackgroundIndex === i }"
               @click="selectedBackgroundIndex = i"
             >
-              <canvas data-thumbnail-canvas class="w-full aspect-video" />
-              <p class="text-xs text-gray-300 px-2 py-1.5 text-left">{{ pattern.label }}</p>
+              <canvas data-thumbnail-canvas class="pattern-canvas" />
+              <span class="pattern-label">{{ pattern.label }}</span>
             </button>
           </div>
         </template>
 
         <!-- 中景: マスク選択 -->
         <template v-else-if="activeSection === 'midground'">
-          <div class="space-y-2">
+          <div class="pattern-grid">
             <!-- なし -->
             <button
-              class="w-full rounded-lg overflow-hidden border-2 transition-all"
-              :class="selectedMaskIndex === null ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-gray-500'"
+              class="pattern-button"
+              :class="{ active: selectedMaskIndex === null }"
               @click="selectedMaskIndex = null"
             >
-              <div class="w-full aspect-video flex items-center justify-center bg-gray-700">
-                <span class="text-sm text-gray-400">なし</span>
-              </div>
-              <p class="text-xs text-gray-300 px-2 py-1.5 text-left">マスクなし</p>
+              <span class="pattern-none">なし</span>
+              <span class="pattern-label">マスクなし</span>
             </button>
             <!-- マスクパターン -->
             <button
               v-for="(pattern, i) in maskPatterns"
               :key="i"
-              class="w-full rounded-lg overflow-hidden border-2 transition-all"
-              :class="selectedMaskIndex === i ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-gray-500'"
+              class="pattern-button"
+              :class="{ active: selectedMaskIndex === i }"
               @click="selectedMaskIndex = i"
             >
-              <canvas data-thumbnail-canvas class="w-full aspect-video" />
-              <p class="text-xs text-gray-300 px-2 py-1.5 text-left">{{ pattern.label }}</p>
+              <canvas data-thumbnail-canvas class="pattern-canvas" />
+              <span class="pattern-label">{{ pattern.label }}</span>
             </button>
           </div>
         </template>
 
         <!-- 前景 -->
         <template v-else-if="activeSection === 'foreground'">
-          <div class="text-center text-gray-500 py-8">
+          <div class="empty-state">
             <p>前景は未実装です</p>
           </div>
         </template>
       </div>
-    </div>
+    </aside>
 
     <!-- 中央: メインコンテンツ -->
-    <div class="flex-1 flex flex-col overflow-hidden bg-gray-950">
+    <main class="hero-main">
+      <!-- ヘッダー -->
+      <header class="hero-header">
+        <h1>Hero View Generator</h1>
+        <nav class="hero-tab-nav">
+          <button
+            class="hero-tab-button"
+            :class="{ active: activeTab === 'generator' }"
+            @click="activeTab = 'generator'"
+          >Generator</button>
+          <button
+            class="hero-tab-button"
+            :class="{ active: activeTab === 'palette' }"
+            @click="activeTab = 'palette'"
+          >Palette</button>
+        </nav>
+      </header>
+
       <!-- Generator タブ: プレビュー -->
-      <div v-if="activeTab === 'generator'" class="flex-1 flex items-center justify-center p-8">
-        <div class="w-full max-w-4xl">
-          <div class="aspect-video rounded-lg overflow-hidden border border-gray-700 shadow-2xl">
-            <canvas ref="previewCanvasRef" class="w-full h-full" />
+      <div v-if="activeTab === 'generator'" class="hero-tab-content hero-preview-container">
+        <div class="hero-preview-wrapper">
+          <div class="hero-preview-frame">
+            <canvas ref="previewCanvasRef" />
           </div>
         </div>
       </div>
 
       <!-- Palette タブ: Semantic Palette プレビュー -->
-      <div v-if="activeTab === 'palette'" class="flex-1 overflow-y-auto p-6 hero-palette-preview" :class="{ dark: isDark }">
+      <div v-if="activeTab === 'palette'" class="hero-tab-content hero-palette-container hero-palette-preview" :class="{ dark: isDark }">
         <PalettePreviewTab
           :contexts="contexts"
           :components="components"
           :actions="actions"
         />
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <style scoped>
-.popup-enter-active,
-.popup-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+/* Sidebar Sections */
+.sidebar-section {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid oklch(0.25 0.02 260);
 }
-.popup-enter-from,
-.popup-leave-to {
-  opacity: 0;
-  transform: translateX(-8px);
+
+.sidebar-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(0.50 0.02 260);
+}
+
+/* Color Buttons */
+.color-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: oklch(0.22 0.02 260);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.color-button:hover {
+  background: oklch(0.26 0.02 260);
+}
+
+.color-button.active {
+  background: oklch(0.50 0.20 250);
+}
+
+.color-swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid oklch(0.40 0.02 260);
+  flex-shrink: 0;
+}
+
+.color-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.color-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.color-value {
+  font-size: 0.625rem;
+  color: oklch(0.60 0.02 260);
+  font-family: ui-monospace, monospace;
+}
+
+/* Layer Buttons */
+.layer-button {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: oklch(0.22 0.02 260);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.layer-button:hover {
+  background: oklch(0.26 0.02 260);
+}
+
+.layer-button.active {
+  background: oklch(0.50 0.20 250);
+}
+
+.layer-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.layer-value {
+  font-size: 0.75rem;
+  color: oklch(0.70 0.02 260);
+  margin-top: 0.25rem;
+}
+
+.layer-button.active .layer-value {
+  color: oklch(0.90 0.02 260);
+}
+
+/* Neutral Ramp */
+.neutral-ramp {
+  display: flex;
+  gap: 2px;
+}
+
+.ramp-step {
+  flex: 1;
+  height: 2rem;
+}
+
+.ramp-step:first-child {
+  border-radius: 0.25rem 0 0 0.25rem;
+}
+
+.ramp-step:last-child {
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+/* Color Popup */
+.color-popup {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 0.25rem;
+  width: 18rem;
+  background: oklch(0.18 0.02 260);
+  border: 1px solid oklch(0.25 0.02 260);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-bottom: 1px solid oklch(0.25 0.02 260);
+}
+
+.popup-header h2 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.popup-close {
+  background: none;
+  border: none;
+  color: oklch(0.60 0.02 260);
+  font-size: 1.125rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.popup-close:hover {
+  color: oklch(0.90 0.02 260);
+}
+
+.popup-content {
+  padding: 1rem;
+}
+
+/* Pattern Grid */
+.pattern-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pattern-button {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 2px solid oklch(0.30 0.02 260);
+  border-radius: 0.5rem;
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.pattern-button:hover {
+  border-color: oklch(0.40 0.02 260);
+}
+
+.pattern-button.active {
+  border-color: oklch(0.55 0.20 250);
+  background: oklch(0.55 0.20 250 / 0.1);
+}
+
+.pattern-canvas {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.pattern-none {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: oklch(0.22 0.02 260);
+  color: oklch(0.60 0.02 260);
+  font-size: 0.875rem;
+}
+
+.pattern-label {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+  color: oklch(0.70 0.02 260);
+  text-align: left;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: oklch(0.50 0.02 260);
 }
 </style>
