@@ -12,7 +12,7 @@ import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/Ass
 import { $AssetTree, ROOT_NODE_ID, $AssetNode } from '../../modules/AssetRepository'
 import {
   getSiteBuilderRepository,
-  initializeSiteBuilderUseCase,
+  initializeSiteBuilder,
   // Brand Guide
   updateBrandGuideUseCase,
   getBrandGuideContentUseCase,
@@ -93,7 +93,7 @@ export function useSiteBuilderAssets() {
 
   // 初期化（一度だけ実行）
   if (!initialized) {
-    initializeSiteBuilderUseCase(repository)
+    initializeSiteBuilder(repository)
 
     // ============================================================
     // フォルダ構造の初期化
