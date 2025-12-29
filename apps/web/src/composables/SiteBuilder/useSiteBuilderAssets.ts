@@ -1,63 +1,31 @@
 /**
  * useSiteBuilderAssets - SiteBuilder のアセット管理 composable
  *
- * AssetRepository と UseCase を使って、アセットの CRUD と監視を行う。
- * Vue のリアクティブシステムと統合。
+ * useAssetManager の状態を使って、SiteBuilder 固有のアセット操作を提供する。
  */
 
-import { ref, shallowRef, computed, watch } from 'vue'
-import type { Asset, AssetId } from '../../modules/Asset'
-import { $Asset } from '../../modules/Asset'
-import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/AssetRepository'
-import { $AssetTree, ROOT_NODE_ID, $AssetNode } from '../../modules/AssetRepository'
+import { ref, computed, watch } from 'vue'
+import type { Asset } from '../../modules/Asset'
+import { $Asset, $AssetSource } from '../../modules/Asset'
+import { $AssetNode } from '../../modules/AssetRepository'
+import { useAssetManager } from '../AssetManager'
 import {
-  getSiteBuilderRepository,
-  initializeSiteBuilder,
   // Brand Guide
-  updateBrandGuideUseCase,
-  getBrandGuideContentUseCase,
-  observeBrandGuideUseCase,
   BRAND_GUIDE_ASSET_ID,
   // SiteConfig
   type SiteConfig,
-  updateSiteConfigUseCase,
-  getSiteConfigUseCase,
-  observeSiteConfigUseCase,
+  $SiteConfig,
   SITE_CONFIG_ASSET_ID,
   // FilterConfig
   type FilterConfig,
-  updateFilterConfigUseCase,
-  getFilterConfigUseCase,
-  observeFilterConfigUseCase,
+  $FilterConfig,
   FILTER_CONFIG_ASSET_ID,
   // SiteContents
   type SiteContents,
-  updateSiteContentsUseCase,
-  getSiteContentsUseCase,
-  observeSiteContentsUseCase,
+  $SiteContents,
   SITE_CONTENTS_ASSET_ID,
 } from '../../modules/SiteBuilder'
-
-/** アセットツリーの状態（将来的にこれも AssetRepository で管理する可能性あり） */
-const tree = shallowRef<AssetTree>($AssetTree.create())
-
-/** アセットマップの状態（Repository の変更を反映するためのリアクティブな Map） */
-const assetsMap = shallowRef<Map<AssetId, Asset>>(new Map())
-
-/** 現在のフォルダID */
-const currentFolderId = ref<NodeId>(ROOT_NODE_ID)
-
-/** 選択中のノードID */
-const selectedNodeId = ref<NodeId | null>(null)
-
-/** 選択中のアセット（リアクティブ用） */
-const selectedAssetRef = shallowRef<Asset | null>(null)
-
-/** 選択中アセットの購読解除関数 */
-let selectedAssetUnsubscribe: (() => void) | null = null
-
-/** 初期化済みフラグ（同期的な Repository 初期化） */
-let initialized = false
+import { DEFAULT_SITE_CONFIG } from '../../modules/SiteBuilder/Infra/MockData'
 
 /** 初期データロード完了フラグ（リアクティブ） */
 const isLoaded = ref(false)
@@ -74,228 +42,64 @@ type InitialData = {
 }
 let cachedInitialData: InitialData | null = null
 
-/** assetsMap を更新するヘルパー */
-const refreshAssetsMap = (repository: import('../../modules/AssetRepository').AssetRepository) => {
-  // ツリー内の全アセット参照を取得して Map を再構築
-  const allRefs = $AssetTree.getAllAssetRefs(tree.value)
-  const newMap = new Map<AssetId, Asset>()
-  for (const ref of allRefs) {
-    const asset = repository.get(ref.assetId)
-    if (asset) {
-      newMap.set(ref.assetId, asset)
-    }
-  }
-  assetsMap.value = newMap
-}
-
 export function useSiteBuilderAssets() {
-  const repository = getSiteBuilderRepository()
+  // useAssetManager から状態と操作を取得
+  const assetManager = useAssetManager()
+  const {
+    tree,
+    assets,
+    currentFolderId,
+    currentFolder,
+    currentNodes,
+    currentPath,
+    breadcrumbs,
+    selectedNodeId,
+    selectedAsset,
+    getAsset,
+    selectNode,
+    navigateTo,
+    navigateUp,
+    handleNodeClick,
+    createFolder,
+    addFiles,
+    pickFiles,
+    removeNode,
+    renameNode,
+  } = assetManager
 
-  // 初期化（一度だけ実行）
-  if (!initialized) {
-    initializeSiteBuilder(repository)
+  // ============================================================
+  // アセット取得・更新ヘルパー
+  // ============================================================
 
-    // ============================================================
-    // フォルダ構造の初期化
-    // ============================================================
-
-    // 1. config/ フォルダを作成し、設定ファイルを配置
-    tree.value = $AssetTree.addFolder(tree.value, 'config', ROOT_NODE_ID)
-    const configFolder = $AssetTree.getChildren(tree.value, ROOT_NODE_ID).find(
-      (node) => $AssetNode.isFolder(node) && node.name === 'config'
-    )
-    const configFolderId = configFolder?.id ?? ROOT_NODE_ID
-
-    tree.value = $AssetTree.addAssetRef(tree.value, 'brand-guide.md', configFolderId, BRAND_GUIDE_ASSET_ID)
-    tree.value = $AssetTree.addAssetRef(tree.value, 'site-config.json', configFolderId, SITE_CONFIG_ASSET_ID)
-    tree.value = $AssetTree.addAssetRef(tree.value, 'filter-config.json', configFolderId, FILTER_CONFIG_ASSET_ID)
-    tree.value = $AssetTree.addAssetRef(tree.value, 'site-contents.json', configFolderId, SITE_CONTENTS_ASSET_ID)
-
-    // 2. assets/ フォルダを作成（サブフォルダ付き）
-    tree.value = $AssetTree.addFolder(tree.value, 'assets', ROOT_NODE_ID)
-    const assetsFolder = $AssetTree.getChildren(tree.value, ROOT_NODE_ID).find(
-      (node) => $AssetNode.isFolder(node) && node.name === 'assets'
-    )
-    const assetsFolderId = assetsFolder?.id ?? ROOT_NODE_ID
-
-    tree.value = $AssetTree.addFolder(tree.value, 'images', assetsFolderId)
-    tree.value = $AssetTree.addFolder(tree.value, 'icons', assetsFolderId)
-    tree.value = $AssetTree.addFolder(tree.value, 'fonts', assetsFolderId)
-    tree.value = $AssetTree.addFolder(tree.value, 'documents', assetsFolderId)
-
-    // 3. dist/ フォルダを作成（ビルド出力用）
-    tree.value = $AssetTree.addFolder(tree.value, 'dist', ROOT_NODE_ID)
-
-    // assetsMap を初期化
-    refreshAssetsMap(repository)
-    initialized = true
+  /** アセットを ID で取得 */
+  const getAssetById = (assetId: string): Asset | undefined => {
+    return assets.value.get(assetId as any)
   }
 
-  /** 現在のフォルダ */
-  const currentFolder = computed<FolderNode>(() => {
-    return $AssetTree.getFolder(tree.value, currentFolderId.value) ?? $AssetTree.getRoot(tree.value)
-  })
-
-  /** 現在のフォルダ内のノード */
-  const currentNodes = computed<readonly AssetNode[]>(() => {
-    return $AssetTree.getChildren(tree.value, currentFolderId.value)
-  })
-
-  /** 現在のパス */
-  const currentPath = computed<string>(() => {
-    return $AssetTree.getPathString(tree.value, currentFolderId.value)
-  })
-
-  /** パンくずリスト */
-  const breadcrumbs = computed<readonly AssetNode[]>(() => {
-    return $AssetTree.getPath(tree.value, currentFolderId.value)
-  })
-
-  /** ノードに関連するアセットを取得 */
-  const getAsset = (node: AssetNode): Asset | undefined => {
-    if ($AssetNode.isAssetRef(node)) {
-      return repository.get(node.assetId)
-    }
-    return undefined
-  }
-
-  /** 選択中のアセットを取得（リアクティブに購読） */
-  const selectedAsset = computed<Asset | null>(() => selectedAssetRef.value)
-
-  /**
-   * 選択中のノードIDが変わったら、対応するアセットを購読する
-   */
-  const setupSelectedAssetSubscription = () => {
-    // 既存の購読を解除
-    if (selectedAssetUnsubscribe) {
-      selectedAssetUnsubscribe()
-      selectedAssetUnsubscribe = null
-    }
-
-    if (!selectedNodeId.value) {
-      selectedAssetRef.value = null
-      return
-    }
-
-    const node = $AssetTree.getNode(tree.value, selectedNodeId.value)
-    if (!node || !$AssetNode.isAssetRef(node)) {
-      selectedAssetRef.value = null
-      return
-    }
-
-    // 初期値を設定
-    selectedAssetRef.value = repository.get(node.assetId) ?? null
-
-    // 変更を購読
-    selectedAssetUnsubscribe = repository.subscribe(node.assetId, (asset) => {
-      selectedAssetRef.value = asset ?? null
-    })
-  }
-
-  // selectedNodeId の変更を監視して購読を設定
-  watch(selectedNodeId, setupSelectedAssetSubscription, { immediate: true })
-
-  /** ノードを選択 */
-  const selectNode = (node: AssetNode) => {
-    selectedNodeId.value = node.id
-  }
-
-  /** フォルダに移動 */
-  const navigateTo = (folderId: NodeId) => {
-    const folder = $AssetTree.getFolder(tree.value, folderId)
-    if (folder) {
-      currentFolderId.value = folderId
-    }
-  }
-
-  /** 親フォルダに移動 */
-  const navigateUp = () => {
-    const current = currentFolder.value
-    if (current.parentId) {
-      currentFolderId.value = current.parentId
-    }
-  }
-
-  /** ノードをクリック（フォルダなら移動） */
-  const handleNodeClick = (node: AssetNode) => {
-    if ($AssetNode.isFolder(node)) {
-      navigateTo(node.id)
-    }
-  }
-
-  /** 新しいフォルダを作成（ルートに追加） */
-  const createFolder = (name: string) => {
-    tree.value = $AssetTree.addFolder(tree.value, name, ROOT_NODE_ID)
-  }
-
-  /** ファイルを追加（ルートに追加） */
-  const addFiles = async (files: FileList | File[]) => {
-    const fileArray = Array.from(files)
-
-    for (const file of fileArray) {
-      const asset = $Asset.fromFile(file)
-      repository.set(asset.id, asset)
-      tree.value = $AssetTree.addAssetRef(tree.value, asset.name, ROOT_NODE_ID, asset.id)
-    }
-    refreshAssetsMap(repository)
-  }
-
-  /** File System Access APIでファイルを選択して追加（ルートに追加） */
-  const pickFiles = async () => {
-    try {
-      const handles = await (window as any).showOpenFilePicker({
-        multiple: true,
-      })
-
-      for (const handle of handles) {
-        const asset = await $Asset.fromFileHandle(handle)
-        repository.set(asset.id, asset)
-        tree.value = $AssetTree.addAssetRef(tree.value, asset.name, ROOT_NODE_ID, asset.id)
-      }
-      refreshAssetsMap(repository)
-    } catch (e) {
-      // ユーザーがキャンセルした場合は何もしない
-      if (e instanceof DOMException && e.name === 'AbortError') {
-        return
-      }
-      throw e
-    }
-  }
-
-  /** アセットを直接追加（Blobから） */
-  const addAsset = (asset: Asset) => {
-    repository.set(asset.id, asset)
-    tree.value = $AssetTree.addAssetRef(tree.value, asset.name, ROOT_NODE_ID, asset.id)
-    refreshAssetsMap(repository)
-  }
-
-  /** アセットを更新（既存のアセットのソースを更新） */
-  const updateAsset = (assetId: AssetId, blob: Blob) => {
-    const existing = repository.get(assetId)
+  /** アセットを更新（新しい Blob で） */
+  const updateAssetContent = (assetId: string, blob: Blob) => {
+    const existing = getAssetById(assetId)
     if (!existing) return
 
     const updated = $Asset.updateSource(existing, blob)
-    repository.set(assetId, updated)
-    refreshAssetsMap(repository)
+    const newAssets = new Map(assets.value)
+    newAssets.set(assetId as any, updated)
+    assets.value = newAssets
   }
 
-  /** ノードを削除 */
-  const removeNode = (nodeId: NodeId) => {
-    const node = $AssetTree.getNode(tree.value, nodeId)
-    if (!node) return
+  /** アセットの内容を文字列として取得 */
+  const getAssetContent = async (assetId: string): Promise<string> => {
+    const asset = getAssetById(assetId)
+    if (!asset) return ''
 
-    // アセット参照の場合、アセット本体も削除
-    if ($AssetNode.isAssetRef(node)) {
-      repository.delete(node.assetId)
+    const source = asset.source
+    if (source.type === 'blob') {
+      return await source.blob.text()
+    } else if (source.type === 'url') {
+      const response = await fetch(source.url)
+      return await response.text()
     }
-
-    tree.value = $AssetTree.removeNode(tree.value, nodeId)
-    refreshAssetsMap(repository)
-  }
-
-  /** ノードをリネーム */
-  const renameNode = (nodeId: NodeId, name: string) => {
-    tree.value = $AssetTree.renameNode(tree.value, nodeId, name)
+    return ''
   }
 
   // ============================================================
@@ -304,22 +108,33 @@ export function useSiteBuilderAssets() {
 
   /** Brand Guideアセットを取得 */
   const getBrandGuideAsset = (): Asset | undefined => {
-    return repository.get(BRAND_GUIDE_ASSET_ID)
+    return getAssetById(BRAND_GUIDE_ASSET_ID)
   }
 
   /** Brand Guideの内容を更新 */
   const updateBrandGuide = (content: string) => {
-    updateBrandGuideUseCase(repository, content)
+    const blob = new Blob([content], { type: 'text/markdown' })
+    updateAssetContent(BRAND_GUIDE_ASSET_ID, blob)
   }
 
   /** Brand Guideの内容を取得 */
   const getBrandGuideContent = (): Promise<string> => {
-    return getBrandGuideContentUseCase(repository)
+    return getAssetContent(BRAND_GUIDE_ASSET_ID)
   }
 
-  /** Brand Guide の変更を監視 */
-  const observeBrandGuide = (callback: (content: string) => void) => {
-    return observeBrandGuideUseCase(repository, callback)
+  /** Brand Guide の変更を監視（watchベース） */
+  const observeBrandGuide = (callback: (content: string) => void): (() => void) => {
+    const stopWatch = watch(
+      () => getAssetById(BRAND_GUIDE_ASSET_ID),
+      async (asset) => {
+        if (asset) {
+          const content = await getAssetContent(BRAND_GUIDE_ASSET_ID)
+          callback(content)
+        }
+      },
+      { immediate: true }
+    )
+    return stopWatch
   }
 
   // ============================================================
@@ -328,18 +143,30 @@ export function useSiteBuilderAssets() {
 
   /** SiteConfig を更新 */
   const updateSiteConfig = (config: SiteConfig) => {
-    updateSiteConfigUseCase(repository, config)
-    refreshAssetsMap(repository)
+    const json = $SiteConfig.toJSON(config)
+    const blob = new Blob([json], { type: 'application/json' })
+    updateAssetContent(SITE_CONFIG_ASSET_ID, blob)
   }
 
   /** SiteConfig を取得 */
-  const getSiteConfig = (): Promise<SiteConfig> => {
-    return getSiteConfigUseCase(repository)
+  const getSiteConfig = async (): Promise<SiteConfig> => {
+    const content = await getAssetContent(SITE_CONFIG_ASSET_ID)
+    return $SiteConfig.fromJSON(content, DEFAULT_SITE_CONFIG)
   }
 
   /** SiteConfig の変更を監視 */
-  const observeSiteConfig = (callback: (config: SiteConfig) => void) => {
-    return observeSiteConfigUseCase(repository, callback)
+  const observeSiteConfig = (callback: (config: SiteConfig) => void): (() => void) => {
+    const stopWatch = watch(
+      () => getAssetById(SITE_CONFIG_ASSET_ID),
+      async (asset) => {
+        if (asset) {
+          const config = await getSiteConfig()
+          callback(config)
+        }
+      },
+      { immediate: true }
+    )
+    return stopWatch
   }
 
   // ============================================================
@@ -348,18 +175,30 @@ export function useSiteBuilderAssets() {
 
   /** FilterConfig を更新 */
   const updateFilterConfig = (config: FilterConfig) => {
-    updateFilterConfigUseCase(repository, config)
-    refreshAssetsMap(repository)
+    const json = $FilterConfig.toJSON(config)
+    const blob = new Blob([json], { type: 'application/json' })
+    updateAssetContent(FILTER_CONFIG_ASSET_ID, blob)
   }
 
   /** FilterConfig を取得 */
-  const getFilterConfig = (): Promise<FilterConfig> => {
-    return getFilterConfigUseCase(repository)
+  const getFilterConfig = async (): Promise<FilterConfig> => {
+    const content = await getAssetContent(FILTER_CONFIG_ASSET_ID)
+    return $FilterConfig.fromJSON(content)
   }
 
   /** FilterConfig の変更を監視 */
-  const observeFilterConfig = (callback: (config: FilterConfig) => void) => {
-    return observeFilterConfigUseCase(repository, callback)
+  const observeFilterConfig = (callback: (config: FilterConfig) => void): (() => void) => {
+    const stopWatch = watch(
+      () => getAssetById(FILTER_CONFIG_ASSET_ID),
+      async (asset) => {
+        if (asset) {
+          const config = await getFilterConfig()
+          callback(config)
+        }
+      },
+      { immediate: true }
+    )
+    return stopWatch
   }
 
   // ============================================================
@@ -368,18 +207,30 @@ export function useSiteBuilderAssets() {
 
   /** SiteContents を更新 */
   const updateSiteContents = (contents: SiteContents) => {
-    updateSiteContentsUseCase(repository, contents)
-    refreshAssetsMap(repository)
+    const json = $SiteContents.toJSON(contents)
+    const blob = new Blob([json], { type: 'application/json' })
+    updateAssetContent(SITE_CONTENTS_ASSET_ID, blob)
   }
 
   /** SiteContents を取得 */
-  const getSiteContents = (): Promise<SiteContents> => {
-    return getSiteContentsUseCase(repository)
+  const getSiteContents = async (): Promise<SiteContents> => {
+    const content = await getAssetContent(SITE_CONTENTS_ASSET_ID)
+    return $SiteContents.fromJSON(content)
   }
 
   /** SiteContents の変更を監視 */
-  const observeSiteContents = (callback: (contents: SiteContents) => void) => {
-    return observeSiteContentsUseCase(repository, callback)
+  const observeSiteContents = (callback: (contents: SiteContents) => void): (() => void) => {
+    const stopWatch = watch(
+      () => getAssetById(SITE_CONTENTS_ASSET_ID),
+      async (asset) => {
+        if (asset) {
+          const contents = await getSiteContents()
+          callback(contents)
+        }
+      },
+      { immediate: true }
+    )
+    return stopWatch
   }
 
   // ============================================================
@@ -444,9 +295,9 @@ export function useSiteBuilderAssets() {
     isLoaded,
     loadInitialData,
 
-    // State
+    // State (from useAssetManager)
     tree,
-    assets: assetsMap,
+    assets,
     currentFolderId,
     currentFolder,
     currentNodes,
@@ -455,7 +306,7 @@ export function useSiteBuilderAssets() {
     selectedNodeId,
     selectedAsset,
 
-    // Actions
+    // Actions (from useAssetManager)
     getAsset,
     selectNode,
     navigateTo,
@@ -464,8 +315,6 @@ export function useSiteBuilderAssets() {
     createFolder,
     addFiles,
     pickFiles,
-    addAsset,
-    updateAsset,
     removeNode,
     renameNode,
 
