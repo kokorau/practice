@@ -10,7 +10,7 @@ const color2: RGBA = [0.2, 0.3, 0.5, 1.0]
 
 interface TexturePattern {
   label: string
-  render: (r: TextureRenderer, c1: RGBA, c2: RGBA) => void
+  render: (r: TextureRenderer, c1: RGBA, c2: RGBA, options?: { clear?: boolean }) => void
 }
 
 // 後景用テクスチャパターン
@@ -56,63 +56,63 @@ const texturePatterns: TexturePattern[] = [
 const maskPatterns: TexturePattern[] = [
   {
     label: 'Circle Center',
-    render: (r, c1, c2) =>
-      r.renderCircleMask({ centerX: 0.5, centerY: 0.5, radius: 0.3, innerColor: c1, outerColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderCircleMask({ centerX: 0.5, centerY: 0.5, radius: 0.3, innerColor: c1, outerColor: c2 }, opts),
   },
   {
     label: 'Circle Large',
-    render: (r, c1, c2) =>
-      r.renderCircleMask({ centerX: 0.5, centerY: 0.5, radius: 0.5, innerColor: c1, outerColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderCircleMask({ centerX: 0.5, centerY: 0.5, radius: 0.5, innerColor: c1, outerColor: c2 }, opts),
   },
   {
     label: 'Circle Top-Left',
-    render: (r, c1, c2) =>
-      r.renderCircleMask({ centerX: 0.25, centerY: 0.25, radius: 0.2, innerColor: c1, outerColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderCircleMask({ centerX: 0.25, centerY: 0.25, radius: 0.2, innerColor: c1, outerColor: c2 }, opts),
   },
   {
     label: 'Circle Bottom-Right',
-    render: (r, c1, c2) =>
-      r.renderCircleMask({ centerX: 0.75, centerY: 0.75, radius: 0.2, innerColor: c1, outerColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderCircleMask({ centerX: 0.75, centerY: 0.75, radius: 0.2, innerColor: c1, outerColor: c2 }, opts),
   },
   {
     label: 'Half Top',
-    render: (r, c1, c2) =>
-      r.renderHalfMask({ direction: 'top', visibleColor: c1, hiddenColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderHalfMask({ direction: 'top', visibleColor: c1, hiddenColor: c2 }, opts),
   },
   {
     label: 'Half Bottom',
-    render: (r, c1, c2) =>
-      r.renderHalfMask({ direction: 'bottom', visibleColor: c1, hiddenColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderHalfMask({ direction: 'bottom', visibleColor: c1, hiddenColor: c2 }, opts),
   },
   {
     label: 'Half Left',
-    render: (r, c1, c2) =>
-      r.renderHalfMask({ direction: 'left', visibleColor: c1, hiddenColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderHalfMask({ direction: 'left', visibleColor: c1, hiddenColor: c2 }, opts),
   },
   {
     label: 'Half Right',
-    render: (r, c1, c2) =>
-      r.renderHalfMask({ direction: 'right', visibleColor: c1, hiddenColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderHalfMask({ direction: 'right', visibleColor: c1, hiddenColor: c2 }, opts),
   },
   {
     label: 'Rect Center',
-    render: (r, c1, c2) =>
-      r.renderRectMask({ left: 0.3, right: 0.7, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderRectMask({ left: 0.3, right: 0.7, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 }, opts),
   },
   {
     label: 'Rect Frame',
-    render: (r, c1, c2) =>
-      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 }, opts),
   },
   {
     label: 'Rect Top',
-    render: (r, c1, c2) =>
-      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.05, bottom: 0.5, innerColor: c1, outerColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.05, bottom: 0.5, innerColor: c1, outerColor: c2 }, opts),
   },
   {
     label: 'Rect Bottom',
-    render: (r, c1, c2) =>
-      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.5, bottom: 0.95, innerColor: c1, outerColor: c2 }),
+    render: (r, c1, c2, opts) =>
+      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.5, bottom: 0.95, innerColor: c1, outerColor: c2 }, opts),
   },
 ]
 
@@ -174,14 +174,27 @@ function openSection(section: 'background' | 'midground' | 'foreground') {
   })
 }
 
+// マスク用カラー（内側透明、外側不透明）
+const maskInnerColor: RGBA = [0, 0, 0, 0] // 透明 - 後景が見える
+const maskOuterColor: RGBA = [0.1, 0.1, 0.15, 1.0] // 不透明 - 後景を隠す
+
 // プレビュー更新
 function updatePreview() {
   if (!previewRenderer) return
+
+  // 1. 後景を描画
   const bgPattern = texturePatterns[selectedBackgroundIndex.value]
   if (bgPattern) {
     bgPattern.render(previewRenderer, color1, color2)
   }
-  // TODO: 中景のマスクを合成
+
+  // 2. 中景のマスクを合成（選択されている場合）
+  if (selectedMaskIndex.value !== null) {
+    const maskPattern = maskPatterns[selectedMaskIndex.value]
+    if (maskPattern) {
+      maskPattern.render(previewRenderer, maskInnerColor, maskOuterColor, { clear: false })
+    }
+  }
 }
 
 watch([selectedBackgroundIndex, selectedMaskIndex], updatePreview)

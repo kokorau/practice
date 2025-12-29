@@ -358,7 +358,7 @@ export class TextureRenderer {
     this.render(this.checkerPipeline, this.checkerBindGroup!)
   }
 
-  renderCircleMask(params: CircleMaskParams): void {
+  renderCircleMask(params: CircleMaskParams, options?: { clear?: boolean }): void {
     if (!this.circleMaskPipeline) {
       const shaderModule = this.device.createShaderModule({
         code: circleMaskShader,
@@ -373,7 +373,23 @@ export class TextureRenderer {
         fragment: {
           module: shaderModule,
           entryPoint: 'fragmentMain',
-          targets: [{ format: this.format }],
+          targets: [
+            {
+              format: this.format,
+              blend: {
+                color: {
+                  srcFactor: 'src-alpha',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+                alpha: {
+                  srcFactor: 'one',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+              },
+            },
+          ],
         },
         primitive: {
           topology: 'triangle-list',
@@ -410,10 +426,10 @@ export class TextureRenderer {
     ])
     this.device.queue.writeBuffer(this.circleMaskBuffer!, 0, data)
 
-    this.render(this.circleMaskPipeline, this.circleMaskBindGroup!)
+    this.render(this.circleMaskPipeline, this.circleMaskBindGroup!, options)
   }
 
-  renderRectMask(params: RectMaskParams): void {
+  renderRectMask(params: RectMaskParams, options?: { clear?: boolean }): void {
     if (!this.rectMaskPipeline) {
       const shaderModule = this.device.createShaderModule({
         code: rectMaskShader,
@@ -428,7 +444,23 @@ export class TextureRenderer {
         fragment: {
           module: shaderModule,
           entryPoint: 'fragmentMain',
-          targets: [{ format: this.format }],
+          targets: [
+            {
+              format: this.format,
+              blend: {
+                color: {
+                  srcFactor: 'src-alpha',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+                alpha: {
+                  srcFactor: 'one',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+              },
+            },
+          ],
         },
         primitive: {
           topology: 'triangle-list',
@@ -462,10 +494,10 @@ export class TextureRenderer {
     ])
     this.device.queue.writeBuffer(this.rectMaskBuffer!, 0, data)
 
-    this.render(this.rectMaskPipeline, this.rectMaskBindGroup!)
+    this.render(this.rectMaskPipeline, this.rectMaskBindGroup!, options)
   }
 
-  renderHalfMask(params: HalfMaskParams): void {
+  renderHalfMask(params: HalfMaskParams, options?: { clear?: boolean }): void {
     if (!this.halfMaskPipeline) {
       const shaderModule = this.device.createShaderModule({
         code: halfMaskShader,
@@ -480,7 +512,23 @@ export class TextureRenderer {
         fragment: {
           module: shaderModule,
           entryPoint: 'fragmentMain',
-          targets: [{ format: this.format }],
+          targets: [
+            {
+              format: this.format,
+              blend: {
+                color: {
+                  srcFactor: 'src-alpha',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+                alpha: {
+                  srcFactor: 'one',
+                  dstFactor: 'one-minus-src-alpha',
+                  operation: 'add',
+                },
+              },
+            },
+          ],
         },
         primitive: {
           topology: 'triangle-list',
@@ -521,17 +569,23 @@ export class TextureRenderer {
     this.device.queue.writeBuffer(this.halfMaskBuffer!, 0, floatData)
     this.device.queue.writeBuffer(this.halfMaskBuffer!, 32, uintData)
 
-    this.render(this.halfMaskPipeline, this.halfMaskBindGroup!)
+    this.render(this.halfMaskPipeline, this.halfMaskBindGroup!, options)
   }
 
-  private render(pipeline: GPURenderPipeline, bindGroup: GPUBindGroup): void {
+  private render(
+    pipeline: GPURenderPipeline,
+    bindGroup: GPUBindGroup,
+    options?: { clear?: boolean }
+  ): void {
+    const clear = options?.clear ?? true
+
     const commandEncoder = this.device.createCommandEncoder()
     const renderPass = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
           view: this.context.getCurrentTexture().createView(),
           clearValue: { r: 0, g: 0, b: 0, a: 1 },
-          loadOp: 'clear',
+          loadOp: clear ? 'clear' : 'load',
           storeOp: 'store',
         },
       ],
