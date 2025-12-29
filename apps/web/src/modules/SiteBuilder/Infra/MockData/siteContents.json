@@ -1,189 +1,175 @@
 {
   "header-1": {
-    "logoText": "PaletteGen",
+    "logoText": "はっぱノート",
     "links": [
-      { "label": "Features", "url": "#features" },
-      { "label": "Pricing", "url": "#pricing" },
-      { "label": "Docs", "url": "#docs" }
+      { "label": "できること", "url": "#features" },
+      { "label": "つかいかた", "url": "#how-it-works" },
+      { "label": "よくある質問", "url": "#faq" }
     ],
-    "ctaLabel": "Log in",
+    "ctaLabel": "はじめる",
     "ctaUrl": "#signup"
   },
   "hero-1": {
-    "badge": "Now in Public Beta",
-    "title": "Design with Perfect Colors",
-    "highlight": "Perfect Colors",
-    "subtitle": "Create beautiful, accessible color palettes for your next project. Powered by OKLCH for perceptually uniform results.",
-    "primaryCtaLabel": "Start Free",
-    "secondaryCtaLabel": "Watch Demo",
+    "badge": "気軽にはじめよう",
+    "title": "がんばらなくても、なんとなく続く",
+    "highlight": "なんとなく続く",
+    "subtitle": "はっぱノートは、暮らしと並走する家計ノート。数字に追われず、気づいたらちょっと節約できてる。そんな感じ。",
+    "primaryCtaLabel": "無料ではじめる",
+    "secondaryCtaLabel": "くわしく見る",
     "stats": [
-      { "value": "10K+", "label": "Designers" },
-      { "value": "50K+", "label": "Palettes" },
-      { "value": "4.9", "label": "Rating" }
+      { "value": "30秒", "label": "で登録完了" },
+      { "value": "0円", "label": "ずっと無料" },
+      { "value": "◎", "label": "続けやすさ" }
     ]
   },
   "features-1": {
-    "title": "Features",
+    "title": "できること",
     "features": [
       {
-        "title": "OKLCH Colors",
-        "description": "Perceptually uniform color space for consistent results."
+        "title": "かんたん記録",
+        "description": "金額とカテゴリを選ぶだけ。細かいことは気にしなくて大丈夫。"
       },
       {
-        "title": "Auto Contrast",
-        "description": "Automatically ensures accessible contrast ratios."
+        "title": "ゆるく振り返り",
+        "description": "月末にそっと教えてくれる。「先月より、少し落ち着いたかも」って。"
       },
       {
-        "title": "Light & Dark",
-        "description": "Seamless theme switching built right in."
+        "title": "たぬきがそばに",
+        "description": "たまに一言くれる相棒。何も言わない日もある。それでいい。"
       }
     ]
   },
   "logos-1": {
-    "label": "Trusted by teams at",
-    "logos": ["Acme Inc", "Globex", "Stark", "Wayne", "Umbrella"]
+    "label": "こんな人が使ってます",
+    "logos": ["学生", "新社会人", "一人暮らし", "同棲カップル", "節約したい人"]
   },
   "how-it-works-1": {
-    "title": "How it works",
+    "title": "つかいかた",
     "steps": [
       {
-        "title": "Pick a brand color",
-        "description": "Choose your primary brand color using our intuitive color picker."
+        "title": "気づいたときに記録",
+        "description": "コンビニで買い物したあと、ふと思い出したときに。毎日じゃなくてOK。"
       },
       {
-        "title": "Adjust parameters",
-        "description": "Fine-tune lightness, chroma, and contrast to match your vision."
+        "title": "ときどき見てみる",
+        "description": "週末とか、月末とか。今月どうだったっけ？って感じで。"
       },
       {
-        "title": "Export & use",
-        "description": "Export as CSS variables, Tailwind config, or design tokens."
+        "title": "なんとなく意識が変わる",
+        "description": "いつのまにか、ちょっとだけ出費を気にするように。無理なく。"
       }
     ]
   },
   "testimonials-1": {
-    "title": "What people are saying",
+    "title": "つかってる人の声",
     "testimonials": [
       {
-        "quote": "Finally, a color tool that understands accessibility. The auto-contrast feature alone saves us hours every week.",
-        "authorName": "Sarah Chen",
-        "authorRole": "Design Lead, Figma"
+        "quote": "家計簿って続かないと思ってたけど、はっぱノートは気づいたら半年続いてた。たぬきがかわいい。",
+        "authorName": "ゆうき",
+        "authorRole": "大学生"
       },
       {
-        "quote": "We switched from HSL to OKLCH thanks to this tool. The perceptual uniformity makes such a difference.",
-        "authorName": "Marcus Johnson",
-        "authorRole": "Senior Engineer, Vercel"
+        "quote": "数字で怒られないのがいい。先月よりちょっと減ったよ、くらいの感じが好き。",
+        "authorName": "あやか",
+        "authorRole": "新社会人"
       },
       {
-        "quote": "The best palette generator I've used. Dark mode support out of the box is a game changer.",
-        "authorName": "Emily Park",
-        "authorRole": "Product Designer, Linear"
+        "quote": "彼女と同棲はじめて、ふたりでなんとなく使ってる。重くないから続く。",
+        "authorName": "たくや",
+        "authorRole": "会社員"
       }
     ]
   },
   "pricing-1": {
-    "title": "Simple pricing",
-    "subtitle": "Start free, upgrade when you need more.",
+    "title": "料金",
+    "subtitle": "ずっと無料で使えます。",
     "plans": [
       {
-        "name": "Free",
-        "price": "$0",
-        "period": "month",
+        "name": "フリー",
+        "price": "¥0",
+        "period": "ずっと",
         "features": [
-          { "text": "5 palettes" },
-          { "text": "CSS export" },
-          { "text": "Basic support" }
+          { "text": "すべての機能が使える" },
+          { "text": "記録は無制限" },
+          { "text": "広告なし" }
         ],
-        "ctaLabel": "Get Started"
+        "ctaLabel": "はじめる"
       },
       {
-        "name": "Pro",
-        "price": "$12",
-        "period": "month",
+        "name": "サポーター",
+        "price": "¥300",
+        "period": "月",
         "features": [
-          { "text": "Unlimited palettes" },
-          { "text": "All export formats" },
-          { "text": "Team sharing" },
-          { "text": "Priority support" }
+          { "text": "フリーと同じ機能" },
+          { "text": "たぬきの着せ替え" },
+          { "text": "開発を応援できる" }
         ],
-        "ctaLabel": "Start Free Trial",
-        "isFeatured": true,
-        "badge": "Popular"
-      },
-      {
-        "name": "Enterprise",
-        "price": "Custom",
-        "features": [
-          { "text": "Everything in Pro" },
-          { "text": "SSO & SAML" },
-          { "text": "Dedicated support" },
-          { "text": "Custom integrations" }
-        ],
-        "ctaLabel": "Contact Sales"
+        "ctaLabel": "応援する",
+        "badge": "開発を応援"
       }
     ]
   },
   "faq-1": {
-    "title": "Frequently asked questions",
+    "title": "よくある質問",
     "items": [
       {
-        "question": "What is OKLCH and why should I use it?",
-        "answer": "OKLCH is a perceptually uniform color space. Unlike HSL, colors with the same lightness value actually appear equally bright to human eyes, making it ideal for creating consistent design systems."
+        "question": "本当に無料？",
+        "answer": "うん、ずっと無料。サポーターになってくれるとうれしいけど、ならなくても全部使えるよ。"
       },
       {
-        "question": "Can I export to Tailwind CSS?",
-        "answer": "Yes! Pro users can export palettes directly to Tailwind config format, including CSS variables and theme extensions."
+        "question": "毎日つけなきゃダメ？",
+        "answer": "ぜんぜん。思い出したときでOK。週に1回でも、月に数回でも。"
       },
       {
-        "question": "How does auto-contrast work?",
-        "answer": "Our algorithm automatically calculates WCAG-compliant contrast ratios and adjusts text colors to ensure readability on any background."
+        "question": "レシート読み取りはある？",
+        "answer": "今はないんだ。でも、シンプルに金額入れるだけでも意外と続くよ。"
       },
       {
-        "question": "Is there a Figma plugin?",
-        "answer": "We're currently developing a Figma plugin. Join our waitlist to be notified when it's ready."
+        "question": "たぬきって何？",
+        "answer": "そばにいる相棒。たまに一言くれるけど、うるさくはない。何も言わない日もある。"
       }
     ]
   },
   "cta-1": {
-    "title": "Ready to Start?",
-    "description": "Join thousands of designers using our palette generator.",
-    "benefits": ["Free forever", "No credit card", "Instant access"],
-    "inputPlaceholder": "Enter your email",
-    "ctaLabel": "Get Started",
-    "note": "By signing up, you agree to our Terms and Privacy Policy."
+    "title": "はじめてみる？",
+    "description": "無理しなくて大丈夫。気軽にどうぞ。",
+    "benefits": ["30秒で登録", "ずっと無料", "いつでもやめられる"],
+    "inputPlaceholder": "メールアドレス",
+    "ctaLabel": "はじめる",
+    "note": "登録すると利用規約とプライバシーポリシーに同意したことになります。"
   },
   "footer-1": {
-    "logoText": "PaletteGen",
-    "tagline": "Beautiful colors for everyone.",
+    "logoText": "はっぱノート",
+    "tagline": "暮らしと並走する家計ノート",
     "columns": [
       {
-        "heading": "Product",
+        "heading": "つかう",
         "links": [
-          { "label": "Features", "url": "#" },
-          { "label": "Pricing", "url": "#" },
-          { "label": "Changelog", "url": "#" }
+          { "label": "はじめる", "url": "#" },
+          { "label": "つかいかた", "url": "#" },
+          { "label": "よくある質問", "url": "#" }
         ]
       },
       {
-        "heading": "Resources",
+        "heading": "もっと知る",
         "links": [
-          { "label": "Documentation", "url": "#" },
-          { "label": "Guides", "url": "#" },
-          { "label": "API", "url": "#" }
+          { "label": "はっぱノートについて", "url": "#" },
+          { "label": "お知らせ", "url": "#" },
+          { "label": "開発ブログ", "url": "#" }
         ]
       },
       {
-        "heading": "Company",
+        "heading": "サポート",
         "links": [
-          { "label": "About", "url": "#" },
-          { "label": "Blog", "url": "#" },
-          { "label": "Careers", "url": "#" }
+          { "label": "お問い合わせ", "url": "#" },
+          { "label": "バグ報告", "url": "#" }
         ]
       }
     ],
-    "copyright": "© 2024 PaletteGen. All rights reserved.",
+    "copyright": "© 2024 はっぱノート",
     "legalLinks": [
-      { "label": "Privacy", "url": "#" },
-      { "label": "Terms", "url": "#" }
+      { "label": "プライバシー", "url": "#" },
+      { "label": "利用規約", "url": "#" }
     ]
   }
 }
