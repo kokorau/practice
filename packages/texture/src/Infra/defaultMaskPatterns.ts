@@ -3,7 +3,6 @@ import type { GetDefaultMaskPatterns } from '../Application'
 import {
   createCircleMaskSpec,
   createRectMaskSpec,
-  createHalfMaskSpec,
   createBlobMaskSpec,
 } from '../shaders'
 
@@ -46,22 +45,34 @@ const defaultMaskPatterns: TexturePattern[] = [
   {
     label: 'Half Top',
     createSpec: (c1, c2, viewport) =>
-      createHalfMaskSpec({ direction: 'top', visibleColor: c1, hiddenColor: c2 }, viewport!),
+      createRectMaskSpec(
+        { left: 0, right: 1, top: 0, bottom: 0.5, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
   },
   {
     label: 'Half Bottom',
     createSpec: (c1, c2, viewport) =>
-      createHalfMaskSpec({ direction: 'bottom', visibleColor: c1, hiddenColor: c2 }, viewport!),
+      createRectMaskSpec(
+        { left: 0, right: 1, top: 0.5, bottom: 1, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
   },
   {
     label: 'Half Left',
     createSpec: (c1, c2, viewport) =>
-      createHalfMaskSpec({ direction: 'left', visibleColor: c1, hiddenColor: c2 }, viewport!),
+      createRectMaskSpec(
+        { left: 0, right: 0.5, top: 0, bottom: 1, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
   },
   {
     label: 'Half Right',
     createSpec: (c1, c2, viewport) =>
-      createHalfMaskSpec({ direction: 'right', visibleColor: c1, hiddenColor: c2 }, viewport!),
+      createRectMaskSpec(
+        { left: 0.5, right: 1, top: 0, bottom: 1, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
   },
   {
     label: 'Rect Center',
@@ -100,6 +111,82 @@ const defaultMaskPatterns: TexturePattern[] = [
     createSpec: (c1, c2, viewport) =>
       createRectMaskSpec(
         { left: 0.1, right: 0.9, top: 0.5, bottom: 0.95, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Rounded Center',
+    createSpec: (c1, c2, viewport) =>
+      createRectMaskSpec(
+        { left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radius: 0.05, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Rounded Frame',
+    createSpec: (c1, c2, viewport) =>
+      createRectMaskSpec(
+        { left: 0.1, right: 0.9, top: 0.1, bottom: 0.9, radius: 0.03, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Pill Narrow',
+    createSpec: (c1, c2, viewport) =>
+      createRectMaskSpec(
+        { left: 0.3, right: 0.7, top: 0.1, bottom: 0.9, radius: 0.2, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Arch Top',
+    createSpec: (c1, c2, viewport) =>
+      createRectMaskSpec(
+        {
+          left: 0.35, right: 0.65, top: 0, bottom: 1,
+          radiusTopLeft: 0, radiusTopRight: 0,
+          radiusBottomLeft: 0.15, radiusBottomRight: 0.15,
+          innerColor: c1, outerColor: c2,
+        },
+        viewport!
+      ),
+  },
+  {
+    label: 'Arch Bottom',
+    createSpec: (c1, c2, viewport) =>
+      createRectMaskSpec(
+        {
+          left: 0.35, right: 0.65, top: 0, bottom: 1,
+          radiusTopLeft: 0.15, radiusTopRight: 0.15,
+          radiusBottomLeft: 0, radiusBottomRight: 0,
+          innerColor: c1, outerColor: c2,
+        },
+        viewport!
+      ),
+  },
+  {
+    label: 'Rounded Left',
+    createSpec: (c1, c2, viewport) =>
+      createRectMaskSpec(
+        {
+          left: 0, right: 0.55, top: 0.1, bottom: 0.9,
+          radiusTopLeft: 0, radiusBottomLeft: 0,
+          radiusTopRight: 0.04, radiusBottomRight: 0.04,
+          innerColor: c1, outerColor: c2,
+        },
+        viewport!
+      ),
+  },
+  {
+    label: 'Rounded Right',
+    createSpec: (c1, c2, viewport) =>
+      createRectMaskSpec(
+        {
+          left: 0.45, right: 1, top: 0.1, bottom: 0.9,
+          radiusTopLeft: 0.04, radiusBottomLeft: 0.04,
+          radiusTopRight: 0, radiusBottomRight: 0,
+          innerColor: c1, outerColor: c2,
+        },
         viewport!
       ),
   },

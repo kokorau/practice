@@ -7,13 +7,9 @@ export { checkerShader, createCheckerSpec, type CheckerTextureParams } from './c
 export {
   circleMaskShader,
   rectMaskShader,
-  halfMaskShader,
   createCircleMaskSpec,
   createRectMaskSpec,
-  createHalfMaskSpec,
   type CircleMaskParams,
   type RectMaskParams,
-  type HalfMaskParams,
-  type HalfMaskDirection,
 } from './mask'
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'

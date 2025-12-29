@@ -15,21 +15,8 @@ export interface CircleMaskParams {
   outerColor: [number, number, number, number]
 }
 
-/** 半分マスクの方向 */
-export type HalfMaskDirection = 'top' | 'bottom' | 'left' | 'right'
-
-/** 半分マスクのパラメータ */
-export interface HalfMaskParams {
-  /** 方向 */
-  direction: HalfMaskDirection
-  /** 見える側の色 */
-  visibleColor: [number, number, number, number]
-  /** 隠れる側の色 */
-  hiddenColor: [number, number, number, number]
-}
-
-/** 長方形マスクのパラメータ */
-export interface RectMaskParams {
+/** 長方形マスクの基本パラメータ */
+interface RectMaskBaseParams {
   /** 左端 (0.0-1.0) */
   left: number
   /** 右端 (0.0-1.0) */
@@ -43,6 +30,27 @@ export interface RectMaskParams {
   /** 外側の色 */
   outerColor: [number, number, number, number]
 }
+
+/** 全角に同じ角丸を適用 */
+interface RectMaskUniformRadius extends RectMaskBaseParams {
+  /** 角丸の半径 (全角に適用) */
+  radius?: number
+}
+
+/** 各角に個別の角丸を適用 */
+interface RectMaskIndividualRadius extends RectMaskBaseParams {
+  /** 左上の角丸半径 */
+  radiusTopLeft: number
+  /** 右上の角丸半径 */
+  radiusTopRight: number
+  /** 左下の角丸半径 */
+  radiusBottomLeft: number
+  /** 右下の角丸半径 */
+  radiusBottomRight: number
+}
+
+/** 長方形マスクのパラメータ */
+export type RectMaskParams = RectMaskUniformRadius | RectMaskIndividualRadius
 
 /** 円形マスクシェーダー */
 export const circleMaskShader = /* wgsl */ `
@@ -93,7 +101,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 }
 `
 
-/** 長方形マスクシェーダー */
+/** 長方形マスクシェーダー（4角個別の角丸対応） */
 export const rectMaskShader = /* wgsl */ `
 ${fullscreenVertex}
 
@@ -106,85 +114,82 @@ struct RectMaskParams {
   right: f32,
   top: f32,
   bottom: f32,
+  radiusTopLeft: f32,
+  radiusTopRight: f32,
+  radiusBottomLeft: f32,
+  radiusBottomRight: f32,
+  aspectRatio: f32,
   viewportWidth: f32,
   viewportHeight: f32,
+  _padding: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: RectMaskParams;
 
-@fragment
-fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  let viewportWidth = params.viewportWidth;
-  let viewportHeight = params.viewportHeight;
-
-  let uv = vec2f(pos.x / viewportWidth, pos.y / viewportHeight);
-
-  let pixelSizeX = 1.0 / viewportWidth;
-  let pixelSizeY = 1.0 / viewportHeight;
-
-  // 各辺からの距離でアンチエイリアス
-  let insideLeft = smoothstep(params.left - pixelSizeX, params.left + pixelSizeX, uv.x);
-  let insideRight = 1.0 - smoothstep(params.right - pixelSizeX, params.right + pixelSizeX, uv.x);
-  let insideTop = smoothstep(params.top - pixelSizeY, params.top + pixelSizeY, uv.y);
-  let insideBottom = 1.0 - smoothstep(params.bottom - pixelSizeY, params.bottom + pixelSizeY, uv.y);
-
-  let inside = insideLeft * insideRight * insideTop * insideBottom;
-
-  return mix(params.outerColor, params.innerColor, inside);
-}
-`
-
-/** 半分マスクシェーダー */
-export const halfMaskShader = /* wgsl */ `
-${fullscreenVertex}
-
-${aaUtils}
-
-struct HalfMaskParams {
-  visibleColor: vec4f,
-  hiddenColor: vec4f,
-  direction: u32,  // 0: top, 1: bottom, 2: left, 3: right
-  _padding1: u32,
-  viewportWidth: f32,
-  viewportHeight: f32,
-}
-
-@group(0) @binding(0) var<uniform> params: HalfMaskParams;
-
-@fragment
-fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  let viewportWidth = params.viewportWidth;
-  let viewportHeight = params.viewportHeight;
-
-  let uv = vec2f(pos.x / viewportWidth, pos.y / viewportHeight);
-
-  var visible: f32;
-  let pixelSizeX = 1.0 / viewportWidth;
-  let pixelSizeY = 1.0 / viewportHeight;
-
-  switch params.direction {
-    case 0u: {
-      // top: 上半分が見える (y < 0.5)
-      visible = 1.0 - smoothstep(0.5 - pixelSizeY, 0.5 + pixelSizeY, uv.y);
+// Signed distance function for rounded rectangle with per-corner radii
+// radii: vec4f(topLeft, topRight, bottomRight, bottomLeft)
+fn sdRoundedRectVar(p: vec2f, halfSize: vec2f, radii: vec4f) -> f32 {
+  // 象限に応じて適切なradiusを選択
+  // p.x < 0 なら左側、p.y < 0 なら上側
+  var r: f32;
+  if (p.x < 0.0) {
+    if (p.y < 0.0) {
+      r = radii.x; // top-left
+    } else {
+      r = radii.w; // bottom-left
     }
-    case 1u: {
-      // bottom: 下半分が見える (y > 0.5)
-      visible = smoothstep(0.5 - pixelSizeY, 0.5 + pixelSizeY, uv.y);
-    }
-    case 2u: {
-      // left: 左半分が見える (x < 0.5)
-      visible = 1.0 - smoothstep(0.5 - pixelSizeX, 0.5 + pixelSizeX, uv.x);
-    }
-    case 3u: {
-      // right: 右半分が見える (x > 0.5)
-      visible = smoothstep(0.5 - pixelSizeX, 0.5 + pixelSizeX, uv.x);
-    }
-    default: {
-      visible = 1.0;
+  } else {
+    if (p.y < 0.0) {
+      r = radii.y; // top-right
+    } else {
+      r = radii.z; // bottom-right
     }
   }
 
-  return mix(params.hiddenColor, params.visibleColor, visible);
+  let q = abs(p) - halfSize + r;
+  return length(max(q, vec2f(0.0))) + min(max(q.x, q.y), 0.0) - r;
+}
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let viewportWidth = params.viewportWidth;
+  let viewportHeight = params.viewportHeight;
+  let aspectRatio = params.aspectRatio;
+
+  let uv = vec2f(pos.x / viewportWidth, pos.y / viewportHeight);
+
+  // 矩形の中心と半サイズを計算
+  let center = vec2f((params.left + params.right) / 2.0, (params.top + params.bottom) / 2.0);
+  let halfSize = vec2f((params.right - params.left) / 2.0, (params.bottom - params.top) / 2.0);
+
+  // uvから中心への距離
+  var p = uv - center;
+  var correctedHalfSize = halfSize;
+  var radii = vec4f(params.radiusTopLeft, params.radiusTopRight, params.radiusBottomRight, params.radiusBottomLeft);
+
+  // アスペクト比補正（正方形空間に変換して計算）
+  if (aspectRatio > 1.0) {
+    p.x *= aspectRatio;
+    correctedHalfSize.x *= aspectRatio;
+    radii *= aspectRatio;
+  } else {
+    p.y /= aspectRatio;
+    correctedHalfSize.y /= aspectRatio;
+    radii /= aspectRatio;
+  }
+
+  // 各radiusを矩形の短辺の半分までにクランプ
+  let maxRadius = min(correctedHalfSize.x, correctedHalfSize.y);
+  radii = min(radii, vec4f(maxRadius));
+
+  // SDFで距離を計算
+  let dist = sdRoundedRectVar(p, correctedHalfSize, radii);
+
+  // アンチエイリアス
+  let pixelSize = 1.0 / min(viewportWidth, viewportHeight);
+  let inside = 1.0 - smoothstep(-pixelSize, pixelSize, dist);
+
+  return mix(params.outerColor, params.innerColor, inside);
 }
 `
 
@@ -221,6 +226,15 @@ export function createRectMaskSpec(
   params: RectMaskParams,
   viewport: Viewport
 ): TextureRenderSpec {
+  const aspectRatio = viewport.width / viewport.height
+
+  // 個別指定か全角指定かを判別
+  const isIndividual = 'radiusTopLeft' in params
+  const radiusTopLeft = isIndividual ? params.radiusTopLeft : (params.radius ?? 0)
+  const radiusTopRight = isIndividual ? params.radiusTopRight : (params.radius ?? 0)
+  const radiusBottomLeft = isIndividual ? params.radiusBottomLeft : (params.radius ?? 0)
+  const radiusBottomRight = isIndividual ? params.radiusBottomRight : (params.radius ?? 0)
+
   const data = new Float32Array([
     ...params.innerColor,
     ...params.outerColor,
@@ -228,59 +242,20 @@ export function createRectMaskSpec(
     params.right,
     params.top,
     params.bottom,
+    radiusTopLeft,
+    radiusTopRight,
+    radiusBottomLeft,
+    radiusBottomRight,
+    aspectRatio,
     viewport.width,
     viewport.height,
+    0, // padding
   ])
   return {
     shader: rectMaskShader,
     uniforms: data.buffer,
-    bufferSize: 64,
+    bufferSize: 96,
     blend: maskBlendState,
   }
 }
 
-/**
- * Create render spec for half mask
- */
-export function createHalfMaskSpec(
-  params: HalfMaskParams,
-  viewport: Viewport
-): TextureRenderSpec {
-  const directionMap: Record<HalfMaskDirection, number> = {
-    top: 0,
-    bottom: 1,
-    left: 2,
-    right: 3,
-  }
-
-  // Build uniform buffer manually due to mixed types (u32 + f32)
-  const buffer = new ArrayBuffer(48)
-  const floatView = new Float32Array(buffer)
-  const uintView = new Uint32Array(buffer)
-
-  // visibleColor (vec4f) - offset 0
-  floatView[0] = params.visibleColor[0]
-  floatView[1] = params.visibleColor[1]
-  floatView[2] = params.visibleColor[2]
-  floatView[3] = params.visibleColor[3]
-  // hiddenColor (vec4f) - offset 16
-  floatView[4] = params.hiddenColor[0]
-  floatView[5] = params.hiddenColor[1]
-  floatView[6] = params.hiddenColor[2]
-  floatView[7] = params.hiddenColor[3]
-  // direction (u32) - offset 32
-  uintView[8] = directionMap[params.direction]
-  // padding (u32) - offset 36
-  uintView[9] = 0
-  // viewportWidth (f32) - offset 40
-  floatView[10] = viewport.width
-  // viewportHeight (f32) - offset 44
-  floatView[11] = viewport.height
-
-  return {
-    shader: halfMaskShader,
-    uniforms: buffer,
-    bufferSize: 48,
-    blend: maskBlendState,
-  }
-}

@@ -12,8 +12,6 @@ export type {
   CheckerTextureParams,
   CircleMaskParams,
   RectMaskParams,
-  HalfMaskParams,
-  HalfMaskDirection,
   BlobMaskParams,
 } from './shaders'
 
@@ -25,7 +23,6 @@ export {
   createCheckerSpec,
   createCircleMaskSpec,
   createRectMaskSpec,
-  createHalfMaskSpec,
   createBlobMaskSpec,
 } from './shaders'
 
