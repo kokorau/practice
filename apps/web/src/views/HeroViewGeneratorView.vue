@@ -100,6 +100,31 @@ const patterns: Omit<TexturePreview, 'canvasRef' | 'renderer'>[] = [
     render: (r, c1, c2) =>
       r.renderPolkaDot({ dotRadius: 2, spacing: 8, rowOffset: 0.5, dotColor: c1, bgColor: c2 }),
   },
+  {
+    label: 'Checker',
+    render: (r, c1, c2) =>
+      r.renderChecker({ cellSize: 30, angle: 0, color1: c1, color2: c2 }),
+  },
+  {
+    label: 'Checker Small',
+    render: (r, c1, c2) =>
+      r.renderChecker({ cellSize: 15, angle: 0, color1: c1, color2: c2 }),
+  },
+  {
+    label: 'Checker Large',
+    render: (r, c1, c2) =>
+      r.renderChecker({ cellSize: 50, angle: 0, color1: c1, color2: c2 }),
+  },
+  {
+    label: 'Diamond',
+    render: (r, c1, c2) =>
+      r.renderChecker({ cellSize: 30, angle: Math.PI / 4, color1: c1, color2: c2 }),
+  },
+  {
+    label: 'Diamond Small',
+    render: (r, c1, c2) =>
+      r.renderChecker({ cellSize: 15, angle: Math.PI / 4, color1: c1, color2: c2 }),
+  },
 ]
 
 const previews: TexturePreview[] = patterns.map((p) => ({

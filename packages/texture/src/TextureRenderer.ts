@@ -3,10 +3,12 @@ import {
   stripeShader,
   gridShader,
   polkaDotShader,
+  checkerShader,
   type SolidTextureParams,
   type StripeTextureParams,
   type GridTextureParams,
   type PolkaDotTextureParams,
+  type CheckerTextureParams,
 } from './shaders'
 
 /**
@@ -36,6 +38,11 @@ export class TextureRenderer {
   private polkaDotPipeline: GPURenderPipeline | null = null
   private polkaDotBuffer: GPUBuffer | null = null
   private polkaDotBindGroup: GPUBindGroup | null = null
+
+  // Checker
+  private checkerPipeline: GPURenderPipeline | null = null
+  private checkerBuffer: GPUBuffer | null = null
+  private checkerBindGroup: GPUBindGroup | null = null
 
   private constructor(
     device: GPUDevice,
@@ -277,6 +284,58 @@ export class TextureRenderer {
     this.render(this.polkaDotPipeline, this.polkaDotBindGroup!)
   }
 
+  renderChecker(params: CheckerTextureParams): void {
+    if (!this.checkerPipeline) {
+      const shaderModule = this.device.createShaderModule({
+        code: checkerShader,
+      })
+
+      this.checkerPipeline = this.device.createRenderPipeline({
+        layout: 'auto',
+        vertex: {
+          module: shaderModule,
+          entryPoint: 'vertexMain',
+        },
+        fragment: {
+          module: shaderModule,
+          entryPoint: 'fragmentMain',
+          targets: [{ format: this.format }],
+        },
+        primitive: {
+          topology: 'triangle-list',
+        },
+      })
+
+      // CheckerParams: color1(16) + color2(16) + cellSize(4) + angle(4) + padding(8) = 48 bytes
+      this.checkerBuffer = this.device.createBuffer({
+        size: 48,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      })
+
+      this.checkerBindGroup = this.device.createBindGroup({
+        layout: this.checkerPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.checkerBuffer },
+          },
+        ],
+      })
+    }
+
+    const data = new Float32Array([
+      ...params.color1,
+      ...params.color2,
+      params.cellSize,
+      params.angle,
+      0, // padding
+      0, // padding
+    ])
+    this.device.queue.writeBuffer(this.checkerBuffer!, 0, data)
+
+    this.render(this.checkerPipeline, this.checkerBindGroup!)
+  }
+
   private render(pipeline: GPURenderPipeline, bindGroup: GPUBindGroup): void {
     const commandEncoder = this.device.createCommandEncoder()
     const renderPass = commandEncoder.beginRenderPass({
@@ -303,5 +362,6 @@ export class TextureRenderer {
     this.stripeBuffer?.destroy()
     this.gridBuffer?.destroy()
     this.polkaDotBuffer?.destroy()
+    this.checkerBuffer?.destroy()
   }
 }

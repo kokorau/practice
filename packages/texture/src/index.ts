@@ -7,4 +7,5 @@ export type {
   StripeTextureParams,
   GridTextureParams,
   PolkaDotTextureParams,
+  CheckerTextureParams,
 } from './shaders'
