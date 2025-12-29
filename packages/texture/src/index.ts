@@ -9,3 +9,12 @@ export type {
   PolkaDotTextureParams,
   CheckerTextureParams,
 } from './shaders'
+
+// Domain
+export type { RGBA, TextureRenderOptions, TexturePattern } from './Domain'
+
+// Application
+export type { GetDefaultTexturePatterns, GetDefaultMaskPatterns } from './Application'
+
+// Infra
+export { getDefaultTexturePatterns, getDefaultMaskPatterns } from './Infra'

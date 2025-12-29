@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { TextureRenderer } from '@practice/texture'
+import {
+  TextureRenderer,
+  getDefaultTexturePatterns,
+  getDefaultMaskPatterns,
+  type TexturePattern,
+  type RGBA,
+} from '@practice/texture'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import { FOUNDATION_PRESETS } from '../components/SiteBuilder/foundationPresets'
@@ -17,8 +23,6 @@ import {
 } from '../modules/SemanticColorPalette/Infra'
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
-
-type RGBA = [number, number, number, number]
 
 // ============================================================
 // Brand Color State (HSV Color Picker)
@@ -147,113 +151,9 @@ const paletteToRgba = (oklch: Oklch, alpha: number = 1.0): RGBA => {
 const textureColor1 = computed((): RGBA => paletteToRgba(primitivePalette.value.B))
 const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value.N4))
 
-interface TexturePattern {
-  label: string
-  render: (r: TextureRenderer, c1: RGBA, c2: RGBA, options?: { clear?: boolean }) => void
-}
-
-// 後景用テクスチャパターン
-const texturePatterns: TexturePattern[] = [
-  { label: 'Solid', render: (r, c1) => r.renderSolid({ color: c1 }) },
-  {
-    label: 'Diagonal 45°',
-    render: (r, c1, c2) =>
-      r.renderStripe({ width1: 20, width2: 20, angle: Math.PI / 4, color1: c1, color2: c2 }),
-  },
-  {
-    label: 'Horizontal',
-    render: (r, c1, c2) =>
-      r.renderStripe({ width1: 15, width2: 15, angle: 0, color1: c1, color2: c2 }),
-  },
-  {
-    label: 'Vertical',
-    render: (r, c1, c2) =>
-      r.renderStripe({ width1: 10, width2: 10, angle: Math.PI / 2, color1: c1, color2: c2 }),
-  },
-  {
-    label: 'Grid',
-    render: (r, c1, c2) =>
-      r.renderGrid({ lineWidth: 2, cellSize: 30, lineColor: c1, bgColor: c2 }),
-  },
-  {
-    label: 'Polka Dot',
-    render: (r, c1, c2) =>
-      r.renderPolkaDot({ dotRadius: 10, spacing: 40, rowOffset: 0.5, dotColor: c1, bgColor: c2 }),
-  },
-  {
-    label: 'Checker',
-    render: (r, c1, c2) => r.renderChecker({ cellSize: 30, angle: 0, color1: c1, color2: c2 }),
-  },
-  {
-    label: 'Diamond',
-    render: (r, c1, c2) =>
-      r.renderChecker({ cellSize: 30, angle: Math.PI / 4, color1: c1, color2: c2 }),
-  },
-]
-
-// 中景用マスクパターン（切り抜き）
-const maskPatterns: TexturePattern[] = [
-  {
-    label: 'Circle Center',
-    render: (r, c1, c2, opts) =>
-      r.renderCircleMask({ centerX: 0.5, centerY: 0.5, radius: 0.3, innerColor: c1, outerColor: c2 }, opts),
-  },
-  {
-    label: 'Circle Large',
-    render: (r, c1, c2, opts) =>
-      r.renderCircleMask({ centerX: 0.5, centerY: 0.5, radius: 0.5, innerColor: c1, outerColor: c2 }, opts),
-  },
-  {
-    label: 'Circle Top-Left',
-    render: (r, c1, c2, opts) =>
-      r.renderCircleMask({ centerX: 0.25, centerY: 0.25, radius: 0.2, innerColor: c1, outerColor: c2 }, opts),
-  },
-  {
-    label: 'Circle Bottom-Right',
-    render: (r, c1, c2, opts) =>
-      r.renderCircleMask({ centerX: 0.75, centerY: 0.75, radius: 0.2, innerColor: c1, outerColor: c2 }, opts),
-  },
-  {
-    label: 'Half Top',
-    render: (r, c1, c2, opts) =>
-      r.renderHalfMask({ direction: 'top', visibleColor: c1, hiddenColor: c2 }, opts),
-  },
-  {
-    label: 'Half Bottom',
-    render: (r, c1, c2, opts) =>
-      r.renderHalfMask({ direction: 'bottom', visibleColor: c1, hiddenColor: c2 }, opts),
-  },
-  {
-    label: 'Half Left',
-    render: (r, c1, c2, opts) =>
-      r.renderHalfMask({ direction: 'left', visibleColor: c1, hiddenColor: c2 }, opts),
-  },
-  {
-    label: 'Half Right',
-    render: (r, c1, c2, opts) =>
-      r.renderHalfMask({ direction: 'right', visibleColor: c1, hiddenColor: c2 }, opts),
-  },
-  {
-    label: 'Rect Center',
-    render: (r, c1, c2, opts) =>
-      r.renderRectMask({ left: 0.3, right: 0.7, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 }, opts),
-  },
-  {
-    label: 'Rect Frame',
-    render: (r, c1, c2, opts) =>
-      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 }, opts),
-  },
-  {
-    label: 'Rect Top',
-    render: (r, c1, c2, opts) =>
-      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.05, bottom: 0.5, innerColor: c1, outerColor: c2 }, opts),
-  },
-  {
-    label: 'Rect Bottom',
-    render: (r, c1, c2, opts) =>
-      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.5, bottom: 0.95, innerColor: c1, outerColor: c2 }, opts),
-  },
-]
+// パターン取得
+const texturePatterns = getDefaultTexturePatterns()
+const maskPatterns = getDefaultMaskPatterns()
 
 // 状態管理
 const selectedBackgroundIndex = ref(0)
