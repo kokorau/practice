@@ -40,22 +40,17 @@ struct CircleMaskParams {
   centerY: f32,
   radius: f32,
   aspectRatio: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: CircleMaskParams;
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  // ビューポートサイズを取得（アスペクト比から逆算）
   let aspectRatio = params.aspectRatio;
-
-  // 正規化座標 (0-1)
-  // pos.x, pos.y はピクセル座標なので、アスペクト比から計算
-  // フラグメントシェーダーでは直接ビューポートサイズを取得できないため、
-  // 大きい三角形の頂点から推測するか、uniformで渡す必要がある
-  // ここでは仮に800x450を想定（後でuniformで渡すように変更可能）
-  let viewportWidth = 400.0;
-  let viewportHeight = viewportWidth / aspectRatio;
+  let viewportWidth = params.viewportWidth;
+  let viewportHeight = params.viewportHeight;
 
   let uv = vec2f(pos.x / viewportWidth, pos.y / viewportHeight);
 
@@ -110,14 +105,16 @@ struct RectMaskParams {
   right: f32,
   top: f32,
   bottom: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: RectMaskParams;
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  let viewportWidth = 400.0;
-  let viewportHeight = 225.0;
+  let viewportWidth = params.viewportWidth;
+  let viewportHeight = params.viewportHeight;
 
   let uv = vec2f(pos.x / viewportWidth, pos.y / viewportHeight);
 
@@ -147,17 +144,16 @@ struct HalfMaskParams {
   hiddenColor: vec4f,
   direction: u32,  // 0: top, 1: bottom, 2: left, 3: right
   _padding1: u32,
-  _padding2: u32,
-  _padding3: u32,
+  viewportWidth: f32,
+  viewportHeight: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: HalfMaskParams;
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  // 仮のビューポートサイズ（16:9想定）
-  let viewportWidth = 400.0;
-  let viewportHeight = 225.0;
+  let viewportWidth = params.viewportWidth;
+  let viewportHeight = params.viewportHeight;
 
   let uv = vec2f(pos.x / viewportWidth, pos.y / viewportHeight);
 

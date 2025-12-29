@@ -161,8 +161,9 @@ function openSection(section: 'background' | 'midground' | 'foreground') {
 
     for (let i = 0; i < canvases.length; i++) {
       const canvas = canvases[i]
-      canvas.width = 160
-      canvas.height = 90
+      // 16:9のアスペクト比でサムネイル描画
+      canvas.width = 256
+      canvas.height = 144
       try {
         const renderer = await TextureRenderer.create(canvas)
         thumbnailRenderers.push(renderer)
@@ -260,69 +261,70 @@ onUnmounted(() => {
     <!-- サブパネル: パターン選択 -->
     <div
       v-if="activeSection"
-      class="w-80 flex-shrink-0 bg-gray-850 border-l border-gray-700 p-4 overflow-y-auto"
+      class="w-72 flex-shrink-0 border-l border-gray-700 overflow-y-auto flex flex-col"
       style="background-color: #1a1f2e;"
     >
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between p-3 border-b border-gray-700">
         <h2 class="text-sm font-semibold text-gray-300">
           {{ activeSection === 'background' ? 'テクスチャ選択' : activeSection === 'midground' ? 'マスク選択' : '前景設定' }}
         </h2>
-        <button class="text-gray-400 hover:text-white" @click="activeSection = null">
-          ✕
+        <button class="text-gray-400 hover:text-white text-lg leading-none" @click="activeSection = null">
+          ×
         </button>
       </div>
 
-      <!-- 後景: テクスチャ選択 -->
-      <template v-if="activeSection === 'background'">
-        <div class="grid grid-cols-2 gap-2">
-          <button
-            v-for="(pattern, i) in texturePatterns"
-            :key="i"
-            class="relative rounded-lg overflow-hidden border-2 transition-all"
-            :class="selectedBackgroundIndex === i ? 'border-blue-500' : 'border-gray-600 hover:border-gray-500'"
-            @click="selectedBackgroundIndex = i"
-          >
-            <canvas data-thumbnail-canvas class="w-full aspect-video" />
-            <div class="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
-              <p class="text-xs truncate">{{ pattern.label }}</p>
-            </div>
-          </button>
-        </div>
-      </template>
+      <div class="flex-1 overflow-y-auto p-2">
+        <!-- 後景: テクスチャ選択 -->
+        <template v-if="activeSection === 'background'">
+          <div class="space-y-2">
+            <button
+              v-for="(pattern, i) in texturePatterns"
+              :key="i"
+              class="w-full rounded-lg overflow-hidden border-2 transition-all"
+              :class="selectedBackgroundIndex === i ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-gray-500'"
+              @click="selectedBackgroundIndex = i"
+            >
+              <canvas data-thumbnail-canvas class="w-full aspect-video" />
+              <p class="text-xs text-gray-300 px-2 py-1.5 text-left">{{ pattern.label }}</p>
+            </button>
+          </div>
+        </template>
 
-      <!-- 中景: マスク選択 -->
-      <template v-else-if="activeSection === 'midground'">
-        <div class="grid grid-cols-2 gap-2">
-          <!-- なし -->
-          <button
-            class="relative rounded-lg overflow-hidden border-2 transition-all aspect-video flex items-center justify-center bg-gray-700"
-            :class="selectedMaskIndex === null ? 'border-blue-500' : 'border-gray-600 hover:border-gray-500'"
-            @click="selectedMaskIndex = null"
-          >
-            <span class="text-sm text-gray-400">なし</span>
-          </button>
-          <!-- マスクパターン -->
-          <button
-            v-for="(pattern, i) in maskPatterns"
-            :key="i"
-            class="relative rounded-lg overflow-hidden border-2 transition-all"
-            :class="selectedMaskIndex === i ? 'border-blue-500' : 'border-gray-600 hover:border-gray-500'"
-            @click="selectedMaskIndex = i"
-          >
-            <canvas data-thumbnail-canvas class="w-full aspect-video" />
-            <div class="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
-              <p class="text-xs truncate">{{ pattern.label }}</p>
-            </div>
-          </button>
-        </div>
-      </template>
+        <!-- 中景: マスク選択 -->
+        <template v-else-if="activeSection === 'midground'">
+          <div class="space-y-2">
+            <!-- なし -->
+            <button
+              class="w-full rounded-lg overflow-hidden border-2 transition-all"
+              :class="selectedMaskIndex === null ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-gray-500'"
+              @click="selectedMaskIndex = null"
+            >
+              <div class="w-full aspect-video flex items-center justify-center bg-gray-700">
+                <span class="text-sm text-gray-400">なし</span>
+              </div>
+              <p class="text-xs text-gray-300 px-2 py-1.5 text-left">マスクなし</p>
+            </button>
+            <!-- マスクパターン -->
+            <button
+              v-for="(pattern, i) in maskPatterns"
+              :key="i"
+              class="w-full rounded-lg overflow-hidden border-2 transition-all"
+              :class="selectedMaskIndex === i ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-gray-500'"
+              @click="selectedMaskIndex = i"
+            >
+              <canvas data-thumbnail-canvas class="w-full aspect-video" />
+              <p class="text-xs text-gray-300 px-2 py-1.5 text-left">{{ pattern.label }}</p>
+            </button>
+          </div>
+        </template>
 
-      <!-- 前景 -->
-      <template v-else-if="activeSection === 'foreground'">
-        <div class="text-center text-gray-500 py-8">
-          <p>前景は未実装です</p>
-        </div>
-      </template>
+        <!-- 前景 -->
+        <template v-else-if="activeSection === 'foreground'">
+          <div class="text-center text-gray-500 py-8">
+            <p>前景は未実装です</p>
+          </div>
+        </template>
+      </div>
     </div>
 
     <!-- 中央: プレビュー -->

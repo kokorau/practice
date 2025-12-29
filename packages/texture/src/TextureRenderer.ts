@@ -396,9 +396,9 @@ export class TextureRenderer {
         },
       })
 
-      // CircleMaskParams: innerColor(16) + outerColor(16) + centerX(4) + centerY(4) + radius(4) + aspectRatio(4) = 48 bytes
+      // CircleMaskParams: innerColor(16) + outerColor(16) + centerX(4) + centerY(4) + radius(4) + aspectRatio(4) + viewport(8) = 56 bytes
       this.circleMaskBuffer = this.device.createBuffer({
-        size: 48,
+        size: 64, // 16-byte aligned
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       })
 
@@ -423,6 +423,8 @@ export class TextureRenderer {
       params.centerY,
       params.radius,
       aspectRatio,
+      canvas.width,
+      canvas.height,
     ])
     this.device.queue.writeBuffer(this.circleMaskBuffer!, 0, data)
 
@@ -467,9 +469,9 @@ export class TextureRenderer {
         },
       })
 
-      // RectMaskParams: innerColor(16) + outerColor(16) + left(4) + right(4) + top(4) + bottom(4) = 48 bytes
+      // RectMaskParams: innerColor(16) + outerColor(16) + left(4) + right(4) + top(4) + bottom(4) + viewport(8) = 56 bytes
       this.rectMaskBuffer = this.device.createBuffer({
-        size: 48,
+        size: 64, // 16-byte aligned
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       })
 
@@ -484,6 +486,7 @@ export class TextureRenderer {
       })
     }
 
+    const canvas = this.context.canvas as HTMLCanvasElement
     const data = new Float32Array([
       ...params.innerColor,
       ...params.outerColor,
@@ -491,6 +494,8 @@ export class TextureRenderer {
       params.right,
       params.top,
       params.bottom,
+      canvas.width,
+      canvas.height,
     ])
     this.device.queue.writeBuffer(this.rectMaskBuffer!, 0, data)
 
@@ -559,15 +564,24 @@ export class TextureRenderer {
       right: 3,
     }
 
-    // Float32 for colors, then Uint32 for direction
+    const canvas = this.context.canvas as HTMLCanvasElement
+
+    // Float32 for colors, then Uint32 for direction, then Float32 for viewport
     const floatData = new Float32Array([
       ...params.visibleColor,
       ...params.hiddenColor,
     ])
-    const uintData = new Uint32Array([directionMap[params.direction], 0, 0, 0])
+    // direction(u32) + padding(u32) + viewportWidth(f32) + viewportHeight(f32)
+    const mixedData = new ArrayBuffer(16)
+    const uintView = new Uint32Array(mixedData, 0, 2)
+    const floatView = new Float32Array(mixedData, 8, 2)
+    uintView[0] = directionMap[params.direction]
+    uintView[1] = 0 // padding
+    floatView[0] = canvas.width
+    floatView[1] = canvas.height
 
     this.device.queue.writeBuffer(this.halfMaskBuffer!, 0, floatData)
-    this.device.queue.writeBuffer(this.halfMaskBuffer!, 32, uintData)
+    this.device.queue.writeBuffer(this.halfMaskBuffer!, 32, new Uint8Array(mixedData))
 
     this.render(this.halfMaskPipeline, this.halfMaskBindGroup!, options)
   }
