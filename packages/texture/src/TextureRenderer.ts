@@ -4,11 +4,16 @@ import {
   gridShader,
   polkaDotShader,
   checkerShader,
+  circleMaskShader,
+  halfMaskShader,
   type SolidTextureParams,
   type StripeTextureParams,
   type GridTextureParams,
   type PolkaDotTextureParams,
   type CheckerTextureParams,
+  type CircleMaskParams,
+  type HalfMaskParams,
+  type HalfMaskDirection,
 } from './shaders'
 
 /**
@@ -43,6 +48,16 @@ export class TextureRenderer {
   private checkerPipeline: GPURenderPipeline | null = null
   private checkerBuffer: GPUBuffer | null = null
   private checkerBindGroup: GPUBindGroup | null = null
+
+  // Circle Mask
+  private circleMaskPipeline: GPURenderPipeline | null = null
+  private circleMaskBuffer: GPUBuffer | null = null
+  private circleMaskBindGroup: GPUBindGroup | null = null
+
+  // Half Mask
+  private halfMaskPipeline: GPURenderPipeline | null = null
+  private halfMaskBuffer: GPUBuffer | null = null
+  private halfMaskBindGroup: GPUBindGroup | null = null
 
   private constructor(
     device: GPUDevice,
@@ -336,6 +351,120 @@ export class TextureRenderer {
     this.render(this.checkerPipeline, this.checkerBindGroup!)
   }
 
+  renderCircleMask(params: CircleMaskParams): void {
+    if (!this.circleMaskPipeline) {
+      const shaderModule = this.device.createShaderModule({
+        code: circleMaskShader,
+      })
+
+      this.circleMaskPipeline = this.device.createRenderPipeline({
+        layout: 'auto',
+        vertex: {
+          module: shaderModule,
+          entryPoint: 'vertexMain',
+        },
+        fragment: {
+          module: shaderModule,
+          entryPoint: 'fragmentMain',
+          targets: [{ format: this.format }],
+        },
+        primitive: {
+          topology: 'triangle-list',
+        },
+      })
+
+      // CircleMaskParams: innerColor(16) + outerColor(16) + centerX(4) + centerY(4) + radius(4) + aspectRatio(4) = 48 bytes
+      this.circleMaskBuffer = this.device.createBuffer({
+        size: 48,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      })
+
+      this.circleMaskBindGroup = this.device.createBindGroup({
+        layout: this.circleMaskPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.circleMaskBuffer },
+          },
+        ],
+      })
+    }
+
+    const canvas = this.context.canvas as HTMLCanvasElement
+    const aspectRatio = canvas.width / canvas.height
+
+    const data = new Float32Array([
+      ...params.innerColor,
+      ...params.outerColor,
+      params.centerX,
+      params.centerY,
+      params.radius,
+      aspectRatio,
+    ])
+    this.device.queue.writeBuffer(this.circleMaskBuffer!, 0, data)
+
+    this.render(this.circleMaskPipeline, this.circleMaskBindGroup!)
+  }
+
+  renderHalfMask(params: HalfMaskParams): void {
+    if (!this.halfMaskPipeline) {
+      const shaderModule = this.device.createShaderModule({
+        code: halfMaskShader,
+      })
+
+      this.halfMaskPipeline = this.device.createRenderPipeline({
+        layout: 'auto',
+        vertex: {
+          module: shaderModule,
+          entryPoint: 'vertexMain',
+        },
+        fragment: {
+          module: shaderModule,
+          entryPoint: 'fragmentMain',
+          targets: [{ format: this.format }],
+        },
+        primitive: {
+          topology: 'triangle-list',
+        },
+      })
+
+      // HalfMaskParams: visibleColor(16) + hiddenColor(16) + direction(4) + padding(12) = 48 bytes
+      this.halfMaskBuffer = this.device.createBuffer({
+        size: 48,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      })
+
+      this.halfMaskBindGroup = this.device.createBindGroup({
+        layout: this.halfMaskPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.halfMaskBuffer },
+          },
+        ],
+      })
+    }
+
+    const directionMap: Record<HalfMaskDirection, number> = {
+      top: 0,
+      bottom: 1,
+      left: 2,
+      right: 3,
+    }
+
+    // Float32 for colors, then Uint32 for direction
+    const floatData = new Float32Array([
+      ...params.visibleColor,
+      ...params.hiddenColor,
+    ])
+    const uintData = new Uint32Array([directionMap[params.direction], 0, 0, 0])
+
+    this.device.queue.writeBuffer(this.halfMaskBuffer!, 0, floatData)
+    this.device.queue.writeBuffer(this.halfMaskBuffer!, 32, uintData)
+
+    this.render(this.halfMaskPipeline, this.halfMaskBindGroup!)
+  }
+
   private render(pipeline: GPURenderPipeline, bindGroup: GPUBindGroup): void {
     const commandEncoder = this.device.createCommandEncoder()
     const renderPass = commandEncoder.beginRenderPass({
@@ -363,5 +492,7 @@ export class TextureRenderer {
     this.gridBuffer?.destroy()
     this.polkaDotBuffer?.destroy()
     this.checkerBuffer?.destroy()
+    this.circleMaskBuffer?.destroy()
+    this.halfMaskBuffer?.destroy()
   }
 }

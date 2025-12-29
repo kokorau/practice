@@ -125,6 +125,47 @@ const patterns: Omit<TexturePreview, 'canvasRef' | 'renderer'>[] = [
     render: (r, c1, c2) =>
       r.renderChecker({ cellSize: 15, angle: Math.PI / 4, color1: c1, color2: c2 }),
   },
+  // Masks
+  {
+    label: 'Circle Center',
+    render: (r, c1, c2) =>
+      r.renderCircleMask({ centerX: 0.5, centerY: 0.5, radius: 0.3, innerColor: c1, outerColor: c2 }),
+  },
+  {
+    label: 'Circle Large',
+    render: (r, c1, c2) =>
+      r.renderCircleMask({ centerX: 0.5, centerY: 0.5, radius: 0.5, innerColor: c1, outerColor: c2 }),
+  },
+  {
+    label: 'Circle Top-Left',
+    render: (r, c1, c2) =>
+      r.renderCircleMask({ centerX: 0.25, centerY: 0.25, radius: 0.2, innerColor: c1, outerColor: c2 }),
+  },
+  {
+    label: 'Circle Bottom-Right',
+    render: (r, c1, c2) =>
+      r.renderCircleMask({ centerX: 0.75, centerY: 0.75, radius: 0.2, innerColor: c1, outerColor: c2 }),
+  },
+  {
+    label: 'Half Top',
+    render: (r, c1, c2) =>
+      r.renderHalfMask({ direction: 'top', visibleColor: c1, hiddenColor: c2 }),
+  },
+  {
+    label: 'Half Bottom',
+    render: (r, c1, c2) =>
+      r.renderHalfMask({ direction: 'bottom', visibleColor: c1, hiddenColor: c2 }),
+  },
+  {
+    label: 'Half Left',
+    render: (r, c1, c2) =>
+      r.renderHalfMask({ direction: 'left', visibleColor: c1, hiddenColor: c2 }),
+  },
+  {
+    label: 'Half Right',
+    render: (r, c1, c2) =>
+      r.renderHalfMask({ direction: 'right', visibleColor: c1, hiddenColor: c2 }),
+  },
 ]
 
 const previews: TexturePreview[] = patterns.map((p) => ({
