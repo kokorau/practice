@@ -98,43 +98,7 @@ const defaultMaskPatterns: TexturePattern[] = [
       ),
   },
   {
-    label: 'Blob Center',
-    render: (r, c1, c2, opts) =>
-      r.renderBlobMask(
-        {
-          centerX: 0.5,
-          centerY: 0.5,
-          baseRadius: 0.35,
-          amplitude: 0.15,
-          frequency: 4,
-          octaves: 3,
-          seed: 42,
-          innerColor: c1,
-          outerColor: c2,
-        },
-        opts
-      ),
-  },
-  {
-    label: 'Blob Large',
-    render: (r, c1, c2, opts) =>
-      r.renderBlobMask(
-        {
-          centerX: 0.5,
-          centerY: 0.5,
-          baseRadius: 0.5,
-          amplitude: 0.12,
-          frequency: 5,
-          octaves: 3,
-          seed: 123,
-          innerColor: c1,
-          outerColor: c2,
-        },
-        opts
-      ),
-  },
-  {
-    label: 'Blob Subtle',
+    label: 'Blob Soft',
     render: (r, c1, c2, opts) =>
       r.renderBlobMask(
         {
@@ -142,9 +106,9 @@ const defaultMaskPatterns: TexturePattern[] = [
           centerY: 0.5,
           baseRadius: 0.4,
           amplitude: 0.08,
-          frequency: 3,
+          frequency: 0,
           octaves: 2,
-          seed: 777,
+          seed: 1,
           innerColor: c1,
           outerColor: c2,
         },
@@ -152,17 +116,17 @@ const defaultMaskPatterns: TexturePattern[] = [
       ),
   },
   {
-    label: 'Blob Wild',
+    label: 'Blob Organic',
     render: (r, c1, c2, opts) =>
       r.renderBlobMask(
         {
           centerX: 0.5,
           centerY: 0.5,
-          baseRadius: 0.35,
-          amplitude: 0.25,
-          frequency: 6,
-          octaves: 4,
-          seed: 999,
+          baseRadius: 0.4,
+          amplitude: 0.12,
+          frequency: 0,
+          octaves: 3,
+          seed: 42,
           innerColor: c1,
           outerColor: c2,
         },

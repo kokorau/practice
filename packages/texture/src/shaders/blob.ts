@@ -10,11 +10,11 @@ export interface BlobMaskParams {
   baseRadius: number
   /** 揺らぎの振幅 (0.0-1.0, baseRadiusに対する比率) */
   amplitude: number
-  /** 揺らぎの周波数 (うねりの数、2-8程度) */
+  /** 未使用（互換性のため残存） */
   frequency: number
-  /** 詳細度のオクターブ数 (1-4) */
+  /** 波の重ね数 (2-4程度、多いほど複雑な形状) */
   octaves: number
-  /** 乱数シード */
+  /** 乱数シード（形状のバリエーション） */
   seed: number
   /** 内側の色 */
   innerColor: [number, number, number, number]
@@ -22,52 +22,30 @@ export interface BlobMaskParams {
   outerColor: [number, number, number, number]
 }
 
-/** 2D Value Noise + fBm 実装 */
-const noiseUtils = /* wgsl */ `
-// Hash function for 2D -> 1D
-fn hash21(p: vec2f) -> f32 {
-  var p3 = fract(vec3f(p.x, p.y, p.x) * 0.1031);
-  p3 += dot(p3, p3.yzx + 33.33);
-  return fract((p3.x + p3.y) * p3.z);
+/** Smooth wave-based blob deformation */
+const waveUtils = /* wgsl */ `
+// Simple hash for phase offset
+fn hash11(p: f32) -> f32 {
+  return fract(sin(p * 127.1) * 43758.5453);
 }
 
-// 2D Value Noise
-fn valueNoise2D(p: vec2f) -> f32 {
-  let i = floor(p);
-  let f = fract(p);
-
-  // Cubic interpolation (smoother than linear)
-  let u = f * f * (3.0 - 2.0 * f);
-
-  // Four corners
-  let a = hash21(i + vec2f(0.0, 0.0));
-  let b = hash21(i + vec2f(1.0, 0.0));
-  let c = hash21(i + vec2f(0.0, 1.0));
-  let d = hash21(i + vec2f(1.0, 1.0));
-
-  // Bilinear interpolation
-  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
-// Fractal Brownian Motion (fBm)
-fn fbm2D(p: vec2f, octaves: u32) -> f32 {
+// Smooth blob shape using layered sine waves
+fn smoothBlob(angle: f32, seed: f32, waves: u32) -> f32 {
   var value = 0.0;
-  var amplitude = 0.5;
-  var frequency = 1.0;
-  var maxValue = 0.0;
-  var pos = p;
+  var totalWeight = 0.0;
 
-  for (var i = 0u; i < octaves; i++) {
-    value += amplitude * valueNoise2D(pos * frequency);
-    maxValue += amplitude;
-    amplitude *= 0.5;
-    frequency *= 2.0;
-    // Rotate to reduce axis-aligned artifacts
-    pos = vec2f(pos.x * 0.8 - pos.y * 0.6, pos.x * 0.6 + pos.y * 0.8);
+  for (var i = 0u; i < waves; i++) {
+    let fi = f32(i);
+    // Each wave has different frequency (2, 3, 4...) and random phase
+    let freq = fi + 2.0;
+    let phase = hash11(seed + fi * 17.3) * 6.283;
+    let weight = 1.0 / (fi + 1.0); // Lower weight for higher frequencies
+
+    value += sin(angle * freq + phase) * weight;
+    totalWeight += weight;
   }
 
-  // Normalize to 0-1 range, then map to -1 to 1
-  return (value / maxValue) * 2.0 - 1.0;
+  return value / totalWeight;
 }
 `
 
@@ -77,7 +55,7 @@ ${fullscreenVertex}
 
 ${aaUtils}
 
-${noiseUtils}
+${waveUtils}
 
 struct BlobMaskParams {
   innerColor: vec4f,
@@ -118,16 +96,11 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   // ピクセルの角度を計算
   let angle = atan2(delta.y, delta.x);
 
-  // 円上で2Dノイズをサンプリング（1周で滑らかにつながる）
-  // cos/sinで円周上の座標を生成し、seedでオフセット
-  let noiseCoord = vec2f(
-    cos(angle) * params.frequency + params.seed,
-    sin(angle) * params.frequency
-  );
-  let noiseValue = fbm2D(noiseCoord, params.octaves);
+  // 滑らかな波形で半径を変調
+  let waveValue = smoothBlob(angle, params.seed, params.octaves);
 
   // 半径に揺らぎを加える
-  let radius = params.baseRadius * (1.0 + noiseValue * params.amplitude);
+  let radius = params.baseRadius * (1.0 + waveValue * params.amplitude);
 
   // 中心からの距離
   let dist = length(delta);
