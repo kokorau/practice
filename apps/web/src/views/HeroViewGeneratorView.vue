@@ -77,7 +77,7 @@ const brandColor = computed(() => {
 // ============================================================
 // Foundation Preset State
 // ============================================================
-const selectedFoundationId = ref('charcoal')
+const selectedFoundationId = ref('white')
 
 const foundationColor = computed(() => {
   const preset = FOUNDATION_PRESETS.find((p) => p.id === selectedFoundationId.value) ?? FOUNDATION_PRESETS[0]!
@@ -150,18 +150,20 @@ const paletteToRgba = (oklch: Oklch, alpha: number = 1.0): RGBA => {
   ]
 }
 
-// テクスチャ用カラー（Primitive Palette から派生）
-// B = Brand, N4 = Neutral mid-tone
+// テクスチャ用カラー（Semantic Palette から派生）
+// textureColor1 = Card.surface (B)
+// textureColor2 = Canvas.surface (F1 for light, F8 for dark)
+const canvasSurfaceKey = computed(() => isDark.value ? 'F8' : 'F1' as const)
 const textureColor1 = computed((): RGBA => paletteToRgba(primitivePalette.value.B))
-const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value.N4))
+const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
 
 // パターン取得
 const texturePatterns = getDefaultTexturePatterns()
 const maskPatterns = getDefaultMaskPatterns()
 
 // 状態管理
-const selectedBackgroundIndex = ref(0)
-const selectedMaskIndex = ref<number | null>(null)
+const selectedBackgroundIndex = ref(4) // Grid
+const selectedMaskIndex = ref<number | null>(1) // Circle Large
 const activeSection = ref<'background' | 'midground' | 'foreground' | null>(null)
 
 // プレビュー用
@@ -233,9 +235,10 @@ function openSection(section: 'background' | 'midground' | 'foreground') {
   })
 }
 
-// マスク用カラー（内側透明、外側不透明 - Foundationベース）
-const maskInnerColor: RGBA = [0, 0, 0, 0] // 透明 - 後景が見える
-const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value.N8))
+// マスク用カラー（内側透明、外側不透明 - Canvas.surface）
+// 内側色は Canvas.surface と同じRGBでアルファ0（AA境界での色ズレ防止）
+const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value], 0))
+const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
 
 // プレビュー更新
 function updatePreview() {
@@ -251,13 +254,13 @@ function updatePreview() {
   if (selectedMaskIndex.value !== null) {
     const maskPattern = maskPatterns[selectedMaskIndex.value]
     if (maskPattern) {
-      maskPattern.render(previewRenderer, maskInnerColor, maskOuterColor.value, { clear: false })
+      maskPattern.render(previewRenderer, maskInnerColor.value, maskOuterColor.value, { clear: false })
     }
   }
 }
 
 // 色・パターン変更時にプレビュー更新
-watch([selectedBackgroundIndex, selectedMaskIndex, textureColor1, textureColor2, maskOuterColor], updatePreview)
+watch([selectedBackgroundIndex, selectedMaskIndex, textureColor1, textureColor2, maskInnerColor, maskOuterColor], updatePreview)
 // 色変更時にサムネイルも更新
 watch([textureColor1, textureColor2], renderThumbnails)
 
