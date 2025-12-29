@@ -90,8 +90,8 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   const midgroundTexturePatterns = defaultMidgroundTexturePatterns
 
   // Selection state
-  const selectedBackgroundIndex = ref(4) // Grid
-  const selectedMaskIndex = ref<number | null>(1) // Circle Large
+  const selectedBackgroundIndex = ref(3) // Vertical
+  const selectedMaskIndex = ref<number | null>(21) // Blob Organic
   const selectedMidgroundTextureIndex = ref<number | null>(null) // Midground texture (null = solid color)
   const activeSection = ref<SectionType | null>(null)
 

@@ -47,7 +47,7 @@ export type UseSiteColorsReturn = {
  */
 export const useSiteColors = (options: UseSiteColorsOptions = {}): UseSiteColorsReturn => {
   const {
-    initialHue = 220,
+    initialHue = 198,
     initialSaturation = 70,
     initialValue = 65,
     initialFoundationId = 'white',

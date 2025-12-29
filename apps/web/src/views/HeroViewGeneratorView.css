@@ -284,6 +284,12 @@
   justify-content: space-between;
 }
 
+.layout-row-between .hero-subtitle,
+.layout-row-top-between .hero-subtitle,
+.layout-row-bottom-between .hero-subtitle {
+  text-align: end;
+}
+
 /* Horizontal - left */
 .layout-row-left,
 .layout-row-top-left,

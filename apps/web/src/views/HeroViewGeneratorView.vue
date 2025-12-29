@@ -92,7 +92,7 @@ const {
   initPreview,
 } = useTexturePreview({ primitivePalette, isDark })
 
-const selectedLayout = ref<LayoutId>('center')
+const selectedLayout = ref<LayoutId>('row-top-between')
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
 
 // ============================================================
