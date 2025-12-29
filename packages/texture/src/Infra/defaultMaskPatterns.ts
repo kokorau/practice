@@ -134,7 +134,7 @@ const defaultMaskPatterns: TexturePattern[] = [
     label: 'Pill Narrow',
     createSpec: (c1, c2, viewport) =>
       createRectMaskSpec(
-        { left: 0.3, right: 0.7, top: 0.1, bottom: 0.9, radius: 0.2, innerColor: c1, outerColor: c2 },
+        { left: 0.32, right: 0.68, top: 0.05, bottom: 0.95, radius: 0.18, innerColor: c1, outerColor: c2 },
         viewport!
       ),
   },
@@ -143,7 +143,7 @@ const defaultMaskPatterns: TexturePattern[] = [
     createSpec: (c1, c2, viewport) =>
       createRectMaskSpec(
         {
-          left: 0.35, right: 0.65, top: 0, bottom: 1,
+          left: 0.35, right: 0.65, top: 0, bottom: 0.9,
           radiusTopLeft: 0, radiusTopRight: 0,
           radiusBottomLeft: 0.15, radiusBottomRight: 0.15,
           innerColor: c1, outerColor: c2,
@@ -156,7 +156,7 @@ const defaultMaskPatterns: TexturePattern[] = [
     createSpec: (c1, c2, viewport) =>
       createRectMaskSpec(
         {
-          left: 0.35, right: 0.65, top: 0, bottom: 1,
+          left: 0.35, right: 0.65, top: 0.1, bottom: 1,
           radiusTopLeft: 0.15, radiusTopRight: 0.15,
           radiusBottomLeft: 0, radiusBottomRight: 0,
           innerColor: c1, outerColor: c2,
