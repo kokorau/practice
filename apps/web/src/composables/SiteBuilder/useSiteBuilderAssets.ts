@@ -5,7 +5,7 @@
  * Vue のリアクティブシステムと統合。
  */
 
-import { ref, shallowRef, computed, watch, onUnmounted } from 'vue'
+import { ref, shallowRef, computed, watch } from 'vue'
 import type { Asset, AssetId } from '../../modules/Asset'
 import { $Asset } from '../../modules/Asset'
 import type { AssetTree, NodeId, AssetNode, FolderNode } from '../../modules/AssetRepository'
