@@ -1,14 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import {
-  TextureRenderer,
-  getDefaultTexturePatterns,
-  getDefaultMaskPatterns,
-  type TexturePattern,
-  type RGBA,
-} from '@practice/texture'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { $Oklch } from '@practice/color'
-import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
 import {
   CONTEXT_CLASS_NAMES,
@@ -25,7 +17,7 @@ import {
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
-import { useSiteColors } from '../composables/SiteBuilder'
+import { useSiteColors, useTexturePreview } from '../composables/SiteBuilder'
 import { LAYOUT_PATTERNS, type LayoutId } from '../components/SiteBuilder/layoutPatterns'
 import './HeroViewGeneratorView.css'
 
@@ -86,146 +78,20 @@ const actions = computed(() => [
 ])
 
 // ============================================================
-// Texture Color (derived from Semantic Palette)
+// Texture Preview (WebGPU rendering)
 // ============================================================
-// Palette から RGBA を生成
-const paletteToRgba = (oklch: Oklch, alpha: number = 1.0): RGBA => {
-  const srgb = $Oklch.toSrgb(oklch)
-  return [
-    Math.max(0, Math.min(1, srgb.r)),
-    Math.max(0, Math.min(1, srgb.g)),
-    Math.max(0, Math.min(1, srgb.b)),
-    alpha
-  ]
-}
-
-// テクスチャ用カラー（Semantic Palette から派生）
-// textureColor1 = Card.surface (B)
-// textureColor2 = Canvas.surface (F1 for light, F8 for dark)
-const canvasSurfaceKey = computed(() => isDark.value ? 'F8' : 'F1' as const)
-const textureColor1 = computed((): RGBA => paletteToRgba(primitivePalette.value.B))
-const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
-
-// パターン取得
-const texturePatterns = getDefaultTexturePatterns()
-const maskPatterns = getDefaultMaskPatterns()
-
-// 状態管理
-const selectedBackgroundIndex = ref(4) // Grid
-const selectedMaskIndex = ref<number | null>(1) // Circle Large
-const activeSection = ref<'background' | 'midground' | 'foreground' | null>(null)
+const {
+  previewCanvasRef,
+  texturePatterns,
+  maskPatterns,
+  selectedBackgroundIndex,
+  selectedMaskIndex,
+  activeSection,
+  openSection,
+  initPreview,
+} = useTexturePreview({ primitivePalette, isDark })
 
 const selectedLayout = ref<LayoutId>('center')
-
-// プレビュー用
-const previewCanvasRef = ref<HTMLCanvasElement | null>(null)
-let previewRenderer: TextureRenderer | null = null
-
-// サムネイル用renderer管理
-const thumbnailRenderers: TextureRenderer[] = []
-
-// パターン一覧を取得
-function getPatterns(section: 'background' | 'midground' | 'foreground'): TexturePattern[] {
-  if (section === 'background') return texturePatterns
-  if (section === 'midground') return maskPatterns
-  return []
-}
-
-// renderersを破棄
-function destroyThumbnailRenderers() {
-  for (const r of thumbnailRenderers) {
-    r.destroy()
-  }
-  thumbnailRenderers.length = 0
-}
-
-// サムネイル再描画
-async function renderThumbnails() {
-  const section = activeSection.value
-  if (!section) return
-
-  const patterns = getPatterns(section)
-  for (let i = 0; i < thumbnailRenderers.length; i++) {
-    const renderer = thumbnailRenderers[i]
-    const pattern = patterns[i]
-    if (renderer && pattern) {
-      const viewport = renderer.getViewport()
-      const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
-      renderer.render(spec)
-    }
-  }
-}
-
-// サブパネルを開く
-function openSection(section: 'background' | 'midground' | 'foreground') {
-  destroyThumbnailRenderers()
-
-  if (activeSection.value === section) {
-    activeSection.value = null
-    return
-  }
-
-  activeSection.value = section
-
-  // DOMが更新されてからrendererを初期化
-  nextTick(async () => {
-    const patterns = getPatterns(section)
-    const canvases = document.querySelectorAll<HTMLCanvasElement>('[data-thumbnail-canvas]')
-
-    for (let i = 0; i < canvases.length; i++) {
-      const canvas = canvases[i]
-      if (!canvas) continue
-      // 16:9のアスペクト比でサムネイル描画
-      canvas.width = 256
-      canvas.height = 144
-      try {
-        const renderer = await TextureRenderer.create(canvas)
-        thumbnailRenderers.push(renderer)
-        const pattern = patterns[i]
-        if (pattern) {
-          const viewport = renderer.getViewport()
-          const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
-          renderer.render(spec)
-        }
-      } catch (e) {
-        console.error('WebGPU not available:', e)
-      }
-    }
-  })
-}
-
-// マスク用カラー（内側透明、外側不透明 - Canvas.surface）
-// 内側色は Canvas.surface と同じRGBでアルファ0（AA境界での色ズレ防止）
-const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value], 0))
-const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
-
-// プレビュー更新
-function updatePreview() {
-  if (!previewRenderer) return
-
-  const viewport = previewRenderer.getViewport()
-
-  // 1. 後景を描画
-  const bgPattern = texturePatterns[selectedBackgroundIndex.value]
-  if (bgPattern) {
-    const spec = bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
-    previewRenderer.render(spec)
-  }
-
-  // 2. 中景のマスクを合成（選択されている場合）
-  if (selectedMaskIndex.value !== null) {
-    const maskPattern = maskPatterns[selectedMaskIndex.value]
-    if (maskPattern) {
-      const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
-      previewRenderer.render(spec, { clear: false })
-    }
-  }
-}
-
-// 色・パターン変更時にプレビュー更新
-watch([selectedBackgroundIndex, selectedMaskIndex, textureColor1, textureColor2, maskInnerColor, maskOuterColor], updatePreview)
-// 色変更時にサムネイルも更新
-watch([textureColor1, textureColor2], renderThumbnails)
 
 // ============================================================
 // Dynamic CSS Injection for Palette Preview
@@ -249,21 +115,10 @@ onMounted(async () => {
   updatePaletteStyles()
 
   // テクスチャプレビュー用キャンバス初期化
-  if (previewCanvasRef.value) {
-    previewCanvasRef.value.width = 1280
-    previewCanvasRef.value.height = 720
-    try {
-      previewRenderer = await TextureRenderer.create(previewCanvasRef.value)
-      updatePreview()
-    } catch (e) {
-      console.error('WebGPU not available:', e)
-    }
-  }
+  await initPreview()
 })
 
 onUnmounted(() => {
-  previewRenderer?.destroy()
-  destroyThumbnailRenderers()
   if (paletteStyleElement) {
     document.head.removeChild(paletteStyleElement)
     paletteStyleElement = null
