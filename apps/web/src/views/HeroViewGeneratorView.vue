@@ -166,6 +166,27 @@ const patterns: Omit<TexturePreview, 'canvasRef' | 'renderer'>[] = [
     render: (r, c1, c2) =>
       r.renderHalfMask({ direction: 'right', visibleColor: c1, hiddenColor: c2 }),
   },
+  // Rect masks
+  {
+    label: 'Rect Center',
+    render: (r, c1, c2) =>
+      r.renderRectMask({ left: 0.3, right: 0.7, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 }),
+  },
+  {
+    label: 'Rect Frame',
+    render: (r, c1, c2) =>
+      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 }),
+  },
+  {
+    label: 'Rect Top',
+    render: (r, c1, c2) =>
+      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.05, bottom: 0.5, innerColor: c1, outerColor: c2 }),
+  },
+  {
+    label: 'Rect Bottom',
+    render: (r, c1, c2) =>
+      r.renderRectMask({ left: 0.1, right: 0.9, top: 0.5, bottom: 0.95, innerColor: c1, outerColor: c2 }),
+  },
 ]
 
 const previews: TexturePreview[] = patterns.map((p) => ({

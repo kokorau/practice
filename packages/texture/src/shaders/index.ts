@@ -6,8 +6,10 @@ export { polkaDotShader, type PolkaDotTextureParams } from './polkaDot'
 export { checkerShader, type CheckerTextureParams } from './checker'
 export {
   circleMaskShader,
+  rectMaskShader,
   halfMaskShader,
   type CircleMaskParams,
+  type RectMaskParams,
   type HalfMaskParams,
   type HalfMaskDirection,
 } from './mask'

@@ -5,6 +5,7 @@ import {
   polkaDotShader,
   checkerShader,
   circleMaskShader,
+  rectMaskShader,
   halfMaskShader,
   type SolidTextureParams,
   type StripeTextureParams,
@@ -12,6 +13,7 @@ import {
   type PolkaDotTextureParams,
   type CheckerTextureParams,
   type CircleMaskParams,
+  type RectMaskParams,
   type HalfMaskParams,
   type HalfMaskDirection,
 } from './shaders'
@@ -53,6 +55,11 @@ export class TextureRenderer {
   private circleMaskPipeline: GPURenderPipeline | null = null
   private circleMaskBuffer: GPUBuffer | null = null
   private circleMaskBindGroup: GPUBindGroup | null = null
+
+  // Rect Mask
+  private rectMaskPipeline: GPURenderPipeline | null = null
+  private rectMaskBuffer: GPUBuffer | null = null
+  private rectMaskBindGroup: GPUBindGroup | null = null
 
   // Half Mask
   private halfMaskPipeline: GPURenderPipeline | null = null
@@ -406,6 +413,58 @@ export class TextureRenderer {
     this.render(this.circleMaskPipeline, this.circleMaskBindGroup!)
   }
 
+  renderRectMask(params: RectMaskParams): void {
+    if (!this.rectMaskPipeline) {
+      const shaderModule = this.device.createShaderModule({
+        code: rectMaskShader,
+      })
+
+      this.rectMaskPipeline = this.device.createRenderPipeline({
+        layout: 'auto',
+        vertex: {
+          module: shaderModule,
+          entryPoint: 'vertexMain',
+        },
+        fragment: {
+          module: shaderModule,
+          entryPoint: 'fragmentMain',
+          targets: [{ format: this.format }],
+        },
+        primitive: {
+          topology: 'triangle-list',
+        },
+      })
+
+      // RectMaskParams: innerColor(16) + outerColor(16) + left(4) + right(4) + top(4) + bottom(4) = 48 bytes
+      this.rectMaskBuffer = this.device.createBuffer({
+        size: 48,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      })
+
+      this.rectMaskBindGroup = this.device.createBindGroup({
+        layout: this.rectMaskPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.rectMaskBuffer },
+          },
+        ],
+      })
+    }
+
+    const data = new Float32Array([
+      ...params.innerColor,
+      ...params.outerColor,
+      params.left,
+      params.right,
+      params.top,
+      params.bottom,
+    ])
+    this.device.queue.writeBuffer(this.rectMaskBuffer!, 0, data)
+
+    this.render(this.rectMaskPipeline, this.rectMaskBindGroup!)
+  }
+
   renderHalfMask(params: HalfMaskParams): void {
     if (!this.halfMaskPipeline) {
       const shaderModule = this.device.createShaderModule({
@@ -493,6 +552,7 @@ export class TextureRenderer {
     this.polkaDotBuffer?.destroy()
     this.checkerBuffer?.destroy()
     this.circleMaskBuffer?.destroy()
+    this.rectMaskBuffer?.destroy()
     this.halfMaskBuffer?.destroy()
   }
 }

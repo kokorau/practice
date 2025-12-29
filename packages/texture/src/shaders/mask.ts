@@ -81,6 +81,61 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 }
 `
 
+/** 長方形マスクのパラメータ */
+export interface RectMaskParams {
+  /** 左端 (0.0-1.0) */
+  left: number
+  /** 右端 (0.0-1.0) */
+  right: number
+  /** 上端 (0.0-1.0) */
+  top: number
+  /** 下端 (0.0-1.0) */
+  bottom: number
+  /** 内側の色 */
+  innerColor: [number, number, number, number]
+  /** 外側の色 */
+  outerColor: [number, number, number, number]
+}
+
+/** 長方形マスクシェーダー */
+export const rectMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+${aaUtils}
+
+struct RectMaskParams {
+  innerColor: vec4f,
+  outerColor: vec4f,
+  left: f32,
+  right: f32,
+  top: f32,
+  bottom: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: RectMaskParams;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let viewportWidth = 400.0;
+  let viewportHeight = 225.0;
+
+  let uv = vec2f(pos.x / viewportWidth, pos.y / viewportHeight);
+
+  let pixelSizeX = 1.0 / viewportWidth;
+  let pixelSizeY = 1.0 / viewportHeight;
+
+  // 各辺からの距離でアンチエイリアス
+  let insideLeft = smoothstep(params.left - pixelSizeX, params.left + pixelSizeX, uv.x);
+  let insideRight = 1.0 - smoothstep(params.right - pixelSizeX, params.right + pixelSizeX, uv.x);
+  let insideTop = smoothstep(params.top - pixelSizeY, params.top + pixelSizeY, uv.y);
+  let insideBottom = 1.0 - smoothstep(params.bottom - pixelSizeY, params.bottom + pixelSizeY, uv.y);
+
+  let inside = insideLeft * insideRight * insideTop * insideBottom;
+
+  return mix(params.outerColor, params.innerColor, inside);
+}
+`
+
 /** 半分マスクシェーダー */
 export const halfMaskShader = /* wgsl */ `
 ${fullscreenVertex}
