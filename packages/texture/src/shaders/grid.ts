@@ -1,4 +1,5 @@
 import { fullscreenVertex, aaUtils } from './common'
+import type { TextureRenderSpec } from '../Domain'
 
 /**
  * 格子テクスチャ用パラメータ
@@ -54,3 +55,22 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   return mix(params.bgColor, params.lineColor, onLine);
 }
 `
+
+/**
+ * Create render spec for grid texture
+ */
+export function createGridSpec(params: GridTextureParams): TextureRenderSpec {
+  const data = new Float32Array([
+    ...params.lineColor,
+    ...params.bgColor,
+    params.lineWidth,
+    params.cellSize,
+    0, // padding
+    0, // padding
+  ])
+  return {
+    shader: gridShader,
+    uniforms: data.buffer,
+    bufferSize: 48,
+  }
+}

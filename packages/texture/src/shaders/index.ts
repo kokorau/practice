@@ -1,16 +1,19 @@
-export { fullscreenVertex, aaUtils } from './common'
-export { solidShader, type SolidTextureParams } from './solid'
-export { stripeShader, type StripeTextureParams } from './stripe'
-export { gridShader, type GridTextureParams } from './grid'
-export { polkaDotShader, type PolkaDotTextureParams } from './polkaDot'
-export { checkerShader, type CheckerTextureParams } from './checker'
+export { fullscreenVertex, aaUtils, maskBlendState } from './common'
+export { solidShader, createSolidSpec, type SolidTextureParams } from './solid'
+export { stripeShader, createStripeSpec, type StripeTextureParams } from './stripe'
+export { gridShader, createGridSpec, type GridTextureParams } from './grid'
+export { polkaDotShader, createPolkaDotSpec, type PolkaDotTextureParams } from './polkaDot'
+export { checkerShader, createCheckerSpec, type CheckerTextureParams } from './checker'
 export {
   circleMaskShader,
   rectMaskShader,
   halfMaskShader,
+  createCircleMaskSpec,
+  createRectMaskSpec,
+  createHalfMaskSpec,
   type CircleMaskParams,
   type RectMaskParams,
   type HalfMaskParams,
   type HalfMaskDirection,
 } from './mask'
-export { blobMaskShader, type BlobMaskParams } from './blob'
+export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'

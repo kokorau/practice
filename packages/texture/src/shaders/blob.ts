@@ -1,4 +1,5 @@
-import { fullscreenVertex, aaUtils } from './common'
+import { fullscreenVertex, aaUtils, maskBlendState } from './common'
+import type { TextureRenderSpec, Viewport } from '../Domain'
 
 /** Blobマスクのパラメータ */
 export interface BlobMaskParams {
@@ -112,3 +113,56 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   return mix(params.innerColor, params.outerColor, aa);
 }
 `
+
+/**
+ * Create render spec for blob mask
+ */
+export function createBlobMaskSpec(
+  params: BlobMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const aspectRatio = viewport.width / viewport.height
+
+  // Build uniform buffer manually due to mixed types (f32 + u32)
+  const buffer = new ArrayBuffer(80)
+  const floatView = new Float32Array(buffer)
+  const uintView = new Uint32Array(buffer)
+
+  // innerColor (vec4f) - offset 0
+  floatView[0] = params.innerColor[0]
+  floatView[1] = params.innerColor[1]
+  floatView[2] = params.innerColor[2]
+  floatView[3] = params.innerColor[3]
+  // outerColor (vec4f) - offset 16
+  floatView[4] = params.outerColor[0]
+  floatView[5] = params.outerColor[1]
+  floatView[6] = params.outerColor[2]
+  floatView[7] = params.outerColor[3]
+  // centerX (f32) - offset 32
+  floatView[8] = params.centerX
+  // centerY (f32) - offset 36
+  floatView[9] = params.centerY
+  // baseRadius (f32) - offset 40
+  floatView[10] = params.baseRadius
+  // amplitude (f32) - offset 44
+  floatView[11] = params.amplitude
+  // frequency (f32) - offset 48
+  floatView[12] = params.frequency
+  // octaves (u32) - offset 52
+  uintView[13] = params.octaves
+  // seed (f32) - offset 56
+  floatView[14] = params.seed
+  // aspectRatio (f32) - offset 60
+  floatView[15] = aspectRatio
+  // viewportWidth (f32) - offset 64
+  floatView[16] = viewport.width
+  // viewportHeight (f32) - offset 68
+  floatView[17] = viewport.height
+
+  return {
+    shader: blobMaskShader,
+    uniforms: buffer,
+    bufferSize: 80,
+    blend: maskBlendState,
+  }
+}

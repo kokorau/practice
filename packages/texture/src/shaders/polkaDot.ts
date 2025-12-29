@@ -1,4 +1,5 @@
 import { fullscreenVertex, aaUtils } from './common'
+import type { TextureRenderSpec } from '../Domain'
 
 /**
  * 水玉テクスチャ用パラメータ
@@ -61,3 +62,22 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   return mix(params.bgColor, params.dotColor, dotMask);
 }
 `
+
+/**
+ * Create render spec for polka dot texture
+ */
+export function createPolkaDotSpec(params: PolkaDotTextureParams): TextureRenderSpec {
+  const data = new Float32Array([
+    ...params.dotColor,
+    ...params.bgColor,
+    params.dotRadius,
+    params.spacing,
+    params.rowOffset,
+    0, // padding
+  ])
+  return {
+    shader: polkaDotShader,
+    uniforms: data.buffer,
+    bufferSize: 48,
+  }
+}

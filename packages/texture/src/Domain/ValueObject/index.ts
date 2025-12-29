@@ -1,1 +1,2 @@
-export type { RGBA, TextureRenderOptions, TexturePattern } from './TexturePattern'
+export type { RGBA, TextureRenderOptions, Viewport, TexturePattern } from './TexturePattern'
+export type { TextureRenderSpec } from './TextureRenderSpec'

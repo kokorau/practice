@@ -225,8 +225,11 @@ async function renderThumbnails() {
   const patterns = getPatterns(section)
   for (let i = 0; i < thumbnailRenderers.length; i++) {
     const renderer = thumbnailRenderers[i]
-    if (renderer) {
-      patterns[i]?.render(renderer, textureColor1.value, textureColor2.value)
+    const pattern = patterns[i]
+    if (renderer && pattern) {
+      const viewport = renderer.getViewport()
+      const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
+      renderer.render(spec)
     }
   }
 }
@@ -256,7 +259,12 @@ function openSection(section: 'background' | 'midground' | 'foreground') {
       try {
         const renderer = await TextureRenderer.create(canvas)
         thumbnailRenderers.push(renderer)
-        patterns[i]?.render(renderer, textureColor1.value, textureColor2.value)
+        const pattern = patterns[i]
+        if (pattern) {
+          const viewport = renderer.getViewport()
+          const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
+          renderer.render(spec)
+        }
       } catch (e) {
         console.error('WebGPU not available:', e)
       }
@@ -273,17 +281,21 @@ const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value
 function updatePreview() {
   if (!previewRenderer) return
 
+  const viewport = previewRenderer.getViewport()
+
   // 1. 後景を描画
   const bgPattern = texturePatterns[selectedBackgroundIndex.value]
   if (bgPattern) {
-    bgPattern.render(previewRenderer, textureColor1.value, textureColor2.value)
+    const spec = bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
+    previewRenderer.render(spec)
   }
 
   // 2. 中景のマスクを合成（選択されている場合）
   if (selectedMaskIndex.value !== null) {
     const maskPattern = maskPatterns[selectedMaskIndex.value]
     if (maskPattern) {
-      maskPattern.render(previewRenderer, maskInnerColor.value, maskOuterColor.value, { clear: false })
+      const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
+      previewRenderer.render(spec, { clear: false })
     }
   }
 }

@@ -1,4 +1,5 @@
 import { fullscreenVertex } from './common'
+import type { TextureRenderSpec } from '../Domain'
 
 /**
  * チェック模様テクスチャ用パラメータ
@@ -53,3 +54,22 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   }
 }
 `
+
+/**
+ * Create render spec for checker texture
+ */
+export function createCheckerSpec(params: CheckerTextureParams): TextureRenderSpec {
+  const data = new Float32Array([
+    ...params.color1,
+    ...params.color2,
+    params.cellSize,
+    params.angle,
+    0, // padding
+    0, // padding
+  ])
+  return {
+    shader: checkerShader,
+    uniforms: data.buffer,
+    bufferSize: 48,
+  }
+}

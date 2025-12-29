@@ -1,4 +1,5 @@
 import { fullscreenVertex, aaUtils } from './common'
+import type { TextureRenderSpec } from '../Domain'
 
 /**
  * ストライプテクスチャ用パラメータ
@@ -54,3 +55,22 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   return mix(params.color1, params.color2, blend);
 }
 `
+
+/**
+ * Create render spec for stripe texture
+ */
+export function createStripeSpec(params: StripeTextureParams): TextureRenderSpec {
+  const data = new Float32Array([
+    ...params.color1,
+    ...params.color2,
+    params.width1,
+    params.width2,
+    params.angle,
+    0, // padding
+  ])
+  return {
+    shader: stripeShader,
+    uniforms: data.buffer,
+    bufferSize: 48,
+  }
+}

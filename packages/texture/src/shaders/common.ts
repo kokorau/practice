@@ -24,3 +24,17 @@ fn aaMix(color1: vec4f, color2: vec4f, edge: f32, x: f32) -> vec4f {
   return mix(color1, color2, t);
 }
 `
+
+/** マスク用ブレンドステート（アルファブレンド） */
+export const maskBlendState: GPUBlendState = {
+  color: {
+    srcFactor: 'src-alpha',
+    dstFactor: 'one-minus-src-alpha',
+    operation: 'add',
+  },
+  alpha: {
+    srcFactor: 'one',
+    dstFactor: 'one-minus-src-alpha',
+    operation: 'add',
+  },
+}

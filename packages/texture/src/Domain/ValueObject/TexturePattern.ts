@@ -1,4 +1,4 @@
-import type { TextureRenderer } from '../../TextureRenderer'
+import type { TextureRenderSpec } from './TextureRenderSpec'
 
 /**
  * RGBA color tuple [r, g, b, a] where each value is 0-1
@@ -14,16 +14,19 @@ export interface TextureRenderOptions {
 }
 
 /**
+ * Viewport information for mask rendering
+ */
+export interface Viewport {
+  width: number
+  height: number
+}
+
+/**
  * Texture pattern definition
  */
 export interface TexturePattern {
   /** Display label for the pattern */
   label: string
-  /** Render function that draws the pattern */
-  render: (
-    renderer: TextureRenderer,
-    color1: RGBA,
-    color2: RGBA,
-    options?: TextureRenderOptions
-  ) => void
+  /** Create render specification from colors */
+  createSpec: (color1: RGBA, color2: RGBA, viewport?: Viewport) => TextureRenderSpec
 }

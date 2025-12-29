@@ -1,4 +1,5 @@
 import { fullscreenVertex } from './common'
+import type { TextureRenderSpec } from '../Domain'
 
 /**
  * べた塗りテクスチャ用パラメータ
@@ -21,3 +22,15 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   return color;
 }
 `
+
+/**
+ * Create render spec for solid texture
+ */
+export function createSolidSpec(params: SolidTextureParams): TextureRenderSpec {
+  const uniforms = new Float32Array(params.color).buffer
+  return {
+    shader: solidShader,
+    uniforms,
+    bufferSize: 16,
+  }
+}

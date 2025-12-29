@@ -1,4 +1,5 @@
-import { fullscreenVertex, aaUtils } from './common'
+import { fullscreenVertex, aaUtils, maskBlendState } from './common'
+import type { TextureRenderSpec, Viewport } from '../Domain'
 
 /** 円形マスクのパラメータ */
 export interface CircleMaskParams {
@@ -25,6 +26,22 @@ export interface HalfMaskParams {
   visibleColor: [number, number, number, number]
   /** 隠れる側の色 */
   hiddenColor: [number, number, number, number]
+}
+
+/** 長方形マスクのパラメータ */
+export interface RectMaskParams {
+  /** 左端 (0.0-1.0) */
+  left: number
+  /** 右端 (0.0-1.0) */
+  right: number
+  /** 上端 (0.0-1.0) */
+  top: number
+  /** 下端 (0.0-1.0) */
+  bottom: number
+  /** 内側の色 */
+  innerColor: [number, number, number, number]
+  /** 外側の色 */
+  outerColor: [number, number, number, number]
 }
 
 /** 円形マスクシェーダー */
@@ -75,22 +92,6 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   return mix(params.innerColor, params.outerColor, aa);
 }
 `
-
-/** 長方形マスクのパラメータ */
-export interface RectMaskParams {
-  /** 左端 (0.0-1.0) */
-  left: number
-  /** 右端 (0.0-1.0) */
-  right: number
-  /** 上端 (0.0-1.0) */
-  top: number
-  /** 下端 (0.0-1.0) */
-  bottom: number
-  /** 内側の色 */
-  innerColor: [number, number, number, number]
-  /** 外側の色 */
-  outerColor: [number, number, number, number]
-}
 
 /** 長方形マスクシェーダー */
 export const rectMaskShader = /* wgsl */ `
@@ -186,3 +187,100 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   return mix(params.hiddenColor, params.visibleColor, visible);
 }
 `
+
+/**
+ * Create render spec for circle mask
+ */
+export function createCircleMaskSpec(
+  params: CircleMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const aspectRatio = viewport.width / viewport.height
+  const data = new Float32Array([
+    ...params.innerColor,
+    ...params.outerColor,
+    params.centerX,
+    params.centerY,
+    params.radius,
+    aspectRatio,
+    viewport.width,
+    viewport.height,
+  ])
+  return {
+    shader: circleMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 64,
+    blend: maskBlendState,
+  }
+}
+
+/**
+ * Create render spec for rect mask
+ */
+export function createRectMaskSpec(
+  params: RectMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const data = new Float32Array([
+    ...params.innerColor,
+    ...params.outerColor,
+    params.left,
+    params.right,
+    params.top,
+    params.bottom,
+    viewport.width,
+    viewport.height,
+  ])
+  return {
+    shader: rectMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 64,
+    blend: maskBlendState,
+  }
+}
+
+/**
+ * Create render spec for half mask
+ */
+export function createHalfMaskSpec(
+  params: HalfMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const directionMap: Record<HalfMaskDirection, number> = {
+    top: 0,
+    bottom: 1,
+    left: 2,
+    right: 3,
+  }
+
+  // Build uniform buffer manually due to mixed types (u32 + f32)
+  const buffer = new ArrayBuffer(48)
+  const floatView = new Float32Array(buffer)
+  const uintView = new Uint32Array(buffer)
+
+  // visibleColor (vec4f) - offset 0
+  floatView[0] = params.visibleColor[0]
+  floatView[1] = params.visibleColor[1]
+  floatView[2] = params.visibleColor[2]
+  floatView[3] = params.visibleColor[3]
+  // hiddenColor (vec4f) - offset 16
+  floatView[4] = params.hiddenColor[0]
+  floatView[5] = params.hiddenColor[1]
+  floatView[6] = params.hiddenColor[2]
+  floatView[7] = params.hiddenColor[3]
+  // direction (u32) - offset 32
+  uintView[8] = directionMap[params.direction]
+  // padding (u32) - offset 36
+  uintView[9] = 0
+  // viewportWidth (f32) - offset 40
+  floatView[10] = viewport.width
+  // viewportHeight (f32) - offset 44
+  floatView[11] = viewport.height
+
+  return {
+    shader: halfMaskShader,
+    uniforms: buffer,
+    bufferSize: 48,
+    blend: maskBlendState,
+  }
+}
