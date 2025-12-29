@@ -25,7 +25,7 @@ const defaultMaskPatterns: TexturePattern[] = [
     label: 'Circle Top-Left',
     render: (r, c1, c2, opts) =>
       r.renderCircleMask(
-        { centerX: 0.25, centerY: 0.25, radius: 0.2, innerColor: c1, outerColor: c2 },
+        { centerX: 0.25, centerY: 0.25, radius: 0.35, innerColor: c1, outerColor: c2 },
         opts
       ),
   },
@@ -33,7 +33,7 @@ const defaultMaskPatterns: TexturePattern[] = [
     label: 'Circle Bottom-Right',
     render: (r, c1, c2, opts) =>
       r.renderCircleMask(
-        { centerX: 0.75, centerY: 0.75, radius: 0.2, innerColor: c1, outerColor: c2 },
+        { centerX: 0.75, centerY: 0.75, radius: 0.35, innerColor: c1, outerColor: c2 },
         opts
       ),
   },
@@ -62,6 +62,14 @@ const defaultMaskPatterns: TexturePattern[] = [
     render: (r, c1, c2, opts) =>
       r.renderRectMask(
         { left: 0.3, right: 0.7, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 },
+        opts
+      ),
+  },
+  {
+    label: 'Rect Center Narrow',
+    render: (r, c1, c2, opts) =>
+      r.renderRectMask(
+        { left: 0.35, right: 0.65, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 },
         opts
       ),
   },
