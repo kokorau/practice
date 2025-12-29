@@ -1,0 +1,48 @@
+{
+  "filter": {
+    "adjustment": {
+      "exposure": 0,
+      "highlights": 0,
+      "shadows": 0,
+      "whites": 0,
+      "blacks": 0,
+      "brightness": 0,
+      "contrast": 0,
+      "temperature": 0,
+      "tint": 0,
+      "clarity": 0,
+      "fade": 0,
+      "vibrance": 0,
+      "splitShadowHue": 220,
+      "splitShadowAmount": 0,
+      "splitHighlightHue": 40,
+      "splitHighlightAmount": 0,
+      "splitBalance": 0,
+      "toe": 0,
+      "shoulder": 0,
+      "liftR": 0,
+      "liftG": 0,
+      "liftB": 0,
+      "gammaR": 0,
+      "gammaG": 0,
+      "gammaB": 0,
+      "gainR": 0,
+      "gainG": 0,
+      "gainB": 0,
+      "selectiveColorEnabled": false,
+      "selectiveHue": 0,
+      "selectiveRange": 30,
+      "selectiveDesaturate": 1,
+      "posterizeLevels": 256,
+      "hueRotation": 0
+    },
+    "master": {
+      "points": [0, 0.16666666666666666, 0.3333333333333333, 0.5, 0.6666666666666666, 0.8333333333333334, 1]
+    },
+    "r": null,
+    "g": null,
+    "b": null
+  },
+  "intensity": 1.0,
+  "presetId": null
+}

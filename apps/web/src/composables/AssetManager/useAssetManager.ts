@@ -8,8 +8,11 @@ import {
   $AssetNode,
   createDefaultAssetsUseCase,
 } from '../../modules/AssetRepository'
+import { addSiteBuilderAssets } from '../../modules/SiteBuilder'
 
-const defaultData = createDefaultAssetsUseCase()
+// 汎用アセットを作成し、SiteBuilder用アセットを追加
+const baseData = createDefaultAssetsUseCase()
+const defaultData = addSiteBuilderAssets(baseData)
 
 /** アセットストレージ（id -> Asset） */
 const assets = shallowRef<Map<AssetId, Asset>>(defaultData.assets)

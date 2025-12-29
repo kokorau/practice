@@ -1,5 +1,8 @@
 /**
  * createDefaultAssetsUseCase - デフォルトのアセットとツリー構造を作成
+ *
+ * 汎用的なサンプルアセット（画像、アイコン、フォントなど）を作成する。
+ * アプリケーション固有のアセット（SiteBuilderなど）は各モジュールのInfra層で追加する。
  */
 
 import type { Asset, AssetId } from '../../Asset'
@@ -17,31 +20,6 @@ import iconSearchSvg from './constants/files/icon-search.svg?raw'
 import readmeContent from './constants/files/README.md?raw'
 import configJson from './constants/files/config.json?raw'
 
-// SiteBuilder用ファイル
-import brandGuideContent from '../../SiteBuilder/Infra/MockData/brandGuide.md?raw'
-import siteConfigData from '../../SiteBuilder/Infra/MockData/siteConfig.json'
-import {
-  BRAND_GUIDE_ASSET_ID,
-  BRAND_GUIDE_FILENAME,
-} from '../../SiteBuilder/Domain/constants/defaultBrandGuide'
-import {
-  SITE_CONFIG_ASSET_ID,
-  SITE_CONFIG_FILENAME,
-  $SiteConfig,
-} from '../../SiteBuilder/Domain/ValueObject/SiteConfig'
-import {
-  FILTER_CONFIG_ASSET_ID,
-  FILTER_CONFIG_FILENAME,
-  DEFAULT_FILTER_CONFIG,
-  $FilterConfig,
-} from '../../SiteBuilder/Domain/ValueObject/FilterConfig'
-import {
-  SITE_CONTENTS_ASSET_ID,
-  SITE_CONTENTS_FILENAME,
-  $SiteContents,
-  createDefaultSiteContents,
-} from '../../SiteBuilder/Domain/ValueObject/SiteContents'
-
 // バイナリファイル (URL)
 import photoLandscapeUrl from './constants/files/photo-landscape.jpg'
 import photoNatureUrl from './constants/files/photo-nature.jpg'
@@ -56,7 +34,7 @@ export type DefaultAssetsResult = {
 }
 
 /** デフォルトフォルダ */
-const defaultFolders = ['Config', 'Images', 'Icons', 'Documents', 'Fonts', 'Data'] as const
+const defaultFolders = ['Images', 'Icons', 'Documents', 'Fonts', 'Data'] as const
 
 /** テキストファイル定義 */
 type TextFileDef = {
@@ -264,79 +242,6 @@ export const createDefaultAssetsUseCase = (): DefaultAssetsResult => {
 
     assetMap.set(asset.id, asset)
     tree = $AssetTree.addAssetRef(tree, asset.name, folderId, asset.id)
-  }
-
-  // ============================================================
-  // SiteBuilder 用アセット（固定ID）
-  // ============================================================
-  const configFolderId = folderMap.get('Config')
-  if (configFolderId) {
-    // Brand Guide
-    const brandGuideBlob = new Blob([brandGuideContent], { type: 'text/markdown' })
-    const brandGuideAsset = $Asset.create({
-      id: BRAND_GUIDE_ASSET_ID,
-      name: BRAND_GUIDE_FILENAME,
-      source: $AssetSource.fromBlob(brandGuideBlob),
-      meta: {
-        mimeType: 'text/markdown',
-        size: brandGuideBlob.size,
-        description: 'Brand Guide document',
-        tags: ['config', 'brand', 'guide'],
-      },
-    })
-    assetMap.set(brandGuideAsset.id, brandGuideAsset)
-    tree = $AssetTree.addAssetRef(tree, brandGuideAsset.name, configFolderId, brandGuideAsset.id)
-
-    // SiteConfig
-    const siteConfigJson = $SiteConfig.toJSON(siteConfigData)
-    const siteConfigBlob = new Blob([siteConfigJson], { type: 'application/json' })
-    const siteConfigAsset = $Asset.create({
-      id: SITE_CONFIG_ASSET_ID,
-      name: SITE_CONFIG_FILENAME,
-      source: $AssetSource.fromBlob(siteConfigBlob),
-      meta: {
-        mimeType: 'application/json',
-        size: siteConfigBlob.size,
-        description: 'Site configuration',
-        tags: ['config', 'site'],
-      },
-    })
-    assetMap.set(siteConfigAsset.id, siteConfigAsset)
-    tree = $AssetTree.addAssetRef(tree, siteConfigAsset.name, configFolderId, siteConfigAsset.id)
-
-    // FilterConfig
-    const filterConfigJson = $FilterConfig.toJSON(DEFAULT_FILTER_CONFIG)
-    const filterConfigBlob = new Blob([filterConfigJson], { type: 'application/json' })
-    const filterConfigAsset = $Asset.create({
-      id: FILTER_CONFIG_ASSET_ID,
-      name: FILTER_CONFIG_FILENAME,
-      source: $AssetSource.fromBlob(filterConfigBlob),
-      meta: {
-        mimeType: 'application/json',
-        size: filterConfigBlob.size,
-        description: 'Filter configuration',
-        tags: ['config', 'filter'],
-      },
-    })
-    assetMap.set(filterConfigAsset.id, filterConfigAsset)
-    tree = $AssetTree.addAssetRef(tree, filterConfigAsset.name, configFolderId, filterConfigAsset.id)
-
-    // SiteContents
-    const siteContentsJson = $SiteContents.toJSON(createDefaultSiteContents())
-    const siteContentsBlob = new Blob([siteContentsJson], { type: 'application/json' })
-    const siteContentsAsset = $Asset.create({
-      id: SITE_CONTENTS_ASSET_ID,
-      name: SITE_CONTENTS_FILENAME,
-      source: $AssetSource.fromBlob(siteContentsBlob),
-      meta: {
-        mimeType: 'application/json',
-        size: siteContentsBlob.size,
-        description: 'Site contents',
-        tags: ['config', 'contents'],
-      },
-    })
-    assetMap.set(siteContentsAsset.id, siteContentsAsset)
-    tree = $AssetTree.addAssetRef(tree, siteContentsAsset.name, configFolderId, siteContentsAsset.id)
   }
 
   return { tree, assets: assetMap }
