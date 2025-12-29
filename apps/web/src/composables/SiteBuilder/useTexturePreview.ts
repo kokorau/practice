@@ -154,13 +154,15 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   }
 
   // Initialize preview renderer
-  const initPreview = async () => {
-    if (!previewCanvasRef.value) return
+  // Can optionally accept an external canvas (e.g., from a child component)
+  const initPreview = async (externalCanvas?: HTMLCanvasElement | null) => {
+    const canvas = externalCanvas ?? previewCanvasRef.value
+    if (!canvas) return
 
-    previewCanvasRef.value.width = 1280
-    previewCanvasRef.value.height = 720
+    canvas.width = 1280
+    canvas.height = 720
     try {
-      previewRenderer = await TextureRenderer.create(previewCanvasRef.value)
+      previewRenderer = await TextureRenderer.create(canvas)
       updatePreview()
     } catch (e) {
       console.error('WebGPU not available:', e)

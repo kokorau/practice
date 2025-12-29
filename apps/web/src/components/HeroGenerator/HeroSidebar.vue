@@ -1,0 +1,339 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import type { Oklch } from '@practice/color'
+import type { TexturePattern } from '@practice/texture'
+import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
+import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
+import { LAYOUT_PATTERNS, type LayoutId } from '../SiteBuilder/layoutPatterns'
+import type { SectionType } from '../../composables/SiteBuilder'
+
+type NeutralRampItem = {
+  key: string
+  css: string
+}
+
+defineProps<{
+  activeTab: 'generator' | 'palette'
+  // Color state
+  hue: number
+  saturation: number
+  value: number
+  selectedHex: string
+  brandOklch: Oklch
+  selectedFoundationId: string
+  foundationHex: string
+  foundationLabel: string
+  // Layer state
+  activeSection: SectionType | null
+  texturePatterns: TexturePattern[]
+  maskPatterns: TexturePattern[]
+  selectedBackgroundIndex: number
+  selectedMaskIndex: number | null
+  selectedLayout: LayoutId
+  // Palette tab
+  neutralRampDisplay: NeutralRampItem[]
+}>()
+
+const emit = defineEmits<{
+  'update:hue': [value: number]
+  'update:saturation': [value: number]
+  'update:value': [value: number]
+  'update:selectedFoundationId': [value: string]
+  'openSection': [section: SectionType]
+}>()
+
+type ColorPopup = 'brand' | 'foundation' | null
+const activeColorPopup = ref<ColorPopup>(null)
+
+const toggleColorPopup = (popup: ColorPopup) => {
+  activeColorPopup.value = activeColorPopup.value === popup ? null : popup
+}
+</script>
+
+<template>
+  <aside class="hero-sidebar">
+    <!-- カラー設定セクション -->
+    <div class="sidebar-section">
+      <p class="sidebar-label">Color Settings</p>
+
+      <!-- Brand Color -->
+      <button
+        class="color-button"
+        :class="{ active: activeColorPopup === 'brand' }"
+        @click="toggleColorPopup('brand')"
+      >
+        <span class="color-swatch" :style="{ backgroundColor: selectedHex }" />
+        <span class="color-info">
+          <span class="color-name">Brand</span>
+          <span class="color-value">{{ selectedHex }}</span>
+        </span>
+      </button>
+
+      <!-- Foundation -->
+      <button
+        class="color-button"
+        :class="{ active: activeColorPopup === 'foundation' }"
+        @click="toggleColorPopup('foundation')"
+      >
+        <span class="color-swatch" :style="{ backgroundColor: foundationHex }" />
+        <span class="color-info">
+          <span class="color-name">Foundation</span>
+          <span class="color-value">{{ foundationLabel }}</span>
+        </span>
+      </button>
+    </div>
+
+    <!-- レイヤーセクション (Generator タブのみ) -->
+    <template v-if="activeTab === 'generator'">
+      <div class="sidebar-section">
+        <p class="sidebar-label">Layers</p>
+
+        <!-- 後景 -->
+        <button
+          class="layer-button"
+          :class="{ active: activeSection === 'background' }"
+          @click="emit('openSection', 'background')"
+        >
+          <span class="layer-name">後景 (Background)</span>
+          <span class="layer-value">{{ texturePatterns[selectedBackgroundIndex]?.label }}</span>
+        </button>
+
+        <!-- 中景 -->
+        <button
+          class="layer-button"
+          :class="{ active: activeSection === 'midground' }"
+          @click="emit('openSection', 'midground')"
+        >
+          <span class="layer-name">中景 (Midground)</span>
+          <span class="layer-value">{{ selectedMaskIndex !== null ? maskPatterns[selectedMaskIndex]?.label : 'なし' }}</span>
+        </button>
+
+        <!-- 前景 -->
+        <button
+          class="layer-button"
+          :class="{ active: activeSection === 'foreground' }"
+          @click="emit('openSection', 'foreground')"
+        >
+          <span class="layer-name">前景 (Foreground)</span>
+          <span class="layer-value">{{ LAYOUT_PATTERNS.find(l => l.id === selectedLayout)?.label }}</span>
+        </button>
+      </div>
+    </template>
+
+    <!-- Palette タブ: Neutral Ramp -->
+    <template v-if="activeTab === 'palette'">
+      <div class="sidebar-section">
+        <p class="sidebar-label">Neutral Ramp</p>
+        <div class="neutral-ramp">
+          <span
+            v-for="item in neutralRampDisplay"
+            :key="item.key"
+            class="ramp-step"
+            :style="{ backgroundColor: item.css }"
+            :title="`${item.key}: ${item.css}`"
+          />
+        </div>
+      </div>
+    </template>
+
+    <!-- カラーポップアップ -->
+    <Transition name="popup">
+      <div v-if="activeColorPopup" class="color-popup">
+        <div class="popup-header">
+          <h2>{{ activeColorPopup === 'brand' ? 'Brand Color' : 'Foundation' }}</h2>
+          <button class="popup-close" @click="activeColorPopup = null">×</button>
+        </div>
+        <div class="popup-content">
+          <BrandColorPicker
+            v-if="activeColorPopup === 'brand'"
+            :hue="hue"
+            :saturation="saturation"
+            :value="value"
+            @update:hue="emit('update:hue', $event)"
+            @update:saturation="emit('update:saturation', $event)"
+            @update:value="emit('update:value', $event)"
+          />
+          <FoundationPresets
+            v-if="activeColorPopup === 'foundation'"
+            :selected-id="selectedFoundationId"
+            :brand-oklch="brandOklch"
+            :brand-hue="hue"
+            @update:selected-id="emit('update:selectedFoundationId', $event)"
+          />
+        </div>
+      </div>
+    </Transition>
+  </aside>
+</template>
+
+<style scoped>
+/* Sidebar Sections */
+.sidebar-section {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid oklch(0.25 0.02 260);
+}
+
+.sidebar-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(0.50 0.02 260);
+}
+
+/* Color Buttons */
+.color-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: oklch(0.22 0.02 260);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.color-button:hover {
+  background: oklch(0.26 0.02 260);
+}
+
+.color-button.active {
+  background: oklch(0.50 0.20 250);
+}
+
+.color-swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid oklch(0.40 0.02 260);
+  flex-shrink: 0;
+}
+
+.color-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.color-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.color-value {
+  font-size: 0.625rem;
+  color: oklch(0.60 0.02 260);
+  font-family: ui-monospace, monospace;
+}
+
+/* Layer Buttons */
+.layer-button {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: oklch(0.22 0.02 260);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.layer-button:hover {
+  background: oklch(0.26 0.02 260);
+}
+
+.layer-button.active {
+  background: oklch(0.50 0.20 250);
+}
+
+.layer-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.layer-value {
+  font-size: 0.75rem;
+  color: oklch(0.70 0.02 260);
+  margin-top: 0.25rem;
+}
+
+.layer-button.active .layer-value {
+  color: oklch(0.90 0.02 260);
+}
+
+/* Neutral Ramp */
+.neutral-ramp {
+  display: flex;
+  gap: 2px;
+}
+
+.ramp-step {
+  flex: 1;
+  height: 2rem;
+}
+
+.ramp-step:first-child {
+  border-radius: 0.25rem 0 0 0.25rem;
+}
+
+.ramp-step:last-child {
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+/* Color Popup */
+.color-popup {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 0.25rem;
+  width: 18rem;
+  background: oklch(0.18 0.02 260);
+  border: 1px solid oklch(0.25 0.02 260);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-bottom: 1px solid oklch(0.25 0.02 260);
+}
+
+.popup-header h2 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.popup-close {
+  background: none;
+  border: none;
+  color: oklch(0.60 0.02 260);
+  font-size: 1.125rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.popup-close:hover {
+  color: oklch(0.90 0.02 260);
+}
+
+.popup-content {
+  padding: 1rem;
+}
+</style>
