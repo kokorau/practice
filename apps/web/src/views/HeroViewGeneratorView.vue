@@ -9,7 +9,6 @@ import {
 } from '@practice/texture'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import { FOUNDATION_PRESETS } from '../components/SiteBuilder/foundationPresets'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
 import {
   CONTEXT_CLASS_NAMES,
@@ -26,48 +25,22 @@ import {
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
-import { hsvToRgb, rgbToHex } from '../components/SiteBuilder/utils/colorConversion'
+import { useSiteColors } from '../composables/SiteBuilder'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
-// Brand Color State (HSV Color Picker)
+// Brand & Foundation Color State
 // ============================================================
-const hue = ref(220)
-const saturation = ref(70)
-const value = ref(65)
-
-const selectedRgb = computed(() => hsvToRgb(hue.value, saturation.value, value.value))
-const selectedHex = computed(() => rgbToHex(...selectedRgb.value))
-
-// Brand color in Oklch
-const brandColor = computed(() => {
-  const [r, g, b] = selectedRgb.value
-  const oklch = $Oklch.fromSrgb({ r: r / 255, g: g / 255, b: b / 255 })
-  return {
-    hex: selectedHex.value,
-    oklch,
-    cssOklch: $Oklch.toCss(oklch),
-  }
-})
-
-// ============================================================
-// Foundation Preset State
-// ============================================================
-const selectedFoundationId = ref('white')
-
-const foundationColor = computed(() => {
-  const preset = FOUNDATION_PRESETS.find((p) => p.id === selectedFoundationId.value) ?? FOUNDATION_PRESETS[0]!
-  const presetHue = preset.H === 'brand' ? hue.value : preset.H
-  const oklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
-  const srgb = $Oklch.toSrgb(oklch)
-  const toHex = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')
-  return {
-    oklch,
-    css: $Oklch.toCss(oklch),
-    hex: `#${toHex(srgb.r)}${toHex(srgb.g)}${toHex(srgb.b)}`,
-    label: preset.label,
-  }
-})
+const {
+  hue,
+  saturation,
+  value,
+  selectedHex,
+  brandColor,
+  selectedFoundationId,
+  foundationColor,
+  isDark,
+} = useSiteColors()
 
 // ============================================================
 // Primitive & Semantic Palette Generation
@@ -81,7 +54,6 @@ const primitivePalette = computed((): PrimitivePalette => {
 
 const semanticPalette = computed(() => createSemanticFromPrimitive(primitivePalette.value))
 const primitiveRefMap = computed(() => createPrimitiveRefMap(primitivePalette.value))
-const isDark = computed(() => foundationColor.value.oklch.L <= 0.5)
 
 // Neutral ramp display
 const neutralRampDisplay = computed(() => {
