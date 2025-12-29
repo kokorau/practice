@@ -1,4 +1,4 @@
-import { fullscreenVertex } from './fullscreen'
+import { fullscreenVertex } from './common'
 
 /**
  * べた塗りテクスチャ用パラメータ

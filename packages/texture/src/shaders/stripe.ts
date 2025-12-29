@@ -1,4 +1,4 @@
-import { fullscreenVertex } from './fullscreen'
+import { fullscreenVertex, aaUtils } from './common'
 
 /**
  * ストライプテクスチャ用パラメータ
@@ -33,6 +33,8 @@ struct StripeParams {
 
 ${fullscreenVertex}
 
+${aaUtils}
+
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let cosA = cos(params.angle);
@@ -43,10 +45,12 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let t = rotatedX % period;
   let normalizedT = select(t, t + period, t < 0.0);
 
-  if (normalizedT < params.width1) {
-    return params.color1;
-  } else {
-    return params.color2;
-  }
+  // 両方のエッジでアンチエイリアス
+  let edge1 = aaStep(params.width1, normalizedT);
+  let edge2 = aaStep(period, normalizedT);
+
+  // edge1: color1 -> color2, edge2: color2 -> color1 (wrap)
+  let blend = edge1 - edge2;
+  return mix(params.color1, params.color2, blend);
 }
 `

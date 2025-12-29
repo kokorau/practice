@@ -1,3 +1,3 @@
-export { fullscreenVertex } from './fullscreen'
+export { fullscreenVertex, aaUtils } from './common'
 export { solidShader, type SolidTextureParams } from './solid'
 export { stripeShader, type StripeTextureParams } from './stripe'
