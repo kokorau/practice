@@ -118,15 +118,20 @@
   padding: 1.5rem;
 }
 
-/* Sub Panel */
+/* Sub Panel (Popover) */
 .hero-subpanel {
+  position: absolute;
+  left: 16rem; /* sidebar width */
+  top: 0;
+  bottom: 0;
   width: 18rem;
-  flex-shrink: 0;
+  z-index: 40;
   border-left: 1px solid oklch(0.20 0.02 260);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   background: oklch(0.10 0.02 260);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .hero-subpanel-header {
@@ -174,4 +179,16 @@
 .popup-leave-to {
   opacity: 0;
   transform: translateX(-8px);
+}
+
+/* Subpanel Transitions */
+.subpanel-enter-active,
+.subpanel-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.subpanel-enter-from,
+.subpanel-leave-to {
+  opacity: 0;
+  transform: translateX(-16px);
 }

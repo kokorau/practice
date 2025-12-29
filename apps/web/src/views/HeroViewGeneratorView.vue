@@ -438,7 +438,8 @@ const toggleColorPopup = (popup: ColorPopup) => {
     </aside>
 
     <!-- サブパネル: パターン選択 (Generator タブのみ) -->
-    <aside v-if="activeSection && activeTab === 'generator'" class="hero-subpanel">
+    <Transition name="subpanel">
+      <aside v-if="activeSection && activeTab === 'generator'" class="hero-subpanel">
       <div class="hero-subpanel-header">
         <h2>{{ activeSection === 'background' ? 'テクスチャ選択' : activeSection === 'midground' ? 'マスク選択' : '前景設定' }}</h2>
         <button class="hero-subpanel-close" @click="activeSection = null">×</button>
@@ -494,7 +495,8 @@ const toggleColorPopup = (popup: ColorPopup) => {
           </div>
         </template>
       </div>
-    </aside>
+      </aside>
+    </Transition>
 
     <!-- 中央: メインコンテンツ -->
     <main class="hero-main">
