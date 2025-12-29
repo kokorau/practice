@@ -3,12 +3,55 @@ import {
   TextureRenderer,
   getDefaultTexturePatterns,
   getDefaultMaskPatterns,
+  createCircleStripeSpec,
+  createCircleGridSpec,
+  createCirclePolkaDotSpec,
+  createRectStripeSpec,
+  createRectGridSpec,
+  createRectPolkaDotSpec,
   type TexturePattern,
+  type MaskPattern,
   type RGBA,
+  type CircleMaskShapeConfig,
+  type RectMaskShapeConfig,
+  type Viewport,
+  type TextureRenderSpec,
 } from '@practice/texture'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+
+/**
+ * Midground texture pattern definition
+ */
+export interface MidgroundTexturePattern {
+  label: string
+  type: 'stripe' | 'grid' | 'polkaDot'
+  config: {
+    // Stripe
+    width1?: number
+    width2?: number
+    angle?: number
+    // Grid
+    lineWidth?: number
+    cellSize?: number
+    // PolkaDot
+    dotRadius?: number
+    spacing?: number
+    rowOffset?: number
+  }
+}
+
+/**
+ * Default midground texture patterns
+ */
+const defaultMidgroundTexturePatterns: MidgroundTexturePattern[] = [
+  { label: 'Diagonal 45°', type: 'stripe', config: { width1: 20, width2: 20, angle: Math.PI / 4 } },
+  { label: 'Horizontal', type: 'stripe', config: { width1: 15, width2: 15, angle: 0 } },
+  { label: 'Vertical', type: 'stripe', config: { width1: 10, width2: 10, angle: Math.PI / 2 } },
+  { label: 'Grid', type: 'grid', config: { lineWidth: 2, cellSize: 30 } },
+  { label: 'Polka Dot', type: 'polkaDot', config: { dotRadius: 10, spacing: 40, rowOffset: 0.5 } },
+]
 
 export type SectionType = 'background' | 'midground' | 'foreground'
 
@@ -40,10 +83,12 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   // Pattern definitions
   const texturePatterns = getDefaultTexturePatterns()
   const maskPatterns = getDefaultMaskPatterns()
+  const midgroundTexturePatterns = defaultMidgroundTexturePatterns
 
   // Selection state
   const selectedBackgroundIndex = ref(4) // Grid
   const selectedMaskIndex = ref<number | null>(1) // Circle Large
+  const selectedMidgroundTextureIndex = ref<number | null>(null) // Midground texture (null = solid color)
   const activeSection = ref<SectionType | null>(null)
 
   // Canvas refs and renderers
@@ -59,6 +104,16 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   // Mask colors (inner transparent, outer opaque)
   const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value], 0))
   const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
+
+  // Midground texture colors: canvas.surface with ΔL=5 shifted inward
+  // dark mode: +5 (brighter), light mode: -5 (darker)
+  const midgroundTextureColor1 = computed((): RGBA => {
+    const surface = primitivePalette.value[canvasSurfaceKey.value]
+    const deltaL = isDark.value ? 0.05 : -0.05
+    const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
+    return paletteToRgba(shifted)
+  })
+  const midgroundTextureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
 
   // Get patterns for a section
   const getPatterns = (section: SectionType): TexturePattern[] => {
@@ -130,6 +185,96 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
     })
   }
 
+  /**
+   * Create masked texture spec based on mask shape and texture pattern
+   */
+  const createMaskedTextureSpec = (
+    maskPattern: MaskPattern,
+    texturePattern: MidgroundTexturePattern,
+    color1: RGBA,
+    color2: RGBA,
+    viewport: Viewport
+  ): TextureRenderSpec | null => {
+    const { maskConfig } = maskPattern
+    const { type: textureType, config } = texturePattern
+
+    // Circle mask
+    if (maskConfig.type === 'circle') {
+      const circleMask: CircleMaskShapeConfig = maskConfig
+      if (textureType === 'stripe') {
+        return createCircleStripeSpec(
+          color1, color2,
+          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius },
+          { type: 'stripe', width1: config.width1!, width2: config.width2!, angle: config.angle! },
+          viewport
+        )
+      }
+      if (textureType === 'grid') {
+        return createCircleGridSpec(
+          color1, color2,
+          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius },
+          { type: 'grid', lineWidth: config.lineWidth!, cellSize: config.cellSize! },
+          viewport
+        )
+      }
+      if (textureType === 'polkaDot') {
+        return createCirclePolkaDotSpec(
+          color1, color2,
+          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius },
+          { type: 'polkaDot', dotRadius: config.dotRadius!, spacing: config.spacing!, rowOffset: config.rowOffset! },
+          viewport
+        )
+      }
+    }
+
+    // Rect mask
+    if (maskConfig.type === 'rect') {
+      const rectMask: RectMaskShapeConfig = maskConfig
+      if (textureType === 'stripe') {
+        return createRectStripeSpec(
+          color1, color2,
+          {
+            type: 'rect',
+            left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom,
+            radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight,
+            radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight,
+          },
+          { type: 'stripe', width1: config.width1!, width2: config.width2!, angle: config.angle! },
+          viewport
+        )
+      }
+      if (textureType === 'grid') {
+        return createRectGridSpec(
+          color1, color2,
+          {
+            type: 'rect',
+            left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom,
+            radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight,
+            radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight,
+          },
+          { type: 'grid', lineWidth: config.lineWidth!, cellSize: config.cellSize! },
+          viewport
+        )
+      }
+      if (textureType === 'polkaDot') {
+        return createRectPolkaDotSpec(
+          color1, color2,
+          {
+            type: 'rect',
+            left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom,
+            radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight,
+            radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight,
+          },
+          { type: 'polkaDot', dotRadius: config.dotRadius!, spacing: config.spacing!, rowOffset: config.rowOffset! },
+          viewport
+        )
+      }
+    }
+
+    // Blob mask: not yet supported for masked textures, fallback to solid
+    return null
+  }
+
   // Update main preview
   const updatePreview = () => {
     if (!previewRenderer) return
@@ -143,10 +288,28 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
       previewRenderer.render(spec)
     }
 
-    // 2. Composite mask (if selected)
+    // 2. Composite midground (mask + optional texture)
     if (selectedMaskIndex.value !== null) {
       const maskPattern = maskPatterns[selectedMaskIndex.value]
       if (maskPattern) {
+        // If midground texture is selected, use masked texture shader
+        if (selectedMidgroundTextureIndex.value !== null) {
+          const texturePattern = midgroundTexturePatterns[selectedMidgroundTextureIndex.value]
+          if (texturePattern) {
+            const spec = createMaskedTextureSpec(
+              maskPattern,
+              texturePattern,
+              midgroundTextureColor1.value,
+              midgroundTextureColor2.value,
+              viewport
+            )
+            if (spec) {
+              previewRenderer.render(spec, { clear: false })
+              return
+            }
+          }
+        }
+        // Fallback to solid color mask
         const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
         previewRenderer.render(spec, { clear: false })
       }
@@ -178,7 +341,17 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
 
   // Watch for changes
   watch(
-    [selectedBackgroundIndex, selectedMaskIndex, textureColor1, textureColor2, maskInnerColor, maskOuterColor],
+    [
+      selectedBackgroundIndex,
+      selectedMaskIndex,
+      selectedMidgroundTextureIndex,
+      textureColor1,
+      textureColor2,
+      maskInnerColor,
+      maskOuterColor,
+      midgroundTextureColor1,
+      midgroundTextureColor2,
+    ],
     updatePreview
   )
   watch([textureColor1, textureColor2], renderThumbnails)
@@ -192,9 +365,11 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
     // Pattern data
     texturePatterns,
     maskPatterns,
+    midgroundTexturePatterns,
     // Selection state
     selectedBackgroundIndex,
     selectedMaskIndex,
+    selectedMidgroundTextureIndex,
     activeSection,
     // Actions
     openSection,

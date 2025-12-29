@@ -13,6 +13,17 @@ export type {
   CircleMaskParams,
   RectMaskParams,
   BlobMaskParams,
+  // Masked texture types
+  MaskType,
+  TextureType,
+  CircleMaskConfig,
+  RectMaskConfig,
+  MaskConfig,
+  StripeTextureConfig,
+  GridTextureConfig,
+  PolkaDotTextureConfig,
+  TextureConfig,
+  MaskedTextureParams,
 } from './shaders'
 
 export {
@@ -24,6 +35,13 @@ export {
   createCircleMaskSpec,
   createRectMaskSpec,
   createBlobMaskSpec,
+  // Masked texture specs
+  createCircleStripeSpec,
+  createCircleGridSpec,
+  createCirclePolkaDotSpec,
+  createRectStripeSpec,
+  createRectGridSpec,
+  createRectPolkaDotSpec,
 } from './shaders'
 
 // Domain
@@ -33,6 +51,12 @@ export type {
   Viewport,
   TexturePattern,
   TextureRenderSpec,
+  MaskShapeType,
+  CircleMaskShapeConfig,
+  RectMaskShapeConfig,
+  BlobMaskShapeConfig,
+  MaskShapeConfig,
+  MaskPattern,
 } from './Domain'
 
 // Application

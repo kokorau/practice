@@ -1,4 +1,4 @@
-import type { TexturePattern } from '../Domain'
+import type { TexturePattern, MaskPattern } from '../Domain'
 
 /**
  * Port interface for retrieving default texture patterns
@@ -11,5 +11,5 @@ export interface GetDefaultTexturePatterns {
  * Port interface for retrieving default mask patterns
  */
 export interface GetDefaultMaskPatterns {
-  (): TexturePattern[]
+  (): MaskPattern[]
 }

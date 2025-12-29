@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Oklch } from '@practice/color'
-import type { TexturePattern } from '@practice/texture'
+import type { TexturePattern, MaskPattern } from '@practice/texture'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
 import { LAYOUT_PATTERNS, type LayoutId } from '../SiteBuilder/layoutPatterns'
-import type { SectionType } from '../../composables/SiteBuilder'
+import type { SectionType, MidgroundTexturePattern } from '../../composables/SiteBuilder'
 
 type NeutralRampItem = {
   key: string
   css: string
 }
 
-defineProps<{
+const props = defineProps<{
   activeTab: 'generator' | 'palette'
   // Color state
   hue: number
@@ -26,13 +26,25 @@ defineProps<{
   // Layer state
   activeSection: SectionType | null
   texturePatterns: TexturePattern[]
-  maskPatterns: TexturePattern[]
+  maskPatterns: MaskPattern[]
+  midgroundTexturePatterns: MidgroundTexturePattern[]
   selectedBackgroundIndex: number
   selectedMaskIndex: number | null
+  selectedMidgroundTextureIndex: number | null
   selectedLayout: LayoutId
   // Palette tab
   neutralRampDisplay: NeutralRampItem[]
 }>()
+
+// Computed for midground display label
+const midgroundLabel = computed(() => {
+  if (props.selectedMaskIndex === null) return 'なし'
+  const maskLabel = props.maskPatterns[props.selectedMaskIndex]?.label ?? ''
+  const textureLabel = props.selectedMidgroundTextureIndex !== null
+    ? props.midgroundTexturePatterns[props.selectedMidgroundTextureIndex]?.label
+    : null
+  return textureLabel ? `${maskLabel} + ${textureLabel}` : maskLabel
+})
 
 const emit = defineEmits<{
   'update:hue': [value: number]
@@ -105,7 +117,7 @@ const toggleColorPopup = (popup: ColorPopup) => {
           @click="emit('openSection', 'midground')"
         >
           <span class="layer-name">中景 (Midground)</span>
-          <span class="layer-value">{{ selectedMaskIndex !== null ? maskPatterns[selectedMaskIndex]?.label : 'なし' }}</span>
+          <span class="layer-value">{{ midgroundLabel }}</span>
         </button>
 
         <!-- 前景 -->

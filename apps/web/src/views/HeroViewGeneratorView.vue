@@ -83,8 +83,10 @@ const actions = computed(() => [
 const {
   texturePatterns,
   maskPatterns,
+  midgroundTexturePatterns,
   selectedBackgroundIndex,
   selectedMaskIndex,
+  selectedMidgroundTextureIndex,
   activeSection,
   openSection,
   initPreview,
@@ -148,8 +150,10 @@ const activeTab = ref<TabId>('generator')
       :active-section="activeSection"
       :texture-patterns="texturePatterns"
       :mask-patterns="maskPatterns"
+      :midground-texture-patterns="midgroundTexturePatterns"
       :selected-background-index="selectedBackgroundIndex"
       :selected-mask-index="selectedMaskIndex"
+      :selected-midground-texture-index="selectedMidgroundTextureIndex"
       :selected-layout="selectedLayout"
       :neutral-ramp-display="neutralRampDisplay"
       @update:hue="hue = $event"
@@ -184,8 +188,10 @@ const activeTab = ref<TabId>('generator')
           </div>
         </template>
 
-        <!-- 中景: マスク選択 -->
+        <!-- 中景: マスク + テクスチャ選択 -->
         <template v-else-if="activeSection === 'midground'">
+          <!-- マスク形状選択 -->
+          <p class="subpanel-section-label">マスク形状</p>
           <div class="pattern-grid">
             <!-- なし -->
             <button
@@ -208,6 +214,33 @@ const activeTab = ref<TabId>('generator')
               <span class="pattern-label">{{ pattern.label }}</span>
             </button>
           </div>
+
+          <!-- テクスチャ選択 (マスクが選択されている場合のみ) -->
+          <template v-if="selectedMaskIndex !== null">
+            <p class="subpanel-section-label" style="margin-top: 1rem;">テクスチャ</p>
+            <div class="texture-grid">
+              <!-- べた塗り -->
+              <button
+                class="texture-button"
+                :class="{ active: selectedMidgroundTextureIndex === null }"
+                @click="selectedMidgroundTextureIndex = null"
+              >
+                <span class="texture-icon">■</span>
+                <span class="texture-label">べた塗り</span>
+              </button>
+              <!-- テクスチャパターン -->
+              <button
+                v-for="(pattern, i) in midgroundTexturePatterns"
+                :key="i"
+                class="texture-button"
+                :class="{ active: selectedMidgroundTextureIndex === i }"
+                @click="selectedMidgroundTextureIndex = i"
+              >
+                <span class="texture-icon">{{ pattern.type === 'stripe' ? '▤' : pattern.type === 'grid' ? '▦' : '⚬' }}</span>
+                <span class="texture-label">{{ pattern.label }}</span>
+              </button>
+            </div>
+          </template>
         </template>
 
         <!-- 前景: レイアウト選択 -->
@@ -269,6 +302,16 @@ const activeTab = ref<TabId>('generator')
 </template>
 
 <style scoped>
+/* Subpanel Section Label */
+.subpanel-section-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(0.50 0.02 260);
+}
+
 /* Pattern Grid */
 .pattern-grid {
   display: flex;
@@ -368,5 +411,48 @@ const activeTab = ref<TabId>('generator')
 .layout-label {
   font-size: 0.625rem;
   font-weight: 500;
+}
+
+/* Texture Grid */
+.texture-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.375rem;
+}
+
+.texture-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.25rem;
+  border: 2px solid oklch(0.30 0.02 260);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: oklch(0.70 0.02 260);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.texture-button:hover {
+  border-color: oklch(0.40 0.02 260);
+  background: oklch(0.20 0.02 260);
+}
+
+.texture-button.active {
+  border-color: oklch(0.55 0.20 250);
+  background: oklch(0.55 0.20 250 / 0.15);
+  color: oklch(0.90 0.02 260);
+}
+
+.texture-icon {
+  font-size: 1rem;
+}
+
+.texture-label {
+  font-size: 0.5rem;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
 }
 </style>

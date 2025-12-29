@@ -30,3 +30,56 @@ export interface TexturePattern {
   /** Create render specification from colors */
   createSpec: (color1: RGBA, color2: RGBA, viewport?: Viewport) => TextureRenderSpec
 }
+
+/**
+ * Mask type enumeration
+ */
+export type MaskShapeType = 'circle' | 'rect' | 'blob'
+
+/**
+ * Circle mask configuration
+ */
+export interface CircleMaskShapeConfig {
+  type: 'circle'
+  centerX: number
+  centerY: number
+  radius: number
+}
+
+/**
+ * Rect mask configuration
+ */
+export interface RectMaskShapeConfig {
+  type: 'rect'
+  left: number
+  right: number
+  top: number
+  bottom: number
+  radiusTopLeft?: number
+  radiusTopRight?: number
+  radiusBottomLeft?: number
+  radiusBottomRight?: number
+}
+
+/**
+ * Blob mask configuration (not supported for masked textures yet)
+ */
+export interface BlobMaskShapeConfig {
+  type: 'blob'
+  centerX: number
+  centerY: number
+  baseRadius: number
+  amplitude: number
+  octaves: number
+  seed: number
+}
+
+export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig
+
+/**
+ * Mask pattern definition with shape configuration
+ */
+export interface MaskPattern extends TexturePattern {
+  /** Mask shape configuration for compositing with textures */
+  maskConfig: MaskShapeConfig
+}

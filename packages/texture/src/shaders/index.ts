@@ -13,3 +13,21 @@ export {
   type RectMaskParams,
 } from './mask'
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'
+export {
+  createCircleStripeSpec,
+  createCircleGridSpec,
+  createCirclePolkaDotSpec,
+  createRectStripeSpec,
+  createRectGridSpec,
+  createRectPolkaDotSpec,
+  type MaskType,
+  type TextureType,
+  type CircleMaskConfig,
+  type RectMaskConfig,
+  type MaskConfig,
+  type StripeTextureConfig,
+  type GridTextureConfig,
+  type PolkaDotTextureConfig,
+  type TextureConfig,
+  type MaskedTextureParams,
+} from './maskedTexture'
