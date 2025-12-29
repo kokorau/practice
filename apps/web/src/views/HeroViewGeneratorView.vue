@@ -50,6 +50,31 @@ const patterns: Omit<TexturePreview, 'canvasRef' | 'renderer'>[] = [
     render: (r, c1, c2) =>
       r.renderStripe({ width1: 2, width2: 12, angle: Math.PI / 2, color1: c1, color2: c2 }),
   },
+  {
+    label: 'Grid',
+    render: (r, c1, c2) =>
+      r.renderGrid({ lineWidth: 2, cellSize: 30, lineColor: c1, bgColor: c2 }),
+  },
+  {
+    label: 'Grid Fine',
+    render: (r, c1, c2) =>
+      r.renderGrid({ lineWidth: 1, cellSize: 15, lineColor: c1, bgColor: c2 }),
+  },
+  {
+    label: 'Grid Thick',
+    render: (r, c1, c2) =>
+      r.renderGrid({ lineWidth: 4, cellSize: 50, lineColor: c1, bgColor: c2 }),
+  },
+  {
+    label: 'Grid Bold',
+    render: (r, c1, c2) =>
+      r.renderGrid({ lineWidth: 8, cellSize: 80, lineColor: c1, bgColor: c2 }),
+  },
+  {
+    label: 'Grid Heavy',
+    render: (r, c1, c2) =>
+      r.renderGrid({ lineWidth: 12, cellSize: 120, lineColor: c1, bgColor: c2 }),
+  },
 ]
 
 const previews: TexturePreview[] = patterns.map((p) => ({

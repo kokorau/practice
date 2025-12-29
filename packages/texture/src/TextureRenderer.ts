@@ -1,8 +1,10 @@
 import {
   solidShader,
   stripeShader,
+  gridShader,
   type SolidTextureParams,
   type StripeTextureParams,
+  type GridTextureParams,
 } from './shaders'
 
 /**
@@ -22,6 +24,11 @@ export class TextureRenderer {
   private stripePipeline: GPURenderPipeline | null = null
   private stripeBuffer: GPUBuffer | null = null
   private stripeBindGroup: GPUBindGroup | null = null
+
+  // Grid
+  private gridPipeline: GPURenderPipeline | null = null
+  private gridBuffer: GPUBuffer | null = null
+  private gridBindGroup: GPUBindGroup | null = null
 
   private constructor(
     device: GPUDevice,
@@ -159,6 +166,58 @@ export class TextureRenderer {
     this.render(this.stripePipeline, this.stripeBindGroup!)
   }
 
+  renderGrid(params: GridTextureParams): void {
+    if (!this.gridPipeline) {
+      const shaderModule = this.device.createShaderModule({
+        code: gridShader,
+      })
+
+      this.gridPipeline = this.device.createRenderPipeline({
+        layout: 'auto',
+        vertex: {
+          module: shaderModule,
+          entryPoint: 'vertexMain',
+        },
+        fragment: {
+          module: shaderModule,
+          entryPoint: 'fragmentMain',
+          targets: [{ format: this.format }],
+        },
+        primitive: {
+          topology: 'triangle-list',
+        },
+      })
+
+      // GridParams: lineColor(16) + bgColor(16) + lineWidth(4) + cellSize(4) + padding(8) = 48 bytes
+      this.gridBuffer = this.device.createBuffer({
+        size: 48,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      })
+
+      this.gridBindGroup = this.device.createBindGroup({
+        layout: this.gridPipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.gridBuffer },
+          },
+        ],
+      })
+    }
+
+    const data = new Float32Array([
+      ...params.lineColor,
+      ...params.bgColor,
+      params.lineWidth,
+      params.cellSize,
+      0, // padding
+      0, // padding
+    ])
+    this.device.queue.writeBuffer(this.gridBuffer!, 0, data)
+
+    this.render(this.gridPipeline, this.gridBindGroup!)
+  }
+
   private render(pipeline: GPURenderPipeline, bindGroup: GPUBindGroup): void {
     const commandEncoder = this.device.createCommandEncoder()
     const renderPass = commandEncoder.beginRenderPass({
@@ -183,5 +242,6 @@ export class TextureRenderer {
   destroy(): void {
     this.solidBuffer?.destroy()
     this.stripeBuffer?.destroy()
+    this.gridBuffer?.destroy()
   }
 }

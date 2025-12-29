@@ -2,4 +2,4 @@
 // テクスチャ生成用のシェーダーをエクスポート
 
 export { TextureRenderer } from './TextureRenderer'
-export type { SolidTextureParams, StripeTextureParams } from './shaders'
+export type { SolidTextureParams, StripeTextureParams, GridTextureParams } from './shaders'
