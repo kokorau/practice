@@ -90,6 +90,10 @@ const {
   activeSection,
   openSection,
   initPreview,
+  customBackgroundImage,
+  customBackgroundFile,
+  setBackgroundImage,
+  clearBackgroundImage,
 } = useTexturePreview({ primitivePalette, isDark })
 
 const selectedLayout = ref<LayoutId>('row-top-between')
@@ -174,12 +178,41 @@ const activeTab = ref<TabId>('generator')
       <div class="hero-subpanel-content">
         <!-- 後景: テクスチャ選択 -->
         <template v-if="activeSection === 'background'">
+          <!-- 画像アップロード -->
+          <p class="subpanel-section-label">画像</p>
+          <div class="image-upload-section">
+            <template v-if="customBackgroundImage">
+              <div class="uploaded-image-preview">
+                <img :src="customBackgroundImage" alt="Uploaded background" />
+                <div class="uploaded-image-info">
+                  <span class="uploaded-image-name">{{ customBackgroundFile?.name }}</span>
+                  <button class="image-clear-button" @click="clearBackgroundImage">削除</button>
+                </div>
+              </div>
+            </template>
+            <label v-else class="image-upload-button">
+              <input
+                type="file"
+                accept="image/*"
+                class="image-upload-input"
+                @change="(e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0]
+                  if (file) setBackgroundImage(file)
+                }"
+              />
+              <span class="image-upload-icon">📷</span>
+              <span class="image-upload-text">画像をアップロード</span>
+            </label>
+          </div>
+
+          <p class="subpanel-section-label" style="margin-top: 1rem;">テクスチャ</p>
           <div class="pattern-grid">
             <button
               v-for="(pattern, i) in texturePatterns"
               :key="i"
               class="pattern-button"
-              :class="{ active: selectedBackgroundIndex === i }"
+              :class="{ active: !customBackgroundImage && selectedBackgroundIndex === i }"
+              :disabled="!!customBackgroundImage"
               @click="selectedBackgroundIndex = i"
             >
               <canvas data-thumbnail-canvas class="pattern-canvas" />
@@ -286,6 +319,7 @@ const activeTab = ref<TabId>('generator')
         v-if="activeTab === 'generator'"
         ref="heroPreviewRef"
         :selected-layout="selectedLayout"
+        :custom-background-image="customBackgroundImage"
         class="hero-tab-content"
       />
 
@@ -454,5 +488,101 @@ const activeTab = ref<TabId>('generator')
   font-weight: 500;
   text-align: center;
   line-height: 1.2;
+}
+
+/* Image Upload Section */
+.image-upload-section {
+  margin-bottom: 0.5rem;
+}
+
+.image-upload-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1.5rem;
+  border: 2px dashed oklch(0.35 0.02 260);
+  border-radius: 0.5rem;
+  background: oklch(0.18 0.02 260);
+  color: oklch(0.60 0.02 260);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.image-upload-button:hover {
+  border-color: oklch(0.55 0.20 250);
+  background: oklch(0.22 0.02 260);
+}
+
+.image-upload-input {
+  display: none;
+}
+
+.image-upload-icon {
+  font-size: 1.5rem;
+}
+
+.image-upload-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.uploaded-image-preview {
+  border: 2px solid oklch(0.55 0.20 250);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: oklch(0.22 0.02 260);
+}
+
+.uploaded-image-preview img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
+.uploaded-image-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border-top: 1px solid oklch(0.30 0.02 260);
+}
+
+.uploaded-image-name {
+  font-size: 0.625rem;
+  color: oklch(0.70 0.02 260);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 10rem;
+}
+
+.image-clear-button {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: oklch(0.35 0.10 25);
+  color: oklch(0.95 0.02 260);
+  font-size: 0.625rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.image-clear-button:hover {
+  background: oklch(0.45 0.15 25);
+}
+
+/* Disabled pattern buttons when image is uploaded */
+.pattern-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pattern-button:disabled:hover {
+  border-color: oklch(0.30 0.02 260);
 }
 </style>

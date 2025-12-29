@@ -95,6 +95,10 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   const selectedMidgroundTextureIndex = ref<number | null>(null) // Midground texture (null = solid color)
   const activeSection = ref<SectionType | null>(null)
 
+  // Custom background image state
+  const customBackgroundImage = ref<string | null>(null)
+  const customBackgroundFile = ref<File | null>(null)
+
   // Canvas refs and renderers
   const previewCanvasRef = ref<HTMLCanvasElement | null>(null)
   let previewRenderer: TextureRenderer | null = null
@@ -386,6 +390,25 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
     destroyThumbnailRenderers()
   }
 
+  // Set custom background image from file
+  const setBackgroundImage = (file: File) => {
+    // Revoke previous ObjectURL if exists
+    if (customBackgroundImage.value) {
+      URL.revokeObjectURL(customBackgroundImage.value)
+    }
+    customBackgroundFile.value = file
+    customBackgroundImage.value = URL.createObjectURL(file)
+  }
+
+  // Clear custom background image
+  const clearBackgroundImage = () => {
+    if (customBackgroundImage.value) {
+      URL.revokeObjectURL(customBackgroundImage.value)
+    }
+    customBackgroundFile.value = null
+    customBackgroundImage.value = null
+  }
+
   // Watch for changes
   watch(
     [
@@ -404,7 +427,10 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   watch([textureColor1, textureColor2], renderThumbnails)
 
   // Cleanup on unmount
-  onUnmounted(destroyPreview)
+  onUnmounted(() => {
+    destroyPreview()
+    clearBackgroundImage()
+  })
 
   return {
     // Canvas ref
@@ -418,6 +444,11 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
     selectedMaskIndex,
     selectedMidgroundTextureIndex,
     activeSection,
+    // Custom background image
+    customBackgroundImage,
+    customBackgroundFile,
+    setBackgroundImage,
+    clearBackgroundImage,
     // Actions
     openSection,
     initPreview,
