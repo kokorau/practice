@@ -557,9 +557,8 @@ const toggleColorPopup = (popup: ColorPopup) => {
             <!-- 前景: CTA + テキスト -->
             <div class="layer-foreground">
               <div class="hero-content" :class="`layout-${selectedLayout}`">
-                <h1 class="hero-title scp-title">Build Something Amazing</h1>
-                <p class="hero-subtitle scp-body">Create beautiful, responsive websites with our intuitive design system.</p>
-                <button class="hero-cta component-action">Get Started</button>
+                <h1 class="hero-title scp-title">Build Amazing</h1>
+                <p class="hero-subtitle scp-body">Create beautiful, responsive websites.<br>Design with confidence.</p>
               </div>
             </div>
           </div>
