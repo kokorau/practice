@@ -26,6 +26,7 @@ import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import { useSiteColors } from '../composables/SiteBuilder'
+import { LAYOUT_PATTERNS, type LayoutId } from '../components/SiteBuilder/layoutPatterns'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
@@ -114,33 +115,6 @@ const selectedBackgroundIndex = ref(4) // Grid
 const selectedMaskIndex = ref<number | null>(1) // Circle Large
 const activeSection = ref<'background' | 'midground' | 'foreground' | null>(null)
 
-// レイアウトパターン定義
-const layoutPatterns = [
-  // 3x3 grid
-  { id: 'top-left', label: '左上', icon: '◰' },
-  { id: 'top-center', label: '上中央', icon: '◱' },
-  { id: 'top-right', label: '右上', icon: '◳' },
-  { id: 'center-left', label: '左中央', icon: '◧' },
-  { id: 'center', label: '中央', icon: '◉' },
-  { id: 'center-right', label: '右中央', icon: '◨' },
-  { id: 'bottom-left', label: '左下', icon: '◲' },
-  { id: 'bottom-center', label: '下中央', icon: '◱' },
-  { id: 'bottom-right', label: '右下', icon: '◳' },
-  // Horizontal layouts - top
-  { id: 'row-top-between', label: '横上両端', icon: '⟷' },
-  { id: 'row-top-left', label: '横上左寄', icon: '⫷' },
-  { id: 'row-top-right', label: '横上右寄', icon: '⫸' },
-  // Horizontal layouts - center
-  { id: 'row-between', label: '横両端', icon: '⟷' },
-  { id: 'row-left', label: '横左寄', icon: '⫷' },
-  { id: 'row-right', label: '横右寄', icon: '⫸' },
-  // Horizontal layouts - bottom
-  { id: 'row-bottom-between', label: '横下両端', icon: '⟷' },
-  { id: 'row-bottom-left', label: '横下左寄', icon: '⫷' },
-  { id: 'row-bottom-right', label: '横下右寄', icon: '⫸' },
-] as const
-
-type LayoutId = typeof layoutPatterns[number]['id']
 const selectedLayout = ref<LayoutId>('center')
 
 // プレビュー用
@@ -376,7 +350,7 @@ const toggleColorPopup = (popup: ColorPopup) => {
             @click="openSection('foreground')"
           >
             <span class="layer-name">前景 (Foreground)</span>
-            <span class="layer-value">{{ layoutPatterns.find(l => l.id === selectedLayout)?.label }}</span>
+            <span class="layer-value">{{ LAYOUT_PATTERNS.find(l => l.id === selectedLayout)?.label }}</span>
           </button>
         </div>
       </template>
@@ -481,7 +455,7 @@ const toggleColorPopup = (popup: ColorPopup) => {
         <template v-else-if="activeSection === 'foreground'">
           <div class="layout-grid">
             <button
-              v-for="layout in layoutPatterns"
+              v-for="layout in LAYOUT_PATTERNS"
               :key="layout.id"
               class="layout-button"
               :class="{ active: selectedLayout === layout.id }"
