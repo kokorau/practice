@@ -14,7 +14,7 @@ export interface PatternItem {
   createSpec: SpecCreator
 }
 
-const props = defineProps<{
+defineProps<{
   // 画像
   customImage: string | null
   customFileName: string | null

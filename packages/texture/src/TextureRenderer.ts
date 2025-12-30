@@ -13,6 +13,21 @@ interface ImagePipelineCache {
   uniformBuffer: GPUBuffer
 }
 
+interface PostEffectPipelineCache {
+  pipeline: GPURenderPipeline
+  uniformBuffer: GPUBuffer
+  sampler: GPUSampler
+}
+
+/**
+ * ポストエフェクト用のスペック
+ */
+export interface PostEffectSpec {
+  shader: string
+  uniforms: ArrayBuffer
+  bufferSize: number
+}
+
 /**
  * テクスチャレンダラー
  * シェーダーをキーにしてpipeline/buffer/bindGroupをキャッシュ
@@ -23,6 +38,11 @@ export class TextureRenderer {
   private format: GPUTextureFormat
   private cache: Map<string, PipelineCache> = new Map()
   private imagePipelineCache: ImagePipelineCache | null = null
+  private postEffectCache: Map<string, PostEffectPipelineCache> = new Map()
+
+  // オフスクリーンレンダリング用のテクスチャ（ダブルバッファ）
+  private offscreenTextures: [GPUTexture | null, GPUTexture | null] = [null, null]
+  private currentTextureIndex: number = 0
 
   private constructor(
     device: GPUDevice,
@@ -255,6 +275,123 @@ export class TextureRenderer {
     this.device.queue.submit([commandEncoder.finish()])
   }
 
+  // ============================================================
+  // Post-Effect Rendering
+  // ============================================================
+
+  /**
+   * Get or create offscreen texture for ping-pong rendering
+   */
+  private getOrCreateOffscreenTexture(index: 0 | 1): GPUTexture {
+    const viewport = this.getViewport()
+
+    if (this.offscreenTextures[index]) {
+      const tex = this.offscreenTextures[index]!
+      if (tex.width === viewport.width && tex.height === viewport.height) {
+        return tex
+      }
+      // Size changed, destroy old texture
+      tex.destroy()
+    }
+
+    const texture = this.device.createTexture({
+      size: [viewport.width, viewport.height],
+      format: this.format,
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.RENDER_ATTACHMENT |
+        GPUTextureUsage.COPY_SRC,
+    })
+
+    this.offscreenTextures[index] = texture
+    return texture
+  }
+
+  /**
+   * Copy current canvas content to offscreen texture
+   */
+  copyCanvasToTexture(): GPUTexture {
+    const target = this.getOrCreateOffscreenTexture(this.currentTextureIndex as 0 | 1)
+    const source = this.context.getCurrentTexture()
+
+    const commandEncoder = this.device.createCommandEncoder()
+    commandEncoder.copyTextureToTexture(
+      { texture: source },
+      { texture: target },
+      [target.width, target.height]
+    )
+    this.device.queue.submit([commandEncoder.finish()])
+
+    return target
+  }
+
+  /**
+   * Apply post-effect shader with input texture
+   */
+  applyPostEffect(
+    spec: PostEffectSpec,
+    inputTexture: GPUTexture,
+    options?: { clear?: boolean }
+  ): void {
+    const cached = this.getOrCreatePostEffectPipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Create bind group for this specific texture
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: inputTexture.createView() },
+      ],
+    })
+
+    this.executeRender(cached.pipeline, bindGroup, options)
+  }
+
+  private getOrCreatePostEffectPipeline(spec: PostEffectSpec): PostEffectPipelineCache {
+    const existing = this.postEffectCache.get(spec.shader)
+    if (existing) {
+      return existing
+    }
+
+    const shaderModule = this.device.createShaderModule({
+      code: spec.shader,
+    })
+
+    const pipeline = this.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: shaderModule,
+        entryPoint: 'vertexMain',
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [{ format: this.format }],
+      },
+      primitive: {
+        topology: 'triangle-list',
+      },
+    })
+
+    const uniformBuffer = this.device.createBuffer({
+      size: spec.bufferSize,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    const sampler = this.device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+    })
+
+    const cached: PostEffectPipelineCache = { pipeline, uniformBuffer, sampler }
+    this.postEffectCache.set(spec.shader, cached)
+    return cached
+  }
+
   destroy(): void {
     for (const cached of this.cache.values()) {
       cached.buffer.destroy()
@@ -265,5 +402,15 @@ export class TextureRenderer {
       this.imagePipelineCache.uniformBuffer.destroy()
       this.imagePipelineCache = null
     }
+
+    for (const cached of this.postEffectCache.values()) {
+      cached.uniformBuffer.destroy()
+    }
+    this.postEffectCache.clear()
+
+    for (const tex of this.offscreenTextures) {
+      tex?.destroy()
+    }
+    this.offscreenTextures = [null, null]
   }
 }

@@ -192,7 +192,7 @@ export class HeroSceneRenderer implements LayerRendererPort {
   private async renderTextLayer(
     layerId: string,
     config: TextLayerConfig,
-    clear: boolean
+    _clear: boolean
   ): Promise<void> {
     const textureInfo = this.deps.getTextTexture(layerId)
     if (!textureInfo) {

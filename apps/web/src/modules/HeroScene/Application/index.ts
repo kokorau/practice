@@ -7,7 +7,6 @@
 import type {
   HeroScene,
   CanvasLayer,
-  CanvasLayerConfig,
   TextLayerConfig,
   HeroSceneConfig,
 } from '../Domain'

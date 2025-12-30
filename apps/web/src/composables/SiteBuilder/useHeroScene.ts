@@ -23,6 +23,11 @@ import {
   createStripeSpec,
   createGridSpec,
   createPolkaDotSpec,
+  // Filters
+  createVignetteSpec,
+  createChromaticAberrationShader,
+  createChromaticAberrationUniforms,
+  CHROMATIC_ABERRATION_BUFFER_SIZE,
   type TexturePattern,
   type MaskPattern,
   type RGBA,
@@ -42,7 +47,6 @@ import {
   createTextureLayer,
   createMaskedTextureLayer,
   createImageLayer,
-  updateCanvasLayer,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -64,7 +68,7 @@ export interface MidgroundTexturePattern {
   }
 }
 
-export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground'
+export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground' | 'filter'
 
 export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
@@ -136,6 +140,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const customMaskImage = ref<string | null>(null)
   const customMaskFile = ref<File | null>(null)
   let customMaskBitmap: ImageBitmap | null = null
+
+  // ============================================================
+  // Filter State
+  // ============================================================
+  const vignetteEnabled = ref(false)
+  const vignetteIntensity = ref(0.5)
+  const vignetteRadius = ref(0.8)
+  const vignetteSoftness = ref(0.4)
+
+  const chromaticAberrationEnabled = ref(false)
+  const chromaticAberrationIntensity = ref(3.0)
 
   // ============================================================
   // Renderer State
@@ -311,7 +326,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Iterate through layers in zIndex order
     for (let i = 0; i < scene.value.canvasLayers.length; i++) {
       const layer = scene.value.canvasLayers[i]
-      if (!layer.visible) continue
+      if (!layer || !layer.visible) continue
 
       const isFirst = i === 0
 
@@ -355,6 +370,39 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           }
           break
       }
+    }
+
+    // ============================================================
+    // Apply Post-Effects (Filters)
+    // ============================================================
+
+    // Chromatic Aberration (requires texture input, must be applied first)
+    if (chromaticAberrationEnabled.value) {
+      const inputTexture = previewRenderer.copyCanvasToTexture()
+      const shader = createChromaticAberrationShader(viewport)
+      const uniforms = createChromaticAberrationUniforms({
+        intensity: chromaticAberrationIntensity.value,
+        angle: 0,
+      })
+      previewRenderer.applyPostEffect(
+        { shader, uniforms, bufferSize: CHROMATIC_ABERRATION_BUFFER_SIZE },
+        inputTexture,
+        { clear: true }
+      )
+    }
+
+    // Vignette (overlay, applied last)
+    if (vignetteEnabled.value) {
+      const vignetteSpec = createVignetteSpec(
+        {
+          color: [0, 0, 0, 1],
+          intensity: vignetteIntensity.value,
+          radius: vignetteRadius.value,
+          softness: vignetteSoftness.value,
+        },
+        viewport
+      )
+      previewRenderer.render(vignetteSpec, { clear: false })
     }
   }
 
@@ -637,6 +685,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   watch([textureColor1, textureColor2], renderThumbnails)
 
+  // Filter watchers
+  watch(
+    [vignetteEnabled, vignetteIntensity, vignetteRadius, vignetteSoftness],
+    () => renderScene()
+  )
+  watch(
+    [chromaticAberrationEnabled, chromaticAberrationIntensity],
+    () => renderScene()
+  )
+
   onUnmounted(() => {
     destroyPreview()
     clearBackgroundImage()
@@ -682,6 +740,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customMaskFile,
     setMaskImage,
     clearMaskImage,
+
+    // Filters
+    vignetteEnabled,
+    vignetteIntensity,
+    vignetteRadius,
+    vignetteSoftness,
+    chromaticAberrationEnabled,
+    chromaticAberrationIntensity,
 
     // Actions
     openSection,

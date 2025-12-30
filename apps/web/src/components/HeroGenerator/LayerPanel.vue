@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 // ============================================================
 // Types
@@ -26,7 +26,7 @@ export interface SubItemConfig {
 // ============================================================
 // Props & Emits
 // ============================================================
-const props = defineProps<{
+defineProps<{
   layers: LayerItem[]
 }>()
 
@@ -46,7 +46,7 @@ const getSubItems = (layer: LayerItem): SubItemConfig[] => {
     case 'base':
       return [
         { type: 'surface', label: 'Surface', value: 'Stripe', enabled: true },
-        { type: 'filter', label: 'Filter', value: 'WIP', enabled: false },
+        { type: 'filter', label: 'Filter', value: 'Vignette / CA', enabled: true },
       ]
     case 'mask':
       return [

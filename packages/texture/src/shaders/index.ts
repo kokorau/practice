@@ -15,6 +15,18 @@ export {
 } from './mask'
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'
 export {
+  vignetteShader,
+  createVignetteShader,
+  createVignetteSpec,
+  type VignetteParams,
+} from './vignette'
+export {
+  createChromaticAberrationShader,
+  createChromaticAberrationUniforms,
+  CHROMATIC_ABERRATION_BUFFER_SIZE,
+  type ChromaticAberrationParams,
+} from './chromaticAberration'
+export {
   createCircleStripeSpec,
   createCircleGridSpec,
   createCirclePolkaDotSpec,

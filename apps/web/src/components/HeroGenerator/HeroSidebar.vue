@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { Oklch } from '@practice/color'
 import type { TexturePattern, MaskPattern } from '@practice/texture'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
@@ -12,7 +12,7 @@ type NeutralRampItem = {
   css: string
 }
 
-const props = defineProps<{
+defineProps<{
   activeTab: 'generator' | 'palette'
   // Color state
   hue: number
@@ -36,11 +36,11 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'update:hue': [value: number]
-  'update:saturation': [value: number]
-  'update:value': [value: number]
-  'update:selectedFoundationId': [value: string]
-  'openSection': [section: SectionType]
+  (e: 'update:hue', value: number): void
+  (e: 'update:saturation', value: number): void
+  (e: 'update:value', value: number): void
+  (e: 'update:selectedFoundationId', value: string): void
+  (e: 'openSection', section: SectionType): void
 }>()
 
 // ============================================================
@@ -80,8 +80,12 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
   const layer = layers.value.find(l => l.id === layerId)
   if (!layer) return
 
-  if (layer.type === 'base' && subItemType === 'surface') {
-    emit('openSection', 'background')
+  if (layer.type === 'base') {
+    if (subItemType === 'surface') {
+      emit('openSection', 'background')
+    } else if (subItemType === 'filter') {
+      emit('openSection', 'filter')
+    }
   } else if (layer.type === 'mask') {
     if (subItemType === 'surface') {
       emit('openSection', 'mask-surface')
@@ -110,7 +114,8 @@ const handleAddLayer = (type: LayerType) => {
 
 const handleRemoveLayer = (layerId: string) => {
   const index = layers.value.findIndex(l => l.id === layerId)
-  if (index > -1 && layers.value[index].type !== 'base') {
+  const layer = index > -1 ? layers.value[index] : undefined
+  if (layer && layer.type !== 'base') {
     layers.value.splice(index, 1)
   }
 }

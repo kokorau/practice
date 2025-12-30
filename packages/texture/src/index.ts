@@ -1,7 +1,7 @@
 // WebGPU 2D Shaders
 // テクスチャ生成用のシェーダーをエクスポート
 
-export { TextureRenderer } from './TextureRenderer'
+export { TextureRenderer, type PostEffectSpec } from './TextureRenderer'
 
 // Shader types and createSpec functions
 export type {
@@ -46,6 +46,16 @@ export {
   createBlobStripeSpec,
   createBlobGridSpec,
   createBlobPolkaDotSpec,
+  // Filter specs
+  createVignetteSpec,
+  createChromaticAberrationShader,
+  createChromaticAberrationUniforms,
+  CHROMATIC_ABERRATION_BUFFER_SIZE,
+} from './shaders'
+
+export type {
+  VignetteParams,
+  ChromaticAberrationParams,
 } from './shaders'
 
 // Domain

@@ -104,13 +104,19 @@ const {
   customMaskFile,
   setMaskImage,
   clearMaskImage,
+  // Filters
+  vignetteEnabled,
+  vignetteIntensity,
+  vignetteRadius,
+  vignetteSoftness,
+  chromaticAberrationEnabled,
+  chromaticAberrationIntensity,
 } = useHeroScene({ primitivePalette, isDark })
 
 // Convert texture patterns to SurfaceSelector format with createSpec
 const backgroundPatterns = computed(() =>
   texturePatterns.map((p) => ({
     label: p.label,
-    type: p.type,
     createSpec: (viewport: { width: number; height: number }) =>
       p.createSpec(textureColor1.value, textureColor2.value, viewport),
   }))
@@ -119,7 +125,6 @@ const backgroundPatterns = computed(() =>
 const maskSurfacePatterns = computed(() =>
   midgroundTexturePatterns.map((p) => ({
     label: p.label,
-    type: p.type,
     createSpec: (viewport: { width: number; height: number }) =>
       createMidgroundThumbnailSpec(p, midgroundTextureColor1.value, midgroundTextureColor2.value, viewport),
   }))
@@ -203,6 +208,7 @@ const activeTab = ref<TabId>('generator')
           activeSection === 'background' ? 'テクスチャ選択' :
           activeSection === 'mask-surface' ? 'マスクテクスチャ' :
           activeSection === 'mask-shape' ? 'マスク形状' :
+          activeSection === 'filter' ? 'フィルター設定' :
           '前景設定'
         }}</h2>
         <button class="hero-subpanel-close" @click="activeSection = null">×</button>
@@ -265,6 +271,81 @@ const activeTab = ref<TabId>('generator')
               <span class="layout-icon">{{ layout.icon }}</span>
               <span class="layout-label">{{ layout.label }}</span>
             </button>
+          </div>
+        </template>
+
+        <!-- フィルター設定 -->
+        <template v-else-if="activeSection === 'filter'">
+          <div class="filter-section">
+            <!-- Vignette -->
+            <div class="filter-group">
+              <label class="filter-toggle">
+                <input
+                  type="checkbox"
+                  v-model="vignetteEnabled"
+                />
+                <span class="filter-name">Vignette</span>
+              </label>
+              <div v-if="vignetteEnabled" class="filter-controls">
+                <label class="slider-label">
+                  <span>Intensity</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    v-model.number="vignetteIntensity"
+                  />
+                  <span class="slider-value">{{ vignetteIntensity.toFixed(2) }}</span>
+                </label>
+                <label class="slider-label">
+                  <span>Radius</span>
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="1.5"
+                    step="0.05"
+                    v-model.number="vignetteRadius"
+                  />
+                  <span class="slider-value">{{ vignetteRadius.toFixed(2) }}</span>
+                </label>
+                <label class="slider-label">
+                  <span>Softness</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    v-model.number="vignetteSoftness"
+                  />
+                  <span class="slider-value">{{ vignetteSoftness.toFixed(2) }}</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Chromatic Aberration -->
+            <div class="filter-group">
+              <label class="filter-toggle">
+                <input
+                  type="checkbox"
+                  v-model="chromaticAberrationEnabled"
+                />
+                <span class="filter-name">Chromatic Aberration</span>
+              </label>
+              <div v-if="chromaticAberrationEnabled" class="filter-controls">
+                <label class="slider-label">
+                  <span>Intensity</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    step="0.5"
+                    v-model.number="chromaticAberrationIntensity"
+                  />
+                  <span class="slider-value">{{ chromaticAberrationIntensity.toFixed(1) }}</span>
+                </label>
+              </div>
+            </div>
           </div>
         </template>
       </div>
@@ -453,6 +534,74 @@ const activeTab = ref<TabId>('generator')
   font-weight: 500;
   text-align: center;
   line-height: 1.2;
+}
+
+/* Filter Section */
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.filter-group {
+  background: oklch(0.20 0.02 260);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.filter-toggle input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: oklch(0.55 0.20 250);
+}
+
+.filter-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: oklch(0.85 0.02 260);
+}
+
+.filter-controls {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.slider-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: oklch(0.70 0.02 260);
+}
+
+.slider-label span:first-child {
+  min-width: 4.5rem;
+}
+
+.slider-label input[type="range"] {
+  flex: 1;
+  height: 0.375rem;
+  background: oklch(0.30 0.02 260);
+  border-radius: 0.1875rem;
+  cursor: pointer;
+  accent-color: oklch(0.55 0.20 250);
+}
+
+.slider-value {
+  min-width: 2.5rem;
+  text-align: right;
+  font-family: ui-monospace, monospace;
+  font-size: 0.6875rem;
+  color: oklch(0.60 0.02 260);
 }
 
 </style>
