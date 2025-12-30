@@ -46,17 +46,10 @@ export {
   createBlobStripeSpec,
   createBlobGridSpec,
   createBlobPolkaDotSpec,
-  // Filter specs
-  createVignetteSpec,
-  createChromaticAberrationShader,
-  createChromaticAberrationUniforms,
-  CHROMATIC_ABERRATION_BUFFER_SIZE,
 } from './shaders'
 
-export type {
-  VignetteParams,
-  ChromaticAberrationParams,
-} from './shaders'
+// Filter specs are now available via '@practice/texture/filters'
+// import { createVignetteSpec, createChromaticAberrationShader } from '@practice/texture/filters'
 
 // Domain
 export type {

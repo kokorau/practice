@@ -23,11 +23,6 @@ import {
   createStripeSpec,
   createGridSpec,
   createPolkaDotSpec,
-  // Filters
-  createVignetteSpec,
-  createChromaticAberrationShader,
-  createChromaticAberrationUniforms,
-  CHROMATIC_ABERRATION_BUFFER_SIZE,
   type TexturePattern,
   type MaskPattern,
   type RGBA,
@@ -37,6 +32,13 @@ import {
   type Viewport,
   type TextureRenderSpec,
 } from '@practice/texture'
+// Filters (separate subpath for tree-shaking)
+import {
+  createVignetteSpec,
+  createChromaticAberrationShader,
+  createChromaticAberrationUniforms,
+  CHROMATIC_ABERRATION_BUFFER_SIZE,
+} from '@practice/texture/filters'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
