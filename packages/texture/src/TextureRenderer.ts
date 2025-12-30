@@ -76,6 +76,7 @@ export class TextureRenderer {
       device,
       format,
       alphaMode: 'premultiplied',
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     })
 
     return new TextureRenderer(device, context, format)
@@ -300,7 +301,8 @@ export class TextureRenderer {
       usage:
         GPUTextureUsage.TEXTURE_BINDING |
         GPUTextureUsage.RENDER_ATTACHMENT |
-        GPUTextureUsage.COPY_SRC,
+        GPUTextureUsage.COPY_SRC |
+        GPUTextureUsage.COPY_DST,
     })
 
     this.offscreenTextures[index] = texture
