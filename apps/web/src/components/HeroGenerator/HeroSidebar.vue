@@ -4,7 +4,7 @@ import type { Oklch } from '@practice/color'
 import type { TexturePattern, MaskPattern } from '@practice/texture'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
-import LayerPanel, { type LayerItem, type LayerType, type SubItemType } from './LayerPanel.vue'
+import LayerPanel, { type LayerItem, type LayerType, type SubItemType, type LayerFilterConfig } from './LayerPanel.vue'
 import type { SectionType, MidgroundTexturePattern } from '../../composables/SiteBuilder'
 
 type NeutralRampItem = {
@@ -31,6 +31,8 @@ defineProps<{
   selectedBackgroundIndex: number
   selectedMaskIndex: number | null
   selectedMidgroundTextureIndex: number | null
+  // Filter state
+  layerFilterConfigs?: Map<string, LayerFilterConfig>
   // Palette tab
   neutralRampDisplay: NeutralRampItem[]
 }>()
@@ -170,6 +172,7 @@ const handleRemoveLayer = (layerId: string) => {
     <template v-if="activeTab === 'generator'">
       <LayerPanel
         :layers="layers"
+        :layer-filter-configs="layerFilterConfigs"
         @toggle-visibility="handleToggleVisibility"
         @toggle-expand="handleToggleExpand"
         @select-subitem="handleSelectSubItem"

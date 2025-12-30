@@ -107,6 +107,7 @@ const {
   // Per-layer filters
   selectedFilterLayerId,
   selectedLayerFilters,
+  layerFilterConfigs,
   updateLayerFilters,
 } = useHeroScene({ primitivePalette, isDark })
 
@@ -208,6 +209,7 @@ const activeTab = ref<TabId>('generator')
       :selected-background-index="selectedBackgroundIndex"
       :selected-mask-index="selectedMaskIndex"
       :selected-midground-texture-index="selectedMidgroundTextureIndex"
+      :layer-filter-configs="layerFilterConfigs"
       :neutral-ramp-display="neutralRampDisplay"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"

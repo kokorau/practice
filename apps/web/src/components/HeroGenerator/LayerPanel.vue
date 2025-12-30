@@ -24,10 +24,19 @@ export interface SubItemConfig {
 }
 
 // ============================================================
+// Types: Filter config (from HeroScene module)
+// ============================================================
+export interface LayerFilterConfig {
+  vignette: { enabled: boolean }
+  chromaticAberration: { enabled: boolean }
+}
+
+// ============================================================
 // Props & Emits
 // ============================================================
-defineProps<{
+const props = defineProps<{
   layers: LayerItem[]
+  layerFilterConfigs?: Map<string, LayerFilterConfig>
 }>()
 
 const emit = defineEmits<{
@@ -41,18 +50,40 @@ const emit = defineEmits<{
 // ============================================================
 // Layer Configuration
 // ============================================================
+
+// Map UI layer ID to scene layer ID for filter lookup
+const getSceneLayerId = (uiLayerId: string): string => {
+  if (uiLayerId === 'base') return 'base-layer'
+  if (uiLayerId.startsWith('mask')) return 'mask-layer'
+  return uiLayerId
+}
+
+// Get filter display value based on current filter state
+const getFilterValue = (layerId: string): string => {
+  if (!props.layerFilterConfigs) return 'None'
+  const sceneLayerId = getSceneLayerId(layerId)
+  const config = props.layerFilterConfigs.get(sceneLayerId)
+  if (!config) return 'None'
+
+  const filters: string[] = []
+  if (config.vignette.enabled) filters.push('Vignette')
+  if (config.chromaticAberration.enabled) filters.push('CA')
+
+  return filters.length > 0 ? filters.join(' / ') : 'None'
+}
+
 const getSubItems = (layer: LayerItem): SubItemConfig[] => {
   switch (layer.type) {
     case 'base':
       return [
         { type: 'surface', label: 'Surface', value: 'Stripe', enabled: true },
-        { type: 'filter', label: 'Filter', value: 'Vignette / CA', enabled: true },
+        { type: 'filter', label: 'Filter', value: getFilterValue(layer.id), enabled: true },
       ]
     case 'mask':
       return [
         { type: 'surface', label: 'Surface', value: 'Solid', enabled: true },
         { type: 'shape', label: 'Shape', value: 'Blob', enabled: true },
-        { type: 'filter', label: 'Filter', value: 'Vignette / CA', enabled: true },
+        { type: 'filter', label: 'Filter', value: getFilterValue(layer.id), enabled: true },
       ]
     case 'object':
       return [
