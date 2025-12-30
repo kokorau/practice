@@ -14,7 +14,14 @@ export interface PatternItem {
   createSpec: SpecCreator
 }
 
-defineProps<{
+const emit = defineEmits<{
+  'upload-image': [file: File]
+  'clear-image': []
+  'select-pattern': [index: number | null]
+  'load-random': []
+}>()
+
+const props = defineProps<{
   // 画像
   customImage: string | null
   customFileName: string | null
@@ -28,18 +35,19 @@ defineProps<{
   isLoadingRandom?: boolean
 }>()
 
-const emit = defineEmits<{
-  'upload-image': [file: File]
-  'clear-image': []
-  'select-pattern': [index: number | null]
-  'load-random': []
-}>()
-
 const handleFileChange = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (file) {
     emit('upload-image', file)
   }
+}
+
+const handleSelectPattern = (index: number | null) => {
+  // 画像が設定されている場合はクリアしてからパターンを選択
+  if (props.customImage) {
+    emit('clear-image')
+  }
+  emit('select-pattern', index)
 }
 </script>
 
@@ -48,35 +56,30 @@ const handleFileChange = (e: Event) => {
     <!-- 画像アップロード -->
     <p class="section-label">画像</p>
     <div class="image-upload-section">
-      <template v-if="customImage">
-        <div class="uploaded-image-preview">
-          <img :src="customImage" alt="Uploaded image" />
-          <div class="uploaded-image-info">
-            <span class="uploaded-image-name">{{ customFileName }}</span>
-            <button class="image-clear-button" @click="emit('clear-image')">削除</button>
-          </div>
-        </div>
-      </template>
-      <template v-else>
-        <label class="image-upload-button">
-          <input
-            type="file"
-            accept="image/*"
-            class="image-upload-input"
-            @change="handleFileChange"
-          />
-          <span class="image-upload-icon">📷</span>
-          <span class="image-upload-text">画像をアップロード</span>
-        </label>
-        <button
-          v-if="showRandomButton"
-          class="random-photo-button"
-          :disabled="isLoadingRandom"
-          @click="emit('load-random')"
-        >
-          {{ isLoadingRandom ? 'Loading...' : 'Random Photo' }}
-        </button>
-      </template>
+      <!-- 画像プレビュー -->
+      <div v-if="customImage" class="uploaded-image-preview">
+        <img :src="customImage" alt="Uploaded image" />
+      </div>
+      <!-- アップロードボタン -->
+      <label v-else class="image-upload-button">
+        <input
+          type="file"
+          accept="image/*"
+          class="image-upload-input"
+          @change="handleFileChange"
+        />
+        <span class="image-upload-icon">📷</span>
+        <span class="image-upload-text">画像をアップロード</span>
+      </label>
+      <!-- Random Photo ボタン (常に表示) -->
+      <button
+        v-if="showRandomButton"
+        class="random-photo-button"
+        :disabled="isLoadingRandom"
+        @click="emit('load-random')"
+      >
+        {{ isLoadingRandom ? 'Loading...' : 'Random Photo' }}
+      </button>
     </div>
 
     <!-- テクスチャパターン -->
@@ -87,8 +90,7 @@ const handleFileChange = (e: Event) => {
         v-if="showSolidOption"
         class="pattern-button"
         :class="{ active: !customImage && selectedIndex === null }"
-        :disabled="!!customImage"
-        @click="emit('select-pattern', null)"
+        @click="handleSelectPattern(null)"
       >
         <span class="pattern-none">Solid</span>
         <span class="pattern-label">べた塗り</span>
@@ -100,8 +102,7 @@ const handleFileChange = (e: Event) => {
         :key="i"
         class="pattern-button"
         :class="{ active: !customImage && selectedIndex === i }"
-        :disabled="!!customImage"
-        @click="emit('select-pattern', i)"
+        @click="handleSelectPattern(i)"
       >
         <PatternThumbnail :create-spec="pattern.createSpec" />
         <span class="pattern-label">{{ pattern.label }}</span>
@@ -196,39 +197,6 @@ const handleFileChange = (e: Event) => {
   display: block;
 }
 
-.uploaded-image-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem;
-  border-top: 1px solid oklch(0.30 0.02 260);
-}
-
-.uploaded-image-name {
-  font-size: 0.625rem;
-  color: oklch(0.70 0.02 260);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 10rem;
-}
-
-.image-clear-button {
-  padding: 0.25rem 0.5rem;
-  border: none;
-  border-radius: 0.25rem;
-  background: oklch(0.35 0.10 25);
-  color: oklch(0.95 0.02 260);
-  font-size: 0.625rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.image-clear-button:hover {
-  background: oklch(0.45 0.15 25);
-}
-
 /* Pattern Grid */
 .pattern-grid {
   display: flex;
@@ -255,15 +223,6 @@ const handleFileChange = (e: Event) => {
 .pattern-button.active {
   border-color: oklch(0.55 0.20 250);
   background: oklch(0.55 0.20 250 / 0.1);
-}
-
-.pattern-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pattern-button:disabled:hover {
-  border-color: oklch(0.30 0.02 260);
 }
 
 .pattern-none {
