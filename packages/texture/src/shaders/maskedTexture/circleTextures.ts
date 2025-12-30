@@ -17,7 +17,7 @@ type RGBA = [number, number, number, number]
 // ============================================================
 
 export const CIRCLE_STRIPE_BUFFER_SIZE = 80
-export const CIRCLE_GRID_BUFFER_SIZE = 64
+export const CIRCLE_GRID_BUFFER_SIZE = 80  // 64 -> 80 (added cutout + padding)
 export const CIRCLE_POLKA_DOT_BUFFER_SIZE = 80
 
 // ============================================================
@@ -49,7 +49,7 @@ struct Params {
   // viewport
   viewportWidth: f32,
   viewportHeight: f32,
-  _padding: f32,
+  cutout: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -61,9 +61,11 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   // Mask SDF (negative = inside, positive = outside)
   let sdf = circleMaskSDF(uv, params.maskCenterX, params.maskCenterY, params.maskRadius, params.aspectRatio);
 
-  // Antialiased mask (0 = inside/transparent, 1 = outside/texture)
+  // Antialiased mask (0 = inside/transparent, 1 = outside/texture for cutout mode)
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
-  let maskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  // cutout=1: texture outside shape, cutout=0: texture inside shape (solid)
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
 
   // Texture color
   let textureColor = stripePattern(pos.xy, params.color1, params.color2, params.stripeWidth1, params.stripeWidth2, params.stripeAngle);
@@ -96,6 +98,8 @@ struct Params {
   // viewport
   viewportWidth: f32,
   viewportHeight: f32,
+  cutout: f32,
+  _padding: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -106,7 +110,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   let sdf = circleMaskSDF(uv, params.maskCenterX, params.maskCenterY, params.maskRadius, params.aspectRatio);
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
-  let maskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
 
   let textureColor = gridPattern(pos.xy, params.color1, params.color2, params.gridLineWidth, params.gridCellSize);
 
@@ -139,7 +144,7 @@ struct Params {
   // viewport
   viewportWidth: f32,
   viewportHeight: f32,
-  _padding: f32,
+  cutout: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -150,7 +155,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   let sdf = circleMaskSDF(uv, params.maskCenterX, params.maskCenterY, params.maskRadius, params.aspectRatio);
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
-  let maskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
 
   let textureColor = polkaDotPattern(pos.xy, params.color1, params.color2, params.dotRadius, params.dotSpacing, params.dotRowOffset);
 
@@ -171,6 +177,7 @@ export function createCircleStripeSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
   const data = new Float32Array([
     ...color1,
     ...color2,
@@ -183,7 +190,7 @@ export function createCircleStripeSpec(
     texture.angle,
     viewport.width,
     viewport.height,
-    0, // padding
+    cutout ? 1.0 : 0.0,
     0, // padding to 80 bytes
     0, // padding to 80 bytes
   ])
@@ -204,6 +211,7 @@ export function createCircleGridSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
   const data = new Float32Array([
     ...color1,
     ...color2,
@@ -215,6 +223,8 @@ export function createCircleGridSpec(
     texture.cellSize,
     viewport.width,
     viewport.height,
+    cutout ? 1.0 : 0.0,
+    0, // padding
   ])
   return {
     shader: circleGridShader,
@@ -233,6 +243,7 @@ export function createCirclePolkaDotSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
   const data = new Float32Array([
     ...color1,
     ...color2,
@@ -245,7 +256,7 @@ export function createCirclePolkaDotSpec(
     texture.rowOffset,
     viewport.width,
     viewport.height,
-    0, // padding
+    cutout ? 1.0 : 0.0,
     0, // padding to 80 bytes
     0, // padding to 80 bytes
   ])

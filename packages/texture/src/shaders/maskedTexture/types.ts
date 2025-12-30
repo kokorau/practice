@@ -17,6 +17,8 @@ export interface CircleMaskConfig {
   centerX: number
   centerY: number
   radius: number
+  /** If true (default), texture is rendered outside the shape (cutout). If false, texture fills the shape (solid). */
+  cutout?: boolean
 }
 
 /** Parameters for rect mask */
@@ -30,6 +32,8 @@ export interface RectMaskConfig {
   radiusTopRight?: number
   radiusBottomLeft?: number
   radiusBottomRight?: number
+  /** If true (default), texture is rendered outside the shape (cutout). If false, texture fills the shape (solid). */
+  cutout?: boolean
 }
 
 /** Parameters for blob mask */
@@ -41,6 +45,8 @@ export interface BlobMaskConfig {
   amplitude: number
   octaves: number
   seed: number
+  /** If true (default), texture is rendered outside the shape (cutout). If false, texture fills the shape (solid). */
+  cutout?: boolean
 }
 
 export type MaskConfig = CircleMaskConfig | RectMaskConfig | BlobMaskConfig

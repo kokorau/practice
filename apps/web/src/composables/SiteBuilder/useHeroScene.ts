@@ -469,7 +469,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (params.type === 'stripe') {
         return createCircleStripeSpec(
           color1, color2,
-          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius },
+          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
           params,
           viewport
         )
@@ -477,7 +477,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (params.type === 'grid') {
         return createCircleGridSpec(
           color1, color2,
-          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius },
+          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
           params,
           viewport
         )
@@ -485,7 +485,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (params.type === 'polkaDot') {
         return createCirclePolkaDotSpec(
           color1, color2,
-          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius },
+          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
           params,
           viewport
         )
@@ -497,7 +497,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (params.type === 'stripe') {
         return createRectStripeSpec(
           color1, color2,
-          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight },
+          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
           params,
           viewport
         )
@@ -505,7 +505,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (params.type === 'grid') {
         return createRectGridSpec(
           color1, color2,
-          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight },
+          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
           params,
           viewport
         )
@@ -513,7 +513,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (params.type === 'polkaDot') {
         return createRectPolkaDotSpec(
           color1, color2,
-          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight },
+          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
           params,
           viewport
         )
@@ -525,7 +525,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (params.type === 'stripe') {
         return createBlobStripeSpec(
           color1, color2,
-          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed },
+          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
           params,
           viewport
         )
@@ -533,7 +533,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (params.type === 'grid') {
         return createBlobGridSpec(
           color1, color2,
-          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed },
+          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
           params,
           viewport
         )
@@ -541,7 +541,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (params.type === 'polkaDot') {
         return createBlobPolkaDotSpec(
           color1, color2,
-          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed },
+          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
           params,
           viewport
         )

@@ -21,6 +21,8 @@ export interface BlobMaskParams {
   innerColor: [number, number, number, number]
   /** 外側の色 */
   outerColor: [number, number, number, number]
+  /** If true (default), texture is rendered outside the shape (cutout). If false, texture fills the shape (solid). */
+  cutout?: boolean
 }
 
 /** Smooth wave-based blob deformation */
@@ -122,6 +124,10 @@ export function createBlobMaskSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = params.cutout ?? true
+  // When cutout=false (solid), swap inner/outer colors to fill the shape
+  const innerColor = cutout ? params.innerColor : params.outerColor
+  const outerColor = cutout ? params.outerColor : params.innerColor
 
   // Build uniform buffer manually due to mixed types (f32 + u32)
   const buffer = new ArrayBuffer(80)
@@ -129,15 +135,15 @@ export function createBlobMaskSpec(
   const uintView = new Uint32Array(buffer)
 
   // innerColor (vec4f) - offset 0
-  floatView[0] = params.innerColor[0]
-  floatView[1] = params.innerColor[1]
-  floatView[2] = params.innerColor[2]
-  floatView[3] = params.innerColor[3]
+  floatView[0] = innerColor[0]
+  floatView[1] = innerColor[1]
+  floatView[2] = innerColor[2]
+  floatView[3] = innerColor[3]
   // outerColor (vec4f) - offset 16
-  floatView[4] = params.outerColor[0]
-  floatView[5] = params.outerColor[1]
-  floatView[6] = params.outerColor[2]
-  floatView[7] = params.outerColor[3]
+  floatView[4] = outerColor[0]
+  floatView[5] = outerColor[1]
+  floatView[6] = outerColor[2]
+  floatView[7] = outerColor[3]
   // centerX (f32) - offset 32
   floatView[8] = params.centerX
   // centerY (f32) - offset 36

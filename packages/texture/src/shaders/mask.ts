@@ -13,6 +13,8 @@ export interface CircleMaskParams {
   innerColor: [number, number, number, number]
   /** 外側の色 */
   outerColor: [number, number, number, number]
+  /** If true (default), texture is rendered outside the shape (cutout). If false, texture fills the shape (solid). */
+  cutout?: boolean
 }
 
 /** 長方形マスクの基本パラメータ */
@@ -29,6 +31,8 @@ interface RectMaskBaseParams {
   innerColor: [number, number, number, number]
   /** 外側の色 */
   outerColor: [number, number, number, number]
+  /** If true (default), texture is rendered outside the shape (cutout). If false, texture fills the shape (solid). */
+  cutout?: boolean
 }
 
 /** 全角に同じ角丸を適用 */
@@ -201,9 +205,13 @@ export function createCircleMaskSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = params.cutout ?? true
+  // When cutout=false (solid), swap inner/outer colors to fill the shape
+  const innerColor = cutout ? params.innerColor : params.outerColor
+  const outerColor = cutout ? params.outerColor : params.innerColor
   const data = new Float32Array([
-    ...params.innerColor,
-    ...params.outerColor,
+    ...innerColor,
+    ...outerColor,
     params.centerX,
     params.centerY,
     params.radius,
@@ -227,6 +235,10 @@ export function createRectMaskSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = params.cutout ?? true
+  // When cutout=false (solid), swap inner/outer colors to fill the shape
+  const innerColor = cutout ? params.innerColor : params.outerColor
+  const outerColor = cutout ? params.outerColor : params.innerColor
 
   // 個別指定か全角指定かを判別
   const isIndividual = 'radiusTopLeft' in params
@@ -236,8 +248,8 @@ export function createRectMaskSpec(
   const radiusBottomRight = isIndividual ? params.radiusBottomRight : (params.radius ?? 0)
 
   const data = new Float32Array([
-    ...params.innerColor,
-    ...params.outerColor,
+    ...innerColor,
+    ...outerColor,
     params.left,
     params.right,
     params.top,

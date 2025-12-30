@@ -16,9 +16,9 @@ type RGBA = [number, number, number, number]
 // Buffer Sizes
 // ============================================================
 
-export const BLOB_STRIPE_BUFFER_SIZE = 80
+export const BLOB_STRIPE_BUFFER_SIZE = 96  // 80 -> 96 (added cutout + padding)
 export const BLOB_GRID_BUFFER_SIZE = 80
-export const BLOB_POLKA_DOT_BUFFER_SIZE = 80
+export const BLOB_POLKA_DOT_BUFFER_SIZE = 96  // 80 -> 96 (added cutout + padding)
 
 // ============================================================
 // Shaders
@@ -54,6 +54,8 @@ struct Params {
   // viewport
   viewportWidth: f32,
   viewportHeight: f32,
+  cutout: f32,
+  _padding: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -64,7 +66,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   let sdf = blobMaskSDF(uv, params.maskCenterX, params.maskCenterY, params.maskBaseRadius, params.maskAmplitude, params.maskOctaves, params.maskSeed, params.aspectRatio);
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
-  let maskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
 
   let textureColor = stripePattern(pos.xy, params.color1, params.color2, params.stripeWidth1, params.stripeWidth2, params.stripeAngle);
 
@@ -101,7 +104,7 @@ struct Params {
   // viewport
   viewportWidth: f32,
   viewportHeight: f32,
-  _padding: f32,
+  cutout: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -112,7 +115,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   let sdf = blobMaskSDF(uv, params.maskCenterX, params.maskCenterY, params.maskBaseRadius, params.maskAmplitude, params.maskOctaves, params.maskSeed, params.aspectRatio);
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
-  let maskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
 
   let textureColor = gridPattern(pos.xy, params.color1, params.color2, params.gridLineWidth, params.gridCellSize);
 
@@ -150,6 +154,8 @@ struct Params {
   // viewport
   viewportWidth: f32,
   viewportHeight: f32,
+  cutout: f32,
+  _padding: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -160,7 +166,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   let sdf = blobMaskSDF(uv, params.maskCenterX, params.maskCenterY, params.maskBaseRadius, params.maskAmplitude, params.maskOctaves, params.maskSeed, params.aspectRatio);
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
-  let maskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
 
   let textureColor = polkaDotPattern(pos.xy, params.color1, params.color2, params.dotRadius, params.dotSpacing, params.dotRowOffset);
 
@@ -181,6 +188,7 @@ export function createBlobStripeSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
   const data = new ArrayBuffer(BLOB_STRIPE_BUFFER_SIZE)
   const floatView = new Float32Array(data)
   const uintView = new Uint32Array(data)
@@ -205,6 +213,8 @@ export function createBlobStripeSpec(
   floatView[17] = texture.angle
   floatView[18] = viewport.width
   floatView[19] = viewport.height
+  floatView[20] = cutout ? 1.0 : 0.0
+  floatView[21] = 0 // padding
 
   return {
     shader: blobStripeShader,
@@ -223,6 +233,7 @@ export function createBlobGridSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
   const data = new ArrayBuffer(BLOB_GRID_BUFFER_SIZE)
   const floatView = new Float32Array(data)
   const uintView = new Uint32Array(data)
@@ -246,7 +257,7 @@ export function createBlobGridSpec(
   floatView[16] = texture.cellSize
   floatView[17] = viewport.width
   floatView[18] = viewport.height
-  floatView[19] = 0 // padding
+  floatView[19] = cutout ? 1.0 : 0.0
 
   return {
     shader: blobGridShader,
@@ -265,6 +276,7 @@ export function createBlobPolkaDotSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
   const data = new ArrayBuffer(BLOB_POLKA_DOT_BUFFER_SIZE)
   const floatView = new Float32Array(data)
   const uintView = new Uint32Array(data)
@@ -289,6 +301,8 @@ export function createBlobPolkaDotSpec(
   floatView[17] = texture.rowOffset
   floatView[18] = viewport.width
   floatView[19] = viewport.height
+  floatView[20] = cutout ? 1.0 : 0.0
+  floatView[21] = 0 // padding
 
   return {
     shader: blobPolkaDotShader,

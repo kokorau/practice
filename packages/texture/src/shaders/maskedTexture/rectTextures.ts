@@ -54,8 +54,8 @@ struct Params {
   // viewport
   viewportWidth: f32,
   viewportHeight: f32,
-  _padding1: f32,
-  _padding2: f32,
+  cutout: f32,
+  _padding: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -71,7 +71,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     params.aspectRatio
   );
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
-  let maskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
 
   let textureColor = stripePattern(pos.xy, params.color1, params.color2, params.stripeWidth1, params.stripeWidth2, params.stripeAngle);
 
@@ -108,9 +109,9 @@ struct Params {
   // viewport
   viewportWidth: f32,
   viewportHeight: f32,
+  cutout: f32,
   _padding1: f32,
   _padding2: f32,
-  _padding3: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -126,7 +127,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     params.aspectRatio
   );
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
-  let maskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
 
   let textureColor = gridPattern(pos.xy, params.color1, params.color2, params.gridLineWidth, params.gridCellSize);
 
@@ -164,8 +166,8 @@ struct Params {
   // viewport
   viewportWidth: f32,
   viewportHeight: f32,
-  _padding1: f32,
-  _padding2: f32,
+  cutout: f32,
+  _padding: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -181,7 +183,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     params.aspectRatio
   );
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
-  let maskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
 
   let textureColor = polkaDotPattern(pos.xy, params.color1, params.color2, params.dotRadius, params.dotSpacing, params.dotRowOffset);
 
@@ -202,6 +205,7 @@ export function createRectStripeSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
   const data = new Float32Array([
     ...color1,
     ...color2,
@@ -219,7 +223,7 @@ export function createRectStripeSpec(
     texture.angle,
     viewport.width,
     viewport.height,
-    0, // padding
+    cutout ? 1.0 : 0.0,
     0, // padding
   ])
   return {
@@ -239,6 +243,7 @@ export function createRectGridSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
   const data = new Float32Array([
     ...color1,
     ...color2,
@@ -255,7 +260,7 @@ export function createRectGridSpec(
     texture.cellSize,
     viewport.width,
     viewport.height,
-    0, // padding
+    cutout ? 1.0 : 0.0,
     0, // padding
     0, // padding
   ])
@@ -276,6 +281,7 @@ export function createRectPolkaDotSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
   const data = new Float32Array([
     ...color1,
     ...color2,
@@ -293,7 +299,7 @@ export function createRectPolkaDotSpec(
     texture.rowOffset,
     viewport.width,
     viewport.height,
-    0, // padding
+    cutout ? 1.0 : 0.0,
     0, // padding
   ])
   return {
