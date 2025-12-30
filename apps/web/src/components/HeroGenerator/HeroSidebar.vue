@@ -4,7 +4,7 @@ import type { Oklch } from '@practice/color'
 import type { TexturePattern, MaskPattern } from '@practice/texture'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
-import { LAYOUT_PATTERNS, type LayoutId } from '../SiteBuilder/layoutPatterns'
+import LayerPanel, { type LayerItem, type LayerType, type SubItemType } from './LayerPanel.vue'
 import type { SectionType, MidgroundTexturePattern } from '../../composables/SiteBuilder'
 
 type NeutralRampItem = {
@@ -31,20 +31,9 @@ const props = defineProps<{
   selectedBackgroundIndex: number
   selectedMaskIndex: number | null
   selectedMidgroundTextureIndex: number | null
-  selectedLayout: LayoutId
   // Palette tab
   neutralRampDisplay: NeutralRampItem[]
 }>()
-
-// Computed for midground display label
-const midgroundLabel = computed(() => {
-  if (props.selectedMaskIndex === null) return 'なし'
-  const maskLabel = props.maskPatterns[props.selectedMaskIndex]?.label ?? ''
-  const textureLabel = props.selectedMidgroundTextureIndex !== null
-    ? props.midgroundTexturePatterns[props.selectedMidgroundTextureIndex]?.label
-    : null
-  return textureLabel ? `${maskLabel} + ${textureLabel}` : maskLabel
-})
 
 const emit = defineEmits<{
   'update:hue': [value: number]
@@ -54,11 +43,72 @@ const emit = defineEmits<{
   'openSection': [section: SectionType]
 }>()
 
+// ============================================================
+// Color Popup
+// ============================================================
 type ColorPopup = 'brand' | 'foundation' | null
 const activeColorPopup = ref<ColorPopup>(null)
 
 const toggleColorPopup = (popup: ColorPopup) => {
   activeColorPopup.value = activeColorPopup.value === popup ? null : popup
+}
+
+// ============================================================
+// Layer Management
+// ============================================================
+const layers = ref<LayerItem[]>([
+  { id: 'base', type: 'base', name: 'Background', visible: true, expanded: true },
+  { id: 'mask-1', type: 'mask', name: 'Mask Layer', visible: true, expanded: false },
+])
+
+const handleToggleVisibility = (layerId: string) => {
+  const layer = layers.value.find(l => l.id === layerId)
+  if (layer) {
+    layer.visible = !layer.visible
+  }
+}
+
+const handleToggleExpand = (layerId: string) => {
+  const layer = layers.value.find(l => l.id === layerId)
+  if (layer) {
+    layer.expanded = !layer.expanded
+  }
+}
+
+const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
+  // Map to existing section system for now
+  const layer = layers.value.find(l => l.id === layerId)
+  if (!layer) return
+
+  if (layer.type === 'base' && subItemType === 'surface') {
+    emit('openSection', 'background')
+  } else if (layer.type === 'mask' && (subItemType === 'surface' || subItemType === 'shape')) {
+    emit('openSection', 'midground')
+  }
+}
+
+const handleAddLayer = (type: LayerType) => {
+  const id = `${type}-${Date.now()}`
+  const names: Record<LayerType, string> = {
+    base: 'Background',
+    mask: 'Mask Layer',
+    object: 'Object',
+    text: 'Text Layer',
+  }
+  layers.value.push({
+    id,
+    type,
+    name: names[type],
+    visible: true,
+    expanded: true,
+  })
+}
+
+const handleRemoveLayer = (layerId: string) => {
+  const index = layers.value.findIndex(l => l.id === layerId)
+  if (index > -1 && layers.value[index].type !== 'base') {
+    layers.value.splice(index, 1)
+  }
 }
 </script>
 
@@ -95,41 +145,16 @@ const toggleColorPopup = (popup: ColorPopup) => {
       </button>
     </div>
 
-    <!-- レイヤーセクション (Generator タブのみ) -->
+    <!-- レイヤーパネル (Generator タブのみ) -->
     <template v-if="activeTab === 'generator'">
-      <div class="sidebar-section">
-        <p class="sidebar-label">Layers</p>
-
-        <!-- 後景 -->
-        <button
-          class="layer-button"
-          :class="{ active: activeSection === 'background' }"
-          @click="emit('openSection', 'background')"
-        >
-          <span class="layer-name">後景 (Background)</span>
-          <span class="layer-value">{{ texturePatterns[selectedBackgroundIndex]?.label }}</span>
-        </button>
-
-        <!-- 中景 -->
-        <button
-          class="layer-button"
-          :class="{ active: activeSection === 'midground' }"
-          @click="emit('openSection', 'midground')"
-        >
-          <span class="layer-name">中景 (Midground)</span>
-          <span class="layer-value">{{ midgroundLabel }}</span>
-        </button>
-
-        <!-- 前景 -->
-        <button
-          class="layer-button"
-          :class="{ active: activeSection === 'foreground' }"
-          @click="emit('openSection', 'foreground')"
-        >
-          <span class="layer-name">前景 (Foreground)</span>
-          <span class="layer-value">{{ LAYOUT_PATTERNS.find(l => l.id === selectedLayout)?.label }}</span>
-        </button>
-      </div>
+      <LayerPanel
+        :layers="layers"
+        @toggle-visibility="handleToggleVisibility"
+        @toggle-expand="handleToggleExpand"
+        @select-subitem="handleSelectSubItem"
+        @add-layer="handleAddLayer"
+        @remove-layer="handleRemoveLayer"
+      />
     </template>
 
     <!-- Palette タブ: Neutral Ramp -->
@@ -242,45 +267,6 @@ const toggleColorPopup = (popup: ColorPopup) => {
   font-size: 0.625rem;
   color: oklch(0.60 0.02 260);
   font-family: ui-monospace, monospace;
-}
-
-/* Layer Buttons */
-.layer-button {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: oklch(0.22 0.02 260);
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.layer-button:hover {
-  background: oklch(0.26 0.02 260);
-}
-
-.layer-button.active {
-  background: oklch(0.50 0.20 250);
-}
-
-.layer-name {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.layer-value {
-  font-size: 0.75rem;
-  color: oklch(0.70 0.02 260);
-  margin-top: 0.25rem;
-}
-
-.layer-button.active .layer-value {
-  color: oklch(0.90 0.02 260);
 }
 
 /* Neutral Ramp */

@@ -158,7 +158,6 @@ const activeTab = ref<TabId>('generator')
       :selected-background-index="selectedBackgroundIndex"
       :selected-mask-index="selectedMaskIndex"
       :selected-midground-texture-index="selectedMidgroundTextureIndex"
-      :selected-layout="selectedLayout"
       :neutral-ramp-display="neutralRampDisplay"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
