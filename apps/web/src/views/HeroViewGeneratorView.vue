@@ -112,6 +112,8 @@ const {
   customMaskFile,
   setMaskImage,
   clearMaskImage,
+  loadRandomMaskImage,
+  isLoadingRandomMask,
   // Per-layer filters
   selectedFilterLayerId,
   selectedLayerFilters,
@@ -314,9 +316,12 @@ const activeTab = ref<TabId>('generator')
             :patterns="maskSurfacePatterns"
             :selected-index="selectedMidgroundTextureIndex"
             :show-solid-option="true"
+            :show-random-button="true"
+            :is-loading-random="isLoadingRandomMask"
             @upload-image="setMaskImage"
             @clear-image="clearMaskImage"
             @select-pattern="(i) => { selectedMidgroundTextureIndex = i }"
+            @load-random="loadRandomMaskImage()"
           />
         </template>
 

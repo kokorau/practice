@@ -943,6 +943,21 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     renderScene()
   }
 
+  const isLoadingRandomMask = ref(false)
+
+  const loadRandomMaskImage = async (query?: string) => {
+    isLoadingRandomMask.value = true
+    try {
+      const url = await fetchUnsplashPhotoUrl({ query })
+      const response = await fetch(url)
+      const blob = await response.blob()
+      const file = new File([blob], `unsplash-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      await setMaskImage(file)
+    } finally {
+      isLoadingRandomMask.value = false
+    }
+  }
+
   // ============================================================
   // Watchers
   // ============================================================
@@ -1018,6 +1033,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customMaskFile,
     setMaskImage,
     clearMaskImage,
+    loadRandomMaskImage,
+    isLoadingRandomMask,
 
     // Per-layer filters
     selectedFilterLayerId,
