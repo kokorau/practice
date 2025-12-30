@@ -16,12 +16,13 @@ export {
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'
 export {
   vignetteShader,
-  createVignetteShader,
+  createVignetteUniforms,
   createVignetteSpec,
+  VIGNETTE_BUFFER_SIZE,
   type VignetteParams,
 } from './vignette'
 export {
-  createChromaticAberrationShader,
+  chromaticAberrationShader,
   createChromaticAberrationUniforms,
   CHROMATIC_ABERRATION_BUFFER_SIZE,
   type ChromaticAberrationParams,

@@ -92,7 +92,7 @@ export type {
 
 // Application
 export type { GetDefaultTexturePatterns, GetDefaultMaskPatterns } from './Application'
-export { createUniforms } from './Application'
+export { createUniforms, createTexturePatternSpec } from './Application'
 
 // Infra
 export { getDefaultTexturePatterns, getDefaultMaskPatterns } from './Infra'

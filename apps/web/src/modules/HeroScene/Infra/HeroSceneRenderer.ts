@@ -13,6 +13,7 @@ import type {
   TextLayerConfig,
 } from '../Domain'
 import type { LayerRendererPort, LayerRenderResult, TextTextureInfo } from '../Application'
+import type { TexturePatternSpec } from '@practice/texture'
 
 /**
  * HeroSceneRendererの依存性
@@ -20,10 +21,8 @@ import type { LayerRendererPort, LayerRenderResult, TextTextureInfo } from '../A
 export interface HeroSceneRendererDeps {
   /** テキストテクスチャを取得する関数 */
   getTextTexture: (layerId: string) => TextTextureInfo | undefined
-  /** テクスチャパターンをレンダリングする関数 */
-  renderTexturePattern: (patternIndex: number, clear: boolean) => void
-  /** マスク付きテクスチャをレンダリングする関数 */
-  renderMaskedTexture: (maskIndex: number, textureIndex: number | null, clear: boolean) => void
+  /** TexturePatternSpecをレンダリングする関数 */
+  renderSpec: (spec: TexturePatternSpec, clear: boolean) => void
   /** 画像をレンダリングする関数 */
   renderImage: (source: ImageBitmap | string, clear: boolean) => Promise<void>
 }
@@ -178,11 +177,11 @@ export class HeroSceneRenderer implements LayerRendererPort {
   // Private methods
 
   private renderTextureLayer(config: TextureLayerConfig, clear: boolean): void {
-    this.deps.renderTexturePattern(config.patternIndex, clear)
+    this.deps.renderSpec(config.spec, clear)
   }
 
   private renderMaskedTextureLayer(config: MaskedTextureLayerConfig, clear: boolean): void {
-    this.deps.renderMaskedTexture(config.maskIndex, config.textureIndex, clear)
+    this.deps.renderSpec(config.spec, clear)
   }
 
   private async renderImageLayer(config: ImageLayerConfig, clear: boolean): Promise<void> {

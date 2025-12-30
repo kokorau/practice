@@ -78,9 +78,27 @@ export type {
   LayerRenderResult,
   LayerRendererPort,
   HeroSceneUseCaseDeps,
+  // Editor State types
+  EditorTextureLayerConfig,
+  EditorMaskedTextureLayerConfig,
+  EditorImageLayerConfig,
+  EditorTextLayerConfig,
+  EditorCanvasLayerConfig,
+  EditorCanvasLayer,
+  HeroSceneEditorState,
+  // Compile types
+  MidgroundTexturePattern,
+  PatternMaps,
+  CompileColors,
+  CompileOptions,
 } from './Application'
 
-export { HeroSceneUseCase, createHeroSceneUseCase } from './Application'
+export {
+  HeroSceneUseCase,
+  createHeroSceneUseCase,
+  createHeroSceneEditorState,
+  compileHeroScene,
+} from './Application'
 
 // Infra
 export type { TextTextureRendererConfig, HeroSceneRendererDeps } from './Infra'

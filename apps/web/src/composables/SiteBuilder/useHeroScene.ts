@@ -43,13 +43,10 @@ import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
 import {
-  type HeroScene,
-  type CanvasLayer,
   type LayerFilterConfig,
-  createHeroScene,
-  createTextureLayer,
-  createMaskedTextureLayer,
-  createImageLayer,
+  type HeroSceneEditorState,
+  type EditorCanvasLayer,
+  createHeroSceneEditorState,
   createDefaultFilterConfig,
 } from '../../modules/HeroScene'
 
@@ -125,9 +122,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const midgroundTexturePatterns = defaultMidgroundTexturePatterns
 
   // ============================================================
-  // Scene State (using HeroScene types internally)
+  // Editor State (index-based for UI management)
   // ============================================================
-  const scene = ref<HeroScene>(createHeroScene({ width: 1280, height: 720 }))
+  const editorState = ref<HeroSceneEditorState>(createHeroSceneEditorState({ width: 1280, height: 720 }))
 
   // Selection state (UI bindings)
   const selectedBackgroundIndex = ref(3)
@@ -177,10 +174,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
     layerFilterConfigs.value.set(layerId, updated)
 
-    // シーンのレイヤーも更新
-    scene.value = {
-      ...scene.value,
-      canvasLayers: scene.value.canvasLayers.map(l =>
+    // エディタ状態のレイヤーも更新
+    editorState.value = {
+      ...editorState.value,
+      canvasLayers: editorState.value.canvasLayers.map(l =>
         l.id === layerId ? { ...l, filters: updated } : l
       ),
     }
@@ -214,42 +211,60 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
 
   /**
-   * Update internal scene layers based on current selection
+   * Update editor state layers based on current selection
    */
-  const syncSceneLayers = () => {
-    const layers: CanvasLayer[] = []
+  const syncEditorLayers = () => {
+    const layers: EditorCanvasLayer[] = []
 
     // Base layer filters
     const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultFilterConfig()
 
     // Base layer (background)
     if (customBackgroundBitmap) {
-      layers.push(createImageLayer(LAYER_IDS.BASE, customBackgroundBitmap, {
-        zIndex: 0,
+      layers.push({
+        id: LAYER_IDS.BASE,
         name: 'Background Image',
-        filters: baseFilters,
-      }))
-    } else {
-      layers.push(createTextureLayer(LAYER_IDS.BASE, selectedBackgroundIndex.value, {
+        visible: true,
+        opacity: 1.0,
         zIndex: 0,
-        name: 'Background Texture',
+        blendMode: 'normal',
         filters: baseFilters,
-      }))
+        config: { type: 'image', source: customBackgroundBitmap },
+      })
+    } else {
+      layers.push({
+        id: LAYER_IDS.BASE,
+        name: 'Background Texture',
+        visible: true,
+        opacity: 1.0,
+        zIndex: 0,
+        blendMode: 'normal',
+        filters: baseFilters,
+        config: { type: 'texture', patternIndex: selectedBackgroundIndex.value },
+      })
     }
 
     // Mask layer (midground)
     if (selectedMaskIndex.value !== null) {
       const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultFilterConfig()
-      layers.push(createMaskedTextureLayer(
-        LAYER_IDS.MASK,
-        selectedMaskIndex.value,
-        selectedMidgroundTextureIndex.value,
-        { zIndex: 1, name: 'Mask Layer', filters: maskFilters }
-      ))
+      layers.push({
+        id: LAYER_IDS.MASK,
+        name: 'Mask Layer',
+        visible: true,
+        opacity: 1.0,
+        zIndex: 1,
+        blendMode: 'normal',
+        filters: maskFilters,
+        config: {
+          type: 'maskedTexture',
+          maskIndex: selectedMaskIndex.value,
+          textureIndex: selectedMidgroundTextureIndex.value,
+        },
+      })
     }
 
-    scene.value = {
-      ...scene.value,
+    editorState.value = {
+      ...editorState.value,
       canvasLayers: layers,
     }
   }
@@ -358,7 +373,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   /**
    * Apply filters to current canvas content for a layer
    */
-  const applyLayerFilters = (layer: CanvasLayer, viewport: Viewport) => {
+  const applyLayerFilters = (layer: EditorCanvasLayer, viewport: Viewport) => {
     if (!previewRenderer) return
 
     const { filters } = layer
@@ -393,7 +408,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
-   * Render scene based on current layer configuration
+   * Render editor state based on current layer configuration
    * Each layer's filters are applied after that layer is rendered
    */
   const renderScene = async () => {
@@ -401,9 +416,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     const viewport = previewRenderer.getViewport()
 
-    // Iterate through layers in zIndex order
-    for (let i = 0; i < scene.value.canvasLayers.length; i++) {
-      const layer = scene.value.canvasLayers[i]
+    // Iterate through editor layers in zIndex order
+    for (let i = 0; i < editorState.value.canvasLayers.length; i++) {
+      const layer = editorState.value.canvasLayers[i]
       if (!layer || !layer.visible) continue
 
       const isFirst = i === 0
@@ -624,12 +639,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const initPreview = async (canvas?: HTMLCanvasElement | null) => {
     if (!canvas) return
 
-    canvas.width = scene.value.config.width
-    canvas.height = scene.value.config.height
+    canvas.width = editorState.value.config.width
+    canvas.height = editorState.value.config.height
 
     try {
       previewRenderer = await TextureRenderer.create(canvas)
-      syncSceneLayers()
+      syncEditorLayers()
       await renderScene()
     } catch (e) {
       console.error('WebGPU not available:', e)
@@ -659,7 +674,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customBackgroundImage.value = URL.createObjectURL(file)
     customBackgroundBitmap = await createImageBitmap(file)
 
-    syncSceneLayers()
+    syncEditorLayers()
     await renderScene()
   }
 
@@ -674,7 +689,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customBackgroundFile.value = null
     customBackgroundImage.value = null
 
-    syncSceneLayers()
+    syncEditorLayers()
     renderScene()
   }
 
@@ -695,7 +710,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customMaskImage.value = URL.createObjectURL(file)
     customMaskBitmap = await createImageBitmap(file)
 
-    syncSceneLayers()
+    syncEditorLayers()
     await renderScene()
   }
 
@@ -710,7 +725,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customMaskFile.value = null
     customMaskImage.value = null
 
-    syncSceneLayers()
+    syncEditorLayers()
     renderScene()
   }
 
@@ -721,7 +736,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   watch(
     [selectedBackgroundIndex, selectedMaskIndex, selectedMidgroundTextureIndex],
     () => {
-      syncSceneLayers()
+      syncEditorLayers()
       renderScene()
     }
   )
@@ -753,8 +768,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
 
   return {
-    // Scene (for debugging/inspection)
-    scene,
+    // Editor State (for debugging/inspection)
+    editorState,
 
     // Pattern data
     texturePatterns,

@@ -2,6 +2,7 @@
  * HeroScene Application Layer
  *
  * レイヤーレンダリングのポート（インターフェース）とユースケース
+ * エディタ状態とコンパイル機能
  */
 
 import type {
@@ -10,6 +11,27 @@ import type {
   TextLayerConfig,
   HeroSceneConfig,
 } from '../Domain'
+
+// Re-export Editor State types
+export type {
+  EditorTextureLayerConfig,
+  EditorMaskedTextureLayerConfig,
+  EditorImageLayerConfig,
+  EditorTextLayerConfig,
+  EditorCanvasLayerConfig,
+  EditorCanvasLayer,
+  HeroSceneEditorState,
+} from './EditorState'
+export { createHeroSceneEditorState } from './EditorState'
+
+// Re-export Compile functions
+export type {
+  MidgroundTexturePattern,
+  PatternMaps,
+  CompileColors,
+  CompileOptions,
+} from './CompileHeroScene'
+export { compileHeroScene } from './CompileHeroScene'
 
 // ============================================================
 // Ports (Interfaces for Infrastructure)

@@ -8,6 +8,8 @@
  * - CanvasLayer[]: 装飾レイヤー（テクスチャ、マスク、装飾テキスト等）
  */
 
+import type { TexturePatternSpec } from '@practice/texture'
+
 // ============================================================
 // Base Layer Types
 // ============================================================
@@ -37,22 +39,22 @@ export type CanvasLayerType = 'texture' | 'maskedTexture' | 'image' | 'text'
 
 /**
  * テクスチャレイヤーの設定
+ * シェーダーとパラメータを直接保持（自己完結型）
  */
 export interface TextureLayerConfig {
   type: 'texture'
-  /** テクスチャパターンのインデックス */
-  patternIndex: number
+  /** テクスチャパターンのスペック（シェーダー + パラメータ） */
+  spec: TexturePatternSpec
 }
 
 /**
  * マスク付きテクスチャレイヤーの設定
+ * シェーダーとパラメータを直接保持（自己完結型）
  */
 export interface MaskedTextureLayerConfig {
   type: 'maskedTexture'
-  /** マスクパターンのインデックス */
-  maskIndex: number
-  /** テクスチャパターンのインデックス (null = べた塗り) */
-  textureIndex: number | null
+  /** マスク付きテクスチャのスペック（シェーダー + パラメータ） */
+  spec: TexturePatternSpec
 }
 
 /**
@@ -260,21 +262,20 @@ export const createCanvasLayer = (
  */
 export const createTextureLayer = (
   id: string,
-  patternIndex: number,
+  spec: TexturePatternSpec,
   options?: Partial<Omit<CanvasLayer, 'id' | 'config'>>
 ): CanvasLayer =>
-  createCanvasLayer(id, 'Background Texture', { type: 'texture', patternIndex }, options)
+  createCanvasLayer(id, 'Background Texture', { type: 'texture', spec }, options)
 
 /**
  * マスク付きテクスチャレイヤーを作成
  */
 export const createMaskedTextureLayer = (
   id: string,
-  maskIndex: number,
-  textureIndex: number | null,
+  spec: TexturePatternSpec,
   options?: Partial<Omit<CanvasLayer, 'id' | 'config'>>
 ): CanvasLayer =>
-  createCanvasLayer(id, 'Masked Texture', { type: 'maskedTexture', maskIndex, textureIndex }, options)
+  createCanvasLayer(id, 'Masked Texture', { type: 'maskedTexture', spec }, options)
 
 /**
  * 画像レイヤーを作成
