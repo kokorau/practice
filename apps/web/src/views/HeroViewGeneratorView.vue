@@ -110,7 +110,7 @@ const {
   updateLayerFilters,
 } = useHeroScene({ primitivePalette, isDark })
 
-// Filter state computed wrappers for v-model binding
+// Filter state computed wrappers for v-model binding (on/off only)
 const vignetteEnabled = computed({
   get: () => selectedLayerFilters.value?.vignette.enabled ?? false,
   set: (v) => {
@@ -118,39 +118,11 @@ const vignetteEnabled = computed({
     if (layerId) updateLayerFilters(layerId, { vignette: { enabled: v } })
   },
 })
-const vignetteIntensity = computed({
-  get: () => selectedLayerFilters.value?.vignette.intensity ?? 0.5,
-  set: (v) => {
-    const layerId = selectedFilterLayerId.value
-    if (layerId) updateLayerFilters(layerId, { vignette: { intensity: v } })
-  },
-})
-const vignetteRadius = computed({
-  get: () => selectedLayerFilters.value?.vignette.radius ?? 0.8,
-  set: (v) => {
-    const layerId = selectedFilterLayerId.value
-    if (layerId) updateLayerFilters(layerId, { vignette: { radius: v } })
-  },
-})
-const vignetteSoftness = computed({
-  get: () => selectedLayerFilters.value?.vignette.softness ?? 0.4,
-  set: (v) => {
-    const layerId = selectedFilterLayerId.value
-    if (layerId) updateLayerFilters(layerId, { vignette: { softness: v } })
-  },
-})
 const chromaticAberrationEnabled = computed({
   get: () => selectedLayerFilters.value?.chromaticAberration.enabled ?? false,
   set: (v) => {
     const layerId = selectedFilterLayerId.value
     if (layerId) updateLayerFilters(layerId, { chromaticAberration: { enabled: v } })
-  },
-})
-const chromaticAberrationIntensity = computed({
-  get: () => selectedLayerFilters.value?.chromaticAberration.intensity ?? 3.0,
-  set: (v) => {
-    const layerId = selectedFilterLayerId.value
-    if (layerId) updateLayerFilters(layerId, { chromaticAberration: { intensity: v } })
   },
 })
 
@@ -316,80 +288,20 @@ const activeTab = ref<TabId>('generator')
           </div>
         </template>
 
-        <!-- フィルター設定 -->
+        <!-- フィルター設定 (オン/オフのみ) -->
         <template v-else-if="activeSection === 'filter'">
           <div class="filter-section">
-            <!-- Vignette -->
-            <div class="filter-group">
-              <label class="filter-toggle">
-                <input
-                  type="checkbox"
-                  v-model="vignetteEnabled"
-                />
-                <span class="filter-name">Vignette</span>
-              </label>
-              <div v-if="vignetteEnabled" class="filter-controls">
-                <label class="slider-label">
-                  <span>Intensity</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    v-model.number="vignetteIntensity"
-                  />
-                  <span class="slider-value">{{ vignetteIntensity.toFixed(2) }}</span>
-                </label>
-                <label class="slider-label">
-                  <span>Radius</span>
-                  <input
-                    type="range"
-                    min="0.2"
-                    max="1.5"
-                    step="0.05"
-                    v-model.number="vignetteRadius"
-                  />
-                  <span class="slider-value">{{ vignetteRadius.toFixed(2) }}</span>
-                </label>
-                <label class="slider-label">
-                  <span>Softness</span>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="1"
-                    step="0.05"
-                    v-model.number="vignetteSoftness"
-                  />
-                  <span class="slider-value">{{ vignetteSoftness.toFixed(2) }}</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Chromatic Aberration -->
-            <div class="filter-group">
-              <label class="filter-toggle">
-                <input
-                  type="checkbox"
-                  v-model="chromaticAberrationEnabled"
-                />
-                <span class="filter-name">Chromatic Aberration</span>
-              </label>
-              <div v-if="chromaticAberrationEnabled" class="filter-controls">
-                <label class="slider-label">
-                  <span>Intensity</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="20"
-                    step="0.5"
-                    v-model.number="chromaticAberrationIntensity"
-                  />
-                  <span class="slider-value">{{ chromaticAberrationIntensity.toFixed(1) }}</span>
-                </label>
-              </div>
-            </div>
+            <label class="filter-toggle">
+              <input type="checkbox" v-model="vignetteEnabled" />
+              <span class="filter-name">Vignette</span>
+            </label>
+            <label class="filter-toggle">
+              <input type="checkbox" v-model="chromaticAberrationEnabled" />
+              <span class="filter-name">Chromatic Aberration</span>
+            </label>
           </div>
         </template>
+
       </div>
       </aside>
     </Transition>
@@ -582,19 +494,16 @@ const activeTab = ref<TabId>('generator')
 .filter-section {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-.filter-group {
-  background: oklch(0.20 0.02 260);
-  border-radius: 0.5rem;
-  padding: 1rem;
+  gap: 0.75rem;
 }
 
 .filter-toggle {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: oklch(0.20 0.02 260);
+  border-radius: 0.5rem;
   cursor: pointer;
 }
 
@@ -608,42 +517,6 @@ const activeTab = ref<TabId>('generator')
   font-size: 0.875rem;
   font-weight: 600;
   color: oklch(0.85 0.02 260);
-}
-
-.filter-controls {
-  margin-top: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.slider-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.75rem;
-  color: oklch(0.70 0.02 260);
-}
-
-.slider-label span:first-child {
-  min-width: 4.5rem;
-}
-
-.slider-label input[type="range"] {
-  flex: 1;
-  height: 0.375rem;
-  background: oklch(0.30 0.02 260);
-  border-radius: 0.1875rem;
-  cursor: pointer;
-  accent-color: oklch(0.55 0.20 250);
-}
-
-.slider-value {
-  min-width: 2.5rem;
-  text-align: right;
-  font-family: ui-monospace, monospace;
-  font-size: 0.6875rem;
-  color: oklch(0.60 0.02 260);
 }
 
 </style>
