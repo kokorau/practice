@@ -19,6 +19,10 @@ import {
   createBlobStripeSpec,
   createBlobGridSpec,
   createBlobPolkaDotSpec,
+  // Simple texture specs (no mask) for thumbnails
+  createStripeSpec,
+  createGridSpec,
+  createPolkaDotSpec,
   type TexturePattern,
   type MaskPattern,
   type RGBA,
@@ -360,50 +364,41 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Create a full-viewport spec for midground texture thumbnail
+   * Uses simple (non-masked) texture shaders for proper display
    */
   const createMidgroundThumbnailSpec = (
     pattern: MidgroundTexturePattern,
     color1: RGBA,
     color2: RGBA,
-    viewport: Viewport
+    _viewport: Viewport
   ): TextureRenderSpec | null => {
     const { type, config } = pattern
-    // Full-viewport rectangle mask
-    const rectMask: RectMaskShapeConfig = {
-      type: 'rect',
-      left: 0,
-      right: 1,
-      top: 0,
-      bottom: 1,
-      radiusTopLeft: 0,
-      radiusTopRight: 0,
-      radiusBottomLeft: 0,
-      radiusBottomRight: 0,
-    }
 
     if (type === 'stripe') {
-      return createRectStripeSpec(
-        color1, color2,
-        rectMask,
-        { type: 'stripe', width1: config.width1!, width2: config.width2!, angle: config.angle! },
-        viewport
-      )
+      return createStripeSpec({
+        color1,
+        color2,
+        width1: config.width1!,
+        width2: config.width2!,
+        angle: config.angle!,
+      })
     }
     if (type === 'grid') {
-      return createRectGridSpec(
-        color1, color2,
-        rectMask,
-        { type: 'grid', lineWidth: config.lineWidth!, cellSize: config.cellSize! },
-        viewport
-      )
+      return createGridSpec({
+        lineColor: color1,
+        bgColor: color2,
+        lineWidth: config.lineWidth!,
+        cellSize: config.cellSize!,
+      })
     }
     if (type === 'polkaDot') {
-      return createRectPolkaDotSpec(
-        color1, color2,
-        rectMask,
-        { type: 'polkaDot', dotRadius: config.dotRadius!, spacing: config.spacing!, rowOffset: config.rowOffset! },
-        viewport
-      )
+      return createPolkaDotSpec({
+        dotColor: color1,
+        bgColor: color2,
+        dotRadius: config.dotRadius!,
+        spacing: config.spacing!,
+        rowOffset: config.rowOffset!,
+      })
     }
     return null
   }
