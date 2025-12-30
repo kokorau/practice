@@ -85,6 +85,11 @@ const {
   texturePatterns,
   maskPatterns,
   midgroundTexturePatterns,
+  textureColor1,
+  textureColor2,
+  midgroundTextureColor1,
+  midgroundTextureColor2,
+  createMidgroundThumbnailSpec,
   selectedBackgroundIndex,
   selectedMaskIndex,
   selectedMidgroundTextureIndex,
@@ -101,13 +106,23 @@ const {
   clearMaskImage,
 } = useHeroScene({ primitivePalette, isDark })
 
-// Convert texture patterns to SurfaceSelector format
+// Convert texture patterns to SurfaceSelector format with createSpec
 const backgroundPatterns = computed(() =>
-  texturePatterns.map((p) => ({ label: p.label, type: p.type }))
+  texturePatterns.map((p) => ({
+    label: p.label,
+    type: p.type,
+    createSpec: (viewport: { width: number; height: number }) =>
+      p.createSpec(textureColor1.value, textureColor2.value, viewport),
+  }))
 )
 
 const maskSurfacePatterns = computed(() =>
-  midgroundTexturePatterns.map((p) => ({ label: p.label, type: p.type }))
+  midgroundTexturePatterns.map((p) => ({
+    label: p.label,
+    type: p.type,
+    createSpec: (viewport: { width: number; height: number }) =>
+      createMidgroundThumbnailSpec(p, midgroundTextureColor1.value, midgroundTextureColor2.value, viewport),
+  }))
 )
 
 const selectedLayout = ref<LayoutId>('row-top-between')

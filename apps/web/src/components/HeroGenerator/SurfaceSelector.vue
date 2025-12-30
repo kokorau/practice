@@ -6,9 +6,12 @@
  * Background, Mask Surface両方で使用
  */
 
+import PatternThumbnail, { type SpecCreator } from './PatternThumbnail.vue'
+
 export interface PatternItem {
   label: string
   type?: string
+  createSpec: SpecCreator
 }
 
 const props = defineProps<{
@@ -32,16 +35,6 @@ const handleFileChange = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (file) {
     emit('upload-image', file)
-  }
-}
-
-const getPatternIcon = (pattern: PatternItem): string => {
-  if (!pattern.type) return '▣'
-  switch (pattern.type) {
-    case 'stripe': return '▤'
-    case 'grid': return '▦'
-    case 'polkaDot': return '⚬'
-    default: return '▣'
   }
 }
 </script>
@@ -96,7 +89,7 @@ const getPatternIcon = (pattern: PatternItem): string => {
         :disabled="!!customImage"
         @click="emit('select-pattern', i)"
       >
-        <canvas data-thumbnail-canvas class="pattern-canvas" />
+        <PatternThumbnail :create-spec="pattern.createSpec" />
         <span class="pattern-label">{{ pattern.label }}</span>
       </button>
     </div>
@@ -234,11 +227,6 @@ const getPatternIcon = (pattern: PatternItem): string => {
 
 .pattern-button:disabled:hover {
   border-color: oklch(0.30 0.02 260);
-}
-
-.pattern-canvas {
-  width: 100%;
-  aspect-ratio: 16 / 9;
 }
 
 .pattern-none {

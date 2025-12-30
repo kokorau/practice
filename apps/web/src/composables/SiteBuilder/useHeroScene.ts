@@ -358,7 +358,57 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Thumbnail Rendering
   // ============================================================
 
-  const getPatterns = (section: SectionType): TexturePattern[] => {
+  /**
+   * Create a full-viewport spec for midground texture thumbnail
+   */
+  const createMidgroundThumbnailSpec = (
+    pattern: MidgroundTexturePattern,
+    color1: RGBA,
+    color2: RGBA,
+    viewport: Viewport
+  ): TextureRenderSpec | null => {
+    const { type, config } = pattern
+    // Full-viewport rectangle mask
+    const rectMask: RectMaskShapeConfig = {
+      type: 'rect',
+      left: 0,
+      right: 1,
+      top: 0,
+      bottom: 1,
+      radiusTopLeft: 0,
+      radiusTopRight: 0,
+      radiusBottomLeft: 0,
+      radiusBottomRight: 0,
+    }
+
+    if (type === 'stripe') {
+      return createRectStripeSpec(
+        color1, color2,
+        rectMask,
+        { type: 'stripe', width1: config.width1!, width2: config.width2!, angle: config.angle! },
+        viewport
+      )
+    }
+    if (type === 'grid') {
+      return createRectGridSpec(
+        color1, color2,
+        rectMask,
+        { type: 'grid', lineWidth: config.lineWidth!, cellSize: config.cellSize! },
+        viewport
+      )
+    }
+    if (type === 'polkaDot') {
+      return createRectPolkaDotSpec(
+        color1, color2,
+        rectMask,
+        { type: 'polkaDot', dotRadius: config.dotRadius!, spacing: config.spacing!, rowOffset: config.rowOffset! },
+        viewport
+      )
+    }
+    return null
+  }
+
+  const getPatterns = (section: SectionType): (TexturePattern | MaskPattern)[] => {
     if (section === 'background') return texturePatterns
     if (section === 'mask-shape') return maskPatterns
     return []
@@ -374,6 +424,27 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const renderThumbnails = async () => {
     const section = activeSection.value
     if (!section) return
+
+    // Handle mask-surface section separately
+    if (section === 'mask-surface') {
+      for (let i = 0; i < thumbnailRenderers.length; i++) {
+        const renderer = thumbnailRenderers[i]
+        const pattern = midgroundTexturePatterns[i]
+        if (renderer && pattern) {
+          const viewport = renderer.getViewport()
+          const spec = createMidgroundThumbnailSpec(
+            pattern,
+            midgroundTextureColor1.value,
+            midgroundTextureColor2.value,
+            viewport
+          )
+          if (spec) {
+            renderer.render(spec)
+          }
+        }
+      }
+      return
+    }
 
     const patterns = getPatterns(section)
     for (let i = 0; i < thumbnailRenderers.length; i++) {
@@ -398,9 +469,40 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     activeSection.value = section
 
     nextTick(async () => {
-      const patterns = getPatterns(section)
       const canvases = document.querySelectorAll<HTMLCanvasElement>('[data-thumbnail-canvas]')
 
+      // Handle mask-surface section separately (uses midgroundTexturePatterns)
+      if (section === 'mask-surface') {
+        for (let i = 0; i < canvases.length; i++) {
+          const canvas = canvases[i]
+          if (!canvas) continue
+          canvas.width = 256
+          canvas.height = 144
+          try {
+            const renderer = await TextureRenderer.create(canvas)
+            thumbnailRenderers.push(renderer)
+            const pattern = midgroundTexturePatterns[i]
+            if (pattern) {
+              const viewport = renderer.getViewport()
+              const spec = createMidgroundThumbnailSpec(
+                pattern,
+                midgroundTextureColor1.value,
+                midgroundTextureColor2.value,
+                viewport
+              )
+              if (spec) {
+                renderer.render(spec)
+              }
+            }
+          } catch (e) {
+            console.error('WebGPU not available:', e)
+          }
+        }
+        return
+      }
+
+      // Handle background and mask-shape sections
+      const patterns = getPatterns(section)
       for (let i = 0; i < canvases.length; i++) {
         const canvas = canvases[i]
         if (!canvas) continue
@@ -558,6 +660,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     texturePatterns,
     maskPatterns,
     midgroundTexturePatterns,
+
+    // Colors for thumbnail rendering
+    textureColor1,
+    textureColor2,
+    midgroundTextureColor1,
+    midgroundTextureColor2,
+
+    // Spec creators for thumbnails
+    createMidgroundThumbnailSpec,
 
     // Selection state
     selectedBackgroundIndex,
