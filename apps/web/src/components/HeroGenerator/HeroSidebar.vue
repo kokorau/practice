@@ -44,6 +44,10 @@ const emit = defineEmits<{
   (e: 'update:selectedFoundationId', value: string): void
   (e: 'openSection', section: SectionType): void
   (e: 'selectFilterLayer', layerId: string): void
+  // Layer operations - propagate to parent for useHeroScene
+  (e: 'toggleLayerVisibility', layerId: string): void
+  (e: 'addLayer', type: LayerType): void
+  (e: 'removeLayer', layerId: string): void
 }>()
 
 // Map UI layer IDs to useHeroScene layer IDs
@@ -75,6 +79,8 @@ const handleToggleVisibility = (layerId: string) => {
   const layer = layers.value.find(l => l.id === layerId)
   if (layer) {
     layer.visible = !layer.visible
+    // Propagate to parent for useHeroScene
+    emit('toggleLayerVisibility', mapLayerIdToSceneLayerId(layerId))
   }
 }
 
@@ -124,6 +130,8 @@ const handleAddLayer = (type: LayerType) => {
     visible: true,
     expanded: true,
   })
+  // Propagate to parent for useHeroScene
+  emit('addLayer', type)
 }
 
 const handleRemoveLayer = (layerId: string) => {
@@ -131,6 +139,8 @@ const handleRemoveLayer = (layerId: string) => {
   const layer = index > -1 ? layers.value[index] : undefined
   if (layer && layer.type !== 'base') {
     layers.value.splice(index, 1)
+    // Propagate to parent for useHeroScene
+    emit('removeLayer', mapLayerIdToSceneLayerId(layerId))
   }
 }
 </script>

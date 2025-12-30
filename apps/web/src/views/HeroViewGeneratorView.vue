@@ -109,6 +109,10 @@ const {
   selectedLayerFilters,
   layerFilterConfigs,
   updateLayerFilters,
+  // Layer operations
+  addMaskLayer,
+  removeLayer,
+  toggleLayerVisibility,
 } = useHeroScene({ primitivePalette, isDark })
 
 // Filter type: single selection (void, vignette, chromaticAberration)
@@ -217,6 +221,9 @@ const activeTab = ref<TabId>('generator')
       @update:selected-foundation-id="selectedFoundationId = $event"
       @open-section="openSection"
       @select-filter-layer="selectedFilterLayerId = $event"
+      @toggle-layer-visibility="toggleLayerVisibility"
+      @add-layer="(type) => { if (type === 'mask') addMaskLayer() }"
+      @remove-layer="removeLayer"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ) -->

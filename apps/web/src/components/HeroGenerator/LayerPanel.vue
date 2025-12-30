@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 // ============================================================
 // Types
@@ -125,11 +125,20 @@ const getLayerTypeLabel = (type: LayerType): string => {
 // ============================================================
 const showAddMenu = ref(false)
 
-const addableLayerTypes: { type: LayerType; label: string; icon: string }[] = [
+const allLayerTypes: { type: LayerType; label: string; icon: string }[] = [
   { type: 'mask', label: 'Mask', icon: 'crop_free' },
   { type: 'object', label: 'Object', icon: 'image' },
   { type: 'text', label: 'Text', icon: 'text_fields' },
 ]
+
+// Filter out layer types that have reached their limit (mask: 1)
+const addableLayerTypes = computed(() => {
+  const hasMask = props.layers.some(l => l.type === 'mask')
+  return allLayerTypes.filter(item => {
+    if (item.type === 'mask' && hasMask) return false
+    return true
+  })
+})
 
 const handleAddLayer = (type: LayerType) => {
   emit('add-layer', type)
