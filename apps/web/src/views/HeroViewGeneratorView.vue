@@ -110,19 +110,22 @@ const {
   updateLayerFilters,
 } = useHeroScene({ primitivePalette, isDark })
 
-// Filter state computed wrappers for v-model binding (on/off only)
-const vignetteEnabled = computed({
-  get: () => selectedLayerFilters.value?.vignette.enabled ?? false,
-  set: (v) => {
-    const layerId = selectedFilterLayerId.value
-    if (layerId) updateLayerFilters(layerId, { vignette: { enabled: v } })
+// Filter type: single selection (void, vignette, chromaticAberration)
+type FilterType = 'void' | 'vignette' | 'chromaticAberration'
+const selectedFilterType = computed<FilterType>({
+  get: () => {
+    const filters = selectedLayerFilters.value
+    if (filters?.vignette.enabled) return 'vignette'
+    if (filters?.chromaticAberration.enabled) return 'chromaticAberration'
+    return 'void'
   },
-})
-const chromaticAberrationEnabled = computed({
-  get: () => selectedLayerFilters.value?.chromaticAberration.enabled ?? false,
-  set: (v) => {
+  set: (type) => {
     const layerId = selectedFilterLayerId.value
-    if (layerId) updateLayerFilters(layerId, { chromaticAberration: { enabled: v } })
+    if (!layerId) return
+    updateLayerFilters(layerId, {
+      vignette: { enabled: type === 'vignette' },
+      chromaticAberration: { enabled: type === 'chromaticAberration' },
+    })
   },
 })
 
@@ -288,15 +291,19 @@ const activeTab = ref<TabId>('generator')
           </div>
         </template>
 
-        <!-- フィルター設定 (オン/オフのみ) -->
+        <!-- フィルター設定 (排他選択) -->
         <template v-else-if="activeSection === 'filter'">
           <div class="filter-section">
-            <label class="filter-toggle">
-              <input type="checkbox" v-model="vignetteEnabled" />
+            <label class="filter-option" :class="{ active: selectedFilterType === 'void' }">
+              <input type="radio" v-model="selectedFilterType" value="void" />
+              <span class="filter-name">None</span>
+            </label>
+            <label class="filter-option" :class="{ active: selectedFilterType === 'vignette' }">
+              <input type="radio" v-model="selectedFilterType" value="vignette" />
               <span class="filter-name">Vignette</span>
             </label>
-            <label class="filter-toggle">
-              <input type="checkbox" v-model="chromaticAberrationEnabled" />
+            <label class="filter-option" :class="{ active: selectedFilterType === 'chromaticAberration' }">
+              <input type="radio" v-model="selectedFilterType" value="chromaticAberration" />
               <span class="filter-name">Chromatic Aberration</span>
             </label>
           </div>
@@ -494,28 +501,39 @@ const activeTab = ref<TabId>('generator')
 .filter-section {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.filter-toggle {
+.filter-option {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   background: oklch(0.20 0.02 260);
+  border: 2px solid transparent;
   border-radius: 0.5rem;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.filter-toggle input[type="checkbox"] {
-  width: 1.25rem;
-  height: 1.25rem;
+.filter-option:hover {
+  background: oklch(0.24 0.02 260);
+}
+
+.filter-option.active {
+  border-color: oklch(0.55 0.20 250);
+  background: oklch(0.55 0.20 250 / 0.15);
+}
+
+.filter-option input[type="radio"] {
+  width: 1rem;
+  height: 1rem;
   accent-color: oklch(0.55 0.20 250);
 }
 
 .filter-name {
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: oklch(0.85 0.02 260);
 }
 
