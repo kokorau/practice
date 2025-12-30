@@ -60,7 +60,7 @@ export interface MidgroundTexturePattern {
   }
 }
 
-export type SectionType = 'background' | 'midground' | 'foreground'
+export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground'
 
 export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
@@ -127,6 +127,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const customBackgroundImage = ref<string | null>(null)
   const customBackgroundFile = ref<File | null>(null)
   let customBackgroundBitmap: ImageBitmap | null = null
+
+  // Custom mask image
+  const customMaskImage = ref<string | null>(null)
+  const customMaskFile = ref<File | null>(null)
+  let customMaskBitmap: ImageBitmap | null = null
 
   // ============================================================
   // Renderer State
@@ -355,7 +360,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const getPatterns = (section: SectionType): TexturePattern[] => {
     if (section === 'background') return texturePatterns
-    if (section === 'midground') return maskPatterns
+    if (section === 'mask-shape') return maskPatterns
     return []
   }
 
@@ -479,6 +484,42 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
+  // Mask Image Handling
+  // ============================================================
+
+  const setMaskImage = async (file: File) => {
+    if (customMaskImage.value) {
+      URL.revokeObjectURL(customMaskImage.value)
+    }
+    if (customMaskBitmap) {
+      customMaskBitmap.close()
+      customMaskBitmap = null
+    }
+
+    customMaskFile.value = file
+    customMaskImage.value = URL.createObjectURL(file)
+    customMaskBitmap = await createImageBitmap(file)
+
+    syncSceneLayers()
+    await renderScene()
+  }
+
+  const clearMaskImage = () => {
+    if (customMaskImage.value) {
+      URL.revokeObjectURL(customMaskImage.value)
+    }
+    if (customMaskBitmap) {
+      customMaskBitmap.close()
+      customMaskBitmap = null
+    }
+    customMaskFile.value = null
+    customMaskImage.value = null
+
+    syncSceneLayers()
+    renderScene()
+  }
+
+  // ============================================================
   // Watchers
   // ============================================================
 
@@ -502,6 +543,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   onUnmounted(() => {
     destroyPreview()
     clearBackgroundImage()
+    clearMaskImage()
   })
 
   // ============================================================
@@ -528,6 +570,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customBackgroundFile,
     setBackgroundImage,
     clearBackgroundImage,
+
+    // Custom mask
+    customMaskImage,
+    customMaskFile,
+    setMaskImage,
+    clearMaskImage,
 
     // Actions
     openSection,

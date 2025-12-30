@@ -82,8 +82,12 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
 
   if (layer.type === 'base' && subItemType === 'surface') {
     emit('openSection', 'background')
-  } else if (layer.type === 'mask' && (subItemType === 'surface' || subItemType === 'shape')) {
-    emit('openSection', 'midground')
+  } else if (layer.type === 'mask') {
+    if (subItemType === 'surface') {
+      emit('openSection', 'mask-surface')
+    } else if (subItemType === 'shape') {
+      emit('openSection', 'mask-shape')
+    }
   }
 }
 
