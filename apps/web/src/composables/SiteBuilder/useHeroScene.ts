@@ -520,11 +520,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const viewport = previewRenderer.getViewport()
 
     // Iterate through editor layers in zIndex order
+    let isFirstVisible = true
     for (let i = 0; i < editorState.value.canvasLayers.length; i++) {
       const layer = editorState.value.canvasLayers[i]
       if (!layer || !layer.visible) continue
 
-      const isFirst = i === 0
+      const isFirst = isFirstVisible
+      isFirstVisible = false
 
       switch (layer.config.type) {
         case 'image':
