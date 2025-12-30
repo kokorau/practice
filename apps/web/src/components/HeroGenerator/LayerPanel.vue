@@ -52,7 +52,7 @@ const getSubItems = (layer: LayerItem): SubItemConfig[] => {
       return [
         { type: 'surface', label: 'Surface', value: 'Solid', enabled: true },
         { type: 'shape', label: 'Shape', value: 'Blob', enabled: true },
-        { type: 'filter', label: 'Filter', value: 'WIP', enabled: false },
+        { type: 'filter', label: 'Filter', value: 'Vignette / CA', enabled: true },
       ]
     case 'object':
       return [

@@ -41,7 +41,15 @@ const emit = defineEmits<{
   (e: 'update:value', value: number): void
   (e: 'update:selectedFoundationId', value: string): void
   (e: 'openSection', section: SectionType): void
+  (e: 'selectFilterLayer', layerId: string): void
 }>()
+
+// Map UI layer IDs to useHeroScene layer IDs
+const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
+  if (uiLayerId === 'base') return 'base-layer'
+  if (uiLayerId.startsWith('mask')) return 'mask-layer'
+  return uiLayerId
+}
 
 // ============================================================
 // Color Popup
@@ -84,6 +92,7 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
     if (subItemType === 'surface') {
       emit('openSection', 'background')
     } else if (subItemType === 'filter') {
+      emit('selectFilterLayer', mapLayerIdToSceneLayerId(layerId))
       emit('openSection', 'filter')
     }
   } else if (layer.type === 'mask') {
@@ -91,6 +100,9 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
       emit('openSection', 'mask-surface')
     } else if (subItemType === 'shape') {
       emit('openSection', 'mask-shape')
+    } else if (subItemType === 'filter') {
+      emit('selectFilterLayer', mapLayerIdToSceneLayerId(layerId))
+      emit('openSection', 'filter')
     }
   }
 }

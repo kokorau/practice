@@ -104,14 +104,55 @@ const {
   customMaskFile,
   setMaskImage,
   clearMaskImage,
-  // Filters
-  vignetteEnabled,
-  vignetteIntensity,
-  vignetteRadius,
-  vignetteSoftness,
-  chromaticAberrationEnabled,
-  chromaticAberrationIntensity,
+  // Per-layer filters
+  selectedFilterLayerId,
+  selectedLayerFilters,
+  updateLayerFilters,
 } = useHeroScene({ primitivePalette, isDark })
+
+// Filter state computed wrappers for v-model binding
+const vignetteEnabled = computed({
+  get: () => selectedLayerFilters.value?.vignette.enabled ?? false,
+  set: (v) => {
+    const layerId = selectedFilterLayerId.value
+    if (layerId) updateLayerFilters(layerId, { vignette: { enabled: v } })
+  },
+})
+const vignetteIntensity = computed({
+  get: () => selectedLayerFilters.value?.vignette.intensity ?? 0.5,
+  set: (v) => {
+    const layerId = selectedFilterLayerId.value
+    if (layerId) updateLayerFilters(layerId, { vignette: { intensity: v } })
+  },
+})
+const vignetteRadius = computed({
+  get: () => selectedLayerFilters.value?.vignette.radius ?? 0.8,
+  set: (v) => {
+    const layerId = selectedFilterLayerId.value
+    if (layerId) updateLayerFilters(layerId, { vignette: { radius: v } })
+  },
+})
+const vignetteSoftness = computed({
+  get: () => selectedLayerFilters.value?.vignette.softness ?? 0.4,
+  set: (v) => {
+    const layerId = selectedFilterLayerId.value
+    if (layerId) updateLayerFilters(layerId, { vignette: { softness: v } })
+  },
+})
+const chromaticAberrationEnabled = computed({
+  get: () => selectedLayerFilters.value?.chromaticAberration.enabled ?? false,
+  set: (v) => {
+    const layerId = selectedFilterLayerId.value
+    if (layerId) updateLayerFilters(layerId, { chromaticAberration: { enabled: v } })
+  },
+})
+const chromaticAberrationIntensity = computed({
+  get: () => selectedLayerFilters.value?.chromaticAberration.intensity ?? 3.0,
+  set: (v) => {
+    const layerId = selectedFilterLayerId.value
+    if (layerId) updateLayerFilters(layerId, { chromaticAberration: { intensity: v } })
+  },
+})
 
 // Convert texture patterns to SurfaceSelector format with createSpec
 const backgroundPatterns = computed(() =>
@@ -198,6 +239,7 @@ const activeTab = ref<TabId>('generator')
       @update:value="value = $event"
       @update:selected-foundation-id="selectedFoundationId = $event"
       @open-section="openSection"
+      @select-filter-layer="selectedFilterLayerId = $event"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ) -->

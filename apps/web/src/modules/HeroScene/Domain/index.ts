@@ -112,12 +112,64 @@ export interface CanvasLayer extends LayerBase {
   config: CanvasLayerConfig
   /** ブレンドモード */
   blendMode: BlendMode
+  /** フィルター設定 */
+  filters: LayerFilterConfig
 }
 
 /**
  * ブレンドモード
  */
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay'
+
+// ============================================================
+// Filter Types
+// ============================================================
+
+/**
+ * ビネットフィルター設定
+ */
+export interface VignetteFilterConfig {
+  enabled: boolean
+  /** 強さ (0.0 - 1.0) */
+  intensity: number
+  /** 半径 (0.2 - 1.5) */
+  radius: number
+  /** ソフトさ (0.1 - 1.0) */
+  softness: number
+}
+
+/**
+ * 色収差フィルター設定
+ */
+export interface ChromaticAberrationFilterConfig {
+  enabled: boolean
+  /** 強さ (0 - 20) */
+  intensity: number
+}
+
+/**
+ * レイヤーフィルター設定
+ */
+export interface LayerFilterConfig {
+  vignette: VignetteFilterConfig
+  chromaticAberration: ChromaticAberrationFilterConfig
+}
+
+/**
+ * デフォルトのフィルター設定
+ */
+export const createDefaultFilterConfig = (): LayerFilterConfig => ({
+  vignette: {
+    enabled: false,
+    intensity: 0.5,
+    radius: 0.8,
+    softness: 0.4,
+  },
+  chromaticAberration: {
+    enabled: false,
+    intensity: 3.0,
+  },
+})
 
 // ============================================================
 // HTML Layer Types
@@ -198,6 +250,7 @@ export const createCanvasLayer = (
   opacity: 1.0,
   zIndex: 0,
   blendMode: 'normal',
+  filters: createDefaultFilterConfig(),
   ...options,
   config,
 })

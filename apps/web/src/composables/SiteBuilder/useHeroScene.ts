@@ -43,10 +43,12 @@ import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain
 import {
   type HeroScene,
   type CanvasLayer,
+  type LayerFilterConfig,
   createHeroScene,
   createTextureLayer,
   createMaskedTextureLayer,
   createImageLayer,
+  createDefaultFilterConfig,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -142,15 +144,45 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   let customMaskBitmap: ImageBitmap | null = null
 
   // ============================================================
-  // Filter State
+  // Per-Layer Filter State
   // ============================================================
-  const vignetteEnabled = ref(false)
-  const vignetteIntensity = ref(0.5)
-  const vignetteRadius = ref(0.8)
-  const vignetteSoftness = ref(0.4)
+  // 選択中のレイヤーのフィルター編集用
+  const selectedFilterLayerId = ref<string | null>(LAYER_IDS.BASE)
 
-  const chromaticAberrationEnabled = ref(false)
-  const chromaticAberrationIntensity = ref(3.0)
+  // レイヤーごとのフィルター設定を保持（syncSceneLayersで再生成されても維持）
+  const layerFilterConfigs = ref<Map<string, LayerFilterConfig>>(new Map([
+    [LAYER_IDS.BASE, createDefaultFilterConfig()],
+    [LAYER_IDS.MASK, createDefaultFilterConfig()],
+  ]))
+
+  // 選択中レイヤーのフィルター設定へのアクセサ
+  const selectedLayerFilters = computed(() => {
+    const layerId = selectedFilterLayerId.value
+    if (!layerId) return null
+    return layerFilterConfigs.value.get(layerId) ?? null
+  })
+
+  // フィルター設定を更新（部分更新をサポート）
+  type DeepPartial<T> = {
+    [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
+  }
+
+  const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerFilterConfig>) => {
+    const current = layerFilterConfigs.value.get(layerId) ?? createDefaultFilterConfig()
+    const updated: LayerFilterConfig = {
+      vignette: { ...current.vignette, ...(updates.vignette ?? {}) },
+      chromaticAberration: { ...current.chromaticAberration, ...(updates.chromaticAberration ?? {}) },
+    }
+    layerFilterConfigs.value.set(layerId, updated)
+
+    // シーンのレイヤーも更新
+    scene.value = {
+      ...scene.value,
+      canvasLayers: scene.value.canvasLayers.map(l =>
+        l.id === layerId ? { ...l, filters: updated } : l
+      ),
+    }
+  }
 
   // ============================================================
   // Renderer State
@@ -185,26 +217,32 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const syncSceneLayers = () => {
     const layers: CanvasLayer[] = []
 
+    // Base layer filters
+    const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultFilterConfig()
+
     // Base layer (background)
     if (customBackgroundBitmap) {
       layers.push(createImageLayer(LAYER_IDS.BASE, customBackgroundBitmap, {
         zIndex: 0,
         name: 'Background Image',
+        filters: baseFilters,
       }))
     } else {
       layers.push(createTextureLayer(LAYER_IDS.BASE, selectedBackgroundIndex.value, {
         zIndex: 0,
         name: 'Background Texture',
+        filters: baseFilters,
       }))
     }
 
     // Mask layer (midground)
     if (selectedMaskIndex.value !== null) {
+      const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultFilterConfig()
       layers.push(createMaskedTextureLayer(
         LAYER_IDS.MASK,
         selectedMaskIndex.value,
         selectedMidgroundTextureIndex.value,
-        { zIndex: 1, name: 'Mask Layer' }
+        { zIndex: 1, name: 'Mask Layer', filters: maskFilters }
       ))
     }
 
@@ -316,7 +354,46 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
+   * Apply filters to current canvas content for a layer
+   */
+  const applyLayerFilters = (layer: CanvasLayer, viewport: Viewport) => {
+    if (!previewRenderer) return
+
+    const { filters } = layer
+
+    // Chromatic Aberration (requires texture input, must be applied first)
+    if (filters.chromaticAberration.enabled) {
+      const inputTexture = previewRenderer.copyCanvasToTexture()
+      const shader = createChromaticAberrationShader(viewport)
+      const uniforms = createChromaticAberrationUniforms({
+        intensity: filters.chromaticAberration.intensity,
+        angle: 0,
+      })
+      previewRenderer.applyPostEffect(
+        { shader, uniforms, bufferSize: CHROMATIC_ABERRATION_BUFFER_SIZE },
+        inputTexture,
+        { clear: true }
+      )
+    }
+
+    // Vignette (overlay, applied last)
+    if (filters.vignette.enabled) {
+      const vignetteSpec = createVignetteSpec(
+        {
+          color: [0, 0, 0, 1],
+          intensity: filters.vignette.intensity,
+          radius: filters.vignette.radius,
+          softness: filters.vignette.softness,
+        },
+        viewport
+      )
+      previewRenderer.render(vignetteSpec, { clear: false })
+    }
+  }
+
+  /**
    * Render scene based on current layer configuration
+   * Each layer's filters are applied after that layer is rendered
    */
   const renderScene = async () => {
     if (!previewRenderer) return
@@ -337,15 +414,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           }
           break
 
-        case 'texture':
+        case 'texture': {
           const bgPattern = texturePatterns[layer.config.patternIndex]
           if (bgPattern) {
             const spec = bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
             previewRenderer.render(spec, { clear: isFirst })
           }
           break
+        }
 
-        case 'maskedTexture':
+        case 'maskedTexture': {
           const maskPattern = maskPatterns[layer.config.maskIndex]
           if (maskPattern) {
             if (layer.config.textureIndex !== null) {
@@ -369,40 +447,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             previewRenderer.render(spec, { clear: false })
           }
           break
+        }
       }
-    }
 
-    // ============================================================
-    // Apply Post-Effects (Filters)
-    // ============================================================
-
-    // Chromatic Aberration (requires texture input, must be applied first)
-    if (chromaticAberrationEnabled.value) {
-      const inputTexture = previewRenderer.copyCanvasToTexture()
-      const shader = createChromaticAberrationShader(viewport)
-      const uniforms = createChromaticAberrationUniforms({
-        intensity: chromaticAberrationIntensity.value,
-        angle: 0,
-      })
-      previewRenderer.applyPostEffect(
-        { shader, uniforms, bufferSize: CHROMATIC_ABERRATION_BUFFER_SIZE },
-        inputTexture,
-        { clear: true }
-      )
-    }
-
-    // Vignette (overlay, applied last)
-    if (vignetteEnabled.value) {
-      const vignetteSpec = createVignetteSpec(
-        {
-          color: [0, 0, 0, 1],
-          intensity: vignetteIntensity.value,
-          radius: vignetteRadius.value,
-          softness: vignetteSoftness.value,
-        },
-        viewport
-      )
-      previewRenderer.render(vignetteSpec, { clear: false })
+      // Apply per-layer filters after rendering the layer
+      applyLayerFilters(layer, viewport)
     }
   }
 
@@ -685,14 +734,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   watch([textureColor1, textureColor2], renderThumbnails)
 
-  // Filter watchers
+  // Filter watchers - watch the Map's changes via deep watch
   watch(
-    [vignetteEnabled, vignetteIntensity, vignetteRadius, vignetteSoftness],
-    () => renderScene()
-  )
-  watch(
-    [chromaticAberrationEnabled, chromaticAberrationIntensity],
-    () => renderScene()
+    layerFilterConfigs,
+    () => renderScene(),
+    { deep: true }
   )
 
   onUnmounted(() => {
@@ -741,13 +787,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     setMaskImage,
     clearMaskImage,
 
-    // Filters
-    vignetteEnabled,
-    vignetteIntensity,
-    vignetteRadius,
-    vignetteSoftness,
-    chromaticAberrationEnabled,
-    chromaticAberrationIntensity,
+    // Per-layer filters
+    selectedFilterLayerId,
+    selectedLayerFilters,
+    layerFilterConfigs,
+    updateLayerFilters,
 
     // Actions
     openSection,
