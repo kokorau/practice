@@ -166,12 +166,14 @@ const handleAddLayer = (type: LayerType) => {
           <!-- Layer Header -->
           <div class="layer-header" @click="emit('toggle-expand', layer.id)">
             <button
+              v-if="layer.type !== 'base'"
               class="visibility-toggle"
               :class="{ hidden: !layer.visible }"
               @click.stop="emit('toggle-visibility', layer.id)"
             >
               <span class="material-icons">{{ layer.visible ? 'visibility' : 'visibility_off' }}</span>
             </button>
+            <span v-else class="visibility-placeholder" />
 
             <span class="material-icons layer-icon">{{ getLayerIcon(layer.type) }}</span>
 
@@ -349,6 +351,12 @@ const handleAddLayer = (type: LayerType) => {
 
 .visibility-toggle .material-icons {
   font-size: 1rem;
+}
+
+.visibility-placeholder {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
 }
 
 .layer-icon {
