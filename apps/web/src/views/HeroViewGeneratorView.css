@@ -137,6 +137,36 @@
   padding: 4rem;
 }
 
+/* Foreground 9-Grid Layout */
+.foreground-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  grid-template-areas:
+    "top-left top-center top-right"
+    "middle-left middle-center middle-right"
+    "bottom-left bottom-center bottom-right";
+}
+
+.grid-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Position classes - grid area assignment */
+.position-top-left { grid-area: top-left; align-items: flex-start; justify-content: flex-start; }
+.position-top-center { grid-area: top-center; align-items: center; justify-content: flex-start; text-align: center; }
+.position-top-right { grid-area: top-right; align-items: flex-end; justify-content: flex-start; text-align: right; }
+
+.position-middle-left { grid-area: middle-left; align-items: flex-start; justify-content: center; }
+.position-middle-center { grid-area: middle-center; align-items: center; justify-content: center; text-align: center; }
+.position-middle-right { grid-area: middle-right; align-items: flex-end; justify-content: center; text-align: right; }
+
+.position-bottom-left { grid-area: bottom-left; align-items: flex-start; justify-content: flex-end; }
+.position-bottom-center { grid-area: bottom-center; align-items: center; justify-content: flex-end; text-align: center; }
+.position-bottom-right { grid-area: bottom-right; align-items: flex-end; justify-content: flex-end; text-align: right; }
+
 /* Hero Content */
 .hero-content {
   display: flex;

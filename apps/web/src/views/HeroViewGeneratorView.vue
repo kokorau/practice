@@ -18,8 +18,14 @@ import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
-import { useSiteColors, useHeroScene } from '../composables/SiteBuilder'
-import { LAYOUT_PATTERNS, type LayoutId } from '../components/SiteBuilder/layoutPatterns'
+import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
+import {
+  useSiteColors,
+  useHeroScene,
+  DEFAULT_FOREGROUND_CONFIG,
+  type GridPosition,
+  type ForegroundConfig,
+} from '../composables/SiteBuilder'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
@@ -151,8 +157,32 @@ const maskSurfacePatterns = computed(() =>
   }))
 )
 
-const selectedLayout = ref<LayoutId>('row-top-between')
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
+
+// ============================================================
+// Foreground Layout Config
+// ============================================================
+const foregroundConfig = ref<ForegroundConfig>({ ...DEFAULT_FOREGROUND_CONFIG })
+
+const titlePosition = computed({
+  get: () => foregroundConfig.value.title.position,
+  set: (pos: GridPosition) => {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      title: { ...foregroundConfig.value.title, position: pos },
+    }
+  },
+})
+
+const descriptionPosition = computed({
+  get: () => foregroundConfig.value.description.position,
+  set: (pos: GridPosition) => {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      description: { ...foregroundConfig.value.description, position: pos },
+    }
+  },
+})
 
 // ============================================================
 // Dynamic CSS Injection for Palette Preview
@@ -224,6 +254,7 @@ const activeTab = ref<TabId>('generator')
       @toggle-layer-visibility="toggleLayerVisibility"
       @add-layer="(type) => { if (type === 'mask') addMaskLayer() }"
       @remove-layer="removeLayer"
+      @open-foreground="openSection('foreground')"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ) -->
@@ -284,19 +315,17 @@ const activeTab = ref<TabId>('generator')
           />
         </template>
 
-        <!-- 前景: レイアウト選択 -->
+        <!-- 前景: Title/Description 位置選択 -->
         <template v-else-if="activeSection === 'foreground'">
-          <div class="layout-grid">
-            <button
-              v-for="layout in LAYOUT_PATTERNS"
-              :key="layout.id"
-              class="layout-button"
-              :class="{ active: selectedLayout === layout.id }"
-              @click="selectedLayout = layout.id"
-            >
-              <span class="layout-icon">{{ layout.icon }}</span>
-              <span class="layout-label">{{ layout.label }}</span>
-            </button>
+          <div class="foreground-position-section">
+            <GridPositionPicker
+              v-model="titlePosition"
+              label="Title Position"
+            />
+            <GridPositionPicker
+              v-model="descriptionPosition"
+              label="Description Position"
+            />
           </div>
         </template>
 
@@ -345,7 +374,7 @@ const activeTab = ref<TabId>('generator')
       <HeroPreview
         v-if="activeTab === 'generator'"
         ref="heroPreviewRef"
-        :selected-layout="selectedLayout"
+        :foreground-config="foregroundConfig"
         class="hero-tab-content"
       />
 

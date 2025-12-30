@@ -45,6 +45,7 @@ const emit = defineEmits<{
   'select-subitem': [layerId: string, subItemType: SubItemType]
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
+  'open-foreground': []
 }>()
 
 // ============================================================
@@ -243,10 +244,14 @@ const handleAddLayer = (type: LayerType) => {
         <span class="section-title">HTML</span>
       </div>
 
-      <div class="html-note">
-        <span class="material-icons">info</span>
-        <span>Foreground HTML layer (CTA, text) - customization coming soon</span>
-      </div>
+      <button class="foreground-button" @click="emit('open-foreground')">
+        <span class="material-icons">text_fields</span>
+        <div class="foreground-info">
+          <span class="foreground-label">Foreground</span>
+          <span class="foreground-desc">Title & Description</span>
+        </div>
+        <span class="material-icons foreground-arrow">chevron_right</span>
+      </button>
     </div>
   </div>
 </template>
@@ -533,22 +538,57 @@ const handleAddLayer = (type: LayerType) => {
   color: oklch(0.60 0.02 260);
 }
 
-/* HTML Note */
-.html-note {
+/* Foreground Button */
+.foreground-button {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
   background: oklch(0.22 0.02 260);
+  border: 1px solid oklch(0.28 0.02 260);
   border-radius: 0.375rem;
-  font-size: 0.6875rem;
-  color: oklch(0.60 0.02 260);
-  line-height: 1.4;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
 
-.html-note .material-icons {
-  font-size: 0.875rem;
-  flex-shrink: 0;
+.foreground-button:hover {
+  background: oklch(0.26 0.02 260);
+  border-color: oklch(0.35 0.02 260);
+}
+
+.foreground-button > .material-icons {
+  font-size: 1rem;
+  color: oklch(0.60 0.02 260);
+}
+
+.foreground-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.foreground-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: oklch(0.85 0.02 260);
+}
+
+.foreground-desc {
+  font-size: 0.625rem;
+  color: oklch(0.55 0.02 260);
+}
+
+.foreground-arrow {
+  font-size: 1rem;
+  color: oklch(0.45 0.02 260);
+}
+
+.foreground-button:hover .foreground-arrow {
+  color: oklch(0.70 0.02 260);
 }
 
 /* Transitions */

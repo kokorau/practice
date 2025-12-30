@@ -1,12 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { LayoutId } from '../SiteBuilder/layoutPatterns'
+import { ref, computed } from 'vue'
+import {
+  compileForegroundLayout,
+  DEFAULT_FOREGROUND_CONFIG,
+  type ForegroundConfig,
+} from '../../composables/SiteBuilder'
 
-defineProps<{
-  selectedLayout: LayoutId
-}>()
+const props = withDefaults(defineProps<{
+  foregroundConfig?: ForegroundConfig
+}>(), {
+  foregroundConfig: () => DEFAULT_FOREGROUND_CONFIG,
+})
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+
+const positionedGroups = computed(() => compileForegroundLayout(props.foregroundConfig))
 
 defineExpose({
   canvasRef,
@@ -25,11 +33,20 @@ defineExpose({
           <!-- 画像やグラフィックテキスト -->
         </div>
 
-        <!-- 前景: CTA + テキスト -->
-        <div class="layer-foreground">
-          <div class="hero-content" :class="`layout-${selectedLayout}`">
-            <h1 class="hero-title scp-title">Build Amazing</h1>
-            <p class="hero-subtitle scp-body">Create beautiful, responsive websites.<br>Design with confidence.</p>
+        <!-- 前景: CTA + テキスト (9-grid layout) -->
+        <div class="layer-foreground foreground-grid">
+          <div
+            v-for="group in positionedGroups"
+            :key="group.position"
+            class="grid-cell"
+            :class="`position-${group.position}`"
+          >
+            <component
+              v-for="(el, i) in group.elements"
+              :key="i"
+              :is="el.tag"
+              :class="el.className"
+            >{{ el.content }}</component>
           </div>
         </div>
       </div>
