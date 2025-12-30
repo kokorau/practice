@@ -19,6 +19,11 @@ import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
+import SchemaFields from '../components/SchemaFields.vue'
+import {
+  VignetteFilterSchema,
+  ChromaticAberrationFilterSchema,
+} from '../modules/HeroScene'
 import {
   useSiteColors,
   useHeroScene,
@@ -141,6 +146,25 @@ const selectedFilterType = computed<FilterType>({
       vignette: { enabled: type === 'vignette' },
       chromaticAberration: { enabled: type === 'chromaticAberration' },
     })
+  },
+})
+
+// Current filter params for SchemaFields binding
+const currentVignetteConfig = computed({
+  get: () => selectedLayerFilters.value?.vignette ?? {},
+  set: (value) => {
+    const layerId = selectedFilterLayerId.value
+    if (!layerId) return
+    updateLayerFilters(layerId, { vignette: value })
+  },
+})
+
+const currentChromaticConfig = computed({
+  get: () => selectedLayerFilters.value?.chromaticAberration ?? {},
+  set: (value) => {
+    const layerId = selectedFilterLayerId.value
+    if (!layerId) return
+    updateLayerFilters(layerId, { chromaticAberration: value })
   },
 })
 
@@ -342,18 +366,39 @@ const activeTab = ref<TabId>('generator')
         <!-- フィルター設定 (排他選択) -->
         <template v-else-if="activeSection === 'filter'">
           <div class="filter-section">
-            <label class="filter-option" :class="{ active: selectedFilterType === 'void' }">
-              <input type="radio" v-model="selectedFilterType" value="void" />
-              <span class="filter-name">None</span>
-            </label>
-            <label class="filter-option" :class="{ active: selectedFilterType === 'vignette' }">
-              <input type="radio" v-model="selectedFilterType" value="vignette" />
-              <span class="filter-name">Vignette</span>
-            </label>
-            <label class="filter-option" :class="{ active: selectedFilterType === 'chromaticAberration' }">
-              <input type="radio" v-model="selectedFilterType" value="chromaticAberration" />
-              <span class="filter-name">Chromatic Aberration</span>
-            </label>
+            <!-- Filter params (shown when filter is active) -->
+            <div v-if="selectedFilterType === 'vignette'" class="filter-params">
+              <SchemaFields
+                :schema="VignetteFilterSchema"
+                :model-value="currentVignetteConfig"
+                :exclude="['enabled']"
+                @update:model-value="currentVignetteConfig = $event"
+              />
+            </div>
+            <div v-else-if="selectedFilterType === 'chromaticAberration'" class="filter-params">
+              <SchemaFields
+                :schema="ChromaticAberrationFilterSchema"
+                :model-value="currentChromaticConfig"
+                :exclude="['enabled']"
+                @update:model-value="currentChromaticConfig = $event"
+              />
+            </div>
+
+            <!-- Filter type selection -->
+            <div class="filter-options">
+              <label class="filter-option" :class="{ active: selectedFilterType === 'void' }">
+                <input type="radio" v-model="selectedFilterType" value="void" />
+                <span class="filter-name">None</span>
+              </label>
+              <label class="filter-option" :class="{ active: selectedFilterType === 'vignette' }">
+                <input type="radio" v-model="selectedFilterType" value="vignette" />
+                <span class="filter-name">Vignette</span>
+              </label>
+              <label class="filter-option" :class="{ active: selectedFilterType === 'chromaticAberration' }">
+                <input type="radio" v-model="selectedFilterType" value="chromaticAberration" />
+                <span class="filter-name">Chromatic Aberration</span>
+              </label>
+            </div>
           </div>
         </template>
 
@@ -583,6 +628,19 @@ const activeTab = ref<TabId>('generator')
   font-size: 0.875rem;
   font-weight: 500;
   color: oklch(0.85 0.02 260);
+}
+
+.filter-params {
+  padding: 0.75rem;
+  background: oklch(0.18 0.02 260);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 </style>
