@@ -17,7 +17,7 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import { useSiteColors, useTexturePreview } from '../composables/SiteBuilder'
+import { useSiteColors, useHeroScene } from '../composables/SiteBuilder'
 import { LAYOUT_PATTERNS, type LayoutId } from '../components/SiteBuilder/layoutPatterns'
 import './HeroViewGeneratorView.css'
 
@@ -78,7 +78,7 @@ const actions = computed(() => [
 ])
 
 // ============================================================
-// Texture Preview (WebGPU rendering)
+// Hero Scene (WebGPU rendering with layer system)
 // ============================================================
 const {
   texturePatterns,
@@ -94,7 +94,7 @@ const {
   customBackgroundFile,
   setBackgroundImage,
   clearBackgroundImage,
-} = useTexturePreview({ primitivePalette, isDark })
+} = useHeroScene({ primitivePalette, isDark })
 
 const selectedLayout = ref<LayoutId>('row-top-between')
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
