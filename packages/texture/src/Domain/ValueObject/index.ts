@@ -10,6 +10,16 @@ export type {
   MaskShapeConfig,
   MaskPattern,
 } from './TexturePattern'
+export type {
+  SurfacePresetType,
+  SolidPresetParams,
+  StripePresetParams,
+  GridPresetParams,
+  PolkaDotPresetParams,
+  CheckerPresetParams,
+  SurfacePresetParams,
+  SurfacePreset,
+} from './SurfacePreset'
 export type { TextureRenderSpec } from './TextureRenderSpec'
 export type {
   // Simple textures

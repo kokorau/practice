@@ -10,6 +10,7 @@ import {
   TextureRenderer,
   getDefaultTexturePatterns,
   getDefaultMaskPatterns,
+  getSurfacePresets,
   createCircleStripeSpec,
   createCircleGridSpec,
   createCirclePolkaDotSpec,
@@ -31,6 +32,10 @@ import {
   type BlobMaskShapeConfig,
   type Viewport,
   type TextureRenderSpec,
+  type SurfacePreset,
+  type StripePresetParams,
+  type GridPresetParams,
+  type PolkaDotPresetParams,
 } from '@practice/texture'
 import { createThreeObjectRenderer, type ThreeObjectRenderer } from './useThreeObject'
 // Filters (separate subpath for tree-shaking)
@@ -55,19 +60,15 @@ import {
 // Types
 // ============================================================
 
-export interface MidgroundTexturePattern {
+/**
+ * Midground texture preset - filtered subset of SurfacePreset
+ * Only stripe, grid, and polkaDot are supported for masked textures
+ */
+export type MidgroundPresetParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams
+
+export interface MidgroundSurfacePreset {
   label: string
-  type: 'stripe' | 'grid' | 'polkaDot'
-  config: {
-    width1?: number
-    width2?: number
-    angle?: number
-    lineWidth?: number
-    cellSize?: number
-    dotRadius?: number
-    spacing?: number
-    rowOffset?: number
-  }
+  params: MidgroundPresetParams
 }
 
 export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground' | 'filter'
@@ -87,17 +88,15 @@ const LAYER_IDS = {
   OBJECT: 'object-layer',
 } as const
 
-const defaultMidgroundTexturePatterns: MidgroundTexturePattern[] = [
-  { label: 'Diagonal 45°', type: 'stripe', config: { width1: 20, width2: 20, angle: Math.PI / 4 } },
-  { label: 'Horizontal', type: 'stripe', config: { width1: 15, width2: 15, angle: 0 } },
-  { label: 'Vertical', type: 'stripe', config: { width1: 10, width2: 10, angle: Math.PI / 2 } },
-  { label: 'Horizontal Thin', type: 'stripe', config: { width1: 2, width2: 40, angle: 0 } },
-  { label: 'Vertical Thin', type: 'stripe', config: { width1: 2, width2: 40, angle: Math.PI / 2 } },
-  { label: 'Grid', type: 'grid', config: { lineWidth: 2, cellSize: 30 } },
-  { label: 'Grid Wide', type: 'grid', config: { lineWidth: 2, cellSize: 60 } },
-  { label: 'Polka Dot', type: 'polkaDot', config: { dotRadius: 10, spacing: 40, rowOffset: 0.5 } },
-  { label: 'Dot Orthogonal', type: 'polkaDot', config: { dotRadius: 1.5, spacing: 12, rowOffset: 0 } },
-]
+/**
+ * Filter SurfacePresets to get only midground-compatible presets (stripe, grid, polkaDot)
+ */
+const getMidgroundPresets = (): MidgroundSurfacePreset[] => {
+  return getSurfacePresets()
+    .filter((p): p is SurfacePreset & { params: MidgroundPresetParams } =>
+      p.params.type === 'stripe' || p.params.type === 'grid' || p.params.type === 'polkaDot'
+    )
+}
 
 // ============================================================
 // Helpers
@@ -125,7 +124,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   const texturePatterns = getDefaultTexturePatterns()
   const maskPatterns = getDefaultMaskPatterns()
-  const midgroundTexturePatterns = defaultMidgroundTexturePatterns
+  const midgroundTexturePatterns = getMidgroundPresets()
 
   // ============================================================
   // Editor State (index-based for UI management)
@@ -457,37 +456,37 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const createMaskedTextureSpec = (
     maskPattern: MaskPattern,
-    texturePattern: MidgroundTexturePattern,
+    preset: MidgroundSurfacePreset,
     color1: RGBA,
     color2: RGBA,
     viewport: Viewport
   ): TextureRenderSpec | null => {
     const { maskConfig } = maskPattern
-    const { type: textureType, config } = texturePattern
+    const { params } = preset
 
     if (maskConfig.type === 'circle') {
       const circleMask: CircleMaskShapeConfig = maskConfig
-      if (textureType === 'stripe') {
+      if (params.type === 'stripe') {
         return createCircleStripeSpec(
           color1, color2,
           { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius },
-          { type: 'stripe', width1: config.width1!, width2: config.width2!, angle: config.angle! },
+          params,
           viewport
         )
       }
-      if (textureType === 'grid') {
+      if (params.type === 'grid') {
         return createCircleGridSpec(
           color1, color2,
           { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius },
-          { type: 'grid', lineWidth: config.lineWidth!, cellSize: config.cellSize! },
+          params,
           viewport
         )
       }
-      if (textureType === 'polkaDot') {
+      if (params.type === 'polkaDot') {
         return createCirclePolkaDotSpec(
           color1, color2,
           { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius },
-          { type: 'polkaDot', dotRadius: config.dotRadius!, spacing: config.spacing!, rowOffset: config.rowOffset! },
+          params,
           viewport
         )
       }
@@ -495,27 +494,27 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     if (maskConfig.type === 'rect') {
       const rectMask: RectMaskShapeConfig = maskConfig
-      if (textureType === 'stripe') {
+      if (params.type === 'stripe') {
         return createRectStripeSpec(
           color1, color2,
           { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight },
-          { type: 'stripe', width1: config.width1!, width2: config.width2!, angle: config.angle! },
+          params,
           viewport
         )
       }
-      if (textureType === 'grid') {
+      if (params.type === 'grid') {
         return createRectGridSpec(
           color1, color2,
           { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight },
-          { type: 'grid', lineWidth: config.lineWidth!, cellSize: config.cellSize! },
+          params,
           viewport
         )
       }
-      if (textureType === 'polkaDot') {
+      if (params.type === 'polkaDot') {
         return createRectPolkaDotSpec(
           color1, color2,
           { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight },
-          { type: 'polkaDot', dotRadius: config.dotRadius!, spacing: config.spacing!, rowOffset: config.rowOffset! },
+          params,
           viewport
         )
       }
@@ -523,27 +522,27 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     if (maskConfig.type === 'blob') {
       const blobMask: BlobMaskShapeConfig = maskConfig
-      if (textureType === 'stripe') {
+      if (params.type === 'stripe') {
         return createBlobStripeSpec(
           color1, color2,
           { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed },
-          { type: 'stripe', width1: config.width1!, width2: config.width2!, angle: config.angle! },
+          params,
           viewport
         )
       }
-      if (textureType === 'grid') {
+      if (params.type === 'grid') {
         return createBlobGridSpec(
           color1, color2,
           { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed },
-          { type: 'grid', lineWidth: config.lineWidth!, cellSize: config.cellSize! },
+          params,
           viewport
         )
       }
-      if (textureType === 'polkaDot') {
+      if (params.type === 'polkaDot') {
         return createBlobPolkaDotSpec(
           color1, color2,
           { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed },
-          { type: 'polkaDot', dotRadius: config.dotRadius!, spacing: config.spacing!, rowOffset: config.rowOffset! },
+          params,
           viewport
         )
       }
@@ -664,37 +663,37 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Uses simple (non-masked) texture shaders for proper display
    */
   const createMidgroundThumbnailSpec = (
-    pattern: MidgroundTexturePattern,
+    preset: MidgroundSurfacePreset,
     color1: RGBA,
     color2: RGBA,
     _viewport: Viewport
   ): TextureRenderSpec | null => {
-    const { type, config } = pattern
+    const { params } = preset
 
-    if (type === 'stripe') {
+    if (params.type === 'stripe') {
       return createStripeSpec({
         color1,
         color2,
-        width1: config.width1!,
-        width2: config.width2!,
-        angle: config.angle!,
+        width1: params.width1,
+        width2: params.width2,
+        angle: params.angle,
       })
     }
-    if (type === 'grid') {
+    if (params.type === 'grid') {
       return createGridSpec({
         lineColor: color1,
         bgColor: color2,
-        lineWidth: config.lineWidth!,
-        cellSize: config.cellSize!,
+        lineWidth: params.lineWidth,
+        cellSize: params.cellSize,
       })
     }
-    if (type === 'polkaDot') {
+    if (params.type === 'polkaDot') {
       return createPolkaDotSpec({
         dotColor: color1,
         bgColor: color2,
-        dotRadius: config.dotRadius!,
-        spacing: config.spacing!,
-        rowOffset: config.rowOffset!,
+        dotRadius: params.dotRadius,
+        spacing: params.spacing,
+        rowOffset: params.rowOffset,
       })
     }
     return null

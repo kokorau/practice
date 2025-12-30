@@ -64,6 +64,15 @@ export type {
   BlobMaskShapeConfig,
   MaskShapeConfig,
   MaskPattern,
+  // Surface Presets
+  SurfacePresetType,
+  SolidPresetParams,
+  StripePresetParams,
+  GridPresetParams,
+  PolkaDotPresetParams,
+  CheckerPresetParams,
+  SurfacePresetParams,
+  SurfacePreset,
   // TexturePatternSpec types
   TexturePatternSpec,
   TexturePatternParams,
@@ -91,8 +100,13 @@ export type {
 } from './Domain'
 
 // Application
-export type { GetDefaultTexturePatterns, GetDefaultMaskPatterns } from './Application'
-export { createUniforms, createTexturePatternSpec } from './Application'
+export type { GetDefaultTexturePatterns, GetDefaultMaskPatterns, GetSurfacePresets } from './Application'
+export {
+  createUniforms,
+  createTexturePatternSpec,
+  createTexturePatternFromPreset,
+  createTexturePatternsFromPresets,
+} from './Application'
 
 // Infra
-export { getDefaultTexturePatterns, getDefaultMaskPatterns } from './Infra'
+export { getDefaultTexturePatterns, getDefaultMaskPatterns, getSurfacePresets } from './Infra'
