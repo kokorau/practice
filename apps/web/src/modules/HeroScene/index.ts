@@ -50,6 +50,7 @@ export type {
   VignetteFilterConfig,
   ChromaticAberrationFilterConfig,
   LayerFilterConfig,
+  LayerFilterSchemaMap,
   HtmlContentItem,
   HtmlLayer,
   HeroSceneConfig,
@@ -57,6 +58,14 @@ export type {
 } from './Domain'
 
 export {
+  // Filter Schemas
+  VignetteFilterSchema,
+  ChromaticAberrationFilterSchema,
+  LayerFilterSchemas,
+  createDefaultVignetteConfig,
+  createDefaultChromaticAberrationConfig,
+  createDefaultFilterConfig,
+  // Layer factories
   createCanvasLayer,
   createTextureLayer,
   createMaskedTextureLayer,
@@ -64,7 +73,6 @@ export {
   createTextLayer,
   createHtmlLayer,
   createHeroScene,
-  createDefaultFilterConfig,
   sortCanvasLayers,
   addCanvasLayer,
   removeCanvasLayer,

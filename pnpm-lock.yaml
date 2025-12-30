@@ -41,6 +41,9 @@ importers:
       '@practice/lighting':
         specifier: workspace:^
         version: link:../../packages/lighting
+      '@practice/schema':
+        specifier: workspace:^
+        version: link:../../packages/schema
       '@practice/texture':
         specifier: workspace:^
         version: link:../../packages/texture
@@ -129,6 +132,8 @@ importers:
       vitest:
         specifier: ^4.0.15
         version: 4.0.15(@types/node@24.10.1)(@vitest/browser-playwright@4.0.15)(happy-dom@20.0.10)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
+
+  packages/schema: {}
 
   packages/texture: {}
 
