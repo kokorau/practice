@@ -32,6 +32,7 @@ import {
   type Viewport,
   type TextureRenderSpec,
 } from '@practice/texture'
+import { createThreeObjectRenderer, type ThreeObjectRenderer } from './useThreeObject'
 // Filters (separate subpath for tree-shaking)
 import {
   createVignetteSpec,
@@ -83,14 +84,19 @@ export interface UseHeroSceneOptions {
 const LAYER_IDS = {
   BASE: 'base-layer',
   MASK: 'mask-layer',
+  OBJECT: 'object-layer',
 } as const
 
 const defaultMidgroundTexturePatterns: MidgroundTexturePattern[] = [
   { label: 'Diagonal 45°', type: 'stripe', config: { width1: 20, width2: 20, angle: Math.PI / 4 } },
   { label: 'Horizontal', type: 'stripe', config: { width1: 15, width2: 15, angle: 0 } },
   { label: 'Vertical', type: 'stripe', config: { width1: 10, width2: 10, angle: Math.PI / 2 } },
+  { label: 'Horizontal Thin', type: 'stripe', config: { width1: 2, width2: 40, angle: 0 } },
+  { label: 'Vertical Thin', type: 'stripe', config: { width1: 2, width2: 40, angle: Math.PI / 2 } },
   { label: 'Grid', type: 'grid', config: { lineWidth: 2, cellSize: 30 } },
+  { label: 'Grid Wide', type: 'grid', config: { lineWidth: 2, cellSize: 60 } },
   { label: 'Polka Dot', type: 'polkaDot', config: { dotRadius: 10, spacing: 40, rowOffset: 0.5 } },
+  { label: 'Dot Orthogonal', type: 'polkaDot', config: { dotRadius: 1.5, spacing: 12, rowOffset: 0 } },
 ]
 
 // ============================================================
@@ -188,6 +194,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   let previewRenderer: TextureRenderer | null = null
   const thumbnailRenderers: TextureRenderer[] = []
+  let threeObjectRenderer: ThreeObjectRenderer | null = null
+  let threeObjectBitmap: ImageBitmap | null = null
+  const threeObjectModelUrl = ref<string | null>(null)
 
   // ============================================================
   // Computed Colors
@@ -370,6 +379,76 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     layer.visible = !layer.visible
     editorState.value = { ...editorState.value }
     renderScene()
+  }
+
+  /**
+   * Add a 3D object layer from GLTF model URL
+   * Returns null if object layer already exists
+   */
+  const addThreeObjectLayer = async (modelUrl: string): Promise<string | null> => {
+    // Check if object layer already exists
+    const existingObject = editorState.value.canvasLayers.find(
+      l => l.id === LAYER_IDS.OBJECT
+    )
+    if (existingObject) return null
+
+    // Create Three.js renderer if not exists
+    if (!threeObjectRenderer) {
+      threeObjectRenderer = createThreeObjectRenderer({
+        width: editorState.value.config.width,
+        height: editorState.value.config.height,
+      })
+    }
+
+    // Load and render model
+    await threeObjectRenderer.loadModel(modelUrl)
+    threeObjectBitmap = await threeObjectRenderer.render()
+    threeObjectModelUrl.value = modelUrl
+
+    // Create object layer
+    const newLayer: EditorCanvasLayer = {
+      id: LAYER_IDS.OBJECT,
+      name: '3D Object',
+      visible: true,
+      opacity: 1.0,
+      zIndex: editorState.value.canvasLayers.length,
+      blendMode: 'normal',
+      filters: createDefaultFilterConfig(),
+      config: {
+        type: 'image',
+        source: threeObjectBitmap,
+      },
+    }
+
+    // Register filter config for new layer
+    layerFilterConfigs.value.set(LAYER_IDS.OBJECT, createDefaultFilterConfig())
+
+    editorState.value = {
+      ...editorState.value,
+      canvasLayers: [...editorState.value.canvasLayers, newLayer],
+    }
+
+    renderScene()
+    return LAYER_IDS.OBJECT
+  }
+
+  /**
+   * Remove 3D object layer and cleanup resources
+   */
+  const removeThreeObjectLayer = (): boolean => {
+    const result = removeLayer(LAYER_IDS.OBJECT)
+    if (result) {
+      if (threeObjectBitmap) {
+        threeObjectBitmap.close()
+        threeObjectBitmap = null
+      }
+      if (threeObjectRenderer) {
+        threeObjectRenderer.dispose()
+        threeObjectRenderer = null
+      }
+      threeObjectModelUrl.value = null
+    }
+    return result
   }
 
   // ============================================================
@@ -765,6 +844,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     previewRenderer?.destroy()
     previewRenderer = null
     destroyThumbnailRenderers()
+
+    // Cleanup Three.js resources
+    if (threeObjectBitmap) {
+      threeObjectBitmap.close()
+      threeObjectBitmap = null
+    }
+    if (threeObjectRenderer) {
+      threeObjectRenderer.dispose()
+      threeObjectRenderer = null
+    }
   }
 
   // ============================================================
@@ -924,6 +1013,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     removeLayer,
     updateLayerVisibility,
     toggleLayerVisibility,
+
+    // 3D Object layer
+    threeObjectModelUrl,
+    addThreeObjectLayer,
+    removeThreeObjectLayer,
 
     // Actions
     openSection,
