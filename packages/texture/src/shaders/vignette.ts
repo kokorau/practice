@@ -1,5 +1,5 @@
 import { fullscreenVertex, maskBlendState } from './common'
-import type { TextureRenderSpec } from '../Domain'
+import type { TextureRenderSpec, Viewport } from '../Domain'
 
 /**
  * ビネットフィルターのパラメータ
@@ -16,16 +16,18 @@ export interface VignetteParams {
 }
 
 /**
- * ビネットシェーダー
- * 画面端を暗くするポストエフェクト（オーバーレイとして描画）
+ * ビネットシェーダー（静的、viewportはuniformで渡す）
  */
 export const vignetteShader = /* wgsl */ `
 struct Uniforms {
-  color: vec4f,        // 16 bytes
-  intensity: f32,      // 4 bytes
-  radius: f32,         // 4 bytes
-  softness: f32,       // 4 bytes
-  _padding: f32,       // 4 bytes (alignment)
+  color: vec4f,           // 16 bytes
+  intensity: f32,         // 4 bytes
+  radius: f32,            // 4 bytes
+  softness: f32,          // 4 bytes
+  _padding1: f32,         // 4 bytes (alignment)
+  viewportWidth: f32,     // 4 bytes
+  viewportHeight: f32,    // 4 bytes
+  _padding2: vec2f,       // 8 bytes (alignment to 16)
 }
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -35,44 +37,10 @@ ${fullscreenVertex}
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   // 正規化座標（-1.0 to 1.0）
-  let uv = (pos.xy / vec2f(1280.0, 720.0)) * 2.0 - 1.0;
+  let uv = (pos.xy / vec2f(u.viewportWidth, u.viewportHeight)) * 2.0 - 1.0;
 
   // 画面中心からの距離（アスペクト比補正）
-  let aspect = 1280.0 / 720.0;
-  let correctedUv = vec2f(uv.x * aspect, uv.y);
-  let dist = length(correctedUv);
-
-  // ビネット効果の計算
-  let vignette = smoothstep(u.radius, u.radius + u.softness, dist);
-  let alpha = vignette * u.intensity;
-
-  return vec4f(u.color.rgb, alpha * u.color.a);
-}
-`
-
-/**
- * ビネットシェーダー（ビューポート対応版）
- */
-export const createVignetteShader = (viewport: { width: number; height: number }) => /* wgsl */ `
-struct Uniforms {
-  color: vec4f,        // 16 bytes
-  intensity: f32,      // 4 bytes
-  radius: f32,         // 4 bytes
-  softness: f32,       // 4 bytes
-  _padding: f32,       // 4 bytes (alignment)
-}
-
-@group(0) @binding(0) var<uniform> u: Uniforms;
-
-${fullscreenVertex}
-
-@fragment
-fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  // 正規化座標（0.0 to 1.0）を-1.0 to 1.0に変換
-  let uv = (pos.xy / vec2f(${viewport.width}.0, ${viewport.height}.0)) * 2.0 - 1.0;
-
-  // 画面中心からの距離（アスペクト比補正）
-  let aspect = ${viewport.width}.0 / ${viewport.height}.0;
+  let aspect = u.viewportWidth / u.viewportHeight;
   let correctedUv = vec2f(uv.x, uv.y * aspect);
   let dist = length(correctedUv);
 
@@ -84,16 +52,16 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 }
 `
 
-const BUFFER_SIZE = 32 // 16 (vec4f) + 4*4 (4 floats) = 32 bytes
+export const VIGNETTE_BUFFER_SIZE = 48 // 16 (vec4f) + 16 (4 floats) + 16 (2 floats + vec2f padding)
 
 /**
- * ビネットフィルター用のTextureRenderSpecを生成
+ * ビネットフィルター用のuniformsを生成
  */
-export const createVignetteSpec = (
+export const createVignetteUniforms = (
   params: VignetteParams,
-  viewport: { width: number; height: number }
-): TextureRenderSpec => {
-  const uniforms = new ArrayBuffer(BUFFER_SIZE)
+  viewport: Viewport
+): ArrayBuffer => {
+  const uniforms = new ArrayBuffer(VIGNETTE_BUFFER_SIZE)
   const view = new DataView(uniforms)
 
   // color (vec4f)
@@ -102,16 +70,32 @@ export const createVignetteSpec = (
   view.setFloat32(8, params.color[2], true)
   view.setFloat32(12, params.color[3], true)
 
-  // intensity, radius, softness, _padding
+  // intensity, radius, softness, _padding1
   view.setFloat32(16, params.intensity, true)
   view.setFloat32(20, params.radius, true)
   view.setFloat32(24, params.softness, true)
   view.setFloat32(28, 0, true) // padding
 
+  // viewportWidth, viewportHeight, _padding2
+  view.setFloat32(32, viewport.width, true)
+  view.setFloat32(36, viewport.height, true)
+  view.setFloat32(40, 0, true) // padding
+  view.setFloat32(44, 0, true) // padding
+
+  return uniforms
+}
+
+/**
+ * ビネットフィルター用のTextureRenderSpecを生成
+ */
+export const createVignetteSpec = (
+  params: VignetteParams,
+  viewport: Viewport
+): TextureRenderSpec => {
   return {
-    shader: createVignetteShader(viewport),
-    uniforms,
-    bufferSize: BUFFER_SIZE,
+    shader: vignetteShader,
+    uniforms: createVignetteUniforms(params, viewport),
+    bufferSize: VIGNETTE_BUFFER_SIZE,
     blend: maskBlendState,
   }
 }

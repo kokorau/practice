@@ -64,10 +64,35 @@ export type {
   BlobMaskShapeConfig,
   MaskShapeConfig,
   MaskPattern,
+  // TexturePatternSpec types
+  TexturePatternSpec,
+  TexturePatternParams,
+  SimpleTexturePatternParams,
+  MaskPatternParams,
+  MaskedTexturePatternParams,
+  FilterPatternParams,
+  SolidPatternParams,
+  StripePatternParams,
+  GridPatternParams,
+  PolkaDotPatternParams,
+  CircleMaskPatternParams,
+  RectMaskPatternParams,
+  CircleStripePatternParams,
+  CircleGridPatternParams,
+  CirclePolkaDotPatternParams,
+  RectStripePatternParams,
+  RectGridPatternParams,
+  RectPolkaDotPatternParams,
+  BlobStripePatternParams,
+  BlobGridPatternParams,
+  BlobPolkaDotPatternParams,
+  VignettePatternParams,
+  ChromaticAberrationPatternParams,
 } from './Domain'
 
 // Application
 export type { GetDefaultTexturePatterns, GetDefaultMaskPatterns } from './Application'
+export { createUniforms } from './Application'
 
 // Infra
 export { getDefaultTexturePatterns, getDefaultMaskPatterns } from './Infra'

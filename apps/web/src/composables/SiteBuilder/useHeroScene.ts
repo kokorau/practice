@@ -35,7 +35,7 @@ import {
 // Filters (separate subpath for tree-shaking)
 import {
   createVignetteSpec,
-  createChromaticAberrationShader,
+  chromaticAberrationShader,
   createChromaticAberrationUniforms,
   CHROMATIC_ABERRATION_BUFFER_SIZE,
 } from '@practice/texture/filters'
@@ -366,13 +366,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Chromatic Aberration (requires texture input, must be applied first)
     if (filters.chromaticAberration.enabled) {
       const inputTexture = previewRenderer.copyCanvasToTexture()
-      const shader = createChromaticAberrationShader(viewport)
-      const uniforms = createChromaticAberrationUniforms({
-        intensity: filters.chromaticAberration.intensity,
-        angle: 0,
-      })
+      const uniforms = createChromaticAberrationUniforms(
+        { intensity: filters.chromaticAberration.intensity, angle: 0 },
+        viewport
+      )
       previewRenderer.applyPostEffect(
-        { shader, uniforms, bufferSize: CHROMATIC_ABERRATION_BUFFER_SIZE },
+        { shader: chromaticAberrationShader, uniforms, bufferSize: CHROMATIC_ABERRATION_BUFFER_SIZE },
         inputTexture,
         { clear: true }
       )
