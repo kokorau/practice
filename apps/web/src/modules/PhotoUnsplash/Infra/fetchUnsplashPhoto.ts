@@ -2,7 +2,7 @@ import { $Photo } from '../../Photo/Domain'
 
 const UNSPLASH_API_BASE = 'https://api.unsplash.com'
 
-type UnsplashRandomResponse = {
+export type UnsplashRandomResponse = {
   urls: {
     raw: string
     full: string
@@ -40,6 +40,36 @@ export type FetchUnsplashPhotoOptions = {
   query?: string
   /** Number of photos to fetch (1-30, default: 1) */
   count?: number
+}
+
+/**
+ * Fetch a random photo URL from Unsplash without converting to ImageData
+ * Returns the regular-sized image URL (1080px width)
+ */
+export const fetchUnsplashPhotoUrl = async (options: FetchUnsplashPhotoOptions = {}): Promise<string> => {
+  const accessKey = import.meta.env.VITE_UNSPLASH_ACCESS_KEY
+  if (!accessKey) {
+    throw new Error('VITE_UNSPLASH_ACCESS_KEY is not set')
+  }
+
+  const params = new URLSearchParams()
+  if (options.query) {
+    params.set('query', options.query)
+  }
+
+  const url = `${UNSPLASH_API_BASE}/photos/random?${params.toString()}`
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Client-ID ${accessKey}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Unsplash API error: ${response.status}`)
+  }
+
+  const data: UnsplashRandomResponse = await response.json()
+  return data.urls.regular
 }
 
 export const fetchUnsplashPhoto = async (options: FetchUnsplashPhotoOptions = {}) => {

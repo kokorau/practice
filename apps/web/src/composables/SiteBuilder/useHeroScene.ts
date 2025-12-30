@@ -48,6 +48,7 @@ import {
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import { fetchUnsplashPhotoUrl } from '../../modules/PhotoUnsplash/Infra/fetchUnsplashPhoto'
 import {
   type LayerFilterConfig,
   type HeroSceneEditorState,
@@ -891,6 +892,21 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     renderScene()
   }
 
+  const isLoadingRandomBackground = ref(false)
+
+  const loadRandomBackgroundImage = async (query?: string) => {
+    isLoadingRandomBackground.value = true
+    try {
+      const url = await fetchUnsplashPhotoUrl({ query })
+      const response = await fetch(url)
+      const blob = await response.blob()
+      const file = new File([blob], `unsplash-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      await setBackgroundImage(file)
+    } finally {
+      isLoadingRandomBackground.value = false
+    }
+  }
+
   // ============================================================
   // Mask Image Handling
   // ============================================================
@@ -994,6 +1010,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customBackgroundFile,
     setBackgroundImage,
     clearBackgroundImage,
+    loadRandomBackgroundImage,
+    isLoadingRandomBackground,
 
     // Custom mask
     customMaskImage,

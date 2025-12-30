@@ -106,6 +106,8 @@ const {
   customBackgroundFile,
   setBackgroundImage,
   clearBackgroundImage,
+  loadRandomBackgroundImage,
+  isLoadingRandomBackground,
   customMaskImage,
   customMaskFile,
   setMaskImage,
@@ -279,9 +281,12 @@ const activeTab = ref<TabId>('generator')
             :custom-file-name="customBackgroundFile?.name ?? null"
             :patterns="backgroundPatterns"
             :selected-index="selectedBackgroundIndex"
+            :show-random-button="true"
+            :is-loading-random="isLoadingRandomBackground"
             @upload-image="setBackgroundImage"
             @clear-image="clearBackgroundImage"
             @select-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
+            @load-random="loadRandomBackgroundImage()"
           />
         </template>
 

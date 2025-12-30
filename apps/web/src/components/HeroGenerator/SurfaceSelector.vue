@@ -23,12 +23,16 @@ defineProps<{
   selectedIndex: number | null
   // オプション: べた塗りを最初に表示するか
   showSolidOption?: boolean
+  // オプション: Random Photo ボタンを表示するか
+  showRandomButton?: boolean
+  isLoadingRandom?: boolean
 }>()
 
 const emit = defineEmits<{
   'upload-image': [file: File]
   'clear-image': []
   'select-pattern': [index: number | null]
+  'load-random': []
 }>()
 
 const handleFileChange = (e: Event) => {
@@ -53,16 +57,26 @@ const handleFileChange = (e: Event) => {
           </div>
         </div>
       </template>
-      <label v-else class="image-upload-button">
-        <input
-          type="file"
-          accept="image/*"
-          class="image-upload-input"
-          @change="handleFileChange"
-        />
-        <span class="image-upload-icon">📷</span>
-        <span class="image-upload-text">画像をアップロード</span>
-      </label>
+      <template v-else>
+        <label class="image-upload-button">
+          <input
+            type="file"
+            accept="image/*"
+            class="image-upload-input"
+            @change="handleFileChange"
+          />
+          <span class="image-upload-icon">📷</span>
+          <span class="image-upload-text">画像をアップロード</span>
+        </label>
+        <button
+          v-if="showRandomButton"
+          class="random-photo-button"
+          :disabled="isLoadingRandom"
+          @click="emit('load-random')"
+        >
+          {{ isLoadingRandom ? 'Loading...' : 'Random Photo' }}
+        </button>
+      </template>
     </div>
 
     <!-- テクスチャパターン -->
@@ -143,6 +157,29 @@ const handleFileChange = (e: Event) => {
 .image-upload-text {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.random-photo-button {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: oklch(0.45 0.15 145);
+  color: oklch(0.98 0.02 260);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.random-photo-button:hover:not(:disabled) {
+  background: oklch(0.50 0.18 145);
+}
+
+.random-photo-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .uploaded-image-preview {
