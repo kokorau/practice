@@ -19,6 +19,7 @@ import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
+import FontSelector from '../components/HeroGenerator/FontSelector.vue'
 import SchemaFields from '../components/SchemaFields.vue'
 import {
   VignetteFilterSchema,
@@ -222,6 +223,26 @@ const descriptionPosition = computed({
   },
 })
 
+const titleFont = computed({
+  get: () => foregroundConfig.value.title.fontId,
+  set: (fontId: string | undefined) => {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      title: { ...foregroundConfig.value.title, fontId },
+    }
+  },
+})
+
+const descriptionFont = computed({
+  get: () => foregroundConfig.value.description.fontId,
+  set: (fontId: string | undefined) => {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      description: { ...foregroundConfig.value.description, fontId },
+    }
+  },
+})
+
 // ============================================================
 // Dynamic CSS Injection for Palette Preview
 // ============================================================
@@ -385,22 +406,30 @@ const activeTab = ref<TabId>('generator')
           />
         </template>
 
-        <!-- 前景: Title 位置選択 -->
+        <!-- 前景: Title 設定 -->
         <template v-else-if="activeSection === 'foreground-title'">
-          <div class="foreground-position-section">
+          <div class="foreground-section">
             <GridPositionPicker
               v-model="titlePosition"
-              label="Title Position"
+              label="Position"
+            />
+            <FontSelector
+              v-model="titleFont"
+              label="Font"
             />
           </div>
         </template>
 
-        <!-- 前景: Description 位置選択 -->
+        <!-- 前景: Description 設定 -->
         <template v-else-if="activeSection === 'foreground-description'">
-          <div class="foreground-position-section">
+          <div class="foreground-section">
             <GridPositionPicker
               v-model="descriptionPosition"
-              label="Description Position"
+              label="Position"
+            />
+            <FontSelector
+              v-model="descriptionFont"
+              label="Font"
             />
           </div>
         </template>
@@ -691,6 +720,13 @@ const activeTab = ref<TabId>('generator')
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* Foreground Section */
+.foreground-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 </style>

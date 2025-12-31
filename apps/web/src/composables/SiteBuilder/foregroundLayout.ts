@@ -41,6 +41,7 @@ export const ELEMENT_TAG: Record<ForegroundElementType, 'h1' | 'p'> = {
 export interface ForegroundElementConfig {
   position: GridPosition
   content: string
+  fontId?: string // Optional font preset ID
 }
 
 export interface ForegroundConfig {
@@ -56,6 +57,7 @@ export interface PositionedElement {
   content: string
   className: string
   tag: 'h1' | 'p'
+  fontId?: string
 }
 
 export interface PositionedGroup {
@@ -83,6 +85,7 @@ export function compileForegroundLayout(config: ForegroundConfig): PositionedGro
       content: elConfig.content,
       className: ELEMENT_CLASS[type],
       tag: ELEMENT_TAG[type],
+      fontId: elConfig.fontId,
     })
     groupMap.set(elConfig.position, existing)
   }
