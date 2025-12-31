@@ -65,6 +65,7 @@ export {
   StripeSurfaceSchema,
   GridSurfaceSchema,
   PolkaDotSurfaceSchema,
+  CheckerSurfaceSchema,
   SurfaceSchemas,
   // Factory functions
   createDefaultCircleMaskParams,
@@ -73,6 +74,7 @@ export {
   createDefaultStripeParams,
   createDefaultGridParams,
   createDefaultPolkaDotParams,
+  createDefaultCheckerParams,
 } from './Schemas'
 export type {
   CircleMaskShapeParams,
@@ -81,4 +83,5 @@ export type {
   StripeSurfaceParams,
   GridSurfaceParams,
   PolkaDotSurfaceParams,
+  CheckerSurfaceParams,
 } from './Schemas'

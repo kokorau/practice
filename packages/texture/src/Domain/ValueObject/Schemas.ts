@@ -96,6 +96,16 @@ export const PolkaDotSurfaceSchema = defineSchema({
 
 export type PolkaDotSurfaceParams = Infer<typeof PolkaDotSurfaceSchema>
 
+/**
+ * Checker Surface Schema
+ */
+export const CheckerSurfaceSchema = defineSchema({
+  cellSize: number({ label: 'Cell Size', min: 10, max: 100, step: 1, default: 30 }),
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+})
+
+export type CheckerSurfaceParams = Infer<typeof CheckerSurfaceSchema>
+
 // ============================================================
 // Factory Functions
 // ============================================================
@@ -118,6 +128,9 @@ export const createDefaultGridParams = (): GridSurfaceParams =>
 export const createDefaultPolkaDotParams = (): PolkaDotSurfaceParams =>
   getDefaults(PolkaDotSurfaceSchema)
 
+export const createDefaultCheckerParams = (): CheckerSurfaceParams =>
+  getDefaults(CheckerSurfaceSchema)
+
 // ============================================================
 // Schema Maps (for dynamic access by type)
 // ============================================================
@@ -132,4 +145,5 @@ export const SurfaceSchemas = {
   stripe: StripeSurfaceSchema,
   grid: GridSurfaceSchema,
   polkaDot: PolkaDotSurfaceSchema,
+  checker: CheckerSurfaceSchema,
 } as const

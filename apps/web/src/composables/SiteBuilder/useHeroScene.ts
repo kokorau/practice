@@ -24,6 +24,7 @@ import {
   createStripeSpec,
   createGridSpec,
   createPolkaDotSpec,
+  createCheckerSpec,
   // Schemas and types
   MaskShapeSchemas,
   SurfaceSchemas,
@@ -37,6 +38,7 @@ import {
   type Viewport,
   type TextureRenderSpec,
   type SurfacePreset,
+  type SurfacePresetParams,
   type StripePresetParams,
   type GridPresetParams,
   type PolkaDotPresetParams,
@@ -46,6 +48,7 @@ import {
   type StripeSurfaceParams,
   type GridSurfaceParams,
   type PolkaDotSurfaceParams,
+  type CheckerSurfaceParams,
 } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 // Filters (separate subpath for tree-shaking)
@@ -93,12 +96,22 @@ export type CustomMaskShapeParams =
   | ({ type: 'blob' } & BlobMaskShapeParams)
 
 /**
- * Custom surface params union type
+ * Custom surface params union type (for midground - no checker)
  */
 export type CustomSurfaceParams =
   | ({ type: 'stripe' } & StripeSurfaceParams)
   | ({ type: 'grid' } & GridSurfaceParams)
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
+
+/**
+ * Custom background surface params union type (includes checker, solid has no params)
+ */
+export type CustomBackgroundSurfaceParams =
+  | ({ type: 'stripe' } & StripeSurfaceParams)
+  | ({ type: 'grid' } & GridSurfaceParams)
+  | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
+  | ({ type: 'checker' } & CheckerSurfaceParams)
+  | { type: 'solid' }
 
 export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
@@ -233,9 +246,30 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
   }
 
+  /**
+   * Extract background surface params from a SurfacePreset
+   */
+  const extractBackgroundSurfaceParams = (params: SurfacePresetParams): CustomBackgroundSurfaceParams => {
+    if (params.type === 'solid') {
+      return { type: 'solid' }
+    }
+    if (params.type === 'stripe') {
+      return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
+    }
+    if (params.type === 'grid') {
+      return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
+    }
+    if (params.type === 'polkaDot') {
+      return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
+    }
+    // checker
+    return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
+  }
+
   // Current custom params (initialized from selected preset)
   const customMaskShapeParams = ref<CustomMaskShapeParams | null>(null)
   const customSurfaceParams = ref<CustomSurfaceParams | null>(null)
+  const customBackgroundSurfaceParams = ref<CustomBackgroundSurfaceParams | null>(null)
 
   // Current schema for UI rendering
   const currentMaskShapeSchema = computed(() => {
@@ -246,6 +280,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const currentSurfaceSchema = computed(() => {
     if (!customSurfaceParams.value) return null
     return SurfaceSchemas[customSurfaceParams.value.type] as ObjectSchema
+  })
+
+  const currentBackgroundSurfaceSchema = computed(() => {
+    if (!customBackgroundSurfaceParams.value) return null
+    const type = customBackgroundSurfaceParams.value.type
+    if (type === 'solid') return null // solid has no params
+    return SurfaceSchemas[type] as ObjectSchema
   })
 
   // Initialize custom params from preset when selection changes
@@ -273,6 +314,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
   }
 
+  const surfacePresets = getSurfacePresets()
+
+  const initBackgroundSurfaceParamsFromPreset = () => {
+    const idx = selectedBackgroundIndex.value
+    const preset = surfacePresets[idx]
+    if (preset) {
+      customBackgroundSurfaceParams.value = extractBackgroundSurfaceParams(preset.params)
+    } else {
+      customBackgroundSurfaceParams.value = null
+    }
+  }
+
   /**
    * Update custom mask shape params
    */
@@ -287,6 +340,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const updateSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams>) => {
     if (!customSurfaceParams.value) return
     customSurfaceParams.value = { ...customSurfaceParams.value, ...updates } as CustomSurfaceParams
+  }
+
+  /**
+   * Update custom background surface params
+   */
+  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => {
+    if (!customBackgroundSurfaceParams.value || customBackgroundSurfaceParams.value.type === 'solid') return
+    customBackgroundSurfaceParams.value = { ...customBackgroundSurfaceParams.value, ...updates } as CustomBackgroundSurfaceParams
   }
 
   // ============================================================
@@ -521,6 +582,34 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
 
   // ============================================================
+  // Background Rendering Helpers
+  // ============================================================
+
+  /**
+   * Create background texture spec from custom params
+   */
+  const createBackgroundSpecFromParams = (
+    params: CustomBackgroundSurfaceParams,
+    color1: RGBA,
+    color2: RGBA
+  ): TextureRenderSpec | null => {
+    if (params.type === 'solid') return null
+    if (params.type === 'stripe') {
+      return createStripeSpec({ color1, color2, width1: params.width1, width2: params.width2, angle: params.angle })
+    }
+    if (params.type === 'grid') {
+      return createGridSpec({ lineColor: color1, bgColor: color2, lineWidth: params.lineWidth, cellSize: params.cellSize })
+    }
+    if (params.type === 'polkaDot') {
+      return createPolkaDotSpec({ dotColor: color1, bgColor: color2, dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
+    }
+    if (params.type === 'checker') {
+      return createCheckerSpec({ color1, color2, cellSize: params.cellSize, angle: params.angle })
+    }
+    return null
+  }
+
+  // ============================================================
   // Rendering
   // ============================================================
 
@@ -734,6 +823,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           break
 
         case 'texture': {
+          // Use custom background surface params if available
+          const customBgParams = customBackgroundSurfaceParams.value
+          if (customBgParams && customBgParams.type !== 'solid') {
+            const spec = createBackgroundSpecFromParams(customBgParams, textureColor1.value, textureColor2.value)
+            if (spec) {
+              previewRenderer.render(spec, { clear: isFirst })
+              break
+            }
+          }
+          // Fallback to preset
           const bgPattern = texturePatterns[layer.config.patternIndex]
           if (bgPattern) {
             const spec = bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
@@ -1083,6 +1182,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   )
 
   // Initialize custom params when selection changes
+  watch(selectedBackgroundIndex, () => {
+    initBackgroundSurfaceParamsFromPreset()
+  }, { immediate: true })
+
   watch(selectedMaskIndex, () => {
     initMaskShapeParamsFromPreset()
   }, { immediate: true })
@@ -1116,6 +1219,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   watch(
     customSurfaceParams,
+    () => renderScene(),
+    { deep: true }
+  )
+
+  watch(
+    customBackgroundSurfaceParams,
     () => renderScene(),
     { deep: true }
   )
@@ -1179,10 +1288,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Custom shape/surface params
     customMaskShapeParams,
     customSurfaceParams,
+    customBackgroundSurfaceParams,
     currentMaskShapeSchema,
     currentSurfaceSchema,
+    currentBackgroundSurfaceSchema,
     updateMaskShapeParams,
     updateSurfaceParams,
+    updateBackgroundSurfaceParams,
 
     // Layer operations
     addMaskLayer,

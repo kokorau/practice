@@ -127,10 +127,13 @@ const {
   // Custom shape/surface params
   customMaskShapeParams,
   customSurfaceParams,
+  customBackgroundSurfaceParams,
   currentMaskShapeSchema,
   currentSurfaceSchema,
+  currentBackgroundSurfaceSchema,
   updateMaskShapeParams,
   updateSurfaceParams,
+  updateBackgroundSurfaceParams,
   // Layer operations
   addMaskLayer,
   removeLayer,
@@ -309,6 +312,14 @@ const activeTab = ref<TabId>('generator')
       <div class="hero-subpanel-content">
         <!-- 後景: テクスチャ選択 -->
         <template v-if="activeSection === 'background'">
+          <!-- Background surface params (shown when non-solid pattern is selected) -->
+          <div v-if="currentBackgroundSurfaceSchema && customBackgroundSurfaceParams && customBackgroundSurfaceParams.type !== 'solid'" class="surface-params">
+            <SchemaFields
+              :schema="currentBackgroundSurfaceSchema"
+              :model-value="customBackgroundSurfaceParams"
+              @update:model-value="updateBackgroundSurfaceParams($event)"
+            />
+          </div>
           <SurfaceSelector
             :custom-image="customBackgroundImage"
             :custom-file-name="customBackgroundFile?.name ?? null"
