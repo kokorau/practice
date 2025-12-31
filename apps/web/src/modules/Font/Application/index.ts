@@ -1,1 +1,7 @@
-export { getGoogleFontPresets, type GetGoogleFontPresetsOptions } from './getGoogleFontPresets'
+export {
+  getGoogleFontPresets,
+  getFontPresetById,
+  loadGoogleFont,
+  ensureFontLoaded,
+  type GetGoogleFontPresetsOptions,
+} from './getGoogleFontPresets'

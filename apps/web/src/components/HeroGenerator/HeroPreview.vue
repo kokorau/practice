@@ -4,7 +4,9 @@ import {
   compileForegroundLayout,
   DEFAULT_FOREGROUND_CONFIG,
   type ForegroundConfig,
+  type PositionedElement,
 } from '../../composables/SiteBuilder'
+import { ensureFontLoaded } from '../../modules/Font'
 
 const props = withDefaults(defineProps<{
   foregroundConfig?: ForegroundConfig
@@ -15,6 +17,17 @@ const props = withDefaults(defineProps<{
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const positionedGroups = computed(() => compileForegroundLayout(props.foregroundConfig))
+
+/**
+ * Get inline style for an element, including font-family if fontId is set
+ */
+const getElementStyle = (el: PositionedElement): Record<string, string> => {
+  const fontFamily = ensureFontLoaded(el.fontId)
+  if (fontFamily) {
+    return { fontFamily }
+  }
+  return {}
+}
 
 defineExpose({
   canvasRef,
@@ -46,6 +59,7 @@ defineExpose({
               :key="i"
               :is="el.tag"
               :class="el.className"
+              :style="getElementStyle(el)"
             >{{ el.content }}</component>
           </div>
         </div>

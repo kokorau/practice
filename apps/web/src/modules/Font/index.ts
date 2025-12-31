@@ -9,7 +9,13 @@ export type {
 } from './Domain/ValueObject'
 
 // Application
-export { getGoogleFontPresets, type GetGoogleFontPresetsOptions } from './Application'
+export {
+  getGoogleFontPresets,
+  getFontPresetById,
+  loadGoogleFont,
+  ensureFontLoaded,
+  type GetGoogleFontPresetsOptions,
+} from './Application'
 
 // Infra
 export { GoogleFontPresets } from './Infra'
