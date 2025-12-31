@@ -85,13 +85,6 @@ const handleToggleVisibility = (layerId: string) => {
   }
 }
 
-const handleToggleExpand = (layerId: string) => {
-  const layer = layers.value.find(l => l.id === layerId)
-  if (layer) {
-    layer.expanded = !layer.expanded
-  }
-}
-
 const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
   // Map to existing section system for now
   const layer = layers.value.find(l => l.id === layerId)
@@ -185,7 +178,6 @@ const handleRemoveLayer = (layerId: string) => {
         :layers="layers"
         :layer-filter-configs="layerFilterConfigs"
         @toggle-visibility="handleToggleVisibility"
-        @toggle-expand="handleToggleExpand"
         @select-subitem="handleSelectSubItem"
         @add-layer="handleAddLayer"
         @remove-layer="handleRemoveLayer"

@@ -41,7 +41,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'toggle-visibility': [layerId: string]
-  'toggle-expand': [layerId: string]
   'select-subitem': [layerId: string, subItemType: SubItemType]
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
@@ -160,11 +159,10 @@ const handleAddLayer = (type: LayerType) => {
         <div
           v-for="layer in layers"
           :key="layer.id"
-          class="layer-item"
-          :class="{ expanded: layer.expanded }"
+          class="layer-item expanded"
         >
-          <!-- Layer Header: [icon][text(flex-1)][eye][chevron] -->
-          <div class="layer-header" @click="emit('toggle-expand', layer.id)">
+          <!-- Layer Header: [icon][text(flex-1)][eye][x] -->
+          <div class="layer-header">
             <span class="material-icons layer-icon">{{ getLayerIcon(layer.type) }}</span>
 
             <div class="layer-info">
@@ -182,38 +180,31 @@ const handleAddLayer = (type: LayerType) => {
             </button>
             <span v-else class="visibility-placeholder" />
 
-            <span class="material-icons expand-icon">
-              {{ layer.expanded ? 'expand_less' : 'expand_more' }}
-            </span>
+            <button
+              v-if="layer.type !== 'base'"
+              class="remove-layer-toggle"
+              @click.stop="emit('remove-layer', layer.id)"
+            >
+              <span class="material-icons">close</span>
+            </button>
+            <span v-else class="visibility-placeholder" />
           </div>
 
-          <!-- Sub Items (expanded) -->
-          <Transition name="expand">
-            <div v-if="layer.expanded" class="sub-items">
-              <button
-                v-for="subItem in getSubItems(layer)"
-                :key="subItem.type"
-                class="sub-item"
-                :class="{ disabled: !subItem.enabled }"
-                :disabled="!subItem.enabled"
-                @click="emit('select-subitem', layer.id, subItem.type)"
-              >
-                <span class="sub-item-label">{{ subItem.label }}</span>
-                <span class="sub-item-value">{{ subItem.value }}</span>
-                <span class="material-icons sub-item-arrow">chevron_right</span>
-              </button>
-
-              <!-- Remove button (not for base) -->
-              <button
-                v-if="layer.type !== 'base'"
-                class="remove-layer-button"
-                @click="emit('remove-layer', layer.id)"
-              >
-                <span class="material-icons">delete_outline</span>
-                <span>Remove Layer</span>
-              </button>
-            </div>
-          </Transition>
+          <!-- Sub Items (always visible) -->
+          <div class="sub-items">
+            <button
+              v-for="subItem in getSubItems(layer)"
+              :key="subItem.type"
+              class="sub-item"
+              :class="{ disabled: !subItem.enabled }"
+              :disabled="!subItem.enabled"
+              @click="emit('select-subitem', layer.id, subItem.type)"
+            >
+              <span class="sub-item-label">{{ subItem.label }}</span>
+              <span class="sub-item-value">{{ subItem.value }}</span>
+              <span class="material-icons sub-item-arrow">chevron_right</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -389,9 +380,28 @@ const handleAddLayer = (type: LayerType) => {
   text-overflow: ellipsis;
 }
 
-.expand-icon {
-  font-size: 1.125rem;
+.remove-layer-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: none;
+  border: none;
   color: oklch(0.50 0.02 260);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 0.25rem;
+  transition: color 0.15s, background 0.15s;
+}
+
+.remove-layer-toggle:hover {
+  background: oklch(0.50 0.10 25 / 0.3);
+  color: oklch(0.70 0.10 25);
+}
+
+.remove-layer-toggle .material-icons {
+  font-size: 1rem;
 }
 
 
@@ -447,33 +457,6 @@ const handleAddLayer = (type: LayerType) => {
 
 .sub-item:hover:not(.disabled) .sub-item-arrow {
   color: oklch(0.70 0.02 260);
-}
-
-/* Remove Layer Button */
-.remove-layer-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  margin-top: 0.25rem;
-  padding: 0.375rem 0.5rem;
-  background: transparent;
-  border: 1px dashed oklch(0.35 0.02 260);
-  border-radius: 0.25rem;
-  color: oklch(0.50 0.02 260);
-  font-size: 0.6875rem;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-}
-
-.remove-layer-button:hover {
-  border-color: oklch(0.50 0.10 25);
-  color: oklch(0.70 0.10 25);
-  background: oklch(0.25 0.05 25 / 0.3);
-}
-
-.remove-layer-button .material-icons {
-  font-size: 0.875rem;
 }
 
 /* Add Layer */
@@ -600,25 +583,6 @@ const handleAddLayer = (type: LayerType) => {
 }
 
 /* Transitions */
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.2s ease;
-  overflow: hidden;
-}
-
-.expand-enter-from,
-.expand-leave-to {
-  opacity: 0;
-  max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.expand-enter-to,
-.expand-leave-from {
-  max-height: 200px;
-}
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.15s ease;
