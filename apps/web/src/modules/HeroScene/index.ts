@@ -55,6 +55,26 @@ export type {
   HtmlLayer,
   HeroSceneConfig,
   HeroScene,
+  // HeroViewConfig types
+  ViewportConfig,
+  StripeSurfaceConfig,
+  GridSurfaceConfig,
+  PolkaDotSurfaceConfig,
+  CheckerSurfaceConfig,
+  SolidSurfaceConfig,
+  ImageSurfaceConfig,
+  BackgroundSurfaceConfig,
+  MaskSurfaceConfig,
+  HeroCircleMaskShapeConfig,
+  HeroRectMaskShapeConfig,
+  HeroBlobMaskShapeConfig,
+  HeroMaskShapeConfig,
+  BackgroundLayerConfig,
+  MaskLayerConfig,
+  GridPosition,
+  ForegroundElementConfig,
+  ForegroundLayerConfig,
+  HeroViewConfig,
 } from './Domain'
 
 export {
@@ -77,6 +97,9 @@ export {
   addCanvasLayer,
   removeCanvasLayer,
   updateCanvasLayer,
+  // HeroViewConfig factories
+  createDefaultForegroundConfig,
+  createDefaultHeroViewConfig,
 } from './Domain'
 
 // Application

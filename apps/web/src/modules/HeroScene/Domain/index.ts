@@ -360,3 +360,34 @@ export const updateCanvasLayer = (
     scene.canvasLayers.map((l) => (l.id === layerId ? { ...l, ...updates } : l))
   ),
 })
+
+// ============================================================
+// HeroViewConfig (統合インターフェース)
+// ============================================================
+
+export type {
+  ViewportConfig,
+  StripeSurfaceConfig,
+  GridSurfaceConfig,
+  PolkaDotSurfaceConfig,
+  CheckerSurfaceConfig,
+  SolidSurfaceConfig,
+  ImageSurfaceConfig,
+  BackgroundSurfaceConfig,
+  MaskSurfaceConfig,
+  CircleMaskShapeConfig as HeroCircleMaskShapeConfig,
+  RectMaskShapeConfig as HeroRectMaskShapeConfig,
+  BlobMaskShapeConfig as HeroBlobMaskShapeConfig,
+  MaskShapeConfig as HeroMaskShapeConfig,
+  BackgroundLayerConfig,
+  MaskLayerConfig,
+  GridPosition,
+  ForegroundElementConfig,
+  ForegroundLayerConfig,
+  HeroViewConfig,
+} from './HeroViewConfig'
+
+export {
+  createDefaultForegroundConfig,
+  createDefaultHeroViewConfig,
+} from './HeroViewConfig'
