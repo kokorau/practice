@@ -49,10 +49,11 @@ const positions: GridPosition[] = [
 .position-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  gap: 3px;
+  max-width: 100px;
   background: oklch(0.15 0.02 260);
-  padding: 4px;
-  border-radius: 0.5rem;
+  padding: 3px;
+  border-radius: 0.375rem;
 }
 
 .position-cell {

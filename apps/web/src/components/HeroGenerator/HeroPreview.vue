@@ -19,14 +19,18 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const positionedGroups = computed(() => compileForegroundLayout(props.foregroundConfig))
 
 /**
- * Get inline style for an element, including font-family if fontId is set
+ * Get inline style for an element, including font-family and fontSize
  */
 const getElementStyle = (el: PositionedElement): Record<string, string> => {
+  const style: Record<string, string> = {}
   const fontFamily = ensureFontLoaded(el.fontId)
   if (fontFamily) {
-    return { fontFamily }
+    style.fontFamily = fontFamily
   }
-  return {}
+  if (el.fontSize !== undefined) {
+    style.fontSize = `${el.fontSize}rem`
+  }
+  return style
 }
 
 defineExpose({

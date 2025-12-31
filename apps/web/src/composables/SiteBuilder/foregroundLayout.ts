@@ -42,6 +42,7 @@ export interface ForegroundElementConfig {
   position: GridPosition
   content: string
   fontId?: string // Optional font preset ID
+  fontSize?: number // Font size in rem units
 }
 
 export interface ForegroundConfig {
@@ -58,6 +59,7 @@ export interface PositionedElement {
   className: string
   tag: 'h1' | 'p'
   fontId?: string
+  fontSize?: number
 }
 
 export interface PositionedGroup {
@@ -86,6 +88,7 @@ export function compileForegroundLayout(config: ForegroundConfig): PositionedGro
       className: ELEMENT_CLASS[type],
       tag: ELEMENT_TAG[type],
       fontId: elConfig.fontId,
+      fontSize: elConfig.fontSize,
     })
     groupMap.set(elConfig.position, existing)
   }

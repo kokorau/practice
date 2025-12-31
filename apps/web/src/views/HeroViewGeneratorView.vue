@@ -243,6 +243,46 @@ const descriptionFont = computed({
   },
 })
 
+const titleFontSize = computed({
+  get: () => foregroundConfig.value.title.fontSize ?? 3,
+  set: (fontSize: number) => {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      title: { ...foregroundConfig.value.title, fontSize },
+    }
+  },
+})
+
+const descriptionFontSize = computed({
+  get: () => foregroundConfig.value.description.fontSize ?? 1,
+  set: (fontSize: number) => {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      description: { ...foregroundConfig.value.description, fontSize },
+    }
+  },
+})
+
+const titleContent = computed({
+  get: () => foregroundConfig.value.title.content,
+  set: (content: string) => {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      title: { ...foregroundConfig.value.title, content },
+    }
+  },
+})
+
+const descriptionContent = computed({
+  get: () => foregroundConfig.value.description.content,
+  set: (content: string) => {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      description: { ...foregroundConfig.value.description, content },
+    }
+  },
+})
+
 // ============================================================
 // Dynamic CSS Injection for Palette Preview
 // ============================================================
@@ -409,6 +449,15 @@ const activeTab = ref<TabId>('generator')
         <!-- 前景: Title 設定 -->
         <template v-else-if="activeSection === 'foreground-title'">
           <div class="foreground-section">
+            <div class="foreground-field">
+              <label class="foreground-label">Text</label>
+              <input
+                v-model="titleContent"
+                type="text"
+                class="foreground-input"
+                placeholder="Enter title text"
+              />
+            </div>
             <GridPositionPicker
               v-model="titlePosition"
               label="Position"
@@ -417,12 +466,35 @@ const activeTab = ref<TabId>('generator')
               v-model="titleFont"
               label="Font"
             />
+            <div class="foreground-field">
+              <label class="foreground-label">Font Size</label>
+              <div class="font-size-control">
+                <input
+                  v-model.number="titleFontSize"
+                  type="range"
+                  min="1"
+                  max="6"
+                  step="0.25"
+                  class="font-size-slider"
+                />
+                <span class="font-size-value">{{ titleFontSize }}rem</span>
+              </div>
+            </div>
           </div>
         </template>
 
         <!-- 前景: Description 設定 -->
         <template v-else-if="activeSection === 'foreground-description'">
           <div class="foreground-section">
+            <div class="foreground-field">
+              <label class="foreground-label">Text</label>
+              <textarea
+                v-model="descriptionContent"
+                class="foreground-textarea"
+                placeholder="Enter description text"
+                rows="3"
+              />
+            </div>
             <GridPositionPicker
               v-model="descriptionPosition"
               label="Position"
@@ -431,6 +503,20 @@ const activeTab = ref<TabId>('generator')
               v-model="descriptionFont"
               label="Font"
             />
+            <div class="foreground-field">
+              <label class="foreground-label">Font Size</label>
+              <div class="font-size-control">
+                <input
+                  v-model.number="descriptionFontSize"
+                  type="range"
+                  min="0.5"
+                  max="3"
+                  step="0.125"
+                  class="font-size-slider"
+                />
+                <span class="font-size-value">{{ descriptionFontSize }}rem</span>
+              </div>
+            </div>
           </div>
         </template>
 
@@ -727,6 +813,87 @@ const activeTab = ref<TabId>('generator')
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.foreground-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.foreground-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: oklch(0.70 0.02 260);
+}
+
+.foreground-input,
+.foreground-textarea {
+  padding: 0.625rem 0.75rem;
+  background: oklch(0.18 0.02 260);
+  border: 1px solid oklch(0.30 0.02 260);
+  border-radius: 0.375rem;
+  color: oklch(0.90 0.02 260);
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.foreground-input:focus,
+.foreground-textarea:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
+}
+
+.foreground-textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+.font-size-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.font-size-slider {
+  flex: 1;
+  height: 4px;
+  appearance: none;
+  background: oklch(0.30 0.02 260);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.font-size-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: oklch(0.55 0.20 250);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.font-size-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+.font-size-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: oklch(0.55 0.20 250);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.font-size-value {
+  min-width: 4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: oklch(0.70 0.02 260);
+  text-align: right;
 }
 
 </style>
