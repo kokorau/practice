@@ -97,6 +97,34 @@ export type {
   BlobPolkaDotPatternParams,
   VignettePatternParams,
   ChromaticAberrationPatternParams,
+  // Schema param types
+  CircleMaskShapeParams,
+  RectMaskShapeParams,
+  BlobMaskShapeParams,
+  StripeSurfaceParams,
+  GridSurfaceParams,
+  PolkaDotSurfaceParams,
+} from './Domain'
+
+// Shape and Surface Schemas
+export {
+  // Shape Schemas
+  CircleMaskShapeSchema,
+  RectMaskShapeSchema,
+  BlobMaskShapeSchema,
+  MaskShapeSchemas,
+  // Surface Schemas
+  StripeSurfaceSchema,
+  GridSurfaceSchema,
+  PolkaDotSurfaceSchema,
+  SurfaceSchemas,
+  // Factory functions
+  createDefaultCircleMaskParams,
+  createDefaultRectMaskParams,
+  createDefaultBlobMaskParams,
+  createDefaultStripeParams,
+  createDefaultGridParams,
+  createDefaultPolkaDotParams,
 } from './Domain'
 
 // Application

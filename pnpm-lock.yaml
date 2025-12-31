@@ -135,7 +135,11 @@ importers:
 
   packages/schema: {}
 
-  packages/texture: {}
+  packages/texture:
+    dependencies:
+      '@practice/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/vector: {}
 

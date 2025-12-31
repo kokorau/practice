@@ -13,5 +13,8 @@
       "default": "./src/filters/index.ts"
     }
   },
-  "files": ["src"]
+  "files": ["src"],
+  "dependencies": {
+    "@practice/schema": "workspace:*"
+  }
 }

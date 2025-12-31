@@ -124,6 +124,13 @@ const {
   selectedLayerFilters,
   layerFilterConfigs,
   updateLayerFilters,
+  // Custom shape/surface params
+  customMaskShapeParams,
+  customSurfaceParams,
+  currentMaskShapeSchema,
+  currentSurfaceSchema,
+  updateMaskShapeParams,
+  updateSurfaceParams,
   // Layer operations
   addMaskLayer,
   removeLayer,
@@ -318,6 +325,15 @@ const activeTab = ref<TabId>('generator')
 
         <!-- マスク形状選択 -->
         <template v-else-if="activeSection === 'mask-shape'">
+          <!-- Shape params (shown when mask is selected) -->
+          <div v-if="currentMaskShapeSchema && customMaskShapeParams" class="shape-params">
+            <SchemaFields
+              :schema="currentMaskShapeSchema"
+              :model-value="customMaskShapeParams"
+              :exclude="['cutout']"
+              @update:model-value="updateMaskShapeParams($event)"
+            />
+          </div>
           <div class="pattern-grid">
             <button
               v-for="(pattern, i) in maskPatterns"
@@ -334,6 +350,14 @@ const activeTab = ref<TabId>('generator')
 
         <!-- マスクテクスチャ選択 -->
         <template v-else-if="activeSection === 'mask-surface'">
+          <!-- Surface params (shown when texture is selected) -->
+          <div v-if="currentSurfaceSchema && customSurfaceParams" class="surface-params">
+            <SchemaFields
+              :schema="currentSurfaceSchema"
+              :model-value="customSurfaceParams"
+              @update:model-value="updateSurfaceParams($event)"
+            />
+          </div>
           <SurfaceSelector
             :custom-image="customMaskImage"
             :custom-file-name="customMaskFile?.name ?? null"
@@ -635,6 +659,14 @@ const activeTab = ref<TabId>('generator')
   background: oklch(0.18 0.02 260);
   border-radius: 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.shape-params,
+.surface-params {
+  padding: 0.75rem;
+  background: oklch(0.18 0.02 260);
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .filter-options {

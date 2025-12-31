@@ -24,8 +24,12 @@ import {
   createStripeSpec,
   createGridSpec,
   createPolkaDotSpec,
+  // Schemas and types
+  MaskShapeSchemas,
+  SurfaceSchemas,
   type TexturePattern,
   type MaskPattern,
+  type MaskShapeConfig,
   type RGBA,
   type CircleMaskShapeConfig,
   type RectMaskShapeConfig,
@@ -36,7 +40,14 @@ import {
   type StripePresetParams,
   type GridPresetParams,
   type PolkaDotPresetParams,
+  type CircleMaskShapeParams,
+  type RectMaskShapeParams,
+  type BlobMaskShapeParams,
+  type StripeSurfaceParams,
+  type GridSurfaceParams,
+  type PolkaDotSurfaceParams,
 } from '@practice/texture'
+import type { ObjectSchema } from '@practice/schema'
 // Filters (separate subpath for tree-shaking)
 import {
   createVignetteSpec,
@@ -72,6 +83,22 @@ export interface MidgroundSurfacePreset {
 }
 
 export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground' | 'filter'
+
+/**
+ * Custom mask shape params union type
+ */
+export type CustomMaskShapeParams =
+  | ({ type: 'circle' } & CircleMaskShapeParams)
+  | ({ type: 'rect' } & RectMaskShapeParams)
+  | ({ type: 'blob' } & BlobMaskShapeParams)
+
+/**
+ * Custom surface params union type
+ */
+export type CustomSurfaceParams =
+  | ({ type: 'stripe' } & StripeSurfaceParams)
+  | ({ type: 'grid' } & GridSurfaceParams)
+  | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
 
 export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
@@ -145,6 +172,122 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const customMaskImage = ref<string | null>(null)
   const customMaskFile = ref<File | null>(null)
   let customMaskBitmap: ImageBitmap | null = null
+
+  // ============================================================
+  // Custom Shape/Surface Params State
+  // ============================================================
+
+
+  /**
+   * Extract custom shape params from a MaskPattern's maskConfig
+   */
+  const extractMaskShapeParams = (maskConfig: MaskShapeConfig): CustomMaskShapeParams => {
+    if (maskConfig.type === 'circle') {
+      return {
+        type: 'circle',
+        centerX: maskConfig.centerX,
+        centerY: maskConfig.centerY,
+        radius: maskConfig.radius,
+        cutout: maskConfig.cutout ?? true,
+      }
+    }
+    if (maskConfig.type === 'rect') {
+      return {
+        type: 'rect',
+        left: maskConfig.left,
+        right: maskConfig.right,
+        top: maskConfig.top,
+        bottom: maskConfig.bottom,
+        radiusTopLeft: maskConfig.radiusTopLeft ?? 0,
+        radiusTopRight: maskConfig.radiusTopRight ?? 0,
+        radiusBottomLeft: maskConfig.radiusBottomLeft ?? 0,
+        radiusBottomRight: maskConfig.radiusBottomRight ?? 0,
+        cutout: maskConfig.cutout ?? true,
+      }
+    }
+    // blob
+    return {
+      type: 'blob',
+      centerX: maskConfig.centerX,
+      centerY: maskConfig.centerY,
+      baseRadius: maskConfig.baseRadius,
+      amplitude: maskConfig.amplitude,
+      octaves: maskConfig.octaves,
+      seed: maskConfig.seed,
+      cutout: maskConfig.cutout ?? true,
+    }
+  }
+
+  /**
+   * Extract surface params from a MidgroundSurfacePreset
+   */
+  const extractSurfaceParams = (preset: MidgroundSurfacePreset): CustomSurfaceParams => {
+    const { params } = preset
+    if (params.type === 'stripe') {
+      return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
+    }
+    if (params.type === 'grid') {
+      return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
+    }
+    // polkaDot
+    return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
+  }
+
+  // Current custom params (initialized from selected preset)
+  const customMaskShapeParams = ref<CustomMaskShapeParams | null>(null)
+  const customSurfaceParams = ref<CustomSurfaceParams | null>(null)
+
+  // Current schema for UI rendering
+  const currentMaskShapeSchema = computed(() => {
+    if (!customMaskShapeParams.value) return null
+    return MaskShapeSchemas[customMaskShapeParams.value.type] as ObjectSchema
+  })
+
+  const currentSurfaceSchema = computed(() => {
+    if (!customSurfaceParams.value) return null
+    return SurfaceSchemas[customSurfaceParams.value.type] as ObjectSchema
+  })
+
+  // Initialize custom params from preset when selection changes
+  const initMaskShapeParamsFromPreset = () => {
+    const idx = selectedMaskIndex.value
+    if (idx === null) {
+      customMaskShapeParams.value = null
+      return
+    }
+    const pattern = maskPatterns[idx]
+    if (pattern) {
+      customMaskShapeParams.value = extractMaskShapeParams(pattern.maskConfig)
+    }
+  }
+
+  const initSurfaceParamsFromPreset = () => {
+    const idx = selectedMidgroundTextureIndex.value
+    if (idx === null) {
+      customSurfaceParams.value = null
+      return
+    }
+    const preset = midgroundTexturePatterns[idx]
+    if (preset) {
+      customSurfaceParams.value = extractSurfaceParams(preset)
+    }
+  }
+
+  /**
+   * Update custom mask shape params
+   */
+  const updateMaskShapeParams = (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams>) => {
+    if (!customMaskShapeParams.value) return
+    customMaskShapeParams.value = { ...customMaskShapeParams.value, ...updates } as CustomMaskShapeParams
+  }
+
+  /**
+   * Update custom surface params
+   */
+  const updateSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams>) => {
+    if (!customSurfaceParams.value) return
+    customSurfaceParams.value = { ...customSurfaceParams.value, ...updates } as CustomSurfaceParams
+  }
 
   // ============================================================
   // Per-Layer Filter State
@@ -381,15 +524,65 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Rendering
   // ============================================================
 
+  /**
+   * Create masked texture spec using custom params if available, falling back to preset values
+   */
   const createMaskedTextureSpec = (
     maskPattern: MaskPattern,
     preset: MidgroundSurfacePreset,
     color1: RGBA,
     color2: RGBA,
-    viewport: Viewport
+    viewport: Viewport,
+    customShapeParams?: CustomMaskShapeParams | null,
+    customSurfParams?: CustomSurfaceParams | null
   ): TextureRenderSpec | null => {
-    const { maskConfig } = maskPattern
-    const { params } = preset
+    // Build mask config from custom params or preset
+    const buildMaskConfig = (): CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig => {
+      if (customShapeParams) {
+        if (customShapeParams.type === 'circle') {
+          return { type: 'circle', centerX: customShapeParams.centerX, centerY: customShapeParams.centerY, radius: customShapeParams.radius, cutout: customShapeParams.cutout }
+        }
+        if (customShapeParams.type === 'rect') {
+          return {
+            type: 'rect',
+            left: customShapeParams.left, right: customShapeParams.right,
+            top: customShapeParams.top, bottom: customShapeParams.bottom,
+            radiusTopLeft: customShapeParams.radiusTopLeft, radiusTopRight: customShapeParams.radiusTopRight,
+            radiusBottomLeft: customShapeParams.radiusBottomLeft, radiusBottomRight: customShapeParams.radiusBottomRight,
+            cutout: customShapeParams.cutout,
+          }
+        }
+        // blob
+        return {
+          type: 'blob',
+          centerX: customShapeParams.centerX, centerY: customShapeParams.centerY,
+          baseRadius: customShapeParams.baseRadius, amplitude: customShapeParams.amplitude,
+          octaves: customShapeParams.octaves, seed: customShapeParams.seed,
+          cutout: customShapeParams.cutout,
+        }
+      }
+      // Fall back to maskPattern
+      return maskPattern.maskConfig
+    }
+
+    // Build surface params from custom params or preset
+    const buildSurfaceParams = (): StripePresetParams | GridPresetParams | PolkaDotPresetParams => {
+      if (customSurfParams) {
+        if (customSurfParams.type === 'stripe') {
+          return { type: 'stripe', width1: customSurfParams.width1, width2: customSurfParams.width2, angle: customSurfParams.angle }
+        }
+        if (customSurfParams.type === 'grid') {
+          return { type: 'grid', lineWidth: customSurfParams.lineWidth, cellSize: customSurfParams.cellSize }
+        }
+        // polkaDot
+        return { type: 'polkaDot', dotRadius: customSurfParams.dotRadius, spacing: customSurfParams.spacing, rowOffset: customSurfParams.rowOffset }
+      }
+      // Fall back to preset
+      return preset.params
+    }
+
+    const maskConfig = buildMaskConfig()
+    const params = buildSurfaceParams()
 
     if (maskConfig.type === 'circle') {
       const circleMask: CircleMaskShapeConfig = maskConfig
@@ -560,7 +753,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   texturePattern,
                   midgroundTextureColor1.value,
                   midgroundTextureColor2.value,
-                  viewport
+                  viewport,
+                  customMaskShapeParams.value,
+                  customSurfaceParams.value
                 )
                 if (spec) {
                   previewRenderer.render(spec, { clear: false })
@@ -569,6 +764,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               }
             }
             // Fallback to solid color mask
+            // TODO: Support custom shape params for solid mask rendering
             const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
             previewRenderer.render(spec, { clear: false })
           }
@@ -886,6 +1082,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
   )
 
+  // Initialize custom params when selection changes
+  watch(selectedMaskIndex, () => {
+    initMaskShapeParamsFromPreset()
+  }, { immediate: true })
+
+  watch(selectedMidgroundTextureIndex, () => {
+    initSurfaceParamsFromPreset()
+  }, { immediate: true })
+
   watch(
     [textureColor1, textureColor2, maskInnerColor, maskOuterColor, midgroundTextureColor1, midgroundTextureColor2],
     () => {
@@ -898,6 +1103,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Filter watchers - watch the Map's changes via deep watch
   watch(
     layerFilterConfigs,
+    () => renderScene(),
+    { deep: true }
+  )
+
+  // Custom params watchers - re-render when params change
+  watch(
+    customMaskShapeParams,
+    () => renderScene(),
+    { deep: true }
+  )
+
+  watch(
+    customSurfaceParams,
     () => renderScene(),
     { deep: true }
   )
@@ -957,6 +1175,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     selectedLayerFilters,
     layerFilterConfigs,
     updateLayerFilters,
+
+    // Custom shape/surface params
+    customMaskShapeParams,
+    customSurfaceParams,
+    currentMaskShapeSchema,
+    currentSurfaceSchema,
+    updateMaskShapeParams,
+    updateSurfaceParams,
 
     // Layer operations
     addMaskLayer,
