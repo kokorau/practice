@@ -6,7 +6,7 @@ import {
   type ForegroundConfig,
   type PositionedElement,
 } from '../../composables/SiteBuilder'
-import { ensureFontLoaded } from '../../modules/Font'
+import { ensureFontLoaded } from '@practice/font'
 
 const props = withDefaults(defineProps<{
   foregroundConfig?: ForegroundConfig

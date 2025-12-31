@@ -10,11 +10,13 @@
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "vue-tsc -b",
-    "fetch:fonts": "update-googlefonts-list -o src/modules/Font/Infra/GoogleFontPresets.ts -l 100"
+    "fetch:fonts": "update-googlefonts-list -o ../../packages/font/src/Infra/GoogleFontPresets.ts -l 100"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "0.10.22-rc.20250304",
     "@practice/color": "workspace:^",
+    "@practice/font": "workspace:^",
+    "@practice/pipe": "workspace:^",
     "@practice/lighting": "workspace:^",
     "@practice/schema": "workspace:^",
     "@practice/texture": "workspace:^",

@@ -3,7 +3,7 @@
  * 内部でGamma/Sigmoidを使用して自然な変化を実現
  */
 
-import { pipe, clamp } from '../../../Pipe'
+import { pipe, clamp } from '@practice/pipe'
 import { srgbToLinear, linearToSrgb, hueToRGB } from './colors'
 import {
   smoothstep,

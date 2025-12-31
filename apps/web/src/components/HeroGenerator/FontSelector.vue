@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import type { FontPreset, FontCategory } from '../../modules/Font'
-import { getGoogleFontPresets } from '../../modules/Font'
+import { ref, computed, onMounted, watch } from 'vue'
+import type { FontPreset, FontCategory } from '@practice/font'
+import { getGoogleFontPresets } from '@practice/font'
 
 const props = defineProps<{
   modelValue: string | undefined
