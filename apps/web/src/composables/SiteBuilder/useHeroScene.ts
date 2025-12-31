@@ -66,8 +66,16 @@ import {
   type LayerFilterConfig,
   type HeroSceneEditorState,
   type EditorCanvasLayer,
+  type HeroViewConfig,
+  type BackgroundLayerConfig,
+  type MaskLayerConfig,
+  type BackgroundSurfaceConfig,
+  type MaskSurfaceConfig,
+  type HeroMaskShapeConfig,
+  type ForegroundLayerConfig,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
+  createDefaultForegroundConfig,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -1246,6 +1254,239 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   // ============================================================
+  // Foreground Config (HTML Layer)
+  // ============================================================
+  const foregroundConfig = ref<ForegroundLayerConfig>(createDefaultForegroundConfig())
+
+  // ============================================================
+  // HeroViewConfig Serialization
+  // ============================================================
+
+  /**
+   * Build BackgroundSurfaceConfig from current state
+   */
+  const buildBackgroundSurface = (): BackgroundSurfaceConfig => {
+    // Custom image takes precedence
+    if (customBackgroundImage.value) {
+      return { type: 'image', imageId: customBackgroundImage.value }
+    }
+
+    // Custom params
+    const params = customBackgroundSurfaceParams.value
+    if (params) {
+      if (params.type === 'solid') return { type: 'solid' }
+      if (params.type === 'stripe') return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
+      if (params.type === 'grid') return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
+      if (params.type === 'polkaDot') return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
+      if (params.type === 'checker') return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
+    }
+
+    return { type: 'solid' }
+  }
+
+  /**
+   * Build MaskSurfaceConfig from current state
+   */
+  const buildMaskSurface = (): MaskSurfaceConfig => {
+    // Custom image takes precedence
+    if (customMaskImage.value) {
+      return { type: 'image', imageId: customMaskImage.value }
+    }
+
+    // No texture selected = solid
+    if (selectedMidgroundTextureIndex.value === null) {
+      return { type: 'solid' }
+    }
+
+    // Custom surface params
+    const params = customSurfaceParams.value
+    if (params) {
+      if (params.type === 'stripe') return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
+      if (params.type === 'grid') return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
+      if (params.type === 'polkaDot') return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
+    }
+
+    return { type: 'solid' }
+  }
+
+  /**
+   * Build MaskShapeConfig from current state
+   */
+  const buildMaskShape = (): HeroMaskShapeConfig | null => {
+    const params = customMaskShapeParams.value
+    if (!params) return null
+
+    if (params.type === 'circle') {
+      return {
+        type: 'circle',
+        centerX: params.centerX,
+        centerY: params.centerY,
+        radius: params.radius,
+        cutout: params.cutout,
+      }
+    }
+    if (params.type === 'rect') {
+      return {
+        type: 'rect',
+        left: params.left,
+        right: params.right,
+        top: params.top,
+        bottom: params.bottom,
+        radiusTopLeft: params.radiusTopLeft,
+        radiusTopRight: params.radiusTopRight,
+        radiusBottomLeft: params.radiusBottomLeft,
+        radiusBottomRight: params.radiusBottomRight,
+        cutout: params.cutout,
+      }
+    }
+    // blob
+    return {
+      type: 'blob',
+      centerX: params.centerX,
+      centerY: params.centerY,
+      baseRadius: params.baseRadius,
+      amplitude: params.amplitude,
+      octaves: params.octaves,
+      seed: params.seed,
+      cutout: params.cutout,
+    }
+  }
+
+  /**
+   * Convert current editor state to HeroViewConfig
+   * Returns a self-contained, JSON-serializable config
+   */
+  const toHeroViewConfig = (): HeroViewConfig => {
+    const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultFilterConfig()
+    const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultFilterConfig()
+
+    const background: BackgroundLayerConfig = {
+      surface: buildBackgroundSurface(),
+      filters: baseFilters,
+    }
+
+    let mask: MaskLayerConfig | null = null
+    const maskShape = buildMaskShape()
+    if (maskShape && selectedMaskIndex.value !== null) {
+      mask = {
+        shape: maskShape,
+        surface: buildMaskSurface(),
+        filters: maskFilters,
+      }
+    }
+
+    return {
+      viewport: {
+        width: editorState.value.config.width,
+        height: editorState.value.config.height,
+      },
+      background,
+      mask,
+      foreground: foregroundConfig.value,
+    }
+  }
+
+  /**
+   * Restore editor state from HeroViewConfig
+   * Note: Image restoration requires additional handling (imageId → ImageBitmap)
+   */
+  const fromHeroViewConfig = (config: HeroViewConfig) => {
+    // Viewport
+    editorState.value = {
+      ...editorState.value,
+      config: {
+        ...editorState.value.config,
+        width: config.viewport.width,
+        height: config.viewport.height,
+      },
+    }
+
+    // Background surface
+    const bgSurface = config.background.surface
+    if (bgSurface.type === 'solid') {
+      customBackgroundSurfaceParams.value = { type: 'solid' }
+    } else if (bgSurface.type === 'stripe') {
+      customBackgroundSurfaceParams.value = { type: 'stripe', width1: bgSurface.width1, width2: bgSurface.width2, angle: bgSurface.angle }
+    } else if (bgSurface.type === 'grid') {
+      customBackgroundSurfaceParams.value = { type: 'grid', lineWidth: bgSurface.lineWidth, cellSize: bgSurface.cellSize }
+    } else if (bgSurface.type === 'polkaDot') {
+      customBackgroundSurfaceParams.value = { type: 'polkaDot', dotRadius: bgSurface.dotRadius, spacing: bgSurface.spacing, rowOffset: bgSurface.rowOffset }
+    } else if (bgSurface.type === 'checker') {
+      customBackgroundSurfaceParams.value = { type: 'checker', cellSize: bgSurface.cellSize, angle: bgSurface.angle }
+    }
+    // Note: image type requires external handling
+
+    // Background filters
+    layerFilterConfigs.value.set(LAYER_IDS.BASE, config.background.filters)
+
+    // Mask layer
+    if (config.mask) {
+      // Mask shape
+      const shape = config.mask.shape
+      if (shape.type === 'circle') {
+        customMaskShapeParams.value = {
+          type: 'circle',
+          centerX: shape.centerX,
+          centerY: shape.centerY,
+          radius: shape.radius,
+          cutout: shape.cutout,
+        }
+      } else if (shape.type === 'rect') {
+        customMaskShapeParams.value = {
+          type: 'rect',
+          left: shape.left,
+          right: shape.right,
+          top: shape.top,
+          bottom: shape.bottom,
+          radiusTopLeft: shape.radiusTopLeft,
+          radiusTopRight: shape.radiusTopRight,
+          radiusBottomLeft: shape.radiusBottomLeft,
+          radiusBottomRight: shape.radiusBottomRight,
+          cutout: shape.cutout,
+        }
+      } else {
+        customMaskShapeParams.value = {
+          type: 'blob',
+          centerX: shape.centerX,
+          centerY: shape.centerY,
+          baseRadius: shape.baseRadius,
+          amplitude: shape.amplitude,
+          octaves: shape.octaves,
+          seed: shape.seed,
+          cutout: shape.cutout,
+        }
+      }
+
+      // Mask surface
+      const maskSurface = config.mask.surface
+      if (maskSurface.type === 'solid') {
+        customSurfaceParams.value = null
+        selectedMidgroundTextureIndex.value = null
+      } else if (maskSurface.type === 'stripe') {
+        customSurfaceParams.value = { type: 'stripe', width1: maskSurface.width1, width2: maskSurface.width2, angle: maskSurface.angle }
+      } else if (maskSurface.type === 'grid') {
+        customSurfaceParams.value = { type: 'grid', lineWidth: maskSurface.lineWidth, cellSize: maskSurface.cellSize }
+      } else if (maskSurface.type === 'polkaDot') {
+        customSurfaceParams.value = { type: 'polkaDot', dotRadius: maskSurface.dotRadius, spacing: maskSurface.spacing, rowOffset: maskSurface.rowOffset }
+      }
+      // Note: image type requires external handling
+
+      // Mask filters
+      layerFilterConfigs.value.set(LAYER_IDS.MASK, config.mask.filters)
+    } else {
+      selectedMaskIndex.value = null
+      customMaskShapeParams.value = null
+      customSurfaceParams.value = null
+    }
+
+    // Foreground
+    foregroundConfig.value = config.foreground
+
+    // Re-render
+    renderScene()
+  }
+
+  // ============================================================
   // Public API
   // ============================================================
 
@@ -1316,5 +1557,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     openSection,
     initPreview,
     destroyPreview,
+
+    // Foreground (HTML layer)
+    foregroundConfig,
+
+    // Serialization
+    toHeroViewConfig,
+    fromHeroViewConfig,
   }
 }

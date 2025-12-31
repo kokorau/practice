@@ -1,10 +1,17 @@
 // ============================================================
-// Grid Position (3x3 = 9箇所)
+// Re-export types from HeroScene/Domain (Single Source of Truth)
 // ============================================================
-export type GridPosition =
-  | 'top-left' | 'top-center' | 'top-right'
-  | 'middle-left' | 'middle-center' | 'middle-right'
-  | 'bottom-left' | 'bottom-center' | 'bottom-right'
+import type {
+  GridPosition,
+  ForegroundElementConfig,
+  ForegroundLayerConfig,
+} from '../../modules/HeroScene'
+import { createDefaultForegroundConfig } from '../../modules/HeroScene'
+
+export type { GridPosition, ForegroundElementConfig }
+
+/** @deprecated Use ForegroundLayerConfig from HeroScene instead */
+export type ForegroundConfig = ForegroundLayerConfig
 
 export const GRID_POSITIONS: GridPosition[] = [
   'top-left', 'top-center', 'top-right',
@@ -33,21 +40,6 @@ const ELEMENT_CLASS: Record<ForegroundElementType, string> = {
 export const ELEMENT_TAG: Record<ForegroundElementType, 'h1' | 'p'> = {
   title: 'h1',
   description: 'p',
-}
-
-// ============================================================
-// Input: Editor Config (Fixed structure)
-// ============================================================
-export interface ForegroundElementConfig {
-  position: GridPosition
-  content: string
-  fontId?: string // Optional font preset ID
-  fontSize?: number // Font size in rem units
-}
-
-export interface ForegroundConfig {
-  title: ForegroundElementConfig
-  description: ForegroundElementConfig
 }
 
 // ============================================================
@@ -110,7 +102,4 @@ export function compileForegroundLayout(config: ForegroundConfig): PositionedGro
 // ============================================================
 // Default Config
 // ============================================================
-export const DEFAULT_FOREGROUND_CONFIG: ForegroundConfig = {
-  title: { position: 'middle-center', content: 'Build Amazing' },
-  description: { position: 'middle-center', content: 'Create beautiful, responsive websites.\nDesign with confidence.' },
-}
+export const DEFAULT_FOREGROUND_CONFIG: ForegroundConfig = createDefaultForegroundConfig()

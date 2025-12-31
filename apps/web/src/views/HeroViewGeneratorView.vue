@@ -28,9 +28,7 @@ import {
 import {
   useSiteColors,
   useHeroScene,
-  DEFAULT_FOREGROUND_CONFIG,
   type GridPosition,
-  type ForegroundConfig,
 } from '../composables/SiteBuilder'
 import './HeroViewGeneratorView.css'
 
@@ -139,6 +137,8 @@ const {
   addMaskLayer,
   removeLayer,
   toggleLayerVisibility,
+  // Foreground
+  foregroundConfig,
 } = useHeroScene({ primitivePalette, isDark })
 
 // Filter type: single selection (void, vignette, chromaticAberration)
@@ -199,9 +199,8 @@ const maskSurfacePatterns = computed(() =>
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
 
 // ============================================================
-// Foreground Layout Config
+// Foreground Layout Config (from useHeroScene)
 // ============================================================
-const foregroundConfig = ref<ForegroundConfig>({ ...DEFAULT_FOREGROUND_CONFIG })
 
 const titlePosition = computed({
   get: () => foregroundConfig.value.title.position,
