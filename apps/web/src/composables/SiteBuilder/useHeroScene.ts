@@ -483,7 +483,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         layer.config = {
           type: 'maskedTexture',
           maskIndex: selectedMaskIndex.value ?? 0,
-          textureIndex: selectedMidgroundTextureIndex.value,
+          textureIndex: customMaskBitmap ? null : selectedMidgroundTextureIndex.value,
+          surfaceImage: customMaskBitmap ?? undefined,
         }
       }
     }
@@ -844,6 +845,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         case 'maskedTexture': {
           const maskPattern = maskPatterns[layer.config.maskIndex]
           if (maskPattern) {
+            // surfaceImage がある場合: 画像を描画してからマスクオーバーレイを適用
+            if (layer.config.surfaceImage) {
+              await previewRenderer.renderImage(layer.config.surfaceImage, { clear: false })
+              // マスク形状の外側を背景色で塗りつぶし（内側は透明）
+              const maskSpec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
+              previewRenderer.render(maskSpec, { clear: false })
+              break
+            }
+
             if (layer.config.textureIndex !== null) {
               const texturePattern = midgroundTexturePatterns[layer.config.textureIndex]
               if (texturePattern) {

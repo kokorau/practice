@@ -36,6 +36,8 @@ export interface EditorMaskedTextureLayerConfig {
   maskIndex: number
   /** midgroundTexturePatterns配列へのインデックス（null = ソリッドマスク） */
   textureIndex: number | null
+  /** カスタム画像をサーフェスとして使用する場合 */
+  surfaceImage?: ImageBitmap
 }
 
 /**
