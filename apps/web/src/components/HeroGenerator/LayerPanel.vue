@@ -44,7 +44,8 @@ const emit = defineEmits<{
   'select-subitem': [layerId: string, subItemType: SubItemType]
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
-  'open-foreground': []
+  'open-foreground-title': []
+  'open-foreground-description': []
 }>()
 
 // ============================================================
@@ -238,14 +239,25 @@ const handleAddLayer = (type: LayerType) => {
         <span class="section-title">HTML</span>
       </div>
 
-      <button class="foreground-button" @click="emit('open-foreground')">
-        <span class="material-icons">text_fields</span>
-        <div class="foreground-info">
-          <span class="foreground-label">Foreground</span>
-          <span class="foreground-desc">Title & Description</span>
-        </div>
-        <span class="material-icons foreground-arrow">chevron_right</span>
-      </button>
+      <div class="foreground-buttons">
+        <button class="foreground-button" @click="emit('open-foreground-title')">
+          <span class="material-icons">title</span>
+          <div class="foreground-info">
+            <span class="foreground-label">Title</span>
+            <span class="foreground-desc">Position</span>
+          </div>
+          <span class="material-icons foreground-arrow">chevron_right</span>
+        </button>
+
+        <button class="foreground-button" @click="emit('open-foreground-description')">
+          <span class="material-icons">notes</span>
+          <div class="foreground-info">
+            <span class="foreground-label">Description</span>
+            <span class="foreground-desc">Position</span>
+          </div>
+          <span class="material-icons foreground-arrow">chevron_right</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -529,7 +541,13 @@ const handleAddLayer = (type: LayerType) => {
   color: oklch(0.60 0.02 260);
 }
 
-/* Foreground Button */
+/* Foreground Buttons */
+.foreground-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .foreground-button {
   display: flex;
   align-items: center;

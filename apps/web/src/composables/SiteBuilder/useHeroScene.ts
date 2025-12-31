@@ -85,7 +85,7 @@ export interface MidgroundSurfacePreset {
   params: MidgroundPresetParams
 }
 
-export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground' | 'filter'
+export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground-title' | 'foreground-description' | 'filter'
 
 /**
  * Custom mask shape params union type

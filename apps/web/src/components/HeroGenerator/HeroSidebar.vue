@@ -48,7 +48,6 @@ const emit = defineEmits<{
   (e: 'toggleLayerVisibility', layerId: string): void
   (e: 'addLayer', type: LayerType): void
   (e: 'removeLayer', layerId: string): void
-  (e: 'openForeground'): void
 }>()
 
 // Map UI layer IDs to useHeroScene layer IDs
@@ -181,7 +180,8 @@ const handleRemoveLayer = (layerId: string) => {
         @select-subitem="handleSelectSubItem"
         @add-layer="handleAddLayer"
         @remove-layer="handleRemoveLayer"
-        @open-foreground="emit('openForeground')"
+        @open-foreground-title="emit('openSection', 'foreground-title')"
+        @open-foreground-description="emit('openSection', 'foreground-description')"
       />
     </template>
 

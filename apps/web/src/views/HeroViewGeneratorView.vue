@@ -292,7 +292,6 @@ const activeTab = ref<TabId>('generator')
       @toggle-layer-visibility="toggleLayerVisibility"
       @add-layer="(type) => { if (type === 'mask') addMaskLayer() }"
       @remove-layer="removeLayer"
-      @open-foreground="openSection('foreground')"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ) -->
@@ -304,7 +303,9 @@ const activeTab = ref<TabId>('generator')
           activeSection === 'mask-surface' ? 'マスクテクスチャ' :
           activeSection === 'mask-shape' ? 'マスク形状' :
           activeSection === 'filter' ? 'フィルター設定' :
-          '前景設定'
+          activeSection === 'foreground-title' ? 'タイトル位置' :
+          activeSection === 'foreground-description' ? '説明文位置' :
+          ''
         }}</h2>
         <button class="hero-subpanel-close" @click="activeSection = null">×</button>
       </div>
@@ -384,13 +385,19 @@ const activeTab = ref<TabId>('generator')
           />
         </template>
 
-        <!-- 前景: Title/Description 位置選択 -->
-        <template v-else-if="activeSection === 'foreground'">
+        <!-- 前景: Title 位置選択 -->
+        <template v-else-if="activeSection === 'foreground-title'">
           <div class="foreground-position-section">
             <GridPositionPicker
               v-model="titlePosition"
               label="Title Position"
             />
+          </div>
+        </template>
+
+        <!-- 前景: Description 位置選択 -->
+        <template v-else-if="activeSection === 'foreground-description'">
+          <div class="foreground-position-section">
             <GridPositionPicker
               v-model="descriptionPosition"
               label="Description Position"
