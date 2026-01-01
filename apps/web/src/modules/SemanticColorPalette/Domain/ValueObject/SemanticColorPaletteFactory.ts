@@ -23,6 +23,7 @@ export type InkRolesInput = {
   body: ColorValue
   meta: ColorValue
   linkText: ColorValue
+  highlight: ColorValue
   border: ColorValue
   divider: ColorValue
 }
@@ -37,6 +38,7 @@ export type StatefulInkTokensInput = {
   body: Record<ActionState, ColorValue>
   meta: Record<ActionState, ColorValue>
   linkText: Record<ActionState, ColorValue>
+  highlight: Record<ActionState, ColorValue>
   border: Record<ActionState, ColorValue>
   divider: Record<ActionState, ColorValue>
 }
@@ -69,6 +71,7 @@ const freezeInk = (ink: InkRolesInput): InkRoles =>
     body: ink.body,
     meta: ink.meta,
     linkText: ink.linkText,
+    highlight: ink.highlight,
     border: ink.border,
     divider: ink.divider,
   })
@@ -85,6 +88,7 @@ const freezeStatefulInk = (ink: StatefulInkTokensInput): StatefulInkTokens =>
     body: freezeStateMap(ink.body),
     meta: freezeStateMap(ink.meta),
     linkText: freezeStateMap(ink.linkText),
+    highlight: freezeStateMap(ink.highlight),
     border: freezeStateMap(ink.border),
     divider: freezeStateMap(ink.divider),
   })
