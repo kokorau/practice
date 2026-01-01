@@ -26,8 +26,8 @@ const p3Values = computed(() => {
 const srgb = computed(() => $Oklch.toSrgb(props.color))
 const hexValue = computed(() => $Srgb.toHex(srgb.value))
 const isOutOfSrgbGamut = computed(() => {
-  const { R, G, B } = srgb.value
-  return R < 0 || R > 1 || G < 0 || G > 1 || B < 0 || B > 1
+  const { r, g, b } = srgb.value
+  return r < 0 || r > 1 || g < 0 || g > 1 || b < 0 || b > 1
 })
 
 const oklchFormatted = computed(() => {

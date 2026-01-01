@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import {
   type PrimitivePalette,
