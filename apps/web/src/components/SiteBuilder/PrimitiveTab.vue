@@ -14,7 +14,7 @@ defineProps<{
     cssOklch: string
     cssP3: string
   }
-  accentColor: {
+  accentColor?: {
     hex: string
     oklch: Oklch
     cssOklch: string
@@ -74,7 +74,7 @@ defineProps<{
         </div>
 
         <!-- Accent Color -->
-        <div class="color-card">
+        <div v-if="accentColor" class="color-card">
           <h2 class="section-heading">Accent Color</h2>
           <div class="color-display">
             <div
@@ -129,7 +129,7 @@ defineProps<{
     <section class="section">
       <h2 class="section-heading">Neutral Ramp + Brand</h2>
       <p class="section-description">
-        Brand hue with minimal chroma ({{ primitivePalette.N0.C.toFixed(4) }}) for ink colors
+        Brand hue with minimal chroma ({{ primitivePalette.BN0.C.toFixed(4) }}) for ink colors
       </p>
       <div class="ramp-with-derivatives">
         <div class="ramp-group">
@@ -168,7 +168,7 @@ defineProps<{
     <section v-if="accentRampDisplay" class="section">
       <h2 class="section-heading">Accent Ramp + Accent</h2>
       <p class="section-description">
-        Accent hue with subtle chroma ({{ primitivePalette.A0.C.toFixed(4) }}) for accent surfaces
+        Accent hue with subtle chroma ({{ primitivePalette.AN0.C.toFixed(4) }}) for accent surfaces
       </p>
       <div class="ramp-with-derivatives">
         <div class="ramp-group">

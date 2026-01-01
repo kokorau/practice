@@ -12,17 +12,17 @@ export const PRIMITIVE_PALETTE_CONFIG = {
   // Theme detection threshold (L > threshold = light theme)
   themeLightnessThreshold: 0.5,
 
-  // Lightness ramps for neutral/foundation scales (10 steps: N0-N9 / F0-F9)
+  // Lightness ramps for neutral/foundation scales (10 steps: BN0-BN9 / F0-F9)
   // Consistent semantic: 0 = lightest (white), 9 = darkest (black)
   // Both themes use the same ordering for predictable primitive key references
   lightnessRamp: {
-    // Light theme: N0/F0 = lightest (0.985), N9/F9 = darkest (0.12)
+    // Light theme: BN0/F0 = lightest (0.985), BN9/F9 = darkest (0.12)
     light: [0.985, 0.955, 0.915, 0.86, 0.78, 0.68, 0.56, 0.42, 0.28, 0.12] as const,
-    // Dark theme: N0/F0 = lightest (0.94), N9/F9 = darkest (0.10)
+    // Dark theme: BN0/F0 = lightest (0.94), BN9/F9 = darkest (0.10)
     dark: [0.94, 0.88, 0.80, 0.70, 0.58, 0.46, 0.34, 0.24, 0.16, 0.10] as const,
   },
 
-  // Neutral ramp (N0-N9): subtle brand-tinted grays
+  // Neutral ramp (BN0-BN9): subtle brand-tinted grays
   neutral: {
     chromaRatio: 0.25,  // Chroma = brand.C * ratio
     chromaMax: 0.15,    // Clamp chroma to this max
@@ -33,7 +33,7 @@ export const PRIMITIVE_PALETTE_CONFIG = {
     chromaRatio: 0.5,   // Foundation color already constrained, apply ratio for subtlety
   },
 
-  // Accent ramp (A0-A9): accent-tinted grays (similar to neutral but from accent)
+  // Accent ramp (AN0-AN9): accent-tinted grays (similar to neutral but from accent)
   accentRamp: {
     chromaRatio: 0.25,  // Slightly more chroma than neutral for accent character
     chromaMax: 0.15,    // Clamp chroma to this max

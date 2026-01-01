@@ -8,14 +8,14 @@ import {
 
 /**
  * Create a simple neutral palette for testing
- * N0 = white (L=1.0), N9 = near-black (L=0.05)
+ * BN0 = white (L=1.0), BN9 = near-black (L=0.05)
  */
 const createTestNeutrals = (): NeutralEntry[] => {
   const neutrals: NeutralEntry[] = []
   for (let i = 0; i <= 9; i++) {
-    const L = 1 - (i / 9) * 0.95 // N0=1.0, N9≈0.05
+    const L = 1 - (i / 9) * 0.95 // BN0=1.0, BN9≈0.05
     neutrals.push({
-      key: `N${i}`,
+      key: `BN${i}`,
       color: { L, C: 0, H: 0 },
     })
   }
@@ -92,7 +92,7 @@ describe('NeutralSelection', () => {
         }
       })
 
-      it('prefers white (N0) over black (N9) when white has higher contrast', () => {
+      it('prefers white (BN0) over black (BN9) when white has higher contrast', () => {
         const result = selectNeutralByApca(neutrals, brandSurface, 75, 'dark-first')
 
         // For mid-lightness surfaces, white typically has higher APCA contrast
@@ -100,24 +100,24 @@ describe('NeutralSelection', () => {
         console.log(`Brand surface best: ${result.key} → Lc ${result.absLc.toFixed(1)}`)
 
         // Verify it's actually the best by checking both extremes
-        const n0Result = selectNeutralByApca(
-          [{ key: 'N0', color: { L: 1.0, C: 0, H: 0 } }],
+        const bn0Result = selectNeutralByApca(
+          [{ key: 'BN0', color: { L: 1.0, C: 0, H: 0 } }],
           brandSurface,
           0, // Accept any
           'dark-first'
         )
-        const n9Result = selectNeutralByApca(
-          [{ key: 'N9', color: { L: 0.05, C: 0, H: 0 } }],
+        const bn9Result = selectNeutralByApca(
+          [{ key: 'BN9', color: { L: 0.05, C: 0, H: 0 } }],
           brandSurface,
           0,
           'dark-first'
         )
 
-        console.log(`  N0 contrast: ${n0Result.absLc.toFixed(1)}`)
-        console.log(`  N9 contrast: ${n9Result.absLc.toFixed(1)}`)
+        console.log(`  BN0 contrast: ${bn0Result.absLc.toFixed(1)}`)
+        console.log(`  BN9 contrast: ${bn9Result.absLc.toFixed(1)}`)
 
         // The selected key should have the highest contrast
-        expect(result.absLc).toBeGreaterThanOrEqual(Math.max(n0Result.absLc, n9Result.absLc) - 1)
+        expect(result.absLc).toBeGreaterThanOrEqual(Math.max(bn0Result.absLc, bn9Result.absLc) - 1)
       })
     })
 

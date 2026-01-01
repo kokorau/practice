@@ -3,16 +3,16 @@ import type { Oklch } from '@practice/color'
 // Theme type: determined by foundation lightness
 export type PaletteTheme = 'light' | 'dark'
 
-// Neutral ramp (ink-derived): N0 = lightest, N9 = darkest
-export const NEUTRAL_KEYS = ['N0', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N8', 'N9'] as const
+// Brand Neutral ramp (brand ink-derived): BN0 = lightest, BN9 = darkest
+export const NEUTRAL_KEYS = ['BN0', 'BN1', 'BN2', 'BN3', 'BN4', 'BN5', 'BN6', 'BN7', 'BN8', 'BN9'] as const
 export type NeutralKey = (typeof NEUTRAL_KEYS)[number]
 
 // Foundation ramp (foundation-derived): F0 = lightest, F9 = darkest
 export const FOUNDATION_KEYS = ['F0', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9'] as const
 export type FoundationKey = (typeof FOUNDATION_KEYS)[number]
 
-// Accent ramp (accent-derived): A0 = lightest, A9 = darkest
-export const ACCENT_RAMP_KEYS = ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9'] as const
+// Accent Neutral ramp (accent-derived): AN0 = lightest, AN9 = darkest
+export const ACCENT_RAMP_KEYS = ['AN0', 'AN1', 'AN2', 'AN3', 'AN4', 'AN5', 'AN6', 'AN7', 'AN8', 'AN9'] as const
 export type AccentRampKey = (typeof ACCENT_RAMP_KEYS)[number]
 
 // Brand-derived keys:

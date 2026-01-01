@@ -130,7 +130,7 @@ const SURFACE_KEYS_LIGHT: SurfaceKeys = {
   sectionTint: 'Bt',
   sectionContrast: 'Bf',
   card: 'B',             // Brand color
-  cardFlat: 'N2',        // Light neutral surface
+  cardFlat: 'BN2',        // Light neutral surface
 }
 
 const SURFACE_KEYS_DARK: SurfaceKeys = {
@@ -139,7 +139,7 @@ const SURFACE_KEYS_DARK: SurfaceKeys = {
   sectionTint: 'Bs',
   sectionContrast: 'Bf',
   card: 'B',             // Brand color
-  cardFlat: 'N7',        // Now L=0.24 (dark neutral surface)
+  cardFlat: 'BN7',        // Now L=0.24 (dark neutral surface)
 }
 
 // ============================================================================
@@ -185,11 +185,11 @@ const buildStatefulSurface = (
 
 /** Action button surface states */
 const buildActionSurface = (p: PrimitivePalette, isLight: boolean) =>
-  buildStatefulSurface(p.B, cssKey(p, isLight ? 'N2' : 'N7'), isLight)
+  buildStatefulSurface(p.B, cssKey(p, isLight ? 'BN2' : 'BN7'), isLight)
 
 /** Action quiet button surface states (uses lightest neutral as base) */
 const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) =>
-  buildStatefulSurface(p.N0, cssKey(p, isLight ? 'N2' : 'N7'), isLight)
+  buildStatefulSurface(p.BN0, cssKey(p, isLight ? 'BN2' : 'BN7'), isLight)
 
 /**
  * Generic stateful ink builder for action buttons.
@@ -227,11 +227,11 @@ const buildStatefulInk = (
 
 /** Stateful ink for action buttons (based on brand color B) */
 const buildActionStatefulInk = (p: PrimitivePalette, isLight: boolean) =>
-  buildStatefulInk(p, p.B, isLight ? p.N2 : p.N7, isLight)
+  buildStatefulInk(p, p.B, isLight ? p.BN2 : p.BN7, isLight)
 
-/** Stateful ink for quiet action buttons (based on N0 - lightest neutral) */
+/** Stateful ink for quiet action buttons (based on BN0 - lightest neutral) */
 const buildActionQuietStatefulInk = (p: PrimitivePalette, isLight: boolean) =>
-  buildStatefulInk(p, p.N0, isLight ? p.N2 : p.N7, isLight)
+  buildStatefulInk(p, p.BN0, isLight ? p.BN2 : p.BN7, isLight)
 
 // ============================================================================
 // Main Factory
@@ -377,11 +377,11 @@ const buildStatefulSurfaceRefs = (
 
 // Helper: Build action surface refs
 const buildActionSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs =>
-  buildStatefulSurfaceRefs('B', isLight ? 'N2' : 'N7')
+  buildStatefulSurfaceRefs('B', isLight ? 'BN2' : 'BN7')
 
-// Helper: Build action quiet surface refs (always uses N0 - lightest neutral)
+// Helper: Build action quiet surface refs (always uses BN0 - lightest neutral)
 const buildActionQuietSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs =>
-  buildStatefulSurfaceRefs('N0', isLight ? 'N2' : 'N7')
+  buildStatefulSurfaceRefs('BN0', isLight ? 'BN2' : 'BN7')
 
 // Helper: Build stateful ink refs (generic)
 // Ink refs are fixed based on default surface - does not change for hover/active
@@ -415,11 +415,11 @@ const buildStatefulInkRefs = (
 
 // Helper: Build action stateful ink refs
 const buildActionStatefulInkRefs = (p: PrimitivePalette, isLight: boolean): StatefulInkRefs =>
-  buildStatefulInkRefs(p, p.B, isLight ? p.N2 : p.N7, isLight)
+  buildStatefulInkRefs(p, p.B, isLight ? p.BN2 : p.BN7, isLight)
 
-// Helper: Build action quiet stateful ink refs (always uses N0 - lightest neutral)
+// Helper: Build action quiet stateful ink refs (always uses BN0 - lightest neutral)
 const buildActionQuietStatefulInkRefs = (p: PrimitivePalette, isLight: boolean): StatefulInkRefs =>
-  buildStatefulInkRefs(p, p.N0, isLight ? p.N2 : p.N7, isLight)
+  buildStatefulInkRefs(p, p.BN0, isLight ? p.BN2 : p.BN7, isLight)
 
 /**
  * Create PrimitiveRefMap from PrimitivePalette
