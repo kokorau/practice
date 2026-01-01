@@ -23,7 +23,7 @@ defineProps<{
   foundationColor: {
     hex: string
     css: string
-    label: string
+    cssP3: string
   }
   primitivePalette: PrimitivePalette
   neutralRampDisplay: Array<{
@@ -116,8 +116,8 @@ defineProps<{
                 <code class="color-value">{{ foundationColor.css }}</code>
               </div>
               <div class="color-row">
-                <span class="color-label">Preset</span>
-                <code class="color-value">{{ foundationColor.label }}</code>
+                <span class="color-label">Display-P3</span>
+                <code class="color-value">{{ foundationColor.cssP3 }}</code>
               </div>
             </div>
           </div>

@@ -25,10 +25,12 @@ defineProps<{
   accentSaturation: number
   accentValue: number
   accentHex: string
-  // Foundation
-  selectedFoundationId: string
+  // Foundation (Oklch values)
+  foundationL: number
+  foundationC: number
+  foundationH: number
+  foundationHueLinkedToBrand: boolean
   foundationHex: string
-  foundationLabel: string
   // Layer state
   activeSection: SectionType | null
   texturePatterns: TexturePattern[]
@@ -50,7 +52,10 @@ const emit = defineEmits<{
   (e: 'update:accentHue', value: number): void
   (e: 'update:accentSaturation', value: number): void
   (e: 'update:accentValue', value: number): void
-  (e: 'update:selectedFoundationId', value: string): void
+  (e: 'update:foundationL', value: number): void
+  (e: 'update:foundationC', value: number): void
+  (e: 'update:foundationH', value: number): void
+  (e: 'update:foundationHueLinkedToBrand', value: boolean): void
   (e: 'openSection', section: SectionType): void
   (e: 'selectFilterLayer', layerId: string): void
   // Layer operations - propagate to parent for useHeroScene
@@ -188,7 +193,7 @@ const handleRemoveLayer = (layerId: string) => {
         <span class="color-swatch" :style="{ backgroundColor: foundationHex }" />
         <span class="color-info">
           <span class="color-name">Foundation</span>
-          <span class="color-value">{{ foundationLabel }}</span>
+          <span class="color-value">{{ foundationHex }}</span>
         </span>
       </button>
     </div>
@@ -251,10 +256,16 @@ const handleRemoveLayer = (layerId: string) => {
           />
           <FoundationPresets
             v-if="activeColorPopup === 'foundation'"
-            :selected-id="selectedFoundationId"
+            :foundation-l="foundationL"
+            :foundation-c="foundationC"
+            :foundation-h="foundationH"
+            :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
             :brand-oklch="brandOklch"
             :brand-hue="hue"
-            @update:selected-id="emit('update:selectedFoundationId', $event)"
+            @update:foundation-l="emit('update:foundationL', $event)"
+            @update:foundation-c="emit('update:foundationC', $event)"
+            @update:foundation-h="emit('update:foundationH', $event)"
+            @update:foundation-hue-linked-to-brand="emit('update:foundationHueLinkedToBrand', $event)"
           />
         </div>
       </div>

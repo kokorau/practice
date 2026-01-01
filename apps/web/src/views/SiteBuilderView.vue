@@ -4,7 +4,6 @@ import '../components/SiteBuilder/demo-styles.css'
 import './SiteBuilderView.css'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import { FOUNDATION_PRESETS } from '../components/SiteBuilder/foundationPresets'
 import {
   type PrimitivePalette,
   CONTEXT_CLASS_NAMES,
@@ -75,8 +74,11 @@ watch(brandGuideMarkdown, (newContent) => {
   }, 500)
 })
 
-// Foundation preset state
-const selectedFoundationId = ref<string | undefined>(undefined)
+// Foundation state (Oklch values)
+const foundationL = ref<number | undefined>(undefined)
+const foundationC = ref<number | undefined>(undefined)
+const foundationH = ref<number | undefined>(undefined)
+const foundationHueLinkedToBrand = ref<boolean>(false)
 const sidebarRef = ref<InstanceType<typeof PaletteSidebar> | null>(null)
 
 // ============================================================
@@ -92,7 +94,7 @@ const syncSiteConfig = () => {
   if (!isLoaded.value) return
   // undefined の値がある場合は同期しない
   if (hue.value === undefined || saturation.value === undefined || value.value === undefined) return
-  if (selectedFoundationId.value === undefined || selectedTokensId.value === undefined) return
+  if (foundationL.value === undefined || selectedTokensId.value === undefined) return
 
   if (siteConfigSyncTimeout) clearTimeout(siteConfigSyncTimeout)
   siteConfigSyncTimeout = setTimeout(() => {
@@ -102,13 +104,18 @@ const syncSiteConfig = () => {
         saturation: saturation.value!,
         value: value.value!,
       },
-      foundationId: selectedFoundationId.value!,
+      foundationOklch: {
+        L: foundationL.value!,
+        C: foundationC.value!,
+        H: foundationH.value!,
+        hueLinkedToBrand: foundationHueLinkedToBrand.value,
+      },
       tokensId: selectedTokensId.value!,
     })
   }, 500)
 }
 
-watch([hue, saturation, value, selectedFoundationId, selectedTokensId], syncSiteConfig)
+watch([hue, saturation, value, foundationL, foundationC, foundationH, foundationHueLinkedToBrand, selectedTokensId], syncSiteConfig)
 
 const currentTokensPreset = computed(() =>
   tokenPresets.find((p) => p.id === selectedTokensId.value) ?? tokenPresets[0]!
@@ -135,18 +142,19 @@ const brandColor = computed(() => {
   }
 })
 
-// Foundation color computed from selected preset ID (not dependent on FoundationPresets component)
+// Foundation color computed from Oklch values
 const foundationColor = computed(() => {
-  const preset = FOUNDATION_PRESETS.find((p) => p.id === selectedFoundationId.value) ?? FOUNDATION_PRESETS[0]!
-  const presetHue = preset.H === 'brand' ? (hue.value ?? 0) : preset.H
-  const oklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
+  const L = foundationL.value ?? 0.955
+  const C = foundationC.value ?? 0
+  const H = foundationHueLinkedToBrand.value ? (hue.value ?? 0) : (foundationH.value ?? 0)
+  const oklch: Oklch = { L, C, H }
   const srgb = $Oklch.toSrgb(oklch)
   const toHex = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')
   return {
     oklch,
     css: $Oklch.toCss(oklch),
+    cssP3: $Oklch.toCssP3(oklch),
     hex: `#${toHex(srgb.r)}${toHex(srgb.g)}${toHex(srgb.b)}`,
-    label: preset.label,
   }
 })
 
@@ -280,7 +288,19 @@ onMounted(async () => {
   hue.value = initialData.siteConfig.brandHSV.hue
   saturation.value = initialData.siteConfig.brandHSV.saturation
   value.value = initialData.siteConfig.brandHSV.value
-  selectedFoundationId.value = initialData.siteConfig.foundationId
+  // Foundation (Oklch values) - 互換性のためfoundationIdがあればそれを使用
+  if (initialData.siteConfig.foundationOklch) {
+    foundationL.value = initialData.siteConfig.foundationOklch.L
+    foundationC.value = initialData.siteConfig.foundationOklch.C
+    foundationH.value = initialData.siteConfig.foundationOklch.H
+    foundationHueLinkedToBrand.value = initialData.siteConfig.foundationOklch.hueLinkedToBrand ?? false
+  } else {
+    // デフォルト値 (white preset)
+    foundationL.value = 0.955
+    foundationC.value = 0
+    foundationH.value = 0
+    foundationHueLinkedToBrand.value = false
+  }
   selectedTokensId.value = initialData.siteConfig.tokensId
 
   // FilterConfig の値を設定
@@ -354,8 +374,10 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
       :saturation="saturation ?? 0"
       :value="value ?? 0"
       :selected-hex="selectedHex"
-      :selected-foundation-id="selectedFoundationId ?? ''"
-      :foundation-label="foundationColor.label"
+      :foundation-l="foundationL ?? 0.955"
+      :foundation-c="foundationC ?? 0"
+      :foundation-h="foundationH ?? 0"
+      :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
       :foundation-hex="foundationColor.hex"
       :brand-oklch="brandColor.oklch"
       :filter="filter"
@@ -372,7 +394,10 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"
-      @update:selected-foundation-id="selectedFoundationId = $event"
+      @update:foundation-l="foundationL = $event"
+      @update:foundation-c="foundationC = $event"
+      @update:foundation-h="foundationH = $event"
+      @update:foundation-hue-linked-to-brand="foundationHueLinkedToBrand = $event"
       @update:intensity="intensity = $event"
       @update:selected-tokens-id="selectedTokensId = $event"
       @update:selected-section-id="selectedSectionId = $event"

@@ -13,12 +13,22 @@ export type HSV = {
   readonly value: number      // 0-100
 }
 
+/** Foundation Oklch カラー値 */
+export type FoundationOklch = {
+  readonly L: number           // 0-1 (Lightness)
+  readonly C: number           // 0-0.4 (Chroma)
+  readonly H: number           // 0-360 (Hue)
+  readonly hueLinkedToBrand?: boolean  // If true, H follows brand hue
+}
+
 /** サイト設定 */
 export type SiteConfig = {
   /** ブランドカラー (HSV) */
   readonly brandHSV: HSV
-  /** ファンデーションプリセット ID */
-  readonly foundationId: string
+  /** ファンデーション Oklch 値 */
+  readonly foundationOklch?: FoundationOklch
+  /** @deprecated ファンデーションプリセット ID (後方互換用) */
+  readonly foundationId?: string
   /** デザイントークンプリセット ID */
   readonly tokensId: string
 }
@@ -36,7 +46,12 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     saturation: 80,
     value: 70,
   },
-  foundationId: 'white',
+  foundationOklch: {
+    L: 0.955,
+    C: 0,
+    H: 0,
+    hueLinkedToBrand: false,
+  },
   tokensId: 'default',
 }
 
@@ -68,10 +83,11 @@ export const $SiteConfig = {
     brandHSV: { ...config.brandHSV, ...hsv },
   }),
 
-  /** foundationId を更新 */
-  updateFoundationId: (config: SiteConfig, foundationId: string): SiteConfig => ({
+  /** foundationOklch を更新 */
+  updateFoundationOklch: (config: SiteConfig, foundationOklch: FoundationOklch): SiteConfig => ({
     ...config,
-    foundationId,
+    foundationOklch,
+    foundationId: undefined, // Clear deprecated field
   }),
 
   /** tokensId を更新 */

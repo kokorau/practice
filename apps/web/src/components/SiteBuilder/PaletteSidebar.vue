@@ -24,9 +24,11 @@ defineProps<{
   saturation: number
   value: number
   selectedHex: string
-  // Foundation
-  selectedFoundationId: string
-  foundationLabel: string
+  // Foundation (Oklch values)
+  foundationL: number
+  foundationC: number
+  foundationH: number
+  foundationHueLinkedToBrand: boolean
   foundationHex: string
   brandOklch: Oklch
   // Filter
@@ -49,7 +51,10 @@ const emit = defineEmits<{
   'update:hue': [value: number]
   'update:saturation': [value: number]
   'update:value': [value: number]
-  'update:selectedFoundationId': [value: string]
+  'update:foundationL': [value: number]
+  'update:foundationC': [value: number]
+  'update:foundationH': [value: number]
+  'update:foundationHueLinkedToBrand': [value: boolean]
   'update:intensity': [value: number]
   'update:selectedTokensId': [value: string]
   'update:selectedSectionId': [value: string | null]
@@ -147,7 +152,7 @@ watch(
           </template>
           <template v-else-if="item.id === 'foundation'">
             <div class="color-swatch-mini" :style="{ backgroundColor: foundationHex }" />
-            <span class="sidebar-item-value">{{ foundationLabel }}</span>
+            <span class="sidebar-item-value">{{ foundationHex }}</span>
           </template>
           <template v-else-if="item.id === 'filter'">
             <span class="sidebar-item-value">{{ currentFilterName }}</span>
@@ -202,10 +207,16 @@ watch(
         <div v-else-if="activePopup === 'foundation'" class="popup-content">
           <FoundationPresets
             ref="foundationPresetsRef"
-            :selected-id="selectedFoundationId"
+            :foundation-l="foundationL"
+            :foundation-c="foundationC"
+            :foundation-h="foundationH"
+            :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
             :brand-oklch="brandOklch"
             :brand-hue="hue"
-            @update:selected-id="$emit('update:selectedFoundationId', $event)"
+            @update:foundation-l="$emit('update:foundationL', $event)"
+            @update:foundation-c="$emit('update:foundationC', $event)"
+            @update:foundation-h="$emit('update:foundationH', $event)"
+            @update:foundation-hue-linked-to-brand="$emit('update:foundationHueLinkedToBrand', $event)"
           />
         </div>
 

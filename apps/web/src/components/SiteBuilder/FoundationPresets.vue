@@ -8,25 +8,41 @@ import { FOUNDATION_PRESETS } from './foundationPresets'
 const MIN_FOUNDATION_BRAND_CONTRAST = 2
 
 const props = defineProps<{
-  selectedId: string
+  foundationL: number
+  foundationC: number
+  foundationH: number
+  foundationHueLinkedToBrand: boolean
   brandOklch: Oklch
   brandHue: number
 }>()
 
 const emit = defineEmits<{
-  'update:selectedId': [value: string]
+  'update:foundationL': [value: number]
+  'update:foundationC': [value: number]
+  'update:foundationH': [value: number]
+  'update:foundationHueLinkedToBrand': [value: boolean]
 }>()
 
-// Get the selected preset
-const selectedPreset = computed(() =>
-  FOUNDATION_PRESETS.find((p) => p.id === props.selectedId) ?? FOUNDATION_PRESETS[0]!
-)
+// Find matching preset for current values (for highlighting selected preset)
+const matchingPresetId = computed(() => {
+  const tolerance = 0.001
+  for (const preset of FOUNDATION_PRESETS) {
+    const matchL = Math.abs(preset.L - props.foundationL) < tolerance
+    const matchC = Math.abs(preset.C - props.foundationC) < tolerance
+    const isLinked = preset.H === 'brand'
+    const matchHueLinked = isLinked === props.foundationHueLinkedToBrand
+    const matchH = isLinked || Math.abs(preset.H as number - props.foundationH) < tolerance
+    if (matchL && matchC && matchH && matchHueLinked) {
+      return preset.id
+    }
+  }
+  return null
+})
 
-// Compute foundation color from selected preset
+// Compute foundation color from current props
 const foundationColor = computed((): { oklch: Oklch; css: string; hex: string } => {
-  const preset = selectedPreset.value
-  const presetHue = preset.H === 'brand' ? props.brandHue : preset.H
-  const oklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
+  const resolvedH = props.foundationHueLinkedToBrand ? props.brandHue : props.foundationH
+  const oklch: Oklch = { L: props.foundationL, C: props.foundationC, H: resolvedH }
   return {
     oklch,
     css: $Oklch.toCss(oklch),
@@ -37,6 +53,18 @@ const foundationColor = computed((): { oklch: Oklch; css: string; hex: string } 
     })(),
   }
 })
+
+// Handle preset selection
+const selectPreset = (preset: typeof FOUNDATION_PRESETS[number]) => {
+  emit('update:foundationL', preset.L)
+  emit('update:foundationC', preset.C)
+  if (preset.H === 'brand') {
+    emit('update:foundationHueLinkedToBrand', true)
+  } else {
+    emit('update:foundationH', preset.H)
+    emit('update:foundationHueLinkedToBrand', false)
+  }
+}
 
 // Check contrast for each preset against current brand
 const presetsWithContrast = computed(() => {
@@ -65,7 +93,7 @@ const darkPresets = computed(() =>
 // Expose for parent
 defineExpose({
   foundationColor,
-  selectedPreset,
+  matchingPresetId,
 })
 </script>
 
@@ -80,11 +108,11 @@ defineExpose({
           :key="preset.id"
           class="preset-button"
           :class="{
-            selected: selectedId === preset.id,
+            selected: matchingPresetId === preset.id,
             warning: !preset.meetsMinContrast,
           }"
           :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
-          @click="emit('update:selectedId', preset.id)"
+          @click="selectPreset(preset)"
         >
           <span class="preset-label">{{ preset.label }}</span>
           <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
@@ -101,11 +129,11 @@ defineExpose({
           :key="preset.id"
           class="preset-button preset-button--dark"
           :class="{
-            selected: selectedId === preset.id,
+            selected: matchingPresetId === preset.id,
             warning: !preset.meetsMinContrast,
           }"
           :style="{ backgroundColor: `oklch(${preset.L} ${preset.C} ${preset.resolvedH})` }"
-          @click="emit('update:selectedId', preset.id)"
+          @click="selectPreset(preset)"
         >
           <span class="preset-label">{{ preset.label }}</span>
           <span v-if="!preset.meetsMinContrast" class="preset-warning-icon">!</span>
@@ -122,7 +150,7 @@ defineExpose({
       <div class="color-values">
         <code class="hex-value">{{ foundationColor.hex }}</code>
         <div class="hsv-values">
-          <span>{{ selectedPreset.label }}</span>
+          <span>L={{ foundationL.toFixed(3) }} C={{ foundationC.toFixed(3) }} H={{ foundationHueLinkedToBrand ? 'brand' : foundationH.toFixed(0) }}</span>
         </div>
       </div>
     </div>

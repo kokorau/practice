@@ -48,7 +48,10 @@ const {
   accentValue,
   accentHex,
   accentColor,
-  selectedFoundationId,
+  foundationL,
+  foundationC,
+  foundationH,
+  foundationHueLinkedToBrand,
   foundationColor,
   isDark,
 } = useSiteColors()
@@ -365,9 +368,11 @@ const activeTab = ref<TabId>('generator')
       :accent-saturation="accentSaturation"
       :accent-value="accentValue"
       :accent-hex="accentHex"
-      :selected-foundation-id="selectedFoundationId"
+      :foundation-l="foundationL"
+      :foundation-c="foundationC"
+      :foundation-h="foundationH"
+      :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
       :foundation-hex="foundationColor.hex"
-      :foundation-label="foundationColor.label"
       :active-section="activeSection"
       :texture-patterns="texturePatterns"
       :mask-patterns="maskPatterns"
@@ -383,7 +388,10 @@ const activeTab = ref<TabId>('generator')
       @update:accent-hue="accentHue = $event"
       @update:accent-saturation="accentSaturation = $event"
       @update:accent-value="accentValue = $event"
-      @update:selected-foundation-id="selectedFoundationId = $event"
+      @update:foundation-l="foundationL = $event"
+      @update:foundation-c="foundationC = $event"
+      @update:foundation-h="foundationH = $event"
+      @update:foundation-hue-linked-to-brand="foundationHueLinkedToBrand = $event"
       @open-section="openSection"
       @select-filter-layer="selectedFilterLayerId = $event"
       @toggle-layer-visibility="toggleLayerVisibility"

@@ -42,7 +42,10 @@ const {
   accentValue,
   accentHex,
   accentColor,
-  selectedFoundationId,
+  foundationL,
+  foundationC,
+  foundationH,
+  foundationHueLinkedToBrand,
   foundationColor,
   isDark,
 } = useSiteColors()
@@ -90,7 +93,7 @@ const extendedAccentColor = computed(() => ({
 const extendedFoundationColor = computed(() => ({
   hex: foundationColor.value.hex,
   css: foundationColor.value.css,
-  label: foundationColor.value.label,
+  cssP3: foundationColor.value.cssP3,
 }))
 
 // Neutral ramp display
@@ -208,7 +211,7 @@ watch(palette, updateStyles)
         <span class="color-swatch" :style="{ backgroundColor: foundationColor.hex }" />
         <span class="color-info">
           <span class="color-name">Foundation</span>
-          <span class="color-value">{{ foundationColor.label }}</span>
+          <span class="color-value">{{ foundationColor.hex }}</span>
         </span>
       </button>
 
@@ -240,10 +243,16 @@ watch(palette, updateStyles)
             />
             <FoundationPresets
               v-if="activeColorPopup === 'foundation'"
-              :selected-id="selectedFoundationId"
+              :foundation-l="foundationL"
+              :foundation-c="foundationC"
+              :foundation-h="foundationH"
+              :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
               :brand-oklch="brandColor.oklch"
               :brand-hue="hue"
-              @update:selected-id="selectedFoundationId = $event"
+              @update:foundation-l="foundationL = $event"
+              @update:foundation-c="foundationC = $event"
+              @update:foundation-h="foundationH = $event"
+              @update:foundation-hue-linked-to-brand="foundationHueLinkedToBrand = $event"
             />
           </div>
         </div>

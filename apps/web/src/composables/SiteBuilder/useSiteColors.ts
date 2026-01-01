@@ -2,7 +2,6 @@ import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import { hsvToRgb, rgbToHex } from '../../components/SiteBuilder/utils/colorConversion'
-import { FOUNDATION_PRESETS } from '../../components/SiteBuilder/foundationPresets'
 
 export type BrandColor = {
   hex: string
@@ -19,15 +18,19 @@ export type AccentColor = {
 export type FoundationColor = {
   oklch: Oklch
   css: string
+  cssP3: string
   hex: string
-  label: string
 }
 
 export type UseSiteColorsOptions = {
   initialHue?: number
   initialSaturation?: number
   initialValue?: number
-  initialFoundationId?: string
+  // Foundation color initial values (Oklch)
+  initialFoundationL?: number
+  initialFoundationC?: number
+  initialFoundationH?: number
+  initialFoundationHueLinkedToBrand?: boolean
   // Accent color initial values
   initialAccentHue?: number
   initialAccentSaturation?: number
@@ -53,8 +56,11 @@ export type UseSiteColorsReturn = {
   accentHex: ComputedRef<string>
   // Accent color
   accentColor: ComputedRef<AccentColor>
-  // Foundation
-  selectedFoundationId: Ref<string>
+  // Foundation (Oklch values)
+  foundationL: Ref<number>
+  foundationC: Ref<number>
+  foundationH: Ref<number>
+  foundationHueLinkedToBrand: Ref<boolean>
   foundationColor: ComputedRef<FoundationColor>
   // Helpers
   isDark: ComputedRef<boolean>
@@ -69,7 +75,11 @@ export const useSiteColors = (options: UseSiteColorsOptions = {}): UseSiteColors
     initialHue = 198,
     initialSaturation = 70,
     initialValue = 65,
-    initialFoundationId = 'white',
+    // Foundation defaults (white preset: L=0.955, C=0, H=0)
+    initialFoundationL = 0.955,
+    initialFoundationC = 0,
+    initialFoundationH = 0,
+    initialFoundationHueLinkedToBrand = false,
     // Accent defaults (complementary hue offset from brand)
     initialAccentHue = 30,
     initialAccentSaturation = 80,
@@ -116,20 +126,22 @@ export const useSiteColors = (options: UseSiteColorsOptions = {}): UseSiteColors
     }
   })
 
-  // Foundation preset state
-  const selectedFoundationId = ref(initialFoundationId)
+  // Foundation state (Oklch values)
+  const foundationL = ref(initialFoundationL)
+  const foundationC = ref(initialFoundationC)
+  const foundationH = ref(initialFoundationH)
+  const foundationHueLinkedToBrand = ref(initialFoundationHueLinkedToBrand)
 
   const foundationColor = computed((): FoundationColor => {
-    const preset = FOUNDATION_PRESETS.find((p) => p.id === selectedFoundationId.value) ?? FOUNDATION_PRESETS[0]!
-    const presetHue = preset.H === 'brand' ? hue.value : preset.H
-    const oklch: Oklch = { L: preset.L, C: preset.C, H: presetHue }
+    const resolvedH = foundationHueLinkedToBrand.value ? hue.value : foundationH.value
+    const oklch: Oklch = { L: foundationL.value, C: foundationC.value, H: resolvedH }
     const srgb = $Oklch.toSrgb(oklch)
     const toHex = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')
     return {
       oklch,
       css: $Oklch.toCss(oklch),
+      cssP3: $Oklch.toCssP3(oklch),
       hex: `#${toHex(srgb.r)}${toHex(srgb.g)}${toHex(srgb.b)}`,
-      label: preset.label,
     }
   })
 
@@ -151,8 +163,11 @@ export const useSiteColors = (options: UseSiteColorsOptions = {}): UseSiteColors
     accentRgb,
     accentHex,
     accentColor,
-    // Foundation
-    selectedFoundationId,
+    // Foundation (Oklch values)
+    foundationL,
+    foundationC,
+    foundationH,
+    foundationHueLinkedToBrand,
     foundationColor,
     // Helpers
     isDark,
