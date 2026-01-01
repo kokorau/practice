@@ -3,9 +3,6 @@ import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import {
   type PrimitivePalette,
-  NEUTRAL_KEYS,
-  FOUNDATION_KEYS,
-  ACCENT_RAMP_KEYS,
   BRAND_KEYS,
   ACCENT_KEYS,
 } from '../../modules/SemanticColorPalette/Domain'
@@ -128,171 +125,108 @@ defineProps<{
       </div>
     </section>
 
+    <!-- Neutral Ramp + Brand -->
     <section class="section">
-      <h2 class="section-heading">Neutral Ramp (Brand-derived)</h2>
+      <h2 class="section-heading">Neutral Ramp + Brand</h2>
       <p class="section-description">
         Brand hue with minimal chroma ({{ primitivePalette.N0.C.toFixed(4) }}) for ink colors
       </p>
-      <div class="neutral-ramp">
-        <div
-          v-for="step in neutralRampDisplay"
-          :key="step.key"
-          class="neutral-step"
-        >
+      <div class="ramp-with-derivatives">
+        <div class="ramp-group">
           <div
-            class="neutral-swatch"
-            :style="{ backgroundColor: step.css }"
-          />
-          <div class="neutral-info">
-            <span class="neutral-index">{{ step.key }}</span>
-            <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2 class="section-heading">Foundation Ramp (Foundation-derived)</h2>
-      <p class="section-description">
-        Foundation hue with minimal chroma ({{ primitivePalette.F0.C.toFixed(4) }}) for surface colors
-      </p>
-      <div class="neutral-ramp">
-        <div
-          v-for="step in foundationRampDisplay"
-          :key="step.key"
-          class="neutral-step"
-        >
-          <div
-            class="neutral-swatch"
-            :style="{ backgroundColor: step.css }"
-          />
-          <div class="neutral-info">
-            <span class="neutral-index">{{ step.key }}</span>
-            <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section v-if="accentRampDisplay" class="section">
-      <h2 class="section-heading">Accent Ramp (Accent-derived)</h2>
-      <p class="section-description">
-        Accent hue with subtle chroma ({{ primitivePalette.A0.C.toFixed(4) }}) for accent surfaces
-      </p>
-      <div class="neutral-ramp">
-        <div
-          v-for="step in accentRampDisplay"
-          :key="step.key"
-          class="neutral-step"
-        >
-          <div
-            class="neutral-swatch"
-            :style="{ backgroundColor: step.css }"
-          />
-          <div class="neutral-info">
-            <span class="neutral-index">{{ step.key }}</span>
-            <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <h2 class="section-heading">Primitive Palette</h2>
-        <span class="theme-badge" :class="primitivePalette.theme">
-          {{ primitivePalette.theme }}
-        </span>
-      </div>
-
-      <!-- Neutral (N0-N9) -->
-      <div class="primitive-group">
-        <h3 class="primitive-group-label">Neutral (Brand-derived)</h3>
-        <div class="primitive-palette-grid">
-          <div
-            v-for="key in NEUTRAL_KEYS"
-            :key="key"
-            class="primitive-item"
+            v-for="step in neutralRampDisplay"
+            :key="step.key"
+            class="neutral-step"
           >
             <div
-              class="primitive-swatch"
-              :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+              class="neutral-swatch"
+              :style="{ backgroundColor: step.css }"
             />
-            <span class="primitive-key">{{ key }}</span>
+            <div class="neutral-info">
+              <span class="neutral-index">{{ step.key }}</span>
+              <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- Foundation (F0-F9) -->
-      <div class="primitive-group">
-        <h3 class="primitive-group-label">Foundation (Foundation-derived)</h3>
-        <div class="primitive-palette-grid">
-          <div
-            v-for="key in FOUNDATION_KEYS"
-            :key="key"
-            class="primitive-item"
-          >
-            <div
-              class="primitive-swatch"
-              :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
-            />
-            <span class="primitive-key">{{ key }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Accent Ramp (A0-A9) -->
-      <div v-if="accentRampDisplay" class="primitive-group">
-        <h3 class="primitive-group-label">Accent Ramp (Accent-derived)</h3>
-        <div class="primitive-palette-grid">
-          <div
-            v-for="key in ACCENT_RAMP_KEYS"
-            :key="key"
-            class="primitive-item"
-          >
-            <div
-              class="primitive-swatch"
-              :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
-            />
-            <span class="primitive-key">{{ key }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Brand (B, Bt, Bs, Bf) -->
-      <div class="primitive-group">
-        <h3 class="primitive-group-label">Brand (B + derivatives)</h3>
-        <div class="primitive-palette-grid">
+        <div class="derivative-group">
           <div
             v-for="key in BRAND_KEYS"
             :key="key"
-            class="primitive-item"
+            class="derivative-item"
           >
             <div
-              class="primitive-swatch"
+              class="derivative-swatch"
               :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
             />
-            <span class="primitive-key">{{ key }}</span>
+            <span class="derivative-key">{{ key }}</span>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Accent (A, At, As, Af) -->
-      <div class="primitive-group">
-        <h3 class="primitive-group-label">Accent (A + derivatives)</h3>
-        <div class="primitive-palette-grid">
+    <!-- Accent Ramp + Accent -->
+    <section v-if="accentRampDisplay" class="section">
+      <h2 class="section-heading">Accent Ramp + Accent</h2>
+      <p class="section-description">
+        Accent hue with subtle chroma ({{ primitivePalette.A0.C.toFixed(4) }}) for accent surfaces
+      </p>
+      <div class="ramp-with-derivatives">
+        <div class="ramp-group">
+          <div
+            v-for="step in accentRampDisplay"
+            :key="step.key"
+            class="neutral-step"
+          >
+            <div
+              class="neutral-swatch"
+              :style="{ backgroundColor: step.css }"
+            />
+            <div class="neutral-info">
+              <span class="neutral-index">{{ step.key }}</span>
+              <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
+            </div>
+          </div>
+        </div>
+        <div class="derivative-group">
           <div
             v-for="key in ACCENT_KEYS"
             :key="key"
-            class="primitive-item"
+            class="derivative-item"
           >
             <div
-              class="primitive-swatch"
+              class="derivative-swatch"
               :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
             />
-            <span class="primitive-key">{{ key }}</span>
+            <span class="derivative-key">{{ key }}</span>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Foundation Ramp -->
+    <section class="section">
+      <h2 class="section-heading">Foundation Ramp</h2>
+      <p class="section-description">
+        Foundation hue with minimal chroma ({{ primitivePalette.F0.C.toFixed(4) }}) for surface colors
+      </p>
+      <div class="ramp-with-derivatives">
+        <div class="ramp-group">
+          <div
+            v-for="step in foundationRampDisplay"
+            :key="step.key"
+            class="neutral-step"
+          >
+            <div
+              class="neutral-swatch"
+              :style="{ backgroundColor: step.css }"
+            />
+            <div class="neutral-info">
+              <span class="neutral-index">{{ step.key }}</span>
+              <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
+            </div>
+          </div>
+        </div>
+        <div class="derivative-group derivative-placeholder" />
       </div>
     </section>
   </div>
@@ -411,10 +345,53 @@ defineProps<{
   color: oklch(0.90 0.01 260);
 }
 
-/* Neutral Ramp */
-.neutral-ramp {
+/* Ramp with Derivatives Layout */
+.ramp-with-derivatives {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.derivative-group {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.derivative-placeholder {
+  visibility: hidden;
+}
+
+.derivative-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.derivative-swatch {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(128, 128, 128, 0.15);
+  flex-shrink: 0;
+}
+
+.derivative-key {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.35 0.02 260);
+}
+
+:global(.dark) .derivative-key {
+  color: oklch(0.75 0.02 260);
+}
+
+.ramp-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .neutral-step {
@@ -457,81 +434,5 @@ defineProps<{
 
 :global(.dark) .neutral-l {
   color: oklch(0.60 0.02 260);
-}
-
-/* Theme Badge */
-.theme-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.theme-badge.light {
-  background: oklch(0.96 0.02 80);
-  color: oklch(0.45 0.08 80);
-  border: 1px solid oklch(0.88 0.04 80);
-}
-
-.theme-badge.dark {
-  background: oklch(0.25 0.02 260);
-  color: oklch(0.75 0.02 260);
-  border: 1px solid oklch(0.35 0.02 260);
-}
-
-/* Primitive Palette Grid */
-.primitive-group {
-  margin-bottom: 1.5rem;
-}
-
-.primitive-group:last-child {
-  margin-bottom: 0;
-}
-
-.primitive-group-label {
-  margin: 0 0 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: oklch(0.50 0.02 260);
-}
-
-:global(.dark) .primitive-group-label {
-  color: oklch(0.60 0.02 260);
-}
-
-.primitive-palette-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.primitive-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.primitive-swatch {
-  width: 48px;
-  height: 48px;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(128, 128, 128, 0.15);
-}
-
-.primitive-key {
-  font-size: 0.7rem;
-  font-weight: 600;
-  font-family: 'SF Mono', Monaco, monospace;
-  color: oklch(0.40 0.02 260);
-}
-
-:global(.dark) .primitive-key {
-  color: oklch(0.70 0.02 260);
 }
 </style>
