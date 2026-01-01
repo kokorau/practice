@@ -3,12 +3,10 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
 import {
-  type ContextTokens,
-  type ComponentTokens,
-  type ActionState,
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
   NEUTRAL_KEYS,
+  FOUNDATION_KEYS,
 } from '../modules/SemanticColorPalette/Domain'
 import {
   createPrimitivePalette,
@@ -20,6 +18,14 @@ import {
 import { useSiteColors } from '../composables/SiteBuilder'
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
+import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'
+import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
+
+// ============================================================
+// Tab State
+// ============================================================
+type TabId = 'primitive' | 'palette'
+const activeTab = ref<TabId>('palette')
 
 // ============================================================
 // Brand, Accent & Foundation Color State
@@ -63,9 +69,33 @@ const semanticPalette = computed(() => createSemanticFromPrimitive(primitivePale
 const primitiveRefMap = computed(() => createPrimitiveRefMap(primitivePalette.value))
 const palette = computed(() => semanticPalette.value)
 
+// Extended brand color for PrimitiveTab
+const extendedBrandColor = computed(() => ({
+  hex: brandColor.value.hex,
+  oklch: brandColor.value.oklch,
+  cssOklch: brandColor.value.cssOklch,
+  cssP3: $Oklch.toCssP3(brandColor.value.oklch),
+}))
+
+// Extended foundation color for PrimitiveTab
+const extendedFoundationColor = computed(() => ({
+  hex: foundationColor.value.hex,
+  css: foundationColor.value.css,
+  label: foundationColor.value.label,
+}))
+
 // Neutral ramp display
 const neutralRampDisplay = computed(() => {
   return NEUTRAL_KEYS.map((key) => ({
+    key,
+    color: primitivePalette.value[key],
+    css: $Oklch.toCss(primitivePalette.value[key]),
+  }))
+})
+
+// Foundation ramp display
+const foundationRampDisplay = computed(() => {
+  return FOUNDATION_KEYS.map((key) => ({
     key,
     color: primitivePalette.value[key],
     css: $Oklch.toCss(primitivePalette.value[key]),
@@ -91,18 +121,6 @@ const actions = computed(() => [
   { name: 'action', label: 'Action (CTA)', className: COMPONENT_CLASS_NAMES.action, tokens: palette.value.component.action },
   { name: 'actionQuiet', label: 'Action Quiet', className: COMPONENT_CLASS_NAMES.actionQuiet, tokens: palette.value.component.actionQuiet },
 ])
-
-const actionStates: ActionState[] = ['default', 'hover', 'active', 'disabled']
-
-// Get token entries for display (flattened for easier viewing)
-const getTokenEntries = (tokens: ContextTokens | ComponentTokens) => {
-  const entries: [string, string][] = []
-  entries.push(['surface', tokens.surface])
-  for (const [key, value] of Object.entries(tokens.ink)) {
-    entries.push([`ink.${key}`, value])
-  }
-  return entries
-}
 
 // Dynamic CSS injection for CSS variables and rule sets
 let styleElement: HTMLStyleElement | null = null
@@ -176,20 +194,6 @@ watch(palette, updateStyles)
         </span>
       </button>
 
-      <!-- Neutral Ramp Display -->
-      <div class="neutral-ramp-section">
-        <span class="ramp-label">Neutral Ramp</span>
-        <div class="neutral-ramp">
-          <span
-            v-for="item in neutralRampDisplay"
-            :key="item.key"
-            class="ramp-step"
-            :style="{ backgroundColor: item.css }"
-            :title="`${item.key}: ${item.css}`"
-          />
-        </div>
-      </div>
-
       <!-- Color Popup -->
       <Transition name="popup">
         <div v-if="activeColorPopup" class="color-popup">
@@ -232,107 +236,43 @@ watch(palette, updateStyles)
     <main class="main-content">
       <header class="header">
         <h1>Semantic Color Palette</h1>
-        <span class="current-palette">{{ isDark ? 'Dark Theme' : 'Light Theme' }}</span>
+        <nav class="tab-nav">
+          <button
+            class="tab-button"
+            :class="{ active: activeTab === 'primitive' }"
+            @click="activeTab = 'primitive'"
+          >
+            Primitive
+          </button>
+          <button
+            class="tab-button"
+            :class="{ active: activeTab === 'palette' }"
+            @click="activeTab = 'palette'"
+          >
+            Palette Preview
+          </button>
+        </nav>
       </header>
 
-    <!-- Contexts Section -->
-    <section class="section">
-      <h2 class="section-heading">Contexts (Places)</h2>
-      <div class="surfaces-grid">
-        <div
-          v-for="ctx in contexts"
-          :key="ctx.name"
-          class="surface-card"
-          :class="ctx.className"
-        >
-          <h3 class="surface-title scp-title">{{ ctx.label }}</h3>
-
-          <div class="tokens-list">
-            <div
-              v-for="[key, value] in getTokenEntries(ctx.tokens)"
-              :key="key"
-              class="token-row"
-            >
-              <span class="token-name scp-body">{{ key }}</span>
-              <div class="token-preview">
-                <span class="color-swatch" :style="{ backgroundColor: value }" />
-                <code class="token-value scp-meta">{{ value }}</code>
-              </div>
-            </div>
-          </div>
-
-          <!-- Preview section -->
-          <div class="preview-section scp-divider">
-            <p class="preview-title scp-title">Title text sample</p>
-            <p class="preview-body scp-body">Body text sample</p>
-            <p class="preview-meta scp-meta">Meta text sample</p>
-            <a href="#" class="preview-link scp-link" @click.prevent>Link text sample</a>
-          </div>
-        </div>
+      <!-- Primitive Tab -->
+      <div v-if="activeTab === 'primitive'" class="tab-content">
+        <PrimitiveTab
+          :brand-color="extendedBrandColor"
+          :foundation-color="extendedFoundationColor"
+          :primitive-palette="primitivePalette"
+          :neutral-ramp-display="neutralRampDisplay"
+          :foundation-ramp-display="foundationRampDisplay"
+        />
       </div>
-    </section>
 
-    <!-- Components Section -->
-    <section class="section">
-      <h2 class="section-heading">Components</h2>
-      <div class="components-grid">
-        <!-- Stateless components -->
-        <div
-          v-for="comp in components"
-          :key="comp.name"
-          class="component-card"
-          :class="comp.className"
-        >
-          <h3 class="component-title scp-title">{{ comp.label }}</h3>
-          <span class="component-badge scp-meta">Stateless</span>
-
-          <!-- Preview section -->
-          <div class="preview-section scp-divider">
-            <p class="preview-title scp-title">Title text sample</p>
-            <p class="preview-body scp-body">Body text sample</p>
-            <p class="preview-meta scp-meta">Meta text sample</p>
-            <a href="#" class="preview-link scp-link" @click.prevent>Link text sample</a>
-          </div>
-        </div>
-
-        <!-- Stateful action components -->
-        <div
-          v-for="action in actions"
-          :key="action.name"
-          class="component-card action-component"
-        >
-          <h3 class="component-title">{{ action.label }}</h3>
-          <span class="component-badge">Stateful</span>
-
-          <!-- Interactive buttons -->
-          <div class="action-buttons">
-            <button :class="action.className">Click me</button>
-            <button :class="action.className" disabled>Disabled</button>
-          </div>
-
-          <!-- State preview -->
-          <div class="state-previews">
-            <div
-              v-for="state in actionStates"
-              :key="state"
-              class="state-preview"
-            >
-              <span class="state-label">{{ state }}</span>
-              <button
-                class="action-button"
-                :style="{
-                  backgroundColor: action.tokens.surface[state],
-                  borderColor: action.tokens.ink.border[state],
-                  color: action.tokens.ink.title[state],
-                }"
-              >
-                Btn
-              </button>
-            </div>
-          </div>
-        </div>
+      <!-- Palette Preview Tab -->
+      <div v-if="activeTab === 'palette'" class="tab-content">
+        <PalettePreviewTab
+          :contexts="contexts"
+          :components="components"
+          :actions="actions"
+        />
       </div>
-    </section>
     </main>
   </div>
 </template>
@@ -438,49 +378,6 @@ watch(palette, updateStyles)
   font-family: ui-monospace, monospace;
 }
 
-/* Neutral Ramp */
-.neutral-ramp-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid oklch(0.88 0.01 260);
-}
-
-.dark .neutral-ramp-section {
-  border-top-color: oklch(0.25 0.02 260);
-}
-
-.ramp-label {
-  display: block;
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: oklch(0.50 0.02 260);
-  margin-bottom: 0.5rem;
-}
-
-.dark .ramp-label {
-  color: oklch(0.60 0.02 260);
-}
-
-.neutral-ramp {
-  display: flex;
-  gap: 2px;
-}
-
-.ramp-step {
-  flex: 1;
-  height: 1.5rem;
-}
-
-.ramp-step:first-child {
-  border-radius: 0.25rem 0 0 0.25rem;
-}
-
-.ramp-step:last-child {
-  border-radius: 0 0.25rem 0.25rem 0;
-}
-
 /* Color Popup */
 .color-popup {
   position: absolute;
@@ -584,224 +481,60 @@ h1 {
   color: oklch(0.90 0.01 260);
 }
 
-.current-palette {
-  font-size: 0.875rem;
-  color: oklch(0.50 0.02 260);
-}
-
-.dark .current-palette {
-  color: oklch(0.60 0.02 260);
-}
-
-.section {
-  max-width: 1400px;
-  margin: 0 auto 2rem;
-}
-
-.section-heading {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0 0 1rem;
-  color: oklch(0.35 0.02 260);
-}
-
-.dark .section-heading {
-  color: oklch(0.75 0.02 260);
-}
-
-.surfaces-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
-}
-
-.surface-card {
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  border: 1px solid transparent;
-}
-
-.surface-title {
-  margin: 0 0 1rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.tokens-list {
+/* Tab Navigation */
+.tab-nav {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.25rem;
+  background: oklch(0.90 0.01 260);
+  padding: 0.25rem;
+  border-radius: 0.5rem;
 }
 
-.token-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
+.dark .tab-nav {
+  background: oklch(0.20 0.02 260);
 }
 
-.token-name {
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.token-preview {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.color-swatch {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  border: 1px solid rgba(128,128,128,0.2);
-  flex-shrink: 0;
-}
-
-.token-value {
-  font-size: 0.65rem;
-  font-family: 'SF Mono', Monaco, monospace;
-  opacity: 0.8;
-}
-
-.preview-section {
-  border-top: 1px solid rgba(128,128,128,0.15);
-  padding-top: 1rem;
-  margin-top: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.preview-section p {
-  margin: 0;
-  font-size: 0.875rem;
-}
-
-.preview-section a {
-  font-size: 0.875rem;
-  text-decoration: underline;
-}
-
-.tint-preview {
-  padding: 0.5rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-}
-
-.accent-preview {
+.tab-button {
   padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-align: center;
-}
-
-/* Components Section (4-column grid) */
-.components-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-}
-
-.component-card {
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-
-.action-component {
-  background: oklch(0.99 0.005 260);
-}
-
-.dark .action-component {
-  background: oklch(0.18 0.02 260);
-}
-
-.component-title {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: oklch(0.25 0.02 260);
-}
-
-.dark .component-title {
-  color: oklch(0.90 0.01 260);
-}
-
-.component-badge {
-  display: inline-block;
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: oklch(0.50 0.02 260);
-  margin-bottom: 0.75rem;
-}
-
-.dark .component-badge {
-  color: oklch(0.60 0.02 260);
-}
-
-/* Action component specific */
-.action-component {
-  display: flex;
-  flex-direction: column;
-}
-
-.action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.action-buttons button {
-  padding: 0.4rem 0.75rem;
-  border: 1px solid;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: oklch(0.45 0.02 260);
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.action-buttons button:disabled {
-  cursor: not-allowed;
+.dark .tab-button {
+  color: oklch(0.65 0.02 260);
 }
 
-.state-previews {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.tab-button:hover {
+  background: oklch(0.85 0.01 260);
+  color: oklch(0.35 0.02 260);
 }
 
-.state-preview {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
+.dark .tab-button:hover {
+  background: oklch(0.25 0.02 260);
+  color: oklch(0.80 0.02 260);
 }
 
-.state-label {
-  font-size: 0.55rem;
-  color: oklch(0.50 0.02 260);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.tab-button.active {
+  background: white;
+  color: oklch(0.25 0.02 260);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.dark .state-label {
-  color: oklch(0.60 0.02 260);
+.dark .tab-button.active {
+  background: oklch(0.30 0.02 260);
+  color: oklch(0.95 0.01 260);
 }
 
-.action-button {
-  padding: 0.3rem 0.5rem;
-  border: 1px solid;
-  border-radius: 4px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  cursor: pointer;
+/* Tab Content */
+.tab-content {
+  max-width: 1400px;
+  margin: 0 auto;
 }
+
 </style>
