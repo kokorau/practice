@@ -9,6 +9,7 @@ import {
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
   NEUTRAL_KEYS,
+  ACCENT_RAMP_KEYS,
 } from '../modules/SemanticColorPalette/Domain'
 import {
   toCSSText,
@@ -52,9 +53,18 @@ const hue = ref<number | undefined>(undefined)
 const saturation = ref<number | undefined>(undefined)
 const value = ref<number | undefined>(undefined)
 
+// Accent Color State (HSV)
+const accentHue = ref<number | undefined>(undefined)
+const accentSaturation = ref<number | undefined>(undefined)
+const accentValue = ref<number | undefined>(undefined)
+
 // Computed color values（ロード前は仮の値を使用）
 const selectedRgb = computed(() => hsvToRgb(hue.value ?? 0, saturation.value ?? 0, value.value ?? 0))
 const selectedHex = computed(() => rgbToHex(...selectedRgb.value))
+
+// Accent computed values
+const accentRgb = computed(() => hsvToRgb(accentHue.value ?? 30, accentSaturation.value ?? 80, accentValue.value ?? 60))
+const accentHex = computed(() => rgbToHex(...accentRgb.value))
 
 // Tab state
 type TabId = 'primitive' | 'palette' | 'demo' | 'brand-guide' | 'assets'
@@ -142,6 +152,18 @@ const brandColor = computed(() => {
   }
 })
 
+// Accent color computed
+const accentColor = computed(() => {
+  const [r, g, b] = accentRgb.value
+  const oklch = $Oklch.fromSrgb({ r: r / 255, g: g / 255, b: b / 255 })
+  return {
+    hex: accentHex.value,
+    oklch,
+    cssOklch: $Oklch.toCss(oklch),
+    cssP3: $Oklch.toCssP3(oklch),
+  }
+})
+
 // Foundation color computed from Oklch values
 const foundationColor = computed(() => {
   const L = foundationL.value ?? 0.955
@@ -212,6 +234,7 @@ const basePrimitivePalette = computed((): PrimitivePalette => {
   return createPrimitivePalette({
     brand: brandColor.value.oklch,
     foundation: foundationColor.value.oklch,
+    accent: accentColor.value.oklch,
   })
 })
 
@@ -221,6 +244,14 @@ const primitivePalette = computed((): PrimitivePalette => {
 
 const neutralRampDisplay = computed(() => {
   return NEUTRAL_KEYS.map((key) => ({
+    key,
+    color: primitivePalette.value[key],
+    css: $Oklch.toCss(primitivePalette.value[key]),
+  }))
+})
+
+const accentRampDisplay = computed(() => {
+  return ACCENT_RAMP_KEYS.map((key) => ({
     key,
     color: primitivePalette.value[key],
     css: $Oklch.toCss(primitivePalette.value[key]),
@@ -374,6 +405,10 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
       :saturation="saturation ?? 0"
       :value="value ?? 0"
       :selected-hex="selectedHex"
+      :accent-hue="accentHue ?? 30"
+      :accent-saturation="accentSaturation ?? 80"
+      :accent-value="accentValue ?? 60"
+      :accent-hex="accentHex"
       :foundation-l="foundationL ?? 0.955"
       :foundation-c="foundationC ?? 0"
       :foundation-h="foundationH ?? 0"
@@ -394,6 +429,9 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"
+      @update:accent-hue="accentHue = $event"
+      @update:accent-saturation="accentSaturation = $event"
+      @update:accent-value="accentValue = $event"
       @update:foundation-l="foundationL = $event"
       @update:foundation-c="foundationC = $event"
       @update:foundation-h="foundationH = $event"
@@ -429,10 +467,12 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
       <div v-if="activeTab === 'primitive'" class="tab-content">
         <PrimitiveTab
           :brand-color="brandColor"
+          :accent-color="accentColor"
           :foundation-color="foundationColor"
           :primitive-palette="primitivePalette"
           :neutral-ramp-display="neutralRampDisplay"
           :foundation-ramp-display="foundationRampDisplay"
+          :accent-ramp-display="accentRampDisplay"
         />
       </div>
 

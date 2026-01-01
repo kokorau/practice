@@ -11,12 +11,12 @@ import FilterPanel from '../Filter/FilterPanel.vue'
 import DesignTokensPresets from './DesignTokensPresets.vue'
 
 export interface SidebarItem {
-  id: 'brand' | 'foundation' | 'filter' | 'tokens' | 'sections'
+  id: 'brand' | 'accent' | 'foundation' | 'filter' | 'tokens' | 'sections'
   label: string
   icon: string
 }
 
-type PopupType = 'brand' | 'foundation' | 'filter' | 'tokens' | 'sections' | null
+type PopupType = 'brand' | 'accent' | 'foundation' | 'filter' | 'tokens' | 'sections' | null
 
 defineProps<{
   // Brand color
@@ -24,6 +24,11 @@ defineProps<{
   saturation: number
   value: number
   selectedHex: string
+  // Accent color
+  accentHue: number
+  accentSaturation: number
+  accentValue: number
+  accentHex: string
   // Foundation (Oklch values)
   foundationL: number
   foundationC: number
@@ -51,6 +56,9 @@ const emit = defineEmits<{
   'update:hue': [value: number]
   'update:saturation': [value: number]
   'update:value': [value: number]
+  'update:accentHue': [value: number]
+  'update:accentSaturation': [value: number]
+  'update:accentValue': [value: number]
   'update:foundationL': [value: number]
   'update:foundationC': [value: number]
   'update:foundationH': [value: number]
@@ -72,6 +80,7 @@ const sectionsEditorRef = ref<InstanceType<typeof SectionsEditor> | null>(null)
 
 const sidebarItems: SidebarItem[] = [
   { id: 'brand', label: 'Brand Color', icon: '🎨' },
+  { id: 'accent', label: 'Accent Color', icon: '💎' },
   { id: 'foundation', label: 'Foundation', icon: '📄' },
   { id: 'filter', label: 'Color Filter', icon: '🔮' },
   { id: 'tokens', label: 'Style', icon: '✨' },
@@ -150,6 +159,10 @@ watch(
             <div class="color-swatch-mini" :style="{ backgroundColor: selectedHex }" />
             <span class="sidebar-item-value">{{ selectedHex }}</span>
           </template>
+          <template v-else-if="item.id === 'accent'">
+            <div class="color-swatch-mini" :style="{ backgroundColor: accentHex }" />
+            <span class="sidebar-item-value">{{ accentHex }}</span>
+          </template>
           <template v-else-if="item.id === 'foundation'">
             <div class="color-swatch-mini" :style="{ backgroundColor: foundationHex }" />
             <span class="sidebar-item-value">{{ foundationHex }}</span>
@@ -185,7 +198,7 @@ watch(
             </span>
             <span class="popup-breadcrumb-separator">›</span>
             <h2 class="popup-title">
-              {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'foundation' ? 'Foundation' : activePopup === 'filter' ? 'Color Filter' : activePopup === 'tokens' ? 'Style' : 'Sections' }}
+              {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'accent' ? 'Accent Color' : activePopup === 'foundation' ? 'Foundation' : activePopup === 'filter' ? 'Color Filter' : activePopup === 'tokens' ? 'Style' : 'Sections' }}
             </h2>
           </div>
           <button class="popup-close" @click="closePopup">×</button>
@@ -200,6 +213,18 @@ watch(
             @update:hue="$emit('update:hue', $event)"
             @update:saturation="$emit('update:saturation', $event)"
             @update:value="$emit('update:value', $event)"
+          />
+        </div>
+
+        <!-- Accent Color Content -->
+        <div v-else-if="activePopup === 'accent'" class="popup-content">
+          <BrandColorPicker
+            :hue="accentHue"
+            :saturation="accentSaturation"
+            :value="accentValue"
+            @update:hue="$emit('update:accentHue', $event)"
+            @update:saturation="$emit('update:accentSaturation', $event)"
+            @update:value="$emit('update:accentValue', $event)"
           />
         </div>
 

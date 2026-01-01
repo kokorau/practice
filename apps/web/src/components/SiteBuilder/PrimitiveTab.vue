@@ -6,6 +6,7 @@ import {
   BRAND_KEYS,
   ACCENT_KEYS,
 } from '../../modules/SemanticColorPalette/Domain'
+import ColorSwatchTooltip from './ColorSwatchTooltip.vue'
 
 defineProps<{
   brandColor: {
@@ -138,13 +139,13 @@ defineProps<{
             :key="step.key"
             class="neutral-step"
           >
-            <div
-              class="neutral-swatch"
-              :style="{ backgroundColor: step.css }"
+            <ColorSwatchTooltip
+              :color="step.color"
+              :label="step.key"
+              size="medium"
             />
             <div class="neutral-info">
               <span class="neutral-index">{{ step.key }}</span>
-              <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
             </div>
           </div>
         </div>
@@ -154,9 +155,10 @@ defineProps<{
             :key="key"
             class="derivative-item"
           >
-            <div
-              class="derivative-swatch"
-              :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+            <ColorSwatchTooltip
+              :color="primitivePalette[key]"
+              :label="key"
+              size="medium"
             />
             <span class="derivative-key">{{ key }}</span>
           </div>
@@ -177,13 +179,13 @@ defineProps<{
             :key="step.key"
             class="neutral-step"
           >
-            <div
-              class="neutral-swatch"
-              :style="{ backgroundColor: step.css }"
+            <ColorSwatchTooltip
+              :color="step.color"
+              :label="step.key"
+              size="medium"
             />
             <div class="neutral-info">
               <span class="neutral-index">{{ step.key }}</span>
-              <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
             </div>
           </div>
         </div>
@@ -193,9 +195,10 @@ defineProps<{
             :key="key"
             class="derivative-item"
           >
-            <div
-              class="derivative-swatch"
-              :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+            <ColorSwatchTooltip
+              :color="primitivePalette[key]"
+              :label="key"
+              size="medium"
             />
             <span class="derivative-key">{{ key }}</span>
           </div>
@@ -216,13 +219,13 @@ defineProps<{
             :key="step.key"
             class="neutral-step"
           >
-            <div
-              class="neutral-swatch"
-              :style="{ backgroundColor: step.css }"
+            <ColorSwatchTooltip
+              :color="step.color"
+              :label="step.key"
+              size="medium"
             />
             <div class="neutral-info">
               <span class="neutral-index">{{ step.key }}</span>
-              <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
             </div>
           </div>
         </div>
@@ -369,14 +372,6 @@ defineProps<{
   gap: 0.5rem;
 }
 
-.derivative-swatch {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(128, 128, 128, 0.15);
-  flex-shrink: 0;
-}
 
 .derivative-key {
   font-size: 0.75rem;
@@ -401,13 +396,6 @@ defineProps<{
   gap: 0.5rem;
 }
 
-.neutral-swatch {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(128, 128, 128, 0.15);
-}
 
 .neutral-info {
   display: flex;
@@ -426,13 +414,4 @@ defineProps<{
   color: oklch(0.75 0.02 260);
 }
 
-.neutral-l {
-  font-size: 0.65rem;
-  font-family: 'SF Mono', Monaco, monospace;
-  color: oklch(0.50 0.02 260);
-}
-
-:global(.dark) .neutral-l {
-  color: oklch(0.60 0.02 260);
-}
 </style>
