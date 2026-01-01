@@ -172,6 +172,10 @@ onMounted(() => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .font-selector-label {
   color: oklch(0.55 0.02 260);
 }
 
@@ -181,22 +185,35 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 0.75rem;
-  background: oklch(0.22 0.02 260);
-  border: 1px solid oklch(0.30 0.02 260);
+  background: oklch(0.94 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.375rem;
+}
+
+:global(.dark) .current-font {
+  background: oklch(0.22 0.02 260);
+  border-color: oklch(0.30 0.02 260);
 }
 
 .current-font-name {
   flex: 1;
   font-size: 0.875rem;
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .current-font-name {
   color: oklch(0.90 0.02 260);
 }
 
 .current-font-placeholder {
   flex: 1;
   font-size: 0.875rem;
-  color: oklch(0.50 0.02 260);
+  color: oklch(0.55 0.02 260);
   font-style: italic;
+}
+
+:global(.dark) .current-font-placeholder {
+  color: oklch(0.50 0.02 260);
 }
 
 .clear-button {
@@ -207,14 +224,23 @@ onMounted(() => {
   height: 1.25rem;
   background: none;
   border: none;
-  color: oklch(0.50 0.02 260);
+  color: oklch(0.55 0.02 260);
   cursor: pointer;
   padding: 0;
   border-radius: 0.25rem;
   transition: color 0.15s, background 0.15s;
 }
 
+:global(.dark) .clear-button {
+  color: oklch(0.50 0.02 260);
+}
+
 .clear-button:hover {
+  color: oklch(0.30 0.02 260);
+  background: oklch(0.88 0.01 260);
+}
+
+:global(.dark) .clear-button:hover {
   color: oklch(0.80 0.02 260);
   background: oklch(0.28 0.02 260);
 }
@@ -229,13 +255,22 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: oklch(0.20 0.02 260);
-  border: 1px solid oklch(0.28 0.02 260);
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.88 0.01 260);
   border-radius: 0.375rem;
+}
+
+:global(.dark) .search-box {
+  background: oklch(0.20 0.02 260);
+  border-color: oklch(0.28 0.02 260);
 }
 
 .search-icon {
   font-size: 1rem;
+  color: oklch(0.55 0.02 260);
+}
+
+:global(.dark) .search-icon {
   color: oklch(0.50 0.02 260);
 }
 
@@ -244,11 +279,19 @@ onMounted(() => {
   background: none;
   border: none;
   font-size: 0.8125rem;
-  color: oklch(0.90 0.02 260);
+  color: oklch(0.25 0.02 260);
   outline: none;
 }
 
+:global(.dark) .search-input {
+  color: oklch(0.90 0.02 260);
+}
+
 .search-input::placeholder {
+  color: oklch(0.60 0.02 260);
+}
+
+:global(.dark) .search-input::placeholder {
   color: oklch(0.45 0.02 260);
 }
 
@@ -261,17 +304,28 @@ onMounted(() => {
 
 .category-button {
   padding: 0.375rem 0.625rem;
-  background: oklch(0.22 0.02 260);
-  border: 1px solid oklch(0.28 0.02 260);
+  background: oklch(0.92 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.25rem;
   font-size: 0.6875rem;
   font-weight: 500;
-  color: oklch(0.65 0.02 260);
+  color: oklch(0.45 0.02 260);
   cursor: pointer;
   transition: all 0.15s;
 }
 
+:global(.dark) .category-button {
+  background: oklch(0.22 0.02 260);
+  border-color: oklch(0.28 0.02 260);
+  color: oklch(0.65 0.02 260);
+}
+
 .category-button:hover {
+  background: oklch(0.88 0.01 260);
+  color: oklch(0.30 0.02 260);
+}
+
+:global(.dark) .category-button:hover {
   background: oklch(0.26 0.02 260);
   color: oklch(0.80 0.02 260);
 }
@@ -297,7 +351,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: oklch(0.20 0.02 260);
+  background: oklch(0.94 0.01 260);
   border: 1px solid transparent;
   border-radius: 0.375rem;
   text-align: left;
@@ -305,7 +359,16 @@ onMounted(() => {
   transition: all 0.15s;
 }
 
+:global(.dark) .font-item {
+  background: oklch(0.20 0.02 260);
+}
+
 .font-item:hover {
+  background: oklch(0.90 0.01 260);
+  border-color: oklch(0.80 0.01 260);
+}
+
+:global(.dark) .font-item:hover {
   background: oklch(0.24 0.02 260);
   border-color: oklch(0.32 0.02 260);
 }
@@ -317,6 +380,10 @@ onMounted(() => {
 
 .font-preview {
   font-size: 0.9375rem;
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .font-preview {
   color: oklch(0.88 0.02 260);
 }
 
@@ -324,6 +391,10 @@ onMounted(() => {
   font-size: 0.625rem;
   font-weight: 500;
   text-transform: uppercase;
+  color: oklch(0.55 0.02 260);
+}
+
+:global(.dark) .font-category {
   color: oklch(0.50 0.02 260);
 }
 </style>

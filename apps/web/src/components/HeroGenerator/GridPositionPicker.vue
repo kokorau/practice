@@ -43,6 +43,10 @@ const positions: GridPosition[] = [
   margin: 0 0 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
+  color: oklch(0.40 0.02 260);
+}
+
+:global(.dark) .picker-label {
   color: oklch(0.70 0.02 260);
 }
 
@@ -51,9 +55,13 @@ const positions: GridPosition[] = [
   grid-template-columns: repeat(3, 1fr);
   gap: 3px;
   max-width: 100px;
-  background: oklch(0.15 0.02 260);
+  background: oklch(0.92 0.01 260);
   padding: 3px;
   border-radius: 0.375rem;
+}
+
+:global(.dark) .position-grid {
+  background: oklch(0.15 0.02 260);
 }
 
 .position-cell {
@@ -61,14 +69,22 @@ const positions: GridPosition[] = [
   display: flex;
   align-items: center;
   justify-content: center;
-  background: oklch(0.22 0.02 260);
+  background: oklch(0.88 0.01 260);
   border: 2px solid transparent;
   border-radius: 0.25rem;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 
+:global(.dark) .position-cell {
+  background: oklch(0.22 0.02 260);
+}
+
 .position-cell:hover {
+  background: oklch(0.82 0.01 260);
+}
+
+:global(.dark) .position-cell:hover {
   background: oklch(0.28 0.02 260);
 }
 
@@ -81,8 +97,12 @@ const positions: GridPosition[] = [
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: oklch(0.40 0.02 260);
+  background: oklch(0.70 0.01 260);
   transition: background 0.15s, transform 0.15s;
+}
+
+:global(.dark) .position-dot {
+  background: oklch(0.40 0.02 260);
 }
 
 .position-cell.active .position-dot {
