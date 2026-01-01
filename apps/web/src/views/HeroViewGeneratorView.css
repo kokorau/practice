@@ -3,6 +3,12 @@
   height: 100vh;
   box-sizing: border-box;
   font-family: system-ui, -apple-system, sans-serif;
+  background: oklch(0.97 0.005 260);
+  color: oklch(0.25 0.02 260);
+  transition: background 0.3s;
+}
+
+.hero-generator.dark {
   background: oklch(0.12 0.02 260);
   color: oklch(0.90 0.01 260);
 }
@@ -11,11 +17,17 @@
 .hero-sidebar {
   width: 16rem;
   flex-shrink: 0;
-  background: oklch(0.18 0.02 260);
+  background: oklch(0.94 0.01 260);
+  border-right: 1px solid oklch(0.88 0.01 260);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+.dark .hero-sidebar {
+  background: oklch(0.18 0.02 260);
+  border-right-color: oklch(0.25 0.02 260);
 }
 
 /* Main Content */
@@ -24,6 +36,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: oklch(0.94 0.01 260);
+}
+
+.dark .hero-main {
   background: oklch(0.08 0.02 260);
 }
 
@@ -32,13 +48,21 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid oklch(0.20 0.02 260);
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+}
+
+.dark .hero-header {
+  border-bottom-color: oklch(0.20 0.02 260);
 }
 
 .hero-header h1 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
+  color: oklch(0.25 0.02 260);
+}
+
+.dark .hero-header h1 {
   color: oklch(0.95 0.01 260);
 }
 
@@ -46,9 +70,13 @@
 .hero-tab-nav {
   display: flex;
   gap: 0.25rem;
-  background: oklch(0.14 0.02 260);
+  background: oklch(0.90 0.01 260);
   padding: 0.25rem;
   border-radius: 0.5rem;
+}
+
+.dark .hero-tab-nav {
+  background: oklch(0.14 0.02 260);
 }
 
 .hero-tab-button {
@@ -56,20 +84,37 @@
   border: none;
   border-radius: 0.375rem;
   background: transparent;
-  color: oklch(0.60 0.02 260);
+  color: oklch(0.45 0.02 260);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
+.dark .hero-tab-button {
+  color: oklch(0.60 0.02 260);
+}
+
 .hero-tab-button:hover {
+  background: oklch(0.85 0.01 260);
+  color: oklch(0.35 0.02 260);
+}
+
+.dark .hero-tab-button:hover {
+  background: oklch(0.20 0.02 260);
   color: oklch(0.80 0.02 260);
 }
 
 .hero-tab-button.active {
+  background: white;
+  color: oklch(0.25 0.02 260);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .hero-tab-button.active {
   background: oklch(0.50 0.20 250);
   color: white;
+  box-shadow: none;
 }
 
 /* Tab Content */
@@ -103,7 +148,12 @@
   aspect-ratio: 16 / 9;
   border-radius: 0.5rem;
   overflow: hidden;
-  border: 1px solid oklch(0.25 0.02 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+.dark .hero-preview-frame {
+  border-color: oklch(0.25 0.02 260);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
@@ -351,10 +401,16 @@
   bottom: 0;
   width: 18rem;
   z-index: 40;
-  border-left: 1px solid oklch(0.20 0.02 260);
+  border-left: 1px solid oklch(0.88 0.01 260);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  background: oklch(0.96 0.01 260);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark .hero-subpanel {
+  border-left-color: oklch(0.20 0.02 260);
   background: oklch(0.10 0.02 260);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
@@ -364,27 +420,43 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
-  border-bottom: 1px solid oklch(0.20 0.02 260);
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+}
+
+.dark .hero-subpanel-header {
+  border-bottom-color: oklch(0.20 0.02 260);
 }
 
 .hero-subpanel-header h2 {
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
+  color: oklch(0.40 0.02 260);
+}
+
+.dark .hero-subpanel-header h2 {
   color: oklch(0.70 0.02 260);
 }
 
 .hero-subpanel-close {
   background: none;
   border: none;
-  color: oklch(0.60 0.02 260);
+  color: oklch(0.50 0.02 260);
   font-size: 1.125rem;
   cursor: pointer;
   padding: 0;
   line-height: 1;
 }
 
+.dark .hero-subpanel-close {
+  color: oklch(0.60 0.02 260);
+}
+
 .hero-subpanel-close:hover {
+  color: oklch(0.25 0.02 260);
+}
+
+.dark .hero-subpanel-close:hover {
   color: oklch(0.90 0.02 260);
 }
 

@@ -373,7 +373,7 @@ const activeTab = ref<TabId>('generator')
 </script>
 
 <template>
-  <div class="hero-generator">
+  <div class="hero-generator" :class="{ dark: isDark }">
     <!-- 左パネル: カラー設定 & セクション一覧 -->
     <HeroSidebar
       :active-tab="activeTab"
@@ -701,7 +701,7 @@ const activeTab = ref<TabId>('generator')
   display: flex;
   flex-direction: column;
   width: 100%;
-  border: 2px solid oklch(0.30 0.02 260);
+  border: 2px solid oklch(0.85 0.01 260);
   border-radius: 0.5rem;
   background: transparent;
   overflow: hidden;
@@ -709,7 +709,15 @@ const activeTab = ref<TabId>('generator')
   transition: border-color 0.15s, background 0.15s;
 }
 
+.dark .pattern-button {
+  border-color: oklch(0.30 0.02 260);
+}
+
 .pattern-button:hover {
+  border-color: oklch(0.75 0.01 260);
+}
+
+.dark .pattern-button:hover {
   border-color: oklch(0.40 0.02 260);
 }
 
@@ -729,16 +737,25 @@ const activeTab = ref<TabId>('generator')
   justify-content: center;
   width: 100%;
   aspect-ratio: 16 / 9;
+  background: oklch(0.92 0.01 260);
+  color: oklch(0.50 0.02 260);
+  font-size: 0.875rem;
+}
+
+.dark .pattern-none {
   background: oklch(0.22 0.02 260);
   color: oklch(0.60 0.02 260);
-  font-size: 0.875rem;
 }
 
 .pattern-label {
   padding: 0.375rem 0.5rem;
   font-size: 0.75rem;
-  color: oklch(0.70 0.02 260);
+  color: oklch(0.40 0.02 260);
   text-align: left;
+}
+
+.dark .pattern-label {
+  color: oklch(0.70 0.02 260);
 }
 
 /* Empty State */
@@ -763,15 +780,25 @@ const activeTab = ref<TabId>('generator')
   align-items: center;
   gap: 0.25rem;
   padding: 0.625rem 0.5rem;
-  border: 2px solid oklch(0.30 0.02 260);
+  border: 2px solid oklch(0.85 0.01 260);
   border-radius: 0.375rem;
   background: transparent;
-  color: oklch(0.70 0.02 260);
+  color: oklch(0.40 0.02 260);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 
+.dark .layout-button {
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.70 0.02 260);
+}
+
 .layout-button:hover {
+  border-color: oklch(0.75 0.01 260);
+  background: oklch(0.92 0.01 260);
+}
+
+.dark .layout-button:hover {
   border-color: oklch(0.40 0.02 260);
   background: oklch(0.20 0.02 260);
 }
@@ -779,6 +806,10 @@ const activeTab = ref<TabId>('generator')
 .layout-button.active {
   border-color: oklch(0.55 0.20 250);
   background: oklch(0.55 0.20 250 / 0.15);
+  color: oklch(0.25 0.02 260);
+}
+
+.dark .layout-button.active {
   color: oklch(0.90 0.02 260);
 }
 
@@ -804,15 +835,25 @@ const activeTab = ref<TabId>('generator')
   align-items: center;
   gap: 0.25rem;
   padding: 0.5rem 0.25rem;
-  border: 2px solid oklch(0.30 0.02 260);
+  border: 2px solid oklch(0.85 0.01 260);
   border-radius: 0.375rem;
   background: transparent;
-  color: oklch(0.70 0.02 260);
+  color: oklch(0.40 0.02 260);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 
+.dark .texture-button {
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.70 0.02 260);
+}
+
 .texture-button:hover {
+  border-color: oklch(0.75 0.01 260);
+  background: oklch(0.92 0.01 260);
+}
+
+.dark .texture-button:hover {
   border-color: oklch(0.40 0.02 260);
   background: oklch(0.20 0.02 260);
 }
@@ -820,6 +861,10 @@ const activeTab = ref<TabId>('generator')
 .texture-button.active {
   border-color: oklch(0.55 0.20 250);
   background: oklch(0.55 0.20 250 / 0.15);
+  color: oklch(0.25 0.02 260);
+}
+
+.dark .texture-button.active {
   color: oklch(0.90 0.02 260);
 }
 
@@ -846,14 +891,22 @@ const activeTab = ref<TabId>('generator')
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: oklch(0.20 0.02 260);
+  background: oklch(0.92 0.01 260);
   border: 2px solid transparent;
   border-radius: 0.5rem;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 
+.dark .filter-option {
+  background: oklch(0.20 0.02 260);
+}
+
 .filter-option:hover {
+  background: oklch(0.88 0.01 260);
+}
+
+.dark .filter-option:hover {
   background: oklch(0.24 0.02 260);
 }
 
@@ -871,22 +924,35 @@ const activeTab = ref<TabId>('generator')
 .filter-name {
   font-size: 0.875rem;
   font-weight: 500;
+  color: oklch(0.25 0.02 260);
+}
+
+.dark .filter-name {
   color: oklch(0.85 0.02 260);
 }
 
 .filter-params {
   padding: 0.75rem;
-  background: oklch(0.18 0.02 260);
+  background: oklch(0.94 0.01 260);
   border-radius: 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.dark .filter-params {
+  background: oklch(0.18 0.02 260);
 }
 
 .shape-params,
 .surface-params {
   padding: 0.75rem;
-  background: oklch(0.18 0.02 260);
+  background: oklch(0.94 0.01 260);
   border-radius: 0.5rem;
   margin-bottom: 0.75rem;
+}
+
+.dark .shape-params,
+.dark .surface-params {
+  background: oklch(0.18 0.02 260);
 }
 
 .filter-options {
@@ -911,19 +977,30 @@ const activeTab = ref<TabId>('generator')
 .foreground-label {
   font-size: 0.75rem;
   font-weight: 500;
+  color: oklch(0.40 0.02 260);
+}
+
+.dark .foreground-label {
   color: oklch(0.70 0.02 260);
 }
 
 .foreground-input,
 .foreground-textarea {
   padding: 0.625rem 0.75rem;
-  background: oklch(0.18 0.02 260);
-  border: 1px solid oklch(0.30 0.02 260);
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.375rem;
-  color: oklch(0.90 0.02 260);
+  color: oklch(0.25 0.02 260);
   font-size: 0.875rem;
   font-family: inherit;
   transition: border-color 0.15s;
+}
+
+.dark .foreground-input,
+.dark .foreground-textarea {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
 }
 
 .foreground-input:focus,
@@ -947,9 +1024,13 @@ const activeTab = ref<TabId>('generator')
   flex: 1;
   height: 4px;
   appearance: none;
-  background: oklch(0.30 0.02 260);
+  background: oklch(0.85 0.01 260);
   border-radius: 2px;
   cursor: pointer;
+}
+
+.dark .font-size-slider {
+  background: oklch(0.30 0.02 260);
 }
 
 .font-size-slider::-webkit-slider-thumb {
@@ -979,8 +1060,12 @@ const activeTab = ref<TabId>('generator')
   min-width: 4rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: oklch(0.70 0.02 260);
+  color: oklch(0.40 0.02 260);
   text-align: right;
+}
+
+.dark .font-size-value {
+  color: oklch(0.70 0.02 260);
 }
 
 </style>
