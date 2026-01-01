@@ -17,13 +17,14 @@ const INK_CSS_NAMES = {
   body: 'body',
   meta: 'meta',
   linkText: 'link-text',
+  highlight: 'highlight',
   border: 'border',
   divider: 'divider',
 } as const
 
 type InkRoleKey = keyof typeof INK_CSS_NAMES
 
-const INK_ROLES: InkRoleKey[] = ['title', 'body', 'meta', 'linkText', 'border', 'divider']
+const INK_ROLES: InkRoleKey[] = ['title', 'body', 'meta', 'linkText', 'highlight', 'border', 'divider']
 
 const ACTION_STATES: ActionState[] = ['default', 'hover', 'active', 'disabled']
 
