@@ -10,6 +10,12 @@ export type BrandColor = {
   cssOklch: string
 }
 
+export type AccentColor = {
+  hex: string
+  oklch: Oklch
+  cssOklch: string
+}
+
 export type FoundationColor = {
   oklch: Oklch
   css: string
@@ -22,18 +28,31 @@ export type UseSiteColorsOptions = {
   initialSaturation?: number
   initialValue?: number
   initialFoundationId?: string
+  // Accent color initial values
+  initialAccentHue?: number
+  initialAccentSaturation?: number
+  initialAccentValue?: number
 }
 
 export type UseSiteColorsReturn = {
-  // HSV state
+  // HSV state (Brand)
   hue: Ref<number>
   saturation: Ref<number>
   value: Ref<number>
-  // Derived RGB/Hex
+  // Derived RGB/Hex (Brand)
   selectedRgb: ComputedRef<[number, number, number]>
   selectedHex: ComputedRef<string>
   // Brand color
   brandColor: ComputedRef<BrandColor>
+  // HSV state (Accent)
+  accentHue: Ref<number>
+  accentSaturation: Ref<number>
+  accentValue: Ref<number>
+  // Derived RGB/Hex (Accent)
+  accentRgb: ComputedRef<[number, number, number]>
+  accentHex: ComputedRef<string>
+  // Accent color
+  accentColor: ComputedRef<AccentColor>
   // Foundation
   selectedFoundationId: Ref<string>
   foundationColor: ComputedRef<FoundationColor>
@@ -51,16 +70,29 @@ export const useSiteColors = (options: UseSiteColorsOptions = {}): UseSiteColors
     initialSaturation = 70,
     initialValue = 65,
     initialFoundationId = 'white',
+    // Accent defaults (complementary hue offset from brand)
+    initialAccentHue = 30,
+    initialAccentSaturation = 80,
+    initialAccentValue = 60,
   } = options
 
-  // HSV state
+  // HSV state (Brand)
   const hue = ref(initialHue)
   const saturation = ref(initialSaturation)
   const value = ref(initialValue)
 
-  // Derived RGB/Hex
+  // HSV state (Accent)
+  const accentHue = ref(initialAccentHue)
+  const accentSaturation = ref(initialAccentSaturation)
+  const accentValue = ref(initialAccentValue)
+
+  // Derived RGB/Hex (Brand)
   const selectedRgb = computed(() => hsvToRgb(hue.value, saturation.value, value.value))
   const selectedHex = computed(() => rgbToHex(...selectedRgb.value))
+
+  // Derived RGB/Hex (Accent)
+  const accentRgb = computed(() => hsvToRgb(accentHue.value, accentSaturation.value, accentValue.value))
+  const accentHex = computed(() => rgbToHex(...accentRgb.value))
 
   // Brand color in Oklch
   const brandColor = computed((): BrandColor => {
@@ -68,6 +100,17 @@ export const useSiteColors = (options: UseSiteColorsOptions = {}): UseSiteColors
     const oklch = $Oklch.fromSrgb({ r: r / 255, g: g / 255, b: b / 255 })
     return {
       hex: selectedHex.value,
+      oklch,
+      cssOklch: $Oklch.toCss(oklch),
+    }
+  })
+
+  // Accent color in Oklch
+  const accentColor = computed((): AccentColor => {
+    const [r, g, b] = accentRgb.value
+    const oklch = $Oklch.fromSrgb({ r: r / 255, g: g / 255, b: b / 255 })
+    return {
+      hex: accentHex.value,
       oklch,
       cssOklch: $Oklch.toCss(oklch),
     }
@@ -94,14 +137,24 @@ export const useSiteColors = (options: UseSiteColorsOptions = {}): UseSiteColors
   const isDark = computed(() => foundationColor.value.oklch.L <= 0.5)
 
   return {
+    // Brand
     hue,
     saturation,
     value,
     selectedRgb,
     selectedHex,
     brandColor,
+    // Accent
+    accentHue,
+    accentSaturation,
+    accentValue,
+    accentRgb,
+    accentHex,
+    accentColor,
+    // Foundation
     selectedFoundationId,
     foundationColor,
+    // Helpers
     isDark,
   }
 }

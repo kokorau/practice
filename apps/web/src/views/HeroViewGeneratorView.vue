@@ -35,7 +35,7 @@ import {
 import './HeroViewGeneratorView.css'
 
 // ============================================================
-// Brand & Foundation Color State
+// Brand, Accent & Foundation Color State
 // ============================================================
 const {
   hue,
@@ -43,6 +43,11 @@ const {
   value,
   selectedHex,
   brandColor,
+  accentHue,
+  accentSaturation,
+  accentValue,
+  accentHex,
+  accentColor,
   selectedFoundationId,
   foundationColor,
   isDark,
@@ -55,6 +60,7 @@ const primitivePalette = computed((): PrimitivePalette => {
   return createPrimitivePalette({
     brand: brandColor.value.oklch,
     foundation: foundationColor.value.oklch,
+    accent: accentColor.value.oklch,
   })
 })
 
@@ -355,6 +361,10 @@ const activeTab = ref<TabId>('generator')
       :value="value"
       :selected-hex="selectedHex"
       :brand-oklch="brandColor.oklch"
+      :accent-hue="accentHue"
+      :accent-saturation="accentSaturation"
+      :accent-value="accentValue"
+      :accent-hex="accentHex"
       :selected-foundation-id="selectedFoundationId"
       :foundation-hex="foundationColor.hex"
       :foundation-label="foundationColor.label"
@@ -370,6 +380,9 @@ const activeTab = ref<TabId>('generator')
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"
+      @update:accent-hue="accentHue = $event"
+      @update:accent-saturation="accentSaturation = $event"
+      @update:accent-value="accentValue = $event"
       @update:selected-foundation-id="selectedFoundationId = $event"
       @open-section="openSection"
       @select-filter-layer="selectedFilterLayerId = $event"

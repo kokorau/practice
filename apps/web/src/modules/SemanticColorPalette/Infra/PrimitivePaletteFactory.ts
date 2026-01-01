@@ -1,6 +1,6 @@
 import type { Oklch } from '@practice/color'
 import { $Oklch } from '@practice/color'
-import type { NeutralKey, FoundationKey, BrandKey, PrimitivePalette, PaletteTheme } from '../Domain/ValueObject/PrimitivePalette'
+import type { NeutralKey, FoundationKey, BrandKey, AccentKey, PrimitivePalette, PaletteTheme } from '../Domain/ValueObject/PrimitivePalette'
 import { NEUTRAL_KEYS, FOUNDATION_KEYS } from '../Domain/ValueObject/PrimitivePalette'
 
 // ============================================
@@ -61,6 +61,35 @@ export const PRIMITIVE_PALETTE_CONFIG = {
       lightnessMax: 0.85,
     },
   },
+
+  // Accent derivatives (same structure as brand)
+  accent: {
+    // At (Accent Tint) - light surface for hover/selected states
+    tint: {
+      chromaRatio: 0.18,
+      chromaMax: 0.06,
+      lightnessOffset: 0.30,
+      lightnessMin: 0.78,
+      lightnessMax: 0.96,
+    },
+    // As (Accent Shade) - dark surface for pressed states
+    shade: {
+      chromaRatio: 0.45,
+      chromaMax: 0.14,
+      lightnessOffset: -0.35,
+      lightnessMin: 0.12,
+      lightnessMax: 0.32,
+    },
+    // Af (Accent Fill) - strong surface for buttons, badges
+    fill: {
+      chromaRatio: 0.85,
+      chromaMin: 0.06,
+      chromaMax: 0.30,
+      lightnessOffset: 0,
+      lightnessMin: 0.20,
+      lightnessMax: 0.85,
+    },
+  },
 } as const
 
 export type PrimitivePaletteConfig = typeof PRIMITIVE_PALETTE_CONFIG
@@ -71,10 +100,12 @@ type LightnessRamp = readonly [number, number, number, number, number, number, n
 type NeutralConfig = typeof PRIMITIVE_PALETTE_CONFIG.neutral
 type FoundationConfig = typeof PRIMITIVE_PALETTE_CONFIG.foundation
 type BrandConfig = typeof PRIMITIVE_PALETTE_CONFIG.brand
+type AccentConfig = typeof PRIMITIVE_PALETTE_CONFIG.accent
 
 export type PrimitivePaletteParams = {
   brand: Oklch
   foundation: Oklch
+  accent?: Oklch
 }
 
 // Helper: clamp value between min and max
@@ -150,11 +181,48 @@ const generateBrandDerivatives = (brand: Oklch, config: BrandConfig): Record<Exc
   }
 }
 
+/**
+ * Generate accent derivative colors (At, As, Af) from accent color
+ * All derivatives preserve hue, adjust L and C, then clamp to P3 gamut
+ */
+const generateAccentDerivatives = (accent: Oklch, config: AccentConfig): Record<Exclude<AccentKey, 'A'>, Oklch> => {
+  const { L, C, H } = accent
+  const { tint, shade, fill } = config
+
+  // At (Accent Tint) - light surface
+  const atRaw = $Oklch.create(
+    clamp(L + tint.lightnessOffset, tint.lightnessMin, tint.lightnessMax),
+    Math.min(C * tint.chromaRatio, tint.chromaMax),
+    H,
+  )
+
+  // As (Accent Shade) - dark surface
+  const asRaw = $Oklch.create(
+    clamp(L + shade.lightnessOffset, shade.lightnessMin, shade.lightnessMax),
+    Math.min(C * shade.chromaRatio, shade.chromaMax),
+    H,
+  )
+
+  // Af (Accent Fill) - strong surface
+  const afRaw = $Oklch.create(
+    clamp(L + fill.lightnessOffset, fill.lightnessMin, fill.lightnessMax),
+    clamp(C * fill.chromaRatio, fill.chromaMin, fill.chromaMax),
+    H,
+  )
+
+  // Clamp to P3 gamut (reduce chroma if out of gamut)
+  return {
+    At: $Oklch.clampToP3Gamut(atRaw),
+    As: $Oklch.clampToP3Gamut(asRaw),
+    Af: $Oklch.clampToP3Gamut(afRaw),
+  }
+}
+
 export const createPrimitivePalette = (
   params: PrimitivePaletteParams,
   config: PrimitivePaletteConfig = PRIMITIVE_PALETTE_CONFIG,
 ): PrimitivePalette => {
-  const { brand, foundation } = params
+  const { brand, foundation, accent } = params
 
   // Determine theme based on foundation lightness
   const theme: PaletteTheme = foundation.L > config.themeLightnessThreshold ? 'light' : 'dark'
@@ -164,5 +232,9 @@ export const createPrimitivePalette = (
   const foundationRamp = generateFoundationRamp(foundation, lightnessSteps, config.foundation)
   const brandDerivatives = generateBrandDerivatives(brand, config.brand)
 
-  return { ...neutralRamp, ...foundationRamp, B: brand, ...brandDerivatives, theme }
+  // Use accent if provided, otherwise fall back to brand
+  const accentColor = accent ?? brand
+  const accentDerivatives = generateAccentDerivatives(accentColor, config.accent)
+
+  return { ...neutralRamp, ...foundationRamp, B: brand, ...brandDerivatives, A: accentColor, ...accentDerivatives, theme }
 }

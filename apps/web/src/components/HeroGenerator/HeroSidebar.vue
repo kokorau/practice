@@ -14,12 +14,18 @@ type NeutralRampItem = {
 
 defineProps<{
   activeTab: 'generator' | 'palette'
-  // Color state
+  // Color state (Brand)
   hue: number
   saturation: number
   value: number
   selectedHex: string
   brandOklch: Oklch
+  // Color state (Accent)
+  accentHue: number
+  accentSaturation: number
+  accentValue: number
+  accentHex: string
+  // Foundation
   selectedFoundationId: string
   foundationHex: string
   foundationLabel: string
@@ -41,6 +47,9 @@ const emit = defineEmits<{
   (e: 'update:hue', value: number): void
   (e: 'update:saturation', value: number): void
   (e: 'update:value', value: number): void
+  (e: 'update:accentHue', value: number): void
+  (e: 'update:accentSaturation', value: number): void
+  (e: 'update:accentValue', value: number): void
   (e: 'update:selectedFoundationId', value: string): void
   (e: 'openSection', section: SectionType): void
   (e: 'selectFilterLayer', layerId: string): void
@@ -60,7 +69,7 @@ const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
 // ============================================================
 // Color Popup
 // ============================================================
-type ColorPopup = 'brand' | 'foundation' | null
+type ColorPopup = 'brand' | 'accent' | 'foundation' | null
 const activeColorPopup = ref<ColorPopup>(null)
 
 const toggleColorPopup = (popup: ColorPopup) => {
@@ -157,6 +166,19 @@ const handleRemoveLayer = (layerId: string) => {
         </span>
       </button>
 
+      <!-- Accent Color -->
+      <button
+        class="color-button"
+        :class="{ active: activeColorPopup === 'accent' }"
+        @click="toggleColorPopup('accent')"
+      >
+        <span class="color-swatch" :style="{ backgroundColor: accentHex }" />
+        <span class="color-info">
+          <span class="color-name">Accent</span>
+          <span class="color-value">{{ accentHex }}</span>
+        </span>
+      </button>
+
       <!-- Foundation -->
       <button
         class="color-button"
@@ -205,7 +227,7 @@ const handleRemoveLayer = (layerId: string) => {
     <Transition name="popup">
       <div v-if="activeColorPopup" class="color-popup">
         <div class="popup-header">
-          <h2>{{ activeColorPopup === 'brand' ? 'Brand Color' : 'Foundation' }}</h2>
+          <h2>{{ activeColorPopup === 'brand' ? 'Brand Color' : activeColorPopup === 'accent' ? 'Accent Color' : 'Foundation' }}</h2>
           <button class="popup-close" @click="activeColorPopup = null">×</button>
         </div>
         <div class="popup-content">
@@ -217,6 +239,15 @@ const handleRemoveLayer = (layerId: string) => {
             @update:hue="emit('update:hue', $event)"
             @update:saturation="emit('update:saturation', $event)"
             @update:value="emit('update:value', $event)"
+          />
+          <BrandColorPicker
+            v-if="activeColorPopup === 'accent'"
+            :hue="accentHue"
+            :saturation="accentSaturation"
+            :value="accentValue"
+            @update:hue="emit('update:accentHue', $event)"
+            @update:saturation="emit('update:accentSaturation', $event)"
+            @update:value="emit('update:accentValue', $event)"
           />
           <FoundationPresets
             v-if="activeColorPopup === 'foundation'"
