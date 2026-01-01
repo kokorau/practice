@@ -6,17 +6,19 @@ import type { Section, SectionContent } from '../../modules/SemanticSection'
 import type { FilterSetters } from '../../composables/Filter/useFilter'
 import BrandColorPicker from './BrandColorPicker.vue'
 import FoundationPresets from './FoundationPresets.vue'
+import ColorPresets from './ColorPresets.vue'
+import type { ColorPreset } from './colorPresets'
 import SectionsEditor from './SectionsEditor.vue'
 import FilterPanel from '../Filter/FilterPanel.vue'
 import DesignTokensPresets from './DesignTokensPresets.vue'
 
 export interface SidebarItem {
-  id: 'brand' | 'accent' | 'foundation' | 'filter' | 'tokens' | 'sections'
+  id: 'presets' | 'brand' | 'accent' | 'foundation' | 'filter' | 'tokens' | 'sections'
   label: string
   icon: string
 }
 
-type PopupType = 'brand' | 'accent' | 'foundation' | 'filter' | 'tokens' | 'sections' | null
+type PopupType = 'presets' | 'brand' | 'accent' | 'foundation' | 'filter' | 'tokens' | 'sections' | null
 
 defineProps<{
   // Brand color
@@ -71,6 +73,7 @@ const emit = defineEmits<{
   'updateMasterPoint': [index: number, value: number]
   'resetFilter': []
   'downloadHTML': []
+  'applyColorPreset': [preset: ColorPreset]
 }>()
 
 const activePopup = ref<PopupType>(null)
@@ -79,6 +82,7 @@ const foundationPresetsRef = ref<InstanceType<typeof FoundationPresets> | null>(
 const sectionsEditorRef = ref<InstanceType<typeof SectionsEditor> | null>(null)
 
 const sidebarItems: SidebarItem[] = [
+  { id: 'presets', label: 'Color Presets', icon: '🎭' },
   { id: 'brand', label: 'Brand Color', icon: '🎨' },
   { id: 'accent', label: 'Accent Color', icon: '💎' },
   { id: 'foundation', label: 'Foundation', icon: '📄' },
@@ -155,7 +159,14 @@ watch(
           <span class="sidebar-item-label">{{ item.label }}</span>
         </div>
         <div class="sidebar-item-preview">
-          <template v-if="item.id === 'brand'">
+          <template v-if="item.id === 'presets'">
+            <div class="color-swatches-mini">
+              <div class="color-swatch-mini" :style="{ backgroundColor: selectedHex }" />
+              <div class="color-swatch-mini" :style="{ backgroundColor: accentHex }" />
+              <div class="color-swatch-mini" :style="{ backgroundColor: foundationHex }" />
+            </div>
+          </template>
+          <template v-else-if="item.id === 'brand'">
             <div class="color-swatch-mini" :style="{ backgroundColor: selectedHex }" />
             <span class="sidebar-item-value">{{ selectedHex }}</span>
           </template>
@@ -198,14 +209,30 @@ watch(
             </span>
             <span class="popup-breadcrumb-separator">›</span>
             <h2 class="popup-title">
-              {{ activePopup === 'brand' ? 'Brand Color' : activePopup === 'accent' ? 'Accent Color' : activePopup === 'foundation' ? 'Foundation' : activePopup === 'filter' ? 'Color Filter' : activePopup === 'tokens' ? 'Style' : 'Sections' }}
+              {{ activePopup === 'presets' ? 'Color Presets' : activePopup === 'brand' ? 'Brand Color' : activePopup === 'accent' ? 'Accent Color' : activePopup === 'foundation' ? 'Foundation' : activePopup === 'filter' ? 'Color Filter' : activePopup === 'tokens' ? 'Style' : 'Sections' }}
             </h2>
           </div>
           <button class="popup-close" @click="closePopup">×</button>
         </div>
 
+        <!-- Color Presets Content -->
+        <div v-if="activePopup === 'presets'" class="popup-content">
+          <ColorPresets
+            :brand-hue="hue"
+            :brand-saturation="saturation"
+            :brand-value="value"
+            :accent-hue="accentHue"
+            :accent-saturation="accentSaturation"
+            :accent-value="accentValue"
+            :foundation-l="foundationL"
+            :foundation-c="foundationC"
+            :foundation-h="foundationH"
+            @apply-preset="$emit('applyColorPreset', $event)"
+          />
+        </div>
+
         <!-- Brand Color Content -->
-        <div v-if="activePopup === 'brand'" class="popup-content">
+        <div v-else-if="activePopup === 'brand'" class="popup-content">
           <BrandColorPicker
             :hue="hue"
             :saturation="saturation"
@@ -369,6 +396,11 @@ watch(
   align-items: center;
   gap: 0.375rem;
   padding-left: 1.375rem;
+}
+
+.color-swatches-mini {
+  display: flex;
+  gap: 0.25rem;
 }
 
 .color-swatch-mini {

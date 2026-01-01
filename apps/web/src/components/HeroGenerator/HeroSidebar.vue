@@ -4,6 +4,8 @@ import type { Oklch } from '@practice/color'
 import type { TexturePattern, MaskPattern } from '@practice/texture'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
+import ColorPresets from '../SiteBuilder/ColorPresets.vue'
+import type { ColorPreset } from '../SiteBuilder/colorPresets'
 import LayerPanel, { type LayerItem, type LayerType, type SubItemType, type LayerFilterConfig } from './LayerPanel.vue'
 import type { SectionType, MidgroundSurfacePreset } from '../../composables/SiteBuilder'
 
@@ -62,6 +64,7 @@ const emit = defineEmits<{
   (e: 'toggleLayerVisibility', layerId: string): void
   (e: 'addLayer', type: LayerType): void
   (e: 'removeLayer', layerId: string): void
+  (e: 'applyColorPreset', preset: ColorPreset): void
 }>()
 
 // Map UI layer IDs to useHeroScene layer IDs
@@ -74,7 +77,7 @@ const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
 // ============================================================
 // Color Popup
 // ============================================================
-type ColorPopup = 'brand' | 'accent' | 'foundation' | null
+type ColorPopup = 'presets' | 'brand' | 'accent' | 'foundation' | null
 const activeColorPopup = ref<ColorPopup>(null)
 
 const toggleColorPopup = (popup: ColorPopup) => {
@@ -158,6 +161,23 @@ const handleRemoveLayer = (layerId: string) => {
     <div class="sidebar-section">
       <p class="sidebar-label">Color Settings</p>
 
+      <!-- Presets -->
+      <button
+        class="color-button"
+        :class="{ active: activeColorPopup === 'presets' }"
+        @click="toggleColorPopup('presets')"
+      >
+        <span class="color-swatches">
+          <span class="color-swatch-mini" :style="{ backgroundColor: selectedHex }" />
+          <span class="color-swatch-mini" :style="{ backgroundColor: accentHex }" />
+          <span class="color-swatch-mini" :style="{ backgroundColor: foundationHex }" />
+        </span>
+        <span class="color-info">
+          <span class="color-name">Presets</span>
+          <span class="color-value">Quick start</span>
+        </span>
+      </button>
+
       <!-- Brand Color -->
       <button
         class="color-button"
@@ -232,12 +252,25 @@ const handleRemoveLayer = (layerId: string) => {
     <Transition name="popup">
       <div v-if="activeColorPopup" class="color-popup">
         <div class="popup-header">
-          <h2>{{ activeColorPopup === 'brand' ? 'Brand Color' : activeColorPopup === 'accent' ? 'Accent Color' : 'Foundation' }}</h2>
+          <h2>{{ activeColorPopup === 'presets' ? 'Color Presets' : activeColorPopup === 'brand' ? 'Brand Color' : activeColorPopup === 'accent' ? 'Accent Color' : 'Foundation' }}</h2>
           <button class="popup-close" @click="activeColorPopup = null">×</button>
         </div>
         <div class="popup-content">
+          <ColorPresets
+            v-if="activeColorPopup === 'presets'"
+            :brand-hue="hue"
+            :brand-saturation="saturation"
+            :brand-value="value"
+            :accent-hue="accentHue"
+            :accent-saturation="accentSaturation"
+            :accent-value="accentValue"
+            :foundation-l="foundationL"
+            :foundation-c="foundationC"
+            :foundation-h="foundationH"
+            @apply-preset="emit('applyColorPreset', $event)"
+          />
           <BrandColorPicker
-            v-if="activeColorPopup === 'brand'"
+            v-else-if="activeColorPopup === 'brand'"
             :hue="hue"
             :saturation="saturation"
             :value="value"
@@ -321,6 +354,19 @@ const handleRemoveLayer = (layerId: string) => {
   border-radius: 0.25rem;
   border: 1px solid oklch(0.40 0.02 260);
   flex-shrink: 0;
+}
+
+.color-swatches {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.color-swatch-mini {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.1875rem;
+  border: 1px solid oklch(0.40 0.02 260);
 }
 
 .color-info {

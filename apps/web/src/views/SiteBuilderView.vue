@@ -26,6 +26,7 @@ import { useFilter } from '../composables/Filter/useFilter'
 import { useDemoSite } from '../composables/SemanticColorPalette/useDemoSite'
 import { useSiteBuilderAssets } from '../composables/SiteBuilder'
 import { hsvToRgb, rgbToHex, applyLutToPalette } from '../components/SiteBuilder/utils'
+import type { ColorPreset } from '../components/SiteBuilder/colorPresets'
 // Child components
 import PaletteSidebar from '../components/SiteBuilder/PaletteSidebar.vue'
 import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'
@@ -387,6 +388,23 @@ watch(siteContents, (newContents) => {
 const handleUpdateMasterPoint = (index: number, val: number) => {
   setMasterPoint(index, val)
 }
+
+// Handle color preset application
+const handleApplyColorPreset = (preset: ColorPreset) => {
+  // Apply brand
+  hue.value = preset.brand.hue
+  saturation.value = preset.brand.saturation
+  value.value = preset.brand.value
+  // Apply accent
+  accentHue.value = preset.accent.hue
+  accentSaturation.value = preset.accent.saturation
+  accentValue.value = preset.accent.value
+  // Apply foundation
+  foundationL.value = preset.foundation.L
+  foundationC.value = preset.foundation.C
+  foundationH.value = preset.foundation.H
+  foundationHueLinkedToBrand.value = false
+}
 </script>
 
 <template>
@@ -444,6 +462,7 @@ const handleUpdateMasterPoint = (index: number, val: number) => {
       @update-master-point="handleUpdateMasterPoint"
       @reset-filter="resetFilter"
       @download-h-t-m-l="downloadHTML"
+      @apply-color-preset="handleApplyColorPreset"
     />
 
     <!-- Main Content -->

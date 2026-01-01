@@ -32,6 +32,7 @@ import {
   useHeroScene,
   type GridPosition,
 } from '../composables/SiteBuilder'
+import type { ColorPreset } from '../components/SiteBuilder/colorPresets'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
@@ -347,6 +348,23 @@ onUnmounted(() => {
   }
 })
 
+// Handle color preset application
+const handleApplyColorPreset = (preset: ColorPreset) => {
+  // Apply brand
+  hue.value = preset.brand.hue
+  saturation.value = preset.brand.saturation
+  value.value = preset.brand.value
+  // Apply accent
+  accentHue.value = preset.accent.hue
+  accentSaturation.value = preset.accent.saturation
+  accentValue.value = preset.accent.value
+  // Apply foundation
+  foundationL.value = preset.foundation.L
+  foundationC.value = preset.foundation.C
+  foundationH.value = preset.foundation.H
+  foundationHueLinkedToBrand.value = false
+}
+
 // ============================================================
 // Tab State
 // ============================================================
@@ -397,6 +415,7 @@ const activeTab = ref<TabId>('generator')
       @toggle-layer-visibility="toggleLayerVisibility"
       @add-layer="(type) => { if (type === 'mask') addMaskLayer() }"
       @remove-layer="removeLayer"
+      @apply-color-preset="handleApplyColorPreset"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ) -->

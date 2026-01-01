@@ -19,6 +19,8 @@ import {
 import { useSiteColors } from '../composables/SiteBuilder'
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
+import ColorPresets from '../components/SiteBuilder/ColorPresets.vue'
+import type { ColorPreset } from '../components/SiteBuilder/colorPresets'
 import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 
@@ -51,11 +53,28 @@ const {
 } = useSiteColors()
 
 // Color popup state
-type ColorPopup = 'brand' | 'accent' | 'foundation' | null
+type ColorPopup = 'presets' | 'brand' | 'accent' | 'foundation' | null
 const activeColorPopup = ref<ColorPopup>(null)
 
 const toggleColorPopup = (popup: ColorPopup) => {
   activeColorPopup.value = activeColorPopup.value === popup ? null : popup
+}
+
+// Handle color preset application
+const handleApplyColorPreset = (preset: ColorPreset) => {
+  // Apply brand
+  hue.value = preset.brand.hue
+  saturation.value = preset.brand.saturation
+  value.value = preset.brand.value
+  // Apply accent
+  accentHue.value = preset.accent.hue
+  accentSaturation.value = preset.accent.saturation
+  accentValue.value = preset.accent.value
+  // Apply foundation
+  foundationL.value = preset.foundation.L
+  foundationC.value = preset.foundation.C
+  foundationH.value = preset.foundation.H
+  foundationHueLinkedToBrand.value = false
 }
 
 // ============================================================
@@ -176,6 +195,23 @@ watch(palette, updateStyles)
     <aside class="palette-sidebar">
       <h2 class="sidebar-title">Color Settings</h2>
 
+      <!-- Presets -->
+      <button
+        class="color-button"
+        :class="{ active: activeColorPopup === 'presets' }"
+        @click="toggleColorPopup('presets')"
+      >
+        <span class="color-swatches">
+          <span class="color-swatch-mini" :style="{ backgroundColor: selectedHex }" />
+          <span class="color-swatch-mini" :style="{ backgroundColor: accentHex }" />
+          <span class="color-swatch-mini" :style="{ backgroundColor: foundationColor.hex }" />
+        </span>
+        <span class="color-info">
+          <span class="color-name">Presets</span>
+          <span class="color-value">Quick start</span>
+        </span>
+      </button>
+
       <!-- Brand Color -->
       <button
         class="color-button"
@@ -219,12 +255,25 @@ watch(palette, updateStyles)
       <Transition name="popup">
         <div v-if="activeColorPopup" class="color-popup">
           <div class="popup-header">
-            <h3>{{ activeColorPopup === 'brand' ? 'Brand Color' : activeColorPopup === 'accent' ? 'Accent Color' : 'Foundation' }}</h3>
+            <h3>{{ activeColorPopup === 'presets' ? 'Color Presets' : activeColorPopup === 'brand' ? 'Brand Color' : activeColorPopup === 'accent' ? 'Accent Color' : 'Foundation' }}</h3>
             <button class="popup-close" @click="activeColorPopup = null">×</button>
           </div>
           <div class="popup-content">
+            <ColorPresets
+              v-if="activeColorPopup === 'presets'"
+              :brand-hue="hue"
+              :brand-saturation="saturation"
+              :brand-value="value"
+              :accent-hue="accentHue"
+              :accent-saturation="accentSaturation"
+              :accent-value="accentValue"
+              :foundation-l="foundationL"
+              :foundation-c="foundationC"
+              :foundation-h="foundationH"
+              @apply-preset="handleApplyColorPreset"
+            />
             <BrandColorPicker
-              v-if="activeColorPopup === 'brand'"
+              v-else-if="activeColorPopup === 'brand'"
               :hue="hue"
               :saturation="saturation"
               :value="value"
@@ -389,6 +438,19 @@ watch(palette, updateStyles)
   border-radius: 0.375rem;
   border: 1px solid rgba(128, 128, 128, 0.3);
   flex-shrink: 0;
+}
+
+.color-swatches {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.color-swatch-mini {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(128, 128, 128, 0.3);
 }
 
 .color-info {
