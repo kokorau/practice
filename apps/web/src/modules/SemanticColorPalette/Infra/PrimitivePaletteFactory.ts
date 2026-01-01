@@ -1,7 +1,7 @@
 import type { Oklch } from '@practice/color'
 import { $Oklch } from '@practice/color'
-import type { NeutralKey, FoundationKey, BrandKey, AccentKey, PrimitivePalette, PaletteTheme } from '../Domain/ValueObject/PrimitivePalette'
-import { NEUTRAL_KEYS, FOUNDATION_KEYS } from '../Domain/ValueObject/PrimitivePalette'
+import type { NeutralKey, FoundationKey, AccentRampKey, BrandKey, AccentKey, PrimitivePalette, PaletteTheme } from '../Domain/ValueObject/PrimitivePalette'
+import { NEUTRAL_KEYS, FOUNDATION_KEYS, ACCENT_RAMP_KEYS } from '../Domain/ValueObject/PrimitivePalette'
 
 // ============================================
 // Primitive Palette Configuration
@@ -31,6 +31,12 @@ export const PRIMITIVE_PALETTE_CONFIG = {
   // Foundation ramp (F0-F9): accent-tinted grays
   foundation: {
     chromaRatio: 0.5,   // Foundation color already constrained, apply ratio for subtlety
+  },
+
+  // Accent ramp (A0-A9): accent-tinted grays (similar to neutral but from accent)
+  accentRamp: {
+    chromaRatio: 0.08,  // Slightly more chroma than neutral for accent character
+    chromaMax: 0.04,    // Clamp chroma to this max
   },
 
   // Brand derivatives
@@ -99,6 +105,7 @@ type LightnessRamp = readonly [number, number, number, number, number, number, n
 
 type NeutralConfig = typeof PRIMITIVE_PALETTE_CONFIG.neutral
 type FoundationConfig = typeof PRIMITIVE_PALETTE_CONFIG.foundation
+type AccentRampConfig = typeof PRIMITIVE_PALETTE_CONFIG.accentRamp
 type BrandConfig = typeof PRIMITIVE_PALETTE_CONFIG.brand
 type AccentConfig = typeof PRIMITIVE_PALETTE_CONFIG.accent
 
@@ -142,6 +149,22 @@ const generateFoundationRamp = (
   ])
 
   return Object.fromEntries(entries) as Record<FoundationKey, Oklch>
+}
+
+const generateAccentRamp = (
+  accent: Oklch,
+  lightnessSteps: LightnessRamp,
+  config: AccentRampConfig,
+): Record<AccentRampKey, Oklch> => {
+  const chroma = Math.min(accent.C * config.chromaRatio, config.chromaMax)
+  const hue = accent.H
+
+  const entries = lightnessSteps.map((L, index) => [
+    ACCENT_RAMP_KEYS[index],
+    $Oklch.create(L, chroma, hue),
+  ])
+
+  return Object.fromEntries(entries) as Record<AccentRampKey, Oklch>
 }
 
 /**
@@ -234,7 +257,8 @@ export const createPrimitivePalette = (
 
   // Use accent if provided, otherwise fall back to brand
   const accentColor = accent ?? brand
+  const accentRamp = generateAccentRamp(accentColor, lightnessSteps, config.accentRamp)
   const accentDerivatives = generateAccentDerivatives(accentColor, config.accent)
 
-  return { ...neutralRamp, ...foundationRamp, B: brand, ...brandDerivatives, A: accentColor, ...accentDerivatives, theme }
+  return { ...neutralRamp, ...foundationRamp, ...accentRamp, B: brand, ...brandDerivatives, A: accentColor, ...accentDerivatives, theme }
 }

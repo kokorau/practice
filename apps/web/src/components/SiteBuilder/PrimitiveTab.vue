@@ -5,7 +5,9 @@ import {
   type PrimitivePalette,
   NEUTRAL_KEYS,
   FOUNDATION_KEYS,
+  ACCENT_RAMP_KEYS,
   BRAND_KEYS,
+  ACCENT_KEYS,
 } from '../../modules/SemanticColorPalette/Domain'
 
 defineProps<{
@@ -27,6 +29,11 @@ defineProps<{
     css: string
   }>
   foundationRampDisplay: Array<{
+    key: string
+    color: Oklch
+    css: string
+  }>
+  accentRampDisplay?: Array<{
     key: string
     color: Oklch
     css: string
@@ -136,6 +143,29 @@ defineProps<{
       </div>
     </section>
 
+    <section v-if="accentRampDisplay" class="section">
+      <h2 class="section-heading">Accent Ramp (Accent-derived)</h2>
+      <p class="section-description">
+        Accent hue with subtle chroma ({{ primitivePalette.A0.C.toFixed(4) }}) for accent surfaces
+      </p>
+      <div class="neutral-ramp">
+        <div
+          v-for="step in accentRampDisplay"
+          :key="step.key"
+          class="neutral-step"
+        >
+          <div
+            class="neutral-swatch"
+            :style="{ backgroundColor: step.css }"
+          />
+          <div class="neutral-info">
+            <span class="neutral-index">{{ step.key }}</span>
+            <span class="neutral-l">L: {{ (step.color.L * 100).toFixed(1) }}%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="section">
       <div class="section-header">
         <h2 class="section-heading">Primitive Palette</h2>
@@ -180,12 +210,48 @@ defineProps<{
         </div>
       </div>
 
+      <!-- Accent Ramp (A0-A9) -->
+      <div v-if="accentRampDisplay" class="primitive-group">
+        <h3 class="primitive-group-label">Accent Ramp (Accent-derived)</h3>
+        <div class="primitive-palette-grid">
+          <div
+            v-for="key in ACCENT_RAMP_KEYS"
+            :key="key"
+            class="primitive-item"
+          >
+            <div
+              class="primitive-swatch"
+              :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+            />
+            <span class="primitive-key">{{ key }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Brand (B, Bt, Bs, Bf) -->
       <div class="primitive-group">
         <h3 class="primitive-group-label">Brand (B + derivatives)</h3>
         <div class="primitive-palette-grid">
           <div
             v-for="key in BRAND_KEYS"
+            :key="key"
+            class="primitive-item"
+          >
+            <div
+              class="primitive-swatch"
+              :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+            />
+            <span class="primitive-key">{{ key }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accent (A, At, As, Af) -->
+      <div class="primitive-group">
+        <h3 class="primitive-group-label">Accent (A + derivatives)</h3>
+        <div class="primitive-palette-grid">
+          <div
+            v-for="key in ACCENT_KEYS"
             :key="key"
             class="primitive-item"
           >

@@ -24,12 +24,14 @@ export type {
   PaletteTheme,
   NeutralKey,
   FoundationKey,
+  AccentRampKey,
   BrandKey,
+  AccentKey,
   PrimitiveKey,
   PrimitivePalette,
 } from './PrimitivePalette'
 
-export { NEUTRAL_KEYS, FOUNDATION_KEYS, BRAND_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
+export { NEUTRAL_KEYS, FOUNDATION_KEYS, ACCENT_RAMP_KEYS, BRAND_KEYS, ACCENT_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
 
 export type {
   FoundationColorValidationResult,

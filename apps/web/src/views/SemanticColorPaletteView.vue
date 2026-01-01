@@ -7,6 +7,7 @@ import {
   COMPONENT_CLASS_NAMES,
   NEUTRAL_KEYS,
   FOUNDATION_KEYS,
+  ACCENT_RAMP_KEYS,
 } from '../modules/SemanticColorPalette/Domain'
 import {
   createPrimitivePalette,
@@ -96,6 +97,15 @@ const neutralRampDisplay = computed(() => {
 // Foundation ramp display
 const foundationRampDisplay = computed(() => {
   return FOUNDATION_KEYS.map((key) => ({
+    key,
+    color: primitivePalette.value[key],
+    css: $Oklch.toCss(primitivePalette.value[key]),
+  }))
+})
+
+// Accent ramp display
+const accentRampDisplay = computed(() => {
+  return ACCENT_RAMP_KEYS.map((key) => ({
     key,
     color: primitivePalette.value[key],
     css: $Oklch.toCss(primitivePalette.value[key]),
@@ -262,6 +272,7 @@ watch(palette, updateStyles)
           :primitive-palette="primitivePalette"
           :neutral-ramp-display="neutralRampDisplay"
           :foundation-ramp-display="foundationRampDisplay"
+          :accent-ramp-display="accentRampDisplay"
         />
       </div>
 
