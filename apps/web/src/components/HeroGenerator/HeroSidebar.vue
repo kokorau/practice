@@ -311,7 +311,11 @@ const handleRemoveLayer = (layerId: string) => {
 .sidebar-section {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid oklch(0.25 0.02 260);
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+}
+
+:global(.dark) .sidebar-section {
+  border-bottom-color: oklch(0.25 0.02 260);
 }
 
 .sidebar-label {
@@ -321,6 +325,10 @@ const handleRemoveLayer = (layerId: string) => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .sidebar-label {
+  color: oklch(0.60 0.02 260);
 }
 
 /* Color Buttons */
@@ -333,26 +341,36 @@ const handleRemoveLayer = (layerId: string) => {
   margin-bottom: 0.5rem;
   border: none;
   border-radius: 0.5rem;
-  background: oklch(0.22 0.02 260);
-  color: inherit;
+  background: oklch(0.88 0.01 260);
+  color: oklch(0.25 0.02 260);
   text-align: left;
   cursor: pointer;
   transition: background 0.15s;
 }
 
+:global(.dark) .color-button {
+  background: oklch(0.22 0.02 260);
+  color: oklch(0.90 0.01 260);
+}
+
 .color-button:hover {
+  background: oklch(0.84 0.01 260);
+}
+
+:global(.dark) .color-button:hover {
   background: oklch(0.26 0.02 260);
 }
 
 .color-button.active {
-  background: oklch(0.50 0.20 250);
+  background: oklch(0.55 0.18 250);
+  color: white;
 }
 
 .color-swatch {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 0.25rem;
-  border: 1px solid oklch(0.40 0.02 260);
+  border: 1px solid rgba(128, 128, 128, 0.3);
   flex-shrink: 0;
 }
 
@@ -366,7 +384,7 @@ const handleRemoveLayer = (layerId: string) => {
   width: 1rem;
   height: 1rem;
   border-radius: 0.1875rem;
-  border: 1px solid oklch(0.40 0.02 260);
+  border: 1px solid rgba(128, 128, 128, 0.3);
 }
 
 .color-info {
@@ -381,7 +399,7 @@ const handleRemoveLayer = (layerId: string) => {
 
 .color-value {
   font-size: 0.625rem;
-  color: oklch(0.60 0.02 260);
+  opacity: 0.7;
   font-family: ui-monospace, monospace;
 }
 
@@ -411,12 +429,18 @@ const handleRemoveLayer = (layerId: string) => {
   top: 0;
   margin-left: 0.25rem;
   width: 18rem;
-  background: oklch(0.18 0.02 260);
-  border: 1px solid oklch(0.25 0.02 260);
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.88 0.01 260);
   border-radius: 0.5rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   z-index: 50;
   overflow: hidden;
+}
+
+:global(.dark) .color-popup {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.25 0.02 260);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .popup-header {
@@ -424,26 +448,43 @@ const handleRemoveLayer = (layerId: string) => {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
-  border-bottom: 1px solid oklch(0.25 0.02 260);
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+}
+
+:global(.dark) .popup-header {
+  border-bottom-color: oklch(0.25 0.02 260);
 }
 
 .popup-header h2 {
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .popup-header h2 {
+  color: oklch(0.90 0.01 260);
 }
 
 .popup-close {
   background: none;
   border: none;
-  color: oklch(0.60 0.02 260);
+  color: oklch(0.50 0.02 260);
   font-size: 1.125rem;
   cursor: pointer;
   padding: 0;
   line-height: 1;
 }
 
+:global(.dark) .popup-close {
+  color: oklch(0.60 0.02 260);
+}
+
 .popup-close:hover {
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .popup-close:hover {
   color: oklch(0.90 0.02 260);
 }
 

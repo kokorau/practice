@@ -271,9 +271,13 @@ const handleAddLayer = (type: LayerType) => {
 
 /* Section */
 .panel-section {
-  background: oklch(0.18 0.02 260);
+  background: oklch(0.92 0.01 260);
   border-radius: 0.5rem;
   padding: 0.75rem;
+}
+
+:global(.dark) .panel-section {
+  background: oklch(0.18 0.02 260);
 }
 
 .section-header {
@@ -282,11 +286,19 @@ const handleAddLayer = (type: LayerType) => {
   gap: 0.5rem;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid oklch(0.25 0.02 260);
+  border-bottom: 1px solid oklch(0.85 0.01 260);
+}
+
+:global(.dark) .section-header {
+  border-bottom-color: oklch(0.25 0.02 260);
 }
 
 .section-icon {
   font-size: 1rem;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .section-icon {
   color: oklch(0.60 0.02 260);
 }
 
@@ -295,6 +307,10 @@ const handleAddLayer = (type: LayerType) => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  color: oklch(0.40 0.02 260);
+}
+
+:global(.dark) .section-title {
   color: oklch(0.70 0.02 260);
 }
 
@@ -306,12 +322,20 @@ const handleAddLayer = (type: LayerType) => {
 }
 
 .layer-item {
-  background: oklch(0.22 0.02 260);
+  background: oklch(0.88 0.01 260);
   border-radius: 0.375rem;
   overflow: hidden;
 }
 
+:global(.dark) .layer-item {
+  background: oklch(0.22 0.02 260);
+}
+
 .layer-item.expanded {
+  background: oklch(0.86 0.01 260);
+}
+
+:global(.dark) .layer-item.expanded {
   background: oklch(0.24 0.02 260);
 }
 
@@ -326,6 +350,10 @@ const handleAddLayer = (type: LayerType) => {
 }
 
 .layer-header:hover {
+  background: oklch(0.82 0.01 260);
+}
+
+:global(.dark) .layer-header:hover {
   background: oklch(0.28 0.02 260);
 }
 
@@ -337,19 +365,32 @@ const handleAddLayer = (type: LayerType) => {
   height: 1.5rem;
   background: none;
   border: none;
-  color: oklch(0.70 0.02 260);
+  color: oklch(0.40 0.02 260);
   cursor: pointer;
   padding: 0;
   border-radius: 0.25rem;
   transition: color 0.15s, background 0.15s;
 }
 
+:global(.dark) .visibility-toggle {
+  color: oklch(0.70 0.02 260);
+}
+
 .visibility-toggle:hover {
+  background: oklch(0.78 0.01 260);
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .visibility-toggle:hover {
   background: oklch(0.30 0.02 260);
   color: oklch(0.90 0.02 260);
 }
 
 .visibility-toggle.hidden {
+  color: oklch(0.65 0.01 260);
+}
+
+:global(.dark) .visibility-toggle.hidden {
   color: oklch(0.40 0.02 260);
 }
 
@@ -365,6 +406,10 @@ const handleAddLayer = (type: LayerType) => {
 
 .layer-icon {
   font-size: 1rem;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .layer-icon {
   color: oklch(0.60 0.02 260);
 }
 
@@ -381,15 +426,23 @@ const handleAddLayer = (type: LayerType) => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  color: oklch(0.55 0.02 260);
+}
+
+:global(.dark) .layer-type {
   color: oklch(0.50 0.02 260);
 }
 
 .layer-name {
   font-size: 0.75rem;
-  color: oklch(0.85 0.02 260);
+  color: oklch(0.25 0.02 260);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+:global(.dark) .layer-name {
+  color: oklch(0.85 0.02 260);
 }
 
 .remove-layer-toggle {
@@ -400,11 +453,15 @@ const handleAddLayer = (type: LayerType) => {
   height: 1.5rem;
   background: none;
   border: none;
-  color: oklch(0.50 0.02 260);
+  color: oklch(0.55 0.02 260);
   cursor: pointer;
   padding: 0;
   border-radius: 0.25rem;
   transition: color 0.15s, background 0.15s;
+}
+
+:global(.dark) .remove-layer-toggle {
+  color: oklch(0.50 0.02 260);
 }
 
 .remove-layer-toggle:hover {
@@ -430,8 +487,8 @@ const handleAddLayer = (type: LayerType) => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: oklch(0.20 0.02 260);
-  border: 1px solid oklch(0.28 0.02 260);
+  background: oklch(0.94 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.25rem;
   color: inherit;
   text-align: left;
@@ -439,7 +496,17 @@ const handleAddLayer = (type: LayerType) => {
   transition: background 0.15s, border-color 0.15s;
 }
 
+:global(.dark) .sub-item {
+  background: oklch(0.20 0.02 260);
+  border-color: oklch(0.28 0.02 260);
+}
+
 .sub-item:hover:not(.disabled) {
+  background: oklch(0.88 0.01 260);
+  border-color: oklch(0.75 0.01 260);
+}
+
+:global(.dark) .sub-item:hover:not(.disabled) {
   background: oklch(0.26 0.02 260);
   border-color: oklch(0.35 0.02 260);
 }
@@ -452,22 +519,38 @@ const handleAddLayer = (type: LayerType) => {
 .sub-item-label {
   font-size: 0.6875rem;
   font-weight: 500;
-  color: oklch(0.60 0.02 260);
+  color: oklch(0.50 0.02 260);
   min-width: 3.5rem;
+}
+
+:global(.dark) .sub-item-label {
+  color: oklch(0.60 0.02 260);
 }
 
 .sub-item-value {
   flex: 1;
   font-size: 0.75rem;
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .sub-item-value {
   color: oklch(0.85 0.02 260);
 }
 
 .sub-item-arrow {
   font-size: 1rem;
+  color: oklch(0.60 0.02 260);
+}
+
+:global(.dark) .sub-item-arrow {
   color: oklch(0.45 0.02 260);
 }
 
 .sub-item:hover:not(.disabled) .sub-item-arrow {
+  color: oklch(0.40 0.02 260);
+}
+
+:global(.dark) .sub-item:hover:not(.disabled) .sub-item-arrow {
   color: oklch(0.70 0.02 260);
 }
 
@@ -485,16 +568,26 @@ const handleAddLayer = (type: LayerType) => {
   width: 100%;
   padding: 0.5rem;
   background: transparent;
-  border: 1px dashed oklch(0.35 0.02 260);
+  border: 1px dashed oklch(0.75 0.01 260);
   border-radius: 0.375rem;
-  color: oklch(0.60 0.02 260);
+  color: oklch(0.50 0.02 260);
   font-size: 0.75rem;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
+:global(.dark) .add-layer-button {
+  border-color: oklch(0.35 0.02 260);
+  color: oklch(0.60 0.02 260);
+}
+
 .add-layer-button:hover {
   border-color: oklch(0.50 0.15 250);
+  color: oklch(0.35 0.02 260);
+  background: oklch(0.90 0.01 260);
+}
+
+:global(.dark) .add-layer-button:hover {
   color: oklch(0.80 0.02 260);
   background: oklch(0.22 0.02 260);
 }
@@ -509,11 +602,17 @@ const handleAddLayer = (type: LayerType) => {
   left: 0;
   right: 0;
   margin-top: 0.25rem;
-  background: oklch(0.22 0.02 260);
-  border: 1px solid oklch(0.30 0.02 260);
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.375rem;
   overflow: hidden;
   z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+:global(.dark) .add-layer-menu {
+  background: oklch(0.22 0.02 260);
+  border-color: oklch(0.30 0.02 260);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
@@ -525,19 +624,31 @@ const handleAddLayer = (type: LayerType) => {
   padding: 0.625rem 0.75rem;
   background: none;
   border: none;
-  color: oklch(0.85 0.02 260);
+  color: oklch(0.25 0.02 260);
   font-size: 0.75rem;
   text-align: left;
   cursor: pointer;
   transition: background 0.15s;
 }
 
+:global(.dark) .add-menu-item {
+  color: oklch(0.85 0.02 260);
+}
+
 .add-menu-item:hover {
+  background: oklch(0.90 0.01 260);
+}
+
+:global(.dark) .add-menu-item:hover {
   background: oklch(0.28 0.02 260);
 }
 
 .add-menu-item .material-icons {
   font-size: 1rem;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .add-menu-item .material-icons {
   color: oklch(0.60 0.02 260);
 }
 
@@ -554,8 +665,8 @@ const handleAddLayer = (type: LayerType) => {
   gap: 0.5rem;
   width: 100%;
   padding: 0.625rem 0.75rem;
-  background: oklch(0.22 0.02 260);
-  border: 1px solid oklch(0.28 0.02 260);
+  background: oklch(0.88 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.375rem;
   color: inherit;
   text-align: left;
@@ -563,13 +674,27 @@ const handleAddLayer = (type: LayerType) => {
   transition: background 0.15s, border-color 0.15s;
 }
 
+:global(.dark) .foreground-button {
+  background: oklch(0.22 0.02 260);
+  border-color: oklch(0.28 0.02 260);
+}
+
 .foreground-button:hover {
+  background: oklch(0.84 0.01 260);
+  border-color: oklch(0.75 0.01 260);
+}
+
+:global(.dark) .foreground-button:hover {
   background: oklch(0.26 0.02 260);
   border-color: oklch(0.35 0.02 260);
 }
 
 .foreground-button > .material-icons {
   font-size: 1rem;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .foreground-button > .material-icons {
   color: oklch(0.60 0.02 260);
 }
 
@@ -583,6 +708,10 @@ const handleAddLayer = (type: LayerType) => {
 .foreground-label {
   font-size: 0.75rem;
   font-weight: 500;
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .foreground-label {
   color: oklch(0.85 0.02 260);
 }
 
@@ -593,10 +722,18 @@ const handleAddLayer = (type: LayerType) => {
 
 .foreground-arrow {
   font-size: 1rem;
+  color: oklch(0.60 0.02 260);
+}
+
+:global(.dark) .foreground-arrow {
   color: oklch(0.45 0.02 260);
 }
 
 .foreground-button:hover .foreground-arrow {
+  color: oklch(0.40 0.02 260);
+}
+
+:global(.dark) .foreground-button:hover .foreground-arrow {
   color: oklch(0.70 0.02 260);
 }
 
