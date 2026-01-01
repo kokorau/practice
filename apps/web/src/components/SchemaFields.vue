@@ -43,8 +43,6 @@ const updateField = (key: string, value: unknown) => {
         :step="field.schema.step"
         :model-value="(modelValue[field.key] as number) ?? field.schema.default"
         @update:model-value="updateField(field.key, $event)"
-        label-class="text-gray-400"
-        input-class="bg-gray-700"
       />
 
       <!-- Boolean field: checkbox -->
@@ -72,8 +70,12 @@ const updateField = (key: string, value: unknown) => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.75rem;
-  color: oklch(0.70 0.02 260);
+  color: oklch(0.40 0.02 260);
   cursor: pointer;
+}
+
+:global(.dark) .schema-checkbox {
+  color: oklch(0.70 0.02 260);
 }
 
 .schema-checkbox input[type="checkbox"] {

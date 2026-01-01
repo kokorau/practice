@@ -5,8 +5,6 @@ defineProps<{
   max: number
   step?: number
   modelValue: number
-  labelClass?: string
-  inputClass?: string
 }>()
 
 const emit = defineEmits<{
@@ -20,18 +18,71 @@ const handleInput = (e: Event) => {
 </script>
 
 <template>
-  <div class="flex items-center gap-2">
-    <span :class="['text-xs w-16 flex-shrink-0', labelClass ?? 'text-gray-500']">
-      {{ label }}
-    </span>
+  <div class="range-input">
+    <span class="range-label">{{ label }}</span>
     <input
       type="range"
       :min="min"
       :max="max"
       :step="step ?? 0.01"
       :value="modelValue"
+      class="range-slider"
       @input="handleInput"
-      :class="['flex-1 h-1.5 rounded-lg appearance-none cursor-pointer', inputClass ?? 'bg-gray-700']"
     />
   </div>
 </template>
+
+<style scoped>
+.range-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.range-label {
+  font-size: 0.75rem;
+  width: 4rem;
+  flex-shrink: 0;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .range-label {
+  color: oklch(0.60 0.02 260);
+}
+
+.range-slider {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  appearance: none;
+  cursor: pointer;
+  background: oklch(0.85 0.01 260);
+}
+
+:global(.dark) .range-slider {
+  background: oklch(0.30 0.02 260);
+}
+
+.range-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: oklch(0.55 0.20 250);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+.range-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: oklch(0.55 0.20 250);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+</style>
