@@ -24,8 +24,8 @@ export const PRIMITIVE_PALETTE_CONFIG = {
 
   // Neutral ramp (N0-N9): subtle brand-tinted grays
   neutral: {
-    chromaRatio: 0.03,  // Chroma = brand.C * ratio
-    chromaMax: 0.02,    // Clamp chroma to this max
+    chromaRatio: 0.25,  // Chroma = brand.C * ratio
+    chromaMax: 0.15,    // Clamp chroma to this max
   },
 
   // Foundation ramp (F0-F9): accent-tinted grays
@@ -35,8 +35,8 @@ export const PRIMITIVE_PALETTE_CONFIG = {
 
   // Accent ramp (A0-A9): accent-tinted grays (similar to neutral but from accent)
   accentRamp: {
-    chromaRatio: 0.08,  // Slightly more chroma than neutral for accent character
-    chromaMax: 0.04,    // Clamp chroma to this max
+    chromaRatio: 0.25,  // Slightly more chroma than neutral for accent character
+    chromaMax: 0.15,    // Clamp chroma to this max
   },
 
   // Brand derivatives
