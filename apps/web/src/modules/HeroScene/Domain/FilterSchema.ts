@@ -37,6 +37,19 @@ export const ChromaticAberrationFilterSchema = defineSchema({
 export type ChromaticAberrationFilterConfig = Infer<typeof ChromaticAberrationFilterSchema>
 
 // ============================================================
+// Dot Halftone Filter Schema
+// ============================================================
+
+export const DotHalftoneFilterSchema = defineSchema({
+  enabled: boolean({ label: 'Enabled', default: false }),
+  dotSize: number({ label: 'Dot Size', min: 2, max: 30, default: 8 }),
+  spacing: number({ label: 'Spacing', min: 4, max: 60, default: 16 }),
+  angle: number({ label: 'Angle', min: 0, max: 90, default: 45 }),
+})
+
+export type DotHalftoneFilterConfig = Infer<typeof DotHalftoneFilterSchema>
+
+// ============================================================
 // Layer Filter Schema (composite)
 // ============================================================
 
@@ -47,6 +60,7 @@ export type ChromaticAberrationFilterConfig = Infer<typeof ChromaticAberrationFi
 export const LayerFilterSchemas = {
   vignette: VignetteFilterSchema,
   chromaticAberration: ChromaticAberrationFilterSchema,
+  dotHalftone: DotHalftoneFilterSchema,
 } as const
 
 export type LayerFilterSchemaMap = typeof LayerFilterSchemas
@@ -55,6 +69,7 @@ export type LayerFilterSchemaMap = typeof LayerFilterSchemas
 export interface LayerFilterConfig {
   vignette: VignetteFilterConfig
   chromaticAberration: ChromaticAberrationFilterConfig
+  dotHalftone: DotHalftoneFilterConfig
 }
 
 // ============================================================
@@ -69,8 +84,13 @@ export const createDefaultVignetteConfig = (): VignetteFilterConfig =>
 export const createDefaultChromaticAberrationConfig = (): ChromaticAberrationFilterConfig =>
   getDefaults(ChromaticAberrationFilterSchema)
 
+/** Create default dot halftone filter config */
+export const createDefaultDotHalftoneConfig = (): DotHalftoneFilterConfig =>
+  getDefaults(DotHalftoneFilterSchema)
+
 /** Create default layer filter config */
 export const createDefaultFilterConfig = (): LayerFilterConfig => ({
   vignette: createDefaultVignetteConfig(),
   chromaticAberration: createDefaultChromaticAberrationConfig(),
+  dotHalftone: createDefaultDotHalftoneConfig(),
 })

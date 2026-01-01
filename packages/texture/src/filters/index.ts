@@ -18,3 +18,10 @@ export {
   CHROMATIC_ABERRATION_BUFFER_SIZE,
   type ChromaticAberrationParams,
 } from '../shaders/chromaticAberration'
+
+export {
+  dotHalftoneShader,
+  createDotHalftoneUniforms,
+  DOT_HALFTONE_BUFFER_SIZE,
+  type DotHalftoneParams,
+} from '../shaders/dotHalftone'
