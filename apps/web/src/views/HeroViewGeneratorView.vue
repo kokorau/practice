@@ -17,6 +17,7 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
+import LayerPanel, { type LayerItem, type LayerType, type SubItemType, type LayerFilterConfig } from '../components/HeroGenerator/LayerPanel.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
@@ -370,6 +371,78 @@ const handleApplyColorPreset = (preset: ColorPreset) => {
 // ============================================================
 type TabId = 'generator' | 'palette'
 const activeTab = ref<TabId>('generator')
+
+// ============================================================
+// Layer Management (for Right Panel)
+// ============================================================
+const layers = ref<LayerItem[]>([
+  { id: 'base', type: 'base', name: 'Background', visible: true, expanded: true },
+  { id: 'mask-1', type: 'mask', name: 'Mask Layer', visible: true, expanded: false },
+])
+
+const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
+  if (uiLayerId === 'base') return 'base-layer'
+  if (uiLayerId.startsWith('mask')) return 'mask-layer'
+  return uiLayerId
+}
+
+const handleToggleVisibility = (layerId: string) => {
+  const layer = layers.value.find(l => l.id === layerId)
+  if (layer) {
+    layer.visible = !layer.visible
+    toggleLayerVisibility(mapLayerIdToSceneLayerId(layerId))
+  }
+}
+
+const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
+  const layer = layers.value.find(l => l.id === layerId)
+  if (!layer) return
+
+  if (layer.type === 'base') {
+    if (subItemType === 'surface') {
+      openSection('background')
+    } else if (subItemType === 'filter') {
+      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
+      openSection('filter')
+    }
+  } else if (layer.type === 'mask') {
+    if (subItemType === 'surface') {
+      openSection('mask-surface')
+    } else if (subItemType === 'shape') {
+      openSection('mask-shape')
+    } else if (subItemType === 'filter') {
+      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
+      openSection('filter')
+    }
+  }
+}
+
+const handleAddLayer = (type: LayerType) => {
+  const id = `${type}-${Date.now()}`
+  const names: Record<LayerType, string> = {
+    base: 'Background',
+    mask: 'Mask Layer',
+    object: 'Object',
+    text: 'Text Layer',
+  }
+  layers.value.push({
+    id,
+    type,
+    name: names[type],
+    visible: true,
+    expanded: true,
+  })
+  if (type === 'mask') addMaskLayer()
+}
+
+const handleRemoveLayer = (layerId: string) => {
+  const index = layers.value.findIndex(l => l.id === layerId)
+  const layer = index > -1 ? layers.value[index] : undefined
+  if (layer && layer.type !== 'base') {
+    layers.value.splice(index, 1)
+    removeLayer(mapLayerIdToSceneLayerId(layerId))
+  }
+}
 </script>
 
 <template>
@@ -391,14 +464,6 @@ const activeTab = ref<TabId>('generator')
       :foundation-h="foundationH"
       :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
       :foundation-hex="foundationColor.hex"
-      :active-section="activeSection"
-      :texture-patterns="texturePatterns"
-      :mask-patterns="maskPatterns"
-      :midground-texture-patterns="midgroundTexturePatterns"
-      :selected-background-index="selectedBackgroundIndex"
-      :selected-mask-index="selectedMaskIndex"
-      :selected-midground-texture-index="selectedMidgroundTextureIndex"
-      :layer-filter-configs="layerFilterConfigs"
       :neutral-ramp-display="neutralRampDisplay"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
@@ -410,17 +475,12 @@ const activeTab = ref<TabId>('generator')
       @update:foundation-c="foundationC = $event"
       @update:foundation-h="foundationH = $event"
       @update:foundation-hue-linked-to-brand="foundationHueLinkedToBrand = $event"
-      @open-section="openSection"
-      @select-filter-layer="selectedFilterLayerId = $event"
-      @toggle-layer-visibility="toggleLayerVisibility"
-      @add-layer="(type) => { if (type === 'mask') addMaskLayer() }"
-      @remove-layer="removeLayer"
       @apply-color-preset="handleApplyColorPreset"
     />
 
-    <!-- サブパネル: パターン選択 (Generator タブのみ) -->
-    <Transition name="subpanel">
-      <aside v-if="activeSection && activeTab === 'generator'" class="hero-subpanel">
+    <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->
+    <Transition name="subpanel-right">
+      <aside v-if="activeSection && activeTab === 'generator'" class="hero-subpanel subpanel-right">
       <div class="hero-subpanel-header">
         <h2>{{
           activeSection === 'background' ? 'テクスチャ選択' :
@@ -686,6 +746,20 @@ const activeTab = ref<TabId>('generator')
         />
       </div>
     </main>
+
+    <!-- 右パネル: Canvas/HTML レイヤー -->
+    <aside v-if="activeTab === 'generator'" class="hero-right-panel">
+      <LayerPanel
+        :layers="layers"
+        :layer-filter-configs="layerFilterConfigs"
+        @toggle-visibility="handleToggleVisibility"
+        @select-subitem="handleSelectSubItem"
+        @add-layer="handleAddLayer"
+        @remove-layer="handleRemoveLayer"
+        @open-foreground-title="openSection('foreground-title')"
+        @open-foreground-description="openSection('foreground-description')"
+      />
+    </aside>
   </div>
 </template>
 

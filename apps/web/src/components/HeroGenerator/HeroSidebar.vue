@@ -6,8 +6,6 @@ import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'
 import type { ColorPreset } from '../SiteBuilder/colorPresets'
-import LayerPanel, { type LayerItem, type LayerType, type SubItemType, type LayerFilterConfig } from './LayerPanel.vue'
-import type { SectionType, MidgroundSurfacePreset } from '../../composables/SiteBuilder'
 
 type NeutralRampItem = {
   key: string
@@ -33,16 +31,6 @@ defineProps<{
   foundationH: number
   foundationHueLinkedToBrand: boolean
   foundationHex: string
-  // Layer state
-  activeSection: SectionType | null
-  texturePatterns: TexturePattern[]
-  maskPatterns: MaskPattern[]
-  midgroundTexturePatterns: MidgroundSurfacePreset[]
-  selectedBackgroundIndex: number
-  selectedMaskIndex: number | null
-  selectedMidgroundTextureIndex: number | null
-  // Filter state
-  layerFilterConfigs?: Map<string, LayerFilterConfig>
   // Palette tab
   neutralRampDisplay: NeutralRampItem[]
 }>()
@@ -58,21 +46,8 @@ const emit = defineEmits<{
   (e: 'update:foundationC', value: number): void
   (e: 'update:foundationH', value: number): void
   (e: 'update:foundationHueLinkedToBrand', value: boolean): void
-  (e: 'openSection', section: SectionType): void
-  (e: 'selectFilterLayer', layerId: string): void
-  // Layer operations - propagate to parent for useHeroScene
-  (e: 'toggleLayerVisibility', layerId: string): void
-  (e: 'addLayer', type: LayerType): void
-  (e: 'removeLayer', layerId: string): void
   (e: 'applyColorPreset', preset: ColorPreset): void
 }>()
-
-// Map UI layer IDs to useHeroScene layer IDs
-const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
-  if (uiLayerId === 'base') return 'base-layer'
-  if (uiLayerId.startsWith('mask')) return 'mask-layer'
-  return uiLayerId
-}
 
 // ============================================================
 // Color Popup
@@ -82,76 +57,6 @@ const activeColorPopup = ref<ColorPopup>(null)
 
 const toggleColorPopup = (popup: ColorPopup) => {
   activeColorPopup.value = activeColorPopup.value === popup ? null : popup
-}
-
-// ============================================================
-// Layer Management
-// ============================================================
-const layers = ref<LayerItem[]>([
-  { id: 'base', type: 'base', name: 'Background', visible: true, expanded: true },
-  { id: 'mask-1', type: 'mask', name: 'Mask Layer', visible: true, expanded: false },
-])
-
-const handleToggleVisibility = (layerId: string) => {
-  const layer = layers.value.find(l => l.id === layerId)
-  if (layer) {
-    layer.visible = !layer.visible
-    // Propagate to parent for useHeroScene
-    emit('toggleLayerVisibility', mapLayerIdToSceneLayerId(layerId))
-  }
-}
-
-const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
-  // Map to existing section system for now
-  const layer = layers.value.find(l => l.id === layerId)
-  if (!layer) return
-
-  if (layer.type === 'base') {
-    if (subItemType === 'surface') {
-      emit('openSection', 'background')
-    } else if (subItemType === 'filter') {
-      emit('selectFilterLayer', mapLayerIdToSceneLayerId(layerId))
-      emit('openSection', 'filter')
-    }
-  } else if (layer.type === 'mask') {
-    if (subItemType === 'surface') {
-      emit('openSection', 'mask-surface')
-    } else if (subItemType === 'shape') {
-      emit('openSection', 'mask-shape')
-    } else if (subItemType === 'filter') {
-      emit('selectFilterLayer', mapLayerIdToSceneLayerId(layerId))
-      emit('openSection', 'filter')
-    }
-  }
-}
-
-const handleAddLayer = (type: LayerType) => {
-  const id = `${type}-${Date.now()}`
-  const names: Record<LayerType, string> = {
-    base: 'Background',
-    mask: 'Mask Layer',
-    object: 'Object',
-    text: 'Text Layer',
-  }
-  layers.value.push({
-    id,
-    type,
-    name: names[type],
-    visible: true,
-    expanded: true,
-  })
-  // Propagate to parent for useHeroScene
-  emit('addLayer', type)
-}
-
-const handleRemoveLayer = (layerId: string) => {
-  const index = layers.value.findIndex(l => l.id === layerId)
-  const layer = index > -1 ? layers.value[index] : undefined
-  if (layer && layer.type !== 'base') {
-    layers.value.splice(index, 1)
-    // Propagate to parent for useHeroScene
-    emit('removeLayer', mapLayerIdToSceneLayerId(layerId))
-  }
 }
 </script>
 
@@ -217,20 +122,6 @@ const handleRemoveLayer = (layerId: string) => {
         </span>
       </button>
     </div>
-
-    <!-- レイヤーパネル (Generator タブのみ) -->
-    <template v-if="activeTab === 'generator'">
-      <LayerPanel
-        :layers="layers"
-        :layer-filter-configs="layerFilterConfigs"
-        @toggle-visibility="handleToggleVisibility"
-        @select-subitem="handleSelectSubItem"
-        @add-layer="handleAddLayer"
-        @remove-layer="handleRemoveLayer"
-        @open-foreground-title="emit('openSection', 'foreground-title')"
-        @open-foreground-description="emit('openSection', 'foreground-description')"
-      />
-    </template>
 
     <!-- Palette タブ: Neutral Ramp -->
     <template v-if="activeTab === 'palette'">
