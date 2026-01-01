@@ -134,16 +134,26 @@ const handleSelectPattern = (index: number | null) => {
   gap: 0.5rem;
   width: 100%;
   padding: 1.5rem;
-  border: 2px dashed oklch(0.35 0.02 260);
+  border: 2px dashed oklch(0.75 0.01 260);
   border-radius: 0.5rem;
-  background: oklch(0.18 0.02 260);
-  color: oklch(0.60 0.02 260);
+  background: oklch(0.94 0.01 260);
+  color: oklch(0.50 0.02 260);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 
+:global(.dark) .image-upload-button {
+  border-color: oklch(0.35 0.02 260);
+  background: oklch(0.18 0.02 260);
+  color: oklch(0.60 0.02 260);
+}
+
 .image-upload-button:hover {
   border-color: oklch(0.55 0.20 250);
+  background: oklch(0.90 0.01 260);
+}
+
+:global(.dark) .image-upload-button:hover {
   background: oklch(0.22 0.02 260);
 }
 
@@ -187,6 +197,10 @@ const handleSelectPattern = (index: number | null) => {
   border: 2px solid oklch(0.55 0.20 250);
   border-radius: 0.5rem;
   overflow: hidden;
+  background: oklch(0.92 0.01 260);
+}
+
+:global(.dark) .uploaded-image-preview {
   background: oklch(0.22 0.02 260);
 }
 
@@ -208,7 +222,7 @@ const handleSelectPattern = (index: number | null) => {
   display: flex;
   flex-direction: column;
   width: 100%;
-  border: 2px solid oklch(0.30 0.02 260);
+  border: 2px solid oklch(0.85 0.01 260);
   border-radius: 0.5rem;
   background: transparent;
   overflow: hidden;
@@ -216,7 +230,15 @@ const handleSelectPattern = (index: number | null) => {
   transition: border-color 0.15s, background 0.15s;
 }
 
+:global(.dark) .pattern-button {
+  border-color: oklch(0.30 0.02 260);
+}
+
 .pattern-button:hover:not(:disabled) {
+  border-color: oklch(0.75 0.01 260);
+}
+
+:global(.dark) .pattern-button:hover:not(:disabled) {
   border-color: oklch(0.40 0.02 260);
 }
 
@@ -231,15 +253,24 @@ const handleSelectPattern = (index: number | null) => {
   justify-content: center;
   width: 100%;
   aspect-ratio: 16 / 9;
+  background: oklch(0.92 0.01 260);
+  color: oklch(0.50 0.02 260);
+  font-size: 0.875rem;
+}
+
+:global(.dark) .pattern-none {
   background: oklch(0.22 0.02 260);
   color: oklch(0.60 0.02 260);
-  font-size: 0.875rem;
 }
 
 .pattern-label {
   padding: 0.375rem 0.5rem;
   font-size: 0.75rem;
-  color: oklch(0.70 0.02 260);
+  color: oklch(0.40 0.02 260);
   text-align: left;
+}
+
+:global(.dark) .pattern-label {
+  color: oklch(0.70 0.02 260);
 }
 </style>
