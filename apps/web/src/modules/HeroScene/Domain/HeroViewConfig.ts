@@ -212,6 +212,7 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
       vignette: { enabled: false, intensity: 0.5, radius: 0.5, softness: 0.5 },
       chromaticAberration: { enabled: false, intensity: 0.01 },
       dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
+      lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
     },
   },
   mask: null,

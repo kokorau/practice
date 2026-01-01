@@ -25,3 +25,10 @@ export {
   DOT_HALFTONE_BUFFER_SIZE,
   type DotHalftoneParams,
 } from '../shaders/dotHalftone'
+
+export {
+  lineHalftoneShader,
+  createLineHalftoneUniforms,
+  LINE_HALFTONE_BUFFER_SIZE,
+  type LineHalftoneParams,
+} from '../shaders/lineHalftone'

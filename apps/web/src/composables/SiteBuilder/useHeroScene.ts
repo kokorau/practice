@@ -60,6 +60,9 @@ import {
   dotHalftoneShader,
   createDotHalftoneUniforms,
   DOT_HALFTONE_BUFFER_SIZE,
+  lineHalftoneShader,
+  createLineHalftoneUniforms,
+  LINE_HALFTONE_BUFFER_SIZE,
 } from '@practice/texture/filters'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
@@ -391,6 +394,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       vignette: { ...current.vignette, ...(updates.vignette ?? {}) },
       chromaticAberration: { ...current.chromaticAberration, ...(updates.chromaticAberration ?? {}) },
       dotHalftone: { ...current.dotHalftone, ...(updates.dotHalftone ?? {}) },
+      lineHalftone: { ...current.lineHalftone, ...(updates.lineHalftone ?? {}) },
     }
     layerFilterConfigs.value.set(layerId, updated)
 
@@ -794,6 +798,24 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       )
       previewRenderer.applyPostEffect(
         { shader: dotHalftoneShader, uniforms, bufferSize: DOT_HALFTONE_BUFFER_SIZE },
+        inputTexture,
+        { clear: true }
+      )
+    }
+
+    // Line Halftone (requires texture input)
+    if (filters.lineHalftone.enabled) {
+      const inputTexture = previewRenderer.copyCanvasToTexture()
+      const uniforms = createLineHalftoneUniforms(
+        {
+          lineWidth: filters.lineHalftone.lineWidth,
+          spacing: filters.lineHalftone.spacing,
+          angle: filters.lineHalftone.angle,
+        },
+        viewport
+      )
+      previewRenderer.applyPostEffect(
+        { shader: lineHalftoneShader, uniforms, bufferSize: LINE_HALFTONE_BUFFER_SIZE },
         inputTexture,
         { clear: true }
       )

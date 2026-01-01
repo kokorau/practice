@@ -50,6 +50,19 @@ export const DotHalftoneFilterSchema = defineSchema({
 export type DotHalftoneFilterConfig = Infer<typeof DotHalftoneFilterSchema>
 
 // ============================================================
+// Line Halftone Filter Schema
+// ============================================================
+
+export const LineHalftoneFilterSchema = defineSchema({
+  enabled: boolean({ label: 'Enabled', default: false }),
+  lineWidth: number({ label: 'Line Width', min: 1, max: 20, default: 4 }),
+  spacing: number({ label: 'Spacing', min: 4, max: 40, default: 12 }),
+  angle: number({ label: 'Angle', min: 0, max: 180, default: 45 }),
+})
+
+export type LineHalftoneFilterConfig = Infer<typeof LineHalftoneFilterSchema>
+
+// ============================================================
 // Layer Filter Schema (composite)
 // ============================================================
 
@@ -61,6 +74,7 @@ export const LayerFilterSchemas = {
   vignette: VignetteFilterSchema,
   chromaticAberration: ChromaticAberrationFilterSchema,
   dotHalftone: DotHalftoneFilterSchema,
+  lineHalftone: LineHalftoneFilterSchema,
 } as const
 
 export type LayerFilterSchemaMap = typeof LayerFilterSchemas
@@ -70,6 +84,7 @@ export interface LayerFilterConfig {
   vignette: VignetteFilterConfig
   chromaticAberration: ChromaticAberrationFilterConfig
   dotHalftone: DotHalftoneFilterConfig
+  lineHalftone: LineHalftoneFilterConfig
 }
 
 // ============================================================
@@ -88,9 +103,14 @@ export const createDefaultChromaticAberrationConfig = (): ChromaticAberrationFil
 export const createDefaultDotHalftoneConfig = (): DotHalftoneFilterConfig =>
   getDefaults(DotHalftoneFilterSchema)
 
+/** Create default line halftone filter config */
+export const createDefaultLineHalftoneConfig = (): LineHalftoneFilterConfig =>
+  getDefaults(LineHalftoneFilterSchema)
+
 /** Create default layer filter config */
 export const createDefaultFilterConfig = (): LayerFilterConfig => ({
   vignette: createDefaultVignetteConfig(),
   chromaticAberration: createDefaultChromaticAberrationConfig(),
   dotHalftone: createDefaultDotHalftoneConfig(),
+  lineHalftone: createDefaultLineHalftoneConfig(),
 })
