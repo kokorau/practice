@@ -15,6 +15,7 @@ export const TEXT_TOKEN_NAMES = {
   body: 'body',
   meta: 'meta',
   linkText: 'linkText',
+  highlight: 'highlight',
 } as const
 
 export type TextTokenName =
@@ -146,6 +147,7 @@ export const TOKEN_CSS_PROPERTY_MAP = {
   body: 'color',
   meta: 'color',
   linkText: 'color',
+  highlight: 'color',
   // Line roles (ink)
   border: 'border-color',
   divider: 'border-color',

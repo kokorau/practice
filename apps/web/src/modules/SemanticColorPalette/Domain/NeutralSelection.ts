@@ -56,6 +56,8 @@ export const APCA_INK_TARGETS = {
   meta: 60,        // Large text equivalent
   /** Link text - same as body for accessibility */
   linkText: 75,    // Body text
+  /** Highlight text - accent color emphasis (currently fixed to A) */
+  highlight: 75,   // Body text equivalent
   /** Border - subtle UI element */
   border: 30,      // Non-text
   /** Divider - subtle separator */
@@ -70,6 +72,7 @@ export const APCA_DISABLED_TARGETS = {
   body: 45,
   meta: 30,
   linkText: 45,
+  highlight: 45,
   border: 15,
   divider: 15,
 } as const

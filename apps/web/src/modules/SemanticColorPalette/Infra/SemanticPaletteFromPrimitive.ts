@@ -59,6 +59,7 @@ type InkColors = {
   body: string
   meta: string
   linkText: string
+  highlight: string
   border: string
   divider: string
 }
@@ -68,6 +69,7 @@ type ApcaTargets = {
   readonly body: number
   readonly meta: number
   readonly linkText: number
+  readonly highlight: number
   readonly border: number
   readonly divider: number
 }
@@ -106,6 +108,7 @@ const buildInkForSurface = (
     body: css(p[bodyKey]),
     meta: css(p[metaKey]),
     linkText: css(p[linkTextKey]),
+    highlight: css(p.A), // Fixed to Accent color
     border: css(adjustL(p[borderKey], BORDER_DELTA_L)),
     divider: css(adjustL(p[dividerKey], DIVIDER_DELTA_L)),
   }
@@ -220,6 +223,7 @@ const buildStatefulInk = (
     body: buildStateMap(defaultInk.body, disabledInk.body),
     meta: buildStateMap(defaultInk.meta, disabledInk.meta),
     linkText: buildStateMap(defaultInk.linkText, disabledInk.linkText),
+    highlight: buildStateMap(defaultInk.highlight, disabledInk.highlight),
     border: buildStateMap(defaultInk.border, disabledInk.border),
     divider: buildStateMap(defaultInk.divider, disabledInk.divider),
   }
@@ -286,6 +290,7 @@ export type InkRefs = {
   body: PrimitiveRef
   meta: PrimitiveRef
   linkText: PrimitiveRef
+  highlight: PrimitiveRef
   border: PrimitiveRef
   divider: PrimitiveRef
 }
@@ -345,6 +350,7 @@ const buildInkRefsForSurface = (
     body: bodyKey,
     meta: metaKey,
     linkText: linkTextKey,
+    highlight: 'A', // Fixed to Accent color
     border: 'computed',
     divider: 'computed',
   }
@@ -408,6 +414,7 @@ const buildStatefulInkRefs = (
     body: buildStateMap(defaultInkRefs.body, disabledInkRefs.body),
     meta: buildStateMap(defaultInkRefs.meta, disabledInkRefs.meta),
     linkText: buildStateMap(defaultInkRefs.linkText, disabledInkRefs.linkText),
+    highlight: buildStateMap(defaultInkRefs.highlight, disabledInkRefs.highlight),
     border: buildStateMap(defaultInkRefs.border, disabledInkRefs.border),
     divider: buildStateMap(defaultInkRefs.divider, disabledInkRefs.divider),
   }
