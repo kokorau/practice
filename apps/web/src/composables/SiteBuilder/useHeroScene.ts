@@ -57,6 +57,9 @@ import {
   chromaticAberrationShader,
   createChromaticAberrationUniforms,
   CHROMATIC_ABERRATION_BUFFER_SIZE,
+  dotHalftoneShader,
+  createDotHalftoneUniforms,
+  DOT_HALFTONE_BUFFER_SIZE,
 } from '@practice/texture/filters'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
@@ -387,6 +390,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const updated: LayerFilterConfig = {
       vignette: { ...current.vignette, ...(updates.vignette ?? {}) },
       chromaticAberration: { ...current.chromaticAberration, ...(updates.chromaticAberration ?? {}) },
+      dotHalftone: { ...current.dotHalftone, ...(updates.dotHalftone ?? {}) },
     }
     layerFilterConfigs.value.set(layerId, updated)
 
@@ -777,7 +781,25 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     const { filters } = layer
 
-    // Chromatic Aberration (requires texture input, must be applied first)
+    // Dot Halftone (requires texture input, applied first)
+    if (filters.dotHalftone.enabled) {
+      const inputTexture = previewRenderer.copyCanvasToTexture()
+      const uniforms = createDotHalftoneUniforms(
+        {
+          dotSize: filters.dotHalftone.dotSize,
+          spacing: filters.dotHalftone.spacing,
+          angle: filters.dotHalftone.angle,
+        },
+        viewport
+      )
+      previewRenderer.applyPostEffect(
+        { shader: dotHalftoneShader, uniforms, bufferSize: DOT_HALFTONE_BUFFER_SIZE },
+        inputTexture,
+        { clear: true }
+      )
+    }
+
+    // Chromatic Aberration (requires texture input)
     if (filters.chromaticAberration.enabled) {
       const inputTexture = previewRenderer.copyCanvasToTexture()
       const uniforms = createChromaticAberrationUniforms(

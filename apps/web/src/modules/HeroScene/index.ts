@@ -49,6 +49,7 @@ export type {
   BlendMode,
   VignetteFilterConfig,
   ChromaticAberrationFilterConfig,
+  DotHalftoneFilterConfig,
   LayerFilterConfig,
   LayerFilterSchemaMap,
   HtmlContentItem,
@@ -81,9 +82,11 @@ export {
   // Filter Schemas
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
+  DotHalftoneFilterSchema,
   LayerFilterSchemas,
   createDefaultVignetteConfig,
   createDefaultChromaticAberrationConfig,
+  createDefaultDotHalftoneConfig,
   createDefaultFilterConfig,
   // Layer factories
   createCanvasLayer,

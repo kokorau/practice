@@ -131,13 +131,16 @@ export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay'
 export {
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
+  DotHalftoneFilterSchema,
   LayerFilterSchemas,
   type VignetteFilterConfig,
   type ChromaticAberrationFilterConfig,
+  type DotHalftoneFilterConfig,
   type LayerFilterConfig,
   type LayerFilterSchemaMap,
   createDefaultVignetteConfig,
   createDefaultChromaticAberrationConfig,
+  createDefaultDotHalftoneConfig,
   createDefaultFilterConfig,
 } from './FilterSchema'
 
