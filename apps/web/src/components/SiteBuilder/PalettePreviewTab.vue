@@ -90,6 +90,7 @@ const getTokenEntries = (tokens: ContextTokens | ComponentTokens, refs: BaseToke
             <p class="preview-body scp-body">Body text sample</p>
             <p class="preview-meta scp-meta">Meta text sample</p>
             <a href="#" class="preview-link scp-link" @click.prevent>Link text sample</a>
+            <p class="preview-highlight scp-highlight">Highlight text sample</p>
           </div>
         </div>
       </div>
@@ -129,6 +130,7 @@ const getTokenEntries = (tokens: ContextTokens | ComponentTokens, refs: BaseToke
             <p class="preview-body scp-body">Body text sample</p>
             <p class="preview-meta scp-meta">Meta text sample</p>
             <a href="#" class="preview-link scp-link" @click.prevent>Link text sample</a>
+            <p class="preview-highlight scp-highlight">Highlight text sample</p>
           </div>
         </div>
 

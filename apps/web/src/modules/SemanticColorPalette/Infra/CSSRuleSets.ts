@@ -19,6 +19,7 @@ const ROLE_CSS_NAMES: Record<keyof typeof TOKEN_CSS_PROPERTY_MAP, string> = {
   body: 'body',
   meta: 'meta',
   linkText: 'link-text',
+  highlight: 'highlight',
   border: 'border',
   divider: 'divider',
 }
@@ -30,6 +31,7 @@ const ALL_ROLES: (keyof typeof TOKEN_CSS_PROPERTY_MAP)[] = [
   'body',
   'meta',
   'linkText',
+  'highlight',
   'border',
   'divider',
 ]
@@ -131,6 +133,7 @@ const generateChildElementRuleSets = (): CSSRuleSet[] => [
   { selector: '.scp-body', declarations: [{ property: 'color', value: 'var(--body)' }] },
   { selector: '.scp-meta', declarations: [{ property: 'color', value: 'var(--meta)' }] },
   { selector: '.scp-link', declarations: [{ property: 'color', value: 'var(--link-text)' }] },
+  { selector: '.scp-highlight', declarations: [{ property: 'color', value: 'var(--highlight)' }] },
   // Line colors (ink)
   { selector: '.scp-border', declarations: [{ property: 'border-color', value: 'var(--border)' }] },
   { selector: '.scp-divider', declarations: [{ property: 'border-color', value: 'var(--divider)' }] },
