@@ -25,6 +25,7 @@ import {
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
   DotHalftoneFilterSchema,
+  LineHalftoneFilterSchema,
 } from '../modules/HeroScene'
 import {
   useSiteColors,
@@ -142,14 +143,15 @@ const {
   foregroundConfig,
 } = useHeroScene({ primitivePalette, isDark })
 
-// Filter type: single selection (void, vignette, chromaticAberration, dotHalftone)
-type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone'
+// Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
+type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone'
 const selectedFilterType = computed<FilterType>({
   get: () => {
     const filters = selectedLayerFilters.value
     if (filters?.vignette.enabled) return 'vignette'
     if (filters?.chromaticAberration.enabled) return 'chromaticAberration'
     if (filters?.dotHalftone.enabled) return 'dotHalftone'
+    if (filters?.lineHalftone.enabled) return 'lineHalftone'
     return 'void'
   },
   set: (type) => {
@@ -159,6 +161,7 @@ const selectedFilterType = computed<FilterType>({
       vignette: { enabled: type === 'vignette' },
       chromaticAberration: { enabled: type === 'chromaticAberration' },
       dotHalftone: { enabled: type === 'dotHalftone' },
+      lineHalftone: { enabled: type === 'lineHalftone' },
     })
   },
 })
@@ -188,6 +191,15 @@ const currentDotHalftoneConfig = computed({
     const layerId = selectedFilterLayerId.value
     if (!layerId) return
     updateLayerFilters(layerId, { dotHalftone: value })
+  },
+})
+
+const currentLineHalftoneConfig = computed({
+  get: () => selectedLayerFilters.value?.lineHalftone ?? {},
+  set: (value) => {
+    const layerId = selectedFilterLayerId.value
+    if (!layerId) return
+    updateLayerFilters(layerId, { lineHalftone: value })
   },
 })
 
@@ -559,6 +571,14 @@ const activeTab = ref<TabId>('generator')
                 @update:model-value="currentDotHalftoneConfig = $event"
               />
             </div>
+            <div v-else-if="selectedFilterType === 'lineHalftone'" class="filter-params">
+              <SchemaFields
+                :schema="LineHalftoneFilterSchema"
+                :model-value="currentLineHalftoneConfig"
+                :exclude="['enabled']"
+                @update:model-value="currentLineHalftoneConfig = $event"
+              />
+            </div>
 
             <!-- Filter type selection -->
             <div class="filter-options">
@@ -577,6 +597,10 @@ const activeTab = ref<TabId>('generator')
               <label class="filter-option" :class="{ active: selectedFilterType === 'dotHalftone' }">
                 <input type="radio" v-model="selectedFilterType" value="dotHalftone" />
                 <span class="filter-name">Dot Halftone</span>
+              </label>
+              <label class="filter-option" :class="{ active: selectedFilterType === 'lineHalftone' }">
+                <input type="radio" v-model="selectedFilterType" value="lineHalftone" />
+                <span class="filter-name">Line Halftone</span>
               </label>
             </div>
           </div>

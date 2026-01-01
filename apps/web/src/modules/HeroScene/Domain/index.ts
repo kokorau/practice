@@ -132,15 +132,18 @@ export {
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
   DotHalftoneFilterSchema,
+  LineHalftoneFilterSchema,
   LayerFilterSchemas,
   type VignetteFilterConfig,
   type ChromaticAberrationFilterConfig,
   type DotHalftoneFilterConfig,
+  type LineHalftoneFilterConfig,
   type LayerFilterConfig,
   type LayerFilterSchemaMap,
   createDefaultVignetteConfig,
   createDefaultChromaticAberrationConfig,
   createDefaultDotHalftoneConfig,
+  createDefaultLineHalftoneConfig,
   createDefaultFilterConfig,
 } from './FilterSchema'
 
