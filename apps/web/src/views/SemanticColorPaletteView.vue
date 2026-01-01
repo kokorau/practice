@@ -26,7 +26,7 @@ import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 // Tab State
 // ============================================================
 type TabId = 'primitive' | 'palette'
-const activeTab = ref<TabId>('palette')
+const activeTab = ref<TabId>('primitive')
 
 // ============================================================
 // Brand, Accent & Foundation Color State
@@ -76,6 +76,14 @@ const extendedBrandColor = computed(() => ({
   oklch: brandColor.value.oklch,
   cssOklch: brandColor.value.cssOklch,
   cssP3: $Oklch.toCssP3(brandColor.value.oklch),
+}))
+
+// Extended accent color for PrimitiveTab
+const extendedAccentColor = computed(() => ({
+  hex: accentColor.value.hex,
+  oklch: accentColor.value.oklch,
+  cssOklch: accentColor.value.cssOklch,
+  cssP3: $Oklch.toCssP3(accentColor.value.oklch),
 }))
 
 // Extended foundation color for PrimitiveTab
@@ -268,6 +276,7 @@ watch(palette, updateStyles)
       <div v-if="activeTab === 'primitive'" class="tab-content">
         <PrimitiveTab
           :brand-color="extendedBrandColor"
+          :accent-color="extendedAccentColor"
           :foundation-color="extendedFoundationColor"
           :primitive-palette="primitivePalette"
           :neutral-ramp-display="neutralRampDisplay"

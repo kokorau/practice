@@ -17,6 +17,12 @@ defineProps<{
     cssOklch: string
     cssP3: string
   }
+  accentColor: {
+    hex: string
+    oklch: Oklch
+    cssOklch: string
+    cssP3: string
+  }
   foundationColor: {
     hex: string
     css: string
@@ -65,6 +71,31 @@ defineProps<{
               <div class="color-row">
                 <span class="color-label">Display-P3</span>
                 <code class="color-value">{{ brandColor.cssP3 }}</code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accent Color -->
+        <div class="color-card">
+          <h2 class="section-heading">Accent Color</h2>
+          <div class="color-display">
+            <div
+              class="color-large"
+              :style="{ backgroundColor: accentColor.hex }"
+            />
+            <div class="color-info">
+              <div class="color-row">
+                <span class="color-label">HEX</span>
+                <code class="color-value">{{ accentColor.hex }}</code>
+              </div>
+              <div class="color-row">
+                <span class="color-label">OKLCH</span>
+                <code class="color-value">{{ accentColor.cssOklch }}</code>
+              </div>
+              <div class="color-row">
+                <span class="color-label">Display-P3</span>
+                <code class="color-value">{{ accentColor.cssP3 }}</code>
               </div>
             </div>
           </div>
@@ -308,8 +339,8 @@ defineProps<{
 /* Color Pair Grid */
 .color-pair-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
@@ -370,7 +401,7 @@ defineProps<{
 }
 
 .color-value {
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   font-family: 'SF Mono', Monaco, monospace;
   font-weight: 500;
   color: oklch(0.25 0.02 260);
