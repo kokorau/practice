@@ -5,7 +5,7 @@ import type { TexturePattern, MaskPattern } from '@practice/texture'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'
-import type { ColorPreset } from '../SiteBuilder/colorPresets'
+import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import LayerPanel, { type LayerItem, type LayerType, type SubItemType, type LayerFilterConfig } from './LayerPanel.vue'
 import type { SectionType, MidgroundSurfacePreset } from '../../composables/SiteBuilder'
 

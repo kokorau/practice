@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { COLOR_PRESETS, type ColorPreset } from './colorPresets'
+import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
+import { COLOR_PRESETS } from '../../modules/SemanticColorPalette/Infra'
 import { hsvToRgb, rgbToHex } from './utils'
 import { $Oklch } from '@practice/color'
 

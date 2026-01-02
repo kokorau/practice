@@ -31,3 +31,5 @@ export {
   type StatefulTokenRefs,
   type PrimitiveRefMap,
 } from './SemanticPaletteFromPrimitive'
+
+export { COLOR_PRESETS } from './ColorPresets'

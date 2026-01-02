@@ -20,7 +20,7 @@ import { useSiteColors } from '../composables/SiteBuilder'
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
 import ColorPresets from '../components/SiteBuilder/ColorPresets.vue'
-import type { ColorPreset } from '../components/SiteBuilder/colorPresets'
+import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 

@@ -32,7 +32,7 @@ import {
   useHeroScene,
   type GridPosition,
 } from '../composables/SiteBuilder'
-import type { ColorPreset } from '../components/SiteBuilder/colorPresets'
+import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
