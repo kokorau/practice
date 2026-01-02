@@ -36,6 +36,11 @@ import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
+// UI Dark Mode (independent from palette)
+// ============================================================
+const uiDarkMode = ref(false)
+
+// ============================================================
 // Brand, Accent & Foundation Color State
 // ============================================================
 const {
@@ -54,7 +59,6 @@ const {
   foundationH,
   foundationHueLinkedToBrand,
   foundationColor,
-  isDark,
 } = useSiteColors()
 
 // ============================================================
@@ -151,7 +155,7 @@ const {
   toggleLayerVisibility,
   // Foreground
   foregroundConfig,
-} = useHeroScene({ primitivePalette, isDark })
+} = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
 // Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
 type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone'
@@ -373,7 +377,7 @@ const activeTab = ref<TabId>('generator')
 </script>
 
 <template>
-  <div class="hero-generator" :class="{ dark: isDark }">
+  <div class="hero-generator" :class="{ dark: uiDarkMode }">
     <!-- 左パネル: カラー設定 & セクション一覧 -->
     <HeroSidebar
       :active-tab="activeTab"
@@ -678,7 +682,7 @@ const activeTab = ref<TabId>('generator')
       />
 
       <!-- Palette タブ: Semantic Palette プレビュー -->
-      <div v-if="activeTab === 'palette'" class="hero-tab-content hero-palette-container hero-palette-preview" :class="{ dark: isDark }">
+      <div v-if="activeTab === 'palette'" class="hero-tab-content hero-palette-container hero-palette-preview" :class="{ dark: uiDarkMode }">
         <PalettePreviewTab
           :contexts="contexts"
           :components="components"
