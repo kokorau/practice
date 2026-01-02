@@ -72,3 +72,9 @@ export {
   GRADIENT_GRAIN_BUFFER_SIZE,
   type GradientGrainParams,
 } from './gradientGrain'
+export {
+  linearDepthMapShader,
+  createLinearDepthMapSpec,
+  LINEAR_DEPTH_MAP_BUFFER_SIZE,
+  type LinearDepthMapParams,
+} from './linearDepthMap'

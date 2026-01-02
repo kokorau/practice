@@ -4,6 +4,7 @@ import {
   TextureRenderer,
   createLinearGradientSpec,
   createGradientGrainSpec,
+  createLinearDepthMapSpec,
   type ColorStop as GpuColorStop,
 } from '@practice/texture'
 
@@ -28,7 +29,7 @@ const grainSeed = ref(12345)
 const grainBlendStrength = ref(1.0)
 
 // レンダリングモード
-type RenderMode = 'gradient' | 'gradientGrain'
+type RenderMode = 'depthMap' | 'gradient' | 'gradientGrain'
 const renderMode = ref<RenderMode>('gradientGrain')
 
 // Canvas refs
@@ -90,7 +91,13 @@ function render() {
 
   const viewport = { width: CANVAS_WIDTH, height: CANVAS_HEIGHT }
 
-  if (renderMode.value === 'gradient' || !grainEnabled.value) {
+  if (renderMode.value === 'depthMap') {
+    const spec = createLinearDepthMapSpec(
+      { angle: angle.value },
+      viewport
+    )
+    renderer.render(spec)
+  } else if (renderMode.value === 'gradient' || !grainEnabled.value) {
     const spec = createLinearGradientSpec(
       { angle: angle.value, stops: gpuStops.value },
       viewport
@@ -177,10 +184,17 @@ onUnmounted(() => {
         <div class="mode-tabs">
           <button
             class="mode-tab"
+            :class="{ active: renderMode === 'depthMap' }"
+            @click="renderMode = 'depthMap'"
+          >
+            Depth Map
+          </button>
+          <button
+            class="mode-tab"
             :class="{ active: renderMode === 'gradient' }"
             @click="renderMode = 'gradient'"
           >
-            Gradient Only
+            Gradient
           </button>
           <button
             class="mode-tab"
