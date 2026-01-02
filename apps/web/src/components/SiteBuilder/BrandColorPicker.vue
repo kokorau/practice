@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { hsvToRgb, rgbToHex } from './utils/colorConversion'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { hsvToRgb, rgbToHex, hexToHsv } from './utils/colorConversion'
 
 const props = defineProps<{
   hue: number
@@ -24,6 +24,50 @@ const hueSliderRef = ref<HTMLDivElement | null>(null)
 const selectedRgb = computed(() => hsvToRgb(props.hue, props.saturation, props.value))
 const selectedHex = computed(() => rgbToHex(...selectedRgb.value))
 const hueColor = computed(() => rgbToHex(...hsvToRgb(props.hue, 100, 100)))
+
+// HEX input state
+const hexInput = ref(selectedHex.value)
+const isHexValid = ref(true)
+
+// Sync hexInput when selectedHex changes (from picker interaction)
+watch(selectedHex, (newHex) => {
+  if (!isDraggingSV.value && !isDraggingHue.value) {
+    hexInput.value = newHex
+    isHexValid.value = true
+  }
+})
+
+// Handle HEX input
+const handleHexInput = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  let value = target.value
+
+  // Add # if not present
+  if (value && !value.startsWith('#')) {
+    value = '#' + value
+  }
+
+  hexInput.value = value
+
+  // Validate and convert
+  const hsv = hexToHsv(value)
+  if (hsv) {
+    isHexValid.value = true
+    emit('update:hue', hsv[0])
+    emit('update:saturation', hsv[1])
+    emit('update:value', hsv[2])
+  } else {
+    isHexValid.value = value.length < 7 // Still typing
+  }
+}
+
+// Handle blur - reset to valid value if invalid
+const handleHexBlur = () => {
+  if (!isHexValid.value || !hexToHsv(hexInput.value)) {
+    hexInput.value = selectedHex.value
+    isHexValid.value = true
+  }
+}
 
 // SV Picker handlers
 const handleSVMouseDown = (e: MouseEvent) => {
@@ -114,7 +158,15 @@ onUnmounted(() => {
         :style="{ backgroundColor: selectedHex }"
       />
       <div class="color-values">
-        <code class="hex-value">{{ selectedHex }}</code>
+        <input
+          type="text"
+          class="hex-input"
+          :class="{ invalid: !isHexValid }"
+          :value="hexInput"
+          maxlength="7"
+          @input="handleHexInput"
+          @blur="handleHexBlur"
+        />
         <div class="hsv-values">
           <span>H: {{ hue }}°</span>
           <span>S: {{ saturation }}%</span>
@@ -130,7 +182,7 @@ onUnmounted(() => {
 .sv-picker {
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 16 / 9;
   border-radius: 8px;
   cursor: crosshair;
   overflow: hidden;
@@ -214,15 +266,49 @@ onUnmounted(() => {
   gap: 4px;
 }
 
-.hex-value {
+.hex-input {
+  width: 5.5rem;
+  padding: 0.125rem 0.25rem;
+  margin-left: -0.25rem;
   font-size: 0.875rem;
   font-family: 'SF Mono', Monaco, monospace;
   font-weight: 600;
   color: oklch(0.25 0.02 260);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
-:global(.dark) .hex-value {
+.hex-input:hover {
+  background: oklch(0.96 0.01 260);
+  border-color: oklch(0.85 0.01 260);
+}
+
+.hex-input:focus {
+  background: oklch(0.96 0.01 260);
+  border-color: oklch(0.55 0.18 250);
+  box-shadow: 0 0 0 2px oklch(0.55 0.18 250 / 0.2);
+}
+
+.hex-input.invalid {
+  border-color: oklch(0.65 0.2 25);
+}
+
+:global(.dark) .hex-input:hover {
+  background: oklch(0.20 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+}
+
+:global(.dark) .hex-input {
   color: oklch(0.90 0.01 260);
+}
+
+:global(.dark) .hex-input:focus {
+  background: oklch(0.20 0.02 260);
+  border-color: oklch(0.65 0.18 250);
+  box-shadow: 0 0 0 2px oklch(0.65 0.18 250 / 0.2);
 }
 
 .hsv-values {

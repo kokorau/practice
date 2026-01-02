@@ -26,7 +26,7 @@ import { useFilter } from '../composables/Filter/useFilter'
 import { useDemoSite } from '../composables/SemanticColorPalette/useDemoSite'
 import { useSiteBuilderAssets } from '../composables/SiteBuilder'
 import { hsvToRgb, rgbToHex, applyLutToPalette } from '../components/SiteBuilder/utils'
-import type { ColorPreset } from '../components/SiteBuilder/colorPresets'
+import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 // Child components
 import PaletteSidebar from '../components/SiteBuilder/PaletteSidebar.vue'
 import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'

@@ -86,7 +86,8 @@ const buildInkForSurface = (
   p: PrimitivePalette,
   surface: Oklch,
   isLight: boolean,
-  targets: ApcaTargets = APCA_INK_TARGETS
+  targets: ApcaTargets = APCA_INK_TARGETS,
+  useAccentHighlight: boolean = true
 ): InkColors => {
   // All inks: find neutrals that just meet target APCA Lc (last-passing)
   const titleKey = findNeutralByApca(p, surface, targets.title, isLight)
@@ -103,12 +104,15 @@ const buildInkForSurface = (
     L: Math.max(0, Math.min(1, color.L + delta * direction)),
   })
 
+  // Highlight: Accent on F-series surfaces, body color on B-series surfaces
+  const highlightColor = useAccentHighlight ? css(p.A) : css(p[bodyKey])
+
   return {
     title: css(p[titleKey]),
     body: css(p[bodyKey]),
     meta: css(p[metaKey]),
     linkText: css(p[linkTextKey]),
-    highlight: css(p.A), // Fixed to Accent color
+    highlight: highlightColor,
     border: css(adjustL(p[borderKey], BORDER_DELTA_L)),
     divider: css(adjustL(p[dividerKey], DIVIDER_DELTA_L)),
   }
@@ -159,9 +163,11 @@ const buildBaseTokens = (
   const surface = p[surfaceKey]
   // Use surface's actual lightness to determine search direction
   const surfaceIsLight = surface.L > 0.5
+  // Accent highlight on F-series surfaces, body color on B-series surfaces
+  const useAccentHighlight = surfaceKey.startsWith('F')
   return {
     surface: css(surface),
-    ink: buildInkForSurface(p, surface, surfaceIsLight),
+    ink: buildInkForSurface(p, surface, surfaceIsLight, APCA_INK_TARGETS, useAccentHighlight),
   }
 }
 
@@ -198,6 +204,7 @@ const buildActionQuietSurface = (p: PrimitivePalette, isLight: boolean) =>
  * Generic stateful ink builder for action buttons.
  * Ink is fixed based on default surface - does not change for hover/active.
  * Only disabled state has different ink.
+ * Action buttons use B-series surfaces, so highlight uses body color (not accent).
  */
 const buildStatefulInk = (
   p: PrimitivePalette,
@@ -208,8 +215,9 @@ const buildStatefulInk = (
   // Use surface's actual lightness for ink search direction
   const defaultIsLight = defaultSurface.L > 0.5
 
-  const defaultInk = buildInkForSurface(p, defaultSurface, defaultIsLight)
-  const disabledInk = buildInkForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
+  // Action buttons are B-series surfaces, so useAccentHighlight = false
+  const defaultInk = buildInkForSurface(p, defaultSurface, defaultIsLight, APCA_INK_TARGETS, false)
+  const disabledInk = buildInkForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS, false)
 
   const buildStateMap = (base: string, dis: string) => ({
     default: base,
@@ -337,7 +345,8 @@ const buildInkRefsForSurface = (
   p: PrimitivePalette,
   surface: Oklch,
   isLight: boolean,
-  targets: ApcaTargets = APCA_INK_TARGETS
+  targets: ApcaTargets = APCA_INK_TARGETS,
+  useAccentHighlight: boolean = true
 ): InkRefs => {
   const titleKey = findNeutralByApca(p, surface, targets.title, isLight)
   const bodyKey = findNeutralByApca(p, surface, targets.body, isLight)
@@ -350,7 +359,7 @@ const buildInkRefsForSurface = (
     body: bodyKey,
     meta: metaKey,
     linkText: linkTextKey,
-    highlight: 'A', // Fixed to Accent color
+    highlight: useAccentHighlight ? 'A' : bodyKey, // Accent on F-series, body on B-series
     border: 'computed',
     divider: 'computed',
   }
@@ -364,9 +373,11 @@ const buildBaseTokenRefs = (
 ): BaseTokenRefs => {
   const surface = p[surfaceKey]
   const surfaceIsLight = surface.L > 0.5
+  // Accent highlight on F-series surfaces, body color on B-series surfaces
+  const useAccentHighlight = surfaceKey.startsWith('F')
   return {
     surface: surfaceKey,
-    ink: buildInkRefsForSurface(p, surface, surfaceIsLight),
+    ink: buildInkRefsForSurface(p, surface, surfaceIsLight, APCA_INK_TARGETS, useAccentHighlight),
   }
 }
 
@@ -391,6 +402,7 @@ const buildActionQuietSurfaceRefs = (isLight: boolean): StatefulSurfaceRefs =>
 
 // Helper: Build stateful ink refs (generic)
 // Ink refs are fixed based on default surface - does not change for hover/active
+// Action buttons are B-series surfaces, so useAccentHighlight = false
 const buildStatefulInkRefs = (
   p: PrimitivePalette,
   defaultSurface: Oklch,
@@ -399,8 +411,9 @@ const buildStatefulInkRefs = (
 ): StatefulInkRefs => {
   const defaultIsLight = defaultSurface.L > 0.5
 
-  const defaultInkRefs = buildInkRefsForSurface(p, defaultSurface, defaultIsLight)
-  const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS)
+  // Action buttons are B-series surfaces, so useAccentHighlight = false
+  const defaultInkRefs = buildInkRefsForSurface(p, defaultSurface, defaultIsLight, APCA_INK_TARGETS, false)
+  const disabledInkRefs = buildInkRefsForSurface(p, disabledSurface, isLight, APCA_DISABLED_TARGETS, false)
 
   const buildStateMap = (base: PrimitiveRef, dis: PrimitiveRef): Record<ActionState, PrimitiveRef> => ({
     default: base,

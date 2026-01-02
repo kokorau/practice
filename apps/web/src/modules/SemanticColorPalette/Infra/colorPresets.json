@@ -1,0 +1,82 @@
+[
+  {
+    "id": "electric-lime",
+    "name": "Electric Lime",
+    "description": "Bold and energetic",
+    "brand": { "hue": 74, "saturation": 75, "value": 76 },
+    "accent": { "hue": 67, "saturation": 84, "value": 95 },
+    "foundation": { "L": 0.269, "C": 0.059, "H": 242 }
+  },
+  {
+    "id": "sunset-fire",
+    "name": "Sunset Fire",
+    "description": "Warm and vibrant",
+    "brand": { "hue": 24, "saturation": 76, "value": 100 },
+    "accent": { "hue": 7, "saturation": 80, "value": 92 },
+    "foundation": { "L": 0.904, "C": 0.176, "H": 98 }
+  },
+  {
+    "id": "ocean-mint",
+    "name": "Ocean Mint",
+    "description": "Cool and refreshing",
+    "brand": { "hue": 198, "saturation": 86, "value": 54 },
+    "accent": { "hue": 127, "saturation": 34, "value": 92 },
+    "foundation": { "L": 0.23, "C": 0.048, "H": 235 }
+  },
+  {
+    "id": "honey-olive",
+    "name": "Honey Olive",
+    "description": "Natural and earthy",
+    "brand": { "hue": 39, "saturation": 94, "value": 95 },
+    "accent": { "hue": 62, "saturation": 83, "value": 35 },
+    "foundation": { "L": 0.884, "C": 0.003, "H": 130 }
+  },
+  {
+    "id": "peach-cocoa",
+    "name": "Peach Cocoa",
+    "description": "Soft and warm",
+    "brand": { "hue": 23, "saturation": 33, "value": 95 },
+    "accent": { "hue": 16, "saturation": 62, "value": 35 },
+    "foundation": { "L": 0.782, "C": 0.159, "H": 75 }
+  },
+  {
+    "id": "teal-rose",
+    "name": "Teal Rose",
+    "description": "Fresh and playful",
+    "brand": { "hue": 176, "saturation": 66, "value": 72 },
+    "accent": { "hue": 340, "saturation": 76, "value": 100 },
+    "foundation": { "L": 0.872, "C": 0.064, "H": 106 }
+  },
+  {
+    "id": "lavender-storm",
+    "name": "Lavender Storm",
+    "description": "Calm yet bold",
+    "brand": { "hue": 231, "saturation": 33, "value": 95 },
+    "accent": { "hue": 253, "saturation": 80, "value": 85 },
+    "foundation": { "L": 0.864, "C": 0.01, "H": 273 }
+  },
+  {
+    "id": "violet-dream",
+    "name": "Violet Dream",
+    "description": "Light and creative",
+    "brand": { "hue": 265, "saturation": 45, "value": 95 },
+    "accent": { "hue": 248, "saturation": 75, "value": 85 },
+    "foundation": { "L": 0.961, "C": 0, "H": 263 }
+  },
+  {
+    "id": "crimson-earth",
+    "name": "Crimson Earth",
+    "description": "Deep and intense",
+    "brand": { "hue": 5, "saturation": 84, "value": 95 },
+    "accent": { "hue": 0, "saturation": 89, "value": 45 },
+    "foundation": { "L": 0.329, "C": 0.09, "H": 45 }
+  },
+  {
+    "id": "cotton-candy",
+    "name": "Cotton Candy",
+    "description": "Soft and gentle",
+    "brand": { "hue": 208, "saturation": 64, "value": 95 },
+    "accent": { "hue": 180, "saturation": 26, "value": 85 },
+    "foundation": { "L": 0.87, "C": 0.082, "H": 326 }
+  }
+]

@@ -79,3 +79,9 @@ export {
   TOKEN_CSS_PROPERTY_MAP,
   CSS_NAMES,
 } from './SemanticNames'
+
+export type {
+  HsvColor,
+  OklchFoundation,
+  ColorPreset,
+} from './ColorPreset'
