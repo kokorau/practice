@@ -25,10 +25,7 @@ const stops = ref<ColorStop[]>([
 const angle = ref(90)
 
 // グレイン設定
-const grainIntensity = ref(0.8) // 0-1
-const grainEnabled = ref(true)
 const grainSeed = ref(12345)
-const grainBlendStrength = ref(1.0)
 
 // ノイズマップ設定
 const noiseThreshold = ref(0.5) // 0-1, 白ドットの割合
@@ -123,7 +120,7 @@ function render() {
       viewport
     )
     renderer.render(spec)
-  } else if (renderMode.value === 'gradient' || !grainEnabled.value) {
+  } else if (renderMode.value === 'gradient') {
     const spec = createLinearGradientSpec(
       { angle: angle.value, stops: gpuStops.value },
       viewport
@@ -136,8 +133,8 @@ function render() {
         colorA: colorA.value,
         colorB: colorB.value,
         seed: grainSeed.value,
-        intensity: grainIntensity.value,
-        blendStrength: grainBlendStrength.value,
+        power: gradientNoisePower.value,
+        sparsity: gradientNoiseSparsity.value,
       },
       viewport
     )
@@ -163,7 +160,7 @@ function removeStop(index: number) {
 
 // Watch for changes
 watch(
-  [stops, angle, grainIntensity, grainEnabled, grainSeed, grainBlendStrength, noiseThreshold, gradientNoisePower, gradientNoiseSparsity, renderMode],
+  [stops, angle, grainSeed, noiseThreshold, gradientNoisePower, gradientNoiseSparsity, renderMode],
   () => render(),
   { deep: true }
 )
@@ -310,44 +307,31 @@ onUnmounted(() => {
 
         <!-- グレイン設定 -->
         <div v-if="renderMode === 'gradientGrain'" class="control-group">
-          <div class="grain-header">
-            <label class="control-label">Grain</label>
-            <label class="toggle-label">
-              <input
-                v-model="grainEnabled"
-                type="checkbox"
-                class="toggle-checkbox"
-              />
-              <span class="toggle-switch" />
-            </label>
-          </div>
-          <div v-if="grainEnabled" class="grain-controls">
-            <label class="control-label-small">Intensity: {{ Math.round(grainIntensity * 100) }}%</label>
-            <input
-              v-model.number="grainIntensity"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              class="grain-slider"
-            />
-            <label class="control-label-small">Blend: {{ Math.round(grainBlendStrength * 100) }}%</label>
-            <input
-              v-model.number="grainBlendStrength"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              class="grain-slider"
-            />
-            <label class="control-label-small">Seed: {{ grainSeed }}</label>
-            <input
-              v-model.number="grainSeed"
-              type="number"
-              min="0"
-              class="seed-input"
-            />
-          </div>
+          <label class="control-label">Power: {{ gradientNoisePower.toFixed(1) }}</label>
+          <input
+            v-model.number="gradientNoisePower"
+            type="range"
+            min="0.2"
+            max="4"
+            step="0.1"
+            class="grain-slider"
+          />
+          <label class="control-label-small">Sparsity: {{ Math.round(gradientNoiseSparsity * 100) }}%</label>
+          <input
+            v-model.number="gradientNoiseSparsity"
+            type="range"
+            min="0"
+            max="0.99"
+            step="0.01"
+            class="grain-slider"
+          />
+          <label class="control-label-small">Seed: {{ grainSeed }}</label>
+          <input
+            v-model.number="grainSeed"
+            type="number"
+            min="0"
+            class="seed-input"
+          />
         </div>
 
         <div class="control-group">

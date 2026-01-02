@@ -1,4 +1,4 @@
-import { fullscreenVertex, interleavedGradientNoise, hash21 } from './common'
+import { fullscreenVertex, hash21 } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 // ============================================================
@@ -10,8 +10,8 @@ export interface GradientGrainParams {
   colorA: [number, number, number, number]  // RGBA start color
   colorB: [number, number, number, number]  // RGBA end color
   seed: number  // noise seed
-  intensity: number  // grain intensity (0-1), affects gradient range
-  blendStrength: number  // how much grain blends with base gradient (0-1)
+  power: number  // easing curve power (1=linear, 2=quadratic)
+  sparsity: number  // sparsity factor (0=dense, 1=very sparse)
 }
 
 // ============================================================
@@ -24,7 +24,7 @@ export interface GradientGrainParams {
  *   viewport: vec2f (8) + angle: f32 (4) + seed: f32 (4) = 16 bytes
  *   colorA: vec4f = 16 bytes
  *   colorB: vec4f = 16 bytes
- *   intensity: f32 (4) + blendStrength: f32 (4) + padding: vec2f (8) = 16 bytes
+ *   power: f32 (4) + sparsity: f32 (4) + padding: vec2f (8) = 16 bytes
  *   Total: 64 bytes
  */
 export const GRADIENT_GRAIN_BUFFER_SIZE = 64
@@ -40,8 +40,8 @@ struct Params {
   seed: f32,
   colorA: vec4f,
   colorB: vec4f,
-  intensity: f32,
-  blendStrength: f32,
+  power: f32,
+  sparsity: f32,
   _padding: vec2f,
 }
 
@@ -51,67 +51,51 @@ ${fullscreenVertex}
 
 ${hash21}
 
-${interleavedGradientNoise}
-
 // 角度からグラデーション方向ベクトルを計算
 fn getGradientDirection(angleDeg: f32) -> vec2f {
   let angleRad = (angleDeg - 90.0) * 3.14159265359 / 180.0;
   return vec2f(cos(angleRad), sin(angleRad));
 }
 
-// グラデーション位置を計算 (0-1)
-fn getGradientT(uv: vec2f) -> f32 {
-  let dir = getGradientDirection(params.angle);
-  let centered = uv - vec2f(0.5, 0.5);
-  let projected = dot(centered, dir);
-  return clamp(projected + 0.5, 0.0, 1.0);
-}
-
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let uv = pos.xy / params.viewport;
 
-  // 基本グラデーション位置
-  let t = getGradientT(uv);
+  // グラデーション方向に沿った位置 t (0-1)
+  let dir = getGradientDirection(params.angle);
+  let centered = uv - vec2f(0.5, 0.5);
+  let projected = dot(centered, dir);
+  let t = clamp(projected + 0.5, 0.0, 1.0);
 
   // ベースのグラデーション色
   let baseColor = mix(params.colorA, params.colorB, t);
 
-  // IGN ノイズ (0-1)
-  let noise = interleavedGradientNoise(pos.xy, params.seed);
+  // 2つの独立したノイズ (異なるseedで)
+  let noiseA = hash21(pos.xy + params.seed);
+  let noiseB = hash21(pos.xy + params.seed + 1000.0);
 
-  // 勾配範囲を intensity で調整
-  // intensity=1.0: 0.2-0.8 の範囲, intensity=0.0: 0.5 固定
-  let range = params.intensity * 0.3;  // max 0.3 (= 0.5 ± 0.3)
-  let gradientStart = 0.5 + range;  // LR が 100% になる位置
-  let gradientEnd = 0.5 - range;    // RL が 100% になる位置
+  // Grain(ColorA, LR): t=0で多く、t=1で少なく
+  // threshold = 1 - (1-t)^power * (1-sparsity)
+  let easedLR = pow(1.0 - t, params.power);
+  let thresholdA = 1.0 - easedLR * (1.0 - params.sparsity);
+  let showA = noiseA >= thresholdA;
 
-  // グラデーション値を正規化 (gradientEnd-gradientStart → 0-1)
-  let normalizedT = clamp((t - gradientEnd) / (gradientStart - gradientEnd + 0.001), 0.0, 1.0);
+  // Grain(ColorB, RL): t=1で多く、t=0で少なく
+  // threshold = 1 - t^power * (1-sparsity)
+  let easedRL = pow(t, params.power);
+  let thresholdB = 1.0 - easedRL * (1.0 - params.sparsity);
+  let showB = noiseB >= thresholdB;
 
-  // LR方向: 勾配が高いほど colorA が出やすい
-  // RL方向: 勾配が低いほど colorB が出やすい
-  let isLR = hash21(pos.xy + params.seed * 100.0) < 0.5;
-
-  var grainColor: vec4f;
-  if (isLR) {
-    // LR: ノイズが normalizedT 未満なら colorA
-    if (noise < normalizedT) {
-      grainColor = params.colorA;
-    } else {
-      grainColor = baseColor;
-    }
-  } else {
-    // RL: ノイズが (1 - normalizedT) 未満なら colorB
-    if (noise < (1.0 - normalizedT)) {
-      grainColor = params.colorB;
-    } else {
-      grainColor = baseColor;
-    }
+  // 合成: ColorA grain → ColorB grain → Base gradient
+  var finalColor = baseColor;
+  if (showB) {
+    finalColor = params.colorB;
+  }
+  if (showA) {
+    finalColor = params.colorA;
   }
 
-  // blendStrength でベース色とグレイン色をブレンド
-  return mix(baseColor, grainColor, params.blendStrength);
+  return finalColor;
 }
 `
 
@@ -143,9 +127,9 @@ export function createGradientGrainSpec(
   data[10] = params.colorB[2]
   data[11] = params.colorB[3]
 
-  // intensity (f32) + blendStrength (f32) + padding (vec2f)
-  data[12] = params.intensity
-  data[13] = params.blendStrength
+  // power (f32) + sparsity (f32) + padding (vec2f)
+  data[12] = params.power
+  data[13] = params.sparsity
   // data[14], data[15] = padding
 
   return {
