@@ -133,6 +133,11 @@ export const CONTEXT_CLASS_NAMES = Object.fromEntries(
   Object.keys(CONTEXT_NAMES).map((key) => [key, `${CSS_CLASS_PREFIX.context}-${toKebab(key)}`])
 ) as Readonly<Record<keyof typeof CONTEXT_NAMES, string>>
 
+/** data-semantic-as attribute values for virtual context (derived from CONTEXT_NAMES) */
+export const CONTEXT_DATA_SEMANTIC_AS_VALUES = Object.fromEntries(
+  Object.keys(CONTEXT_NAMES).map((key) => [key, toKebab(key)])
+) as Readonly<Record<keyof typeof CONTEXT_NAMES, string>>
+
 /** Component CSS class names (derived from COMPONENT_NAMES) */
 export const COMPONENT_CLASS_NAMES = Object.fromEntries(
   Object.keys(COMPONENT_NAMES).map((key) => [key, `${CSS_CLASS_PREFIX.component}-${toKebab(key)}`])

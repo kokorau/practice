@@ -3,6 +3,7 @@ import {
   STATELESS_COMPONENT_NAMES,
   STATEFUL_COMPONENT_NAMES,
   CONTEXT_CLASS_NAMES,
+  CONTEXT_DATA_SEMANTIC_AS_VALUES,
   COMPONENT_CLASS_NAMES,
   TOKEN_CSS_PROPERTY_MAP,
   type ActionState,
@@ -57,9 +58,11 @@ type CSSRuleSet = { selector: string; declarations: CSSDeclaration[] }
 
 /**
  * Generate CSS rule set for a context (CSS properties + all role aliases)
+ * Includes both class selector and data-semantic-as attribute selector
  */
 const generateContextRuleSet = (contextKey: string): CSSRuleSet => {
   const className = CONTEXT_CLASS_NAMES[contextKey as keyof typeof CONTEXT_CLASS_NAMES]
+  const dataSemanticAsValue = CONTEXT_DATA_SEMANTIC_AS_VALUES[contextKey as keyof typeof CONTEXT_DATA_SEMANTIC_AS_VALUES]
   const varPrefix = `--context-${toKebab(contextKey)}`
 
   // CSS property declarations (surface, body, border)
@@ -74,7 +77,10 @@ const generateContextRuleSet = (contextKey: string): CSSRuleSet => {
     value: `var(${varPrefix}-${ROLE_CSS_NAMES[role]})`,
   }))
 
-  return { selector: `.${className}`, declarations: [...propertyDeclarations, ...aliasDeclarations] }
+  // Compound selector: class + data-semantic-as attribute
+  const selector = `.${className}, [data-semantic-as="${dataSemanticAsValue}"]`
+
+  return { selector, declarations: [...propertyDeclarations, ...aliasDeclarations] }
 }
 
 /**

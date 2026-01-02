@@ -3,11 +3,12 @@ import { collectCSSRuleSets, toCSSRuleSetsText } from './CSSRuleSets'
 
 describe('CSSRuleSets', () => {
   describe('collectCSSRuleSets', () => {
-    it('generates context rule sets', () => {
+    it('generates context rule sets with class and data-semantic-as selectors', () => {
       const ruleSets = collectCSSRuleSets()
 
-      const canvasRuleSet = ruleSets.find((r) => r.selector === '.context-canvas')
+      const canvasRuleSet = ruleSets.find((r) => r.selector.includes('.context-canvas'))
       expect(canvasRuleSet).toBeDefined()
+      expect(canvasRuleSet!.selector).toBe('.context-canvas, [data-semantic-as="canvas"]')
       expect(canvasRuleSet!.declarations).toContainEqual({
         property: 'background-color',
         value: 'var(--context-canvas-surface)',
@@ -22,13 +23,16 @@ describe('CSSRuleSets', () => {
       })
     })
 
-    it('generates context rule sets with kebab-case class names', () => {
+    it('generates context rule sets with kebab-case in both selectors', () => {
       const ruleSets = collectCSSRuleSets()
 
       const sectionNeutralRuleSet = ruleSets.find(
-        (r) => r.selector === '.context-section-neutral'
+        (r) => r.selector.includes('.context-section-neutral')
       )
       expect(sectionNeutralRuleSet).toBeDefined()
+      expect(sectionNeutralRuleSet!.selector).toBe(
+        '.context-section-neutral, [data-semantic-as="section-neutral"]'
+      )
     })
 
     it('generates stateless component rule sets', () => {
@@ -90,10 +94,10 @@ describe('CSSRuleSets', () => {
   })
 
   describe('toCSSRuleSetsText', () => {
-    it('generates valid CSS text', () => {
+    it('generates valid CSS text with compound selectors', () => {
       const css = toCSSRuleSetsText()
 
-      expect(css).toContain('.context-canvas {')
+      expect(css).toContain('.context-canvas, [data-semantic-as="canvas"] {')
       expect(css).toContain('background-color: var(--context-canvas-surface);')
       expect(css).toContain('}')
     })
