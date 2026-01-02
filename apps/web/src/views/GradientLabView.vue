@@ -21,13 +21,14 @@ const grainEnabled = ref(true)
 const grainThreshold = ref(0.5) // 0-1 閾値
 
 // マップビューの切り替え
-type MapViewType = 'gradient' | 'grain'
+type MapViewType = 'gradient' | 'grain' | 'gradientGrain'
 const activeMapView = ref<MapViewType>('gradient')
 
 // Canvas ref
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const gradientMapRef = ref<HTMLCanvasElement | null>(null)
 const grainMapRef = ref<HTMLCanvasElement | null>(null)
+const gradientGrainMapRef = ref<HTMLCanvasElement | null>(null)
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 450
 
@@ -113,6 +114,43 @@ const drawGrainMap = () => {
   mapCtx.putImageData(imageData, 0, 0)
 }
 
+// グラデーショングレインマップを描画（勾配を閾値として使用）
+const drawGradientGrainMap = () => {
+  const mapCanvas = gradientGrainMapRef.value
+  const gradientCanvas = gradientMapRef.value
+  if (!mapCanvas || !gradientCanvas) return
+
+  const mapCtx = mapCanvas.getContext('2d')
+  const gradientCtx = gradientCanvas.getContext('2d')
+  if (!mapCtx || !gradientCtx) return
+
+  const width = mapCanvas.width
+  const height = mapCanvas.height
+
+  // 黒背景
+  mapCtx.fillStyle = '#000000'
+  mapCtx.fillRect(0, 0, width, height)
+
+  if (!grainEnabled.value || grainIntensity.value <= 0) return
+
+  // 勾配マップのデータを取得
+  const gradientData = gradientCtx.getImageData(0, 0, width, height).data
+  const imageData = mapCtx.getImageData(0, 0, width, height)
+  const data = imageData.data
+
+  for (let i = 0; i < data.length; i += 4) {
+    // 勾配マップの値を閾値として使用 (0-255 → 0-1)
+    const gradientValue = gradientData[i] / 255
+    // ランダム値が勾配閾値未満なら白
+    const gray = Math.random() < gradientValue ? 255 : 0
+    data[i] = gray     // R
+    data[i + 1] = gray // G
+    data[i + 2] = gray // B
+  }
+
+  mapCtx.putImageData(imageData, 0, 0)
+}
+
 // グレインノイズを適用
 const applyGrain = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
   const imageData = ctx.getImageData(0, 0, width, height)
@@ -166,6 +204,7 @@ const drawGradient = () => {
   // マップを更新
   drawGradientMap()
   drawGrainMap()
+  drawGradientGrainMap()
 }
 
 // 色停止点を追加
@@ -217,14 +256,21 @@ onMounted(() => {
               :class="{ active: activeMapView === 'gradient' }"
               @click="activeMapView = 'gradient'"
             >
-              Gradient Map
+              Gradient
             </button>
             <button
               class="map-tab"
               :class="{ active: activeMapView === 'grain' }"
               @click="activeMapView = 'grain'"
             >
-              Grain Map
+              Grain
+            </button>
+            <button
+              class="map-tab"
+              :class="{ active: activeMapView === 'gradientGrain' }"
+              @click="activeMapView = 'gradientGrain'"
+            >
+              Gradient Grain
             </button>
           </div>
 
@@ -241,6 +287,15 @@ onMounted(() => {
           <canvas
             v-show="activeMapView === 'grain'"
             ref="grainMapRef"
+            :width="CANVAS_WIDTH"
+            :height="CANVAS_HEIGHT"
+            class="map-canvas"
+          />
+
+          <!-- グラデーショングレインマップ -->
+          <canvas
+            v-show="activeMapView === 'gradientGrain'"
+            ref="gradientGrainMapRef"
             :width="CANVAS_WIDTH"
             :height="CANVAS_HEIGHT"
             class="map-canvas"
