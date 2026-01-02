@@ -964,33 +964,6 @@ onMounted(() => {
   color: #aaa;
 }
 
-.type-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.type-button {
-  flex: 1;
-  padding: 0.625rem 1rem;
-  background: #2a2a4a;
-  border: 2px solid transparent;
-  border-radius: 0.5rem;
-  color: #ccc;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.type-button:hover {
-  background: #3a3a5a;
-}
-
-.type-button.active {
-  background: #4ecdc4;
-  color: #1a1a2e;
-  border-color: #4ecdc4;
-}
-
 .angle-slider {
   width: 100%;
   height: 6px;
