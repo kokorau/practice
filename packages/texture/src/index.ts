@@ -31,6 +31,7 @@ export type {
   GradientGrainParams,
   LinearDepthMapParams,
   NoiseMapParams,
+  GradientNoiseMapParams,
 } from './shaders'
 
 export {
@@ -57,6 +58,7 @@ export {
   createGradientGrainSpec,
   createLinearDepthMapSpec,
   createNoiseMapSpec,
+  createGradientNoiseMapSpec,
 } from './shaders'
 
 // Filter specs are now available via '@practice/texture/filters'

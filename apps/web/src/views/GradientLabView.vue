@@ -6,6 +6,7 @@ import {
   createGradientGrainSpec,
   createLinearDepthMapSpec,
   createNoiseMapSpec,
+  createGradientNoiseMapSpec,
   type ColorStop as GpuColorStop,
 } from '@practice/texture'
 
@@ -33,7 +34,7 @@ const grainBlendStrength = ref(1.0)
 const noiseThreshold = ref(0.5) // 0-1, 白ドットの割合
 
 // レンダリングモード
-type RenderMode = 'depthMap' | 'noise' | 'gradient' | 'gradientGrain'
+type RenderMode = 'depthMap' | 'noise' | 'gradientNoise' | 'gradient' | 'gradientGrain'
 const renderMode = ref<RenderMode>('gradientGrain')
 
 // Canvas refs
@@ -104,6 +105,12 @@ function render() {
   } else if (renderMode.value === 'noise') {
     const spec = createNoiseMapSpec(
       { seed: grainSeed.value, threshold: noiseThreshold.value },
+      viewport
+    )
+    renderer.render(spec)
+  } else if (renderMode.value === 'gradientNoise') {
+    const spec = createGradientNoiseMapSpec(
+      { angle: angle.value, seed: grainSeed.value },
       viewport
     )
     renderer.render(spec)
@@ -205,6 +212,13 @@ onUnmounted(() => {
             @click="renderMode = 'noise'"
           >
             Noise
+          </button>
+          <button
+            class="mode-tab"
+            :class="{ active: renderMode === 'gradientNoise' }"
+            @click="renderMode = 'gradientNoise'"
+          >
+            Depth + Noise
           </button>
           <button
             class="mode-tab"

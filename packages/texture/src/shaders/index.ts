@@ -84,3 +84,9 @@ export {
   NOISE_MAP_BUFFER_SIZE,
   type NoiseMapParams,
 } from './noiseMap'
+export {
+  gradientNoiseMapShader,
+  createGradientNoiseMapSpec,
+  GRADIENT_NOISE_MAP_BUFFER_SIZE,
+  type GradientNoiseMapParams,
+} from './gradientNoiseMap'
