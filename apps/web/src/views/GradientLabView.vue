@@ -369,9 +369,9 @@ const drawBlueNoiseClusterMap = () => {
   const data = imageData.data
 
   for (let i = 0; i < data.length; i += 4) {
-    // BN Blur の値を閾値として使用 (0-255 → 0.15-0.85)
+    // BN Blur の値を閾値として使用 (0-255 → 0.4-0.6)
     const normalized = blurData[i] / 255
-    const threshold = 0.15 + normalized * 0.7  // 0.15 ~ 0.85
+    const threshold = 0.4 + normalized * 0.2    // 0.4 ~ 0.6
     // ランダム値が閾値未満なら白
     const gray = random() < threshold ? 255 : 0
     data[i] = gray     // R
