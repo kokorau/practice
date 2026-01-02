@@ -33,6 +33,10 @@ const grainBlendStrength = ref(1.0)
 // ノイズマップ設定
 const noiseThreshold = ref(0.5) // 0-1, 白ドットの割合
 
+// グラデーションノイズ設定
+const gradientNoisePower = ref(2.0)    // イージングカーブ (1=linear, 2=quadratic)
+const gradientNoiseSparsity = ref(0.5) // まばらさ (0=dense, 1=sparse)
+
 // レンダリングモード
 type RenderMode = 'depthMap' | 'noise' | 'gradientNoise' | 'gradient' | 'gradientGrain'
 const renderMode = ref<RenderMode>('gradientGrain')
@@ -110,7 +114,12 @@ function render() {
     renderer.render(spec)
   } else if (renderMode.value === 'gradientNoise') {
     const spec = createGradientNoiseMapSpec(
-      { angle: angle.value, seed: grainSeed.value },
+      {
+        angle: angle.value,
+        seed: grainSeed.value,
+        power: gradientNoisePower.value,
+        sparsity: gradientNoiseSparsity.value,
+      },
       viewport
     )
     renderer.render(spec)
@@ -154,7 +163,7 @@ function removeStop(index: number) {
 
 // Watch for changes
 watch(
-  [stops, angle, grainIntensity, grainEnabled, grainSeed, grainBlendStrength, noiseThreshold, renderMode],
+  [stops, angle, grainIntensity, grainEnabled, grainSeed, grainBlendStrength, noiseThreshold, gradientNoisePower, gradientNoiseSparsity, renderMode],
   () => render(),
   { deep: true }
 )
@@ -258,6 +267,35 @@ onUnmounted(() => {
             type="range"
             min="0"
             max="1"
+            step="0.01"
+            class="grain-slider"
+          />
+          <label class="control-label-small">Seed: {{ grainSeed }}</label>
+          <input
+            v-model.number="grainSeed"
+            type="number"
+            min="0"
+            class="seed-input"
+          />
+        </div>
+
+        <!-- グラデーションノイズ設定 -->
+        <div v-if="renderMode === 'gradientNoise'" class="control-group">
+          <label class="control-label">Power: {{ gradientNoisePower.toFixed(1) }}</label>
+          <input
+            v-model.number="gradientNoisePower"
+            type="range"
+            min="0.2"
+            max="4"
+            step="0.1"
+            class="grain-slider"
+          />
+          <label class="control-label-small">Sparsity: {{ Math.round(gradientNoiseSparsity * 100) }}%</label>
+          <input
+            v-model.number="gradientNoiseSparsity"
+            type="range"
+            min="0"
+            max="0.99"
             step="0.01"
             class="grain-slider"
           />
