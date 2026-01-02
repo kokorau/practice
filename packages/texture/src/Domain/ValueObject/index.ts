@@ -47,6 +47,11 @@ export type {
   VignettePatternParams,
   ChromaticAberrationPatternParams,
   FilterPatternParams,
+  // Gradient / Noise
+  ColorStop,
+  LinearGradientPatternParams,
+  GradientGrainPatternParams,
+  GradientPatternParams,
   // Union
   TexturePatternParams,
   // Spec

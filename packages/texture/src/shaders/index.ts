@@ -1,4 +1,14 @@
-export { fullscreenVertex, aaUtils, maskBlendState } from './common'
+export {
+  fullscreenVertex,
+  aaUtils,
+  maskBlendState,
+  hash21,
+  hash22,
+  interleavedGradientNoise,
+  valueNoise,
+  fbm,
+  noiseUtils,
+} from './common'
 export { imageShader } from './image'
 export { solidShader, createSolidSpec, type SolidTextureParams } from './solid'
 export { stripeShader, createStripeSpec, type StripeTextureParams } from './stripe'
@@ -49,3 +59,16 @@ export {
   type TextureConfig,
   type MaskedTextureParams,
 } from './maskedTexture'
+export {
+  linearGradientShader,
+  createLinearGradientSpec,
+  LINEAR_GRADIENT_BUFFER_SIZE,
+  type LinearGradientParams,
+  type ColorStop,
+} from './linearGradient'
+export {
+  gradientGrainShader,
+  createGradientGrainSpec,
+  GRADIENT_GRAIN_BUFFER_SIZE,
+  type GradientGrainParams,
+} from './gradientGrain'

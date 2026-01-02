@@ -205,6 +205,31 @@ export interface ChromaticAberrationPatternParams {
 }
 
 // ============================================================
+// Gradient / Noise Pattern Params
+// ============================================================
+
+export interface ColorStop {
+  color: RGBA
+  position: number  // 0-1
+}
+
+export interface LinearGradientPatternParams {
+  type: 'linearGradient'
+  angle: number  // 0-360 degrees
+  stops: ColorStop[]  // max 8 stops
+}
+
+export interface GradientGrainPatternParams {
+  type: 'gradientGrain'
+  angle: number  // 0-360 degrees
+  colorA: RGBA  // start color
+  colorB: RGBA  // end color
+  seed: number  // noise seed
+  intensity: number  // grain intensity (0-1)
+  blendStrength: number  // grain blend amount (0-1)
+}
+
+// ============================================================
 // Union Types
 // ============================================================
 
@@ -233,11 +258,16 @@ export type FilterPatternParams =
   | VignettePatternParams
   | ChromaticAberrationPatternParams
 
+export type GradientPatternParams =
+  | LinearGradientPatternParams
+  | GradientGrainPatternParams
+
 export type TexturePatternParams =
   | SimpleTexturePatternParams
   | MaskPatternParams
   | MaskedTexturePatternParams
   | FilterPatternParams
+  | GradientPatternParams
 
 // ============================================================
 // TexturePatternSpec - Self-contained render specification
