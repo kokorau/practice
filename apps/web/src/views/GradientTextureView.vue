@@ -298,14 +298,14 @@ onUnmounted(() => {
     <!-- Main Panel: Canvas -->
     <main ref="containerRef" class="flex-1 overflow-hidden">
       <canvas
-        v-if="webGPUSupported"
+        v-show="webGPUSupported"
         ref="canvasRef"
         :width="canvasSize.width"
         :height="canvasSize.height"
         class="w-full h-full"
       />
 
-      <div v-else class="w-full h-full flex items-center justify-center">
+      <div v-if="!webGPUSupported" class="w-full h-full flex items-center justify-center">
         <div class="text-center p-8">
           <div class="text-red-400 text-xl font-semibold mb-2">
             WebGPU Not Supported

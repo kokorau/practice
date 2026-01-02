@@ -34,17 +34,19 @@ export const LINEAR_GRADIENT_BUFFER_SIZE = 272
 
 export const linearGradientShader = /* wgsl */ `
 struct ColorStop {
-  color: vec4f,
-  position: f32,
-  _padding: vec3f,
-}
+  color: vec4f,      // 16 bytes @ offset 0
+  position: f32,     // 4 bytes @ offset 16
+  _pad0: f32,        // 4 bytes @ offset 20
+  _pad1: f32,        // 4 bytes @ offset 24
+  _pad2: f32,        // 4 bytes @ offset 28
+}                    // Total: 32 bytes
 
 struct Params {
-  viewport: vec2f,
-  angle: f32,
-  stopCount: f32,
-  stops: array<ColorStop, 8>,
-}
+  viewport: vec2f,   // 8 bytes @ offset 0
+  angle: f32,        // 4 bytes @ offset 8
+  stopCount: f32,    // 4 bytes @ offset 12
+  stops: array<ColorStop, 8>,  // 32 * 8 = 256 bytes @ offset 16
+}                    // Total: 272 bytes
 
 @group(0) @binding(0) var<uniform> params: Params;
 
@@ -56,32 +58,23 @@ fn getGradientDirection(angleDeg: f32) -> vec2f {
   return vec2f(cos(angleRad), sin(angleRad));
 }
 
-// 位置 t (0-1) に対応する色を計算
+// 位置 t (0-1) に対応する色を計算（2 stop 固定版）
 fn sampleGradient(t: f32) -> vec4f {
-  let count = i32(params.stopCount);
+  let color0 = params.stops[0].color;
+  let color1 = params.stops[1].color;
+  let pos0 = params.stops[0].position;
+  let pos1 = params.stops[1].position;
 
-  // 最初のstopより前
-  if (t <= params.stops[0].position) {
-    return params.stops[0].color;
+  // clamp t to valid range
+  let clamped = clamp(t, pos0, pos1);
+
+  // 補間
+  let range = pos1 - pos0;
+  if (range <= 0.0) {
+    return color0;
   }
-
-  // 最後のstopより後
-  if (t >= params.stops[count - 1].position) {
-    return params.stops[count - 1].color;
-  }
-
-  // 2つのstop間を補間
-  for (var i = 0; i < count - 1; i++) {
-    let p0 = params.stops[i].position;
-    let p1 = params.stops[i + 1].position;
-
-    if (t >= p0 && t <= p1) {
-      let localT = (t - p0) / (p1 - p0);
-      return mix(params.stops[i].color, params.stops[i + 1].color, localT);
-    }
-  }
-
-  return params.stops[0].color;
+  let localT = (clamped - pos0) / range;
+  return mix(color0, color1, localT);
 }
 
 @fragment
