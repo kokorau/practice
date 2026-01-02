@@ -70,6 +70,11 @@ const pages = [
     title: 'Hero View Generator',
     description: 'ヒーローセクションを視覚的にデザイン・生成',
   },
+  {
+    to: '/gradient-lab',
+    title: 'Gradient Lab',
+    description: 'グラデーションの試行錯誤と実験',
+  },
 ]
 </script>
 

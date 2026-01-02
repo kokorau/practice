@@ -79,6 +79,11 @@ const router = createRouter({
       name: 'hero-view-generator',
       component: () => import('../views/HeroViewGeneratorView.vue'),
     },
+    {
+      path: '/gradient-lab',
+      name: 'gradient-lab',
+      component: () => import('../views/GradientLabView.vue'),
+    },
   ],
 })
 
