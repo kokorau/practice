@@ -34,8 +34,8 @@ const grainBlendStrength = ref(1.0)
 const noiseThreshold = ref(0.5) // 0-1, 白ドットの割合
 
 // グラデーションノイズ設定
-const gradientNoisePower = ref(2.0)    // イージングカーブ (1=linear, 2=quadratic)
-const gradientNoiseSparsity = ref(0.5) // まばらさ (0=dense, 1=sparse)
+const gradientNoisePower = ref(2.5)     // イージングカーブ (1=linear, 2=quadratic)
+const gradientNoiseSparsity = ref(0.75) // まばらさ (0=dense, 1=sparse)
 
 // レンダリングモード
 type RenderMode = 'depthMap' | 'noise' | 'gradientNoise' | 'gradient' | 'gradientGrain'
