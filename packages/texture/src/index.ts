@@ -25,6 +25,10 @@ export type {
   PolkaDotTextureConfig,
   TextureConfig,
   MaskedTextureParams,
+  // Gradient types
+  LinearGradientParams,
+  ColorStop,
+  GradientGrainParams,
 } from './shaders'
 
 export {
@@ -46,6 +50,9 @@ export {
   createBlobStripeSpec,
   createBlobGridSpec,
   createBlobPolkaDotSpec,
+  // Gradient specs
+  createLinearGradientSpec,
+  createGradientGrainSpec,
 } from './shaders'
 
 // Filter specs are now available via '@practice/texture/filters'

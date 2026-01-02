@@ -129,8 +129,8 @@ export function createLinearGradientSpec(
   // stops array (each stop = 8 floats: color(4) + position(1) + padding(3))
   for (let i = 0; i < 8; i++) {
     const offset = 4 + i * 8  // 4 floats header + 8 floats per stop
-    if (i < sortedStops.length) {
-      const stop = sortedStops[i]
+    const stop = sortedStops[i]
+    if (stop) {
       data[offset] = stop.color[0]
       data[offset + 1] = stop.color[1]
       data[offset + 2] = stop.color[2]

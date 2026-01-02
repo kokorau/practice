@@ -84,6 +84,11 @@ const router = createRouter({
       name: 'gradient-lab',
       component: () => import('../views/GradientLabView.vue'),
     },
+    {
+      path: '/gradient-texture',
+      name: 'gradient-texture',
+      component: () => import('../views/GradientTextureView.vue'),
+    },
   ],
 })
 
