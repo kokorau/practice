@@ -78,3 +78,9 @@ export {
   LINEAR_DEPTH_MAP_BUFFER_SIZE,
   type LinearDepthMapParams,
 } from './linearDepthMap'
+export {
+  noiseMapShader,
+  createNoiseMapSpec,
+  NOISE_MAP_BUFFER_SIZE,
+  type NoiseMapParams,
+} from './noiseMap'
