@@ -18,10 +18,16 @@ const angle = ref(90)
 // グレイン設定
 const grainIntensity = ref(0.15) // 0-1
 const grainEnabled = ref(true)
+const grainThreshold = ref(0.5) // 0-1 閾値
+
+// マップビューの切り替え
+type MapViewType = 'gradient' | 'grain'
+const activeMapView = ref<MapViewType>('gradient')
 
 // Canvas ref
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const gradientMapRef = ref<HTMLCanvasElement | null>(null)
+const grainMapRef = ref<HTMLCanvasElement | null>(null)
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 450
 
@@ -75,6 +81,38 @@ const drawGradientMap = () => {
   mapCtx.fillRect(0, 0, mapCanvas.width, mapCanvas.height)
 }
 
+// グレインマップを描画（閾値で0/1に二値化）
+const drawGrainMap = () => {
+  const mapCanvas = grainMapRef.value
+  if (!mapCanvas) return
+
+  const mapCtx = mapCanvas.getContext('2d')
+  if (!mapCtx) return
+
+  const width = mapCanvas.width
+  const height = mapCanvas.height
+
+  // 黒背景
+  mapCtx.fillStyle = '#000000'
+  mapCtx.fillRect(0, 0, width, height)
+
+  if (!grainEnabled.value || grainIntensity.value <= 0) return
+
+  const imageData = mapCtx.getImageData(0, 0, width, height)
+  const data = imageData.data
+  const threshold = grainThreshold.value
+
+  for (let i = 0; i < data.length; i += 4) {
+    // ランダム値が閾値を超えたら白、そうでなければ黒
+    const gray = Math.random() < threshold ? 255 : 0
+    data[i] = gray     // R
+    data[i + 1] = gray // G
+    data[i + 2] = gray // B
+  }
+
+  mapCtx.putImageData(imageData, 0, 0)
+}
+
 // グレインノイズを適用
 const applyGrain = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
   const imageData = ctx.getImageData(0, 0, width, height)
@@ -125,8 +163,9 @@ const drawGradient = () => {
     applyGrain(ctx, canvas.width, canvas.height)
   }
 
-  // 勾配マップを更新
+  // マップを更新
   drawGradientMap()
+  drawGrainMap()
 }
 
 // 色停止点を追加
@@ -146,7 +185,7 @@ const removeStop = (index: number) => {
 }
 
 // 変更を監視して再描画
-watch([stops, angle, grainIntensity, grainEnabled], drawGradient, { deep: true })
+watch([stops, angle, grainIntensity, grainEnabled, grainThreshold], drawGradient, { deep: true })
 
 onMounted(() => {
   drawGradient()
@@ -170,14 +209,41 @@ onMounted(() => {
           class="preview-canvas"
         />
 
-        <!-- 勾配マップ (from=白, to=黒) -->
-        <div class="gradient-map-container">
-          <h3 class="gradient-map-title">Gradient Map (White → Black)</h3>
+        <!-- マップビュー切り替え -->
+        <div class="map-view-container">
+          <div class="map-view-tabs">
+            <button
+              class="map-tab"
+              :class="{ active: activeMapView === 'gradient' }"
+              @click="activeMapView = 'gradient'"
+            >
+              Gradient Map
+            </button>
+            <button
+              class="map-tab"
+              :class="{ active: activeMapView === 'grain' }"
+              @click="activeMapView = 'grain'"
+            >
+              Grain Map
+            </button>
+          </div>
+
+          <!-- 勾配マップ (from=白, to=黒) -->
           <canvas
+            v-show="activeMapView === 'gradient'"
             ref="gradientMapRef"
             :width="CANVAS_WIDTH"
             :height="CANVAS_HEIGHT"
-            class="gradient-map-canvas"
+            class="map-canvas"
+          />
+
+          <!-- グレインマップ -->
+          <canvas
+            v-show="activeMapView === 'grain'"
+            ref="grainMapRef"
+            :width="CANVAS_WIDTH"
+            :height="CANVAS_HEIGHT"
+            class="map-canvas"
           />
         </div>
       </section>
@@ -215,6 +281,15 @@ onMounted(() => {
               type="range"
               min="0"
               max="0.5"
+              step="0.01"
+              class="grain-slider"
+            />
+            <label class="control-label-small">Threshold: {{ Math.round(grainThreshold * 100) }}%</label>
+            <input
+              v-model.number="grainThreshold"
+              type="range"
+              min="0"
+              max="1"
               step="0.01"
               class="grain-slider"
             />
@@ -313,20 +388,43 @@ onMounted(() => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Gradient Map */
-.gradient-map-container {
+/* Map View */
+.map-view-container {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.gradient-map-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #888;
+.map-view-tabs {
+  display: flex;
+  gap: 0.5rem;
 }
 
-.gradient-map-canvas {
+.map-tab {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  background: #2a2a4a;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  color: #888;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.map-tab:hover {
+  background: #3a3a5a;
+  color: #aaa;
+}
+
+.map-tab.active {
+  background: #3a3a5a;
+  border-color: #4ecdc4;
+  color: #4ecdc4;
+}
+
+.map-canvas {
   width: 100%;
   height: auto;
   border-radius: 0.5rem;
