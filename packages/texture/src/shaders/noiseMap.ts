@@ -1,4 +1,4 @@
-import { fullscreenVertex, interleavedGradientNoise } from './common'
+import { fullscreenVertex, hash21 } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 // ============================================================
@@ -36,12 +36,12 @@ struct Params {
 
 ${fullscreenVertex}
 
-${interleavedGradientNoise}
+${hash21}
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  // IGN ノイズ (0-1)
-  let noise = interleavedGradientNoise(pos.xy, params.seed);
+  // ホワイトノイズ (0-1)
+  let noise = hash21(pos.xy + params.seed);
 
   // 二値化: noise >= threshold なら 1 (白), そうでなければ 0 (黒)
   let binary = select(0.0, 1.0, noise >= params.threshold);
