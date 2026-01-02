@@ -34,7 +34,7 @@ const createSeededRandom = (seed: number) => {
 }
 
 // マップビューの切り替え
-type MapViewType = 'gradient' | 'grain' | 'gradientGrain' | 'blueNoise' | 'blueNoiseBlur' | 'blueNoiseCluster'
+type MapViewType = 'gradient' | 'grain' | 'gradientGrain' | 'blueNoise' | 'blueNoiseBlur' | 'blueNoiseCluster' | 'bnGradientGrain'
 const activeMapView = ref<MapViewType>('gradient')
 
 // Canvas ref
@@ -45,6 +45,7 @@ const gradientGrainMapRef = ref<HTMLCanvasElement | null>(null)
 const blueNoiseMapRef = ref<HTMLCanvasElement | null>(null)
 const blueNoiseBlurMapRef = ref<HTMLCanvasElement | null>(null)
 const blueNoiseClusterMapRef = ref<HTMLCanvasElement | null>(null)
+const bnGradientGrainMapRef = ref<HTMLCanvasElement | null>(null)
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 450
 
@@ -382,6 +383,59 @@ const drawBlueNoiseClusterMap = () => {
   mapCtx.putImageData(imageData, 0, 0)
 }
 
+// BN Gradient Grain マップを描画（1つのBNを勾配値で LR/RL に排他的に振り分け）
+const drawBnGradientGrainMap = () => {
+  const mapCanvas = bnGradientGrainMapRef.value
+  const gradientCanvas = gradientMapRef.value
+  if (!mapCanvas || !gradientCanvas) return
+
+  const mapCtx = mapCanvas.getContext('2d')
+  const gradientCtx = gradientCanvas.getContext('2d')
+  if (!mapCtx || !gradientCtx) return
+
+  const width = mapCanvas.width
+  const height = mapCanvas.height
+
+  // 黒背景
+  mapCtx.fillStyle = '#000000'
+  mapCtx.fillRect(0, 0, width, height)
+
+  if (!grainEnabled.value || grainIntensity.value <= 0) return
+
+  // 細かいブルーノイズを生成
+  const random = createSeededRandom(grainSeed.value + 4)
+  const minDist = 3  // 細かいブルーノイズ
+  const points = poissonDiskSampling(width, height, minDist, random)
+
+  // 勾配マップのデータを取得
+  const gradientData = gradientCtx.getImageData(0, 0, width, height).data
+
+  // 各点をランダムに LR/RL に振り分け、勾配値で確率的にフィルタリング
+  for (const point of points) {
+    const x = Math.floor(point.x)
+    const y = Math.floor(point.y)
+    const i = (y * width + x) * 4
+    const gradientValue = gradientData[i] / 255
+
+    // 50%でLR、50%でRLに振り分け
+    const isLR = random() < 0.5
+
+    if (isLR) {
+      // LR: 勾配が白いほど表示確率が高い
+      if (random() < gradientValue) {
+        mapCtx.fillStyle = '#ffffff'  // LR = 白
+        mapCtx.fillRect(x, y, 1, 1)
+      }
+    } else {
+      // RL: 勾配が黒いほど表示確率が高い
+      if (random() < (1 - gradientValue)) {
+        mapCtx.fillStyle = '#888888'  // RL = グレー（区別用）
+        mapCtx.fillRect(x, y, 1, 1)
+      }
+    }
+  }
+}
+
 // グレインノイズを適用
 const applyGrain = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
   const imageData = ctx.getImageData(0, 0, width, height)
@@ -400,6 +454,65 @@ const applyGrain = (ctx: CanvasRenderingContext2D, width: number, height: number
   }
 
   ctx.putImageData(imageData, 0, 0)
+}
+
+// HEX色をRGBに変換
+const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : { r: 0, g: 0, b: 0 }
+}
+
+// BN Gradient Grain をプレビューに適用
+const applyBnGradientGrain = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  const gradientCanvas = gradientMapRef.value
+  if (!gradientCanvas) return
+
+  const gradientCtx = gradientCanvas.getContext('2d')
+  if (!gradientCtx) return
+
+  // 細かいブルーノイズを生成
+  const random = createSeededRandom(grainSeed.value + 5)
+  const minDist = 3
+  const points = poissonDiskSampling(width, height, minDist, random)
+
+  // 勾配マップのデータを取得
+  const gradientData = gradientCtx.getImageData(0, 0, width, height).data
+
+  // 色停止点から開始色と終了色を取得
+  const sortedStops = [...stops.value].sort((a, b) => a.position - b.position)
+  const colorA = hexToRgb(sortedStops[0]?.color || '#ffffff')
+  const colorB = hexToRgb(sortedStops[sortedStops.length - 1]?.color || '#000000')
+
+  // 各点をランダムに LR/RL に振り分け、勾配値で確率的にフィルタリング
+  for (const point of points) {
+    const x = Math.floor(point.x)
+    const y = Math.floor(point.y)
+    const i = (y * width + x) * 4
+    const gradientValue = gradientData[i] / 255
+
+    // 50%でLR、50%でRLに振り分け
+    const isLR = random() < 0.5
+
+    if (isLR) {
+      // LR: 勾配が白いほど表示確率が高い → ColorA を描画
+      if (random() < gradientValue) {
+        ctx.fillStyle = `rgb(${colorA.r}, ${colorA.g}, ${colorA.b})`
+        ctx.fillRect(x, y, 1, 1)
+      }
+    } else {
+      // RL: 勾配が黒いほど表示確率が高い → ColorB を描画
+      if (random() < (1 - gradientValue)) {
+        ctx.fillStyle = `rgb(${colorB.r}, ${colorB.g}, ${colorB.b})`
+        ctx.fillRect(x, y, 1, 1)
+      }
+    }
+  }
 }
 
 // Canvas にグラデーションを描画
@@ -427,18 +540,21 @@ const drawGradient = () => {
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  // グレインを適用
+  // 勾配マップを先に描画（applyBnGradientGrain で参照するため）
+  drawGradientMap()
+
+  // BN Gradient Grain を適用
   if (grainEnabled.value && grainIntensity.value > 0) {
-    applyGrain(ctx, canvas.width, canvas.height)
+    applyBnGradientGrain(ctx, canvas.width, canvas.height)
   }
 
-  // マップを更新
-  drawGradientMap()
+  // 他のマップを更新
   drawGrainMap()
   drawGradientGrainMap()
   drawBlueNoiseMap()
   drawBlueNoiseBlurMap()
   drawBlueNoiseClusterMap()
+  drawBnGradientGrainMap()
 }
 
 // 色停止点を追加
@@ -527,6 +643,13 @@ onMounted(() => {
             >
               BN Cluster
             </button>
+            <button
+              class="map-tab"
+              :class="{ active: activeMapView === 'bnGradientGrain' }"
+              @click="activeMapView = 'bnGradientGrain'"
+            >
+              BN Grad
+            </button>
           </div>
 
           <!-- 勾配マップ (from=白, to=黒) -->
@@ -578,6 +701,15 @@ onMounted(() => {
           <canvas
             v-show="activeMapView === 'blueNoiseCluster'"
             ref="blueNoiseClusterMapRef"
+            :width="CANVAS_WIDTH"
+            :height="CANVAS_HEIGHT"
+            class="map-canvas"
+          />
+
+          <!-- BN Gradient Grain マップ -->
+          <canvas
+            v-show="activeMapView === 'bnGradientGrain'"
+            ref="bnGradientGrainMapRef"
             :width="CANVAS_WIDTH"
             :height="CANVAS_HEIGHT"
             class="map-canvas"
