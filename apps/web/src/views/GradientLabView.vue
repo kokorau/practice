@@ -306,28 +306,41 @@ const drawBlueNoiseBlurMap = () => {
   const random = createSeededRandom(grainSeed.value + 2)
   const points = poissonDiskSampling(width, height, minDist, random)
 
-  // 加算合成モードで描画
-  mapCtx.globalCompositeOperation = 'lighter'
+  // ガウシアンフォールオフ関数
+  const gaussian = (dist: number, sigma: number) => Math.exp(-(dist * dist) / (2 * sigma * sigma))
 
-  // 各点に対して放射状グラデーションを描画
-  const blurRadius = minDist * 0.8
-  for (const point of points) {
-    const gradient = mapCtx.createRadialGradient(
-      point.x, point.y, 0,
-      point.x, point.y, blurRadius
-    )
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)')
-    gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)')
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
+  const imageData = mapCtx.getImageData(0, 0, width, height)
+  const data = imageData.data
+  const sigma = minDist * 0.4  // ガウシアンの広がり
 
-    mapCtx.fillStyle = gradient
-    mapCtx.beginPath()
-    mapCtx.arc(point.x, point.y, blurRadius, 0, Math.PI * 2)
-    mapCtx.fill()
+  // 各ピクセルで近くの点からの影響を計算
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let totalInfluence = 0
+
+      // 近くの点からの影響を合算
+      for (const point of points) {
+        const dx = x - point.x
+        const dy = y - point.y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+
+        // 遠すぎる点はスキップ（最適化）
+        if (dist > sigma * 4) continue
+
+        totalInfluence += gaussian(dist, sigma)
+      }
+
+      // 影響を0-1にクランプして明るさに変換
+      const brightness = Math.min(1, totalInfluence) * 255
+
+      const i = (y * width + x) * 4
+      data[i] = brightness     // R
+      data[i + 1] = brightness // G
+      data[i + 2] = brightness // B
+    }
   }
 
-  // 合成モードを戻す
-  mapCtx.globalCompositeOperation = 'source-over'
+  mapCtx.putImageData(imageData, 0, 0)
 }
 
 // ブルーノイズクラスターマップを描画（BN Blurを閾値として細かいノイズを二値化）
