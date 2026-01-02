@@ -6,7 +6,8 @@ import type { TextureRenderSpec } from '../Domain'
 // ============================================================
 
 export interface NoiseMapParams {
-  seed: number  // noise seed
+  seed: number      // noise seed
+  intensity: number // noise intensity/contrast (0-1), 1.0 = full range
 }
 
 // ============================================================
@@ -16,7 +17,7 @@ export interface NoiseMapParams {
 /**
  * Uniform buffer size (16-byte aligned)
  * Layout:
- *   viewport: vec2f (8) + seed: f32 (4) + padding: f32 (4) = 16 bytes
+ *   viewport: vec2f (8) + seed: f32 (4) + intensity: f32 (4) = 16 bytes
  */
 export const NOISE_MAP_BUFFER_SIZE = 16
 
@@ -28,7 +29,7 @@ export const noiseMapShader = /* wgsl */ `
 struct Params {
   viewport: vec2f,   // 8 bytes @ offset 0
   seed: f32,         // 4 bytes @ offset 8
-  _pad: f32,         // 4 bytes @ offset 12
+  intensity: f32,    // 4 bytes @ offset 12
 }                    // Total: 16 bytes
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -42,8 +43,12 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   // IGN ノイズ (0-1)
   let noise = interleavedGradientNoise(pos.xy, params.seed);
 
+  // 0.5を中心にintensityでスケーリング
+  // intensity=1.0: 0-1, intensity=0.5: 0.25-0.75, intensity=0: 0.5固定
+  let scaled = 0.5 + (noise - 0.5) * params.intensity;
+
   // グレースケールで出力
-  return vec4f(noise, noise, noise, 1.0);
+  return vec4f(scaled, scaled, scaled, 1.0);
 }
 `
 
@@ -60,7 +65,7 @@ export function createNoiseMapSpec(
   data[0] = viewport.width
   data[1] = viewport.height
   data[2] = params.seed
-  data[3] = 0  // padding
+  data[3] = params.intensity
 
   return {
     shader: noiseMapShader,

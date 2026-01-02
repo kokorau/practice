@@ -29,6 +29,9 @@ const grainEnabled = ref(true)
 const grainSeed = ref(12345)
 const grainBlendStrength = ref(1.0)
 
+// ノイズマップ設定
+const noiseIntensity = ref(1.0) // 0-1
+
 // レンダリングモード
 type RenderMode = 'depthMap' | 'noise' | 'gradient' | 'gradientGrain'
 const renderMode = ref<RenderMode>('gradientGrain')
@@ -100,7 +103,7 @@ function render() {
     renderer.render(spec)
   } else if (renderMode.value === 'noise') {
     const spec = createNoiseMapSpec(
-      { seed: grainSeed.value },
+      { seed: grainSeed.value, intensity: noiseIntensity.value },
       viewport
     )
     renderer.render(spec)
@@ -144,7 +147,7 @@ function removeStop(index: number) {
 
 // Watch for changes
 watch(
-  [stops, angle, grainIntensity, grainEnabled, grainSeed, grainBlendStrength, renderMode],
+  [stops, angle, grainIntensity, grainEnabled, grainSeed, grainBlendStrength, noiseIntensity, renderMode],
   () => render(),
   { deep: true }
 )
@@ -230,6 +233,26 @@ onUnmounted(() => {
             min="0"
             max="360"
             class="angle-slider"
+          />
+        </div>
+
+        <!-- ノイズ設定 -->
+        <div v-if="renderMode === 'noise'" class="control-group">
+          <label class="control-label">Noise Intensity: {{ Math.round(noiseIntensity * 100) }}%</label>
+          <input
+            v-model.number="noiseIntensity"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            class="grain-slider"
+          />
+          <label class="control-label-small">Seed: {{ grainSeed }}</label>
+          <input
+            v-model.number="grainSeed"
+            type="number"
+            min="0"
+            class="seed-input"
           />
         </div>
 
