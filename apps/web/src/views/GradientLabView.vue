@@ -19,9 +19,22 @@ const angle = ref(90)
 const grainIntensity = ref(0.15) // 0-1
 const grainEnabled = ref(true)
 const grainThreshold = ref(0.5) // 0-1 閾値
+const grainSeed = ref(12345) // シード値
+
+// シード付き乱数生成器 (Mulberry32)
+const createSeededRandom = (seed: number) => {
+  let state = seed
+  return () => {
+    state |= 0
+    state = (state + 0x6d2b79f5) | 0
+    let t = Math.imul(state ^ (state >>> 15), 1 | state)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
 
 // マップビューの切り替え
-type MapViewType = 'gradient' | 'grain' | 'gradientGrain'
+type MapViewType = 'gradient' | 'grain' | 'gradientGrain' | 'blueNoise' | 'blueNoiseBlur' | 'blueNoiseCluster'
 const activeMapView = ref<MapViewType>('gradient')
 
 // Canvas ref
@@ -29,6 +42,9 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const gradientMapRef = ref<HTMLCanvasElement | null>(null)
 const grainMapRef = ref<HTMLCanvasElement | null>(null)
 const gradientGrainMapRef = ref<HTMLCanvasElement | null>(null)
+const blueNoiseMapRef = ref<HTMLCanvasElement | null>(null)
+const blueNoiseBlurMapRef = ref<HTMLCanvasElement | null>(null)
+const blueNoiseClusterMapRef = ref<HTMLCanvasElement | null>(null)
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 450
 
@@ -99,13 +115,14 @@ const drawGrainMap = () => {
 
   if (!grainEnabled.value || grainIntensity.value <= 0) return
 
+  const random = createSeededRandom(grainSeed.value)
   const imageData = mapCtx.getImageData(0, 0, width, height)
   const data = imageData.data
   const threshold = grainThreshold.value
 
   for (let i = 0; i < data.length; i += 4) {
     // ランダム値が閾値を超えたら白、そうでなければ黒
-    const gray = Math.random() < threshold ? 255 : 0
+    const gray = random() < threshold ? 255 : 0
     data[i] = gray     // R
     data[i + 1] = gray // G
     data[i + 2] = gray // B
@@ -133,6 +150,7 @@ const drawGradientGrainMap = () => {
 
   if (!grainEnabled.value || grainIntensity.value <= 0) return
 
+  const random = createSeededRandom(grainSeed.value + 1)
   // 勾配マップのデータを取得
   const gradientData = gradientCtx.getImageData(0, 0, width, height).data
   const imageData = mapCtx.getImageData(0, 0, width, height)
@@ -142,7 +160,207 @@ const drawGradientGrainMap = () => {
     // 勾配マップの値を閾値として使用 (0-255 → 0-1)
     const gradientValue = gradientData[i] / 255
     // ランダム値が勾配閾値未満なら白
-    const gray = Math.random() < gradientValue ? 255 : 0
+    const gray = random() < gradientValue ? 255 : 0
+    data[i] = gray     // R
+    data[i + 1] = gray // G
+    data[i + 2] = gray // B
+  }
+
+  mapCtx.putImageData(imageData, 0, 0)
+}
+
+// ポアソンディスクサンプリングでブルーノイズを生成
+const poissonDiskSampling = (
+  width: number,
+  height: number,
+  minDist: number,
+  random: () => number,
+  maxAttempts: number = 30
+): Array<{ x: number; y: number }> => {
+  const cellSize = minDist / Math.SQRT2
+  const gridWidth = Math.ceil(width / cellSize)
+  const gridHeight = Math.ceil(height / cellSize)
+  const grid: Array<{ x: number; y: number } | null> = new Array(gridWidth * gridHeight).fill(null)
+  const points: Array<{ x: number; y: number }> = []
+  const activeList: Array<{ x: number; y: number }> = []
+
+  const getGridIndex = (x: number, y: number) => {
+    const gx = Math.floor(x / cellSize)
+    const gy = Math.floor(y / cellSize)
+    return gy * gridWidth + gx
+  }
+
+  const isValidPoint = (x: number, y: number): boolean => {
+    if (x < 0 || x >= width || y < 0 || y >= height) return false
+
+    const gx = Math.floor(x / cellSize)
+    const gy = Math.floor(y / cellSize)
+
+    // 周囲のセルをチェック
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const nx = gx + dx
+        const ny = gy + dy
+        if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+          const neighbor = grid[ny * gridWidth + nx]
+          if (neighbor) {
+            const distSq = (x - neighbor.x) ** 2 + (y - neighbor.y) ** 2
+            if (distSq < minDist * minDist) return false
+          }
+        }
+      }
+    }
+    return true
+  }
+
+  // 最初の点をランダムに配置
+  const firstPoint = { x: random() * width, y: random() * height }
+  points.push(firstPoint)
+  activeList.push(firstPoint)
+  grid[getGridIndex(firstPoint.x, firstPoint.y)] = firstPoint
+
+  while (activeList.length > 0) {
+    const idx = Math.floor(random() * activeList.length)
+    const point = activeList[idx]
+    let found = false
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const angle = random() * Math.PI * 2
+      const dist = minDist + random() * minDist
+      const newX = point.x + Math.cos(angle) * dist
+      const newY = point.y + Math.sin(angle) * dist
+
+      if (isValidPoint(newX, newY)) {
+        const newPoint = { x: newX, y: newY }
+        points.push(newPoint)
+        activeList.push(newPoint)
+        grid[getGridIndex(newX, newY)] = newPoint
+        found = true
+        break
+      }
+    }
+
+    if (!found) {
+      activeList.splice(idx, 1)
+    }
+  }
+
+  return points
+}
+
+// ブルーノイズマップを描画
+const drawBlueNoiseMap = () => {
+  const mapCanvas = blueNoiseMapRef.value
+  if (!mapCanvas) return
+
+  const mapCtx = mapCanvas.getContext('2d')
+  if (!mapCtx) return
+
+  const width = mapCanvas.width
+  const height = mapCanvas.height
+
+  // 黒背景
+  mapCtx.fillStyle = '#000000'
+  mapCtx.fillRect(0, 0, width, height)
+
+  if (!grainEnabled.value || grainIntensity.value <= 0) return
+
+  // 閾値に基づいて点の密度を調整（minDistを変える）
+  // threshold が高いほど点が多い = minDist が小さい
+  const baseMinDist = 20
+  const minDist = baseMinDist * (1.5 - grainThreshold.value)
+
+  const random = createSeededRandom(grainSeed.value + 2)
+  const points = poissonDiskSampling(width, height, minDist, random)
+
+  // 点を白で描画
+  mapCtx.fillStyle = '#ffffff'
+  for (const point of points) {
+    mapCtx.beginPath()
+    mapCtx.arc(point.x, point.y, 1.5, 0, Math.PI * 2)
+    mapCtx.fill()
+  }
+}
+
+// ブルーノイズブラーマップを描画（各点から放射状にフェードアウト）
+const drawBlueNoiseBlurMap = () => {
+  const mapCanvas = blueNoiseBlurMapRef.value
+  if (!mapCanvas) return
+
+  const mapCtx = mapCanvas.getContext('2d')
+  if (!mapCtx) return
+
+  const width = mapCanvas.width
+  const height = mapCanvas.height
+
+  // 黒背景
+  mapCtx.fillStyle = '#000000'
+  mapCtx.fillRect(0, 0, width, height)
+
+  if (!grainEnabled.value || grainIntensity.value <= 0) return
+
+  // 閾値に基づいて点の密度を調整
+  const baseMinDist = 20
+  const minDist = baseMinDist * (1.5 - grainThreshold.value)
+
+  const random = createSeededRandom(grainSeed.value + 2)
+  const points = poissonDiskSampling(width, height, minDist, random)
+
+  // 加算合成モードで描画
+  mapCtx.globalCompositeOperation = 'lighter'
+
+  // 各点に対して放射状グラデーションを描画
+  const blurRadius = minDist * 0.8
+  for (const point of points) {
+    const gradient = mapCtx.createRadialGradient(
+      point.x, point.y, 0,
+      point.x, point.y, blurRadius
+    )
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)')
+    gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)')
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
+
+    mapCtx.fillStyle = gradient
+    mapCtx.beginPath()
+    mapCtx.arc(point.x, point.y, blurRadius, 0, Math.PI * 2)
+    mapCtx.fill()
+  }
+
+  // 合成モードを戻す
+  mapCtx.globalCompositeOperation = 'source-over'
+}
+
+// ブルーノイズクラスターマップを描画（BN Blurを閾値として細かいノイズを二値化）
+const drawBlueNoiseClusterMap = () => {
+  const mapCanvas = blueNoiseClusterMapRef.value
+  const blurCanvas = blueNoiseBlurMapRef.value
+  if (!mapCanvas || !blurCanvas) return
+
+  const mapCtx = mapCanvas.getContext('2d')
+  const blurCtx = blurCanvas.getContext('2d')
+  if (!mapCtx || !blurCtx) return
+
+  const width = mapCanvas.width
+  const height = mapCanvas.height
+
+  // 黒背景
+  mapCtx.fillStyle = '#000000'
+  mapCtx.fillRect(0, 0, width, height)
+
+  if (!grainEnabled.value || grainIntensity.value <= 0) return
+
+  const random = createSeededRandom(grainSeed.value + 3)
+  // BN Blur マップのデータを取得（閾値マップとして使用）
+  const blurData = blurCtx.getImageData(0, 0, width, height).data
+  const imageData = mapCtx.getImageData(0, 0, width, height)
+  const data = imageData.data
+
+  for (let i = 0; i < data.length; i += 4) {
+    // BN Blur の値を閾値として使用 (0-255 → 0.15-0.85)
+    const normalized = blurData[i] / 255
+    const threshold = 0.15 + normalized * 0.7  // 0.15 ~ 0.85
+    // ランダム値が閾値未満なら白
+    const gray = random() < threshold ? 255 : 0
     data[i] = gray     // R
     data[i + 1] = gray // G
     data[i + 2] = gray // B
@@ -205,6 +423,9 @@ const drawGradient = () => {
   drawGradientMap()
   drawGrainMap()
   drawGradientGrainMap()
+  drawBlueNoiseMap()
+  drawBlueNoiseBlurMap()
+  drawBlueNoiseClusterMap()
 }
 
 // 色停止点を追加
@@ -224,7 +445,7 @@ const removeStop = (index: number) => {
 }
 
 // 変更を監視して再描画
-watch([stops, angle, grainIntensity, grainEnabled, grainThreshold], drawGradient, { deep: true })
+watch([stops, angle, grainIntensity, grainEnabled, grainThreshold, grainSeed], drawGradient, { deep: true })
 
 onMounted(() => {
   drawGradient()
@@ -272,6 +493,27 @@ onMounted(() => {
             >
               Gradient Grain
             </button>
+            <button
+              class="map-tab"
+              :class="{ active: activeMapView === 'blueNoise' }"
+              @click="activeMapView = 'blueNoise'"
+            >
+              Blue Noise
+            </button>
+            <button
+              class="map-tab"
+              :class="{ active: activeMapView === 'blueNoiseBlur' }"
+              @click="activeMapView = 'blueNoiseBlur'"
+            >
+              BN Blur
+            </button>
+            <button
+              class="map-tab"
+              :class="{ active: activeMapView === 'blueNoiseCluster' }"
+              @click="activeMapView = 'blueNoiseCluster'"
+            >
+              BN Cluster
+            </button>
           </div>
 
           <!-- 勾配マップ (from=白, to=黒) -->
@@ -296,6 +538,33 @@ onMounted(() => {
           <canvas
             v-show="activeMapView === 'gradientGrain'"
             ref="gradientGrainMapRef"
+            :width="CANVAS_WIDTH"
+            :height="CANVAS_HEIGHT"
+            class="map-canvas"
+          />
+
+          <!-- ブルーノイズマップ -->
+          <canvas
+            v-show="activeMapView === 'blueNoise'"
+            ref="blueNoiseMapRef"
+            :width="CANVAS_WIDTH"
+            :height="CANVAS_HEIGHT"
+            class="map-canvas"
+          />
+
+          <!-- ブルーノイズブラーマップ -->
+          <canvas
+            v-show="activeMapView === 'blueNoiseBlur'"
+            ref="blueNoiseBlurMapRef"
+            :width="CANVAS_WIDTH"
+            :height="CANVAS_HEIGHT"
+            class="map-canvas"
+          />
+
+          <!-- ブルーノイズクラスターマップ -->
+          <canvas
+            v-show="activeMapView === 'blueNoiseCluster'"
+            ref="blueNoiseClusterMapRef"
             :width="CANVAS_WIDTH"
             :height="CANVAS_HEIGHT"
             class="map-canvas"
@@ -347,6 +616,13 @@ onMounted(() => {
               max="1"
               step="0.01"
               class="grain-slider"
+            />
+            <label class="control-label-small">Seed: {{ grainSeed }}</label>
+            <input
+              v-model.number="grainSeed"
+              type="number"
+              min="0"
+              class="seed-input"
             />
           </div>
         </div>
@@ -630,6 +906,22 @@ onMounted(() => {
   background: #ff6b6b;
   border-radius: 50%;
   cursor: pointer;
+}
+
+.seed-input {
+  width: 100%;
+  padding: 0.5rem;
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  border-radius: 0.375rem;
+  color: #eee;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.seed-input:focus {
+  outline: none;
+  border-color: #4ecdc4;
 }
 
 .stops-header {
