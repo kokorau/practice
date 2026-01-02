@@ -404,11 +404,16 @@ const drawBnGradientGrainMap = () => {
 
   // 細かいブルーノイズを生成
   const random = createSeededRandom(grainSeed.value + 4)
-  const minDist = 3  // 細かいブルーノイズ
+  const minDist = 2  // 細かいブルーノイズ
   const points = poissonDiskSampling(width, height, minDist, random)
 
   // 勾配マップのデータを取得
   const gradientData = gradientCtx.getImageData(0, 0, width, height).data
+
+  // 勾配の範囲設定（始点・終点）
+  const gradientStart = 0.8  // LR が 100% になる位置
+  const gradientEnd = 0.2    // RL が 100% になる位置
+  const range = gradientStart - gradientEnd  // 0.6
 
   // 各点をランダムに LR/RL に振り分け、勾配値で確率的にフィルタリング
   for (const point of points) {
@@ -417,18 +422,22 @@ const drawBnGradientGrainMap = () => {
     const i = (y * width + x) * 4
     const gradientValue = gradientData[i] / 255
 
+    // 勾配値を 0.2-0.8 の範囲で正規化
+    const normalizedLR = Math.max(0, Math.min(1, (gradientValue - gradientEnd) / range))
+    const normalizedRL = 1 - normalizedLR
+
     // 50%でLR、50%でRLに振り分け
     const isLR = random() < 0.5
 
     if (isLR) {
       // LR: 勾配が白いほど表示確率が高い
-      if (random() < gradientValue) {
+      if (random() < normalizedLR) {
         mapCtx.fillStyle = '#ffffff'  // LR = 白
         mapCtx.fillRect(x, y, 1, 1)
       }
     } else {
       // RL: 勾配が黒いほど表示確率が高い
-      if (random() < (1 - gradientValue)) {
+      if (random() < normalizedRL) {
         mapCtx.fillStyle = '#888888'  // RL = グレー（区別用）
         mapCtx.fillRect(x, y, 1, 1)
       }
@@ -489,6 +498,14 @@ const applyBnGradientGrain = (ctx: CanvasRenderingContext2D, width: number, heig
   const colorA = hexToRgb(sortedStops[0]?.color || '#ffffff')
   const colorB = hexToRgb(sortedStops[sortedStops.length - 1]?.color || '#000000')
 
+  // 勾配の範囲設定（始点・終点）
+  const gradientStart = 0.8  // LR が 100% になる位置
+  const gradientEnd = 0.2    // RL が 100% になる位置
+  const range = gradientStart - gradientEnd  // 0.6
+
+  // プレビューキャンバスから現在のグラデーション色を取得
+  const canvasData = ctx.getImageData(0, 0, width, height).data
+
   // 各点をランダムに LR/RL に振り分け、勾配値で確率的にフィルタリング
   for (const point of points) {
     const x = Math.floor(point.x)
@@ -496,19 +513,38 @@ const applyBnGradientGrain = (ctx: CanvasRenderingContext2D, width: number, heig
     const i = (y * width + x) * 4
     const gradientValue = gradientData[i] / 255
 
+    // 勾配値を 0.2-0.8 の範囲で正規化
+    const normalizedLR = Math.max(0, Math.min(1, (gradientValue - gradientEnd) / range))
+    const normalizedRL = 1 - normalizedLR
+
+    // その位置のグラデーション色を取得
+    const bgR = canvasData[i]
+    const bgG = canvasData[i + 1]
+    const bgB = canvasData[i + 2]
+
     // 50%でLR、50%でRLに振り分け
     const isLR = random() < 0.5
 
     if (isLR) {
-      // LR: 勾配が白いほど表示確率が高い → ColorA を描画
-      if (random() < gradientValue) {
-        ctx.fillStyle = `rgb(${colorA.r}, ${colorA.g}, ${colorA.b})`
+      // LR: 勾配が白いほど表示確率が高い
+      if (random() < normalizedLR) {
+        // normalizedLR が高いほど純粋なColorA、低いほどグラデーション色に馴染む
+        const blend = normalizedLR
+        const r = Math.round(colorA.r * blend + bgR * (1 - blend))
+        const g = Math.round(colorA.g * blend + bgG * (1 - blend))
+        const b = Math.round(colorA.b * blend + bgB * (1 - blend))
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
         ctx.fillRect(x, y, 1, 1)
       }
     } else {
-      // RL: 勾配が黒いほど表示確率が高い → ColorB を描画
-      if (random() < (1 - gradientValue)) {
-        ctx.fillStyle = `rgb(${colorB.r}, ${colorB.g}, ${colorB.b})`
+      // RL: 勾配が黒いほど表示確率が高い
+      if (random() < normalizedRL) {
+        // normalizedRL が高いほど純粋なColorB、低いほどグラデーション色に馴染む
+        const blend = normalizedRL
+        const r = Math.round(colorB.r * blend + bgR * (1 - blend))
+        const g = Math.round(colorB.g * blend + bgG * (1 - blend))
+        const b = Math.round(colorB.b * blend + bgB * (1 - blend))
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
         ctx.fillRect(x, y, 1, 1)
       }
     }
