@@ -81,6 +81,9 @@ export type {
   ForegroundLayerConfig,
   HeroViewConfig,
   // HeroViewPreset types
+  PresetHsvColor,
+  PresetFoundation,
+  PresetColorConfig,
   HeroViewPreset,
 } from './Domain'
 

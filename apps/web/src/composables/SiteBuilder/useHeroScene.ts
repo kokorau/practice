@@ -1968,13 +1968,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Apply a preset by ID
+   * Returns the colorPreset if available for the caller to apply
    */
   const applyPreset = async (presetId: string) => {
     const preset = await presetUseCase.findById(presetId)
     if (preset) {
       selectedPresetId.value = presetId
       fromHeroViewConfig(preset.config)
+      return preset.colorPreset ?? null
     }
+    return null
   }
 
   // ============================================================

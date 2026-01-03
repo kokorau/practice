@@ -450,6 +450,26 @@ const handleApplyColorPreset = (preset: ColorPreset) => {
   foundationHueLinkedToBrand.value = false
 }
 
+// Handle layout preset application (also applies color preset if available)
+const handleApplyLayoutPreset = async (presetId: string) => {
+  const colorPreset = await applyPreset(presetId)
+  if (colorPreset) {
+    // Apply brand
+    hue.value = colorPreset.brand.hue
+    saturation.value = colorPreset.brand.saturation
+    value.value = colorPreset.brand.value
+    // Apply accent
+    accentHue.value = colorPreset.accent.hue
+    accentSaturation.value = colorPreset.accent.saturation
+    accentValue.value = colorPreset.accent.value
+    // Apply foundation
+    foundationL.value = colorPreset.foundation.L
+    foundationC.value = colorPreset.foundation.C
+    foundationH.value = colorPreset.foundation.H
+    foundationHueLinkedToBrand.value = false
+  }
+}
+
 // ============================================================
 // Tab State
 // ============================================================
@@ -562,7 +582,7 @@ const handleRemoveLayer = (layerId: string) => {
       @update:foundation-h="foundationH = $event"
       @update:foundation-hue-linked-to-brand="foundationHueLinkedToBrand = $event"
       @apply-color-preset="handleApplyColorPreset"
-      @apply-layout-preset="applyPreset"
+      @apply-layout-preset="handleApplyLayoutPreset"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->

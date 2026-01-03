@@ -6,7 +6,7 @@
  */
 
 import type { HeroViewPresetRepository } from '../Application/ports/HeroViewPresetRepository'
-import type { HeroViewPreset } from '../Domain/HeroViewPreset'
+import type { HeroViewPreset, PresetColorConfig } from '../Domain/HeroViewPreset'
 import type { LayerFilterConfig } from '../Domain'
 
 // ============================================================
@@ -23,6 +23,16 @@ const createFilters = (options?: {
   chromaticAberration: { enabled: false, intensity: 0.01, ...options?.chromaticAberration },
   dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45, ...options?.dotHalftone },
   lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45, ...options?.lineHalftone },
+})
+
+const createColorPreset = (
+  brand: { hue: number; saturation: number; value: number },
+  accent: { hue: number; saturation: number; value: number },
+  foundation: { L: number; C: number; H: number }
+): PresetColorConfig => ({
+  brand,
+  accent,
+  foundation,
 })
 
 // ============================================================
@@ -61,6 +71,12 @@ const PRESETS: HeroViewPreset[] = [
         description: { position: 'middle-left', content: 'Streamline your business with our platform.', fontSize: 1.25 },
       },
     },
+    // Professional blue with teal accent, light neutral foundation
+    colorPreset: createColorPreset(
+      { hue: 220, saturation: 75, value: 60 },
+      { hue: 180, saturation: 50, value: 70 },
+      { L: 0.96, C: 0.005, H: 260 }
+    ),
   },
 
   // 2. Creative Studio - クリエイティブ系
@@ -93,6 +109,12 @@ const PRESETS: HeroViewPreset[] = [
         description: { position: 'bottom-left', content: 'Where creativity meets innovation.', fontSize: 1.5 },
       },
     },
+    // Vibrant coral with electric purple accent, warm cream foundation
+    colorPreset: createColorPreset(
+      { hue: 15, saturation: 80, value: 95 },
+      { hue: 280, saturation: 70, value: 85 },
+      { L: 0.92, C: 0.03, H: 80 }
+    ),
   },
 
   // 3. Tech Startup - テック系スタートアップ
@@ -124,6 +146,12 @@ const PRESETS: HeroViewPreset[] = [
         description: { position: 'middle-left', content: 'Next-gen tools for next-gen teams.', fontSize: 1.25 },
       },
     },
+    // Electric lime with cyan accent, dark foundation
+    colorPreset: createColorPreset(
+      { hue: 74, saturation: 75, value: 76 },
+      { hue: 190, saturation: 85, value: 90 },
+      { L: 0.18, C: 0.03, H: 260 }
+    ),
   },
 
   // 4. Fashion Editorial - ファッション系
@@ -157,6 +185,12 @@ const PRESETS: HeroViewPreset[] = [
         description: { position: 'bottom-center', content: 'The New Collection', fontSize: 4 },
       },
     },
+    // Elegant rose with champagne accent, pure white foundation
+    colorPreset: createColorPreset(
+      { hue: 350, saturation: 30, value: 85 },
+      { hue: 40, saturation: 20, value: 95 },
+      { L: 0.98, C: 0, H: 0 }
+    ),
   },
 
   // 5. Retro Pop - レトロポップ
@@ -188,6 +222,12 @@ const PRESETS: HeroViewPreset[] = [
         description: { position: 'bottom-center', content: 'Back to the classics', fontSize: 1.5 },
       },
     },
+    // Sunset orange with mustard yellow accent, warm peachy foundation
+    colorPreset: createColorPreset(
+      { hue: 24, saturation: 76, value: 100 },
+      { hue: 45, saturation: 85, value: 90 },
+      { L: 0.90, C: 0.12, H: 70 }
+    ),
   },
 
   // 6. Minimal Zen - ミニマル禅
@@ -220,6 +260,12 @@ const PRESETS: HeroViewPreset[] = [
         description: { position: 'middle-center', content: 'Less is more.', fontSize: 1 },
       },
     },
+    // Sage green with olive accent, warm natural beige foundation
+    colorPreset: createColorPreset(
+      { hue: 140, saturation: 25, value: 65 },
+      { hue: 85, saturation: 40, value: 50 },
+      { L: 0.90, C: 0.02, H: 90 }
+    ),
   },
 
   // 7. Bold Statement - 大胆なステートメント
@@ -253,6 +299,12 @@ const PRESETS: HeroViewPreset[] = [
         description: { position: 'bottom-center', content: 'Your vision, our mission.', fontSize: 1.25 },
       },
     },
+    // Deep crimson with gold accent, dark charcoal foundation
+    colorPreset: createColorPreset(
+      { hue: 5, saturation: 84, value: 75 },
+      { hue: 45, saturation: 90, value: 95 },
+      { L: 0.25, C: 0.02, H: 280 }
+    ),
   },
 ]
 

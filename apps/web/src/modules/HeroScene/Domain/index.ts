@@ -406,4 +406,9 @@ export {
 // HeroViewPreset
 // ============================================================
 
-export type { HeroViewPreset } from './HeroViewPreset'
+export type {
+  PresetHsvColor,
+  PresetFoundation,
+  PresetColorConfig,
+  HeroViewPreset,
+} from './HeroViewPreset'
