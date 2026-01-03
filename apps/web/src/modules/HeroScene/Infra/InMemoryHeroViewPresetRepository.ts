@@ -67,8 +67,8 @@ const PRESETS: HeroViewPreset[] = [
         filters: createFilters(),
       },
       foreground: {
-        title: { position: 'middle-left', content: 'Enterprise Solutions', fontSize: 3.5 },
-        description: { position: 'middle-left', content: 'Streamline your business with our platform.', fontSize: 1.25 },
+        title: { position: 'middle-left', content: 'Enterprise Solutions', fontSize: 3.5, fontId: 'inter' },
+        description: { position: 'middle-left', content: 'Streamline your business with our platform.', fontSize: 1.25, fontId: 'ibm-plex-sans' },
       },
     },
     // Professional blue with teal accent, light neutral foundation
@@ -105,8 +105,8 @@ const PRESETS: HeroViewPreset[] = [
         filters: createFilters(),
       },
       foreground: {
-        title: { position: 'middle-left', content: 'Think Different', fontSize: 4 },
-        description: { position: 'bottom-left', content: 'Where creativity meets innovation.', fontSize: 1.5 },
+        title: { position: 'middle-left', content: 'Think Different', fontSize: 4, fontId: 'poppins' },
+        description: { position: 'bottom-left', content: 'Where creativity meets innovation.', fontSize: 1.5, fontId: 'montserrat' },
       },
     },
     // Vibrant coral with electric purple accent, warm cream foundation
@@ -142,8 +142,8 @@ const PRESETS: HeroViewPreset[] = [
         filters: createFilters({ vignette: { enabled: true, intensity: 0.4, radius: 0.6, softness: 0.5 } }),
       },
       foreground: {
-        title: { position: 'middle-left', content: 'Build the Future', fontSize: 3.5 },
-        description: { position: 'middle-left', content: 'Next-gen tools for next-gen teams.', fontSize: 1.25 },
+        title: { position: 'middle-left', content: 'Build the Future', fontSize: 3.5, fontId: 'space-grotesk' },
+        description: { position: 'middle-left', content: 'Next-gen tools for next-gen teams.', fontSize: 1.25, fontId: 'dm-sans' },
       },
     },
     // Electric lime with cyan accent, dark foundation
@@ -181,8 +181,8 @@ const PRESETS: HeroViewPreset[] = [
         filters: createFilters(),
       },
       foreground: {
-        title: { position: 'top-center', content: 'SPRING 2025', fontSize: 2 },
-        description: { position: 'bottom-center', content: 'The New Collection', fontSize: 4 },
+        title: { position: 'top-center', content: 'SPRING 2025', fontSize: 2, fontId: 'josefin-sans' },
+        description: { position: 'bottom-center', content: 'The New Collection', fontSize: 4, fontId: 'playfair-display' },
       },
     },
     // Elegant rose with champagne accent, pure white foundation
@@ -218,8 +218,8 @@ const PRESETS: HeroViewPreset[] = [
         filters: createFilters(),
       },
       foreground: {
-        title: { position: 'middle-center', content: 'GROOVY', fontSize: 5 },
-        description: { position: 'bottom-center', content: 'Back to the classics', fontSize: 1.5 },
+        title: { position: 'middle-center', content: 'GROOVY', fontSize: 5, fontId: 'bebas-neue' },
+        description: { position: 'bottom-center', content: 'Back to the classics', fontSize: 1.5, fontId: 'comfortaa' },
       },
     },
     // Sunset orange with mustard yellow accent, warm peachy foundation
@@ -256,8 +256,8 @@ const PRESETS: HeroViewPreset[] = [
         filters: createFilters(),
       },
       foreground: {
-        title: { position: 'middle-center', content: 'Simplicity', fontSize: 3 },
-        description: { position: 'middle-center', content: 'Less is more.', fontSize: 1 },
+        title: { position: 'middle-center', content: 'Simplicity', fontSize: 3, fontId: 'cormorant-garamond' },
+        description: { position: 'middle-center', content: 'Less is more.', fontSize: 1, fontId: 'quicksand' },
       },
     },
     // Sage green with olive accent, warm natural beige foundation
@@ -295,8 +295,8 @@ const PRESETS: HeroViewPreset[] = [
         filters: createFilters({ chromaticAberration: { enabled: true, intensity: 0.02 } }),
       },
       foreground: {
-        title: { position: 'middle-center', content: 'MAKE IT HAPPEN', fontSize: 4.5 },
-        description: { position: 'bottom-center', content: 'Your vision, our mission.', fontSize: 1.25 },
+        title: { position: 'middle-center', content: 'MAKE IT HAPPEN', fontSize: 4.5, fontId: 'anton' },
+        description: { position: 'bottom-center', content: 'Your vision, our mission.', fontSize: 1.25, fontId: 'archivo' },
       },
     },
     // Deep crimson with gold accent, dark charcoal foundation
