@@ -472,3 +472,60 @@ export const createPrimitiveRefMap = (
     },
   }
 }
+
+// ============================================================================
+// Ink Selection for Arbitrary Surfaces (for Hero/Canvas rendering)
+// ============================================================================
+
+/**
+ * Ink role types for text/UI elements
+ */
+export type InkRole = 'title' | 'body' | 'meta' | 'linkText' | 'highlight'
+
+/**
+ * Select an appropriate ink color for a given surface using APCA contrast.
+ * This is useful for Hero/Canvas rendering where surfaces are chosen from
+ * PrimitivePalette but text needs appropriate contrast.
+ *
+ * @param p - PrimitivePalette to select neutrals from
+ * @param surface - The surface color (background) in Oklch
+ * @param role - The ink role determining the required contrast level
+ * @returns The selected ink color as Oklch
+ */
+export const selectInkForSurface = (
+  p: PrimitivePalette,
+  surface: Oklch,
+  role: InkRole
+): Oklch => {
+  const surfaceIsLight = surface.L > 0.5
+  const target = APCA_INK_TARGETS[role]
+  const neutralKey = findNeutralByApca(p, surface, target, surfaceIsLight)
+
+  // Special case: highlight uses accent color (A) for emphasis
+  if (role === 'highlight') {
+    return p.A
+  }
+
+  return p[neutralKey]
+}
+
+/**
+ * Select all ink colors for a given surface.
+ * Returns a complete set of ink colors (title, body, meta, linkText, highlight).
+ *
+ * @param p - PrimitivePalette to select neutrals from
+ * @param surface - The surface color (background) in Oklch
+ * @returns Object containing all ink colors as Oklch
+ */
+export const selectAllInksForSurface = (
+  p: PrimitivePalette,
+  surface: Oklch
+): Record<InkRole, Oklch> => {
+  return {
+    title: selectInkForSurface(p, surface, 'title'),
+    body: selectInkForSurface(p, surface, 'body'),
+    meta: selectInkForSurface(p, surface, 'meta'),
+    linkText: selectInkForSurface(p, surface, 'linkText'),
+    highlight: selectInkForSurface(p, surface, 'highlight'),
+  }
+}

@@ -70,6 +70,7 @@ import {
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette, ContextName, PrimitiveKey } from '../../modules/SemanticColorPalette/Domain'
+import { selectInkForSurface, type InkRole } from '../../modules/SemanticColorPalette/Infra'
 import { fetchUnsplashPhotoUrl } from '../../modules/PhotoUnsplash/Infra/fetchUnsplashPhoto'
 import {
   type LayerFilterConfig,
@@ -487,6 +488,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const maskSemanticContext = ref<ContextName>('canvas')
 
   // ============================================================
+  // PrimitiveKey-based Color Selection
+  // ============================================================
+  // Background layer colors (two colors for texture patterns)
+  const backgroundColorKey1 = ref<PrimitiveKey>('B')      // Primary color (e.g., brand)
+  const backgroundColorKey2 = ref<PrimitiveKey | 'auto'>('auto')  // Secondary color ('auto' = canvas surface)
+
+  // Mask layer colors (two colors for masked texture patterns)
+  const maskColorKey1 = ref<PrimitiveKey | 'auto'>('auto')  // Primary color ('auto' = surface - deltaL)
+  const maskColorKey2 = ref<PrimitiveKey | 'auto'>('auto')  // Secondary color ('auto' = mask surface)
+
+  // ============================================================
   // Computed Colors
   // ============================================================
   const themeMode = computed((): 'light' | 'dark' => (isDark.value ? 'dark' : 'light'))
@@ -497,18 +509,75 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Mask layer: uses semantic context (currently fixed to 'canvas')
   const maskSurfaceKey = computed((): PrimitiveKey => CONTEXT_SURFACE_KEYS[themeMode.value][maskSemanticContext.value])
 
-  const textureColor1 = computed((): RGBA => paletteToRgba(primitivePalette.value.B))
-  const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
+  // Resolve 'auto' to actual PrimitiveKey
+  const resolvedBackgroundColorKey2 = computed((): PrimitiveKey =>
+    backgroundColorKey2.value === 'auto' ? canvasSurfaceKey.value : backgroundColorKey2.value
+  )
+
+  const resolvedMaskColorKey2 = computed((): PrimitiveKey =>
+    maskColorKey2.value === 'auto' ? maskSurfaceKey.value : maskColorKey2.value
+  )
+
+  const textureColor1 = computed((): RGBA => paletteToRgba(primitivePalette.value[backgroundColorKey1.value]))
+  const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedBackgroundColorKey2.value]))
   const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value], 0))
   const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value]))
 
+  // Mask texture colors: auto calculates shifted lightness
   const midgroundTextureColor1 = computed((): RGBA => {
+    if (maskColorKey1.value !== 'auto') {
+      return paletteToRgba(primitivePalette.value[maskColorKey1.value])
+    }
+    // Auto: shift lightness from mask surface
     const surface = primitivePalette.value[maskSurfaceKey.value]
     const deltaL = isDark.value ? 0.05 : -0.05
     const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
     return paletteToRgba(shifted)
   })
-  const midgroundTextureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value]))
+  const midgroundTextureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedMaskColorKey2.value]))
+
+  // ============================================================
+  // Ink Color Selection (for text on surfaces)
+  // ============================================================
+  /**
+   * Get ink color for text on a given surface
+   * Uses APCA to ensure proper contrast
+   */
+  const getInkColorForSurface = (surfaceKey: PrimitiveKey, role: InkRole = 'body'): Oklch => {
+    const surface = primitivePalette.value[surfaceKey]
+    return selectInkForSurface(primitivePalette.value, surface, role)
+  }
+
+  /**
+   * Get ink color as RGBA for rendering
+   */
+  const getInkRgbaForSurface = (surfaceKey: PrimitiveKey, role: InkRole = 'body'): RGBA => {
+    return paletteToRgba(getInkColorForSurface(surfaceKey, role))
+  }
+
+  // ============================================================
+  // Foreground Ink Colors (computed from background)
+  // ============================================================
+  /**
+   * Computed ink colors for foreground text elements.
+   * These are automatically calculated based on the background surface color.
+   */
+  const foregroundTitleInk = computed((): Oklch => {
+    // Use the background's primary surface color to determine text contrast
+    const surfaceKey = resolvedBackgroundColorKey2.value
+    return getInkColorForSurface(surfaceKey, 'title')
+  })
+
+  const foregroundBodyInk = computed((): Oklch => {
+    const surfaceKey = resolvedBackgroundColorKey2.value
+    return getInkColorForSurface(surfaceKey, 'body')
+  })
+
+  /**
+   * Get CSS color strings for foreground elements
+   */
+  const foregroundTitleColor = computed((): string => $Oklch.toCss(foregroundTitleInk.value))
+  const foregroundBodyColor = computed((): string => $Oklch.toCss(foregroundBodyInk.value))
 
   // ============================================================
   // Layer Management (internal)
@@ -1662,6 +1731,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Semantic context for mask layer (for future UI switching)
     maskSemanticContext,
 
+    // PrimitiveKey-based color selection
+    backgroundColorKey1,
+    backgroundColorKey2,
+    maskColorKey1,
+    maskColorKey2,
+
+    // Ink color helpers (for text on surfaces)
+    getInkColorForSurface,
+    getInkRgbaForSurface,
+
     // Custom background
     customBackgroundImage,
     customBackgroundFile,
@@ -1708,6 +1787,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Foreground (HTML layer)
     foregroundConfig,
+    foregroundTitleColor,
+    foregroundBodyColor,
 
     // Serialization
     toHeroViewConfig,

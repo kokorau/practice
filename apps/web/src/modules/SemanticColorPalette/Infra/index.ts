@@ -23,8 +23,11 @@ export {
 export {
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
+  selectInkForSurface,
+  selectAllInksForSurface,
   type PrimitiveRef,
   type InkRefs,
+  type InkRole,
   type BaseTokenRefs,
   type StatefulSurfaceRefs,
   type StatefulInkRefs,

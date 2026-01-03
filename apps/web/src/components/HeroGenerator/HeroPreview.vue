@@ -10,8 +10,12 @@ import { ensureFontLoaded } from '@practice/font'
 
 const props = withDefaults(defineProps<{
   foregroundConfig?: ForegroundConfig
+  titleColor?: string
+  bodyColor?: string
 }>(), {
   foregroundConfig: () => DEFAULT_FOREGROUND_CONFIG,
+  titleColor: undefined,
+  bodyColor: undefined,
 })
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -19,7 +23,7 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const positionedGroups = computed(() => compileForegroundLayout(props.foregroundConfig))
 
 /**
- * Get inline style for an element, including font-family and fontSize
+ * Get inline style for an element, including font-family, fontSize, and color
  */
 const getElementStyle = (el: PositionedElement): Record<string, string> => {
   const style: Record<string, string> = {}
@@ -29,6 +33,12 @@ const getElementStyle = (el: PositionedElement): Record<string, string> => {
   }
   if (el.fontSize !== undefined) {
     style.fontSize = `${el.fontSize}rem`
+  }
+  // Apply color based on element type (title uses titleColor, description uses bodyColor)
+  if (el.className === 'foreground-title' && props.titleColor) {
+    style.color = props.titleColor
+  } else if (el.className === 'foreground-description' && props.bodyColor) {
+    style.color = props.bodyColor
   }
   return style
 }

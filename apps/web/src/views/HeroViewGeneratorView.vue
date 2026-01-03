@@ -157,6 +157,8 @@ const {
   toggleLayerVisibility,
   // Foreground
   foregroundConfig,
+  foregroundTitleColor,
+  foregroundBodyColor,
 } = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
 // Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
@@ -757,6 +759,8 @@ const handleRemoveLayer = (layerId: string) => {
         v-if="activeTab === 'generator'"
         ref="heroPreviewRef"
         :foreground-config="foregroundConfig"
+        :title-color="foregroundTitleColor"
+        :body-color="foregroundBodyColor"
         class="hero-tab-content"
       />
 
