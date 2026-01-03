@@ -118,8 +118,8 @@ const radialStartAngle = ref(0)
 const radialSweepAngle = ref(360)
 
 // カーブパラメータ
-const curvePoints = ref<number[]>([0, 1/6, 2/6, 3/6, 4/6, 5/6, 1])
-const curvePreset = ref<string>('linear')
+const curvePoints = ref<number[]>([0, 1/36, 4/36, 9/36, 16/36, 25/36, 1])  // parabola: x²
+const curvePreset = ref<string>('parabola')
 
 // プリセット定義
 // exp: (e^x - 1) / (e - 1), log: ln(1 + x*(e-1)) を正規化
