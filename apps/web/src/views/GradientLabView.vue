@@ -125,7 +125,6 @@ const radialSweepAngle = ref(360)
 // パーリンノイズ深度マップ用パラメータ
 const perlinScale = ref(4)
 const perlinOctaves = ref(4)
-const perlinSeed = ref(42)
 const perlinContrast = ref(1)
 const perlinOffset = ref(0)
 
@@ -235,7 +234,7 @@ const depthParams = computed(() => {
     // Perlin noise params
     perlinScale: perlinScale.value,
     perlinOctaves: perlinOctaves.value,
-    perlinSeed: perlinSeed.value,
+    perlinSeed: grainSeed.value,
     perlinContrast: perlinContrast.value,
     perlinOffset: perlinOffset.value,
   }
@@ -260,7 +259,7 @@ const depthSpec = computed<TextureRenderSpec>(() => {
       return createPerlinDepthMapSpec({
         scale: perlinScale.value,
         octaves: perlinOctaves.value,
-        seed: perlinSeed.value,
+        seed: grainSeed.value,
         contrast: perlinContrast.value,
         offset: perlinOffset.value,
       }, nodeViewport)
@@ -334,7 +333,7 @@ watch(
    depthMapType, linearCenterX, linearCenterY,
    circularCenterX, circularCenterY,
    radialCenterX, radialCenterY, radialStartAngle, radialSweepAngle,
-   perlinScale, perlinOctaves, perlinSeed, perlinContrast, perlinOffset],
+   perlinScale, perlinOctaves, perlinContrast, perlinOffset],
   () => renderMain(),
   { deep: true }
 )
@@ -579,8 +578,8 @@ onUnmounted(() => {
               <input v-model.number="perlinOctaves" type="range" min="1" max="8" step="1" class="slider" />
             </div>
             <div class="control-group">
-              <label class="control-label">Seed: {{ perlinSeed }}</label>
-              <input v-model.number="perlinSeed" type="number" min="0" class="seed-input" />
+              <label class="control-label">Seed: {{ grainSeed }}</label>
+              <input v-model.number="grainSeed" type="number" min="0" class="seed-input" />
             </div>
             <div class="control-group">
               <label class="control-label">Contrast: {{ perlinContrast.toFixed(2) }}</label>
