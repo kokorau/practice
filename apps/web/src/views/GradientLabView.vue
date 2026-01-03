@@ -7,6 +7,7 @@ import {
   createLinearDepthMapSpec,
   createCircularDepthMapSpec,
   createRadialDepthMapSpec,
+  createPerlinDepthMapSpec,
   createNoiseMapSpec,
   createGradientNoiseMapSpec,
   createIntensityCurveSpec,
@@ -104,7 +105,7 @@ const grainSeed = ref(12345)
 const sparsity = ref(0.75)
 
 // 深度マップタイプ
-type DepthMapType = 'linear' | 'circular' | 'radial'
+type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin'
 const depthMapType = ref<DepthMapType>('linear')
 
 // 円形深度マップ用パラメータ
@@ -116,6 +117,13 @@ const radialCenterX = ref(0.5)
 const radialCenterY = ref(0.5)
 const radialStartAngle = ref(0)
 const radialSweepAngle = ref(360)
+
+// パーリンノイズ深度マップ用パラメータ
+const perlinScale = ref(4)
+const perlinOctaves = ref(4)
+const perlinSeed = ref(42)
+const perlinContrast = ref(1)
+const perlinOffset = ref(0)
 
 // カーブパラメータ
 const curvePoints = ref<number[]>([0, 1/36, 4/36, 9/36, 16/36, 25/36, 1])  // parabola: x²
@@ -220,6 +228,14 @@ const depthSpec = computed<TextureRenderSpec>(() => {
         startAngle: radialStartAngle.value,
         sweepAngle: radialSweepAngle.value,
       }, nodeViewport)
+    case 'perlin':
+      return createPerlinDepthMapSpec({
+        scale: perlinScale.value,
+        octaves: perlinOctaves.value,
+        seed: perlinSeed.value,
+        contrast: perlinContrast.value,
+        offset: perlinOffset.value,
+      }, nodeViewport)
     case 'linear':
     default:
       return createLinearDepthMapSpec({ angle: angle.value }, nodeViewport)
@@ -284,7 +300,8 @@ function renderMain() {
 watch(
   [colorAHex, colorBHex, angle, grainSeed, sparsity, curvePoints,
    depthMapType, circularCenterX, circularCenterY,
-   radialCenterX, radialCenterY, radialStartAngle, radialSweepAngle],
+   radialCenterX, radialCenterY, radialStartAngle, radialSweepAngle,
+   perlinScale, perlinOctaves, perlinSeed, perlinContrast, perlinOffset],
   () => renderMain(),
   { deep: true }
 )
@@ -470,6 +487,7 @@ onUnmounted(() => {
               <option value="linear">Linear</option>
               <option value="circular">Circular</option>
               <option value="radial">Radial</option>
+              <option value="perlin">Perlin Noise</option>
             </select>
           </div>
           <!-- Linear params -->
@@ -507,6 +525,29 @@ onUnmounted(() => {
             <div class="control-group">
               <label class="control-label">Sweep: {{ radialSweepAngle }}°</label>
               <input v-model.number="radialSweepAngle" type="range" min="1" max="360" class="slider" />
+            </div>
+          </template>
+          <!-- Perlin params -->
+          <template v-else-if="depthMapType === 'perlin'">
+            <div class="control-group">
+              <label class="control-label">Scale: {{ perlinScale.toFixed(1) }}</label>
+              <input v-model.number="perlinScale" type="range" min="1" max="20" step="0.5" class="slider" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Octaves: {{ perlinOctaves }}</label>
+              <input v-model.number="perlinOctaves" type="range" min="1" max="8" step="1" class="slider" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Seed: {{ perlinSeed }}</label>
+              <input v-model.number="perlinSeed" type="number" min="0" class="seed-input" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Contrast: {{ perlinContrast.toFixed(2) }}</label>
+              <input v-model.number="perlinContrast" type="range" min="0.1" max="3" step="0.05" class="slider" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Offset: {{ perlinOffset.toFixed(2) }}</label>
+              <input v-model.number="perlinOffset" type="range" min="-0.5" max="0.5" step="0.01" class="slider" />
             </div>
           </template>
         </div>

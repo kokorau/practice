@@ -111,3 +111,9 @@ export {
   INTENSITY_CURVE_BUFFER_SIZE,
   type IntensityCurveParams,
 } from './intensityCurve'
+export {
+  perlinDepthMapShader,
+  createPerlinDepthMapSpec,
+  PERLIN_DEPTH_MAP_BUFFER_SIZE,
+  type PerlinDepthMapParams,
+} from './perlinDepthMap'

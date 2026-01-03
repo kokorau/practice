@@ -124,7 +124,7 @@ ${valueNoise}
 // ============================================================
 
 /** 深度マップタイプ */
-export type DepthMapType = 'linear' | 'circular' | 'radial'
+export type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin'
 
 /** 深度マップタイプをシェーダー用の数値に変換 */
 export function depthMapTypeToNumber(type: DepthMapType): number {
@@ -132,13 +132,14 @@ export function depthMapTypeToNumber(type: DepthMapType): number {
     case 'linear': return 0
     case 'circular': return 1
     case 'radial': return 2
+    case 'perlin': return 3
     default: return 0
   }
 }
 
 /**
  * 深度計算関数（WGSL）
- * depthMapType: 0=linear, 1=circular, 2=radial
+ * depthMapType: 0=linear, 1=circular, 2=radial, 3=perlin (perlin is handled separately)
  */
 export const depthMapUtils = /* wgsl */ `
 const PI: f32 = 3.14159265359;
