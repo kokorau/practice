@@ -1957,13 +1957,22 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const presetRepository = createInMemoryHeroViewPresetRepository()
   const presetUseCase = createGetHeroViewPresetsUseCase(presetRepository)
   const presets = ref<HeroViewPreset[]>([])
-  const selectedPresetId = ref<string | null>(null)
+  const selectedPresetId = ref<string | null>('corporate-clean')
 
   /**
-   * Load available presets
+   * Load available presets and optionally apply the initial preset
    */
-  const loadPresets = async () => {
+  const loadPresets = async (applyInitial = true) => {
     presets.value = await presetUseCase.execute()
+    // Apply initial preset if specified
+    if (applyInitial && selectedPresetId.value) {
+      const preset = await presetUseCase.findById(selectedPresetId.value)
+      if (preset) {
+        fromHeroViewConfig(preset.config)
+        return preset.colorPreset ?? null
+      }
+    }
+    return null
   }
 
   /**

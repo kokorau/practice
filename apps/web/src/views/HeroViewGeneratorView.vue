@@ -419,8 +419,20 @@ onMounted(async () => {
   document.head.appendChild(paletteStyleElement)
   updatePaletteStyles()
 
-  // Load layout presets
-  await loadPresets()
+  // Load layout presets and apply initial preset (including colors)
+  const initialColorPreset = await loadPresets()
+  if (initialColorPreset) {
+    hue.value = initialColorPreset.brand.hue
+    saturation.value = initialColorPreset.brand.saturation
+    value.value = initialColorPreset.brand.value
+    accentHue.value = initialColorPreset.accent.hue
+    accentSaturation.value = initialColorPreset.accent.saturation
+    accentValue.value = initialColorPreset.accent.value
+    foundationL.value = initialColorPreset.foundation.L
+    foundationC.value = initialColorPreset.foundation.C
+    foundationH.value = initialColorPreset.foundation.H
+    foundationHueLinkedToBrand.value = false
+  }
 
   // テクスチャプレビュー用キャンバス初期化 (HeroPreviewのcanvasを使用)
   await initPreview(heroPreviewRef.value?.canvasRef)
