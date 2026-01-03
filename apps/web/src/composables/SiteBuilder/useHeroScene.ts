@@ -95,10 +95,13 @@ import {
   type MaskSurfaceConfig,
   type HeroMaskShapeConfig,
   type ForegroundLayerConfig,
+  type HeroViewPreset,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
+  createGetHeroViewPresetsUseCase,
+  createInMemoryHeroViewPresetRepository,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -1936,8 +1939,42 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Foreground
     foregroundConfig.value = config.foreground
 
+    // Reset mask selection based on restored config
+    if (config.mask) {
+      selectedMaskIndex.value = 0 // TODO: Reverse-lookup mask shape index
+    } else {
+      selectedMaskIndex.value = null
+    }
+
     // Re-render
     renderScene()
+  }
+
+  // ============================================================
+  // Preset Management
+  // ============================================================
+
+  const presetRepository = createInMemoryHeroViewPresetRepository()
+  const presetUseCase = createGetHeroViewPresetsUseCase(presetRepository)
+  const presets = ref<HeroViewPreset[]>([])
+  const selectedPresetId = ref<string | null>(null)
+
+  /**
+   * Load available presets
+   */
+  const loadPresets = async () => {
+    presets.value = await presetUseCase.execute()
+  }
+
+  /**
+   * Apply a preset by ID
+   */
+  const applyPreset = async (presetId: string) => {
+    const preset = await presetUseCase.findById(presetId)
+    if (preset) {
+      selectedPresetId.value = presetId
+      fromHeroViewConfig(preset.config)
+    }
   }
 
   // ============================================================
@@ -2034,5 +2071,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Serialization
     toHeroViewConfig,
     fromHeroViewConfig,
+
+    // Presets
+    presets,
+    selectedPresetId,
+    loadPresets,
+    applyPreset,
   }
 }

@@ -167,6 +167,11 @@ const {
   maskColorKey1,
   maskColorKey2,
   maskOuterColorKey,
+  // Presets
+  presets,
+  selectedPresetId,
+  loadPresets,
+  applyPreset,
 } = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
 // Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
@@ -414,6 +419,9 @@ onMounted(async () => {
   document.head.appendChild(paletteStyleElement)
   updatePaletteStyles()
 
+  // Load layout presets
+  await loadPresets()
+
   // テクスチャプレビュー用キャンバス初期化 (HeroPreviewのcanvasを使用)
   await initPreview(heroPreviewRef.value?.canvasRef)
 })
@@ -541,6 +549,8 @@ const handleRemoveLayer = (layerId: string) => {
       :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
       :foundation-hex="foundationColor.hex"
       :neutral-ramp-display="neutralRampDisplay"
+      :presets="presets"
+      :selected-preset-id="selectedPresetId"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"
@@ -552,6 +562,7 @@ const handleRemoveLayer = (layerId: string) => {
       @update:foundation-h="foundationH = $event"
       @update:foundation-hue-linked-to-brand="foundationHueLinkedToBrand = $event"
       @apply-color-preset="handleApplyColorPreset"
+      @apply-layout-preset="applyPreset"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->
