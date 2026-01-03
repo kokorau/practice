@@ -31,6 +31,10 @@ import {
   createCheckerSpec,
   // Gradient specs
   createGradientGrainSpec,
+  // Mask specs (for solid fallback with custom cutout)
+  createCircleMaskSpec,
+  createRectMaskSpec,
+  createBlobMaskSpec,
   // Schemas and types
   MaskShapeSchemas,
   SurfaceSchemas,
@@ -1145,13 +1149,75 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 }
               }
             }
-            // Fallback to solid color mask: fill inside with primary color
-            // First: fill the mask shape with primary color (midgroundTextureColor1)
-            const solidSpec = createSolidSpec({ color: midgroundTextureColor1.value })
-            previewRenderer.render(solidSpec, { clear: false })
-            // Then: render mask to cover the outside with maskOuterColor
-            const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
-            previewRenderer.render(spec, { clear: false })
+            // Fallback to solid color mask: use customMaskShapeParams to respect cutout setting
+            const params = customMaskShapeParams.value
+            const cutout = params?.cutout ?? true
+
+            // Create mask spec using customMaskShapeParams for proper cutout handling
+            // For cutout: true  -> inside transparent (show background), outside colored
+            // For cutout: false -> inside colored, outside transparent
+            const createMaskSpecFromParams = (): TextureRenderSpec | null => {
+              if (!params) return null
+
+              if (params.type === 'circle') {
+                return createCircleMaskSpec(
+                  {
+                    centerX: params.centerX,
+                    centerY: params.centerY,
+                    radius: params.radius,
+                    innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
+                    outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                    cutout,
+                  },
+                  viewport
+                )
+              }
+              if (params.type === 'rect') {
+                return createRectMaskSpec(
+                  {
+                    left: params.left,
+                    right: params.right,
+                    top: params.top,
+                    bottom: params.bottom,
+                    radiusTopLeft: params.radiusTopLeft,
+                    radiusTopRight: params.radiusTopRight,
+                    radiusBottomLeft: params.radiusBottomLeft,
+                    radiusBottomRight: params.radiusBottomRight,
+                    innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
+                    outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                    cutout,
+                  },
+                  viewport
+                )
+              }
+              if (params.type === 'blob') {
+                return createBlobMaskSpec(
+                  {
+                    centerX: params.centerX,
+                    centerY: params.centerY,
+                    baseRadius: params.baseRadius,
+                    amplitude: params.amplitude,
+                    frequency: 0,
+                    octaves: params.octaves,
+                    seed: params.seed,
+                    innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
+                    outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                    cutout,
+                  },
+                  viewport
+                )
+              }
+              return null
+            }
+
+            const maskSpec = createMaskSpecFromParams()
+            if (maskSpec) {
+              previewRenderer.render(maskSpec, { clear: false })
+            } else {
+              // Fallback if customMaskShapeParams not available
+              const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
+              previewRenderer.render(spec, { clear: false })
+            }
           }
           break
         }
@@ -1347,6 +1413,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       // Create default layers only if none exist
       if (editorState.value.canvasLayers.length === 0) {
         createDefaultLayers()
+      }
+
+      // Ensure custom params are initialized before first render
+      // This handles any edge cases where the immediate watch might not have completed
+      if (customBackgroundSurfaceParams.value === null) {
+        initBackgroundSurfaceParamsFromPreset()
+      }
+      if (customMaskShapeParams.value === null && selectedMaskIndex.value !== null) {
+        initMaskShapeParamsFromPreset()
+      }
+      if (customSurfaceParams.value === null && selectedMidgroundTextureIndex.value !== null) {
+        initSurfaceParamsFromPreset()
       }
 
       await renderScene()
