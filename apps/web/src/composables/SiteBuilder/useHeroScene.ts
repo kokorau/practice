@@ -86,6 +86,9 @@ import {
   type HeroSceneEditorState,
   type EditorCanvasLayer,
   type HeroViewConfig,
+  type HeroColorsConfig,
+  type HeroPrimitiveKey,
+  type HeroContextName,
   type BackgroundLayerConfig,
   type MaskLayerConfig,
   type BackgroundSurfaceConfig,
@@ -95,6 +98,7 @@ import {
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
+  createDefaultColorsConfig,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -1775,6 +1779,22 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
+   * Build colors config from current state
+   */
+  const buildColorsConfig = (): HeroColorsConfig => ({
+    background: {
+      primary: backgroundColorKey1.value as HeroPrimitiveKey,
+      secondary: backgroundColorKey2.value as HeroPrimitiveKey | 'auto',
+    },
+    mask: {
+      primary: maskColorKey1.value as HeroPrimitiveKey | 'auto',
+      secondary: maskColorKey2.value as HeroPrimitiveKey | 'auto',
+      outer: maskOuterColorKey.value as HeroPrimitiveKey | 'auto',
+    },
+    semanticContext: maskSemanticContext.value as HeroContextName,
+  })
+
+  /**
    * Convert current editor state to HeroViewConfig
    * Returns a self-contained, JSON-serializable config
    */
@@ -1802,6 +1822,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         width: editorState.value.config.width,
         height: editorState.value.config.height,
       },
+      colors: buildColorsConfig(),
       background,
       mask,
       foreground: foregroundConfig.value,
@@ -1822,6 +1843,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         height: config.viewport.height,
       },
     }
+
+    // Colors (restore from config, fallback to defaults if not present)
+    const colors = config.colors ?? createDefaultColorsConfig()
+    backgroundColorKey1.value = colors.background.primary as PrimitiveKey
+    backgroundColorKey2.value = colors.background.secondary as PrimitiveKey | 'auto'
+    maskColorKey1.value = colors.mask.primary as PrimitiveKey | 'auto'
+    maskColorKey2.value = colors.mask.secondary as PrimitiveKey | 'auto'
+    maskOuterColorKey.value = colors.mask.outer as PrimitiveKey | 'auto'
+    maskSemanticContext.value = colors.semanticContext as ContextName
 
     // Background surface
     const bgSurface = config.background.surface

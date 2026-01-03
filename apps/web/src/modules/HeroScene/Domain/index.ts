@@ -372,6 +372,9 @@ export const updateCanvasLayer = (
 // ============================================================
 
 export type {
+  HeroPrimitiveKey,
+  HeroContextName,
+  HeroColorsConfig,
   ViewportConfig,
   StripeSurfaceConfig,
   GridSurfaceConfig,
@@ -394,6 +397,7 @@ export type {
 } from './HeroViewConfig'
 
 export {
+  createDefaultColorsConfig,
   createDefaultForegroundConfig,
   createDefaultHeroViewConfig,
 } from './HeroViewConfig'
