@@ -52,6 +52,15 @@ export interface BooleanFieldSchema extends FieldSchemaBase {
   default: boolean
 }
 
+/** Select field schema (dropdown) */
+export interface SelectFieldSchema<T extends string = string> extends FieldSchemaBase {
+  type: 'select'
+  /** Available options */
+  options: readonly { value: T; label: string }[]
+  /** Default value */
+  default: T
+}
+
 /** Literal field schema (fixed value, not editable) */
 export interface LiteralFieldSchema<T extends string | number | boolean> extends FieldSchemaBase {
   type: 'literal'
@@ -63,6 +72,7 @@ export interface LiteralFieldSchema<T extends string | number | boolean> extends
 export type FieldSchema =
   | NumberFieldSchema
   | BooleanFieldSchema
+  | SelectFieldSchema<string>
   | LiteralFieldSchema<string | number | boolean>
 
 /** Object schema (collection of fields) */
@@ -76,6 +86,7 @@ export type ObjectSchema = Record<string, FieldSchema>
 type InferField<F extends FieldSchema> =
   F extends NumberFieldSchema ? number :
   F extends BooleanFieldSchema ? boolean :
+  F extends SelectFieldSchema<infer T> ? T :
   F extends LiteralFieldSchema<infer V> ? V :
   never
 
@@ -97,6 +108,14 @@ export const number = (opts: Omit<NumberFieldSchema, 'type'>): NumberFieldSchema
 /** Create a boolean field schema */
 export const boolean = (opts: Omit<BooleanFieldSchema, 'type'>): BooleanFieldSchema => ({
   type: 'boolean',
+  ...opts,
+})
+
+/** Create a select field schema */
+export const select = <T extends string>(
+  opts: Omit<SelectFieldSchema<T>, 'type'>
+): SelectFieldSchema<T> => ({
+  type: 'select',
   ...opts,
 })
 
@@ -184,6 +203,15 @@ export const validate = <S extends ObjectSchema>(
       case 'boolean':
         if (typeof v !== 'boolean') {
           errors.push({ field: key, message: `Expected boolean`, value: v })
+        }
+        break
+
+      case 'select':
+        if (typeof v !== 'string') {
+          errors.push({ field: key, message: `Expected string`, value: v })
+        } else if (!field.options.some(opt => opt.value === v)) {
+          const validValues = field.options.map(opt => opt.value).join(', ')
+          errors.push({ field: key, message: `Must be one of: ${validValues}`, value: v })
         }
         break
 

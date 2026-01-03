@@ -8,6 +8,7 @@ import {
   defineSchema,
   number,
   boolean,
+  select,
   getDefaults,
   type Infer,
 } from '@practice/schema'
@@ -106,6 +107,36 @@ export const CheckerSurfaceSchema = defineSchema({
 
 export type CheckerSurfaceParams = Infer<typeof CheckerSurfaceSchema>
 
+/**
+ * Depth Map Type options for select field
+ */
+const depthMapTypeOptions = [
+  { value: 'linear' as const, label: 'Linear' },
+  { value: 'circular' as const, label: 'Circular' },
+  { value: 'radial' as const, label: 'Radial' },
+  { value: 'perlin' as const, label: 'Perlin Noise' },
+] as const
+
+/**
+ * Gradient Grain Surface Schema
+ */
+export const GradientGrainSurfaceSchema = defineSchema({
+  depthMapType: select({ label: 'Depth Type', options: depthMapTypeOptions, default: 'linear' }),
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 90 }),
+  centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  radialStartAngle: number({ label: 'Start Angle', min: 0, max: 360, step: 1, default: 0 }),
+  radialSweepAngle: number({ label: 'Sweep Angle', min: 1, max: 360, step: 1, default: 360 }),
+  perlinScale: number({ label: 'Perlin Scale', min: 1, max: 20, step: 0.5, default: 4 }),
+  perlinOctaves: number({ label: 'Octaves', min: 1, max: 8, step: 1, default: 4 }),
+  perlinContrast: number({ label: 'Contrast', min: 0.1, max: 3, step: 0.05, default: 1 }),
+  perlinOffset: number({ label: 'Offset', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+})
+
+export type GradientGrainSurfaceParams = Infer<typeof GradientGrainSurfaceSchema>
+
 // ============================================================
 // Factory Functions
 // ============================================================
@@ -131,6 +162,9 @@ export const createDefaultPolkaDotParams = (): PolkaDotSurfaceParams =>
 export const createDefaultCheckerParams = (): CheckerSurfaceParams =>
   getDefaults(CheckerSurfaceSchema)
 
+export const createDefaultGradientGrainParams = (): GradientGrainSurfaceParams =>
+  getDefaults(GradientGrainSurfaceSchema)
+
 // ============================================================
 // Schema Maps (for dynamic access by type)
 // ============================================================
@@ -146,4 +180,5 @@ export const SurfaceSchemas = {
   grid: GridSurfaceSchema,
   polkaDot: PolkaDotSurfaceSchema,
   checker: CheckerSurfaceSchema,
+  gradientGrain: GradientGrainSurfaceSchema,
 } as const

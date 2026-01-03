@@ -54,6 +54,24 @@ const updateField = (key: string, value: unknown) => {
         />
         <span>{{ field.schema.label }}</span>
       </label>
+
+      <!-- Select field: dropdown -->
+      <div v-else-if="field.schema.type === 'select'" class="schema-select-group">
+        <label class="schema-select-label">{{ field.schema.label }}</label>
+        <select
+          class="schema-select"
+          :value="(modelValue[field.key] as string) ?? field.schema.default"
+          @change="updateField(field.key, ($event.target as HTMLSelectElement).value)"
+        >
+          <option
+            v-for="opt in field.schema.options"
+            :key="opt.value"
+            :value="opt.value"
+          >
+            {{ opt.label }}
+          </option>
+        </select>
+      </div>
     </template>
   </div>
 </template>
@@ -82,5 +100,41 @@ const updateField = (key: string, value: unknown) => {
   width: 1rem;
   height: 1rem;
   accent-color: oklch(0.55 0.20 250);
+}
+
+.schema-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.schema-select-label {
+  font-size: 0.75rem;
+  color: oklch(0.40 0.02 260);
+}
+
+:global(.dark) .schema-select-label {
+  color: oklch(0.70 0.02 260);
+}
+
+.schema-select {
+  padding: 0.5rem;
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  color: oklch(0.25 0.02 260);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+:global(.dark) .schema-select {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
+}
+
+.schema-select:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
 }
 </style>

@@ -25,6 +25,8 @@ import {
   createGridSpec,
   createPolkaDotSpec,
   createCheckerSpec,
+  // Gradient specs
+  createGradientGrainSpec,
   // Schemas and types
   MaskShapeSchemas,
   SurfaceSchemas,
@@ -49,6 +51,7 @@ import {
   type GridSurfaceParams,
   type PolkaDotSurfaceParams,
   type CheckerSurfaceParams,
+  type DepthMapType,
 } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 // Filters (separate subpath for tree-shaking)
@@ -118,6 +121,27 @@ export type CustomSurfaceParams =
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
 
 /**
+ * Gradient grain surface params (from GradientLab)
+ */
+export interface GradientGrainSurfaceParams {
+  depthMapType: DepthMapType
+  angle: number
+  centerX: number
+  centerY: number
+  radialStartAngle: number
+  radialSweepAngle: number
+  perlinScale: number
+  perlinOctaves: number
+  perlinContrast: number
+  perlinOffset: number
+  colorA: RGBA
+  colorB: RGBA
+  seed: number
+  sparsity: number
+  curvePoints: number[]
+}
+
+/**
  * Custom background surface params union type (includes checker, solid has no params)
  */
 export type CustomBackgroundSurfaceParams =
@@ -125,6 +149,7 @@ export type CustomBackgroundSurfaceParams =
   | ({ type: 'grid' } & GridSurfaceParams)
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ type: 'checker' } & CheckerSurfaceParams)
+  | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
   | { type: 'solid' }
 
 export interface UseHeroSceneOptions {
@@ -332,6 +357,30 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const initBackgroundSurfaceParamsFromPreset = () => {
     const idx = selectedBackgroundIndex.value
+    // gradientGrain is added after texturePatterns, so check if idx is beyond texturePatterns length
+    const gradientGrainIndex = texturePatterns.length
+    if (idx === gradientGrainIndex) {
+      // GradientGrain selected - initialize with defaults
+      const defaults = {
+        depthMapType: 'linear' as const,
+        angle: 90,
+        centerX: 0.5,
+        centerY: 0.5,
+        radialStartAngle: 0,
+        radialSweepAngle: 360,
+        perlinScale: 4,
+        perlinOctaves: 4,
+        perlinContrast: 1,
+        perlinOffset: 0,
+        colorA: textureColor1.value,
+        colorB: textureColor2.value,
+        seed: 12345,
+        sparsity: 0.75,
+        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
+      }
+      customBackgroundSurfaceParams.value = { type: 'gradientGrain', ...defaults }
+      return
+    }
     const preset = surfacePresets[idx]
     if (preset) {
       customBackgroundSurfaceParams.value = extractBackgroundSurfaceParams(preset.params)
@@ -608,7 +657,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const createBackgroundSpecFromParams = (
     params: CustomBackgroundSurfaceParams,
     color1: RGBA,
-    color2: RGBA
+    color2: RGBA,
+    viewport: Viewport
   ): TextureRenderSpec | null => {
     if (params.type === 'solid') return null
     if (params.type === 'stripe') {
@@ -622,6 +672,26 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
     if (params.type === 'checker') {
       return createCheckerSpec({ color1, color2, cellSize: params.cellSize, angle: params.angle })
+    }
+    if (params.type === 'gradientGrain') {
+      return createGradientGrainSpec({
+        depthMapType: params.depthMapType,
+        angle: params.angle,
+        centerX: params.centerX,
+        centerY: params.centerY,
+        radialStartAngle: params.radialStartAngle,
+        radialSweepAngle: params.radialSweepAngle,
+        perlinScale: params.perlinScale,
+        perlinOctaves: params.perlinOctaves,
+        perlinSeed: params.seed,
+        perlinContrast: params.perlinContrast,
+        perlinOffset: params.perlinOffset,
+        colorA: params.colorA,
+        colorB: params.colorB,
+        seed: params.seed,
+        sparsity: params.sparsity,
+        curvePoints: params.curvePoints,
+      }, viewport)
     }
     return null
   }
@@ -879,7 +949,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           // Use custom background surface params if available
           const customBgParams = customBackgroundSurfaceParams.value
           if (customBgParams && customBgParams.type !== 'solid') {
-            const spec = createBackgroundSpecFromParams(customBgParams, textureColor1.value, textureColor2.value)
+            const spec = createBackgroundSpecFromParams(customBgParams, textureColor1.value, textureColor2.value, viewport)
             if (spec) {
               previewRenderer.render(spec, { clear: isFirst })
               break

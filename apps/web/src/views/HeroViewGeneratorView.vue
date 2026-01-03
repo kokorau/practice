@@ -33,6 +33,7 @@ import {
   useHeroScene,
   type GridPosition,
 } from '../composables/SiteBuilder'
+import { createGradientGrainSpec, createDefaultGradientGrainParams, type DepthMapType } from '@practice/texture'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import './HeroViewGeneratorView.css'
 
@@ -219,13 +220,31 @@ const currentLineHalftoneConfig = computed({
 })
 
 // Convert texture patterns to SurfaceSelector format with createSpec
-const backgroundPatterns = computed(() =>
-  texturePatterns.map((p) => ({
+const backgroundPatterns = computed(() => {
+  const textureItems = texturePatterns.map((p) => ({
     label: p.label,
     createSpec: (viewport: { width: number; height: number }) =>
       p.createSpec(textureColor1.value, textureColor2.value, viewport),
   }))
-)
+
+  // Add gradient grain option
+  const defaultGradientParams = createDefaultGradientGrainParams()
+  const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
+  const gradientGrainItem = {
+    label: 'Gradient Grain',
+    type: 'gradientGrain',
+    createSpec: (viewport: { width: number; height: number }) =>
+      createGradientGrainSpec({
+        ...defaultGradientParams,
+        depthMapType: defaultGradientParams.depthMapType as DepthMapType,
+        colorA: textureColor1.value,
+        colorB: textureColor2.value,
+        curvePoints: defaultCurvePoints,
+      }, viewport),
+  }
+
+  return [...textureItems, gradientGrainItem]
+})
 
 const maskSurfacePatterns = computed(() =>
   midgroundTexturePatterns.map((p) => ({
