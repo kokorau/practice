@@ -498,6 +498,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const maskColorKey1 = ref<PrimitiveKey | 'auto'>('auto')  // Primary color ('auto' = surface - deltaL)
   const maskColorKey2 = ref<PrimitiveKey | 'auto'>('auto')  // Secondary color ('auto' = mask surface)
 
+  // Mask outer color (the color outside the mask / cutout area)
+  const maskOuterColorKey = ref<PrimitiveKey | 'auto'>('auto')  // 'auto' = use semantic context surface
+
   // ============================================================
   // Computed Colors
   // ============================================================
@@ -520,8 +523,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const textureColor1 = computed((): RGBA => paletteToRgba(primitivePalette.value[backgroundColorKey1.value]))
   const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedBackgroundColorKey2.value]))
-  const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value], 0))
-  const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value]))
+
+  // Resolve mask outer color key ('auto' uses semantic context surface)
+  const resolvedMaskOuterColorKey = computed((): PrimitiveKey =>
+    maskOuterColorKey.value === 'auto' ? maskSurfaceKey.value : maskOuterColorKey.value
+  )
+
+  const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedMaskOuterColorKey.value], 0))
+  const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedMaskOuterColorKey.value]))
 
   // Mask texture colors: auto calculates shifted lightness
   const midgroundTextureColor1 = computed((): RGBA => {
@@ -1736,6 +1745,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     backgroundColorKey2,
     maskColorKey1,
     maskColorKey2,
+    maskOuterColorKey,
 
     // Ink color helpers (for text on surfaces)
     getInkColorForSurface,

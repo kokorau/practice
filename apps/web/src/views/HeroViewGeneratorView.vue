@@ -165,6 +165,7 @@ const {
   backgroundColorKey2,
   maskColorKey1,
   maskColorKey2,
+  maskOuterColorKey,
 } = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
 // Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
@@ -586,6 +587,15 @@ const handleRemoveLayer = (layerId: string) => {
               <canvas data-thumbnail-canvas class="pattern-canvas" />
               <span class="pattern-label">{{ pattern.label }}</span>
             </button>
+          </div>
+          <!-- Mask outer color (cutout area color) -->
+          <div class="color-selection-section">
+            <PrimitiveColorPicker
+              v-model="maskOuterColorKey"
+              :palette="primitivePalette"
+              label="Mask Outer Color"
+              :show-auto="true"
+            />
           </div>
         </template>
 
