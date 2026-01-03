@@ -67,8 +67,8 @@ const PRESETS: HeroViewPreset[] = [
         filters: createFilters(),
       },
       foreground: {
-        title: { position: 'middle-left', content: 'Enterprise Solutions', fontSize: 3.5, fontId: 'inter' },
-        description: { position: 'middle-left', content: 'Streamline your business with our platform.', fontSize: 1.25, fontId: 'ibm-plex-sans' },
+        title: { position: 'middle-right', content: 'Enterprise Solutions', fontSize: 3.5, fontId: 'inter' },
+        description: { position: 'middle-right', content: 'Streamline your business with our platform.', fontSize: 1.25, fontId: 'ibm-plex-sans' },
       },
     },
     // Professional blue with teal accent, light neutral foundation
