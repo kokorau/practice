@@ -10,8 +10,8 @@ export interface GradientGrainParams {
   colorA: [number, number, number, number]  // RGBA start color
   colorB: [number, number, number, number]  // RGBA end color
   seed: number  // noise seed
-  power: number  // easing curve power (1=linear, 2=quadratic)
   sparsity: number  // sparsity factor (0=dense, 1=very sparse)
+  curvePoints: number[]  // 7 Y values (0-1) for intensity curve
 }
 
 // ============================================================
@@ -24,10 +24,12 @@ export interface GradientGrainParams {
  *   viewport: vec2f (8) + angle: f32 (4) + seed: f32 (4) = 16 bytes
  *   colorA: vec4f = 16 bytes
  *   colorB: vec4f = 16 bytes
- *   power: f32 (4) + sparsity: f32 (4) + padding: vec2f (8) = 16 bytes
- *   Total: 64 bytes
+ *   sparsity: f32 (4) + _pad: vec3f (12) = 16 bytes
+ *   curvePoints[0..3]: vec4f = 16 bytes
+ *   curvePoints[4..6] + _pad: vec4f = 16 bytes
+ *   Total: 96 bytes
  */
-export const GRADIENT_GRAIN_BUFFER_SIZE = 64
+export const GRADIENT_GRAIN_BUFFER_SIZE = 96
 
 // ============================================================
 // WGSL Shader
@@ -40,9 +42,10 @@ struct Params {
   seed: f32,
   colorA: vec4f,
   colorB: vec4f,
-  power: f32,
   sparsity: f32,
-  _padding: vec2f,
+  _pad0: vec3f,
+  curvePoints0: vec4f,
+  curvePoints1: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -50,6 +53,43 @@ struct Params {
 ${fullscreenVertex}
 
 ${hash21}
+
+// Catmull-Rom spline interpolation
+fn catmullRom(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32 {
+  let t2 = t * t;
+  let t3 = t2 * t;
+  return 0.5 * (
+    (2.0 * p1) +
+    (-p0 + p2) * t +
+    (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2 +
+    (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3
+  );
+}
+
+fn getPoint(idx: i32) -> f32 {
+  switch(idx) {
+    case 0: { return params.curvePoints0.x; }
+    case 1: { return params.curvePoints0.y; }
+    case 2: { return params.curvePoints0.z; }
+    case 3: { return params.curvePoints0.w; }
+    case 4: { return params.curvePoints1.x; }
+    case 5: { return params.curvePoints1.y; }
+    case 6: { return params.curvePoints1.z; }
+    default: { return 0.0; }
+  }
+}
+
+fn evaluateCurve(x: f32) -> f32 {
+  let segmentF = x * 6.0;
+  let segment = i32(floor(segmentF));
+  let t = fract(segmentF);
+  let i = clamp(segment, 0, 5);
+  let p0 = getPoint(max(i - 1, 0));
+  let p1 = getPoint(i);
+  let p2 = getPoint(min(i + 1, 6));
+  let p3 = getPoint(min(i + 2, 6));
+  return clamp(catmullRom(p0, p1, p2, p3, t), 0.0, 1.0);
+}
 
 // 角度からグラデーション方向ベクトルを計算
 fn getGradientDirection(angleDeg: f32) -> vec2f {
@@ -74,16 +114,16 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let noiseA = hash21(pos.xy + params.seed);
   let noiseB = hash21(pos.xy + params.seed + 1000.0);
 
+  // カーブを適用
+  let curvedT = evaluateCurve(t);
+  let curvedInvT = evaluateCurve(1.0 - t);
+
   // Grain(ColorA, LR): t=0で多く、t=1で少なく
-  // threshold = 1 - (1-t)^power * (1-sparsity)
-  let easedLR = pow(1.0 - t, params.power);
-  let thresholdA = 1.0 - easedLR * (1.0 - params.sparsity);
+  let thresholdA = 1.0 - curvedInvT * (1.0 - params.sparsity);
   let showA = noiseA >= thresholdA;
 
   // Grain(ColorB, RL): t=1で多く、t=0で少なく
-  // threshold = 1 - t^power * (1-sparsity)
-  let easedRL = pow(t, params.power);
-  let thresholdB = 1.0 - easedRL * (1.0 - params.sparsity);
+  let thresholdB = 1.0 - curvedT * (1.0 - params.sparsity);
   let showB = noiseB >= thresholdB;
 
   // 合成: ColorA grain → ColorB grain → Base gradient
@@ -127,10 +167,23 @@ export function createGradientGrainSpec(
   data[10] = params.colorB[2]
   data[11] = params.colorB[3]
 
-  // power (f32) + sparsity (f32) + padding (vec2f)
-  data[12] = params.power
-  data[13] = params.sparsity
-  // data[14], data[15] = padding
+  // sparsity (f32) + padding (vec3f)
+  data[12] = params.sparsity
+  data[13] = 0  // _pad0.x
+  data[14] = 0  // _pad0.y
+  data[15] = 0  // _pad0.z
+
+  // curvePoints[0..3]
+  data[16] = params.curvePoints[0] ?? 0
+  data[17] = params.curvePoints[1] ?? 1/6
+  data[18] = params.curvePoints[2] ?? 2/6
+  data[19] = params.curvePoints[3] ?? 3/6
+
+  // curvePoints[4..6] + padding
+  data[20] = params.curvePoints[4] ?? 4/6
+  data[21] = params.curvePoints[5] ?? 5/6
+  data[22] = params.curvePoints[6] ?? 1
+  data[23] = 0  // padding
 
   return {
     shader: gradientGrainShader,

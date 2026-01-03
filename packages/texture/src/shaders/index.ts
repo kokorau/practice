@@ -90,3 +90,9 @@ export {
   GRADIENT_NOISE_MAP_BUFFER_SIZE,
   type GradientNoiseMapParams,
 } from './gradientNoiseMap'
+export {
+  intensityCurveShader,
+  createIntensityCurveSpec,
+  INTENSITY_CURVE_BUFFER_SIZE,
+  type IntensityCurveParams,
+} from './intensityCurve'

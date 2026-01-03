@@ -7,15 +7,19 @@ import {
   createLinearDepthMapSpec,
   createNoiseMapSpec,
   createGradientNoiseMapSpec,
+  createIntensityCurveSpec,
   type TextureRenderSpec,
   type ColorStop as GpuColorStop,
 } from '@practice/texture'
 import NodePreview from '../components/NodePreview.vue'
+import CurveEditor from '../components/CurveEditor.vue'
+import { type Curve } from '../modules/Filter/Domain'
 
 // ノードのDOM参照
 const nodeGraphRef = ref<HTMLElement | null>(null)
 const depthNodeRef = ref<HTMLElement | null>(null)
 const noiseNodeRef = ref<HTMLElement | null>(null)
+const intensityCurveNodeRef = ref<HTMLElement | null>(null)
 const gradientNodeRef = ref<HTMLElement | null>(null)
 const depthNoiseNodeRef = ref<HTMLElement | null>(null)
 const finalNodeRef = ref<HTMLElement | null>(null)
@@ -51,7 +55,11 @@ function updateConnections() {
   const depthBottom = getNodeCenter(depthNodeRef.value, container, 'bottom')
   const gradientTop = getNodeCenter(gradientNodeRef.value, container, 'top')
 
-  // Depth -> DepthNoise
+  // Depth -> IntensityCurve
+  const intensityCurveTop = getNodeCenter(intensityCurveNodeRef.value, container, 'top')
+
+  // IntensityCurve -> DepthNoise
+  const intensityCurveBottom = getNodeCenter(intensityCurveNodeRef.value, container, 'bottom')
   const depthNoiseTop = getNodeCenter(depthNoiseNodeRef.value, container, 'top')
 
   // Noise -> DepthNoise
@@ -66,7 +74,8 @@ function updateConnections() {
 
   connectionPaths.value = [
     createBezierPath(depthBottom, gradientTop),
-    createBezierPath(depthBottom, depthNoiseTop),
+    createBezierPath(depthBottom, intensityCurveTop),
+    createBezierPath(intensityCurveBottom, depthNoiseTop),
     createBezierPath(noiseBottom, depthNoiseTop),
     createBezierPath(gradientBottom, finalTop),
     createBezierPath(depthNoiseBottom, finalTop),
@@ -88,8 +97,40 @@ const stops = ref<ColorStop[]>([
 const angle = ref(90)
 const grainSeed = ref(12345)
 const noiseThreshold = ref(0.5)
-const power = ref(2.5)
 const sparsity = ref(0.75)
+
+// カーブパラメータ
+const curvePoints = ref<number[]>([0, 1/6, 2/6, 3/6, 4/6, 5/6, 1])
+const curvePreset = ref<string>('linear')
+
+// プリセット定義
+const curvePresets: Record<string, number[]> = {
+  linear: [0, 1/6, 2/6, 3/6, 4/6, 5/6, 1],
+  easeIn: [0, 0.005, 0.028, 0.083, 0.194, 0.389, 1],
+  easeOut: [0, 0.611, 0.806, 0.917, 0.972, 0.995, 1],
+  sCurve: [0, 0.028, 0.132, 0.5, 0.868, 0.972, 1],
+  step: [0, 0, 0, 0.5, 1, 1, 1],
+  inverse: [1, 5/6, 4/6, 3/6, 2/6, 1/6, 0],
+}
+
+// カーブをCurve型に変換
+const intensityCurve = computed<Curve>(() => ({
+  points: curvePoints.value
+}))
+
+// プリセット適用
+function applyCurvePreset() {
+  const preset = curvePresets[curvePreset.value]
+  if (preset) {
+    curvePoints.value = [...preset]
+  }
+}
+
+// カーブポイント更新
+function updateCurvePoint(index: number, value: number) {
+  curvePoints.value[index] = value
+  curvePreset.value = 'custom'
+}
 
 // プレビューサイズ
 const NODE_WIDTH = 200
@@ -151,12 +192,19 @@ const gradientSpec = computed<TextureRenderSpec>(() =>
   createLinearGradientSpec({ angle: angle.value, stops: gpuStops.value }, nodeViewport)
 )
 
+const curvedDepthSpec = computed<TextureRenderSpec>(() =>
+  createIntensityCurveSpec({
+    angle: angle.value,
+    curvePoints: curvePoints.value,
+  }, nodeViewport)
+)
+
 const depthNoiseSpec = computed<TextureRenderSpec>(() =>
   createGradientNoiseMapSpec({
     angle: angle.value,
     seed: grainSeed.value,
-    power: power.value,
     sparsity: sparsity.value,
+    curvePoints: curvePoints.value,
   }, nodeViewport)
 )
 
@@ -166,8 +214,8 @@ const finalSpec = computed<TextureRenderSpec>(() =>
     colorA: colorA.value,
     colorB: colorB.value,
     seed: grainSeed.value,
-    power: power.value,
     sparsity: sparsity.value,
+    curvePoints: curvePoints.value,
   }, mainViewport)
 )
 
@@ -202,7 +250,7 @@ function removeStop(index: number) {
 }
 
 watch(
-  [stops, angle, grainSeed, noiseThreshold, power, sparsity],
+  [stops, angle, grainSeed, noiseThreshold, sparsity, curvePoints],
   () => renderMain(),
   { deep: true }
 )
@@ -268,7 +316,28 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Row 2: Processing nodes -->
+        <!-- Row 2: Intensity Curve + Curved Depth (右寄せ) -->
+        <div class="node-row node-row-right">
+          <div ref="intensityCurveNodeRef" class="node-wrapper curve-node">
+            <div class="node-label">Intensity Curve</div>
+            <CurveEditor
+              :curve="intensityCurve"
+              :width="NODE_WIDTH"
+              :height="NODE_HEIGHT"
+              @update:point="updateCurvePoint"
+            />
+          </div>
+          <div class="node-wrapper">
+            <NodePreview
+              label="Curved Depth"
+              :width="NODE_WIDTH"
+              :height="NODE_HEIGHT"
+              :spec="curvedDepthSpec"
+            />
+          </div>
+        </div>
+
+        <!-- Row 3: Processing nodes -->
         <div class="node-row">
           <div ref="gradientNodeRef" class="node-wrapper">
             <NodePreview
@@ -288,7 +357,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Row 3: Output node -->
+        <!-- Row 4: Output node -->
         <div class="node-row final-row">
           <div ref="finalNodeRef" class="final-node">
             <div class="node-label">Final Output</div>
@@ -315,8 +384,16 @@ onUnmounted(() => {
         </div>
 
         <div class="control-group">
-          <label class="control-label">Power: {{ power.toFixed(1) }}</label>
-          <input v-model.number="power" type="range" min="0.2" max="4" step="0.1" class="slider" />
+          <label class="control-label">Curve Preset</label>
+          <select v-model="curvePreset" class="preset-select" @change="applyCurvePreset">
+            <option value="linear">Linear</option>
+            <option value="easeIn">Ease In</option>
+            <option value="easeOut">Ease Out</option>
+            <option value="sCurve">S-Curve</option>
+            <option value="step">Step</option>
+            <option value="inverse">Inverse</option>
+            <option value="custom">Custom</option>
+          </select>
         </div>
 
         <div class="control-group">
@@ -433,6 +510,22 @@ onUnmounted(() => {
   align-items: center;
 }
 
+.node-row-right {
+  justify-content: center;
+  padding-left: calc(200px + 3rem);
+}
+
+.curve-node {
+  padding: 0.5rem;
+  background: #1e1e3a;
+  border: 1px solid #3a3a5a;
+  border-radius: 0.5rem;
+}
+
+.curve-node .node-label {
+  margin-bottom: 0.25rem;
+}
+
 .final-row {
   margin-top: 0;
 }
@@ -528,6 +621,22 @@ onUnmounted(() => {
 }
 
 .seed-input:focus {
+  outline: none;
+  border-color: #4ecdc4;
+}
+
+.preset-select {
+  width: 100%;
+  padding: 0.5rem;
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  border-radius: 0.375rem;
+  color: #eee;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.preset-select:focus {
   outline: none;
   border-color: #4ecdc4;
 }

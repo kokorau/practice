@@ -32,6 +32,7 @@ export type {
   LinearDepthMapParams,
   NoiseMapParams,
   GradientNoiseMapParams,
+  IntensityCurveParams,
 } from './shaders'
 
 export {
@@ -59,6 +60,7 @@ export {
   createLinearDepthMapSpec,
   createNoiseMapSpec,
   createGradientNoiseMapSpec,
+  createIntensityCurveSpec,
 } from './shaders'
 
 // Filter specs are now available via '@practice/texture/filters'
