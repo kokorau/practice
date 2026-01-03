@@ -18,6 +18,7 @@ import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import LayerPanel, { type LayerItem, type LayerType, type SubItemType } from '../components/HeroGenerator/LayerPanel.vue'
+import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
@@ -282,6 +283,31 @@ const maskSurfacePatterns = computed(() => {
 })
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
+const rightPanelRef = ref<HTMLElement | null>(null)
+
+// Subpanel title
+const sectionTitle = computed(() => {
+  switch (activeSection.value) {
+    case 'background':
+      return 'テクスチャ選択'
+    case 'mask-surface':
+      return 'マスクテクスチャ'
+    case 'mask-shape':
+      return 'マスク形状'
+    case 'filter':
+      return 'フィルター設定'
+    case 'foreground-title':
+      return 'タイトル位置'
+    case 'foreground-description':
+      return '説明文位置'
+    default:
+      return ''
+  }
+})
+
+const closeSection = () => {
+  activeSection.value = null
+}
 
 // ============================================================
 // Foreground Layout Config (from useHeroScene)
@@ -529,22 +555,14 @@ const handleRemoveLayer = (layerId: string) => {
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->
-    <Transition name="subpanel-right">
-      <aside v-if="activeSection && activeTab === 'generator'" class="hero-subpanel subpanel-right">
-      <div class="hero-subpanel-header">
-        <h2>{{
-          activeSection === 'background' ? 'テクスチャ選択' :
-          activeSection === 'mask-surface' ? 'マスクテクスチャ' :
-          activeSection === 'mask-shape' ? 'マスク形状' :
-          activeSection === 'filter' ? 'フィルター設定' :
-          activeSection === 'foreground-title' ? 'タイトル位置' :
-          activeSection === 'foreground-description' ? '説明文位置' :
-          ''
-        }}</h2>
-        <button class="hero-subpanel-close" @click="activeSection = null">×</button>
-      </div>
-
-      <div class="hero-subpanel-content">
+    <FloatingPanel
+      v-if="activeTab === 'generator'"
+      :title="sectionTitle"
+      :is-open="!!activeSection"
+      position="right"
+      :ignore-refs="[rightPanelRef]"
+      @close="closeSection"
+    >
         <!-- 後景: テクスチャ選択 -->
         <template v-if="activeSection === 'background'">
           <!-- Color selection (at top for easy access) -->
@@ -793,9 +811,7 @@ const handleRemoveLayer = (layerId: string) => {
           </div>
         </template>
 
-      </div>
-      </aside>
-    </Transition>
+    </FloatingPanel>
 
     <!-- 中央: メインコンテンツ -->
     <main class="hero-main">
@@ -837,7 +853,7 @@ const handleRemoveLayer = (layerId: string) => {
     </main>
 
     <!-- 右パネル: Canvas/HTML レイヤー -->
-    <aside v-if="activeTab === 'generator'" class="hero-right-panel">
+    <aside ref="rightPanelRef" v-if="activeTab === 'generator'" class="hero-right-panel">
       <LayerPanel
         :layers="layers"
         :layer-filter-configs="layerFilterConfigs"

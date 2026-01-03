@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Oklch } from '@practice/color'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'
+import FloatingPanel from './FloatingPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 
 type NeutralRampItem = {
@@ -54,9 +55,49 @@ const emit = defineEmits<{
 type ColorPopup = 'presets' | 'brand' | 'accent' | 'foundation' | null
 const activeColorPopup = ref<ColorPopup>(null)
 
+// Button refs for click-outside ignore
+const presetsButtonRef = ref<HTMLElement | null>(null)
+const brandButtonRef = ref<HTMLElement | null>(null)
+const accentButtonRef = ref<HTMLElement | null>(null)
+const foundationButtonRef = ref<HTMLElement | null>(null)
+
 const toggleColorPopup = (popup: ColorPopup) => {
   activeColorPopup.value = activeColorPopup.value === popup ? null : popup
 }
+
+const closePopup = () => {
+  activeColorPopup.value = null
+}
+
+const currentIgnoreRefs = computed(() => {
+  switch (activeColorPopup.value) {
+    case 'presets':
+      return [presetsButtonRef.value]
+    case 'brand':
+      return [brandButtonRef.value]
+    case 'accent':
+      return [accentButtonRef.value]
+    case 'foundation':
+      return [foundationButtonRef.value]
+    default:
+      return []
+  }
+})
+
+const popupTitle = computed(() => {
+  switch (activeColorPopup.value) {
+    case 'presets':
+      return 'Color Presets'
+    case 'brand':
+      return 'Brand Color'
+    case 'accent':
+      return 'Accent Color'
+    case 'foundation':
+      return 'Foundation'
+    default:
+      return ''
+  }
+})
 </script>
 
 <template>
@@ -67,6 +108,7 @@ const toggleColorPopup = (popup: ColorPopup) => {
 
       <!-- Presets -->
       <button
+        ref="presetsButtonRef"
         class="color-button"
         :class="{ active: activeColorPopup === 'presets' }"
         @click="toggleColorPopup('presets')"
@@ -84,6 +126,7 @@ const toggleColorPopup = (popup: ColorPopup) => {
 
       <!-- Brand Color -->
       <button
+        ref="brandButtonRef"
         class="color-button"
         :class="{ active: activeColorPopup === 'brand' }"
         @click="toggleColorPopup('brand')"
@@ -97,6 +140,7 @@ const toggleColorPopup = (popup: ColorPopup) => {
 
       <!-- Accent Color -->
       <button
+        ref="accentButtonRef"
         class="color-button"
         :class="{ active: activeColorPopup === 'accent' }"
         @click="toggleColorPopup('accent')"
@@ -110,6 +154,7 @@ const toggleColorPopup = (popup: ColorPopup) => {
 
       <!-- Foundation -->
       <button
+        ref="foundationButtonRef"
         class="color-button"
         :class="{ active: activeColorPopup === 'foundation' }"
         @click="toggleColorPopup('foundation')"
@@ -139,60 +184,58 @@ const toggleColorPopup = (popup: ColorPopup) => {
     </template>
 
     <!-- カラーポップアップ -->
-    <Transition name="popup">
-      <div v-if="activeColorPopup" class="color-popup">
-        <div class="popup-header">
-          <h2>{{ activeColorPopup === 'presets' ? 'Color Presets' : activeColorPopup === 'brand' ? 'Brand Color' : activeColorPopup === 'accent' ? 'Accent Color' : 'Foundation' }}</h2>
-          <button class="popup-close" @click="activeColorPopup = null">×</button>
-        </div>
-        <div class="popup-content">
-          <ColorPresets
-            v-if="activeColorPopup === 'presets'"
-            :brand-hue="hue"
-            :brand-saturation="saturation"
-            :brand-value="value"
-            :accent-hue="accentHue"
-            :accent-saturation="accentSaturation"
-            :accent-value="accentValue"
-            :foundation-l="foundationL"
-            :foundation-c="foundationC"
-            :foundation-h="foundationH"
-            @apply-preset="emit('applyColorPreset', $event)"
-          />
-          <BrandColorPicker
-            v-else-if="activeColorPopup === 'brand'"
-            :hue="hue"
-            :saturation="saturation"
-            :value="value"
-            @update:hue="emit('update:hue', $event)"
-            @update:saturation="emit('update:saturation', $event)"
-            @update:value="emit('update:value', $event)"
-          />
-          <BrandColorPicker
-            v-if="activeColorPopup === 'accent'"
-            :hue="accentHue"
-            :saturation="accentSaturation"
-            :value="accentValue"
-            @update:hue="emit('update:accentHue', $event)"
-            @update:saturation="emit('update:accentSaturation', $event)"
-            @update:value="emit('update:accentValue', $event)"
-          />
-          <FoundationPresets
-            v-if="activeColorPopup === 'foundation'"
-            :foundation-l="foundationL"
-            :foundation-c="foundationC"
-            :foundation-h="foundationH"
-            :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
-            :brand-oklch="brandOklch"
-            :brand-hue="hue"
-            @update:foundation-l="emit('update:foundationL', $event)"
-            @update:foundation-c="emit('update:foundationC', $event)"
-            @update:foundation-h="emit('update:foundationH', $event)"
-            @update:foundation-hue-linked-to-brand="emit('update:foundationHueLinkedToBrand', $event)"
-          />
-        </div>
-      </div>
-    </Transition>
+    <FloatingPanel
+      :title="popupTitle"
+      :is-open="!!activeColorPopup"
+      position="left"
+      :ignore-refs="currentIgnoreRefs"
+      @close="closePopup"
+    >
+      <ColorPresets
+        v-if="activeColorPopup === 'presets'"
+        :brand-hue="hue"
+        :brand-saturation="saturation"
+        :brand-value="value"
+        :accent-hue="accentHue"
+        :accent-saturation="accentSaturation"
+        :accent-value="accentValue"
+        :foundation-l="foundationL"
+        :foundation-c="foundationC"
+        :foundation-h="foundationH"
+        @apply-preset="emit('applyColorPreset', $event)"
+      />
+      <BrandColorPicker
+        v-else-if="activeColorPopup === 'brand'"
+        :hue="hue"
+        :saturation="saturation"
+        :value="value"
+        @update:hue="emit('update:hue', $event)"
+        @update:saturation="emit('update:saturation', $event)"
+        @update:value="emit('update:value', $event)"
+      />
+      <BrandColorPicker
+        v-if="activeColorPopup === 'accent'"
+        :hue="accentHue"
+        :saturation="accentSaturation"
+        :value="accentValue"
+        @update:hue="emit('update:accentHue', $event)"
+        @update:saturation="emit('update:accentSaturation', $event)"
+        @update:value="emit('update:accentValue', $event)"
+      />
+      <FoundationPresets
+        v-if="activeColorPopup === 'foundation'"
+        :foundation-l="foundationL"
+        :foundation-c="foundationC"
+        :foundation-h="foundationH"
+        :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
+        :brand-oklch="brandOklch"
+        :brand-hue="hue"
+        @update:foundation-l="emit('update:foundationL', $event)"
+        @update:foundation-c="emit('update:foundationC', $event)"
+        @update:foundation-h="emit('update:foundationH', $event)"
+        @update:foundation-hue-linked-to-brand="emit('update:foundationHueLinkedToBrand', $event)"
+      />
+    </FloatingPanel>
   </aside>
 </template>
 
@@ -310,75 +353,5 @@ const toggleColorPopup = (popup: ColorPopup) => {
 
 .ramp-step:last-child {
   border-radius: 0 0.25rem 0.25rem 0;
-}
-
-/* Color Popup */
-.color-popup {
-  position: absolute;
-  left: 100%;
-  top: 0;
-  margin-left: 0.25rem;
-  width: 18rem;
-  background: oklch(0.96 0.01 260);
-  border: 1px solid oklch(0.88 0.01 260);
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  z-index: 50;
-  overflow: hidden;
-}
-
-:global(.dark) .color-popup {
-  background: oklch(0.18 0.02 260);
-  border-color: oklch(0.25 0.02 260);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-}
-
-.popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem;
-  border-bottom: 1px solid oklch(0.88 0.01 260);
-}
-
-:global(.dark) .popup-header {
-  border-bottom-color: oklch(0.25 0.02 260);
-}
-
-.popup-header h2 {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: oklch(0.25 0.02 260);
-}
-
-:global(.dark) .popup-header h2 {
-  color: oklch(0.90 0.01 260);
-}
-
-.popup-close {
-  background: none;
-  border: none;
-  color: oklch(0.50 0.02 260);
-  font-size: 1.125rem;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-:global(.dark) .popup-close {
-  color: oklch(0.60 0.02 260);
-}
-
-.popup-close:hover {
-  color: oklch(0.25 0.02 260);
-}
-
-:global(.dark) .popup-close:hover {
-  color: oklch(0.90 0.02 260);
-}
-
-.popup-content {
-  padding: 1rem;
 }
 </style>
