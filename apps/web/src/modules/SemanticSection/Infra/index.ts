@@ -3,7 +3,7 @@ export { renderSection, renderPage, generateCSS } from './SectionRenderer'
 export type { RenderPageOptions } from './SectionRenderer'
 
 // Default Content
-export { getDefaultContent, getAllDefaultContents } from './getDefaultContent'
+export { getDefaultContent, getAllDefaultContents, createDemoPage } from './getDefaultContent'
 
 // Eta Config
 export { eta, escapeHtml } from './etaConfig'

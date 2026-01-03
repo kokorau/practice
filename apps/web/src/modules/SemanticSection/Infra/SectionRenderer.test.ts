@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { renderPage, renderSection } from './SectionRenderer'
-import { $Page, DEFAULT_TOKENS } from '../Domain'
-import type { RenderTheme, PageContents, HeaderContent, HeroContent } from '../Domain'
-import { getDefaultContent } from './getDefaultContent'
+import { $Page, $Section, DEFAULT_TOKENS } from '../Domain'
+import type { RenderTheme, HeaderContent, HeroContent } from '../Domain'
+import { getDefaultContent, createDemoPage } from './getDefaultContent'
 import { createSemanticFromPrimitive, createPrimitivePalette } from '../../SemanticColorPalette/Infra'
 
 // Create a test theme
@@ -28,8 +28,8 @@ describe('SectionRenderer', () => {
         links: [{ label: 'Home', url: '/' }],
       }
 
-      const section = { id: 'header-1', type: 'header' as const }
-      const html = renderSection(section, content, theme)
+      const section = $Section.create('header', content, 'header-1')
+      const html = renderSection(section, theme)
 
       expect(html).toContain('TestLogo')
       expect(html).toContain('Home')
@@ -44,8 +44,8 @@ describe('SectionRenderer', () => {
         primaryCtaLabel: 'Get Started',
       }
 
-      const section = { id: 'hero-1', type: 'hero' as const }
-      const html = renderSection(section, content, theme)
+      const section = $Section.create('hero', content, 'hero-1')
+      const html = renderSection(section, theme)
 
       expect(html).toContain('Welcome')
       expect(html).toContain('This is a test')
@@ -57,15 +57,9 @@ describe('SectionRenderer', () => {
   describe('renderPage', () => {
     it('renders a full page with all sections', () => {
       const theme = createTestTheme()
-      const page = $Page.createDemo()
+      const page = createDemoPage()
 
-      // Create contents from default content
-      const contents: Record<string, ReturnType<typeof getDefaultContent>> = {}
-      for (const section of page.sections) {
-        contents[section.id] = getDefaultContent(section.type)
-      }
-
-      const html = renderPage(page, contents, theme)
+      const html = renderPage(page, theme)
 
       // Check for CSS
       expect(html).toContain('<style>')
@@ -89,12 +83,10 @@ describe('SectionRenderer', () => {
 
     it('renders without CSS when includeCSS is false', () => {
       const theme = createTestTheme()
-      const page = $Page.create([{ id: 'header-1', type: 'header' }])
-      const contents: PageContents = {
-        'header-1': getDefaultContent('header'),
-      }
+      const headerSection = $Section.create('header', getDefaultContent('header'), 'header-1')
+      const page = $Page.create([headerSection])
 
-      const html = renderPage(page, contents, theme, { includeCSS: false })
+      const html = renderPage(page, theme, { includeCSS: false })
 
       expect(html).not.toContain('<style>')
       expect(html).toContain('class="semantic-page"')
@@ -102,12 +94,10 @@ describe('SectionRenderer', () => {
 
     it('uses custom wrapper class', () => {
       const theme = createTestTheme()
-      const page = $Page.create([{ id: 'header-1', type: 'header' }])
-      const contents: PageContents = {
-        'header-1': getDefaultContent('header'),
-      }
+      const headerSection = $Section.create('header', getDefaultContent('header'), 'header-1')
+      const page = $Page.create([headerSection])
 
-      const html = renderPage(page, contents, theme, { wrapperClass: 'my-custom-page' })
+      const html = renderPage(page, theme, { wrapperClass: 'my-custom-page' })
 
       expect(html).toContain('class="my-custom-page"')
     })

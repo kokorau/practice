@@ -9,7 +9,7 @@
  * Note: Eta auto-escapes <%= %> output. Use <%~ %> for raw HTML.
  */
 
-import type { SectionType } from '../../Domain'
+import type { SectionKind } from '../../Domain'
 import { CONTEXT_CLASS_NAMES, COMPONENT_CLASS_NAMES } from '../../../SemanticColorPalette/Domain'
 
 const ctx = CONTEXT_CLASS_NAMES
@@ -17,7 +17,7 @@ const cmp = COMPONENT_CLASS_NAMES
 
 export interface EtaTemplate {
   readonly id: string
-  readonly type: SectionType
+  readonly kind: SectionKind
   readonly template: string
 }
 
@@ -27,7 +27,7 @@ export interface EtaTemplate {
 
 export const headerTemplate: EtaTemplate = {
   id: 'header',
-  type: 'header',
+  kind: 'header',
   template: `
 <header class="${ctx.canvas}" style="padding: var(--dt-spacing-md) 0;">
   <div style="max-width: 980px; margin: 0 auto; padding: 0 var(--dt-spacing-xl);">
@@ -54,7 +54,7 @@ export const headerTemplate: EtaTemplate = {
 
 export const heroTemplate: EtaTemplate = {
   id: 'hero',
-  type: 'hero',
+  kind: 'hero',
   template: `
 <section class="${ctx.sectionTint}" style="padding: var(--dt-spacing-3xl) var(--dt-spacing-xl); text-align: center;">
   <div style="max-width: 980px; margin: 0 auto;">
@@ -97,7 +97,7 @@ export const heroTemplate: EtaTemplate = {
 
 export const featuresTemplate: EtaTemplate = {
   id: 'features',
-  type: 'features',
+  kind: 'features',
   template: `
 <section class="${ctx.sectionNeutral}" style="padding: var(--dt-spacing-3xl) var(--dt-spacing-xl);">
   <div style="max-width: 980px; margin: 0 auto;">
@@ -120,7 +120,7 @@ export const featuresTemplate: EtaTemplate = {
 
 export const logosTemplate: EtaTemplate = {
   id: 'logos',
-  type: 'logos',
+  kind: 'logos',
   template: `
 <section class="${ctx.canvas}" style="padding: var(--dt-spacing-2xl) var(--dt-spacing-xl); text-align: center;">
   <div style="max-width: 980px; margin: 0 auto;">
@@ -140,7 +140,7 @@ export const logosTemplate: EtaTemplate = {
 
 export const howItWorksTemplate: EtaTemplate = {
   id: 'howItWorks',
-  type: 'howItWorks',
+  kind: 'howItWorks',
   template: `
 <section class="${ctx.canvas}" style="padding: var(--dt-spacing-3xl) var(--dt-spacing-xl);">
   <div style="max-width: 980px; margin: 0 auto;">
@@ -164,7 +164,7 @@ export const howItWorksTemplate: EtaTemplate = {
 
 export const testimonialsTemplate: EtaTemplate = {
   id: 'testimonials',
-  type: 'testimonials',
+  kind: 'testimonials',
   template: `
 <section class="${ctx.sectionNeutral}" style="padding: var(--dt-spacing-3xl) var(--dt-spacing-xl);">
   <div style="max-width: 980px; margin: 0 auto;">
@@ -193,7 +193,7 @@ export const testimonialsTemplate: EtaTemplate = {
 
 export const pricingTemplate: EtaTemplate = {
   id: 'pricing',
-  type: 'pricing',
+  kind: 'pricing',
   template: `
 <section class="${ctx.canvas}" style="padding: var(--dt-spacing-3xl) var(--dt-spacing-xl); text-align: center;">
   <div style="max-width: 980px; margin: 0 auto;">
@@ -230,7 +230,7 @@ export const pricingTemplate: EtaTemplate = {
 
 export const faqTemplate: EtaTemplate = {
   id: 'faq',
-  type: 'faq',
+  kind: 'faq',
   template: `
 <section class="${ctx.sectionNeutral}" style="padding: var(--dt-spacing-3xl) var(--dt-spacing-xl);">
   <div style="max-width: 700px; margin: 0 auto;">
@@ -256,7 +256,7 @@ export const faqTemplate: EtaTemplate = {
 
 export const ctaTemplate: EtaTemplate = {
   id: 'cta',
-  type: 'cta',
+  kind: 'cta',
   template: `
 <section class="${ctx.sectionContrast}" style="padding: var(--dt-spacing-3xl) var(--dt-spacing-xl); text-align: center;">
   <div style="max-width: 600px; margin: 0 auto;">
@@ -286,7 +286,7 @@ export const ctaTemplate: EtaTemplate = {
 
 export const footerTemplate: EtaTemplate = {
   id: 'footer',
-  type: 'footer',
+  kind: 'footer',
   template: `
 <footer class="${ctx.sectionNeutral}" style="padding: var(--dt-spacing-2xl) var(--dt-spacing-xl) var(--dt-spacing-xl);">
   <div style="max-width: 980px; margin: 0 auto;">
@@ -324,7 +324,7 @@ export const footerTemplate: EtaTemplate = {
 // Template Registry
 // ============================================================================
 
-export const ETA_TEMPLATES: Record<SectionType, EtaTemplate> = {
+export const ETA_TEMPLATES: Record<SectionKind, EtaTemplate> = {
   header: headerTemplate,
   hero: heroTemplate,
   features: featuresTemplate,
@@ -337,10 +337,10 @@ export const ETA_TEMPLATES: Record<SectionType, EtaTemplate> = {
   footer: footerTemplate,
 }
 
-export const getEtaTemplate = (type: SectionType): EtaTemplate => {
-  const template = ETA_TEMPLATES[type]
+export const getEtaTemplate = (kind: SectionKind): EtaTemplate => {
+  const template = ETA_TEMPLATES[kind]
   if (!template) {
-    throw new Error(`Unknown section type: ${type}`)
+    throw new Error(`Unknown section kind: ${kind}`)
   }
   return template
 }

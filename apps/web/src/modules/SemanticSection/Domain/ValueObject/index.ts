@@ -1,6 +1,31 @@
 // Section
-export type { SectionType, Section, Page } from './Section'
-export { SECTION_TYPES, SECTION_TYPE_LIST, $Section, $Page } from './Section'
+export type {
+  SectionKind,
+  Section,
+  Page,
+  HeaderSection,
+  HeroSection,
+  FeaturesSection,
+  LogosSection,
+  HowItWorksSection,
+  TestimonialsSection,
+  PricingSection,
+  FAQSection,
+  CTASection,
+  FooterSection,
+  SectionKindContentMap,
+  // Legacy (deprecated)
+  SectionType,
+} from './Section'
+export {
+  SECTION_KINDS,
+  SECTION_KIND_LIST,
+  $Section,
+  $Page,
+  // Legacy (deprecated)
+  SECTION_TYPES,
+  SECTION_TYPE_LIST,
+} from './Section'
 
 // Content
 export type {

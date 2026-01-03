@@ -66,16 +66,16 @@ export const $Site = {
   getFirstPage: (site: Site): Page | undefined => site.pages[0],
 
   /**
-   * Get schema for a section type
+   * Get schema for a section kind
    */
-  getSchema: (site: Site, type: string): SectionSchema | undefined =>
-    site.schemas.find((s) => s.type === type),
+  getSchema: (site: Site, kind: string): SectionSchema | undefined =>
+    site.schemas.find((s) => s.type === kind),
 
   /**
-   * Get template for a section type
+   * Get template for a section kind
    */
-  getTemplate: (site: Site, type: string): StringSectionTemplate | undefined =>
-    site.templates.find((t) => t.type === type),
+  getTemplate: (site: Site, kind: string): StringSectionTemplate | undefined =>
+    site.templates.find((t) => t.kind === kind),
 
   /**
    * Get content for a section by ID

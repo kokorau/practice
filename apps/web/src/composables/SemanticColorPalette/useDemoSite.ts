@@ -2,15 +2,14 @@ import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { SemanticColorPalette } from '../../modules/SemanticColorPalette/Domain'
 import type { DesignTokens } from '../../modules/DesignTokens/Domain'
 import {
-  $Site,
-  $Page,
   createSite,
+  createDemoPage,
   renderPage,
   exportToHTML,
-  getDefaultContent,
   type Site,
   type Section,
   type SectionContent,
+  type Page,
 } from '../../modules/SemanticSection'
 
 export interface UseDemoSiteParams {
@@ -21,6 +20,7 @@ export interface UseDemoSiteParams {
 export interface UseDemoSiteReturn {
   siteContents: Ref<Record<string, SectionContent>>
   demoSite: ComputedRef<Site>
+  demoTheme: ComputedRef<import('../../modules/SemanticSection').RenderTheme>
   currentSections: ComputedRef<readonly Section[]>
   demoHtml: ComputedRef<string>
   selectedSectionId: Ref<string | null>
@@ -30,17 +30,33 @@ export interface UseDemoSiteReturn {
 
 export function useDemoSite(params: UseDemoSiteParams): UseDemoSiteReturn {
   const { palette, tokens } = params
-  const demoPage = $Page.createDemo()
+  const initialPage = createDemoPage()
 
-  const initializeContents = (): Record<string, SectionContent> => {
-    const contents: Record<string, SectionContent> = {}
-    for (const section of demoPage.sections) {
-      contents[section.id] = getDefaultContent(section.type)
-    }
-    return contents
-  }
+  // Mutable sections for editing
+  const sections = ref<Section[]>([...initialPage.sections])
 
-  const siteContents = ref<Record<string, SectionContent>>(initializeContents())
+  // Derived siteContents for backward compatibility
+  const siteContents = computed({
+    get: (): Record<string, SectionContent> => {
+      const contents: Record<string, SectionContent> = {}
+      for (const section of sections.value) {
+        contents[section.id] = section.content
+      }
+      return contents
+    },
+    set: (newContents: Record<string, SectionContent>) => {
+      sections.value = sections.value.map(section => ({
+        ...section,
+        content: newContents[section.id] ?? section.content,
+      })) as Section[]
+    },
+  })
+
+  // Create page from current sections
+  const currentPage = computed((): Page => ({
+    id: initialPage.id,
+    sections: sections.value,
+  }))
 
   const demoSite = computed((): Site => createSite({
     meta: {
@@ -50,19 +66,20 @@ export function useDemoSite(params: UseDemoSiteParams): UseDemoSiteReturn {
     },
     palette: palette.value,
     tokens: tokens?.value,
-    pages: [demoPage],
+    pages: [currentPage.value],
     contents: siteContents.value,
   }))
 
   const selectedSectionId = ref<string | null>(null)
 
-  const currentSections = computed(() => demoPage.sections)
+  const currentSections = computed(() => sections.value as readonly Section[])
+
+  const demoTheme = computed(() => demoSite.value.theme)
 
   const demoHtml = computed(() => {
+    const page = currentPage.value
     const site = demoSite.value
-    const page = $Site.getFirstPage(site)
-    if (!page) return ''
-    return renderPage(page, site.contents, site.theme, {
+    return renderPage(page, site.theme, {
       includeCSS: false,
       wrapperClass: 'demo-page',
     })
@@ -92,6 +109,7 @@ export function useDemoSite(params: UseDemoSiteParams): UseDemoSiteReturn {
   return {
     siteContents,
     demoSite,
+    demoTheme,
     currentSections,
     demoHtml,
     selectedSectionId,
