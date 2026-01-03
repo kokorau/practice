@@ -104,9 +104,13 @@ const curvePoints = ref<number[]>([0, 1/6, 2/6, 3/6, 4/6, 5/6, 1])
 const curvePreset = ref<string>('linear')
 
 // プリセット定義
+// exp: (e^x - 1) / (e - 1), log: ln(1 + x*(e-1)) を正規化
+const E = Math.E
 const curvePresets: Record<string, number[]> = {
   linear: [0, 1/6, 2/6, 3/6, 4/6, 5/6, 1],
   parabola: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],  // x²
+  exp: [0, 1, 2, 3, 4, 5, 6].map(i => (Math.exp(i/6) - 1) / (E - 1)),
+  log: [0, 1, 2, 3, 4, 5, 6].map(i => Math.log(1 + (i/6) * (E - 1))),
   easeIn: [0, 0.005, 0.028, 0.083, 0.194, 0.389, 1],
   easeOut: [0, 0.611, 0.806, 0.917, 0.972, 0.995, 1],
   sCurve: [0, 0.028, 0.132, 0.5, 0.868, 0.972, 1],
@@ -325,6 +329,8 @@ onUnmounted(() => {
               <select v-model="curvePreset" class="curve-preset-select" @change="applyCurvePreset">
                 <option value="linear">Linear</option>
                 <option value="parabola">Parabola</option>
+                <option value="exp">Exp</option>
+                <option value="log">Log</option>
                 <option value="easeIn">Ease In</option>
                 <option value="easeOut">Ease Out</option>
                 <option value="sCurve">S-Curve</option>
