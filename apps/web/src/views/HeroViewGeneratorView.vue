@@ -21,6 +21,7 @@ import LayerPanel, { type LayerItem, type LayerType, type SubItemType } from '..
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
+import PrimitiveColorPicker from '../components/HeroGenerator/PrimitiveColorPicker.vue'
 import SchemaFields from '../components/SchemaFields.vue'
 import {
   VignetteFilterSchema,
@@ -159,6 +160,11 @@ const {
   foregroundConfig,
   foregroundTitleColor,
   foregroundBodyColor,
+  // PrimitiveKey color selection
+  backgroundColorKey1,
+  backgroundColorKey2,
+  maskColorKey1,
+  maskColorKey2,
 } = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
 // Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
@@ -542,6 +548,20 @@ const handleRemoveLayer = (layerId: string) => {
             @select-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
             @load-random="loadRandomBackgroundImage()"
           />
+          <!-- Color selection -->
+          <div class="color-selection-section">
+            <PrimitiveColorPicker
+              v-model="backgroundColorKey1"
+              :palette="primitivePalette"
+              label="Primary Color"
+            />
+            <PrimitiveColorPicker
+              v-model="backgroundColorKey2"
+              :palette="primitivePalette"
+              label="Secondary Color"
+              :show-auto="true"
+            />
+          </div>
         </template>
 
         <!-- マスク形状選択 -->
@@ -592,6 +612,21 @@ const handleRemoveLayer = (layerId: string) => {
             @select-pattern="(i) => { selectedMidgroundTextureIndex = i }"
             @load-random="loadRandomMaskImage()"
           />
+          <!-- Mask color selection -->
+          <div class="color-selection-section">
+            <PrimitiveColorPicker
+              v-model="maskColorKey1"
+              :palette="primitivePalette"
+              label="Mask Primary Color"
+              :show-auto="true"
+            />
+            <PrimitiveColorPicker
+              v-model="maskColorKey2"
+              :palette="primitivePalette"
+              label="Mask Secondary Color"
+              :show-auto="true"
+            />
+          </div>
         </template>
 
         <!-- 前景: Title 設定 -->
@@ -1167,6 +1202,20 @@ const handleRemoveLayer = (layerId: string) => {
 
 .dark .font-size-value {
   color: oklch(0.70 0.02 260);
+}
+
+/* Color Selection Section */
+.color-selection-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid oklch(0.85 0.01 260);
+}
+
+.dark .color-selection-section {
+  border-top-color: oklch(0.30 0.02 260);
 }
 
 </style>
