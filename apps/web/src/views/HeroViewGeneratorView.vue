@@ -17,7 +17,7 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import LayerPanel, { type LayerItem, type LayerType, type SubItemType, type LayerFilterConfig } from '../components/HeroGenerator/LayerPanel.vue'
+import LayerPanel, { type LayerItem, type LayerType, type SubItemType } from '../components/HeroGenerator/LayerPanel.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'

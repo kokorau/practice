@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Oklch } from '@practice/color'
-import type { TexturePattern, MaskPattern } from '@practice/texture'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'

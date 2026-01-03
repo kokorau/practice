@@ -5,7 +5,7 @@
  * 現在は2レイヤー固定（base, mask）
  */
 
-import { ref, computed, watch, nextTick, onUnmounted, type ComputedRef } from 'vue'
+import { ref, computed, watch, nextTick, onUnmounted, type ComputedRef, type Ref } from 'vue'
 import {
   TextureRenderer,
   getDefaultTexturePatterns,
@@ -129,7 +129,7 @@ export type CustomBackgroundSurfaceParams =
 
 export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
-  isDark: ComputedRef<boolean>
+  isDark: Ref<boolean> | ComputedRef<boolean>
 }
 
 // ============================================================
