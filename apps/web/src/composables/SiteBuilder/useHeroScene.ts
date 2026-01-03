@@ -95,10 +95,13 @@ import {
   type MaskSurfaceConfig,
   type HeroMaskShapeConfig,
   type ForegroundLayerConfig,
+  type HeroViewPreset,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
+  createGetHeroViewPresetsUseCase,
+  createInMemoryHeroViewPresetRepository,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -1936,8 +1939,54 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Foreground
     foregroundConfig.value = config.foreground
 
+    // Reset mask selection based on restored config
+    if (config.mask) {
+      selectedMaskIndex.value = 0 // TODO: Reverse-lookup mask shape index
+    } else {
+      selectedMaskIndex.value = null
+    }
+
     // Re-render
     renderScene()
+  }
+
+  // ============================================================
+  // Preset Management
+  // ============================================================
+
+  const presetRepository = createInMemoryHeroViewPresetRepository()
+  const presetUseCase = createGetHeroViewPresetsUseCase(presetRepository)
+  const presets = ref<HeroViewPreset[]>([])
+  const selectedPresetId = ref<string | null>('corporate-clean')
+
+  /**
+   * Load available presets and optionally apply the initial preset
+   */
+  const loadPresets = async (applyInitial = true) => {
+    presets.value = await presetUseCase.execute()
+    // Apply initial preset if specified
+    if (applyInitial && selectedPresetId.value) {
+      const preset = await presetUseCase.findById(selectedPresetId.value)
+      if (preset) {
+        fromHeroViewConfig(preset.config)
+        return preset.colorPreset ?? null
+      }
+    }
+    return null
+  }
+
+  /**
+   * Apply a preset by ID
+   * Returns the colorPreset if available for the caller to apply
+   */
+  const applyPreset = async (presetId: string) => {
+    const preset = await presetUseCase.findById(presetId)
+    if (preset) {
+      selectedPresetId.value = presetId
+      fromHeroViewConfig(preset.config)
+      return preset.colorPreset ?? null
+    }
+    return null
   }
 
   // ============================================================
@@ -2034,5 +2083,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Serialization
     toHeroViewConfig,
     fromHeroViewConfig,
+
+    // Presets
+    presets,
+    selectedPresetId,
+    loadPresets,
+    applyPreset,
   }
 }

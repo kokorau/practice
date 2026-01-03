@@ -6,6 +6,7 @@ import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'
 import FloatingPanel from './FloatingPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
+import type { HeroViewPreset } from '../../modules/HeroScene'
 
 type NeutralRampItem = {
   key: string
@@ -33,6 +34,9 @@ defineProps<{
   foundationHex: string
   // Palette tab
   neutralRampDisplay: NeutralRampItem[]
+  // Layout presets
+  presets: HeroViewPreset[]
+  selectedPresetId: string | null
 }>()
 
 const emit = defineEmits<{
@@ -47,6 +51,7 @@ const emit = defineEmits<{
   (e: 'update:foundationH', value: number): void
   (e: 'update:foundationHueLinkedToBrand', value: boolean): void
   (e: 'applyColorPreset', preset: ColorPreset): void
+  (e: 'applyLayoutPreset', presetId: string): void
 }>()
 
 // ============================================================
@@ -102,6 +107,22 @@ const popupTitle = computed(() => {
 
 <template>
   <aside class="hero-sidebar">
+    <!-- レイアウトプリセットセクション -->
+    <div class="sidebar-section">
+      <p class="sidebar-label">Layout Presets</p>
+      <div class="preset-grid">
+        <button
+          v-for="preset in presets"
+          :key="preset.id"
+          class="preset-button"
+          :class="{ active: selectedPresetId === preset.id }"
+          @click="emit('applyLayoutPreset', preset.id)"
+        >
+          <span class="preset-name">{{ preset.name }}</span>
+        </button>
+      </div>
+    </div>
+
     <!-- カラー設定セクション -->
     <div class="sidebar-section">
       <p class="sidebar-label">Color Settings</p>
@@ -353,5 +374,51 @@ const popupTitle = computed(() => {
 
 .ramp-step:last-child {
   border-radius: 0 0.25rem 0.25rem 0;
+}
+
+/* Preset Grid */
+.preset-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.preset-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 2px solid oklch(0.85 0.01 260);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: oklch(0.30 0.02 260);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+:global(.dark) .preset-button {
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.85 0.02 260);
+}
+
+.preset-button:hover {
+  border-color: oklch(0.75 0.01 260);
+  background: oklch(0.96 0.01 260);
+}
+
+:global(.dark) .preset-button:hover {
+  border-color: oklch(0.40 0.02 260);
+  background: oklch(0.20 0.02 260);
+}
+
+.preset-button.active {
+  border-color: oklch(0.55 0.20 250);
+  background: oklch(0.55 0.20 250 / 0.15);
+}
+
+.preset-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
 }
 </style>

@@ -167,6 +167,11 @@ const {
   maskColorKey1,
   maskColorKey2,
   maskOuterColorKey,
+  // Presets
+  presets,
+  selectedPresetId,
+  loadPresets,
+  applyPreset,
 } = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
 // Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
@@ -414,6 +419,21 @@ onMounted(async () => {
   document.head.appendChild(paletteStyleElement)
   updatePaletteStyles()
 
+  // Load layout presets and apply initial preset (including colors)
+  const initialColorPreset = await loadPresets()
+  if (initialColorPreset) {
+    hue.value = initialColorPreset.brand.hue
+    saturation.value = initialColorPreset.brand.saturation
+    value.value = initialColorPreset.brand.value
+    accentHue.value = initialColorPreset.accent.hue
+    accentSaturation.value = initialColorPreset.accent.saturation
+    accentValue.value = initialColorPreset.accent.value
+    foundationL.value = initialColorPreset.foundation.L
+    foundationC.value = initialColorPreset.foundation.C
+    foundationH.value = initialColorPreset.foundation.H
+    foundationHueLinkedToBrand.value = false
+  }
+
   // テクスチャプレビュー用キャンバス初期化 (HeroPreviewのcanvasを使用)
   await initPreview(heroPreviewRef.value?.canvasRef)
 })
@@ -440,6 +460,26 @@ const handleApplyColorPreset = (preset: ColorPreset) => {
   foundationC.value = preset.foundation.C
   foundationH.value = preset.foundation.H
   foundationHueLinkedToBrand.value = false
+}
+
+// Handle layout preset application (also applies color preset if available)
+const handleApplyLayoutPreset = async (presetId: string) => {
+  const colorPreset = await applyPreset(presetId)
+  if (colorPreset) {
+    // Apply brand
+    hue.value = colorPreset.brand.hue
+    saturation.value = colorPreset.brand.saturation
+    value.value = colorPreset.brand.value
+    // Apply accent
+    accentHue.value = colorPreset.accent.hue
+    accentSaturation.value = colorPreset.accent.saturation
+    accentValue.value = colorPreset.accent.value
+    // Apply foundation
+    foundationL.value = colorPreset.foundation.L
+    foundationC.value = colorPreset.foundation.C
+    foundationH.value = colorPreset.foundation.H
+    foundationHueLinkedToBrand.value = false
+  }
 }
 
 // ============================================================
@@ -541,6 +581,8 @@ const handleRemoveLayer = (layerId: string) => {
       :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
       :foundation-hex="foundationColor.hex"
       :neutral-ramp-display="neutralRampDisplay"
+      :presets="presets"
+      :selected-preset-id="selectedPresetId"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"
@@ -552,6 +594,7 @@ const handleRemoveLayer = (layerId: string) => {
       @update:foundation-h="foundationH = $event"
       @update:foundation-hue-linked-to-brand="foundationHueLinkedToBrand = $event"
       @apply-color-preset="handleApplyColorPreset"
+      @apply-layout-preset="handleApplyLayoutPreset"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->

@@ -24,6 +24,13 @@ export type {
 } from './EditorState'
 export { createHeroSceneEditorState } from './EditorState'
 
+// Re-export Ports
+export type { HeroViewPresetRepository } from './ports'
+
+// Re-export Preset UseCase
+export type { GetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
+export { createGetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
+
 // Re-export Compile functions
 export type {
   MidgroundTexturePattern,
