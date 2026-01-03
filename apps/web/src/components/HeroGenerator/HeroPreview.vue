@@ -35,9 +35,9 @@ const getElementStyle = (el: PositionedElement): Record<string, string> => {
     style.fontSize = `${el.fontSize}rem`
   }
   // Apply color based on element type (title uses titleColor, description uses bodyColor)
-  if (el.className === 'foreground-title' && props.titleColor) {
+  if (el.type === 'title' && props.titleColor) {
     style.color = props.titleColor
-  } else if (el.className === 'foreground-description' && props.bodyColor) {
+  } else if (el.type === 'description' && props.bodyColor) {
     style.color = props.bodyColor
   }
   return style
