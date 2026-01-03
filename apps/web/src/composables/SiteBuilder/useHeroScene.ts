@@ -47,7 +47,6 @@ import {
   type BlobMaskShapeConfig,
   type Viewport,
   type TextureRenderSpec,
-  type SurfacePreset,
   type SurfacePresetParams,
   type SolidPresetParams,
   type StripePresetParams,
@@ -87,6 +86,9 @@ import {
   type HeroSceneEditorState,
   type EditorCanvasLayer,
   type HeroViewConfig,
+  type HeroColorsConfig,
+  type HeroPrimitiveKey,
+  type HeroContextName,
   type BackgroundLayerConfig,
   type MaskLayerConfig,
   type BackgroundSurfaceConfig,
@@ -96,6 +98,7 @@ import {
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
+  createDefaultColorsConfig,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -385,7 +388,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const gradientGrainIndex = midgroundTexturePatterns.length
     if (idx === gradientGrainIndex) {
       // GradientGrain selected - initialize with defaults
-      const defaults = {
+      const defaults: GradientGrainSurfaceParams = {
         depthMapType: 'linear' as const,
         angle: 90,
         centerX: 0.5,
@@ -396,6 +399,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         perlinOctaves: 4,
         perlinContrast: 1,
         perlinOffset: 0,
+        colorA: [0, 0, 0, 1],
+        colorB: [1, 1, 1, 1],
         seed: Math.floor(Math.random() * 10000),
         sparsity: 0.75,
         curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
@@ -902,8 +907,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         if (customSurfParams.type === 'polkaDot') {
           return { type: 'polkaDot', dotRadius: customSurfParams.dotRadius, spacing: customSurfParams.spacing, rowOffset: customSurfParams.rowOffset }
         }
-        // checker
-        return { type: 'checker', cellSize: customSurfParams.cellSize, angle: customSurfParams.angle }
+        if (customSurfParams.type === 'checker') {
+          return { type: 'checker', cellSize: customSurfParams.cellSize, angle: customSurfParams.angle }
+        }
+        // gradientGrain is handled separately
+        return null
       }
       // Fall back to preset - check for solid type
       if (preset.params.type === 'solid') {
@@ -1183,6 +1191,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 perlinOffset: params.perlinOffset,
                 colorA: midgroundTextureColor1.value,
                 colorB: midgroundTextureColor2.value,
+                seed: params.seed,
                 sparsity: params.sparsity,
                 curvePoints: params.curvePoints,
               }, viewport)
@@ -1770,6 +1779,22 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
+   * Build colors config from current state
+   */
+  const buildColorsConfig = (): HeroColorsConfig => ({
+    background: {
+      primary: backgroundColorKey1.value as HeroPrimitiveKey,
+      secondary: backgroundColorKey2.value as HeroPrimitiveKey | 'auto',
+    },
+    mask: {
+      primary: maskColorKey1.value as HeroPrimitiveKey | 'auto',
+      secondary: maskColorKey2.value as HeroPrimitiveKey | 'auto',
+      outer: maskOuterColorKey.value as HeroPrimitiveKey | 'auto',
+    },
+    semanticContext: maskSemanticContext.value as HeroContextName,
+  })
+
+  /**
    * Convert current editor state to HeroViewConfig
    * Returns a self-contained, JSON-serializable config
    */
@@ -1797,6 +1822,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         width: editorState.value.config.width,
         height: editorState.value.config.height,
       },
+      colors: buildColorsConfig(),
       background,
       mask,
       foreground: foregroundConfig.value,
@@ -1817,6 +1843,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         height: config.viewport.height,
       },
     }
+
+    // Colors (restore from config, fallback to defaults if not present)
+    const colors = config.colors ?? createDefaultColorsConfig()
+    backgroundColorKey1.value = colors.background.primary as PrimitiveKey
+    backgroundColorKey2.value = colors.background.secondary as PrimitiveKey | 'auto'
+    maskColorKey1.value = colors.mask.primary as PrimitiveKey | 'auto'
+    maskColorKey2.value = colors.mask.secondary as PrimitiveKey | 'auto'
+    maskOuterColorKey.value = colors.mask.outer as PrimitiveKey | 'auto'
+    maskSemanticContext.value = colors.semanticContext as ContextName
 
     // Background surface
     const bgSurface = config.background.surface

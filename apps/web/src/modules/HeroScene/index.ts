@@ -58,6 +58,9 @@ export type {
   HeroSceneConfig,
   HeroScene,
   // HeroViewConfig types
+  HeroPrimitiveKey,
+  HeroContextName,
+  HeroColorsConfig,
   ViewportConfig,
   StripeSurfaceConfig,
   GridSurfaceConfig,
@@ -104,6 +107,7 @@ export {
   removeCanvasLayer,
   updateCanvasLayer,
   // HeroViewConfig factories
+  createDefaultColorsConfig,
   createDefaultForegroundConfig,
   createDefaultHeroViewConfig,
 } from './Domain'

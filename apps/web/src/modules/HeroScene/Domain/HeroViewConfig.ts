@@ -10,6 +10,52 @@
 import type { LayerFilterConfig } from './FilterSchema'
 
 // ============================================================
+// Color Config Types (for serialization)
+// ============================================================
+
+/**
+ * PrimitiveKey type (duplicated here for JSON serialization independence)
+ * Original definition in SemanticColorPalette/Domain/ValueObject/PrimitivePalette.ts
+ */
+export type HeroPrimitiveKey =
+  | 'BN0' | 'BN1' | 'BN2' | 'BN3' | 'BN4' | 'BN5' | 'BN6' | 'BN7' | 'BN8' | 'BN9'
+  | 'F0' | 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9'
+  | 'AN0' | 'AN1' | 'AN2' | 'AN3' | 'AN4' | 'AN5' | 'AN6' | 'AN7' | 'AN8' | 'AN9'
+  | 'B' | 'Bt' | 'Bs' | 'Bf'
+  | 'A' | 'At' | 'As' | 'Af'
+
+/**
+ * ContextName type (duplicated here for JSON serialization independence)
+ * Original definition in SemanticColorPalette/Domain/ValueObject/SemanticNames.ts
+ */
+export type HeroContextName = 'canvas' | 'sectionNeutral' | 'sectionTint' | 'sectionContrast'
+
+/**
+ * Color configuration for HeroView
+ * Contains all color-related state needed for rendering
+ */
+export interface HeroColorsConfig {
+  /** Background layer colors */
+  background: {
+    /** Primary color (e.g., brand color for patterns) */
+    primary: HeroPrimitiveKey
+    /** Secondary color ('auto' = derived from canvas surface) */
+    secondary: HeroPrimitiveKey | 'auto'
+  }
+  /** Mask layer colors */
+  mask: {
+    /** Primary color ('auto' = surface with shifted lightness) */
+    primary: HeroPrimitiveKey | 'auto'
+    /** Secondary color ('auto' = derived from semantic context surface) */
+    secondary: HeroPrimitiveKey | 'auto'
+    /** Outer color for mask area ('auto' = use semantic context surface) */
+    outer: HeroPrimitiveKey | 'auto'
+  }
+  /** Semantic context for mask layer color resolution */
+  semanticContext: HeroContextName
+}
+
+// ============================================================
 // Viewport
 // ============================================================
 
@@ -67,12 +113,13 @@ export type BackgroundSurfaceConfig =
   | CheckerSurfaceConfig
   | ImageSurfaceConfig
 
-/** マスク用サーフェス（checker を除く） */
+/** マスク用サーフェス */
 export type MaskSurfaceConfig =
   | SolidSurfaceConfig
   | StripeSurfaceConfig
   | GridSurfaceConfig
   | PolkaDotSurfaceConfig
+  | CheckerSurfaceConfig
   | ImageSurfaceConfig
 
 // ============================================================
@@ -185,6 +232,9 @@ export interface HeroViewConfig {
   /** キャンバスサイズ */
   viewport: ViewportConfig
 
+  /** 色設定（パレットキーベース） */
+  colors: HeroColorsConfig
+
   /** 背景レイヤー */
   background: BackgroundLayerConfig
 
@@ -204,8 +254,22 @@ export const createDefaultForegroundConfig = (): ForegroundLayerConfig => ({
   description: { position: 'middle-center', content: 'Create beautiful, responsive websites.\nDesign with confidence.' },
 })
 
+export const createDefaultColorsConfig = (): HeroColorsConfig => ({
+  background: {
+    primary: 'B',
+    secondary: 'auto',
+  },
+  mask: {
+    primary: 'auto',
+    secondary: 'auto',
+    outer: 'auto',
+  },
+  semanticContext: 'canvas',
+})
+
 export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
   viewport: { width: 1280, height: 720 },
+  colors: createDefaultColorsConfig(),
   background: {
     surface: { type: 'solid' },
     filters: {
