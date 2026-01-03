@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   TextureRenderer,
   createLinearGradientSpec,
@@ -11,6 +11,67 @@ import {
   type ColorStop as GpuColorStop,
 } from '@practice/texture'
 import NodePreview from '../components/NodePreview.vue'
+
+// ノードのDOM参照
+const nodeGraphRef = ref<HTMLElement | null>(null)
+const depthNodeRef = ref<HTMLElement | null>(null)
+const noiseNodeRef = ref<HTMLElement | null>(null)
+const gradientNodeRef = ref<HTMLElement | null>(null)
+const depthNoiseNodeRef = ref<HTMLElement | null>(null)
+const finalNodeRef = ref<HTMLElement | null>(null)
+
+// 接続線のパス
+const connectionPaths = ref<string[]>([])
+
+// ノードの中心位置を取得
+function getNodeCenter(nodeRef: HTMLElement | null, container: HTMLElement | null, position: 'top' | 'bottom') {
+  if (!nodeRef || !container) return { x: 0, y: 0 }
+  const nodeRect = nodeRef.getBoundingClientRect()
+  const containerRect = container.getBoundingClientRect()
+  const x = nodeRect.left - containerRect.left + nodeRect.width / 2
+  const y = position === 'top'
+    ? nodeRect.top - containerRect.top
+    : nodeRect.top - containerRect.top + nodeRect.height
+  return { x, y }
+}
+
+// ベジェ曲線のパスを生成
+function createBezierPath(from: { x: number, y: number }, to: { x: number, y: number }) {
+  const midY = (from.y + to.y) / 2
+  return `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`
+}
+
+// 接続線を更新
+function updateConnections() {
+  if (!nodeGraphRef.value) return
+
+  const container = nodeGraphRef.value
+
+  // Depth -> Gradient
+  const depthBottom = getNodeCenter(depthNodeRef.value, container, 'bottom')
+  const gradientTop = getNodeCenter(gradientNodeRef.value, container, 'top')
+
+  // Depth -> DepthNoise
+  const depthNoiseTop = getNodeCenter(depthNoiseNodeRef.value, container, 'top')
+
+  // Noise -> DepthNoise
+  const noiseBottom = getNodeCenter(noiseNodeRef.value, container, 'bottom')
+
+  // Gradient -> Final
+  const gradientBottom = getNodeCenter(gradientNodeRef.value, container, 'bottom')
+  const finalTop = getNodeCenter(finalNodeRef.value, container, 'top')
+
+  // DepthNoise -> Final
+  const depthNoiseBottom = getNodeCenter(depthNoiseNodeRef.value, container, 'bottom')
+
+  connectionPaths.value = [
+    createBezierPath(depthBottom, gradientTop),
+    createBezierPath(depthBottom, depthNoiseTop),
+    createBezierPath(noiseBottom, depthNoiseTop),
+    createBezierPath(gradientBottom, finalTop),
+    createBezierPath(depthNoiseBottom, finalTop),
+  ]
+}
 
 // グラデーションの色停止点
 interface ColorStop {
@@ -153,11 +214,17 @@ onMounted(async () => {
     return
   }
   await initMainRenderer()
+
+  // 接続線を更新（レイアウト完了後）
+  await nextTick()
+  setTimeout(updateConnections, 100)
+  window.addEventListener('resize', updateConnections)
 })
 
 onUnmounted(() => {
   mainRenderer?.destroy()
   mainRenderer = null
+  window.removeEventListener('resize', updateConnections)
 })
 </script>
 
@@ -170,10 +237,20 @@ onUnmounted(() => {
 
     <main class="main">
       <!-- ノードグラフ -->
-      <section class="node-graph">
+      <section ref="nodeGraphRef" class="node-graph">
+        <!-- SVG接続線（オーバーレイ） -->
+        <svg class="connections-overlay">
+          <path
+            v-for="(path, index) in connectionPaths"
+            :key="index"
+            :d="path"
+            class="connection-line"
+          />
+        </svg>
+
         <!-- Row 1: Input nodes -->
         <div class="node-row">
-          <div class="node-column">
+          <div ref="depthNodeRef" class="node-wrapper">
             <NodePreview
               label="Depth (t)"
               :width="NODE_WIDTH"
@@ -181,7 +258,7 @@ onUnmounted(() => {
               :spec="depthSpec"
             />
           </div>
-          <div class="node-column">
+          <div ref="noiseNodeRef" class="node-wrapper">
             <NodePreview
               label="Noise"
               :width="NODE_WIDTH"
@@ -191,19 +268,9 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Connection lines -->
-        <svg class="connections" viewBox="0 0 500 60">
-          <!-- Depth -> Gradient -->
-          <path d="M 125 0 L 125 30 L 80 30 L 80 60" class="connection-line" />
-          <!-- Depth -> DepthNoise -->
-          <path d="M 125 0 L 125 30 L 250 30 L 250 60" class="connection-line" />
-          <!-- Noise -> DepthNoise -->
-          <path d="M 375 0 L 375 30 L 250 30 L 250 60" class="connection-line" />
-        </svg>
-
         <!-- Row 2: Processing nodes -->
         <div class="node-row">
-          <div class="node-column">
+          <div ref="gradientNodeRef" class="node-wrapper">
             <NodePreview
               label="Gradient"
               :width="NODE_WIDTH"
@@ -211,7 +278,7 @@ onUnmounted(() => {
               :spec="gradientSpec"
             />
           </div>
-          <div class="node-column">
+          <div ref="depthNoiseNodeRef" class="node-wrapper">
             <NodePreview
               label="Depth + Noise"
               :width="NODE_WIDTH"
@@ -221,15 +288,9 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Connection lines to final -->
-        <svg class="connections" viewBox="0 0 500 60">
-          <path d="M 125 0 L 125 30 L 250 30 L 250 60" class="connection-line" />
-          <path d="M 375 0 L 375 30 L 250 30 L 250 60" class="connection-line" />
-        </svg>
-
         <!-- Row 3: Output node -->
         <div class="node-row final-row">
-          <div class="final-node">
+          <div ref="finalNodeRef" class="final-node">
             <div class="node-label">Final Output</div>
             <canvas
               v-show="webGPUSupported"
@@ -332,28 +393,21 @@ onUnmounted(() => {
 
 /* Node Graph */
 .node-graph {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
-}
-
-.node-row {
-  display: flex;
   gap: 2rem;
-  justify-content: center;
 }
 
-.node-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.connections {
-  width: 500px;
-  height: 60px;
-  overflow: visible;
+.connections-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .connection-line {
@@ -362,7 +416,21 @@ onUnmounted(() => {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.6;
+  opacity: 0.5;
+}
+
+.node-row {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.node-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .final-row {
