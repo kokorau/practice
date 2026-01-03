@@ -9,7 +9,7 @@
 // ============================================================
 
 export type MaskType = 'circle' | 'rect' | 'blob'
-export type TextureType = 'stripe' | 'grid' | 'polkaDot'
+export type TextureType = 'stripe' | 'grid' | 'polkaDot' | 'checker'
 
 /** Parameters for circle mask */
 export interface CircleMaskConfig {
@@ -78,7 +78,14 @@ export interface PolkaDotTextureConfig {
   rowOffset: number
 }
 
-export type TextureConfig = StripeTextureConfig | GridTextureConfig | PolkaDotTextureConfig
+/** Parameters for checker texture */
+export interface CheckerTextureConfig {
+  type: 'checker'
+  cellSize: number
+  angle: number
+}
+
+export type TextureConfig = StripeTextureConfig | GridTextureConfig | PolkaDotTextureConfig | CheckerTextureConfig
 
 // ============================================================
 // Combined Types

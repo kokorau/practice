@@ -5,10 +5,10 @@
  */
 
 import { fullscreenVertex, aaUtils, maskBlendState } from '../common'
-import { stripePatternFn, gridPatternFn, polkaDotPatternFn } from './patterns'
+import { stripePatternFn, gridPatternFn, polkaDotPatternFn, checkerPatternFn } from './patterns'
 import { rectMaskFn } from './masks'
 import type { TextureRenderSpec, Viewport } from '../../Domain'
-import type { RectMaskConfig, StripeTextureConfig, GridTextureConfig, PolkaDotTextureConfig } from './types'
+import type { RectMaskConfig, StripeTextureConfig, GridTextureConfig, PolkaDotTextureConfig, CheckerTextureConfig } from './types'
 
 type RGBA = [number, number, number, number]
 
@@ -19,6 +19,7 @@ type RGBA = [number, number, number, number]
 export const RECT_STRIPE_BUFFER_SIZE = 96
 export const RECT_GRID_BUFFER_SIZE = 96
 export const RECT_POLKA_DOT_BUFFER_SIZE = 96
+export const RECT_CHECKER_BUFFER_SIZE = 96
 
 // ============================================================
 // Shaders
@@ -306,6 +307,100 @@ export function createRectPolkaDotSpec(
     shader: rectPolkaDotShader,
     uniforms: data.buffer,
     bufferSize: RECT_POLKA_DOT_BUFFER_SIZE,
+    blend: maskBlendState,
+  }
+}
+
+/** Rect mask + checker texture shader */
+export const rectCheckerShader = /* wgsl */ `
+${fullscreenVertex}
+
+${aaUtils}
+
+${checkerPatternFn}
+
+${rectMaskFn}
+
+struct Params {
+  color1: vec4f,
+  color2: vec4f,
+  // mask params
+  maskLeft: f32,
+  maskRight: f32,
+  maskTop: f32,
+  maskBottom: f32,
+  maskRadiusTL: f32,
+  maskRadiusTR: f32,
+  maskRadiusBL: f32,
+  maskRadiusBR: f32,
+  aspectRatio: f32,
+  // texture params
+  cellSize: f32,
+  angle: f32,
+  // viewport
+  viewportWidth: f32,
+  viewportHeight: f32,
+  cutout: f32,
+  _padding1: f32,
+  _padding2: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: Params;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  let sdf = rectMaskSDF(
+    uv,
+    params.maskLeft, params.maskRight, params.maskTop, params.maskBottom,
+    params.maskRadiusTL, params.maskRadiusTR, params.maskRadiusBL, params.maskRadiusBR,
+    params.aspectRatio
+  );
+  let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
+
+  let textureColor = checkerPattern(pos.xy, params.color1, params.color2, params.cellSize, params.angle);
+
+  return vec4f(textureColor.rgb, textureColor.a * maskAlpha);
+}
+`
+
+/** Create spec for rect mask + checker texture */
+export function createRectCheckerSpec(
+  color1: RGBA,
+  color2: RGBA,
+  mask: RectMaskConfig,
+  texture: CheckerTextureConfig,
+  viewport: Viewport
+): TextureRenderSpec {
+  const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
+  const data = new Float32Array([
+    ...color1,
+    ...color2,
+    mask.left,
+    mask.right,
+    mask.top,
+    mask.bottom,
+    mask.radiusTopLeft ?? 0,
+    mask.radiusTopRight ?? 0,
+    mask.radiusBottomLeft ?? 0,
+    mask.radiusBottomRight ?? 0,
+    aspectRatio,
+    texture.cellSize,
+    texture.angle,
+    viewport.width,
+    viewport.height,
+    cutout ? 1.0 : 0.0,
+    0, // padding
+    0, // padding
+  ])
+  return {
+    shader: rectCheckerShader,
+    uniforms: data.buffer,
+    bufferSize: RECT_CHECKER_BUFFER_SIZE,
     blend: maskBlendState,
   }
 }

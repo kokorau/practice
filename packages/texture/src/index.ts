@@ -23,6 +23,7 @@ export type {
   StripeTextureConfig,
   GridTextureConfig,
   PolkaDotTextureConfig,
+  CheckerTextureConfig,
   TextureConfig,
   MaskedTextureParams,
   // Gradient types
@@ -52,12 +53,15 @@ export {
   createCircleStripeSpec,
   createCircleGridSpec,
   createCirclePolkaDotSpec,
+  createCircleCheckerSpec,
   createRectStripeSpec,
   createRectGridSpec,
   createRectPolkaDotSpec,
+  createRectCheckerSpec,
   createBlobStripeSpec,
   createBlobGridSpec,
   createBlobPolkaDotSpec,
+  createBlobCheckerSpec,
   // Gradient specs
   createLinearGradientSpec,
   createGradientGrainSpec,

@@ -5,10 +5,10 @@
  */
 
 import { fullscreenVertex, aaUtils, maskBlendState } from '../common'
-import { stripePatternFn, gridPatternFn, polkaDotPatternFn } from './patterns'
+import { stripePatternFn, gridPatternFn, polkaDotPatternFn, checkerPatternFn } from './patterns'
 import { circleMaskFn } from './masks'
 import type { TextureRenderSpec, Viewport } from '../../Domain'
-import type { CircleMaskConfig, StripeTextureConfig, GridTextureConfig, PolkaDotTextureConfig } from './types'
+import type { CircleMaskConfig, StripeTextureConfig, GridTextureConfig, PolkaDotTextureConfig, CheckerTextureConfig } from './types'
 
 type RGBA = [number, number, number, number]
 
@@ -19,6 +19,7 @@ type RGBA = [number, number, number, number]
 export const CIRCLE_STRIPE_BUFFER_SIZE = 80
 export const CIRCLE_GRID_BUFFER_SIZE = 80  // 64 -> 80 (added cutout + padding)
 export const CIRCLE_POLKA_DOT_BUFFER_SIZE = 80
+export const CIRCLE_CHECKER_BUFFER_SIZE = 80
 
 // ============================================================
 // Shaders
@@ -264,6 +265,83 @@ export function createCirclePolkaDotSpec(
     shader: circlePolkaDotShader,
     uniforms: data.buffer,
     bufferSize: CIRCLE_POLKA_DOT_BUFFER_SIZE,
+    blend: maskBlendState,
+  }
+}
+
+/** Circle mask + checker texture shader */
+export const circleCheckerShader = /* wgsl */ `
+${fullscreenVertex}
+
+${aaUtils}
+
+${checkerPatternFn}
+
+${circleMaskFn}
+
+struct Params {
+  color1: vec4f,
+  color2: vec4f,
+  // mask params
+  maskCenterX: f32,
+  maskCenterY: f32,
+  maskRadius: f32,
+  aspectRatio: f32,
+  // texture params
+  cellSize: f32,
+  angle: f32,
+  // viewport
+  viewportWidth: f32,
+  viewportHeight: f32,
+  cutout: f32,
+  _padding: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: Params;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  let sdf = circleMaskSDF(uv, params.maskCenterX, params.maskCenterY, params.maskRadius, params.aspectRatio);
+  let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
+  let rawMaskAlpha = smoothstep(-pixelSize, pixelSize, sdf);
+  let maskAlpha = mix(1.0 - rawMaskAlpha, rawMaskAlpha, params.cutout);
+
+  let textureColor = checkerPattern(pos.xy, params.color1, params.color2, params.cellSize, params.angle);
+
+  return vec4f(textureColor.rgb, textureColor.a * maskAlpha);
+}
+`
+
+/** Create spec for circle mask + checker texture */
+export function createCircleCheckerSpec(
+  color1: RGBA,
+  color2: RGBA,
+  mask: CircleMaskConfig,
+  texture: CheckerTextureConfig,
+  viewport: Viewport
+): TextureRenderSpec {
+  const aspectRatio = viewport.width / viewport.height
+  const cutout = mask.cutout ?? true
+  const data = new Float32Array([
+    ...color1,
+    ...color2,
+    mask.centerX,
+    mask.centerY,
+    mask.radius,
+    aspectRatio,
+    texture.cellSize,
+    texture.angle,
+    viewport.width,
+    viewport.height,
+    cutout ? 1.0 : 0.0,
+    0, // padding
+  ])
+  return {
+    shader: circleCheckerShader,
+    uniforms: data.buffer,
+    bufferSize: CIRCLE_CHECKER_BUFFER_SIZE,
     blend: maskBlendState,
   }
 }

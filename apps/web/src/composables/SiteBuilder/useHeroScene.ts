@@ -14,13 +14,17 @@ import {
   createCircleStripeSpec,
   createCircleGridSpec,
   createCirclePolkaDotSpec,
+  createCircleCheckerSpec,
   createRectStripeSpec,
   createRectGridSpec,
   createRectPolkaDotSpec,
+  createRectCheckerSpec,
   createBlobStripeSpec,
   createBlobGridSpec,
   createBlobPolkaDotSpec,
+  createBlobCheckerSpec,
   // Simple texture specs (no mask) for thumbnails
+  createSolidSpec,
   createStripeSpec,
   createGridSpec,
   createPolkaDotSpec,
@@ -44,6 +48,7 @@ import {
   type StripePresetParams,
   type GridPresetParams,
   type PolkaDotPresetParams,
+  type CheckerPresetParams,
   type CircleMaskShapeParams,
   type RectMaskShapeParams,
   type BlobMaskShapeParams,
@@ -94,9 +99,9 @@ import {
 
 /**
  * Midground texture preset - filtered subset of SurfacePreset
- * Only stripe, grid, and polkaDot are supported for masked textures
+ * stripe, grid, polkaDot, and checker are supported for masked textures
  */
-export type MidgroundPresetParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams
+export type MidgroundPresetParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
 
 export interface MidgroundSurfacePreset {
   label: string
@@ -114,12 +119,13 @@ export type CustomMaskShapeParams =
   | ({ type: 'blob' } & BlobMaskShapeParams)
 
 /**
- * Custom surface params union type (for midground - no checker)
+ * Custom surface params union type (for midground - includes checker)
  */
 export type CustomSurfaceParams =
   | ({ type: 'stripe' } & StripeSurfaceParams)
   | ({ type: 'grid' } & GridSurfaceParams)
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
+  | ({ type: 'checker' } & CheckerSurfaceParams)
 
 /**
  * Gradient grain surface params (from GradientLab)
@@ -187,12 +193,12 @@ const CONTEXT_SURFACE_KEYS: Record<'light' | 'dark', Record<ContextName, Primiti
 }
 
 /**
- * Filter SurfacePresets to get only midground-compatible presets (stripe, grid, polkaDot)
+ * Filter SurfacePresets to get only midground-compatible presets (stripe, grid, polkaDot, checker)
  */
 const getMidgroundPresets = (): MidgroundSurfacePreset[] => {
   return getSurfacePresets()
     .filter((p): p is SurfacePreset & { params: MidgroundPresetParams } =>
-      p.params.type === 'stripe' || p.params.type === 'grid' || p.params.type === 'polkaDot'
+      p.params.type === 'stripe' || p.params.type === 'grid' || p.params.type === 'polkaDot' || p.params.type === 'checker'
     )
 }
 
@@ -301,8 +307,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (params.type === 'grid') {
       return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
     }
-    // polkaDot
-    return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
+    if (params.type === 'polkaDot') {
+      return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
+    }
+    // checker
+    return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
   }
 
   /**
@@ -851,7 +860,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
 
     // Build surface params from custom params or preset
-    const buildSurfaceParams = (): StripePresetParams | GridPresetParams | PolkaDotPresetParams => {
+    const buildSurfaceParams = (): StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams => {
       if (customSurfParams) {
         if (customSurfParams.type === 'stripe') {
           return { type: 'stripe', width1: customSurfParams.width1, width2: customSurfParams.width2, angle: customSurfParams.angle }
@@ -859,8 +868,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         if (customSurfParams.type === 'grid') {
           return { type: 'grid', lineWidth: customSurfParams.lineWidth, cellSize: customSurfParams.cellSize }
         }
-        // polkaDot
-        return { type: 'polkaDot', dotRadius: customSurfParams.dotRadius, spacing: customSurfParams.spacing, rowOffset: customSurfParams.rowOffset }
+        if (customSurfParams.type === 'polkaDot') {
+          return { type: 'polkaDot', dotRadius: customSurfParams.dotRadius, spacing: customSurfParams.spacing, rowOffset: customSurfParams.rowOffset }
+        }
+        // checker
+        return { type: 'checker', cellSize: customSurfParams.cellSize, angle: customSurfParams.angle }
       }
       // Fall back to preset
       return preset.params
@@ -895,6 +907,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           viewport
         )
       }
+      if (params.type === 'checker') {
+        return createCircleCheckerSpec(
+          color1, color2,
+          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
+          params,
+          viewport
+        )
+      }
     }
 
     if (maskConfig.type === 'rect') {
@@ -923,6 +943,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           viewport
         )
       }
+      if (params.type === 'checker') {
+        return createRectCheckerSpec(
+          color1, color2,
+          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
+          params,
+          viewport
+        )
+      }
     }
 
     if (maskConfig.type === 'blob') {
@@ -945,6 +973,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
       if (params.type === 'polkaDot') {
         return createBlobPolkaDotSpec(
+          color1, color2,
+          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
+          params,
+          viewport
+        )
+      }
+      if (params.type === 'checker') {
+        return createBlobCheckerSpec(
           color1, color2,
           { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
           params,
@@ -1057,7 +1093,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         case 'texture': {
           // Use custom background surface params if available
           const customBgParams = customBackgroundSurfaceParams.value
-          if (customBgParams && customBgParams.type !== 'solid') {
+          if (customBgParams) {
+            if (customBgParams.type === 'solid') {
+              // Solid fill with primary color
+              const spec = createSolidSpec({ color: textureColor1.value })
+              previewRenderer.render(spec, { clear: isFirst })
+              break
+            }
             const spec = createBackgroundSpecFromParams(customBgParams, textureColor1.value, textureColor2.value, viewport)
             if (spec) {
               previewRenderer.render(spec, { clear: isFirst })
@@ -1103,8 +1145,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 }
               }
             }
-            // Fallback to solid color mask
-            // TODO: Support custom shape params for solid mask rendering
+            // Fallback to solid color mask: fill inside with primary color
+            // First: fill the mask shape with primary color (midgroundTextureColor1)
+            const solidSpec = createSolidSpec({ color: midgroundTextureColor1.value })
+            previewRenderer.render(solidSpec, { clear: false })
+            // Then: render mask to cover the outside with maskOuterColor
             const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
             previewRenderer.render(spec, { clear: false })
           }
@@ -1157,6 +1202,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         dotRadius: params.dotRadius,
         spacing: params.spacing,
         rowOffset: params.rowOffset,
+      })
+    }
+    if (params.type === 'checker') {
+      return createCheckerSpec({
+        color1,
+        color2,
+        cellSize: params.cellSize,
+        angle: params.angle,
       })
     }
     return null

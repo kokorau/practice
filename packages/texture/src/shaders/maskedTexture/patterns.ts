@@ -60,3 +60,19 @@ fn polkaDotPattern(pos: vec2f, dotColor: vec4f, bgColor: vec4f, dotRadius: f32, 
   return mix(bgColor, dotColor, dotMask);
 }
 `
+
+/** Checker texture pattern function */
+export const checkerPatternFn = /* wgsl */ `
+fn checkerPattern(pos: vec2f, color1: vec4f, color2: vec4f, cellSize: f32, angle: f32) -> vec4f {
+  let cosA = cos(angle);
+  let sinA = sin(angle);
+  let rotatedX = pos.x * cosA + pos.y * sinA;
+  let rotatedY = -pos.x * sinA + pos.y * cosA;
+
+  let cellX = floor(rotatedX / cellSize);
+  let cellY = floor(rotatedY / cellSize);
+  let isEven = (i32(cellX) + i32(cellY)) % 2 == 0;
+
+  return select(color2, color1, isEven);
+}
+`
