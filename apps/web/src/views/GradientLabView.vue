@@ -20,6 +20,7 @@ const nodeGraphRef = ref<HTMLElement | null>(null)
 const depthNodeRef = ref<HTMLElement | null>(null)
 const noiseNodeRef = ref<HTMLElement | null>(null)
 const intensityCurveNodeRef = ref<HTMLElement | null>(null)
+const curvedDepthNodeRef = ref<HTMLElement | null>(null)
 const gradientNodeRef = ref<HTMLElement | null>(null)
 const depthNoiseNodeRef = ref<HTMLElement | null>(null)
 const finalNodeRef = ref<HTMLElement | null>(null)
@@ -51,32 +52,34 @@ function updateConnections() {
 
   const container = nodeGraphRef.value
 
-  // Depth -> Gradient
+  // Row 1 bottoms
   const depthBottom = getNodeCenter(depthNodeRef.value, container, 'bottom')
-  const gradientTop = getNodeCenter(gradientNodeRef.value, container, 'top')
-
-  // Depth -> IntensityCurve
-  const intensityCurveTop = getNodeCenter(intensityCurveNodeRef.value, container, 'top')
-
-  // IntensityCurve -> DepthNoise
-  const intensityCurveBottom = getNodeCenter(intensityCurveNodeRef.value, container, 'bottom')
-  const depthNoiseTop = getNodeCenter(depthNoiseNodeRef.value, container, 'top')
-
-  // Noise -> DepthNoise
   const noiseBottom = getNodeCenter(noiseNodeRef.value, container, 'bottom')
+  const intensityCurveBottom = getNodeCenter(intensityCurveNodeRef.value, container, 'bottom')
 
-  // Gradient -> Final
-  const gradientBottom = getNodeCenter(gradientNodeRef.value, container, 'bottom')
-  const finalTop = getNodeCenter(finalNodeRef.value, container, 'top')
-
-  // DepthNoise -> Final
+  // Row 2 tops/bottoms
+  const curvedDepthTop = getNodeCenter(curvedDepthNodeRef.value, container, 'top')
+  const curvedDepthBottom = getNodeCenter(curvedDepthNodeRef.value, container, 'bottom')
+  const depthNoiseTop = getNodeCenter(depthNoiseNodeRef.value, container, 'top')
   const depthNoiseBottom = getNodeCenter(depthNoiseNodeRef.value, container, 'bottom')
 
+  // Row 3 tops/bottoms
+  const gradientTop = getNodeCenter(gradientNodeRef.value, container, 'top')
+  const gradientBottom = getNodeCenter(gradientNodeRef.value, container, 'bottom')
+
+  // Row 4 top
+  const finalTop = getNodeCenter(finalNodeRef.value, container, 'top')
+
   connectionPaths.value = [
-    createBezierPath(depthBottom, gradientTop),
-    createBezierPath(depthBottom, intensityCurveTop),
-    createBezierPath(intensityCurveBottom, depthNoiseTop),
+    // Depth + IntensityCurve -> CurvedDepth
+    createBezierPath(depthBottom, curvedDepthTop),
+    createBezierPath(intensityCurveBottom, curvedDepthTop),
+    // Noise + CurvedDepth -> DepthNoise
     createBezierPath(noiseBottom, depthNoiseTop),
+    createBezierPath(curvedDepthBottom, depthNoiseTop),
+    // Depth -> Gradient
+    createBezierPath(depthBottom, gradientTop),
+    // Gradient + DepthNoise -> Final
     createBezierPath(gradientBottom, finalTop),
     createBezierPath(depthNoiseBottom, finalTop),
   ]
@@ -301,43 +304,45 @@ onUnmounted(() => {
           />
         </svg>
 
-        <!-- Row 1: Input nodes -->
+        <!-- Row 1: Depth, Noise, Intensity Curve -->
         <div class="node-row">
           <div ref="depthNodeRef" class="node-wrapper">
             <NodePreview
-              label="Depth (t)"
               :width="NODE_WIDTH"
               :height="NODE_HEIGHT"
               :spec="depthSpec"
-            />
+            >
+              <template #label>
+                <div class="node-title">
+                  <span class="node-badge">A</span>
+                  <span class="node-title-text">Depth (t)</span>
+                  <span class="node-badge-offset"></span>
+                </div>
+              </template>
+            </NodePreview>
           </div>
           <div ref="noiseNodeRef" class="node-wrapper">
             <NodePreview
-              label="Noise"
               :width="NODE_WIDTH"
               :height="NODE_HEIGHT"
               :spec="noiseSpec"
-            />
+            >
+              <template #label>
+                <div class="node-title">
+                  <span class="node-badge">B</span>
+                  <span class="node-title-text">Noise</span>
+                  <span class="node-badge-offset"></span>
+                </div>
+              </template>
+            </NodePreview>
           </div>
-        </div>
-
-        <!-- Row 2: Intensity Curve + Curved Depth (右寄せ) -->
-        <div class="node-row node-row-right">
           <div ref="intensityCurveNodeRef" class="node-wrapper curve-node">
             <div class="curve-node-header">
-              <span class="node-label">Intensity Curve</span>
-              <select v-model="curvePreset" class="curve-preset-select" @change="applyCurvePreset">
-                <option value="linear">Linear</option>
-                <option value="parabola">Parabola</option>
-                <option value="exp">Exp</option>
-                <option value="log">Log</option>
-                <option value="easeIn">Ease In</option>
-                <option value="easeOut">Ease Out</option>
-                <option value="sCurve">S-Curve</option>
-                <option value="step">Step</option>
-                <option value="inverse">Inverse</option>
-                <option value="custom">Custom</option>
-              </select>
+              <div class="node-title">
+                <span class="node-badge">C</span>
+                <span class="node-title-text">Intensity Curve</span>
+                <span class="node-badge-offset"></span>
+              </div>
             </div>
             <CurveEditor
               :curve="intensityCurve"
@@ -346,40 +351,69 @@ onUnmounted(() => {
               @update:point="updateCurvePoint"
             />
           </div>
-          <div class="node-wrapper">
+        </div>
+
+        <!-- Row 2: Curved Depth -->
+        <div class="node-row">
+          <div ref="curvedDepthNodeRef" class="node-wrapper">
             <NodePreview
-              label="Curved Depth"
               :width="NODE_WIDTH"
               :height="NODE_HEIGHT"
               :spec="curvedDepthSpec"
-            />
+            >
+              <template #label>
+                <div class="node-title">
+                  <span class="node-badge">D</span>
+                  <span class="node-title-text">Curved Depth</span>
+                  <span class="node-badge-offset"></span>
+                </div>
+              </template>
+            </NodePreview>
           </div>
         </div>
 
-        <!-- Row 3: Processing nodes -->
+        <!-- Row 3: Gradient, Depth + Noise -->
         <div class="node-row">
           <div ref="gradientNodeRef" class="node-wrapper">
             <NodePreview
-              label="Gradient"
               :width="NODE_WIDTH"
               :height="NODE_HEIGHT"
               :spec="gradientSpec"
-            />
+            >
+              <template #label>
+                <div class="node-title">
+                  <span class="node-badge">E</span>
+                  <span class="node-title-text">Gradient</span>
+                  <span class="node-badge-offset"></span>
+                </div>
+              </template>
+            </NodePreview>
           </div>
           <div ref="depthNoiseNodeRef" class="node-wrapper">
             <NodePreview
-              label="Depth + Noise"
               :width="NODE_WIDTH"
               :height="NODE_HEIGHT"
               :spec="depthNoiseSpec"
-            />
+            >
+              <template #label>
+                <div class="node-title">
+                  <span class="node-badge">F</span>
+                  <span class="node-title-text">Depth + Noise</span>
+                  <span class="node-badge-offset"></span>
+                </div>
+              </template>
+            </NodePreview>
           </div>
         </div>
 
         <!-- Row 4: Output node -->
         <div class="node-row final-row">
           <div ref="finalNodeRef" class="final-node">
-            <div class="node-label">Final Output</div>
+            <div class="node-title">
+              <span class="node-badge">G</span>
+              <span class="node-title-text">Final Output</span>
+              <span class="node-badge-offset"></span>
+            </div>
             <canvas
               v-show="webGPUSupported"
               ref="mainCanvasRef"
@@ -397,38 +431,93 @@ onUnmounted(() => {
 
       <!-- コントロールパネル -->
       <aside class="controls-panel">
-        <div class="control-group">
-          <label class="control-label">Angle: {{ angle }}°</label>
-          <input v-model.number="angle" type="range" min="0" max="360" class="slider" />
-        </div>
-
-        <div class="control-group">
-          <label class="control-label">Sparsity: {{ Math.round(sparsity * 100) }}%</label>
-          <input v-model.number="sparsity" type="range" min="0" max="0.99" step="0.01" class="slider" />
-        </div>
-
-        <div class="control-group">
-          <label class="control-label">Noise Threshold: {{ Math.round(noiseThreshold * 100) }}%</label>
-          <input v-model.number="noiseThreshold" type="range" min="0" max="1" step="0.01" class="slider" />
-        </div>
-
-        <div class="control-group">
-          <label class="control-label">Seed: {{ grainSeed }}</label>
-          <input v-model.number="grainSeed" type="number" min="0" class="seed-input" />
-        </div>
-
-        <div class="control-group">
-          <div class="stops-header">
-            <label class="control-label">Colors</label>
-            <button class="add-button" :disabled="stops.length >= 8" @click="addStop">+</button>
+        <!-- A: Depth -->
+        <div class="node-group">
+          <div class="node-group-header">
+            <span class="node-badge">A</span>
+            <span class="node-group-title">Depth</span>
+            <span class="node-badge-offset"></span>
           </div>
-          <div class="stops-list">
-            <div v-for="(stop, index) in stops" :key="index" class="stop-item">
-              <input v-model="stop.color" type="color" class="color-input" />
-              <input v-model.number="stop.position" type="range" min="0" max="100" class="position-slider" />
-              <span class="position-value">{{ stop.position }}%</span>
-              <button class="remove-button" :disabled="stops.length <= 2" @click="removeStop(index)">×</button>
+          <div class="control-group">
+            <label class="control-label">Angle: {{ angle }}°</label>
+            <input v-model.number="angle" type="range" min="0" max="360" class="slider" />
+          </div>
+        </div>
+
+        <!-- B: Noise -->
+        <div class="node-group">
+          <div class="node-group-header">
+            <span class="node-badge">B</span>
+            <span class="node-group-title">Noise</span>
+            <span class="node-badge-offset"></span>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Threshold: {{ Math.round(noiseThreshold * 100) }}%</label>
+            <input v-model.number="noiseThreshold" type="range" min="0" max="1" step="0.01" class="slider" />
+          </div>
+          <div class="control-group">
+            <label class="control-label">Seed: {{ grainSeed }}</label>
+            <input v-model.number="grainSeed" type="number" min="0" class="seed-input" />
+          </div>
+        </div>
+
+        <!-- C: Intensity Curve -->
+        <div class="node-group">
+          <div class="node-group-header">
+            <span class="node-badge">C</span>
+            <span class="node-group-title">Intensity Curve</span>
+            <span class="node-badge-offset"></span>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Preset</label>
+            <select v-model="curvePreset" class="preset-select" @change="applyCurvePreset">
+              <option value="linear">Linear</option>
+              <option value="parabola">Parabola</option>
+              <option value="exp">Exp</option>
+              <option value="log">Log</option>
+              <option value="easeIn">Ease In</option>
+              <option value="easeOut">Ease Out</option>
+              <option value="sCurve">S-Curve</option>
+              <option value="step">Step</option>
+              <option value="inverse">Inverse</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- E: Gradient -->
+        <div class="node-group">
+          <div class="node-group-header">
+            <span class="node-badge">E</span>
+            <span class="node-group-title">Gradient</span>
+            <span class="node-badge-offset"></span>
+          </div>
+          <div class="control-group">
+            <div class="stops-header">
+              <label class="control-label">Colors</label>
+              <button class="add-button" :disabled="stops.length >= 8" @click="addStop">+</button>
             </div>
+            <div class="stops-list">
+              <div v-for="(stop, index) in stops" :key="index" class="stop-item">
+                <input v-model="stop.color" type="color" class="color-input" />
+                <input v-model.number="stop.position" type="range" min="0" max="100" class="position-slider" />
+                <span class="position-value">{{ stop.position }}%</span>
+                <button class="remove-button" :disabled="stops.length <= 2" @click="removeStop(index)">×</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- F: Depth + Noise -->
+        <div class="node-group">
+          <div class="node-group-header">
+            <span class="node-badge">F</span>
+            <span class="node-group-title">Depth + Noise</span>
+            <span class="node-badge-offset"></span>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Sparsity: {{ Math.round(sparsity * 100) }}%</label>
+            <input v-model.number="sparsity" type="range" min="0" max="0.99" step="0.01" class="slider" />
           </div>
         </div>
       </aside>
@@ -574,6 +663,43 @@ onUnmounted(() => {
   letter-spacing: 0.05em;
 }
 
+/* Node Title with Badge */
+.node-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.node-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: #4ecdc4;
+  color: #1a1a2e;
+  font-size: 0.625rem;
+  font-weight: 700;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+}
+
+.node-title-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.node-badge-offset {
+  width: 1.25rem;
+  flex-shrink: 0;
+}
+
 .main-canvas {
   border-radius: 0.5rem;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -602,6 +728,36 @@ onUnmounted(() => {
   background: #16162a;
   border-radius: 0.75rem;
   height: fit-content;
+}
+
+.node-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #1e1e3a;
+  border-radius: 0.5rem;
+  border: 1px solid #2a2a4a;
+}
+
+.node-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #2a2a4a;
+  margin-bottom: 0.25rem;
+}
+
+.node-group-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex: 1;
+  text-align: center;
 }
 
 .control-group {

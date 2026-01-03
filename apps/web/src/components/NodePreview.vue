@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { TextureRenderer, type TextureRenderSpec } from '@practice/texture'
 
 const props = defineProps<{
-  label: string
+  label?: string
   width?: number
   height?: number
   spec: TextureRenderSpec | null
@@ -45,7 +45,9 @@ onUnmounted(() => {
 
 <template>
   <div class="node-preview">
-    <div class="node-label">{{ label }}</div>
+    <div class="node-label">
+      <slot name="label">{{ label }}</slot>
+    </div>
     <canvas
       ref="canvasRef"
       :width="canvasWidth"
