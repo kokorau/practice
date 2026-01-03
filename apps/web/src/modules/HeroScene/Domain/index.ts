@@ -412,3 +412,15 @@ export type {
   PresetColorConfig,
   HeroViewPreset,
 } from './HeroViewPreset'
+
+// ============================================================
+// Reverse Lookup Utilities
+// ============================================================
+
+export {
+  approxEqual,
+  findSurfacePresetIndex,
+  findMaskPatternIndex,
+  type SurfacePresetParams,
+  type MaskPatternConfig,
+} from './ReverseLookup'

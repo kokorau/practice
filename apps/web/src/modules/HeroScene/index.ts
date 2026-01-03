@@ -85,6 +85,9 @@ export type {
   PresetFoundation,
   PresetColorConfig,
   HeroViewPreset,
+  // ReverseLookup types
+  SurfacePresetParams,
+  MaskPatternConfig,
 } from './Domain'
 
 export {
@@ -115,6 +118,10 @@ export {
   createDefaultColorsConfig,
   createDefaultForegroundConfig,
   createDefaultHeroViewConfig,
+  // ReverseLookup utilities
+  approxEqual,
+  findSurfacePresetIndex,
+  findMaskPatternIndex,
 } from './Domain'
 
 // Application
