@@ -49,6 +49,7 @@ import {
   type TextureRenderSpec,
   type SurfacePreset,
   type SurfacePresetParams,
+  type SolidPresetParams,
   type StripePresetParams,
   type GridPresetParams,
   type PolkaDotPresetParams,
@@ -102,10 +103,10 @@ import {
 // ============================================================
 
 /**
- * Midground texture preset - filtered subset of SurfacePreset
- * stripe, grid, polkaDot, and checker are supported for masked textures
+ * Midground texture preset - same as SurfacePresetParams
+ * Now includes solid for consistency with background
  */
-export type MidgroundPresetParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
+export type MidgroundPresetParams = SolidPresetParams | StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
 
 export interface MidgroundSurfacePreset {
   label: string
@@ -123,13 +124,15 @@ export type CustomMaskShapeParams =
   | ({ type: 'blob' } & BlobMaskShapeParams)
 
 /**
- * Custom surface params union type (for midground - includes checker)
+ * Custom surface params union type (for midground - includes solid, checker, and gradientGrain)
  */
 export type CustomSurfaceParams =
+  | { type: 'solid' }
   | ({ type: 'stripe' } & StripeSurfaceParams)
   | ({ type: 'grid' } & GridSurfaceParams)
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ type: 'checker' } & CheckerSurfaceParams)
+  | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
 
 /**
  * Gradient grain surface params (from GradientLab)
@@ -197,13 +200,10 @@ const CONTEXT_SURFACE_KEYS: Record<'light' | 'dark', Record<ContextName, Primiti
 }
 
 /**
- * Filter SurfacePresets to get only midground-compatible presets (stripe, grid, polkaDot, checker)
+ * Get all SurfacePresets as MidgroundSurfacePreset (now includes solid)
  */
 const getMidgroundPresets = (): MidgroundSurfacePreset[] => {
-  return getSurfacePresets()
-    .filter((p): p is SurfacePreset & { params: MidgroundPresetParams } =>
-      p.params.type === 'stripe' || p.params.type === 'grid' || p.params.type === 'polkaDot' || p.params.type === 'checker'
-    )
+  return getSurfacePresets() as MidgroundSurfacePreset[]
 }
 
 // ============================================================
@@ -242,7 +242,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Selection state (UI bindings)
   const selectedBackgroundIndex = ref(3)
   const selectedMaskIndex = ref<number | null>(21)
-  const selectedMidgroundTextureIndex = ref<number | null>(null)
+  const selectedMidgroundTextureIndex = ref<number>(0) // 0 = Solid
   const activeSection = ref<SectionType | null>(null)
 
   // Custom background image
@@ -305,6 +305,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    */
   const extractSurfaceParams = (preset: MidgroundSurfacePreset): CustomSurfaceParams => {
     const { params } = preset
+    if (params.type === 'solid') {
+      return { type: 'solid' }
+    }
     if (params.type === 'stripe') {
       return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
     }
@@ -351,7 +354,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const currentSurfaceSchema = computed(() => {
     if (!customSurfaceParams.value) return null
-    return SurfaceSchemas[customSurfaceParams.value.type] as ObjectSchema
+    const type = customSurfaceParams.value.type
+    if (type === 'solid') return null // solid has no params
+    return SurfaceSchemas[type] as ObjectSchema
   })
 
   const currentBackgroundSurfaceSchema = computed(() => {
@@ -376,8 +381,26 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const initSurfaceParamsFromPreset = () => {
     const idx = selectedMidgroundTextureIndex.value
-    if (idx === null) {
-      customSurfaceParams.value = null
+    // gradientGrain is added after midgroundTexturePatterns, so check if idx is beyond length
+    const gradientGrainIndex = midgroundTexturePatterns.length
+    if (idx === gradientGrainIndex) {
+      // GradientGrain selected - initialize with defaults
+      const defaults = {
+        depthMapType: 'linear' as const,
+        angle: 90,
+        centerX: 0.5,
+        centerY: 0.5,
+        radialStartAngle: 0,
+        radialSweepAngle: 360,
+        perlinScale: 4,
+        perlinOctaves: 4,
+        perlinContrast: 1,
+        perlinOffset: 0,
+        seed: Math.floor(Math.random() * 10000),
+        sparsity: 0.75,
+        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
+      }
+      customSurfaceParams.value = { type: 'gradientGrain', ...defaults }
       return
     }
     const preset = midgroundTexturePatterns[idx]
@@ -864,8 +887,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
 
     // Build surface params from custom params or preset
-    const buildSurfaceParams = (): StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams => {
+    // Returns null for solid type (triggers fallback to solid mask)
+    const buildSurfaceParams = (): StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams | null => {
       if (customSurfParams) {
+        if (customSurfParams.type === 'solid') {
+          return null
+        }
         if (customSurfParams.type === 'stripe') {
           return { type: 'stripe', width1: customSurfParams.width1, width2: customSurfParams.width2, angle: customSurfParams.angle }
         }
@@ -878,12 +905,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         // checker
         return { type: 'checker', cellSize: customSurfParams.cellSize, angle: customSurfParams.angle }
       }
-      // Fall back to preset
-      return preset.params
+      // Fall back to preset - check for solid type
+      if (preset.params.type === 'solid') {
+        return null
+      }
+      return preset.params as StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
     }
 
     const maskConfig = buildMaskConfig()
     const params = buildSurfaceParams()
+
+    // If solid type was selected, return null to trigger solid mask fallback
+    if (params === null) {
+      return null
+    }
 
     if (maskConfig.type === 'circle') {
       const circleMask: CircleMaskShapeConfig = maskConfig
@@ -1131,6 +1166,34 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               break
             }
 
+            // gradientGrain がある場合: グラデーションを描画してからマスクオーバーレイを適用
+            if (customSurfaceParams.value?.type === 'gradientGrain') {
+              const params = customSurfaceParams.value
+              const gradientSpec = createGradientGrainSpec({
+                depthMapType: params.depthMapType,
+                angle: params.angle,
+                centerX: params.centerX,
+                centerY: params.centerY,
+                radialStartAngle: params.radialStartAngle,
+                radialSweepAngle: params.radialSweepAngle,
+                perlinScale: params.perlinScale,
+                perlinOctaves: params.perlinOctaves,
+                perlinSeed: params.seed,
+                perlinContrast: params.perlinContrast,
+                perlinOffset: params.perlinOffset,
+                colorA: midgroundTextureColor1.value,
+                colorB: midgroundTextureColor2.value,
+                sparsity: params.sparsity,
+                curvePoints: params.curvePoints,
+              }, viewport)
+              if (gradientSpec) {
+                previewRenderer.render(gradientSpec, { clear: false })
+                const maskSpec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
+                previewRenderer.render(maskSpec, { clear: false })
+                break
+              }
+            }
+
             if (layer.config.textureIndex !== null) {
               const texturePattern = midgroundTexturePatterns[layer.config.textureIndex]
               if (texturePattern) {
@@ -1244,6 +1307,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   ): TextureRenderSpec | null => {
     const { params } = preset
 
+    if (params.type === 'solid') {
+      return createSolidSpec({ color: color1 })
+    }
     if (params.type === 'stripe') {
       return createStripeSpec({
         color1,
@@ -1423,7 +1489,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (customMaskShapeParams.value === null && selectedMaskIndex.value !== null) {
         initMaskShapeParamsFromPreset()
       }
-      if (customSurfaceParams.value === null && selectedMidgroundTextureIndex.value !== null) {
+      if (customSurfaceParams.value === null) {
         initSurfaceParamsFromPreset()
       }
 
@@ -1647,17 +1713,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       return { type: 'image', imageId: customMaskImage.value }
     }
 
-    // No texture selected = solid
-    if (selectedMidgroundTextureIndex.value === null) {
-      return { type: 'solid' }
-    }
-
     // Custom surface params
     const params = customSurfaceParams.value
     if (params) {
+      if (params.type === 'solid') return { type: 'solid' }
       if (params.type === 'stripe') return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
       if (params.type === 'grid') return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
       if (params.type === 'polkaDot') return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
+      if (params.type === 'checker') return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
     }
 
     return { type: 'solid' }
@@ -1814,14 +1877,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       // Mask surface
       const maskSurface = config.mask.surface
       if (maskSurface.type === 'solid') {
-        customSurfaceParams.value = null
-        selectedMidgroundTextureIndex.value = null
+        customSurfaceParams.value = { type: 'solid' }
+        selectedMidgroundTextureIndex.value = 0
       } else if (maskSurface.type === 'stripe') {
         customSurfaceParams.value = { type: 'stripe', width1: maskSurface.width1, width2: maskSurface.width2, angle: maskSurface.angle }
       } else if (maskSurface.type === 'grid') {
         customSurfaceParams.value = { type: 'grid', lineWidth: maskSurface.lineWidth, cellSize: maskSurface.cellSize }
       } else if (maskSurface.type === 'polkaDot') {
         customSurfaceParams.value = { type: 'polkaDot', dotRadius: maskSurface.dotRadius, spacing: maskSurface.spacing, rowOffset: maskSurface.rowOffset }
+      } else if (maskSurface.type === 'checker') {
+        customSurfaceParams.value = { type: 'checker', cellSize: maskSurface.cellSize, angle: maskSurface.angle }
       }
       // Note: image type requires external handling
 

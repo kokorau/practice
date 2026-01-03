@@ -255,13 +255,31 @@ const backgroundPatterns = computed(() => {
   return [...textureItems, gradientGrainItem]
 })
 
-const maskSurfacePatterns = computed(() =>
-  midgroundTexturePatterns.map((p) => ({
+const maskSurfacePatterns = computed(() => {
+  const textureItems = midgroundTexturePatterns.map((p) => ({
     label: p.label,
     createSpec: (viewport: { width: number; height: number }) =>
       createMidgroundThumbnailSpec(p, midgroundTextureColor1.value, midgroundTextureColor2.value, viewport),
   }))
-)
+
+  // Add gradient grain option (same as background)
+  const defaultGradientParams = createDefaultGradientGrainParams()
+  const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
+  const gradientGrainItem = {
+    label: 'Gradient Grain',
+    type: 'gradientGrain',
+    createSpec: (viewport: { width: number; height: number }) =>
+      createGradientGrainSpec({
+        ...defaultGradientParams,
+        depthMapType: defaultGradientParams.depthMapType as DepthMapType,
+        colorA: midgroundTextureColor1.value,
+        colorB: midgroundTextureColor2.value,
+        curvePoints: defaultCurvePoints,
+      }, viewport),
+  }
+
+  return [...textureItems, gradientGrainItem]
+})
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
 
@@ -629,12 +647,11 @@ const handleRemoveLayer = (layerId: string) => {
             :custom-file-name="customMaskFile?.name ?? null"
             :patterns="maskSurfacePatterns"
             :selected-index="selectedMidgroundTextureIndex"
-            :show-solid-option="true"
             :show-random-button="true"
             :is-loading-random="isLoadingRandomMask"
             @upload-image="setMaskImage"
             @clear-image="clearMaskImage"
-            @select-pattern="(i) => { selectedMidgroundTextureIndex = i }"
+            @select-pattern="(i) => { if (i !== null) selectedMidgroundTextureIndex = i }"
             @load-random="loadRandomMaskImage()"
           />
         </template>
