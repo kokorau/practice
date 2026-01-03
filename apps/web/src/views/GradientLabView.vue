@@ -87,21 +87,20 @@ function updateConnections() {
   ]
 }
 
-// グラデーションの色停止点
-interface ColorStop {
-  color: string  // HEX
-  position: number // 0-100
-}
+// グラデーションの2色
+const colorAHex = ref('#ff6b6b')
+const colorBHex = ref('#4ecdc4')
 
-const stops = ref<ColorStop[]>([
-  { color: '#ff6b6b', position: 0 },
-  { color: '#4ecdc4', position: 100 },
-])
+// 色をスワップ
+function swapColors() {
+  const temp = colorAHex.value
+  colorAHex.value = colorBHex.value
+  colorBHex.value = temp
+}
 
 // パラメータ
 const angle = ref(90)
 const grainSeed = ref(12345)
-const noiseThreshold = ref(0.5)
 const sparsity = ref(0.75)
 
 // 深度マップタイプ
@@ -111,7 +110,6 @@ const depthMapType = ref<DepthMapType>('linear')
 // 円形深度マップ用パラメータ
 const circularCenterX = ref(0.5)
 const circularCenterY = ref(0.5)
-const circularInvert = ref(false)
 
 // 放射深度マップ用パラメータ
 const radialCenterX = ref(0.5)
@@ -183,23 +181,14 @@ function hexToRgba(hex: string): [number, number, number, number] {
   ]
 }
 
-// Convert stops to GPU format
-const gpuStops = computed<GpuColorStop[]>(() =>
-  stops.value.map(s => ({
-    color: hexToRgba(s.color),
-    position: s.position / 100,
-  }))
-)
+// Convert to GPU format (2 colors)
+const gpuStops = computed<GpuColorStop[]>(() => [
+  { color: hexToRgba(colorAHex.value), position: 0 },
+  { color: hexToRgba(colorBHex.value), position: 1 },
+])
 
-const colorA = computed(() => {
-  const sorted = [...stops.value].sort((a, b) => a.position - b.position)
-  return hexToRgba(sorted[0]?.color || '#ffffff')
-})
-
-const colorB = computed(() => {
-  const sorted = [...stops.value].sort((a, b) => a.position - b.position)
-  return hexToRgba(sorted[sorted.length - 1]?.color || '#000000')
-})
+const colorA = computed(() => hexToRgba(colorAHex.value))
+const colorB = computed(() => hexToRgba(colorBHex.value))
 
 // ノード用のspec
 const nodeViewport = { width: NODE_WIDTH, height: NODE_HEIGHT }
@@ -211,7 +200,7 @@ const depthParams = computed(() => ({
   angle: angle.value,
   centerX: depthMapType.value === 'circular' ? circularCenterX.value : radialCenterX.value,
   centerY: depthMapType.value === 'circular' ? circularCenterY.value : radialCenterY.value,
-  circularInvert: circularInvert.value,
+  circularInvert: false,  // always false (use color swap instead)
   radialStartAngle: radialStartAngle.value,
   radialSweepAngle: radialSweepAngle.value,
 }))
@@ -222,7 +211,7 @@ const depthSpec = computed<TextureRenderSpec>(() => {
       return createCircularDepthMapSpec({
         centerX: circularCenterX.value,
         centerY: circularCenterY.value,
-        invert: circularInvert.value,
+        invert: false,
       }, nodeViewport)
     case 'radial':
       return createRadialDepthMapSpec({
@@ -238,7 +227,7 @@ const depthSpec = computed<TextureRenderSpec>(() => {
 })
 
 const noiseSpec = computed<TextureRenderSpec>(() =>
-  createNoiseMapSpec({ seed: grainSeed.value, threshold: noiseThreshold.value }, nodeViewport)
+  createNoiseMapSpec({ seed: grainSeed.value }, nodeViewport)
 )
 
 const gradientSpec = computed<TextureRenderSpec>(() =>
@@ -292,22 +281,9 @@ function renderMain() {
   mainRenderer.render(finalSpec.value)
 }
 
-// 色停止点を追加
-function addStop() {
-  if (stops.value.length >= 8) return
-  stops.value.push({ color: '#ffffff', position: 50 })
-}
-
-// 色停止点を削除
-function removeStop(index: number) {
-  if (stops.value.length > 2) {
-    stops.value.splice(index, 1)
-  }
-}
-
 watch(
-  [stops, angle, grainSeed, noiseThreshold, sparsity, curvePoints,
-   depthMapType, circularCenterX, circularCenterY, circularInvert,
+  [colorAHex, colorBHex, angle, grainSeed, sparsity, curvePoints,
+   depthMapType, circularCenterX, circularCenterY,
    radialCenterX, radialCenterY, radialStartAngle, radialSweepAngle],
   () => renderMain(),
   { deep: true }
@@ -513,12 +489,6 @@ onUnmounted(() => {
               <label class="control-label">Center Y: {{ Math.round(circularCenterY * 100) }}%</label>
               <input v-model.number="circularCenterY" type="range" min="0" max="1" step="0.01" class="slider" />
             </div>
-            <div class="control-group checkbox-group">
-              <label class="checkbox-label">
-                <input v-model="circularInvert" type="checkbox" class="checkbox-input" />
-                <span>Invert</span>
-              </label>
-            </div>
           </template>
           <!-- Radial params -->
           <template v-else-if="depthMapType === 'radial'">
@@ -547,10 +517,6 @@ onUnmounted(() => {
             <span class="node-badge">B</span>
             <span class="node-group-title">Noise</span>
             <span class="node-badge-offset"></span>
-          </div>
-          <div class="control-group">
-            <label class="control-label">Threshold: {{ Math.round(noiseThreshold * 100) }}%</label>
-            <input v-model.number="noiseThreshold" type="range" min="0" max="1" step="0.01" class="slider" />
           </div>
           <div class="control-group">
             <label class="control-label">Seed: {{ grainSeed }}</label>
@@ -590,17 +556,13 @@ onUnmounted(() => {
             <span class="node-badge-offset"></span>
           </div>
           <div class="control-group">
-            <div class="stops-header">
-              <label class="control-label">Colors</label>
-              <button class="add-button" :disabled="stops.length >= 8" @click="addStop">+</button>
-            </div>
-            <div class="stops-list">
-              <div v-for="(stop, index) in stops" :key="index" class="stop-item">
-                <input v-model="stop.color" type="color" class="color-input" />
-                <input v-model.number="stop.position" type="range" min="0" max="100" class="position-slider" />
-                <span class="position-value">{{ stop.position }}%</span>
-                <button class="remove-button" :disabled="stops.length <= 2" @click="removeStop(index)">×</button>
-              </div>
+            <label class="control-label">Colors</label>
+            <div class="color-pair">
+              <input v-model="colorAHex" type="color" class="color-input-large" title="Color A (start)" />
+              <button class="swap-button" @click="swapColors" title="Swap colors">
+                <span class="swap-icon">⇄</span>
+              </button>
+              <input v-model="colorBHex" type="color" class="color-input-large" title="Color B (end)" />
             </div>
           </div>
         </div>
@@ -965,6 +927,55 @@ onUnmounted(() => {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.color-pair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.color-input-large {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 2px solid #3a3a5a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.color-input-large::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-input-large::-webkit-color-swatch {
+  border-radius: 3px;
+  border: none;
+}
+
+.swap-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.swap-button:hover {
+  background: #3a3a5a;
+  border-color: #4ecdc4;
+  color: #4ecdc4;
+}
+
+.swap-icon {
+  font-size: 1rem;
 }
 
 .position-slider {

@@ -6,8 +6,8 @@ import type { TextureRenderSpec } from '../Domain'
 // ============================================================
 
 export interface NoiseMapParams {
-  seed: number      // noise seed
-  threshold: number // threshold for binary noise (0-1), 0.5 = 50% white/black
+  seed: number       // noise seed
+  threshold?: number // threshold for binary noise (0-1), default 0.5 = 50% white/black
 }
 
 // ============================================================
@@ -63,7 +63,7 @@ export function createNoiseMapSpec(
   data[0] = viewport.width
   data[1] = viewport.height
   data[2] = params.seed
-  data[3] = params.threshold
+  data[3] = params.threshold ?? 0.5
 
   return {
     shader: noiseMapShader,
