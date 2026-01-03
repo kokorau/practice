@@ -69,7 +69,7 @@ import {
 } from '@practice/texture/filters'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette, ContextName, PrimitiveKey } from '../../modules/SemanticColorPalette/Domain'
 import { fetchUnsplashPhotoUrl } from '../../modules/PhotoUnsplash/Infra/fetchUnsplashPhoto'
 import {
   type LayerFilterConfig,
@@ -165,6 +165,25 @@ const LAYER_IDS = {
   BASE: 'base-layer',
   MASK: 'mask-layer',
 } as const
+
+/**
+ * Semantic context to primitive surface key mapping
+ * Derived from SemanticPaletteFromPrimitive.ts
+ */
+const CONTEXT_SURFACE_KEYS: Record<'light' | 'dark', Record<ContextName, PrimitiveKey>> = {
+  light: {
+    canvas: 'F1',
+    sectionNeutral: 'F2',
+    sectionTint: 'Bt',
+    sectionContrast: 'Bf',
+  },
+  dark: {
+    canvas: 'F8',
+    sectionNeutral: 'F7',
+    sectionTint: 'Bs',
+    sectionContrast: 'Bf',
+  },
+}
 
 /**
  * Filter SurfacePresets to get only midground-compatible presets (stripe, grid, polkaDot)
@@ -463,21 +482,33 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const thumbnailRenderers: TextureRenderer[] = []
 
   // ============================================================
+  // Semantic Context for Mask Layer (fixed to 'canvas' for now)
+  // ============================================================
+  const maskSemanticContext = ref<ContextName>('canvas')
+
+  // ============================================================
   // Computed Colors
   // ============================================================
-  const canvasSurfaceKey = computed((): 'F1' | 'F8' => (isDark.value ? 'F8' : 'F1'))
+  const themeMode = computed((): 'light' | 'dark' => (isDark.value ? 'dark' : 'light'))
+
+  // Background: always uses canvas surface
+  const canvasSurfaceKey = computed((): PrimitiveKey => CONTEXT_SURFACE_KEYS[themeMode.value].canvas)
+
+  // Mask layer: uses semantic context (currently fixed to 'canvas')
+  const maskSurfaceKey = computed((): PrimitiveKey => CONTEXT_SURFACE_KEYS[themeMode.value][maskSemanticContext.value])
+
   const textureColor1 = computed((): RGBA => paletteToRgba(primitivePalette.value.B))
   const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
-  const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value], 0))
-  const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
+  const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value], 0))
+  const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value]))
 
   const midgroundTextureColor1 = computed((): RGBA => {
-    const surface = primitivePalette.value[canvasSurfaceKey.value]
+    const surface = primitivePalette.value[maskSurfaceKey.value]
     const deltaL = isDark.value ? 0.05 : -0.05
     const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
     return paletteToRgba(shifted)
   })
-  const midgroundTextureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
+  const midgroundTextureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value]))
 
   // ============================================================
   // Layer Management (internal)
@@ -686,8 +717,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         perlinSeed: params.seed,
         perlinContrast: params.perlinContrast,
         perlinOffset: params.perlinOffset,
-        colorA: params.colorA,
-        colorB: params.colorB,
+        colorA: color1,  // Use reactive color from palette
+        colorB: color2,  // Use reactive color from palette
         seed: params.seed,
         sparsity: params.sparsity,
         curvePoints: params.curvePoints,
@@ -1627,6 +1658,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     selectedMaskIndex,
     selectedMidgroundTextureIndex,
     activeSection,
+
+    // Semantic context for mask layer (for future UI switching)
+    maskSemanticContext,
 
     // Custom background
     customBackgroundImage,
