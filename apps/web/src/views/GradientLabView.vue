@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import {
   TextureRenderer,
   createLinearGradientSpec,
@@ -7,8 +7,10 @@ import {
   createLinearDepthMapSpec,
   createNoiseMapSpec,
   createGradientNoiseMapSpec,
+  type TextureRenderSpec,
   type ColorStop as GpuColorStop,
 } from '@practice/texture'
+import NodePreview from '../components/NodePreview.vue'
 
 // グラデーションの色停止点
 interface ColorStop {
@@ -21,32 +23,26 @@ const stops = ref<ColorStop[]>([
   { color: '#4ecdc4', position: 100 },
 ])
 
-// グラデーションの角度
+// パラメータ
 const angle = ref(90)
-
-// グレイン設定
 const grainSeed = ref(12345)
+const noiseThreshold = ref(0.5)
+const power = ref(2.5)
+const sparsity = ref(0.75)
 
-// ノイズマップ設定
-const noiseThreshold = ref(0.5) // 0-1, 白ドットの割合
-
-// グラデーションノイズ設定
-const gradientNoisePower = ref(2.5)     // イージングカーブ (1=linear, 2=quadratic)
-const gradientNoiseSparsity = ref(0.75) // まばらさ (0=dense, 1=sparse)
-
-// レンダリングモード
-type RenderMode = 'depthMap' | 'noise' | 'gradientNoise' | 'gradient' | 'gradientGrain'
-const renderMode = ref<RenderMode>('gradientGrain')
-
-// Canvas refs
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const CANVAS_WIDTH = 800
-const CANVAS_HEIGHT = 450
+// プレビューサイズ
+const NODE_WIDTH = 200
+const NODE_HEIGHT = 112
+const MAIN_WIDTH = 400
+const MAIN_HEIGHT = 225
 
 // WebGPU
-let renderer: TextureRenderer | null = null
 const webGPUSupported = ref(true)
 const webGPUError = ref<string | null>(null)
+
+// メインキャンバス
+const mainCanvasRef = ref<HTMLCanvasElement | null>(null)
+let mainRenderer: TextureRenderer | null = null
 
 // HEX to RGBA (0-1)
 function hexToRgba(hex: string): [number, number, number, number] {
@@ -68,7 +64,6 @@ const gpuStops = computed<GpuColorStop[]>(() =>
   }))
 )
 
-// Get first and last colors for grain mode
 const colorA = computed(() => {
   const sorted = [...stops.value].sort((a, b) => a.position - b.position)
   return hexToRgba(sorted[0]?.color || '#ffffff')
@@ -79,76 +74,63 @@ const colorB = computed(() => {
   return hexToRgba(sorted[sorted.length - 1]?.color || '#000000')
 })
 
-async function initRenderer() {
-  if (!canvasRef.value) return
+// ノード用のspec
+const nodeViewport = { width: NODE_WIDTH, height: NODE_HEIGHT }
+const mainViewport = { width: MAIN_WIDTH, height: MAIN_HEIGHT }
 
+const depthSpec = computed<TextureRenderSpec>(() =>
+  createLinearDepthMapSpec({ angle: angle.value }, nodeViewport)
+)
+
+const noiseSpec = computed<TextureRenderSpec>(() =>
+  createNoiseMapSpec({ seed: grainSeed.value, threshold: noiseThreshold.value }, nodeViewport)
+)
+
+const gradientSpec = computed<TextureRenderSpec>(() =>
+  createLinearGradientSpec({ angle: angle.value, stops: gpuStops.value }, nodeViewport)
+)
+
+const depthNoiseSpec = computed<TextureRenderSpec>(() =>
+  createGradientNoiseMapSpec({
+    angle: angle.value,
+    seed: grainSeed.value,
+    power: power.value,
+    sparsity: sparsity.value,
+  }, nodeViewport)
+)
+
+const finalSpec = computed<TextureRenderSpec>(() =>
+  createGradientGrainSpec({
+    angle: angle.value,
+    colorA: colorA.value,
+    colorB: colorB.value,
+    seed: grainSeed.value,
+    power: power.value,
+    sparsity: sparsity.value,
+  }, mainViewport)
+)
+
+async function initMainRenderer() {
+  if (!mainCanvasRef.value) return
   try {
-    renderer = await TextureRenderer.create(canvasRef.value)
+    mainRenderer = await TextureRenderer.create(mainCanvasRef.value)
     webGPUSupported.value = true
-    render()
+    renderMain()
   } catch (e) {
     webGPUError.value = e instanceof Error ? e.message : 'Unknown error'
     webGPUSupported.value = false
   }
 }
 
-function render() {
-  if (!renderer) return
-
-  const viewport = { width: CANVAS_WIDTH, height: CANVAS_HEIGHT }
-
-  if (renderMode.value === 'depthMap') {
-    const spec = createLinearDepthMapSpec(
-      { angle: angle.value },
-      viewport
-    )
-    renderer.render(spec)
-  } else if (renderMode.value === 'noise') {
-    const spec = createNoiseMapSpec(
-      { seed: grainSeed.value, threshold: noiseThreshold.value },
-      viewport
-    )
-    renderer.render(spec)
-  } else if (renderMode.value === 'gradientNoise') {
-    const spec = createGradientNoiseMapSpec(
-      {
-        angle: angle.value,
-        seed: grainSeed.value,
-        power: gradientNoisePower.value,
-        sparsity: gradientNoiseSparsity.value,
-      },
-      viewport
-    )
-    renderer.render(spec)
-  } else if (renderMode.value === 'gradient') {
-    const spec = createLinearGradientSpec(
-      { angle: angle.value, stops: gpuStops.value },
-      viewport
-    )
-    renderer.render(spec)
-  } else {
-    const spec = createGradientGrainSpec(
-      {
-        angle: angle.value,
-        colorA: colorA.value,
-        colorB: colorB.value,
-        seed: grainSeed.value,
-        power: gradientNoisePower.value,
-        sparsity: gradientNoiseSparsity.value,
-      },
-      viewport
-    )
-    renderer.render(spec)
-  }
+function renderMain() {
+  if (!mainRenderer) return
+  mainRenderer.render(finalSpec.value)
 }
 
 // 色停止点を追加
 function addStop() {
   if (stops.value.length >= 8) return
-  stops.value.push({
-    color: '#ffffff',
-    position: 50,
-  })
+  stops.value.push({ color: '#ffffff', position: 50 })
 }
 
 // 色停止点を削除
@@ -158,10 +140,9 @@ function removeStop(index: number) {
   }
 }
 
-// Watch for changes
 watch(
-  [stops, angle, grainSeed, noiseThreshold, gradientNoisePower, gradientNoiseSparsity, renderMode],
-  () => render(),
+  [stops, angle, grainSeed, noiseThreshold, power, sparsity],
+  () => renderMain(),
   { deep: true }
 )
 
@@ -171,12 +152,12 @@ onMounted(async () => {
     webGPUSupported.value = false
     return
   }
-  await initRenderer()
+  await initMainRenderer()
 })
 
 onUnmounted(() => {
-  renderer?.destroy()
-  renderer = null
+  mainRenderer?.destroy()
+  mainRenderer = null
 })
 </script>
 
@@ -188,195 +169,125 @@ onUnmounted(() => {
     </header>
 
     <main class="main">
-      <!-- プレビューエリア -->
-      <section class="preview-section">
-        <canvas
-          v-show="webGPUSupported"
-          ref="canvasRef"
-          :width="CANVAS_WIDTH"
-          :height="CANVAS_HEIGHT"
-          class="preview-canvas"
-        />
-
-        <div v-if="!webGPUSupported" class="error-message">
-          <p>WebGPU Not Supported</p>
-          <p class="error-detail">{{ webGPUError }}</p>
-        </div>
-
-        <!-- レンダリングモード切り替え -->
-        <div class="mode-tabs">
-          <button
-            class="mode-tab"
-            :class="{ active: renderMode === 'depthMap' }"
-            @click="renderMode = 'depthMap'"
-          >
-            Depth Map
-          </button>
-          <button
-            class="mode-tab"
-            :class="{ active: renderMode === 'noise' }"
-            @click="renderMode = 'noise'"
-          >
-            Noise
-          </button>
-          <button
-            class="mode-tab"
-            :class="{ active: renderMode === 'gradientNoise' }"
-            @click="renderMode = 'gradientNoise'"
-          >
-            Depth + Noise
-          </button>
-          <button
-            class="mode-tab"
-            :class="{ active: renderMode === 'gradient' }"
-            @click="renderMode = 'gradient'"
-          >
-            Gradient
-          </button>
-          <button
-            class="mode-tab"
-            :class="{ active: renderMode === 'gradientGrain' }"
-            @click="renderMode = 'gradientGrain'"
-          >
-            Gradient + Grain
-          </button>
-        </div>
-      </section>
-
-      <!-- コントロールパネル -->
-      <section class="controls-section">
-        <div class="control-group">
-          <label class="control-label">Angle: {{ angle }}°</label>
-          <input
-            v-model.number="angle"
-            type="range"
-            min="0"
-            max="360"
-            class="angle-slider"
-          />
-        </div>
-
-        <!-- ノイズ設定 -->
-        <div v-if="renderMode === 'noise'" class="control-group">
-          <label class="control-label">Threshold: {{ Math.round(noiseThreshold * 100) }}%</label>
-          <input
-            v-model.number="noiseThreshold"
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            class="grain-slider"
-          />
-          <label class="control-label-small">Seed: {{ grainSeed }}</label>
-          <input
-            v-model.number="grainSeed"
-            type="number"
-            min="0"
-            class="seed-input"
-          />
-        </div>
-
-        <!-- グラデーションノイズ設定 -->
-        <div v-if="renderMode === 'gradientNoise'" class="control-group">
-          <label class="control-label">Power: {{ gradientNoisePower.toFixed(1) }}</label>
-          <input
-            v-model.number="gradientNoisePower"
-            type="range"
-            min="0.2"
-            max="4"
-            step="0.1"
-            class="grain-slider"
-          />
-          <label class="control-label-small">Sparsity: {{ Math.round(gradientNoiseSparsity * 100) }}%</label>
-          <input
-            v-model.number="gradientNoiseSparsity"
-            type="range"
-            min="0"
-            max="0.99"
-            step="0.01"
-            class="grain-slider"
-          />
-          <label class="control-label-small">Seed: {{ grainSeed }}</label>
-          <input
-            v-model.number="grainSeed"
-            type="number"
-            min="0"
-            class="seed-input"
-          />
-        </div>
-
-        <!-- グレイン設定 -->
-        <div v-if="renderMode === 'gradientGrain'" class="control-group">
-          <label class="control-label">Power: {{ gradientNoisePower.toFixed(1) }}</label>
-          <input
-            v-model.number="gradientNoisePower"
-            type="range"
-            min="0.2"
-            max="4"
-            step="0.1"
-            class="grain-slider"
-          />
-          <label class="control-label-small">Sparsity: {{ Math.round(gradientNoiseSparsity * 100) }}%</label>
-          <input
-            v-model.number="gradientNoiseSparsity"
-            type="range"
-            min="0"
-            max="0.99"
-            step="0.01"
-            class="grain-slider"
-          />
-          <label class="control-label-small">Seed: {{ grainSeed }}</label>
-          <input
-            v-model.number="grainSeed"
-            type="number"
-            min="0"
-            class="seed-input"
-          />
-        </div>
-
-        <div class="control-group">
-          <div class="stops-header">
-            <label class="control-label">Color Stops (max 8)</label>
-            <button
-              class="add-stop-button"
-              :disabled="stops.length >= 8"
-              @click="addStop"
-            >
-              + Add
-            </button>
+      <!-- ノードグラフ -->
+      <section class="node-graph">
+        <!-- Row 1: Input nodes -->
+        <div class="node-row">
+          <div class="node-column">
+            <NodePreview
+              label="Depth (t)"
+              :width="NODE_WIDTH"
+              :height="NODE_HEIGHT"
+              :spec="depthSpec"
+            />
           </div>
-          <div class="stops-list">
-            <div v-for="(stop, index) in stops" :key="index" class="stop-item">
-              <input
-                v-model="stop.color"
-                type="color"
-                class="color-input"
-              />
-              <input
-                v-model="stop.color"
-                type="text"
-                class="color-text"
-                placeholder="#000000"
-              />
-              <input
-                v-model.number="stop.position"
-                type="range"
-                min="0"
-                max="100"
-                class="position-slider"
-              />
-              <span class="position-value">{{ stop.position }}%</span>
-              <button
-                class="remove-button"
-                :disabled="stops.length <= 2"
-                @click="removeStop(index)"
-              >
-                ×
-              </button>
+          <div class="node-column">
+            <NodePreview
+              label="Noise"
+              :width="NODE_WIDTH"
+              :height="NODE_HEIGHT"
+              :spec="noiseSpec"
+            />
+          </div>
+        </div>
+
+        <!-- Connection lines -->
+        <svg class="connections" viewBox="0 0 500 60">
+          <!-- Depth -> Gradient -->
+          <path d="M 125 0 L 125 30 L 80 30 L 80 60" class="connection-line" />
+          <!-- Depth -> DepthNoise -->
+          <path d="M 125 0 L 125 30 L 250 30 L 250 60" class="connection-line" />
+          <!-- Noise -> DepthNoise -->
+          <path d="M 375 0 L 375 30 L 250 30 L 250 60" class="connection-line" />
+        </svg>
+
+        <!-- Row 2: Processing nodes -->
+        <div class="node-row">
+          <div class="node-column">
+            <NodePreview
+              label="Gradient"
+              :width="NODE_WIDTH"
+              :height="NODE_HEIGHT"
+              :spec="gradientSpec"
+            />
+          </div>
+          <div class="node-column">
+            <NodePreview
+              label="Depth + Noise"
+              :width="NODE_WIDTH"
+              :height="NODE_HEIGHT"
+              :spec="depthNoiseSpec"
+            />
+          </div>
+        </div>
+
+        <!-- Connection lines to final -->
+        <svg class="connections" viewBox="0 0 500 60">
+          <path d="M 125 0 L 125 30 L 250 30 L 250 60" class="connection-line" />
+          <path d="M 375 0 L 375 30 L 250 30 L 250 60" class="connection-line" />
+        </svg>
+
+        <!-- Row 3: Output node -->
+        <div class="node-row final-row">
+          <div class="final-node">
+            <div class="node-label">Final Output</div>
+            <canvas
+              v-show="webGPUSupported"
+              ref="mainCanvasRef"
+              :width="MAIN_WIDTH"
+              :height="MAIN_HEIGHT"
+              class="main-canvas"
+            />
+            <div v-if="!webGPUSupported" class="error-message">
+              <p>WebGPU Not Supported</p>
+              <p class="error-detail">{{ webGPUError }}</p>
             </div>
           </div>
         </div>
       </section>
+
+      <!-- コントロールパネル -->
+      <aside class="controls-panel">
+        <div class="control-group">
+          <label class="control-label">Angle: {{ angle }}°</label>
+          <input v-model.number="angle" type="range" min="0" max="360" class="slider" />
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Power: {{ power.toFixed(1) }}</label>
+          <input v-model.number="power" type="range" min="0.2" max="4" step="0.1" class="slider" />
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Sparsity: {{ Math.round(sparsity * 100) }}%</label>
+          <input v-model.number="sparsity" type="range" min="0" max="0.99" step="0.01" class="slider" />
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Noise Threshold: {{ Math.round(noiseThreshold * 100) }}%</label>
+          <input v-model.number="noiseThreshold" type="range" min="0" max="1" step="0.01" class="slider" />
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Seed: {{ grainSeed }}</label>
+          <input v-model.number="grainSeed" type="number" min="0" class="seed-input" />
+        </div>
+
+        <div class="control-group">
+          <div class="stops-header">
+            <label class="control-label">Colors</label>
+            <button class="add-button" :disabled="stops.length >= 8" @click="addStop">+</button>
+          </div>
+          <div class="stops-list">
+            <div v-for="(stop, index) in stops" :key="index" class="stop-item">
+              <input v-model="stop.color" type="color" class="color-input" />
+              <input v-model.number="stop.position" type="range" min="0" max="100" class="position-slider" />
+              <span class="position-value">{{ stop.position }}%</span>
+              <button class="remove-button" :disabled="stops.length <= 2" @click="removeStop(index)">×</button>
+            </div>
+          </div>
+        </div>
+      </aside>
     </main>
   </div>
 </template>
@@ -386,18 +297,18 @@ onUnmounted(() => {
   min-height: 100vh;
   background: #1a1a2e;
   color: #eee;
-  padding: 2rem;
+  padding: 1.5rem;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .header h1 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
 }
 
@@ -413,92 +324,113 @@ onUnmounted(() => {
 
 .main {
   display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 2rem;
-  max-width: 1200px;
+  grid-template-columns: 1fr 280px;
+  gap: 1.5rem;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
-.preview-section {
+/* Node Graph */
+.node-graph {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  align-items: center;
+  gap: 0;
 }
 
-.preview-canvas {
-  width: 100%;
-  height: auto;
-  border-radius: 1rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+.node-row {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.node-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.connections {
+  width: 500px;
+  height: 60px;
+  overflow: visible;
+}
+
+.connection-line {
+  fill: none;
+  stroke: #4ecdc4;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.6;
+}
+
+.final-row {
+  margin-top: 0;
+}
+
+.final-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #1e1e3a;
+  border: 2px solid #4ecdc4;
+  border-radius: 0.75rem;
+}
+
+.node-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.main-canvas {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .error-message {
   padding: 2rem;
   background: #2a2a4a;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   text-align: center;
   color: #ff6b6b;
 }
 
 .error-detail {
   margin-top: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: #888;
 }
 
-/* Mode Tabs */
-.mode-tabs {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.mode-tab {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  background: #2a2a4a;
-  border: 2px solid transparent;
-  border-radius: 0.5rem;
-  color: #888;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.mode-tab:hover {
-  background: #3a3a5a;
-  color: #aaa;
-}
-
-.mode-tab.active {
-  background: #3a3a5a;
-  border-color: #4ecdc4;
-  color: #4ecdc4;
-}
-
-.controls-section {
+/* Controls Panel */
+.controls-panel {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.5rem;
+  gap: 1rem;
+  padding: 1rem;
   background: #16162a;
-  border-radius: 1rem;
+  border-radius: 0.75rem;
   height: fit-content;
 }
 
 .control-group {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .control-label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: #aaa;
 }
 
-.angle-slider {
+.slider {
   width: 100%;
   height: 6px;
   appearance: none;
@@ -507,91 +439,11 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.angle-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  background: #4ecdc4;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-/* Grain Controls */
-.grain-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.toggle-label {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
-}
-
-.toggle-checkbox {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-switch {
-  display: block;
-  width: 40px;
-  height: 22px;
-  background: #2a2a4a;
-  border-radius: 11px;
-  transition: background 0.2s;
-}
-
-.toggle-switch::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 16px;
-  height: 16px;
-  background: #666;
-  border-radius: 50%;
-  transition: transform 0.2s, background 0.2s;
-}
-
-.toggle-checkbox:checked + .toggle-switch {
-  background: #4ecdc4;
-}
-
-.toggle-checkbox:checked + .toggle-switch::after {
-  transform: translateX(18px);
-  background: #fff;
-}
-
-.grain-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.control-label-small {
-  font-size: 0.75rem;
-  color: #888;
-}
-
-.grain-slider {
-  width: 100%;
-  height: 6px;
-  appearance: none;
-  background: #2a2a4a;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.grain-slider::-webkit-slider-thumb {
+.slider::-webkit-slider-thumb {
   appearance: none;
   width: 16px;
   height: 16px;
-  background: #ff6b6b;
+  background: #4ecdc4;
   border-radius: 50%;
   cursor: pointer;
 }
@@ -618,62 +470,46 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.add-stop-button {
-  padding: 0.375rem 0.75rem;
+.add-button {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #4ecdc4;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: 4px;
   color: #1a1a2e;
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s;
 }
 
-.add-stop-button:hover:not(:disabled) {
-  opacity: 0.85;
-}
-
-.add-stop-button:disabled {
-  opacity: 0.5;
+.add-button:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
 .stops-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .stop-item {
   display: grid;
-  grid-template-columns: 36px 1fr 1fr 48px 28px;
+  grid-template-columns: 32px 1fr 40px 24px;
   gap: 0.5rem;
   align-items: center;
 }
 
 .color-input {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: 4px;
   cursor: pointer;
-}
-
-.color-text {
-  padding: 0.5rem;
-  background: #2a2a4a;
-  border: 1px solid #3a3a5a;
-  border-radius: 0.375rem;
-  color: #eee;
-  font-family: monospace;
-  font-size: 0.75rem;
-}
-
-.color-text:focus {
-  outline: none;
-  border-color: #4ecdc4;
 }
 
 .position-slider {
@@ -687,32 +523,31 @@ onUnmounted(() => {
 
 .position-slider::-webkit-slider-thumb {
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   background: #ff6b6b;
   border-radius: 50%;
   cursor: pointer;
 }
 
 .position-value {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   color: #888;
   text-align: right;
 }
 
 .remove-button {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: 1px solid #3a3a5a;
-  border-radius: 0.375rem;
+  border-radius: 4px;
   color: #888;
-  font-size: 1rem;
+  font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .remove-button:hover:not(:disabled) {
