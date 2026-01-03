@@ -102,6 +102,8 @@ import {
   createDefaultColorsConfig,
   createGetHeroViewPresetsUseCase,
   createInMemoryHeroViewPresetRepository,
+  findSurfacePresetIndex,
+  findMaskPatternIndex,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -1836,7 +1838,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Restore editor state from HeroViewConfig
    * Note: Image restoration requires additional handling (imageId → ImageBitmap)
    */
-  const fromHeroViewConfig = (config: HeroViewConfig) => {
+  const fromHeroViewConfig = async (config: HeroViewConfig) => {
     // Viewport
     editorState.value = {
       ...editorState.value,
@@ -1868,8 +1870,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       customBackgroundSurfaceParams.value = { type: 'polkaDot', dotRadius: bgSurface.dotRadius, spacing: bgSurface.spacing, rowOffset: bgSurface.rowOffset }
     } else if (bgSurface.type === 'checker') {
       customBackgroundSurfaceParams.value = { type: 'checker', cellSize: bgSurface.cellSize, angle: bgSurface.angle }
+    } else if (bgSurface.type === 'image') {
+      // Restore background image from imageId (URL)
+      await restoreBackgroundImage(bgSurface.imageId)
     }
-    // Note: image type requires external handling
+
+    // Reverse-lookup background surface preset index
+    const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
+    selectedBackgroundIndex.value = bgPresetIndex ?? 0
 
     // Background filters
     layerFilterConfigs.value.set(LAYER_IDS.BASE, config.background.filters)
@@ -1912,11 +1920,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         }
       }
 
+      // Reverse-lookup mask shape index
+      const maskPresetIndex = findMaskPatternIndex(shape, maskPatterns)
+      selectedMaskIndex.value = maskPresetIndex ?? 0
+
       // Mask surface
       const maskSurface = config.mask.surface
       if (maskSurface.type === 'solid') {
         customSurfaceParams.value = { type: 'solid' }
-        selectedMidgroundTextureIndex.value = 0
       } else if (maskSurface.type === 'stripe') {
         customSurfaceParams.value = { type: 'stripe', width1: maskSurface.width1, width2: maskSurface.width2, angle: maskSurface.angle }
       } else if (maskSurface.type === 'grid') {
@@ -1925,8 +1936,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         customSurfaceParams.value = { type: 'polkaDot', dotRadius: maskSurface.dotRadius, spacing: maskSurface.spacing, rowOffset: maskSurface.rowOffset }
       } else if (maskSurface.type === 'checker') {
         customSurfaceParams.value = { type: 'checker', cellSize: maskSurface.cellSize, angle: maskSurface.angle }
+      } else if (maskSurface.type === 'image') {
+        // Restore mask image from imageId (URL)
+        await restoreMaskImage(maskSurface.imageId)
       }
-      // Note: image type requires external handling
+
+      // Reverse-lookup mask surface preset index
+      const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
+      selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
       // Mask filters
       layerFilterConfigs.value.set(LAYER_IDS.MASK, config.mask.filters)
@@ -1939,15 +1956,37 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Foreground
     foregroundConfig.value = config.foreground
 
-    // Reset mask selection based on restored config
-    if (config.mask) {
-      selectedMaskIndex.value = 0 // TODO: Reverse-lookup mask shape index
-    } else {
-      selectedMaskIndex.value = null
-    }
+    // Sync layer configs and re-render
+    syncLayerConfigs()
+    await renderScene()
+  }
 
-    // Re-render
-    renderScene()
+  /**
+   * Restore background image from URL (imageId)
+   */
+  const restoreBackgroundImage = async (imageId: string) => {
+    try {
+      const response = await fetch(imageId)
+      const blob = await response.blob()
+      const file = new File([blob], `restored-bg-${Date.now()}.jpg`, { type: blob.type })
+      await setBackgroundImage(file)
+    } catch (e) {
+      console.error('Failed to restore background image:', e)
+    }
+  }
+
+  /**
+   * Restore mask image from URL (imageId)
+   */
+  const restoreMaskImage = async (imageId: string) => {
+    try {
+      const response = await fetch(imageId)
+      const blob = await response.blob()
+      const file = new File([blob], `restored-mask-${Date.now()}.jpg`, { type: blob.type })
+      await setMaskImage(file)
+    } catch (e) {
+      console.error('Failed to restore mask image:', e)
+    }
   }
 
   // ============================================================
@@ -1968,7 +2007,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (applyInitial && selectedPresetId.value) {
       const preset = await presetUseCase.findById(selectedPresetId.value)
       if (preset) {
-        fromHeroViewConfig(preset.config)
+        await fromHeroViewConfig(preset.config)
         return preset.colorPreset ?? null
       }
     }
@@ -1983,7 +2022,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const preset = await presetUseCase.findById(presetId)
     if (preset) {
       selectedPresetId.value = presetId
-      fromHeroViewConfig(preset.config)
+      await fromHeroViewConfig(preset.config)
       return preset.colorPreset ?? null
     }
     return null
