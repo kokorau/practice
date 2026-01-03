@@ -7,8 +7,6 @@
 import type {
   Page,
   Section,
-  SectionContent,
-  PageContents,
   RenderTheme,
 } from '../Domain'
 import { toCSSText, toCSSRuleSetsText } from '../../SemanticColorPalette/Infra'
@@ -22,14 +20,15 @@ import { getEtaTemplate } from './etaTemplates'
 
 /**
  * Render a single section to HTML
+ *
+ * Uses section.kind to select template and section.content for data.
  */
 export const renderSection = (
   section: Section,
-  content: SectionContent,
   _theme: RenderTheme
 ): string => {
-  const template = getEtaTemplate(section.type)
-  return eta.renderString(template.template, { content })
+  const template = getEtaTemplate(section.kind)
+  return eta.renderString(template.template, { content: section.content })
 }
 
 // ============================================================================
@@ -54,15 +53,13 @@ const DEFAULT_OPTIONS: Required<RenderPageOptions> = {
 /**
  * Render a page to HTML
  *
- * @param page - Page definition with sections
- * @param contents - Map of section ID to content
+ * @param page - Page definition with sections (content embedded)
  * @param theme - Render theme (palette + style)
  * @param options - Rendering options
  * @returns Complete HTML string
  */
 export const renderPage = (
   page: Page,
-  contents: PageContents,
   theme: RenderTheme,
   options: RenderPageOptions = {}
 ): string => {
@@ -73,17 +70,9 @@ export const renderPage = (
     ? generateCSS(theme, opts.cssSelector)
     : ''
 
-  // Render sections
+  // Render sections (content is now embedded in section)
   const sectionsHtml = page.sections
-    .map((section) => {
-      const content = contents[section.id]
-      if (!content) {
-        console.warn(`No content found for section: ${section.id}`)
-        return ''
-      }
-      return renderSection(section, content, theme)
-    })
-    .filter(Boolean)
+    .map((section) => renderSection(section, theme))
     .join('\n')
 
   // Wrap in page container

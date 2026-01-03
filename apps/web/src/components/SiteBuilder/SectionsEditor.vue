@@ -6,15 +6,15 @@ import {
   hasErrorAt,
   getErrorsAt,
   type Section,
-  type SectionType,
+  type SectionKind,
   type SectionContent,
   type SectionSchema,
   type FieldSchema,
   type ValidationResult,
 } from '../../modules/SemanticSection'
 
-// Section type labels for display
-const SECTION_TYPE_LABELS: Record<SectionType, string> = {
+// Section kind labels for display
+const SECTION_KIND_LABELS: Record<SectionKind, string> = {
   header: 'Header',
   hero: 'Hero',
   features: 'Features',
@@ -57,8 +57,8 @@ const isArrayExpanded = (fieldKey: string) => expandedArrayFields.value.has(fiel
 const currentSections = computed(() => {
   return props.sections.map((section) => ({
     id: section.id,
-    type: section.type,
-    label: SECTION_TYPE_LABELS[section.type],
+    kind: section.kind,
+    label: SECTION_KIND_LABELS[section.kind],
   }))
 })
 
@@ -69,15 +69,15 @@ const selectedSection = computed(() => {
   if (!section) return null
   return {
     ...section,
-    label: SECTION_TYPE_LABELS[section.type],
-    content: props.contents[section.id],
+    label: SECTION_KIND_LABELS[section.kind],
+    content: props.contents[section.id] ?? section.content,
   }
 })
 
 // Get schema for selected section
 const selectedSchema = computed((): SectionSchema | null => {
   if (!selectedSection.value) return null
-  return getSchemaByType(selectedSection.value.type) ?? null
+  return getSchemaByType(selectedSection.value.kind) ?? null
 })
 
 // Get validation result for selected section
@@ -216,7 +216,7 @@ defineExpose({
           <span class="section-number">{{ index + 1 }}</span>
           <div class="section-info">
             <span class="section-label">{{ section.label }}</span>
-            <code class="section-type">{{ section.type }}</code>
+            <code class="section-type">{{ section.kind }}</code>
           </div>
           <span class="section-arrow">›</span>
         </button>
@@ -227,7 +227,7 @@ defineExpose({
     <template v-else>
       <div class="section-detail">
         <div class="section-detail-header">
-          <span class="section-detail-type">{{ selectedSection.type }}</span>
+          <span class="section-detail-type">{{ selectedSection.kind }}</span>
         </div>
 
         <!-- Validation Summary -->

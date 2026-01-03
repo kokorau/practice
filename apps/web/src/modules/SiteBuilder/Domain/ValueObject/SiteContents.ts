@@ -6,7 +6,7 @@
 
 import type { AssetId } from '../../../Asset'
 import type { SectionContent } from '../../../SemanticSection'
-import { $Page, getDefaultContent } from '../../../SemanticSection'
+import { createDemoPage } from '../../../SemanticSection'
 
 /** サイトコンテンツ (sectionId -> SectionContent) */
 export type SiteContents = Record<string, SectionContent>
@@ -19,10 +19,10 @@ export const SITE_CONTENTS_FILENAME = 'site-contents.json'
 
 /** デフォルトの SiteContents を生成 */
 export const createDefaultSiteContents = (): SiteContents => {
-  const demoPage = $Page.createDemo()
+  const demoPage = createDemoPage()
   const contents: SiteContents = {}
   for (const section of demoPage.sections) {
-    contents[section.id] = getDefaultContent(section.type)
+    contents[section.id] = section.content
   }
   return contents
 }

@@ -3,8 +3,9 @@
  */
 
 import type {
-  SectionType,
-  SectionContentMap,
+  SectionKind,
+  SectionKindContentMap,
+  Page,
   HeaderContent,
   HeroContent,
   FeaturesContent,
@@ -16,6 +17,11 @@ import type {
   CTAContent,
   FooterContent,
 } from '../Domain'
+import { $Page } from '../Domain'
+
+// Legacy type alias
+type SectionType = SectionKind
+type SectionContentMap = SectionKindContentMap
 
 // ============================================================================
 // Default Content for Each Section Type
@@ -254,3 +260,8 @@ export const getDefaultContent = <T extends SectionType>(type: T): SectionConten
  * Get all default contents
  */
 export const getAllDefaultContents = (): SectionContentMap => defaultContents
+
+/**
+ * Create a demo page with all section types and default content embedded
+ */
+export const createDemoPage = (): Page => $Page.createDemoWithContent(getDefaultContent)

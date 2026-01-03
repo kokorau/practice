@@ -10,17 +10,16 @@ import type {
   Page,
   PageContents,
   SectionContent,
-  SectionType,
+  SectionKind,
   RenderTheme,
 } from '../Domain'
 import type { SemanticColorPalette } from '../../SemanticColorPalette/Domain'
 import type { DesignTokens } from '../../DesignTokens/Domain'
 import { DEFAULT_TOKENS } from '../Domain'
-import { $Page } from '../Domain'
 import { DEFAULT_SCHEMAS } from './defaultSchemas'
 import {
   DEFAULT_TEMPLATES,
-  getDefaultContent,
+  createDemoPage,
   renderPage,
   generateCSS,
 } from '../Infra'
@@ -65,12 +64,12 @@ export const createSite = (params: CreateSiteParams): Site => {
  * Useful for previewing palettes
  */
 export const createDemoSite = (palette: SemanticColorPalette): Site => {
-  const page = $Page.createDemo()
+  const page = createDemoPage()
 
-  // Build contents from page sections
+  // Build contents map from page sections (for backward compatibility)
   const contents: Record<string, SectionContent> = {}
   for (const section of page.sections) {
-    contents[section.id] = getDefaultContent(section.type)
+    contents[section.id] = section.content
   }
 
   return createSite({
@@ -136,17 +135,22 @@ export const getSectionContent = (
 ): SectionContent | undefined => site.contents[sectionId]
 
 /**
- * Get all section types used in the site
+ * Get all section kinds used in the site
  */
-export const getUsedSectionTypes = (site: Site): SectionType[] => {
-  const types = new Set<SectionType>()
+export const getUsedSectionKinds = (site: Site): SectionKind[] => {
+  const kinds = new Set<SectionKind>()
   for (const page of site.pages) {
     for (const section of page.sections) {
-      types.add(section.type)
+      kinds.add(section.kind)
     }
   }
-  return Array.from(types)
+  return Array.from(kinds)
 }
+
+/**
+ * @deprecated Use getUsedSectionKinds instead
+ */
+export const getUsedSectionTypes = getUsedSectionKinds
 
 // ============================================================================
 // Export Site
@@ -194,7 +198,7 @@ export const exportToHTML = (
   }
 
   // Render page content with CSS
-  const pageHtml = renderPage(page, site.contents, site.theme, {
+  const pageHtml = renderPage(page, site.theme, {
     cssSelector: opts.cssSelector,
     includeCSS: true,
     wrapperClass: opts.wrapperClass,

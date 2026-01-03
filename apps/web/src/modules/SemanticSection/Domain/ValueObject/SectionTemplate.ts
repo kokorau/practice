@@ -6,7 +6,7 @@
  * 2. String: Template string with ${variable} placeholders (DB-storable)
  */
 
-import type { SectionType } from './Section'
+import type { SectionKind } from './Section'
 import type { SectionContent } from './SectionContent'
 import type { RenderTheme } from './RenderTheme'
 
@@ -19,7 +19,7 @@ import type { RenderTheme } from './RenderTheme'
  * @deprecated Use StringSectionTemplate for new templates
  */
 export interface LegacySectionTemplate<T extends SectionContent = SectionContent> {
-  readonly type: SectionType
+  readonly kind: SectionKind
   readonly render: (content: T, theme: RenderTheme) => string
 }
 
@@ -38,7 +38,7 @@ export type TemplateVars = Readonly<Record<string, string>>
  */
 export interface StringSectionTemplate {
   readonly id: string
-  readonly type: SectionType
+  readonly kind: SectionKind
   readonly template: string
 }
 
@@ -75,5 +75,5 @@ export const isLegacyTemplate = <T extends SectionContent>(
  * Registry of all section templates
  */
 export type TemplateRegistry = Readonly<
-  Record<SectionType, SectionTemplate<SectionContent>>
+  Record<SectionKind, SectionTemplate<SectionContent>>
 >
