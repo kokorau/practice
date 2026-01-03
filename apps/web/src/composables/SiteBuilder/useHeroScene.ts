@@ -47,7 +47,6 @@ import {
   type BlobMaskShapeConfig,
   type Viewport,
   type TextureRenderSpec,
-  type SurfacePreset,
   type SurfacePresetParams,
   type SolidPresetParams,
   type StripePresetParams,
@@ -385,7 +384,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const gradientGrainIndex = midgroundTexturePatterns.length
     if (idx === gradientGrainIndex) {
       // GradientGrain selected - initialize with defaults
-      const defaults = {
+      const defaults: GradientGrainSurfaceParams = {
         depthMapType: 'linear' as const,
         angle: 90,
         centerX: 0.5,
@@ -396,6 +395,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         perlinOctaves: 4,
         perlinContrast: 1,
         perlinOffset: 0,
+        colorA: [0, 0, 0, 1],
+        colorB: [1, 1, 1, 1],
         seed: Math.floor(Math.random() * 10000),
         sparsity: 0.75,
         curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
@@ -902,8 +903,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         if (customSurfParams.type === 'polkaDot') {
           return { type: 'polkaDot', dotRadius: customSurfParams.dotRadius, spacing: customSurfParams.spacing, rowOffset: customSurfParams.rowOffset }
         }
-        // checker
-        return { type: 'checker', cellSize: customSurfParams.cellSize, angle: customSurfParams.angle }
+        if (customSurfParams.type === 'checker') {
+          return { type: 'checker', cellSize: customSurfParams.cellSize, angle: customSurfParams.angle }
+        }
+        // gradientGrain is handled separately
+        return null
       }
       // Fall back to preset - check for solid type
       if (preset.params.type === 'solid') {
@@ -1183,6 +1187,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 perlinOffset: params.perlinOffset,
                 colorA: midgroundTextureColor1.value,
                 colorB: midgroundTextureColor2.value,
+                seed: params.seed,
                 sparsity: params.sparsity,
                 curvePoints: params.curvePoints,
               }, viewport)

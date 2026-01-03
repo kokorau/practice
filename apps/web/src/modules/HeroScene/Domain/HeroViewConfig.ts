@@ -67,12 +67,13 @@ export type BackgroundSurfaceConfig =
   | CheckerSurfaceConfig
   | ImageSurfaceConfig
 
-/** マスク用サーフェス（checker を除く） */
+/** マスク用サーフェス */
 export type MaskSurfaceConfig =
   | SolidSurfaceConfig
   | StripeSurfaceConfig
   | GridSurfaceConfig
   | PolkaDotSurfaceConfig
+  | CheckerSurfaceConfig
   | ImageSurfaceConfig
 
 // ============================================================
