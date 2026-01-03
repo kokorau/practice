@@ -6,6 +6,7 @@ import type {
   SectionKind,
   SectionKindContentMap,
   Page,
+  HeroSection,
   HeaderContent,
   HeroContent,
   FeaturesContent,
@@ -17,7 +18,8 @@ import type {
   CTAContent,
   FooterContent,
 } from '../Domain'
-import { $Page } from '../Domain'
+import { $Page, $Section } from '../Domain'
+import type { HeroViewConfig } from '../../HeroScene/Domain/HeroViewConfig'
 
 // Legacy type alias
 type SectionType = SectionKind
@@ -261,7 +263,68 @@ export const getDefaultContent = <T extends SectionType>(type: T): SectionConten
  */
 export const getAllDefaultContents = (): SectionContentMap => defaultContents
 
+// ============================================================================
+// Corporate Clean Preset Config for Demo Hero
+// ============================================================================
+
+/**
+ * Corporate Clean preset config for the demo hero section
+ */
+const corporateCleanConfig: HeroViewConfig = {
+  viewport: { width: 1280, height: 720 },
+  colors: {
+    background: { primary: 'BN1', secondary: 'BN2' },
+    mask: { primary: 'B', secondary: 'Bt', outer: 'BN0' },
+    semanticContext: 'canvas',
+  },
+  background: {
+    surface: { type: 'grid', lineWidth: 1, cellSize: 48 },
+    filters: {
+      vignette: { enabled: true, intensity: 0.3, radius: 0.8, softness: 0.6 },
+      chromaticAberration: { enabled: false, intensity: 0.01 },
+      dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
+      lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+    },
+  },
+  mask: {
+    shape: {
+      type: 'rect',
+      left: 0.05, right: 0.55, top: 0.1, bottom: 0.9,
+      radiusTopLeft: 0.02, radiusTopRight: 0.02,
+      radiusBottomLeft: 0.02, radiusBottomRight: 0.02,
+      cutout: true,
+    },
+    surface: { type: 'solid' },
+    filters: {
+      vignette: { enabled: false, intensity: 0.5, radius: 0.5, softness: 0.5 },
+      chromaticAberration: { enabled: false, intensity: 0.01 },
+      dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
+      lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+    },
+  },
+  foreground: {
+    title: { position: 'middle-right', content: 'Enterprise Solutions', fontSize: 3.5, fontId: 'inter' },
+    description: { position: 'middle-right', content: 'Streamline your business with our platform.', fontSize: 1.25, fontId: 'ibm-plex-sans' },
+  },
+}
+
 /**
  * Create a demo page with all section types and default content embedded
+ * Hero section includes Corporate Clean canvas config
  */
-export const createDemoPage = (): Page => $Page.createDemoWithContent(getDefaultContent)
+export const createDemoPage = (): Page => {
+  const basePage = $Page.createDemoWithContent(getDefaultContent)
+
+  // Replace hero section with one that includes canvas config
+  const sections = basePage.sections.map((section) => {
+    if (section.kind === 'hero') {
+      return $Section.createHero(section.content, corporateCleanConfig, section.id) as HeroSection
+    }
+    return section
+  })
+
+  return {
+    ...basePage,
+    sections,
+  }
+}
