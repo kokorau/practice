@@ -80,6 +80,8 @@ export type {
   ForegroundElementConfig,
   ForegroundLayerConfig,
   HeroViewConfig,
+  // HeroViewPreset types
+  HeroViewPreset,
 } from './Domain'
 
 export {
@@ -132,6 +134,9 @@ export type {
   PatternMaps,
   CompileColors,
   CompileOptions,
+  // Preset types
+  HeroViewPresetRepository,
+  GetHeroViewPresetsUseCase,
 } from './Application'
 
 export {
@@ -139,6 +144,8 @@ export {
   createHeroSceneUseCase,
   createHeroSceneEditorState,
   compileHeroScene,
+  // Preset UseCase
+  createGetHeroViewPresetsUseCase,
 } from './Application'
 
 // Infra
@@ -149,4 +156,6 @@ export {
   createTextTextureRenderer,
   HeroSceneRenderer,
   createHeroSceneRenderer,
+  // Preset Repository
+  createInMemoryHeroViewPresetRepository,
 } from './Infra'

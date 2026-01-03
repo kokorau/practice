@@ -401,3 +401,9 @@ export {
   createDefaultForegroundConfig,
   createDefaultHeroViewConfig,
 } from './HeroViewConfig'
+
+// ============================================================
+// HeroViewPreset
+// ============================================================
+
+export type { HeroViewPreset } from './HeroViewPreset'
