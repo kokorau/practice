@@ -529,6 +529,20 @@ const handleRemoveLayer = (layerId: string) => {
       <div class="hero-subpanel-content">
         <!-- 後景: テクスチャ選択 -->
         <template v-if="activeSection === 'background'">
+          <!-- Color selection (at top for easy access) -->
+          <div class="color-selection-section no-border">
+            <PrimitiveColorPicker
+              v-model="backgroundColorKey1"
+              :palette="primitivePalette"
+              label="Primary Color"
+            />
+            <PrimitiveColorPicker
+              v-model="backgroundColorKey2"
+              :palette="primitivePalette"
+              label="Secondary Color"
+              :show-auto="true"
+            />
+          </div>
           <!-- Background surface params (shown when non-solid pattern is selected) -->
           <div v-if="currentBackgroundSurfaceSchema && customBackgroundSurfaceParams && customBackgroundSurfaceParams.type !== 'solid'" class="surface-params">
             <SchemaFields
@@ -549,24 +563,19 @@ const handleRemoveLayer = (layerId: string) => {
             @select-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
             @load-random="loadRandomBackgroundImage()"
           />
-          <!-- Color selection -->
-          <div class="color-selection-section">
-            <PrimitiveColorPicker
-              v-model="backgroundColorKey1"
-              :palette="primitivePalette"
-              label="Primary Color"
-            />
-            <PrimitiveColorPicker
-              v-model="backgroundColorKey2"
-              :palette="primitivePalette"
-              label="Secondary Color"
-              :show-auto="true"
-            />
-          </div>
         </template>
 
         <!-- マスク形状選択 -->
         <template v-else-if="activeSection === 'mask-shape'">
+          <!-- Mask outer color (at top for easy access) -->
+          <div class="color-selection-section no-border">
+            <PrimitiveColorPicker
+              v-model="maskOuterColorKey"
+              :palette="primitivePalette"
+              label="Mask Outer Color"
+              :show-auto="true"
+            />
+          </div>
           <!-- Shape params (shown when mask is selected) -->
           <div v-if="currentMaskShapeSchema && customMaskShapeParams" class="shape-params">
             <SchemaFields
@@ -588,19 +597,25 @@ const handleRemoveLayer = (layerId: string) => {
               <span class="pattern-label">{{ pattern.label }}</span>
             </button>
           </div>
-          <!-- Mask outer color (cutout area color) -->
-          <div class="color-selection-section">
-            <PrimitiveColorPicker
-              v-model="maskOuterColorKey"
-              :palette="primitivePalette"
-              label="Mask Outer Color"
-              :show-auto="true"
-            />
-          </div>
         </template>
 
         <!-- マスクテクスチャ選択 -->
         <template v-else-if="activeSection === 'mask-surface'">
+          <!-- Mask color selection (at top for easy access) -->
+          <div class="color-selection-section no-border">
+            <PrimitiveColorPicker
+              v-model="maskColorKey1"
+              :palette="primitivePalette"
+              label="Mask Primary Color"
+              :show-auto="true"
+            />
+            <PrimitiveColorPicker
+              v-model="maskColorKey2"
+              :palette="primitivePalette"
+              label="Mask Secondary Color"
+              :show-auto="true"
+            />
+          </div>
           <!-- Surface params (shown when texture is selected) -->
           <div v-if="currentSurfaceSchema && customSurfaceParams" class="surface-params">
             <SchemaFields
@@ -622,21 +637,6 @@ const handleRemoveLayer = (layerId: string) => {
             @select-pattern="(i) => { selectedMidgroundTextureIndex = i }"
             @load-random="loadRandomMaskImage()"
           />
-          <!-- Mask color selection -->
-          <div class="color-selection-section">
-            <PrimitiveColorPicker
-              v-model="maskColorKey1"
-              :palette="primitivePalette"
-              label="Mask Primary Color"
-              :show-auto="true"
-            />
-            <PrimitiveColorPicker
-              v-model="maskColorKey2"
-              :palette="primitivePalette"
-              label="Mask Secondary Color"
-              :show-auto="true"
-            />
-          </div>
         </template>
 
         <!-- 前景: Title 設定 -->
@@ -1222,6 +1222,13 @@ const handleRemoveLayer = (layerId: string) => {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid oklch(0.85 0.01 260);
+}
+
+.color-selection-section.no-border {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  margin-bottom: 1rem;
 }
 
 .dark .color-selection-section {
