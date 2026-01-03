@@ -37,7 +37,9 @@ struct Params {
   angle: f32,           // 4 bytes @ offset 8
   seed: f32,            // 4 bytes @ offset 12
   sparsity: f32,        // 4 bytes @ offset 16
-  _pad0: vec3f,         // 12 bytes @ offset 20
+  _pad0: f32,           // 4 bytes @ offset 20
+  _pad1: f32,           // 4 bytes @ offset 24
+  _pad2: f32,           // 4 bytes @ offset 28
   curvePoints0: vec4f,  // 16 bytes @ offset 32 (points 0,1,2,3)
   curvePoints1: vec4f,  // 16 bytes @ offset 48 (points 4,5,6,_pad)
 }                       // Total: 64 bytes

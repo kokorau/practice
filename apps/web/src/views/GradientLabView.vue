@@ -106,6 +106,7 @@ const curvePreset = ref<string>('linear')
 // プリセット定義
 const curvePresets: Record<string, number[]> = {
   linear: [0, 1/6, 2/6, 3/6, 4/6, 5/6, 1],
+  parabola: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],  // x²
   easeIn: [0, 0.005, 0.028, 0.083, 0.194, 0.389, 1],
   easeOut: [0, 0.611, 0.806, 0.917, 0.972, 0.995, 1],
   sCurve: [0, 0.028, 0.132, 0.5, 0.868, 0.972, 1],
@@ -319,7 +320,19 @@ onUnmounted(() => {
         <!-- Row 2: Intensity Curve + Curved Depth (右寄せ) -->
         <div class="node-row node-row-right">
           <div ref="intensityCurveNodeRef" class="node-wrapper curve-node">
-            <div class="node-label">Intensity Curve</div>
+            <div class="curve-node-header">
+              <span class="node-label">Intensity Curve</span>
+              <select v-model="curvePreset" class="curve-preset-select" @change="applyCurvePreset">
+                <option value="linear">Linear</option>
+                <option value="parabola">Parabola</option>
+                <option value="easeIn">Ease In</option>
+                <option value="easeOut">Ease Out</option>
+                <option value="sCurve">S-Curve</option>
+                <option value="step">Step</option>
+                <option value="inverse">Inverse</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
             <CurveEditor
               :curve="intensityCurve"
               :width="NODE_WIDTH"
@@ -381,19 +394,6 @@ onUnmounted(() => {
         <div class="control-group">
           <label class="control-label">Angle: {{ angle }}°</label>
           <input v-model.number="angle" type="range" min="0" max="360" class="slider" />
-        </div>
-
-        <div class="control-group">
-          <label class="control-label">Curve Preset</label>
-          <select v-model="curvePreset" class="preset-select" @change="applyCurvePreset">
-            <option value="linear">Linear</option>
-            <option value="easeIn">Ease In</option>
-            <option value="easeOut">Ease Out</option>
-            <option value="sCurve">S-Curve</option>
-            <option value="step">Step</option>
-            <option value="inverse">Inverse</option>
-            <option value="custom">Custom</option>
-          </select>
         </div>
 
         <div class="control-group">
@@ -522,8 +522,27 @@ onUnmounted(() => {
   border-radius: 0.5rem;
 }
 
-.curve-node .node-label {
+.curve-node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 0.25rem;
+  gap: 0.5rem;
+}
+
+.curve-preset-select {
+  padding: 0.125rem 0.25rem;
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  border-radius: 0.25rem;
+  color: #eee;
+  font-size: 0.625rem;
+  cursor: pointer;
+}
+
+.curve-preset-select:focus {
+  outline: none;
+  border-color: #4ecdc4;
 }
 
 .final-row {

@@ -37,16 +37,18 @@ export const GRADIENT_GRAIN_BUFFER_SIZE = 96
 
 export const gradientGrainShader = /* wgsl */ `
 struct Params {
-  viewport: vec2f,
-  angle: f32,
-  seed: f32,
-  colorA: vec4f,
-  colorB: vec4f,
-  sparsity: f32,
-  _pad0: vec3f,
-  curvePoints0: vec4f,
-  curvePoints1: vec4f,
-}
+  viewport: vec2f,      // 8 bytes @ offset 0
+  angle: f32,           // 4 bytes @ offset 8
+  seed: f32,            // 4 bytes @ offset 12
+  colorA: vec4f,        // 16 bytes @ offset 16
+  colorB: vec4f,        // 16 bytes @ offset 32
+  sparsity: f32,        // 4 bytes @ offset 48
+  _pad0: f32,           // 4 bytes @ offset 52
+  _pad1: f32,           // 4 bytes @ offset 56
+  _pad2: f32,           // 4 bytes @ offset 60
+  curvePoints0: vec4f,  // 16 bytes @ offset 64
+  curvePoints1: vec4f,  // 16 bytes @ offset 80
+}                       // Total: 96 bytes
 
 @group(0) @binding(0) var<uniform> params: Params;
 
