@@ -104,6 +104,10 @@ const angle = ref(90)
 const grainSeed = ref(12345)
 const sparsity = ref(0.75)
 
+// 線形深度マップ用パラメータ
+const linearCenterX = ref(0.5)
+const linearCenterY = ref(0.5)
+
 // 深度マップタイプ
 type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin'
 const depthMapType = ref<DepthMapType>('linear')
@@ -203,21 +207,39 @@ const nodeViewport = { width: NODE_WIDTH, height: NODE_HEIGHT }
 const mainViewport = { width: MAIN_WIDTH, height: MAIN_HEIGHT }
 
 // 共通の深度マップパラメータ
-const depthParams = computed(() => ({
-  depthMapType: depthMapType.value,
-  angle: angle.value,
-  centerX: depthMapType.value === 'circular' ? circularCenterX.value : radialCenterX.value,
-  centerY: depthMapType.value === 'circular' ? circularCenterY.value : radialCenterY.value,
-  circularInvert: false,  // always false (use color swap instead)
-  radialStartAngle: radialStartAngle.value,
-  radialSweepAngle: radialSweepAngle.value,
-  // Perlin noise params
-  perlinScale: perlinScale.value,
-  perlinOctaves: perlinOctaves.value,
-  perlinSeed: perlinSeed.value,
-  perlinContrast: perlinContrast.value,
-  perlinOffset: perlinOffset.value,
-}))
+const depthParams = computed(() => {
+  let centerX = 0.5
+  let centerY = 0.5
+  switch (depthMapType.value) {
+    case 'linear':
+      centerX = linearCenterX.value
+      centerY = linearCenterY.value
+      break
+    case 'circular':
+      centerX = circularCenterX.value
+      centerY = circularCenterY.value
+      break
+    case 'radial':
+      centerX = radialCenterX.value
+      centerY = radialCenterY.value
+      break
+  }
+  return {
+    depthMapType: depthMapType.value,
+    angle: angle.value,
+    centerX,
+    centerY,
+    circularInvert: false,  // always false (use color swap instead)
+    radialStartAngle: radialStartAngle.value,
+    radialSweepAngle: radialSweepAngle.value,
+    // Perlin noise params
+    perlinScale: perlinScale.value,
+    perlinOctaves: perlinOctaves.value,
+    perlinSeed: perlinSeed.value,
+    perlinContrast: perlinContrast.value,
+    perlinOffset: perlinOffset.value,
+  }
+})
 
 const depthSpec = computed<TextureRenderSpec>(() => {
   switch (depthMapType.value) {
@@ -244,7 +266,11 @@ const depthSpec = computed<TextureRenderSpec>(() => {
       }, nodeViewport)
     case 'linear':
     default:
-      return createLinearDepthMapSpec({ angle: angle.value }, nodeViewport)
+      return createLinearDepthMapSpec({
+        angle: angle.value,
+        centerX: linearCenterX.value,
+        centerY: linearCenterY.value,
+      }, nodeViewport)
   }
 })
 
@@ -305,7 +331,8 @@ function renderMain() {
 
 watch(
   [colorAHex, colorBHex, angle, grainSeed, sparsity, curvePoints,
-   depthMapType, circularCenterX, circularCenterY,
+   depthMapType, linearCenterX, linearCenterY,
+   circularCenterX, circularCenterY,
    radialCenterX, radialCenterY, radialStartAngle, radialSweepAngle,
    perlinScale, perlinOctaves, perlinSeed, perlinContrast, perlinOffset],
   () => renderMain(),
@@ -501,6 +528,14 @@ onUnmounted(() => {
             <div class="control-group">
               <label class="control-label">Angle: {{ angle }}°</label>
               <input v-model.number="angle" type="range" min="0" max="360" class="slider" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Center X: {{ Math.round(linearCenterX * 100) }}%</label>
+              <input v-model.number="linearCenterX" type="range" min="0" max="1" step="0.01" class="slider" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Center Y: {{ Math.round(linearCenterY * 100) }}%</label>
+              <input v-model.number="linearCenterY" type="range" min="0" max="1" step="0.01" class="slider" />
             </div>
           </template>
           <!-- Circular params -->

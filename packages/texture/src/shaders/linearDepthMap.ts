@@ -7,6 +7,8 @@ import type { TextureRenderSpec } from '../Domain'
 
 export interface LinearDepthMapParams {
   angle: number  // degrees (0-360)
+  centerX: number  // 0-1
+  centerY: number  // 0-1
 }
 
 // ============================================================
@@ -17,8 +19,10 @@ export interface LinearDepthMapParams {
  * Uniform buffer size (16-byte aligned)
  * Layout:
  *   viewport: vec2f (8) + angle: f32 (4) + padding: f32 (4) = 16 bytes
+ *   center: vec2f (8) + padding: vec2f (8) = 16 bytes
+ *   Total: 32 bytes
  */
-export const LINEAR_DEPTH_MAP_BUFFER_SIZE = 16
+export const LINEAR_DEPTH_MAP_BUFFER_SIZE = 32
 
 // ============================================================
 // WGSL Shader
@@ -28,8 +32,10 @@ export const linearDepthMapShader = /* wgsl */ `
 struct Params {
   viewport: vec2f,   // 8 bytes @ offset 0
   angle: f32,        // 4 bytes @ offset 8
-  _pad: f32,         // 4 bytes @ offset 12
-}                    // Total: 16 bytes
+  _pad0: f32,        // 4 bytes @ offset 12
+  center: vec2f,     // 8 bytes @ offset 16
+  _pad1: vec2f,      // 8 bytes @ offset 24
+}                    // Total: 32 bytes
 
 @group(0) @binding(0) var<uniform> params: Params;
 
@@ -49,8 +55,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   // グラデーション方向
   let dir = getGradientDirection(params.angle);
 
-  // 中心を(0.5, 0.5)として、方向に沿った位置を計算
-  let centered = uv - vec2f(0.5, 0.5);
+  // 中心からの相対位置を計算
+  let centered = uv - params.center;
   let projected = dot(centered, dir);
 
   // -0.5〜0.5 を 0〜1 にマッピング
@@ -75,6 +81,10 @@ export function createLinearDepthMapSpec(
   data[1] = viewport.height
   data[2] = params.angle
   data[3] = 0  // padding
+  data[4] = params.centerX
+  data[5] = params.centerY
+  data[6] = 0  // padding
+  data[7] = 0  // padding
 
   return {
     shader: linearDepthMapShader,

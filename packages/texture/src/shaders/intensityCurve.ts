@@ -97,6 +97,14 @@ fn getPoint(idx: i32) -> f32 {
 
 // Evaluate 7-point curve using Catmull-Rom interpolation
 fn evaluateCurve(x: f32) -> f32 {
+  // Handle edge cases to ensure endpoints are reached
+  if (x >= 1.0) {
+    return getPoint(6);
+  }
+  if (x <= 0.0) {
+    return getPoint(0);
+  }
+
   let segmentF = x * 6.0;
   let segment = i32(floor(segmentF));
   let t = fract(segmentF);

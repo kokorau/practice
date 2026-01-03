@@ -181,10 +181,10 @@ fn depthFbm(p: vec2f, octaves: i32) -> f32 {
 }
 
 // Linear depth: gradient along angle direction
-fn linearDepth(uv: vec2f, angle: f32) -> f32 {
+fn linearDepth(uv: vec2f, angle: f32, center: vec2f) -> f32 {
   let angleRad = (angle - 90.0) * PI / 180.0;
   let dir = vec2f(cos(angleRad), sin(angleRad));
-  let centered = uv - vec2f(0.5, 0.5);
+  let centered = uv - center;
   let projected = dot(centered, dir);
   return clamp(projected + 0.5, 0.0, 1.0);
 }
@@ -249,7 +249,7 @@ fn calculateDepth(
       return radialDepth(uv, center, radialStartAngle, radialSweepAngle);
     }
     default: {
-      return linearDepth(uv, linearAngle);
+      return linearDepth(uv, linearAngle, center);
     }
   }
 }
@@ -282,7 +282,7 @@ fn calculateDepthEx(
       return perlinDepth(uv, perlinScale, i32(perlinOctaves), perlinSeed, perlinContrast, perlinOffset);
     }
     default: {
-      return linearDepth(uv, linearAngle);
+      return linearDepth(uv, linearAngle, center);
     }
   }
 }
