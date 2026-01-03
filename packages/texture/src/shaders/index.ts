@@ -8,6 +8,9 @@ export {
   valueNoise,
   fbm,
   noiseUtils,
+  depthMapUtils,
+  depthMapTypeToNumber,
+  type DepthMapType,
 } from './common'
 export { imageShader } from './image'
 export { solidShader, createSolidSpec, type SolidTextureParams } from './solid'

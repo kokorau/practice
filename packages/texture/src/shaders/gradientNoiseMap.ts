@@ -1,4 +1,4 @@
-import { fullscreenVertex, hash21 } from './common'
+import { fullscreenVertex, hash21, depthMapUtils, depthMapTypeToNumber, type DepthMapType } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 // ============================================================
@@ -6,7 +6,13 @@ import type { TextureRenderSpec } from '../Domain'
 // ============================================================
 
 export interface GradientNoiseMapParams {
-  angle: number       // gradient direction (degrees)
+  depthMapType?: DepthMapType  // 'linear' | 'circular' | 'radial'
+  angle: number       // gradient direction (degrees) for linear
+  centerX?: number    // 0-1, default 0.5
+  centerY?: number    // 0-1, default 0.5
+  circularInvert?: boolean
+  radialStartAngle?: number  // degrees
+  radialSweepAngle?: number  // degrees
   seed: number        // noise seed
   sparsity: number    // sparsity factor (0=dense, 1=very sparse)
   curvePoints: number[] // 7 Y values (0-1) for intensity curve
@@ -19,13 +25,14 @@ export interface GradientNoiseMapParams {
 /**
  * Uniform buffer size (16-byte aligned)
  * Layout:
- *   viewport: vec2f (8) + angle: f32 (4) + seed: f32 (4) = 16 bytes
- *   sparsity: f32 (4) + _pad: vec3f (12) = 16 bytes
+ *   viewport: vec2f (8) + depthType: f32 (4) + angle: f32 (4) = 16 bytes
+ *   center: vec2f (8) + circularInvert: f32 (4) + radialStartAngle: f32 (4) = 16 bytes
+ *   radialSweepAngle: f32 (4) + seed: f32 (4) + sparsity: f32 (4) + _pad: f32 (4) = 16 bytes
  *   curvePoints[0..3]: vec4f (16) = 16 bytes
  *   curvePoints[4..6] + _pad: vec4f (16) = 16 bytes
- *   Total: 64 bytes
+ *   Total: 80 bytes
  */
-export const GRADIENT_NOISE_MAP_BUFFER_SIZE = 64
+export const GRADIENT_NOISE_MAP_BUFFER_SIZE = 80
 
 // ============================================================
 // WGSL Shader
@@ -33,22 +40,27 @@ export const GRADIENT_NOISE_MAP_BUFFER_SIZE = 64
 
 export const gradientNoiseMapShader = /* wgsl */ `
 struct Params {
-  viewport: vec2f,      // 8 bytes @ offset 0
-  angle: f32,           // 4 bytes @ offset 8
-  seed: f32,            // 4 bytes @ offset 12
-  sparsity: f32,        // 4 bytes @ offset 16
-  _pad0: f32,           // 4 bytes @ offset 20
-  _pad1: f32,           // 4 bytes @ offset 24
-  _pad2: f32,           // 4 bytes @ offset 28
-  curvePoints0: vec4f,  // 16 bytes @ offset 32 (points 0,1,2,3)
-  curvePoints1: vec4f,  // 16 bytes @ offset 48 (points 4,5,6,_pad)
-}                       // Total: 64 bytes
+  viewport: vec2f,         // 8 bytes @ offset 0
+  depthType: f32,          // 4 bytes @ offset 8
+  angle: f32,              // 4 bytes @ offset 12
+  center: vec2f,           // 8 bytes @ offset 16
+  circularInvert: f32,     // 4 bytes @ offset 24
+  radialStartAngle: f32,   // 4 bytes @ offset 28
+  radialSweepAngle: f32,   // 4 bytes @ offset 32
+  seed: f32,               // 4 bytes @ offset 36
+  sparsity: f32,           // 4 bytes @ offset 40
+  _pad0: f32,              // 4 bytes @ offset 44
+  curvePoints0: vec4f,     // 16 bytes @ offset 48 (points 0,1,2,3)
+  curvePoints1: vec4f,     // 16 bytes @ offset 64 (points 4,5,6,_pad)
+}                          // Total: 80 bytes
 
 @group(0) @binding(0) var<uniform> params: Params;
 
 ${fullscreenVertex}
 
 ${hash21}
+
+${depthMapUtils}
 
 // Catmull-Rom spline interpolation
 fn catmullRom(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32 {
@@ -89,26 +101,27 @@ fn evaluateCurve(x: f32) -> f32 {
   return clamp(catmullRom(p0, p1, p2, p3, t), 0.0, 1.0);
 }
 
-// 角度からグラデーション方向ベクトルを計算
-fn getGradientDirection(angleDeg: f32) -> vec2f {
-  let angleRad = (angleDeg - 90.0) * 3.14159265359 / 180.0;
-  return vec2f(cos(angleRad), sin(angleRad));
-}
-
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let uv = pos.xy / params.viewport;
+  let aspect = params.viewport.x / params.viewport.y;
 
-  // グラデーション方向に沿った位置 t (0-1)
-  let dir = getGradientDirection(params.angle);
-  let centered = uv - vec2f(0.5, 0.5);
-  let projected = dot(centered, dir);
-  let t = clamp(projected + 0.5, 0.0, 1.0);
+  // Calculate depth based on type
+  let t = calculateDepth(
+    uv,
+    params.depthType,
+    params.angle,
+    params.center,
+    aspect,
+    params.circularInvert,
+    params.radialStartAngle,
+    params.radialSweepAngle
+  );
 
-  // カーブを適用
+  // Apply curve
   let curvedT = evaluateCurve(t);
 
-  // ホワイトノイズ (0-1)
+  // White noise (0-1)
   let noise = hash21(pos.xy + params.seed);
 
   // sparsity: 0=dense, 1=very sparse
@@ -129,29 +142,35 @@ export function createGradientNoiseMapSpec(
 ): TextureRenderSpec {
   const data = new Float32Array(GRADIENT_NOISE_MAP_BUFFER_SIZE / 4)
 
-  // viewport + angle + seed
+  // viewport + depthType + angle
   data[0] = viewport.width
   data[1] = viewport.height
-  data[2] = params.angle
-  data[3] = params.seed
+  data[2] = depthMapTypeToNumber(params.depthMapType ?? 'linear')
+  data[3] = params.angle
 
-  // sparsity + padding
-  data[4] = params.sparsity
-  data[5] = 0  // _pad0.x
-  data[6] = 0  // _pad0.y
-  data[7] = 0  // _pad0.z
+  // center + circularInvert + radialStartAngle
+  data[4] = params.centerX ?? 0.5
+  data[5] = params.centerY ?? 0.5
+  data[6] = params.circularInvert ? 1.0 : 0.0
+  data[7] = params.radialStartAngle ?? 0
+
+  // radialSweepAngle + seed + sparsity + padding
+  data[8] = params.radialSweepAngle ?? 360
+  data[9] = params.seed
+  data[10] = params.sparsity
+  data[11] = 0  // _pad0
 
   // curvePoints[0..3]
-  data[8] = params.curvePoints[0] ?? 0
-  data[9] = params.curvePoints[1] ?? 1/6
-  data[10] = params.curvePoints[2] ?? 2/6
-  data[11] = params.curvePoints[3] ?? 3/6
+  data[12] = params.curvePoints[0] ?? 0
+  data[13] = params.curvePoints[1] ?? 1/6
+  data[14] = params.curvePoints[2] ?? 2/6
+  data[15] = params.curvePoints[3] ?? 3/6
 
   // curvePoints[4..6] + padding
-  data[12] = params.curvePoints[4] ?? 4/6
-  data[13] = params.curvePoints[5] ?? 5/6
-  data[14] = params.curvePoints[6] ?? 1
-  data[15] = 0  // padding
+  data[16] = params.curvePoints[4] ?? 4/6
+  data[17] = params.curvePoints[5] ?? 5/6
+  data[18] = params.curvePoints[6] ?? 1
+  data[19] = 0  // padding
 
   return {
     shader: gradientNoiseMapShader,

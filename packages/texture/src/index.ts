@@ -35,6 +35,7 @@ export type {
   NoiseMapParams,
   GradientNoiseMapParams,
   IntensityCurveParams,
+  DepthMapType,
 } from './shaders'
 
 export {

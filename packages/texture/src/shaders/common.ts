@@ -118,3 +118,95 @@ ${hash21}
 ${interleavedGradientNoise}
 ${valueNoise}
 `
+
+// ============================================================
+// Depth Map Utilities
+// ============================================================
+
+/** 深度マップタイプ */
+export type DepthMapType = 'linear' | 'circular' | 'radial'
+
+/** 深度マップタイプをシェーダー用の数値に変換 */
+export function depthMapTypeToNumber(type: DepthMapType): number {
+  switch (type) {
+    case 'linear': return 0
+    case 'circular': return 1
+    case 'radial': return 2
+    default: return 0
+  }
+}
+
+/**
+ * 深度計算関数（WGSL）
+ * depthMapType: 0=linear, 1=circular, 2=radial
+ */
+export const depthMapUtils = /* wgsl */ `
+const PI: f32 = 3.14159265359;
+const TWO_PI: f32 = 6.28318530718;
+
+// Linear depth: gradient along angle direction
+fn linearDepth(uv: vec2f, angle: f32) -> f32 {
+  let angleRad = (angle - 90.0) * PI / 180.0;
+  let dir = vec2f(cos(angleRad), sin(angleRad));
+  let centered = uv - vec2f(0.5, 0.5);
+  let projected = dot(centered, dir);
+  return clamp(projected + 0.5, 0.0, 1.0);
+}
+
+// Circular depth: distance from center
+fn circularDepth(uv: vec2f, center: vec2f, aspect: f32, invert: f32) -> f32 {
+  let diff = uv - center;
+  let adjustedDiff = vec2f(diff.x * aspect, diff.y);
+  let maxDist = length(vec2f(0.5 * aspect, 0.5));
+  let dist = length(adjustedDiff);
+  var t = clamp(dist / maxDist, 0.0, 1.0);
+  if (invert > 0.5) {
+    t = 1.0 - t;
+  }
+  return t;
+}
+
+// Radial depth: angle from center
+fn radialDepth(uv: vec2f, center: vec2f, startAngle: f32, sweepAngle: f32) -> f32 {
+  let diff = uv - center;
+  var angle = atan2(diff.y, diff.x);
+  if (angle < 0.0) {
+    angle = angle + TWO_PI;
+  }
+  let startRad = startAngle * PI / 180.0;
+  angle = angle - startRad;
+  if (angle < 0.0) {
+    angle = angle + TWO_PI;
+  }
+  if (angle > TWO_PI) {
+    angle = angle - TWO_PI;
+  }
+  let sweepRad = sweepAngle * PI / 180.0;
+  return clamp(angle / sweepRad, 0.0, 1.0);
+}
+
+// Unified depth function based on type
+fn calculateDepth(
+  uv: vec2f,
+  depthType: f32,
+  linearAngle: f32,
+  center: vec2f,
+  aspect: f32,
+  circularInvert: f32,
+  radialStartAngle: f32,
+  radialSweepAngle: f32
+) -> f32 {
+  let typeInt = i32(depthType);
+  switch(typeInt) {
+    case 1: {
+      return circularDepth(uv, center, aspect, circularInvert);
+    }
+    case 2: {
+      return radialDepth(uv, center, radialStartAngle, radialSweepAngle);
+    }
+    default: {
+      return linearDepth(uv, linearAngle);
+    }
+  }
+}
+`

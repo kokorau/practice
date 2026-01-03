@@ -205,6 +205,17 @@ const colorB = computed(() => {
 const nodeViewport = { width: NODE_WIDTH, height: NODE_HEIGHT }
 const mainViewport = { width: MAIN_WIDTH, height: MAIN_HEIGHT }
 
+// 共通の深度マップパラメータ
+const depthParams = computed(() => ({
+  depthMapType: depthMapType.value,
+  angle: angle.value,
+  centerX: depthMapType.value === 'circular' ? circularCenterX.value : radialCenterX.value,
+  centerY: depthMapType.value === 'circular' ? circularCenterY.value : radialCenterY.value,
+  circularInvert: circularInvert.value,
+  radialStartAngle: radialStartAngle.value,
+  radialSweepAngle: radialSweepAngle.value,
+}))
+
 const depthSpec = computed<TextureRenderSpec>(() => {
   switch (depthMapType.value) {
     case 'circular':
@@ -231,19 +242,22 @@ const noiseSpec = computed<TextureRenderSpec>(() =>
 )
 
 const gradientSpec = computed<TextureRenderSpec>(() =>
-  createLinearGradientSpec({ angle: angle.value, stops: gpuStops.value }, nodeViewport)
+  createLinearGradientSpec({
+    ...depthParams.value,
+    stops: gpuStops.value,
+  }, nodeViewport)
 )
 
 const curvedDepthSpec = computed<TextureRenderSpec>(() =>
   createIntensityCurveSpec({
-    angle: angle.value,
+    ...depthParams.value,
     curvePoints: curvePoints.value,
   }, nodeViewport)
 )
 
 const depthNoiseSpec = computed<TextureRenderSpec>(() =>
   createGradientNoiseMapSpec({
-    angle: angle.value,
+    ...depthParams.value,
     seed: grainSeed.value,
     sparsity: sparsity.value,
     curvePoints: curvePoints.value,
@@ -252,7 +266,7 @@ const depthNoiseSpec = computed<TextureRenderSpec>(() =>
 
 const finalSpec = computed<TextureRenderSpec>(() =>
   createGradientGrainSpec({
-    angle: angle.value,
+    ...depthParams.value,
     colorA: colorA.value,
     colorB: colorB.value,
     seed: grainSeed.value,

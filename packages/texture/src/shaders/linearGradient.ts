@@ -1,4 +1,4 @@
-import { fullscreenVertex } from './common'
+import { fullscreenVertex, depthMapUtils, depthMapTypeToNumber, type DepthMapType } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 // ============================================================
@@ -11,7 +11,13 @@ export interface ColorStop {
 }
 
 export interface LinearGradientParams {
-  angle: number  // degrees (0-360)
+  depthMapType?: DepthMapType  // 'linear' | 'circular' | 'radial'
+  angle: number  // degrees (0-360) for linear
+  centerX?: number    // 0-1, default 0.5
+  centerY?: number    // 0-1, default 0.5
+  circularInvert?: boolean
+  radialStartAngle?: number  // degrees
+  radialSweepAngle?: number  // degrees
   stops: ColorStop[]  // max 8 stops
 }
 
@@ -22,11 +28,13 @@ export interface LinearGradientParams {
 /**
  * Uniform buffer size (16-byte aligned)
  * Layout:
- *   viewport: vec2f (8) + angle: f32 (4) + stopCount: f32 (4) = 16 bytes
+ *   viewport: vec2f (8) + depthType: f32 (4) + angle: f32 (4) = 16 bytes
+ *   center: vec2f (8) + circularInvert: f32 (4) + radialStartAngle: f32 (4) = 16 bytes
+ *   radialSweepAngle: f32 (4) + stopCount: f32 (4) + _pad (8) = 16 bytes
  *   stops[8]: each { color: vec4f (16) + position: f32 (4) + padding: vec3f (12) } = 32 bytes
- *   Total: 16 + 32 * 8 = 272 bytes
+ *   Total: 48 + 32 * 8 = 304 bytes
  */
-export const LINEAR_GRADIENT_BUFFER_SIZE = 272
+export const LINEAR_GRADIENT_BUFFER_SIZE = 304
 
 // ============================================================
 // WGSL Shader
@@ -42,33 +50,33 @@ struct ColorStop {
 }                    // Total: 32 bytes
 
 struct Params {
-  viewport: vec2f,   // 8 bytes @ offset 0
-  angle: f32,        // 4 bytes @ offset 8
-  stopCount: f32,    // 4 bytes @ offset 12
-  stops: array<ColorStop, 8>,  // 32 * 8 = 256 bytes @ offset 16
-}                    // Total: 272 bytes
+  viewport: vec2f,         // 8 bytes @ offset 0
+  depthType: f32,          // 4 bytes @ offset 8
+  angle: f32,              // 4 bytes @ offset 12
+  center: vec2f,           // 8 bytes @ offset 16
+  circularInvert: f32,     // 4 bytes @ offset 24
+  radialStartAngle: f32,   // 4 bytes @ offset 28
+  radialSweepAngle: f32,   // 4 bytes @ offset 32
+  stopCount: f32,          // 4 bytes @ offset 36
+  _pad0: f32,              // 4 bytes @ offset 40
+  _pad1: f32,              // 4 bytes @ offset 44
+  stops: array<ColorStop, 8>,  // 32 * 8 = 256 bytes @ offset 48
+}                          // Total: 304 bytes
 
 @group(0) @binding(0) var<uniform> params: Params;
 
 ${fullscreenVertex}
 
-// 角度からグラデーション方向ベクトルを計算
-fn getGradientDirection(angleDeg: f32) -> vec2f {
-  let angleRad = (angleDeg - 90.0) * 3.14159265359 / 180.0;
-  return vec2f(cos(angleRad), sin(angleRad));
-}
+${depthMapUtils}
 
-// 位置 t (0-1) に対応する色を計算（2 stop 固定版）
+// Sample gradient (2 stop version)
 fn sampleGradient(t: f32) -> vec4f {
   let color0 = params.stops[0].color;
   let color1 = params.stops[1].color;
   let pos0 = params.stops[0].position;
   let pos1 = params.stops[1].position;
 
-  // clamp t to valid range
   let clamped = clamp(t, pos0, pos1);
-
-  // 補間
   let range = pos1 - pos0;
   if (range <= 0.0) {
     return color0;
@@ -79,18 +87,20 @@ fn sampleGradient(t: f32) -> vec4f {
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  // 正規化座標 (0-1)
   let uv = pos.xy / params.viewport;
+  let aspect = params.viewport.x / params.viewport.y;
 
-  // グラデーション方向
-  let dir = getGradientDirection(params.angle);
-
-  // 中心を(0.5, 0.5)として、方向に沿った位置を計算
-  let centered = uv - vec2f(0.5, 0.5);
-  let projected = dot(centered, dir);
-
-  // -0.5〜0.5 を 0〜1 にマッピング
-  let t = projected + 0.5;
+  // Calculate depth based on type
+  let t = calculateDepth(
+    uv,
+    params.depthType,
+    params.angle,
+    params.center,
+    aspect,
+    params.circularInvert,
+    params.radialStartAngle,
+    params.radialSweepAngle
+  );
 
   return sampleGradient(t);
 }
@@ -113,15 +123,27 @@ export function createLinearGradientSpec(
   // Create uniform buffer
   const data = new Float32Array(LINEAR_GRADIENT_BUFFER_SIZE / 4)
 
-  // viewport (vec2f) + angle (f32) + stopCount (f32)
+  // viewport + depthType + angle
   data[0] = viewport.width
   data[1] = viewport.height
-  data[2] = params.angle
-  data[3] = stopCount
+  data[2] = depthMapTypeToNumber(params.depthMapType ?? 'linear')
+  data[3] = params.angle
+
+  // center + circularInvert + radialStartAngle
+  data[4] = params.centerX ?? 0.5
+  data[5] = params.centerY ?? 0.5
+  data[6] = params.circularInvert ? 1.0 : 0.0
+  data[7] = params.radialStartAngle ?? 0
+
+  // radialSweepAngle + stopCount + padding
+  data[8] = params.radialSweepAngle ?? 360
+  data[9] = stopCount
+  data[10] = 0  // _pad0
+  data[11] = 0  // _pad1
 
   // stops array (each stop = 8 floats: color(4) + position(1) + padding(3))
   for (let i = 0; i < 8; i++) {
-    const offset = 4 + i * 8  // 4 floats header + 8 floats per stop
+    const offset = 12 + i * 8  // 12 floats header + 8 floats per stop
     const stop = sortedStops[i]
     if (stop) {
       data[offset] = stop.color[0]
