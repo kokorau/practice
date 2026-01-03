@@ -11,13 +11,19 @@ export interface ColorStop {
 }
 
 export interface LinearGradientParams {
-  depthMapType?: DepthMapType  // 'linear' | 'circular' | 'radial'
+  depthMapType?: DepthMapType  // 'linear' | 'circular' | 'radial' | 'perlin'
   angle: number  // degrees (0-360) for linear
   centerX?: number    // 0-1, default 0.5
   centerY?: number    // 0-1, default 0.5
   circularInvert?: boolean
   radialStartAngle?: number  // degrees
   radialSweepAngle?: number  // degrees
+  // Perlin noise params
+  perlinScale?: number     // noise scale (1-20), default 4
+  perlinOctaves?: number   // fBm octaves (1-8), default 4
+  perlinSeed?: number      // random seed, default 42
+  perlinContrast?: number  // contrast (0-3), default 1
+  perlinOffset?: number    // offset (-0.5 to 0.5), default 0
   stops: ColorStop[]  // max 8 stops
 }
 
@@ -30,11 +36,12 @@ export interface LinearGradientParams {
  * Layout:
  *   viewport: vec2f (8) + depthType: f32 (4) + angle: f32 (4) = 16 bytes
  *   center: vec2f (8) + circularInvert: f32 (4) + radialStartAngle: f32 (4) = 16 bytes
- *   radialSweepAngle: f32 (4) + stopCount: f32 (4) + _pad (8) = 16 bytes
+ *   radialSweepAngle: f32 (4) + perlinScale: f32 (4) + perlinOctaves: f32 (4) + perlinSeed: f32 (4) = 16 bytes
+ *   perlinContrast: f32 (4) + perlinOffset: f32 (4) + stopCount: f32 (4) + _pad (4) = 16 bytes
  *   stops[8]: each { color: vec4f (16) + position: f32 (4) + padding: vec3f (12) } = 32 bytes
- *   Total: 48 + 32 * 8 = 304 bytes
+ *   Total: 64 + 32 * 8 = 320 bytes
  */
-export const LINEAR_GRADIENT_BUFFER_SIZE = 304
+export const LINEAR_GRADIENT_BUFFER_SIZE = 320
 
 // ============================================================
 // WGSL Shader
@@ -57,11 +64,15 @@ struct Params {
   circularInvert: f32,     // 4 bytes @ offset 24
   radialStartAngle: f32,   // 4 bytes @ offset 28
   radialSweepAngle: f32,   // 4 bytes @ offset 32
-  stopCount: f32,          // 4 bytes @ offset 36
-  _pad0: f32,              // 4 bytes @ offset 40
-  _pad1: f32,              // 4 bytes @ offset 44
-  stops: array<ColorStop, 8>,  // 32 * 8 = 256 bytes @ offset 48
-}                          // Total: 304 bytes
+  perlinScale: f32,        // 4 bytes @ offset 36
+  perlinOctaves: f32,      // 4 bytes @ offset 40
+  perlinSeed: f32,         // 4 bytes @ offset 44
+  perlinContrast: f32,     // 4 bytes @ offset 48
+  perlinOffset: f32,       // 4 bytes @ offset 52
+  stopCount: f32,          // 4 bytes @ offset 56
+  _pad0: f32,              // 4 bytes @ offset 60
+  stops: array<ColorStop, 8>,  // 32 * 8 = 256 bytes @ offset 64
+}                          // Total: 320 bytes
 
 @group(0) @binding(0) var<uniform> params: Params;
 
@@ -90,8 +101,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let uv = pos.xy / params.viewport;
   let aspect = params.viewport.x / params.viewport.y;
 
-  // Calculate depth based on type
-  let t = calculateDepth(
+  // Calculate depth based on type (with perlin support)
+  let t = calculateDepthEx(
     uv,
     params.depthType,
     params.angle,
@@ -99,7 +110,12 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     aspect,
     params.circularInvert,
     params.radialStartAngle,
-    params.radialSweepAngle
+    params.radialSweepAngle,
+    params.perlinScale,
+    params.perlinOctaves,
+    params.perlinSeed,
+    params.perlinContrast,
+    params.perlinOffset
   );
 
   return sampleGradient(t);
@@ -135,15 +151,21 @@ export function createLinearGradientSpec(
   data[6] = params.circularInvert ? 1.0 : 0.0
   data[7] = params.radialStartAngle ?? 0
 
-  // radialSweepAngle + stopCount + padding
+  // radialSweepAngle + perlin params
   data[8] = params.radialSweepAngle ?? 360
-  data[9] = stopCount
-  data[10] = 0  // _pad0
-  data[11] = 0  // _pad1
+  data[9] = params.perlinScale ?? 4
+  data[10] = params.perlinOctaves ?? 4
+  data[11] = params.perlinSeed ?? 42
+
+  // perlin params continued + stopCount + padding
+  data[12] = params.perlinContrast ?? 1
+  data[13] = params.perlinOffset ?? 0
+  data[14] = stopCount
+  data[15] = 0  // _pad0
 
   // stops array (each stop = 8 floats: color(4) + position(1) + padding(3))
   for (let i = 0; i < 8; i++) {
-    const offset = 12 + i * 8  // 12 floats header + 8 floats per stop
+    const offset = 16 + i * 8  // 16 floats header + 8 floats per stop
     const stop = sortedStops[i]
     if (stop) {
       data[offset] = stop.color[0]

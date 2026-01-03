@@ -211,6 +211,12 @@ const depthParams = computed(() => ({
   circularInvert: false,  // always false (use color swap instead)
   radialStartAngle: radialStartAngle.value,
   radialSweepAngle: radialSweepAngle.value,
+  // Perlin noise params
+  perlinScale: perlinScale.value,
+  perlinOctaves: perlinOctaves.value,
+  perlinSeed: perlinSeed.value,
+  perlinContrast: perlinContrast.value,
+  perlinOffset: perlinOffset.value,
 }))
 
 const depthSpec = computed<TextureRenderSpec>(() => {

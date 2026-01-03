@@ -6,16 +6,22 @@ import type { TextureRenderSpec } from '../Domain'
 // ============================================================
 
 export interface GradientGrainParams {
-  depthMapType?: DepthMapType  // 'linear' | 'circular' | 'radial'
+  depthMapType?: DepthMapType  // 'linear' | 'circular' | 'radial' | 'perlin'
   angle: number  // degrees (0-360) for linear
   centerX?: number    // 0-1, default 0.5
   centerY?: number    // 0-1, default 0.5
   circularInvert?: boolean
   radialStartAngle?: number  // degrees
   radialSweepAngle?: number  // degrees
+  // Perlin noise params
+  perlinScale?: number     // noise scale (1-20), default 4
+  perlinOctaves?: number   // fBm octaves (1-8), default 4
+  perlinSeed?: number      // random seed for perlin, default 42
+  perlinContrast?: number  // contrast (0-3), default 1
+  perlinOffset?: number    // offset (-0.5 to 0.5), default 0
   colorA: [number, number, number, number]  // RGBA start color
   colorB: [number, number, number, number]  // RGBA end color
-  seed: number  // noise seed
+  seed: number  // noise seed for grain
   sparsity: number  // sparsity factor (0=dense, 1=very sparse)
   curvePoints: number[]  // 7 Y values (0-1) for intensity curve
 }
@@ -29,14 +35,15 @@ export interface GradientGrainParams {
  * Layout:
  *   viewport: vec2f (8) + depthType: f32 (4) + angle: f32 (4) = 16 bytes
  *   center: vec2f (8) + circularInvert: f32 (4) + radialStartAngle: f32 (4) = 16 bytes
- *   radialSweepAngle: f32 (4) + seed: f32 (4) + sparsity: f32 (4) + _pad: f32 (4) = 16 bytes
+ *   radialSweepAngle: f32 (4) + perlinScale: f32 (4) + perlinOctaves: f32 (4) + perlinSeed: f32 (4) = 16 bytes
+ *   perlinContrast: f32 (4) + perlinOffset: f32 (4) + seed: f32 (4) + sparsity: f32 (4) = 16 bytes
  *   colorA: vec4f = 16 bytes
  *   colorB: vec4f = 16 bytes
  *   curvePoints[0..3]: vec4f = 16 bytes
  *   curvePoints[4..6] + _pad: vec4f = 16 bytes
- *   Total: 112 bytes
+ *   Total: 128 bytes
  */
-export const GRADIENT_GRAIN_BUFFER_SIZE = 112
+export const GRADIENT_GRAIN_BUFFER_SIZE = 128
 
 // ============================================================
 // WGSL Shader
@@ -51,14 +58,18 @@ struct Params {
   circularInvert: f32,     // 4 bytes @ offset 24
   radialStartAngle: f32,   // 4 bytes @ offset 28
   radialSweepAngle: f32,   // 4 bytes @ offset 32
-  seed: f32,               // 4 bytes @ offset 36
-  sparsity: f32,           // 4 bytes @ offset 40
-  _pad0: f32,              // 4 bytes @ offset 44
-  colorA: vec4f,           // 16 bytes @ offset 48
-  colorB: vec4f,           // 16 bytes @ offset 64
-  curvePoints0: vec4f,     // 16 bytes @ offset 80
-  curvePoints1: vec4f,     // 16 bytes @ offset 96
-}                          // Total: 112 bytes
+  perlinScale: f32,        // 4 bytes @ offset 36
+  perlinOctaves: f32,      // 4 bytes @ offset 40
+  perlinSeed: f32,         // 4 bytes @ offset 44
+  perlinContrast: f32,     // 4 bytes @ offset 48
+  perlinOffset: f32,       // 4 bytes @ offset 52
+  seed: f32,               // 4 bytes @ offset 56
+  sparsity: f32,           // 4 bytes @ offset 60
+  colorA: vec4f,           // 16 bytes @ offset 64
+  colorB: vec4f,           // 16 bytes @ offset 80
+  curvePoints0: vec4f,     // 16 bytes @ offset 96
+  curvePoints1: vec4f,     // 16 bytes @ offset 112
+}                          // Total: 128 bytes
 
 @group(0) @binding(0) var<uniform> params: Params;
 
@@ -110,8 +121,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let uv = pos.xy / params.viewport;
   let aspect = params.viewport.x / params.viewport.y;
 
-  // Calculate depth based on type
-  let t = calculateDepth(
+  // Calculate depth based on type (with perlin support)
+  let t = calculateDepthEx(
     uv,
     params.depthType,
     params.angle,
@@ -119,7 +130,12 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     aspect,
     params.circularInvert,
     params.radialStartAngle,
-    params.radialSweepAngle
+    params.radialSweepAngle,
+    params.perlinScale,
+    params.perlinOctaves,
+    params.perlinSeed,
+    params.perlinContrast,
+    params.perlinOffset
   );
 
   // Base gradient color
@@ -176,35 +192,41 @@ export function createGradientGrainSpec(
   data[6] = params.circularInvert ? 1.0 : 0.0
   data[7] = params.radialStartAngle ?? 0
 
-  // radialSweepAngle + seed + sparsity + padding
+  // radialSweepAngle + perlin params
   data[8] = params.radialSweepAngle ?? 360
-  data[9] = params.seed
-  data[10] = params.sparsity
-  data[11] = 0  // _pad0
+  data[9] = params.perlinScale ?? 4
+  data[10] = params.perlinOctaves ?? 4
+  data[11] = params.perlinSeed ?? 42
+
+  // perlin params continued + seed + sparsity
+  data[12] = params.perlinContrast ?? 1
+  data[13] = params.perlinOffset ?? 0
+  data[14] = params.seed
+  data[15] = params.sparsity
 
   // colorA (vec4f)
-  data[12] = params.colorA[0]
-  data[13] = params.colorA[1]
-  data[14] = params.colorA[2]
-  data[15] = params.colorA[3]
+  data[16] = params.colorA[0]
+  data[17] = params.colorA[1]
+  data[18] = params.colorA[2]
+  data[19] = params.colorA[3]
 
   // colorB (vec4f)
-  data[16] = params.colorB[0]
-  data[17] = params.colorB[1]
-  data[18] = params.colorB[2]
-  data[19] = params.colorB[3]
+  data[20] = params.colorB[0]
+  data[21] = params.colorB[1]
+  data[22] = params.colorB[2]
+  data[23] = params.colorB[3]
 
   // curvePoints[0..3]
-  data[20] = params.curvePoints[0] ?? 0
-  data[21] = params.curvePoints[1] ?? 1/6
-  data[22] = params.curvePoints[2] ?? 2/6
-  data[23] = params.curvePoints[3] ?? 3/6
+  data[24] = params.curvePoints[0] ?? 0
+  data[25] = params.curvePoints[1] ?? 1/6
+  data[26] = params.curvePoints[2] ?? 2/6
+  data[27] = params.curvePoints[3] ?? 3/6
 
   // curvePoints[4..6] + padding
-  data[24] = params.curvePoints[4] ?? 4/6
-  data[25] = params.curvePoints[5] ?? 5/6
-  data[26] = params.curvePoints[6] ?? 1
-  data[27] = 0  // padding
+  data[28] = params.curvePoints[4] ?? 4/6
+  data[29] = params.curvePoints[5] ?? 5/6
+  data[30] = params.curvePoints[6] ?? 1
+  data[31] = 0  // padding
 
   return {
     shader: gradientGrainShader,

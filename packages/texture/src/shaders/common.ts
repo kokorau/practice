@@ -139,11 +139,46 @@ export function depthMapTypeToNumber(type: DepthMapType): number {
 
 /**
  * 深度計算関数（WGSL）
- * depthMapType: 0=linear, 1=circular, 2=radial, 3=perlin (perlin is handled separately)
+ * depthMapType: 0=linear, 1=circular, 2=radial, 3=perlin
  */
 export const depthMapUtils = /* wgsl */ `
 const PI: f32 = 3.14159265359;
 const TWO_PI: f32 = 6.28318530718;
+
+// Hash function for noise
+fn depthHash21(p: vec2f) -> f32 {
+  var p3 = fract(vec3f(p.x, p.y, p.x) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+// Value noise for perlin depth
+fn depthValueNoise(p: vec2f) -> f32 {
+  let i = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+
+  let a = depthHash21(i);
+  let b = depthHash21(i + vec2f(1.0, 0.0));
+  let c = depthHash21(i + vec2f(0.0, 1.0));
+  let d = depthHash21(i + vec2f(1.0, 1.0));
+
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+// fBm for perlin depth
+fn depthFbm(p: vec2f, octaves: i32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = p;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * depthValueNoise(pos);
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
 
 // Linear depth: gradient along angle direction
 fn linearDepth(uv: vec2f, angle: f32) -> f32 {
@@ -186,6 +221,14 @@ fn radialDepth(uv: vec2f, center: vec2f, startAngle: f32, sweepAngle: f32) -> f3
   return clamp(angle / sweepRad, 0.0, 1.0);
 }
 
+// Perlin noise depth
+fn perlinDepth(uv: vec2f, scale: f32, octaves: i32, seed: f32, contrast: f32, offset: f32) -> f32 {
+  let noisePos = uv * scale + vec2f(seed * 0.1, seed * 0.073);
+  var noise = depthFbm(noisePos, octaves);
+  noise = (noise - 0.5) * contrast + 0.5 + offset;
+  return clamp(noise, 0.0, 1.0);
+}
+
 // Unified depth function based on type
 fn calculateDepth(
   uv: vec2f,
@@ -204,6 +247,39 @@ fn calculateDepth(
     }
     case 2: {
       return radialDepth(uv, center, radialStartAngle, radialSweepAngle);
+    }
+    default: {
+      return linearDepth(uv, linearAngle);
+    }
+  }
+}
+
+// Extended depth function with perlin support
+fn calculateDepthEx(
+  uv: vec2f,
+  depthType: f32,
+  linearAngle: f32,
+  center: vec2f,
+  aspect: f32,
+  circularInvert: f32,
+  radialStartAngle: f32,
+  radialSweepAngle: f32,
+  perlinScale: f32,
+  perlinOctaves: f32,
+  perlinSeed: f32,
+  perlinContrast: f32,
+  perlinOffset: f32
+) -> f32 {
+  let typeInt = i32(depthType);
+  switch(typeInt) {
+    case 1: {
+      return circularDepth(uv, center, aspect, circularInvert);
+    }
+    case 2: {
+      return radialDepth(uv, center, radialStartAngle, radialSweepAngle);
+    }
+    case 3: {
+      return perlinDepth(uv, perlinScale, i32(perlinOctaves), perlinSeed, perlinContrast, perlinOffset);
     }
     default: {
       return linearDepth(uv, linearAngle);
