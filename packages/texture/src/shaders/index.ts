@@ -79,6 +79,18 @@ export {
   type LinearDepthMapParams,
 } from './linearDepthMap'
 export {
+  circularDepthMapShader,
+  createCircularDepthMapSpec,
+  CIRCULAR_DEPTH_MAP_BUFFER_SIZE,
+  type CircularDepthMapParams,
+} from './circularDepthMap'
+export {
+  radialDepthMapShader,
+  createRadialDepthMapSpec,
+  RADIAL_DEPTH_MAP_BUFFER_SIZE,
+  type RadialDepthMapParams,
+} from './radialDepthMap'
+export {
   noiseMapShader,
   createNoiseMapSpec,
   NOISE_MAP_BUFFER_SIZE,

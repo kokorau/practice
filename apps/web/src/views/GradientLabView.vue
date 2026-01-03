@@ -5,6 +5,8 @@ import {
   createLinearGradientSpec,
   createGradientGrainSpec,
   createLinearDepthMapSpec,
+  createCircularDepthMapSpec,
+  createRadialDepthMapSpec,
   createNoiseMapSpec,
   createGradientNoiseMapSpec,
   createIntensityCurveSpec,
@@ -102,6 +104,21 @@ const grainSeed = ref(12345)
 const noiseThreshold = ref(0.5)
 const sparsity = ref(0.75)
 
+// 深度マップタイプ
+type DepthMapType = 'linear' | 'circular' | 'radial'
+const depthMapType = ref<DepthMapType>('linear')
+
+// 円形深度マップ用パラメータ
+const circularCenterX = ref(0.5)
+const circularCenterY = ref(0.5)
+const circularInvert = ref(false)
+
+// 放射深度マップ用パラメータ
+const radialCenterX = ref(0.5)
+const radialCenterY = ref(0.5)
+const radialStartAngle = ref(0)
+const radialSweepAngle = ref(360)
+
 // カーブパラメータ
 const curvePoints = ref<number[]>([0, 1/6, 2/6, 3/6, 4/6, 5/6, 1])
 const curvePreset = ref<string>('linear')
@@ -188,9 +205,26 @@ const colorB = computed(() => {
 const nodeViewport = { width: NODE_WIDTH, height: NODE_HEIGHT }
 const mainViewport = { width: MAIN_WIDTH, height: MAIN_HEIGHT }
 
-const depthSpec = computed<TextureRenderSpec>(() =>
-  createLinearDepthMapSpec({ angle: angle.value }, nodeViewport)
-)
+const depthSpec = computed<TextureRenderSpec>(() => {
+  switch (depthMapType.value) {
+    case 'circular':
+      return createCircularDepthMapSpec({
+        centerX: circularCenterX.value,
+        centerY: circularCenterY.value,
+        invert: circularInvert.value,
+      }, nodeViewport)
+    case 'radial':
+      return createRadialDepthMapSpec({
+        centerX: radialCenterX.value,
+        centerY: radialCenterY.value,
+        startAngle: radialStartAngle.value,
+        sweepAngle: radialSweepAngle.value,
+      }, nodeViewport)
+    case 'linear':
+    default:
+      return createLinearDepthMapSpec({ angle: angle.value }, nodeViewport)
+  }
+})
 
 const noiseSpec = computed<TextureRenderSpec>(() =>
   createNoiseMapSpec({ seed: grainSeed.value, threshold: noiseThreshold.value }, nodeViewport)
@@ -258,7 +292,9 @@ function removeStop(index: number) {
 }
 
 watch(
-  [stops, angle, grainSeed, noiseThreshold, sparsity, curvePoints],
+  [stops, angle, grainSeed, noiseThreshold, sparsity, curvePoints,
+   depthMapType, circularCenterX, circularCenterY, circularInvert,
+   radialCenterX, radialCenterY, radialStartAngle, radialSweepAngle],
   () => renderMain(),
   { deep: true }
 )
@@ -439,9 +475,56 @@ onUnmounted(() => {
             <span class="node-badge-offset"></span>
           </div>
           <div class="control-group">
-            <label class="control-label">Angle: {{ angle }}°</label>
-            <input v-model.number="angle" type="range" min="0" max="360" class="slider" />
+            <label class="control-label">Type</label>
+            <select v-model="depthMapType" class="preset-select">
+              <option value="linear">Linear</option>
+              <option value="circular">Circular</option>
+              <option value="radial">Radial</option>
+            </select>
           </div>
+          <!-- Linear params -->
+          <template v-if="depthMapType === 'linear'">
+            <div class="control-group">
+              <label class="control-label">Angle: {{ angle }}°</label>
+              <input v-model.number="angle" type="range" min="0" max="360" class="slider" />
+            </div>
+          </template>
+          <!-- Circular params -->
+          <template v-else-if="depthMapType === 'circular'">
+            <div class="control-group">
+              <label class="control-label">Center X: {{ Math.round(circularCenterX * 100) }}%</label>
+              <input v-model.number="circularCenterX" type="range" min="0" max="1" step="0.01" class="slider" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Center Y: {{ Math.round(circularCenterY * 100) }}%</label>
+              <input v-model.number="circularCenterY" type="range" min="0" max="1" step="0.01" class="slider" />
+            </div>
+            <div class="control-group checkbox-group">
+              <label class="checkbox-label">
+                <input v-model="circularInvert" type="checkbox" class="checkbox-input" />
+                <span>Invert</span>
+              </label>
+            </div>
+          </template>
+          <!-- Radial params -->
+          <template v-else-if="depthMapType === 'radial'">
+            <div class="control-group">
+              <label class="control-label">Center X: {{ Math.round(radialCenterX * 100) }}%</label>
+              <input v-model.number="radialCenterX" type="range" min="0" max="1" step="0.01" class="slider" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Center Y: {{ Math.round(radialCenterY * 100) }}%</label>
+              <input v-model.number="radialCenterY" type="range" min="0" max="1" step="0.01" class="slider" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Start Angle: {{ radialStartAngle }}°</label>
+              <input v-model.number="radialStartAngle" type="range" min="0" max="360" class="slider" />
+            </div>
+            <div class="control-group">
+              <label class="control-label">Sweep: {{ radialSweepAngle }}°</label>
+              <input v-model.number="radialSweepAngle" type="range" min="1" max="360" class="slider" />
+            </div>
+          </template>
         </div>
 
         <!-- B: Noise -->
@@ -916,6 +999,28 @@ onUnmounted(() => {
 .remove-button:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+  flex-direction: row;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.checkbox-input {
+  width: 16px;
+  height: 16px;
+  accent-color: #4ecdc4;
+  cursor: pointer;
 }
 
 @media (max-width: 900px) {
