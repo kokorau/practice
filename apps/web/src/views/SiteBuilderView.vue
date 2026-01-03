@@ -33,6 +33,7 @@ import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import BrandGuideTab from '../components/SiteBuilder/BrandGuideTab.vue'
 import AssetsTab from '../components/SiteBuilder/AssetsTab.vue'
+import DemoPageRenderer from '../components/SiteBuilder/DemoPageRenderer.vue'
 
 // ============================================================
 // SiteBuilder Assets (Single Source of Truth)
@@ -365,8 +366,9 @@ watch([palette, currentTokens], updateStyles)
 
 const {
   siteContents,
+  demoTheme,
   currentSections,
-  demoHtml,
+  // demoHtml is not needed when using DemoPageRenderer
   selectedSectionId,
   updateSectionContent,
   downloadHTML,
@@ -506,8 +508,12 @@ const handleApplyColorPreset = (preset: ColorPreset) => {
 
       <!-- Demo Tab -->
       <div v-if="activeTab === 'demo'" class="tab-content">
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div v-html="demoHtml" />
+        <DemoPageRenderer
+          :sections="currentSections"
+          :theme="demoTheme"
+          :primitive-palette="primitivePalette"
+          :is-dark="isDark"
+        />
       </div>
 
       <!-- Brand Guide Tab -->

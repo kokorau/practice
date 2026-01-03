@@ -20,6 +20,7 @@ export interface UseDemoSiteParams {
 export interface UseDemoSiteReturn {
   siteContents: Ref<Record<string, SectionContent>>
   demoSite: ComputedRef<Site>
+  demoTheme: ComputedRef<import('../../modules/SemanticSection').RenderTheme>
   currentSections: ComputedRef<readonly Section[]>
   demoHtml: ComputedRef<string>
   selectedSectionId: Ref<string | null>
@@ -73,6 +74,8 @@ export function useDemoSite(params: UseDemoSiteParams): UseDemoSiteReturn {
 
   const currentSections = computed(() => sections.value as readonly Section[])
 
+  const demoTheme = computed(() => demoSite.value.theme)
+
   const demoHtml = computed(() => {
     const page = currentPage.value
     const site = demoSite.value
@@ -106,6 +109,7 @@ export function useDemoSite(params: UseDemoSiteParams): UseDemoSiteReturn {
   return {
     siteContents,
     demoSite,
+    demoTheme,
     currentSections,
     demoHtml,
     selectedSectionId,
