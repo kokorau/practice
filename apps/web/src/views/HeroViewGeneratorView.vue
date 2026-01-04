@@ -563,20 +563,56 @@ const handleRemoveLayer = (layerId: string) => {
 // ============================================================
 // Layer Panel Display Labels
 // ============================================================
+const getSurfaceTypeLabel = (type: string): string => {
+  switch (type) {
+    case 'solid': return 'Solid'
+    case 'stripe': return 'Stripe'
+    case 'grid': return 'Grid'
+    case 'polkaDot': return 'Polka Dot'
+    case 'checker': return 'Checker'
+    case 'gradientGrain': return 'Gradient Grain'
+    default: return 'Solid'
+  }
+}
+
+const getShapeTypeLabel = (type: string): string => {
+  switch (type) {
+    case 'circle': return 'Circle'
+    case 'rect': return 'Rectangle'
+    case 'blob': return 'Blob'
+    default: return 'None'
+  }
+}
+
 const backgroundSurfaceLabel = computed(() => {
   if (customBackgroundImage.value) return 'Image'
+  // Use customBackgroundSurfaceParams if available (set during preset load)
+  if (customBackgroundSurfaceParams.value) {
+    return getSurfaceTypeLabel(customBackgroundSurfaceParams.value.type)
+  }
+  // Fallback to pattern label by index
   const pattern = texturePatterns[selectedBackgroundIndex.value]
   return pattern?.label ?? 'Solid'
 })
 
 const maskSurfaceLabel = computed(() => {
   if (customMaskImage.value) return 'Image'
+  // Use customSurfaceParams if available (set during preset load)
+  if (customSurfaceParams.value) {
+    return getSurfaceTypeLabel(customSurfaceParams.value.type)
+  }
+  // Fallback to pattern label by index
   const pattern = midgroundTexturePatterns[selectedMidgroundTextureIndex.value]
   return pattern?.label ?? 'Solid'
 })
 
 const maskShapeLabel = computed(() => {
   if (selectedMaskIndex.value === null) return 'None'
+  // Use customMaskShapeParams if available (set during preset load)
+  if (customMaskShapeParams.value) {
+    return getShapeTypeLabel(customMaskShapeParams.value.type)
+  }
+  // Fallback to pattern label by index
   const pattern = maskPatterns[selectedMaskIndex.value]
   return pattern?.label ?? 'None'
 })
