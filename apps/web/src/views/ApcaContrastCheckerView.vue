@@ -35,6 +35,7 @@ interface Connection {
 // Node definitions
 const NODE_SOURCE = 'source-image'
 const NODE_TEXT = 'text-layer'
+const NODE_COMPOSITE = 'composite-preview'
 const NODE_LUMINANCE = 'luminance-map'
 const NODE_REGION = 'text-region'
 const NODE_TEXT_Y = 'text-color-y'
@@ -45,6 +46,7 @@ const NODE_FINAL_SCORE = 'final-score'
 const nodeDefinitions = ref<NodeDefinition[]>([
   { id: NODE_SOURCE, label: 'A', title: 'Source', type: 'canvas', row: 1 },
   { id: NODE_TEXT, label: 'B', title: 'Text', type: 'text', row: 1 },
+  { id: NODE_COMPOSITE, label: 'I', title: 'Composite', type: 'canvas', row: 1 },
   { id: NODE_LUMINANCE, label: 'C', title: 'Luminance', type: 'canvas', row: 2 },
   { id: NODE_REGION, label: 'D', title: 'Region', type: 'canvas', row: 2 },
   { id: NODE_TEXT_Y, label: 'E', title: 'Text Y', type: 'value', row: 2 },
@@ -95,6 +97,7 @@ function setNodeRef(nodeId: string, el: HTMLElement | null) {
 
 // Canvas refs (individual refs for reliability)
 const canvasSourceRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+const canvasCompositeRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const canvasLuminanceRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const canvasRegionRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const canvasApcaScoreRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
@@ -103,6 +106,7 @@ const canvasApcaScoreRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 function getCanvas(nodeId: string): HTMLCanvasElement | null {
   switch (nodeId) {
     case NODE_SOURCE: return canvasSourceRef.value?.canvas ?? null
+    case NODE_COMPOSITE: return canvasCompositeRef.value?.canvas ?? null
     case NODE_LUMINANCE: return canvasLuminanceRef.value?.canvas ?? null
     case NODE_REGION: return canvasRegionRef.value?.canvas ?? null
     case NODE_APCA_SCORE: return canvasApcaScoreRef.value?.canvas ?? null
@@ -253,19 +257,12 @@ function calcCoverRect(srcW: number, srcH: number, dstW: number, dstH: number) {
   return { sx, sy, sw, sh }
 }
 
-// Node: Source Image
+// Node: Source Image (renders to both Source and Composite canvases)
 function renderSourceImage() {
-  const canvas = getCanvas(NODE_SOURCE)
-  if (!media.value || !canvas) return
-
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!media.value) return
 
   const sourceImageData = $Media.getImageData(media.value)
   if (!sourceImageData) return
-
-  canvas.width = CANVAS_WIDTH
-  canvas.height = CANVAS_HEIGHT
 
   const offscreen = new OffscreenCanvas(sourceImageData.width, sourceImageData.height)
   const offCtx = offscreen.getContext('2d')
@@ -276,7 +273,19 @@ function renderSourceImage() {
     sourceImageData.width, sourceImageData.height,
     CANVAS_WIDTH, CANVAS_HEIGHT
   )
-  ctx.drawImage(offscreen, sx, sy, sw, sh, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+
+  // Render to both Source and Composite canvases
+  for (const nodeId of [NODE_SOURCE, NODE_COMPOSITE]) {
+    const canvas = getCanvas(nodeId)
+    if (!canvas) continue
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) continue
+
+    canvas.width = CANVAS_WIDTH
+    canvas.height = CANVAS_HEIGHT
+    ctx.drawImage(offscreen, sx, sy, sw, sh, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+  }
 }
 
 // Node: Luminance Map
@@ -609,7 +618,7 @@ onUnmounted(() => {
           </svg>
 
           <!-- Row 1: Source, Text (中央寄せ) -->
-          <div :ref="(el) => setNodeRef(NODE_SOURCE, el as HTMLElement)" class="node-wrapper" style="grid-column: 3 / span 2; grid-row: 1;">
+          <div :ref="(el) => setNodeRef(NODE_SOURCE, el as HTMLElement)" class="node-wrapper" style="grid-column: 2 / span 2; grid-row: 1;">
             <div class="node-title">
               <span class="node-badge">{{ getNodeLabel(NODE_SOURCE) }}</span>
               <span class="node-title-text">{{ getNodeTitle(NODE_SOURCE) }}</span>
@@ -637,6 +646,28 @@ onUnmounted(() => {
               >
                 <span ref="textMeasureRef" class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
               </div>
+            </div>
+          </div>
+
+          <div :ref="(el) => setNodeRef(NODE_COMPOSITE, el as HTMLElement)" class="node-wrapper" style="grid-column: 3 / span 2; grid-row: 5;">
+            <div class="node-title">
+              <span class="node-badge">{{ getNodeLabel(NODE_COMPOSITE) }}</span>
+              <span class="node-title-text">{{ getNodeTitle(NODE_COMPOSITE) }}</span>
+            </div>
+            <div class="node-preview node-preview-composite">
+              <ScaledCanvas
+                ref="canvasCompositeRef"
+                :canvas-width="CANVAS_WIDTH"
+                :canvas-height="CANVAS_HEIGHT"
+                :class="{ 'opacity-0': !media }"
+              />
+              <div
+                class="text-layer text-layer-overlay"
+                :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
+              >
+                <span class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
+              </div>
+              <p v-if="!media" class="node-empty">No image</p>
             </div>
           </div>
 
@@ -687,7 +718,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Row 3: APCA Score -->
-          <div :ref="(el) => setNodeRef(NODE_APCA_SCORE, el as HTMLElement)" class="node-wrapper" style="grid-column: 4 / span 2; grid-row: 3;">
+          <div :ref="(el) => setNodeRef(NODE_APCA_SCORE, el as HTMLElement)" class="node-wrapper" style="grid-column: 5 / span 2; grid-row: 3;">
             <div class="node-title">
               <span class="node-badge">{{ getNodeLabel(NODE_APCA_SCORE) }}</span>
               <span class="node-title-text">{{ getNodeTitle(NODE_APCA_SCORE) }}</span>
@@ -703,8 +734,8 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Row 4: Histogram (col 4-5) -->
-          <div :ref="(el) => setNodeRef(NODE_HISTOGRAM, el as HTMLElement)" class="node-wrapper" style="grid-column: 4 / span 2; grid-row: 4;">
+          <!-- Row 4: Histogram -->
+          <div :ref="(el) => setNodeRef(NODE_HISTOGRAM, el as HTMLElement)" class="node-wrapper" style="grid-column: 5 / span 2; grid-row: 4;">
             <div class="node-title">
               <span class="node-badge">{{ getNodeLabel(NODE_HISTOGRAM) }}</span>
               <span class="node-title-text">{{ getNodeTitle(NODE_HISTOGRAM) }}</span>
@@ -727,8 +758,8 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Row 5: Final Score (col 4-5) -->
-          <div :ref="(el) => setNodeRef(NODE_FINAL_SCORE, el as HTMLElement)" class="node-wrapper" style="grid-column: 4 / span 2; grid-row: 5;">
+          <!-- Row 5: Final Score -->
+          <div :ref="(el) => setNodeRef(NODE_FINAL_SCORE, el as HTMLElement)" class="node-wrapper" style="grid-column: 5 / span 2; grid-row: 5;">
             <div class="node-title">
               <span class="node-badge">{{ getNodeLabel(NODE_FINAL_SCORE) }}</span>
               <span class="node-title-text">{{ getNodeTitle(NODE_FINAL_SCORE) }}</span>
@@ -882,6 +913,16 @@ onUnmounted(() => {
   font-weight: 700;
   margin: 0;
   white-space: nowrap;
+}
+
+.text-layer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.node-preview-composite {
+  position: relative;
 }
 
 /* Value Display */
