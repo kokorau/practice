@@ -48,8 +48,6 @@ export interface HeroColorsConfig {
     primary: HeroPrimitiveKey | 'auto'
     /** Secondary color ('auto' = derived from semantic context surface) */
     secondary: HeroPrimitiveKey | 'auto'
-    /** Outer color for mask area ('auto' = use semantic context surface) */
-    outer: HeroPrimitiveKey | 'auto'
   }
   /** Semantic context for mask layer color resolution */
   semanticContext: HeroContextName
@@ -272,7 +270,6 @@ export const createDefaultColorsConfig = (): HeroColorsConfig => ({
   mask: {
     primary: 'auto',
     secondary: 'auto',
-    outer: 'auto',
   },
   semanticContext: 'canvas',
 })

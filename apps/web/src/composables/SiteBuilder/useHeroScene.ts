@@ -570,9 +570,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const maskColorKey1 = ref<PrimitiveKey | 'auto'>('auto')  // Primary color ('auto' = surface - deltaL)
   const maskColorKey2 = ref<PrimitiveKey | 'auto'>('auto')  // Secondary color ('auto' = mask surface)
 
-  // Mask outer color (the color outside the mask / cutout area)
-  const maskOuterColorKey = ref<PrimitiveKey | 'auto'>('auto')  // 'auto' = use semantic context surface
-
   // ============================================================
   // Computed Colors
   // ============================================================
@@ -596,13 +593,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const textureColor1 = computed((): RGBA => paletteToRgba(primitivePalette.value[backgroundColorKey1.value]))
   const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedBackgroundColorKey2.value]))
 
-  // Resolve mask outer color key ('auto' uses semantic context surface)
-  const resolvedMaskOuterColorKey = computed((): PrimitiveKey =>
-    maskOuterColorKey.value === 'auto' ? maskSurfaceKey.value : maskOuterColorKey.value
-  )
-
-  const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedMaskOuterColorKey.value], 0))
-  const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedMaskOuterColorKey.value]))
+  // Mask outer color uses semantic context surface (no user override)
+  const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value], 0))
+  const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value]))
 
   // Mask texture colors: auto calculates shifted lightness
   const midgroundTextureColor1 = computed((): RGBA => {
@@ -1318,14 +1311,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             if (!shapeParams) return null
 
             const cutout = shapeParams.cutout ?? true
+            // For solid surface: use midgroundTextureColor1 (maskColorKey1) consistently
+            // like stripe shader uses same color1/color2 regardless of cutout mode
+            const solidInnerColor = cutout ? maskInnerColor.value : midgroundTextureColor1.value
+            const solidOuterColor = cutout ? midgroundTextureColor1.value : maskInnerColor.value
             if (shapeParams.type === 'circle') {
               return createCircleMaskSpec(
                 {
                   centerX: shapeParams.centerX,
                   centerY: shapeParams.centerY,
                   radius: shapeParams.radius,
-                  innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
-                  outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                  innerColor: solidInnerColor,
+                  outerColor: solidOuterColor,
                   cutout,
                 },
                 viewport
@@ -1342,8 +1339,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   radiusTopRight: shapeParams.radiusTopRight,
                   radiusBottomLeft: shapeParams.radiusBottomLeft,
                   radiusBottomRight: shapeParams.radiusBottomRight,
-                  innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
-                  outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                  innerColor: solidInnerColor,
+                  outerColor: solidOuterColor,
                   cutout,
                 },
                 viewport
@@ -1359,8 +1356,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   frequency: 0,
                   octaves: shapeParams.octaves,
                   seed: shapeParams.seed,
-                  innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
-                  outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                  innerColor: solidInnerColor,
+                  outerColor: solidOuterColor,
                   cutout,
                 },
                 viewport
@@ -1373,8 +1370,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   threshold: shapeParams.threshold,
                   scale: shapeParams.scale,
                   octaves: shapeParams.octaves,
-                  innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
-                  outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                  innerColor: solidInnerColor,
+                  outerColor: solidOuterColor,
                   cutout,
                 },
                 viewport
@@ -1943,7 +1940,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     mask: {
       primary: maskColorKey1.value as HeroPrimitiveKey | 'auto',
       secondary: maskColorKey2.value as HeroPrimitiveKey | 'auto',
-      outer: maskOuterColorKey.value as HeroPrimitiveKey | 'auto',
     },
     semanticContext: maskSemanticContext.value as HeroContextName,
   })
@@ -2007,7 +2003,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     backgroundColorKey2.value = colors.background.secondary as PrimitiveKey | 'auto'
     maskColorKey1.value = colors.mask.primary as PrimitiveKey | 'auto'
     maskColorKey2.value = colors.mask.secondary as PrimitiveKey | 'auto'
-    maskOuterColorKey.value = colors.mask.outer as PrimitiveKey | 'auto'
     maskSemanticContext.value = colors.semanticContext as ContextName
 
     // Background surface
@@ -2228,7 +2223,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     backgroundColorKey2,
     maskColorKey1,
     maskColorKey2,
-    maskOuterColorKey,
 
     // Ink color helpers (for text on surfaces)
     getInkColorForSurface,

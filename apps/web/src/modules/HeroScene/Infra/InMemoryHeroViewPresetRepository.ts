@@ -48,7 +48,7 @@ const PRESETS: HeroViewPreset[] = [
       viewport: { width: 1280, height: 720 },
       colors: {
         background: { primary: 'BN1', secondary: 'BN2' },
-        mask: { primary: 'B', secondary: 'Bt', outer: 'BN0' },
+        mask: { primary: 'B', secondary: 'Bt' },
         semanticContext: 'canvas',
       },
       background: {
@@ -87,7 +87,7 @@ const PRESETS: HeroViewPreset[] = [
       viewport: { width: 1280, height: 720 },
       colors: {
         background: { primary: 'A', secondary: 'At' },
-        mask: { primary: 'B', secondary: 'Bf', outer: 'A' },
+        mask: { primary: 'B', secondary: 'Bf' },
         semanticContext: 'sectionContrast',
       },
       background: {
@@ -125,7 +125,7 @@ const PRESETS: HeroViewPreset[] = [
       viewport: { width: 1280, height: 720 },
       colors: {
         background: { primary: 'BN8', secondary: 'BN7' },
-        mask: { primary: 'A', secondary: 'At', outer: 'BN9' },
+        mask: { primary: 'A', secondary: 'At' },
         semanticContext: 'sectionContrast',
       },
       background: {
@@ -162,7 +162,7 @@ const PRESETS: HeroViewPreset[] = [
       viewport: { width: 1280, height: 720 },
       colors: {
         background: { primary: 'BN0', secondary: 'BN1' },
-        mask: { primary: 'BN9', secondary: 'BN8', outer: 'BN0' },
+        mask: { primary: 'BN9', secondary: 'BN8' },
         semanticContext: 'canvas',
       },
       background: {
@@ -201,7 +201,7 @@ const PRESETS: HeroViewPreset[] = [
       viewport: { width: 1280, height: 720 },
       colors: {
         background: { primary: 'A', secondary: 'F3' },
-        mask: { primary: 'B', secondary: 'F1', outer: 'At' },
+        mask: { primary: 'B', secondary: 'F1' },
         semanticContext: 'sectionTint',
       },
       background: {
@@ -238,7 +238,7 @@ const PRESETS: HeroViewPreset[] = [
       viewport: { width: 1280, height: 720 },
       colors: {
         background: { primary: 'F0', secondary: 'F1' },
-        mask: { primary: 'BN3', secondary: 'BN2', outer: 'F0' },
+        mask: { primary: 'BN3', secondary: 'BN2' },
         semanticContext: 'canvas',
       },
       background: {
@@ -276,7 +276,7 @@ const PRESETS: HeroViewPreset[] = [
       viewport: { width: 1280, height: 720 },
       colors: {
         background: { primary: 'B', secondary: 'Bs' },
-        mask: { primary: 'A', secondary: 'As', outer: 'B' },
+        mask: { primary: 'A', secondary: 'As' },
         semanticContext: 'sectionContrast',
       },
       background: {

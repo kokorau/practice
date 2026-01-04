@@ -166,7 +166,6 @@ const {
   backgroundColorKey2,
   maskColorKey1,
   maskColorKey2,
-  maskOuterColorKey,
   // Presets
   presets,
   selectedPresetId,
@@ -703,15 +702,6 @@ const maskShapeLabel = computed(() => {
 
         <!-- マスク形状選択 -->
         <template v-else-if="activeSection === 'mask-shape'">
-          <!-- Mask outer color (at top for easy access) -->
-          <div class="color-selection-section no-border">
-            <PrimitiveColorPicker
-              v-model="maskOuterColorKey"
-              :palette="primitivePalette"
-              label="Mask Outer Color"
-              :show-auto="true"
-            />
-          </div>
           <!-- Shape params (shown when mask is selected) -->
           <div v-if="currentMaskShapeSchema && customMaskShapeParams" class="shape-params">
             <SchemaFields
