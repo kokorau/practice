@@ -677,145 +677,135 @@ onUnmounted(() => {
             />
           </svg>
 
-          <!-- Row 1: Source, Text -->
-          <div class="node-row">
-            <div :ref="(el) => setNodeRef(NODE_SOURCE, el as HTMLElement)" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">{{ getNodeLabel(NODE_SOURCE) }}</span>
-                <span class="node-title-text">{{ getNodeTitle(NODE_SOURCE) }}</span>
-              </div>
-              <div class="node-preview">
-                <ScaledCanvas
-                  ref="canvasSourceRef"
-                  :canvas-width="CANVAS_WIDTH"
-                  :canvas-height="CANVAS_HEIGHT"
-                  :class="{ 'opacity-0': !media }"
-                />
-                <p v-if="!media" class="node-empty">No image</p>
-              </div>
+          <!-- Row 1: Source, Text (中央寄せ) -->
+          <div :ref="(el) => setNodeRef(NODE_SOURCE, el as HTMLElement)" class="node-wrapper" style="grid-column: 3 / span 2; grid-row: 1;">
+            <div class="node-title">
+              <span class="node-badge">{{ getNodeLabel(NODE_SOURCE) }}</span>
+              <span class="node-title-text">{{ getNodeTitle(NODE_SOURCE) }}</span>
             </div>
+            <div class="node-preview">
+              <ScaledCanvas
+                ref="canvasSourceRef"
+                :canvas-width="CANVAS_WIDTH"
+                :canvas-height="CANVAS_HEIGHT"
+                :class="{ 'opacity-0': !media }"
+              />
+              <p v-if="!media" class="node-empty">No image</p>
+            </div>
+          </div>
 
-            <div :ref="(el) => setNodeRef(NODE_TEXT, el as HTMLElement)" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">{{ getNodeLabel(NODE_TEXT) }}</span>
-                <span class="node-title-text">{{ getNodeTitle(NODE_TEXT) }}</span>
-              </div>
-              <div class="node-preview">
-                <div
-                  class="text-layer"
-                  :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
-                >
-                  <span ref="textMeasureRef" class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
-                </div>
+          <div :ref="(el) => setNodeRef(NODE_TEXT, el as HTMLElement)" class="node-wrapper" style="grid-column: 5 / span 2; grid-row: 1;">
+            <div class="node-title">
+              <span class="node-badge">{{ getNodeLabel(NODE_TEXT) }}</span>
+              <span class="node-title-text">{{ getNodeTitle(NODE_TEXT) }}</span>
+            </div>
+            <div class="node-preview">
+              <div
+                class="text-layer"
+                :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
+              >
+                <span ref="textMeasureRef" class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Row 2: Luminance, Region, Text Y -->
-          <div class="node-row">
-            <div :ref="(el) => setNodeRef(NODE_LUMINANCE, el as HTMLElement)" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">{{ getNodeLabel(NODE_LUMINANCE) }}</span>
-                <span class="node-title-text">{{ getNodeTitle(NODE_LUMINANCE) }}</span>
-              </div>
-              <div class="node-preview">
-                <ScaledCanvas
-                  ref="canvasLuminanceRef"
-                  :canvas-width="CANVAS_WIDTH"
-                  :canvas-height="CANVAS_HEIGHT"
-                  :class="{ 'opacity-0': !media }"
-                />
-                <p v-if="!media" class="node-empty">No image</p>
-              </div>
+          <!-- Row 2: Luminance, Region, Text Y (中央寄せ) -->
+          <div :ref="(el) => setNodeRef(NODE_LUMINANCE, el as HTMLElement)" class="node-wrapper" style="grid-column: 2 / span 2; grid-row: 2;">
+            <div class="node-title">
+              <span class="node-badge">{{ getNodeLabel(NODE_LUMINANCE) }}</span>
+              <span class="node-title-text">{{ getNodeTitle(NODE_LUMINANCE) }}</span>
             </div>
-
-            <div :ref="(el) => setNodeRef(NODE_REGION, el as HTMLElement)" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">{{ getNodeLabel(NODE_REGION) }}</span>
-                <span class="node-title-text">{{ getNodeTitle(NODE_REGION) }}</span>
-              </div>
-              <div class="node-preview">
-                <ScaledCanvas
-                  ref="canvasRegionRef"
-                  :canvas-width="NODE_WIDTH"
-                  :canvas-height="NODE_HEIGHT"
-                  :class="{ 'opacity-0': !textBounds }"
-                />
-                <p v-if="!textBounds" class="node-empty">No text</p>
-              </div>
+            <div class="node-preview">
+              <ScaledCanvas
+                ref="canvasLuminanceRef"
+                :canvas-width="CANVAS_WIDTH"
+                :canvas-height="CANVAS_HEIGHT"
+                :class="{ 'opacity-0': !media }"
+              />
+              <p v-if="!media" class="node-empty">No image</p>
             </div>
+          </div>
 
-            <div :ref="(el) => setNodeRef(NODE_TEXT_Y, el as HTMLElement)" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">{{ getNodeLabel(NODE_TEXT_Y) }}</span>
-                <span class="node-title-text">{{ getNodeTitle(NODE_TEXT_Y) }}</span>
-              </div>
-              <div class="node-preview node-preview-center">
-                <div class="value-display">
-                  <div class="value-color" :style="{ backgroundColor: textColor }"></div>
-                  <span class="value-number">{{ textColorY.toFixed(4) }}</span>
-                </div>
+          <div :ref="(el) => setNodeRef(NODE_REGION, el as HTMLElement)" class="node-wrapper" style="grid-column: 4 / span 2; grid-row: 2;">
+            <div class="node-title">
+              <span class="node-badge">{{ getNodeLabel(NODE_REGION) }}</span>
+              <span class="node-title-text">{{ getNodeTitle(NODE_REGION) }}</span>
+            </div>
+            <div class="node-preview">
+              <ScaledCanvas
+                ref="canvasRegionRef"
+                :canvas-width="NODE_WIDTH"
+                :canvas-height="NODE_HEIGHT"
+                :class="{ 'opacity-0': !textBounds }"
+              />
+              <p v-if="!textBounds" class="node-empty">No text</p>
+            </div>
+          </div>
+
+          <div :ref="(el) => setNodeRef(NODE_TEXT_Y, el as HTMLElement)" class="node-wrapper" style="grid-column: 6 / span 2; grid-row: 2;">
+            <div class="node-title">
+              <span class="node-badge">{{ getNodeLabel(NODE_TEXT_Y) }}</span>
+              <span class="node-title-text">{{ getNodeTitle(NODE_TEXT_Y) }}</span>
+            </div>
+            <div class="node-preview node-preview-center">
+              <div class="value-display">
+                <div class="value-color" :style="{ backgroundColor: textColor }"></div>
+                <span class="value-number">{{ textColorY.toFixed(4) }}</span>
               </div>
             </div>
           </div>
 
           <!-- Row 3: APCA Score -->
-          <div class="node-row">
-            <div :ref="(el) => setNodeRef(NODE_APCA_SCORE, el as HTMLElement)" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">{{ getNodeLabel(NODE_APCA_SCORE) }}</span>
-                <span class="node-title-text">{{ getNodeTitle(NODE_APCA_SCORE) }}</span>
-              </div>
-              <div class="node-preview">
-                <ScaledCanvas
-                  ref="canvasApcaScoreRef"
-                  :canvas-width="NODE_WIDTH"
-                  :canvas-height="NODE_HEIGHT"
-                  :class="{ 'opacity-0': !textBounds }"
-                />
-                <p v-if="!textBounds" class="node-empty">No data</p>
-              </div>
+          <div :ref="(el) => setNodeRef(NODE_APCA_SCORE, el as HTMLElement)" class="node-wrapper" style="grid-column: 4 / span 2; grid-row: 3;">
+            <div class="node-title">
+              <span class="node-badge">{{ getNodeLabel(NODE_APCA_SCORE) }}</span>
+              <span class="node-title-text">{{ getNodeTitle(NODE_APCA_SCORE) }}</span>
+            </div>
+            <div class="node-preview">
+              <ScaledCanvas
+                ref="canvasApcaScoreRef"
+                :canvas-width="NODE_WIDTH"
+                :canvas-height="NODE_HEIGHT"
+                :class="{ 'opacity-0': !textBounds }"
+              />
+              <p v-if="!textBounds" class="node-empty">No data</p>
             </div>
           </div>
 
-          <!-- Row 4: Histogram -->
-          <div class="node-row">
-            <div :ref="(el) => setNodeRef(NODE_HISTOGRAM, el as HTMLElement)" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">{{ getNodeLabel(NODE_HISTOGRAM) }}</span>
-                <span class="node-title-text">{{ getNodeTitle(NODE_HISTOGRAM) }}</span>
-              </div>
-              <div class="node-preview node-preview-histogram">
-                <div class="histogram">
+          <!-- Row 4: Histogram (col 4-5) -->
+          <div :ref="(el) => setNodeRef(NODE_HISTOGRAM, el as HTMLElement)" class="node-wrapper" style="grid-column: 4 / span 2; grid-row: 4;">
+            <div class="node-title">
+              <span class="node-badge">{{ getNodeLabel(NODE_HISTOGRAM) }}</span>
+              <span class="node-title-text">{{ getNodeTitle(NODE_HISTOGRAM) }}</span>
+            </div>
+            <div class="node-preview node-preview-histogram">
+              <div class="histogram">
+                <div
+                  v-for="(value, index) in histogramData"
+                  :key="index"
+                  class="histogram-bar-container"
+                >
                   <div
-                    v-for="(value, index) in histogramData"
-                    :key="index"
-                    class="histogram-bar-container"
-                  >
-                    <div
-                      class="histogram-bar"
-                      :style="{ height: `${value}%` }"
-                      :class="{ 'histogram-bar-threshold': value >= scoreThreshold }"
-                    ></div>
-                    <span class="histogram-label">{{ index * 10 }}</span>
-                  </div>
+                    class="histogram-bar"
+                    :style="{ height: `${value}%` }"
+                    :class="{ 'histogram-bar-threshold': value >= scoreThreshold }"
+                  ></div>
+                  <span class="histogram-label">{{ index * 10 }}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Row 5: Final Score -->
-          <div class="node-row">
-            <div :ref="(el) => setNodeRef(NODE_FINAL_SCORE, el as HTMLElement)" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">{{ getNodeLabel(NODE_FINAL_SCORE) }}</span>
-                <span class="node-title-text">{{ getNodeTitle(NODE_FINAL_SCORE) }}</span>
-              </div>
-              <div class="node-preview node-preview-center">
-                <div class="score-display">
-                  <span class="score-number">{{ calculatedScore }}</span>
-                  <span class="score-label">APCA Lc</span>
-                </div>
+          <!-- Row 5: Final Score (col 4-5) -->
+          <div :ref="(el) => setNodeRef(NODE_FINAL_SCORE, el as HTMLElement)" class="node-wrapper" style="grid-column: 4 / span 2; grid-row: 5;">
+            <div class="node-title">
+              <span class="node-badge">{{ getNodeLabel(NODE_FINAL_SCORE) }}</span>
+              <span class="node-title-text">{{ getNodeTitle(NODE_FINAL_SCORE) }}</span>
+            </div>
+            <div class="node-preview node-preview-center">
+              <div class="score-display">
+                <span class="score-number">{{ calculatedScore }}</span>
+                <span class="score-label">APCA Lc</span>
               </div>
             </div>
           </div>
@@ -828,9 +818,8 @@ onUnmounted(() => {
 <style scoped>
 .node-graph {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
   gap: 3rem;
 }
 
@@ -853,19 +842,13 @@ onUnmounted(() => {
   opacity: 0.5;
 }
 
-.node-row {
-  display: flex;
-  gap: 3rem;
-  justify-content: center;
-  position: relative;
-  z-index: 1;
-}
-
 .node-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
+  position: relative;
+  z-index: 1;
 }
 
 .node-title {
