@@ -401,10 +401,12 @@ const handleApplyColorPreset = (preset: ColorPreset) => {
   accentHue.value = preset.accent.hue
   accentSaturation.value = preset.accent.saturation
   accentValue.value = preset.accent.value
-  // Apply foundation
-  foundationL.value = preset.foundation.L
-  foundationC.value = preset.foundation.C
-  foundationH.value = preset.foundation.H
+  // Apply foundation (convert HSV to OKLCH)
+  const [r, g, b] = hsvToRgb(preset.foundation.hue, preset.foundation.saturation, preset.foundation.value)
+  const oklch = $Oklch.fromSrgb({ r: r / 255, g: g / 255, b: b / 255 })
+  foundationL.value = oklch.L
+  foundationC.value = oklch.C
+  foundationH.value = oklch.H
   foundationHueLinkedToBrand.value = false
 }
 </script>

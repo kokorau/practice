@@ -17,12 +17,12 @@ export interface PresetHsvColor {
 }
 
 /**
- * Oklch Foundation設定
+ * HSV Foundation設定
  */
 export interface PresetFoundation {
-  L: number
-  C: number
-  H: number
+  hue: number
+  saturation: number
+  value: number
 }
 
 /**

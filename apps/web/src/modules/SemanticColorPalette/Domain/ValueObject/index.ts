@@ -83,6 +83,5 @@ export {
 
 export type {
   HsvColor,
-  OklchFoundation,
   ColorPreset,
 } from './ColorPreset'

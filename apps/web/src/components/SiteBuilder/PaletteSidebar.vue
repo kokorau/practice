@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import type { Oklch } from '@practice/color'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { $Oklch, type Oklch } from '@practice/color'
 import type { Filter, Preset } from '../../modules/Filter/Domain'
 import type { Section, SectionContent } from '../../modules/SemanticSection'
 import type { FilterSetters } from '../../composables/Filter/useFilter'
@@ -11,6 +11,7 @@ import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import SectionsEditor from './SectionsEditor.vue'
 import FilterPanel from '../Filter/FilterPanel.vue'
 import DesignTokensPresets from './DesignTokensPresets.vue'
+import { rgbToHsv } from './utils/colorConversion'
 
 export interface SidebarItem {
   id: 'presets' | 'brand' | 'accent' | 'foundation' | 'filter' | 'tokens' | 'sections'
@@ -20,7 +21,7 @@ export interface SidebarItem {
 
 type PopupType = 'presets' | 'brand' | 'accent' | 'foundation' | 'filter' | 'tokens' | 'sections' | null
 
-defineProps<{
+const props = defineProps<{
   // Brand color
   hue: number
   saturation: number
@@ -75,6 +76,22 @@ const emit = defineEmits<{
   'downloadHTML': []
   'applyColorPreset': [preset: ColorPreset]
 }>()
+
+// Convert OKLCH foundation to HSV for ColorPresets
+const foundationHsv = computed(() => {
+  const oklch: Oklch = {
+    L: props.foundationL,
+    C: props.foundationC,
+    H: props.foundationHueLinkedToBrand ? props.hue : props.foundationH,
+  }
+  const srgb = $Oklch.toSrgb(oklch)
+  const [h, s, v] = rgbToHsv(
+    Math.round(Math.max(0, Math.min(1, srgb.r)) * 255),
+    Math.round(Math.max(0, Math.min(1, srgb.g)) * 255),
+    Math.round(Math.max(0, Math.min(1, srgb.b)) * 255),
+  )
+  return { hue: h, saturation: s, value: v }
+})
 
 const activePopup = ref<PopupType>(null)
 const popupRef = ref<HTMLDivElement | null>(null)
@@ -224,9 +241,9 @@ watch(
             :accent-hue="accentHue"
             :accent-saturation="accentSaturation"
             :accent-value="accentValue"
-            :foundation-l="foundationL"
-            :foundation-c="foundationC"
-            :foundation-h="foundationH"
+            :foundation-hue="foundationHsv.hue"
+            :foundation-saturation="foundationHsv.saturation"
+            :foundation-value="foundationHsv.value"
             @apply-preset="$emit('applyColorPreset', $event)"
           />
         </div>

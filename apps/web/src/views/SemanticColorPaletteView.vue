@@ -18,7 +18,6 @@ import {
 } from '../modules/SemanticColorPalette/Infra'
 import { useSiteColors } from '../composables/SiteBuilder'
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
-import FoundationPresets from '../components/SiteBuilder/FoundationPresets.vue'
 import ColorPresets from '../components/SiteBuilder/ColorPresets.vue'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'
@@ -44,10 +43,9 @@ const {
   accentValue,
   accentHex,
   accentColor,
-  foundationL,
-  foundationC,
-  foundationH,
-  foundationHueLinkedToBrand,
+  foundationHue,
+  foundationSaturation,
+  foundationValue,
   foundationColor,
   isDark,
 } = useSiteColors()
@@ -71,10 +69,9 @@ const handleApplyColorPreset = (preset: ColorPreset) => {
   accentSaturation.value = preset.accent.saturation
   accentValue.value = preset.accent.value
   // Apply foundation
-  foundationL.value = preset.foundation.L
-  foundationC.value = preset.foundation.C
-  foundationH.value = preset.foundation.H
-  foundationHueLinkedToBrand.value = false
+  foundationHue.value = preset.foundation.hue
+  foundationSaturation.value = preset.foundation.saturation
+  foundationValue.value = preset.foundation.value
 }
 
 // ============================================================
@@ -267,9 +264,9 @@ watch(palette, updateStyles)
               :accent-hue="accentHue"
               :accent-saturation="accentSaturation"
               :accent-value="accentValue"
-              :foundation-l="foundationL"
-              :foundation-c="foundationC"
-              :foundation-h="foundationH"
+              :foundation-hue="foundationHue"
+              :foundation-saturation="foundationSaturation"
+              :foundation-value="foundationValue"
               @apply-preset="handleApplyColorPreset"
             />
             <BrandColorPicker
@@ -290,18 +287,14 @@ watch(palette, updateStyles)
               @update:saturation="accentSaturation = $event"
               @update:value="accentValue = $event"
             />
-            <FoundationPresets
+            <BrandColorPicker
               v-if="activeColorPopup === 'foundation'"
-              :foundation-l="foundationL"
-              :foundation-c="foundationC"
-              :foundation-h="foundationH"
-              :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
-              :brand-oklch="brandColor.oklch"
-              :brand-hue="hue"
-              @update:foundation-l="foundationL = $event"
-              @update:foundation-c="foundationC = $event"
-              @update:foundation-h="foundationH = $event"
-              @update:foundation-hue-linked-to-brand="foundationHueLinkedToBrand = $event"
+              :hue="foundationHue"
+              :saturation="foundationSaturation"
+              :value="foundationValue"
+              @update:hue="foundationHue = $event"
+              @update:saturation="foundationSaturation = $event"
+              @update:value="foundationValue = $event"
             />
           </div>
         </div>
