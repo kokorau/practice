@@ -166,12 +166,13 @@ const {
   backgroundColorKey2,
   maskColorKey1,
   maskColorKey2,
-  maskOuterColorKey,
   // Presets
   presets,
   selectedPresetId,
   loadPresets,
   applyPreset,
+  // Serialization
+  toHeroViewConfig,
 } = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
 // Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
@@ -483,6 +484,47 @@ const handleApplyLayoutPreset = async (presetId: string) => {
 }
 
 // ============================================================
+// Export Preset
+// ============================================================
+const exportPreset = () => {
+  // Build preset with current config and colors
+  const preset = {
+    id: `custom-${Date.now()}`,
+    name: 'Custom Preset',
+    config: toHeroViewConfig(),
+    colorPreset: {
+      brand: {
+        hue: hue.value,
+        saturation: saturation.value,
+        value: value.value,
+      },
+      accent: {
+        hue: accentHue.value,
+        saturation: accentSaturation.value,
+        value: accentValue.value,
+      },
+      foundation: {
+        L: foundationL.value,
+        C: foundationC.value,
+        H: foundationH.value,
+      },
+    },
+  }
+
+  // Download as JSON
+  const json = JSON.stringify(preset, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `hero-preset-${Date.now()}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// ============================================================
 // Tab State
 // ============================================================
 type TabId = 'generator' | 'palette'
@@ -703,15 +745,6 @@ const maskShapeLabel = computed(() => {
 
         <!-- マスク形状選択 -->
         <template v-else-if="activeSection === 'mask-shape'">
-          <!-- Mask outer color (at top for easy access) -->
-          <div class="color-selection-section no-border">
-            <PrimitiveColorPicker
-              v-model="maskOuterColorKey"
-              :palette="primitivePalette"
-              label="Mask Outer Color"
-              :show-auto="true"
-            />
-          </div>
           <!-- Shape params (shown when mask is selected) -->
           <div v-if="currentMaskShapeSchema && customMaskShapeParams" class="shape-params">
             <SchemaFields
@@ -954,6 +987,12 @@ const maskShapeLabel = computed(() => {
 
     <!-- 右パネル: Canvas/HTML レイヤー -->
     <aside ref="rightPanelRef" v-if="activeTab === 'generator'" class="hero-right-panel">
+      <div class="right-panel-header">
+        <span class="right-panel-title">Layers</span>
+        <button class="export-button" @click="exportPreset" title="Export Preset">
+          <span class="material-icons">download</span>
+        </button>
+      </div>
       <LayerPanel
         :layers="layers"
         :layer-filter-configs="layerFilterConfigs"
@@ -1369,6 +1408,66 @@ const maskShapeLabel = computed(() => {
 
 .dark .color-selection-section {
   border-top-color: oklch(0.30 0.02 260);
+}
+
+/* Right Panel Header */
+.right-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid oklch(0.85 0.01 260);
+  margin-bottom: 0.75rem;
+}
+
+.dark .right-panel-header {
+  border-bottom-color: oklch(0.30 0.02 260);
+}
+
+.right-panel-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: oklch(0.25 0.02 260);
+}
+
+.dark .right-panel-title {
+  color: oklch(0.85 0.02 260);
+}
+
+.export-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: oklch(0.92 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  color: oklch(0.40 0.02 260);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.dark .export-button {
+  background: oklch(0.22 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.70 0.02 260);
+}
+
+.export-button:hover {
+  background: oklch(0.55 0.20 250);
+  border-color: oklch(0.55 0.20 250);
+  color: oklch(0.98 0.01 260);
+}
+
+.dark .export-button:hover {
+  background: oklch(0.55 0.20 250);
+  border-color: oklch(0.55 0.20 250);
+  color: oklch(0.98 0.01 260);
+}
+
+.export-button .material-icons {
+  font-size: 1.125rem;
 }
 
 </style>

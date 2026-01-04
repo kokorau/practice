@@ -271,3 +271,115 @@ export function createRectMaskSpec(
   }
 }
 
+/** Perlin noise mask parameters */
+export interface PerlinMaskParams {
+  /** Random seed */
+  seed: number
+  /** Threshold for binarization (0.0-1.0) */
+  threshold: number
+  /** Noise scale */
+  scale: number
+  /** fBm octaves (1-8) */
+  octaves: number
+  /** Inner color (where noise > threshold) */
+  innerColor: [number, number, number, number]
+  /** Outer color (where noise <= threshold) */
+  outerColor: [number, number, number, number]
+  /** If true (default), noise > threshold is opaque. If false, noise <= threshold is opaque. */
+  cutout?: boolean
+}
+
+/** Perlin noise mask shader */
+export const perlinMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+fn perlinHash21(p: vec2f) -> f32 {
+  var p3 = fract(vec3f(p.x, p.y, p.x) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+fn perlinValueNoise(p: vec2f) -> f32 {
+  let i = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+
+  let a = perlinHash21(i);
+  let b = perlinHash21(i + vec2f(1.0, 0.0));
+  let c = perlinHash21(i + vec2f(0.0, 1.0));
+  let d = perlinHash21(i + vec2f(1.0, 1.0));
+
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+fn perlinFbm(p: vec2f, octaves: i32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = p;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * perlinValueNoise(pos);
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+struct PerlinMaskParams {
+  innerColor: vec4f,
+  outerColor: vec4f,
+  seed: f32,
+  threshold: f32,
+  scale: f32,
+  octaves: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: PerlinMaskParams;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+  let noisePos = uv * params.scale + vec2f(params.seed * 0.1, params.seed * 0.073);
+
+  let octaves = clamp(i32(params.octaves), 1, 8);
+  let noise = perlinFbm(noisePos, octaves);
+
+  // Binarize: noise > threshold -> inner, else -> outer
+  let mask = select(0.0, 1.0, noise > params.threshold);
+
+  return mix(params.outerColor, params.innerColor, mask);
+}
+`
+
+/**
+ * Create render spec for perlin noise mask
+ */
+export function createPerlinMaskSpec(
+  params: PerlinMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const cutout = params.cutout ?? true
+  // When cutout=false, swap inner/outer colors
+  const innerColor = cutout ? params.innerColor : params.outerColor
+  const outerColor = cutout ? params.outerColor : params.innerColor
+
+  const data = new Float32Array([
+    ...innerColor,
+    ...outerColor,
+    params.seed,
+    params.threshold,
+    params.scale,
+    params.octaves,
+    viewport.width,
+    viewport.height,
+  ])
+  return {
+    shader: perlinMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 64, // 8 floats for colors + 6 floats = 14 floats, but need 16-byte alignment
+    blend: maskBlendState,
+  }
+}
+

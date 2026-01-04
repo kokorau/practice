@@ -133,19 +133,19 @@
 .hero-preview-container {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 2rem;
+  overflow-y: auto;
 }
 
 .hero-preview-wrapper {
-  width: 100%;
-  max-width: 1200px;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .hero-preview-frame {
   position: relative;
-  aspect-ratio: 16 / 9;
   border-radius: 0.5rem;
   overflow: hidden;
   border: 1px solid oklch(0.85 0.01 260);
@@ -184,7 +184,7 @@
 .layer-foreground {
   z-index: 2;
   display: flex;
-  padding: 4rem;
+  padding: 80px;
 }
 
 /* Foreground 9-Grid Layout */
@@ -201,7 +201,7 @@
 .grid-cell {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 /* Position classes - grid area assignment */
@@ -221,28 +221,28 @@
 .hero-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 40rem;
+  gap: 16px;
+  max-width: 640px;
 }
 
 .hero-title {
   margin: 0;
-  font-size: 3rem;
+  font-size: 48px;
   font-weight: 800;
   line-height: 1.1;
 }
 
 .hero-subtitle {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 20px;
   line-height: 1.5;
 }
 
 .hero-cta {
   align-self: flex-start;
-  padding: 0.875rem 2rem;
-  border-radius: 0.5rem;
-  font-size: 1rem;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.15s, transform 0.15s;
@@ -375,7 +375,7 @@
 .layout-row-top-left,
 .layout-row-bottom-left {
   justify-content: flex-start;
-  gap: 3rem;
+  gap: 48px;
 }
 
 /* Horizontal - right */
@@ -383,7 +383,7 @@
 .layout-row-top-right,
 .layout-row-bottom-right {
   justify-content: flex-end;
-  gap: 3rem;
+  gap: 48px;
 }
 
 /* Palette Preview */

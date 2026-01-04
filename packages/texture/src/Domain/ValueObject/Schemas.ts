@@ -61,6 +61,20 @@ export const BlobMaskShapeSchema = defineSchema({
 
 export type BlobMaskShapeParams = Infer<typeof BlobMaskShapeSchema>
 
+/**
+ * Perlin Noise Mask Shape Schema
+ * Thresholded perlin noise for binary mask
+ */
+export const PerlinMaskShapeSchema = defineSchema({
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  threshold: number({ label: 'Threshold', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  scale: number({ label: 'Scale', min: 0.5, max: 20, step: 0.5, default: 4 }),
+  octaves: number({ label: 'Octaves', min: 1, max: 8, step: 1, default: 4 }),
+  cutout: boolean({ label: 'Cutout', default: true }),
+})
+
+export type PerlinMaskShapeParams = Infer<typeof PerlinMaskShapeSchema>
+
 // ============================================================
 // Surface Schemas (Texture Patterns)
 // ============================================================
@@ -150,6 +164,9 @@ export const createDefaultRectMaskParams = (): RectMaskShapeParams =>
 export const createDefaultBlobMaskParams = (): BlobMaskShapeParams =>
   getDefaults(BlobMaskShapeSchema)
 
+export const createDefaultPerlinMaskParams = (): PerlinMaskShapeParams =>
+  getDefaults(PerlinMaskShapeSchema)
+
 export const createDefaultStripeParams = (): StripeSurfaceParams =>
   getDefaults(StripeSurfaceSchema)
 
@@ -173,6 +190,7 @@ export const MaskShapeSchemas = {
   circle: CircleMaskShapeSchema,
   rect: RectMaskShapeSchema,
   blob: BlobMaskShapeSchema,
+  perlin: PerlinMaskShapeSchema,
 } as const
 
 export const SurfaceSchemas = {

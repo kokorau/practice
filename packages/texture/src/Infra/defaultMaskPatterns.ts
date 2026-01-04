@@ -4,6 +4,7 @@ import {
   createCircleMaskSpec,
   createRectMaskSpec,
   createBlobMaskSpec,
+  createPerlinMaskSpec,
 } from '../shaders'
 
 /**
@@ -245,6 +246,33 @@ const defaultMaskPatterns: MaskPattern[] = [
           innerColor: c1,
           outerColor: c2,
         },
+        viewport!
+      ),
+  },
+  {
+    label: 'Perlin Noise',
+    maskConfig: { type: 'perlin', seed: 12345, threshold: 0.5, scale: 4, octaves: 4 },
+    createSpec: (c1, c2, viewport) =>
+      createPerlinMaskSpec(
+        { seed: 12345, threshold: 0.5, scale: 4, octaves: 4, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Perlin Dense',
+    maskConfig: { type: 'perlin', seed: 99, threshold: 0.4, scale: 6, octaves: 5 },
+    createSpec: (c1, c2, viewport) =>
+      createPerlinMaskSpec(
+        { seed: 99, threshold: 0.4, scale: 6, octaves: 5, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Perlin Sparse',
+    maskConfig: { type: 'perlin', seed: 42, threshold: 0.6, scale: 3, octaves: 3 },
+    createSpec: (c1, c2, viewport) =>
+      createPerlinMaskSpec(
+        { seed: 42, threshold: 0.6, scale: 3, octaves: 3, innerColor: c1, outerColor: c2 },
         viewport!
       ),
   },

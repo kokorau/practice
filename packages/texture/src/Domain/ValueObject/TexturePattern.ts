@@ -34,7 +34,7 @@ export interface TexturePattern {
 /**
  * Mask type enumeration
  */
-export type MaskShapeType = 'circle' | 'rect' | 'blob'
+export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin'
 
 /**
  * Circle mask configuration
@@ -80,7 +80,21 @@ export interface BlobMaskShapeConfig {
   cutout?: boolean
 }
 
-export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig
+/**
+ * Perlin noise mask configuration
+ * Thresholded perlin noise for binary mask
+ */
+export interface PerlinMaskShapeConfig {
+  type: 'perlin'
+  seed: number
+  threshold: number
+  scale: number
+  octaves: number
+  /** If true (default), noise > threshold is opaque. If false, noise <= threshold is opaque. */
+  cutout?: boolean
+}
+
+export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig
 
 /**
  * Mask pattern definition with shape configuration

@@ -13,12 +13,14 @@ export type {
   CircleMaskParams,
   RectMaskParams,
   BlobMaskParams,
+  PerlinMaskParams,
   // Masked texture types
   MaskType,
   TextureType,
   CircleMaskConfig,
   RectMaskConfig,
   BlobMaskConfig,
+  PerlinMaskConfig,
   MaskConfig,
   StripeTextureConfig,
   GridTextureConfig,
@@ -26,6 +28,7 @@ export type {
   CheckerTextureConfig,
   TextureConfig,
   MaskedTextureParams,
+  GradientGrainTextureConfig,
   // Gradient types
   LinearGradientParams,
   ColorStop,
@@ -49,6 +52,7 @@ export {
   createCircleMaskSpec,
   createRectMaskSpec,
   createBlobMaskSpec,
+  createPerlinMaskSpec,
   // Masked texture specs
   createCircleStripeSpec,
   createCircleGridSpec,
@@ -62,6 +66,14 @@ export {
   createBlobGridSpec,
   createBlobPolkaDotSpec,
   createBlobCheckerSpec,
+  createPerlinStripeSpec,
+  createPerlinGridSpec,
+  createPerlinPolkaDotSpec,
+  createPerlinCheckerSpec,
+  // Masked GradientGrain specs
+  createCircleGradientGrainSpec,
+  createRectGradientGrainSpec,
+  createBlobGradientGrainSpec,
   // Gradient specs
   createLinearGradientSpec,
   createGradientGrainSpec,
@@ -88,6 +100,7 @@ export type {
   CircleMaskShapeConfig,
   RectMaskShapeConfig,
   BlobMaskShapeConfig,
+  PerlinMaskShapeConfig,
   MaskShapeConfig,
   MaskPattern,
   // Surface Presets
@@ -127,6 +140,7 @@ export type {
   CircleMaskShapeParams,
   RectMaskShapeParams,
   BlobMaskShapeParams,
+  PerlinMaskShapeParams,
   StripeSurfaceParams,
   GridSurfaceParams,
   PolkaDotSurfaceParams,
@@ -139,6 +153,7 @@ export {
   CircleMaskShapeSchema,
   RectMaskShapeSchema,
   BlobMaskShapeSchema,
+  PerlinMaskShapeSchema,
   MaskShapeSchemas,
   // Surface Schemas
   StripeSurfaceSchema,
@@ -151,6 +166,7 @@ export {
   createDefaultCircleMaskParams,
   createDefaultRectMaskParams,
   createDefaultBlobMaskParams,
+  createDefaultPerlinMaskParams,
   createDefaultStripeParams,
   createDefaultGridParams,
   createDefaultPolkaDotParams,

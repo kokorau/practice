@@ -8,7 +8,7 @@
 // Mask Types
 // ============================================================
 
-export type MaskType = 'circle' | 'rect' | 'blob'
+export type MaskType = 'circle' | 'rect' | 'blob' | 'perlin'
 export type TextureType = 'stripe' | 'grid' | 'polkaDot' | 'checker'
 
 /** Parameters for circle mask */
@@ -49,7 +49,18 @@ export interface BlobMaskConfig {
   cutout?: boolean
 }
 
-export type MaskConfig = CircleMaskConfig | RectMaskConfig | BlobMaskConfig
+/** Parameters for perlin noise mask */
+export interface PerlinMaskConfig {
+  type: 'perlin'
+  seed: number
+  threshold: number
+  scale: number
+  octaves: number
+  /** If true (default), noise > threshold is opaque. If false, noise <= threshold is opaque. */
+  cutout?: boolean
+}
+
+export type MaskConfig = CircleMaskConfig | RectMaskConfig | BlobMaskConfig | PerlinMaskConfig
 
 // ============================================================
 // Texture Types

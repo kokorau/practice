@@ -73,16 +73,15 @@ const clickOutsideOptions = computed(() => ({
 .floating-panel.position-left {
   left: 100%;
   top: 0;
-  margin-left: 0.25rem;
-  border: 1px solid oklch(0.88 0.01 260);
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border-right: 1px solid oklch(0.88 0.01 260);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  max-height: 100vh;
 }
 
 :global(.dark) .floating-panel.position-left {
-  border-color: oklch(0.25 0.02 260);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  border-right-color: oklch(0.25 0.02 260);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
 
 /* Right position (from right panel) - full height */

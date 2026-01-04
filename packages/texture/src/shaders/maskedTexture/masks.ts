@@ -118,3 +118,48 @@ fn rectMaskSDF(
   return sdRoundedRectMasked(p, correctedHalfSize, radii);
 }
 `
+
+/** Perlin noise utilities for perlin mask */
+export const perlinMaskUtils = /* wgsl */ `
+fn perlinHash21(p: vec2f) -> f32 {
+  var p3 = fract(vec3f(p.x, p.y, p.x) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+fn perlinValueNoise(p: vec2f) -> f32 {
+  let i = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+
+  let a = perlinHash21(i);
+  let b = perlinHash21(i + vec2f(1.0, 0.0));
+  let c = perlinHash21(i + vec2f(0.0, 1.0));
+  let d = perlinHash21(i + vec2f(1.0, 1.0));
+
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+fn perlinFbm(p: vec2f, octaves: i32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = p;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * perlinValueNoise(pos);
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+`
+
+/** Perlin noise mask function (thresholded) */
+export const perlinMaskFn = /* wgsl */ `
+fn perlinMaskValue(uv: vec2f, seed: f32, scale: f32, octaves: i32, threshold: f32) -> f32 {
+  let noisePos = uv * scale + vec2f(seed * 0.1, seed * 0.073);
+  let noise = perlinFbm(noisePos, octaves);
+  // threshold で2値化: noise > threshold なら1（不透過）、それ以外は0（透過）
+  return select(0.0, 1.0, noise > threshold);
+}
+`

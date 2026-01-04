@@ -32,7 +32,7 @@ export interface SurfacePresetParams {
  * Mask pattern config type (for matching)
  */
 export interface MaskPatternConfig {
-  type: 'circle' | 'rect' | 'blob'
+  type: 'circle' | 'rect' | 'blob' | 'perlin'
   centerX?: number
   centerY?: number
   radius?: number
@@ -48,6 +48,8 @@ export interface MaskPatternConfig {
   amplitude?: number
   octaves?: number
   seed?: number
+  threshold?: number
+  scale?: number
   cutout?: boolean
 }
 
@@ -155,6 +157,16 @@ export const findMaskPatternIndex = (
         approxEqual(shapeConfig.amplitude, maskConfig.amplitude ?? 0) &&
         shapeConfig.octaves === maskConfig.octaves &&
         shapeConfig.seed === maskConfig.seed
+      ) {
+        return i
+      }
+    }
+    if (shapeConfig.type === 'perlin' && maskConfig.type === 'perlin') {
+      if (
+        shapeConfig.seed === maskConfig.seed &&
+        approxEqual(shapeConfig.threshold, maskConfig.threshold ?? 0.5) &&
+        approxEqual(shapeConfig.scale, maskConfig.scale ?? 4) &&
+        shapeConfig.octaves === maskConfig.octaves
       ) {
         return i
       }
