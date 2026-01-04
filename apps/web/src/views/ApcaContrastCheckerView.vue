@@ -56,17 +56,14 @@ const connectionDefinitions = ref<Connection[]>([
   { from: { nodeId: NODE_HISTOGRAM, position: 'bottom' }, to: { nodeId: NODE_FINAL_SCORE, position: 'top' } },
 ])
 
-// Group nodes by row
-const nodesByRow = computed(() => {
-  const rows = new Map<number, NodeDefinition[]>()
-  for (const node of nodeDefinitions.value) {
-    if (!rows.has(node.row)) {
-      rows.set(node.row, [])
-    }
-    rows.get(node.row)!.push(node)
-  }
-  return Array.from(rows.entries()).sort((a, b) => a[0] - b[0])
-})
+// Get node label/title by ID
+function getNodeLabel(id: string): string {
+  return nodeDefinitions.value.find(n => n.id === id)?.label ?? ''
+}
+
+function getNodeTitle(id: string): string {
+  return nodeDefinitions.value.find(n => n.id === id)?.title ?? ''
+}
 
 // Node sizes (like GradientLabView)
 const NODE_WIDTH = 200
@@ -88,17 +85,21 @@ function setNodeRef(nodeId: string, el: HTMLElement | null) {
   nodeRefs.value.set(nodeId, el)
 }
 
-// Canvas refs (Map by node ID)
-const canvasRefs = ref<Map<string, InstanceType<typeof ScaledCanvas> | null>>(new Map())
-
-// Set canvas ref helper
-function setCanvasRef(nodeId: string, el: InstanceType<typeof ScaledCanvas> | null) {
-  canvasRefs.value.set(nodeId, el)
-}
+// Canvas refs (individual refs for reliability)
+const canvasSourceRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+const canvasLuminanceRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+const canvasRegionRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+const canvasApcaScoreRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 
 // Get canvas by node ID
 function getCanvas(nodeId: string): HTMLCanvasElement | null {
-  return canvasRefs.value.get(nodeId)?.canvas ?? null
+  switch (nodeId) {
+    case NODE_SOURCE: return canvasSourceRef.value?.canvas ?? null
+    case NODE_LUMINANCE: return canvasLuminanceRef.value?.canvas ?? null
+    case NODE_REGION: return canvasRegionRef.value?.canvas ?? null
+    case NODE_APCA_SCORE: return canvasApcaScoreRef.value?.canvas ?? null
+    default: return null
+  }
 }
 
 // Node G: Histogram data
@@ -490,15 +491,15 @@ function calculateHistogram() {
   }
 }
 
-// Watch for media/canvas changes
-watch([media, canvasRefs], async () => {
+// Watch for media changes
+watch(media, async () => {
   await nextTick()
   renderSourceImage()
   renderLuminanceMap()
   renderTextRegion()
   renderApcaScoreMap()
   calculateHistogram()
-}, { deep: true })
+})
 
 // Watch for text changes
 watch([textContent, verticalAlign, horizontalAlign, textMeasureRef], async () => {
@@ -555,6 +556,8 @@ onMounted(async () => {
   setTimeout(() => {
     updateConnections()
     updateTextBounds()
+    renderSourceImage()
+    renderLuminanceMap()
     renderTextRegion()
     renderApcaScoreMap()
     calculateHistogram()
@@ -674,43 +677,30 @@ onUnmounted(() => {
             />
           </svg>
 
-          <!-- Dynamic node rows -->
-          <div v-for="[rowNum, nodes] in nodesByRow" :key="rowNum" class="node-row">
-            <div
-              v-for="node in nodes"
-              :key="node.id"
-              :ref="(el) => setNodeRef(node.id, el as HTMLElement)"
-              class="node-wrapper"
-            >
+          <!-- Row 1: Source, Text -->
+          <div class="node-row">
+            <div :ref="(el) => setNodeRef(NODE_SOURCE, el as HTMLElement)" class="node-wrapper">
               <div class="node-title">
-                <span class="node-badge">{{ node.label }}</span>
-                <span class="node-title-text">{{ node.title }}</span>
+                <span class="node-badge">{{ getNodeLabel(NODE_SOURCE) }}</span>
+                <span class="node-title-text">{{ getNodeTitle(NODE_SOURCE) }}</span>
               </div>
-
-              <!-- Canvas nodes (source, luminance) -->
-              <div v-if="node.type === 'canvas' && (node.id === NODE_SOURCE || node.id === NODE_LUMINANCE)" class="node-preview">
+              <div class="node-preview">
                 <ScaledCanvas
-                  :ref="(el: any) => setCanvasRef(node.id, el)"
+                  ref="canvasSourceRef"
                   :canvas-width="CANVAS_WIDTH"
                   :canvas-height="CANVAS_HEIGHT"
                   :class="{ 'opacity-0': !media }"
                 />
                 <p v-if="!media" class="node-empty">No image</p>
               </div>
+            </div>
 
-              <!-- Canvas nodes (region, apca-score) -->
-              <div v-else-if="node.type === 'canvas' && (node.id === NODE_REGION || node.id === NODE_APCA_SCORE)" class="node-preview">
-                <ScaledCanvas
-                  :ref="(el: any) => setCanvasRef(node.id, el)"
-                  :canvas-width="NODE_WIDTH"
-                  :canvas-height="NODE_HEIGHT"
-                  :class="{ 'opacity-0': !textBounds }"
-                />
-                <p v-if="!textBounds" class="node-empty">No text</p>
+            <div :ref="(el) => setNodeRef(NODE_TEXT, el as HTMLElement)" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">{{ getNodeLabel(NODE_TEXT) }}</span>
+                <span class="node-title-text">{{ getNodeTitle(NODE_TEXT) }}</span>
               </div>
-
-              <!-- Text layer node -->
-              <div v-else-if="node.type === 'text'" class="node-preview">
+              <div class="node-preview">
                 <div
                   class="text-layer"
                   :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
@@ -718,17 +708,84 @@ onUnmounted(() => {
                   <span ref="textMeasureRef" class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Value display node -->
-              <div v-else-if="node.type === 'value'" class="node-preview node-preview-center">
+          <!-- Row 2: Luminance, Region, Text Y -->
+          <div class="node-row">
+            <div :ref="(el) => setNodeRef(NODE_LUMINANCE, el as HTMLElement)" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">{{ getNodeLabel(NODE_LUMINANCE) }}</span>
+                <span class="node-title-text">{{ getNodeTitle(NODE_LUMINANCE) }}</span>
+              </div>
+              <div class="node-preview">
+                <ScaledCanvas
+                  ref="canvasLuminanceRef"
+                  :canvas-width="CANVAS_WIDTH"
+                  :canvas-height="CANVAS_HEIGHT"
+                  :class="{ 'opacity-0': !media }"
+                />
+                <p v-if="!media" class="node-empty">No image</p>
+              </div>
+            </div>
+
+            <div :ref="(el) => setNodeRef(NODE_REGION, el as HTMLElement)" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">{{ getNodeLabel(NODE_REGION) }}</span>
+                <span class="node-title-text">{{ getNodeTitle(NODE_REGION) }}</span>
+              </div>
+              <div class="node-preview">
+                <ScaledCanvas
+                  ref="canvasRegionRef"
+                  :canvas-width="NODE_WIDTH"
+                  :canvas-height="NODE_HEIGHT"
+                  :class="{ 'opacity-0': !textBounds }"
+                />
+                <p v-if="!textBounds" class="node-empty">No text</p>
+              </div>
+            </div>
+
+            <div :ref="(el) => setNodeRef(NODE_TEXT_Y, el as HTMLElement)" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">{{ getNodeLabel(NODE_TEXT_Y) }}</span>
+                <span class="node-title-text">{{ getNodeTitle(NODE_TEXT_Y) }}</span>
+              </div>
+              <div class="node-preview node-preview-center">
                 <div class="value-display">
                   <div class="value-color" :style="{ backgroundColor: textColor }"></div>
                   <span class="value-number">{{ textColorY.toFixed(4) }}</span>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Histogram node -->
-              <div v-else-if="node.type === 'histogram'" class="node-preview node-preview-histogram">
+          <!-- Row 3: APCA Score -->
+          <div class="node-row">
+            <div :ref="(el) => setNodeRef(NODE_APCA_SCORE, el as HTMLElement)" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">{{ getNodeLabel(NODE_APCA_SCORE) }}</span>
+                <span class="node-title-text">{{ getNodeTitle(NODE_APCA_SCORE) }}</span>
+              </div>
+              <div class="node-preview">
+                <ScaledCanvas
+                  ref="canvasApcaScoreRef"
+                  :canvas-width="NODE_WIDTH"
+                  :canvas-height="NODE_HEIGHT"
+                  :class="{ 'opacity-0': !textBounds }"
+                />
+                <p v-if="!textBounds" class="node-empty">No data</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 4: Histogram -->
+          <div class="node-row">
+            <div :ref="(el) => setNodeRef(NODE_HISTOGRAM, el as HTMLElement)" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">{{ getNodeLabel(NODE_HISTOGRAM) }}</span>
+                <span class="node-title-text">{{ getNodeTitle(NODE_HISTOGRAM) }}</span>
+              </div>
+              <div class="node-preview node-preview-histogram">
                 <div class="histogram">
                   <div
                     v-for="(value, index) in histogramData"
@@ -744,9 +801,17 @@ onUnmounted(() => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Score node -->
-              <div v-else-if="node.type === 'score'" class="node-preview node-preview-center">
+          <!-- Row 5: Final Score -->
+          <div class="node-row">
+            <div :ref="(el) => setNodeRef(NODE_FINAL_SCORE, el as HTMLElement)" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">{{ getNodeLabel(NODE_FINAL_SCORE) }}</span>
+                <span class="node-title-text">{{ getNodeTitle(NODE_FINAL_SCORE) }}</span>
+              </div>
+              <div class="node-preview node-preview-center">
                 <div class="score-display">
                   <span class="score-number">{{ calculatedScore }}</span>
                   <span class="score-label">APCA Lc</span>
