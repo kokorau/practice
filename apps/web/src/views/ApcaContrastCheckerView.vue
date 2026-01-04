@@ -7,6 +7,13 @@ import { createDefaultPhotoUseCase } from '../modules/Photo/Application/createDe
 import { loadUnsplashPhoto } from '../modules/PhotoUnsplash/Application/loadUnsplashPhoto'
 import ScaledCanvas from '../components/ScaledCanvas.vue'
 import { $APCA, $Srgb } from '@practice/color'
+import {
+  type LuminanceMap,
+  type ContrastHistogram,
+  $LuminanceMapGenerator,
+  $ContrastAnalyzer,
+  $ContrastScore,
+} from '../modules/ContrastChecker'
 
 // Node types
 type NodeType = 'canvas' | 'text' | 'value' | 'histogram' | 'score'
@@ -103,18 +110,16 @@ function getCanvas(nodeId: string): HTMLCanvasElement | null {
   }
 }
 
+// Luminance map (for reuse in score calculation)
+const luminanceMap = ref<LuminanceMap | null>(null)
+
 // Node G: Histogram data
-const histogramData = ref<number[]>(new Array(10).fill(0))
+const histogramData = ref<ContrastHistogram>($ContrastScore.createEmptyHistogram())
 
 // Node H: Score calculation
 const scoreThreshold = ref(2) // percentage threshold
 const calculatedScore = computed(() => {
-  for (let i = 0; i < histogramData.value.length; i++) {
-    if (histogramData.value[i]! >= scoreThreshold.value) {
-      return i * 10 // Return lower bound of the range
-    }
-  }
-  return 100 // All ranges below threshold, max score
+  return $ContrastScore.calculateMinimumScore(histogramData.value, scoreThreshold.value)
 })
 
 // Connection paths
@@ -293,6 +298,7 @@ function renderLuminanceMap() {
     CANVAS_WIDTH, CANVAS_HEIGHT
   )
 
+  // Resample source image to canvas size
   const croppedImageData = new ImageData(CANVAS_WIDTH, CANVAS_HEIGHT)
   const srcData = sourceImageData.data
   const dstData = croppedImageData.data
@@ -305,22 +311,19 @@ function renderLuminanceMap() {
       const srcIdx = (srcY * srcW + srcX) * 4
       const dstIdx = (dy * CANVAS_WIDTH + dx) * 4
 
-      const r = srcData[srcIdx]!
-      const g = srcData[srcIdx + 1]!
-      const b = srcData[srcIdx + 2]!
-      const a = srcData[srcIdx + 3]!
-
-      const y = $APCA.srgbToY($Srgb.from255(r, g, b))
-      const gray = Math.round(y * 255)
-
-      dstData[dstIdx] = gray
-      dstData[dstIdx + 1] = gray
-      dstData[dstIdx + 2] = gray
-      dstData[dstIdx + 3] = a
+      dstData[dstIdx] = srcData[srcIdx]!
+      dstData[dstIdx + 1] = srcData[srcIdx + 1]!
+      dstData[dstIdx + 2] = srcData[srcIdx + 2]!
+      dstData[dstIdx + 3] = srcData[srcIdx + 3]!
     }
   }
 
-  ctx.putImageData(croppedImageData, 0, 0)
+  // Generate luminance map using ContrastChecker module
+  luminanceMap.value = $LuminanceMapGenerator.fromImageData(croppedImageData)
+
+  // Convert to grayscale ImageData for display
+  const luminanceImageData = $LuminanceMapGenerator.toImageData(luminanceMap.value)
+  ctx.putImageData(luminanceImageData, 0, 0)
 }
 
 // Node: Extract text region from luminance map
@@ -358,11 +361,10 @@ function renderTextRegion() {
   ctx.drawImage(srcCanvas, sx, sy, sw, sh, dx, dy, dw, dh)
 }
 
-// Node: APCA Score Map
+// Node: APCA Score Map (uses $ContrastAnalyzer.generateScoreMap)
 function renderApcaScoreMap() {
-  const srcCanvas = getCanvas(NODE_REGION)
   const dstCanvas = getCanvas(NODE_APCA_SCORE)
-  if (!srcCanvas || !dstCanvas) return
+  if (!dstCanvas || !luminanceMap.value || !textBounds.value) return
 
   const ctx = dstCanvas.getContext('2d')
   if (!ctx) return
@@ -370,84 +372,54 @@ function renderApcaScoreMap() {
   dstCanvas.width = NODE_WIDTH
   dstCanvas.height = NODE_HEIGHT
 
-  const srcCtx = srcCanvas.getContext('2d')
-  if (!srcCtx) return
+  // Clear canvas
+  ctx.clearRect(0, 0, NODE_WIDTH, NODE_HEIGHT)
 
-  const srcImageData = srcCtx.getImageData(0, 0, NODE_WIDTH, NODE_HEIGHT)
-  const dstImageData = ctx.createImageData(NODE_WIDTH, NODE_HEIGHT)
-  const srcData = srcImageData.data
-  const dstData = dstImageData.data
-
+  const bounds = textBounds.value
   const textY = textColorY.value
 
-  for (let i = 0; i < srcData.length; i += 4) {
-    const alpha = srcData[i + 3]!
+  // Generate score map for the text region
+  const scoreImageData = $ContrastAnalyzer.generateScoreMap(
+    luminanceMap.value,
+    textY,
+    { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
+  )
 
-    // Skip transparent pixels (outside extracted region)
-    if (alpha === 0) {
-      dstData[i] = 0
-      dstData[i + 1] = 0
-      dstData[i + 2] = 0
-      dstData[i + 3] = 0
-      continue
-    }
+  // Scale and center in node preview
+  const scaleX = NODE_WIDTH / CANVAS_WIDTH
+  const scaleY = NODE_HEIGHT / CANVAS_HEIGHT
+  const dw = bounds.width * scaleX
+  const dh = bounds.height * scaleY
+  const dx = (NODE_WIDTH - dw) / 2
+  const dy = (NODE_HEIGHT - dh) / 2
 
-    // Get background Y from grayscale luminance map
-    const bgY = srcData[i]! / 255
-
-    // Calculate APCA score
-    const score = $APCA.fromY(textY, bgY)
-    const absScore = Math.abs(score)
-
-    // Clamp to 0-100, then normalize to 0-1
-    const clamped = Math.min(Math.max(absScore, 0), 100)
-    const normalized = clamped / 100
-    const gray = Math.round(normalized * 255)
-
-    dstData[i] = gray
-    dstData[i + 1] = gray
-    dstData[i + 2] = gray
-    dstData[i + 3] = alpha
+  // Draw score map scaled to preview size
+  const tempCanvas = new OffscreenCanvas(scoreImageData.width, scoreImageData.height)
+  const tempCtx = tempCanvas.getContext('2d')
+  if (tempCtx) {
+    tempCtx.putImageData(scoreImageData, 0, 0)
+    ctx.drawImage(tempCanvas, 0, 0, scoreImageData.width, scoreImageData.height, dx, dy, dw, dh)
   }
-
-  ctx.putImageData(dstImageData, 0, 0)
 }
 
-// Node: Calculate histogram from APCA score map
+// Node: Calculate histogram (uses $ContrastAnalyzer.analyze)
 function calculateHistogram() {
-  const srcCanvas = getCanvas(NODE_APCA_SCORE)
-  if (!srcCanvas) return
-
-  const ctx = srcCanvas.getContext('2d')
-  if (!ctx) return
-
-  const imageData = ctx.getImageData(0, 0, NODE_WIDTH, NODE_HEIGHT)
-  const data = imageData.data
-
-  // Initialize bins (0-10, 10-20, ..., 90-100)
-  const bins = new Array(10).fill(0)
-  let totalPixels = 0
-
-  for (let i = 0; i < data.length; i += 4) {
-    const alpha = data[i + 3]!
-    if (alpha === 0) continue // Skip transparent pixels
-
-    // Gray value represents score (0-255 maps to 0-100)
-    const gray = data[i]!
-    const score = (gray / 255) * 100
-
-    // Determine bin index (0-9)
-    const binIndex = Math.min(Math.floor(score / 10), 9)
-    bins[binIndex]++
-    totalPixels++
+  if (!luminanceMap.value || !textBounds.value) {
+    histogramData.value = $ContrastScore.createEmptyHistogram()
+    return
   }
 
-  // Convert to percentages
-  if (totalPixels > 0) {
-    histogramData.value = bins.map(count => (count / totalPixels) * 100)
-  } else {
-    histogramData.value = new Array(10).fill(0)
-  }
+  const bounds = textBounds.value
+  const textY = textColorY.value
+
+  // Analyze contrast for the text region
+  const result = $ContrastAnalyzer.analyze(
+    luminanceMap.value,
+    textY,
+    { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
+  )
+
+  histogramData.value = result.histogram
 }
 
 // Watch for media changes
@@ -740,7 +712,7 @@ onUnmounted(() => {
             <div class="node-preview node-preview-histogram">
               <div class="histogram">
                 <div
-                  v-for="(value, index) in histogramData"
+                  v-for="(value, index) in histogramData.bins"
                   :key="index"
                   class="histogram-bar-container"
                 >
