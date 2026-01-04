@@ -29,6 +29,8 @@ export interface SubItemConfig {
 export interface LayerFilterConfig {
   vignette: { enabled: boolean }
   chromaticAberration: { enabled: boolean }
+  dotHalftone: { enabled: boolean }
+  lineHalftone: { enabled: boolean }
 }
 
 // ============================================================
@@ -37,6 +39,9 @@ export interface LayerFilterConfig {
 const props = defineProps<{
   layers: LayerItem[]
   layerFilterConfigs?: Map<string, LayerFilterConfig>
+  backgroundSurfaceLabel?: string
+  maskSurfaceLabel?: string
+  maskShapeLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -69,6 +74,8 @@ const getFilterValue = (layerId: string): string => {
   const filters: string[] = []
   if (config.vignette.enabled) filters.push('Vignette')
   if (config.chromaticAberration.enabled) filters.push('CA')
+  if (config.dotHalftone.enabled) filters.push('Dot HT')
+  if (config.lineHalftone.enabled) filters.push('Line HT')
 
   return filters.length > 0 ? filters.join(' / ') : 'None'
 }
@@ -77,13 +84,13 @@ const getSubItems = (layer: LayerItem): SubItemConfig[] => {
   switch (layer.type) {
     case 'base':
       return [
-        { type: 'surface', label: 'Surface', value: 'Stripe', enabled: true },
+        { type: 'surface', label: 'Surface', value: props.backgroundSurfaceLabel ?? 'Solid', enabled: true },
         { type: 'filter', label: 'Filter', value: getFilterValue(layer.id), enabled: true },
       ]
     case 'mask':
       return [
-        { type: 'surface', label: 'Surface', value: 'Solid', enabled: true },
-        { type: 'shape', label: 'Shape', value: 'Blob', enabled: true },
+        { type: 'surface', label: 'Surface', value: props.maskSurfaceLabel ?? 'Solid', enabled: true },
+        { type: 'shape', label: 'Shape', value: props.maskShapeLabel ?? 'None', enabled: true },
         { type: 'filter', label: 'Filter', value: getFilterValue(layer.id), enabled: true },
       ]
     case 'object':

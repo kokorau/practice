@@ -559,6 +559,27 @@ const handleRemoveLayer = (layerId: string) => {
     removeLayer(mapLayerIdToSceneLayerId(layerId))
   }
 }
+
+// ============================================================
+// Layer Panel Display Labels
+// ============================================================
+const backgroundSurfaceLabel = computed(() => {
+  if (customBackgroundImage.value) return 'Image'
+  const pattern = texturePatterns[selectedBackgroundIndex.value]
+  return pattern?.label ?? 'Solid'
+})
+
+const maskSurfaceLabel = computed(() => {
+  if (customMaskImage.value) return 'Image'
+  const pattern = midgroundTexturePatterns[selectedMidgroundTextureIndex.value]
+  return pattern?.label ?? 'Solid'
+})
+
+const maskShapeLabel = computed(() => {
+  if (selectedMaskIndex.value === null) return 'None'
+  const pattern = maskPatterns[selectedMaskIndex.value]
+  return pattern?.label ?? 'None'
+})
 </script>
 
 <template>
@@ -900,6 +921,9 @@ const handleRemoveLayer = (layerId: string) => {
       <LayerPanel
         :layers="layers"
         :layer-filter-configs="layerFilterConfigs"
+        :background-surface-label="backgroundSurfaceLabel"
+        :mask-surface-label="maskSurfaceLabel"
+        :mask-shape-label="maskShapeLabel"
         @toggle-visibility="handleToggleVisibility"
         @select-subitem="handleSelectSubItem"
         @add-layer="handleAddLayer"
