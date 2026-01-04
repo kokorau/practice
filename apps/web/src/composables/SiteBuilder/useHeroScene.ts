@@ -696,6 +696,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           layer.config = { type: 'texture', patternIndex: selectedBackgroundIndex.value }
           layer.name = 'Background Texture'
         }
+        // Sync filters from layerFilterConfigs
+        const filters = layerFilterConfigs.value.get(LAYER_IDS.BASE)
+        if (filters) {
+          layer.filters = filters
+        }
       }
 
       // Update mask layer configs (all maskedTexture layers share the same settings)
@@ -706,8 +711,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           textureIndex: customMaskBitmap ? null : selectedMidgroundTextureIndex.value,
           surfaceImage: customMaskBitmap ?? undefined,
         }
+        // Sync filters from layerFilterConfigs
+        const filters = layerFilterConfigs.value.get(LAYER_IDS.MASK)
+        if (filters) {
+          layer.filters = filters
+        }
       }
     }
+
+    // Trigger reactivity for layerFilterConfigs (Map needs explicit trigger)
+    layerFilterConfigs.value = new Map(layerFilterConfigs.value)
 
     // Trigger reactivity
     editorState.value = { ...editorState.value }
