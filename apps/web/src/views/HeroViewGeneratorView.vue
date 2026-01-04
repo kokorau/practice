@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
 import {
@@ -37,6 +37,7 @@ import {
 } from '../composables/SiteBuilder'
 import { createGradientGrainSpec, createDefaultGradientGrainParams, type DepthMapType } from '@practice/texture'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
+import { checkImageDataContrast, type ContrastAnalysisResult } from '../modules/ContrastChecker'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
@@ -161,6 +162,8 @@ const {
   foregroundConfig,
   foregroundTitleColor,
   foregroundBodyColor,
+  // Canvas ImageData for contrast analysis
+  canvasImageData,
   // PrimitiveKey color selection
   backgroundColorKey1,
   backgroundColorKey2,
@@ -658,6 +661,66 @@ const maskShapeLabel = computed(() => {
   const pattern = maskPatterns[selectedMaskIndex.value]
   return pattern?.label ?? 'None'
 })
+
+// ============================================================
+// APCA Contrast Check
+// ============================================================
+const titleContrastResult = ref<ContrastAnalysisResult | null>(null)
+const descriptionContrastResult = ref<ContrastAnalysisResult | null>(null)
+
+const checkTitleContrast = async () => {
+  await nextTick()
+  const imageData = canvasImageData.value
+  const bounds = heroPreviewRef.value?.getElementBounds('title')
+  const textColor = foregroundTitleColor.value
+
+  if (!imageData || !bounds || !textColor) {
+    titleContrastResult.value = null
+    return
+  }
+
+  titleContrastResult.value = checkImageDataContrast({
+    imageData,
+    textColor,
+    region: bounds,
+  })
+}
+
+const checkDescriptionContrast = async () => {
+  await nextTick()
+  const imageData = canvasImageData.value
+  const bounds = heroPreviewRef.value?.getElementBounds('description')
+  const textColor = foregroundBodyColor.value
+
+  if (!imageData || !bounds || !textColor) {
+    descriptionContrastResult.value = null
+    return
+  }
+
+  descriptionContrastResult.value = checkImageDataContrast({
+    imageData,
+    textColor,
+    region: bounds,
+  })
+}
+
+// Watch for changes that affect contrast
+watch([foregroundTitleColor, titlePosition, titleFontSize], checkTitleContrast)
+watch([foregroundBodyColor, descriptionPosition, descriptionFontSize], checkDescriptionContrast)
+
+// Update contrast when canvas ImageData changes (after each render)
+watch(canvasImageData, () => {
+  checkTitleContrast()
+  checkDescriptionContrast()
+})
+
+// Helper to get score level class
+const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' => {
+  if (score >= 75) return 'excellent'
+  if (score >= 60) return 'good'
+  if (score >= 45) return 'fair'
+  return 'poor'
+}
 </script>
 
 <template>
@@ -810,6 +873,30 @@ const maskShapeLabel = computed(() => {
         <!-- 前景: Title 設定 -->
         <template v-else-if="activeSection === 'foreground-title'">
           <div class="foreground-section">
+            <!-- APCA Contrast Score -->
+            <div v-if="titleContrastResult" class="contrast-score-section">
+              <div class="contrast-score-header">
+                <span class="contrast-score-label">APCA Contrast</span>
+                <span
+                  class="contrast-score-badge"
+                  :class="getScoreLevel(titleContrastResult.score)"
+                >
+                  Lc {{ titleContrastResult.score }}
+                </span>
+              </div>
+              <div class="contrast-histogram">
+                <div
+                  v-for="(percent, i) in titleContrastResult.histogram.bins"
+                  :key="i"
+                  class="histogram-bar"
+                  :style="{ height: `${Math.min(percent, 100)}%` }"
+                  :title="`${i * 10}-${(i + 1) * 10}: ${percent.toFixed(1)}%`"
+                />
+              </div>
+              <div class="contrast-score-hint">
+                {{ titleContrastResult.score >= 60 ? 'Good readability' : titleContrastResult.score >= 45 ? 'Minimum for body text' : 'Poor contrast' }}
+              </div>
+            </div>
             <div class="foreground-field">
               <label class="foreground-label">Text</label>
               <input
@@ -847,6 +934,30 @@ const maskShapeLabel = computed(() => {
         <!-- 前景: Description 設定 -->
         <template v-else-if="activeSection === 'foreground-description'">
           <div class="foreground-section">
+            <!-- APCA Contrast Score -->
+            <div v-if="descriptionContrastResult" class="contrast-score-section">
+              <div class="contrast-score-header">
+                <span class="contrast-score-label">APCA Contrast</span>
+                <span
+                  class="contrast-score-badge"
+                  :class="getScoreLevel(descriptionContrastResult.score)"
+                >
+                  Lc {{ descriptionContrastResult.score }}
+                </span>
+              </div>
+              <div class="contrast-histogram">
+                <div
+                  v-for="(percent, i) in descriptionContrastResult.histogram.bins"
+                  :key="i"
+                  class="histogram-bar"
+                  :style="{ height: `${Math.min(percent, 100)}%` }"
+                  :title="`${i * 10}-${(i + 1) * 10}: ${percent.toFixed(1)}%`"
+                />
+              </div>
+              <div class="contrast-score-hint">
+                {{ descriptionContrastResult.score >= 60 ? 'Good readability' : descriptionContrastResult.score >= 45 ? 'Minimum for body text' : 'Poor contrast' }}
+              </div>
+            </div>
             <div class="foreground-field">
               <label class="foreground-label">Text</label>
               <textarea
@@ -999,6 +1110,8 @@ const maskShapeLabel = computed(() => {
         :background-surface-label="backgroundSurfaceLabel"
         :mask-surface-label="maskSurfaceLabel"
         :mask-shape-label="maskShapeLabel"
+        :title-contrast-score="titleContrastResult?.score ?? null"
+        :description-contrast-score="descriptionContrastResult?.score ?? null"
         @toggle-visibility="handleToggleVisibility"
         @select-subitem="handleSelectSubItem"
         @add-layer="handleAddLayer"
@@ -1468,6 +1581,92 @@ const maskShapeLabel = computed(() => {
 
 .export-button .material-icons {
   font-size: 1.125rem;
+}
+
+/* Contrast Score Section */
+.contrast-score-section {
+  padding: 0.75rem;
+  background: oklch(0.94 0.01 260);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.dark .contrast-score-section {
+  background: oklch(0.18 0.02 260);
+}
+
+.contrast-score-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.contrast-score-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: oklch(0.40 0.02 260);
+}
+
+.dark .contrast-score-label {
+  color: oklch(0.70 0.02 260);
+}
+
+.contrast-score-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.contrast-score-badge.excellent {
+  background: oklch(0.75 0.15 145);
+  color: oklch(0.25 0.05 145);
+}
+
+.contrast-score-badge.good {
+  background: oklch(0.80 0.12 130);
+  color: oklch(0.30 0.05 130);
+}
+
+.contrast-score-badge.fair {
+  background: oklch(0.80 0.12 85);
+  color: oklch(0.30 0.05 85);
+}
+
+.contrast-score-badge.poor {
+  background: oklch(0.75 0.15 30);
+  color: oklch(0.25 0.05 30);
+}
+
+.contrast-histogram {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 2rem;
+  padding: 0.25rem 0;
+}
+
+.histogram-bar {
+  flex: 1;
+  min-height: 2px;
+  background: oklch(0.55 0.15 250);
+  border-radius: 1px;
+  transition: height 0.2s;
+}
+
+.dark .histogram-bar {
+  background: oklch(0.65 0.15 250);
+}
+
+.contrast-score-hint {
+  font-size: 0.6875rem;
+  color: oklch(0.50 0.02 260);
+  margin-top: 0.25rem;
+}
+
+.dark .contrast-score-hint {
+  color: oklch(0.60 0.02 260);
 }
 
 </style>

@@ -31,6 +31,8 @@ export {
   $CheckTextContrast,
   type ContrastRegion,
   type CanvasContrastCheckOptions,
+  type ImageDataContrastCheckOptions,
   checkCanvasContrast,
+  checkImageDataContrast,
   $CheckCanvasContrast,
 } from './Application'

@@ -5,7 +5,7 @@
  * 現在は2レイヤー固定（base, mask）
  */
 
-import { ref, computed, watch, nextTick, onUnmounted, type ComputedRef, type Ref } from 'vue'
+import { ref, shallowRef, computed, watch, nextTick, onUnmounted, type ComputedRef, type Ref } from 'vue'
 import {
   TextureRenderer,
   getDefaultTexturePatterns,
@@ -553,6 +553,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   let previewRenderer: TextureRenderer | null = null
   const thumbnailRenderers: TextureRenderer[] = []
+
+  // Cached canvas ImageData for contrast analysis (updated after each render)
+  const canvasImageData = shallowRef<ImageData | null>(null)
 
   // ============================================================
   // Semantic Context for Mask Layer (fixed to 'canvas' for now)
@@ -1445,6 +1448,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       // Apply per-layer filters after rendering the layer
       applyLayerFilters(layer, viewport)
     }
+
+    // Update cached ImageData for contrast analysis
+    try {
+      canvasImageData.value = await previewRenderer.readPixels()
+    } catch {
+      // Ignore errors (e.g., if canvas is not ready)
+    }
   }
 
   // ============================================================
@@ -2289,6 +2299,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foregroundConfig,
     foregroundTitleColor,
     foregroundBodyColor,
+
+    // Canvas ImageData for contrast analysis
+    canvasImageData,
 
     // Serialization
     toHeroViewConfig,

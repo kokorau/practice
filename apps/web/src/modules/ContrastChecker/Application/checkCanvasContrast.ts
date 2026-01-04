@@ -1,4 +1,4 @@
-import { $APCA, $Srgb, type Srgb } from '@practice/color'
+import { $APCA, $Srgb, $Oklch, type Srgb } from '@practice/color'
 import { type ContrastAnalysisResult } from '../Domain'
 import { $LuminanceMapGenerator, $ContrastAnalyzer } from '../Infra'
 
@@ -25,10 +25,33 @@ export type CanvasContrastCheckOptions = {
 }
 
 /**
+ * Parse oklch CSS string to Srgb
+ * Format: oklch(L% C H) or oklch(L C H)
+ */
+function parseOklchCss(css: string): Srgb | null {
+  const match = css.match(/oklch\(\s*([\d.]+)%?\s+([\d.]+)\s+([\d.]+)\s*\)/)
+  if (!match) return null
+
+  const L = parseFloat(match[1]!) / 100 // Convert percentage to 0-1
+  const C = parseFloat(match[2]!)
+  const H = parseFloat(match[3]!)
+
+  return $Oklch.toSrgb({ L, C, H })
+}
+
+/**
  * Parse text color to Y value
+ * Supports: hex string (#fff, #ffffff), oklch CSS string, or Srgb object
  */
 function parseTextColorToY(textColor: string | Srgb): number | null {
   if (typeof textColor === 'string') {
+    // Try oklch CSS format first
+    if (textColor.startsWith('oklch(')) {
+      const srgb = parseOklchCss(textColor)
+      if (!srgb) return null
+      return $APCA.srgbToY(srgb)
+    }
+    // Fall back to hex format
     const srgb = $Srgb.fromHex(textColor)
     if (!srgb) return null
     return $APCA.srgbToY(srgb)
@@ -78,6 +101,41 @@ export function checkCanvasContrast(
   return $ContrastAnalyzer.analyze(luminanceMap, textY, region)
 }
 
+/**
+ * Options for ImageData contrast check (WebGPU compatible)
+ */
+export type ImageDataContrastCheckOptions = {
+  /** ImageData from WebGPU readPixels or other source */
+  imageData: ImageData
+  /** Text color (hex string, oklch CSS string, or Srgb) */
+  textColor: string | Srgb
+  /** Region where text is placed */
+  region: ContrastRegion
+}
+
+/**
+ * Check contrast between text and background from ImageData
+ *
+ * Use this when working with WebGPU canvas (where getContext('2d') is not available).
+ * Get ImageData via TextureRenderer.readPixels() instead.
+ */
+export function checkImageDataContrast(
+  options: ImageDataContrastCheckOptions
+): ContrastAnalysisResult | null {
+  const { imageData, textColor, region } = options
+
+  // Parse text color
+  const textY = parseTextColorToY(textColor)
+  if (textY === null) return null
+
+  // Generate luminance map from ImageData
+  const luminanceMap = $LuminanceMapGenerator.fromImageData(imageData)
+
+  // Analyze contrast for the region
+  return $ContrastAnalyzer.analyze(luminanceMap, textY, region)
+}
+
 export const $CheckCanvasContrast = {
   check: checkCanvasContrast,
+  checkImageData: checkImageDataContrast,
 }

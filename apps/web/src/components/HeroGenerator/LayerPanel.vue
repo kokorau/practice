@@ -42,6 +42,8 @@ const props = defineProps<{
   backgroundSurfaceLabel?: string
   maskSurfaceLabel?: string
   maskShapeLabel?: string
+  titleContrastScore?: number | null
+  descriptionContrastScore?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -163,6 +165,14 @@ const handleAddLayer = (type: LayerType) => {
   emit('add-layer', type)
   showAddMenu.value = false
 }
+
+// Get score level class for contrast badge
+const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' => {
+  if (score >= 75) return 'excellent'
+  if (score >= 60) return 'good'
+  if (score >= 45) return 'fair'
+  return 'poor'
+}
 </script>
 
 <template>
@@ -264,6 +274,11 @@ const handleAddLayer = (type: LayerType) => {
             <span class="foreground-label">Title</span>
             <span class="foreground-desc">Position</span>
           </div>
+          <span
+            v-if="titleContrastScore != null"
+            class="contrast-badge"
+            :class="getScoreLevel(titleContrastScore)"
+          >Lc {{ titleContrastScore }}</span>
           <span class="material-icons foreground-arrow">chevron_right</span>
         </button>
 
@@ -273,6 +288,11 @@ const handleAddLayer = (type: LayerType) => {
             <span class="foreground-label">Description</span>
             <span class="foreground-desc">Position</span>
           </div>
+          <span
+            v-if="descriptionContrastScore != null"
+            class="contrast-badge"
+            :class="getScoreLevel(descriptionContrastScore)"
+          >Lc {{ descriptionContrastScore }}</span>
           <span class="material-icons foreground-arrow">chevron_right</span>
         </button>
       </div>
@@ -753,6 +773,35 @@ const handleAddLayer = (type: LayerType) => {
 
 :global(.dark) .foreground-button:hover .foreground-arrow {
   color: oklch(0.70 0.02 260);
+}
+
+/* Contrast Badge */
+.contrast-badge {
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.contrast-badge.excellent {
+  background: oklch(0.75 0.15 145);
+  color: oklch(0.25 0.05 145);
+}
+
+.contrast-badge.good {
+  background: oklch(0.80 0.12 130);
+  color: oklch(0.30 0.05 130);
+}
+
+.contrast-badge.fair {
+  background: oklch(0.80 0.12 85);
+  color: oklch(0.30 0.05 85);
+}
+
+.contrast-badge.poor {
+  background: oklch(0.75 0.15 30);
+  color: oklch(0.25 0.05 30);
 }
 
 /* Transitions */

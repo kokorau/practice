@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
 import {
   compileForegroundLayout,
   DEFAULT_FOREGROUND_CONFIG,
   type ForegroundConfig,
   type PositionedElement,
+  type ForegroundElementType,
 } from '../../composables/SiteBuilder'
 import { ensureFontLoaded } from '@practice/font'
 
@@ -12,6 +13,16 @@ import { ensureFontLoaded } from '@practice/font'
 const BASE_WIDTH = 1920
 const BASE_HEIGHT = 1080
 const BASE_FONT_SIZE = 16 // px per rem for consistent sizing
+
+/**
+ * Element bounds in canvas coordinate system
+ */
+export type ElementBounds = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
 
 const props = withDefaults(defineProps<{
   foregroundConfig?: ForegroundConfig
@@ -25,6 +36,9 @@ const props = withDefaults(defineProps<{
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLElement | null>(null)
+const frameRef = ref<HTMLElement | null>(null)
+const titleRef = ref<HTMLElement | null>(null)
+const descriptionRef = ref<HTMLElement | null>(null)
 const scale = ref(1)
 
 // ResizeObserver to track container width and calculate scale
@@ -88,15 +102,49 @@ const wrapperStyle = computed(() => ({
   height: `${BASE_HEIGHT * scale.value}px`,
 }))
 
+/**
+ * Get element bounds in canvas coordinate system (BASE_WIDTH x BASE_HEIGHT)
+ * The frame is scaled for display, so we need to convert DOM coordinates back to canvas space
+ */
+const getElementBounds = (type: ForegroundElementType): ElementBounds | null => {
+  const elementRef = type === 'title' ? titleRef.value : descriptionRef.value
+  const frame = frameRef.value
+  if (!elementRef || !frame) return null
+
+  const elementRect = elementRef.getBoundingClientRect()
+  const frameRect = frame.getBoundingClientRect()
+
+  // Convert from screen coordinates to canvas coordinates
+  // The frame is displayed at scale.value * BASE dimensions
+  const x = (elementRect.left - frameRect.left) / scale.value
+  const y = (elementRect.top - frameRect.top) / scale.value
+  const width = elementRect.width / scale.value
+  const height = elementRect.height / scale.value
+
+  return { x, y, width, height }
+}
+
+/**
+ * Set element ref based on type (used by template)
+ */
+const setElementRef = (el: HTMLElement | null, type: ForegroundElementType) => {
+  if (type === 'title') {
+    titleRef.value = el
+  } else if (type === 'description') {
+    descriptionRef.value = el
+  }
+}
+
 defineExpose({
   canvasRef,
+  getElementBounds,
 })
 </script>
 
 <template>
   <div ref="containerRef" class="hero-preview-container">
     <div class="hero-preview-wrapper" :style="wrapperStyle">
-      <div class="hero-preview-frame hero-palette-preview context-canvas" :style="frameStyle">
+      <div ref="frameRef" class="hero-preview-frame hero-palette-preview context-canvas" :style="frameStyle">
         <!-- 後景: テクスチャ or カスタム画像 (Canvas に描画) -->
         <canvas ref="canvasRef" class="layer-background" :width="BASE_WIDTH" :height="BASE_HEIGHT" />
 
@@ -117,6 +165,7 @@ defineExpose({
               v-for="(el, i) in group.elements"
               :key="i"
               :is="el.tag"
+              :ref="(r: Element | ComponentPublicInstance | null) => setElementRef(r as HTMLElement | null, el.type)"
               :class="el.className"
               :style="getElementStyle(el)"
             >{{ el.content }}</component>

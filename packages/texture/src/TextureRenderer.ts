@@ -394,6 +394,55 @@ export class TextureRenderer {
     return cached
   }
 
+  /**
+   * Read pixels from current canvas texture as ImageData
+   * Useful for contrast analysis or other CPU-side processing
+   */
+  async readPixels(): Promise<ImageData> {
+    const viewport = this.getViewport()
+    const { width, height } = viewport
+
+    // Calculate buffer size with proper alignment (256 bytes per row)
+    const bytesPerPixel = 4
+    const bytesPerRow = Math.ceil((width * bytesPerPixel) / 256) * 256
+    const bufferSize = bytesPerRow * height
+
+    // Create staging buffer for reading
+    const stagingBuffer = this.device.createBuffer({
+      size: bufferSize,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    })
+
+    // Copy texture to buffer
+    const commandEncoder = this.device.createCommandEncoder()
+    commandEncoder.copyTextureToBuffer(
+      { texture: this.context.getCurrentTexture() },
+      { buffer: stagingBuffer, bytesPerRow },
+      [width, height]
+    )
+    this.device.queue.submit([commandEncoder.finish()])
+
+    // Map buffer and read data
+    await stagingBuffer.mapAsync(GPUMapMode.READ)
+    const arrayBuffer = stagingBuffer.getMappedRange()
+    const data = new Uint8Array(arrayBuffer)
+
+    // Create ImageData (remove row padding if any)
+    const imageData = new ImageData(width, height)
+    const actualBytesPerRow = width * bytesPerPixel
+    for (let y = 0; y < height; y++) {
+      const srcOffset = y * bytesPerRow
+      const dstOffset = y * actualBytesPerRow
+      imageData.data.set(data.subarray(srcOffset, srcOffset + actualBytesPerRow), dstOffset)
+    }
+
+    // Cleanup
+    stagingBuffer.unmap()
+    stagingBuffer.destroy()
+
+    return imageData
+  }
+
   destroy(): void {
     for (const cached of this.cache.values()) {
       cached.buffer.destroy()
