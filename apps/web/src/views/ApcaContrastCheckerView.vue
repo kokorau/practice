@@ -165,7 +165,7 @@ onMounted(() => {
               <canvas
                 ref="canvasRef"
                 :class="{ 'opacity-0': !media }"
-                class="node-canvas"
+                class="node-canvas-cover"
               />
               <p v-if="!media" class="absolute inset-0 flex items-center justify-center text-gray-600 text-sm">
                 No image
@@ -184,7 +184,7 @@ onMounted(() => {
               <canvas
                 ref="luminanceCanvasRef"
                 :class="{ 'opacity-0': !media }"
-                class="node-canvas"
+                class="node-canvas-cover"
               />
               <p v-if="!media" class="absolute inset-0 flex items-center justify-center text-gray-600 text-sm">
                 No image
@@ -255,7 +255,7 @@ onMounted(() => {
   border-radius: 0.5rem;
   overflow: hidden;
   width: 400px;
-  aspect-ratio: 3/2;
+  aspect-ratio: 16/9;
 }
 
 .node-canvas {
@@ -264,5 +264,13 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.node-canvas-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 </style>
