@@ -25,11 +25,13 @@ const nodeBRef = ref<HTMLElement | null>(null)
 const nodeCRef = ref<HTMLElement | null>(null)
 const nodeDRef = ref<HTMLElement | null>(null)
 const nodeERef = ref<HTMLElement | null>(null)
+const nodeFRef = ref<HTMLElement | null>(null)
 
 // Canvas refs
 const scaledCanvasARef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const scaledCanvasCRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const scaledCanvasDRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+const scaledCanvasFRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 
 // Connection paths
 const connectionPaths = ref<string[]>([])
@@ -129,13 +131,18 @@ function updateConnections() {
   const cRight = getNodeEdge(nodeCRef.value, container, 'right')
   const dLeft = getNodeEdge(nodeDRef.value, container, 'left')
   const dTop = getNodeEdge(nodeDRef.value, container, 'top')
+  const dBottom = getNodeEdge(nodeDRef.value, container, 'bottom')
   const eTop = getNodeEdge(nodeERef.value, container, 'top')
+  const eBottom = getNodeEdge(nodeERef.value, container, 'bottom')
+  const fTop = getNodeEdge(nodeFRef.value, container, 'top')
 
   connectionPaths.value = [
     createBezierPathV(aBottom, cTop),   // A -> C (vertical)
     createBezierPathH(cRight, dLeft),   // C -> D (horizontal)
     createBezierPathV(bBottom, dTop),   // B -> D (vertical)
     createBezierPathV(bBottom, eTop),   // B -> E (vertical)
+    createBezierPathV(dBottom, fTop),   // D -> F (vertical)
+    createBezierPathV(eBottom, fTop),   // E -> F (vertical)
   ]
 }
 
@@ -286,12 +293,81 @@ function renderTextRegion() {
   ctx.drawImage(srcCanvas, sx, sy, sw, sh, dx, dy, dw, dh)
 }
 
+// APCA Contrast calculation
+function calcApcaContrast(textY: number, bgY: number): number {
+  const Ybg = bgY < 0 ? 0 : bgY
+  const Ytxt = textY < 0 ? 0 : textY
+
+  // Soft clamp
+  const Rbg = Ybg > 0.022 ? Ybg : Ybg + Math.pow(0.022 - Ybg, 1.414)
+  const Rtxt = Ytxt > 0.022 ? Ytxt : Ytxt + Math.pow(0.022 - Ytxt, 1.414)
+
+  // APCA contrast
+  let Lc: number
+  if (Rbg > Rtxt) {
+    // Dark text on light background
+    Lc = (Math.pow(Rbg, 0.56) - Math.pow(Rtxt, 0.57)) * 1.14
+  } else {
+    // Light text on dark background
+    Lc = (Math.pow(Rbg, 0.65) - Math.pow(Rtxt, 0.62)) * 1.14
+  }
+
+  // Scale and return absolute value
+  if (Math.abs(Lc) < 0.1) return 0
+  return Lc > 0 ? (Lc - 0.027) * 100 : (Lc + 0.027) * 100
+}
+
+// Node F: APCA Score Map
+function renderApcaScoreMap() {
+  const srcCanvas = scaledCanvasDRef.value?.canvas
+  const dstCanvas = scaledCanvasFRef.value?.canvas
+  if (!srcCanvas || !dstCanvas) return
+
+  const ctx = dstCanvas.getContext('2d')
+  if (!ctx) return
+
+  dstCanvas.width = NODE_WIDTH
+  dstCanvas.height = NODE_HEIGHT
+
+  const srcCtx = srcCanvas.getContext('2d')
+  if (!srcCtx) return
+
+  const srcImageData = srcCtx.getImageData(0, 0, NODE_WIDTH, NODE_HEIGHT)
+  const dstImageData = ctx.createImageData(NODE_WIDTH, NODE_HEIGHT)
+  const srcData = srcImageData.data
+  const dstData = dstImageData.data
+
+  const textY = textColorY.value
+
+  for (let i = 0; i < srcData.length; i += 4) {
+    // Get background Y from grayscale luminance map
+    const bgY = srcData[i]! / 255
+
+    // Calculate APCA score
+    const score = calcApcaContrast(textY, bgY)
+    const absScore = Math.abs(score)
+
+    // Clamp to 0-100, then normalize to 0-1
+    const clamped = Math.min(Math.max(absScore, 0), 100)
+    const normalized = clamped / 100
+    const gray = Math.round(normalized * 255)
+
+    dstData[i] = gray
+    dstData[i + 1] = gray
+    dstData[i + 2] = gray
+    dstData[i + 3] = srcData[i + 3]!
+  }
+
+  ctx.putImageData(dstImageData, 0, 0)
+}
+
 // Watch for media/canvas changes
 watch([media, scaledCanvasARef, scaledCanvasCRef], async () => {
   await nextTick()
   renderSourceImage()
   renderLuminanceMap()
   renderTextRegion()
+  renderApcaScoreMap()
 })
 
 // Watch for text changes
@@ -299,6 +375,13 @@ watch([textContent, verticalAlign, horizontalAlign, textMeasureRef, scaledCanvas
   await nextTick()
   updateTextBounds()
   renderTextRegion()
+  renderApcaScoreMap()
+})
+
+// Watch for text color changes
+watch([textColor, scaledCanvasFRef], async () => {
+  await nextTick()
+  renderApcaScoreMap()
 })
 
 // Unsplash
@@ -341,6 +424,7 @@ onMounted(async () => {
     updateConnections()
     updateTextBounds()
     renderTextRegion()
+    renderApcaScoreMap()
   }, 100)
   window.addEventListener('resize', updateConnections)
 })
@@ -521,6 +605,26 @@ onUnmounted(() => {
                   <div class="value-color" :style="{ backgroundColor: textColor }"></div>
                   <span class="value-number">{{ textColorY.toFixed(4) }}</span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3: F -->
+          <div class="node-row">
+            <!-- Node F: APCA Score Map -->
+            <div ref="nodeFRef" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">F</span>
+                <span class="node-title-text">APCA Score</span>
+              </div>
+              <div class="node-preview">
+                <ScaledCanvas
+                  ref="scaledCanvasFRef"
+                  :canvas-width="NODE_WIDTH"
+                  :canvas-height="NODE_HEIGHT"
+                  :class="{ 'opacity-0': !textBounds }"
+                />
+                <p v-if="!textBounds" class="node-empty">No data</p>
               </div>
             </div>
           </div>
