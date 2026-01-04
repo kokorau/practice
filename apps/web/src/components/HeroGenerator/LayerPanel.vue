@@ -80,7 +80,7 @@ const getFilterValue = (layerId: string): string => {
   return filters.length > 0 ? filters.join(' / ') : 'None'
 }
 
-const getSubItems = (layer: LayerItem): SubItemConfig[] => {
+const getSubItemsForLayer = (layer: LayerItem): SubItemConfig[] => {
   switch (layer.type) {
     case 'base':
       return [
@@ -107,6 +107,17 @@ const getSubItems = (layer: LayerItem): SubItemConfig[] => {
       return []
   }
 }
+
+// Computed map for reactive sub-items (tracks layerFilterConfigs changes)
+const subItemsMap = computed(() => {
+  // Access layerFilterConfigs to establish reactive dependency
+  const _filterConfigs = props.layerFilterConfigs
+  const map = new Map<string, SubItemConfig[]>()
+  for (const layer of props.layers) {
+    map.set(layer.id, getSubItemsForLayer(layer))
+  }
+  return map
+})
 
 const getLayerIcon = (type: LayerType): string => {
   switch (type) {
@@ -201,7 +212,7 @@ const handleAddLayer = (type: LayerType) => {
           <!-- Sub Items (always visible) -->
           <div class="sub-items">
             <button
-              v-for="subItem in getSubItems(layer)"
+              v-for="subItem in subItemsMap.get(layer.id)"
               :key="subItem.type"
               class="sub-item"
               :class="{ disabled: !subItem.enabled }"
