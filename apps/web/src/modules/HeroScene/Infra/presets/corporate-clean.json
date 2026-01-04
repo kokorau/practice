@@ -2,45 +2,125 @@
   "id": "corporate-clean",
   "name": "Corporate Clean",
   "config": {
-    "viewport": { "width": 1280, "height": 720 },
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
     "colors": {
-      "background": { "primary": "BN1", "secondary": "BN2" },
-      "mask": { "primary": "B", "secondary": "Bt" },
+      "background": {
+        "primary": "BN4",
+        "secondary": "BN2"
+      },
+      "mask": {
+        "primary": "BN2",
+        "secondary": "BN1"
+      },
       "semanticContext": "canvas"
     },
     "background": {
-      "surface": { "type": "grid", "lineWidth": 1, "cellSize": 48 },
+      "surface": {
+        "type": "grid",
+        "lineWidth": 1,
+        "cellSize": 48
+      },
       "filters": {
-        "vignette": { "enabled": false, "intensity": 0.5, "radius": 0.5, "softness": 0.5 },
-        "chromaticAberration": { "enabled": false, "intensity": 0.01 },
-        "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
-        "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
+        "vignette": {
+          "enabled": false,
+          "intensity": 0.5,
+          "radius": 0.5,
+          "softness": 0.5
+        },
+        "chromaticAberration": {
+          "enabled": false,
+          "intensity": 0.01
+        },
+        "dotHalftone": {
+          "enabled": false,
+          "dotSize": 8,
+          "spacing": 16,
+          "angle": 45
+        },
+        "lineHalftone": {
+          "enabled": false,
+          "lineWidth": 4,
+          "spacing": 12,
+          "angle": 45
+        }
       }
     },
     "mask": {
       "shape": {
         "type": "rect",
-        "left": 0.05, "right": 0.55, "top": 0.1, "bottom": 0.9,
-        "radiusTopLeft": 0.02, "radiusTopRight": 0.02,
-        "radiusBottomLeft": 0.02, "radiusBottomRight": 0.02,
+        "left": 0.05,
+        "right": 0.55,
+        "top": 0.1,
+        "bottom": 0.9,
+        "radiusTopLeft": 0.02,
+        "radiusTopRight": 0.02,
+        "radiusBottomLeft": 0.02,
+        "radiusBottomRight": 0.02,
         "cutout": true
       },
-      "surface": { "type": "solid" },
+      "surface": {
+        "type": "grid",
+        "lineWidth": 2,
+        "cellSize": 30
+      },
       "filters": {
-        "vignette": { "enabled": false, "intensity": 0.5, "radius": 0.5, "softness": 0.5 },
-        "chromaticAberration": { "enabled": false, "intensity": 0.01 },
-        "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
-        "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
+        "vignette": {
+          "enabled": false,
+          "intensity": 0.5,
+          "radius": 0.5,
+          "softness": 0.5
+        },
+        "chromaticAberration": {
+          "enabled": false,
+          "intensity": 0.01
+        },
+        "dotHalftone": {
+          "enabled": false,
+          "dotSize": 8,
+          "spacing": 16,
+          "angle": 45
+        },
+        "lineHalftone": {
+          "enabled": false,
+          "lineWidth": 4,
+          "spacing": 12,
+          "angle": 45
+        }
       }
     },
     "foreground": {
-      "title": { "position": "middle-right", "content": "Enterprise Solutions", "fontSize": 3.5, "fontId": "inter" },
-      "description": { "position": "middle-right", "content": "Streamline your business with our platform.", "fontSize": 1.25, "fontId": "ibm-plex-sans" }
+      "title": {
+        "position": "bottom-right",
+        "content": "Enterprise Solutions",
+        "fontSize": 5,
+        "fontId": "playfair-display"
+      },
+      "description": {
+        "position": "bottom-right",
+        "content": "Streamline your business with our platform.",
+        "fontSize": 1.25,
+        "fontId": "ibm-plex-sans"
+      }
     }
   },
   "colorPreset": {
-    "brand": { "hue": 220, "saturation": 75, "value": 60 },
-    "accent": { "hue": 180, "saturation": 50, "value": 70 },
-    "foundation": { "L": 0.96, "C": 0.005, "H": 260 }
+    "brand": {
+      "hue": 220,
+      "saturation": 75,
+      "value": 60
+    },
+    "accent": {
+      "hue": 180,
+      "saturation": 50,
+      "value": 70
+    },
+    "foundation": {
+      "L": 0.96,
+      "C": 0.005,
+      "H": 260
+    }
   }
 }
