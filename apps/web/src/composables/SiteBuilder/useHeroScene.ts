@@ -1185,12 +1185,70 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
         case 'maskedTexture': {
           const maskPattern = maskPatterns[layer.config.maskIndex]
+
+          // Helper to create mask spec from customMaskShapeParams
+          const createMaskOverlaySpec = (): TextureRenderSpec | null => {
+            const shapeParams = customMaskShapeParams.value
+            if (!shapeParams) return null
+
+            const cutout = shapeParams.cutout ?? true
+            if (shapeParams.type === 'circle') {
+              return createCircleMaskSpec(
+                {
+                  centerX: shapeParams.centerX,
+                  centerY: shapeParams.centerY,
+                  radius: shapeParams.radius,
+                  innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
+                  outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                  cutout,
+                },
+                viewport
+              )
+            }
+            if (shapeParams.type === 'rect') {
+              return createRectMaskSpec(
+                {
+                  left: shapeParams.left,
+                  right: shapeParams.right,
+                  top: shapeParams.top,
+                  bottom: shapeParams.bottom,
+                  radiusTopLeft: shapeParams.radiusTopLeft,
+                  radiusTopRight: shapeParams.radiusTopRight,
+                  radiusBottomLeft: shapeParams.radiusBottomLeft,
+                  radiusBottomRight: shapeParams.radiusBottomRight,
+                  innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
+                  outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                  cutout,
+                },
+                viewport
+              )
+            }
+            if (shapeParams.type === 'blob') {
+              return createBlobMaskSpec(
+                {
+                  centerX: shapeParams.centerX,
+                  centerY: shapeParams.centerY,
+                  baseRadius: shapeParams.baseRadius,
+                  amplitude: shapeParams.amplitude,
+                  frequency: 0,
+                  octaves: shapeParams.octaves,
+                  seed: shapeParams.seed,
+                  innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
+                  outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                  cutout,
+                },
+                viewport
+              )
+            }
+            return null
+          }
+
           if (maskPattern) {
             // surfaceImage がある場合: 画像を描画してからマスクオーバーレイを適用
             if (layer.config.surfaceImage) {
               await previewRenderer.renderImage(layer.config.surfaceImage, { clear: false })
               // マスク形状の外側を背景色で塗りつぶし（内側は透明）
-              const maskSpec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
+              const maskSpec = createMaskOverlaySpec() ?? maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
               previewRenderer.render(maskSpec, { clear: false })
               break
             }
@@ -1218,7 +1276,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               }, viewport)
               if (gradientSpec) {
                 previewRenderer.render(gradientSpec, { clear: false })
-                const maskSpec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
+                const maskSpec = createMaskOverlaySpec() ?? maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
                 previewRenderer.render(maskSpec, { clear: false })
                 break
               }
@@ -1243,70 +1301,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               }
             }
             // Fallback to solid color mask: use customMaskShapeParams to respect cutout setting
-            const params = customMaskShapeParams.value
-            const cutout = params?.cutout ?? true
-
-            // Create mask spec using customMaskShapeParams for proper cutout handling
-            // For cutout: true  -> inside transparent (show background), outside colored
-            // For cutout: false -> inside colored, outside transparent
-            const createMaskSpecFromParams = (): TextureRenderSpec | null => {
-              if (!params) return null
-
-              if (params.type === 'circle') {
-                return createCircleMaskSpec(
-                  {
-                    centerX: params.centerX,
-                    centerY: params.centerY,
-                    radius: params.radius,
-                    innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
-                    outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
-                    cutout,
-                  },
-                  viewport
-                )
-              }
-              if (params.type === 'rect') {
-                return createRectMaskSpec(
-                  {
-                    left: params.left,
-                    right: params.right,
-                    top: params.top,
-                    bottom: params.bottom,
-                    radiusTopLeft: params.radiusTopLeft,
-                    radiusTopRight: params.radiusTopRight,
-                    radiusBottomLeft: params.radiusBottomLeft,
-                    radiusBottomRight: params.radiusBottomRight,
-                    innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
-                    outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
-                    cutout,
-                  },
-                  viewport
-                )
-              }
-              if (params.type === 'blob') {
-                return createBlobMaskSpec(
-                  {
-                    centerX: params.centerX,
-                    centerY: params.centerY,
-                    baseRadius: params.baseRadius,
-                    amplitude: params.amplitude,
-                    frequency: 0,
-                    octaves: params.octaves,
-                    seed: params.seed,
-                    innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
-                    outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
-                    cutout,
-                  },
-                  viewport
-                )
-              }
-              return null
-            }
-
-            const maskSpec = createMaskSpecFromParams()
+            const maskSpec = createMaskOverlaySpec()
             if (maskSpec) {
               previewRenderer.render(maskSpec, { clear: false })
-            } else {
+            } else if (maskPattern) {
               // Fallback if customMaskShapeParams not available
               const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
               previewRenderer.render(spec, { clear: false })
