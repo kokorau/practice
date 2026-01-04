@@ -274,7 +274,7 @@ const corporateCleanConfig: HeroViewConfig = {
   viewport: { width: 1280, height: 720 },
   colors: {
     background: { primary: 'BN1', secondary: 'BN2' },
-    mask: { primary: 'B', secondary: 'Bt', outer: 'BN0' },
+    mask: { primary: 'B', secondary: 'Bt' },
     semanticContext: 'canvas',
   },
   background: {
