@@ -630,21 +630,34 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
-  // Foreground Ink Colors (computed from background)
+  // Foreground Ink Colors (computed from mask primary color)
   // ============================================================
   /**
+   * Mask primary color resolved as Oklch (for ink calculation)
+   * This represents the surface color that text will appear on
+   */
+  const resolvedMaskPrimaryColorOklch = computed((): Oklch => {
+    if (maskColorKey1.value !== 'auto') {
+      return primitivePalette.value[maskColorKey1.value]
+    }
+    // Auto: shift lightness from mask surface
+    const surface = primitivePalette.value[maskSurfaceKey.value]
+    const deltaL = isDark.value ? 0.05 : -0.05
+    return { L: surface.L + deltaL, C: surface.C, H: surface.H }
+  })
+
+  /**
    * Computed ink colors for foreground text elements.
-   * These are automatically calculated based on the background surface color.
+   * These are automatically calculated based on the mask primary color (the surface text appears on).
    */
   const foregroundTitleInk = computed((): Oklch => {
-    // Use the background's primary surface color to determine text contrast
-    const surfaceKey = resolvedBackgroundColorKey2.value
-    return getInkColorForSurface(surfaceKey, 'title')
+    const surface = resolvedMaskPrimaryColorOklch.value
+    return selectInkForSurface(primitivePalette.value, surface, 'title')
   })
 
   const foregroundBodyInk = computed((): Oklch => {
-    const surfaceKey = resolvedBackgroundColorKey2.value
-    return getInkColorForSurface(surfaceKey, 'body')
+    const surface = resolvedMaskPrimaryColorOklch.value
+    return selectInkForSurface(primitivePalette.value, surface, 'body')
   })
 
   /**
