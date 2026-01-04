@@ -126,8 +126,10 @@ const getElementBounds = (type: ForegroundElementType): ElementBounds | null => 
 
 /**
  * Set element ref based on type (used by template)
+ * Note: Ignore null to prevent old element unmount from overwriting new ref
  */
 const setElementRef = (el: HTMLElement | null, type: ForegroundElementType) => {
+  if (!el) return // Ignore unmount callbacks
   if (type === 'title') {
     titleRef.value = el
   } else if (type === 'description') {
