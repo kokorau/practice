@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useMedia } from '../composables/Media'
 import { $Media } from '../modules/Media'
 import { photoRepository } from '../modules/Photo/Infra/photoRepository'
@@ -21,10 +21,20 @@ const luminanceCanvasRef = ref<HTMLCanvasElement | null>(null)
 
 // Node C: Text Layer
 const textContent = ref('Hello World')
+const textColor = ref('#ffffff')
 type VerticalAlign = 'top' | 'center' | 'bottom'
 type HorizontalAlign = 'left' | 'center' | 'right'
 const verticalAlign = ref<VerticalAlign>('center')
 const horizontalAlign = ref<HorizontalAlign>('center')
+
+// Node E: Text Color APCA Y value
+const textColorY = computed(() => {
+  const hex = textColor.value.replace('#', '')
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  return calcApcaLuminance(r, g, b)
+})
 
 // object-fit: cover的な描画のためのパラメータ計算
 function calcCoverRect(srcW: number, srcH: number, dstW: number, dstH: number) {
@@ -234,6 +244,16 @@ onMounted(() => {
                 class="w-full py-1.5 px-3 rounded text-xs bg-gray-800 text-gray-300 border border-gray-700 focus:border-gray-500 focus:outline-none"
               />
 
+              <!-- Text Color -->
+              <div class="flex items-center gap-2">
+                <input
+                  v-model="textColor"
+                  type="color"
+                  class="w-8 h-8 rounded border-0 cursor-pointer"
+                />
+                <span class="text-xs text-gray-400">{{ textColor }}</span>
+              </div>
+
               <!-- Position Grid -->
               <div class="position-grid">
                 <button
@@ -319,7 +339,40 @@ onMounted(() => {
                 class="text-layer"
                 :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
               >
-                <h1 class="text-layer-title">{{ textContent }}</h1>
+                <h1 class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Node Row 2 -->
+        <div class="node-row">
+          <!-- Node D: Void (placeholder) -->
+          <div class="node-wrapper">
+            <div class="node-title">
+              <span class="node-badge">D</span>
+              <span class="node-title-text">Void</span>
+              <span class="node-badge-offset"></span>
+            </div>
+            <div class="node-preview node-preview-void">
+              <span class="text-gray-600 text-sm">Coming soon...</span>
+            </div>
+          </div>
+
+          <!-- Node E: Text Color Y -->
+          <div class="node-wrapper">
+            <div class="node-title">
+              <span class="node-badge">E</span>
+              <span class="node-title-text">Text Color Y</span>
+              <span class="node-badge-offset"></span>
+            </div>
+            <div class="node-preview node-preview-value">
+              <div class="value-display">
+                <div class="value-color" :style="{ backgroundColor: textColor }"></div>
+                <div class="value-info">
+                  <span class="value-label">APCA Luminance (Y)</span>
+                  <span class="value-number">{{ textColorY.toFixed(4) }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -466,5 +519,50 @@ onMounted(() => {
   font-size: 48px;
   font-weight: 700;
   margin: 0;
+}
+
+/* Node D: Void */
+.node-preview-void {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Node E: Value Display */
+.node-preview-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.value-display {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.value-color {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.value-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.value-label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.value-number {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: monospace;
+  color: #fff;
 }
 </style>
