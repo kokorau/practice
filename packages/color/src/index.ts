@@ -32,6 +32,7 @@ export {
   apcaFromDisplayP3,
   apcaFromOklch,
   apcaFromY,
+  srgbToY,
   meetsBodyText,
   meetsLargeText,
   meetsHeadline,

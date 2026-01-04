@@ -68,8 +68,9 @@ const p3ToLinear = srgbToLinear
 
 /**
  * Extract Y (luminance) from sRGB color via XYZ
+ * This is the APCA-specific luminance calculation.
  */
-const srgbToY = (srgb: Srgb): number => {
+export const srgbToY = (srgb: Srgb): number => {
   const rLin = srgbToLinear(srgb.r)
   const gLin = srgbToLinear(srgb.g)
   const bLin = srgbToLinear(srgb.b)
@@ -296,6 +297,7 @@ export const $APCA = {
   fromDisplayP3: apcaFromDisplayP3,
   fromOklch: apcaFromOklch,
   fromY: apcaFromY,
+  srgbToY,
   meetsBodyText,
   meetsLargeText,
   meetsHeadline,

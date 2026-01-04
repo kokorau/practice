@@ -6,6 +6,7 @@ import { photoRepository } from '../modules/Photo/Infra/photoRepository'
 import { createDefaultPhotoUseCase } from '../modules/Photo/Application/createDefaultPhotoUseCase'
 import { loadUnsplashPhoto } from '../modules/PhotoUnsplash/Application/loadUnsplashPhoto'
 import ScaledCanvas from '../components/ScaledCanvas.vue'
+import { $APCA, $Srgb } from '@practice/color'
 
 // Node types
 type NodeType = 'canvas' | 'text' | 'value' | 'histogram' | 'score'
@@ -129,11 +130,8 @@ const horizontalAlign = ref<HorizontalAlign>('center')
 
 // Node E: Text Color APCA Y value
 const textColorY = computed(() => {
-  const hex = textColor.value.replace('#', '')
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
-  return calcApcaLuminance(r, g, b)
+  const srgb = $Srgb.fromHex(textColor.value)
+  return srgb ? $APCA.srgbToY(srgb) : 0
 })
 
 // Text bounding box calculation
@@ -276,21 +274,6 @@ function renderSourceImage() {
   ctx.drawImage(offscreen, sx, sy, sw, sh, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 }
 
-// sRGB to Linear RGB
-function sRGBtoLinear(val: number): number {
-  return val <= 0.04045
-    ? val / 12.92
-    : Math.pow((val + 0.055) / 1.055, 2.4)
-}
-
-// APCA Luminance (Y)
-function calcApcaLuminance(r: number, g: number, b: number): number {
-  const rLin = sRGBtoLinear(r / 255)
-  const gLin = sRGBtoLinear(g / 255)
-  const bLin = sRGBtoLinear(b / 255)
-  return 0.2126729 * rLin + 0.7151522 * gLin + 0.0721750 * bLin
-}
-
 // Node: Luminance Map
 function renderLuminanceMap() {
   const canvas = getCanvas(NODE_LUMINANCE)
@@ -327,7 +310,7 @@ function renderLuminanceMap() {
       const b = srcData[srcIdx + 2]!
       const a = srcData[srcIdx + 3]!
 
-      const y = calcApcaLuminance(r, g, b)
+      const y = $APCA.srgbToY($Srgb.from255(r, g, b))
       const gray = Math.round(y * 255)
 
       dstData[dstIdx] = gray
@@ -375,30 +358,6 @@ function renderTextRegion() {
   ctx.drawImage(srcCanvas, sx, sy, sw, sh, dx, dy, dw, dh)
 }
 
-// APCA Contrast calculation
-function calcApcaContrast(textY: number, bgY: number): number {
-  const Ybg = bgY < 0 ? 0 : bgY
-  const Ytxt = textY < 0 ? 0 : textY
-
-  // Soft clamp
-  const Rbg = Ybg > 0.022 ? Ybg : Ybg + Math.pow(0.022 - Ybg, 1.414)
-  const Rtxt = Ytxt > 0.022 ? Ytxt : Ytxt + Math.pow(0.022 - Ytxt, 1.414)
-
-  // APCA contrast
-  let Lc: number
-  if (Rbg > Rtxt) {
-    // Dark text on light background
-    Lc = (Math.pow(Rbg, 0.56) - Math.pow(Rtxt, 0.57)) * 1.14
-  } else {
-    // Light text on dark background
-    Lc = (Math.pow(Rbg, 0.65) - Math.pow(Rtxt, 0.62)) * 1.14
-  }
-
-  // Scale and return absolute value
-  if (Math.abs(Lc) < 0.1) return 0
-  return Lc > 0 ? (Lc - 0.027) * 100 : (Lc + 0.027) * 100
-}
-
 // Node: APCA Score Map
 function renderApcaScoreMap() {
   const srcCanvas = getCanvas(NODE_REGION)
@@ -437,7 +396,7 @@ function renderApcaScoreMap() {
     const bgY = srcData[i]! / 255
 
     // Calculate APCA score
-    const score = calcApcaContrast(textY, bgY)
+    const score = $APCA.fromY(textY, bgY)
     const absScore = Math.abs(score)
 
     // Clamp to 0-100, then normalize to 0-1

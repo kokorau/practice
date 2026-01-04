@@ -4,6 +4,7 @@ import {
   apcaFromDisplayP3,
   apcaFromOklch,
   apcaFromY,
+  srgbToY,
   meetsBodyText,
   meetsLargeText,
   meetsHeadline,
@@ -140,6 +141,32 @@ describe('APCA', () => {
     })
   })
 
+  describe('srgbToY', () => {
+    it('returns 0 for black', () => {
+      const Y = srgbToY({ r: 0, g: 0, b: 0 })
+      expect(Y).toBe(0)
+    })
+
+    it('returns 1 for white', () => {
+      const Y = srgbToY({ r: 1, g: 1, b: 1 })
+      expect(Y).toBeCloseTo(1, 5)
+    })
+
+    it('returns correct Y for mid-gray', () => {
+      // sRGB 0.5 is not linear 0.5 due to gamma
+      const Y = srgbToY({ r: 0.5, g: 0.5, b: 0.5 })
+      expect(Y).toBeGreaterThan(0.2)
+      expect(Y).toBeLessThan(0.3)
+    })
+
+    it('matches textY from apcaFromSrgb', () => {
+      const color = { r: 0.3, g: 0.6, b: 0.9 }
+      const Y = srgbToY(color)
+      const result = apcaFromSrgb(color, { r: 1, g: 1, b: 1 })
+      expect(Y).toBeCloseTo(result.textY, 10)
+    })
+  })
+
   describe('threshold checks', () => {
     it('correctly identifies body text compliance', () => {
       const compliant = { Lc: 80, absLc: 80 } as any
@@ -180,6 +207,7 @@ describe('APCA', () => {
       expect($APCA.fromDisplayP3).toBeDefined()
       expect($APCA.fromOklch).toBeDefined()
       expect($APCA.fromY).toBeDefined()
+      expect($APCA.srgbToY).toBeDefined()
       expect($APCA.meetsBodyText).toBeDefined()
       expect($APCA.meetsLargeText).toBeDefined()
       expect($APCA.meetsHeadline).toBeDefined()
