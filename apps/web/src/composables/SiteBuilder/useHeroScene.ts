@@ -1639,15 +1639,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Watchers
   // ============================================================
 
-  watch(
-    [selectedBackgroundIndex, selectedMaskIndex, selectedMidgroundTextureIndex],
-    () => {
-      syncLayerConfigs()
-      renderScene()
-    }
-  )
-
   // Initialize custom params when selection changes
+  // IMPORTANT: These watchers must be registered BEFORE the combined watcher
+  // to ensure customParams are updated before syncLayerConfigs/renderScene run
   watch(selectedBackgroundIndex, () => {
     if (isLoadingFromConfig) return
     initBackgroundSurfaceParamsFromPreset()
@@ -1662,6 +1656,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (isLoadingFromConfig) return
     initSurfaceParamsFromPreset()
   }, { immediate: true })
+
+  // Sync layer configs and re-render when selection changes
+  // This watcher runs AFTER the init watchers above
+  watch(
+    [selectedBackgroundIndex, selectedMaskIndex, selectedMidgroundTextureIndex],
+    () => {
+      syncLayerConfigs()
+      renderScene()
+    }
+  )
 
   watch(
     [textureColor1, textureColor2, maskInnerColor, maskOuterColor, midgroundTextureColor1, midgroundTextureColor2],
