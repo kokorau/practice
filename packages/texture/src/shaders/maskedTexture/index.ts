@@ -74,3 +74,17 @@ export { stripePatternFn, gridPatternFn, polkaDotPatternFn, checkerPatternFn } f
 
 // Mask SDF functions (for extension)
 export { circleMaskFn, rectMaskFn, blobMaskFn, waveUtils } from './masks'
+
+// GradientGrain mask textures
+export {
+  circleGradientGrainShader,
+  rectGradientGrainShader,
+  blobGradientGrainShader,
+  createCircleGradientGrainSpec,
+  createRectGradientGrainSpec,
+  createBlobGradientGrainSpec,
+  CIRCLE_GRADIENT_GRAIN_BUFFER_SIZE,
+  RECT_GRADIENT_GRAIN_BUFFER_SIZE,
+  BLOB_GRADIENT_GRAIN_BUFFER_SIZE,
+  type GradientGrainTextureConfig,
+} from './gradientGrainTextures'

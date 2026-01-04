@@ -26,6 +26,7 @@ export type {
   CheckerTextureConfig,
   TextureConfig,
   MaskedTextureParams,
+  GradientGrainTextureConfig,
   // Gradient types
   LinearGradientParams,
   ColorStop,
@@ -62,6 +63,10 @@ export {
   createBlobGridSpec,
   createBlobPolkaDotSpec,
   createBlobCheckerSpec,
+  // Masked GradientGrain specs
+  createCircleGradientGrainSpec,
+  createRectGradientGrainSpec,
+  createBlobGradientGrainSpec,
   // Gradient specs
   createLinearGradientSpec,
   createGradientGrainSpec,

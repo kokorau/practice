@@ -53,6 +53,10 @@ export {
   createBlobGridSpec,
   createBlobPolkaDotSpec,
   createBlobCheckerSpec,
+  // Masked GradientGrain
+  createCircleGradientGrainSpec,
+  createRectGradientGrainSpec,
+  createBlobGradientGrainSpec,
   type MaskType,
   type TextureType,
   type CircleMaskConfig,
@@ -65,6 +69,7 @@ export {
   type CheckerTextureConfig,
   type TextureConfig,
   type MaskedTextureParams,
+  type GradientGrainTextureConfig,
 } from './maskedTexture'
 export {
   linearGradientShader,

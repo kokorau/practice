@@ -23,6 +23,11 @@ import {
   createBlobGridSpec,
   createBlobPolkaDotSpec,
   createBlobCheckerSpec,
+  // Masked GradientGrain specs
+  createCircleGradientGrainSpec,
+  createRectGradientGrainSpec,
+  createBlobGradientGrainSpec,
+  type GradientGrainTextureConfig,
   // Simple texture specs (no mask) for thumbnails
   createSolidSpec,
   createStripeSpec,
@@ -914,7 +919,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Build surface params from custom params or preset
     // Returns null for solid type (triggers fallback to solid mask)
-    const buildSurfaceParams = (): StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams | null => {
+    type SurfaceParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams | { type: 'gradientGrain' } | null
+    const buildSurfaceParams = (): SurfaceParams => {
       if (customSurfParams) {
         if (customSurfParams.type === 'solid') {
           return null
@@ -931,7 +937,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         if (customSurfParams.type === 'checker') {
           return { type: 'checker', cellSize: customSurfParams.cellSize, angle: customSurfParams.angle }
         }
-        // gradientGrain is handled separately
+        if (customSurfParams.type === 'gradientGrain') {
+          return { type: 'gradientGrain' }
+        }
         return null
       }
       // Fall back to preset - check for solid type
@@ -939,6 +947,28 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         return null
       }
       return preset.params as StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
+    }
+
+    // Build gradientGrain texture config from custom params
+    const buildGradientGrainConfig = (): GradientGrainTextureConfig | null => {
+      if (!customSurfParams || customSurfParams.type !== 'gradientGrain') return null
+      return {
+        depthMapType: customSurfParams.depthMapType as DepthMapType,
+        angle: customSurfParams.angle,
+        centerX: customSurfParams.centerX,
+        centerY: customSurfParams.centerY,
+        circularInvert: false,
+        radialStartAngle: customSurfParams.radialStartAngle,
+        radialSweepAngle: customSurfParams.radialSweepAngle,
+        perlinScale: customSurfParams.perlinScale,
+        perlinOctaves: customSurfParams.perlinOctaves,
+        perlinSeed: customSurfParams.seed,
+        perlinContrast: customSurfParams.perlinContrast,
+        perlinOffset: customSurfParams.perlinOffset,
+        seed: customSurfParams.seed,
+        sparsity: customSurfParams.sparsity,
+        curvePoints: customSurfParams.curvePoints,
+      }
     }
 
     const maskConfig = buildMaskConfig()
@@ -983,6 +1013,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           viewport
         )
       }
+      if (params.type === 'gradientGrain') {
+        const ggConfig = buildGradientGrainConfig()
+        if (ggConfig) {
+          return createCircleGradientGrainSpec(
+            color1, color2,
+            { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
+            ggConfig,
+            viewport
+          )
+        }
+      }
     }
 
     if (maskConfig.type === 'rect') {
@@ -1019,6 +1060,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           viewport
         )
       }
+      if (params.type === 'gradientGrain') {
+        const ggConfig = buildGradientGrainConfig()
+        if (ggConfig) {
+          return createRectGradientGrainSpec(
+            color1, color2,
+            { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
+            ggConfig,
+            viewport
+          )
+        }
+      }
     }
 
     if (maskConfig.type === 'blob') {
@@ -1054,6 +1106,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           params,
           viewport
         )
+      }
+      if (params.type === 'gradientGrain') {
+        const ggConfig = buildGradientGrainConfig()
+        if (ggConfig) {
+          return createBlobGradientGrainSpec(
+            color1, color2,
+            { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
+            ggConfig,
+            viewport
+          )
+        }
       }
     }
 
@@ -1253,41 +1316,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               break
             }
 
-            // gradientGrain がある場合: グラデーションを描画してからマスクオーバーレイを適用
-            if (customSurfaceParams.value?.type === 'gradientGrain') {
-              const params = customSurfaceParams.value
-              const gradientSpec = createGradientGrainSpec({
-                depthMapType: params.depthMapType,
-                angle: params.angle,
-                centerX: params.centerX,
-                centerY: params.centerY,
-                radialStartAngle: params.radialStartAngle,
-                radialSweepAngle: params.radialSweepAngle,
-                perlinScale: params.perlinScale,
-                perlinOctaves: params.perlinOctaves,
-                perlinSeed: params.seed,
-                perlinContrast: params.perlinContrast,
-                perlinOffset: params.perlinOffset,
-                colorA: midgroundTextureColor1.value,
-                colorB: midgroundTextureColor2.value,
-                seed: params.seed,
-                sparsity: params.sparsity,
-                curvePoints: params.curvePoints,
-              }, viewport)
-              if (gradientSpec) {
-                previewRenderer.render(gradientSpec, { clear: false })
-                const maskSpec = createMaskOverlaySpec() ?? maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
-                previewRenderer.render(maskSpec, { clear: false })
-                break
-              }
-            }
+            // Use createMaskedTextureSpec for all texture types (including gradientGrain)
+            // For gradientGrain, texturePattern might be undefined but customSurfaceParams handles it
+            const textureIndex = layer.config.textureIndex
+            const texturePattern = textureIndex !== null ? midgroundTexturePatterns[textureIndex] : undefined
+            const hasTexture = texturePattern !== undefined || customSurfaceParams.value?.type === 'gradientGrain'
 
-            if (layer.config.textureIndex !== null) {
-              const texturePattern = midgroundTexturePatterns[layer.config.textureIndex]
-              if (texturePattern) {
+            if (hasTexture) {
+              // Use a fallback preset for gradientGrain (solid preset works since customSurfaceParams overrides it)
+              const preset = texturePattern ?? midgroundTexturePatterns[0]
+              if (preset) {
                 const spec = createMaskedTextureSpec(
                   maskPattern,
-                  texturePattern,
+                  preset,
                   midgroundTextureColor1.value,
                   midgroundTextureColor2.value,
                   viewport,
