@@ -28,12 +28,12 @@ const nodeERef = ref<HTMLElement | null>(null)
 
 // Canvas refs
 const scaledCanvasARef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
-const scaledCanvasBRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+const scaledCanvasCRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 
 // Connection paths
 const connectionPaths = ref<string[]>([])
 
-// Node C: Text Layer
+// Node B: Text Layer
 const textContent = ref('Hello World')
 const textColor = ref('#ffffff')
 type VerticalAlign = 'top' | 'center' | 'bottom'
@@ -88,18 +88,18 @@ function updateConnections() {
   const container = nodeGraphRef.value
 
   const aBottom = getNodeEdge(nodeARef.value, container, 'bottom')
-  const bTop = getNodeEdge(nodeBRef.value, container, 'top')
-  const bRight = getNodeEdge(nodeBRef.value, container, 'right')
-  const cBottom = getNodeEdge(nodeCRef.value, container, 'bottom')
+  const bBottom = getNodeEdge(nodeBRef.value, container, 'bottom')
+  const cTop = getNodeEdge(nodeCRef.value, container, 'top')
+  const cRight = getNodeEdge(nodeCRef.value, container, 'right')
   const dLeft = getNodeEdge(nodeDRef.value, container, 'left')
   const dTop = getNodeEdge(nodeDRef.value, container, 'top')
   const eTop = getNodeEdge(nodeERef.value, container, 'top')
 
   connectionPaths.value = [
-    createBezierPathV(aBottom, bTop),   // A -> B (vertical)
-    createBezierPathH(bRight, dLeft),   // B -> D (horizontal)
-    createBezierPathV(cBottom, dTop),   // C -> D (vertical)
-    createBezierPathV(cBottom, eTop),   // C -> E (vertical)
+    createBezierPathV(aBottom, cTop),   // A -> C (vertical)
+    createBezierPathH(cRight, dLeft),   // C -> D (horizontal)
+    createBezierPathV(bBottom, dTop),   // B -> D (vertical)
+    createBezierPathV(bBottom, eTop),   // B -> E (vertical)
   ]
 }
 
@@ -166,9 +166,9 @@ function calcApcaLuminance(r: number, g: number, b: number): number {
   return 0.2126729 * rLin + 0.7151522 * gLin + 0.0721750 * bLin
 }
 
-// Node B: Luminance Map
+// Node C: Luminance Map
 function renderLuminanceMap() {
-  const canvas = scaledCanvasBRef.value?.canvas
+  const canvas = scaledCanvasCRef.value?.canvas
   if (!media.value || !canvas) return
 
   const ctx = canvas.getContext('2d')
@@ -216,7 +216,7 @@ function renderLuminanceMap() {
 }
 
 // Watch for media/canvas changes
-watch([media, scaledCanvasARef, scaledCanvasBRef], async () => {
+watch([media, scaledCanvasARef, scaledCanvasCRef], async () => {
   await nextTick()
   renderSourceImage()
   renderLuminanceMap()
@@ -355,7 +355,7 @@ onUnmounted(() => {
             />
           </svg>
 
-          <!-- Row 1: A, C -->
+          <!-- Row 1: A, B -->
           <div class="node-row">
             <!-- Node A: Source Image -->
             <div ref="nodeARef" class="node-wrapper">
@@ -374,10 +374,10 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Node C: Text Layer -->
-            <div ref="nodeCRef" class="node-wrapper">
+            <!-- Node B: Text Layer -->
+            <div ref="nodeBRef" class="node-wrapper">
               <div class="node-title">
-                <span class="node-badge">C</span>
+                <span class="node-badge">B</span>
                 <span class="node-title-text">Text</span>
               </div>
               <div class="node-preview">
@@ -391,17 +391,17 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Row 2: B, D, E -->
+          <!-- Row 2: C, D, E -->
           <div class="node-row">
-            <!-- Node B: APCA Luminance -->
-            <div ref="nodeBRef" class="node-wrapper">
+            <!-- Node C: APCA Luminance -->
+            <div ref="nodeCRef" class="node-wrapper">
               <div class="node-title">
-                <span class="node-badge">B</span>
+                <span class="node-badge">C</span>
                 <span class="node-title-text">Luminance</span>
               </div>
               <div class="node-preview">
                 <ScaledCanvas
-                  ref="scaledCanvasBRef"
+                  ref="scaledCanvasCRef"
                   :canvas-width="CANVAS_WIDTH"
                   :canvas-height="CANVAS_HEIGHT"
                   :class="{ 'opacity-0': !media }"
