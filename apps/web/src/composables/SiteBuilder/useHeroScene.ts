@@ -258,7 +258,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // Editor State (index-based for UI management)
   // ============================================================
-  const editorState = ref<HeroSceneEditorState>(createHeroSceneEditorState({ width: 1280, height: 720 }))
+  const editorState = ref<HeroSceneEditorState>(createHeroSceneEditorState({ width: 1920, height: 1080 }))
 
   // Selection state (UI bindings)
   const selectedBackgroundIndex = ref(3)
