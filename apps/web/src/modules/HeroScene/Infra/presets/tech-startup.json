@@ -39,6 +39,6 @@
   "colorPreset": {
     "brand": { "hue": 74, "saturation": 75, "value": 76 },
     "accent": { "hue": 190, "saturation": 85, "value": 90 },
-    "foundation": { "L": 0.18, "C": 0.03, "H": 260 }
+    "foundation": { "hue": 260, "saturation": 30, "value": 20 }
   }
 }

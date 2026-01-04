@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import { COLOR_PRESETS } from '../../modules/SemanticColorPalette/Infra'
 import { hsvToRgb, rgbToHex } from './utils'
-import { $Oklch } from '@practice/color'
 
 const props = defineProps<{
   // Current brand HSV
@@ -14,10 +13,10 @@ const props = defineProps<{
   accentHue: number
   accentSaturation: number
   accentValue: number
-  // Current foundation Oklch
-  foundationL: number
-  foundationC: number
-  foundationH: number
+  // Current foundation HSV
+  foundationHue: number
+  foundationSaturation: number
+  foundationValue: number
 }>()
 
 const emit = defineEmits<{
@@ -30,16 +29,9 @@ const hsvToHex = (h: number, s: number, v: number): string => {
   return rgbToHex(...rgb)
 }
 
-// Convert Oklch to hex for preview
-const oklchToHex = (L: number, C: number, H: number): string => {
-  const srgb = $Oklch.toSrgb({ L, C, H })
-  const toHex = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')
-  return `#${toHex(srgb.r)}${toHex(srgb.g)}${toHex(srgb.b)}`
-}
-
 // Check if current values match a preset
 const matchingPresetId = computed(() => {
-  const tolerance = { hue: 1, sv: 2, oklch: 0.01 }
+  const tolerance = { hue: 1, sv: 2 }
 
   for (const preset of COLOR_PRESETS) {
     const brandMatch =
@@ -53,9 +45,9 @@ const matchingPresetId = computed(() => {
       Math.abs(preset.accent.value - props.accentValue) < tolerance.sv
 
     const foundationMatch =
-      Math.abs(preset.foundation.L - props.foundationL) < tolerance.oklch &&
-      Math.abs(preset.foundation.C - props.foundationC) < tolerance.oklch &&
-      Math.abs(preset.foundation.H - props.foundationH) < tolerance.hue
+      Math.abs(preset.foundation.hue - props.foundationHue) < tolerance.hue &&
+      Math.abs(preset.foundation.saturation - props.foundationSaturation) < tolerance.sv &&
+      Math.abs(preset.foundation.value - props.foundationValue) < tolerance.sv
 
     if (brandMatch && accentMatch && foundationMatch) {
       return preset.id
@@ -70,8 +62,8 @@ const presetsWithColors = computed(() => {
     ...preset,
     brandHex: hsvToHex(preset.brand.hue, preset.brand.saturation, preset.brand.value),
     accentHex: hsvToHex(preset.accent.hue, preset.accent.saturation, preset.accent.value),
-    foundationHex: oklchToHex(preset.foundation.L, preset.foundation.C, preset.foundation.H),
-    isDark: preset.foundation.L < 0.5,
+    foundationHex: hsvToHex(preset.foundation.hue, preset.foundation.saturation, preset.foundation.value),
+    isDark: preset.foundation.value < 50,
   }))
 })
 

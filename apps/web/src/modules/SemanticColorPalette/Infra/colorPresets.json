@@ -5,7 +5,7 @@
     "description": "Bold and energetic",
     "brand": { "hue": 74, "saturation": 75, "value": 76 },
     "accent": { "hue": 67, "saturation": 84, "value": 95 },
-    "foundation": { "L": 0.269, "C": 0.059, "H": 242 }
+    "foundation": { "hue": 242, "saturation": 35, "value": 28 }
   },
   {
     "id": "sunset-fire",
@@ -13,7 +13,7 @@
     "description": "Warm and vibrant",
     "brand": { "hue": 24, "saturation": 76, "value": 100 },
     "accent": { "hue": 7, "saturation": 80, "value": 92 },
-    "foundation": { "L": 0.904, "C": 0.176, "H": 98 }
+    "foundation": { "hue": 50, "saturation": 35, "value": 95 }
   },
   {
     "id": "ocean-mint",
@@ -21,7 +21,7 @@
     "description": "Cool and refreshing",
     "brand": { "hue": 198, "saturation": 86, "value": 54 },
     "accent": { "hue": 127, "saturation": 34, "value": 92 },
-    "foundation": { "L": 0.23, "C": 0.048, "H": 235 }
+    "foundation": { "hue": 230, "saturation": 35, "value": 25 }
   },
   {
     "id": "honey-olive",
@@ -29,7 +29,7 @@
     "description": "Natural and earthy",
     "brand": { "hue": 39, "saturation": 94, "value": 95 },
     "accent": { "hue": 62, "saturation": 83, "value": 35 },
-    "foundation": { "L": 0.884, "C": 0.003, "H": 130 }
+    "foundation": { "hue": 0, "saturation": 2, "value": 90 }
   },
   {
     "id": "peach-cocoa",
@@ -37,7 +37,7 @@
     "description": "Soft and warm",
     "brand": { "hue": 23, "saturation": 33, "value": 95 },
     "accent": { "hue": 16, "saturation": 62, "value": 35 },
-    "foundation": { "L": 0.782, "C": 0.159, "H": 75 }
+    "foundation": { "hue": 35, "saturation": 30, "value": 85 }
   },
   {
     "id": "teal-rose",
@@ -45,7 +45,7 @@
     "description": "Fresh and playful",
     "brand": { "hue": 176, "saturation": 66, "value": 72 },
     "accent": { "hue": 340, "saturation": 76, "value": 100 },
-    "foundation": { "L": 0.872, "C": 0.064, "H": 106 }
+    "foundation": { "hue": 100, "saturation": 15, "value": 90 }
   },
   {
     "id": "lavender-storm",
@@ -53,7 +53,7 @@
     "description": "Calm yet bold",
     "brand": { "hue": 231, "saturation": 33, "value": 95 },
     "accent": { "hue": 253, "saturation": 80, "value": 85 },
-    "foundation": { "L": 0.864, "C": 0.01, "H": 273 }
+    "foundation": { "hue": 270, "saturation": 5, "value": 90 }
   },
   {
     "id": "violet-dream",
@@ -61,7 +61,7 @@
     "description": "Light and creative",
     "brand": { "hue": 265, "saturation": 45, "value": 95 },
     "accent": { "hue": 248, "saturation": 75, "value": 85 },
-    "foundation": { "L": 0.961, "C": 0, "H": 263 }
+    "foundation": { "hue": 0, "saturation": 0, "value": 97 }
   },
   {
     "id": "crimson-earth",
@@ -69,7 +69,7 @@
     "description": "Deep and intense",
     "brand": { "hue": 5, "saturation": 84, "value": 95 },
     "accent": { "hue": 0, "saturation": 89, "value": 45 },
-    "foundation": { "L": 0.329, "C": 0.09, "H": 45 }
+    "foundation": { "hue": 25, "saturation": 45, "value": 35 }
   },
   {
     "id": "cotton-candy",
@@ -77,6 +77,6 @@
     "description": "Soft and gentle",
     "brand": { "hue": 208, "saturation": 64, "value": 95 },
     "accent": { "hue": 180, "saturation": 26, "value": 85 },
-    "foundation": { "L": 0.87, "C": 0.082, "H": 326 }
+    "foundation": { "hue": 330, "saturation": 18, "value": 92 }
   }
 ]

@@ -8,17 +8,11 @@ export interface HsvColor {
   value: number
 }
 
-export interface OklchFoundation {
-  L: number
-  C: number
-  H: number
-}
-
 export interface ColorPreset {
   id: string
   name: string
   description: string
   brand: HsvColor
   accent: HsvColor
-  foundation: OklchFoundation
+  foundation: HsvColor
 }

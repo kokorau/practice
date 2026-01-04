@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Oklch } from '@practice/color'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
-import FoundationPresets from '../SiteBuilder/FoundationPresets.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'
 import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
@@ -21,17 +19,15 @@ const props = defineProps<{
   saturation: number
   value: number
   selectedHex: string
-  brandOklch: Oklch
   // Color state (Accent)
   accentHue: number
   accentSaturation: number
   accentValue: number
   accentHex: string
-  // Foundation (Oklch values)
-  foundationL: number
-  foundationC: number
-  foundationH: number
-  foundationHueLinkedToBrand: boolean
+  // Foundation (HSV values)
+  foundationHue: number
+  foundationSaturation: number
+  foundationValue: number
   foundationHex: string
   // Palette tab
   neutralRampDisplay: NeutralRampItem[]
@@ -47,10 +43,9 @@ const emit = defineEmits<{
   (e: 'update:accentHue', value: number): void
   (e: 'update:accentSaturation', value: number): void
   (e: 'update:accentValue', value: number): void
-  (e: 'update:foundationL', value: number): void
-  (e: 'update:foundationC', value: number): void
-  (e: 'update:foundationH', value: number): void
-  (e: 'update:foundationHueLinkedToBrand', value: boolean): void
+  (e: 'update:foundationHue', value: number): void
+  (e: 'update:foundationSaturation', value: number): void
+  (e: 'update:foundationValue', value: number): void
   (e: 'applyColorPreset', preset: ColorPreset): void
   (e: 'applyLayoutPreset', presetId: string): void
 }>()
@@ -239,9 +234,9 @@ const selectedPresetName = computed(() => {
         :accent-hue="accentHue"
         :accent-saturation="accentSaturation"
         :accent-value="accentValue"
-        :foundation-l="foundationL"
-        :foundation-c="foundationC"
-        :foundation-h="foundationH"
+        :foundation-hue="foundationHue"
+        :foundation-saturation="foundationSaturation"
+        :foundation-value="foundationValue"
         @apply-preset="emit('applyColorPreset', $event)"
       />
       <BrandColorPicker
@@ -262,18 +257,14 @@ const selectedPresetName = computed(() => {
         @update:saturation="emit('update:accentSaturation', $event)"
         @update:value="emit('update:accentValue', $event)"
       />
-      <FoundationPresets
+      <BrandColorPicker
         v-if="activeColorPopup === 'foundation'"
-        :foundation-l="foundationL"
-        :foundation-c="foundationC"
-        :foundation-h="foundationH"
-        :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
-        :brand-oklch="brandOklch"
-        :brand-hue="hue"
-        @update:foundation-l="emit('update:foundationL', $event)"
-        @update:foundation-c="emit('update:foundationC', $event)"
-        @update:foundation-h="emit('update:foundationH', $event)"
-        @update:foundation-hue-linked-to-brand="emit('update:foundationHueLinkedToBrand', $event)"
+        :hue="foundationHue"
+        :saturation="foundationSaturation"
+        :value="foundationValue"
+        @update:hue="emit('update:foundationHue', $event)"
+        @update:saturation="emit('update:foundationSaturation', $event)"
+        @update:value="emit('update:foundationValue', $event)"
       />
     </FloatingPanel>
   </aside>

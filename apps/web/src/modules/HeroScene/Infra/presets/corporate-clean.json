@@ -118,9 +118,9 @@
       "value": 70
     },
     "foundation": {
-      "L": 0.96,
-      "C": 0.005,
-      "H": 260
+      "hue": 260,
+      "saturation": 2,
+      "value": 97
     }
   }
 }

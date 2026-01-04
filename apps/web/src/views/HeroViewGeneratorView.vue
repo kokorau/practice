@@ -59,10 +59,10 @@ const {
   accentValue,
   accentHex,
   accentColor,
-  foundationL,
-  foundationC,
-  foundationH,
-  foundationHueLinkedToBrand,
+  foundationHue,
+  foundationSaturation,
+  foundationValue,
+  foundationHex,
   foundationColor,
 } = useSiteColors()
 
@@ -432,10 +432,9 @@ onMounted(async () => {
     accentHue.value = initialColorPreset.accent.hue
     accentSaturation.value = initialColorPreset.accent.saturation
     accentValue.value = initialColorPreset.accent.value
-    foundationL.value = initialColorPreset.foundation.L
-    foundationC.value = initialColorPreset.foundation.C
-    foundationH.value = initialColorPreset.foundation.H
-    foundationHueLinkedToBrand.value = false
+    foundationHue.value = initialColorPreset.foundation.hue
+    foundationSaturation.value = initialColorPreset.foundation.saturation
+    foundationValue.value = initialColorPreset.foundation.value
   }
 
   // テクスチャプレビュー用キャンバス初期化 (HeroPreviewのcanvasを使用)
@@ -460,10 +459,9 @@ const handleApplyColorPreset = (preset: ColorPreset) => {
   accentSaturation.value = preset.accent.saturation
   accentValue.value = preset.accent.value
   // Apply foundation
-  foundationL.value = preset.foundation.L
-  foundationC.value = preset.foundation.C
-  foundationH.value = preset.foundation.H
-  foundationHueLinkedToBrand.value = false
+  foundationHue.value = preset.foundation.hue
+  foundationSaturation.value = preset.foundation.saturation
+  foundationValue.value = preset.foundation.value
 }
 
 // Handle layout preset application (also applies color preset if available)
@@ -479,10 +477,9 @@ const handleApplyLayoutPreset = async (presetId: string) => {
     accentSaturation.value = colorPreset.accent.saturation
     accentValue.value = colorPreset.accent.value
     // Apply foundation
-    foundationL.value = colorPreset.foundation.L
-    foundationC.value = colorPreset.foundation.C
-    foundationH.value = colorPreset.foundation.H
-    foundationHueLinkedToBrand.value = false
+    foundationHue.value = colorPreset.foundation.hue
+    foundationSaturation.value = colorPreset.foundation.saturation
+    foundationValue.value = colorPreset.foundation.value
   }
 }
 
@@ -507,9 +504,9 @@ const exportPreset = () => {
         value: accentValue.value,
       },
       foundation: {
-        L: foundationL.value,
-        C: foundationC.value,
-        H: foundationH.value,
+        hue: foundationHue.value,
+        saturation: foundationSaturation.value,
+        value: foundationValue.value,
       },
     },
   }
@@ -748,16 +745,14 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       :saturation="saturation"
       :value="value"
       :selected-hex="selectedHex"
-      :brand-oklch="brandColor.oklch"
       :accent-hue="accentHue"
       :accent-saturation="accentSaturation"
       :accent-value="accentValue"
       :accent-hex="accentHex"
-      :foundation-l="foundationL"
-      :foundation-c="foundationC"
-      :foundation-h="foundationH"
-      :foundation-hue-linked-to-brand="foundationHueLinkedToBrand"
-      :foundation-hex="foundationColor.hex"
+      :foundation-hue="foundationHue"
+      :foundation-saturation="foundationSaturation"
+      :foundation-value="foundationValue"
+      :foundation-hex="foundationHex"
       :neutral-ramp-display="neutralRampDisplay"
       :presets="presets"
       :selected-preset-id="selectedPresetId"
@@ -767,10 +762,9 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       @update:accent-hue="accentHue = $event"
       @update:accent-saturation="accentSaturation = $event"
       @update:accent-value="accentValue = $event"
-      @update:foundation-l="foundationL = $event"
-      @update:foundation-c="foundationC = $event"
-      @update:foundation-h="foundationH = $event"
-      @update:foundation-hue-linked-to-brand="foundationHueLinkedToBrand = $event"
+      @update:foundation-hue="foundationHue = $event"
+      @update:foundation-saturation="foundationSaturation = $event"
+      @update:foundation-value="foundationValue = $event"
       @apply-color-preset="handleApplyColorPreset"
       @apply-layout-preset="handleApplyLayoutPreset"
     />
