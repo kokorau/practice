@@ -53,7 +53,7 @@ const PRESETS: HeroViewPreset[] = [
       },
       background: {
         surface: { type: 'grid', lineWidth: 1, cellSize: 48 },
-        filters: createFilters({ vignette: { enabled: true, intensity: 0.3, radius: 0.8, softness: 0.6 } }),
+        filters: createFilters(),
       },
       mask: {
         shape: {
