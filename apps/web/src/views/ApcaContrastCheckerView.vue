@@ -26,12 +26,28 @@ const nodeCRef = ref<HTMLElement | null>(null)
 const nodeDRef = ref<HTMLElement | null>(null)
 const nodeERef = ref<HTMLElement | null>(null)
 const nodeFRef = ref<HTMLElement | null>(null)
+const nodeGRef = ref<HTMLElement | null>(null)
+const nodeHRef = ref<HTMLElement | null>(null)
 
 // Canvas refs
 const scaledCanvasARef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const scaledCanvasCRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const scaledCanvasDRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const scaledCanvasFRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+
+// Node G: Histogram data
+const histogramData = ref<number[]>(new Array(10).fill(0))
+
+// Node H: Score calculation
+const scoreThreshold = ref(2) // percentage threshold
+const calculatedScore = computed(() => {
+  for (let i = 0; i < histogramData.value.length; i++) {
+    if (histogramData.value[i]! >= scoreThreshold.value) {
+      return i * 10 // Return lower bound of the range
+    }
+  }
+  return 100 // All ranges below threshold, max score
+})
 
 // Connection paths
 const connectionPaths = ref<string[]>([])
@@ -135,6 +151,10 @@ function updateConnections() {
   const eTop = getNodeEdge(nodeERef.value, container, 'top')
   const eBottom = getNodeEdge(nodeERef.value, container, 'bottom')
   const fTop = getNodeEdge(nodeFRef.value, container, 'top')
+  const fBottom = getNodeEdge(nodeFRef.value, container, 'bottom')
+  const gTop = getNodeEdge(nodeGRef.value, container, 'top')
+  const gBottom = getNodeEdge(nodeGRef.value, container, 'bottom')
+  const hTop = getNodeEdge(nodeHRef.value, container, 'top')
 
   connectionPaths.value = [
     createBezierPathV(aBottom, cTop),   // A -> C (vertical)
@@ -143,6 +163,8 @@ function updateConnections() {
     createBezierPathV(bBottom, eTop),   // B -> E (vertical)
     createBezierPathV(dBottom, fTop),   // D -> F (vertical)
     createBezierPathV(eBottom, fTop),   // E -> F (vertical)
+    createBezierPathV(fBottom, gTop),   // F -> G (vertical)
+    createBezierPathV(gBottom, hTop),   // G -> H (vertical)
   ]
 }
 
@@ -271,8 +293,8 @@ function renderTextRegion() {
   dstCanvas.width = NODE_WIDTH
   dstCanvas.height = NODE_HEIGHT
 
-  ctx.fillStyle = '#1e1e3a'
-  ctx.fillRect(0, 0, NODE_WIDTH, NODE_HEIGHT)
+  // Clear with transparent background (don't fill with color)
+  ctx.clearRect(0, 0, NODE_WIDTH, NODE_HEIGHT)
 
   // Scale factor from canvas coords to node preview
   const scaleX = NODE_WIDTH / CANVAS_WIDTH
@@ -340,6 +362,17 @@ function renderApcaScoreMap() {
   const textY = textColorY.value
 
   for (let i = 0; i < srcData.length; i += 4) {
+    const alpha = srcData[i + 3]!
+
+    // Skip transparent pixels (outside extracted region)
+    if (alpha === 0) {
+      dstData[i] = 0
+      dstData[i + 1] = 0
+      dstData[i + 2] = 0
+      dstData[i + 3] = 0
+      continue
+    }
+
     // Get background Y from grayscale luminance map
     const bgY = srcData[i]! / 255
 
@@ -355,10 +388,47 @@ function renderApcaScoreMap() {
     dstData[i] = gray
     dstData[i + 1] = gray
     dstData[i + 2] = gray
-    dstData[i + 3] = srcData[i + 3]!
+    dstData[i + 3] = alpha
   }
 
   ctx.putImageData(dstImageData, 0, 0)
+}
+
+// Node G: Calculate histogram from APCA score map
+function calculateHistogram() {
+  const srcCanvas = scaledCanvasFRef.value?.canvas
+  if (!srcCanvas) return
+
+  const ctx = srcCanvas.getContext('2d')
+  if (!ctx) return
+
+  const imageData = ctx.getImageData(0, 0, NODE_WIDTH, NODE_HEIGHT)
+  const data = imageData.data
+
+  // Initialize bins (0-10, 10-20, ..., 90-100)
+  const bins = new Array(10).fill(0)
+  let totalPixels = 0
+
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3]!
+    if (alpha === 0) continue // Skip transparent pixels
+
+    // Gray value represents score (0-255 maps to 0-100)
+    const gray = data[i]!
+    const score = (gray / 255) * 100
+
+    // Determine bin index (0-9)
+    const binIndex = Math.min(Math.floor(score / 10), 9)
+    bins[binIndex]++
+    totalPixels++
+  }
+
+  // Convert to percentages
+  if (totalPixels > 0) {
+    histogramData.value = bins.map(count => (count / totalPixels) * 100)
+  } else {
+    histogramData.value = new Array(10).fill(0)
+  }
 }
 
 // Watch for media/canvas changes
@@ -368,6 +438,7 @@ watch([media, scaledCanvasARef, scaledCanvasCRef], async () => {
   renderLuminanceMap()
   renderTextRegion()
   renderApcaScoreMap()
+  calculateHistogram()
 })
 
 // Watch for text changes
@@ -376,12 +447,14 @@ watch([textContent, verticalAlign, horizontalAlign, textMeasureRef, scaledCanvas
   updateTextBounds()
   renderTextRegion()
   renderApcaScoreMap()
+  calculateHistogram()
 })
 
 // Watch for text color changes
 watch([textColor, scaledCanvasFRef], async () => {
   await nextTick()
   renderApcaScoreMap()
+  calculateHistogram()
 })
 
 // Unsplash
@@ -425,6 +498,7 @@ onMounted(async () => {
     updateTextBounds()
     renderTextRegion()
     renderApcaScoreMap()
+    calculateHistogram()
   }, 100)
   window.addEventListener('resize', updateConnections)
 })
@@ -502,6 +576,25 @@ onUnmounted(() => {
                 >
                 </button>
               </div>
+            </div>
+          </section>
+
+          <!-- Score Settings -->
+          <section>
+            <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Score</h2>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-400">Threshold</span>
+                <span class="text-xs text-gray-300">{{ scoreThreshold }}%</span>
+              </div>
+              <input
+                v-model.number="scoreThreshold"
+                type="range"
+                min="1"
+                max="5"
+                step="0.5"
+                class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+              />
             </div>
           </section>
 
@@ -625,6 +718,50 @@ onUnmounted(() => {
                   :class="{ 'opacity-0': !textBounds }"
                 />
                 <p v-if="!textBounds" class="node-empty">No data</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 4: G -->
+          <div class="node-row">
+            <!-- Node G: Histogram -->
+            <div ref="nodeGRef" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">G</span>
+                <span class="node-title-text">Distribution</span>
+              </div>
+              <div class="node-preview node-preview-histogram">
+                <div class="histogram">
+                  <div
+                    v-for="(value, index) in histogramData"
+                    :key="index"
+                    class="histogram-bar-container"
+                  >
+                    <div
+                      class="histogram-bar"
+                      :style="{ height: `${value}%` }"
+                      :class="{ 'histogram-bar-threshold': value >= scoreThreshold }"
+                    ></div>
+                    <span class="histogram-label">{{ index * 10 }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 5: H -->
+          <div class="node-row">
+            <!-- Node H: Final Score -->
+            <div ref="nodeHRef" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">H</span>
+                <span class="node-title-text">Score</span>
+              </div>
+              <div class="node-preview node-preview-center">
+                <div class="score-display">
+                  <span class="score-number">{{ calculatedScore }}</span>
+                  <span class="score-label">APCA Lc</span>
+                </div>
               </div>
             </div>
           </div>
@@ -799,5 +936,92 @@ onUnmounted(() => {
   font-weight: 700;
   font-family: monospace;
   color: #fff;
+}
+
+/* Histogram */
+.node-preview-histogram {
+  display: flex;
+  align-items: flex-end;
+  padding: 8px 4px 16px;
+}
+
+.histogram {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  gap: 2px;
+}
+
+.histogram-bar-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.histogram-bar {
+  width: 100%;
+  background: linear-gradient(to top, #4ecdc4, #88d8d0);
+  border-radius: 2px 2px 0 0;
+  min-height: 1px;
+  position: absolute;
+  bottom: 12px;
+}
+
+.histogram-label {
+  position: absolute;
+  bottom: 0;
+  font-size: 7px;
+  color: #888;
+  font-family: monospace;
+}
+
+.histogram-bar-threshold {
+  background: linear-gradient(to top, #f59e0b, #fbbf24);
+}
+
+/* Score Display */
+.score-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.score-number {
+  font-size: 36px;
+  font-weight: 700;
+  font-family: monospace;
+  color: #4ecdc4;
+}
+
+.score-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Slider thumb */
+.slider-thumb::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #4ecdc4;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider-thumb::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #4ecdc4;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
 }
 </style>
