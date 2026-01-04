@@ -668,6 +668,10 @@ const maskShapeLabel = computed(() => {
 const titleContrastResult = ref<ContrastAnalysisResult | null>(null)
 const descriptionContrastResult = ref<ContrastAnalysisResult | null>(null)
 
+// Base dimensions used in HeroPreview (must match)
+const BASE_WIDTH = 1920
+const BASE_HEIGHT = 1080
+
 const checkTitleContrast = async () => {
   await nextTick()
   const imageData = canvasImageData.value
@@ -679,10 +683,20 @@ const checkTitleContrast = async () => {
     return
   }
 
+  // Scale bounds from BASE dimensions to actual ImageData dimensions
+  const scaleX = imageData.width / BASE_WIDTH
+  const scaleY = imageData.height / BASE_HEIGHT
+  const scaledRegion = {
+    x: bounds.x * scaleX,
+    y: bounds.y * scaleY,
+    width: bounds.width * scaleX,
+    height: bounds.height * scaleY,
+  }
+
   titleContrastResult.value = checkImageDataContrast({
     imageData,
     textColor,
-    region: bounds,
+    region: scaledRegion,
   })
 }
 
@@ -697,10 +711,20 @@ const checkDescriptionContrast = async () => {
     return
   }
 
+  // Scale bounds from BASE dimensions to actual ImageData dimensions
+  const scaleX = imageData.width / BASE_WIDTH
+  const scaleY = imageData.height / BASE_HEIGHT
+  const scaledRegion = {
+    x: bounds.x * scaleX,
+    y: bounds.y * scaleY,
+    width: bounds.width * scaleX,
+    height: bounds.height * scaleY,
+  }
+
   descriptionContrastResult.value = checkImageDataContrast({
     imageData,
     textColor,
-    region: bounds,
+    region: scaledRegion,
   })
 }
 
