@@ -21,10 +21,13 @@ export { checkerShader, createCheckerSpec, type CheckerTextureParams } from './c
 export {
   circleMaskShader,
   rectMaskShader,
+  perlinMaskShader,
   createCircleMaskSpec,
   createRectMaskSpec,
+  createPerlinMaskSpec,
   type CircleMaskParams,
   type RectMaskParams,
+  type PerlinMaskParams,
 } from './mask'
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'
 export {
@@ -53,6 +56,10 @@ export {
   createBlobGridSpec,
   createBlobPolkaDotSpec,
   createBlobCheckerSpec,
+  createPerlinStripeSpec,
+  createPerlinGridSpec,
+  createPerlinPolkaDotSpec,
+  createPerlinCheckerSpec,
   // Masked GradientGrain
   createCircleGradientGrainSpec,
   createRectGradientGrainSpec,
@@ -62,6 +69,7 @@ export {
   type CircleMaskConfig,
   type RectMaskConfig,
   type BlobMaskConfig,
+  type PerlinMaskConfig,
   type MaskConfig,
   type StripeTextureConfig,
   type GridTextureConfig,

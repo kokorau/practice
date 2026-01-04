@@ -23,6 +23,10 @@ import {
   createBlobGridSpec,
   createBlobPolkaDotSpec,
   createBlobCheckerSpec,
+  createPerlinStripeSpec,
+  createPerlinGridSpec,
+  createPerlinPolkaDotSpec,
+  createPerlinCheckerSpec,
   // Masked GradientGrain specs
   createCircleGradientGrainSpec,
   createRectGradientGrainSpec,
@@ -40,6 +44,7 @@ import {
   createCircleMaskSpec,
   createRectMaskSpec,
   createBlobMaskSpec,
+  createPerlinMaskSpec,
   // Schemas and types
   MaskShapeSchemas,
   SurfaceSchemas,
@@ -50,6 +55,7 @@ import {
   type CircleMaskShapeConfig,
   type RectMaskShapeConfig,
   type BlobMaskShapeConfig,
+  type PerlinMaskShapeConfig,
   type Viewport,
   type TextureRenderSpec,
   type SurfacePresetParams,
@@ -61,6 +67,7 @@ import {
   type CircleMaskShapeParams,
   type RectMaskShapeParams,
   type BlobMaskShapeParams,
+  type PerlinMaskShapeParams,
   type StripeSurfaceParams,
   type GridSurfaceParams,
   type PolkaDotSurfaceParams,
@@ -135,6 +142,7 @@ export type CustomMaskShapeParams =
   | ({ type: 'circle' } & CircleMaskShapeParams)
   | ({ type: 'rect' } & RectMaskShapeParams)
   | ({ type: 'blob' } & BlobMaskShapeParams)
+  | ({ type: 'perlin' } & PerlinMaskShapeParams)
 
 /**
  * Custom surface params union type (for midground - includes solid, checker, and gradientGrain)
@@ -297,6 +305,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         radiusTopRight: maskConfig.radiusTopRight ?? 0,
         radiusBottomLeft: maskConfig.radiusBottomLeft ?? 0,
         radiusBottomRight: maskConfig.radiusBottomRight ?? 0,
+        cutout: maskConfig.cutout ?? true,
+      }
+    }
+    if (maskConfig.type === 'perlin') {
+      return {
+        type: 'perlin',
+        seed: maskConfig.seed,
+        threshold: maskConfig.threshold,
+        scale: maskConfig.scale,
+        octaves: maskConfig.octaves,
         cutout: maskConfig.cutout ?? true,
       }
     }
@@ -889,7 +907,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customSurfParams?: CustomSurfaceParams | null
   ): TextureRenderSpec | null => {
     // Build mask config from custom params or preset
-    const buildMaskConfig = (): CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig => {
+    const buildMaskConfig = (): CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig => {
       if (customShapeParams) {
         if (customShapeParams.type === 'circle') {
           return { type: 'circle', centerX: customShapeParams.centerX, centerY: customShapeParams.centerY, radius: customShapeParams.radius, cutout: customShapeParams.cutout }
@@ -901,6 +919,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             top: customShapeParams.top, bottom: customShapeParams.bottom,
             radiusTopLeft: customShapeParams.radiusTopLeft, radiusTopRight: customShapeParams.radiusTopRight,
             radiusBottomLeft: customShapeParams.radiusBottomLeft, radiusBottomRight: customShapeParams.radiusBottomRight,
+            cutout: customShapeParams.cutout,
+          }
+        }
+        if (customShapeParams.type === 'perlin') {
+          return {
+            type: 'perlin',
+            seed: customShapeParams.seed, threshold: customShapeParams.threshold,
+            scale: customShapeParams.scale, octaves: customShapeParams.octaves,
             cutout: customShapeParams.cutout,
           }
         }
@@ -1120,6 +1146,43 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
     }
 
+    if (maskConfig.type === 'perlin') {
+      const perlinMask: PerlinMaskShapeConfig = maskConfig
+      if (params.type === 'stripe') {
+        return createPerlinStripeSpec(
+          color1, color2,
+          { type: 'perlin', seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout },
+          params,
+          viewport
+        )
+      }
+      if (params.type === 'grid') {
+        return createPerlinGridSpec(
+          color1, color2,
+          { type: 'perlin', seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout },
+          params,
+          viewport
+        )
+      }
+      if (params.type === 'polkaDot') {
+        return createPerlinPolkaDotSpec(
+          color1, color2,
+          { type: 'perlin', seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout },
+          params,
+          viewport
+        )
+      }
+      if (params.type === 'checker') {
+        return createPerlinCheckerSpec(
+          color1, color2,
+          { type: 'perlin', seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout },
+          params,
+          viewport
+        )
+      }
+      // Note: gradientGrain with perlin mask is not supported yet
+    }
+
     return null
   }
 
@@ -1296,6 +1359,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   frequency: 0,
                   octaves: shapeParams.octaves,
                   seed: shapeParams.seed,
+                  innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
+                  outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
+                  cutout,
+                },
+                viewport
+              )
+            }
+            if (shapeParams.type === 'perlin') {
+              return createPerlinMaskSpec(
+                {
+                  seed: shapeParams.seed,
+                  threshold: shapeParams.threshold,
+                  scale: shapeParams.scale,
+                  octaves: shapeParams.octaves,
                   innerColor: cutout ? maskInnerColor.value : midgroundTextureColor1.value,
                   outerColor: cutout ? maskOuterColor.value : maskInnerColor.value,
                   cutout,
@@ -1832,6 +1909,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         cutout: params.cutout,
       }
     }
+    if (params.type === 'perlin') {
+      return {
+        type: 'perlin',
+        seed: params.seed,
+        threshold: params.threshold,
+        scale: params.scale,
+        octaves: params.octaves,
+        cutout: params.cutout,
+      }
+    }
     // blob
     return {
       type: 'blob',
@@ -1970,6 +2057,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           radiusTopRight: shape.radiusTopRight,
           radiusBottomLeft: shape.radiusBottomLeft,
           radiusBottomRight: shape.radiusBottomRight,
+          cutout: shape.cutout,
+        }
+      } else if (shape.type === 'perlin') {
+        customMaskShapeParams.value = {
+          type: 'perlin',
+          seed: shape.seed,
+          threshold: shape.threshold,
+          scale: shape.scale,
+          octaves: shape.octaves,
           cutout: shape.cutout,
         }
       } else {

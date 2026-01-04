@@ -7,6 +7,7 @@ export type {
   CircleMaskShapeConfig,
   RectMaskShapeConfig,
   BlobMaskShapeConfig,
+  PerlinMaskShapeConfig,
   MaskShapeConfig,
   MaskPattern,
 } from './TexturePattern'
@@ -65,6 +66,7 @@ export {
   CircleMaskShapeSchema,
   RectMaskShapeSchema,
   BlobMaskShapeSchema,
+  PerlinMaskShapeSchema,
   MaskShapeSchemas,
   // Surface Schemas
   StripeSurfaceSchema,
@@ -77,6 +79,7 @@ export {
   createDefaultCircleMaskParams,
   createDefaultRectMaskParams,
   createDefaultBlobMaskParams,
+  createDefaultPerlinMaskParams,
   createDefaultStripeParams,
   createDefaultGridParams,
   createDefaultPolkaDotParams,
@@ -87,6 +90,7 @@ export type {
   CircleMaskShapeParams,
   RectMaskShapeParams,
   BlobMaskShapeParams,
+  PerlinMaskShapeParams,
   StripeSurfaceParams,
   GridSurfaceParams,
   PolkaDotSurfaceParams,

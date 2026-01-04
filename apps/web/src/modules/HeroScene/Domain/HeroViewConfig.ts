@@ -158,10 +158,20 @@ export interface BlobMaskShapeConfig {
   cutout: boolean
 }
 
+export interface PerlinMaskShapeConfig {
+  type: 'perlin'
+  seed: number
+  threshold: number
+  scale: number
+  octaves: number
+  cutout: boolean
+}
+
 export type MaskShapeConfig =
   | CircleMaskShapeConfig
   | RectMaskShapeConfig
   | BlobMaskShapeConfig
+  | PerlinMaskShapeConfig
 
 // ============================================================
 // Layer Configs

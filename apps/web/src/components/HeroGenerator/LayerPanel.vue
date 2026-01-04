@@ -111,7 +111,7 @@ const getSubItemsForLayer = (layer: LayerItem): SubItemConfig[] => {
 // Computed map for reactive sub-items (tracks layerFilterConfigs changes)
 const subItemsMap = computed(() => {
   // Access layerFilterConfigs to establish reactive dependency
-  const _filterConfigs = props.layerFilterConfigs
+  void props.layerFilterConfigs
   const map = new Map<string, SubItemConfig[]>()
   for (const layer of props.layers) {
     map.set(layer.id, getSubItemsForLayer(layer))

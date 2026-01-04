@@ -12,6 +12,7 @@ export type {
   CircleMaskConfig,
   RectMaskConfig,
   BlobMaskConfig,
+  PerlinMaskConfig,
   MaskConfig,
   StripeTextureConfig,
   GridTextureConfig,
@@ -73,7 +74,23 @@ export {
 export { stripePatternFn, gridPatternFn, polkaDotPatternFn, checkerPatternFn } from './patterns'
 
 // Mask SDF functions (for extension)
-export { circleMaskFn, rectMaskFn, blobMaskFn, waveUtils } from './masks'
+export { circleMaskFn, rectMaskFn, blobMaskFn, waveUtils, perlinMaskUtils, perlinMaskFn } from './masks'
+
+// Perlin mask textures
+export {
+  perlinStripeShader,
+  perlinGridShader,
+  perlinPolkaDotShader,
+  perlinCheckerShader,
+  createPerlinStripeSpec,
+  createPerlinGridSpec,
+  createPerlinPolkaDotSpec,
+  createPerlinCheckerSpec,
+  PERLIN_STRIPE_BUFFER_SIZE,
+  PERLIN_GRID_BUFFER_SIZE,
+  PERLIN_POLKA_DOT_BUFFER_SIZE,
+  PERLIN_CHECKER_BUFFER_SIZE,
+} from './perlinTextures'
 
 // GradientGrain mask textures
 export {
