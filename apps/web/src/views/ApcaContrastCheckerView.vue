@@ -1,23 +1,37 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useMedia } from '../composables/Media'
 import { $Media } from '../modules/Media'
 import { photoRepository } from '../modules/Photo/Infra/photoRepository'
 import { createDefaultPhotoUseCase } from '../modules/Photo/Application/createDefaultPhotoUseCase'
 import { loadUnsplashPhoto } from '../modules/PhotoUnsplash/Application/loadUnsplashPhoto'
+import ScaledCanvas from '../components/ScaledCanvas.vue'
 
-// 仮想キャンバスサイズ
+// Node sizes (like GradientLabView)
+const NODE_WIDTH = 200
+const NODE_HEIGHT = 112
+
+// Internal canvas size
 const CANVAS_WIDTH = 640
 const CANVAS_HEIGHT = 360
 
 // Media
 const { media, loadPhoto, setPhoto, error: mediaError } = useMedia()
 
-// Node A: Source Image
-const canvasRef = ref<HTMLCanvasElement | null>(null)
+// Node refs for connection lines
+const nodeGraphRef = ref<HTMLElement | null>(null)
+const nodeARef = ref<HTMLElement | null>(null)
+const nodeBRef = ref<HTMLElement | null>(null)
+const nodeCRef = ref<HTMLElement | null>(null)
+const nodeDRef = ref<HTMLElement | null>(null)
+const nodeERef = ref<HTMLElement | null>(null)
 
-// Node B: APCA Luminance Map
-const luminanceCanvasRef = ref<HTMLCanvasElement | null>(null)
+// Canvas refs
+const scaledCanvasARef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+const scaledCanvasBRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+
+// Connection paths
+const connectionPaths = ref<string[]>([])
 
 // Node C: Text Layer
 const textContent = ref('Hello World')
@@ -36,7 +50,60 @@ const textColorY = computed(() => {
   return calcApcaLuminance(r, g, b)
 })
 
-// object-fit: cover的な描画のためのパラメータ計算
+// Get node edge position
+function getNodeEdge(nodeRef: HTMLElement | null, container: HTMLElement | null, position: 'top' | 'bottom' | 'left' | 'right') {
+  if (!nodeRef || !container) return { x: 0, y: 0 }
+  const nodeRect = nodeRef.getBoundingClientRect()
+  const containerRect = container.getBoundingClientRect()
+
+  const left = nodeRect.left - containerRect.left
+  const top = nodeRect.top - containerRect.top
+  const centerX = left + nodeRect.width / 2
+  const centerY = top + nodeRect.height / 2
+
+  switch (position) {
+    case 'top': return { x: centerX, y: top }
+    case 'bottom': return { x: centerX, y: top + nodeRect.height }
+    case 'left': return { x: left, y: centerY }
+    case 'right': return { x: left + nodeRect.width, y: centerY }
+  }
+}
+
+// Create bezier path (vertical)
+function createBezierPathV(from: { x: number, y: number }, to: { x: number, y: number }) {
+  const midY = (from.y + to.y) / 2
+  return `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`
+}
+
+// Create bezier path (horizontal)
+function createBezierPathH(from: { x: number, y: number }, to: { x: number, y: number }) {
+  const midX = (from.x + to.x) / 2
+  return `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`
+}
+
+// Update connection lines
+function updateConnections() {
+  if (!nodeGraphRef.value) return
+
+  const container = nodeGraphRef.value
+
+  const aBottom = getNodeEdge(nodeARef.value, container, 'bottom')
+  const bTop = getNodeEdge(nodeBRef.value, container, 'top')
+  const bRight = getNodeEdge(nodeBRef.value, container, 'right')
+  const cBottom = getNodeEdge(nodeCRef.value, container, 'bottom')
+  const dLeft = getNodeEdge(nodeDRef.value, container, 'left')
+  const dTop = getNodeEdge(nodeDRef.value, container, 'top')
+  const eTop = getNodeEdge(nodeERef.value, container, 'top')
+
+  connectionPaths.value = [
+    createBezierPathV(aBottom, bTop),   // A -> B (vertical)
+    createBezierPathH(bRight, dLeft),   // B -> D (horizontal)
+    createBezierPathV(cBottom, dTop),   // C -> D (vertical)
+    createBezierPathV(cBottom, eTop),   // C -> E (vertical)
+  ]
+}
+
+// object-fit: cover calculation
 function calcCoverRect(srcW: number, srcH: number, dstW: number, dstH: number) {
   const srcAspect = srcW / srcH
   const dstAspect = dstW / dstH
@@ -44,13 +111,11 @@ function calcCoverRect(srcW: number, srcH: number, dstW: number, dstH: number) {
   let sx: number, sy: number, sw: number, sh: number
 
   if (srcAspect > dstAspect) {
-    // ソースが横長 → 左右をクロップ
     sh = srcH
     sw = srcH * dstAspect
     sx = (srcW - sw) / 2
     sy = 0
   } else {
-    // ソースが縦長 → 上下をクロップ
     sw = srcW
     sh = srcW / dstAspect
     sx = 0
@@ -60,28 +125,25 @@ function calcCoverRect(srcW: number, srcH: number, dstW: number, dstH: number) {
   return { sx, sy, sw, sh }
 }
 
-// Node A: ソース画像を描画
+// Node A: Source Image
 function renderSourceImage() {
-  if (!media.value || !canvasRef.value) return
+  const canvas = scaledCanvasARef.value?.canvas
+  if (!media.value || !canvas) return
 
-  const canvas = canvasRef.value
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
   const sourceImageData = $Media.getImageData(media.value)
   if (!sourceImageData) return
 
-  // 固定サイズに設定
   canvas.width = CANVAS_WIDTH
   canvas.height = CANVAS_HEIGHT
 
-  // オフスクリーンcanvasで元画像を復元
   const offscreen = new OffscreenCanvas(sourceImageData.width, sourceImageData.height)
   const offCtx = offscreen.getContext('2d')
   if (!offCtx) return
   offCtx.putImageData(sourceImageData, 0, 0)
 
-  // cover描画
   const { sx, sy, sw, sh } = calcCoverRect(
     sourceImageData.width, sourceImageData.height,
     CANVAS_WIDTH, CANVAS_HEIGHT
@@ -89,15 +151,14 @@ function renderSourceImage() {
   ctx.drawImage(offscreen, sx, sy, sw, sh, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 }
 
-// sRGB to Linear RGB (gamma expansion)
+// sRGB to Linear RGB
 function sRGBtoLinear(val: number): number {
   return val <= 0.04045
     ? val / 12.92
     : Math.pow((val + 0.055) / 1.055, 2.4)
 }
 
-// APCA Luminance (Y) calculation
-// Y = 0.2126729 * R + 0.7151522 * G + 0.0721750 * B
+// APCA Luminance (Y)
 function calcApcaLuminance(r: number, g: number, b: number): number {
   const rLin = sRGBtoLinear(r / 255)
   const gLin = sRGBtoLinear(g / 255)
@@ -105,29 +166,25 @@ function calcApcaLuminance(r: number, g: number, b: number): number {
   return 0.2126729 * rLin + 0.7151522 * gLin + 0.0721750 * bLin
 }
 
-// 輝度マップを描画
+// Node B: Luminance Map
 function renderLuminanceMap() {
-  if (!media.value || !luminanceCanvasRef.value) return
+  const canvas = scaledCanvasBRef.value?.canvas
+  if (!media.value || !canvas) return
 
-  const canvas = luminanceCanvasRef.value
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  // Media から ImageData を取得
   const sourceImageData = $Media.getImageData(media.value)
   if (!sourceImageData) return
 
-  // 固定サイズに設定
   canvas.width = CANVAS_WIDTH
   canvas.height = CANVAS_HEIGHT
 
-  // cover描画のパラメータ計算
   const { sx, sy, sw, sh } = calcCoverRect(
     sourceImageData.width, sourceImageData.height,
     CANVAS_WIDTH, CANVAS_HEIGHT
   )
 
-  // 切り出し範囲のImageDataを作成
   const croppedImageData = new ImageData(CANVAS_WIDTH, CANVAS_HEIGHT)
   const srcData = sourceImageData.data
   const dstData = croppedImageData.data
@@ -135,7 +192,6 @@ function renderLuminanceMap() {
 
   for (let dy = 0; dy < CANVAS_HEIGHT; dy++) {
     for (let dx = 0; dx < CANVAS_WIDTH; dx++) {
-      // ソース座標を計算
       const srcX = Math.floor(sx + (dx / CANVAS_WIDTH) * sw)
       const srcY = Math.floor(sy + (dy / CANVAS_HEIGHT) * sh)
       const srcIdx = (srcY * srcW + srcX) * 4
@@ -146,7 +202,6 @@ function renderLuminanceMap() {
       const b = srcData[srcIdx + 2]!
       const a = srcData[srcIdx + 3]!
 
-      // APCA輝度 (0-1)
       const y = calcApcaLuminance(r, g, b)
       const gray = Math.round(y * 255)
 
@@ -160,8 +215,8 @@ function renderLuminanceMap() {
   ctx.putImageData(croppedImageData, 0, 0)
 }
 
-// mediaまたはcanvasが変更されたら描画を更新
-watch([media, canvasRef, luminanceCanvasRef], async () => {
+// Watch for media/canvas changes
+watch([media, scaledCanvasARef, scaledCanvasBRef], async () => {
   await nextTick()
   renderSourceImage()
   renderLuminanceMap()
@@ -182,7 +237,7 @@ const handleLoadUnsplash = async () => {
   }
 }
 
-// ファイル入力ハンドラ
+// File input handler
 const handleFileChange = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
@@ -191,8 +246,8 @@ const handleFileChange = async (e: Event) => {
   }
 }
 
-// 初期化
-onMounted(() => {
+// Initialize
+onMounted(async () => {
   const existingPhoto = photoRepository.get()
   if (existingPhoto && !media.value) {
     setPhoto(existingPhoto)
@@ -201,6 +256,14 @@ onMounted(() => {
     photoRepository.set(defaultPhoto)
     setPhoto(defaultPhoto)
   }
+
+  await nextTick()
+  setTimeout(updateConnections, 100)
+  window.addEventListener('resize', updateConnections)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateConnections)
 })
 </script>
 
@@ -236,7 +299,6 @@ onMounted(() => {
           <section>
             <h2 class="text-[11px] text-gray-500 uppercase tracking-wider mb-2">Text Layer</h2>
             <div class="space-y-3">
-              <!-- Text Input -->
               <input
                 v-model="textContent"
                 type="text"
@@ -244,7 +306,6 @@ onMounted(() => {
                 class="w-full py-1.5 px-3 rounded text-xs bg-gray-800 text-gray-300 border border-gray-700 focus:border-gray-500 focus:outline-none"
               />
 
-              <!-- Text Color -->
               <div class="flex items-center gap-2">
                 <input
                   v-model="textColor"
@@ -254,7 +315,6 @@ onMounted(() => {
                 <span class="text-xs text-gray-400">{{ textColor }}</span>
               </div>
 
-              <!-- Position Grid -->
               <div class="position-grid">
                 <button
                   v-for="pos in [
@@ -271,137 +331,163 @@ onMounted(() => {
                   :key="`${pos.v}-${pos.h}`"
                   @click="verticalAlign = pos.v as VerticalAlign; horizontalAlign = pos.h as HorizontalAlign"
                   class="position-grid-cell"
-                  :class="verticalAlign === pos.v && horizontalAlign === pos.h
-                    ? 'active'
-                    : ''"
+                  :class="verticalAlign === pos.v && horizontalAlign === pos.h ? 'active' : ''"
                 >
                 </button>
               </div>
             </div>
           </section>
 
-          <!-- Error -->
           <p v-if="mediaError" class="text-xs text-red-400">{{ mediaError }}</p>
         </div>
       </div>
 
       <!-- Main Content -->
-      <div class="flex-1 flex flex-col min-w-0 p-6 gap-6 overflow-auto">
-        <!-- Node Row -->
-        <div class="node-row">
-          <!-- Node A: Source Image -->
-          <div class="node-wrapper">
-            <div class="node-title">
-              <span class="node-badge">A</span>
-              <span class="node-title-text">Source Image</span>
-              <span class="node-badge-offset"></span>
-            </div>
-            <div class="node-preview">
-              <canvas
-                ref="canvasRef"
-                :class="{ 'opacity-0': !media }"
-                class="node-canvas"
-              />
-              <p v-if="!media" class="absolute inset-0 flex items-center justify-center text-gray-600 text-sm">
-                No image
-              </p>
-            </div>
-          </div>
+      <div class="flex-1 flex flex-col min-w-0 p-6 overflow-auto">
+        <section ref="nodeGraphRef" class="node-graph">
+          <!-- SVG Connection Lines -->
+          <svg class="connections-overlay">
+            <path
+              v-for="(path, index) in connectionPaths"
+              :key="index"
+              :d="path"
+              class="connection-line"
+            />
+          </svg>
 
-          <!-- Node B: APCA Luminance -->
-          <div class="node-wrapper">
-            <div class="node-title">
-              <span class="node-badge">B</span>
-              <span class="node-title-text">APCA Luminance (Y)</span>
-              <span class="node-badge-offset"></span>
+          <!-- Row 1: A, C -->
+          <div class="node-row">
+            <!-- Node A: Source Image -->
+            <div ref="nodeARef" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">A</span>
+                <span class="node-title-text">Source</span>
+              </div>
+              <div class="node-preview">
+                <ScaledCanvas
+                  ref="scaledCanvasARef"
+                  :canvas-width="CANVAS_WIDTH"
+                  :canvas-height="CANVAS_HEIGHT"
+                  :class="{ 'opacity-0': !media }"
+                />
+                <p v-if="!media" class="node-empty">No image</p>
+              </div>
             </div>
-            <div class="node-preview">
-              <canvas
-                ref="luminanceCanvasRef"
-                :class="{ 'opacity-0': !media }"
-                class="node-canvas"
-              />
-              <p v-if="!media" class="absolute inset-0 flex items-center justify-center text-gray-600 text-sm">
-                No image
-              </p>
-            </div>
-          </div>
 
-          <!-- Node C: Text Overlay -->
-          <div class="node-wrapper">
-            <div class="node-title">
-              <span class="node-badge">C</span>
-              <span class="node-title-text">Text Layer</span>
-              <span class="node-badge-offset"></span>
-            </div>
-            <div class="node-preview">
-              <div
-                class="text-layer"
-                :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
-              >
-                <h1 class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</h1>
+            <!-- Node C: Text Layer -->
+            <div ref="nodeCRef" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">C</span>
+                <span class="node-title-text">Text</span>
+              </div>
+              <div class="node-preview">
+                <div
+                  class="text-layer"
+                  :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
+                >
+                  <span class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Node Row 2 -->
-        <div class="node-row">
-          <!-- Node D: Void (placeholder) -->
-          <div class="node-wrapper">
-            <div class="node-title">
-              <span class="node-badge">D</span>
-              <span class="node-title-text">Void</span>
-              <span class="node-badge-offset"></span>
+          <!-- Row 2: B, D, E -->
+          <div class="node-row">
+            <!-- Node B: APCA Luminance -->
+            <div ref="nodeBRef" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">B</span>
+                <span class="node-title-text">Luminance</span>
+              </div>
+              <div class="node-preview">
+                <ScaledCanvas
+                  ref="scaledCanvasBRef"
+                  :canvas-width="CANVAS_WIDTH"
+                  :canvas-height="CANVAS_HEIGHT"
+                  :class="{ 'opacity-0': !media }"
+                />
+                <p v-if="!media" class="node-empty">No image</p>
+              </div>
             </div>
-            <div class="node-preview node-preview-void">
-              <span class="text-gray-600 text-sm">Coming soon...</span>
-            </div>
-          </div>
 
-          <!-- Node E: Text Color Y -->
-          <div class="node-wrapper">
-            <div class="node-title">
-              <span class="node-badge">E</span>
-              <span class="node-title-text">Text Color Y</span>
-              <span class="node-badge-offset"></span>
+            <!-- Node D: Void -->
+            <div ref="nodeDRef" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">D</span>
+                <span class="node-title-text">Void</span>
+              </div>
+              <div class="node-preview node-preview-center">
+                <span class="text-gray-600 text-xs">Coming soon...</span>
+              </div>
             </div>
-            <div class="node-preview node-preview-value">
-              <div class="value-display">
-                <div class="value-color" :style="{ backgroundColor: textColor }"></div>
-                <div class="value-info">
-                  <span class="value-label">APCA Luminance (Y)</span>
+
+            <!-- Node E: Text Color Y -->
+            <div ref="nodeERef" class="node-wrapper">
+              <div class="node-title">
+                <span class="node-badge">E</span>
+                <span class="node-title-text">Text Y</span>
+              </div>
+              <div class="node-preview node-preview-center">
+                <div class="value-display">
+                  <div class="value-color" :style="{ backgroundColor: textColor }"></div>
                   <span class="value-number">{{ textColorY.toFixed(4) }}</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.node-graph {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+}
+
+.connections-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.connection-line {
+  fill: none;
+  stroke: #4ecdc4;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.5;
+}
+
 .node-row {
   display: flex;
-  gap: 2rem;
+  gap: 3rem;
   justify-content: center;
-  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
 .node-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .node-title {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
   gap: 0.5rem;
 }
 
@@ -416,7 +502,6 @@ onMounted(() => {
   font-size: 0.625rem;
   font-weight: 700;
   border-radius: 0.25rem;
-  flex-shrink: 0;
 }
 
 .node-title-text {
@@ -425,12 +510,6 @@ onMounted(() => {
   color: #aaa;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  text-align: center;
-}
-
-.node-badge-offset {
-  width: 1.25rem;
-  flex-shrink: 0;
 }
 
 .node-preview {
@@ -439,17 +518,24 @@ onMounted(() => {
   border: 1px solid #3a3a5a;
   border-radius: 0.5rem;
   overflow: hidden;
-  /* 表示サイズ: 640 * 0.625 = 400, 360 * 0.625 = 225 */
-  width: 400px;
-  height: 225px;
+  width: 200px;
+  height: 112px;
 }
 
-.node-canvas {
-  /* 仮想サイズ640x360をscaleで縮小表示 */
-  width: 640px;
-  height: 360px;
-  transform: scale(0.625);
-  transform-origin: top left;
+.node-preview-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 0.75rem;
 }
 
 /* Position Grid */
@@ -478,89 +564,45 @@ onMounted(() => {
 
 /* Text Layer */
 .text-layer {
-  /* 仮想サイズ640x360をscaleで縮小表示 */
   width: 640px;
   height: 360px;
-  transform: scale(0.625);
+  transform: scale(0.3125);
   transform-origin: top left;
-  background: transparent;
   padding: 32px;
   display: flex;
-  color: white;
 }
 
-/* Vertical alignment */
-.text-layer.align-v-top {
-  align-items: flex-start;
-}
-
-.text-layer.align-v-center {
-  align-items: center;
-}
-
-.text-layer.align-v-bottom {
-  align-items: flex-end;
-}
-
-/* Horizontal alignment */
-.text-layer.align-h-left {
-  justify-content: flex-start;
-}
-
-.text-layer.align-h-center {
-  justify-content: center;
-}
-
-.text-layer.align-h-right {
-  justify-content: flex-end;
-}
+.text-layer.align-v-top { align-items: flex-start; }
+.text-layer.align-v-center { align-items: center; }
+.text-layer.align-v-bottom { align-items: flex-end; }
+.text-layer.align-h-left { justify-content: flex-start; }
+.text-layer.align-h-center { justify-content: center; }
+.text-layer.align-h-right { justify-content: flex-end; }
 
 .text-layer-title {
   font-size: 48px;
   font-weight: 700;
   margin: 0;
+  white-space: nowrap;
 }
 
-/* Node D: Void */
-.node-preview-void {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Node E: Value Display */
-.node-preview-value {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
+/* Value Display */
 .value-display {
   display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.value-color {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.value-info {
-  display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
 }
 
-.value-label {
-  font-size: 12px;
-  color: #9ca3af;
+.value-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .value-number {
-  font-size: 32px;
+  font-size: 14px;
   font-weight: 700;
   font-family: monospace;
   color: #fff;
