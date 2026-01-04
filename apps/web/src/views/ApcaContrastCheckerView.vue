@@ -29,6 +29,7 @@ const nodeERef = ref<HTMLElement | null>(null)
 // Canvas refs
 const scaledCanvasARef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const scaledCanvasCRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+const scaledCanvasDRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 
 // Connection paths
 const connectionPaths = ref<string[]>([])
@@ -49,6 +50,41 @@ const textColorY = computed(() => {
   const b = parseInt(hex.substring(4, 6), 16)
   return calcApcaLuminance(r, g, b)
 })
+
+// Text bounding box calculation
+const textBounds = ref<{ x: number; y: number; width: number; height: number } | null>(null)
+const textMeasureRef = ref<HTMLSpanElement | null>(null)
+
+function updateTextBounds() {
+  if (!textMeasureRef.value) return
+
+  const span = textMeasureRef.value
+  const textWidth = span.offsetWidth
+  const textHeight = span.offsetHeight
+
+  const padding = 32
+  const areaWidth = CANVAS_WIDTH - padding * 2
+  const areaHeight = CANVAS_HEIGHT - padding * 2
+
+  let x = padding
+  let y = padding
+
+  // Horizontal alignment
+  if (horizontalAlign.value === 'center') {
+    x = padding + (areaWidth - textWidth) / 2
+  } else if (horizontalAlign.value === 'right') {
+    x = padding + areaWidth - textWidth
+  }
+
+  // Vertical alignment
+  if (verticalAlign.value === 'center') {
+    y = padding + (areaHeight - textHeight) / 2
+  } else if (verticalAlign.value === 'bottom') {
+    y = padding + areaHeight - textHeight
+  }
+
+  textBounds.value = { x, y, width: textWidth, height: textHeight }
+}
 
 // Get node edge position
 function getNodeEdge(nodeRef: HTMLElement | null, container: HTMLElement | null, position: 'top' | 'bottom' | 'left' | 'right') {
@@ -215,11 +251,54 @@ function renderLuminanceMap() {
   ctx.putImageData(croppedImageData, 0, 0)
 }
 
+// Node D: Extract text region from luminance map
+function renderTextRegion() {
+  const srcCanvas = scaledCanvasCRef.value?.canvas
+  const dstCanvas = scaledCanvasDRef.value?.canvas
+  if (!srcCanvas || !dstCanvas || !textBounds.value) return
+
+  const ctx = dstCanvas.getContext('2d')
+  if (!ctx) return
+
+  const bounds = textBounds.value
+  dstCanvas.width = NODE_WIDTH
+  dstCanvas.height = NODE_HEIGHT
+
+  ctx.fillStyle = '#1e1e3a'
+  ctx.fillRect(0, 0, NODE_WIDTH, NODE_HEIGHT)
+
+  // Scale factor from canvas coords to node preview
+  const scaleX = NODE_WIDTH / CANVAS_WIDTH
+  const scaleY = NODE_HEIGHT / CANVAS_HEIGHT
+
+  // Source region (in canvas coordinates)
+  const sx = bounds.x
+  const sy = bounds.y
+  const sw = bounds.width
+  const sh = bounds.height
+
+  // Destination (centered in node preview)
+  const dw = sw * scaleX
+  const dh = sh * scaleY
+  const dx = (NODE_WIDTH - dw) / 2
+  const dy = (NODE_HEIGHT - dh) / 2
+
+  ctx.drawImage(srcCanvas, sx, sy, sw, sh, dx, dy, dw, dh)
+}
+
 // Watch for media/canvas changes
 watch([media, scaledCanvasARef, scaledCanvasCRef], async () => {
   await nextTick()
   renderSourceImage()
   renderLuminanceMap()
+  renderTextRegion()
+})
+
+// Watch for text changes
+watch([textContent, verticalAlign, horizontalAlign, textMeasureRef, scaledCanvasDRef], async () => {
+  await nextTick()
+  updateTextBounds()
+  renderTextRegion()
 })
 
 // Unsplash
@@ -258,7 +337,11 @@ onMounted(async () => {
   }
 
   await nextTick()
-  setTimeout(updateConnections, 100)
+  setTimeout(() => {
+    updateConnections()
+    updateTextBounds()
+    renderTextRegion()
+  }, 100)
   window.addEventListener('resize', updateConnections)
 })
 
@@ -385,7 +468,7 @@ onUnmounted(() => {
                   class="text-layer"
                   :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
                 >
-                  <span class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
+                  <span ref="textMeasureRef" class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
                 </div>
               </div>
             </div>
@@ -410,14 +493,20 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Node D: Void -->
+            <!-- Node D: Text Region from Luminance -->
             <div ref="nodeDRef" class="node-wrapper">
               <div class="node-title">
                 <span class="node-badge">D</span>
-                <span class="node-title-text">Void</span>
+                <span class="node-title-text">Region</span>
               </div>
-              <div class="node-preview node-preview-center">
-                <span class="text-gray-600 text-xs">Coming soon...</span>
+              <div class="node-preview">
+                <ScaledCanvas
+                  ref="scaledCanvasDRef"
+                  :canvas-width="NODE_WIDTH"
+                  :canvas-height="NODE_HEIGHT"
+                  :class="{ 'opacity-0': !textBounds }"
+                />
+                <p v-if="!textBounds" class="node-empty">No text</p>
               </div>
             </div>
 
