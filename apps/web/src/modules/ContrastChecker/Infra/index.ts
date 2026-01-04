@@ -11,3 +11,9 @@ export {
   generateScoreMap,
   $ContrastAnalyzer,
 } from './ContrastAnalyzer'
+
+export {
+  checkContrastAsync,
+  terminateContrastWorker,
+  $ContrastWorkerClient,
+} from './ContrastWorkerClient'

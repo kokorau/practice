@@ -21,6 +21,9 @@ export {
   generateScoreMap,
   $LuminanceMapGenerator,
   $ContrastAnalyzer,
+  checkContrastAsync,
+  terminateContrastWorker,
+  $ContrastWorkerClient,
 } from './Infra'
 
 // Application

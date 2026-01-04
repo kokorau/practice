@@ -37,7 +37,7 @@ import {
 } from '../composables/SiteBuilder'
 import { createGradientGrainSpec, createDefaultGradientGrainParams, type DepthMapType } from '@practice/texture'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
-import { checkImageDataContrast, type ContrastAnalysisResult } from '../modules/ContrastChecker'
+import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
@@ -693,11 +693,7 @@ const checkTitleContrast = async () => {
     height: bounds.height * scaleY,
   }
 
-  titleContrastResult.value = checkImageDataContrast({
-    imageData,
-    textColor,
-    region: scaledRegion,
-  })
+  titleContrastResult.value = await checkContrastAsync(imageData, textColor, scaledRegion)
 }
 
 const checkDescriptionContrast = async () => {
@@ -721,11 +717,7 @@ const checkDescriptionContrast = async () => {
     height: bounds.height * scaleY,
   }
 
-  descriptionContrastResult.value = checkImageDataContrast({
-    imageData,
-    textColor,
-    region: scaledRegion,
-  })
+  descriptionContrastResult.value = await checkContrastAsync(imageData, textColor, scaledRegion)
 }
 
 // Watch for changes that affect contrast
