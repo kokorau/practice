@@ -354,6 +354,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const customSurfaceParams = ref<CustomSurfaceParams | null>(null)
   const customBackgroundSurfaceParams = ref<CustomBackgroundSurfaceParams | null>(null)
 
+  // Flag to skip watcher updates during fromHeroViewConfig execution
+  let isLoadingFromConfig = false
+
   // Current schema for UI rendering
   const currentMaskShapeSchema = computed(() => {
     if (!customMaskShapeParams.value) return null
@@ -1648,14 +1651,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Initialize custom params when selection changes
   watch(selectedBackgroundIndex, () => {
+    if (isLoadingFromConfig) return
     initBackgroundSurfaceParamsFromPreset()
   }, { immediate: true })
 
   watch(selectedMaskIndex, () => {
+    if (isLoadingFromConfig) return
     initMaskShapeParamsFromPreset()
   }, { immediate: true })
 
   watch(selectedMidgroundTextureIndex, () => {
+    if (isLoadingFromConfig) return
     initSurfaceParamsFromPreset()
   }, { immediate: true })
 
@@ -1852,6 +1858,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Note: Image restoration requires additional handling (imageId → ImageBitmap)
    */
   const fromHeroViewConfig = async (config: HeroViewConfig) => {
+    // Prevent watchers from overwriting custom params during config load
+    isLoadingFromConfig = true
+
     // Viewport
     editorState.value = {
       ...editorState.value,
@@ -1972,6 +1981,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Sync layer configs and re-render
     syncLayerConfigs()
     await renderScene()
+
+    // Re-enable watchers
+    isLoadingFromConfig = false
   }
 
   /**
