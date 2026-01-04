@@ -7,6 +7,67 @@ import { createDefaultPhotoUseCase } from '../modules/Photo/Application/createDe
 import { loadUnsplashPhoto } from '../modules/PhotoUnsplash/Application/loadUnsplashPhoto'
 import ScaledCanvas from '../components/ScaledCanvas.vue'
 
+// Node types
+type NodeType = 'canvas' | 'text' | 'value' | 'histogram' | 'score'
+type EdgePosition = 'top' | 'bottom' | 'left' | 'right'
+
+interface NodeDefinition {
+  id: string           // UUID for connections
+  label: string        // Display label (A, B, C...)
+  title: string        // Node title
+  type: NodeType
+  row: number          // Row position for layout
+}
+
+interface Connection {
+  from: { nodeId: string; position: EdgePosition }
+  to: { nodeId: string; position: EdgePosition }
+}
+
+// Node definitions
+const NODE_SOURCE = 'source-image'
+const NODE_TEXT = 'text-layer'
+const NODE_LUMINANCE = 'luminance-map'
+const NODE_REGION = 'text-region'
+const NODE_TEXT_Y = 'text-color-y'
+const NODE_APCA_SCORE = 'apca-score-map'
+const NODE_HISTOGRAM = 'histogram'
+const NODE_FINAL_SCORE = 'final-score'
+
+const nodeDefinitions = ref<NodeDefinition[]>([
+  { id: NODE_SOURCE, label: 'A', title: 'Source', type: 'canvas', row: 1 },
+  { id: NODE_TEXT, label: 'B', title: 'Text', type: 'text', row: 1 },
+  { id: NODE_LUMINANCE, label: 'C', title: 'Luminance', type: 'canvas', row: 2 },
+  { id: NODE_REGION, label: 'D', title: 'Region', type: 'canvas', row: 2 },
+  { id: NODE_TEXT_Y, label: 'E', title: 'Text Y', type: 'value', row: 2 },
+  { id: NODE_APCA_SCORE, label: 'F', title: 'APCA Score', type: 'canvas', row: 3 },
+  { id: NODE_HISTOGRAM, label: 'G', title: 'Distribution', type: 'histogram', row: 4 },
+  { id: NODE_FINAL_SCORE, label: 'H', title: 'Score', type: 'score', row: 5 },
+])
+
+const connectionDefinitions = ref<Connection[]>([
+  { from: { nodeId: NODE_SOURCE, position: 'bottom' }, to: { nodeId: NODE_LUMINANCE, position: 'top' } },
+  { from: { nodeId: NODE_LUMINANCE, position: 'right' }, to: { nodeId: NODE_REGION, position: 'left' } },
+  { from: { nodeId: NODE_TEXT, position: 'bottom' }, to: { nodeId: NODE_REGION, position: 'top' } },
+  { from: { nodeId: NODE_TEXT, position: 'bottom' }, to: { nodeId: NODE_TEXT_Y, position: 'top' } },
+  { from: { nodeId: NODE_REGION, position: 'bottom' }, to: { nodeId: NODE_APCA_SCORE, position: 'top' } },
+  { from: { nodeId: NODE_TEXT_Y, position: 'bottom' }, to: { nodeId: NODE_APCA_SCORE, position: 'top' } },
+  { from: { nodeId: NODE_APCA_SCORE, position: 'bottom' }, to: { nodeId: NODE_HISTOGRAM, position: 'top' } },
+  { from: { nodeId: NODE_HISTOGRAM, position: 'bottom' }, to: { nodeId: NODE_FINAL_SCORE, position: 'top' } },
+])
+
+// Group nodes by row
+const nodesByRow = computed(() => {
+  const rows = new Map<number, NodeDefinition[]>()
+  for (const node of nodeDefinitions.value) {
+    if (!rows.has(node.row)) {
+      rows.set(node.row, [])
+    }
+    rows.get(node.row)!.push(node)
+  }
+  return Array.from(rows.entries()).sort((a, b) => a[0] - b[0])
+})
+
 // Node sizes (like GradientLabView)
 const NODE_WIDTH = 200
 const NODE_HEIGHT = 112
@@ -18,22 +79,27 @@ const CANVAS_HEIGHT = 360
 // Media
 const { media, loadPhoto, setPhoto, error: mediaError } = useMedia()
 
-// Node refs for connection lines
+// Node refs for connection lines (Map by node ID)
 const nodeGraphRef = ref<HTMLElement | null>(null)
-const nodeARef = ref<HTMLElement | null>(null)
-const nodeBRef = ref<HTMLElement | null>(null)
-const nodeCRef = ref<HTMLElement | null>(null)
-const nodeDRef = ref<HTMLElement | null>(null)
-const nodeERef = ref<HTMLElement | null>(null)
-const nodeFRef = ref<HTMLElement | null>(null)
-const nodeGRef = ref<HTMLElement | null>(null)
-const nodeHRef = ref<HTMLElement | null>(null)
+const nodeRefs = ref<Map<string, HTMLElement | null>>(new Map())
 
-// Canvas refs
-const scaledCanvasARef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
-const scaledCanvasCRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
-const scaledCanvasDRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
-const scaledCanvasFRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
+// Set node ref helper
+function setNodeRef(nodeId: string, el: HTMLElement | null) {
+  nodeRefs.value.set(nodeId, el)
+}
+
+// Canvas refs (Map by node ID)
+const canvasRefs = ref<Map<string, InstanceType<typeof ScaledCanvas> | null>>(new Map())
+
+// Set canvas ref helper
+function setCanvasRef(nodeId: string, el: InstanceType<typeof ScaledCanvas> | null) {
+  canvasRefs.value.set(nodeId, el)
+}
+
+// Get canvas by node ID
+function getCanvas(nodeId: string): HTMLCanvasElement | null {
+  return canvasRefs.value.get(nodeId)?.canvas ?? null
+}
 
 // Node G: Histogram data
 const histogramData = ref<number[]>(new Array(10).fill(0))
@@ -135,37 +201,30 @@ function createBezierPathH(from: { x: number, y: number }, to: { x: number, y: n
   return `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`
 }
 
-// Update connection lines
+// Update connection lines (UUID-based)
 function updateConnections() {
   if (!nodeGraphRef.value) return
 
   const container = nodeGraphRef.value
+  const paths: string[] = []
 
-  const aBottom = getNodeEdge(nodeARef.value, container, 'bottom')
-  const bBottom = getNodeEdge(nodeBRef.value, container, 'bottom')
-  const cTop = getNodeEdge(nodeCRef.value, container, 'top')
-  const cRight = getNodeEdge(nodeCRef.value, container, 'right')
-  const dLeft = getNodeEdge(nodeDRef.value, container, 'left')
-  const dTop = getNodeEdge(nodeDRef.value, container, 'top')
-  const dBottom = getNodeEdge(nodeDRef.value, container, 'bottom')
-  const eTop = getNodeEdge(nodeERef.value, container, 'top')
-  const eBottom = getNodeEdge(nodeERef.value, container, 'bottom')
-  const fTop = getNodeEdge(nodeFRef.value, container, 'top')
-  const fBottom = getNodeEdge(nodeFRef.value, container, 'bottom')
-  const gTop = getNodeEdge(nodeGRef.value, container, 'top')
-  const gBottom = getNodeEdge(nodeGRef.value, container, 'bottom')
-  const hTop = getNodeEdge(nodeHRef.value, container, 'top')
+  for (const conn of connectionDefinitions.value) {
+    const fromNode = nodeRefs.value.get(conn.from.nodeId)
+    const toNode = nodeRefs.value.get(conn.to.nodeId)
 
-  connectionPaths.value = [
-    createBezierPathV(aBottom, cTop),   // A -> C (vertical)
-    createBezierPathH(cRight, dLeft),   // C -> D (horizontal)
-    createBezierPathV(bBottom, dTop),   // B -> D (vertical)
-    createBezierPathV(bBottom, eTop),   // B -> E (vertical)
-    createBezierPathV(dBottom, fTop),   // D -> F (vertical)
-    createBezierPathV(eBottom, fTop),   // E -> F (vertical)
-    createBezierPathV(fBottom, gTop),   // F -> G (vertical)
-    createBezierPathV(gBottom, hTop),   // G -> H (vertical)
-  ]
+    const fromPos = getNodeEdge(fromNode ?? null, container, conn.from.position)
+    const toPos = getNodeEdge(toNode ?? null, container, conn.to.position)
+
+    // Use horizontal path for left/right connections, vertical for top/bottom
+    const isHorizontal = conn.from.position === 'left' || conn.from.position === 'right'
+    const path = isHorizontal
+      ? createBezierPathH(fromPos, toPos)
+      : createBezierPathV(fromPos, toPos)
+
+    paths.push(path)
+  }
+
+  connectionPaths.value = paths
 }
 
 // object-fit: cover calculation
@@ -190,9 +249,9 @@ function calcCoverRect(srcW: number, srcH: number, dstW: number, dstH: number) {
   return { sx, sy, sw, sh }
 }
 
-// Node A: Source Image
+// Node: Source Image
 function renderSourceImage() {
-  const canvas = scaledCanvasARef.value?.canvas
+  const canvas = getCanvas(NODE_SOURCE)
   if (!media.value || !canvas) return
 
   const ctx = canvas.getContext('2d')
@@ -231,9 +290,9 @@ function calcApcaLuminance(r: number, g: number, b: number): number {
   return 0.2126729 * rLin + 0.7151522 * gLin + 0.0721750 * bLin
 }
 
-// Node C: Luminance Map
+// Node: Luminance Map
 function renderLuminanceMap() {
-  const canvas = scaledCanvasCRef.value?.canvas
+  const canvas = getCanvas(NODE_LUMINANCE)
   if (!media.value || !canvas) return
 
   const ctx = canvas.getContext('2d')
@@ -280,10 +339,10 @@ function renderLuminanceMap() {
   ctx.putImageData(croppedImageData, 0, 0)
 }
 
-// Node D: Extract text region from luminance map
+// Node: Extract text region from luminance map
 function renderTextRegion() {
-  const srcCanvas = scaledCanvasCRef.value?.canvas
-  const dstCanvas = scaledCanvasDRef.value?.canvas
+  const srcCanvas = getCanvas(NODE_LUMINANCE)
+  const dstCanvas = getCanvas(NODE_REGION)
   if (!srcCanvas || !dstCanvas || !textBounds.value) return
 
   const ctx = dstCanvas.getContext('2d')
@@ -339,10 +398,10 @@ function calcApcaContrast(textY: number, bgY: number): number {
   return Lc > 0 ? (Lc - 0.027) * 100 : (Lc + 0.027) * 100
 }
 
-// Node F: APCA Score Map
+// Node: APCA Score Map
 function renderApcaScoreMap() {
-  const srcCanvas = scaledCanvasDRef.value?.canvas
-  const dstCanvas = scaledCanvasFRef.value?.canvas
+  const srcCanvas = getCanvas(NODE_REGION)
+  const dstCanvas = getCanvas(NODE_APCA_SCORE)
   if (!srcCanvas || !dstCanvas) return
 
   const ctx = dstCanvas.getContext('2d')
@@ -394,9 +453,9 @@ function renderApcaScoreMap() {
   ctx.putImageData(dstImageData, 0, 0)
 }
 
-// Node G: Calculate histogram from APCA score map
+// Node: Calculate histogram from APCA score map
 function calculateHistogram() {
-  const srcCanvas = scaledCanvasFRef.value?.canvas
+  const srcCanvas = getCanvas(NODE_APCA_SCORE)
   if (!srcCanvas) return
 
   const ctx = srcCanvas.getContext('2d')
@@ -432,17 +491,17 @@ function calculateHistogram() {
 }
 
 // Watch for media/canvas changes
-watch([media, scaledCanvasARef, scaledCanvasCRef], async () => {
+watch([media, canvasRefs], async () => {
   await nextTick()
   renderSourceImage()
   renderLuminanceMap()
   renderTextRegion()
   renderApcaScoreMap()
   calculateHistogram()
-})
+}, { deep: true })
 
 // Watch for text changes
-watch([textContent, verticalAlign, horizontalAlign, textMeasureRef, scaledCanvasDRef], async () => {
+watch([textContent, verticalAlign, horizontalAlign, textMeasureRef], async () => {
   await nextTick()
   updateTextBounds()
   renderTextRegion()
@@ -451,7 +510,7 @@ watch([textContent, verticalAlign, horizontalAlign, textMeasureRef, scaledCanvas
 })
 
 // Watch for text color changes
-watch([textColor, scaledCanvasFRef], async () => {
+watch(textColor, async () => {
   await nextTick()
   renderApcaScoreMap()
   calculateHistogram()
@@ -615,32 +674,43 @@ onUnmounted(() => {
             />
           </svg>
 
-          <!-- Row 1: A, B -->
-          <div class="node-row">
-            <!-- Node A: Source Image -->
-            <div ref="nodeARef" class="node-wrapper">
+          <!-- Dynamic node rows -->
+          <div v-for="[rowNum, nodes] in nodesByRow" :key="rowNum" class="node-row">
+            <div
+              v-for="node in nodes"
+              :key="node.id"
+              :ref="(el) => setNodeRef(node.id, el as HTMLElement)"
+              class="node-wrapper"
+            >
               <div class="node-title">
-                <span class="node-badge">A</span>
-                <span class="node-title-text">Source</span>
+                <span class="node-badge">{{ node.label }}</span>
+                <span class="node-title-text">{{ node.title }}</span>
               </div>
-              <div class="node-preview">
+
+              <!-- Canvas nodes (source, luminance) -->
+              <div v-if="node.type === 'canvas' && (node.id === NODE_SOURCE || node.id === NODE_LUMINANCE)" class="node-preview">
                 <ScaledCanvas
-                  ref="scaledCanvasARef"
+                  :ref="(el: any) => setCanvasRef(node.id, el)"
                   :canvas-width="CANVAS_WIDTH"
                   :canvas-height="CANVAS_HEIGHT"
                   :class="{ 'opacity-0': !media }"
                 />
                 <p v-if="!media" class="node-empty">No image</p>
               </div>
-            </div>
 
-            <!-- Node B: Text Layer -->
-            <div ref="nodeBRef" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">B</span>
-                <span class="node-title-text">Text</span>
+              <!-- Canvas nodes (region, apca-score) -->
+              <div v-else-if="node.type === 'canvas' && (node.id === NODE_REGION || node.id === NODE_APCA_SCORE)" class="node-preview">
+                <ScaledCanvas
+                  :ref="(el: any) => setCanvasRef(node.id, el)"
+                  :canvas-width="NODE_WIDTH"
+                  :canvas-height="NODE_HEIGHT"
+                  :class="{ 'opacity-0': !textBounds }"
+                />
+                <p v-if="!textBounds" class="node-empty">No text</p>
               </div>
-              <div class="node-preview">
+
+              <!-- Text layer node -->
+              <div v-else-if="node.type === 'text'" class="node-preview">
                 <div
                   class="text-layer"
                   :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
@@ -648,89 +718,17 @@ onUnmounted(() => {
                   <span ref="textMeasureRef" class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Row 2: C, D, E -->
-          <div class="node-row">
-            <!-- Node C: APCA Luminance -->
-            <div ref="nodeCRef" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">C</span>
-                <span class="node-title-text">Luminance</span>
-              </div>
-              <div class="node-preview">
-                <ScaledCanvas
-                  ref="scaledCanvasCRef"
-                  :canvas-width="CANVAS_WIDTH"
-                  :canvas-height="CANVAS_HEIGHT"
-                  :class="{ 'opacity-0': !media }"
-                />
-                <p v-if="!media" class="node-empty">No image</p>
-              </div>
-            </div>
-
-            <!-- Node D: Text Region from Luminance -->
-            <div ref="nodeDRef" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">D</span>
-                <span class="node-title-text">Region</span>
-              </div>
-              <div class="node-preview">
-                <ScaledCanvas
-                  ref="scaledCanvasDRef"
-                  :canvas-width="NODE_WIDTH"
-                  :canvas-height="NODE_HEIGHT"
-                  :class="{ 'opacity-0': !textBounds }"
-                />
-                <p v-if="!textBounds" class="node-empty">No text</p>
-              </div>
-            </div>
-
-            <!-- Node E: Text Color Y -->
-            <div ref="nodeERef" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">E</span>
-                <span class="node-title-text">Text Y</span>
-              </div>
-              <div class="node-preview node-preview-center">
+              <!-- Value display node -->
+              <div v-else-if="node.type === 'value'" class="node-preview node-preview-center">
                 <div class="value-display">
                   <div class="value-color" :style="{ backgroundColor: textColor }"></div>
                   <span class="value-number">{{ textColorY.toFixed(4) }}</span>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Row 3: F -->
-          <div class="node-row">
-            <!-- Node F: APCA Score Map -->
-            <div ref="nodeFRef" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">F</span>
-                <span class="node-title-text">APCA Score</span>
-              </div>
-              <div class="node-preview">
-                <ScaledCanvas
-                  ref="scaledCanvasFRef"
-                  :canvas-width="NODE_WIDTH"
-                  :canvas-height="NODE_HEIGHT"
-                  :class="{ 'opacity-0': !textBounds }"
-                />
-                <p v-if="!textBounds" class="node-empty">No data</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Row 4: G -->
-          <div class="node-row">
-            <!-- Node G: Histogram -->
-            <div ref="nodeGRef" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">G</span>
-                <span class="node-title-text">Distribution</span>
-              </div>
-              <div class="node-preview node-preview-histogram">
+              <!-- Histogram node -->
+              <div v-else-if="node.type === 'histogram'" class="node-preview node-preview-histogram">
                 <div class="histogram">
                   <div
                     v-for="(value, index) in histogramData"
@@ -746,18 +744,9 @@ onUnmounted(() => {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Row 5: H -->
-          <div class="node-row">
-            <!-- Node H: Final Score -->
-            <div ref="nodeHRef" class="node-wrapper">
-              <div class="node-title">
-                <span class="node-badge">H</span>
-                <span class="node-title-text">Score</span>
-              </div>
-              <div class="node-preview node-preview-center">
+              <!-- Score node -->
+              <div v-else-if="node.type === 'score'" class="node-preview node-preview-center">
                 <div class="score-display">
                   <span class="score-number">{{ calculatedScore }}</span>
                   <span class="score-label">APCA Lc</span>
