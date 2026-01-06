@@ -51,11 +51,13 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let cosA = cos(angleRad);
   let sinA = sin(angleRad);
 
-  // 座標を回転（線に垂直な方向を計算）
-  let rotatedY = pos.x * sinA + pos.y * cosA;
+  // キャンバスの中心を基準に回転（線に垂直な方向を計算）
+  let center = texSize * 0.5;
+  let centered = pos.xy - center;
+  let rotatedY = centered.x * sinA + centered.y * cosA;
 
-  // 線のパターン内での位置を計算（0 to spacing）
-  let linePos = rotatedY % u.spacing;
+  // 線のパターン内での位置を計算（負の値でも正しく動作するモジュロ）
+  let linePos = ((rotatedY % u.spacing) + u.spacing) % u.spacing;
 
   // 線の中心からの距離
   let centerDist = abs(linePos - u.spacing * 0.5);

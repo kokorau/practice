@@ -51,14 +51,16 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let cosA = cos(angleRad);
   let sinA = sin(angleRad);
 
-  // 座標を回転
+  // キャンバスの中心を基準に回転
+  let center = texSize * 0.5;
+  let centered = pos.xy - center;
   let rotatedPos = vec2f(
-    pos.x * cosA - pos.y * sinA,
-    pos.x * sinA + pos.y * cosA
+    centered.x * cosA - centered.y * sinA,
+    centered.x * sinA + centered.y * cosA
   );
 
-  // グリッド内の位置を計算
-  let cellPos = rotatedPos % u.spacing;
+  // グリッド内の位置を計算（負の値でも正しく動作するモジュロ）
+  let cellPos = ((rotatedPos % u.spacing) + u.spacing) % u.spacing;
   let cellCenter = u.spacing * 0.5;
 
   // セルの中心からの距離
