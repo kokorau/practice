@@ -89,6 +89,11 @@ const router = createRouter({
       name: 'apca-contrast-checker',
       component: () => import('../views/ApcaContrastCheckerView.vue'),
     },
+    {
+      path: '/texture-playground',
+      name: 'texture-playground',
+      component: () => import('../views/TexturePlaygroundView.vue'),
+    },
   ],
 })
 
