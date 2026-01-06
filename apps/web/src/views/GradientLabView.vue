@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import {
   TextureRenderer,
   createLinearGradientSpec,
@@ -16,77 +16,32 @@ import {
 } from '@practice/texture'
 import NodePreview from '../components/NodePreview.vue'
 import CurveEditor from '../components/CurveEditor.vue'
+import { NodeGraph, NodeWrapper, type Connection } from '../components/NodeGraph'
 import { type Curve } from '../modules/Filter/Domain'
 
-// ノードのDOM参照
-const nodeGraphRef = ref<HTMLElement | null>(null)
-const depthNodeRef = ref<HTMLElement | null>(null)
-const noiseNodeRef = ref<HTMLElement | null>(null)
-const intensityCurveNodeRef = ref<HTMLElement | null>(null)
-const curvedDepthNodeRef = ref<HTMLElement | null>(null)
-const gradientNodeRef = ref<HTMLElement | null>(null)
-const depthNoiseNodeRef = ref<HTMLElement | null>(null)
-const finalNodeRef = ref<HTMLElement | null>(null)
+// Node IDs
+const NODE_DEPTH = 'depth'
+const NODE_NOISE = 'noise'
+const NODE_INTENSITY_CURVE = 'intensity-curve'
+const NODE_CURVED_DEPTH = 'curved-depth'
+const NODE_GRADIENT = 'gradient'
+const NODE_DEPTH_NOISE = 'depth-noise'
+const NODE_FINAL = 'final'
 
-// 接続線のパス
-const connectionPaths = ref<string[]>([])
-
-// ノードの中心位置を取得
-function getNodeCenter(nodeRef: HTMLElement | null, container: HTMLElement | null, position: 'top' | 'bottom') {
-  if (!nodeRef || !container) return { x: 0, y: 0 }
-  const nodeRect = nodeRef.getBoundingClientRect()
-  const containerRect = container.getBoundingClientRect()
-  const x = nodeRect.left - containerRect.left + nodeRect.width / 2
-  const y = position === 'top'
-    ? nodeRect.top - containerRect.top
-    : nodeRect.top - containerRect.top + nodeRect.height
-  return { x, y }
-}
-
-// ベジェ曲線のパスを生成
-function createBezierPath(from: { x: number, y: number }, to: { x: number, y: number }) {
-  const midY = (from.y + to.y) / 2
-  return `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`
-}
-
-// 接続線を更新
-function updateConnections() {
-  if (!nodeGraphRef.value) return
-
-  const container = nodeGraphRef.value
-
-  // Row 1 bottoms
-  const depthBottom = getNodeCenter(depthNodeRef.value, container, 'bottom')
-  const noiseBottom = getNodeCenter(noiseNodeRef.value, container, 'bottom')
-  const intensityCurveBottom = getNodeCenter(intensityCurveNodeRef.value, container, 'bottom')
-
-  // Row 2 tops/bottoms
-  const curvedDepthTop = getNodeCenter(curvedDepthNodeRef.value, container, 'top')
-  const curvedDepthBottom = getNodeCenter(curvedDepthNodeRef.value, container, 'bottom')
-  const depthNoiseTop = getNodeCenter(depthNoiseNodeRef.value, container, 'top')
-  const depthNoiseBottom = getNodeCenter(depthNoiseNodeRef.value, container, 'bottom')
-
-  // Row 3 tops/bottoms
-  const gradientTop = getNodeCenter(gradientNodeRef.value, container, 'top')
-  const gradientBottom = getNodeCenter(gradientNodeRef.value, container, 'bottom')
-
-  // Row 4 top
-  const finalTop = getNodeCenter(finalNodeRef.value, container, 'top')
-
-  connectionPaths.value = [
-    // Depth + IntensityCurve -> CurvedDepth
-    createBezierPath(depthBottom, curvedDepthTop),
-    createBezierPath(intensityCurveBottom, curvedDepthTop),
-    // Noise + CurvedDepth -> DepthNoise
-    createBezierPath(noiseBottom, depthNoiseTop),
-    createBezierPath(curvedDepthBottom, depthNoiseTop),
-    // Depth -> Gradient
-    createBezierPath(depthBottom, gradientTop),
-    // Gradient + DepthNoise -> Final
-    createBezierPath(gradientBottom, finalTop),
-    createBezierPath(depthNoiseBottom, finalTop),
-  ]
-}
+// Connection definitions
+const connections = ref<Connection[]>([
+  // Depth + IntensityCurve -> CurvedDepth
+  { from: { nodeId: NODE_DEPTH, position: 'bottom' }, to: { nodeId: NODE_CURVED_DEPTH, position: 'top' } },
+  { from: { nodeId: NODE_INTENSITY_CURVE, position: 'bottom' }, to: { nodeId: NODE_CURVED_DEPTH, position: 'top' } },
+  // Noise + CurvedDepth -> DepthNoise
+  { from: { nodeId: NODE_NOISE, position: 'bottom' }, to: { nodeId: NODE_DEPTH_NOISE, position: 'top' } },
+  { from: { nodeId: NODE_CURVED_DEPTH, position: 'bottom' }, to: { nodeId: NODE_DEPTH_NOISE, position: 'top' } },
+  // Depth -> Gradient
+  { from: { nodeId: NODE_DEPTH, position: 'bottom' }, to: { nodeId: NODE_GRADIENT, position: 'top' } },
+  // Gradient + DepthNoise -> Final
+  { from: { nodeId: NODE_GRADIENT, position: 'bottom' }, to: { nodeId: NODE_FINAL, position: 'top' } },
+  { from: { nodeId: NODE_DEPTH_NOISE, position: 'bottom' }, to: { nodeId: NODE_FINAL, position: 'top' } },
+])
 
 // グラデーションの2色
 const colorAHex = ref('#ff6b6b')
@@ -345,17 +300,11 @@ onMounted(async () => {
     return
   }
   await initMainRenderer()
-
-  // 接続線を更新（レイアウト完了後）
-  await nextTick()
-  setTimeout(updateConnections, 100)
-  window.addEventListener('resize', updateConnections)
 })
 
 onUnmounted(() => {
   mainRenderer?.destroy()
   mainRenderer = null
-  window.removeEventListener('resize', updateConnections)
 })
 </script>
 
@@ -368,141 +317,89 @@ onUnmounted(() => {
 
     <main class="main">
       <!-- ノードグラフ -->
-      <section ref="nodeGraphRef" class="node-graph">
-        <!-- SVG接続線（オーバーレイ） -->
-        <svg class="connections-overlay">
-          <path
-            v-for="(path, index) in connectionPaths"
-            :key="index"
-            :d="path"
-            class="connection-line"
-          />
-        </svg>
-
+      <NodeGraph :connections="connections" :columns="6" gap="2rem" v-slot="{ setNodeRef }">
         <!-- Row 1: Depth, Noise, Intensity Curve -->
-        <div class="node-row">
-          <div ref="depthNodeRef" class="node-wrapper">
-            <NodePreview
-              :width="NODE_WIDTH"
-              :height="NODE_HEIGHT"
-              :spec="depthSpec"
-            >
-              <template #label>
-                <div class="node-title">
-                  <span class="node-badge">A</span>
-                  <span class="node-title-text">Depth (t)</span>
-                  <span class="node-badge-offset"></span>
-                </div>
-              </template>
-            </NodePreview>
-          </div>
-          <div ref="noiseNodeRef" class="node-wrapper">
-            <NodePreview
-              :width="NODE_WIDTH"
-              :height="NODE_HEIGHT"
-              :spec="noiseSpec"
-            >
-              <template #label>
-                <div class="node-title">
-                  <span class="node-badge">B</span>
-                  <span class="node-title-text">Noise</span>
-                  <span class="node-badge-offset"></span>
-                </div>
-              </template>
-            </NodePreview>
-          </div>
-          <div ref="intensityCurveNodeRef" class="node-wrapper curve-node">
-            <div class="curve-node-header">
-              <div class="node-title">
-                <span class="node-badge">C</span>
-                <span class="node-title-text">Intensity Curve</span>
-                <span class="node-badge-offset"></span>
-              </div>
-            </div>
-            <CurveEditor
-              :curve="intensityCurve"
-              :width="NODE_WIDTH"
-              :height="NODE_HEIGHT"
-              @update:point="updateCurvePoint"
-            />
-          </div>
-        </div>
+        <NodeWrapper
+          :ref="(el: any) => setNodeRef(NODE_DEPTH, el?.$el)"
+          label="A"
+          title="Depth (t)"
+          style="grid-column: 1; grid-row: 1;"
+        >
+          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="depthSpec" />
+        </NodeWrapper>
+
+        <NodeWrapper
+          :ref="(el: any) => setNodeRef(NODE_NOISE, el?.$el)"
+          label="B"
+          title="Noise"
+          style="grid-column: 3; grid-row: 1;"
+        >
+          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="noiseSpec" />
+        </NodeWrapper>
+
+        <NodeWrapper
+          :ref="(el: any) => setNodeRef(NODE_INTENSITY_CURVE, el?.$el)"
+          label="C"
+          title="Intensity Curve"
+          style="grid-column: 5; grid-row: 1;"
+        >
+          <CurveEditor
+            :curve="intensityCurve"
+            :width="NODE_WIDTH"
+            :height="NODE_HEIGHT"
+            @update:point="updateCurvePoint"
+          />
+        </NodeWrapper>
 
         <!-- Row 2: Curved Depth -->
-        <div class="node-row">
-          <div ref="curvedDepthNodeRef" class="node-wrapper">
-            <NodePreview
-              :width="NODE_WIDTH"
-              :height="NODE_HEIGHT"
-              :spec="curvedDepthSpec"
-            >
-              <template #label>
-                <div class="node-title">
-                  <span class="node-badge">D</span>
-                  <span class="node-title-text">Curved Depth</span>
-                  <span class="node-badge-offset"></span>
-                </div>
-              </template>
-            </NodePreview>
-          </div>
-        </div>
+        <NodeWrapper
+          :ref="(el: any) => setNodeRef(NODE_CURVED_DEPTH, el?.$el)"
+          label="D"
+          title="Curved Depth"
+          style="grid-column: 3; grid-row: 2;"
+        >
+          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="curvedDepthSpec" />
+        </NodeWrapper>
 
         <!-- Row 3: Gradient, Depth + Noise -->
-        <div class="node-row">
-          <div ref="gradientNodeRef" class="node-wrapper">
-            <NodePreview
-              :width="NODE_WIDTH"
-              :height="NODE_HEIGHT"
-              :spec="gradientSpec"
-            >
-              <template #label>
-                <div class="node-title">
-                  <span class="node-badge">E</span>
-                  <span class="node-title-text">Gradient</span>
-                  <span class="node-badge-offset"></span>
-                </div>
-              </template>
-            </NodePreview>
-          </div>
-          <div ref="depthNoiseNodeRef" class="node-wrapper">
-            <NodePreview
-              :width="NODE_WIDTH"
-              :height="NODE_HEIGHT"
-              :spec="depthNoiseSpec"
-            >
-              <template #label>
-                <div class="node-title">
-                  <span class="node-badge">F</span>
-                  <span class="node-title-text">Depth + Noise</span>
-                  <span class="node-badge-offset"></span>
-                </div>
-              </template>
-            </NodePreview>
-          </div>
-        </div>
+        <NodeWrapper
+          :ref="(el: any) => setNodeRef(NODE_GRADIENT, el?.$el)"
+          label="E"
+          title="Gradient"
+          style="grid-column: 2; grid-row: 3;"
+        >
+          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="gradientSpec" />
+        </NodeWrapper>
+
+        <NodeWrapper
+          :ref="(el: any) => setNodeRef(NODE_DEPTH_NOISE, el?.$el)"
+          label="F"
+          title="Depth + Noise"
+          style="grid-column: 4; grid-row: 3;"
+        >
+          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="depthNoiseSpec" />
+        </NodeWrapper>
 
         <!-- Row 4: Output node -->
-        <div class="node-row final-row">
-          <div ref="finalNodeRef" class="final-node">
-            <div class="node-title">
-              <span class="node-badge">G</span>
-              <span class="node-title-text">Final Output</span>
-              <span class="node-badge-offset"></span>
-            </div>
-            <canvas
-              v-show="webGPUSupported"
-              ref="mainCanvasRef"
-              :width="MAIN_WIDTH"
-              :height="MAIN_HEIGHT"
-              class="main-canvas"
-            />
-            <div v-if="!webGPUSupported" class="error-message">
-              <p>WebGPU Not Supported</p>
-              <p class="error-detail">{{ webGPUError }}</p>
-            </div>
+        <NodeWrapper
+          :ref="(el: any) => setNodeRef(NODE_FINAL, el?.$el)"
+          label="G"
+          title="Final Output"
+          style="grid-column: 3; grid-row: 4;"
+        >
+          <canvas
+            v-show="webGPUSupported"
+            ref="mainCanvasRef"
+            :width="MAIN_WIDTH"
+            :height="MAIN_HEIGHT"
+            class="main-canvas"
+          />
+          <div v-if="!webGPUSupported" class="error-message">
+            <p>WebGPU Not Supported</p>
+            <p class="error-detail">{{ webGPUError }}</p>
           </div>
-        </div>
-      </section>
+        </NodeWrapper>
+      </NodeGraph>
 
       <!-- コントロールパネル -->
       <aside class="controls-panel">
@@ -703,142 +600,6 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
-/* Node Graph */
-.node-graph {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-}
-
-.connections-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.connection-line {
-  fill: none;
-  stroke: #4ecdc4;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.5;
-}
-
-.node-row {
-  display: flex;
-  gap: 3rem;
-  justify-content: center;
-  position: relative;
-  z-index: 1;
-}
-
-.node-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.node-row-right {
-  justify-content: center;
-  padding-left: calc(200px + 3rem);
-}
-
-.curve-node {
-  padding: 0.5rem;
-  background: #1e1e3a;
-  border: 1px solid #3a3a5a;
-  border-radius: 0.5rem;
-}
-
-.curve-node-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.25rem;
-  gap: 0.5rem;
-}
-
-.curve-preset-select {
-  padding: 0.125rem 0.25rem;
-  background: #2a2a4a;
-  border: 1px solid #3a3a5a;
-  border-radius: 0.25rem;
-  color: #eee;
-  font-size: 0.625rem;
-  cursor: pointer;
-}
-
-.curve-preset-select:focus {
-  outline: none;
-  border-color: #4ecdc4;
-}
-
-.final-row {
-  margin-top: 0;
-}
-
-.final-node {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: #1e1e3a;
-  border: 2px solid #4ecdc4;
-  border-radius: 0.75rem;
-}
-
-.node-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Node Title with Badge */
-.node-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  gap: 0.5rem;
-}
-
-.node-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  background: #4ecdc4;
-  color: #1a1a2e;
-  font-size: 0.625rem;
-  font-weight: 700;
-  border-radius: 0.25rem;
-  flex-shrink: 0;
-}
-
-.node-title-text {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  text-align: center;
-}
-
-.node-badge-offset {
-  width: 1.25rem;
-  flex-shrink: 0;
-}
 
 .main-canvas {
   border-radius: 0.5rem;

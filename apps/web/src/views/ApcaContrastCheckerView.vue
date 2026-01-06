@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useMedia } from '../composables/Media'
 import { $Media } from '../modules/Media'
 import { photoRepository } from '../modules/Photo/Infra/photoRepository'
@@ -14,25 +14,9 @@ import {
   $ContrastAnalyzer,
   $ContrastScore,
 } from '../modules/ContrastChecker'
+import { NodeGraph, NodeWrapper, type Connection } from '../components/NodeGraph'
 
-// Node types
-type NodeType = 'canvas' | 'text' | 'value' | 'histogram' | 'score'
-type EdgePosition = 'top' | 'bottom' | 'left' | 'right'
-
-interface NodeDefinition {
-  id: string           // UUID for connections
-  label: string        // Display label (A, B, C...)
-  title: string        // Node title
-  type: NodeType
-  row: number          // Row position for layout
-}
-
-interface Connection {
-  from: { nodeId: string; position: EdgePosition }
-  to: { nodeId: string; position: EdgePosition }
-}
-
-// Node definitions
+// Node IDs
 const NODE_SOURCE = 'source-image'
 const NODE_TEXT = 'text-layer'
 const NODE_COMPOSITE = 'composite-preview'
@@ -43,19 +27,8 @@ const NODE_APCA_SCORE = 'apca-score-map'
 const NODE_HISTOGRAM = 'histogram'
 const NODE_FINAL_SCORE = 'final-score'
 
-const nodeDefinitions = ref<NodeDefinition[]>([
-  { id: NODE_SOURCE, label: 'A', title: 'Source', type: 'canvas', row: 1 },
-  { id: NODE_TEXT, label: 'B', title: 'Text', type: 'text', row: 1 },
-  { id: NODE_COMPOSITE, label: 'I', title: 'Composite', type: 'canvas', row: 1 },
-  { id: NODE_LUMINANCE, label: 'C', title: 'Luminance', type: 'canvas', row: 2 },
-  { id: NODE_REGION, label: 'D', title: 'Region', type: 'canvas', row: 2 },
-  { id: NODE_TEXT_Y, label: 'E', title: 'Text Y', type: 'value', row: 2 },
-  { id: NODE_APCA_SCORE, label: 'F', title: 'APCA Score', type: 'canvas', row: 3 },
-  { id: NODE_HISTOGRAM, label: 'G', title: 'Distribution', type: 'histogram', row: 4 },
-  { id: NODE_FINAL_SCORE, label: 'H', title: 'Score', type: 'score', row: 5 },
-])
-
-const connectionDefinitions = ref<Connection[]>([
+// Connection definitions
+const connections = ref<Connection[]>([
   { from: { nodeId: NODE_SOURCE, position: 'bottom' }, to: { nodeId: NODE_LUMINANCE, position: 'top' } },
   { from: { nodeId: NODE_LUMINANCE, position: 'right' }, to: { nodeId: NODE_REGION, position: 'left' } },
   { from: { nodeId: NODE_TEXT, position: 'bottom' }, to: { nodeId: NODE_REGION, position: 'top' } },
@@ -65,15 +38,6 @@ const connectionDefinitions = ref<Connection[]>([
   { from: { nodeId: NODE_APCA_SCORE, position: 'bottom' }, to: { nodeId: NODE_HISTOGRAM, position: 'top' } },
   { from: { nodeId: NODE_HISTOGRAM, position: 'bottom' }, to: { nodeId: NODE_FINAL_SCORE, position: 'top' } },
 ])
-
-// Get node label/title by ID
-function getNodeLabel(id: string): string {
-  return nodeDefinitions.value.find(n => n.id === id)?.label ?? ''
-}
-
-function getNodeTitle(id: string): string {
-  return nodeDefinitions.value.find(n => n.id === id)?.title ?? ''
-}
 
 // Node sizes (like GradientLabView)
 const NODE_WIDTH = 200
@@ -86,16 +50,7 @@ const CANVAS_HEIGHT = 360
 // Media
 const { media, loadPhoto, setPhoto, error: mediaError } = useMedia()
 
-// Node refs for connection lines (Map by node ID)
-const nodeGraphRef = ref<HTMLElement | null>(null)
-const nodeRefs = ref<Map<string, HTMLElement | null>>(new Map())
-
-// Set node ref helper
-function setNodeRef(nodeId: string, el: HTMLElement | null) {
-  nodeRefs.value.set(nodeId, el)
-}
-
-// Canvas refs (individual refs for reliability)
+// Canvas refs
 const canvasSourceRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const canvasCompositeRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
 const canvasLuminanceRef = ref<InstanceType<typeof ScaledCanvas> | null>(null)
@@ -125,9 +80,6 @@ const scoreThreshold = ref(2) // percentage threshold
 const calculatedScore = computed(() => {
   return $ContrastScore.calculateMinimumScore(histogramData.value, scoreThreshold.value)
 })
-
-// Connection paths
-const connectionPaths = ref<string[]>([])
 
 // Node B: Text Layer
 const textContent = ref('Hello World')
@@ -176,63 +128,6 @@ function updateTextBounds() {
   }
 
   textBounds.value = { x, y, width: textWidth, height: textHeight }
-}
-
-// Get node edge position
-function getNodeEdge(nodeRef: HTMLElement | null, container: HTMLElement | null, position: 'top' | 'bottom' | 'left' | 'right') {
-  if (!nodeRef || !container) return { x: 0, y: 0 }
-  const nodeRect = nodeRef.getBoundingClientRect()
-  const containerRect = container.getBoundingClientRect()
-
-  const left = nodeRect.left - containerRect.left
-  const top = nodeRect.top - containerRect.top
-  const centerX = left + nodeRect.width / 2
-  const centerY = top + nodeRect.height / 2
-
-  switch (position) {
-    case 'top': return { x: centerX, y: top }
-    case 'bottom': return { x: centerX, y: top + nodeRect.height }
-    case 'left': return { x: left, y: centerY }
-    case 'right': return { x: left + nodeRect.width, y: centerY }
-  }
-}
-
-// Create bezier path (vertical)
-function createBezierPathV(from: { x: number, y: number }, to: { x: number, y: number }) {
-  const midY = (from.y + to.y) / 2
-  return `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`
-}
-
-// Create bezier path (horizontal)
-function createBezierPathH(from: { x: number, y: number }, to: { x: number, y: number }) {
-  const midX = (from.x + to.x) / 2
-  return `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`
-}
-
-// Update connection lines (UUID-based)
-function updateConnections() {
-  if (!nodeGraphRef.value) return
-
-  const container = nodeGraphRef.value
-  const paths: string[] = []
-
-  for (const conn of connectionDefinitions.value) {
-    const fromNode = nodeRefs.value.get(conn.from.nodeId)
-    const toNode = nodeRefs.value.get(conn.to.nodeId)
-
-    const fromPos = getNodeEdge(fromNode ?? null, container, conn.from.position)
-    const toPos = getNodeEdge(toNode ?? null, container, conn.to.position)
-
-    // Use horizontal path for left/right connections, vertical for top/bottom
-    const isHorizontal = conn.from.position === 'left' || conn.from.position === 'right'
-    const path = isHorizontal
-      ? createBezierPathH(fromPos, toPos)
-      : createBezierPathV(fromPos, toPos)
-
-    paths.push(path)
-  }
-
-  connectionPaths.value = paths
 }
 
 // object-fit: cover calculation
@@ -494,7 +389,6 @@ onMounted(async () => {
 
   await nextTick()
   setTimeout(() => {
-    updateConnections()
     updateTextBounds()
     renderSourceImage()
     renderLuminanceMap()
@@ -502,11 +396,6 @@ onMounted(async () => {
     renderApcaScoreMap()
     calculateHistogram()
   }, 100)
-  window.addEventListener('resize', updateConnections)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateConnections)
 })
 </script>
 
@@ -606,40 +495,32 @@ onUnmounted(() => {
 
       <!-- Main Content -->
       <div class="flex-1 flex flex-col min-w-0 p-6 overflow-auto">
-        <section ref="nodeGraphRef" class="node-graph">
-          <!-- SVG Connection Lines -->
-          <svg class="connections-overlay">
-            <path
-              v-for="(path, index) in connectionPaths"
-              :key="index"
-              :d="path"
-              class="connection-line"
+        <NodeGraph :connections="connections" :columns="8" gap="2rem" v-slot="{ setNodeRef }">
+          <!-- Row 1: Source, Text -->
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_SOURCE, el?.$el)"
+            label="A"
+            title="Source"
+            style="grid-column: 2 / span 2; grid-row: 1;"
+          >
+            <ScaledCanvas
+              ref="canvasSourceRef"
+              :canvas-width="CANVAS_WIDTH"
+              :canvas-height="CANVAS_HEIGHT"
+              :display-width="NODE_WIDTH"
+              :display-height="NODE_HEIGHT"
+              :class="{ 'opacity-0': !media }"
             />
-          </svg>
+            <p v-if="!media" class="node-empty">No image</p>
+          </NodeWrapper>
 
-          <!-- Row 1: Source, Text (中央寄せ) -->
-          <div :ref="(el) => setNodeRef(NODE_SOURCE, el as HTMLElement)" class="node-wrapper" style="grid-column: 2 / span 2; grid-row: 1;">
-            <div class="node-title">
-              <span class="node-badge">{{ getNodeLabel(NODE_SOURCE) }}</span>
-              <span class="node-title-text">{{ getNodeTitle(NODE_SOURCE) }}</span>
-            </div>
-            <div class="node-preview">
-              <ScaledCanvas
-                ref="canvasSourceRef"
-                :canvas-width="CANVAS_WIDTH"
-                :canvas-height="CANVAS_HEIGHT"
-                :class="{ 'opacity-0': !media }"
-              />
-              <p v-if="!media" class="node-empty">No image</p>
-            </div>
-          </div>
-
-          <div :ref="(el) => setNodeRef(NODE_TEXT, el as HTMLElement)" class="node-wrapper" style="grid-column: 5 / span 2; grid-row: 1;">
-            <div class="node-title">
-              <span class="node-badge">{{ getNodeLabel(NODE_TEXT) }}</span>
-              <span class="node-title-text">{{ getNodeTitle(NODE_TEXT) }}</span>
-            </div>
-            <div class="node-preview">
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_TEXT, el?.$el)"
+            label="B"
+            title="Text"
+            style="grid-column: 5 / span 2; grid-row: 1;"
+          >
+            <div class="node-content">
               <div
                 class="text-layer"
                 :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
@@ -647,100 +528,83 @@ onUnmounted(() => {
                 <span ref="textMeasureRef" class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
               </div>
             </div>
-          </div>
+          </NodeWrapper>
 
-          <div :ref="(el) => setNodeRef(NODE_COMPOSITE, el as HTMLElement)" class="node-wrapper" style="grid-column: 3 / span 2; grid-row: 5;">
-            <div class="node-title">
-              <span class="node-badge">{{ getNodeLabel(NODE_COMPOSITE) }}</span>
-              <span class="node-title-text">{{ getNodeTitle(NODE_COMPOSITE) }}</span>
-            </div>
-            <div class="node-preview node-preview-composite">
-              <ScaledCanvas
-                ref="canvasCompositeRef"
-                :canvas-width="CANVAS_WIDTH"
-                :canvas-height="CANVAS_HEIGHT"
-                :class="{ 'opacity-0': !media }"
-              />
-              <div
-                class="text-layer text-layer-overlay"
-                :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
-              >
-                <span class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
-              </div>
-              <p v-if="!media" class="node-empty">No image</p>
-            </div>
-          </div>
+          <!-- Row 2: Luminance, Region, Text Y -->
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_LUMINANCE, el?.$el)"
+            label="C"
+            title="Luminance"
+            style="grid-column: 2 / span 2; grid-row: 2;"
+          >
+            <ScaledCanvas
+              ref="canvasLuminanceRef"
+              :canvas-width="CANVAS_WIDTH"
+              :canvas-height="CANVAS_HEIGHT"
+              :display-width="NODE_WIDTH"
+              :display-height="NODE_HEIGHT"
+              :class="{ 'opacity-0': !media }"
+            />
+            <p v-if="!media" class="node-empty">No image</p>
+          </NodeWrapper>
 
-          <!-- Row 2: Luminance, Region, Text Y (中央寄せ) -->
-          <div :ref="(el) => setNodeRef(NODE_LUMINANCE, el as HTMLElement)" class="node-wrapper" style="grid-column: 2 / span 2; grid-row: 2;">
-            <div class="node-title">
-              <span class="node-badge">{{ getNodeLabel(NODE_LUMINANCE) }}</span>
-              <span class="node-title-text">{{ getNodeTitle(NODE_LUMINANCE) }}</span>
-            </div>
-            <div class="node-preview">
-              <ScaledCanvas
-                ref="canvasLuminanceRef"
-                :canvas-width="CANVAS_WIDTH"
-                :canvas-height="CANVAS_HEIGHT"
-                :class="{ 'opacity-0': !media }"
-              />
-              <p v-if="!media" class="node-empty">No image</p>
-            </div>
-          </div>
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_REGION, el?.$el)"
+            label="D"
+            title="Region"
+            style="grid-column: 4 / span 2; grid-row: 2;"
+          >
+            <ScaledCanvas
+              ref="canvasRegionRef"
+              :canvas-width="NODE_WIDTH"
+              :canvas-height="NODE_HEIGHT"
+              :display-width="NODE_WIDTH"
+              :display-height="NODE_HEIGHT"
+              :class="{ 'opacity-0': !textBounds }"
+            />
+            <p v-if="!textBounds" class="node-empty">No text</p>
+          </NodeWrapper>
 
-          <div :ref="(el) => setNodeRef(NODE_REGION, el as HTMLElement)" class="node-wrapper" style="grid-column: 4 / span 2; grid-row: 2;">
-            <div class="node-title">
-              <span class="node-badge">{{ getNodeLabel(NODE_REGION) }}</span>
-              <span class="node-title-text">{{ getNodeTitle(NODE_REGION) }}</span>
-            </div>
-            <div class="node-preview">
-              <ScaledCanvas
-                ref="canvasRegionRef"
-                :canvas-width="NODE_WIDTH"
-                :canvas-height="NODE_HEIGHT"
-                :class="{ 'opacity-0': !textBounds }"
-              />
-              <p v-if="!textBounds" class="node-empty">No text</p>
-            </div>
-          </div>
-
-          <div :ref="(el) => setNodeRef(NODE_TEXT_Y, el as HTMLElement)" class="node-wrapper" style="grid-column: 6 / span 2; grid-row: 2;">
-            <div class="node-title">
-              <span class="node-badge">{{ getNodeLabel(NODE_TEXT_Y) }}</span>
-              <span class="node-title-text">{{ getNodeTitle(NODE_TEXT_Y) }}</span>
-            </div>
-            <div class="node-preview node-preview-center">
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_TEXT_Y, el?.$el)"
+            label="E"
+            title="Text Y"
+            style="grid-column: 6 / span 2; grid-row: 2;"
+          >
+            <div class="node-content node-content--center">
               <div class="value-display">
                 <div class="value-color" :style="{ backgroundColor: textColor }"></div>
                 <span class="value-number">{{ textColorY.toFixed(4) }}</span>
               </div>
             </div>
-          </div>
+          </NodeWrapper>
 
           <!-- Row 3: APCA Score -->
-          <div :ref="(el) => setNodeRef(NODE_APCA_SCORE, el as HTMLElement)" class="node-wrapper" style="grid-column: 5 / span 2; grid-row: 3;">
-            <div class="node-title">
-              <span class="node-badge">{{ getNodeLabel(NODE_APCA_SCORE) }}</span>
-              <span class="node-title-text">{{ getNodeTitle(NODE_APCA_SCORE) }}</span>
-            </div>
-            <div class="node-preview">
-              <ScaledCanvas
-                ref="canvasApcaScoreRef"
-                :canvas-width="NODE_WIDTH"
-                :canvas-height="NODE_HEIGHT"
-                :class="{ 'opacity-0': !textBounds }"
-              />
-              <p v-if="!textBounds" class="node-empty">No data</p>
-            </div>
-          </div>
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_APCA_SCORE, el?.$el)"
+            label="F"
+            title="APCA Score"
+            style="grid-column: 5 / span 2; grid-row: 3;"
+          >
+            <ScaledCanvas
+              ref="canvasApcaScoreRef"
+              :canvas-width="NODE_WIDTH"
+              :canvas-height="NODE_HEIGHT"
+              :display-width="NODE_WIDTH"
+              :display-height="NODE_HEIGHT"
+              :class="{ 'opacity-0': !textBounds }"
+            />
+            <p v-if="!textBounds" class="node-empty">No data</p>
+          </NodeWrapper>
 
           <!-- Row 4: Histogram -->
-          <div :ref="(el) => setNodeRef(NODE_HISTOGRAM, el as HTMLElement)" class="node-wrapper" style="grid-column: 5 / span 2; grid-row: 4;">
-            <div class="node-title">
-              <span class="node-badge">{{ getNodeLabel(NODE_HISTOGRAM) }}</span>
-              <span class="node-title-text">{{ getNodeTitle(NODE_HISTOGRAM) }}</span>
-            </div>
-            <div class="node-preview node-preview-histogram">
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_HISTOGRAM, el?.$el)"
+            label="G"
+            title="Distribution"
+            style="grid-column: 5 / span 2; grid-row: 4;"
+          >
+            <div class="node-content">
               <div class="histogram">
                 <div
                   v-for="(value, index) in histogramData.bins"
@@ -756,102 +620,63 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
-          </div>
+          </NodeWrapper>
 
-          <!-- Row 5: Final Score -->
-          <div :ref="(el) => setNodeRef(NODE_FINAL_SCORE, el as HTMLElement)" class="node-wrapper" style="grid-column: 5 / span 2; grid-row: 5;">
-            <div class="node-title">
-              <span class="node-badge">{{ getNodeLabel(NODE_FINAL_SCORE) }}</span>
-              <span class="node-title-text">{{ getNodeTitle(NODE_FINAL_SCORE) }}</span>
+          <!-- Row 5: Composite, Final Score -->
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_COMPOSITE, el?.$el)"
+            label="I"
+            title="Composite"
+            style="grid-column: 3 / span 2; grid-row: 5;"
+          >
+            <div class="composite-container">
+              <ScaledCanvas
+                ref="canvasCompositeRef"
+                :canvas-width="CANVAS_WIDTH"
+                :canvas-height="CANVAS_HEIGHT"
+                :display-width="NODE_WIDTH"
+                :display-height="NODE_HEIGHT"
+                :class="{ 'opacity-0': !media }"
+              />
+              <div
+                class="text-layer text-layer-overlay"
+                :class="[`align-v-${verticalAlign}`, `align-h-${horizontalAlign}`]"
+              >
+                <span class="text-layer-title" :style="{ color: textColor }">{{ textContent }}</span>
+              </div>
+              <p v-if="!media" class="node-empty">No image</p>
             </div>
-            <div class="node-preview node-preview-center">
+          </NodeWrapper>
+
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_FINAL_SCORE, el?.$el)"
+            label="H"
+            title="Score"
+            style="grid-column: 5 / span 2; grid-row: 5;"
+          >
+            <div class="node-content node-content--center">
               <div class="score-display">
                 <span class="score-number">{{ calculatedScore }}</span>
                 <span class="score-label">APCA Lc</span>
               </div>
             </div>
-          </div>
-        </section>
+          </NodeWrapper>
+        </NodeGraph>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.node-graph {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 3rem;
-}
-
-.connections-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.connection-line {
-  fill: none;
-  stroke: #4ecdc4;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.5;
-}
-
-.node-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  position: relative;
-  z-index: 1;
-}
-
-.node-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.node-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  background: #4ecdc4;
-  color: #1a1a2e;
-  font-size: 0.625rem;
-  font-weight: 700;
-  border-radius: 0.25rem;
-}
-
-.node-title-text {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.node-preview {
-  position: relative;
-  background: #1e1e3a;
-  border: 1px solid #3a3a5a;
-  border-radius: 0.5rem;
-  overflow: hidden;
+/* Node content container - fixed size */
+.node-content {
   width: 200px;
   height: 112px;
+  position: relative;
+  overflow: hidden;
 }
 
-.node-preview-center {
+.node-content--center {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -921,7 +746,7 @@ onUnmounted(() => {
   left: 0;
 }
 
-.node-preview-composite {
+.composite-container {
   position: relative;
 }
 
@@ -948,13 +773,8 @@ onUnmounted(() => {
 }
 
 /* Histogram */
-.node-preview-histogram {
-  display: flex;
-  align-items: flex-end;
-  padding: 8px 4px 16px;
-}
-
 .histogram {
+  padding: 8px 4px 16px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;

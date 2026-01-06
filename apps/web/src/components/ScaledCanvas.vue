@@ -1,45 +1,34 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = withDefaults(defineProps<{
   /** Internal canvas width */
   canvasWidth?: number
   /** Internal canvas height */
   canvasHeight?: number
+  /** Display width (optional, defaults to canvasWidth) */
+  displayWidth?: number
+  /** Display height (optional, defaults to canvasHeight) */
+  displayHeight?: number
 }>(), {
   canvasWidth: 640,
   canvasHeight: 360,
 })
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-const containerRef = ref<HTMLElement | null>(null)
-const containerWidth = ref(0)
 
-// Calculate scale based on container width
-const scale = computed(() => {
-  if (containerWidth.value === 0) return 1
-  return containerWidth.value / props.canvasWidth
-})
+// Display size (use props or default to canvas size)
+const displayW = computed(() => props.displayWidth ?? props.canvasWidth)
+const displayH = computed(() => props.displayHeight ?? props.canvasHeight)
 
-// Observe container size
-let resizeObserver: ResizeObserver | null = null
+// Calculate scale
+const scale = computed(() => displayW.value / props.canvasWidth)
 
-onMounted(() => {
-  if (containerRef.value) {
-    resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        containerWidth.value = entry.contentRect.width
-      }
-    })
-    resizeObserver.observe(containerRef.value)
-    // Initial measurement
-    containerWidth.value = containerRef.value.clientWidth
-  }
-})
-
-onUnmounted(() => {
-  resizeObserver?.disconnect()
-})
+// Container style
+const containerStyle = computed(() => ({
+  width: `${displayW.value}px`,
+  height: `${displayH.value}px`,
+}))
 
 defineExpose({
   canvas: canvasRef,
@@ -47,7 +36,7 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="containerRef" class="scaled-canvas-container">
+  <div class="scaled-canvas-container" :style="containerStyle">
     <canvas
       ref="canvasRef"
       :width="canvasWidth"
@@ -62,7 +51,6 @@ defineExpose({
 <style scoped>
 .scaled-canvas-container {
   position: relative;
-  width: 100%;
   overflow: hidden;
 }
 
