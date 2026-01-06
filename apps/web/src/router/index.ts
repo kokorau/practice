@@ -80,11 +80,6 @@ const router = createRouter({
       component: () => import('../views/HeroViewGeneratorView.vue'),
     },
     {
-      path: '/gradient-lab',
-      name: 'gradient-lab',
-      component: () => import('../views/GradientLabView.vue'),
-    },
-    {
       path: '/apca-contrast-checker',
       name: 'apca-contrast-checker',
       component: () => import('../views/ApcaContrastCheckerView.vue'),
