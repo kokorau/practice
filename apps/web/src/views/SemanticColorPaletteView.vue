@@ -22,11 +22,12 @@ import ColorPresets from '../components/SiteBuilder/ColorPresets.vue'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
+import ContrastTab from '../components/SiteBuilder/ContrastTab.vue'
 
 // ============================================================
 // Tab State
 // ============================================================
-type TabId = 'primitive' | 'palette'
+type TabId = 'primitive' | 'palette' | 'contrast'
 const activeTab = ref<TabId>('primitive')
 
 // ============================================================
@@ -318,7 +319,14 @@ watch(palette, updateStyles)
             :class="{ active: activeTab === 'palette' }"
             @click="activeTab = 'palette'"
           >
-            Palette Preview
+            Palette
+          </button>
+          <button
+            class="tab-button"
+            :class="{ active: activeTab === 'contrast' }"
+            @click="activeTab = 'contrast'"
+          >
+            Contrast
           </button>
         </nav>
       </header>
@@ -343,6 +351,11 @@ watch(palette, updateStyles)
           :components="components"
           :actions="actions"
         />
+      </div>
+
+      <!-- Contrast Tab -->
+      <div v-if="activeTab === 'contrast'" class="tab-content">
+        <ContrastTab :primitive-palette="primitivePalette" />
       </div>
     </main>
   </div>

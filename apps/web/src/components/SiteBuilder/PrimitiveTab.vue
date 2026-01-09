@@ -4,6 +4,7 @@ import {
   type PrimitivePalette,
   BRAND_KEYS,
   ACCENT_KEYS,
+  FOUNDATION_DERIVED_KEYS,
 } from '../../modules/SemanticColorPalette/Domain'
 import ColorSwatchTooltip from './ColorSwatchTooltip.vue'
 
@@ -205,9 +206,9 @@ defineProps<{
       </div>
     </section>
 
-    <!-- Foundation Ramp -->
+    <!-- Foundation Ramp + Foundation -->
     <section class="section">
-      <h2 class="section-heading">Foundation Ramp</h2>
+      <h2 class="section-heading">Foundation Ramp + Foundation</h2>
       <p class="section-description">
         Foundation hue with minimal chroma ({{ primitivePalette.F0.C.toFixed(4) }}) for surface colors
       </p>
@@ -228,7 +229,20 @@ defineProps<{
             </div>
           </div>
         </div>
-        <div class="derivative-group derivative-placeholder" />
+        <div class="derivative-group">
+          <div
+            v-for="key in FOUNDATION_DERIVED_KEYS"
+            :key="key"
+            class="derivative-item"
+          >
+            <ColorSwatchTooltip
+              :color="primitivePalette[key]"
+              :label="key"
+              size="medium"
+            />
+            <span class="derivative-key">{{ key }}</span>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -358,10 +372,6 @@ defineProps<{
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
-}
-
-.derivative-placeholder {
-  visibility: hidden;
 }
 
 .derivative-item {

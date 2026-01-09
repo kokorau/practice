@@ -31,7 +31,15 @@ export type BrandKey = (typeof BRAND_KEYS)[number]
 export const ACCENT_KEYS = ['A', 'At', 'As', 'Af'] as const
 export type AccentKey = (typeof ACCENT_KEYS)[number]
 
-export const PRIMITIVE_KEYS = [...NEUTRAL_KEYS, ...FOUNDATION_KEYS, ...ACCENT_RAMP_KEYS, ...BRAND_KEYS, ...ACCENT_KEYS] as const
+// Foundation-derived keys:
+// F: Foundation (input color)
+// Ft: Foundation Tint (light surface)
+// Fs: Foundation Shade (dark surface)
+// Ff: Foundation Fill (strong surface)
+export const FOUNDATION_DERIVED_KEYS = ['F', 'Ft', 'Fs', 'Ff'] as const
+export type FoundationDerivedKey = (typeof FOUNDATION_DERIVED_KEYS)[number]
+
+export const PRIMITIVE_KEYS = [...NEUTRAL_KEYS, ...FOUNDATION_KEYS, ...ACCENT_RAMP_KEYS, ...BRAND_KEYS, ...ACCENT_KEYS, ...FOUNDATION_DERIVED_KEYS] as const
 export type PrimitiveKey = (typeof PRIMITIVE_KEYS)[number]
 
 export type PrimitivePalette = Record<PrimitiveKey, Oklch> & {

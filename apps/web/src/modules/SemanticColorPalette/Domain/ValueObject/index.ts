@@ -27,11 +27,12 @@ export type {
   AccentRampKey,
   BrandKey,
   AccentKey,
+  FoundationDerivedKey,
   PrimitiveKey,
   PrimitivePalette,
 } from './PrimitivePalette'
 
-export { NEUTRAL_KEYS, FOUNDATION_KEYS, ACCENT_RAMP_KEYS, BRAND_KEYS, ACCENT_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
+export { NEUTRAL_KEYS, FOUNDATION_KEYS, ACCENT_RAMP_KEYS, BRAND_KEYS, ACCENT_KEYS, FOUNDATION_DERIVED_KEYS, PRIMITIVE_KEYS } from './PrimitivePalette'
 
 export type {
   FoundationColorValidationResult,
