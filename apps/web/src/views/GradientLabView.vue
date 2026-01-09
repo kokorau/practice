@@ -17,7 +17,15 @@ import {
 import NodePreview from '../components/NodePreview.vue'
 import CurveEditor from '../components/CurveEditor.vue'
 import { NodeGraph, NodeWrapper, type Connection } from '../components/NodeGraph'
-import { type Curve } from '../modules/Filter/Domain'
+import { type Curve } from '../modules/Filter/Domain'// View types for left panel navigation
+type ShaderView = 'gradient-grain' | 'depth-maps' | 'noise'
+const currentView = ref<ShaderView>('gradient-grain')
+
+const viewItems: { id: ShaderView; label: string; description: string }[] = [
+  { id: 'gradient-grain', label: 'Gradient Grain', description: 'Dithered gradient with noise' },
+  { id: 'depth-maps', label: 'Depth Maps', description: 'Various depth map types' },
+  { id: 'noise', label: 'Noise', description: 'Noise generation patterns' },
+]
 
 // Node IDs
 const NODE_DEPTH = 'depth'
@@ -316,93 +324,131 @@ onUnmounted(() => {
     </header>
 
     <main class="main">
-      <!-- ノードグラフ -->
-      <NodeGraph :connections="connections" :columns="6" gap="2rem" v-slot="{ setNodeRef }">
-        <!-- Row 1: Depth, Noise, Intensity Curve -->
-        <NodeWrapper
-          :ref="(el: any) => setNodeRef(NODE_DEPTH, el?.$el)"
-          label="A"
-          title="Depth (t)"
-          style="grid-column: 1; grid-row: 1;"
-        >
-          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="depthSpec" />
-        </NodeWrapper>
+      <!-- 左パネル: ビュー切り替え -->
+      <aside class="left-panel">
+        <div class="panel-title">Shader Views</div>
+        <nav class="view-nav">
+          <button
+            v-for="item in viewItems"
+            :key="item.id"
+            class="view-item"
+            :class="{ active: currentView === item.id }"
+            @click="currentView = item.id"
+          >
+            <span class="view-label">{{ item.label }}</span>
+            <span class="view-description">{{ item.description }}</span>
+          </button>
+        </nav>
+      </aside>
 
-        <NodeWrapper
-          :ref="(el: any) => setNodeRef(NODE_NOISE, el?.$el)"
-          label="B"
-          title="Noise"
-          style="grid-column: 3; grid-row: 1;"
-        >
-          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="noiseSpec" />
-        </NodeWrapper>
+      <!-- メインコンテンツ: Gradient Grain -->
+      <div v-if="currentView === 'gradient-grain'" class="main-content">
+        <!-- ノードグラフ -->
+        <NodeGraph :connections="connections" :columns="6" gap="0.5rem" v-slot="{ setNodeRef }">
+          <!-- Row 1: Depth, Noise, Intensity Curve -->
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_DEPTH, el?.$el)"
+            label="A"
+            title="Depth (t)"
+            style="grid-column: 1 / span 2; grid-row: 1;"
+          >
+            <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="depthSpec" />
+          </NodeWrapper>
 
-        <NodeWrapper
-          :ref="(el: any) => setNodeRef(NODE_INTENSITY_CURVE, el?.$el)"
-          label="C"
-          title="Intensity Curve"
-          style="grid-column: 5; grid-row: 1;"
-        >
-          <CurveEditor
-            :curve="intensityCurve"
-            :width="NODE_WIDTH"
-            :height="NODE_HEIGHT"
-            @update:point="updateCurvePoint"
-          />
-        </NodeWrapper>
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_NOISE, el?.$el)"
+            label="B"
+            title="Noise"
+            style="grid-column: 3 / span 2; grid-row: 1;"
+          >
+            <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="noiseSpec" />
+          </NodeWrapper>
 
-        <!-- Row 2: Curved Depth -->
-        <NodeWrapper
-          :ref="(el: any) => setNodeRef(NODE_CURVED_DEPTH, el?.$el)"
-          label="D"
-          title="Curved Depth"
-          style="grid-column: 3; grid-row: 2;"
-        >
-          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="curvedDepthSpec" />
-        </NodeWrapper>
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_INTENSITY_CURVE, el?.$el)"
+            label="C"
+            title="Intensity Curve"
+            style="grid-column: 5 / span 2; grid-row: 1;"
+          >
+            <CurveEditor
+              :curve="intensityCurve"
+              :width="NODE_WIDTH"
+              :height="NODE_HEIGHT"
+              @update:point="updateCurvePoint"
+            />
+          </NodeWrapper>
 
-        <!-- Row 3: Gradient, Depth + Noise -->
-        <NodeWrapper
-          :ref="(el: any) => setNodeRef(NODE_GRADIENT, el?.$el)"
-          label="E"
-          title="Gradient"
-          style="grid-column: 2; grid-row: 3;"
-        >
-          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="gradientSpec" />
-        </NodeWrapper>
+          <!-- Row 2: Curved Depth (under Intensity Curve) -->
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_CURVED_DEPTH, el?.$el)"
+            label="D"
+            title="Curved Depth"
+            style="grid-column: 5 / span 2; grid-row: 2;"
+          >
+            <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="curvedDepthSpec" />
+          </NodeWrapper>
 
-        <NodeWrapper
-          :ref="(el: any) => setNodeRef(NODE_DEPTH_NOISE, el?.$el)"
-          label="F"
-          title="Depth + Noise"
-          style="grid-column: 4; grid-row: 3;"
-        >
-          <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="depthNoiseSpec" />
-        </NodeWrapper>
+          <!-- Row 3: Gradient, Depth + Noise -->
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_GRADIENT, el?.$el)"
+            label="E"
+            title="Gradient"
+            style="grid-column: 2 / span 2; grid-row: 3;"
+          >
+            <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="gradientSpec" />
+          </NodeWrapper>
 
-        <!-- Row 4: Output node -->
-        <NodeWrapper
-          :ref="(el: any) => setNodeRef(NODE_FINAL, el?.$el)"
-          label="G"
-          title="Final Output"
-          style="grid-column: 3; grid-row: 4;"
-        >
-          <canvas
-            v-show="webGPUSupported"
-            ref="mainCanvasRef"
-            :width="MAIN_WIDTH"
-            :height="MAIN_HEIGHT"
-            class="main-canvas"
-          />
-          <div v-if="!webGPUSupported" class="error-message">
-            <p>WebGPU Not Supported</p>
-            <p class="error-detail">{{ webGPUError }}</p>
-          </div>
-        </NodeWrapper>
-      </NodeGraph>
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_DEPTH_NOISE, el?.$el)"
+            label="F"
+            title="Depth + Noise"
+            style="grid-column: 4 / span 2; grid-row: 3;"
+          >
+            <NodePreview :width="NODE_WIDTH" :height="NODE_HEIGHT" :spec="depthNoiseSpec" />
+          </NodeWrapper>
 
-      <!-- コントロールパネル -->
-      <aside class="controls-panel">
+          <!-- Row 4: Output node -->
+          <NodeWrapper
+            :ref="(el: any) => setNodeRef(NODE_FINAL, el?.$el)"
+            label="G"
+            title="Final Output"
+            style="grid-column: 3 / span 2; grid-row: 4;"
+          >
+            <canvas
+              v-show="webGPUSupported"
+              ref="mainCanvasRef"
+              :width="MAIN_WIDTH"
+              :height="MAIN_HEIGHT"
+              class="main-canvas"
+            />
+            <div v-if="!webGPUSupported" class="error-message">
+              <p>WebGPU Not Supported</p>
+              <p class="error-detail">{{ webGPUError }}</p>
+            </div>
+          </NodeWrapper>
+        </NodeGraph>
+      </div>
+
+      <!-- メインコンテンツ: Depth Maps (プレースホルダー) -->
+      <div v-else-if="currentView === 'depth-maps'" class="main-content placeholder-content">
+        <div class="placeholder">
+          <h2>Depth Maps</h2>
+          <p>Compare and experiment with different depth map algorithms</p>
+          <span class="coming-soon">Coming Soon</span>
+        </div>
+      </div>
+
+      <!-- メインコンテンツ: Noise (プレースホルダー) -->
+      <div v-else-if="currentView === 'noise'" class="main-content placeholder-content">
+        <div class="placeholder">
+          <h2>Noise Patterns</h2>
+          <p>Explore various noise generation techniques</p>
+          <span class="coming-soon">Coming Soon</span>
+        </div>
+      </div>
+
+      <!-- コントロールパネル (Gradient Grain用) -->
+      <aside v-if="currentView === 'gradient-grain'" class="controls-panel">
         <!-- A: Depth -->
         <div class="node-group">
           <div class="node-group-header">
@@ -594,10 +640,124 @@ onUnmounted(() => {
 
 .main {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 200px 1fr 280px;
   gap: 1.5rem;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
+}
+
+/* Left Panel */
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #16162a;
+  border-radius: 0.75rem;
+  height: fit-content;
+}
+
+.panel-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #2a2a4a;
+  margin-bottom: 0.25rem;
+}
+
+.view-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.view-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.625rem 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.view-item:hover {
+  background: #1e1e3a;
+  border-color: #2a2a4a;
+}
+
+.view-item.active {
+  background: #1e1e3a;
+  border-color: #4ecdc4;
+}
+
+.view-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #eee;
+}
+
+.view-item.active .view-label {
+  color: #4ecdc4;
+}
+
+.view-description {
+  font-size: 0.6875rem;
+  color: #666;
+  line-height: 1.3;
+}
+
+/* Main Content */
+.main-content {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.main-content :deep(.node-graph) {
+  row-gap: 1.5rem;
+}
+
+.placeholder-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.placeholder {
+  text-align: center;
+  padding: 2rem;
+}
+
+.placeholder h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #aaa;
+  margin-bottom: 0.5rem;
+}
+
+.placeholder p {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.coming-soon {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background: #2a2a4a;
+  border-radius: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 
@@ -893,6 +1053,24 @@ onUnmounted(() => {
 @media (max-width: 900px) {
   .main {
     grid-template-columns: 1fr;
+  }
+
+  .main-content {
+    overflow-x: auto;
+  }
+
+  .left-panel {
+    order: -1;
+  }
+
+  .view-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .view-item {
+    flex: 1;
+    min-width: 120px;
   }
 }
 </style>
