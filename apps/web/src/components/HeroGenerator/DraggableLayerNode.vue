@@ -74,7 +74,7 @@ const children = computed(() => {
 
 // Processor info
 const processors = computed(() => {
-  const result: { type: 'effect' | 'mask'; label: string; value: string; enabled: boolean }[] = []
+  const result: { type: 'effect' | 'mask'; label: string; value: string; icon: string; enabled: boolean }[] = []
 
   const effectProc = props.node.processors.find(isEffectProcessor)
   if (effectProc) {
@@ -87,6 +87,7 @@ const processors = computed(() => {
       type: 'effect',
       label: 'Effect',
       value: activeEffects.length > 0 ? activeEffects.join(' / ') : 'None',
+      icon: 'auto_fix_high',
       enabled: effectProc.enabled,
     })
   }
@@ -99,6 +100,7 @@ const processors = computed(() => {
         type: 'mask',
         label: 'Mask',
         value: shapeType.charAt(0).toUpperCase() + shapeType.slice(1),
+        icon: 'crop',
         enabled: maskProc.enabled,
       })
     }
@@ -281,19 +283,22 @@ const handleDrop = (e: DragEvent) => {
       <span v-else class="visibility-spacer" />
     </div>
 
-    <!-- Processors (shown when expanded) -->
-    <div v-if="isExpanded && processors.length > 0" class="processors" :style="{ marginLeft: `${depth * 1 + 1.5}rem` }">
-      <button
+    <!-- Processors (shown when expanded, displayed as tree nodes) -->
+    <template v-if="isExpanded && processors.length > 0">
+      <div
         v-for="proc in processors"
         :key="proc.type"
-        class="processor-item"
+        class="processor-node"
+        :style="{ paddingLeft: `${(depth + 1) * 1}rem` }"
         @click="handleSelectProcessor(proc.type)"
       >
+        <span class="expand-spacer" />
+        <span class="material-icons processor-icon">{{ proc.icon }}</span>
         <span class="processor-label">{{ proc.label }}</span>
         <span class="processor-value">{{ proc.value }}</span>
         <span class="material-icons processor-arrow">chevron_right</span>
-      </button>
-    </div>
+      </div>
+    </template>
 
     <!-- Children (Recursive) -->
     <template v-if="isExpanded && children.length > 0">
@@ -571,79 +576,69 @@ const handleDrop = (e: DragEvent) => {
   font-size: 1rem;
 }
 
-/* Processors */
-.processors {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  margin: 0.125rem 0 0.25rem;
-}
-
-.processor-item {
+/* Processor Nodes (tree node style) */
+.processor-node {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.5rem;
-  background: oklch(0.94 0.01 260);
-  border: 1px solid oklch(0.88 0.01 260);
-  border-radius: 0.25rem;
-  color: inherit;
-  text-align: left;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-  margin-right: 0.5rem;
+  transition: background 0.15s;
+  border-radius: 0.25rem;
 }
 
-:global(.dark) .processor-item {
-  background: oklch(0.18 0.02 260);
-  border-color: oklch(0.25 0.02 260);
-}
-
-.processor-item:hover {
+.processor-node:hover {
   background: oklch(0.90 0.01 260);
-  border-color: oklch(0.80 0.01 260);
 }
 
-:global(.dark) .processor-item:hover {
-  background: oklch(0.22 0.02 260);
-  border-color: oklch(0.32 0.02 260);
+:global(.dark) .processor-node:hover {
+  background: oklch(0.24 0.02 260);
+}
+
+.processor-icon {
+  font-size: 0.875rem;
+  color: oklch(0.55 0.02 260);
+  flex-shrink: 0;
+}
+
+:global(.dark) .processor-icon {
+  color: oklch(0.55 0.02 260);
 }
 
 .processor-label {
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: oklch(0.50 0.02 260);
-  min-width: 2.5rem;
+  color: oklch(0.40 0.02 260);
 }
 
 :global(.dark) .processor-label {
-  color: oklch(0.60 0.02 260);
+  color: oklch(0.65 0.02 260);
 }
 
 .processor-value {
   flex: 1;
   font-size: 0.6875rem;
-  color: oklch(0.30 0.02 260);
+  color: oklch(0.55 0.02 260);
+  text-align: right;
+  margin-right: 0.25rem;
 }
 
 :global(.dark) .processor-value {
-  color: oklch(0.80 0.02 260);
+  color: oklch(0.55 0.02 260);
 }
 
 .processor-arrow {
   font-size: 0.875rem;
   color: oklch(0.60 0.02 260);
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 
 :global(.dark) .processor-arrow {
   color: oklch(0.45 0.02 260);
 }
 
-.processor-item:hover .processor-arrow {
-  color: oklch(0.40 0.02 260);
-}
-
-:global(.dark) .processor-item:hover .processor-arrow {
-  color: oklch(0.70 0.02 260);
+.processor-node:hover .processor-arrow {
+  opacity: 1;
 }
 </style>

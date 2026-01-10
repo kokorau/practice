@@ -21,6 +21,7 @@ import { useLayerDragDrop } from '../components/HeroGenerator/useLayerDragDrop'
 import type { LayerNode } from '../modules/HeroScene'
 import {
   createBaseLayerNode,
+  createGroupLayerNode,
   createSurfaceLayerNode,
   createEffectProcessor,
   createMaskProcessor,
@@ -612,13 +613,19 @@ const layers = ref<LayerNode[]>([
     { type: 'solid', color: 'BN1' },
     { processors: [createEffectProcessor()] }
   ),
-  createSurfaceLayerNode(
-    'surface-1',
-    { type: 'solid', color: 'B' },
-    {
-      name: 'Surface',
-      processors: [createEffectProcessor(), createMaskProcessor()],
-    }
+  createGroupLayerNode(
+    'main-group',
+    [
+      createSurfaceLayerNode(
+        'surface-1',
+        { type: 'solid', color: 'B' },
+        {
+          name: 'Surface',
+          processors: [createEffectProcessor(), createMaskProcessor()],
+        }
+      ),
+    ],
+    { name: 'Main Group', expanded: true }
   ),
 ])
 
