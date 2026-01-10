@@ -50,11 +50,12 @@ const isGroupNode = computed(() => isGroup(props.node))
 const hasChildren = computed(() => isGroupNode.value && (props.node as Group).children.length > 0)
 const isExpanded = computed(() => props.node.expanded)
 
-// Check if this node has expandable content (children or modifiers)
-const hasExpandableContent = computed(() => hasChildren.value || modifiers.value.length > 0)
+// Check if this node has expandable content (only children, modifiers are always visible)
+const hasExpandableContent = computed(() => hasChildren.value)
 const isDragging = computed(() => props.draggedId === props.node.id)
 const isBaseLayer = computed(() => isLayer(props.node) && props.node.variant === 'base')
 const isDraggable = computed(() => !isBaseLayer.value)
+const hasModifiers = computed(() => modifiers.value.length > 0)
 
 // Check if this node is the current drop target
 const isDropTarget = computed(() => props.dropTarget?.nodeId === props.node.id)
@@ -238,7 +239,7 @@ const handleDrop = (e: DragEvent) => {
     <!-- Node Header -->
     <div
       class="node-header"
-      :class="{ selected: isSelected }"
+      :class="{ selected: isSelected, 'has-modifiers': hasModifiers }"
       :style="indentStyle"
       :draggable="isDraggable"
       @click="handleSelect"
@@ -290,18 +291,32 @@ const handleDrop = (e: DragEvent) => {
       <span v-else class="visibility-spacer" />
     </div>
 
-    <!-- Modifiers (shown when expanded, displayed as tree nodes) -->
-    <template v-if="isExpanded && modifiers.length > 0">
+    <!-- Processor group (contains Effect/Mask as children) -->
+    <template v-if="modifiers.length > 0">
+      <!-- Processor parent node with L-shape arrow pointing up -->
+      <div
+        class="processor-group-node"
+        :style="{ paddingLeft: `${depth * 0.75}rem` }"
+      >
+        <span class="material-icons l-shape-arrow">subdirectory_arrow_right</span>
+        <span class="material-icons layer-icon">tune</span>
+        <div class="layer-info">
+          <span class="layer-name">Processor</span>
+        </div>
+      </div>
+      <!-- Processor children (Effect, Mask) -->
       <div
         v-for="mod in modifiers"
         :key="mod.type"
-        class="processor-node"
+        class="processor-child-node"
         :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
         @click="handleSelectProcessor(mod.type)"
       >
         <span class="expand-spacer" />
-        <span class="material-icons processor-icon">{{ mod.icon }}</span>
-        <span class="processor-label">{{ mod.label }}</span>
+        <span class="material-icons layer-icon">{{ mod.icon }}</span>
+        <div class="layer-info">
+          <span class="layer-name">{{ mod.label }}</span>
+        </div>
         <span class="processor-value">{{ mod.value }}</span>
         <span class="material-icons processor-arrow">chevron_right</span>
       </div>
@@ -561,8 +576,29 @@ const handleDrop = (e: DragEvent) => {
   font-size: 1rem;
 }
 
-/* Processor Nodes (tree node style) */
-.processor-node {
+/* Processor group node (parent of Effect/Mask) */
+.processor-group-node {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* L-shape arrow - rotated to point up-left */
+.l-shape-arrow {
+  font-size: 1rem;
+  flex-shrink: 0;
+  color: oklch(0.55 0.02 260);
+  transform: rotate(180deg) scaleX(-1);
+}
+
+:global(.dark) .l-shape-arrow {
+  color: oklch(0.50 0.02 260);
+}
+
+/* Processor child nodes (Effect, Mask) */
+.processor-child-node {
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -572,32 +608,12 @@ const handleDrop = (e: DragEvent) => {
   border-radius: 0.25rem;
 }
 
-.processor-node:hover {
+.processor-child-node:hover {
   background: oklch(0.90 0.01 260);
 }
 
-:global(.dark) .processor-node:hover {
+:global(.dark) .processor-child-node:hover {
   background: oklch(0.24 0.02 260);
-}
-
-.processor-icon {
-  font-size: 1rem;
-  color: oklch(0.55 0.02 260);
-  flex-shrink: 0;
-}
-
-:global(.dark) .processor-icon {
-  color: oklch(0.55 0.02 260);
-}
-
-.processor-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: oklch(0.40 0.02 260);
-}
-
-:global(.dark) .processor-label {
-  color: oklch(0.65 0.02 260);
 }
 
 .processor-value {
@@ -623,7 +639,7 @@ const handleDrop = (e: DragEvent) => {
   color: oklch(0.45 0.02 260);
 }
 
-.processor-node:hover .processor-arrow {
+.processor-child-node:hover .processor-arrow {
   opacity: 1;
 }
 </style>
