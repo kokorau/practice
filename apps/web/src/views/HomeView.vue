@@ -71,14 +71,14 @@ const pages = [
     description: 'ヒーローセクションを視覚的にデザイン・生成',
   },
   {
-    to: '/gradient-lab',
-    title: 'Gradient Lab',
-    description: 'グラデーションの試行錯誤と実験',
-  },
-  {
     to: '/apca-contrast-checker',
     title: 'APCA Contrast Checker',
     description: '画像上のテキストコントラストをAPCA基準で判定・違反率チェック',
+  },
+  {
+    to: '/texture-playground',
+    title: 'Texture Playground',
+    description: 'WebGPUテクスチャ合成フローのプレイグラウンド',
   },
 ]
 </script>
