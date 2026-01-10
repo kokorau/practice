@@ -27,10 +27,10 @@ import FontSelector from '../components/HeroGenerator/FontSelector.vue'
 import PrimitiveColorPicker from '../components/HeroGenerator/PrimitiveColorPicker.vue'
 import SchemaFields from '../components/SchemaFields.vue'
 import {
-  VignetteFilterSchema,
-  ChromaticAberrationFilterSchema,
-  DotHalftoneFilterSchema,
-  LineHalftoneFilterSchema,
+  VignetteEffectSchema,
+  ChromaticAberrationEffectSchema,
+  DotHalftoneEffectSchema,
+  LineHalftoneEffectSchema,
 } from '../modules/HeroScene'
 import {
   useSiteColors,
@@ -311,7 +311,8 @@ const sectionTitle = computed(() => {
     case 'clip-group-shape':
       return 'クリップグループ形状'
     case 'filter':
-      return 'フィルター設定'
+    case 'effect':
+      return 'エフェクト設定'
     case 'foreground-title':
       return 'タイトル位置'
     case 'foreground-description':
@@ -625,19 +626,22 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
   const layer = layers.value.find(l => l.id === layerId)
   if (!layer) return
 
+  // Handle effect/filter (both for backward compatibility)
+  const isEffectOrFilter = subItemType === 'filter' || subItemType === 'effect'
+
   if (layer.type === 'base') {
     if (subItemType === 'surface') {
       openSection('background')
-    } else if (subItemType === 'filter') {
+    } else if (isEffectOrFilter) {
       selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
       openSection('filter')
     }
-  } else if (layer.type === 'clipGroup') {
+  } else if (layer.type === 'clipGroup' || layer.type === 'group') {
     if (subItemType === 'surface') {
       openSection('clip-group-surface')
     } else if (subItemType === 'shape') {
       openSection('clip-group-shape')
-    } else if (subItemType === 'filter') {
+    } else if (isEffectOrFilter) {
       selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
       openSection('filter')
     }
@@ -645,7 +649,7 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
     if (subItemType === 'source') {
       selectedTextLayerId.value = layerId
       openSection('text-content')
-    } else if (subItemType === 'filter') {
+    } else if (isEffectOrFilter) {
       selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
       openSection('filter')
     }
@@ -655,6 +659,7 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
 const handleAddLayer = (type: LayerType) => {
   const names: Record<LayerType, string> = {
     base: 'Background',
+    group: 'Group',
     clipGroup: 'Clip Group',
     object: 'Object',
     text: 'Text Layer',
@@ -663,7 +668,7 @@ const handleAddLayer = (type: LayerType) => {
   let id: string
 
   // Add to scene and get the ID
-  if (type === 'clipGroup') {
+  if (type === 'clipGroup' || type === 'group') {
     id = addMaskLayer() ?? `clip-group-${Date.now()}`
   } else if (type === 'text') {
     id = addTextLayer()
@@ -1092,13 +1097,13 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
           </div>
         </template>
 
-        <!-- フィルター設定 (排他選択) -->
-        <template v-else-if="activeSection === 'filter'">
+        <!-- エフェクト設定 (排他選択) -->
+        <template v-else-if="activeSection === 'filter' || activeSection === 'effect'">
           <div class="filter-section">
-            <!-- Filter params (shown when filter is active) -->
+            <!-- Effect params (shown when effect is active) -->
             <div v-if="selectedFilterType === 'vignette'" class="filter-params">
               <SchemaFields
-                :schema="VignetteFilterSchema"
+                :schema="VignetteEffectSchema"
                 :model-value="currentVignetteConfig"
                 :exclude="['enabled']"
                 @update:model-value="currentVignetteConfig = $event"
@@ -1106,7 +1111,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             </div>
             <div v-else-if="selectedFilterType === 'chromaticAberration'" class="filter-params">
               <SchemaFields
-                :schema="ChromaticAberrationFilterSchema"
+                :schema="ChromaticAberrationEffectSchema"
                 :model-value="currentChromaticConfig"
                 :exclude="['enabled']"
                 @update:model-value="currentChromaticConfig = $event"
@@ -1114,7 +1119,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             </div>
             <div v-else-if="selectedFilterType === 'dotHalftone'" class="filter-params">
               <SchemaFields
-                :schema="DotHalftoneFilterSchema"
+                :schema="DotHalftoneEffectSchema"
                 :model-value="currentDotHalftoneConfig"
                 :exclude="['enabled']"
                 @update:model-value="currentDotHalftoneConfig = $event"
@@ -1122,7 +1127,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             </div>
             <div v-else-if="selectedFilterType === 'lineHalftone'" class="filter-params">
               <SchemaFields
-                :schema="LineHalftoneFilterSchema"
+                :schema="LineHalftoneEffectSchema"
                 :model-value="currentLineHalftoneConfig"
                 :exclude="['enabled']"
                 @update:model-value="currentLineHalftoneConfig = $event"
