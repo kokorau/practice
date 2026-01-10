@@ -2732,9 +2732,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     textureColor2,
     midgroundTextureColor1,
     midgroundTextureColor2,
+    maskInnerColor,
+    maskOuterColor,
 
     // Spec creators for thumbnails
     createMidgroundThumbnailSpec,
+    createBackgroundThumbnailSpec: (viewport: { width: number; height: number }) => {
+      const bgPattern = texturePatterns[selectedBackgroundIndex.value]
+      if (bgPattern) {
+        return bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
+      }
+      return null
+    },
 
     // Selection state
     selectedBackgroundIndex,

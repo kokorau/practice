@@ -35,6 +35,7 @@ import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
 import PrimitiveColorPicker from '../components/HeroGenerator/PrimitiveColorPicker.vue'
+import MaskPatternThumbnail from '../components/HeroGenerator/MaskPatternThumbnail.vue'
 import SchemaFields from '../components/SchemaFields.vue'
 import {
   VignetteEffectSchema,
@@ -132,12 +133,14 @@ const {
   textureColor2,
   midgroundTextureColor1,
   midgroundTextureColor2,
+  maskInnerColor,
+  maskOuterColor,
   createMidgroundThumbnailSpec,
+  createBackgroundThumbnailSpec,
   selectedBackgroundIndex,
   selectedMaskIndex,
   selectedMidgroundTextureIndex,
   activeSection,
-  openSection,
   initPreview,
   customBackgroundImage,
   customBackgroundFile,
@@ -607,6 +610,8 @@ const activeTab = ref<TabId>('generator')
 // Layer Management (for Right Panel)
 // ============================================================
 const selectedLayerId = ref<string | null>(null)
+const selectedProcessorType = ref<'effect' | 'mask' | null>(null)
+const selectedProcessorLayerId = ref<string | null>(null)
 
 const layers = ref<LayerNode[]>([
   createBaseLayerNode(
@@ -629,6 +634,12 @@ const layers = ref<LayerNode[]>([
   ),
 ])
 
+// Get selected layer for right panel display
+const selectedLayer = computed(() => {
+  if (!selectedLayerId.value) return null
+  return findLayerNode(layers.value, selectedLayerId.value)
+})
+
 // Drag & drop state for layers
 const { draggedId, dropTarget, startDrag, endDrag, setDropTarget, clearDropTarget } = useLayerDragDrop()
 
@@ -644,6 +655,9 @@ const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
 
 const handleSelectLayer = (layerId: string) => {
   selectedLayerId.value = layerId
+  // Clear processor selection when selecting a different layer
+  selectedProcessorType.value = null
+  selectedProcessorLayerId.value = null
 }
 
 const handleToggleExpand = (layerId: string) => {
@@ -666,11 +680,12 @@ const handleSelectProcessor = (layerId: string, processorType: 'effect' | 'mask'
   const layer = findLayerNode(layers.value, layerId)
   if (!layer) return
 
+  // Set state for right panel display instead of FloatingPanel
+  selectedProcessorType.value = processorType
+  selectedProcessorLayerId.value = layerId
+
   if (processorType === 'effect') {
     selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
-    openSection('filter')
-  } else if (processorType === 'mask') {
-    openSection('clip-group-shape')
   }
 }
 
@@ -889,7 +904,12 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
               :class="{ active: selectedMaskIndex === i }"
               @click="selectedMaskIndex = i"
             >
-              <canvas data-thumbnail-canvas class="pattern-canvas" />
+              <MaskPatternThumbnail
+                :create-background-spec="createBackgroundThumbnailSpec"
+                :create-mask-spec="pattern.createSpec"
+                :mask-color1="maskOuterColor"
+                :mask-color2="maskInnerColor"
+              />
               <span class="pattern-label">{{ pattern.label }}</span>
             </button>
           </div>
@@ -1322,17 +1342,214 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
     <!-- 右パネル: 選択要素のプロパティ -->
     <aside ref="rightPanelRef" v-if="activeTab === 'generator'" class="hero-right-panel">
       <div class="right-panel-header">
-        <span class="right-panel-title">Properties</span>
+        <span class="right-panel-title">
+          {{
+            selectedProcessorType === 'effect' ? 'Effect Settings' :
+            selectedProcessorType === 'mask' ? 'Mask Settings' :
+            selectedLayer?.type === 'base' ? 'Background' :
+            selectedLayer?.type === 'surface' ? 'Surface' :
+            'Properties'
+          }}
+        </span>
         <button class="export-button" @click="exportPreset" title="Export Preset">
           <span class="material-icons">download</span>
         </button>
       </div>
       <div class="property-panel">
-        <template v-if="selectedLayerId">
+        <!-- Background (Base Layer) Settings -->
+        <template v-if="!selectedProcessorType && selectedLayer?.type === 'base'">
+          <div class="layer-settings">
+            <!-- Color selection -->
+            <div class="settings-section">
+              <p class="settings-label">Colors</p>
+              <PrimitiveColorPicker
+                v-model="backgroundColorKey1"
+                :palette="primitivePalette"
+                label="Primary"
+              />
+              <PrimitiveColorPicker
+                v-model="backgroundColorKey2"
+                :palette="primitivePalette"
+                label="Secondary"
+                :show-auto="true"
+              />
+            </div>
+            <!-- Background surface params -->
+            <div v-if="currentBackgroundSurfaceSchema && customBackgroundSurfaceParams && customBackgroundSurfaceParams.type !== 'solid'" class="settings-section">
+              <p class="settings-label">Parameters</p>
+              <SchemaFields
+                :schema="currentBackgroundSurfaceSchema"
+                :model-value="customBackgroundSurfaceParams"
+                @update:model-value="updateBackgroundSurfaceParams($event)"
+              />
+            </div>
+            <!-- Texture selection -->
+            <div class="settings-section">
+              <p class="settings-label">Texture</p>
+              <SurfaceSelector
+                :custom-image="customBackgroundImage"
+                :custom-file-name="customBackgroundFile?.name ?? null"
+                :patterns="backgroundPatterns"
+                :selected-index="selectedBackgroundIndex"
+                :show-random-button="true"
+                :is-loading-random="isLoadingRandomBackground"
+                @upload-image="setBackgroundImage"
+                @clear-image="clearBackgroundImage"
+                @select-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
+                @load-random="loadRandomBackgroundImage()"
+              />
+            </div>
+          </div>
+        </template>
+
+        <!-- Surface Layer Settings -->
+        <template v-else-if="!selectedProcessorType && selectedLayer?.type === 'surface'">
+          <div class="layer-settings">
+            <!-- Color selection -->
+            <div class="settings-section">
+              <p class="settings-label">Colors</p>
+              <PrimitiveColorPicker
+                v-model="maskColorKey1"
+                :palette="primitivePalette"
+                label="Primary"
+                :show-auto="true"
+              />
+              <PrimitiveColorPicker
+                v-model="maskColorKey2"
+                :palette="primitivePalette"
+                label="Secondary"
+                :show-auto="true"
+              />
+            </div>
+            <!-- Surface params -->
+            <div v-if="currentSurfaceSchema && customSurfaceParams" class="settings-section">
+              <p class="settings-label">Parameters</p>
+              <SchemaFields
+                :schema="currentSurfaceSchema"
+                :model-value="customSurfaceParams"
+                @update:model-value="updateSurfaceParams($event)"
+              />
+            </div>
+            <!-- Texture selection -->
+            <div class="settings-section">
+              <p class="settings-label">Texture</p>
+              <SurfaceSelector
+                :custom-image="customMaskImage"
+                :custom-file-name="customMaskFile?.name ?? null"
+                :patterns="maskSurfacePatterns"
+                :selected-index="selectedMidgroundTextureIndex"
+                :show-random-button="true"
+                :is-loading-random="isLoadingRandomMask"
+                @upload-image="setMaskImage"
+                @clear-image="clearMaskImage"
+                @select-pattern="(i) => { if (i !== null) selectedMidgroundTextureIndex = i }"
+                @load-random="loadRandomMaskImage()"
+              />
+            </div>
+          </div>
+        </template>
+
+        <!-- Effect Processor Settings -->
+        <template v-else-if="selectedProcessorType === 'effect'">
+          <div class="processor-settings">
+            <!-- Effect params (shown when effect is active) -->
+            <div v-if="selectedFilterType === 'vignette'" class="filter-params">
+              <SchemaFields
+                :schema="VignetteEffectSchema"
+                :model-value="currentVignetteConfig"
+                :exclude="['enabled']"
+                @update:model-value="currentVignetteConfig = $event"
+              />
+            </div>
+            <div v-else-if="selectedFilterType === 'chromaticAberration'" class="filter-params">
+              <SchemaFields
+                :schema="ChromaticAberrationEffectSchema"
+                :model-value="currentChromaticConfig"
+                :exclude="['enabled']"
+                @update:model-value="currentChromaticConfig = $event"
+              />
+            </div>
+            <div v-else-if="selectedFilterType === 'dotHalftone'" class="filter-params">
+              <SchemaFields
+                :schema="DotHalftoneEffectSchema"
+                :model-value="currentDotHalftoneConfig"
+                :exclude="['enabled']"
+                @update:model-value="currentDotHalftoneConfig = $event"
+              />
+            </div>
+            <div v-else-if="selectedFilterType === 'lineHalftone'" class="filter-params">
+              <SchemaFields
+                :schema="LineHalftoneEffectSchema"
+                :model-value="currentLineHalftoneConfig"
+                :exclude="['enabled']"
+                @update:model-value="currentLineHalftoneConfig = $event"
+              />
+            </div>
+
+            <!-- Filter type selection -->
+            <div class="filter-options">
+              <label class="filter-option" :class="{ active: selectedFilterType === 'void' }">
+                <input type="radio" v-model="selectedFilterType" value="void" />
+                <span class="filter-name">None</span>
+              </label>
+              <label class="filter-option" :class="{ active: selectedFilterType === 'vignette' }">
+                <input type="radio" v-model="selectedFilterType" value="vignette" />
+                <span class="filter-name">Vignette</span>
+              </label>
+              <label class="filter-option" :class="{ active: selectedFilterType === 'chromaticAberration' }">
+                <input type="radio" v-model="selectedFilterType" value="chromaticAberration" />
+                <span class="filter-name">Chromatic Aberration</span>
+              </label>
+              <label class="filter-option" :class="{ active: selectedFilterType === 'dotHalftone' }">
+                <input type="radio" v-model="selectedFilterType" value="dotHalftone" />
+                <span class="filter-name">Dot Halftone</span>
+              </label>
+              <label class="filter-option" :class="{ active: selectedFilterType === 'lineHalftone' }">
+                <input type="radio" v-model="selectedFilterType" value="lineHalftone" />
+                <span class="filter-name">Line Halftone</span>
+              </label>
+            </div>
+          </div>
+        </template>
+
+        <!-- Mask Processor Settings -->
+        <template v-else-if="selectedProcessorType === 'mask'">
+          <div class="processor-settings">
+            <!-- Shape params (shown when mask is selected) -->
+            <div v-if="currentMaskShapeSchema && customMaskShapeParams" class="shape-params">
+              <SchemaFields
+                :schema="currentMaskShapeSchema"
+                :model-value="customMaskShapeParams"
+                :exclude="['cutout']"
+                @update:model-value="updateMaskShapeParams($event)"
+              />
+            </div>
+            <div class="pattern-grid">
+              <button
+                v-for="(pattern, i) in maskPatterns"
+                :key="i"
+                class="pattern-button"
+                :class="{ active: selectedMaskIndex === i }"
+                @click="selectedMaskIndex = i"
+              >
+                <MaskPatternThumbnail
+                  :create-background-spec="createBackgroundThumbnailSpec"
+                  :create-mask-spec="pattern.createSpec"
+                  :mask-color1="maskOuterColor"
+                  :mask-color2="maskInnerColor"
+                />
+                <span class="pattern-label">{{ pattern.label }}</span>
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <!-- Default: Other layer types or Group selected -->
+        <template v-else-if="selectedLayer && selectedLayer.type !== 'base' && selectedLayer.type !== 'surface'">
           <div class="property-placeholder">
             <span class="material-icons property-icon">tune</span>
-            <p class="property-text">Selected: {{ selectedLayerId }}</p>
-            <p class="property-hint">Properties for this layer will be shown here</p>
+            <p class="property-text">{{ selectedLayer.name }}</p>
+            <p class="property-hint">Click Effect or Mask to edit processor settings</p>
           </div>
         </template>
         <template v-else>
@@ -2038,7 +2255,41 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
 /* Property Panel */
 .property-panel {
-  padding: 0.75rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 8rem);
+}
+
+/* Layer Settings */
+.layer-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-label {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .settings-label {
+  color: oklch(0.60 0.02 260);
+}
+
+/* Processor Settings */
+.processor-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .property-placeholder {
