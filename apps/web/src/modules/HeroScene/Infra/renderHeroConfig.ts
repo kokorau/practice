@@ -76,6 +76,28 @@ export interface RenderHeroConfigOptions {
 // Color Helpers
 // ============================================================
 
+type ContextName = 'canvas' | 'sectionNeutral' | 'sectionTint' | 'sectionContrast'
+type PrimitiveKey = string
+
+/**
+ * Semantic context to primitive surface key mapping
+ * Must match useHeroScene.ts CONTEXT_SURFACE_KEYS
+ */
+const CONTEXT_SURFACE_KEYS: Record<'light' | 'dark', Record<ContextName, PrimitiveKey>> = {
+  light: {
+    canvas: 'F1',
+    sectionNeutral: 'F2',
+    sectionTint: 'Bt',
+    sectionContrast: 'Bf',
+  },
+  dark: {
+    canvas: 'F8',
+    sectionNeutral: 'F7',
+    sectionTint: 'Bs',
+    sectionContrast: 'Bf',
+  },
+}
+
 /**
  * Convert Oklch to RGBA
  */
@@ -92,12 +114,57 @@ function oklchToRgba(oklch: Oklch, alpha = 1): RGBA {
 /**
  * Get color from palette by key
  */
-function getColorFromPalette(palette: PrimitivePalette, key: string): RGBA {
+function getColorFromPalette(palette: PrimitivePalette, key: string, alpha = 1): RGBA {
   const oklch = (palette as Record<string, Oklch>)[key]
   if (oklch) {
-    return oklchToRgba(oklch)
+    return oklchToRgba(oklch, alpha)
   }
-  return [0.5, 0.5, 0.5, 1]
+  return [0.5, 0.5, 0.5, alpha]
+}
+
+/**
+ * Get Oklch from palette by key
+ */
+function getOklchFromPalette(palette: PrimitivePalette, key: string): Oklch {
+  const oklch = (palette as Record<string, Oklch>)[key]
+  return oklch ?? { L: 0.5, C: 0, H: 0 }
+}
+
+/**
+ * Determine if palette represents dark theme
+ */
+function isDarkTheme(palette: PrimitivePalette): boolean {
+  const f0 = getOklchFromPalette(palette, 'F0')
+  return f0.L < 0.5
+}
+
+/**
+ * Get mask surface key based on semantic context and theme
+ */
+function getMaskSurfaceKey(semanticContext: string, isDark: boolean): PrimitiveKey {
+  const mode = isDark ? 'dark' : 'light'
+  const context = (semanticContext as ContextName) || 'canvas'
+  return CONTEXT_SURFACE_KEYS[mode][context] ?? CONTEXT_SURFACE_KEYS[mode].canvas
+}
+
+/**
+ * Calculate midground texture color (auto-shifted from surface)
+ * Must match useHeroScene.ts midgroundTextureColor1 logic
+ */
+function getMidgroundTextureColor(
+  palette: PrimitivePalette,
+  maskPrimaryKey: string,
+  maskSurfaceKey: string,
+  isDark: boolean
+): RGBA {
+  if (maskPrimaryKey !== 'auto') {
+    return getColorFromPalette(palette, maskPrimaryKey)
+  }
+  // Auto: shift lightness from mask surface
+  const surface = getOklchFromPalette(palette, maskSurfaceKey)
+  const deltaL = isDark ? 0.05 : -0.05
+  const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
+  return oklchToRgba(shifted)
 }
 
 // ============================================================
@@ -382,15 +449,30 @@ export async function renderHeroConfig(
   const viewport = renderer.getViewport()
   const colors = config.colors
 
-  // Resolve colors from palette
+  // Determine theme mode from palette
+  const isDark = isDarkTheme(palette)
+
+  // Get mask surface key based on semantic context
+  const semanticContext = colors.semanticContext ?? 'canvas'
+  const maskSurfaceKey = getMaskSurfaceKey(semanticContext, isDark)
+
+  // Resolve background colors from palette
   const bgColor1 = getColorFromPalette(palette, colors.background.primary)
+  const canvasSurfaceKey = isDark ? 'F8' : 'F1'
   const bgColor2 = colors.background.secondary === 'auto'
-    ? getColorFromPalette(palette, 'F2') // canvas surface fallback
+    ? getColorFromPalette(palette, canvasSurfaceKey)
     : getColorFromPalette(palette, colors.background.secondary)
 
-  const maskColor1 = colors.mask.primary === 'auto'
-    ? getColorFromPalette(palette, 'BN2')
-    : getColorFromPalette(palette, colors.mask.primary)
+  // Resolve mask colors (matching useHeroScene logic)
+  // maskInnerColor: semantic context surface with alpha=0 (transparent)
+  const maskInnerColor = getColorFromPalette(palette, maskSurfaceKey, 0)
+  // midgroundTextureColor1: mask.primary or auto-shifted from surface
+  const midgroundTextureColor1 = getMidgroundTextureColor(
+    palette,
+    colors.mask.primary,
+    maskSurfaceKey,
+    isDark
+  )
 
   // 1. Render background (base layer)
   const baseLayer = findBaseLayer(config.layers)
@@ -420,13 +502,12 @@ export async function renderHeroConfig(
     const maskProcessor = surfaceLayer.processors.find((p) => p.type === 'mask')
     if (maskProcessor && 'shape' in maskProcessor) {
       const shape = maskProcessor.shape as MaskShapeConfig
-      const cutout = shape.cutout ?? false
 
-      // Determine inner/outer colors based on cutout mode
-      // cutout = true: inner = mask color (filled shape), outer = bg color
-      // cutout = false: inner = bg color (background shows), outer = mask color (frame)
-      const innerColor = cutout ? maskColor1 : bgColor1
-      const outerColor = cutout ? bgColor1 : maskColor1
+      // Pass colors directly - mask spec functions handle cutout internally
+      // innerColor = transparent (shows background through), outerColor = mask color
+      // The mask spec functions (createBlobMaskSpec, etc.) swap colors based on cutout
+      const innerColor = maskInnerColor
+      const outerColor = midgroundTextureColor1
 
       const maskSpec = createMaskSpecFromShape(shape, innerColor, outerColor, viewport)
       if (maskSpec) {
