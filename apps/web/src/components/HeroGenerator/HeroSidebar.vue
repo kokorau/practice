@@ -4,13 +4,18 @@ import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'
 import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
+import DraggableLayerNode from './DraggableLayerNode.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
-import type { HeroViewPreset } from '../../modules/HeroScene'
+import type { HeroViewPreset, LayerNode, DropPosition } from '../../modules/HeroScene'
+import type { DropTarget } from './useLayerDragDrop'
 
 type NeutralRampItem = {
   key: string
   css: string
 }
+
+// Sidebar tab
+type SidebarTab = 'theme' | 'layers'
 
 const props = defineProps<{
   activeTab: 'generator' | 'palette'
@@ -34,6 +39,11 @@ const props = defineProps<{
   // Layout presets
   presets: HeroViewPreset[]
   selectedPresetId: string | null
+  // Layers
+  layers: LayerNode[]
+  selectedLayerId: string | null
+  draggedId: string | null
+  dropTarget: DropTarget | null
 }>()
 
 const emit = defineEmits<{
@@ -48,7 +58,22 @@ const emit = defineEmits<{
   (e: 'update:foundationValue', value: number): void
   (e: 'applyColorPreset', preset: ColorPreset): void
   (e: 'applyLayoutPreset', presetId: string): void
+  // Layer events
+  (e: 'select-layer', layerId: string): void
+  (e: 'toggle-expand', layerId: string): void
+  (e: 'toggle-visibility', layerId: string): void
+  (e: 'select-processor', layerId: string, processorType: 'effect' | 'mask'): void
+  (e: 'drag-start', nodeId: string): void
+  (e: 'drag-end'): void
+  (e: 'drag-over', nodeId: string, position: DropPosition): void
+  (e: 'drag-leave', nodeId: string): void
+  (e: 'drop', sourceId: string, targetId: string, position: DropPosition): void
 }>()
+
+// ============================================================
+// Sidebar Tab State
+// ============================================================
+const sidebarTab = ref<SidebarTab>('theme')
 
 // ============================================================
 // Color Popup
@@ -114,8 +139,30 @@ const selectedPresetName = computed(() => {
 
 <template>
   <aside class="hero-sidebar">
-    <!-- レイアウトプリセットセクション -->
-    <div class="sidebar-section">
+    <!-- サイドバータブ -->
+    <div class="sidebar-tabs">
+      <button
+        class="sidebar-tab"
+        :class="{ active: sidebarTab === 'theme' }"
+        @click="sidebarTab = 'theme'"
+      >
+        <span class="material-icons">palette</span>
+        Theme
+      </button>
+      <button
+        class="sidebar-tab"
+        :class="{ active: sidebarTab === 'layers' }"
+        @click="sidebarTab = 'layers'"
+      >
+        <span class="material-icons">layers</span>
+        Layers
+      </button>
+    </div>
+
+    <!-- Theme タブ -->
+    <template v-if="sidebarTab === 'theme'">
+      <!-- レイアウトプリセットセクション -->
+      <div class="sidebar-section">
       <p class="sidebar-label">Layout</p>
       <button
         ref="layoutButtonRef"
@@ -196,17 +243,44 @@ const selectedPresetName = computed(() => {
       </button>
     </div>
 
-    <!-- Palette タブ: Neutral Ramp -->
-    <template v-if="activeTab === 'palette'">
-      <div class="sidebar-section">
-        <p class="sidebar-label">Neutral Ramp</p>
-        <div class="neutral-ramp">
-          <span
-            v-for="item in neutralRampDisplay"
-            :key="item.key"
-            class="ramp-step"
-            :style="{ backgroundColor: item.css }"
-            :title="`${item.key}: ${item.css}`"
+      <!-- Palette タブ: Neutral Ramp -->
+      <template v-if="activeTab === 'palette'">
+        <div class="sidebar-section">
+          <p class="sidebar-label">Neutral Ramp</p>
+          <div class="neutral-ramp">
+            <span
+              v-for="item in neutralRampDisplay"
+              :key="item.key"
+              class="ramp-step"
+              :style="{ backgroundColor: item.css }"
+              :title="`${item.key}: ${item.css}`"
+            />
+          </div>
+        </div>
+      </template>
+    </template>
+
+    <!-- Layers タブ -->
+    <template v-if="sidebarTab === 'layers'">
+      <div class="sidebar-section layers-section">
+        <div class="layer-list">
+          <DraggableLayerNode
+            v-for="layer in layers"
+            :key="layer.id"
+            :node="layer"
+            :depth="0"
+            :selected-id="selectedLayerId"
+            :dragged-id="draggedId"
+            :drop-target="dropTarget"
+            @select="(id: string) => emit('select-layer', id)"
+            @toggle-expand="(id: string) => emit('toggle-expand', id)"
+            @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
+            @select-processor="(id: string, type: 'effect' | 'mask') => emit('select-processor', id, type)"
+            @drag-start="(id: string) => emit('drag-start', id)"
+            @drag-end="() => emit('drag-end')"
+            @drag-over="(id: string, pos: DropPosition) => emit('drag-over', id, pos)"
+            @drag-leave="(id: string) => emit('drag-leave', id)"
+            @drop="(src: string, tgt: string, pos: DropPosition) => emit('drop', src, tgt, pos)"
           />
         </div>
       </div>
@@ -271,11 +345,74 @@ const selectedPresetName = computed(() => {
 </template>
 
 <style scoped>
+/* Sidebar Tabs */
+.sidebar-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+}
+
+:global(.dark) .sidebar-tabs {
+  border-bottom-color: oklch(0.25 0.02 260);
+}
+
+.sidebar-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: oklch(0.45 0.02 260);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+:global(.dark) .sidebar-tab {
+  color: oklch(0.60 0.02 260);
+}
+
+.sidebar-tab:hover {
+  background: oklch(0.90 0.01 260);
+  color: oklch(0.30 0.02 260);
+}
+
+:global(.dark) .sidebar-tab:hover {
+  background: oklch(0.24 0.02 260);
+  color: oklch(0.80 0.02 260);
+}
+
+.sidebar-tab.active {
+  background: oklch(0.55 0.18 250);
+  color: white;
+}
+
+.sidebar-tab .material-icons {
+  font-size: 1rem;
+}
+
 /* Sidebar Sections */
 .sidebar-section {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid oklch(0.88 0.01 260);
+}
+
+.sidebar-section.layers-section {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.layers-section .layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 :global(.dark) .sidebar-section {

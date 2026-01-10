@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-// Test 3D model
-import chairModelUrl from '../modules/HeroScene/Infra/models/chair/scene.gltf'
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
 import {
@@ -19,20 +17,15 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import LayerPanel, { type LayerType } from '../components/HeroGenerator/LayerPanel.vue'
+import { useLayerDragDrop } from '../components/HeroGenerator/useLayerDragDrop'
 import type { LayerNode } from '../modules/HeroScene'
 import {
   createBaseLayerNode,
   createSurfaceLayerNode,
-  createGroupLayerNode,
-  createTextLayerNode,
-  createModel3DLayerNode,
-  createImageLayerNode,
   createEffectProcessor,
   createMaskProcessor,
   findLayerNode,
   updateLayerNode,
-  removeLayerNode as removeLayerNodeFromTree,
   moveLayerNode as moveLayerNodeInTree,
   type DropPosition,
 } from '../modules/HeroScene'
@@ -172,10 +165,6 @@ const {
   updateSurfaceParams,
   updateBackgroundSurfaceParams,
   // Layer operations
-  addMaskLayer,
-  addTextLayer,
-  addObjectLayer,
-  removeLayer,
   toggleLayerVisibility,
   updateTextLayerConfig: heroUpdateTextLayerConfig,
   // Editor state (for text layer editing)
@@ -633,6 +622,9 @@ const layers = ref<LayerNode[]>([
   ),
 ])
 
+// Drag & drop state for layers
+const { draggedId, dropTarget, startDrag, endDrag, setDropTarget, clearDropTarget } = useLayerDragDrop()
+
 const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
   if (uiLayerId === 'base') return 'base-layer'
   // Surface layers map to clip-group-layer in the scene
@@ -675,76 +667,30 @@ const handleSelectProcessor = (layerId: string, processorType: 'effect' | 'mask'
   }
 }
 
-const handleAddLayer = (type: LayerType) => {
-  let id: string
-  let newLayer: LayerNode
-
-  // Add to scene and get the ID, then create corresponding LayerNode
-  if (type === 'surface') {
-    id = addMaskLayer() ?? `surface-${Date.now()}`
-    newLayer = createSurfaceLayerNode(id, { type: 'solid', color: 'B' }, {
-      name: 'Surface',
-      processors: [createEffectProcessor(), createMaskProcessor()],
-    })
-  } else if (type === 'group') {
-    id = `group-${Date.now()}`
-    newLayer = createGroupLayerNode(id, [], {
-      name: 'Group',
-      processors: [createEffectProcessor(), createMaskProcessor()],
-    })
-  } else if (type === 'text') {
-    id = addTextLayer()
-    newLayer = createTextLayerNode(id, {
-      type: 'text',
-      text: 'New Text',
-      fontFamily: 'sans-serif',
-      fontSize: 48,
-      fontWeight: 400,
-      letterSpacing: 0,
-      lineHeight: 1.2,
-      color: '#ffffff',
-      position: { x: 0.5, y: 0.5, anchor: 'center' },
-      rotation: 0,
-    }, {
-      name: 'Text Layer',
-      processors: [createEffectProcessor()],
-    })
-  } else if (type === 'model3d') {
-    id = addObjectLayer({ modelUrl: chairModelUrl })
-    newLayer = createModel3DLayerNode(id, {
-      type: 'model3d',
-      modelUrl: chairModelUrl,
-      position: { x: 0, y: 0, z: 0 },
-      rotation: { x: 0, y: 0, z: 0 },
-      scale: 1,
-    }, {
-      name: '3D Model',
-      processors: [createEffectProcessor()],
-    })
-  } else if (type === 'image') {
-    id = `image-${Date.now()}`
-    newLayer = createImageLayerNode(id, '', {
-      name: 'Image',
-      processors: [createEffectProcessor(), createMaskProcessor()],
-    })
-  } else {
-    return // Unknown type, don't add
-  }
-
-  // Add to UI layer list
-  layers.value = [...layers.value, newLayer]
-}
-
-const handleRemoveLayer = (layerId: string) => {
-  const layer = findLayerNode(layers.value, layerId)
-  if (layer && layer.type !== 'base') {
-    layers.value = removeLayerNodeFromTree(layers.value, layerId)
-    removeLayer(mapLayerIdToSceneLayerId(layerId))
-  }
-}
-
 const handleMoveLayer = (sourceId: string, targetId: string, position: DropPosition) => {
   layers.value = moveLayerNodeInTree(layers.value, sourceId, targetId, position)
+}
+
+// Drag & drop handlers for layers
+const handleDragStart = (nodeId: string) => {
+  startDrag(nodeId)
+}
+
+const handleDragEnd = () => {
+  endDrag()
+}
+
+const handleDragOver = (nodeId: string, position: DropPosition) => {
+  setDropTarget({ nodeId, position })
+}
+
+const handleDragLeave = (nodeId: string) => {
+  clearDropTarget(nodeId)
+}
+
+const handleDrop = (sourceId: string, targetId: string, position: DropPosition) => {
+  handleMoveLayer(sourceId, targetId, position)
+  endDrag()
 }
 
 // ============================================================
@@ -826,7 +772,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
 <template>
   <div class="hero-generator" :class="{ dark: uiDarkMode }">
-    <!-- 左パネル: カラー設定 & セクション一覧 -->
+    <!-- 左パネル: カラー設定 & レイヤー -->
     <HeroSidebar
       :active-tab="activeTab"
       :hue="hue"
@@ -844,6 +790,10 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       :neutral-ramp-display="neutralRampDisplay"
       :presets="presets"
       :selected-preset-id="selectedPresetId"
+      :layers="layers"
+      :selected-layer-id="selectedLayerId"
+      :dragged-id="draggedId"
+      :drop-target="dropTarget"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"
@@ -855,6 +805,15 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       @update:foundation-value="foundationValue = $event"
       @apply-color-preset="handleApplyColorPreset"
       @apply-layout-preset="handleApplyLayoutPreset"
+      @select-layer="handleSelectLayer"
+      @toggle-expand="handleToggleExpand"
+      @toggle-visibility="handleToggleVisibility"
+      @select-processor="handleSelectProcessor"
+      @drag-start="handleDragStart"
+      @drag-end="handleDragEnd"
+      @drag-over="handleDragOver"
+      @drag-leave="handleDragLeave"
+      @drop="handleDrop"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->
@@ -1353,29 +1312,30 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       </div>
     </main>
 
-    <!-- 右パネル: Canvas/HTML レイヤー -->
+    <!-- 右パネル: 選択要素のプロパティ -->
     <aside ref="rightPanelRef" v-if="activeTab === 'generator'" class="hero-right-panel">
       <div class="right-panel-header">
-        <span class="right-panel-title">Layers</span>
+        <span class="right-panel-title">Properties</span>
         <button class="export-button" @click="exportPreset" title="Export Preset">
           <span class="material-icons">download</span>
         </button>
       </div>
-      <LayerPanel
-        :layers="layers"
-        :selected-layer-id="selectedLayerId"
-        :title-contrast-score="titleContrastResult?.score ?? null"
-        :description-contrast-score="descriptionContrastResult?.score ?? null"
-        @select-layer="handleSelectLayer"
-        @toggle-expand="handleToggleExpand"
-        @toggle-visibility="handleToggleVisibility"
-        @select-processor="handleSelectProcessor"
-        @add-layer="handleAddLayer"
-        @remove-layer="handleRemoveLayer"
-        @move-layer="handleMoveLayer"
-        @open-foreground-title="openSection('foreground-title')"
-        @open-foreground-description="openSection('foreground-description')"
-      />
+      <div class="property-panel">
+        <template v-if="selectedLayerId">
+          <div class="property-placeholder">
+            <span class="material-icons property-icon">tune</span>
+            <p class="property-text">Selected: {{ selectedLayerId }}</p>
+            <p class="property-hint">Properties for this layer will be shown here</p>
+          </div>
+        </template>
+        <template v-else>
+          <div class="property-placeholder">
+            <span class="material-icons property-icon">layers</span>
+            <p class="property-text">No layer selected</p>
+            <p class="property-hint">Select a layer from the left panel to edit its properties</p>
+          </div>
+        </template>
+      </div>
     </aside>
   </div>
 </template>
@@ -2067,6 +2027,48 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
   border: none;
   border-radius: 50%;
   cursor: pointer;
+}
+
+/* Property Panel */
+.property-panel {
+  padding: 0.75rem;
+}
+
+.property-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .property-placeholder {
+  color: oklch(0.60 0.02 260);
+}
+
+.property-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+
+.property-text {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: oklch(0.35 0.02 260);
+}
+
+.dark .property-text {
+  color: oklch(0.75 0.02 260);
+}
+
+.property-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  opacity: 0.7;
 }
 
 </style>
