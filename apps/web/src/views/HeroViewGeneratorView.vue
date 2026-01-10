@@ -20,7 +20,6 @@ import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import { useLayerDragDrop } from '../components/HeroGenerator/useLayerDragDrop'
 import type { LayerNode } from '../modules/HeroScene'
 import {
-  createBaseLayerNode,
   createGroupLayerNode,
   createSurfaceLayerNode,
   createEffectProcessor,
@@ -615,9 +614,19 @@ const selectedProcessorType = ref<'effect' | 'mask' | null>(null)
 const selectedProcessorLayerId = ref<string | null>(null)
 
 const layers = ref<LayerNode[]>([
-  createBaseLayerNode(
-    { type: 'solid', color: 'BN1' },
-    { name: 'Background', processors: [createEffectProcessor()] }
+  createGroupLayerNode(
+    'background-group',
+    [
+      createSurfaceLayerNode(
+        'background-surface',
+        { type: 'solid', color: 'BN1' },
+        {
+          name: 'Surface',
+          processors: [createEffectProcessor()],
+        }
+      ),
+    ],
+    { name: 'Background', expanded: true }
   ),
   createGroupLayerNode(
     'main-group',
