@@ -37,6 +37,26 @@ export {
 } from './mask'
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'
 export {
+  // Clip mask shaders
+  circleClipShader,
+  rectClipShader,
+  blobClipShader,
+  perlinClipShader,
+  // Clip mask spec creators
+  createCircleClipSpec,
+  createRectClipSpec,
+  createBlobClipSpec,
+  createPerlinClipSpec,
+  createClipMaskSpec,
+  // Clip mask types
+  type ClipMaskBaseParams,
+  type CircleClipParams,
+  type RectClipParams,
+  type BlobClipParams,
+  type PerlinClipParams,
+  type ClipMaskParams,
+} from './clipMask'
+export {
   vignetteShader,
   createVignetteUniforms,
   createVignetteSpec,

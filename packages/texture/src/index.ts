@@ -41,6 +41,13 @@ export type {
   GradientNoiseMapParams,
   IntensityCurveParams,
   DepthMapType,
+  // Clip mask types
+  ClipMaskBaseParams,
+  CircleClipParams,
+  RectClipParams,
+  BlobClipParams,
+  PerlinClipParams,
+  ClipMaskParams,
 } from './shaders'
 
 export {
@@ -84,6 +91,12 @@ export {
   createNoiseMapSpec,
   createGradientNoiseMapSpec,
   createIntensityCurveSpec,
+  // Clip mask specs
+  createCircleClipSpec,
+  createRectClipSpec,
+  createBlobClipSpec,
+  createPerlinClipSpec,
+  createClipMaskSpec,
 } from './shaders'
 
 // Filter specs are now available via '@practice/texture/filters'
