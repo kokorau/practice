@@ -4,8 +4,11 @@ import { ref, computed } from 'vue'
 // ============================================================
 // Types
 // ============================================================
-export type LayerType = 'base' | 'clipGroup' | 'object' | 'text'
 
+/** Layer types in the UI */
+export type LayerType = 'base' | 'group' | 'object' | 'text' | 'clipGroup'
+
+/** Layer item for UI display */
 export interface LayerItem {
   id: string
   type: LayerType
@@ -14,34 +17,50 @@ export interface LayerItem {
   expanded: boolean
 }
 
-export type SubItemType = 'surface' | 'shape' | 'filter' | 'source'
+/** Sub-item types within a layer */
+export type SubItemType = 'surface' | 'shape' | 'effect' | 'source' | 'filter'
 
+/** Sub-item configuration for display */
 export interface SubItemConfig {
   type: SubItemType
   label: string
   value: string
   enabled: boolean
+  /** Nesting level for processor items */
+  indent?: number
 }
 
 // ============================================================
-// Types: Filter config (from HeroScene module)
+// Types: Effect config (from HeroScene module)
 // ============================================================
-export interface LayerFilterConfig {
+
+/** Layer effect configuration */
+export interface LayerEffectConfig {
   vignette: { enabled: boolean }
   chromaticAberration: { enabled: boolean }
   dotHalftone: { enabled: boolean }
   lineHalftone: { enabled: boolean }
 }
 
+// Legacy alias
+export type LayerFilterConfig = LayerEffectConfig
+
 // ============================================================
 // Props & Emits
 // ============================================================
+
 const props = defineProps<{
   layers: LayerItem[]
-  layerFilterConfigs?: Map<string, LayerFilterConfig>
+  layerEffectConfigs?: Map<string, LayerEffectConfig>
+  /** @deprecated Use layerEffectConfigs instead */
+  layerFilterConfigs?: Map<string, LayerEffectConfig>
   backgroundSurfaceLabel?: string
+  /** @deprecated Use groupSurfaceLabel instead */
   clipGroupSurfaceLabel?: string
+  groupSurfaceLabel?: string
+  /** @deprecated Use groupShapeLabel instead */
   clipGroupShapeLabel?: string
+  groupShapeLabel?: string
   titleContrastScore?: number | null
   descriptionContrastScore?: number | null
 }>()
@@ -56,66 +75,87 @@ const emit = defineEmits<{
 }>()
 
 // ============================================================
+// Computed: Merged props with backward compatibility
+// ============================================================
+
+const effectConfigs = computed(() =>
+  props.layerEffectConfigs ?? props.layerFilterConfigs
+)
+
+const groupSurface = computed(() =>
+  props.groupSurfaceLabel ?? props.clipGroupSurfaceLabel
+)
+
+const groupShape = computed(() =>
+  props.groupShapeLabel ?? props.clipGroupShapeLabel
+)
+
+// ============================================================
 // Layer Configuration
 // ============================================================
 
-// Map UI layer ID to scene layer ID for filter lookup
+// Map UI layer ID to scene layer ID for effect lookup
 const getSceneLayerId = (uiLayerId: string): string => {
   if (uiLayerId === 'base') return 'base-layer'
-  if (uiLayerId.startsWith('clip-group')) return 'clip-group-layer'
-  // Legacy support for mask layer IDs
+  if (uiLayerId.startsWith('clip-group') || uiLayerId.startsWith('group')) return 'clip-group-layer'
+  // Legacy support
   if (uiLayerId.startsWith('mask')) return 'clip-group-layer'
   return uiLayerId
 }
 
-// Get filter display value based on current filter state
-const getFilterValue = (layerId: string): string => {
-  if (!props.layerFilterConfigs) return 'None'
+// Get effect display value based on current effect state
+const getEffectValue = (layerId: string): string => {
+  if (!effectConfigs.value) return 'None'
   const sceneLayerId = getSceneLayerId(layerId)
-  const config = props.layerFilterConfigs.get(sceneLayerId)
+  const config = effectConfigs.value.get(sceneLayerId)
   if (!config) return 'None'
 
-  const filters: string[] = []
-  if (config.vignette.enabled) filters.push('Vignette')
-  if (config.chromaticAberration.enabled) filters.push('CA')
-  if (config.dotHalftone.enabled) filters.push('Dot HT')
-  if (config.lineHalftone.enabled) filters.push('Line HT')
+  const effects: string[] = []
+  if (config.vignette.enabled) effects.push('Vignette')
+  if (config.chromaticAberration.enabled) effects.push('CA')
+  if (config.dotHalftone.enabled) effects.push('Dot HT')
+  if (config.lineHalftone.enabled) effects.push('Line HT')
 
-  return filters.length > 0 ? filters.join(' / ') : 'None'
+  return effects.length > 0 ? effects.join(' / ') : 'None'
 }
 
 const getSubItemsForLayer = (layer: LayerItem): SubItemConfig[] => {
-  switch (layer.type) {
+  // Normalize type: treat 'clipGroup' as 'group' for backward compatibility
+  const normalizedType = layer.type === 'clipGroup' as unknown ? 'group' : layer.type
+
+  switch (normalizedType) {
     case 'base':
       return [
         { type: 'surface', label: 'Surface', value: props.backgroundSurfaceLabel ?? 'Solid', enabled: true },
-        { type: 'filter', label: 'Filter', value: getFilterValue(layer.id), enabled: true },
+        // Processor section (effect only for base - no mask)
+        { type: 'effect', label: 'Effect', value: getEffectValue(layer.id), enabled: true, indent: 1 },
       ]
-    case 'clipGroup':
+    case 'group':
       return [
-        { type: 'surface', label: 'Surface', value: props.clipGroupSurfaceLabel ?? 'Solid', enabled: true },
-        { type: 'shape', label: 'Shape', value: props.clipGroupShapeLabel ?? 'None', enabled: true },
-        { type: 'filter', label: 'Filter', value: getFilterValue(layer.id), enabled: true },
+        { type: 'surface', label: 'Surface', value: groupSurface.value ?? 'Solid', enabled: true },
+        // Processor section (effect + mask for groups)
+        { type: 'effect', label: 'Effect', value: getEffectValue(layer.id), enabled: true, indent: 1 },
+        { type: 'shape', label: 'Mask', value: groupShape.value ?? 'None', enabled: true, indent: 1 },
       ]
     case 'object':
       return [
         { type: 'source', label: 'Source', value: 'Image', enabled: true },
-        { type: 'filter', label: 'Filter', value: 'WIP', enabled: false },
+        { type: 'effect', label: 'Effect', value: 'WIP', enabled: false, indent: 1 },
       ]
     case 'text':
       return [
         { type: 'source', label: 'Source', value: 'Text Content', enabled: true },
-        { type: 'filter', label: 'Filter', value: 'WIP', enabled: false },
+        { type: 'effect', label: 'Effect', value: 'WIP', enabled: false, indent: 1 },
       ]
     default:
       return []
   }
 }
 
-// Computed map for reactive sub-items (tracks layerFilterConfigs changes)
+// Computed map for reactive sub-items (tracks layerEffectConfigs changes)
 const subItemsMap = computed(() => {
-  // Access layerFilterConfigs to establish reactive dependency
-  void props.layerFilterConfigs
+  // Access effectConfigs to establish reactive dependency
+  void effectConfigs.value
   const map = new Map<string, SubItemConfig[]>()
   for (const layer of props.layers) {
     map.set(layer.id, getSubItemsForLayer(layer))
@@ -123,20 +163,22 @@ const subItemsMap = computed(() => {
   return map
 })
 
-const getLayerIcon = (type: LayerType): string => {
+const getLayerIcon = (type: LayerType | 'clipGroup'): string => {
   switch (type) {
     case 'base': return 'gradient'
+    case 'group':
     case 'clipGroup': return 'crop_free'
-    case 'object': return 'image'
+    case 'object': return 'view_in_ar'
     case 'text': return 'text_fields'
     default: return 'layers'
   }
 }
 
-const getLayerTypeLabel = (type: LayerType): string => {
+const getLayerTypeLabel = (type: LayerType | 'clipGroup'): string => {
   switch (type) {
     case 'base': return 'Base'
-    case 'clipGroup': return 'Clip Group'
+    case 'group':
+    case 'clipGroup': return 'Group'
     case 'object': return 'Object'
     case 'text': return 'Text'
     default: return 'Layer'
@@ -146,20 +188,22 @@ const getLayerTypeLabel = (type: LayerType): string => {
 // ============================================================
 // Add Layer Menu
 // ============================================================
+
 const showAddMenu = ref(false)
 
 const allLayerTypes: { type: LayerType; label: string; icon: string }[] = [
-  { type: 'clipGroup', label: 'Clip Group', icon: 'crop_free' },
-  { type: 'object', label: 'Object', icon: 'image' },
+  { type: 'group', label: 'Group', icon: 'crop_free' },
+  { type: 'object', label: 'Object', icon: 'view_in_ar' },
   { type: 'text', label: 'Text', icon: 'text_fields' },
 ]
 
-// Filter out layer types that have reached their limit (clipGroup: 1 for now)
+// Filter out layer types that have reached their limit
 const addableLayerTypes = computed(() => {
-  const hasClipGroup = props.layers.some(l => l.type === 'clipGroup')
+  // Check for both 'group' and legacy 'clipGroup'
+  const hasGroup = props.layers.some(l => l.type === 'group' || (l.type as string) === 'clipGroup')
   return allLayerTypes.filter(item => {
-    // Currently limiting to 1 clip group (can be expanded later)
-    if (item.type === 'clipGroup' && hasClipGroup) return false
+    // Currently limiting to 1 group (can be expanded later)
+    if (item.type === 'group' && hasGroup) return false
     return true
   })
 })
@@ -175,6 +219,13 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
   if (score >= 60) return 'good'
   if (score >= 45) return 'fair'
   return 'poor'
+}
+
+// Handle subitem selection with type mapping for backward compatibility
+const handleSelectSubitem = (layerId: string, subItemType: SubItemType) => {
+  // Map effect -> filter for backward compatibility with parent components
+  const mappedType = subItemType === 'effect' ? 'filter' as SubItemType : subItemType
+  emit('select-subitem', layerId, mappedType)
 }
 </script>
 
@@ -222,15 +273,18 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             <span v-else class="visibility-placeholder" />
           </div>
 
-          <!-- Sub Items (always visible) -->
+          <!-- Sub Items (with processor nesting) -->
           <div class="sub-items">
             <button
               v-for="subItem in subItemsMap.get(layer.id)"
               :key="subItem.type"
               class="sub-item"
-              :class="{ disabled: !subItem.enabled }"
+              :class="{
+                disabled: !subItem.enabled,
+                'processor-item': subItem.indent === 1,
+              }"
               :disabled="!subItem.enabled"
-              @click="emit('select-subitem', layer.id, subItem.type)"
+              @click="handleSelectSubitem(layer.id, subItem.type)"
             >
               <span class="sub-item-label">{{ subItem.label }}</span>
               <span class="sub-item-value">{{ subItem.value }}</span>
@@ -555,6 +609,27 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 .sub-item.disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Processor items (indented) */
+.sub-item.processor-item {
+  margin-left: 0.75rem;
+  padding: 0.375rem 0.625rem;
+  background: oklch(0.96 0.01 260);
+  border-color: oklch(0.88 0.01 260);
+}
+
+:global(.dark) .sub-item.processor-item {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.25 0.02 260);
+}
+
+.sub-item.processor-item:hover:not(.disabled) {
+  background: oklch(0.92 0.01 260);
+}
+
+:global(.dark) .sub-item.processor-item:hover:not(.disabled) {
+  background: oklch(0.22 0.02 260);
 }
 
 .sub-item-label {

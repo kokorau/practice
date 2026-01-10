@@ -7,7 +7,10 @@
  * - これだけあれば状態を完全に復元可能
  */
 
-import type { LayerFilterConfig } from './FilterSchema'
+import type { LayerEffectConfig } from './EffectSchema'
+
+// Legacy alias for backward compatibility
+type LayerFilterConfig = LayerEffectConfig
 
 // ============================================================
 // Color Config Types (for serialization)

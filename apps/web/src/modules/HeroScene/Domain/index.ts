@@ -9,7 +9,11 @@
  */
 
 import type { TexturePatternSpec } from '@practice/texture'
-import { createDefaultFilterConfig, type LayerFilterConfig } from './FilterSchema'
+import { createDefaultEffectConfig, type LayerEffectConfig } from './EffectSchema'
+
+// Legacy alias for backward compatibility
+const createDefaultFilterConfig = createDefaultEffectConfig
+type LayerFilterConfig = LayerEffectConfig
 
 // ============================================================
 // Base Layer Types
@@ -269,10 +273,24 @@ export interface CanvasLayer extends LayerBase {
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay'
 
 // ============================================================
-// Filter Types (Schema-based)
+// Effect Types (Schema-based)
 // ============================================================
 
 export {
+  // New Effect exports
+  VignetteEffectSchema,
+  ChromaticAberrationEffectSchema,
+  DotHalftoneEffectSchema,
+  LineHalftoneEffectSchema,
+  LayerEffectSchemas,
+  type VignetteEffectConfig,
+  type ChromaticAberrationEffectConfig,
+  type DotHalftoneEffectConfig,
+  type LineHalftoneEffectConfig,
+  type LayerEffectConfig,
+  type LayerEffectSchemaMap,
+  createDefaultEffectConfig,
+  // Legacy aliases (deprecated)
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
   DotHalftoneFilterSchema,
@@ -289,7 +307,56 @@ export {
   createDefaultDotHalftoneConfig,
   createDefaultLineHalftoneConfig,
   createDefaultFilterConfig,
-} from './FilterSchema'
+} from './EffectSchema'
+
+// ============================================================
+// Processor Types
+// ============================================================
+
+export {
+  type EffectProcessor,
+  type MaskProcessor,
+  type Processor,
+  createEffectProcessor,
+  createMaskProcessor,
+  isEffectProcessor,
+  isMaskProcessor,
+  getEnabledEffects,
+  getEnabledMasks,
+} from './Processor'
+
+// ============================================================
+// LayerNode Types (Tree Structure)
+// ============================================================
+
+export {
+  type LayerNodeType,
+  type LayerNodeBase,
+  type BaseLayerNode,
+  type GroupLayerNode,
+  type SurfaceLayerNode,
+  type ObjectLayerNode,
+  type TextLayerNode,
+  type LayerNode,
+  type SurfaceConfig,
+  type TexturePatternSurface,
+  type ImageSurface,
+  type SolidSurface,
+  createBaseLayerNode,
+  createGroupLayerNode,
+  createSurfaceLayerNode,
+  createTextLayerNode,
+  createObjectLayerNode,
+  isBaseLayerNode,
+  isGroupLayerNode,
+  isSurfaceLayerNode,
+  isTextLayerNode,
+  isObjectLayerNode,
+  findLayerNode,
+  updateLayerNode,
+  removeLayerNode,
+  flattenLayerNodes,
+} from './LayerNode'
 
 // ============================================================
 // HTML Layer Types

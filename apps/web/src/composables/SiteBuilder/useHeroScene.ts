@@ -144,7 +144,7 @@ export interface MidgroundSurfacePreset {
   params: MidgroundPresetParams
 }
 
-export type SectionType = 'background' | 'clip-group-surface' | 'clip-group-shape' | 'foreground-title' | 'foreground-description' | 'filter' | 'text-content'
+export type SectionType = 'background' | 'clip-group-surface' | 'clip-group-shape' | 'foreground-title' | 'foreground-description' | 'filter' | 'effect' | 'text-content'
 
 /**
  * Custom mask shape params union type

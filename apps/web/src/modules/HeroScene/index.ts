@@ -43,6 +43,7 @@ export type {
   TextureLayerConfig,
   ImageLayerConfig,
   TextLayerConfig,
+  ObjectLayerConfig,
   // ClipGroup types
   ClipMaskShape,
   ClipMaskConfig,
@@ -56,12 +57,38 @@ export type {
   CanvasLayerConfig,
   CanvasLayer,
   BlendMode,
+  // Effect types (new)
+  VignetteEffectConfig,
+  ChromaticAberrationEffectConfig,
+  DotHalftoneEffectConfig,
+  LineHalftoneEffectConfig,
+  LayerEffectConfig,
+  LayerEffectSchemaMap,
+  // Effect types (legacy aliases)
   VignetteFilterConfig,
   ChromaticAberrationFilterConfig,
   DotHalftoneFilterConfig,
   LineHalftoneFilterConfig,
   LayerFilterConfig,
   LayerFilterSchemaMap,
+  // Processor types (new)
+  EffectProcessor,
+  MaskProcessor,
+  Processor,
+  // LayerNode types (new)
+  LayerNodeType,
+  LayerNodeBase,
+  BaseLayerNode,
+  GroupLayerNode,
+  SurfaceLayerNode,
+  ObjectLayerNode as ObjectLayerNodeType,
+  TextLayerNode,
+  LayerNode,
+  SurfaceConfig,
+  TexturePatternSurface,
+  ImageSurface,
+  SolidSurface,
+  // HTML types
   HtmlContentItem,
   HtmlLayer,
   HeroSceneConfig,
@@ -100,7 +127,14 @@ export type {
 } from './Domain'
 
 export {
-  // Filter Schemas
+  // Effect Schemas (new)
+  VignetteEffectSchema,
+  ChromaticAberrationEffectSchema,
+  DotHalftoneEffectSchema,
+  LineHalftoneEffectSchema,
+  LayerEffectSchemas,
+  createDefaultEffectConfig,
+  // Effect Schemas (legacy aliases)
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
   DotHalftoneFilterSchema,
@@ -111,6 +145,28 @@ export {
   createDefaultDotHalftoneConfig,
   createDefaultLineHalftoneConfig,
   createDefaultFilterConfig,
+  // Processor factories (new)
+  createEffectProcessor,
+  createMaskProcessor,
+  isEffectProcessor,
+  isMaskProcessor,
+  getEnabledEffects,
+  getEnabledMasks,
+  // LayerNode factories (new)
+  createBaseLayerNode,
+  createGroupLayerNode,
+  createSurfaceLayerNode,
+  createTextLayerNode,
+  createObjectLayerNode,
+  isBaseLayerNode,
+  isGroupLayerNode,
+  isSurfaceLayerNode,
+  isTextLayerNode,
+  isObjectLayerNode,
+  findLayerNode,
+  updateLayerNode,
+  removeLayerNode,
+  flattenLayerNodes,
   // Layer factories
   createCanvasLayer,
   createTextureLayer,
