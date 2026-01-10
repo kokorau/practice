@@ -1,8 +1,8 @@
 /**
- * Processor Type Definitions
+ * Modifier Type Definitions
  *
  * Unified abstraction for effects and masks that can be applied to layers.
- * Processors transform layer content in a pipeline:
+ * Modifiers transform layer content in a pipeline:
  * - Effects: Visual transformations (vignette, halftone, etc.)
  * - Masks: Clipping operations (shapes that define visible regions)
  */
@@ -19,7 +19,7 @@ import type { LayerEffectConfig } from './EffectSchema'
 export type ClipMaskShape = 'circle' | 'rect' | 'blob' | 'perlin' | 'image'
 
 /**
- * Mask shape parameters (simplified for processor usage)
+ * Mask shape parameters (simplified for modifier usage)
  */
 export interface ClipMaskShapeParams {
   type: ClipMaskShape
@@ -38,46 +38,46 @@ export interface ClipMaskConfig {
 }
 
 // ============================================================
-// Effect Processor
+// Effect Modifier
 // ============================================================
 
 /**
- * Effect processor configuration.
+ * Effect modifier configuration.
  * Applies visual effects to a layer or group.
  */
-export interface EffectProcessor {
+export interface EffectModifier {
   type: 'effect'
-  /** Whether this processor is enabled */
+  /** Whether this modifier is enabled */
   enabled: boolean
   /** Effect configuration */
   config: LayerEffectConfig
 }
 
 // ============================================================
-// Mask Processor
+// Mask Modifier
 // ============================================================
 
 /**
- * Mask processor configuration.
+ * Mask modifier configuration.
  * Clips layer content using a shape.
  */
-export interface MaskProcessor {
+export interface MaskModifier {
   type: 'mask'
-  /** Whether this processor is enabled */
+  /** Whether this modifier is enabled */
   enabled: boolean
   /** Mask configuration */
   config: ClipMaskConfig
 }
 
 // ============================================================
-// Processor Union Type
+// Modifier Union Type
 // ============================================================
 
 /**
- * Processor type union.
- * A processor can be either an effect or a mask.
+ * Modifier type union.
+ * A modifier can be either an effect or a mask.
  */
-export type Processor = EffectProcessor | MaskProcessor
+export type Modifier = EffectModifier | MaskModifier
 
 // ============================================================
 // Factory Functions
@@ -118,11 +118,11 @@ const createDefaultClipMaskConfig = (
 })
 
 /**
- * Create a default effect processor
+ * Create a default effect modifier
  */
-export const createEffectProcessor = (
+export const createEffectModifier = (
   config?: Partial<LayerEffectConfig>
-): EffectProcessor => ({
+): EffectModifier => ({
   type: 'effect',
   enabled: true,
   config: {
@@ -132,11 +132,11 @@ export const createEffectProcessor = (
 })
 
 /**
- * Create a default mask processor
+ * Create a default mask modifier
  */
-export const createMaskProcessor = (
+export const createMaskModifier = (
   config?: Partial<ClipMaskConfig>
-): MaskProcessor => ({
+): MaskModifier => ({
   type: 'mask',
   enabled: true,
   config: createDefaultClipMaskConfig(config?.shape ?? 'circle', config),
@@ -147,25 +147,44 @@ export const createMaskProcessor = (
 // ============================================================
 
 /**
- * Check if processor is an effect
+ * Check if modifier is an effect
  */
-export const isEffectProcessor = (processor: Processor): processor is EffectProcessor =>
-  processor.type === 'effect'
+export const isEffectModifier = (modifier: Modifier): modifier is EffectModifier =>
+  modifier.type === 'effect'
 
 /**
- * Check if processor is a mask
+ * Check if modifier is a mask
  */
-export const isMaskProcessor = (processor: Processor): processor is MaskProcessor =>
-  processor.type === 'mask'
+export const isMaskModifier = (modifier: Modifier): modifier is MaskModifier =>
+  modifier.type === 'mask'
 
 /**
- * Get enabled effects from processor list
+ * Get enabled effects from modifier list
  */
-export const getEnabledEffects = (processors: Processor[]): EffectProcessor[] =>
-  processors.filter((p): p is EffectProcessor => isEffectProcessor(p) && p.enabled)
+export const getEnabledEffects = (modifiers: Modifier[]): EffectModifier[] =>
+  modifiers.filter((m): m is EffectModifier => isEffectModifier(m) && m.enabled)
 
 /**
- * Get enabled masks from processor list
+ * Get enabled masks from modifier list
  */
-export const getEnabledMasks = (processors: Processor[]): MaskProcessor[] =>
-  processors.filter((p): p is MaskProcessor => isMaskProcessor(p) && p.enabled)
+export const getEnabledMasks = (modifiers: Modifier[]): MaskModifier[] =>
+  modifiers.filter((m): m is MaskModifier => isMaskModifier(m) && m.enabled)
+
+// ============================================================
+// Legacy Aliases (for backward compatibility)
+// ============================================================
+
+/** @deprecated Use EffectModifier instead */
+export type EffectProcessor = EffectModifier
+/** @deprecated Use MaskModifier instead */
+export type MaskProcessor = MaskModifier
+/** @deprecated Use Modifier instead */
+export type Processor = Modifier
+/** @deprecated Use createEffectModifier instead */
+export const createEffectProcessor = createEffectModifier
+/** @deprecated Use createMaskModifier instead */
+export const createMaskProcessor = createMaskModifier
+/** @deprecated Use isEffectModifier instead */
+export const isEffectProcessor = isEffectModifier
+/** @deprecated Use isMaskModifier instead */
+export const isMaskProcessor = isMaskModifier

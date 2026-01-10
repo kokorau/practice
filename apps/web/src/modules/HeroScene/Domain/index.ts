@@ -310,10 +310,21 @@ export {
 } from './EffectSchema'
 
 // ============================================================
-// Processor Types
+// Modifier Types (new naming)
 // ============================================================
 
 export {
+  // New types
+  type EffectModifier,
+  type MaskModifier,
+  type Modifier,
+  createEffectModifier,
+  createMaskModifier,
+  isEffectModifier,
+  isMaskModifier,
+  getEnabledEffects,
+  getEnabledMasks,
+  // Legacy aliases (deprecated)
   type EffectProcessor,
   type MaskProcessor,
   type Processor,
@@ -321,15 +332,53 @@ export {
   createMaskProcessor,
   isEffectProcessor,
   isMaskProcessor,
-  getEnabledEffects,
-  getEnabledMasks,
-} from './Processor'
+} from './Modifier'
 
 // ============================================================
-// LayerNode Types (Tree Structure)
+// Layer & Group Types (new naming)
 // ============================================================
 
 export {
+  // New types
+  type Layer,
+  type Group,
+  type SceneNode,
+  type LayerType,
+  type LayerVariant,
+  type NodeBase,
+  type Surface,
+  type PatternSurface,
+  type ImageSurface,
+  type SolidSurface,
+  type TextConfig,
+  type Model3DConfig,
+  type DropPosition,
+  // New factory functions
+  createLayer,
+  createBaseLayer,
+  createSurfaceLayer,
+  createTextLayer as createSceneTextLayer,
+  createModel3DLayer,
+  createImageLayer as createSceneImageLayer,
+  createGroup,
+  // New type guards
+  isLayer,
+  isGroup,
+  isBaseLayer,
+  isSurfaceLayer,
+  isTextLayer,
+  isModel3DLayer,
+  isImageLayer,
+  // New tree utilities
+  findNode,
+  updateNode,
+  removeNode,
+  flattenNodes,
+  findParentNode,
+  isAncestorOf,
+  insertNode,
+  moveNode,
+  // Legacy aliases (deprecated)
   type LayerNodeType,
   type LayerNodeBase,
   type BaseLayerNode,
@@ -340,9 +389,6 @@ export {
   type LayerNode,
   type SurfaceConfig,
   type TexturePatternSurface,
-  type ImageSurface,
-  type SolidSurface,
-  type DropPosition,
   createBaseLayerNode,
   createGroupLayerNode,
   createSurfaceLayerNode,
@@ -361,9 +407,6 @@ export {
   updateLayerNode,
   removeLayerNode,
   flattenLayerNodes,
-  // Tree manipulation (for Drag & Drop)
-  findParentNode,
-  isAncestorOf,
   insertLayerNode,
   moveLayerNode,
 } from './LayerNode'

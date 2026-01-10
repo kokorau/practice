@@ -71,11 +71,26 @@ export type {
   LineHalftoneFilterConfig,
   LayerFilterConfig,
   LayerFilterSchemaMap,
-  // Processor types (new)
+  // Modifier types (new)
+  EffectModifier,
+  MaskModifier,
+  Modifier,
+  // Legacy Processor aliases
   EffectProcessor,
   MaskProcessor,
   Processor,
-  // LayerNode types (new)
+  // Layer & Group types (new)
+  Layer,
+  Group,
+  SceneNode,
+  LayerType,
+  LayerVariant,
+  NodeBase,
+  Surface,
+  PatternSurface,
+  TextConfig,
+  Model3DConfig,
+  // Legacy LayerNode aliases
   LayerNodeType,
   LayerNodeBase,
   BaseLayerNode,
@@ -163,14 +178,42 @@ export {
   createDefaultDotHalftoneConfig,
   createDefaultLineHalftoneConfig,
   createDefaultFilterConfig,
-  // Processor factories (new)
+  // Modifier factories (new)
+  createEffectModifier,
+  createMaskModifier,
+  isEffectModifier,
+  isMaskModifier,
+  getEnabledEffects,
+  getEnabledMasks,
+  // Legacy Processor factories
   createEffectProcessor,
   createMaskProcessor,
   isEffectProcessor,
   isMaskProcessor,
-  getEnabledEffects,
-  getEnabledMasks,
-  // LayerNode factories (new)
+  // Layer & Group factories (new)
+  createLayer,
+  createBaseLayer,
+  createSurfaceLayer,
+  createTextLayer as createSceneTextLayer,
+  createModel3DLayer,
+  createImageLayer as createSceneImageLayer,
+  createGroup,
+  isLayer,
+  isGroup,
+  isBaseLayer,
+  isSurfaceLayer,
+  isTextLayer,
+  isModel3DLayer,
+  isImageLayer,
+  findNode,
+  updateNode,
+  removeNode,
+  flattenNodes,
+  findParentNode,
+  isAncestorOf,
+  insertNode,
+  moveNode,
+  // Legacy LayerNode factories
   createBaseLayerNode,
   createGroupLayerNode,
   createSurfaceLayerNode,
@@ -189,9 +232,6 @@ export {
   updateLayerNode,
   removeLayerNode,
   flattenLayerNodes,
-  // Tree manipulation (for Drag & Drop)
-  findParentNode,
-  isAncestorOf,
   insertLayerNode,
   moveLayerNode,
   // Layer factories

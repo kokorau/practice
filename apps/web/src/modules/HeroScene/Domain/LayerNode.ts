@@ -1,220 +1,36 @@
 /**
- * LayerNode Type Definitions
+ * Layer & Group Type Definitions
  *
  * Tree-based layer structure for the UI.
  *
- * Layer Categories:
- * - object: Drawable targets (base, surface, text, model3d, image)
- * - group: Organizational grouping only (no rendering semantics)
+ * Structure:
+ * - Layer: Drawable unit with sources (surfaces) and modifiers (effects/masks)
+ * - Group: Organizational container for children (like Figma's group)
  *
- * Processors (effect, mask) are attached to layers, not separate layer types.
+ * New naming convention:
+ * - Layer: replaces SurfaceLayerNode, BaseLayerNode, etc.
+ * - Group: replaces GroupLayerNode
+ * - sources: replaces surface (now supports multiple)
+ * - modifiers: replaces processors
  */
 
-import type { Processor } from './Processor'
+import type { Modifier } from './Modifier'
+import { createEffectModifier, createMaskModifier } from './Modifier'
 import type { TexturePatternSpec } from '@practice/texture'
 
 // ============================================================
-// Layer Categories & Subtypes
+// Surface Types (what to render)
 // ============================================================
 
 /**
- * Layer category - top-level classification
+ * Surface configuration - defines what content to render
  */
-export type LayerCategory = 'object' | 'group'
-
-/**
- * Object subtypes - drawable targets
- */
-export type ObjectSubtype = 'base' | 'surface' | 'text' | 'model3d' | 'image'
-
-// ============================================================
-// Inline types to avoid circular import
-// ============================================================
-
-/**
- * Text layer configuration (inline to avoid circular import)
- */
-export interface TextLayerConfig {
-  type: 'text'
-  text: string
-  fontFamily: string
-  fontSize: number
-  fontWeight: number
-  letterSpacing: number
-  lineHeight: number
-  color: string
-  position: {
-    x: number
-    y: number
-    anchor: 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
-  }
-  rotation: number
-}
-
-/**
- * 3D Model layer configuration (inline to avoid circular import)
- */
-export interface Model3DLayerConfig {
-  type: 'model3d'
-  modelUrl: string
-  position: { x: number; y: number; z: number }
-  rotation: { x: number; y: number; z: number }
-  scale: number
-  materialOverrides?: {
-    color?: string
-    metalness?: number
-    roughness?: number
-  }
-}
-
-/** @deprecated Use Model3DLayerConfig instead */
-export type ObjectLayerConfig = Model3DLayerConfig
-
-// ============================================================
-// Layer Node Types
-// ============================================================
-
-/**
- * Layer node type discriminator
- */
-export type LayerNodeType = 'base' | 'group' | 'surface' | 'model3d' | 'text' | 'image'
-
-/** @deprecated Use LayerNodeType instead */
-export type LegacyLayerNodeType = 'base' | 'group' | 'surface' | 'object' | 'text'
-
-/**
- * Base properties for all layer nodes
- */
-export interface LayerNodeBase {
-  /** Unique identifier */
-  id: string
-  /** Display name */
-  name: string
-  /** Whether the layer is visible */
-  visible: boolean
-  /** Whether the layer is expanded in UI */
-  expanded: boolean
-  /** Layer category */
-  category: LayerCategory
-}
-
-// ============================================================
-// Concrete Layer Node Types (Object Category)
-// ============================================================
-
-/**
- * Base layer (background) - always present, cannot be deleted
- * Does not support mask processors (always opaque)
- */
-export interface BaseLayerNode extends LayerNodeBase {
-  category: 'object'
-  type: 'base'
-  /** Surface configuration */
-  surface: SurfaceConfig
-  /** Processors (effects only, no masks) */
-  processors: Processor[]
-}
-
-/**
- * Surface layer - displays a texture pattern
- */
-export interface SurfaceLayerNode extends LayerNodeBase {
-  category: 'object'
-  type: 'surface'
-  /** Surface configuration */
-  surface: SurfaceConfig
-  /** Processors (effect + mask) */
-  processors: Processor[]
-}
-
-/**
- * Text layer - displays text
- */
-export interface TextLayerNode extends LayerNodeBase {
-  category: 'object'
-  type: 'text'
-  /** Text configuration */
-  config: TextLayerConfig
-  /** Processors (effect + mask) */
-  processors: Processor[]
-}
-
-/**
- * 3D Model layer - displays a 3D object
- */
-export interface Model3DLayerNode extends LayerNodeBase {
-  category: 'object'
-  type: 'model3d'
-  /** Model configuration */
-  config: Model3DLayerConfig
-  /** Processors (effect + mask) */
-  processors: Processor[]
-}
-
-/** @deprecated Use Model3DLayerNode instead */
-export type ObjectLayerNode = Model3DLayerNode
-
-/**
- * Image layer - displays an image
- */
-export interface ImageLayerNode extends LayerNodeBase {
-  category: 'object'
-  type: 'image'
-  /** Image source */
-  source: ImageBitmap | string
-  /** Processors (effect + mask) */
-  processors: Processor[]
-}
-
-// ============================================================
-// Concrete Layer Node Types (Group Category)
-// ============================================================
-
-/**
- * Group layer - organizational container for child layers
- * No rendering semantics - purely for UI organization
- */
-export interface GroupLayerNode extends LayerNodeBase {
-  category: 'group'
-  type: 'group'
-  /** Child layer nodes */
-  children: LayerNode[]
-  /** Processors applied to the entire group (effect + mask) */
-  processors: Processor[]
-}
-
-// ============================================================
-// Union Types
-// ============================================================
-
-/**
- * Object layer nodes (drawable targets)
- */
-export type ObjectCategoryNode =
-  | BaseLayerNode
-  | SurfaceLayerNode
-  | TextLayerNode
-  | Model3DLayerNode
-  | ImageLayerNode
-
-/**
- * Layer node union type
- */
-export type LayerNode = ObjectCategoryNode | GroupLayerNode
-
-// ============================================================
-// Surface Configuration
-// ============================================================
-
-/**
- * Surface configuration - how a layer's content is rendered
- */
-export type SurfaceConfig =
-  | TexturePatternSurface
+export type Surface =
+  | PatternSurface
   | ImageSurface
   | SolidSurface
 
-export interface TexturePatternSurface {
+export interface PatternSurface {
   type: 'pattern'
   /** Texture pattern specification */
   spec: TexturePatternSpec
@@ -233,173 +49,301 @@ export interface SolidSurface {
 }
 
 // ============================================================
+// Layer Types
+// ============================================================
+
+/**
+ * Layer type discriminator
+ */
+export type LayerType = 'layer' | 'group'
+
+/**
+ * Layer variant for specialized rendering
+ */
+export type LayerVariant = 'base' | 'surface' | 'text' | 'model3d' | 'image'
+
+/**
+ * Base properties for Layer and Group
+ */
+export interface NodeBase {
+  /** Unique identifier */
+  id: string
+  /** Display name */
+  name: string
+  /** Whether the node is visible */
+  visible: boolean
+  /** Whether the node is expanded in UI */
+  expanded: boolean
+}
+
+/**
+ * Text configuration for text layers
+ */
+export interface TextConfig {
+  text: string
+  fontFamily: string
+  fontSize: number
+  fontWeight: number
+  letterSpacing: number
+  lineHeight: number
+  color: string
+  position: {
+    x: number
+    y: number
+    anchor: 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
+  }
+  rotation: number
+}
+
+/**
+ * 3D Model configuration
+ */
+export interface Model3DConfig {
+  modelUrl: string
+  position: { x: number; y: number; z: number }
+  rotation: { x: number; y: number; z: number }
+  scale: number
+  materialOverrides?: {
+    color?: string
+    metalness?: number
+    roughness?: number
+  }
+}
+
+/**
+ * Layer - a drawable unit
+ *
+ * Contains:
+ * - sources: What to render (surfaces)
+ * - modifiers: How to process (effects, masks)
+ */
+export interface Layer extends NodeBase {
+  type: 'layer'
+  /** Layer variant for specialized rendering */
+  variant: LayerVariant
+  /** Surfaces to render (what to draw) */
+  sources: Surface[]
+  /** Modifiers to apply (effects, masks) */
+  modifiers: Modifier[]
+  /** Text configuration (when variant is 'text') */
+  textConfig?: TextConfig
+  /** 3D model configuration (when variant is 'model3d') */
+  model3dConfig?: Model3DConfig
+}
+
+/**
+ * Group - organizational container
+ *
+ * Contains children (Layer or Group) for organization purposes.
+ * Similar to Figma's group functionality.
+ */
+export interface Group extends NodeBase {
+  type: 'group'
+  /** Child nodes */
+  children: SceneNode[]
+  /** Modifiers applied to the entire group */
+  modifiers: Modifier[]
+}
+
+/**
+ * Scene node union type
+ */
+export type SceneNode = Layer | Group
+
+// ============================================================
 // Factory Functions
 // ============================================================
 
-import { createEffectProcessor } from './Processor'
-
 /**
- * Create a base layer node
+ * Create a layer
  */
-export const createBaseLayerNode = (
-  surface: SurfaceConfig,
-  options?: Partial<Omit<BaseLayerNode, 'type' | 'category' | 'surface'>>
-): BaseLayerNode => ({
-  id: 'base',
-  name: 'Background',
+export const createLayer = (
+  id: string,
+  variant: LayerVariant,
+  sources: Surface[],
+  options?: Partial<Omit<Layer, 'type' | 'id' | 'variant' | 'sources'>>
+): Layer => ({
+  id,
+  name: getDefaultName(variant),
   visible: true,
   expanded: true,
   ...options,
-  category: 'object',
-  type: 'base',
-  surface,
-  processors: options?.processors ?? [createEffectProcessor()],
+  type: 'layer',
+  variant,
+  sources,
+  modifiers: options?.modifiers ?? [createEffectModifier()],
 })
 
 /**
- * Create a group layer node
+ * Create a base layer (background)
  */
-export const createGroupLayerNode = (
+export const createBaseLayer = (
+  surface: Surface,
+  options?: Partial<Omit<Layer, 'type' | 'variant' | 'sources'>>
+): Layer => createLayer(
+  options?.id ?? 'base',
+  'base',
+  [surface],
+  { name: 'Background', ...options }
+)
+
+/**
+ * Create a surface layer
+ */
+export const createSurfaceLayer = (
   id: string,
-  children: LayerNode[] = [],
-  options?: Partial<Omit<GroupLayerNode, 'type' | 'category' | 'children'>>
-): GroupLayerNode => ({
+  surface: Surface,
+  options?: Partial<Omit<Layer, 'type' | 'variant' | 'sources'>>
+): Layer => createLayer(
+  id,
+  'surface',
+  [surface],
+  {
+    modifiers: [createEffectModifier(), createMaskModifier()],
+    ...options,
+  }
+)
+
+/**
+ * Create a text layer
+ */
+export const createTextLayer = (
+  id: string,
+  textConfig: TextConfig,
+  options?: Partial<Omit<Layer, 'type' | 'variant' | 'sources' | 'textConfig'>>
+): Layer => createLayer(
+  id,
+  'text',
+  [],
+  {
+    name: `Text: ${textConfig.text.slice(0, 20)}`,
+    textConfig,
+    ...options,
+  }
+)
+
+/**
+ * Create a 3D model layer
+ */
+export const createModel3DLayer = (
+  id: string,
+  model3dConfig: Model3DConfig,
+  options?: Partial<Omit<Layer, 'type' | 'variant' | 'sources' | 'model3dConfig'>>
+): Layer => createLayer(
+  id,
+  'model3d',
+  [],
+  {
+    name: '3D Model',
+    model3dConfig,
+    ...options,
+  }
+)
+
+/**
+ * Create an image layer
+ */
+export const createImageLayer = (
+  id: string,
+  source: ImageBitmap | string,
+  options?: Partial<Omit<Layer, 'type' | 'variant' | 'sources'>>
+): Layer => createLayer(
+  id,
+  'image',
+  [{ type: 'image', source }],
+  { name: 'Image', ...options }
+)
+
+/**
+ * Create a group
+ */
+export const createGroup = (
+  id: string,
+  children: SceneNode[] = [],
+  options?: Partial<Omit<Group, 'type' | 'id' | 'children'>>
+): Group => ({
   id,
   name: 'Group',
   visible: true,
   expanded: true,
   ...options,
-  category: 'group',
   type: 'group',
   children,
-  processors: options?.processors ?? [],
+  modifiers: options?.modifiers ?? [],
 })
 
 /**
- * Create a surface layer node
+ * Get default name for a layer variant
  */
-export const createSurfaceLayerNode = (
-  id: string,
-  surface: SurfaceConfig,
-  options?: Partial<Omit<SurfaceLayerNode, 'type' | 'category' | 'surface'>>
-): SurfaceLayerNode => ({
-  id,
-  name: 'Surface',
-  visible: true,
-  expanded: true,
-  ...options,
-  category: 'object',
-  type: 'surface',
-  surface,
-  processors: options?.processors ?? [],
-})
-
-/**
- * Create a text layer node
- */
-export const createTextLayerNode = (
-  id: string,
-  config: TextLayerConfig,
-  options?: Partial<Omit<TextLayerNode, 'type' | 'category' | 'config'>>
-): TextLayerNode => ({
-  id,
-  name: `Text: ${config.text.slice(0, 20)}`,
-  visible: true,
-  expanded: true,
-  ...options,
-  category: 'object',
-  type: 'text',
-  config,
-  processors: options?.processors ?? [],
-})
-
-/**
- * Create a 3D model layer node
- */
-export const createModel3DLayerNode = (
-  id: string,
-  config: Model3DLayerConfig,
-  options?: Partial<Omit<Model3DLayerNode, 'type' | 'category' | 'config'>>
-): Model3DLayerNode => ({
-  id,
-  name: '3D Model',
-  visible: true,
-  expanded: true,
-  ...options,
-  category: 'object',
-  type: 'model3d',
-  config,
-  processors: options?.processors ?? [],
-})
-
-/** @deprecated Use createModel3DLayerNode instead */
-export const createObjectLayerNode = createModel3DLayerNode
-
-/**
- * Create an image layer node
- */
-export const createImageLayerNode = (
-  id: string,
-  source: ImageBitmap | string,
-  options?: Partial<Omit<ImageLayerNode, 'type' | 'category' | 'source'>>
-): ImageLayerNode => ({
-  id,
-  name: 'Image',
-  visible: true,
-  expanded: true,
-  ...options,
-  category: 'object',
-  type: 'image',
-  source,
-  processors: options?.processors ?? [],
-})
+const getDefaultName = (variant: LayerVariant): string => {
+  switch (variant) {
+    case 'base': return 'Background'
+    case 'surface': return 'Surface'
+    case 'text': return 'Text'
+    case 'model3d': return '3D Model'
+    case 'image': return 'Image'
+    default: return 'Layer'
+  }
+}
 
 // ============================================================
-// Utility Functions
+// Type Guards
 // ============================================================
 
 /**
- * Category type guards
+ * Check if node is a Layer
  */
-export const isObjectCategory = (node: LayerNode): node is ObjectCategoryNode =>
-  node.category === 'object'
-
-export const isGroupCategory = (node: LayerNode): node is GroupLayerNode =>
-  node.category === 'group'
+export const isLayer = (node: SceneNode): node is Layer =>
+  node.type === 'layer'
 
 /**
- * Type guards for layer nodes
+ * Check if node is a Group
  */
-export const isBaseLayerNode = (node: LayerNode): node is BaseLayerNode =>
-  node.type === 'base'
-
-export const isGroupLayerNode = (node: LayerNode): node is GroupLayerNode =>
+export const isGroup = (node: SceneNode): node is Group =>
   node.type === 'group'
 
-export const isSurfaceLayerNode = (node: LayerNode): node is SurfaceLayerNode =>
-  node.type === 'surface'
-
-export const isTextLayerNode = (node: LayerNode): node is TextLayerNode =>
-  node.type === 'text'
-
-export const isModel3DLayerNode = (node: LayerNode): node is Model3DLayerNode =>
-  node.type === 'model3d'
-
-export const isImageLayerNode = (node: LayerNode): node is ImageLayerNode =>
-  node.type === 'image'
-
-/** @deprecated Use isModel3DLayerNode instead */
-export const isObjectLayerNode = (node: LayerNode): node is Model3DLayerNode =>
-  node.type === 'model3d' || (node as { type: string }).type === 'object'
+/**
+ * Check if layer is a base layer
+ */
+export const isBaseLayer = (node: SceneNode): boolean =>
+  isLayer(node) && node.variant === 'base'
 
 /**
- * Find a layer node by ID (recursive search)
+ * Check if layer is a surface layer
  */
-export const findLayerNode = (nodes: LayerNode[], id: string): LayerNode | undefined => {
+export const isSurfaceLayer = (node: SceneNode): boolean =>
+  isLayer(node) && node.variant === 'surface'
+
+/**
+ * Check if layer is a text layer
+ */
+export const isTextLayer = (node: SceneNode): boolean =>
+  isLayer(node) && node.variant === 'text'
+
+/**
+ * Check if layer is a 3D model layer
+ */
+export const isModel3DLayer = (node: SceneNode): boolean =>
+  isLayer(node) && node.variant === 'model3d'
+
+/**
+ * Check if layer is an image layer
+ */
+export const isImageLayer = (node: SceneNode): boolean =>
+  isLayer(node) && node.variant === 'image'
+
+// ============================================================
+// Tree Utility Functions
+// ============================================================
+
+/**
+ * Find a node by ID (recursive search)
+ */
+export const findNode = (nodes: SceneNode[], id: string): SceneNode | undefined => {
   for (const node of nodes) {
     if (node.id === id) return node
-    if (isGroupLayerNode(node)) {
-      const found = findLayerNode(node.children, id)
+    if (isGroup(node)) {
+      const found = findNode(node.children, id)
       if (found) return found
     }
   }
@@ -407,21 +351,21 @@ export const findLayerNode = (nodes: LayerNode[], id: string): LayerNode | undef
 }
 
 /**
- * Update a layer node by ID (recursive, immutable)
+ * Update a node by ID (recursive, immutable)
  */
-export const updateLayerNode = (
-  nodes: LayerNode[],
+export const updateNode = (
+  nodes: SceneNode[],
   id: string,
-  updates: Partial<LayerNode>
-): LayerNode[] => {
+  updates: Partial<SceneNode>
+): SceneNode[] => {
   return nodes.map(node => {
     if (node.id === id) {
-      return { ...node, ...updates } as LayerNode
+      return { ...node, ...updates } as SceneNode
     }
-    if (isGroupLayerNode(node)) {
+    if (isGroup(node)) {
       return {
         ...node,
-        children: updateLayerNode(node.children, id, updates),
+        children: updateNode(node.children, id, updates),
       }
     }
     return node
@@ -429,16 +373,16 @@ export const updateLayerNode = (
 }
 
 /**
- * Remove a layer node by ID (recursive, immutable)
+ * Remove a node by ID (recursive, immutable)
  */
-export const removeLayerNode = (nodes: LayerNode[], id: string): LayerNode[] => {
+export const removeNode = (nodes: SceneNode[], id: string): SceneNode[] => {
   return nodes
     .filter(node => node.id !== id)
     .map(node => {
-      if (isGroupLayerNode(node)) {
+      if (isGroup(node)) {
         return {
           ...node,
-          children: removeLayerNode(node.children, id),
+          children: removeNode(node.children, id),
         }
       }
       return node
@@ -446,14 +390,14 @@ export const removeLayerNode = (nodes: LayerNode[], id: string): LayerNode[] => 
 }
 
 /**
- * Flatten layer nodes to a list (for rendering order)
+ * Flatten nodes to a list (for rendering order)
  */
-export const flattenLayerNodes = (nodes: LayerNode[]): LayerNode[] => {
-  const result: LayerNode[] = []
+export const flattenNodes = (nodes: SceneNode[]): SceneNode[] => {
+  const result: SceneNode[] = []
   for (const node of nodes) {
     result.push(node)
-    if (isGroupLayerNode(node)) {
-      result.push(...flattenLayerNodes(node.children))
+    if (isGroup(node)) {
+      result.push(...flattenNodes(node.children))
     }
   }
   return result
@@ -473,35 +417,35 @@ export type DropPosition = 'before' | 'after' | 'into'
  * Returns null if the node is at root level, undefined if not found
  */
 export const findParentNode = (
-  nodes: LayerNode[],
+  nodes: SceneNode[],
   targetId: string,
-  parent: GroupLayerNode | null = null
-): GroupLayerNode | null | undefined => {
+  parent: Group | null = null
+): Group | null | undefined => {
   for (const node of nodes) {
     if (node.id === targetId) return parent
-    if (isGroupLayerNode(node)) {
+    if (isGroup(node)) {
       const found = findParentNode(node.children, targetId, node)
       if (found !== undefined) return found
     }
   }
-  return undefined // Not found in tree
+  return undefined
 }
 
 /**
  * Check if sourceId is an ancestor of targetId (to prevent circular moves)
  */
 export const isAncestorOf = (
-  nodes: LayerNode[],
+  nodes: SceneNode[],
   sourceId: string,
   targetId: string
 ): boolean => {
-  const sourceNode = findLayerNode(nodes, sourceId)
-  if (!sourceNode || !isGroupLayerNode(sourceNode)) return false
+  const sourceNode = findNode(nodes, sourceId)
+  if (!sourceNode || !isGroup(sourceNode)) return false
 
-  const checkDescendants = (children: LayerNode[]): boolean => {
+  const checkDescendants = (children: SceneNode[]): boolean => {
     for (const child of children) {
       if (child.id === targetId) return true
-      if (isGroupLayerNode(child) && checkDescendants(child.children)) return true
+      if (isGroup(child) && checkDescendants(child.children)) return true
     }
     return false
   }
@@ -513,34 +457,32 @@ export const isAncestorOf = (
  * Insert a node at a specific position (before/after target, or into group)
  * Returns new tree (immutable)
  */
-export const insertLayerNode = (
-  nodes: LayerNode[],
-  nodeToInsert: LayerNode,
+export const insertNode = (
+  nodes: SceneNode[],
+  nodeToInsert: SceneNode,
   targetId: string,
   position: DropPosition
-): LayerNode[] => {
-  // Handle 'into' position - insert as first child of target group
+): SceneNode[] => {
   if (position === 'into') {
     return nodes.map(node => {
-      if (node.id === targetId && isGroupLayerNode(node)) {
+      if (node.id === targetId && isGroup(node)) {
         return {
           ...node,
           children: [nodeToInsert, ...node.children],
-          expanded: true, // Expand to show the inserted node
+          expanded: true,
         }
       }
-      if (isGroupLayerNode(node)) {
+      if (isGroup(node)) {
         return {
           ...node,
-          children: insertLayerNode(node.children, nodeToInsert, targetId, position),
+          children: insertNode(node.children, nodeToInsert, targetId, position),
         }
       }
       return node
     })
   }
 
-  // Handle 'before' and 'after' positions
-  const result: LayerNode[] = []
+  const result: SceneNode[] = []
   for (const node of nodes) {
     if (node.id === targetId) {
       if (position === 'before') {
@@ -548,17 +490,16 @@ export const insertLayerNode = (
       } else {
         result.push(node, nodeToInsert)
       }
-    } else if (isGroupLayerNode(node)) {
+    } else if (isGroup(node)) {
       result.push({
         ...node,
-        children: insertLayerNode(node.children, nodeToInsert, targetId, position),
+        children: insertNode(node.children, nodeToInsert, targetId, position),
       })
     } else {
       result.push(node)
     }
   }
 
-  // If target wasn't found at this level, return as-is
   if (!nodes.some(n => n.id === targetId)) {
     return result
   }
@@ -567,34 +508,143 @@ export const insertLayerNode = (
 }
 
 /**
- * Move a layer node from its current position to a new position
+ * Move a node from its current position to a new position
  * Combines remove + insert in an immutable way
  */
-export const moveLayerNode = (
-  nodes: LayerNode[],
+export const moveNode = (
+  nodes: SceneNode[],
   sourceId: string,
   targetId: string,
   position: DropPosition
-): LayerNode[] => {
-  // Validate: prevent moving to self
+): SceneNode[] => {
   if (sourceId === targetId) return nodes
-
-  // Validate: prevent moving into own descendants
   if (isAncestorOf(nodes, sourceId, targetId)) return nodes
 
-  // Validate: prevent moving base layer
-  const sourceNode = findLayerNode(nodes, sourceId)
-  if (!sourceNode || sourceNode.type === 'base') return nodes
+  const sourceNode = findNode(nodes, sourceId)
+  if (!sourceNode) return nodes
 
-  // Validate: 'into' position only valid for group targets
+  // Prevent moving base layer
+  if (isLayer(sourceNode) && sourceNode.variant === 'base') return nodes
+
+  // 'into' position only valid for group targets
   if (position === 'into') {
-    const targetNode = findLayerNode(nodes, targetId)
-    if (!targetNode || !isGroupLayerNode(targetNode)) return nodes
+    const targetNode = findNode(nodes, targetId)
+    if (!targetNode || !isGroup(targetNode)) return nodes
   }
 
-  // Remove from current position
-  const withoutSource = removeLayerNode(nodes, sourceId)
-
-  // Insert at new position
-  return insertLayerNode(withoutSource, sourceNode, targetId, position)
+  const withoutSource = removeNode(nodes, sourceId)
+  return insertNode(withoutSource, sourceNode, targetId, position)
 }
+
+// ============================================================
+// Legacy Aliases (for backward compatibility)
+// ============================================================
+
+// Types
+/** @deprecated Use Layer instead */
+export type LayerNode = SceneNode
+/** @deprecated Use Layer instead */
+export type BaseLayerNode = Layer
+/** @deprecated Use Layer instead */
+export type SurfaceLayerNode = Layer
+/** @deprecated Use Layer instead */
+export type TextLayerNode = Layer
+/** @deprecated Use Layer instead */
+export type Model3DLayerNode = Layer
+/** @deprecated Use Layer instead */
+export type ImageLayerNode = Layer
+/** @deprecated Use Layer instead */
+export type ObjectLayerNode = Layer
+/** @deprecated Use Group instead */
+export type GroupLayerNode = Group
+/** @deprecated Use NodeBase instead */
+export type LayerNodeBase = NodeBase
+/** @deprecated Use LayerType instead */
+export type LayerNodeType = 'base' | 'group' | 'surface' | 'model3d' | 'text' | 'image'
+
+// Surface types (keep for compatibility)
+/** @deprecated Use PatternSurface instead */
+export type TexturePatternSurface = PatternSurface
+/** @deprecated Use Surface instead */
+export type SurfaceConfig = Surface
+
+// Factory functions
+/** @deprecated Use createBaseLayer instead */
+export const createBaseLayerNode = (
+  surface: { type: 'solid'; color: string } | { type: 'pattern'; spec: TexturePatternSpec } | { type: 'image'; source: ImageBitmap | string },
+  options?: { processors?: Modifier[]; name?: string }
+): Layer => createBaseLayer(surface as Surface, { modifiers: options?.processors, name: options?.name })
+
+/** @deprecated Use createGroup instead */
+export const createGroupLayerNode = (
+  id: string,
+  children: SceneNode[] = [],
+  options?: { name?: string; expanded?: boolean; processors?: Modifier[] }
+): Group => createGroup(id, children, { name: options?.name, expanded: options?.expanded, modifiers: options?.processors })
+
+/** @deprecated Use createSurfaceLayer instead */
+export const createSurfaceLayerNode = (
+  id: string,
+  surface: { type: 'solid'; color: string } | { type: 'pattern'; spec: TexturePatternSpec } | { type: 'image'; source: ImageBitmap | string },
+  options?: { name?: string; processors?: Modifier[] }
+): Layer => createSurfaceLayer(id, surface as Surface, { name: options?.name, modifiers: options?.processors })
+
+/** @deprecated Use createTextLayer instead */
+export const createTextLayerNode = (
+  id: string,
+  config: TextConfig & { type: 'text' },
+  options?: { name?: string; processors?: Modifier[] }
+): Layer => {
+  const { type: _, ...textConfig } = config
+  return createTextLayer(id, textConfig, { name: options?.name, modifiers: options?.processors })
+}
+
+/** @deprecated Use createModel3DLayer instead */
+export const createModel3DLayerNode = (
+  id: string,
+  config: Model3DConfig & { type: 'model3d' },
+  options?: { name?: string; processors?: Modifier[] }
+): Layer => {
+  const { type: _, ...model3dConfig } = config
+  return createModel3DLayer(id, model3dConfig, { name: options?.name, modifiers: options?.processors })
+}
+
+/** @deprecated Use createModel3DLayer instead */
+export const createObjectLayerNode = createModel3DLayerNode
+
+/** @deprecated Use createImageLayer instead */
+export const createImageLayerNode = (
+  id: string,
+  source: ImageBitmap | string,
+  options?: { name?: string; processors?: Modifier[] }
+): Layer => createImageLayer(id, source, { name: options?.name, modifiers: options?.processors })
+
+// Type guards
+/** @deprecated Use isBaseLayer instead */
+export const isBaseLayerNode = isBaseLayer
+/** @deprecated Use isGroup instead */
+export const isGroupLayerNode = (node: SceneNode): node is Group => isGroup(node)
+/** @deprecated Use isSurfaceLayer instead */
+export const isSurfaceLayerNode = isSurfaceLayer
+/** @deprecated Use isTextLayer instead */
+export const isTextLayerNode = isTextLayer
+/** @deprecated Use isModel3DLayer instead */
+export const isModel3DLayerNode = isModel3DLayer
+/** @deprecated Use isImageLayer instead */
+export const isImageLayerNode = isImageLayer
+/** @deprecated Use isModel3DLayer instead */
+export const isObjectLayerNode = isModel3DLayer
+
+// Tree utilities
+/** @deprecated Use findNode instead */
+export const findLayerNode = findNode
+/** @deprecated Use updateNode instead */
+export const updateLayerNode = updateNode
+/** @deprecated Use removeNode instead */
+export const removeLayerNode = removeNode
+/** @deprecated Use flattenNodes instead */
+export const flattenLayerNodes = flattenNodes
+/** @deprecated Use insertNode instead */
+export const insertLayerNode = insertNode
+/** @deprecated Use moveNode instead */
+export const moveLayerNode = moveNode
