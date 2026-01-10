@@ -813,8 +813,11 @@ const handleAddLayer = (type: LayerNodeType) => {
 }
 
 const handleRemoveLayer = (layerId: string) => {
+  // Map UI layer ID to scene layer ID (e.g., 'surface-1' -> 'mask-layer')
+  const sceneLayerId = mapLayerIdToSceneLayerId(layerId)
+
   // Remove from scene (this updates editorState.canvasLayers and re-renders)
-  sceneRemoveLayer(layerId)
+  sceneRemoveLayer(sceneLayerId)
 
   // Remove from UI layers tree
   layers.value = removeNode(layers.value, layerId)
