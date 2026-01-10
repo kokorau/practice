@@ -1,0 +1,649 @@
+<script setup lang="ts">
+/**
+ * DraggableLayerNode
+ *
+ * Recursive tree node component with drag & drop support.
+ * Features:
+ * - Native HTML5 drag and drop
+ * - Visual depth indication via indentation
+ * - Three drop zones: before, into (groups only), after
+ * - Expand/collapse for groups
+ */
+
+import { computed } from 'vue'
+import type { LayerNode, LayerNodeType, DropPosition } from '../../modules/HeroScene'
+import { isGroupLayerNode, isEffectProcessor, isMaskProcessor } from '../../modules/HeroScene'
+import type { DropTarget } from './useLayerDragDrop'
+
+// ============================================================
+// Props & Emits
+// ============================================================
+
+const props = defineProps<{
+  node: LayerNode
+  depth: number
+  selectedId: string | null
+  draggedId: string | null
+  dropTarget: DropTarget | null
+}>()
+
+const emit = defineEmits<{
+  select: [nodeId: string]
+  'toggle-expand': [nodeId: string]
+  'toggle-visibility': [nodeId: string]
+  'select-processor': [nodeId: string, processorType: 'effect' | 'mask']
+  'remove-layer': [nodeId: string]
+  // Drag & drop events
+  'drag-start': [nodeId: string]
+  'drag-end': []
+  'drag-over': [nodeId: string, position: DropPosition, event: DragEvent]
+  'drag-leave': [nodeId: string]
+  drop: [sourceId: string, targetId: string, position: DropPosition]
+}>()
+
+// ============================================================
+// Computed
+// ============================================================
+
+const isSelected = computed(() => props.selectedId === props.node.id)
+const isGroup = computed(() => isGroupLayerNode(props.node))
+const hasChildren = computed(() => isGroup.value && (props.node as { children: LayerNode[] }).children.length > 0)
+const isExpanded = computed(() => props.node.expanded)
+
+// Check if this node has expandable content (children or processors)
+const hasExpandableContent = computed(() => hasChildren.value || processors.value.length > 0)
+const isDragging = computed(() => props.draggedId === props.node.id)
+const isDraggable = computed(() => props.node.type !== 'base')
+
+// Check if this node is the current drop target
+const isDropTarget = computed(() => props.dropTarget?.nodeId === props.node.id)
+const dropPosition = computed(() => props.dropTarget?.nodeId === props.node.id ? props.dropTarget.position : null)
+
+// Indent style based on depth
+const indentStyle = computed(() => ({
+  paddingLeft: `${props.depth * 1}rem`,
+}))
+
+// Children for group nodes
+const children = computed(() => {
+  if (isGroupLayerNode(props.node)) {
+    return props.node.children
+  }
+  return []
+})
+
+// Processor info
+const processors = computed(() => {
+  const result: { type: 'effect' | 'mask'; label: string; value: string; enabled: boolean }[] = []
+
+  const effectProc = props.node.processors.find(isEffectProcessor)
+  if (effectProc) {
+    const activeEffects: string[] = []
+    if (effectProc.config.vignette.enabled) activeEffects.push('Vignette')
+    if (effectProc.config.chromaticAberration.enabled) activeEffects.push('CA')
+    if (effectProc.config.dotHalftone.enabled) activeEffects.push('Dot HT')
+    if (effectProc.config.lineHalftone.enabled) activeEffects.push('Line HT')
+    result.push({
+      type: 'effect',
+      label: 'Effect',
+      value: activeEffects.length > 0 ? activeEffects.join(' / ') : 'None',
+      enabled: effectProc.enabled,
+    })
+  }
+
+  if (props.node.type !== 'base') {
+    const maskProc = props.node.processors.find(isMaskProcessor)
+    if (maskProc) {
+      const shapeType = maskProc.config.shape
+      result.push({
+        type: 'mask',
+        label: 'Mask',
+        value: shapeType.charAt(0).toUpperCase() + shapeType.slice(1),
+        enabled: maskProc.enabled,
+      })
+    }
+  }
+
+  return result
+})
+
+// ============================================================
+// Icon & Label Helpers
+// ============================================================
+
+const getLayerIcon = (type: LayerNodeType): string => {
+  switch (type) {
+    case 'base': return 'gradient'
+    case 'surface': return 'texture'
+    case 'group': return 'folder_open'
+    case 'model3d': return 'view_in_ar'
+    case 'image': return 'image'
+    case 'text': return 'text_fields'
+    default: return 'layers'
+  }
+}
+
+// ============================================================
+// Event Handlers
+// ============================================================
+
+const handleSelect = () => {
+  emit('select', props.node.id)
+}
+
+const handleToggleExpand = (e: Event) => {
+  e.stopPropagation()
+  emit('toggle-expand', props.node.id)
+}
+
+const handleToggleVisibility = (e: Event) => {
+  e.stopPropagation()
+  emit('toggle-visibility', props.node.id)
+}
+
+const handleRemove = (e: Event) => {
+  e.stopPropagation()
+  emit('remove-layer', props.node.id)
+}
+
+const handleSelectProcessor = (type: 'effect' | 'mask') => {
+  emit('select-processor', props.node.id, type)
+}
+
+// Drag & Drop Handlers
+const handleDragStart = (e: DragEvent) => {
+  if (!isDraggable.value) {
+    e.preventDefault()
+    return
+  }
+  e.dataTransfer!.effectAllowed = 'move'
+  e.dataTransfer!.setData('text/plain', props.node.id)
+  emit('drag-start', props.node.id)
+}
+
+const handleDragEnd = () => {
+  emit('drag-end')
+}
+
+const handleDragOver = (e: DragEvent) => {
+  // Don't allow dropping onto self or if not dragging
+  if (!props.draggedId || props.draggedId === props.node.id) {
+    return
+  }
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'move'
+
+  // Calculate drop position based on mouse position
+  const target = e.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  const y = e.clientY - rect.top
+  const height = rect.height
+
+  const topZone = height * 0.25
+  const bottomZone = height * 0.75
+
+  let position: DropPosition
+  if (y < topZone) {
+    position = 'before'
+  } else if (y > bottomZone) {
+    position = 'after'
+  } else {
+    position = isGroup.value ? 'into' : 'after'
+  }
+
+  emit('drag-over', props.node.id, position, e)
+}
+
+const handleDragLeave = (e: DragEvent) => {
+  // Check if we're leaving to a child element
+  const relatedTarget = e.relatedTarget as HTMLElement | null
+  const currentTarget = e.currentTarget as HTMLElement
+  if (relatedTarget && currentTarget.contains(relatedTarget)) {
+    return
+  }
+  emit('drag-leave', props.node.id)
+}
+
+const handleDrop = (e: DragEvent) => {
+  e.preventDefault()
+  if (!props.draggedId || !props.dropTarget) return
+
+  emit('drop', props.draggedId, props.dropTarget.nodeId, props.dropTarget.position)
+}
+</script>
+
+<template>
+  <div
+    class="draggable-layer-node"
+    :class="{
+      'is-dragging': isDragging,
+      'is-drop-target': isDropTarget,
+      'drop-before': dropPosition === 'before',
+      'drop-into': dropPosition === 'into',
+      'drop-after': dropPosition === 'after',
+    }"
+  >
+    <!-- Node Header -->
+    <div
+      class="node-header"
+      :class="{ selected: isSelected }"
+      :style="indentStyle"
+      :draggable="isDraggable"
+      @click="handleSelect"
+      @dragstart="handleDragStart"
+      @dragend="handleDragEnd"
+      @dragover="handleDragOver"
+      @dragleave="handleDragLeave"
+      @drop="handleDrop"
+    >
+      <!-- Drag Handle -->
+      <span v-if="isDraggable" class="drag-handle material-icons">drag_indicator</span>
+      <span v-else class="drag-spacer" />
+
+      <!-- Expand Toggle -->
+      <button
+        v-if="hasExpandableContent || node.type === 'group'"
+        class="expand-toggle"
+        :class="{ expanded: isExpanded }"
+        @click="handleToggleExpand"
+      >
+        <span class="material-icons">chevron_right</span>
+      </button>
+      <span v-else class="expand-spacer" />
+
+      <!-- Type Icon -->
+      <span class="material-icons layer-icon">{{ getLayerIcon(node.type) }}</span>
+
+      <!-- Layer Name -->
+      <div class="layer-info">
+        <span class="layer-name">{{ node.name }}</span>
+      </div>
+
+      <!-- Visibility Toggle -->
+      <button
+        v-if="node.type !== 'base'"
+        class="visibility-toggle"
+        :class="{ hidden: !node.visible }"
+        @click="handleToggleVisibility"
+      >
+        <span class="material-icons">{{ node.visible ? 'visibility' : 'visibility_off' }}</span>
+      </button>
+      <span v-else class="visibility-spacer" />
+
+      <!-- Remove Button -->
+      <button
+        v-if="node.type !== 'base'"
+        class="remove-toggle"
+        @click="handleRemove"
+      >
+        <span class="material-icons">close</span>
+      </button>
+      <span v-else class="visibility-spacer" />
+    </div>
+
+    <!-- Processors (shown when expanded) -->
+    <div v-if="isExpanded && processors.length > 0" class="processors" :style="{ marginLeft: `${depth * 1 + 1.5}rem` }">
+      <button
+        v-for="proc in processors"
+        :key="proc.type"
+        class="processor-item"
+        @click="handleSelectProcessor(proc.type)"
+      >
+        <span class="processor-label">{{ proc.label }}</span>
+        <span class="processor-value">{{ proc.value }}</span>
+        <span class="material-icons processor-arrow">chevron_right</span>
+      </button>
+    </div>
+
+    <!-- Children (Recursive) -->
+    <template v-if="isExpanded && children.length > 0">
+      <DraggableLayerNode
+        v-for="child in children"
+        :key="child.id"
+        :node="child"
+        :depth="depth + 1"
+        :selected-id="selectedId"
+        :dragged-id="draggedId"
+        :drop-target="dropTarget"
+        @select="(id: string) => emit('select', id)"
+        @toggle-expand="(id: string) => emit('toggle-expand', id)"
+        @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
+        @select-processor="(id: string, type: 'effect' | 'mask') => emit('select-processor', id, type)"
+        @remove-layer="(id: string) => emit('remove-layer', id)"
+        @drag-start="(id: string) => emit('drag-start', id)"
+        @drag-end="() => emit('drag-end')"
+        @drag-over="(id: string, pos: DropPosition, e: DragEvent) => emit('drag-over', id, pos, e)"
+        @drag-leave="(id: string) => emit('drag-leave', id)"
+        @drop="(src: string, tgt: string, pos: DropPosition) => emit('drop', src, tgt, pos)"
+      />
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.draggable-layer-node {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Dragging state */
+.draggable-layer-node.is-dragging {
+  opacity: 0.5;
+}
+
+/* Drop target indicators */
+.draggable-layer-node.is-drop-target.drop-before::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: oklch(0.55 0.20 250);
+  z-index: 10;
+}
+
+.draggable-layer-node.is-drop-target.drop-after::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: oklch(0.55 0.20 250);
+  z-index: 10;
+}
+
+.draggable-layer-node.is-drop-target.drop-into > .node-header {
+  background: oklch(0.55 0.20 250 / 0.2);
+  outline: 2px solid oklch(0.55 0.20 250);
+  outline-offset: -2px;
+}
+
+/* Node Header */
+.node-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 0.25rem;
+}
+
+.node-header:hover {
+  background: oklch(0.90 0.01 260);
+}
+
+:global(.dark) .node-header:hover {
+  background: oklch(0.24 0.02 260);
+}
+
+.node-header.selected {
+  background: oklch(0.55 0.15 250 / 0.15);
+}
+
+:global(.dark) .node-header.selected {
+  background: oklch(0.55 0.15 250 / 0.25);
+}
+
+/* Drag Handle */
+.drag-handle {
+  font-size: 1rem;
+  color: oklch(0.60 0.02 260);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.node-header:hover .drag-handle {
+  opacity: 1;
+}
+
+:global(.dark) .drag-handle {
+  color: oklch(0.50 0.02 260);
+}
+
+.drag-spacer {
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+/* Expand Toggle */
+.expand-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: oklch(0.50 0.02 260);
+  cursor: pointer;
+  border-radius: 0.125rem;
+  transition: transform 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+:global(.dark) .expand-toggle {
+  color: oklch(0.55 0.02 260);
+}
+
+.expand-toggle:hover {
+  color: oklch(0.35 0.02 260);
+}
+
+:global(.dark) .expand-toggle:hover {
+  color: oklch(0.75 0.02 260);
+}
+
+.expand-toggle.expanded {
+  transform: rotate(90deg);
+}
+
+.expand-toggle .material-icons {
+  font-size: 1rem;
+}
+
+.expand-spacer {
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+/* Layer Icon */
+.layer-icon {
+  font-size: 1rem;
+  color: oklch(0.50 0.02 260);
+  flex-shrink: 0;
+}
+
+:global(.dark) .layer-icon {
+  color: oklch(0.60 0.02 260);
+}
+
+/* Layer Info */
+.layer-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.layer-name {
+  font-size: 0.8125rem;
+  color: oklch(0.25 0.02 260);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:global(.dark) .layer-name {
+  color: oklch(0.85 0.02 260);
+}
+
+/* Visibility Toggle */
+.visibility-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: oklch(0.50 0.02 260);
+  cursor: pointer;
+  border-radius: 0.125rem;
+  transition: color 0.15s;
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.node-header:hover .visibility-toggle,
+.visibility-toggle.hidden {
+  opacity: 1;
+}
+
+:global(.dark) .visibility-toggle {
+  color: oklch(0.60 0.02 260);
+}
+
+.visibility-toggle:hover {
+  color: oklch(0.30 0.02 260);
+}
+
+:global(.dark) .visibility-toggle:hover {
+  color: oklch(0.85 0.02 260);
+}
+
+.visibility-toggle.hidden {
+  color: oklch(0.70 0.01 260);
+}
+
+:global(.dark) .visibility-toggle.hidden {
+  color: oklch(0.40 0.02 260);
+}
+
+.visibility-toggle .material-icons {
+  font-size: 1rem;
+}
+
+.visibility-spacer {
+  width: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* Remove Toggle */
+.remove-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: oklch(0.55 0.02 260);
+  cursor: pointer;
+  border-radius: 0.125rem;
+  transition: color 0.15s;
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.node-header:hover .remove-toggle {
+  opacity: 1;
+}
+
+:global(.dark) .remove-toggle {
+  color: oklch(0.50 0.02 260);
+}
+
+.remove-toggle:hover {
+  color: oklch(0.60 0.15 25);
+}
+
+.remove-toggle .material-icons {
+  font-size: 1rem;
+}
+
+/* Processors */
+.processors {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin: 0.125rem 0 0.25rem;
+}
+
+.processor-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  background: oklch(0.94 0.01 260);
+  border: 1px solid oklch(0.88 0.01 260);
+  border-radius: 0.25rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  margin-right: 0.5rem;
+}
+
+:global(.dark) .processor-item {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.25 0.02 260);
+}
+
+.processor-item:hover {
+  background: oklch(0.90 0.01 260);
+  border-color: oklch(0.80 0.01 260);
+}
+
+:global(.dark) .processor-item:hover {
+  background: oklch(0.22 0.02 260);
+  border-color: oklch(0.32 0.02 260);
+}
+
+.processor-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: oklch(0.50 0.02 260);
+  min-width: 2.5rem;
+}
+
+:global(.dark) .processor-label {
+  color: oklch(0.60 0.02 260);
+}
+
+.processor-value {
+  flex: 1;
+  font-size: 0.6875rem;
+  color: oklch(0.30 0.02 260);
+}
+
+:global(.dark) .processor-value {
+  color: oklch(0.80 0.02 260);
+}
+
+.processor-arrow {
+  font-size: 0.875rem;
+  color: oklch(0.60 0.02 260);
+}
+
+:global(.dark) .processor-arrow {
+  color: oklch(0.45 0.02 260);
+}
+
+.processor-item:hover .processor-arrow {
+  color: oklch(0.40 0.02 260);
+}
+
+:global(.dark) .processor-item:hover .processor-arrow {
+  color: oklch(0.70 0.02 260);
+}
+</style>

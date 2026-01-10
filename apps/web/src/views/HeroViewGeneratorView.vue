@@ -19,7 +19,23 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import LayerPanel, { type LayerItem, type LayerType, type SubItemType } from '../components/HeroGenerator/LayerPanel.vue'
+import LayerPanel, { type LayerType } from '../components/HeroGenerator/LayerPanel.vue'
+import type { LayerNode } from '../modules/HeroScene'
+import {
+  createBaseLayerNode,
+  createSurfaceLayerNode,
+  createGroupLayerNode,
+  createTextLayerNode,
+  createModel3DLayerNode,
+  createImageLayerNode,
+  createEffectProcessor,
+  createMaskProcessor,
+  findLayerNode,
+  updateLayerNode,
+  removeLayerNode as removeLayerNodeFromTree,
+  moveLayerNode as moveLayerNodeInTree,
+  type DropPosition,
+} from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
@@ -144,7 +160,6 @@ const {
   // Per-layer filters
   selectedFilterLayerId,
   selectedLayerFilters,
-  layerFilterConfigs,
   updateLayerFilters,
   // Custom shape/surface params
   customMaskShapeParams,
@@ -601,9 +616,21 @@ const activeTab = ref<TabId>('generator')
 // ============================================================
 // Layer Management (for Right Panel)
 // ============================================================
-const layers = ref<LayerItem[]>([
-  { id: 'base', type: 'base', name: 'Background', visible: true, expanded: true },
-  { id: 'surface-1', type: 'surface', name: 'Surface', visible: true, expanded: false },
+const selectedLayerId = ref<string | null>(null)
+
+const layers = ref<LayerNode[]>([
+  createBaseLayerNode(
+    { type: 'solid', color: 'BN1' },
+    { processors: [createEffectProcessor()] }
+  ),
+  createSurfaceLayerNode(
+    'surface-1',
+    { type: 'solid', color: 'B' },
+    {
+      name: 'Surface',
+      processors: [createEffectProcessor(), createMaskProcessor()],
+    }
+  ),
 ])
 
 const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
@@ -616,172 +643,109 @@ const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
   return uiLayerId
 }
 
+const handleSelectLayer = (layerId: string) => {
+  selectedLayerId.value = layerId
+}
+
+const handleToggleExpand = (layerId: string) => {
+  layers.value = updateLayerNode(layers.value, layerId, {
+    expanded: !findLayerNode(layers.value, layerId)?.expanded,
+  })
+}
+
 const handleToggleVisibility = (layerId: string) => {
-  const layer = layers.value.find(l => l.id === layerId)
+  const layer = findLayerNode(layers.value, layerId)
   if (layer) {
-    layer.visible = !layer.visible
+    layers.value = updateLayerNode(layers.value, layerId, {
+      visible: !layer.visible,
+    })
     toggleLayerVisibility(mapLayerIdToSceneLayerId(layerId))
   }
 }
 
-const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
-  const layer = layers.value.find(l => l.id === layerId)
+const handleSelectProcessor = (layerId: string, processorType: 'effect' | 'mask') => {
+  const layer = findLayerNode(layers.value, layerId)
   if (!layer) return
 
-  // Handle effect/filter (both for backward compatibility)
-  const isEffectOrFilter = subItemType === 'filter' || subItemType === 'effect'
-
-  // Normalize layer type for backward compatibility
-  const layerType = layer.type as string
-  const normalizedType = layerType === 'clipGroup' ? 'surface' : layer.type
-
-  if (normalizedType === 'base') {
-    if (subItemType === 'surface') {
-      openSection('background')
-    } else if (isEffectOrFilter) {
-      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
-      openSection('filter')
-    }
-  } else if (normalizedType === 'surface') {
-    if (subItemType === 'surface') {
-      openSection('clip-group-surface')
-    } else if (subItemType === 'shape') {
-      openSection('clip-group-shape')
-    } else if (isEffectOrFilter) {
-      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
-      openSection('filter')
-    }
-  } else if (normalizedType === 'group') {
-    // Group is purely organizational - only has processors
-    if (subItemType === 'shape') {
-      openSection('clip-group-shape')
-    } else if (isEffectOrFilter) {
-      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
-      openSection('filter')
-    }
-  } else if (normalizedType === 'text') {
-    if (subItemType === 'source') {
-      selectedTextLayerId.value = layerId
-      openSection('text-content')
-    } else if (isEffectOrFilter) {
-      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
-      openSection('filter')
-    }
-  } else if (normalizedType === 'image') {
-    if (subItemType === 'source') {
-      // TODO: Implement image source selection
-    } else if (isEffectOrFilter) {
-      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
-      openSection('filter')
-    }
+  if (processorType === 'effect') {
+    selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
+    openSection('filter')
+  } else if (processorType === 'mask') {
+    openSection('clip-group-shape')
   }
 }
 
 const handleAddLayer = (type: LayerType) => {
-  const names: Record<LayerType, string> = {
-    base: 'Background',
-    surface: 'Surface',
-    group: 'Group',
-    model3d: '3D Model',
-    image: 'Image',
-    text: 'Text Layer',
-  }
-
   let id: string
+  let newLayer: LayerNode
 
-  // Add to scene and get the ID
+  // Add to scene and get the ID, then create corresponding LayerNode
   if (type === 'surface') {
-    // Surface layer uses the mask layer infrastructure with mask processor
     id = addMaskLayer() ?? `surface-${Date.now()}`
+    newLayer = createSurfaceLayerNode(id, { type: 'solid', color: 'B' }, {
+      name: 'Surface',
+      processors: [createEffectProcessor(), createMaskProcessor()],
+    })
   } else if (type === 'group') {
-    // Group is purely organizational (no scene layer for now)
     id = `group-${Date.now()}`
+    newLayer = createGroupLayerNode(id, [], {
+      name: 'Group',
+      processors: [createEffectProcessor(), createMaskProcessor()],
+    })
   } else if (type === 'text') {
     id = addTextLayer()
+    newLayer = createTextLayerNode(id, {
+      type: 'text',
+      text: 'New Text',
+      fontFamily: 'sans-serif',
+      fontSize: 48,
+      fontWeight: 400,
+      letterSpacing: 0,
+      lineHeight: 1.2,
+      color: '#ffffff',
+      position: { x: 0.5, y: 0.5, anchor: 'center' },
+      rotation: 0,
+    }, {
+      name: 'Text Layer',
+      processors: [createEffectProcessor()],
+    })
   } else if (type === 'model3d') {
     id = addObjectLayer({ modelUrl: chairModelUrl })
+    newLayer = createModel3DLayerNode(id, {
+      type: 'model3d',
+      modelUrl: chairModelUrl,
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: 1,
+    }, {
+      name: '3D Model',
+      processors: [createEffectProcessor()],
+    })
   } else if (type === 'image') {
-    // TODO: Implement image layer
     id = `image-${Date.now()}`
+    newLayer = createImageLayerNode(id, '', {
+      name: 'Image',
+      processors: [createEffectProcessor(), createMaskProcessor()],
+    })
   } else {
-    id = `${type}-${Date.now()}`
+    return // Unknown type, don't add
   }
 
   // Add to UI layer list
-  layers.value.push({
-    id,
-    type,
-    name: names[type],
-    visible: true,
-    expanded: true,
-  })
+  layers.value = [...layers.value, newLayer]
 }
 
 const handleRemoveLayer = (layerId: string) => {
-  const index = layers.value.findIndex(l => l.id === layerId)
-  const layer = index > -1 ? layers.value[index] : undefined
+  const layer = findLayerNode(layers.value, layerId)
   if (layer && layer.type !== 'base') {
-    layers.value.splice(index, 1)
+    layers.value = removeLayerNodeFromTree(layers.value, layerId)
     removeLayer(mapLayerIdToSceneLayerId(layerId))
   }
 }
 
-// ============================================================
-// Layer Panel Display Labels
-// ============================================================
-const getSurfaceTypeLabel = (type: string): string => {
-  switch (type) {
-    case 'solid': return 'Solid'
-    case 'stripe': return 'Stripe'
-    case 'grid': return 'Grid'
-    case 'polkaDot': return 'Polka Dot'
-    case 'checker': return 'Checker'
-    case 'gradientGrain': return 'Gradient Grain'
-    default: return 'Solid'
-  }
+const handleMoveLayer = (sourceId: string, targetId: string, position: DropPosition) => {
+  layers.value = moveLayerNodeInTree(layers.value, sourceId, targetId, position)
 }
-
-const getShapeTypeLabel = (type: string): string => {
-  switch (type) {
-    case 'circle': return 'Circle'
-    case 'rect': return 'Rectangle'
-    case 'blob': return 'Blob'
-    default: return 'None'
-  }
-}
-
-const backgroundSurfaceLabel = computed(() => {
-  if (customBackgroundImage.value) return 'Image'
-  // Use customBackgroundSurfaceParams if available (set during preset load)
-  if (customBackgroundSurfaceParams.value) {
-    return getSurfaceTypeLabel(customBackgroundSurfaceParams.value.type)
-  }
-  // Fallback to pattern label by index
-  const pattern = texturePatterns[selectedBackgroundIndex.value]
-  return pattern?.label ?? 'Solid'
-})
-
-const clipGroupSurfaceLabel = computed(() => {
-  if (customMaskImage.value) return 'Image'
-  // Use customSurfaceParams if available (set during preset load)
-  if (customSurfaceParams.value) {
-    return getSurfaceTypeLabel(customSurfaceParams.value.type)
-  }
-  // Fallback to pattern label by index
-  const pattern = midgroundTexturePatterns[selectedMidgroundTextureIndex.value]
-  return pattern?.label ?? 'Solid'
-})
-
-const clipGroupShapeLabel = computed(() => {
-  if (selectedMaskIndex.value === null) return 'None'
-  // Use customMaskShapeParams if available (set during preset load)
-  if (customMaskShapeParams.value) {
-    return getShapeTypeLabel(customMaskShapeParams.value.type)
-  }
-  // Fallback to pattern label by index
-  const pattern = maskPatterns[selectedMaskIndex.value]
-  return pattern?.label ?? 'None'
-})
 
 // ============================================================
 // APCA Contrast Check
@@ -1399,16 +1363,16 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       </div>
       <LayerPanel
         :layers="layers"
-        :layer-filter-configs="layerFilterConfigs"
-        :background-surface-label="backgroundSurfaceLabel"
-        :clip-group-surface-label="clipGroupSurfaceLabel"
-        :clip-group-shape-label="clipGroupShapeLabel"
+        :selected-layer-id="selectedLayerId"
         :title-contrast-score="titleContrastResult?.score ?? null"
         :description-contrast-score="descriptionContrastResult?.score ?? null"
+        @select-layer="handleSelectLayer"
+        @toggle-expand="handleToggleExpand"
         @toggle-visibility="handleToggleVisibility"
-        @select-subitem="handleSelectSubItem"
+        @select-processor="handleSelectProcessor"
         @add-layer="handleAddLayer"
         @remove-layer="handleRemoveLayer"
+        @move-layer="handleMoveLayer"
         @open-foreground-title="openSection('foreground-title')"
         @open-foreground-description="openSection('foreground-description')"
       />

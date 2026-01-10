@@ -458,3 +458,143 @@ export const flattenLayerNodes = (nodes: LayerNode[]): LayerNode[] => {
   }
   return result
 }
+
+// ============================================================
+// Tree Manipulation Functions (for Drag & Drop)
+// ============================================================
+
+/**
+ * Drop position for move operations
+ */
+export type DropPosition = 'before' | 'after' | 'into'
+
+/**
+ * Find the parent of a node by ID
+ * Returns null if the node is at root level, undefined if not found
+ */
+export const findParentNode = (
+  nodes: LayerNode[],
+  targetId: string,
+  parent: GroupLayerNode | null = null
+): GroupLayerNode | null | undefined => {
+  for (const node of nodes) {
+    if (node.id === targetId) return parent
+    if (isGroupLayerNode(node)) {
+      const found = findParentNode(node.children, targetId, node)
+      if (found !== undefined) return found
+    }
+  }
+  return undefined // Not found in tree
+}
+
+/**
+ * Check if sourceId is an ancestor of targetId (to prevent circular moves)
+ */
+export const isAncestorOf = (
+  nodes: LayerNode[],
+  sourceId: string,
+  targetId: string
+): boolean => {
+  const sourceNode = findLayerNode(nodes, sourceId)
+  if (!sourceNode || !isGroupLayerNode(sourceNode)) return false
+
+  const checkDescendants = (children: LayerNode[]): boolean => {
+    for (const child of children) {
+      if (child.id === targetId) return true
+      if (isGroupLayerNode(child) && checkDescendants(child.children)) return true
+    }
+    return false
+  }
+
+  return checkDescendants(sourceNode.children)
+}
+
+/**
+ * Insert a node at a specific position (before/after target, or into group)
+ * Returns new tree (immutable)
+ */
+export const insertLayerNode = (
+  nodes: LayerNode[],
+  nodeToInsert: LayerNode,
+  targetId: string,
+  position: DropPosition
+): LayerNode[] => {
+  // Handle 'into' position - insert as first child of target group
+  if (position === 'into') {
+    return nodes.map(node => {
+      if (node.id === targetId && isGroupLayerNode(node)) {
+        return {
+          ...node,
+          children: [nodeToInsert, ...node.children],
+          expanded: true, // Expand to show the inserted node
+        }
+      }
+      if (isGroupLayerNode(node)) {
+        return {
+          ...node,
+          children: insertLayerNode(node.children, nodeToInsert, targetId, position),
+        }
+      }
+      return node
+    })
+  }
+
+  // Handle 'before' and 'after' positions
+  const result: LayerNode[] = []
+  for (const node of nodes) {
+    if (node.id === targetId) {
+      if (position === 'before') {
+        result.push(nodeToInsert, node)
+      } else {
+        result.push(node, nodeToInsert)
+      }
+    } else if (isGroupLayerNode(node)) {
+      result.push({
+        ...node,
+        children: insertLayerNode(node.children, nodeToInsert, targetId, position),
+      })
+    } else {
+      result.push(node)
+    }
+  }
+
+  // If target wasn't found at this level, return as-is
+  if (!nodes.some(n => n.id === targetId)) {
+    return result
+  }
+
+  return result
+}
+
+/**
+ * Move a layer node from its current position to a new position
+ * Combines remove + insert in an immutable way
+ */
+export const moveLayerNode = (
+  nodes: LayerNode[],
+  sourceId: string,
+  targetId: string,
+  position: DropPosition
+): LayerNode[] => {
+  // Validate: prevent moving to self
+  if (sourceId === targetId) return nodes
+
+  // Validate: prevent moving into own descendants
+  if (isAncestorOf(nodes, sourceId, targetId)) return nodes
+
+  // Validate: prevent moving base layer
+  const sourceNode = findLayerNode(nodes, sourceId)
+  if (!sourceNode || sourceNode.type === 'base') return nodes
+
+  // Validate: 'into' position only valid for group targets
+  if (position === 'into') {
+    const targetNode = findLayerNode(nodes, targetId)
+    if (!targetNode || !isGroupLayerNode(targetNode)) return nodes
+  }
+
+  // Remove from current position
+  const withoutSource = removeLayerNode(nodes, sourceId)
+
+  // Insert at new position
+  return insertLayerNode(withoutSource, sourceNode, targetId, position)
+}
