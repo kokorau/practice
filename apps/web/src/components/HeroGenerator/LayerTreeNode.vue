@@ -6,19 +6,19 @@
  * - Nested display with expand/collapse
  * - Type-specific icons
  * - Visibility toggle
- * - Processor sub-items (Effect/Mask)
+ * - Modifier sub-items (Effect/Mask)
  */
 
 import { computed } from 'vue'
-import type { LayerNode, LayerNodeType } from '../../modules/HeroScene'
-import { isGroupLayerNode, isEffectProcessor, isMaskProcessor } from '../../modules/HeroScene'
+import type { SceneNode, Group, LayerVariant } from '../../modules/HeroScene'
+import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
 
 // ============================================================
 // Props & Emits
 // ============================================================
 
 const props = defineProps<{
-  node: LayerNode
+  node: SceneNode
   depth: number
   selectedId: string | null
 }>()
@@ -36,47 +36,58 @@ const emit = defineEmits<{
 // ============================================================
 
 const isSelected = computed(() => props.selectedId === props.node.id)
-const hasChildren = computed(() => isGroupLayerNode(props.node) && props.node.children.length > 0)
+const isGroupNode = computed(() => isGroup(props.node))
+const hasChildren = computed(() => isGroupNode.value && (props.node as Group).children.length > 0)
 const isExpanded = computed(() => props.node.expanded)
+const isBaseLayer = computed(() => isLayer(props.node) && props.node.variant === 'base')
+
+// Get node variant for Layer nodes
+const nodeVariant = computed((): LayerVariant | 'group' => {
+  if (isLayer(props.node)) {
+    return props.node.variant
+  }
+  return 'group'
+})
 
 // Get children for group nodes
 const children = computed(() => {
-  if (isGroupLayerNode(props.node)) {
+  if (isGroup(props.node)) {
     return props.node.children
   }
   return []
 })
 
-// Get processor info for display
-const processors = computed(() => {
+// Get modifier info for display
+const modifiers = computed(() => {
   const result: { type: 'effect' | 'mask'; label: string; value: string; enabled: boolean }[] = []
 
-  // Effect processor
-  const effectProc = props.node.processors.find(isEffectProcessor)
-  if (effectProc) {
+  const nodeModifiers = props.node.modifiers
+  // Effect modifier
+  const effectMod = nodeModifiers.find(isEffectModifier)
+  if (effectMod) {
     const activeEffects: string[] = []
-    if (effectProc.config.vignette.enabled) activeEffects.push('Vignette')
-    if (effectProc.config.chromaticAberration.enabled) activeEffects.push('CA')
-    if (effectProc.config.dotHalftone.enabled) activeEffects.push('Dot HT')
-    if (effectProc.config.lineHalftone.enabled) activeEffects.push('Line HT')
+    if (effectMod.config.vignette.enabled) activeEffects.push('Vignette')
+    if (effectMod.config.chromaticAberration.enabled) activeEffects.push('CA')
+    if (effectMod.config.dotHalftone.enabled) activeEffects.push('Dot HT')
+    if (effectMod.config.lineHalftone.enabled) activeEffects.push('Line HT')
     result.push({
       type: 'effect',
       label: 'Effect',
       value: activeEffects.length > 0 ? activeEffects.join(' / ') : 'None',
-      enabled: effectProc.enabled,
+      enabled: effectMod.enabled,
     })
   }
 
-  // Mask processor (only for non-base layers)
-  if (props.node.type !== 'base') {
-    const maskProc = props.node.processors.find(isMaskProcessor)
-    if (maskProc) {
-      const shapeType = maskProc.config.shape
+  // Mask modifier (only for non-base layers)
+  if (!isBaseLayer.value) {
+    const maskMod = nodeModifiers.find(isMaskModifier)
+    if (maskMod) {
+      const shapeType = maskMod.config.shape
       result.push({
         type: 'mask',
         label: 'Mask',
         value: shapeType.charAt(0).toUpperCase() + shapeType.slice(1),
-        enabled: maskProc.enabled,
+        enabled: maskMod.enabled,
       })
     }
   }
@@ -88,8 +99,8 @@ const processors = computed(() => {
 // Icon & Label Helpers
 // ============================================================
 
-const getLayerIcon = (type: LayerNodeType): string => {
-  switch (type) {
+const getLayerIcon = (variant: LayerVariant | 'group'): string => {
+  switch (variant) {
     case 'base': return 'gradient'
     case 'surface': return 'texture'
     case 'group': return 'folder_open'
@@ -100,8 +111,8 @@ const getLayerIcon = (type: LayerNodeType): string => {
   }
 }
 
-const getLayerTypeLabel = (type: LayerNodeType): string => {
-  switch (type) {
+const getLayerTypeLabel = (variant: LayerVariant | 'group'): string => {
+  switch (variant) {
     case 'base': return 'Base'
     case 'surface': return 'Surface'
     case 'group': return 'Group'
@@ -150,7 +161,7 @@ const handleSelectProcessor = (type: 'effect' | 'mask') => {
     >
       <!-- Expand Toggle (Group only) -->
       <button
-        v-if="hasChildren || node.type === 'group'"
+        v-if="hasChildren || isGroupNode"
         class="expand-toggle"
         :class="{ expanded: isExpanded }"
         @click="handleToggleExpand"
@@ -160,17 +171,17 @@ const handleSelectProcessor = (type: 'effect' | 'mask') => {
       <span v-else class="expand-spacer" />
 
       <!-- Type Icon -->
-      <span class="material-icons layer-icon">{{ getLayerIcon(node.type) }}</span>
+      <span class="material-icons layer-icon">{{ getLayerIcon(nodeVariant) }}</span>
 
       <!-- Layer Info -->
       <div class="layer-info">
-        <span class="layer-type">{{ getLayerTypeLabel(node.type) }}</span>
+        <span class="layer-type">{{ getLayerTypeLabel(nodeVariant) }}</span>
         <span class="layer-name">{{ node.name }}</span>
       </div>
 
       <!-- Visibility Toggle -->
       <button
-        v-if="node.type !== 'base'"
+        v-if="!isBaseLayer"
         class="visibility-toggle"
         :class="{ hidden: !node.visible }"
         @click="handleToggleVisibility"
@@ -181,7 +192,7 @@ const handleSelectProcessor = (type: 'effect' | 'mask') => {
 
       <!-- Remove Button -->
       <button
-        v-if="node.type !== 'base'"
+        v-if="!isBaseLayer"
         class="remove-toggle"
         @click="handleRemove"
       >
@@ -190,16 +201,16 @@ const handleSelectProcessor = (type: 'effect' | 'mask') => {
       <span v-else class="visibility-spacer" />
     </div>
 
-    <!-- Processors (Effect/Mask) - Visual sub-items when selected -->
-    <div v-if="isSelected && processors.length > 0" class="processors">
+    <!-- Modifiers (Effect/Mask) - Visual sub-items when selected -->
+    <div v-if="isSelected && modifiers.length > 0" class="processors">
       <button
-        v-for="proc in processors"
-        :key="proc.type"
+        v-for="mod in modifiers"
+        :key="mod.type"
         class="processor-item"
-        @click="handleSelectProcessor(proc.type)"
+        @click="handleSelectProcessor(mod.type)"
       >
-        <span class="processor-label">{{ proc.label }}</span>
-        <span class="processor-value">{{ proc.value }}</span>
+        <span class="processor-label">{{ mod.label }}</span>
+        <span class="processor-value">{{ mod.value }}</span>
         <span class="material-icons processor-arrow">chevron_right</span>
       </button>
     </div>

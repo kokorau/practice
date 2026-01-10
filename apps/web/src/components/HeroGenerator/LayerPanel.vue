@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { LayerNode, LayerNodeType, DropPosition } from '../../modules/HeroScene'
-import { flattenLayerNodes } from '../../modules/HeroScene'
+import { flattenLayerNodes, isLayer } from '../../modules/HeroScene'
 import DraggableLayerNode from './DraggableLayerNode.vue'
 import { useLayerDragDrop } from './useLayerDragDrop'
 
@@ -96,7 +96,7 @@ const allLayerTypes: { type: LayerType; label: string; icon: string }[] = [
 // Filter out layer types that have reached their limit
 const addableLayerTypes = computed(() => {
   const flatLayers = flattenLayerNodes(props.layers)
-  const hasSurface = flatLayers.some(l => l.type === 'surface')
+  const hasSurface = flatLayers.some(l => isLayer(l) && l.variant === 'surface')
   return allLayerTypes.filter(item => {
     // Currently limiting to 1 surface layer (can be expanded later)
     if (item.type === 'surface' && hasSurface) return false

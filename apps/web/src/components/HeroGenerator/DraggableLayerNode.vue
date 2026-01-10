@@ -11,8 +11,8 @@
  */
 
 import { computed } from 'vue'
-import type { LayerNode, LayerNodeType, DropPosition } from '../../modules/HeroScene'
-import { isGroupLayerNode, isEffectProcessor, isMaskProcessor } from '../../modules/HeroScene'
+import type { SceneNode, Group, LayerVariant, DropPosition } from '../../modules/HeroScene'
+import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
 import type { DropTarget } from './useLayerDragDrop'
 
 // ============================================================
@@ -20,7 +20,7 @@ import type { DropTarget } from './useLayerDragDrop'
 // ============================================================
 
 const props = defineProps<{
-  node: LayerNode
+  node: SceneNode
   depth: number
   selectedId: string | null
   draggedId: string | null
@@ -46,14 +46,15 @@ const emit = defineEmits<{
 // ============================================================
 
 const isSelected = computed(() => props.selectedId === props.node.id)
-const isGroup = computed(() => isGroupLayerNode(props.node))
-const hasChildren = computed(() => isGroup.value && (props.node as { children: LayerNode[] }).children.length > 0)
+const isGroupNode = computed(() => isGroup(props.node))
+const hasChildren = computed(() => isGroupNode.value && (props.node as Group).children.length > 0)
 const isExpanded = computed(() => props.node.expanded)
 
-// Check if this node has expandable content (children or processors)
-const hasExpandableContent = computed(() => hasChildren.value || processors.value.length > 0)
+// Check if this node has expandable content (children or modifiers)
+const hasExpandableContent = computed(() => hasChildren.value || modifiers.value.length > 0)
 const isDragging = computed(() => props.draggedId === props.node.id)
-const isDraggable = computed(() => props.node.type !== 'base')
+const isBaseLayer = computed(() => isLayer(props.node) && props.node.variant === 'base')
+const isDraggable = computed(() => !isBaseLayer.value)
 
 // Check if this node is the current drop target
 const isDropTarget = computed(() => props.dropTarget?.nodeId === props.node.id)
@@ -66,42 +67,51 @@ const indentStyle = computed(() => ({
 
 // Children for group nodes
 const children = computed(() => {
-  if (isGroupLayerNode(props.node)) {
+  if (isGroup(props.node)) {
     return props.node.children
   }
   return []
 })
 
-// Processor info
-const processors = computed(() => {
+// Get node variant for Layer nodes
+const nodeVariant = computed((): LayerVariant | 'group' => {
+  if (isLayer(props.node)) {
+    return props.node.variant
+  }
+  return 'group'
+})
+
+// Modifier info
+const modifiers = computed(() => {
   const result: { type: 'effect' | 'mask'; label: string; value: string; icon: string; enabled: boolean }[] = []
 
-  const effectProc = props.node.processors.find(isEffectProcessor)
-  if (effectProc) {
+  const nodeModifiers = props.node.modifiers
+  const effectMod = nodeModifiers.find(isEffectModifier)
+  if (effectMod) {
     const activeEffects: string[] = []
-    if (effectProc.config.vignette.enabled) activeEffects.push('Vignette')
-    if (effectProc.config.chromaticAberration.enabled) activeEffects.push('CA')
-    if (effectProc.config.dotHalftone.enabled) activeEffects.push('Dot HT')
-    if (effectProc.config.lineHalftone.enabled) activeEffects.push('Line HT')
+    if (effectMod.config.vignette.enabled) activeEffects.push('Vignette')
+    if (effectMod.config.chromaticAberration.enabled) activeEffects.push('CA')
+    if (effectMod.config.dotHalftone.enabled) activeEffects.push('Dot HT')
+    if (effectMod.config.lineHalftone.enabled) activeEffects.push('Line HT')
     result.push({
       type: 'effect',
       label: 'Effect',
       value: activeEffects.length > 0 ? activeEffects.join(' / ') : 'None',
       icon: 'auto_fix_high',
-      enabled: effectProc.enabled,
+      enabled: effectMod.enabled,
     })
   }
 
-  if (props.node.type !== 'base') {
-    const maskProc = props.node.processors.find(isMaskProcessor)
-    if (maskProc) {
-      const shapeType = maskProc.config.shape
+  if (!isBaseLayer.value) {
+    const maskMod = nodeModifiers.find(isMaskModifier)
+    if (maskMod) {
+      const shapeType = maskMod.config.shape
       result.push({
         type: 'mask',
         label: 'Mask',
         value: shapeType.charAt(0).toUpperCase() + shapeType.slice(1),
         icon: 'crop',
-        enabled: maskProc.enabled,
+        enabled: maskMod.enabled,
       })
     }
   }
@@ -113,8 +123,8 @@ const processors = computed(() => {
 // Icon & Label Helpers
 // ============================================================
 
-const getLayerIcon = (type: LayerNodeType): string => {
-  switch (type) {
+const getLayerIcon = (variant: LayerVariant | 'group'): string => {
+  switch (variant) {
     case 'base': return 'gradient'
     case 'surface': return 'texture'
     case 'group': return 'folder_open'
@@ -190,7 +200,7 @@ const handleDragOver = (e: DragEvent) => {
   } else if (y > bottomZone) {
     position = 'after'
   } else {
-    position = isGroup.value ? 'into' : 'after'
+    position = isGroupNode.value ? 'into' : 'after'
   }
 
   emit('drag-over', props.node.id, position, e)
@@ -241,7 +251,7 @@ const handleDrop = (e: DragEvent) => {
 
       <!-- Expand Toggle -->
       <button
-        v-if="hasExpandableContent || node.type === 'group'"
+        v-if="hasExpandableContent || isGroupNode"
         class="expand-toggle"
         :class="{ expanded: isExpanded }"
         @click="handleToggleExpand"
@@ -251,7 +261,7 @@ const handleDrop = (e: DragEvent) => {
       <span v-else class="expand-spacer" />
 
       <!-- Type Icon -->
-      <span class="material-icons layer-icon">{{ getLayerIcon(node.type) }}</span>
+      <span class="material-icons layer-icon">{{ getLayerIcon(nodeVariant) }}</span>
 
       <!-- Layer Name -->
       <div class="layer-info">
@@ -260,7 +270,7 @@ const handleDrop = (e: DragEvent) => {
 
       <!-- Visibility Toggle -->
       <button
-        v-if="node.type !== 'base'"
+        v-if="!isBaseLayer"
         class="visibility-toggle"
         :class="{ hidden: !node.visible }"
         @click="handleToggleVisibility"
@@ -271,7 +281,7 @@ const handleDrop = (e: DragEvent) => {
 
       <!-- Remove Button -->
       <button
-        v-if="node.type !== 'base'"
+        v-if="!isBaseLayer"
         class="remove-toggle"
         @click="handleRemove"
       >
@@ -280,19 +290,19 @@ const handleDrop = (e: DragEvent) => {
       <span v-else class="visibility-spacer" />
     </div>
 
-    <!-- Processors (shown when expanded, displayed as tree nodes) -->
-    <template v-if="isExpanded && processors.length > 0">
+    <!-- Modifiers (shown when expanded, displayed as tree nodes) -->
+    <template v-if="isExpanded && modifiers.length > 0">
       <div
-        v-for="proc in processors"
-        :key="proc.type"
+        v-for="mod in modifiers"
+        :key="mod.type"
         class="processor-node"
         :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
-        @click="handleSelectProcessor(proc.type)"
+        @click="handleSelectProcessor(mod.type)"
       >
         <span class="expand-spacer" />
-        <span class="material-icons processor-icon">{{ proc.icon }}</span>
-        <span class="processor-label">{{ proc.label }}</span>
-        <span class="processor-value">{{ proc.value }}</span>
+        <span class="material-icons processor-icon">{{ mod.icon }}</span>
+        <span class="processor-label">{{ mod.label }}</span>
+        <span class="processor-value">{{ mod.value }}</span>
         <span class="material-icons processor-arrow">chevron_right</span>
       </div>
     </template>

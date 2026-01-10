@@ -28,6 +28,7 @@ import {
   findLayerNode,
   updateLayerNode,
   moveLayerNode as moveLayerNodeInTree,
+  isLayer,
   type DropPosition,
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
@@ -638,6 +639,13 @@ const layers = ref<LayerNode[]>([
 const selectedLayer = computed(() => {
   if (!selectedLayerId.value) return null
   return findLayerNode(layers.value, selectedLayerId.value)
+})
+
+// Helper to get layer variant (for Layer nodes)
+const selectedLayerVariant = computed(() => {
+  const layer = selectedLayer.value
+  if (!layer || !isLayer(layer)) return null
+  return layer.variant
 })
 
 // Drag & drop state for layers
@@ -1346,8 +1354,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
           {{
             selectedProcessorType === 'effect' ? 'Effect Settings' :
             selectedProcessorType === 'mask' ? 'Mask Settings' :
-            selectedLayer?.type === 'base' ? 'Background' :
-            selectedLayer?.type === 'surface' ? 'Surface' :
+            selectedLayerVariant === 'base' ? 'Background' :
+            selectedLayerVariant === 'surface' ? 'Surface' :
             'Properties'
           }}
         </span>
@@ -1357,7 +1365,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       </div>
       <div class="property-panel">
         <!-- Background (Base Layer) Settings -->
-        <template v-if="!selectedProcessorType && selectedLayer?.type === 'base'">
+        <template v-if="!selectedProcessorType && selectedLayerVariant === 'base'">
           <div class="layer-settings">
             <!-- Color selection -->
             <div class="settings-section">
@@ -1403,7 +1411,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
         </template>
 
         <!-- Surface Layer Settings -->
-        <template v-else-if="!selectedProcessorType && selectedLayer?.type === 'surface'">
+        <template v-else-if="!selectedProcessorType && selectedLayerVariant === 'surface'">
           <div class="layer-settings">
             <!-- Color selection -->
             <div class="settings-section">
@@ -1545,7 +1553,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
         </template>
 
         <!-- Default: Other layer types or Group selected -->
-        <template v-else-if="selectedLayer && selectedLayer.type !== 'base' && selectedLayer.type !== 'surface'">
+        <template v-else-if="selectedLayer && selectedLayerVariant !== 'base' && selectedLayerVariant !== 'surface'">
           <div class="property-placeholder">
             <span class="material-icons property-icon">tune</span>
             <p class="property-text">{{ selectedLayer.name }}</p>
