@@ -223,13 +223,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
 /* Section */
 .panel-section {
-  background: oklch(0.92 0.01 260);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-}
-
-:global(.dark) .panel-section {
-  background: oklch(0.18 0.02 260);
+  /* No background or padding */
 }
 
 .section-header {
