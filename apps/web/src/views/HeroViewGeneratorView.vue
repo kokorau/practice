@@ -23,7 +23,6 @@ import {
   createSurfaceLayerNode,
   createTextLayerNode,
   createModel3DLayerNode,
-  createImageLayerNode,
   createEffectProcessor,
   createMaskProcessor,
   findLayerNode,
@@ -173,6 +172,9 @@ const {
   updateSurfaceParams,
   updateBackgroundSurfaceParams,
   // Layer operations
+  addMaskLayer: sceneAddMaskLayer,
+  addTextLayer: sceneAddTextLayer,
+  addObjectLayer: sceneAddObjectLayer,
   toggleLayerVisibility,
   updateTextLayerConfig: heroUpdateTextLayerConfig,
   // Editor state (for text layer editing)
@@ -716,13 +718,20 @@ const handleMoveLayer = (sourceId: string, targetId: string, position: DropPosit
 }
 
 const handleAddLayer = (type: LayerNodeType) => {
-  const id = `${type}-${Date.now()}`
-  let newLayer: LayerNode
+  let sceneLayerId: string | null = null
+  let newLayer: LayerNode | null = null
 
   switch (type) {
-    case 'surface':
+    case 'surface': {
+      // Add to scene (this adds to editorState.canvasLayers and renders)
+      sceneLayerId = sceneAddMaskLayer()
+      if (!sceneLayerId) {
+        // Surface layer limit reached
+        return
+      }
+      // Create UI layer node
       newLayer = createSurfaceLayerNode(
-        id,
+        sceneLayerId,
         { type: 'solid', color: 'B' },
         {
           name: 'Surface',
@@ -730,12 +739,31 @@ const handleAddLayer = (type: LayerNodeType) => {
         }
       )
       break
-    case 'group':
+    }
+    case 'group': {
+      // Groups are UI-only for now (no scene representation)
+      const id = `group-${Date.now()}`
       newLayer = createGroupLayerNode(id, [], { name: 'Group', expanded: true })
       break
-    case 'text':
+    }
+    case 'text': {
+      // Add to scene
+      sceneLayerId = sceneAddTextLayer({
+        text: 'New Text',
+        fontFamily: 'sans-serif',
+        fontSize: 48,
+        fontWeight: 400,
+        letterSpacing: 0,
+        lineHeight: 1.2,
+        color: '#ffffff',
+        x: 0.5,
+        y: 0.5,
+        anchor: 'center',
+        rotation: 0,
+      })
+      // Create UI layer node
       newLayer = createTextLayerNode(
-        id,
+        sceneLayerId,
         {
           type: 'text',
           text: 'New Text',
@@ -751,9 +779,13 @@ const handleAddLayer = (type: LayerNodeType) => {
         { name: 'Text' }
       )
       break
-    case 'model3d':
+    }
+    case 'model3d': {
+      // Add to scene (requires a model URL)
+      sceneLayerId = sceneAddObjectLayer({ modelUrl: '' })
+      // Create UI layer node
       newLayer = createModel3DLayerNode(
-        id,
+        sceneLayerId,
         {
           type: 'model3d',
           modelUrl: '',
@@ -764,15 +796,18 @@ const handleAddLayer = (type: LayerNodeType) => {
         { name: '3D Model' }
       )
       break
+    }
     case 'image':
-      newLayer = createImageLayerNode(id, '', { name: 'Image' })
-      break
+      // Image is WIP, should not reach here
+      return
     default:
       return
   }
 
-  // Add to the end of the layers array (before background group would be at index 0)
-  layers.value = [...layers.value, newLayer]
+  if (newLayer) {
+    // Add to the end of the layers array
+    layers.value = [...layers.value, newLayer]
+  }
 }
 
 // ============================================================
