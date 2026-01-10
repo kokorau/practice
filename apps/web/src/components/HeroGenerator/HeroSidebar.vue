@@ -7,7 +7,6 @@ import FloatingPanel from './FloatingPanel.vue'
 import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import type { HeroViewPreset, LayerNode, DropPosition } from '../../modules/HeroScene'
-
 type NeutralRampItem = {
   key: string
   css: string
@@ -40,8 +39,6 @@ const props = defineProps<{
   selectedPresetId: string | null
   // Layers
   layers: LayerNode[]
-  selectedLayerId: string | null
-  selectedProcessorType?: 'effect' | 'mask' | 'processor' | null
   // Contrast scores for HTML elements
   titleContrastScore?: number | null
   descriptionContrastScore?: number | null
@@ -267,8 +264,6 @@ const selectedPresetName = computed(() => {
       <div class="sidebar-section layers-section">
         <LayerPanel
           :layers="layers"
-          :selected-layer-id="selectedLayerId"
-          :selected-processor-type="selectedProcessorType"
           :title-contrast-score="titleContrastScore"
           :description-contrast-score="descriptionContrastScore"
           @select-layer="(id: string) => emit('select-layer', id)"

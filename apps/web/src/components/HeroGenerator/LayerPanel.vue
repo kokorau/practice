@@ -4,6 +4,7 @@ import type { LayerNode, LayerNodeType, DropPosition } from '../../modules/HeroS
 import { flattenLayerNodes, isLayer } from '../../modules/HeroScene'
 import DraggableLayerNode from './DraggableLayerNode.vue'
 import { useLayerDragDrop } from './useLayerDragDrop'
+import { useLayerSelection } from '../../composables/useLayerSelection'
 
 // ============================================================
 // Types (kept for backward compatibility)
@@ -35,11 +36,12 @@ export type SubItemType = 'surface' | 'shape' | 'effect' | 'source' | 'filter'
 
 const props = defineProps<{
   layers: LayerNode[]
-  selectedLayerId: string | null
-  selectedProcessorType?: 'effect' | 'mask' | 'processor' | null
   titleContrastScore?: number | null
   descriptionContrastScore?: number | null
 }>()
+
+// Layer selection from store
+const { layerId: selectedLayerId, processorType: selectedProcessorType } = useLayerSelection()
 
 const emit = defineEmits<{
   'select-layer': [layerId: string]
@@ -86,11 +88,11 @@ const handleDrop = (sourceId: string, targetId: string, position: DropPosition) 
 
 const showAddMenu = ref(false)
 
-const allLayerTypes: { type: LayerType; label: string; icon: string }[] = [
+const allLayerTypes: { type: LayerType; label: string; icon: string; disabled?: boolean }[] = [
   { type: 'surface', label: 'Surface', icon: 'texture' },
   { type: 'group', label: 'Group', icon: 'folder_open' },
   { type: 'model3d', label: '3D Model', icon: 'view_in_ar' },
-  { type: 'image', label: 'Image', icon: 'image' },
+  { type: 'image', label: 'Image (WIP)', icon: 'image', disabled: true },
   { type: 'text', label: 'Text', icon: 'text_fields' },
 ]
 
@@ -164,7 +166,9 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
               v-for="item in addableLayerTypes"
               :key="item.type"
               class="add-menu-item"
-              @click="handleAddLayer(item.type)"
+              :class="{ disabled: item.disabled }"
+              :disabled="item.disabled"
+              @click="!item.disabled && handleAddLayer(item.type)"
             >
               <span class="material-icons">{{ item.icon }}</span>
               <span>{{ item.label }}</span>
@@ -355,6 +359,15 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
 :global(.dark) .add-menu-item .material-icons {
   color: oklch(0.60 0.02 260);
+}
+
+.add-menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-menu-item.disabled:hover {
+  background: none;
 }
 
 /* HTML Layer List */

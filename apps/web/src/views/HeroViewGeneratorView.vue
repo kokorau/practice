@@ -21,6 +21,9 @@ import type { LayerNode } from '../modules/HeroScene'
 import {
   createGroupLayerNode,
   createSurfaceLayerNode,
+  createTextLayerNode,
+  createModel3DLayerNode,
+  createImageLayerNode,
   createEffectProcessor,
   createMaskProcessor,
   findLayerNode,
@@ -28,6 +31,7 @@ import {
   moveLayerNode as moveLayerNodeInTree,
   isLayer,
   type DropPosition,
+  type LayerNodeType,
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
@@ -50,6 +54,7 @@ import {
 import { createGradientGrainSpec, createDefaultGradientGrainParams, type DepthMapType } from '@practice/texture'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
+import { useLayerSelection } from '../composables/useLayerSelection'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
@@ -390,21 +395,11 @@ const closeSection = () => {
 }
 
 const openForegroundTitle = () => {
-  // Clear canvas layer selection
-  selectedLayerId.value = null
-  selectedProcessorType.value = null
-  selectedProcessorLayerId.value = null
-  // Select HTML title layer
-  selectedHtmlLayerId.value = 'title'
+  selectHtmlLayer('title')
 }
 
 const openForegroundDescription = () => {
-  // Clear canvas layer selection
-  selectedLayerId.value = null
-  selectedProcessorType.value = null
-  selectedProcessorLayerId.value = null
-  // Select HTML description layer
-  selectedHtmlLayerId.value = 'description'
+  selectHtmlLayer('description')
 }
 
 // ============================================================
@@ -620,12 +615,16 @@ type TabId = 'generator' | 'palette'
 const activeTab = ref<TabId>('generator')
 
 // ============================================================
-// Layer Management (for Right Panel)
+// Layer Selection (from Store)
 // ============================================================
-const selectedLayerId = ref<string | null>(null)
-const selectedProcessorType = ref<'effect' | 'mask' | 'processor' | null>(null)
-const selectedProcessorLayerId = ref<string | null>(null)
-const selectedHtmlLayerId = ref<'title' | 'description' | null>(null)
+const {
+  layerId: selectedLayerId,
+  processorType: selectedProcessorType,
+  htmlLayerId: selectedHtmlLayerId,
+  selectCanvasLayer,
+  selectProcessor,
+  selectHtmlLayer,
+} = useLayerSelection()
 
 const layers = ref<LayerNode[]>([
   createGroupLayerNode(
@@ -681,13 +680,8 @@ const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
   return uiLayerId
 }
 
-const handleSelectLayer = (layerId: string) => {
-  selectedLayerId.value = layerId
-  // Clear processor selection when selecting a different layer
-  selectedProcessorType.value = null
-  selectedProcessorLayerId.value = null
-  // Clear HTML layer selection when selecting a canvas layer
-  selectedHtmlLayerId.value = null
+const handleSelectLayer = (id: string) => {
+  selectCanvasLayer(id)
 }
 
 const handleToggleExpand = (layerId: string) => {
@@ -706,21 +700,79 @@ const handleToggleVisibility = (layerId: string) => {
   }
 }
 
-const handleSelectProcessor = (layerId: string, processorType: 'effect' | 'mask' | 'processor') => {
+const handleSelectProcessor = (layerId: string, type: 'effect' | 'mask' | 'processor') => {
   const layer = findLayerNode(layers.value, layerId)
   if (!layer) return
 
-  // Set state for right panel display instead of FloatingPanel
-  selectedProcessorType.value = processorType
-  selectedProcessorLayerId.value = layerId
+  selectProcessor(layerId, type)
 
-  if (processorType === 'effect') {
+  if (type === 'effect') {
     selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
   }
 }
 
 const handleMoveLayer = (sourceId: string, targetId: string, position: DropPosition) => {
   layers.value = moveLayerNodeInTree(layers.value, sourceId, targetId, position)
+}
+
+const handleAddLayer = (type: LayerNodeType) => {
+  const id = `${type}-${Date.now()}`
+  let newLayer: LayerNode
+
+  switch (type) {
+    case 'surface':
+      newLayer = createSurfaceLayerNode(
+        id,
+        { type: 'solid', color: 'B' },
+        {
+          name: 'Surface',
+          processors: [createEffectProcessor(), createMaskProcessor()],
+        }
+      )
+      break
+    case 'group':
+      newLayer = createGroupLayerNode(id, [], { name: 'Group', expanded: true })
+      break
+    case 'text':
+      newLayer = createTextLayerNode(
+        id,
+        {
+          type: 'text',
+          text: 'New Text',
+          fontFamily: 'sans-serif',
+          fontSize: 48,
+          fontWeight: 400,
+          letterSpacing: 0,
+          lineHeight: 1.2,
+          color: '#ffffff',
+          position: { x: 0.5, y: 0.5, anchor: 'center' },
+          rotation: 0,
+        },
+        { name: 'Text' }
+      )
+      break
+    case 'model3d':
+      newLayer = createModel3DLayerNode(
+        id,
+        {
+          type: 'model3d',
+          modelUrl: '',
+          scale: 1,
+          rotation: { x: 0, y: 0, z: 0 },
+          position: { x: 0, y: 0, z: 0 },
+        },
+        { name: '3D Model' }
+      )
+      break
+    case 'image':
+      newLayer = createImageLayerNode(id, '', { name: 'Image' })
+      break
+    default:
+      return
+  }
+
+  // Add to the end of the layers array (before background group would be at index 0)
+  layers.value = [...layers.value, newLayer]
 }
 
 // ============================================================
@@ -821,8 +873,6 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       :presets="presets"
       :selected-preset-id="selectedPresetId"
       :layers="layers"
-      :selected-layer-id="selectedLayerId"
-      :selected-processor-type="selectedProcessorType"
       :title-contrast-score="titleContrastResult?.score ?? null"
       :description-contrast-score="descriptionContrastResult?.score ?? null"
       @update:hue="hue = $event"
@@ -840,6 +890,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       @toggle-expand="handleToggleExpand"
       @toggle-visibility="handleToggleVisibility"
       @select-processor="handleSelectProcessor"
+      @add-layer="handleAddLayer"
       @move-layer="handleMoveLayer"
       @open-foreground-title="openForegroundTitle"
       @open-foreground-description="openForegroundDescription"
