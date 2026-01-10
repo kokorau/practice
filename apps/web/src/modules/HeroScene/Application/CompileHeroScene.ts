@@ -9,7 +9,7 @@ import type {
   HeroScene,
   CanvasLayer,
   TextureLayerConfig,
-  MaskedTextureLayerConfig,
+  ClipGroupLayerConfig,
   ImageLayerConfig,
   TextLayerConfig,
 } from '../Domain'
@@ -17,7 +17,7 @@ import type {
   HeroSceneEditorState,
   EditorCanvasLayer,
   EditorTextureLayerConfig,
-  EditorMaskedTextureLayerConfig,
+  EditorClipGroupLayerConfig,
 } from './EditorState'
 import type {
   TexturePattern,
@@ -25,7 +25,6 @@ import type {
   RGBA,
   Viewport,
   TexturePatternSpec,
-  TextureRenderSpec,
 } from '@practice/texture'
 
 // ============================================================
@@ -82,14 +81,6 @@ export interface CompileOptions {
   maps: PatternMaps
   colors: CompileColors
   viewport: Viewport
-  /** マスク+テクスチャのspec生成関数 */
-  createMaskedTextureSpec: (
-    maskPattern: MaskPattern,
-    texturePattern: MidgroundTexturePattern,
-    color1: RGBA,
-    color2: RGBA,
-    viewport: Viewport
-  ) => TextureRenderSpec | null
 }
 
 // ============================================================
@@ -131,71 +122,25 @@ const compileTextureLayer = (
 }
 
 /**
- * EditorMaskedTextureLayerConfigをMaskedTextureLayerConfigにコンパイル
+ * EditorClipGroupLayerConfigをClipGroupLayerConfigにコンパイル
+ * TODO: Phase 3以降で本格実装
  */
-const compileMaskedTextureLayer = (
-  config: EditorMaskedTextureLayerConfig,
-  options: CompileOptions
-): MaskedTextureLayerConfig | null => {
-  const maskPattern = options.maps.maskPatterns[config.maskIndex]
-  if (!maskPattern) return null
-
-  let renderSpec: TextureRenderSpec
-
-  if (config.textureIndex !== null) {
-    const texturePattern = options.maps.midgroundTexturePatterns[config.textureIndex]
-    if (texturePattern) {
-      const maskedSpec = options.createMaskedTextureSpec(
-        maskPattern,
-        texturePattern,
-        options.colors.midgroundTextureColor1,
-        options.colors.midgroundTextureColor2,
-        options.viewport
-      )
-      if (maskedSpec) {
-        renderSpec = maskedSpec
-      } else {
-        // Fallback to solid mask
-        renderSpec = maskPattern.createSpec(
-          options.colors.maskInnerColor,
-          options.colors.maskOuterColor,
-          options.viewport
-        )
-      }
-    } else {
-      // Texture not found, fallback to solid mask
-      renderSpec = maskPattern.createSpec(
-        options.colors.maskInnerColor,
-        options.colors.maskOuterColor,
-        options.viewport
-      )
-    }
-  } else {
-    // No texture, use solid mask
-    renderSpec = maskPattern.createSpec(
-      options.colors.maskInnerColor,
-      options.colors.maskOuterColor,
-      options.viewport
-    )
-  }
-
-  const spec: TexturePatternSpec = {
-    shader: renderSpec.shader,
-    bufferSize: renderSpec.bufferSize,
-    blend: renderSpec.blend,
-    params: {
-      type: 'circleMask',
-      innerColor: options.colors.maskInnerColor,
-      outerColor: options.colors.maskOuterColor,
-      centerX: 0.5,
-      centerY: 0.5,
-      radius: 0.3,
-    }, // Placeholder
-  }
-
+const compileClipGroupLayer = (
+  config: EditorClipGroupLayerConfig,
+  _editorState: HeroSceneEditorState,
+  _options: CompileOptions
+): ClipGroupLayerConfig | null => {
+  // Placeholder implementation
+  // Full implementation will be done in later phases
   return {
-    type: 'maskedTexture',
-    spec,
+    type: 'clipGroup',
+    mask: {
+      shape: config.maskShape,
+      shapeParams: config.maskShapeParams,
+      invert: config.maskInvert,
+      feather: config.maskFeather,
+    },
+    childIds: config.childIds,
   }
 }
 
@@ -204,6 +149,7 @@ const compileMaskedTextureLayer = (
  */
 const compileCanvasLayer = (
   editorLayer: EditorCanvasLayer,
+  editorState: HeroSceneEditorState,
   options: CompileOptions
 ): CanvasLayer | null => {
   let config: CanvasLayer['config']
@@ -215,8 +161,8 @@ const compileCanvasLayer = (
       config = compiled
       break
     }
-    case 'maskedTexture': {
-      const compiled = compileMaskedTextureLayer(editorLayer.config, options)
+    case 'clipGroup': {
+      const compiled = compileClipGroupLayer(editorLayer.config, editorState, options)
       if (!compiled) return null
       config = compiled
       break
@@ -261,7 +207,7 @@ export const compileHeroScene = (
   const canvasLayers: CanvasLayer[] = []
 
   for (const editorLayer of editorState.canvasLayers) {
-    const compiled = compileCanvasLayer(editorLayer, options)
+    const compiled = compileCanvasLayer(editorLayer, editorState, options)
     if (compiled) {
       canvasLayers.push(compiled)
     }

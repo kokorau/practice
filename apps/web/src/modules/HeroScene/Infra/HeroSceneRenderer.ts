@@ -8,7 +8,7 @@ import type {
   HeroScene,
   CanvasLayer,
   TextureLayerConfig,
-  MaskedTextureLayerConfig,
+  ClipGroupLayerConfig,
   ImageLayerConfig,
   TextLayerConfig,
 } from '../Domain'
@@ -119,8 +119,8 @@ export class HeroSceneRenderer implements LayerRendererPort {
         case 'texture':
           this.renderTextureLayer(layer.config, clear)
           break
-        case 'maskedTexture':
-          this.renderMaskedTextureLayer(layer.config, clear)
+        case 'clipGroup':
+          await this.renderClipGroupLayer(layer.config, clear)
           break
         case 'image':
           await this.renderImageLayer(layer.config, clear)
@@ -180,8 +180,15 @@ export class HeroSceneRenderer implements LayerRendererPort {
     this.deps.renderSpec(config.spec, clear)
   }
 
-  private renderMaskedTextureLayer(config: MaskedTextureLayerConfig, clear: boolean): void {
-    this.deps.renderSpec(config.spec, clear)
+  private async renderClipGroupLayer(
+    _config: ClipGroupLayerConfig,
+    _clear: boolean
+  ): Promise<void> {
+    // TODO: Phase 4以降で本格実装
+    // 1. 子レイヤーをオフスクリーンテクスチャにレンダリング
+    // 2. マスク形状でクリッピング
+    // 3. メインキャンバスに合成
+    console.log('ClipGroup rendering not yet implemented')
   }
 
   private async renderImageLayer(config: ImageLayerConfig, clear: boolean): Promise<void> {

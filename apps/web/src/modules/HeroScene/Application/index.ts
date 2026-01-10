@@ -15,7 +15,7 @@ import type {
 // Re-export Editor State types
 export type {
   EditorTextureLayerConfig,
-  EditorMaskedTextureLayerConfig,
+  EditorClipGroupLayerConfig,
   EditorImageLayerConfig,
   EditorTextLayerConfig,
   EditorCanvasLayerConfig,

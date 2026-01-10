@@ -13,6 +13,8 @@ import type {
   HtmlLayer,
   TextLayerConfig,
   ObjectLayerConfig,
+  ClipMaskShape,
+  ClipMaskShapeParams,
 } from '../Domain'
 
 // ============================================================
@@ -29,16 +31,23 @@ export interface EditorTextureLayerConfig {
 }
 
 /**
- * マスク付きテクスチャレイヤーのエディタ設定（インデックス参照）
+ * ClipGroupレイヤーのエディタ設定
+ * 子レイヤーを直接保持する
  */
-export interface EditorMaskedTextureLayerConfig {
-  type: 'maskedTexture'
-  /** maskPatterns配列へのインデックス */
-  maskIndex: number
-  /** midgroundTexturePatterns配列へのインデックス（null = ソリッドマスク） */
-  textureIndex: number | null
-  /** カスタム画像をサーフェスとして使用する場合 */
-  surfaceImage?: ImageBitmap
+export interface EditorClipGroupLayerConfig {
+  type: 'clipGroup'
+  /** マスク形状 */
+  maskShape: ClipMaskShape
+  /** マスク形状のパラメータ */
+  maskShapeParams: ClipMaskShapeParams
+  /** 内側/外側の反転 */
+  maskInvert: boolean
+  /** エッジのフェード量 (0-1) */
+  maskFeather: number
+  /** マスク表面テクスチャのインデックス（null = なし） */
+  maskTextureIndex: number | null
+  /** 子レイヤー（Editor版、再帰的に持たない簡易版のため別配列で管理） */
+  childIds: string[]
 }
 
 /**
@@ -65,7 +74,7 @@ export type EditorObjectLayerConfig = ObjectLayerConfig
  */
 export type EditorCanvasLayerConfig =
   | EditorTextureLayerConfig
-  | EditorMaskedTextureLayerConfig
+  | EditorClipGroupLayerConfig
   | EditorImageLayerConfig
   | EditorTextLayerConfig
   | EditorObjectLayerConfig

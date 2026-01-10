@@ -705,16 +705,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       },
       {
         id: LAYER_IDS.MASK,
-        name: 'Mask Layer',
+        name: 'Clip Group',
         visible: true,
         opacity: 1.0,
         zIndex: 1,
         blendMode: 'normal',
         filters: maskFilters,
         config: {
-          type: 'maskedTexture',
-          maskIndex: selectedMaskIndex.value ?? 0,
-          textureIndex: selectedMidgroundTextureIndex.value,
+          type: 'clipGroup',
+          maskShape: 'circle' as const,
+          maskShapeParams: { type: 'circle' as const, centerX: 0.5, centerY: 0.5, radius: 0.3 },
+          maskInvert: false,
+          maskFeather: 0,
+          maskTextureIndex: selectedMidgroundTextureIndex.value,
+          childIds: [],
         },
       },
     ]
@@ -749,13 +753,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         }
       }
 
-      // Update mask layer configs (all maskedTexture layers share the same settings)
-      if (layer.config.type === 'maskedTexture') {
+      // Update clip group layer configs
+      if (layer.config.type === 'clipGroup') {
+        const existingConfig = layer.config
         layer.config = {
-          type: 'maskedTexture',
-          maskIndex: selectedMaskIndex.value ?? 0,
-          textureIndex: customMaskBitmap ? null : selectedMidgroundTextureIndex.value,
-          surfaceImage: customMaskBitmap ?? undefined,
+          type: 'clipGroup',
+          maskShape: existingConfig.maskShape,
+          maskShapeParams: existingConfig.maskShapeParams,
+          maskInvert: existingConfig.maskInvert,
+          maskFeather: existingConfig.maskFeather,
+          maskTextureIndex: customMaskBitmap ? null : selectedMidgroundTextureIndex.value,
+          childIds: existingConfig.childIds,
         }
         // Sync filters from layerFilterConfigs
         const filters = layerFilterConfigs.value.get(LAYER_IDS.MASK)
@@ -777,29 +785,34 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
 
   /**
-   * Add a new mask layer (limited to 1 mask layer)
-   * Returns null if a mask layer already exists
+   * Add a new clip group layer
+   * TODO: In future, allow multiple clip groups
+   * Returns null if a clip group layer already exists (current limitation)
    */
   const addMaskLayer = (): string | null => {
-    // Check if mask layer already exists
-    const existingMask = editorState.value.canvasLayers.find(
-      l => l.config.type === 'maskedTexture'
+    // Check if clip group layer already exists (temporary limitation)
+    const existingClipGroup = editorState.value.canvasLayers.find(
+      l => l.config.type === 'clipGroup'
     )
-    if (existingMask) return null
+    if (existingClipGroup) return null
 
-    const id = `mask-${Date.now()}`
+    const id = `clipgroup-${Date.now()}`
     const newLayer: EditorCanvasLayer = {
       id,
-      name: 'Mask Layer',
+      name: 'Clip Group',
       visible: true,
       opacity: 1.0,
       zIndex: editorState.value.canvasLayers.length,
       blendMode: 'normal',
       filters: createDefaultFilterConfig(),
       config: {
-        type: 'maskedTexture',
-        maskIndex: selectedMaskIndex.value ?? 0,
-        textureIndex: selectedMidgroundTextureIndex.value,
+        type: 'clipGroup',
+        maskShape: 'circle' as const,
+        maskShapeParams: { type: 'circle' as const, centerX: 0.5, centerY: 0.5, radius: 0.3 },
+        maskInvert: false,
+        maskFeather: 0,
+        maskTextureIndex: selectedMidgroundTextureIndex.value,
+        childIds: [],
       },
     }
 
@@ -1462,19 +1475,29 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           break
         }
 
-        case 'maskedTexture': {
-          const maskPattern = maskPatterns[layer.config.maskIndex]
+        case 'clipGroup': {
+          // ClipGroup rendering: use layer's mask config
+          const layerMaskShape = layer.config.maskShape
+          const layerMaskShapeParams = layer.config.maskShapeParams
+          const maskInvert = layer.config.maskInvert
 
-          // Helper to create mask spec from customMaskShapeParams
+          // Use selectedMaskIndex to get the mask pattern for fallback rendering
+          const maskPattern = maskPatterns[selectedMaskIndex.value ?? 0]
+
+          // Helper to create mask spec from layer's maskShapeParams
           const createMaskOverlaySpec = (): TextureRenderSpec | null => {
-            const shapeParams = customMaskShapeParams.value
+            // Use customMaskShapeParams if available, otherwise use layer config
+            const shapeParams = customMaskShapeParams.value ?? {
+              ...layerMaskShapeParams,
+              cutout: !maskInvert, // invert=true means show outside (cutout=false)
+            }
             if (!shapeParams) return null
 
-            const cutout = shapeParams.cutout ?? true
+            const cutout = 'cutout' in shapeParams ? (shapeParams.cutout ?? true) : !maskInvert
             // For solid surface: use midgroundTextureColor1 (maskColorKey1) consistently
-            // like stripe shader uses same color1/color2 regardless of cutout mode
             const solidInnerColor = cutout ? maskInnerColor.value : midgroundTextureColor1.value
             const solidOuterColor = cutout ? midgroundTextureColor1.value : maskInnerColor.value
+
             if (shapeParams.type === 'circle') {
               return createCircleMaskSpec(
                 {
@@ -1489,22 +1512,47 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               )
             }
             if (shapeParams.type === 'rect') {
-              return createRectMaskSpec(
-                {
-                  left: shapeParams.left,
-                  right: shapeParams.right,
-                  top: shapeParams.top,
-                  bottom: shapeParams.bottom,
-                  radiusTopLeft: shapeParams.radiusTopLeft,
-                  radiusTopRight: shapeParams.radiusTopRight,
-                  radiusBottomLeft: shapeParams.radiusBottomLeft,
-                  radiusBottomRight: shapeParams.radiusBottomRight,
-                  innerColor: solidInnerColor,
-                  outerColor: solidOuterColor,
-                  cutout,
-                },
-                viewport
-              )
+              // Check if using old format (from customMaskShapeParams) or new format (from layer config)
+              if ('left' in shapeParams) {
+                // Old format with left/right/top/bottom
+                return createRectMaskSpec(
+                  {
+                    left: shapeParams.left,
+                    right: shapeParams.right,
+                    top: shapeParams.top,
+                    bottom: shapeParams.bottom,
+                    radiusTopLeft: shapeParams.radiusTopLeft,
+                    radiusTopRight: shapeParams.radiusTopRight,
+                    radiusBottomLeft: shapeParams.radiusBottomLeft,
+                    radiusBottomRight: shapeParams.radiusBottomRight,
+                    innerColor: solidInnerColor,
+                    outerColor: solidOuterColor,
+                    cutout,
+                  },
+                  viewport
+                )
+              } else {
+                // New format with centerX/centerY/width/height
+                const halfWidth = shapeParams.width / 2
+                const halfHeight = shapeParams.height / 2
+                const cornerRadius = shapeParams.cornerRadius
+                return createRectMaskSpec(
+                  {
+                    left: shapeParams.centerX - halfWidth,
+                    right: shapeParams.centerX + halfWidth,
+                    top: shapeParams.centerY - halfHeight,
+                    bottom: shapeParams.centerY + halfHeight,
+                    radiusTopLeft: cornerRadius[0],
+                    radiusTopRight: cornerRadius[1],
+                    radiusBottomLeft: cornerRadius[3],
+                    radiusBottomRight: cornerRadius[2],
+                    innerColor: solidInnerColor,
+                    outerColor: solidOuterColor,
+                    cutout,
+                  },
+                  viewport
+                )
+              }
             }
             if (shapeParams.type === 'blob') {
               return createBlobMaskSpec(
@@ -1540,23 +1588,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             return null
           }
 
-          if (maskPattern) {
-            // surfaceImage がある場合: 画像を描画してからマスクオーバーレイを適用
-            if (layer.config.surfaceImage) {
-              await previewRenderer.renderImage(layer.config.surfaceImage, { clear: false })
-              // マスク形状の外側を背景色で塗りつぶし（内側は透明）
-              const maskSpec = createMaskOverlaySpec() ?? maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
-              previewRenderer.render(maskSpec, { clear: false })
-              break
-            }
+          if (maskPattern || layerMaskShape) {
+            // TODO: In future, render child layers first, then apply mask
+            // For now, render mask texture directly like the old maskedTexture
 
             // Use createMaskedTextureSpec for all texture types (including gradientGrain)
-            // For gradientGrain, texturePattern might be undefined but customSurfaceParams handles it
-            const textureIndex = layer.config.textureIndex
+            const textureIndex = layer.config.maskTextureIndex
             const texturePattern = textureIndex !== null ? midgroundTexturePatterns[textureIndex] : undefined
             const hasTexture = texturePattern !== undefined || customSurfaceParams.value?.type === 'gradientGrain'
 
-            if (hasTexture) {
+            if (hasTexture && maskPattern) {
               // Use a fallback preset for gradientGrain (solid preset works since customSurfaceParams overrides it)
               const preset = texturePattern ?? midgroundTexturePatterns[0]
               if (preset) {
@@ -1575,12 +1616,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 }
               }
             }
-            // Fallback to solid color mask: use customMaskShapeParams to respect cutout setting
+            // Fallback to solid color mask: use layer's maskShapeParams
             const maskSpec = createMaskOverlaySpec()
             if (maskSpec) {
               previewRenderer.render(maskSpec, { clear: false })
             } else if (maskPattern) {
-              // Fallback if customMaskShapeParams not available
+              // Fallback if maskShapeParams not available
               const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
               previewRenderer.render(spec, { clear: false })
             }
