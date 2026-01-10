@@ -17,7 +17,6 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import { useLayerDragDrop } from '../components/HeroGenerator/useLayerDragDrop'
 import type { LayerNode } from '../modules/HeroScene'
 import {
   createGroupLayerNode,
@@ -394,6 +393,14 @@ const closeSection = () => {
   activeSection.value = null
 }
 
+const openForegroundTitle = () => {
+  activeSection.value = 'foreground-title'
+}
+
+const openForegroundDescription = () => {
+  activeSection.value = 'foreground-description'
+}
+
 // ============================================================
 // Foreground Layout Config (from useHeroScene)
 // ============================================================
@@ -657,9 +664,6 @@ const selectedLayerVariant = computed(() => {
   return layer.variant
 })
 
-// Drag & drop state for layers
-const { draggedId, dropTarget, startDrag, endDrag, setDropTarget, clearDropTarget } = useLayerDragDrop()
-
 const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
   if (uiLayerId === 'base') return 'base-layer'
   // Surface layers map to mask-layer in the scene (LAYER_IDS.MASK)
@@ -708,28 +712,6 @@ const handleSelectProcessor = (layerId: string, processorType: 'effect' | 'mask'
 
 const handleMoveLayer = (sourceId: string, targetId: string, position: DropPosition) => {
   layers.value = moveLayerNodeInTree(layers.value, sourceId, targetId, position)
-}
-
-// Drag & drop handlers for layers
-const handleDragStart = (nodeId: string) => {
-  startDrag(nodeId)
-}
-
-const handleDragEnd = () => {
-  endDrag()
-}
-
-const handleDragOver = (nodeId: string, position: DropPosition) => {
-  setDropTarget({ nodeId, position })
-}
-
-const handleDragLeave = (nodeId: string) => {
-  clearDropTarget(nodeId)
-}
-
-const handleDrop = (sourceId: string, targetId: string, position: DropPosition) => {
-  handleMoveLayer(sourceId, targetId, position)
-  endDrag()
 }
 
 // ============================================================
@@ -832,8 +814,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       :layers="layers"
       :selected-layer-id="selectedLayerId"
       :selected-processor-type="selectedProcessorType"
-      :dragged-id="draggedId"
-      :drop-target="dropTarget"
+      :title-contrast-score="titleContrastResult?.score ?? null"
+      :description-contrast-score="descriptionContrastResult?.score ?? null"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"
@@ -849,11 +831,9 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       @toggle-expand="handleToggleExpand"
       @toggle-visibility="handleToggleVisibility"
       @select-processor="handleSelectProcessor"
-      @drag-start="handleDragStart"
-      @drag-end="handleDragEnd"
-      @drag-over="handleDragOver"
-      @drag-leave="handleDragLeave"
-      @drop="handleDrop"
+      @move-layer="handleMoveLayer"
+      @open-foreground-title="openForegroundTitle"
+      @open-foreground-description="openForegroundDescription"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->

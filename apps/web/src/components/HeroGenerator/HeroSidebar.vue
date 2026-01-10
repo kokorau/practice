@@ -4,10 +4,9 @@ import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'
 import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
-import DraggableLayerNode from './DraggableLayerNode.vue'
+import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import type { HeroViewPreset, LayerNode, DropPosition } from '../../modules/HeroScene'
-import type { DropTarget } from './useLayerDragDrop'
 
 type NeutralRampItem = {
   key: string
@@ -42,9 +41,10 @@ const props = defineProps<{
   // Layers
   layers: LayerNode[]
   selectedLayerId: string | null
-  selectedProcessorType: 'effect' | 'mask' | 'processor' | null
-  draggedId: string | null
-  dropTarget: DropTarget | null
+  selectedProcessorType?: 'effect' | 'mask' | 'processor' | null
+  // Contrast scores for HTML elements
+  titleContrastScore?: number | null
+  descriptionContrastScore?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -64,11 +64,12 @@ const emit = defineEmits<{
   (e: 'toggle-expand', layerId: string): void
   (e: 'toggle-visibility', layerId: string): void
   (e: 'select-processor', layerId: string, processorType: 'effect' | 'mask' | 'processor'): void
-  (e: 'drag-start', nodeId: string): void
-  (e: 'drag-end'): void
-  (e: 'drag-over', nodeId: string, position: DropPosition): void
-  (e: 'drag-leave', nodeId: string): void
-  (e: 'drop', sourceId: string, targetId: string, position: DropPosition): void
+  (e: 'add-layer', type: LayerType): void
+  (e: 'remove-layer', layerId: string): void
+  (e: 'move-layer', sourceId: string, targetId: string, position: DropPosition): void
+  // Foreground events
+  (e: 'open-foreground-title'): void
+  (e: 'open-foreground-description'): void
 }>()
 
 // ============================================================
@@ -264,27 +265,22 @@ const selectedPresetName = computed(() => {
     <!-- Layers タブ -->
     <template v-if="sidebarTab === 'layers'">
       <div class="sidebar-section layers-section">
-        <div class="layer-list">
-          <DraggableLayerNode
-            v-for="layer in layers"
-            :key="layer.id"
-            :node="layer"
-            :depth="0"
-            :selected-id="selectedLayerId"
-            :selected-processor-type="selectedProcessorType"
-            :dragged-id="draggedId"
-            :drop-target="dropTarget"
-            @select="(id: string) => emit('select-layer', id)"
-            @toggle-expand="(id: string) => emit('toggle-expand', id)"
-            @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
-            @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
-            @drag-start="(id: string) => emit('drag-start', id)"
-            @drag-end="() => emit('drag-end')"
-            @drag-over="(id: string, pos: DropPosition) => emit('drag-over', id, pos)"
-            @drag-leave="(id: string) => emit('drag-leave', id)"
-            @drop="(src: string, tgt: string, pos: DropPosition) => emit('drop', src, tgt, pos)"
-          />
-        </div>
+        <LayerPanel
+          :layers="layers"
+          :selected-layer-id="selectedLayerId"
+          :selected-processor-type="selectedProcessorType"
+          :title-contrast-score="titleContrastScore"
+          :description-contrast-score="descriptionContrastScore"
+          @select-layer="(id: string) => emit('select-layer', id)"
+          @toggle-expand="(id: string) => emit('toggle-expand', id)"
+          @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
+          @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
+          @add-layer="(type: LayerType) => emit('add-layer', type)"
+          @remove-layer="(id: string) => emit('remove-layer', id)"
+          @move-layer="(src: string, tgt: string, pos: DropPosition) => emit('move-layer', src, tgt, pos)"
+          @open-foreground-title="emit('open-foreground-title')"
+          @open-foreground-description="emit('open-foreground-description')"
+        />
       </div>
     </template>
 
