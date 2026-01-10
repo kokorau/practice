@@ -45,6 +45,11 @@ import {
   createRectMaskSpec,
   createBlobMaskSpec,
   createPerlinMaskSpec,
+  // Clip mask specs (for ClipGroup rendering)
+  createCircleClipSpec,
+  createRectClipSpec,
+  createBlobClipSpec,
+  createPerlinClipSpec,
   // Schemas and types
   MaskShapeSchemas,
   SurfaceSchemas,
@@ -1480,21 +1485,117 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           const layerMaskShape = layer.config.maskShape
           const layerMaskShapeParams = layer.config.maskShapeParams
           const maskInvert = layer.config.maskInvert
+          const maskFeather = layer.config.maskFeather
 
           // Use selectedMaskIndex to get the mask pattern for fallback rendering
           const maskPattern = maskPatterns[selectedMaskIndex.value ?? 0]
 
-          // Helper to create mask spec from layer's maskShapeParams
-          const createMaskOverlaySpec = (): TextureRenderSpec | null => {
+          // Helper to create clip mask spec from layer's maskShapeParams
+          const createClipSpec = (): TextureRenderSpec | null => {
             // Use customMaskShapeParams if available, otherwise use layer config
+            const shapeParams = customMaskShapeParams.value ?? layerMaskShapeParams
+            if (!shapeParams) return null
+
+            const feather = maskFeather ?? 0
+
+            if (shapeParams.type === 'circle') {
+              return createCircleClipSpec(
+                {
+                  type: 'circle',
+                  centerX: shapeParams.centerX,
+                  centerY: shapeParams.centerY,
+                  radius: shapeParams.radius,
+                  invert: maskInvert,
+                  feather,
+                },
+                viewport
+              )
+            }
+            if (shapeParams.type === 'rect') {
+              // Check if using old format (from customMaskShapeParams) or new format (from layer config)
+              if ('left' in shapeParams) {
+                // Old format: convert to center-based format
+                const centerX = (shapeParams.left + shapeParams.right) / 2
+                const centerY = (shapeParams.top + shapeParams.bottom) / 2
+                const width = shapeParams.right - shapeParams.left
+                const height = shapeParams.bottom - shapeParams.top
+                return createRectClipSpec(
+                  {
+                    type: 'rect',
+                    centerX,
+                    centerY,
+                    width,
+                    height,
+                    cornerRadius: [
+                      shapeParams.radiusTopLeft,
+                      shapeParams.radiusTopRight,
+                      shapeParams.radiusBottomRight,
+                      shapeParams.radiusBottomLeft,
+                    ],
+                    invert: maskInvert,
+                    feather,
+                  },
+                  viewport
+                )
+              } else {
+                // New format with centerX/centerY/width/height
+                return createRectClipSpec(
+                  {
+                    type: 'rect',
+                    centerX: shapeParams.centerX,
+                    centerY: shapeParams.centerY,
+                    width: shapeParams.width,
+                    height: shapeParams.height,
+                    cornerRadius: shapeParams.cornerRadius,
+                    invert: maskInvert,
+                    feather,
+                  },
+                  viewport
+                )
+              }
+            }
+            if (shapeParams.type === 'blob') {
+              return createBlobClipSpec(
+                {
+                  type: 'blob',
+                  centerX: shapeParams.centerX,
+                  centerY: shapeParams.centerY,
+                  baseRadius: shapeParams.baseRadius,
+                  amplitude: shapeParams.amplitude,
+                  octaves: shapeParams.octaves,
+                  seed: shapeParams.seed,
+                  invert: maskInvert,
+                  feather,
+                },
+                viewport
+              )
+            }
+            if (shapeParams.type === 'perlin') {
+              return createPerlinClipSpec(
+                {
+                  type: 'perlin',
+                  seed: shapeParams.seed,
+                  threshold: shapeParams.threshold,
+                  scale: shapeParams.scale,
+                  octaves: shapeParams.octaves,
+                  invert: maskInvert,
+                  feather,
+                },
+                viewport
+              )
+            }
+            return null
+          }
+
+          // Helper to create mask overlay spec (for fallback/solid fill rendering)
+          const createMaskOverlaySpec = (): TextureRenderSpec | null => {
             const shapeParams = customMaskShapeParams.value ?? {
               ...layerMaskShapeParams,
-              cutout: !maskInvert, // invert=true means show outside (cutout=false)
+              cutout: !maskInvert,
             }
             if (!shapeParams) return null
 
             const cutout = 'cutout' in shapeParams ? (shapeParams.cutout ?? true) : !maskInvert
-            // For solid surface: use midgroundTextureColor1 (maskColorKey1) consistently
             const solidInnerColor = cutout ? maskInnerColor.value : midgroundTextureColor1.value
             const solidOuterColor = cutout ? midgroundTextureColor1.value : maskInnerColor.value
 
@@ -1512,9 +1613,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               )
             }
             if (shapeParams.type === 'rect') {
-              // Check if using old format (from customMaskShapeParams) or new format (from layer config)
               if ('left' in shapeParams) {
-                // Old format with left/right/top/bottom
                 return createRectMaskSpec(
                   {
                     left: shapeParams.left,
@@ -1532,7 +1631,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   viewport
                 )
               } else {
-                // New format with centerX/centerY/width/height
                 const halfWidth = shapeParams.width / 2
                 const halfHeight = shapeParams.height / 2
                 const cornerRadius = shapeParams.cornerRadius
@@ -1589,16 +1687,84 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           }
 
           if (maskPattern || layerMaskShape) {
-            // TODO: In future, render child layers first, then apply mask
-            // For now, render mask texture directly like the old maskedTexture
+            // ClipGroup rendering pipeline:
+            // 1. Render content (texture pattern or child layers) to offscreen
+            // 2. Apply clip mask shader
+            // 3. Composite to main canvas
 
-            // Use createMaskedTextureSpec for all texture types (including gradientGrain)
             const textureIndex = layer.config.maskTextureIndex
             const texturePattern = textureIndex !== null ? midgroundTexturePatterns[textureIndex] : undefined
             const hasTexture = texturePattern !== undefined || customSurfaceParams.value?.type === 'gradientGrain'
 
+            // Try to use new clip mask pipeline
+            const clipSpec = createClipSpec()
+
+            // Helper to create pure texture spec (no mask) for offscreen rendering
+            const createPureTextureSpec = (): TextureRenderSpec | null => {
+              const params = customSurfaceParams.value ?? texturePattern?.params
+              if (!params) return null
+
+              // RGBA is a tuple [r, g, b, a]
+              const color1 = midgroundTextureColor1.value
+              const color2 = midgroundTextureColor2.value
+
+              if (params.type === 'stripe') {
+                return createStripeSpec({
+                  color1,
+                  color2,
+                  width1: params.width1,
+                  width2: params.width2,
+                  angle: params.angle,
+                })
+              }
+              if (params.type === 'grid') {
+                return createGridSpec({
+                  lineColor: color1,
+                  bgColor: color2,
+                  lineWidth: params.lineWidth,
+                  cellSize: params.cellSize,
+                })
+              }
+              if (params.type === 'polkaDot') {
+                return createPolkaDotSpec({
+                  dotColor: color1,
+                  bgColor: color2,
+                  dotRadius: params.dotRadius,
+                  spacing: params.spacing,
+                  rowOffset: params.rowOffset,
+                })
+              }
+              if (params.type === 'checker') {
+                return createCheckerSpec({
+                  color1,
+                  color2,
+                  cellSize: params.cellSize,
+                  angle: params.angle,
+                })
+              }
+              // Solid type - use solid spec
+              if (params.type === 'solid') {
+                return createSolidSpec({
+                  color: color1,
+                })
+              }
+              return null
+            }
+
+            if (hasTexture && clipSpec) {
+              // New approach: Render texture to offscreen, then apply clip mask
+              const textureSpec = createPureTextureSpec()
+              if (textureSpec) {
+                // Render texture to offscreen buffer
+                const offscreenTexture = previewRenderer.renderToOffscreen(textureSpec, 0)
+                // Apply clip mask and render to main canvas
+                previewRenderer.applyClipMask(clipSpec, offscreenTexture, { clear: false })
+                break
+              }
+            }
+
             if (hasTexture && maskPattern) {
-              // Use a fallback preset for gradientGrain (solid preset works since customSurfaceParams overrides it)
+              // Fallback: use old maskedTexture approach for textured content
               const preset = texturePattern ?? midgroundTexturePatterns[0]
               if (preset) {
                 const spec = createMaskedTextureSpec(
@@ -1616,12 +1782,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 }
               }
             }
-            // Fallback to solid color mask: use layer's maskShapeParams
+
+            // Fallback to solid color mask with new clip parameters
             const maskSpec = createMaskOverlaySpec()
             if (maskSpec) {
               previewRenderer.render(maskSpec, { clear: false })
             } else if (maskPattern) {
-              // Fallback if maskShapeParams not available
               const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
               previewRenderer.render(spec, { clear: false })
             }
