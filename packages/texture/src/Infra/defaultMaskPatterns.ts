@@ -9,8 +9,71 @@ import {
 
 /**
  * Default mask patterns for midground layer
+ * Ordered: Normal (cutout=false, shape filled) first, then Invert (cutout=true, shape cutout)
  */
 const defaultMaskPatterns: MaskPattern[] = [
+  // ============================================================
+  // Normal patterns (cutout=false) - shape is filled, outside is transparent
+  // ============================================================
+  {
+    label: 'Solid Circle Center',
+    maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createCircleMaskSpec(
+        { centerX: 0.5, centerY: 0.5, radius: 0.3, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Solid Circle Large',
+    maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.5, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createCircleMaskSpec(
+        { centerX: 0.5, centerY: 0.5, radius: 0.5, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Solid Rounded Center',
+    maskConfig: { type: 'rect', left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radiusTopLeft: 0.05, radiusTopRight: 0.05, radiusBottomLeft: 0.05, radiusBottomRight: 0.05, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createRectMaskSpec(
+        { left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radius: 0.05, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Solid Pill',
+    maskConfig: { type: 'rect', left: 0.32, right: 0.68, top: 0.05, bottom: 0.95, radiusTopLeft: 0.18, radiusTopRight: 0.18, radiusBottomLeft: 0.18, radiusBottomRight: 0.18, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createRectMaskSpec(
+        { left: 0.32, right: 0.68, top: 0.05, bottom: 0.95, radius: 0.18, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Solid Blob',
+    maskConfig: { type: 'blob', centerX: 0.5, centerY: 0.5, baseRadius: 0.4, amplitude: 0.08, octaves: 2, seed: 1, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createBlobMaskSpec(
+        {
+          centerX: 0.5,
+          centerY: 0.5,
+          baseRadius: 0.4,
+          amplitude: 0.08,
+          frequency: 0,
+          octaves: 2,
+          seed: 1,
+          innerColor: c1,
+          outerColor: c2,
+          cutout: false,
+        },
+        viewport!
+      ),
+  },
+  // ============================================================
+  // Invert patterns (cutout=true) - shape is cutout, outside is filled
+  // ============================================================
   {
     label: 'Circle Center',
     maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3 },
@@ -273,65 +336,6 @@ const defaultMaskPatterns: MaskPattern[] = [
     createSpec: (c1, c2, viewport) =>
       createPerlinMaskSpec(
         { seed: 42, threshold: 0.6, scale: 3, octaves: 3, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
-  },
-  // ============================================================
-  // Solid patterns (cutout=false) - shape is filled, outside is transparent
-  // ============================================================
-  {
-    label: 'Solid Circle Center',
-    maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createCircleMaskSpec(
-        { centerX: 0.5, centerY: 0.5, radius: 0.3, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Solid Circle Large',
-    maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.5, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createCircleMaskSpec(
-        { centerX: 0.5, centerY: 0.5, radius: 0.5, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Solid Rounded Center',
-    maskConfig: { type: 'rect', left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radiusTopLeft: 0.05, radiusTopRight: 0.05, radiusBottomLeft: 0.05, radiusBottomRight: 0.05, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radius: 0.05, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Solid Pill',
-    maskConfig: { type: 'rect', left: 0.32, right: 0.68, top: 0.05, bottom: 0.95, radiusTopLeft: 0.18, radiusTopRight: 0.18, radiusBottomLeft: 0.18, radiusBottomRight: 0.18, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.32, right: 0.68, top: 0.05, bottom: 0.95, radius: 0.18, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Solid Blob',
-    maskConfig: { type: 'blob', centerX: 0.5, centerY: 0.5, baseRadius: 0.4, amplitude: 0.08, octaves: 2, seed: 1, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBlobMaskSpec(
-        {
-          centerX: 0.5,
-          centerY: 0.5,
-          baseRadius: 0.4,
-          amplitude: 0.08,
-          frequency: 0,
-          octaves: 2,
-          seed: 1,
-          innerColor: c1,
-          outerColor: c2,
-          cutout: false,
-        },
         viewport!
       ),
   },

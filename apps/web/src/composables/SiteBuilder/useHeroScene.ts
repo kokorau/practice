@@ -275,7 +275,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Selection state (UI bindings)
   const selectedBackgroundIndex = ref(3)
-  const selectedMaskIndex = ref<number | null>(21)
+  const selectedMaskIndex = ref<number | null>(0)
   const selectedMidgroundTextureIndex = ref<number>(0) // 0 = Solid
   const activeSection = ref<SectionType | null>(null)
 
@@ -1499,6 +1499,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             if (!shapeParams) return null
 
             const feather = maskFeather ?? 0
+            // Use cutout from shapeParams (pattern preset), fallback to maskInvert (layer config)
+            // cutout === invert: true = show outside, false = show inside
+            const invert = 'cutout' in shapeParams ? (shapeParams.cutout ?? false) : maskInvert
 
             if (shapeParams.type === 'circle') {
               return createCircleClipSpec(
@@ -1507,7 +1510,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   centerX: shapeParams.centerX,
                   centerY: shapeParams.centerY,
                   radius: shapeParams.radius,
-                  invert: maskInvert,
+                  invert,
                   feather,
                 },
                 viewport
@@ -1534,7 +1537,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                       shapeParams.radiusBottomRight,
                       shapeParams.radiusBottomLeft,
                     ],
-                    invert: maskInvert,
+                    invert,
                     feather,
                   },
                   viewport
@@ -1549,7 +1552,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     width: shapeParams.width,
                     height: shapeParams.height,
                     cornerRadius: shapeParams.cornerRadius,
-                    invert: maskInvert,
+                    invert,
                     feather,
                   },
                   viewport
@@ -1566,7 +1569,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   amplitude: shapeParams.amplitude,
                   octaves: shapeParams.octaves,
                   seed: shapeParams.seed,
-                  invert: maskInvert,
+                  invert,
                   feather,
                 },
                 viewport
@@ -1580,7 +1583,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   threshold: shapeParams.threshold,
                   scale: shapeParams.scale,
                   octaves: shapeParams.octaves,
-                  invert: maskInvert,
+                  invert,
                   feather,
                 },
                 viewport
