@@ -61,7 +61,7 @@ const dropPosition = computed(() => props.dropTarget?.nodeId === props.node.id ?
 
 // Indent style based on depth
 const indentStyle = computed(() => ({
-  paddingLeft: `${props.depth * 1}rem`,
+  paddingLeft: `${props.depth * 0.75}rem`,
 }))
 
 // Children for group nodes
@@ -238,9 +238,6 @@ const handleDrop = (e: DragEvent) => {
       @dragleave="handleDragLeave"
       @drop="handleDrop"
     >
-      <!-- Drag Handle -->
-      <span v-if="isDraggable" class="drag-handle material-icons">drag_indicator</span>
-      <span v-else class="drag-spacer" />
 
       <!-- Expand Toggle -->
       <button
@@ -289,7 +286,7 @@ const handleDrop = (e: DragEvent) => {
         v-for="proc in processors"
         :key="proc.type"
         class="processor-node"
-        :style="{ paddingLeft: `${(depth + 1) * 1}rem` }"
+        :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
         @click="handleSelectProcessor(proc.type)"
       >
         <span class="expand-spacer" />
@@ -393,28 +390,6 @@ const handleDrop = (e: DragEvent) => {
   background: oklch(0.55 0.15 250 / 0.25);
 }
 
-/* Drag Handle */
-.drag-handle {
-  font-size: 1rem;
-  color: oklch(0.60 0.02 260);
-  cursor: grab;
-  opacity: 0;
-  transition: opacity 0.15s;
-  flex-shrink: 0;
-}
-
-.node-header:hover .drag-handle {
-  opacity: 1;
-}
-
-:global(.dark) .drag-handle {
-  color: oklch(0.50 0.02 260);
-}
-
-.drag-spacer {
-  width: 1rem;
-  flex-shrink: 0;
-}
 
 /* Expand Toggle */
 .expand-toggle {
