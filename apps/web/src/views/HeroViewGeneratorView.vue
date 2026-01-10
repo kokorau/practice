@@ -27,6 +27,7 @@ import {
   createMaskProcessor,
   findLayerNode,
   updateLayerNode,
+  removeNode,
   moveLayerNode as moveLayerNodeInTree,
   isLayer,
   type DropPosition,
@@ -175,6 +176,7 @@ const {
   addMaskLayer: sceneAddMaskLayer,
   addTextLayer: sceneAddTextLayer,
   addObjectLayer: sceneAddObjectLayer,
+  removeLayer: sceneRemoveLayer,
   toggleLayerVisibility,
   updateTextLayerConfig: heroUpdateTextLayerConfig,
   // Editor state (for text layer editing)
@@ -810,6 +812,19 @@ const handleAddLayer = (type: LayerNodeType) => {
   }
 }
 
+const handleRemoveLayer = (layerId: string) => {
+  // Remove from scene (this updates editorState.canvasLayers and re-renders)
+  sceneRemoveLayer(layerId)
+
+  // Remove from UI layers tree
+  layers.value = removeNode(layers.value, layerId)
+
+  // Clear selection if the removed layer was selected
+  if (selectedLayerId.value === layerId) {
+    selectCanvasLayer('')
+  }
+}
+
 // ============================================================
 // APCA Contrast Check
 // ============================================================
@@ -926,6 +941,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       @toggle-visibility="handleToggleVisibility"
       @select-processor="handleSelectProcessor"
       @add-layer="handleAddLayer"
+      @remove-layer="handleRemoveLayer"
       @move-layer="handleMoveLayer"
       @open-foreground-title="openForegroundTitle"
       @open-foreground-description="openForegroundDescription"
