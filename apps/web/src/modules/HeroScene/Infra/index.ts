@@ -11,3 +11,8 @@ export { HeroSceneRenderer, createHeroSceneRenderer } from './HeroSceneRenderer'
 export type { HeroSceneRendererDeps } from './HeroSceneRenderer'
 
 export { createInMemoryHeroViewPresetRepository } from './InMemoryHeroViewPresetRepository'
+
+export {
+  ThreeJsObject3DRenderer,
+  createObject3DRenderer,
+} from './ThreeJsObject3DRenderer'

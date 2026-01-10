@@ -41,9 +41,18 @@ export type {
   LayerBase,
   CanvasLayerType,
   TextureLayerConfig,
-  MaskedTextureLayerConfig,
   ImageLayerConfig,
   TextLayerConfig,
+  // ClipGroup types
+  ClipMaskShape,
+  ClipMaskConfig,
+  ClipMaskShapeParams,
+  CircleClipShapeParams,
+  RectClipShapeParams,
+  BlobClipShapeParams,
+  PerlinClipShapeParams,
+  ImageClipShapeParams,
+  ClipGroupLayerConfig,
   CanvasLayerConfig,
   CanvasLayer,
   BlendMode,
@@ -105,7 +114,8 @@ export {
   // Layer factories
   createCanvasLayer,
   createTextureLayer,
-  createMaskedTextureLayer,
+  createDefaultClipMask,
+  createClipGroupLayer,
   createImageLayer,
   createTextLayer,
   createHtmlLayer,
@@ -131,9 +141,13 @@ export type {
   LayerRenderResult,
   LayerRendererPort,
   HeroSceneUseCaseDeps,
+  // 3D Object Renderer
+  Object3DRendererPort,
+  Object3DRenderParams,
+  LightingConfig,
   // Editor State types
   EditorTextureLayerConfig,
-  EditorMaskedTextureLayerConfig,
+  EditorClipGroupLayerConfig,
   EditorImageLayerConfig,
   EditorTextLayerConfig,
   EditorCanvasLayerConfig,
@@ -168,4 +182,7 @@ export {
   createHeroSceneRenderer,
   // Preset Repository
   createInMemoryHeroViewPresetRepository,
+  // 3D Object Renderer
+  ThreeJsObject3DRenderer,
+  createObject3DRenderer,
 } from './Infra'

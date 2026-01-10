@@ -15,7 +15,7 @@ import type {
 // Re-export Editor State types
 export type {
   EditorTextureLayerConfig,
-  EditorMaskedTextureLayerConfig,
+  EditorClipGroupLayerConfig,
   EditorImageLayerConfig,
   EditorTextLayerConfig,
   EditorCanvasLayerConfig,
@@ -25,7 +25,12 @@ export type {
 export { createHeroSceneEditorState } from './EditorState'
 
 // Re-export Ports
-export type { HeroViewPresetRepository } from './ports'
+export type {
+  HeroViewPresetRepository,
+  Object3DRendererPort,
+  Object3DRenderParams,
+  LightingConfig,
+} from './ports'
 
 // Re-export Preset UseCase
 export type { GetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'

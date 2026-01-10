@@ -45,6 +45,11 @@ import {
   createRectMaskSpec,
   createBlobMaskSpec,
   createPerlinMaskSpec,
+  // Clip mask specs (for ClipGroup rendering)
+  createCircleClipSpec,
+  createRectClipSpec,
+  createBlobClipSpec,
+  createPerlinClipSpec,
   // Schemas and types
   MaskShapeSchemas,
   SurfaceSchemas,
@@ -112,6 +117,7 @@ import {
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
+  type Object3DRendererPort,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
@@ -120,6 +126,7 @@ import {
   createInMemoryHeroViewPresetRepository,
   findSurfacePresetIndex,
   findMaskPatternIndex,
+  createObject3DRenderer,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -137,7 +144,7 @@ export interface MidgroundSurfacePreset {
   params: MidgroundPresetParams
 }
 
-export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground-title' | 'foreground-description' | 'filter' | 'text-content'
+export type SectionType = 'background' | 'clip-group-surface' | 'clip-group-shape' | 'foreground-title' | 'foreground-description' | 'filter' | 'text-content'
 
 /**
  * Custom mask shape params union type
@@ -558,6 +565,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   let previewRenderer: TextureRenderer | null = null
   const thumbnailRenderers: TextureRenderer[] = []
 
+  // 3D Object Renderers (keyed by layer ID)
+  const object3DRenderers = new Map<string, Object3DRendererPort>()
+  // Track loaded model URLs to avoid reloading
+  const loadedModelUrls = new Map<string, string>()
+
   // Cached canvas ImageData for contrast analysis (updated after each render)
   const canvasImageData = shallowRef<ImageData | null>(null)
 
@@ -698,16 +710,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       },
       {
         id: LAYER_IDS.MASK,
-        name: 'Mask Layer',
+        name: 'Clip Group',
         visible: true,
         opacity: 1.0,
         zIndex: 1,
         blendMode: 'normal',
         filters: maskFilters,
         config: {
-          type: 'maskedTexture',
-          maskIndex: selectedMaskIndex.value ?? 0,
-          textureIndex: selectedMidgroundTextureIndex.value,
+          type: 'clipGroup',
+          maskShape: 'circle' as const,
+          maskShapeParams: { type: 'circle' as const, centerX: 0.5, centerY: 0.5, radius: 0.3 },
+          maskInvert: false,
+          maskFeather: 0,
+          maskTextureIndex: selectedMidgroundTextureIndex.value,
+          childIds: [],
         },
       },
     ]
@@ -742,13 +758,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         }
       }
 
-      // Update mask layer configs (all maskedTexture layers share the same settings)
-      if (layer.config.type === 'maskedTexture') {
+      // Update clip group layer configs
+      if (layer.config.type === 'clipGroup') {
+        const existingConfig = layer.config
         layer.config = {
-          type: 'maskedTexture',
-          maskIndex: selectedMaskIndex.value ?? 0,
-          textureIndex: customMaskBitmap ? null : selectedMidgroundTextureIndex.value,
-          surfaceImage: customMaskBitmap ?? undefined,
+          type: 'clipGroup',
+          maskShape: existingConfig.maskShape,
+          maskShapeParams: existingConfig.maskShapeParams,
+          maskInvert: existingConfig.maskInvert,
+          maskFeather: existingConfig.maskFeather,
+          maskTextureIndex: customMaskBitmap ? null : selectedMidgroundTextureIndex.value,
+          childIds: existingConfig.childIds,
         }
         // Sync filters from layerFilterConfigs
         const filters = layerFilterConfigs.value.get(LAYER_IDS.MASK)
@@ -770,29 +790,34 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
 
   /**
-   * Add a new mask layer (limited to 1 mask layer)
-   * Returns null if a mask layer already exists
+   * Add a new clip group layer
+   * TODO: In future, allow multiple clip groups
+   * Returns null if a clip group layer already exists (current limitation)
    */
   const addMaskLayer = (): string | null => {
-    // Check if mask layer already exists
-    const existingMask = editorState.value.canvasLayers.find(
-      l => l.config.type === 'maskedTexture'
+    // Check if clip group layer already exists (temporary limitation)
+    const existingClipGroup = editorState.value.canvasLayers.find(
+      l => l.config.type === 'clipGroup'
     )
-    if (existingMask) return null
+    if (existingClipGroup) return null
 
-    const id = `mask-${Date.now()}`
+    const id = `clipgroup-${Date.now()}`
     const newLayer: EditorCanvasLayer = {
       id,
-      name: 'Mask Layer',
+      name: 'Clip Group',
       visible: true,
       opacity: 1.0,
       zIndex: editorState.value.canvasLayers.length,
       blendMode: 'normal',
       filters: createDefaultFilterConfig(),
       config: {
-        type: 'maskedTexture',
-        maskIndex: selectedMaskIndex.value ?? 0,
-        textureIndex: selectedMidgroundTextureIndex.value,
+        type: 'clipGroup',
+        maskShape: 'circle' as const,
+        maskShapeParams: { type: 'circle' as const, centerX: 0.5, centerY: 0.5, radius: 0.3 },
+        maskInvert: false,
+        maskFeather: 0,
+        maskTextureIndex: selectedMidgroundTextureIndex.value,
+        childIds: [],
       },
     }
 
@@ -927,6 +952,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Remove filter config
     layerFilterConfigs.value.delete(id)
+
+    // Cleanup 3D object renderer if exists
+    const renderer = object3DRenderers.get(id)
+    if (renderer) {
+      renderer.dispose()
+      object3DRenderers.delete(id)
+      loadedModelUrls.delete(id)
+    }
 
     editorState.value = {
       ...editorState.value,
@@ -1447,19 +1480,125 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           break
         }
 
-        case 'maskedTexture': {
-          const maskPattern = maskPatterns[layer.config.maskIndex]
+        case 'clipGroup': {
+          // ClipGroup rendering: use layer's mask config
+          const layerMaskShape = layer.config.maskShape
+          const layerMaskShapeParams = layer.config.maskShapeParams
+          const maskInvert = layer.config.maskInvert
+          const maskFeather = layer.config.maskFeather
 
-          // Helper to create mask spec from customMaskShapeParams
-          const createMaskOverlaySpec = (): TextureRenderSpec | null => {
-            const shapeParams = customMaskShapeParams.value
+          // Use selectedMaskIndex to get the mask pattern for fallback rendering
+          const maskPattern = maskPatterns[selectedMaskIndex.value ?? 0]
+
+          // Helper to create clip mask spec from layer's maskShapeParams
+          const createClipSpec = (): TextureRenderSpec | null => {
+            // Use customMaskShapeParams if available, otherwise use layer config
+            const shapeParams = customMaskShapeParams.value ?? layerMaskShapeParams
             if (!shapeParams) return null
 
-            const cutout = shapeParams.cutout ?? true
-            // For solid surface: use midgroundTextureColor1 (maskColorKey1) consistently
-            // like stripe shader uses same color1/color2 regardless of cutout mode
+            const feather = maskFeather ?? 0
+
+            if (shapeParams.type === 'circle') {
+              return createCircleClipSpec(
+                {
+                  type: 'circle',
+                  centerX: shapeParams.centerX,
+                  centerY: shapeParams.centerY,
+                  radius: shapeParams.radius,
+                  invert: maskInvert,
+                  feather,
+                },
+                viewport
+              )
+            }
+            if (shapeParams.type === 'rect') {
+              // Check if using old format (from customMaskShapeParams) or new format (from layer config)
+              if ('left' in shapeParams) {
+                // Old format: convert to center-based format
+                const centerX = (shapeParams.left + shapeParams.right) / 2
+                const centerY = (shapeParams.top + shapeParams.bottom) / 2
+                const width = shapeParams.right - shapeParams.left
+                const height = shapeParams.bottom - shapeParams.top
+                return createRectClipSpec(
+                  {
+                    type: 'rect',
+                    centerX,
+                    centerY,
+                    width,
+                    height,
+                    cornerRadius: [
+                      shapeParams.radiusTopLeft,
+                      shapeParams.radiusTopRight,
+                      shapeParams.radiusBottomRight,
+                      shapeParams.radiusBottomLeft,
+                    ],
+                    invert: maskInvert,
+                    feather,
+                  },
+                  viewport
+                )
+              } else {
+                // New format with centerX/centerY/width/height
+                return createRectClipSpec(
+                  {
+                    type: 'rect',
+                    centerX: shapeParams.centerX,
+                    centerY: shapeParams.centerY,
+                    width: shapeParams.width,
+                    height: shapeParams.height,
+                    cornerRadius: shapeParams.cornerRadius,
+                    invert: maskInvert,
+                    feather,
+                  },
+                  viewport
+                )
+              }
+            }
+            if (shapeParams.type === 'blob') {
+              return createBlobClipSpec(
+                {
+                  type: 'blob',
+                  centerX: shapeParams.centerX,
+                  centerY: shapeParams.centerY,
+                  baseRadius: shapeParams.baseRadius,
+                  amplitude: shapeParams.amplitude,
+                  octaves: shapeParams.octaves,
+                  seed: shapeParams.seed,
+                  invert: maskInvert,
+                  feather,
+                },
+                viewport
+              )
+            }
+            if (shapeParams.type === 'perlin') {
+              return createPerlinClipSpec(
+                {
+                  type: 'perlin',
+                  seed: shapeParams.seed,
+                  threshold: shapeParams.threshold,
+                  scale: shapeParams.scale,
+                  octaves: shapeParams.octaves,
+                  invert: maskInvert,
+                  feather,
+                },
+                viewport
+              )
+            }
+            return null
+          }
+
+          // Helper to create mask overlay spec (for fallback/solid fill rendering)
+          const createMaskOverlaySpec = (): TextureRenderSpec | null => {
+            const shapeParams = customMaskShapeParams.value ?? {
+              ...layerMaskShapeParams,
+              cutout: !maskInvert,
+            }
+            if (!shapeParams) return null
+
+            const cutout = 'cutout' in shapeParams ? (shapeParams.cutout ?? true) : !maskInvert
             const solidInnerColor = cutout ? maskInnerColor.value : midgroundTextureColor1.value
             const solidOuterColor = cutout ? midgroundTextureColor1.value : maskInnerColor.value
+
             if (shapeParams.type === 'circle') {
               return createCircleMaskSpec(
                 {
@@ -1474,22 +1613,44 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               )
             }
             if (shapeParams.type === 'rect') {
-              return createRectMaskSpec(
-                {
-                  left: shapeParams.left,
-                  right: shapeParams.right,
-                  top: shapeParams.top,
-                  bottom: shapeParams.bottom,
-                  radiusTopLeft: shapeParams.radiusTopLeft,
-                  radiusTopRight: shapeParams.radiusTopRight,
-                  radiusBottomLeft: shapeParams.radiusBottomLeft,
-                  radiusBottomRight: shapeParams.radiusBottomRight,
-                  innerColor: solidInnerColor,
-                  outerColor: solidOuterColor,
-                  cutout,
-                },
-                viewport
-              )
+              if ('left' in shapeParams) {
+                return createRectMaskSpec(
+                  {
+                    left: shapeParams.left,
+                    right: shapeParams.right,
+                    top: shapeParams.top,
+                    bottom: shapeParams.bottom,
+                    radiusTopLeft: shapeParams.radiusTopLeft,
+                    radiusTopRight: shapeParams.radiusTopRight,
+                    radiusBottomLeft: shapeParams.radiusBottomLeft,
+                    radiusBottomRight: shapeParams.radiusBottomRight,
+                    innerColor: solidInnerColor,
+                    outerColor: solidOuterColor,
+                    cutout,
+                  },
+                  viewport
+                )
+              } else {
+                const halfWidth = shapeParams.width / 2
+                const halfHeight = shapeParams.height / 2
+                const cornerRadius = shapeParams.cornerRadius
+                return createRectMaskSpec(
+                  {
+                    left: shapeParams.centerX - halfWidth,
+                    right: shapeParams.centerX + halfWidth,
+                    top: shapeParams.centerY - halfHeight,
+                    bottom: shapeParams.centerY + halfHeight,
+                    radiusTopLeft: cornerRadius[0],
+                    radiusTopRight: cornerRadius[1],
+                    radiusBottomLeft: cornerRadius[3],
+                    radiusBottomRight: cornerRadius[2],
+                    innerColor: solidInnerColor,
+                    outerColor: solidOuterColor,
+                    cutout,
+                  },
+                  viewport
+                )
+              }
             }
             if (shapeParams.type === 'blob') {
               return createBlobMaskSpec(
@@ -1525,24 +1686,85 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             return null
           }
 
-          if (maskPattern) {
-            // surfaceImage がある場合: 画像を描画してからマスクオーバーレイを適用
-            if (layer.config.surfaceImage) {
-              await previewRenderer.renderImage(layer.config.surfaceImage, { clear: false })
-              // マスク形状の外側を背景色で塗りつぶし（内側は透明）
-              const maskSpec = createMaskOverlaySpec() ?? maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
-              previewRenderer.render(maskSpec, { clear: false })
-              break
-            }
+          if (maskPattern || layerMaskShape) {
+            // ClipGroup rendering pipeline:
+            // 1. Render content (texture pattern or child layers) to offscreen
+            // 2. Apply clip mask shader
+            // 3. Composite to main canvas
 
-            // Use createMaskedTextureSpec for all texture types (including gradientGrain)
-            // For gradientGrain, texturePattern might be undefined but customSurfaceParams handles it
-            const textureIndex = layer.config.textureIndex
+            const textureIndex = layer.config.maskTextureIndex
             const texturePattern = textureIndex !== null ? midgroundTexturePatterns[textureIndex] : undefined
             const hasTexture = texturePattern !== undefined || customSurfaceParams.value?.type === 'gradientGrain'
 
-            if (hasTexture) {
-              // Use a fallback preset for gradientGrain (solid preset works since customSurfaceParams overrides it)
+            // Try to use new clip mask pipeline
+            const clipSpec = createClipSpec()
+
+            // Helper to create pure texture spec (no mask) for offscreen rendering
+            const createPureTextureSpec = (): TextureRenderSpec | null => {
+              const params = customSurfaceParams.value ?? texturePattern?.params
+              if (!params) return null
+
+              // RGBA is a tuple [r, g, b, a]
+              const color1 = midgroundTextureColor1.value
+              const color2 = midgroundTextureColor2.value
+
+              if (params.type === 'stripe') {
+                return createStripeSpec({
+                  color1,
+                  color2,
+                  width1: params.width1,
+                  width2: params.width2,
+                  angle: params.angle,
+                })
+              }
+              if (params.type === 'grid') {
+                return createGridSpec({
+                  lineColor: color1,
+                  bgColor: color2,
+                  lineWidth: params.lineWidth,
+                  cellSize: params.cellSize,
+                })
+              }
+              if (params.type === 'polkaDot') {
+                return createPolkaDotSpec({
+                  dotColor: color1,
+                  bgColor: color2,
+                  dotRadius: params.dotRadius,
+                  spacing: params.spacing,
+                  rowOffset: params.rowOffset,
+                })
+              }
+              if (params.type === 'checker') {
+                return createCheckerSpec({
+                  color1,
+                  color2,
+                  cellSize: params.cellSize,
+                  angle: params.angle,
+                })
+              }
+              // Solid type - use solid spec
+              if (params.type === 'solid') {
+                return createSolidSpec({
+                  color: color1,
+                })
+              }
+              return null
+            }
+
+            if (hasTexture && clipSpec) {
+              // New approach: Render texture to offscreen, then apply clip mask
+              const textureSpec = createPureTextureSpec()
+              if (textureSpec) {
+                // Render texture to offscreen buffer
+                const offscreenTexture = previewRenderer.renderToOffscreen(textureSpec, 0)
+                // Apply clip mask and render to main canvas
+                previewRenderer.applyClipMask(clipSpec, offscreenTexture, { clear: false })
+                break
+              }
+            }
+
+            if (hasTexture && maskPattern) {
+              // Fallback: use old maskedTexture approach for textured content
               const preset = texturePattern ?? midgroundTexturePatterns[0]
               if (preset) {
                 const spec = createMaskedTextureSpec(
@@ -1560,12 +1782,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 }
               }
             }
-            // Fallback to solid color mask: use customMaskShapeParams to respect cutout setting
+
+            // Fallback to solid color mask with new clip parameters
             const maskSpec = createMaskOverlaySpec()
             if (maskSpec) {
               previewRenderer.render(maskSpec, { clear: false })
             } else if (maskPattern) {
-              // Fallback if customMaskShapeParams not available
               const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
               previewRenderer.render(spec, { clear: false })
             }
@@ -1605,6 +1827,64 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
           // Clean up the bitmap
           textResult.bitmap.close()
+          break
+        }
+
+        case 'object': {
+          const config = layer.config
+          if (!config.modelUrl) break
+
+          // Get or create renderer for this layer
+          let renderer = object3DRenderers.get(layer.id)
+          if (!renderer) {
+            renderer = createObject3DRenderer()
+            object3DRenderers.set(layer.id, renderer)
+          }
+
+          // Load model if URL changed
+          const currentUrl = loadedModelUrls.get(layer.id)
+          if (currentUrl !== config.modelUrl) {
+            try {
+              await renderer.loadModel(config.modelUrl)
+              loadedModelUrls.set(layer.id, config.modelUrl)
+            } catch (error) {
+              console.error(`Failed to load 3D model: ${config.modelUrl}`, error)
+              break
+            }
+          }
+
+          // Render 3D object to ImageBitmap
+          try {
+            const bitmap = await renderer.renderFrame({
+              width: viewport.width,
+              height: viewport.height,
+              cameraPosition: { x: 0, y: 0, z: 5 },
+              modelTransform: {
+                position: config.position,
+                rotation: config.rotation,
+                scale: config.scale,
+              },
+              materialOverrides: config.materialOverrides,
+            })
+
+            // Render the 3D bitmap to canvas (centered)
+            await previewRenderer.renderPositionedImage(
+              bitmap,
+              {
+                x: 0.5,
+                y: 0.5,
+                anchorX: 0.5,
+                anchorY: 0.5,
+                rotation: 0,
+                opacity: layer.opacity,
+              },
+              { clear: false }
+            )
+
+            bitmap.close()
+          } catch (error) {
+            console.error('Failed to render 3D object', error)
+          }
           break
         }
       }
@@ -1679,7 +1959,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const getPatterns = (section: SectionType): (TexturePattern | MaskPattern)[] => {
     if (section === 'background') return texturePatterns
-    if (section === 'mask-shape') return maskPatterns
+    if (section === 'clip-group-shape') return maskPatterns
     return []
   }
 
@@ -1694,8 +1974,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const section = activeSection.value
     if (!section) return
 
-    // Handle mask-surface section separately
-    if (section === 'mask-surface') {
+    // Handle clip-group-surface section separately
+    if (section === 'clip-group-surface') {
       for (let i = 0; i < thumbnailRenderers.length; i++) {
         const renderer = thumbnailRenderers[i]
         const pattern = midgroundTexturePatterns[i]
@@ -1740,8 +2020,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     nextTick(async () => {
       const canvases = document.querySelectorAll<HTMLCanvasElement>('[data-thumbnail-canvas]')
 
-      // Handle mask-surface section separately (uses midgroundTexturePatterns)
-      if (section === 'mask-surface') {
+      // Handle clip-group-surface section separately (uses midgroundTexturePatterns)
+      if (section === 'clip-group-surface') {
         for (let i = 0; i < canvases.length; i++) {
           const canvas = canvases[i]
           if (!canvas) continue
@@ -1770,7 +2050,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         return
       }
 
-      // Handle background and mask-shape sections
+      // Handle background and clip-group-shape sections
       const patterns = getPatterns(section)
       for (let i = 0; i < canvases.length; i++) {
         const canvas = canvases[i]
@@ -1833,6 +2113,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     previewRenderer?.destroy()
     previewRenderer = null
     destroyThumbnailRenderers()
+
+    // Cleanup 3D object renderers
+    for (const renderer of object3DRenderers.values()) {
+      renderer.dispose()
+    }
+    object3DRenderers.clear()
+    loadedModelUrls.clear()
   }
 
   // ============================================================

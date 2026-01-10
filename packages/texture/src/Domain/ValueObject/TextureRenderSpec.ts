@@ -11,4 +11,6 @@ export interface TextureRenderSpec {
   bufferSize: number
   /** Blend state for compositing (optional, for masks) */
   blend?: GPUBlendState
+  /** Indicates shader requires an input texture (for clip masks) */
+  requiresTexture?: boolean
 }

@@ -5,3 +5,8 @@
  */
 
 export type { HeroViewPresetRepository } from './HeroViewPresetRepository'
+export type {
+  Object3DRendererPort,
+  Object3DRenderParams,
+  LightingConfig,
+} from './Object3DRendererPort'

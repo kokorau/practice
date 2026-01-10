@@ -4,7 +4,7 @@ import { ref, computed } from 'vue'
 // ============================================================
 // Types
 // ============================================================
-export type LayerType = 'base' | 'mask' | 'object' | 'text'
+export type LayerType = 'base' | 'clipGroup' | 'object' | 'text'
 
 export interface LayerItem {
   id: string
@@ -40,8 +40,8 @@ const props = defineProps<{
   layers: LayerItem[]
   layerFilterConfigs?: Map<string, LayerFilterConfig>
   backgroundSurfaceLabel?: string
-  maskSurfaceLabel?: string
-  maskShapeLabel?: string
+  clipGroupSurfaceLabel?: string
+  clipGroupShapeLabel?: string
   titleContrastScore?: number | null
   descriptionContrastScore?: number | null
 }>()
@@ -62,7 +62,9 @@ const emit = defineEmits<{
 // Map UI layer ID to scene layer ID for filter lookup
 const getSceneLayerId = (uiLayerId: string): string => {
   if (uiLayerId === 'base') return 'base-layer'
-  if (uiLayerId.startsWith('mask')) return 'mask-layer'
+  if (uiLayerId.startsWith('clip-group')) return 'clip-group-layer'
+  // Legacy support for mask layer IDs
+  if (uiLayerId.startsWith('mask')) return 'clip-group-layer'
   return uiLayerId
 }
 
@@ -89,10 +91,10 @@ const getSubItemsForLayer = (layer: LayerItem): SubItemConfig[] => {
         { type: 'surface', label: 'Surface', value: props.backgroundSurfaceLabel ?? 'Solid', enabled: true },
         { type: 'filter', label: 'Filter', value: getFilterValue(layer.id), enabled: true },
       ]
-    case 'mask':
+    case 'clipGroup':
       return [
-        { type: 'surface', label: 'Surface', value: props.maskSurfaceLabel ?? 'Solid', enabled: true },
-        { type: 'shape', label: 'Shape', value: props.maskShapeLabel ?? 'None', enabled: true },
+        { type: 'surface', label: 'Surface', value: props.clipGroupSurfaceLabel ?? 'Solid', enabled: true },
+        { type: 'shape', label: 'Shape', value: props.clipGroupShapeLabel ?? 'None', enabled: true },
         { type: 'filter', label: 'Filter', value: getFilterValue(layer.id), enabled: true },
       ]
     case 'object':
@@ -124,7 +126,7 @@ const subItemsMap = computed(() => {
 const getLayerIcon = (type: LayerType): string => {
   switch (type) {
     case 'base': return 'gradient'
-    case 'mask': return 'crop_free'
+    case 'clipGroup': return 'crop_free'
     case 'object': return 'image'
     case 'text': return 'text_fields'
     default: return 'layers'
@@ -134,7 +136,7 @@ const getLayerIcon = (type: LayerType): string => {
 const getLayerTypeLabel = (type: LayerType): string => {
   switch (type) {
     case 'base': return 'Base'
-    case 'mask': return 'Mask'
+    case 'clipGroup': return 'Clip Group'
     case 'object': return 'Object'
     case 'text': return 'Text'
     default: return 'Layer'
@@ -147,16 +149,17 @@ const getLayerTypeLabel = (type: LayerType): string => {
 const showAddMenu = ref(false)
 
 const allLayerTypes: { type: LayerType; label: string; icon: string }[] = [
-  { type: 'mask', label: 'Mask', icon: 'crop_free' },
+  { type: 'clipGroup', label: 'Clip Group', icon: 'crop_free' },
   { type: 'object', label: 'Object', icon: 'image' },
   { type: 'text', label: 'Text', icon: 'text_fields' },
 ]
 
-// Filter out layer types that have reached their limit (mask: 1)
+// Filter out layer types that have reached their limit (clipGroup: 1 for now)
 const addableLayerTypes = computed(() => {
-  const hasMask = props.layers.some(l => l.type === 'mask')
+  const hasClipGroup = props.layers.some(l => l.type === 'clipGroup')
   return allLayerTypes.filter(item => {
-    if (item.type === 'mask' && hasMask) return false
+    // Currently limiting to 1 clip group (can be expanded later)
+    if (item.type === 'clipGroup' && hasClipGroup) return false
     return true
   })
 })

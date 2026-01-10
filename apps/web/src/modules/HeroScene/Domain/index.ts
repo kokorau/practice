@@ -36,7 +36,12 @@ export interface LayerBase {
 /**
  * Canvasレイヤーの種類
  */
-export type CanvasLayerType = 'texture' | 'maskedTexture' | 'image' | 'text'
+export type CanvasLayerType = 'texture' | 'image' | 'text' | 'object' | 'clipGroup'
+
+/**
+ * マスク形状の種類
+ */
+export type ClipMaskShape = 'circle' | 'rect' | 'blob' | 'perlin' | 'image'
 
 /**
  * テクスチャレイヤーの設定
@@ -45,16 +50,6 @@ export type CanvasLayerType = 'texture' | 'maskedTexture' | 'image' | 'text'
 export interface TextureLayerConfig {
   type: 'texture'
   /** テクスチャパターンのスペック（シェーダー + パラメータ） */
-  spec: TexturePatternSpec
-}
-
-/**
- * マスク付きテクスチャレイヤーの設定
- * シェーダーとパラメータを直接保持（自己完結型）
- */
-export interface MaskedTextureLayerConfig {
-  type: 'maskedTexture'
-  /** マスク付きテクスチャのスペック（シェーダー + パラメータ） */
   spec: TexturePatternSpec
 }
 
@@ -128,15 +123,130 @@ export interface ObjectLayerConfig {
   }
 }
 
+// ============================================================
+// ClipGroup Types
+// ============================================================
+
+/**
+ * クリッピングマスクの設定
+ */
+export interface ClipMaskConfig {
+  /** マスク形状 */
+  shape: ClipMaskShape
+  /** 形状パラメータ（形状タイプに応じた設定） */
+  shapeParams: ClipMaskShapeParams
+  /** 内側/外側の反転 (true: 外側を表示) */
+  invert: boolean
+  /** エッジのフェード量 (0-1, 0=シャープ, 1=最大フェード) */
+  feather: number
+  /** マスク表面のテクスチャスペック（オプション） */
+  surface?: TexturePatternSpec
+}
+
+/**
+ * マスク形状のパラメータ（Union型）
+ */
+export type ClipMaskShapeParams =
+  | CircleClipShapeParams
+  | RectClipShapeParams
+  | BlobClipShapeParams
+  | PerlinClipShapeParams
+  | ImageClipShapeParams
+
+/**
+ * 円形マスクのパラメータ
+ */
+export interface CircleClipShapeParams {
+  type: 'circle'
+  /** 中心X座標 (0-1, 正規化) */
+  centerX: number
+  /** 中心Y座標 (0-1, 正規化) */
+  centerY: number
+  /** 半径 (0-1, 画面短辺に対する比率) */
+  radius: number
+}
+
+/**
+ * 矩形マスクのパラメータ
+ */
+export interface RectClipShapeParams {
+  type: 'rect'
+  /** 中心X座標 (0-1, 正規化) */
+  centerX: number
+  /** 中心Y座標 (0-1, 正規化) */
+  centerY: number
+  /** 幅 (0-1, 正規化) */
+  width: number
+  /** 高さ (0-1, 正規化) */
+  height: number
+  /** 角丸半径 [top-left, top-right, bottom-right, bottom-left] */
+  cornerRadius: [number, number, number, number]
+}
+
+/**
+ * Blobマスクのパラメータ
+ */
+export interface BlobClipShapeParams {
+  type: 'blob'
+  /** 中心X座標 (0-1, 正規化) */
+  centerX: number
+  /** 中心Y座標 (0-1, 正規化) */
+  centerY: number
+  /** 基本半径 (0-1) */
+  baseRadius: number
+  /** 変形の振幅 (0-1) */
+  amplitude: number
+  /** 波の数 */
+  octaves: number
+  /** ランダムシード */
+  seed: number
+}
+
+/**
+ * Perlinノイズマスクのパラメータ
+ */
+export interface PerlinClipShapeParams {
+  type: 'perlin'
+  /** スケール */
+  scale: number
+  /** オクターブ数 */
+  octaves: number
+  /** 閾値 */
+  threshold: number
+  /** シード */
+  seed: number
+}
+
+/**
+ * 画像マスクのパラメータ
+ */
+export interface ImageClipShapeParams {
+  type: 'image'
+  /** マスク画像 */
+  source: ImageBitmap | string
+}
+
+/**
+ * ClipGroupレイヤーの設定（子レイヤーを再帰的に持たない簡易版）
+ * 注: 子レイヤーはCanvasLayerとして別途管理
+ */
+export interface ClipGroupLayerConfig {
+  type: 'clipGroup'
+  /** クリッピングマスク設定 */
+  mask: ClipMaskConfig
+  /** 子レイヤーのID配列（描画順） */
+  childIds: string[]
+}
+
 /**
  * Canvasレイヤーの設定（Union型）
  */
 export type CanvasLayerConfig =
   | TextureLayerConfig
-  | MaskedTextureLayerConfig
   | ImageLayerConfig
   | TextLayerConfig
   | ObjectLayerConfig
+  | ClipGroupLayerConfig
 
 /**
  * Canvasレイヤー
@@ -276,14 +386,48 @@ export const createTextureLayer = (
   createCanvasLayer(id, 'Background Texture', { type: 'texture', spec }, options)
 
 /**
- * マスク付きテクスチャレイヤーを作成
+ * デフォルトのClipMaskConfigを作成
  */
-export const createMaskedTextureLayer = (
+export const createDefaultClipMask = (
+  shape: ClipMaskShape = 'circle',
+  options?: Partial<ClipMaskConfig>
+): ClipMaskConfig => {
+  const defaultShapeParams: Record<ClipMaskShape, ClipMaskShapeParams> = {
+    circle: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3 },
+    rect: { type: 'rect', centerX: 0.5, centerY: 0.5, width: 0.6, height: 0.4, cornerRadius: [0, 0, 0, 0] },
+    blob: { type: 'blob', centerX: 0.5, centerY: 0.5, baseRadius: 0.3, amplitude: 0.1, octaves: 3, seed: 42 },
+    perlin: { type: 'perlin', scale: 4, octaves: 4, threshold: 0.5, seed: 42 },
+    image: { type: 'image', source: '' },
+  }
+
+  return {
+    shape,
+    shapeParams: defaultShapeParams[shape],
+    invert: false,
+    feather: 0,
+    ...options,
+  }
+}
+
+/**
+ * ClipGroupレイヤーを作成
+ */
+export const createClipGroupLayer = (
   id: string,
-  spec: TexturePatternSpec,
+  mask?: Partial<ClipMaskConfig>,
+  childIds: string[] = [],
   options?: Partial<Omit<CanvasLayer, 'id' | 'config'>>
 ): CanvasLayer =>
-  createCanvasLayer(id, 'Masked Texture', { type: 'maskedTexture', spec }, options)
+  createCanvasLayer(
+    id,
+    'Clip Group',
+    {
+      type: 'clipGroup',
+      mask: createDefaultClipMask(mask?.shape ?? 'circle', mask),
+      childIds,
+    },
+    options
+  )
 
 /**
  * 画像レイヤーを作成
