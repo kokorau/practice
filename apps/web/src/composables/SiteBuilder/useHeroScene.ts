@@ -112,6 +112,7 @@ import {
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
+  type Object3DRendererPort,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
@@ -120,6 +121,7 @@ import {
   createInMemoryHeroViewPresetRepository,
   findSurfacePresetIndex,
   findMaskPatternIndex,
+  createObject3DRenderer,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -558,6 +560,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   let previewRenderer: TextureRenderer | null = null
   const thumbnailRenderers: TextureRenderer[] = []
 
+  // 3D Object Renderers (keyed by layer ID)
+  const object3DRenderers = new Map<string, Object3DRendererPort>()
+  // Track loaded model URLs to avoid reloading
+  const loadedModelUrls = new Map<string, string>()
+
   // Cached canvas ImageData for contrast analysis (updated after each render)
   const canvasImageData = shallowRef<ImageData | null>(null)
 
@@ -927,6 +934,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Remove filter config
     layerFilterConfigs.value.delete(id)
+
+    // Cleanup 3D object renderer if exists
+    const renderer = object3DRenderers.get(id)
+    if (renderer) {
+      renderer.dispose()
+      object3DRenderers.delete(id)
+      loadedModelUrls.delete(id)
+    }
 
     editorState.value = {
       ...editorState.value,
@@ -1607,6 +1622,64 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           textResult.bitmap.close()
           break
         }
+
+        case 'object': {
+          const config = layer.config
+          if (!config.modelUrl) break
+
+          // Get or create renderer for this layer
+          let renderer = object3DRenderers.get(layer.id)
+          if (!renderer) {
+            renderer = createObject3DRenderer()
+            object3DRenderers.set(layer.id, renderer)
+          }
+
+          // Load model if URL changed
+          const currentUrl = loadedModelUrls.get(layer.id)
+          if (currentUrl !== config.modelUrl) {
+            try {
+              await renderer.loadModel(config.modelUrl)
+              loadedModelUrls.set(layer.id, config.modelUrl)
+            } catch (error) {
+              console.error(`Failed to load 3D model: ${config.modelUrl}`, error)
+              break
+            }
+          }
+
+          // Render 3D object to ImageBitmap
+          try {
+            const bitmap = await renderer.renderFrame({
+              width: viewport.width,
+              height: viewport.height,
+              cameraPosition: { x: 0, y: 0, z: 5 },
+              modelTransform: {
+                position: config.position,
+                rotation: config.rotation,
+                scale: config.scale,
+              },
+              materialOverrides: config.materialOverrides,
+            })
+
+            // Render the 3D bitmap to canvas (centered)
+            await previewRenderer.renderPositionedImage(
+              bitmap,
+              {
+                x: 0.5,
+                y: 0.5,
+                anchorX: 0.5,
+                anchorY: 0.5,
+                rotation: 0,
+                opacity: layer.opacity,
+              },
+              { clear: false }
+            )
+
+            bitmap.close()
+          } catch (error) {
+            console.error('Failed to render 3D object', error)
+          }
+          break
+        }
       }
 
       // Apply per-layer filters after rendering the layer
@@ -1833,6 +1906,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     previewRenderer?.destroy()
     previewRenderer = null
     destroyThumbnailRenderers()
+
+    // Cleanup 3D object renderers
+    for (const renderer of object3DRenderers.values()) {
+      renderer.dispose()
+    }
+    object3DRenderers.clear()
+    loadedModelUrls.clear()
   }
 
   // ============================================================

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+// Test 3D model
+import chairModelUrl from '../modules/HeroScene/Infra/models/chair/scene.gltf'
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
 import {
@@ -157,6 +159,7 @@ const {
   // Layer operations
   addMaskLayer,
   addTextLayer,
+  addObjectLayer,
   removeLayer,
   toggleLayerVisibility,
   updateTextLayerConfig: heroUpdateTextLayerConfig,
@@ -662,6 +665,8 @@ const handleAddLayer = (type: LayerType) => {
     id = addMaskLayer() ?? `mask-${Date.now()}`
   } else if (type === 'text') {
     id = addTextLayer()
+  } else if (type === 'object') {
+    id = addObjectLayer({ modelUrl: chairModelUrl })
   } else {
     id = `${type}-${Date.now()}`
   }

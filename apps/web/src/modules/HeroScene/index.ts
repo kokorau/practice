@@ -131,6 +131,10 @@ export type {
   LayerRenderResult,
   LayerRendererPort,
   HeroSceneUseCaseDeps,
+  // 3D Object Renderer
+  Object3DRendererPort,
+  Object3DRenderParams,
+  LightingConfig,
   // Editor State types
   EditorTextureLayerConfig,
   EditorMaskedTextureLayerConfig,
@@ -168,4 +172,7 @@ export {
   createHeroSceneRenderer,
   // Preset Repository
   createInMemoryHeroViewPresetRepository,
+  // 3D Object Renderer
+  ThreeJsObject3DRenderer,
+  createObject3DRenderer,
 } from './Infra'
