@@ -30,6 +30,7 @@ import {
   removeNode,
   moveLayerNode as moveLayerNodeInTree,
   isLayer,
+  isGroup,
   type DropPosition,
   type LayerNodeType,
 } from '../modules/HeroScene'
@@ -813,11 +814,29 @@ const handleAddLayer = (type: LayerNodeType) => {
 }
 
 const handleRemoveLayer = (layerId: string) => {
-  // Map UI layer ID to scene layer ID (e.g., 'surface-1' -> 'mask-layer')
-  const sceneLayerId = mapLayerIdToSceneLayerId(layerId)
+  // Find the layer to check if it's a Group
+  const layer = findLayerNode(layers.value, layerId)
+  if (!layer) return
 
-  // Remove from scene (this updates editorState.canvasLayers and re-renders)
-  sceneRemoveLayer(sceneLayerId)
+  // If it's a Group, remove all children from the scene first
+  if (isGroup(layer)) {
+    const removeChildrenFromScene = (node: LayerNode) => {
+      if (isGroup(node)) {
+        for (const child of node.children) {
+          removeChildrenFromScene(child)
+        }
+      } else {
+        // It's a Layer node, remove from scene
+        const sceneLayerId = mapLayerIdToSceneLayerId(node.id)
+        sceneRemoveLayer(sceneLayerId)
+      }
+    }
+    removeChildrenFromScene(layer)
+  } else {
+    // Single layer, map and remove from scene
+    const sceneLayerId = mapLayerIdToSceneLayerId(layerId)
+    sceneRemoveLayer(sceneLayerId)
+  }
 
   // Remove from UI layers tree
   layers.value = removeNode(layers.value, layerId)
