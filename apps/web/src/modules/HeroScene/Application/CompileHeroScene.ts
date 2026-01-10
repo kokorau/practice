@@ -229,6 +229,10 @@ const compileCanvasLayer = (
       config = editorLayer.config as TextLayerConfig
       break
     }
+    case 'object': {
+      // 3D object layers are not yet implemented
+      return null
+    }
   }
 
   return {

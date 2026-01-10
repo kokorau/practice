@@ -73,6 +73,9 @@ import {
   type PolkaDotSurfaceParams,
   type CheckerSurfaceParams,
   type DepthMapType,
+  // Text rendering
+  renderTextToBitmap,
+  anchorToNumbers,
 } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 // Filters (separate subpath for tree-shaking)
@@ -108,6 +111,7 @@ import {
   type HeroMaskShapeConfig,
   type ForegroundLayerConfig,
   type HeroViewPreset,
+  type TextLayerConfig,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
@@ -133,7 +137,7 @@ export interface MidgroundSurfacePreset {
   params: MidgroundPresetParams
 }
 
-export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground-title' | 'foreground-description' | 'filter'
+export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground-title' | 'foreground-description' | 'filter' | 'text-content'
 
 /**
  * Custom mask shape params union type
@@ -957,6 +961,21 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     renderScene()
   }
 
+  /**
+   * Update text layer config and re-render
+   */
+  const updateTextLayerConfig = (id: string, updates: Partial<TextLayerConfig>) => {
+    const layer = editorState.value.canvasLayers.find(l => l.id === id)
+    if (!layer || layer.config.type !== 'text') return
+
+    // Update the config properties
+    Object.assign(layer.config, updates)
+
+    // Trigger reactivity and re-render
+    editorState.value = { ...editorState.value }
+    renderScene()
+  }
+
 
   // ============================================================
   // Background Rendering Helpers
@@ -1551,6 +1570,41 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               previewRenderer.render(spec, { clear: false })
             }
           }
+          break
+        }
+
+        case 'text': {
+          const config = layer.config
+          // Render text to ImageBitmap using Canvas 2D
+          const textResult = await renderTextToBitmap({
+            text: config.text,
+            fontFamily: config.fontFamily,
+            fontSize: config.fontSize,
+            fontWeight: config.fontWeight,
+            letterSpacing: config.letterSpacing,
+            lineHeight: config.lineHeight,
+            color: config.color,
+          })
+
+          // Convert anchor string to numeric values
+          const anchor = anchorToNumbers(config.position.anchor)
+
+          // Render the text bitmap at the specified position
+          await previewRenderer.renderPositionedImage(
+            textResult.bitmap,
+            {
+              x: config.position.x,
+              y: config.position.y,
+              anchorX: anchor.x,
+              anchorY: anchor.y,
+              rotation: config.rotation,
+              opacity: layer.opacity,
+            },
+            { clear: false }
+          )
+
+          // Clean up the bitmap
+          textResult.bitmap.close()
           break
         }
       }
@@ -2401,6 +2455,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     removeLayer,
     updateLayerVisibility,
     toggleLayerVisibility,
+    updateTextLayerConfig,
 
     // Actions
     openSection,

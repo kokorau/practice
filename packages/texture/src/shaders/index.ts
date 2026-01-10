@@ -13,6 +13,12 @@ export {
   type DepthMapType,
 } from './common'
 export { imageShader } from './image'
+export {
+  positionedImageShader,
+  createPositionedImageSpec,
+  anchorToNumbers,
+  type PositionedImageParams,
+} from './positionedImage'
 export { solidShader, createSolidSpec, type SolidTextureParams } from './solid'
 export { stripeShader, createStripeSpec, type StripeTextureParams } from './stripe'
 export { gridShader, createGridSpec, type GridTextureParams } from './grid'

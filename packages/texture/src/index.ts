@@ -185,3 +185,7 @@ export {
 
 // Infra
 export { getDefaultTexturePatterns, getDefaultMaskPatterns, getSurfacePresets } from './Infra'
+
+// Text rendering
+export { renderTextToBitmap, type TextRenderOptions, type TextRenderResult } from './text/renderTextToCanvas'
+export { createPositionedImageSpec, anchorToNumbers, type PositionedImageParams } from './shaders'

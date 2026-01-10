@@ -156,8 +156,12 @@ const {
   updateBackgroundSurfaceParams,
   // Layer operations
   addMaskLayer,
+  addTextLayer,
   removeLayer,
   toggleLayerVisibility,
+  updateTextLayerConfig: heroUpdateTextLayerConfig,
+  // Editor state (for text layer editing)
+  editorState,
   // Foreground
   foregroundConfig,
   foregroundTitleColor,
@@ -309,10 +313,70 @@ const sectionTitle = computed(() => {
       return 'タイトル位置'
     case 'foreground-description':
       return '説明文位置'
+    case 'text-content':
+      return 'テキスト設定'
     default:
       return ''
   }
 })
+
+// ============================================================
+// Text Layer Editing
+// ============================================================
+const selectedTextLayerId = ref<string | null>(null)
+
+// Get selected text layer config
+const selectedTextLayerConfig = computed(() => {
+  if (!selectedTextLayerId.value) return null
+  const layer = editorState.value.canvasLayers.find(
+    l => l.id === selectedTextLayerId.value && l.config.type === 'text'
+  )
+  if (!layer || layer.config.type !== 'text') return null
+  return layer.config
+})
+
+// Update text layer config (wrapper that handles position updates and calls heroUpdateTextLayerConfig)
+const updateTextLayerConfig = (updates: Partial<{
+  text: string
+  fontFamily: string
+  fontSize: number
+  fontWeight: number
+  letterSpacing: number
+  lineHeight: number
+  color: string
+  x: number
+  y: number
+  anchor: string
+  rotation: number
+}>) => {
+  if (!selectedTextLayerId.value) return
+  const config = selectedTextLayerConfig.value
+  if (!config) return
+
+  // Build the actual config updates, handling position fields specially
+  const configUpdates: Record<string, unknown> = {}
+
+  if (updates.text !== undefined) configUpdates.text = updates.text
+  if (updates.fontFamily !== undefined) configUpdates.fontFamily = updates.fontFamily
+  if (updates.fontSize !== undefined) configUpdates.fontSize = updates.fontSize
+  if (updates.fontWeight !== undefined) configUpdates.fontWeight = updates.fontWeight
+  if (updates.letterSpacing !== undefined) configUpdates.letterSpacing = updates.letterSpacing
+  if (updates.lineHeight !== undefined) configUpdates.lineHeight = updates.lineHeight
+  if (updates.color !== undefined) configUpdates.color = updates.color
+  if (updates.rotation !== undefined) configUpdates.rotation = updates.rotation
+
+  // Handle position updates - need to merge with existing position
+  if (updates.x !== undefined || updates.y !== undefined || updates.anchor !== undefined) {
+    configUpdates.position = {
+      x: updates.x ?? config.position.x,
+      y: updates.y ?? config.position.y,
+      anchor: updates.anchor ?? config.position.anchor,
+    }
+  }
+
+  // Call the composable's updateTextLayerConfig which triggers renderScene
+  heroUpdateTextLayerConfig(selectedTextLayerId.value, configUpdates)
+}
 
 const closeSection = () => {
   activeSection.value = null
@@ -572,17 +636,37 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
       selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
       openSection('filter')
     }
+  } else if (layer.type === 'text') {
+    if (subItemType === 'source') {
+      selectedTextLayerId.value = layerId
+      openSection('text-content')
+    } else if (subItemType === 'filter') {
+      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
+      openSection('filter')
+    }
   }
 }
 
 const handleAddLayer = (type: LayerType) => {
-  const id = `${type}-${Date.now()}`
   const names: Record<LayerType, string> = {
     base: 'Background',
     mask: 'Mask Layer',
     object: 'Object',
     text: 'Text Layer',
   }
+
+  let id: string
+
+  // Add to scene and get the ID
+  if (type === 'mask') {
+    id = addMaskLayer() ?? `mask-${Date.now()}`
+  } else if (type === 'text') {
+    id = addTextLayer()
+  } else {
+    id = `${type}-${Date.now()}`
+  }
+
+  // Add to UI layer list
   layers.value.push({
     id,
     type,
@@ -590,7 +674,6 @@ const handleAddLayer = (type: LayerType) => {
     visible: true,
     expanded: true,
   })
-  if (type === 'mask') addMaskLayer()
 }
 
 const handleRemoveLayer = (layerId: string) => {
@@ -1061,6 +1144,165 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
                 <input type="radio" v-model="selectedFilterType" value="lineHalftone" />
                 <span class="filter-name">Line Halftone</span>
               </label>
+            </div>
+          </div>
+        </template>
+
+        <!-- テキストレイヤー設定 -->
+        <template v-else-if="activeSection === 'text-content'">
+          <div v-if="selectedTextLayerConfig" class="text-layer-section">
+            <div class="text-layer-field">
+              <label class="text-layer-label">Text</label>
+              <textarea
+                :value="selectedTextLayerConfig.text"
+                @input="updateTextLayerConfig({ text: ($event.target as HTMLTextAreaElement).value })"
+                class="text-layer-textarea"
+                placeholder="Enter text..."
+                rows="3"
+              />
+            </div>
+
+            <div class="text-layer-field">
+              <label class="text-layer-label">Font Family</label>
+              <select
+                :value="selectedTextLayerConfig.fontFamily"
+                @change="updateTextLayerConfig({ fontFamily: ($event.target as HTMLSelectElement).value })"
+                class="text-layer-select"
+              >
+                <option value="sans-serif">Sans Serif</option>
+                <option value="serif">Serif</option>
+                <option value="monospace">Monospace</option>
+                <option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
+                <option value="'Noto Serif JP', serif">Noto Serif JP</option>
+              </select>
+            </div>
+
+            <div class="text-layer-row">
+              <div class="text-layer-field">
+                <label class="text-layer-label">Size (px)</label>
+                <input
+                  type="number"
+                  :value="selectedTextLayerConfig.fontSize"
+                  @input="updateTextLayerConfig({ fontSize: Number(($event.target as HTMLInputElement).value) })"
+                  class="text-layer-input"
+                  min="8"
+                  max="200"
+                />
+              </div>
+
+              <div class="text-layer-field">
+                <label class="text-layer-label">Weight</label>
+                <select
+                  :value="selectedTextLayerConfig.fontWeight"
+                  @change="updateTextLayerConfig({ fontWeight: Number(($event.target as HTMLSelectElement).value) })"
+                  class="text-layer-select"
+                >
+                  <option :value="100">Thin</option>
+                  <option :value="300">Light</option>
+                  <option :value="400">Regular</option>
+                  <option :value="500">Medium</option>
+                  <option :value="700">Bold</option>
+                  <option :value="900">Black</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="text-layer-row">
+              <div class="text-layer-field">
+                <label class="text-layer-label">Letter Spacing (em)</label>
+                <input
+                  type="number"
+                  :value="selectedTextLayerConfig.letterSpacing"
+                  @input="updateTextLayerConfig({ letterSpacing: Number(($event.target as HTMLInputElement).value) })"
+                  class="text-layer-input"
+                  min="-0.2"
+                  max="1"
+                  step="0.01"
+                />
+              </div>
+
+              <div class="text-layer-field">
+                <label class="text-layer-label">Line Height</label>
+                <input
+                  type="number"
+                  :value="selectedTextLayerConfig.lineHeight"
+                  @input="updateTextLayerConfig({ lineHeight: Number(($event.target as HTMLInputElement).value) })"
+                  class="text-layer-input"
+                  min="0.5"
+                  max="3"
+                  step="0.1"
+                />
+              </div>
+            </div>
+
+            <div class="text-layer-field">
+              <label class="text-layer-label">Color</label>
+              <input
+                type="color"
+                :value="selectedTextLayerConfig.color"
+                @input="updateTextLayerConfig({ color: ($event.target as HTMLInputElement).value })"
+                class="text-layer-color"
+              />
+            </div>
+
+            <div class="text-layer-row">
+              <div class="text-layer-field">
+                <label class="text-layer-label">Position X</label>
+                <input
+                  type="range"
+                  :value="selectedTextLayerConfig.position.x"
+                  @input="updateTextLayerConfig({ x: Number(($event.target as HTMLInputElement).value) })"
+                  class="text-layer-slider"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                />
+              </div>
+
+              <div class="text-layer-field">
+                <label class="text-layer-label">Position Y</label>
+                <input
+                  type="range"
+                  :value="selectedTextLayerConfig.position.y"
+                  @input="updateTextLayerConfig({ y: Number(($event.target as HTMLInputElement).value) })"
+                  class="text-layer-slider"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            <div class="text-layer-field">
+              <label class="text-layer-label">Anchor</label>
+              <select
+                :value="selectedTextLayerConfig.position.anchor"
+                @change="updateTextLayerConfig({ anchor: ($event.target as HTMLSelectElement).value })"
+                class="text-layer-select"
+              >
+                <option value="top-left">Top Left</option>
+                <option value="top-center">Top Center</option>
+                <option value="top-right">Top Right</option>
+                <option value="center-left">Center Left</option>
+                <option value="center">Center</option>
+                <option value="center-right">Center Right</option>
+                <option value="bottom-left">Bottom Left</option>
+                <option value="bottom-center">Bottom Center</option>
+                <option value="bottom-right">Bottom Right</option>
+              </select>
+            </div>
+
+            <div class="text-layer-field">
+              <label class="text-layer-label">Rotation (deg)</label>
+              <input
+                type="range"
+                :value="selectedTextLayerConfig.rotation * (180 / Math.PI)"
+                @input="updateTextLayerConfig({ rotation: Number(($event.target as HTMLInputElement).value) * (Math.PI / 180) })"
+                class="text-layer-slider"
+                min="-180"
+                max="180"
+                step="1"
+              />
             </div>
           </div>
         </template>
@@ -1677,6 +1919,149 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
 .dark .contrast-score-hint {
   color: oklch(0.60 0.02 260);
+}
+
+/* Text Layer Section */
+.text-layer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.text-layer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.text-layer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.text-layer-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: oklch(0.45 0.02 260);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dark .text-layer-label {
+  color: oklch(0.65 0.02 260);
+}
+
+.text-layer-textarea {
+  padding: 0.5rem 0.625rem;
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  color: oklch(0.20 0.02 260);
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 3rem;
+}
+
+.dark .text-layer-textarea {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
+}
+
+.text-layer-textarea:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
+}
+
+.text-layer-input {
+  padding: 0.5rem 0.625rem;
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  color: oklch(0.20 0.02 260);
+  font-size: 0.8125rem;
+  font-family: inherit;
+}
+
+.dark .text-layer-input {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
+}
+
+.text-layer-input:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
+}
+
+.text-layer-select {
+  padding: 0.5rem 0.625rem;
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  color: oklch(0.20 0.02 260);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dark .text-layer-select {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
+}
+
+.text-layer-select:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
+}
+
+.text-layer-color {
+  width: 100%;
+  height: 2rem;
+  padding: 0.125rem;
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.dark .text-layer-color {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+}
+
+.text-layer-slider {
+  width: 100%;
+  height: 4px;
+  appearance: none;
+  background: oklch(0.85 0.01 260);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.dark .text-layer-slider {
+  background: oklch(0.30 0.02 260);
+}
+
+.text-layer-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: oklch(0.55 0.20 250);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.text-layer-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: oklch(0.55 0.20 250);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
 }
 
 </style>

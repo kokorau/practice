@@ -1,5 +1,7 @@
 import type { TextureRenderSpec } from './Domain'
 import { imageShader } from './shaders/image'
+import { positionedImageShader, type PositionedImageParams } from './shaders/positionedImage'
+import { maskBlendState } from './shaders/common'
 
 interface PipelineCache {
   pipeline: GPURenderPipeline
@@ -8,6 +10,12 @@ interface PipelineCache {
 }
 
 interface ImagePipelineCache {
+  pipeline: GPURenderPipeline
+  sampler: GPUSampler
+  uniformBuffer: GPUBuffer
+}
+
+interface PositionedImagePipelineCache {
   pipeline: GPURenderPipeline
   sampler: GPUSampler
   uniformBuffer: GPUBuffer
@@ -38,6 +46,7 @@ export class TextureRenderer {
   private format: GPUTextureFormat
   private cache: Map<string, PipelineCache> = new Map()
   private imagePipelineCache: ImagePipelineCache | null = null
+  private positionedImagePipelineCache: PositionedImagePipelineCache | null = null
   private postEffectCache: Map<string, PostEffectPipelineCache> = new Map()
 
   // オフスクリーンレンダリング用のテクスチャ（ダブルバッファ）
@@ -156,6 +165,106 @@ export class TextureRenderer {
 
     // Clean up texture
     texture.destroy()
+  }
+
+  /**
+   * Render an image at a specific position with rotation and alpha blending
+   */
+  async renderPositionedImage(
+    source: ImageBitmap,
+    params: PositionedImageParams,
+    options?: { clear?: boolean }
+  ): Promise<void> {
+    const cache = this.getOrCreatePositionedImagePipeline()
+    const viewport = this.getViewport()
+
+    // Create texture from image source
+    const texture = this.device.createTexture({
+      size: [source.width, source.height],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    })
+
+    // Copy image to texture
+    this.device.queue.copyExternalImageToTexture(
+      { source },
+      { texture },
+      [source.width, source.height]
+    )
+
+    // Write uniform data
+    const uniformData = new Float32Array([
+      viewport.width,
+      viewport.height,
+      source.width,
+      source.height,
+      params.x,
+      params.y,
+      params.anchorX,
+      params.anchorY,
+      params.rotation,
+      params.opacity,
+      0, // padding
+      0, // padding
+    ])
+    this.device.queue.writeBuffer(cache.uniformBuffer, 0, uniformData)
+
+    // Create bind group for this image
+    const bindGroup = this.device.createBindGroup({
+      layout: cache.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: cache.sampler },
+        { binding: 1, resource: texture.createView() },
+        { binding: 2, resource: { buffer: cache.uniformBuffer } },
+      ],
+    })
+
+    this.executeRender(cache.pipeline, bindGroup, options)
+
+    // Clean up texture
+    texture.destroy()
+  }
+
+  private getOrCreatePositionedImagePipeline(): PositionedImagePipelineCache {
+    if (this.positionedImagePipelineCache) {
+      return this.positionedImagePipelineCache
+    }
+
+    const shaderModule = this.device.createShaderModule({
+      code: positionedImageShader,
+    })
+
+    const pipeline = this.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: shaderModule,
+        entryPoint: 'vertexMain',
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [{ format: this.format, blend: maskBlendState }],
+      },
+      primitive: {
+        topology: 'triangle-list',
+      },
+    })
+
+    const sampler = this.device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+    })
+
+    const uniformBuffer = this.device.createBuffer({
+      size: 48, // 12 floats
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    this.positionedImagePipelineCache = { pipeline, sampler, uniformBuffer }
+    return this.positionedImagePipelineCache
   }
 
   private getOrCreateImagePipeline(): ImagePipelineCache {
