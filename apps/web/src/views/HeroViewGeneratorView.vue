@@ -306,10 +306,10 @@ const sectionTitle = computed(() => {
   switch (activeSection.value) {
     case 'background':
       return 'テクスチャ選択'
-    case 'mask-surface':
-      return 'マスクテクスチャ'
-    case 'mask-shape':
-      return 'マスク形状'
+    case 'clip-group-surface':
+      return 'クリップグループテクスチャ'
+    case 'clip-group-shape':
+      return 'クリップグループ形状'
     case 'filter':
       return 'フィルター設定'
     case 'foreground-title':
@@ -602,12 +602,14 @@ const activeTab = ref<TabId>('generator')
 // ============================================================
 const layers = ref<LayerItem[]>([
   { id: 'base', type: 'base', name: 'Background', visible: true, expanded: true },
-  { id: 'mask-1', type: 'mask', name: 'Mask Layer', visible: true, expanded: false },
+  { id: 'clip-group-1', type: 'clipGroup', name: 'Clip Group', visible: true, expanded: false },
 ])
 
 const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
   if (uiLayerId === 'base') return 'base-layer'
-  if (uiLayerId.startsWith('mask')) return 'mask-layer'
+  if (uiLayerId.startsWith('clip-group')) return 'clip-group-layer'
+  // Legacy support for old mask layer IDs
+  if (uiLayerId.startsWith('mask')) return 'clip-group-layer'
   return uiLayerId
 }
 
@@ -630,11 +632,11 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
       selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
       openSection('filter')
     }
-  } else if (layer.type === 'mask') {
+  } else if (layer.type === 'clipGroup') {
     if (subItemType === 'surface') {
-      openSection('mask-surface')
+      openSection('clip-group-surface')
     } else if (subItemType === 'shape') {
-      openSection('mask-shape')
+      openSection('clip-group-shape')
     } else if (subItemType === 'filter') {
       selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
       openSection('filter')
@@ -653,7 +655,7 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
 const handleAddLayer = (type: LayerType) => {
   const names: Record<LayerType, string> = {
     base: 'Background',
-    mask: 'Mask Layer',
+    clipGroup: 'Clip Group',
     object: 'Object',
     text: 'Text Layer',
   }
@@ -661,8 +663,8 @@ const handleAddLayer = (type: LayerType) => {
   let id: string
 
   // Add to scene and get the ID
-  if (type === 'mask') {
-    id = addMaskLayer() ?? `mask-${Date.now()}`
+  if (type === 'clipGroup') {
+    id = addMaskLayer() ?? `clip-group-${Date.now()}`
   } else if (type === 'text') {
     id = addTextLayer()
   } else if (type === 'object') {
@@ -725,7 +727,7 @@ const backgroundSurfaceLabel = computed(() => {
   return pattern?.label ?? 'Solid'
 })
 
-const maskSurfaceLabel = computed(() => {
+const clipGroupSurfaceLabel = computed(() => {
   if (customMaskImage.value) return 'Image'
   // Use customSurfaceParams if available (set during preset load)
   if (customSurfaceParams.value) {
@@ -736,7 +738,7 @@ const maskSurfaceLabel = computed(() => {
   return pattern?.label ?? 'Solid'
 })
 
-const maskShapeLabel = computed(() => {
+const clipGroupShapeLabel = computed(() => {
   if (selectedMaskIndex.value === null) return 'None'
   // Use customMaskShapeParams if available (set during preset load)
   if (customMaskShapeParams.value) {
@@ -904,8 +906,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
           />
         </template>
 
-        <!-- マスク形状選択 -->
-        <template v-else-if="activeSection === 'mask-shape'">
+        <!-- クリップグループ形状選択 -->
+        <template v-else-if="activeSection === 'clip-group-shape'">
           <!-- Shape params (shown when mask is selected) -->
           <div v-if="currentMaskShapeSchema && customMaskShapeParams" class="shape-params">
             <SchemaFields
@@ -929,8 +931,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
           </div>
         </template>
 
-        <!-- マスクテクスチャ選択 -->
-        <template v-else-if="activeSection === 'mask-surface'">
+        <!-- クリップグループテクスチャ選択 -->
+        <template v-else-if="activeSection === 'clip-group-surface'">
           <!-- Mask color selection (at top for easy access) -->
           <div class="color-selection-section no-border">
             <PrimitiveColorPicker
@@ -1365,8 +1367,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
         :layers="layers"
         :layer-filter-configs="layerFilterConfigs"
         :background-surface-label="backgroundSurfaceLabel"
-        :mask-surface-label="maskSurfaceLabel"
-        :mask-shape-label="maskShapeLabel"
+        :clip-group-surface-label="clipGroupSurfaceLabel"
+        :clip-group-shape-label="clipGroupShapeLabel"
         :title-contrast-score="titleContrastResult?.score ?? null"
         :description-contrast-score="descriptionContrastResult?.score ?? null"
         @toggle-visibility="handleToggleVisibility"

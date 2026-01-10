@@ -144,7 +144,7 @@ export interface MidgroundSurfacePreset {
   params: MidgroundPresetParams
 }
 
-export type SectionType = 'background' | 'mask-surface' | 'mask-shape' | 'foreground-title' | 'foreground-description' | 'filter' | 'text-content'
+export type SectionType = 'background' | 'clip-group-surface' | 'clip-group-shape' | 'foreground-title' | 'foreground-description' | 'filter' | 'text-content'
 
 /**
  * Custom mask shape params union type
@@ -1959,7 +1959,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const getPatterns = (section: SectionType): (TexturePattern | MaskPattern)[] => {
     if (section === 'background') return texturePatterns
-    if (section === 'mask-shape') return maskPatterns
+    if (section === 'clip-group-shape') return maskPatterns
     return []
   }
 
@@ -1974,8 +1974,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const section = activeSection.value
     if (!section) return
 
-    // Handle mask-surface section separately
-    if (section === 'mask-surface') {
+    // Handle clip-group-surface section separately
+    if (section === 'clip-group-surface') {
       for (let i = 0; i < thumbnailRenderers.length; i++) {
         const renderer = thumbnailRenderers[i]
         const pattern = midgroundTexturePatterns[i]
@@ -2020,8 +2020,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     nextTick(async () => {
       const canvases = document.querySelectorAll<HTMLCanvasElement>('[data-thumbnail-canvas]')
 
-      // Handle mask-surface section separately (uses midgroundTexturePatterns)
-      if (section === 'mask-surface') {
+      // Handle clip-group-surface section separately (uses midgroundTexturePatterns)
+      if (section === 'clip-group-surface') {
         for (let i = 0; i < canvases.length; i++) {
           const canvas = canvases[i]
           if (!canvas) continue
@@ -2050,7 +2050,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         return
       }
 
-      // Handle background and mask-shape sections
+      // Handle background and clip-group-shape sections
       const patterns = getPatterns(section)
       for (let i = 0; i < canvases.length; i++) {
         const canvas = canvases[i]
