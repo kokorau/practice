@@ -266,7 +266,7 @@ const handleDrop = (e: DragEvent) => {
       >
         <span class="material-icons">chevron_right</span>
       </button>
-      <span v-else-if="!isBaseLayer" class="expand-spacer" />
+      <span v-else-if="!isBaseLayer && !hasModifiers" class="expand-spacer" />
 
       <!-- Type Icon -->
       <span class="material-icons layer-icon">{{ getLayerIcon(nodeVariant) }}</span>
