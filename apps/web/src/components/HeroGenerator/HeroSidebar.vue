@@ -42,6 +42,7 @@ const props = defineProps<{
   // Layers
   layers: LayerNode[]
   selectedLayerId: string | null
+  selectedProcessorType: 'effect' | 'mask' | 'processor' | null
   draggedId: string | null
   dropTarget: DropTarget | null
 }>()
@@ -62,7 +63,7 @@ const emit = defineEmits<{
   (e: 'select-layer', layerId: string): void
   (e: 'toggle-expand', layerId: string): void
   (e: 'toggle-visibility', layerId: string): void
-  (e: 'select-processor', layerId: string, processorType: 'effect' | 'mask'): void
+  (e: 'select-processor', layerId: string, processorType: 'effect' | 'mask' | 'processor'): void
   (e: 'drag-start', nodeId: string): void
   (e: 'drag-end'): void
   (e: 'drag-over', nodeId: string, position: DropPosition): void
@@ -270,12 +271,13 @@ const selectedPresetName = computed(() => {
             :node="layer"
             :depth="0"
             :selected-id="selectedLayerId"
+            :selected-processor-type="selectedProcessorType"
             :dragged-id="draggedId"
             :drop-target="dropTarget"
             @select="(id: string) => emit('select-layer', id)"
             @toggle-expand="(id: string) => emit('toggle-expand', id)"
             @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
-            @select-processor="(id: string, type: 'effect' | 'mask') => emit('select-processor', id, type)"
+            @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
             @drag-start="(id: string) => emit('drag-start', id)"
             @drag-end="() => emit('drag-end')"
             @drag-over="(id: string, pos: DropPosition) => emit('drag-over', id, pos)"

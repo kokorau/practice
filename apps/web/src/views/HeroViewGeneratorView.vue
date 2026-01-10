@@ -610,7 +610,7 @@ const activeTab = ref<TabId>('generator')
 // Layer Management (for Right Panel)
 // ============================================================
 const selectedLayerId = ref<string | null>(null)
-const selectedProcessorType = ref<'effect' | 'mask' | null>(null)
+const selectedProcessorType = ref<'effect' | 'mask' | 'processor' | null>(null)
 const selectedProcessorLayerId = ref<string | null>(null)
 
 const layers = ref<LayerNode[]>([
@@ -693,7 +693,7 @@ const handleToggleVisibility = (layerId: string) => {
   }
 }
 
-const handleSelectProcessor = (layerId: string, processorType: 'effect' | 'mask') => {
+const handleSelectProcessor = (layerId: string, processorType: 'effect' | 'mask' | 'processor') => {
   const layer = findLayerNode(layers.value, layerId)
   if (!layer) return
 
@@ -831,6 +831,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       :selected-preset-id="selectedPresetId"
       :layers="layers"
       :selected-layer-id="selectedLayerId"
+      :selected-processor-type="selectedProcessorType"
       :dragged-id="draggedId"
       :drop-target="dropTarget"
       @update:hue="hue = $event"
@@ -1361,6 +1362,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       <div class="right-panel-header">
         <span class="right-panel-title">
           {{
+            selectedProcessorType === 'processor' ? 'Processor' :
             selectedProcessorType === 'effect' ? 'Effect Settings' :
             selectedProcessorType === 'mask' ? 'Mask Settings' :
             selectedLayerVariant === 'base' ? 'Background' :
@@ -1558,6 +1560,15 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
                 <span class="pattern-label">{{ pattern.label }}</span>
               </button>
             </div>
+          </div>
+        </template>
+
+        <!-- Processor Selected -->
+        <template v-else-if="selectedProcessorType === 'processor'">
+          <div class="property-placeholder">
+            <span class="material-icons property-icon">tune</span>
+            <p class="property-text">Processor</p>
+            <p class="property-hint">Processors modify how layers are rendered. Select Effect or Mask below to configure.</p>
           </div>
         </template>
 

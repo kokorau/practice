@@ -23,6 +23,7 @@ const props = defineProps<{
   node: SceneNode
   depth: number
   selectedId: string | null
+  selectedProcessorType: 'effect' | 'mask' | 'processor' | null
   draggedId: string | null
   dropTarget: DropTarget | null
 }>()
@@ -31,7 +32,7 @@ const emit = defineEmits<{
   select: [nodeId: string]
   'toggle-expand': [nodeId: string]
   'toggle-visibility': [nodeId: string]
-  'select-processor': [nodeId: string, processorType: 'effect' | 'mask']
+  'select-processor': [nodeId: string, processorType: 'effect' | 'mask' | 'processor']
   'remove-layer': [nodeId: string]
   // Drag & drop events
   'drag-start': [nodeId: string]
@@ -56,6 +57,11 @@ const isDragging = computed(() => props.draggedId === props.node.id)
 const isBaseLayer = computed(() => isLayer(props.node) && props.node.variant === 'base')
 const isDraggable = computed(() => !isBaseLayer.value)
 const hasModifiers = computed(() => modifiers.value.length > 0)
+
+// Check if this node's processor is selected
+const isProcessorSelected = computed(() =>
+  props.selectedId === props.node.id && props.selectedProcessorType === 'processor'
+)
 
 // Processor expand state (local, not persisted)
 const isProcessorExpanded = ref(true)
@@ -166,7 +172,7 @@ const handleRemove = (e: Event) => {
   emit('remove-layer', props.node.id)
 }
 
-const handleSelectProcessor = (type: 'effect' | 'mask') => {
+const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
   emit('select-processor', props.node.id, type)
 }
 
@@ -310,7 +316,9 @@ const handleDrop = (e: DragEvent) => {
       <!-- Processor parent node with L-shape connector -->
       <div
         class="processor-group-node"
+        :class="{ selected: isProcessorSelected }"
         :style="{ paddingLeft: `${depth * 0.75}rem` }"
+        @click="handleSelectProcessor('processor')"
       >
         <!-- L字コーナー SVG -->
         <svg class="processor-link-icon" viewBox="0 0 12 24" fill="none">
@@ -360,12 +368,13 @@ const handleDrop = (e: DragEvent) => {
         :node="child"
         :depth="depth + 1"
         :selected-id="selectedId"
+        :selected-processor-type="selectedProcessorType"
         :dragged-id="draggedId"
         :drop-target="dropTarget"
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
-        @select-processor="(id: string, type: 'effect' | 'mask') => emit('select-processor', id, type)"
+        @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
         @drag-start="(id: string) => emit('drag-start', id)"
         @drag-end="() => emit('drag-end')"
@@ -632,6 +641,7 @@ const handleDrop = (e: DragEvent) => {
   padding: 0.375rem 0.5rem;
   border-radius: 0.25rem;
   transition: background 0.15s;
+  cursor: pointer;
 }
 
 .processor-group-node:hover {
@@ -640,6 +650,14 @@ const handleDrop = (e: DragEvent) => {
 
 :global(.dark) .processor-group-node:hover {
   background: oklch(0.24 0.02 260);
+}
+
+.processor-group-node.selected {
+  background: oklch(0.55 0.15 250 / 0.15);
+}
+
+:global(.dark) .processor-group-node.selected {
+  background: oklch(0.55 0.15 250 / 0.25);
 }
 
 /* Processor内のchevronは小さく */
