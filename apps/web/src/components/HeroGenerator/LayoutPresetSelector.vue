@@ -106,13 +106,18 @@ const getPresetInkColor = (preset: HeroViewPreset, palette: PrimitivePalette): s
 
 /**
  * Get inline style for foreground element
+ * Uses container query width (cqw) for responsive font sizing
  */
 const getElementStyle = (el: PositionedElement, inkColor: string): Record<string, string> => {
   const style: Record<string, string> = {}
   const fontFamily = ensureFontLoaded(el.fontId)
   if (fontFamily) style.fontFamily = fontFamily
   if (el.fontSize !== undefined) {
-    style.fontSize = `${el.fontSize * 16 * PREVIEW_FONT_SCALE}px`
+    // Calculate font size relative to container width using cqw
+    // Base: fontSize * 16 * PREVIEW_FONT_SCALE at PREVIEW_WIDTH (384px)
+    const fontSizePx = el.fontSize * 16 * PREVIEW_FONT_SCALE
+    const fontSizeCqw = (fontSizePx / PREVIEW_WIDTH) * 100
+    style.fontSize = `${fontSizeCqw}cqw`
   }
   style.color = inkColor
   return style
@@ -288,6 +293,7 @@ watch(() => props.presets, async () => {
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
+  container-type: inline-size; /* Enable container queries for responsive font sizing */
 }
 
 .preset-canvas {
