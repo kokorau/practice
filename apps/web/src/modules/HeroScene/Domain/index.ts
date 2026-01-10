@@ -631,23 +631,43 @@ export type {
   CheckerSurfaceConfig,
   SolidSurfaceConfig,
   ImageSurfaceConfig,
-  BackgroundSurfaceConfig,
-  MaskSurfaceConfig,
+  // New SurfaceConfig type (replaces BackgroundSurfaceConfig/MaskSurfaceConfig)
+  SurfaceConfig as HeroSurfaceConfig,
+  // Mask shape types
   CircleMaskShapeConfig as HeroCircleMaskShapeConfig,
   RectMaskShapeConfig as HeroRectMaskShapeConfig,
   BlobMaskShapeConfig as HeroBlobMaskShapeConfig,
+  PerlinMaskShapeConfig as HeroPerlinMaskShapeConfig,
+  MaskShapeConfig,
   MaskShapeConfig as HeroMaskShapeConfig,
-  BackgroundLayerConfig,
-  MaskLayerConfig,
+  // Processor config types (for JSON serialization)
+  ProcessorConfig,
+  EffectProcessorConfig,
+  MaskProcessorConfig,
+  // LayerNodeConfig types (for JSON serialization)
+  LayerNodeConfig,
+  BaseLayerNodeConfig,
+  SurfaceLayerNodeConfig,
+  TextLayerNodeConfig,
+  Model3DLayerNodeConfig,
+  ImageLayerNodeConfig,
+  GroupLayerNodeConfig,
+  // Foreground
   GridPosition,
   ForegroundElementConfig,
   ForegroundLayerConfig,
   HeroViewConfig,
+  // Legacy types (deprecated)
+  BackgroundSurfaceConfig,
+  MaskSurfaceConfig,
+  BackgroundLayerConfig,
+  MaskLayerConfig,
 } from './HeroViewConfig'
 
 export {
   createDefaultColorsConfig,
   createDefaultForegroundConfig,
+  createDefaultEffectProcessorConfig,
   createDefaultHeroViewConfig,
 } from './HeroViewConfig'
 

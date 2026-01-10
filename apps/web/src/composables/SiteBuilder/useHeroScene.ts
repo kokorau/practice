@@ -109,11 +109,13 @@ import {
   type HeroColorsConfig,
   type HeroPrimitiveKey,
   type HeroContextName,
-  type BackgroundLayerConfig,
-  type MaskLayerConfig,
-  type BackgroundSurfaceConfig,
-  type MaskSurfaceConfig,
-  type HeroMaskShapeConfig,
+  type HeroSurfaceConfig,
+  type MaskShapeConfig as HeroMaskShapeConfig,
+  type LayerNodeConfig,
+  type BaseLayerNodeConfig,
+  type SurfaceLayerNodeConfig,
+  type EffectProcessorConfig,
+  type MaskProcessorConfig,
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
@@ -2307,9 +2309,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
 
   /**
-   * Build BackgroundSurfaceConfig from current state
+   * Build SurfaceConfig from current background state
    */
-  const buildBackgroundSurface = (): BackgroundSurfaceConfig => {
+  const buildBackgroundSurface = (): HeroSurfaceConfig => {
     // Custom image takes precedence
     if (customBackgroundImage.value) {
       return { type: 'image', imageId: customBackgroundImage.value }
@@ -2329,9 +2331,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
-   * Build MaskSurfaceConfig from current state
+   * Build SurfaceConfig from current mask state
    */
-  const buildMaskSurface = (): MaskSurfaceConfig => {
+  const buildMaskSurface = (): HeroSurfaceConfig => {
     // Custom image takes precedence
     if (customMaskImage.value) {
       return { type: 'image', imageId: customMaskImage.value }
@@ -2420,25 +2422,57 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Convert current editor state to HeroViewConfig
-   * Returns a self-contained, JSON-serializable config
+   * Returns a self-contained, JSON-serializable config with LayerNodeConfig[] structure
    */
   const toHeroViewConfig = (): HeroViewConfig => {
     const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultFilterConfig()
     const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultFilterConfig()
 
-    const background: BackgroundLayerConfig = {
-      surface: buildBackgroundSurface(),
-      filters: baseFilters,
-    }
+    // Build layers array
+    const layers: LayerNodeConfig[] = []
 
-    let mask: MaskLayerConfig | null = null
+    // Base layer (always present)
+    const baseLayer: BaseLayerNodeConfig = {
+      type: 'base',
+      id: 'base',
+      name: 'Background',
+      visible: true,
+      surface: buildBackgroundSurface(),
+      processors: [
+        {
+          type: 'effect',
+          enabled: true,
+          config: baseFilters,
+        } as EffectProcessorConfig,
+      ],
+    }
+    layers.push(baseLayer)
+
+    // Surface layer with mask (if mask is enabled)
     const maskShape = buildMaskShape()
     if (maskShape && selectedMaskIndex.value !== null) {
-      mask = {
-        shape: maskShape,
+      const surfaceLayer: SurfaceLayerNodeConfig = {
+        type: 'surface',
+        id: 'surface-1',
+        name: 'Mask Surface',
+        visible: true,
         surface: buildMaskSurface(),
-        filters: maskFilters,
+        processors: [
+          {
+            type: 'effect',
+            enabled: true,
+            config: maskFilters,
+          } as EffectProcessorConfig,
+          {
+            type: 'mask',
+            enabled: true,
+            shape: maskShape,
+            invert: false,
+            feather: 0,
+          } as MaskProcessorConfig,
+        ],
       }
+      layers.push(surfaceLayer)
     }
 
     return {
@@ -2447,8 +2481,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         height: editorState.value.config.height,
       },
       colors: buildColorsConfig(),
-      background,
-      mask,
+      layers,
       foreground: foregroundConfig.value,
     }
   }
@@ -2479,83 +2512,100 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     maskColorKey2.value = colors.mask.secondary as PrimitiveKey | 'auto'
     maskSemanticContext.value = colors.semanticContext as ContextName
 
-    // Background surface
-    const bgSurface = config.background.surface
-    if (bgSurface.type === 'solid') {
-      customBackgroundSurfaceParams.value = { type: 'solid' }
-    } else if (bgSurface.type === 'stripe') {
-      customBackgroundSurfaceParams.value = { type: 'stripe', width1: bgSurface.width1, width2: bgSurface.width2, angle: bgSurface.angle }
-    } else if (bgSurface.type === 'grid') {
-      customBackgroundSurfaceParams.value = { type: 'grid', lineWidth: bgSurface.lineWidth, cellSize: bgSurface.cellSize }
-    } else if (bgSurface.type === 'polkaDot') {
-      customBackgroundSurfaceParams.value = { type: 'polkaDot', dotRadius: bgSurface.dotRadius, spacing: bgSurface.spacing, rowOffset: bgSurface.rowOffset }
-    } else if (bgSurface.type === 'checker') {
-      customBackgroundSurfaceParams.value = { type: 'checker', cellSize: bgSurface.cellSize, angle: bgSurface.angle }
-    } else if (bgSurface.type === 'image') {
-      // Restore background image from imageId (URL)
-      await restoreBackgroundImage(bgSurface.imageId)
-    }
+    // Find base layer and surface layer from config.layers
+    const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
+    const surfaceLayer = config.layers.find((l): l is SurfaceLayerNodeConfig => l.type === 'surface')
 
-    // Reverse-lookup background surface preset index
-    const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
-    selectedBackgroundIndex.value = bgPresetIndex ?? 0
-
-    // Background filters
-    layerFilterConfigs.value.set(LAYER_IDS.BASE, config.background.filters)
-
-    // Mask layer
-    if (config.mask) {
-      // Mask shape
-      const shape = config.mask.shape
-      if (shape.type === 'circle') {
-        customMaskShapeParams.value = {
-          type: 'circle',
-          centerX: shape.centerX,
-          centerY: shape.centerY,
-          radius: shape.radius,
-          cutout: shape.cutout,
-        }
-      } else if (shape.type === 'rect') {
-        customMaskShapeParams.value = {
-          type: 'rect',
-          left: shape.left,
-          right: shape.right,
-          top: shape.top,
-          bottom: shape.bottom,
-          radiusTopLeft: shape.radiusTopLeft,
-          radiusTopRight: shape.radiusTopRight,
-          radiusBottomLeft: shape.radiusBottomLeft,
-          radiusBottomRight: shape.radiusBottomRight,
-          cutout: shape.cutout,
-        }
-      } else if (shape.type === 'perlin') {
-        customMaskShapeParams.value = {
-          type: 'perlin',
-          seed: shape.seed,
-          threshold: shape.threshold,
-          scale: shape.scale,
-          octaves: shape.octaves,
-          cutout: shape.cutout,
-        }
-      } else {
-        customMaskShapeParams.value = {
-          type: 'blob',
-          centerX: shape.centerX,
-          centerY: shape.centerY,
-          baseRadius: shape.baseRadius,
-          amplitude: shape.amplitude,
-          octaves: shape.octaves,
-          seed: shape.seed,
-          cutout: shape.cutout,
-        }
+    // Background surface (from base layer)
+    if (baseLayer) {
+      const bgSurface = baseLayer.surface
+      if (bgSurface.type === 'solid') {
+        customBackgroundSurfaceParams.value = { type: 'solid' }
+      } else if (bgSurface.type === 'stripe') {
+        customBackgroundSurfaceParams.value = { type: 'stripe', width1: bgSurface.width1, width2: bgSurface.width2, angle: bgSurface.angle }
+      } else if (bgSurface.type === 'grid') {
+        customBackgroundSurfaceParams.value = { type: 'grid', lineWidth: bgSurface.lineWidth, cellSize: bgSurface.cellSize }
+      } else if (bgSurface.type === 'polkaDot') {
+        customBackgroundSurfaceParams.value = { type: 'polkaDot', dotRadius: bgSurface.dotRadius, spacing: bgSurface.spacing, rowOffset: bgSurface.rowOffset }
+      } else if (bgSurface.type === 'checker') {
+        customBackgroundSurfaceParams.value = { type: 'checker', cellSize: bgSurface.cellSize, angle: bgSurface.angle }
+      } else if (bgSurface.type === 'image') {
+        // Restore background image from imageId (URL)
+        await restoreBackgroundImage(bgSurface.imageId)
       }
 
-      // Reverse-lookup mask shape index
-      const maskPresetIndex = findMaskPatternIndex(shape, maskPatterns)
-      selectedMaskIndex.value = maskPresetIndex ?? 0
+      // Reverse-lookup background surface preset index
+      const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
+      selectedBackgroundIndex.value = bgPresetIndex ?? 0
+
+      // Background filters (from effect processor)
+      const effectProcessor = baseLayer.processors.find((p): p is EffectProcessorConfig => p.type === 'effect')
+      if (effectProcessor) {
+        layerFilterConfigs.value.set(LAYER_IDS.BASE, effectProcessor.config)
+      }
+    }
+
+    // Surface layer with mask
+    if (surfaceLayer) {
+      // Find mask processor
+      const maskProcessor = surfaceLayer.processors.find((p): p is MaskProcessorConfig => p.type === 'mask')
+
+      if (maskProcessor) {
+        // Mask shape
+        const shape = maskProcessor.shape
+        if (shape.type === 'circle') {
+          customMaskShapeParams.value = {
+            type: 'circle',
+            centerX: shape.centerX,
+            centerY: shape.centerY,
+            radius: shape.radius,
+            cutout: shape.cutout,
+          }
+        } else if (shape.type === 'rect') {
+          customMaskShapeParams.value = {
+            type: 'rect',
+            left: shape.left,
+            right: shape.right,
+            top: shape.top,
+            bottom: shape.bottom,
+            radiusTopLeft: shape.radiusTopLeft,
+            radiusTopRight: shape.radiusTopRight,
+            radiusBottomLeft: shape.radiusBottomLeft,
+            radiusBottomRight: shape.radiusBottomRight,
+            cutout: shape.cutout,
+          }
+        } else if (shape.type === 'perlin') {
+          customMaskShapeParams.value = {
+            type: 'perlin',
+            seed: shape.seed,
+            threshold: shape.threshold,
+            scale: shape.scale,
+            octaves: shape.octaves,
+            cutout: shape.cutout,
+          }
+        } else {
+          customMaskShapeParams.value = {
+            type: 'blob',
+            centerX: shape.centerX,
+            centerY: shape.centerY,
+            baseRadius: shape.baseRadius,
+            amplitude: shape.amplitude,
+            octaves: shape.octaves,
+            seed: shape.seed,
+            cutout: shape.cutout,
+          }
+        }
+
+        // Reverse-lookup mask shape index
+        const maskPresetIndex = findMaskPatternIndex(shape, maskPatterns)
+        selectedMaskIndex.value = maskPresetIndex ?? 0
+      } else {
+        selectedMaskIndex.value = null
+        customMaskShapeParams.value = null
+      }
 
       // Mask surface
-      const maskSurface = config.mask.surface
+      const maskSurface = surfaceLayer.surface
       if (maskSurface.type === 'solid') {
         customSurfaceParams.value = { type: 'solid' }
       } else if (maskSurface.type === 'stripe') {
@@ -2575,8 +2625,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
       selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
-      // Mask filters
-      layerFilterConfigs.value.set(LAYER_IDS.MASK, config.mask.filters)
+      // Mask filters (from effect processor)
+      const effectProcessor = surfaceLayer.processors.find((p): p is EffectProcessorConfig => p.type === 'effect')
+      if (effectProcessor) {
+        layerFilterConfigs.value.set(LAYER_IDS.MASK, effectProcessor.config)
+      }
     } else {
       selectedMaskIndex.value = null
       customMaskShapeParams.value = null

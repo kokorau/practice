@@ -31,7 +31,10 @@ const previewColor2: RGBA = [0.85, 0.87, 0.9, 1]
  * Create a render spec from preset background surface config
  */
 const createSpecFromPreset = (preset: HeroViewPreset, _viewport: Viewport): TextureRenderSpec | null => {
-  const surface = preset.config.background.surface
+  // Get surface from base layer (first layer with type 'base')
+  const baseLayer = preset.config.layers.find(l => l.type === 'base')
+  if (!baseLayer || !('surface' in baseLayer)) return null
+  const surface = baseLayer.surface
 
   if (surface.type === 'solid') {
     return createSolidSpec({ color: previewColor2 })

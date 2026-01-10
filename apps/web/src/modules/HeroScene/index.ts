@@ -104,18 +104,35 @@ export type {
   CheckerSurfaceConfig,
   SolidSurfaceConfig,
   ImageSurfaceConfig,
-  BackgroundSurfaceConfig,
-  MaskSurfaceConfig,
+  HeroSurfaceConfig,
   HeroCircleMaskShapeConfig,
   HeroRectMaskShapeConfig,
   HeroBlobMaskShapeConfig,
+  HeroPerlinMaskShapeConfig,
+  MaskShapeConfig,
   HeroMaskShapeConfig,
-  BackgroundLayerConfig,
-  MaskLayerConfig,
+  // Processor config types (JSON serialization)
+  ProcessorConfig,
+  EffectProcessorConfig,
+  MaskProcessorConfig,
+  // LayerNodeConfig types (JSON serialization)
+  LayerNodeConfig,
+  BaseLayerNodeConfig,
+  SurfaceLayerNodeConfig,
+  TextLayerNodeConfig as TextLayerNodeConfigType,
+  Model3DLayerNodeConfig,
+  ImageLayerNodeConfig as ImageLayerNodeConfigType,
+  GroupLayerNodeConfig,
+  // Foreground
   GridPosition,
   ForegroundElementConfig,
   ForegroundLayerConfig,
   HeroViewConfig,
+  // Legacy types (deprecated)
+  BackgroundSurfaceConfig,
+  MaskSurfaceConfig,
+  BackgroundLayerConfig,
+  MaskLayerConfig,
   // HeroViewPreset types
   PresetHsvColor,
   PresetFoundation,
@@ -183,6 +200,7 @@ export {
   // HeroViewConfig factories
   createDefaultColorsConfig,
   createDefaultForegroundConfig,
+  createDefaultEffectProcessorConfig,
   createDefaultHeroViewConfig,
   // ReverseLookup utilities
   approxEqual,

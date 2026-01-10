@@ -277,31 +277,59 @@ const corporateCleanConfig: HeroViewConfig = {
     mask: { primary: 'B', secondary: 'Bt' },
     semanticContext: 'canvas',
   },
-  background: {
-    surface: { type: 'grid', lineWidth: 1, cellSize: 48 },
-    filters: {
-      vignette: { enabled: true, intensity: 0.3, radius: 0.8, softness: 0.6 },
-      chromaticAberration: { enabled: false, intensity: 0.01 },
-      dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-      lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+  layers: [
+    {
+      type: 'base',
+      id: 'base',
+      name: 'Background',
+      visible: true,
+      surface: { type: 'grid', lineWidth: 1, cellSize: 48 },
+      processors: [
+        {
+          type: 'effect',
+          enabled: true,
+          config: {
+            vignette: { enabled: true, intensity: 0.3, radius: 0.8, softness: 0.6 },
+            chromaticAberration: { enabled: false, intensity: 0.01 },
+            dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
+            lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+          },
+        },
+      ],
     },
-  },
-  mask: {
-    shape: {
-      type: 'rect',
-      left: 0.05, right: 0.55, top: 0.1, bottom: 0.9,
-      radiusTopLeft: 0.02, radiusTopRight: 0.02,
-      radiusBottomLeft: 0.02, radiusBottomRight: 0.02,
-      cutout: true,
+    {
+      type: 'surface',
+      id: 'surface-1',
+      name: 'Mask Surface',
+      visible: true,
+      surface: { type: 'solid' },
+      processors: [
+        {
+          type: 'effect',
+          enabled: true,
+          config: {
+            vignette: { enabled: false, intensity: 0.5, radius: 0.5, softness: 0.5 },
+            chromaticAberration: { enabled: false, intensity: 0.01 },
+            dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
+            lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+          },
+        },
+        {
+          type: 'mask',
+          enabled: true,
+          shape: {
+            type: 'rect',
+            left: 0.05, right: 0.55, top: 0.1, bottom: 0.9,
+            radiusTopLeft: 0.02, radiusTopRight: 0.02,
+            radiusBottomLeft: 0.02, radiusBottomRight: 0.02,
+            cutout: true,
+          },
+          invert: false,
+          feather: 0,
+        },
+      ],
     },
-    surface: { type: 'solid' },
-    filters: {
-      vignette: { enabled: false, intensity: 0.5, radius: 0.5, softness: 0.5 },
-      chromaticAberration: { enabled: false, intensity: 0.01 },
-      dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-      lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
-    },
-  },
+  ],
   foreground: {
     title: { position: 'middle-right', content: 'Enterprise Solutions', fontSize: 3.5, fontId: 'inter' },
     description: { position: 'middle-right', content: 'Streamline your business with our platform.', fontSize: 1.25, fontId: 'ibm-plex-sans' },

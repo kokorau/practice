@@ -4,13 +4,10 @@
  * HeroView の完全な状態を表す統合インターフェース
  * - 外部参照なし（fontId, imageId は文字列識別子）
  * - JSON.stringify 可能（保存・復元可能）
- * - これだけあれば状態を完全に復元可能
+ * - LayerNode[] ベースの構造
  */
 
 import type { LayerEffectConfig } from './EffectSchema'
-
-// Legacy alias for backward compatibility
-type LayerFilterConfig = LayerEffectConfig
 
 // ============================================================
 // Color Config Types (for serialization)
@@ -66,7 +63,7 @@ export interface ViewportConfig {
 }
 
 // ============================================================
-// Surface Config (背景・マスク共通のテクスチャパターン)
+// Surface Config (テクスチャパターン)
 // ============================================================
 
 export interface StripeSurfaceConfig {
@@ -105,8 +102,7 @@ export interface ImageSurfaceConfig {
   imageId: string
 }
 
-/** 背景用サーフェス（solid, checker を含む） */
-export type BackgroundSurfaceConfig =
+export type SurfaceConfig =
   | SolidSurfaceConfig
   | StripeSurfaceConfig
   | GridSurfaceConfig
@@ -114,14 +110,10 @@ export type BackgroundSurfaceConfig =
   | CheckerSurfaceConfig
   | ImageSurfaceConfig
 
-/** マスク用サーフェス */
-export type MaskSurfaceConfig =
-  | SolidSurfaceConfig
-  | StripeSurfaceConfig
-  | GridSurfaceConfig
-  | PolkaDotSurfaceConfig
-  | CheckerSurfaceConfig
-  | ImageSurfaceConfig
+/** @deprecated Use SurfaceConfig instead */
+export type BackgroundSurfaceConfig = SurfaceConfig
+/** @deprecated Use SurfaceConfig instead */
+export type MaskSurfaceConfig = SurfaceConfig
 
 // ============================================================
 // Mask Shape Config
@@ -175,20 +167,105 @@ export type MaskShapeConfig =
   | PerlinMaskShapeConfig
 
 // ============================================================
-// Layer Configs
+// Processor Config (JSON シリアライズ用)
 // ============================================================
 
-/** 背景レイヤーの設定 */
-export interface BackgroundLayerConfig {
-  surface: BackgroundSurfaceConfig
-  filters: LayerFilterConfig
+export interface EffectProcessorConfig {
+  type: 'effect'
+  enabled: boolean
+  config: LayerEffectConfig
 }
 
-/** マスクレイヤーの設定 */
+export interface MaskProcessorConfig {
+  type: 'mask'
+  enabled: boolean
+  shape: MaskShapeConfig
+  invert: boolean
+  feather: number
+}
+
+export type ProcessorConfig = EffectProcessorConfig | MaskProcessorConfig
+
+// ============================================================
+// Layer Node Config (JSON シリアライズ用)
+// ============================================================
+
+interface LayerNodeConfigBase {
+  id: string
+  name: string
+  visible: boolean
+}
+
+export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
+  type: 'base'
+  surface: SurfaceConfig
+  processors: ProcessorConfig[]
+}
+
+export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
+  type: 'surface'
+  surface: SurfaceConfig
+  processors: ProcessorConfig[]
+}
+
+export interface TextLayerNodeConfig extends LayerNodeConfigBase {
+  type: 'text'
+  text: string
+  fontFamily: string
+  fontSize: number
+  fontWeight: number
+  letterSpacing: number
+  lineHeight: number
+  color: string
+  position: { x: number; y: number; anchor: string }
+  rotation: number
+  processors: ProcessorConfig[]
+}
+
+export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
+  type: 'model3d'
+  modelUrl: string
+  position: { x: number; y: number; z: number }
+  rotation: { x: number; y: number; z: number }
+  scale: number
+  processors: ProcessorConfig[]
+}
+
+export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
+  type: 'image'
+  imageId: string
+  processors: ProcessorConfig[]
+}
+
+export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
+  type: 'group'
+  children: LayerNodeConfig[]
+  processors: ProcessorConfig[]
+}
+
+export type LayerNodeConfig =
+  | BaseLayerNodeConfig
+  | SurfaceLayerNodeConfig
+  | TextLayerNodeConfig
+  | Model3DLayerNodeConfig
+  | ImageLayerNodeConfig
+  | GroupLayerNodeConfig
+
+// ============================================================
+// Legacy Layer Configs (deprecated, for backward compatibility)
+// ============================================================
+
+/** @deprecated Use LayerNodeConfig instead */
+export interface BackgroundLayerConfig {
+  surface: SurfaceConfig
+  filters: LayerEffectConfig
+}
+
+/** @deprecated Use LayerNodeConfig instead */
 export interface MaskLayerConfig {
   shape: MaskShapeConfig
-  surface: MaskSurfaceConfig
-  filters: LayerFilterConfig
+  surface: SurfaceConfig
+  filters: LayerEffectConfig
 }
 
 // ============================================================
@@ -223,18 +300,31 @@ export interface ForegroundLayerConfig {
  * ```typescript
  * const config: HeroViewConfig = {
  *   viewport: { width: 1280, height: 720 },
- *   background: {
- *     surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
- *     filters: { vignette: { enabled: false }, chromaticAberration: { enabled: false } },
- *   },
- *   mask: {
- *     shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: true },
- *     surface: { type: 'solid' },
- *     filters: { vignette: { enabled: false }, chromaticAberration: { enabled: false } },
- *   },
+ *   colors: { ... },
+ *   layers: [
+ *     {
+ *       type: 'base',
+ *       id: 'base',
+ *       name: 'Background',
+ *       visible: true,
+ *       surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
+ *       processors: [{ type: 'effect', enabled: true, config: { ... } }]
+ *     },
+ *     {
+ *       type: 'surface',
+ *       id: 'surface-1',
+ *       name: 'Surface',
+ *       visible: true,
+ *       surface: { type: 'solid' },
+ *       processors: [
+ *         { type: 'effect', enabled: true, config: { ... } },
+ *         { type: 'mask', enabled: true, shape: { ... }, invert: false, feather: 0 }
+ *       ]
+ *     }
+ *   ],
  *   foreground: {
- *     title: { position: 'middle-center', content: 'Hello World', fontId: 'montserrat' },
- *     description: { position: 'middle-center', content: 'Welcome', fontSize: 1.5 },
+ *     title: { position: 'middle-center', content: 'Hello World' },
+ *     description: { position: 'middle-center', content: 'Welcome' },
  *   },
  * }
  * ```
@@ -246,11 +336,8 @@ export interface HeroViewConfig {
   /** 色設定（パレットキーベース） */
   colors: HeroColorsConfig
 
-  /** 背景レイヤー */
-  background: BackgroundLayerConfig
-
-  /** マスクレイヤー（null = マスクなし） */
-  mask: MaskLayerConfig | null
+  /** レイヤー構成 */
+  layers: LayerNodeConfig[]
 
   /** 前景レイヤー（HTML） */
   foreground: ForegroundLayerConfig
@@ -277,18 +364,29 @@ export const createDefaultColorsConfig = (): HeroColorsConfig => ({
   semanticContext: 'canvas',
 })
 
+export const createDefaultEffectProcessorConfig = (): EffectProcessorConfig => ({
+  type: 'effect',
+  enabled: true,
+  config: {
+    vignette: { enabled: false, intensity: 0.5, radius: 0.5, softness: 0.5 },
+    chromaticAberration: { enabled: false, intensity: 0.01 },
+    dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
+    lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+  },
+})
+
 export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
   viewport: { width: 1280, height: 720 },
   colors: createDefaultColorsConfig(),
-  background: {
-    surface: { type: 'solid' },
-    filters: {
-      vignette: { enabled: false, intensity: 0.5, radius: 0.5, softness: 0.5 },
-      chromaticAberration: { enabled: false, intensity: 0.01 },
-      dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-      lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+  layers: [
+    {
+      type: 'base',
+      id: 'base',
+      name: 'Background',
+      visible: true,
+      surface: { type: 'solid' },
+      processors: [createDefaultEffectProcessorConfig()],
     },
-  },
-  mask: null,
+  ],
   foreground: createDefaultForegroundConfig(),
 })
