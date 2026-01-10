@@ -27,6 +27,12 @@ interface PostEffectPipelineCache {
   sampler: GPUSampler
 }
 
+interface ClipMaskPipelineCache {
+  pipeline: GPURenderPipeline
+  uniformBuffer: GPUBuffer
+  sampler: GPUSampler
+}
+
 /**
  * ポストエフェクト用のスペック
  */
@@ -48,6 +54,7 @@ export class TextureRenderer {
   private imagePipelineCache: ImagePipelineCache | null = null
   private positionedImagePipelineCache: PositionedImagePipelineCache | null = null
   private postEffectCache: Map<string, PostEffectPipelineCache> = new Map()
+  private clipMaskCache: Map<string, ClipMaskPipelineCache> = new Map()
 
   // オフスクリーンレンダリング用のテクスチャ（ダブルバッファ）
   private offscreenTextures: [GPUTexture | null, GPUTexture | null] = [null, null]
@@ -503,6 +510,225 @@ export class TextureRenderer {
     return cached
   }
 
+  // ============================================================
+  // Clip Mask Rendering (for ClipGroup)
+  // ============================================================
+
+  /**
+   * Apply clip mask shader to input texture and render to canvas
+   * Used for ClipGroup rendering: masks child layers with SDF shapes
+   */
+  applyClipMask(
+    spec: TextureRenderSpec,
+    inputTexture: GPUTexture,
+    options?: { clear?: boolean }
+  ): void {
+    if (!spec.requiresTexture) {
+      console.warn('applyClipMask called with spec that does not require texture')
+    }
+
+    const cached = this.getOrCreateClipMaskPipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Create bind group for this specific texture
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: inputTexture.createView() },
+      ],
+    })
+
+    this.executeRender(cached.pipeline, bindGroup, options)
+  }
+
+  /**
+   * Render a spec to an offscreen texture instead of canvas
+   * Returns the offscreen texture for further processing
+   */
+  renderToOffscreen(
+    spec: TextureRenderSpec,
+    textureIndex: 0 | 1 = 0
+  ): GPUTexture {
+    const target = this.getOrCreateOffscreenTexture(textureIndex)
+    const cached = this.getOrCreatePipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.buffer, 0, spec.uniforms)
+
+    // Render to offscreen texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: target.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cached.pipeline)
+    renderPass.setBindGroup(0, cached.bindGroup)
+    renderPass.draw(3)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+
+    return target
+  }
+
+  /**
+   * Render image to an offscreen texture
+   * Returns the offscreen texture for further processing
+   */
+  async renderImageToOffscreen(
+    source: ImageBitmap | HTMLImageElement,
+    textureIndex: 0 | 1 = 0
+  ): Promise<GPUTexture> {
+    const target = this.getOrCreateOffscreenTexture(textureIndex)
+    const cache = this.getOrCreateImagePipeline()
+    const viewport = this.getViewport()
+
+    // Create texture from image source
+    const texture = this.device.createTexture({
+      size: [source.width, source.height],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    })
+
+    // Copy image to texture
+    this.device.queue.copyExternalImageToTexture(
+      { source },
+      { texture },
+      [source.width, source.height]
+    )
+
+    // Write uniform data
+    const uniformData = new Float32Array([
+      viewport.width,
+      viewport.height,
+      source.width,
+      source.height,
+    ])
+    this.device.queue.writeBuffer(cache.uniformBuffer, 0, uniformData)
+
+    // Create bind group for this image
+    const bindGroup = this.device.createBindGroup({
+      layout: cache.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: cache.sampler },
+        { binding: 1, resource: texture.createView() },
+        { binding: 2, resource: { buffer: cache.uniformBuffer } },
+      ],
+    })
+
+    // Render to offscreen texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: target.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cache.pipeline)
+    renderPass.setBindGroup(0, bindGroup)
+    renderPass.draw(3)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+
+    // Clean up texture
+    texture.destroy()
+
+    return target
+  }
+
+  /**
+   * Copy offscreen texture to canvas
+   */
+  copyOffscreenToCanvas(textureIndex: 0 | 1): void {
+    const source = this.offscreenTextures[textureIndex]
+    if (!source) {
+      console.warn('No offscreen texture at index', textureIndex)
+      return
+    }
+
+    const target = this.context.getCurrentTexture()
+
+    const commandEncoder = this.device.createCommandEncoder()
+    commandEncoder.copyTextureToTexture(
+      { texture: source },
+      { texture: target },
+      [source.width, source.height]
+    )
+    this.device.queue.submit([commandEncoder.finish()])
+  }
+
+  /**
+   * Get an offscreen texture by index (creates if needed)
+   */
+  getOffscreenTexture(index: 0 | 1): GPUTexture {
+    return this.getOrCreateOffscreenTexture(index)
+  }
+
+  private getOrCreateClipMaskPipeline(spec: TextureRenderSpec): ClipMaskPipelineCache {
+    const existing = this.clipMaskCache.get(spec.shader)
+    if (existing) {
+      return existing
+    }
+
+    const shaderModule = this.device.createShaderModule({
+      code: spec.shader,
+    })
+
+    const pipeline = this.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: shaderModule,
+        entryPoint: 'vertexMain',
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [
+          spec.blend
+            ? { format: this.format, blend: spec.blend }
+            : { format: this.format, blend: maskBlendState },
+        ],
+      },
+      primitive: {
+        topology: 'triangle-list',
+      },
+    })
+
+    const uniformBuffer = this.device.createBuffer({
+      size: spec.bufferSize,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    const sampler = this.device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+    })
+
+    const cached: ClipMaskPipelineCache = { pipeline, uniformBuffer, sampler }
+    this.clipMaskCache.set(spec.shader, cached)
+    return cached
+  }
+
   /**
    * Read pixels from current canvas texture as ImageData
    * Useful for contrast analysis or other CPU-side processing
@@ -567,6 +793,11 @@ export class TextureRenderer {
       cached.uniformBuffer.destroy()
     }
     this.postEffectCache.clear()
+
+    for (const cached of this.clipMaskCache.values()) {
+      cached.uniformBuffer.destroy()
+    }
+    this.clipMaskCache.clear()
 
     for (const tex of this.offscreenTextures) {
       tex?.destroy()
