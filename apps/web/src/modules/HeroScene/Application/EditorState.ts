@@ -12,6 +12,7 @@ import type {
   HeroSceneConfig,
   HtmlLayer,
   TextLayerConfig,
+  ObjectLayerConfig,
 } from '../Domain'
 
 // ============================================================
@@ -55,6 +56,11 @@ export interface EditorImageLayerConfig {
 export type EditorTextLayerConfig = TextLayerConfig
 
 /**
+ * オブジェクトレイヤーのエディタ設定（Domainと同一）
+ */
+export type EditorObjectLayerConfig = ObjectLayerConfig
+
+/**
  * エディタレイヤー設定（Union型）
  */
 export type EditorCanvasLayerConfig =
@@ -62,6 +68,7 @@ export type EditorCanvasLayerConfig =
   | EditorMaskedTextureLayerConfig
   | EditorImageLayerConfig
   | EditorTextLayerConfig
+  | EditorObjectLayerConfig
 
 /**
  * エディタ用Canvasレイヤー

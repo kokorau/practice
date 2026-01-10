@@ -80,6 +80,10 @@ export interface TextLayerConfig {
   fontSize: number
   /** フォントウェイト */
   fontWeight: number
+  /** 字詰め (em単位) */
+  letterSpacing: number
+  /** 行の高さ (倍率) */
+  lineHeight: number
   /** テキスト色 (CSS color string) */
   color: string
   /** 配置 */
@@ -96,6 +100,35 @@ export interface TextLayerConfig {
 }
 
 /**
+ * 3Dオブジェクトレイヤーの設定
+ */
+export interface ObjectLayerConfig {
+  type: 'object'
+  /** モデルファイルのURL (GLTF/GLB) */
+  modelUrl: string
+  /** 3D位置 */
+  position: {
+    x: number
+    y: number
+    z: number
+  }
+  /** 3D回転 (radians) */
+  rotation: {
+    x: number
+    y: number
+    z: number
+  }
+  /** スケール */
+  scale: number
+  /** マテリアルオーバーライド */
+  materialOverrides?: {
+    color?: string
+    metalness?: number
+    roughness?: number
+  }
+}
+
+/**
  * Canvasレイヤーの設定（Union型）
  */
 export type CanvasLayerConfig =
@@ -103,6 +136,7 @@ export type CanvasLayerConfig =
   | MaskedTextureLayerConfig
   | ImageLayerConfig
   | TextLayerConfig
+  | ObjectLayerConfig
 
 /**
  * Canvasレイヤー

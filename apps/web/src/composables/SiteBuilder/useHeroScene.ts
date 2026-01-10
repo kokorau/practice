@@ -805,6 +805,114 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
+   * Add a new text layer
+   * Returns the layer ID
+   */
+  const addTextLayer = (options?: Partial<{
+    text: string
+    fontFamily: string
+    fontSize: number
+    fontWeight: number
+    letterSpacing: number
+    lineHeight: number
+    color: string
+    x: number
+    y: number
+    anchor: 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
+    rotation: number
+  }>): string => {
+    const id = `text-${Date.now()}`
+    const newLayer: EditorCanvasLayer = {
+      id,
+      name: options?.text?.slice(0, 20) || 'Text Layer',
+      visible: true,
+      opacity: 1.0,
+      zIndex: editorState.value.canvasLayers.length,
+      blendMode: 'normal',
+      filters: createDefaultFilterConfig(),
+      config: {
+        type: 'text',
+        text: options?.text ?? 'Text',
+        fontFamily: options?.fontFamily ?? 'sans-serif',
+        fontSize: options?.fontSize ?? 48,
+        fontWeight: options?.fontWeight ?? 400,
+        letterSpacing: options?.letterSpacing ?? 0,
+        lineHeight: options?.lineHeight ?? 1.2,
+        color: options?.color ?? '#000000',
+        position: {
+          x: options?.x ?? 0.5,
+          y: options?.y ?? 0.5,
+          anchor: options?.anchor ?? 'center',
+        },
+        rotation: options?.rotation ?? 0,
+      },
+    }
+
+    // Register filter config for new layer
+    layerFilterConfigs.value.set(id, createDefaultFilterConfig())
+
+    editorState.value = {
+      ...editorState.value,
+      canvasLayers: [...editorState.value.canvasLayers, newLayer],
+    }
+
+    renderScene()
+    return id
+  }
+
+  /**
+   * Add a new object layer (3D object placeholder)
+   * Returns the layer ID
+   */
+  const addObjectLayer = (options?: Partial<{
+    modelUrl: string
+    x: number
+    y: number
+    z: number
+    rotationX: number
+    rotationY: number
+    rotationZ: number
+    scale: number
+  }>): string => {
+    const id = `object-${Date.now()}`
+    const newLayer: EditorCanvasLayer = {
+      id,
+      name: 'Object Layer',
+      visible: true,
+      opacity: 1.0,
+      zIndex: editorState.value.canvasLayers.length,
+      blendMode: 'normal',
+      filters: createDefaultFilterConfig(),
+      config: {
+        type: 'object',
+        modelUrl: options?.modelUrl ?? '',
+        position: {
+          x: options?.x ?? 0,
+          y: options?.y ?? 0,
+          z: options?.z ?? 0,
+        },
+        rotation: {
+          x: options?.rotationX ?? 0,
+          y: options?.rotationY ?? 0,
+          z: options?.rotationZ ?? 0,
+        },
+        scale: options?.scale ?? 1,
+      },
+    }
+
+    // Register filter config for new layer
+    layerFilterConfigs.value.set(id, createDefaultFilterConfig())
+
+    editorState.value = {
+      ...editorState.value,
+      canvasLayers: [...editorState.value.canvasLayers, newLayer],
+    }
+
+    renderScene()
+    return id
+  }
+
+  /**
    * Remove a layer by ID (base layer cannot be removed)
    */
   const removeLayer = (id: string): boolean => {
@@ -1277,11 +1385,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     const viewport = previewRenderer.getViewport()
 
-    // Iterate through editor layers in zIndex order
+    // Sort layers by zIndex and filter visible ones
+    const sortedLayers = [...editorState.value.canvasLayers]
+      .filter(l => l.visible)
+      .sort((a, b) => a.zIndex - b.zIndex)
+
     let isFirstVisible = true
-    for (let i = 0; i < editorState.value.canvasLayers.length; i++) {
-      const layer = editorState.value.canvasLayers[i]
-      if (!layer || !layer.visible) continue
+    for (const layer of sortedLayers) {
 
       const isFirst = isFirstVisible
       isFirstVisible = false
@@ -2286,6 +2396,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Layer operations
     addMaskLayer,
+    addTextLayer,
+    addObjectLayer,
     removeLayer,
     updateLayerVisibility,
     toggleLayerVisibility,
