@@ -556,7 +556,7 @@ const handleDrop = (e: DragEvent) => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.375rem 0.5rem;
   cursor: pointer;
   transition: background 0.15s;
   border-radius: 0.25rem;
@@ -571,7 +571,7 @@ const handleDrop = (e: DragEvent) => {
 }
 
 .processor-icon {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: oklch(0.55 0.02 260);
   flex-shrink: 0;
 }
@@ -603,7 +603,7 @@ const handleDrop = (e: DragEvent) => {
 }
 
 .processor-arrow {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: oklch(0.60 0.02 260);
   opacity: 0;
   transition: opacity 0.15s;
