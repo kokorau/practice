@@ -320,10 +320,6 @@ const sectionTitle = computed(() => {
     case 'filter':
     case 'effect':
       return 'エフェクト設定'
-    case 'foreground-title':
-      return 'タイトル位置'
-    case 'foreground-description':
-      return '説明文位置'
     case 'text-content':
       return 'テキスト設定'
     default:
@@ -394,11 +390,21 @@ const closeSection = () => {
 }
 
 const openForegroundTitle = () => {
-  activeSection.value = 'foreground-title'
+  // Clear canvas layer selection
+  selectedLayerId.value = null
+  selectedProcessorType.value = null
+  selectedProcessorLayerId.value = null
+  // Select HTML title layer
+  selectedHtmlLayerId.value = 'title'
 }
 
 const openForegroundDescription = () => {
-  activeSection.value = 'foreground-description'
+  // Clear canvas layer selection
+  selectedLayerId.value = null
+  selectedProcessorType.value = null
+  selectedProcessorLayerId.value = null
+  // Select HTML description layer
+  selectedHtmlLayerId.value = 'description'
 }
 
 // ============================================================
@@ -619,6 +625,7 @@ const activeTab = ref<TabId>('generator')
 const selectedLayerId = ref<string | null>(null)
 const selectedProcessorType = ref<'effect' | 'mask' | 'processor' | null>(null)
 const selectedProcessorLayerId = ref<string | null>(null)
+const selectedHtmlLayerId = ref<'title' | 'description' | null>(null)
 
 const layers = ref<LayerNode[]>([
   createGroupLayerNode(
@@ -679,6 +686,8 @@ const handleSelectLayer = (layerId: string) => {
   // Clear processor selection when selecting a different layer
   selectedProcessorType.value = null
   selectedProcessorLayerId.value = null
+  // Clear HTML layer selection when selecting a canvas layer
+  selectedHtmlLayerId.value = null
 }
 
 const handleToggleExpand = (layerId: string) => {
@@ -952,128 +961,6 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
           />
         </template>
 
-        <!-- 前景: Title 設定 -->
-        <template v-else-if="activeSection === 'foreground-title'">
-          <div class="foreground-section">
-            <!-- APCA Contrast Score -->
-            <div v-if="titleContrastResult" class="contrast-score-section">
-              <div class="contrast-score-header">
-                <span class="contrast-score-label">APCA Contrast</span>
-                <span
-                  class="contrast-score-badge"
-                  :class="getScoreLevel(titleContrastResult.score)"
-                >
-                  Lc {{ titleContrastResult.score }}
-                </span>
-              </div>
-              <div class="contrast-histogram">
-                <div
-                  v-for="(percent, i) in titleContrastResult.histogram.bins"
-                  :key="i"
-                  class="histogram-bar"
-                  :style="{ height: `${Math.min(percent, 100)}%` }"
-                  :title="`${i * 10}-${(i + 1) * 10}: ${percent.toFixed(1)}%`"
-                />
-              </div>
-              <div class="contrast-score-hint">
-                {{ titleContrastResult.score >= 60 ? 'Good readability' : titleContrastResult.score >= 45 ? 'Minimum for body text' : 'Poor contrast' }}
-              </div>
-            </div>
-            <div class="foreground-field">
-              <label class="foreground-label">Text</label>
-              <input
-                v-model="titleContent"
-                type="text"
-                class="foreground-input"
-                placeholder="Enter title text"
-              />
-            </div>
-            <GridPositionPicker
-              v-model="titlePosition"
-              label="Position"
-            />
-            <FontSelector
-              v-model="titleFont"
-              label="Font"
-            />
-            <div class="foreground-field">
-              <label class="foreground-label">Font Size</label>
-              <div class="font-size-control">
-                <input
-                  v-model.number="titleFontSize"
-                  type="range"
-                  min="1"
-                  max="6"
-                  step="0.25"
-                  class="font-size-slider"
-                />
-                <span class="font-size-value">{{ titleFontSize }}rem</span>
-              </div>
-            </div>
-          </div>
-        </template>
-
-        <!-- 前景: Description 設定 -->
-        <template v-else-if="activeSection === 'foreground-description'">
-          <div class="foreground-section">
-            <!-- APCA Contrast Score -->
-            <div v-if="descriptionContrastResult" class="contrast-score-section">
-              <div class="contrast-score-header">
-                <span class="contrast-score-label">APCA Contrast</span>
-                <span
-                  class="contrast-score-badge"
-                  :class="getScoreLevel(descriptionContrastResult.score)"
-                >
-                  Lc {{ descriptionContrastResult.score }}
-                </span>
-              </div>
-              <div class="contrast-histogram">
-                <div
-                  v-for="(percent, i) in descriptionContrastResult.histogram.bins"
-                  :key="i"
-                  class="histogram-bar"
-                  :style="{ height: `${Math.min(percent, 100)}%` }"
-                  :title="`${i * 10}-${(i + 1) * 10}: ${percent.toFixed(1)}%`"
-                />
-              </div>
-              <div class="contrast-score-hint">
-                {{ descriptionContrastResult.score >= 60 ? 'Good readability' : descriptionContrastResult.score >= 45 ? 'Minimum for body text' : 'Poor contrast' }}
-              </div>
-            </div>
-            <div class="foreground-field">
-              <label class="foreground-label">Text</label>
-              <textarea
-                v-model="descriptionContent"
-                class="foreground-textarea"
-                placeholder="Enter description text"
-                rows="3"
-              />
-            </div>
-            <GridPositionPicker
-              v-model="descriptionPosition"
-              label="Position"
-            />
-            <FontSelector
-              v-model="descriptionFont"
-              label="Font"
-            />
-            <div class="foreground-field">
-              <label class="foreground-label">Font Size</label>
-              <div class="font-size-control">
-                <input
-                  v-model.number="descriptionFontSize"
-                  type="range"
-                  min="0.5"
-                  max="3"
-                  step="0.125"
-                  class="font-size-slider"
-                />
-                <span class="font-size-value">{{ descriptionFontSize }}rem</span>
-              </div>
-            </div>
-          </div>
-        </template>
-
         <!-- エフェクト設定 (排他選択) -->
         <template v-else-if="activeSection === 'filter' || activeSection === 'effect'">
           <div class="filter-section">
@@ -1342,6 +1229,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       <div class="right-panel-header">
         <span class="right-panel-title">
           {{
+            selectedHtmlLayerId === 'title' ? 'Title' :
+            selectedHtmlLayerId === 'description' ? 'Description' :
             selectedProcessorType === 'processor' ? 'Processor' :
             selectedProcessorType === 'effect' ? 'Effect Settings' :
             selectedProcessorType === 'mask' ? 'Mask Settings' :
@@ -1355,8 +1244,128 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
         </button>
       </div>
       <div class="property-panel">
+        <!-- HTML Title Settings -->
+        <template v-if="selectedHtmlLayerId === 'title'">
+          <div class="layer-settings">
+            <!-- APCA Contrast Score -->
+            <div v-if="titleContrastResult" class="contrast-score-section">
+              <div class="contrast-score-header">
+                <span class="contrast-score-label">APCA Contrast</span>
+                <span
+                  class="contrast-score-badge"
+                  :class="getScoreLevel(titleContrastResult.score)"
+                >
+                  Lc {{ titleContrastResult.score }}
+                </span>
+              </div>
+              <div class="contrast-histogram">
+                <div
+                  v-for="(percent, i) in titleContrastResult.histogram.bins"
+                  :key="i"
+                  class="histogram-bar"
+                  :style="{ height: `${Math.min(percent, 100)}%` }"
+                  :title="`${i * 10}-${(i + 1) * 10}: ${percent.toFixed(1)}%`"
+                />
+              </div>
+              <div class="contrast-score-hint">
+                {{ titleContrastResult.score >= 60 ? 'Good readability' : titleContrastResult.score >= 45 ? 'Minimum for body text' : 'Poor contrast' }}
+              </div>
+            </div>
+            <div class="settings-section">
+              <p class="settings-label">Text</p>
+              <input
+                v-model="titleContent"
+                type="text"
+                class="foreground-input"
+                placeholder="Enter title text"
+              />
+            </div>
+            <div class="settings-section">
+              <GridPositionPicker v-model="titlePosition" label="Position" />
+            </div>
+            <div class="settings-section">
+              <p class="settings-label">Font</p>
+              <FontSelector v-model="titleFont" />
+            </div>
+            <div class="settings-section">
+              <p class="settings-label">Font Size</p>
+              <div class="font-size-control">
+                <input
+                  v-model.number="titleFontSize"
+                  type="range"
+                  min="1"
+                  max="6"
+                  step="0.25"
+                  class="font-size-slider"
+                />
+                <span class="font-size-value">{{ titleFontSize }}rem</span>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- HTML Description Settings -->
+        <template v-else-if="selectedHtmlLayerId === 'description'">
+          <div class="layer-settings">
+            <!-- APCA Contrast Score -->
+            <div v-if="descriptionContrastResult" class="contrast-score-section">
+              <div class="contrast-score-header">
+                <span class="contrast-score-label">APCA Contrast</span>
+                <span
+                  class="contrast-score-badge"
+                  :class="getScoreLevel(descriptionContrastResult.score)"
+                >
+                  Lc {{ descriptionContrastResult.score }}
+                </span>
+              </div>
+              <div class="contrast-histogram">
+                <div
+                  v-for="(percent, i) in descriptionContrastResult.histogram.bins"
+                  :key="i"
+                  class="histogram-bar"
+                  :style="{ height: `${Math.min(percent, 100)}%` }"
+                  :title="`${i * 10}-${(i + 1) * 10}: ${percent.toFixed(1)}%`"
+                />
+              </div>
+              <div class="contrast-score-hint">
+                {{ descriptionContrastResult.score >= 60 ? 'Good readability' : descriptionContrastResult.score >= 45 ? 'Minimum for body text' : 'Poor contrast' }}
+              </div>
+            </div>
+            <div class="settings-section">
+              <p class="settings-label">Text</p>
+              <textarea
+                v-model="descriptionContent"
+                class="foreground-textarea"
+                placeholder="Enter description text"
+                rows="3"
+              />
+            </div>
+            <div class="settings-section">
+              <GridPositionPicker v-model="descriptionPosition" label="Position" />
+            </div>
+            <div class="settings-section">
+              <p class="settings-label">Font</p>
+              <FontSelector v-model="descriptionFont" />
+            </div>
+            <div class="settings-section">
+              <p class="settings-label">Font Size</p>
+              <div class="font-size-control">
+                <input
+                  v-model.number="descriptionFontSize"
+                  type="range"
+                  min="0.5"
+                  max="3"
+                  step="0.125"
+                  class="font-size-slider"
+                />
+                <span class="font-size-value">{{ descriptionFontSize }}rem</span>
+              </div>
+            </div>
+          </div>
+        </template>
+
         <!-- Background (Base Layer) Settings -->
-        <template v-if="!selectedProcessorType && selectedLayerVariant === 'base'">
+        <template v-else-if="!selectedProcessorType && selectedLayerVariant === 'base'">
           <div class="layer-settings">
             <!-- Color selection -->
             <div class="settings-section">
