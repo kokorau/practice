@@ -764,7 +764,7 @@ const handleAddLayer = (type: LayerNodeType) => {
         anchor: 'center',
         rotation: 0,
       })
-      // Create UI layer node
+      // Create UI layer node (no processors by default)
       newLayer = createTextLayerNode(
         sceneLayerId,
         {
@@ -779,14 +779,14 @@ const handleAddLayer = (type: LayerNodeType) => {
           position: { x: 0.5, y: 0.5, anchor: 'center' },
           rotation: 0,
         },
-        { name: 'Text' }
+        { name: 'Text', processors: [] }
       )
       break
     }
     case 'model3d': {
       // Add to scene (requires a model URL)
       sceneLayerId = sceneAddObjectLayer({ modelUrl: '' })
-      // Create UI layer node
+      // Create UI layer node (no processors by default)
       newLayer = createModel3DLayerNode(
         sceneLayerId,
         {
@@ -796,7 +796,7 @@ const handleAddLayer = (type: LayerNodeType) => {
           rotation: { x: 0, y: 0, z: 0 },
           position: { x: 0, y: 0, z: 0 },
         },
-        { name: '3D Model' }
+        { name: '3D Model', processors: [] }
       )
       break
     }
