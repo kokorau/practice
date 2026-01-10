@@ -181,33 +181,25 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
         <span class="section-title">HTML</span>
       </div>
 
-      <div class="foreground-buttons">
-        <button class="foreground-button" @click="emit('open-foreground-title')">
-          <span class="material-icons">title</span>
-          <div class="foreground-info">
-            <span class="foreground-label">Title</span>
-            <span class="foreground-desc">Position</span>
-          </div>
+      <div class="html-layer-list">
+        <button class="html-layer-item" @click="emit('open-foreground-title')">
+          <span class="material-icons html-layer-icon">title</span>
+          <span class="html-layer-name">Title</span>
           <span
             v-if="titleContrastScore != null"
             class="contrast-badge"
             :class="getScoreLevel(titleContrastScore)"
           >Lc {{ titleContrastScore }}</span>
-          <span class="material-icons foreground-arrow">chevron_right</span>
         </button>
 
-        <button class="foreground-button" @click="emit('open-foreground-description')">
-          <span class="material-icons">notes</span>
-          <div class="foreground-info">
-            <span class="foreground-label">Description</span>
-            <span class="foreground-desc">Position</span>
-          </div>
+        <button class="html-layer-item" @click="emit('open-foreground-description')">
+          <span class="material-icons html-layer-icon">notes</span>
+          <span class="html-layer-name">Description</span>
           <span
             v-if="descriptionContrastScore != null"
             class="contrast-badge"
             :class="getScoreLevel(descriptionContrastScore)"
           >Lc {{ descriptionContrastScore }}</span>
-          <span class="material-icons foreground-arrow">chevron_right</span>
         </button>
       </div>
     </div>
@@ -365,89 +357,57 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
   color: oklch(0.60 0.02 260);
 }
 
-/* Foreground Buttons */
-.foreground-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.foreground-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.625rem 0.75rem;
-  background: oklch(0.88 0.01 260);
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-:global(.dark) .foreground-button {
-  background: oklch(0.22 0.02 260);
-  border-color: oklch(0.28 0.02 260);
-}
-
-.foreground-button:hover {
-  background: oklch(0.84 0.01 260);
-  border-color: oklch(0.75 0.01 260);
-}
-
-:global(.dark) .foreground-button:hover {
-  background: oklch(0.26 0.02 260);
-  border-color: oklch(0.35 0.02 260);
-}
-
-.foreground-button > .material-icons {
-  font-size: 1rem;
-  color: oklch(0.50 0.02 260);
-}
-
-:global(.dark) .foreground-button > .material-icons {
-  color: oklch(0.60 0.02 260);
-}
-
-.foreground-info {
-  flex: 1;
+/* HTML Layer List */
+.html-layer-list {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
 }
 
-.foreground-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: oklch(0.25 0.02 260);
+.html-layer-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
-:global(.dark) .foreground-label {
-  color: oklch(0.85 0.02 260);
+.html-layer-item:hover {
+  background: oklch(0.90 0.01 260);
 }
 
-.foreground-desc {
-  font-size: 0.625rem;
-  color: oklch(0.55 0.02 260);
+:global(.dark) .html-layer-item:hover {
+  background: oklch(0.24 0.02 260);
 }
 
-.foreground-arrow {
+.html-layer-icon {
   font-size: 1rem;
+  color: oklch(0.50 0.02 260);
+  flex-shrink: 0;
+}
+
+:global(.dark) .html-layer-icon {
   color: oklch(0.60 0.02 260);
 }
 
-:global(.dark) .foreground-arrow {
-  color: oklch(0.45 0.02 260);
+.html-layer-name {
+  flex: 1;
+  font-size: 0.8125rem;
+  color: oklch(0.25 0.02 260);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.foreground-button:hover .foreground-arrow {
-  color: oklch(0.40 0.02 260);
-}
-
-:global(.dark) .foreground-button:hover .foreground-arrow {
-  color: oklch(0.70 0.02 260);
+:global(.dark) .html-layer-name {
+  color: oklch(0.85 0.02 260);
 }
 
 /* Contrast Badge */
