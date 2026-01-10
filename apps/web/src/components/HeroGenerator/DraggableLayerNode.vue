@@ -10,7 +10,7 @@
  * - Expand/collapse for groups
  */
 
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { SceneNode, Group, LayerVariant, DropPosition } from '../../modules/HeroScene'
 import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
 import type { DropTarget } from './useLayerDragDrop'
@@ -56,6 +56,9 @@ const isDragging = computed(() => props.draggedId === props.node.id)
 const isBaseLayer = computed(() => isLayer(props.node) && props.node.variant === 'base')
 const isDraggable = computed(() => !isBaseLayer.value)
 const hasModifiers = computed(() => modifiers.value.length > 0)
+
+// Processor expand state (local, not persisted)
+const isProcessorExpanded = ref(true)
 
 // Check if this node is the current drop target
 const isDropTarget = computed(() => props.dropTarget?.nodeId === props.node.id)
@@ -147,6 +150,10 @@ const handleSelect = () => {
 const handleToggleExpand = (e: Event) => {
   e.stopPropagation()
   emit('toggle-expand', props.node.id)
+}
+
+const handleToggleProcessorExpand = () => {
+  isProcessorExpanded.value = !isProcessorExpanded.value
 }
 
 const handleToggleVisibility = (e: Event) => {
@@ -312,27 +319,37 @@ const handleDrop = (e: DragEvent) => {
           <!-- 横線 (中央から右へ) -->
           <line x1="6" y1="12" x2="12" y2="12" stroke="currentColor" stroke-width="1" />
         </svg>
+        <!-- Expand Toggle -->
+        <button
+          class="expand-toggle"
+          :class="{ expanded: isProcessorExpanded }"
+          @click="handleToggleProcessorExpand"
+        >
+          <span class="material-icons">chevron_right</span>
+        </button>
         <span class="material-icons layer-icon">tune</span>
         <div class="layer-info">
           <span class="layer-name">Processor</span>
         </div>
       </div>
       <!-- Processor children (Effect, Mask) -->
-      <div
-        v-for="mod in modifiers"
-        :key="mod.type"
-        class="processor-child-node"
-        :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
-        @click="handleSelectProcessor(mod.type)"
-      >
-        <span class="expand-spacer" />
-        <span class="material-icons layer-icon">{{ mod.icon }}</span>
-        <div class="layer-info">
-          <span class="layer-name">{{ mod.label }}</span>
+      <template v-if="isProcessorExpanded">
+        <div
+          v-for="mod in modifiers"
+          :key="mod.type"
+          class="processor-child-node"
+          :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
+          @click="handleSelectProcessor(mod.type)"
+        >
+          <span class="expand-spacer" />
+          <span class="material-icons layer-icon">{{ mod.icon }}</span>
+          <div class="layer-info">
+            <span class="layer-name">{{ mod.label }}</span>
+          </div>
+          <span class="processor-value">{{ mod.value }}</span>
+          <span class="material-icons processor-arrow">chevron_right</span>
         </div>
-        <span class="processor-value">{{ mod.value }}</span>
-        <span class="material-icons processor-arrow">chevron_right</span>
-      </div>
+      </template>
     </template>
 
     <!-- Children (Recursive) -->
@@ -435,7 +452,7 @@ const handleDrop = (e: DragEvent) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1rem;
+  width: 0.75rem;
   height: 1rem;
   padding: 0;
   background: none;
@@ -468,7 +485,7 @@ const handleDrop = (e: DragEvent) => {
 }
 
 .expand-spacer {
-  width: 1rem;
+  width: 0.75rem;
   flex-shrink: 0;
 }
 
@@ -614,6 +631,20 @@ const handleDrop = (e: DragEvent) => {
   gap: 0.25rem;
   padding: 0.375rem 0.5rem;
   border-radius: 0.25rem;
+  transition: background 0.15s;
+}
+
+.processor-group-node:hover {
+  background: oklch(0.90 0.01 260);
+}
+
+:global(.dark) .processor-group-node:hover {
+  background: oklch(0.24 0.02 260);
+}
+
+/* Processor内のchevronは小さく */
+.processor-group-node .expand-toggle {
+  width: 0.5rem;
 }
 
 /* Processor child nodes (Effect, Mask) */
