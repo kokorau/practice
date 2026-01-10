@@ -5,8 +5,19 @@ import { ref, computed } from 'vue'
 // Types
 // ============================================================
 
-/** Layer types in the UI */
-export type LayerType = 'base' | 'group' | 'object' | 'text' | 'clipGroup'
+/**
+ * Layer types in the UI
+ *
+ * Categories:
+ * - object: Drawable targets (base, surface, text, model3d, image)
+ * - group: Organizational grouping only
+ *
+ * Note: Processors (effect, mask) are sub-items of layers, not layer types
+ */
+export type LayerType = 'base' | 'surface' | 'text' | 'model3d' | 'image' | 'group'
+
+/** @deprecated Use LayerType instead */
+export type LegacyLayerType = 'base' | 'group' | 'object' | 'text' | 'clipGroup'
 
 /** Layer item for UI display */
 export interface LayerItem {
@@ -120,8 +131,12 @@ const getEffectValue = (layerId: string): string => {
 }
 
 const getSubItemsForLayer = (layer: LayerItem): SubItemConfig[] => {
-  // Normalize type: treat 'clipGroup' as 'group' for backward compatibility
-  const normalizedType = layer.type === 'clipGroup' as unknown ? 'group' : layer.type
+  // Normalize type: treat legacy 'clipGroup' and 'object' types
+  const layerType = layer.type as string
+  const normalizedType: LayerType =
+    layerType === 'clipGroup' ? 'surface' :
+    layerType === 'object' ? 'model3d' :
+    layer.type
 
   switch (normalizedType) {
     case 'base':
@@ -130,17 +145,29 @@ const getSubItemsForLayer = (layer: LayerItem): SubItemConfig[] => {
         // Processor section (effect only for base - no mask)
         { type: 'effect', label: 'Effect', value: getEffectValue(layer.id), enabled: true, indent: 1 },
       ]
-    case 'group':
+    case 'surface':
       return [
         { type: 'surface', label: 'Surface', value: groupSurface.value ?? 'Solid', enabled: true },
-        // Processor section (effect + mask for groups)
+        // Processor section (effect + mask for surface layers)
         { type: 'effect', label: 'Effect', value: getEffectValue(layer.id), enabled: true, indent: 1 },
         { type: 'shape', label: 'Mask', value: groupShape.value ?? 'None', enabled: true, indent: 1 },
       ]
-    case 'object':
+    case 'group':
+      return [
+        // Group is purely organizational - no surface, but can have processors
+        { type: 'effect', label: 'Effect', value: getEffectValue(layer.id), enabled: true, indent: 1 },
+        { type: 'shape', label: 'Mask', value: groupShape.value ?? 'None', enabled: true, indent: 1 },
+      ]
+    case 'model3d':
+      return [
+        { type: 'source', label: 'Source', value: '3D Model', enabled: true },
+        { type: 'effect', label: 'Effect', value: 'WIP', enabled: false, indent: 1 },
+      ]
+    case 'image':
       return [
         { type: 'source', label: 'Source', value: 'Image', enabled: true },
-        { type: 'effect', label: 'Effect', value: 'WIP', enabled: false, indent: 1 },
+        { type: 'effect', label: 'Effect', value: getEffectValue(layer.id), enabled: true, indent: 1 },
+        { type: 'shape', label: 'Mask', value: 'None', enabled: true, indent: 1 },
       ]
     case 'text':
       return [
@@ -163,23 +190,29 @@ const subItemsMap = computed(() => {
   return map
 })
 
-const getLayerIcon = (type: LayerType | 'clipGroup'): string => {
+const getLayerIcon = (type: LayerType | LegacyLayerType): string => {
   switch (type) {
     case 'base': return 'gradient'
+    case 'surface': return 'texture'
     case 'group':
-    case 'clipGroup': return 'crop_free'
+    case 'clipGroup': return 'folder_open'
+    case 'model3d':
     case 'object': return 'view_in_ar'
+    case 'image': return 'image'
     case 'text': return 'text_fields'
     default: return 'layers'
   }
 }
 
-const getLayerTypeLabel = (type: LayerType | 'clipGroup'): string => {
+const getLayerTypeLabel = (type: LayerType | LegacyLayerType): string => {
   switch (type) {
     case 'base': return 'Base'
-    case 'group':
-    case 'clipGroup': return 'Group'
-    case 'object': return 'Object'
+    case 'surface':
+    case 'clipGroup': return 'Surface'
+    case 'group': return 'Group'
+    case 'model3d':
+    case 'object': return '3D Model'
+    case 'image': return 'Image'
     case 'text': return 'Text'
     default: return 'Layer'
   }
@@ -192,18 +225,22 @@ const getLayerTypeLabel = (type: LayerType | 'clipGroup'): string => {
 const showAddMenu = ref(false)
 
 const allLayerTypes: { type: LayerType; label: string; icon: string }[] = [
-  { type: 'group', label: 'Group', icon: 'crop_free' },
-  { type: 'object', label: 'Object', icon: 'view_in_ar' },
+  { type: 'surface', label: 'Surface', icon: 'texture' },
+  { type: 'group', label: 'Group', icon: 'folder_open' },
+  { type: 'model3d', label: '3D Model', icon: 'view_in_ar' },
+  { type: 'image', label: 'Image', icon: 'image' },
   { type: 'text', label: 'Text', icon: 'text_fields' },
 ]
 
 // Filter out layer types that have reached their limit
 const addableLayerTypes = computed(() => {
-  // Check for both 'group' and legacy 'clipGroup'
-  const hasGroup = props.layers.some(l => l.type === 'group' || (l.type as string) === 'clipGroup')
+  // Check for surface layers (including legacy 'clipGroup')
+  const hasSurface = props.layers.some(l =>
+    l.type === 'surface' || (l.type as string) === 'clipGroup'
+  )
   return allLayerTypes.filter(item => {
-    // Currently limiting to 1 group (can be expanded later)
-    if (item.type === 'group' && hasGroup) return false
+    // Currently limiting to 1 surface layer (can be expanded later)
+    if (item.type === 'surface' && hasSurface) return false
     return true
   })
 })

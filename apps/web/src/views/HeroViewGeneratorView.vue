@@ -603,13 +603,15 @@ const activeTab = ref<TabId>('generator')
 // ============================================================
 const layers = ref<LayerItem[]>([
   { id: 'base', type: 'base', name: 'Background', visible: true, expanded: true },
-  { id: 'clip-group-1', type: 'clipGroup', name: 'Clip Group', visible: true, expanded: false },
+  { id: 'surface-1', type: 'surface', name: 'Surface', visible: true, expanded: false },
 ])
 
 const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
   if (uiLayerId === 'base') return 'base-layer'
+  // Surface layers map to clip-group-layer in the scene
+  if (uiLayerId.startsWith('surface')) return 'clip-group-layer'
+  // Legacy support for old IDs
   if (uiLayerId.startsWith('clip-group')) return 'clip-group-layer'
-  // Legacy support for old mask layer IDs
   if (uiLayerId.startsWith('mask')) return 'clip-group-layer'
   return uiLayerId
 }
@@ -629,14 +631,18 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
   // Handle effect/filter (both for backward compatibility)
   const isEffectOrFilter = subItemType === 'filter' || subItemType === 'effect'
 
-  if (layer.type === 'base') {
+  // Normalize layer type for backward compatibility
+  const layerType = layer.type as string
+  const normalizedType = layerType === 'clipGroup' ? 'surface' : layer.type
+
+  if (normalizedType === 'base') {
     if (subItemType === 'surface') {
       openSection('background')
     } else if (isEffectOrFilter) {
       selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
       openSection('filter')
     }
-  } else if (layer.type === 'clipGroup' || layer.type === 'group') {
+  } else if (normalizedType === 'surface') {
     if (subItemType === 'surface') {
       openSection('clip-group-surface')
     } else if (subItemType === 'shape') {
@@ -645,10 +651,25 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
       selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
       openSection('filter')
     }
-  } else if (layer.type === 'text') {
+  } else if (normalizedType === 'group') {
+    // Group is purely organizational - only has processors
+    if (subItemType === 'shape') {
+      openSection('clip-group-shape')
+    } else if (isEffectOrFilter) {
+      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
+      openSection('filter')
+    }
+  } else if (normalizedType === 'text') {
     if (subItemType === 'source') {
       selectedTextLayerId.value = layerId
       openSection('text-content')
+    } else if (isEffectOrFilter) {
+      selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
+      openSection('filter')
+    }
+  } else if (normalizedType === 'image') {
+    if (subItemType === 'source') {
+      // TODO: Implement image source selection
     } else if (isEffectOrFilter) {
       selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
       openSection('filter')
@@ -659,21 +680,29 @@ const handleSelectSubItem = (layerId: string, subItemType: SubItemType) => {
 const handleAddLayer = (type: LayerType) => {
   const names: Record<LayerType, string> = {
     base: 'Background',
+    surface: 'Surface',
     group: 'Group',
-    clipGroup: 'Clip Group',
-    object: 'Object',
+    model3d: '3D Model',
+    image: 'Image',
     text: 'Text Layer',
   }
 
   let id: string
 
   // Add to scene and get the ID
-  if (type === 'clipGroup' || type === 'group') {
-    id = addMaskLayer() ?? `clip-group-${Date.now()}`
+  if (type === 'surface') {
+    // Surface layer uses the mask layer infrastructure with mask processor
+    id = addMaskLayer() ?? `surface-${Date.now()}`
+  } else if (type === 'group') {
+    // Group is purely organizational (no scene layer for now)
+    id = `group-${Date.now()}`
   } else if (type === 'text') {
     id = addTextLayer()
-  } else if (type === 'object') {
+  } else if (type === 'model3d') {
     id = addObjectLayer({ modelUrl: chairModelUrl })
+  } else if (type === 'image') {
+    // TODO: Implement image layer
+    id = `image-${Date.now()}`
   } else {
     id = `${type}-${Date.now()}`
   }
