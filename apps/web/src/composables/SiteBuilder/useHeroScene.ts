@@ -2524,9 +2524,24 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     maskColorKey2.value = colors.mask.secondary as PrimitiveKey | 'auto'
     maskSemanticContext.value = colors.semanticContext as ContextName
 
-    // Find base layer and surface layer from config.layers
+    // Find base layer and surface layer from config.layers (including nested in groups)
     const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
-    const surfaceLayer = config.layers.find((l): l is SurfaceLayerNodeConfig => l.type === 'surface')
+
+    // Surface layer may be nested inside a group
+    let surfaceLayer: SurfaceLayerNodeConfig | undefined
+    for (const layer of config.layers) {
+      if (layer.type === 'surface') {
+        surfaceLayer = layer
+        break
+      }
+      if (layer.type === 'group' && layer.children) {
+        const nested = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
+        if (nested) {
+          surfaceLayer = nested
+          break
+        }
+      }
+    }
 
     // Background surface (from base layer)
     if (baseLayer) {
