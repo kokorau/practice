@@ -239,7 +239,7 @@ const handleDrop = (e: DragEvent) => {
     <!-- Node Header -->
     <div
       class="node-header"
-      :class="{ selected: isSelected, 'has-modifiers': hasModifiers }"
+      :class="{ selected: isSelected }"
       :style="indentStyle"
       :draggable="isDraggable"
       @click="handleSelect"
@@ -249,6 +249,13 @@ const handleDrop = (e: DragEvent) => {
       @dragleave="handleDragLeave"
       @drop="handleDrop"
     >
+      <!-- Processor Link: 上向き矢印 (対象レイヤーの先頭) -->
+      <svg v-if="hasModifiers" class="processor-link-icon" viewBox="0 0 12 24" fill="none">
+        <!-- 縦線 (矢印先端から下へ、次の要素まで伸ばす) -->
+        <line x1="6" y1="6" x2="6" y2="36" stroke="currentColor" stroke-width="1" />
+        <!-- 矢印ヘッド (上向き三角形) -->
+        <path d="M6 2 L9 7 L3 7 Z" fill="currentColor" />
+      </svg>
 
       <!-- Expand Toggle -->
       <button
@@ -293,12 +300,18 @@ const handleDrop = (e: DragEvent) => {
 
     <!-- Processor group (contains Effect/Mask as children) -->
     <template v-if="modifiers.length > 0">
-      <!-- Processor parent node with L-shape arrow pointing up -->
+      <!-- Processor parent node with L-shape connector -->
       <div
         class="processor-group-node"
         :style="{ paddingLeft: `${depth * 0.75}rem` }"
       >
-        <span class="material-icons l-shape-arrow">subdirectory_arrow_right</span>
+        <!-- L字コーナー SVG -->
+        <svg class="processor-link-icon" viewBox="0 0 12 24" fill="none">
+          <!-- 縦線 (上の要素から中央へ、上にはみ出す) -->
+          <line x1="6" y1="-12" x2="6" y2="12" stroke="currentColor" stroke-width="1" />
+          <!-- 横線 (中央から右へ) -->
+          <line x1="6" y1="12" x2="12" y2="12" stroke="currentColor" stroke-width="1" />
+        </svg>
         <span class="material-icons layer-icon">tune</span>
         <div class="layer-info">
           <span class="layer-name">Processor</span>
@@ -397,6 +410,7 @@ const handleDrop = (e: DragEvent) => {
   cursor: pointer;
   transition: background 0.15s;
   border-radius: 0.25rem;
+  overflow: visible; /* Allow processor link to overflow */
 }
 
 .node-header:hover {
@@ -576,6 +590,23 @@ const handleDrop = (e: DragEvent) => {
   font-size: 1rem;
 }
 
+/* ============================================================
+   Processor Link System (連結矢印) - SVG版
+   ============================================================ */
+
+/* SVGアイコン共通スタイル */
+.processor-link-icon {
+  width: 0.75rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  color: oklch(0.55 0.02 260);
+  overflow: visible; /* SVGがはみ出せるように */
+}
+
+:global(.dark) .processor-link-icon {
+  color: oklch(0.50 0.02 260);
+}
+
 /* Processor group node (parent of Effect/Mask) */
 .processor-group-node {
   display: flex;
@@ -583,18 +614,6 @@ const handleDrop = (e: DragEvent) => {
   gap: 0.25rem;
   padding: 0.375rem 0.5rem;
   border-radius: 0.25rem;
-}
-
-/* L-shape arrow - rotated to point up-left */
-.l-shape-arrow {
-  font-size: 1rem;
-  flex-shrink: 0;
-  color: oklch(0.55 0.02 260);
-  transform: rotate(180deg) scaleX(-1);
-}
-
-:global(.dark) .l-shape-arrow {
-  color: oklch(0.50 0.02 260);
 }
 
 /* Processor child nodes (Effect, Mask) */
