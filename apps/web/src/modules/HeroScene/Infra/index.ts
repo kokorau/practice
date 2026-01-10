@@ -16,3 +16,6 @@ export {
   ThreeJsObject3DRenderer,
   createObject3DRenderer,
 } from './ThreeJsObject3DRenderer'
+
+export { renderHeroConfig } from './renderHeroConfig'
+export type { RenderHeroConfigOptions, TextureRendererLike } from './renderHeroConfig'

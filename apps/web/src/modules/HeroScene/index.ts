@@ -257,7 +257,7 @@ export {
 } from './Application'
 
 // Infra
-export type { TextTextureRendererConfig, HeroSceneRendererDeps } from './Infra'
+export type { TextTextureRendererConfig, HeroSceneRendererDeps, RenderHeroConfigOptions, TextureRendererLike } from './Infra'
 
 export {
   TextTextureRenderer,
@@ -269,4 +269,6 @@ export {
   // 3D Object Renderer
   ThreeJsObject3DRenderer,
   createObject3DRenderer,
+  // Config-based rendering
+  renderHeroConfig,
 } from './Infra'

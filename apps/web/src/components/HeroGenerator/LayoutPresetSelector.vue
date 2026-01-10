@@ -3,28 +3,15 @@
  * LayoutPresetSelector
  *
  * レイアウトプリセットを選択するUI
- * 各プリセットのプレビューをHeroPreviewと同じ仕組みでレンダリング
+ * 各プリセットのプレビューをrenderHeroConfigでレンダリング（HeroPreviewと同じロジック）
  */
 
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import {
-  TextureRenderer,
-  createSolidSpec,
-  createStripeSpec,
-  createGridSpec,
-  createPolkaDotSpec,
-  createCheckerSpec,
-  createCircleMaskSpec,
-  createRectMaskSpec,
-  createBlobMaskSpec,
-  createPerlinMaskSpec,
-  type TextureRenderSpec,
-  type Viewport,
-  type RGBA,
-} from '@practice/texture'
-import type { HeroViewPreset, MaskShapeConfig, SurfaceLayerNodeConfig } from '../../modules/HeroScene'
+import { TextureRenderer } from '@practice/texture'
+import type { HeroViewPreset } from '../../modules/HeroScene'
+import { renderHeroConfig } from '../../modules/HeroScene'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
 import { createPrimitivePalette } from '../../modules/SemanticColorPalette/Infra'
 import { hsvToRgb } from '../SiteBuilder/utils/colorConversion'
@@ -67,19 +54,6 @@ const hsvToOklch = (h: number, s: number, v: number): Oklch => {
 }
 
 /**
- * Convert Oklch to RGBA for texture rendering
- */
-const oklchToRgba = (oklch: Oklch, alpha = 1): RGBA => {
-  const srgb = $Oklch.toSrgb(oklch)
-  return [
-    Math.max(0, Math.min(1, srgb.r)),
-    Math.max(0, Math.min(1, srgb.g)),
-    Math.max(0, Math.min(1, srgb.b)),
-    alpha,
-  ]
-}
-
-/**
  * Convert Oklch to CSS color string
  */
 const oklchToCss = (oklch: Oklch): string => $Oklch.toCss(oklch)
@@ -98,17 +72,6 @@ const createPaletteFromPreset = (preset: HeroViewPreset): PrimitivePalette | nul
 }
 
 /**
- * Get color from palette by key
- */
-const getColorFromPalette = (palette: PrimitivePalette, key: string): RGBA => {
-  const oklch = (palette as Record<string, Oklch>)[key]
-  if (oklch) {
-    return oklchToRgba(oklch)
-  }
-  return [0.5, 0.5, 0.5, 1]
-}
-
-/**
  * Get Oklch color from palette by key
  */
 const getOklchFromPalette = (palette: PrimitivePalette, key: string): Oklch => {
@@ -117,124 +80,6 @@ const getOklchFromPalette = (palette: PrimitivePalette, key: string): Oklch => {
     return oklch
   }
   return { L: 0.5, C: 0, H: 0 }
-}
-
-/**
- * Scale a value for preview size
- */
-const scaleForPreview = (value: number): number => Math.max(1, Math.round(value * TEXTURE_SCALE))
-
-/**
- * Create background texture spec from preset
- */
-const createBackgroundSpec = (
-  preset: HeroViewPreset,
-  palette: PrimitivePalette,
-  _viewport: Viewport
-): TextureRenderSpec | null => {
-  const baseLayer = preset.config.layers.find(l => l.type === 'base')
-  if (!baseLayer || !('surface' in baseLayer)) return null
-  const surface = baseLayer.surface
-
-  const colors = preset.config.colors
-  const color1 = getColorFromPalette(palette, colors?.background?.primary ?? 'BN4')
-  const color2 = getColorFromPalette(palette, colors?.background?.secondary ?? 'BN2')
-
-  if (surface.type === 'solid') {
-    return createSolidSpec({ color: color1 })
-  }
-  if (surface.type === 'stripe') {
-    return createStripeSpec({
-      color1, color2,
-      width1: scaleForPreview(surface.width1),
-      width2: scaleForPreview(surface.width2),
-      angle: surface.angle,
-    })
-  }
-  if (surface.type === 'grid') {
-    return createGridSpec({
-      lineColor: color1, bgColor: color2,
-      lineWidth: scaleForPreview(surface.lineWidth),
-      cellSize: scaleForPreview(surface.cellSize),
-    })
-  }
-  if (surface.type === 'polkaDot') {
-    return createPolkaDotSpec({
-      dotColor: color1, bgColor: color2,
-      dotRadius: scaleForPreview(surface.dotRadius),
-      spacing: scaleForPreview(surface.spacing),
-      rowOffset: surface.rowOffset,
-    })
-  }
-  if (surface.type === 'checker') {
-    return createCheckerSpec({
-      color1, color2,
-      cellSize: scaleForPreview(surface.cellSize),
-      angle: surface.angle,
-    })
-  }
-  return createSolidSpec({ color: color1 })
-}
-
-/**
- * Find surface layer from preset (may be nested in group)
- */
-const findSurfaceLayer = (preset: HeroViewPreset): SurfaceLayerNodeConfig | null => {
-  for (const layer of preset.config.layers) {
-    if (layer.type === 'surface') return layer as SurfaceLayerNodeConfig
-    if (layer.type === 'group' && 'children' in layer && layer.children) {
-      const nested = layer.children.find(c => c.type === 'surface')
-      if (nested) return nested as SurfaceLayerNodeConfig
-    }
-  }
-  return null
-}
-
-/**
- * Create mask shape spec from preset
- */
-const createMaskShapeSpec = (
-  shape: MaskShapeConfig,
-  innerColor: RGBA,
-  outerColor: RGBA,
-  viewport: Viewport
-): TextureRenderSpec | null => {
-  const cutout = shape.cutout ?? true
-
-  if (shape.type === 'circle') {
-    return createCircleMaskSpec(
-      { centerX: shape.centerX, centerY: shape.centerY, radius: shape.radius, innerColor, outerColor, cutout },
-      viewport
-    )
-  }
-  if (shape.type === 'rect') {
-    return createRectMaskSpec(
-      {
-        left: shape.left, right: shape.right, top: shape.top, bottom: shape.bottom,
-        radiusTopLeft: shape.radiusTopLeft, radiusTopRight: shape.radiusTopRight,
-        radiusBottomLeft: shape.radiusBottomLeft, radiusBottomRight: shape.radiusBottomRight,
-        innerColor, outerColor, cutout,
-      },
-      viewport
-    )
-  }
-  if (shape.type === 'blob') {
-    return createBlobMaskSpec(
-      {
-        centerX: shape.centerX, centerY: shape.centerY, baseRadius: shape.baseRadius,
-        amplitude: shape.amplitude, frequency: 0, octaves: shape.octaves, seed: shape.seed,
-        innerColor, outerColor, cutout,
-      },
-      viewport
-    )
-  }
-  if (shape.type === 'perlin') {
-    return createPerlinMaskSpec(
-      { seed: shape.seed, threshold: shape.threshold, scale: shape.scale, octaves: shape.octaves, innerColor, outerColor },
-      viewport
-    )
-  }
-  return null
 }
 
 /**
@@ -281,46 +126,21 @@ const setCanvasRef = (presetId: string, el: HTMLCanvasElement | null) => {
   }
 }
 
+/**
+ * Render preset using shared renderHeroConfig function
+ */
 const renderPreset = async (presetId: string) => {
   const renderer = renderers.value.get(presetId)
   const preset = props.presets.find(p => p.id === presetId)
   if (!renderer || !preset) return
 
-  const viewport = renderer.getViewport()
   const palette = createPaletteFromPreset(preset)
   if (!palette) return
 
-  const colors = preset.config.colors
-
-  // 1. Render background texture
-  const bgSpec = createBackgroundSpec(preset, palette, viewport)
-  if (bgSpec) {
-    renderer.render(bgSpec)
-  }
-
-  // 2. Find surface layer and render mask shape
-  const surfaceLayer = findSurfaceLayer(preset)
-  if (surfaceLayer) {
-    const maskProcessor = surfaceLayer.processors.find(p => p.type === 'mask')
-    if (maskProcessor && 'shape' in maskProcessor) {
-      const shape = maskProcessor.shape as MaskShapeConfig
-      const cutout = shape.cutout ?? true
-
-      // Get mask colors from palette
-      const maskPrimaryColor = getColorFromPalette(palette, colors?.mask?.primary ?? 'BN2')
-      const transparent: RGBA = [0, 0, 0, 0]
-
-      // Match useHeroScene rendering logic:
-      // cutout = true: inner = transparent (bg shows through), outer = mask color
-      // cutout = false: inner = mask color, outer = transparent (bg shows through)
-      const innerColor = cutout ? transparent : maskPrimaryColor
-      const outerColor = cutout ? maskPrimaryColor : transparent
-      const maskSpec = createMaskShapeSpec(shape, innerColor, outerColor, viewport)
-      if (maskSpec) {
-        renderer.render(maskSpec, { clear: false })
-      }
-    }
-  }
+  // Use shared renderHeroConfig with scale for preview size
+  await renderHeroConfig(renderer, preset.config, palette, {
+    scale: TEXTURE_SCALE,
+  })
 }
 
 const initRenderers = async () => {
