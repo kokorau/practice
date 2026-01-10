@@ -1593,11 +1593,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           const createMaskOverlaySpec = (): TextureRenderSpec | null => {
             const shapeParams = customMaskShapeParams.value ?? {
               ...layerMaskShapeParams,
-              cutout: !maskInvert,
+              cutout: maskInvert,
             }
             if (!shapeParams) return null
 
-            const cutout = 'cutout' in shapeParams ? (shapeParams.cutout ?? true) : !maskInvert
+            // cutout === maskInvert: true = show outside (cutout), false = show inside (solid)
+            const cutout = 'cutout' in shapeParams ? (shapeParams.cutout ?? false) : maskInvert
             const solidInnerColor = cutout ? maskInnerColor.value : midgroundTextureColor1.value
             const solidOuterColor = cutout ? midgroundTextureColor1.value : maskInnerColor.value
 
@@ -1751,6 +1752,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 })
               }
               return null
+            }
+
+            // Handle custom mask image (customMaskBitmap)
+            if (customMaskBitmap && clipSpec) {
+              // Render custom image to offscreen, then apply clip mask
+              const offscreenTexture = await previewRenderer.renderImageToOffscreen(customMaskBitmap, 0)
+              previewRenderer.applyClipMask(clipSpec, offscreenTexture, { clear: false })
+              break
             }
 
             if (hasTexture && clipSpec) {

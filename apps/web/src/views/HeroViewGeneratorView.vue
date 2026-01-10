@@ -645,11 +645,11 @@ const { draggedId, dropTarget, startDrag, endDrag, setDropTarget, clearDropTarge
 
 const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
   if (uiLayerId === 'base') return 'base-layer'
-  // Surface layers map to clip-group-layer in the scene
-  if (uiLayerId.startsWith('surface')) return 'clip-group-layer'
+  // Surface layers map to mask-layer in the scene (LAYER_IDS.MASK)
+  if (uiLayerId.startsWith('surface')) return 'mask-layer'
   // Legacy support for old IDs
-  if (uiLayerId.startsWith('clip-group')) return 'clip-group-layer'
-  if (uiLayerId.startsWith('mask')) return 'clip-group-layer'
+  if (uiLayerId.startsWith('clip-group')) return 'mask-layer'
+  if (uiLayerId.startsWith('mask')) return 'mask-layer'
   return uiLayerId
 }
 
