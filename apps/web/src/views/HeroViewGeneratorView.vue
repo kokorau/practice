@@ -617,7 +617,7 @@ const selectedProcessorLayerId = ref<string | null>(null)
 const layers = ref<LayerNode[]>([
   createBaseLayerNode(
     { type: 'solid', color: 'BN1' },
-    { processors: [createEffectProcessor()] }
+    { name: 'Background', processors: [createEffectProcessor()] }
   ),
   createGroupLayerNode(
     'main-group',
