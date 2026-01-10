@@ -417,7 +417,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const initMaskShapeParamsFromPreset = () => {
     const idx = selectedMaskIndex.value
     if (idx === null) {
-      customMaskShapeParams.value = null
+      // Keep existing customMaskShapeParams (loaded from preset with custom values)
       return
     }
     const pattern = maskPatterns[idx]
@@ -2608,9 +2608,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           }
         }
 
-        // Reverse-lookup mask shape index
-        const maskPresetIndex = findMaskPatternIndex(shape, maskPatterns)
-        selectedMaskIndex.value = maskPresetIndex ?? 0
+        // Reverse-lookup mask shape index (null = custom params, keep as-is)
+        selectedMaskIndex.value = findMaskPatternIndex(shape, maskPatterns)
       } else {
         selectedMaskIndex.value = null
         customMaskShapeParams.value = null

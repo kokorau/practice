@@ -75,15 +75,14 @@
                 "enabled": true,
                 "shape": {
                   "type": "rect",
-                  "left": 0.05,
+                  "left": 0,
                   "right": 0.55,
                   "top": 0.1,
                   "bottom": 0.9,
-                  "radiusTopLeft": 0.02,
-                  "radiusTopRight": 0.02,
-                  "radiusBottomLeft": 0.02,
-                  "radiusBottomRight": 0.02,
-                  "cutout": true
+                  "radiusTopLeft": 0,
+                  "radiusTopRight": 0.04,
+                  "radiusBottomLeft": 0,
+                  "radiusBottomRight": 0.04
                 },
                 "invert": false,
                 "feather": 0

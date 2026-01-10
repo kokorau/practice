@@ -58,10 +58,9 @@
                 "enabled": true,
                 "shape": {
                   "type": "circle",
-                  "centerX": 0.75,
+                  "centerX": 0.5,
                   "centerY": 0.5,
-                  "radius": 0.4,
-                  "cutout": true
+                  "radius": 0.5
                 },
                 "invert": false,
                 "feather": 0

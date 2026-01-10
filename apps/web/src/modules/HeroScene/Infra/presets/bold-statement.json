@@ -60,13 +60,8 @@
                   "type": "rect",
                   "left": 0,
                   "right": 1,
-                  "top": 0.29,
-                  "bottom": 0.69,
-                  "radiusTopLeft": 0,
-                  "radiusTopRight": 0,
-                  "radiusBottomLeft": 0,
-                  "radiusBottomRight": 0,
-                  "cutout": true
+                  "top": 0.5,
+                  "bottom": 1
                 },
                 "invert": false,
                 "feather": 0

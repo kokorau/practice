@@ -57,13 +57,10 @@
                 "type": "mask",
                 "enabled": true,
                 "shape": {
-                  "type": "blob",
+                  "type": "circle",
                   "centerX": 0.5,
                   "centerY": 0.5,
-                  "baseRadius": 0.25,
-                  "amplitude": 0.03,
-                  "octaves": 3,
-                  "seed": 888,
+                  "radius": 0.3,
                   "cutout": false
                 },
                 "invert": false,

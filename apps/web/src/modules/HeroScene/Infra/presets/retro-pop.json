@@ -60,8 +60,7 @@
                   "type": "circle",
                   "centerX": 0.5,
                   "centerY": 0.5,
-                  "radius": 0.38,
-                  "cutout": true
+                  "radius": 0.3
                 },
                 "invert": false,
                 "feather": 0
