@@ -33,6 +33,7 @@ import {
   wrapNodeInMaskedGroup,
   isLayer,
   isGroup,
+  getSceneLayerId,
   type DropPosition,
   type LayerNodeType,
 } from '../modules/HeroScene'
@@ -665,18 +666,6 @@ const selectedLayerVariant = computed(() => {
   return layer.variant
 })
 
-const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
-  if (uiLayerId === 'base') return 'base-layer'
-  // Background layers map to base-layer in the scene
-  if (uiLayerId.startsWith('background-')) return 'base-layer'
-  // Surface layers map to mask-layer in the scene (LAYER_IDS.MASK)
-  if (uiLayerId.startsWith('surface')) return 'mask-layer'
-  // Legacy support for old IDs
-  if (uiLayerId.startsWith('clip-group')) return 'mask-layer'
-  if (uiLayerId.startsWith('mask')) return 'mask-layer'
-  return uiLayerId
-}
-
 const handleSelectLayer = (id: string) => {
   selectCanvasLayer(id)
   selectedForegroundElementId.value = null
@@ -690,11 +679,14 @@ const handleToggleExpand = (layerId: string) => {
 
 const handleToggleVisibility = (layerId: string) => {
   const layer = findLayerNode(layers.value, layerId)
-  if (layer) {
-    layers.value = updateLayerNode(layers.value, layerId, {
-      visible: !layer.visible,
-    })
-    toggleLayerVisibility(mapLayerIdToSceneLayerId(layerId))
+  if (!layer) return
+
+  layers.value = updateLayerNode(layers.value, layerId, {
+    visible: !layer.visible,
+  })
+
+  if (isLayer(layer)) {
+    toggleLayerVisibility(getSceneLayerId(layer))
   }
 }
 
@@ -705,8 +697,8 @@ const handleSelectProcessor = (layerId: string, type: 'effect' | 'mask' | 'proce
   selectProcessor(layerId, type)
   selectedForegroundElementId.value = null
 
-  if (type === 'effect') {
-    selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
+  if (type === 'effect' && isLayer(layer)) {
+    selectedFilterLayerId.value = getSceneLayerId(layer)
   }
 }
 
@@ -819,17 +811,15 @@ const handleRemoveLayer = (layerId: string) => {
         for (const child of node.children) {
           removeChildrenFromScene(child)
         }
-      } else {
+      } else if (isLayer(node)) {
         // It's a Layer node, remove from scene
-        const sceneLayerId = mapLayerIdToSceneLayerId(node.id)
-        sceneRemoveLayer(sceneLayerId)
+        sceneRemoveLayer(getSceneLayerId(node))
       }
     }
     removeChildrenFromScene(layer)
-  } else {
-    // Single layer, map and remove from scene
-    const sceneLayerId = mapLayerIdToSceneLayerId(layerId)
-    sceneRemoveLayer(sceneLayerId)
+  } else if (isLayer(layer)) {
+    // Single layer, remove from scene
+    sceneRemoveLayer(getSceneLayerId(layer))
   }
 
   // Remove from UI layers tree

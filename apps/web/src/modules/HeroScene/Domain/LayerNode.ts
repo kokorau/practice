@@ -287,6 +287,41 @@ const getDefaultName = (variant: LayerVariant): string => {
 }
 
 // ============================================================
+// Scene Layer ID Mapping
+// ============================================================
+
+/**
+ * Scene layer IDs used by the rendering engine
+ */
+export const SCENE_LAYER_IDS = {
+  BASE: 'base-layer',
+  MASK: 'mask-layer',
+} as const
+
+export type SceneLayerId = typeof SCENE_LAYER_IDS[keyof typeof SCENE_LAYER_IDS]
+
+/**
+ * Get the scene layer ID for a Layer based on its variant
+ * Uses exhaustive switch for type safety
+ */
+export const getSceneLayerId = (layer: Layer): SceneLayerId => {
+  switch (layer.variant) {
+    case 'base':
+      return SCENE_LAYER_IDS.BASE
+    case 'surface':
+    case 'text':
+    case 'model3d':
+    case 'image':
+      return SCENE_LAYER_IDS.MASK
+    default: {
+      // Exhaustive check - this should never be reached
+      layer.variant satisfies never
+      return SCENE_LAYER_IDS.MASK
+    }
+  }
+}
+
+// ============================================================
 // Type Guards
 // ============================================================
 
