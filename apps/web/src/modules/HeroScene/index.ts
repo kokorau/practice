@@ -88,10 +88,10 @@ export type {
   NodeBase,
   Surface,
   PatternSurface,
-  TextConfig,
-  Model3DConfig,
   ImageSurface,
   SolidSurface,
+  TextConfig,
+  Model3DConfig,
   DropPosition,
   // HTML types
   HtmlContentItem,
