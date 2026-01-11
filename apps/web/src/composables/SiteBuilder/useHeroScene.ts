@@ -85,7 +85,9 @@ import {
 import type { ObjectSchema } from '@practice/schema'
 // Filters (separate subpath for tree-shaking)
 import {
-  createVignetteSpec,
+  vignetteShader,
+  createVignetteUniforms,
+  VIGNETTE_BUFFER_SIZE,
   chromaticAberrationShader,
   createChromaticAberrationUniforms,
   CHROMATIC_ABERRATION_BUFFER_SIZE,
@@ -1853,9 +1855,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       )
     }
 
-    // Vignette (overlay, applied last)
+    // Vignette (requires texture input, applied last)
     if (filters.vignette.enabled) {
-      const vignetteSpec = createVignetteSpec(
+      const inputTexture = previewRenderer.copyCanvasToTexture()
+      const uniforms = createVignetteUniforms(
         {
           color: [0, 0, 0, 1],
           intensity: filters.vignette.intensity,
@@ -1864,7 +1867,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         },
         viewport
       )
-      previewRenderer.render(vignetteSpec, { clear: false })
+      previewRenderer.applyPostEffect(
+        { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
+        inputTexture,
+        { clear: true }
+      )
     }
   }
 
@@ -2275,6 +2282,25 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 )
               }
 
+              // Vignette
+              if (filters.vignette.enabled) {
+                const uniforms = createVignetteUniforms(
+                  {
+                    color: [0, 0, 0, 1],
+                    intensity: filters.vignette.intensity,
+                    radius: filters.vignette.radius,
+                    softness: filters.vignette.softness,
+                  },
+                  viewport
+                )
+                const outputIndex = currentTexture === renderer.getOffscreenTexture(0) ? 1 : 0
+                currentTexture = renderer.applyPostEffectToOffscreen(
+                  { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
+                  currentTexture,
+                  outputIndex as 0 | 1
+                )
+              }
+
               return currentTexture
             }
 
@@ -2285,19 +2311,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               // Apply effects to offscreen texture (stays within mask bounds)
               offscreenTexture = applyEffectsToOffscreen(offscreenTexture)
               previewRenderer.applyClipMask(clipSpec, offscreenTexture, { clear: false })
-              // Apply vignette overlay after clip mask (on main canvas)
-              if (layer.filters.vignette.enabled) {
-                const vignetteSpec = createVignetteSpec(
-                  {
-                    color: [0, 0, 0, 1],
-                    intensity: layer.filters.vignette.intensity,
-                    radius: layer.filters.vignette.radius,
-                    softness: layer.filters.vignette.softness,
-                  },
-                  viewport
-                )
-                previewRenderer.render(vignetteSpec, { clear: false })
-              }
               break
             }
 
@@ -2311,19 +2324,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 offscreenTexture = applyEffectsToOffscreen(offscreenTexture)
                 // Apply clip mask and render to main canvas
                 previewRenderer.applyClipMask(clipSpec, offscreenTexture, { clear: false })
-                // Apply vignette overlay after clip mask (on main canvas)
-                if (layer.filters.vignette.enabled) {
-                  const vignetteSpec = createVignetteSpec(
-                    {
-                      color: [0, 0, 0, 1],
-                      intensity: layer.filters.vignette.intensity,
-                      radius: layer.filters.vignette.radius,
-                      softness: layer.filters.vignette.softness,
-                    },
-                    viewport
-                  )
-                  previewRenderer.render(vignetteSpec, { clear: false })
-                }
                 break
               }
             }
