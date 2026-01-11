@@ -6,7 +6,7 @@
  */
 
 import type { HeroViewRepository } from './ports/HeroViewRepository'
-import type { HeroPrimitiveKey, SurfaceConfig } from '../Domain/HeroViewConfig'
+import type { HeroPrimitiveKey, SurfaceConfig, DepthMapType } from '../Domain/HeroViewConfig'
 
 // ============================================================
 // Types
@@ -35,6 +35,21 @@ export type SurfaceParamsUpdate =
   | { type: 'grid'; lineWidth?: number; cellSize?: number }
   | { type: 'polkaDot'; dotRadius?: number; spacing?: number; rowOffset?: number }
   | { type: 'checker'; cellSize?: number; angle?: number }
+  | {
+      type: 'gradientGrain'
+      depthMapType?: DepthMapType
+      angle?: number
+      centerX?: number
+      centerY?: number
+      radialStartAngle?: number
+      radialSweepAngle?: number
+      perlinScale?: number
+      perlinOctaves?: number
+      perlinContrast?: number
+      perlinOffset?: number
+      seed?: number
+      sparsity?: number
+    }
 
 // ============================================================
 // Interface

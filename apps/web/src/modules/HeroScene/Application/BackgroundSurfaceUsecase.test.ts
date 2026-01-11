@@ -211,6 +211,35 @@ describe('BackgroundSurfaceUsecase', () => {
         expect(layer.surface).toEqual({ type: 'solid' })
       }
     })
+
+    it('updates gradientGrain surface params', () => {
+      const gradientGrainSurface = {
+        type: 'gradientGrain' as const,
+        depthMapType: 'linear' as const,
+        angle: 0,
+        centerX: 0.5,
+        centerY: 0.5,
+        radialStartAngle: 0,
+        radialSweepAngle: 360,
+        perlinScale: 1,
+        perlinOctaves: 4,
+        perlinContrast: 1,
+        perlinOffset: 0,
+        seed: 12345,
+        sparsity: 0.5,
+      }
+      usecase.selectSurface(gradientGrainSurface)
+      usecase.updateSurfaceParams({ type: 'gradientGrain', angle: 45, sparsity: 0.8 })
+
+      const layer = repository.findLayer('base')
+      if (layer?.type === 'base') {
+        expect(layer.surface).toEqual({
+          ...gradientGrainSurface,
+          angle: 45,
+          sparsity: 0.8,
+        })
+      }
+    })
   })
 
   describe('repository subscription', () => {
