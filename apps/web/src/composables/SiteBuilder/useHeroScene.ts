@@ -69,6 +69,7 @@ import {
   type GridPresetParams,
   type PolkaDotPresetParams,
   type CheckerPresetParams,
+  type GradientGrainPresetParams,
   type CircleMaskShapeParams,
   type RectMaskShapeParams,
   type BlobMaskShapeParams,
@@ -179,7 +180,7 @@ import {
  * Midground texture preset - same as SurfacePresetParams
  * Now includes solid for consistency with background
  */
-export type MidgroundPresetParams = SolidPresetParams | StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
+export type MidgroundPresetParams = SolidPresetParams | StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams | GradientGrainPresetParams
 
 export interface MidgroundSurfacePreset {
   label: string
@@ -520,7 +521,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   /**
    * Extract surface params from a MidgroundSurfacePreset
    */
-  const extractSurfaceParams = (preset: MidgroundSurfacePreset): CustomSurfaceParams => {
+  const extractSurfaceParams = (preset: MidgroundSurfacePreset, colorA: RGBA, colorB: RGBA): CustomSurfaceParams => {
     const { params } = preset
     if (params.type === 'solid') {
       return { type: 'solid' }
@@ -534,6 +535,26 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (params.type === 'polkaDot') {
       return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
     }
+    if (params.type === 'gradientGrain') {
+      return {
+        type: 'gradientGrain',
+        depthMapType: params.depthMapType,
+        angle: params.angle,
+        centerX: params.centerX,
+        centerY: params.centerY,
+        radialStartAngle: params.radialStartAngle,
+        radialSweepAngle: params.radialSweepAngle,
+        perlinScale: params.perlinScale,
+        perlinOctaves: params.perlinOctaves,
+        perlinContrast: params.perlinContrast,
+        perlinOffset: params.perlinOffset,
+        seed: params.seed,
+        sparsity: params.sparsity,
+        colorA,
+        colorB,
+        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
+      }
+    }
     // checker
     return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
   }
@@ -541,7 +562,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   /**
    * Extract background surface params from a SurfacePreset
    */
-  const extractBackgroundSurfaceParams = (params: SurfacePresetParams): CustomBackgroundSurfaceParams => {
+  const extractBackgroundSurfaceParams = (params: SurfacePresetParams, colorA: RGBA, colorB: RGBA): CustomBackgroundSurfaceParams => {
     if (params.type === 'solid') {
       return { type: 'solid' }
     }
@@ -553,6 +574,26 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
     if (params.type === 'polkaDot') {
       return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
+    }
+    if (params.type === 'gradientGrain') {
+      return {
+        type: 'gradientGrain',
+        depthMapType: params.depthMapType,
+        angle: params.angle,
+        centerX: params.centerX,
+        centerY: params.centerY,
+        radialStartAngle: params.radialStartAngle,
+        radialSweepAngle: params.radialSweepAngle,
+        perlinScale: params.perlinScale,
+        perlinOctaves: params.perlinOctaves,
+        perlinContrast: params.perlinContrast,
+        perlinOffset: params.perlinOffset,
+        seed: params.seed,
+        sparsity: params.sparsity,
+        colorA,
+        colorB,
+        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
+      }
     }
     // checker
     return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
@@ -601,33 +642,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const initSurfaceParamsFromPreset = () => {
     const idx = selectedMidgroundTextureIndex.value
-    // gradientGrain is added after midgroundTexturePatterns, so check if idx is beyond length
-    const gradientGrainIndex = midgroundTexturePatterns.length
-    if (idx === gradientGrainIndex) {
-      // GradientGrain selected - initialize with defaults using dynamic colors
-      const defaults: GradientGrainSurfaceParams = {
-        depthMapType: 'linear' as const,
-        angle: 90,
-        centerX: 0.5,
-        centerY: 0.5,
-        radialStartAngle: 0,
-        radialSweepAngle: 360,
-        perlinScale: 4,
-        perlinOctaves: 4,
-        perlinContrast: 1,
-        perlinOffset: 0,
-        colorA: midgroundTextureColor1.value,
-        colorB: midgroundTextureColor2.value,
-        seed: Math.floor(Math.random() * 10000),
-        sparsity: 0.75,
-        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
-      }
-      customSurfaceParams.value = { type: 'gradientGrain', ...defaults }
-      return
-    }
     const preset = midgroundTexturePatterns[idx]
     if (preset) {
-      customSurfaceParams.value = extractSurfaceParams(preset)
+      customSurfaceParams.value = extractSurfaceParams(preset, midgroundTextureColor1.value, midgroundTextureColor2.value)
     }
   }
 
@@ -635,36 +652,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const initBackgroundSurfaceParamsFromPreset = () => {
     const idx = selectedBackgroundIndex.value
-    // gradientGrain is added after texturePatterns, so check if idx is beyond texturePatterns length
-    const gradientGrainIndex = texturePatterns.length
-    if (idx === gradientGrainIndex) {
-      // GradientGrain selected - initialize with defaults
-      const defaults = {
-        depthMapType: 'linear' as const,
-        angle: 90,
-        centerX: 0.5,
-        centerY: 0.5,
-        radialStartAngle: 0,
-        radialSweepAngle: 360,
-        perlinScale: 4,
-        perlinOctaves: 4,
-        perlinContrast: 1,
-        perlinOffset: 0,
-        colorA: textureColor1.value,
-        colorB: textureColor2.value,
-        seed: 12345,
-        sparsity: 0.75,
-        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
-      }
-      customBackgroundSurfaceParams.value = { type: 'gradientGrain', ...defaults }
-      // Note: gradientGrain is not supported by BackgroundSurfaceUsecase yet
-      return
-    }
     const preset = surfacePresets[idx]
     if (preset) {
-      const params = extractBackgroundSurfaceParams(preset.params)
+      const params = extractBackgroundSurfaceParams(preset.params, textureColor1.value, textureColor2.value)
       customBackgroundSurfaceParams.value = params
-      // Usecaseを通じてRepositoryを更新
+      // Usecaseを通じてRepositoryを更新 (gradientGrain is not supported by BackgroundSurfaceUsecase yet)
       if (params.type === 'solid') {
         backgroundSurfaceUsecase.selectSurface({ type: 'solid' })
       } else if (params.type === 'stripe') {
@@ -2194,6 +2186,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               }
               // GradientGrain type
               if (params.type === 'gradientGrain') {
+                const defaultCurvePoints: number[] = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
+                const curvePoints: number[] = 'curvePoints' in params && Array.isArray(params.curvePoints) ? params.curvePoints : defaultCurvePoints
                 return createGradientGrainSpec({
                   depthMapType: params.depthMapType,
                   angle: params.angle,
@@ -2210,7 +2204,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   colorB: color2,
                   seed: params.seed,
                   sparsity: params.sparsity,
-                  curvePoints: params.curvePoints,
+                  curvePoints,
                 }, viewport)
               }
               return null
@@ -2519,36 +2513,27 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         angle: params.angle,
       })
     }
+    if (params.type === 'gradientGrain') {
+      const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
+      return createGradientGrainSpec({
+        depthMapType: params.depthMapType,
+        angle: params.angle,
+        centerX: params.centerX,
+        centerY: params.centerY,
+        radialStartAngle: params.radialStartAngle,
+        radialSweepAngle: params.radialSweepAngle,
+        perlinScale: params.perlinScale,
+        perlinOctaves: params.perlinOctaves,
+        perlinContrast: params.perlinContrast,
+        perlinOffset: params.perlinOffset,
+        colorA: color1,
+        colorB: color2,
+        seed: params.seed,
+        sparsity: params.sparsity,
+        curvePoints: defaultCurvePoints,
+      }, _viewport)
+    }
     return null
-  }
-
-  /**
-   * Create a GradientGrain spec for thumbnail rendering
-   */
-  const createGradientGrainThumbnailSpec = (
-    params: CustomSurfaceParams & { type: 'gradientGrain' },
-    color1: RGBA,
-    color2: RGBA,
-    viewport: Viewport
-  ): TextureRenderSpec => {
-    return createGradientGrainSpec({
-      depthMapType: params.depthMapType,
-      angle: params.angle,
-      centerX: params.centerX,
-      centerY: params.centerY,
-      radialStartAngle: params.radialStartAngle,
-      radialSweepAngle: params.radialSweepAngle,
-      perlinScale: params.perlinScale,
-      perlinOctaves: params.perlinOctaves,
-      perlinSeed: params.seed,
-      perlinContrast: params.perlinContrast,
-      perlinOffset: params.perlinOffset,
-      colorA: color1,
-      colorB: color2,
-      seed: params.seed,
-      sparsity: params.sparsity,
-      curvePoints: params.curvePoints,
-    }, viewport)
   }
 
   const getPatterns = (section: SectionType): (TexturePattern | MaskPattern)[] => {
@@ -2568,48 +2553,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const section = activeSection.value
     if (!section) return
 
-    // Handle clip-group-surface section separately
+    // Handle clip-group-surface section (uses midgroundTexturePatterns which includes gradientGrain)
     if (section === 'clip-group-surface') {
-      const gradientGrainIndex = midgroundTexturePatterns.length
       for (let i = 0; i < thumbnailRenderers.length; i++) {
         const renderer = thumbnailRenderers[i]
         if (!renderer) continue
 
         const viewport = renderer.getViewport()
-
-        // Handle GradientGrain thumbnail (last index after patterns)
-        if (i === gradientGrainIndex) {
-          // Use current customSurfaceParams if it's gradientGrain, otherwise use defaults
-          const params = customSurfaceParams.value?.type === 'gradientGrain'
-            ? customSurfaceParams.value
-            : {
-                type: 'gradientGrain' as const,
-                depthMapType: 'linear' as const,
-                angle: 90,
-                centerX: 0.5,
-                centerY: 0.5,
-                radialStartAngle: 0,
-                radialSweepAngle: 360,
-                perlinScale: 4,
-                perlinOctaves: 4,
-                perlinContrast: 1,
-                perlinOffset: 0,
-                colorA: midgroundTextureColor1.value,
-                colorB: midgroundTextureColor2.value,
-                seed: 12345,
-                sparsity: 0.75,
-                curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1] as number[],
-              }
-          const spec = createGradientGrainThumbnailSpec(
-            params,
-            midgroundTextureColor1.value,
-            midgroundTextureColor2.value,
-            viewport
-          )
-          renderer.render(spec)
-          continue
-        }
-
         const pattern = midgroundTexturePatterns[i]
         if (pattern) {
           const spec = createMidgroundThumbnailSpec(

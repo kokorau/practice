@@ -1,10 +1,11 @@
-import type { SurfacePreset, TexturePattern, RGBA } from '../Domain'
+import type { SurfacePreset, TexturePattern, RGBA, Viewport } from '../Domain'
 import {
   createSolidSpec,
   createStripeSpec,
   createGridSpec,
   createPolkaDotSpec,
   createCheckerSpec,
+  createGradientGrainSpec,
 } from '../shaders'
 
 /**
@@ -66,6 +67,30 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             color2: c2,
           }),
       }
+    case 'gradientGrain': {
+      const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
+          createGradientGrainSpec({
+            depthMapType: params.depthMapType,
+            angle: params.angle,
+            centerX: params.centerX,
+            centerY: params.centerY,
+            radialStartAngle: params.radialStartAngle,
+            radialSweepAngle: params.radialSweepAngle,
+            perlinScale: params.perlinScale,
+            perlinOctaves: params.perlinOctaves,
+            perlinContrast: params.perlinContrast,
+            perlinOffset: params.perlinOffset,
+            colorA: c1,
+            colorB: c2,
+            seed: params.seed,
+            sparsity: params.sparsity,
+            curvePoints: defaultCurvePoints,
+          }, viewport ?? { width: 1920, height: 1080 }),
+      }
+    }
   }
 }
 

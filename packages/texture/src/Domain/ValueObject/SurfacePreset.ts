@@ -2,7 +2,12 @@
  * Surface Preset Type
  * Defines the available surface pattern types
  */
-export type SurfacePresetType = 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker'
+export type SurfacePresetType = 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain'
+
+/**
+ * Depth Map Type for Gradient Grain
+ */
+export type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin'
 
 /**
  * Solid surface params (no additional params needed)
@@ -50,6 +55,25 @@ export interface CheckerPresetParams {
 }
 
 /**
+ * Gradient Grain surface params
+ */
+export interface GradientGrainPresetParams {
+  type: 'gradientGrain'
+  depthMapType: DepthMapType
+  angle: number
+  centerX: number
+  centerY: number
+  radialStartAngle: number
+  radialSweepAngle: number
+  perlinScale: number
+  perlinOctaves: number
+  perlinContrast: number
+  perlinOffset: number
+  seed: number
+  sparsity: number
+}
+
+/**
  * Union of all surface preset params
  */
 export type SurfacePresetParams =
@@ -58,6 +82,7 @@ export type SurfacePresetParams =
   | GridPresetParams
   | PolkaDotPresetParams
   | CheckerPresetParams
+  | GradientGrainPresetParams
 
 /**
  * Surface Preset
