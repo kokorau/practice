@@ -47,8 +47,8 @@ const props = defineProps<{
   previewMode?: 'pattern' | 'hero'
   baseConfig?: HeroViewConfig
   palette?: PrimitivePalette
-  // Target layer type for preview ('base' for Background, 'group' for Main Group)
-  targetLayerType?: 'base' | 'group'
+  // Target layer type for preview ('base' for Background, 'surface' for Main Group)
+  targetLayerType?: 'base' | 'surface'
 }>()
 
 const handleFileChange = (e: Event) => {
@@ -80,24 +80,7 @@ const createSurfacePreviewConfig = (base: HeroViewConfig, surface: SurfaceConfig
     ...base,
     layers: base.layers
       .filter(layer => layer.type === targetType)
-      .map(layer => {
-        if (layer.type === 'base') {
-          return { ...layer, surface } as typeof layer
-        }
-        // For group layer, update the surface of child surface layers
-        if (layer.type === 'group' && 'children' in layer && layer.children) {
-          return {
-            ...layer,
-            children: layer.children.map(child => {
-              if (child.type === 'surface') {
-                return { ...child, surface }
-              }
-              return child
-            }),
-          } as typeof layer
-        }
-        return layer
-      }),
+      .map(layer => ({ ...layer, surface }) as typeof layer),
   }
 }
 
