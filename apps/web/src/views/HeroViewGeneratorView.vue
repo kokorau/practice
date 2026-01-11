@@ -46,6 +46,7 @@ import {
   ChromaticAberrationEffectSchema,
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
+  createForegroundElementUsecase,
 } from '../modules/HeroScene'
 import {
   useSiteColors,
@@ -404,65 +405,37 @@ const closeSection = () => {
   activeSection.value = null
 }
 
-// Selected foreground element ID
+// ============================================================
+// Foreground Element Usecase
+// ============================================================
 const selectedForegroundElementId = ref<string | null>(null)
 
-// Get selected foreground element
-const selectedForegroundElement = computed(() => {
-  if (!selectedForegroundElementId.value) return null
-  return foregroundConfig.value.elements.find(el => el.id === selectedForegroundElementId.value) ?? null
+const foregroundUsecase = createForegroundElementUsecase({
+  foregroundConfig: {
+    get: () => foregroundConfig.value,
+    set: (config) => { foregroundConfig.value = config },
+  },
+  selection: {
+    getSelectedId: () => selectedForegroundElementId.value,
+    setSelectedId: (id) => { selectedForegroundElementId.value = id },
+    clearCanvasSelection: () => clearSelection(),
+  },
 })
 
+// Get selected foreground element (computed wrapper for reactivity)
+const selectedForegroundElement = computed(() => foregroundUsecase.getSelectedElement())
+
+// Handler functions delegating to usecase
 const handleSelectForegroundElement = (elementId: string) => {
-  selectedForegroundElementId.value = elementId
-  clearSelection() // Clear canvas layer selection
+  foregroundUsecase.selectElement(elementId)
 }
 
 const handleAddForegroundElement = (type: 'title' | 'description') => {
-  // Generate unique ID
-  const id = `${type}-${Date.now()}`
-  const newElement = {
-    id,
-    type,
-    visible: true,
-    position: 'middle-center' as const,
-    content: type === 'title' ? 'New Title' : 'New description text',
-    fontSize: type === 'title' ? 3 : 1,
-  }
-  foregroundConfig.value = {
-    ...foregroundConfig.value,
-    elements: [...foregroundConfig.value.elements, newElement],
-  }
-  // Select the newly added element
-  selectedForegroundElementId.value = id
-  clearSelection()
+  foregroundUsecase.addElement(type)
 }
 
 const handleRemoveForegroundElement = (elementId: string) => {
-  foregroundConfig.value = {
-    ...foregroundConfig.value,
-    elements: foregroundConfig.value.elements.filter(el => el.id !== elementId),
-  }
-  // Clear selection if the removed element was selected
-  if (selectedForegroundElementId.value === elementId) {
-    selectedForegroundElementId.value = null
-  }
-}
-
-// Helper to update a foreground element by ID
-const updateForegroundElement = (elementId: string, updates: Partial<{
-  position: GridPosition
-  content: string
-  fontId: string
-  fontSize: number
-  colorKey: HeroPrimitiveKey | 'auto'
-}>) => {
-  foregroundConfig.value = {
-    ...foregroundConfig.value,
-    elements: foregroundConfig.value.elements.map(el =>
-      el.id === elementId ? { ...el, ...updates } : el
-    ),
-  }
+  foregroundUsecase.removeElement(elementId)
 }
 
 // ============================================================
@@ -472,45 +445,35 @@ const updateForegroundElement = (elementId: string, updates: Partial<{
 const selectedElementPosition = computed({
   get: () => selectedForegroundElement.value?.position ?? 'middle-center',
   set: (pos: GridPosition) => {
-    if (selectedForegroundElementId.value) {
-      updateForegroundElement(selectedForegroundElementId.value, { position: pos })
-    }
+    foregroundUsecase.updateSelectedElement({ position: pos })
   },
 })
 
 const selectedElementFont = computed({
   get: () => selectedForegroundElement.value?.fontId,
   set: (fontId: string | undefined) => {
-    if (selectedForegroundElementId.value) {
-      updateForegroundElement(selectedForegroundElementId.value, { fontId })
-    }
+    foregroundUsecase.updateSelectedElement({ fontId })
   },
 })
 
 const selectedElementFontSize = computed({
   get: () => selectedForegroundElement.value?.fontSize ?? (selectedForegroundElement.value?.type === 'title' ? 3 : 1),
   set: (fontSize: number) => {
-    if (selectedForegroundElementId.value) {
-      updateForegroundElement(selectedForegroundElementId.value, { fontSize })
-    }
+    foregroundUsecase.updateSelectedElement({ fontSize })
   },
 })
 
 const selectedElementContent = computed({
   get: () => selectedForegroundElement.value?.content ?? '',
   set: (content: string) => {
-    if (selectedForegroundElementId.value) {
-      updateForegroundElement(selectedForegroundElementId.value, { content })
-    }
+    foregroundUsecase.updateSelectedElement({ content })
   },
 })
 
 const selectedElementColorKey = computed({
   get: (): HeroPrimitiveKey | 'auto' => (selectedForegroundElement.value?.colorKey ?? 'auto') as HeroPrimitiveKey | 'auto',
   set: (colorKey: HeroPrimitiveKey | 'auto') => {
-    if (selectedForegroundElementId.value) {
-      updateForegroundElement(selectedForegroundElementId.value, { colorKey })
-    }
+    foregroundUsecase.updateSelectedElement({ colorKey })
   },
 })
 
