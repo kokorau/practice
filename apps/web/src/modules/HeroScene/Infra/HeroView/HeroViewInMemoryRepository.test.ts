@@ -100,4 +100,173 @@ describe('HeroViewInMemoryRepository', () => {
       expect(subscriber2).toHaveBeenCalledTimes(2)
     })
   })
+
+  describe('updateColors', () => {
+    it('should partially update colors and notify subscribers', () => {
+      const repository = createHeroViewInMemoryRepository()
+      const subscriber = vi.fn()
+      repository.subscribe(subscriber)
+
+      repository.updateColors({ semanticContext: 'sectionTint' })
+
+      expect(subscriber).toHaveBeenCalledTimes(2)
+      expect(repository.get().colors.semanticContext).toBe('sectionTint')
+      // Other color properties should remain unchanged
+      expect(repository.get().colors.background.primary).toBe('B')
+    })
+  })
+
+  describe('updateViewport', () => {
+    it('should partially update viewport and notify subscribers', () => {
+      const repository = createHeroViewInMemoryRepository()
+      const subscriber = vi.fn()
+      repository.subscribe(subscriber)
+
+      repository.updateViewport({ width: 1920 })
+
+      expect(subscriber).toHaveBeenCalledTimes(2)
+      expect(repository.get().viewport.width).toBe(1920)
+      expect(repository.get().viewport.height).toBe(720) // unchanged
+    })
+  })
+
+  describe('updateForeground', () => {
+    it('should partially update foreground and notify subscribers', () => {
+      const repository = createHeroViewInMemoryRepository()
+      const subscriber = vi.fn()
+      repository.subscribe(subscriber)
+
+      repository.updateForeground({ elements: [] })
+
+      expect(subscriber).toHaveBeenCalledTimes(2)
+      expect(repository.get().foreground.elements).toEqual([])
+    })
+  })
+
+  describe('updateLayer', () => {
+    it('should update specific layer by id', () => {
+      const repository = createHeroViewInMemoryRepository()
+      const subscriber = vi.fn()
+      repository.subscribe(subscriber)
+
+      repository.updateLayer('base', { name: 'Updated Background' })
+
+      expect(subscriber).toHaveBeenCalledTimes(2)
+      const layer = repository.get().layers.find((l) => l.id === 'base')
+      expect(layer?.name).toBe('Updated Background')
+    })
+
+    it('should not modify other layers', () => {
+      const config = createDefaultHeroViewConfig()
+      config.layers.push({
+        type: 'surface',
+        id: 'surface-1',
+        name: 'Surface 1',
+        visible: true,
+        surface: { type: 'solid' },
+        processors: [],
+      })
+      const repository = createHeroViewInMemoryRepository(config)
+
+      repository.updateLayer('base', { name: 'Updated' })
+
+      const surfaceLayer = repository.get().layers.find((l) => l.id === 'surface-1')
+      expect(surfaceLayer?.name).toBe('Surface 1')
+    })
+  })
+
+  describe('addLayer', () => {
+    it('should add layer to the end by default', () => {
+      const repository = createHeroViewInMemoryRepository()
+      const newLayer = {
+        type: 'surface' as const,
+        id: 'surface-1',
+        name: 'New Surface',
+        visible: true,
+        surface: { type: 'solid' as const },
+        processors: [],
+      }
+
+      repository.addLayer(newLayer)
+
+      const layers = repository.get().layers
+      expect(layers.length).toBe(2)
+      expect(layers[1]!.id).toBe('surface-1')
+    })
+
+    it('should add layer at specified index', () => {
+      const repository = createHeroViewInMemoryRepository()
+      const newLayer = {
+        type: 'surface' as const,
+        id: 'surface-1',
+        name: 'New Surface',
+        visible: true,
+        surface: { type: 'solid' as const },
+        processors: [],
+      }
+
+      repository.addLayer(newLayer, 0)
+
+      const layers = repository.get().layers
+      expect(layers.length).toBe(2)
+      expect(layers[0]!.id).toBe('surface-1')
+      expect(layers[1]!.id).toBe('base')
+    })
+  })
+
+  describe('removeLayer', () => {
+    it('should remove layer by id', () => {
+      const config = createDefaultHeroViewConfig()
+      config.layers.push({
+        type: 'surface',
+        id: 'surface-1',
+        name: 'Surface 1',
+        visible: true,
+        surface: { type: 'solid' },
+        processors: [],
+      })
+      const repository = createHeroViewInMemoryRepository(config)
+
+      repository.removeLayer('surface-1')
+
+      const layers = repository.get().layers
+      expect(layers.length).toBe(1)
+      expect(layers.find((l) => l.id === 'surface-1')).toBeUndefined()
+    })
+  })
+
+  describe('reorderLayers', () => {
+    it('should reorder layers according to provided ids', () => {
+      const config = createDefaultHeroViewConfig()
+      config.layers = [
+        { type: 'base', id: 'layer-1', name: 'Layer 1', visible: true, surface: { type: 'solid' }, processors: [] },
+        { type: 'surface', id: 'layer-2', name: 'Layer 2', visible: true, surface: { type: 'solid' }, processors: [] },
+        { type: 'surface', id: 'layer-3', name: 'Layer 3', visible: true, surface: { type: 'solid' }, processors: [] },
+      ]
+      const repository = createHeroViewInMemoryRepository(config)
+
+      repository.reorderLayers(['layer-3', 'layer-1', 'layer-2'])
+
+      const layers = repository.get().layers
+      expect(layers[0]!.id).toBe('layer-3')
+      expect(layers[1]!.id).toBe('layer-1')
+      expect(layers[2]!.id).toBe('layer-2')
+    })
+
+    it('should only include layers that exist', () => {
+      const config = createDefaultHeroViewConfig()
+      config.layers = [
+        { type: 'base', id: 'layer-1', name: 'Layer 1', visible: true, surface: { type: 'solid' }, processors: [] },
+        { type: 'surface', id: 'layer-2', name: 'Layer 2', visible: true, surface: { type: 'solid' }, processors: [] },
+      ]
+      const repository = createHeroViewInMemoryRepository(config)
+
+      repository.reorderLayers(['layer-2', 'non-existent', 'layer-1'])
+
+      const layers = repository.get().layers
+      expect(layers.length).toBe(2)
+      expect(layers[0]!.id).toBe('layer-2')
+      expect(layers[1]!.id).toBe('layer-1')
+    })
+  })
 })
