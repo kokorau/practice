@@ -63,13 +63,12 @@ import {
   type PerlinMaskShapeConfig,
   type Viewport,
   type TextureRenderSpec,
+  type SurfacePreset,
   type SurfacePresetParams,
-  type SolidPresetParams,
   type StripePresetParams,
   type GridPresetParams,
   type PolkaDotPresetParams,
   type CheckerPresetParams,
-  type GradientGrainPresetParams,
   type CircleMaskShapeParams,
   type RectMaskShapeParams,
   type BlobMaskShapeParams,
@@ -179,14 +178,25 @@ import {
 // ============================================================
 
 /**
- * Midground texture preset - same as SurfacePresetParams
- * Now includes solid for consistency with background
+ * Type alias for MidgroundSurfacePreset (now uses SurfacePreset from @practice/texture)
+ * @deprecated Use SurfacePreset directly
  */
-export type MidgroundPresetParams = SolidPresetParams | StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams | GradientGrainPresetParams
+export type MidgroundSurfacePreset = SurfacePreset
 
-export interface MidgroundSurfacePreset {
-  label: string
-  params: MidgroundPresetParams
+/**
+ * Pattern-based surface preset params (excludes solid and gradientGrain)
+ * Used for type-safe narrowing in buildSurfaceParams
+ */
+export type PatternPresetParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
+
+/**
+ * Type guard to check if preset params is a pattern type (not solid or gradientGrain)
+ * Enables TypeScript to narrow the type after the check
+ */
+export const isPatternPresetParams = (
+  params: SurfacePresetParams
+): params is PatternPresetParams => {
+  return params.type !== 'solid' && params.type !== 'gradientGrain'
 }
 
 export type SectionType = 'background' | 'clip-group-surface' | 'clip-group-shape' | 'foreground-title' | 'foreground-description' | 'filter' | 'effect' | 'text-content'
@@ -285,10 +295,11 @@ const CONTEXT_SURFACE_KEYS: Record<'light' | 'dark', Record<ContextName, Primiti
 }
 
 /**
- * Get all SurfacePresets as MidgroundSurfacePreset (now includes solid)
+ * Get all SurfacePresets (now includes solid)
+ * @deprecated Use getSurfacePresets() directly
  */
-const getMidgroundPresets = (): MidgroundSurfacePreset[] => {
-  return getSurfacePresets() as MidgroundSurfacePreset[]
+const getMidgroundPresets = (): SurfacePreset[] => {
+  return getSurfacePresets()
 }
 
 // ============================================================
@@ -1549,11 +1560,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     type SurfaceParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams | { type: 'gradientGrain' } | null
     const buildSurfaceParams = (): SurfaceParams => {
       if (!customSurfParams) {
-        // Fall back to preset - check for solid type
-        if (preset.params.type === 'solid') {
-          return null
+        // Fall back to preset - use type guard for safe narrowing
+        if (isPatternPresetParams(preset.params)) {
+          return preset.params
         }
-        return preset.params as StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
+        if (preset.params.type === 'gradientGrain') {
+          return { type: 'gradientGrain' }
+        }
+        return null
       }
       switch (customSurfParams.type) {
         case 'solid':
@@ -1577,9 +1591,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Build gradientGrain texture config from custom params
     const buildGradientGrainConfig = (): GradientGrainTextureConfig | null => {
-      if (!customSurfParams || customSurfParams.type !== 'gradientGrain') return null
+      if (!customSurfParams) return null
+      if (customSurfParams.type !== 'gradientGrain') return null
+      // After the type check, TypeScript narrows customSurfParams to gradientGrain type
       return {
-        depthMapType: customSurfParams.depthMapType as DepthMapType,
+        depthMapType: customSurfParams.depthMapType,
         angle: customSurfParams.angle,
         centerX: customSurfParams.centerX,
         centerY: customSurfParams.centerY,
@@ -1609,8 +1625,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const createSpecForMaskAndSurface = (): TextureRenderSpec | null => {
       switch (maskConfig.type) {
         case 'circle': {
-          const circleMask: CircleMaskShapeConfig = maskConfig
-          const maskSpec = { type: 'circle' as const, centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout }
+          // TypeScript narrows maskConfig to CircleMaskShapeConfig in this case block
+          const maskSpec = { type: 'circle' as const, centerX: maskConfig.centerX, centerY: maskConfig.centerY, radius: maskConfig.radius, cutout: maskConfig.cutout }
           switch (params.type) {
             case 'stripe':
               return createCircleStripeSpec(color1, color2, maskSpec, params, viewport)
@@ -1631,8 +1647,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           }
         }
         case 'rect': {
-          const rectMask: RectMaskShapeConfig = maskConfig
-          const maskSpec = { type: 'rect' as const, left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout }
+          // TypeScript narrows maskConfig to RectMaskShapeConfig in this case block
+          const maskSpec = { type: 'rect' as const, left: maskConfig.left, right: maskConfig.right, top: maskConfig.top, bottom: maskConfig.bottom, radiusTopLeft: maskConfig.radiusTopLeft, radiusTopRight: maskConfig.radiusTopRight, radiusBottomLeft: maskConfig.radiusBottomLeft, radiusBottomRight: maskConfig.radiusBottomRight, cutout: maskConfig.cutout }
           switch (params.type) {
             case 'stripe':
               return createRectStripeSpec(color1, color2, maskSpec, params, viewport)
@@ -1653,8 +1669,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           }
         }
         case 'blob': {
-          const blobMask: BlobMaskShapeConfig = maskConfig
-          const maskSpec = { type: 'blob' as const, centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout }
+          // TypeScript narrows maskConfig to BlobMaskShapeConfig in this case block
+          const maskSpec = { type: 'blob' as const, centerX: maskConfig.centerX, centerY: maskConfig.centerY, baseRadius: maskConfig.baseRadius, amplitude: maskConfig.amplitude, octaves: maskConfig.octaves, seed: maskConfig.seed, cutout: maskConfig.cutout }
           switch (params.type) {
             case 'stripe':
               return createBlobStripeSpec(color1, color2, maskSpec, params, viewport)
@@ -1675,8 +1691,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           }
         }
         case 'perlin': {
-          const perlinMask: PerlinMaskShapeConfig = maskConfig
-          const maskSpec = { type: 'perlin' as const, seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout }
+          // TypeScript narrows maskConfig to PerlinMaskShapeConfig in this case block
+          const maskSpec = { type: 'perlin' as const, seed: maskConfig.seed, threshold: maskConfig.threshold, scale: maskConfig.scale, octaves: maskConfig.octaves, cutout: maskConfig.cutout }
           switch (params.type) {
             case 'stripe':
               return createPerlinStripeSpec(color1, color2, maskSpec, params, viewport)
