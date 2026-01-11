@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createHeroViewInMemoryRepository } from './HeroViewInMemoryRepository'
-import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
+import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
 
 describe('HeroViewInMemoryRepository', () => {
   describe('createHeroViewInMemoryRepository', () => {

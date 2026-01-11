@@ -10,11 +10,11 @@ import type {
   HeroViewRepository,
   HeroViewSubscriber,
   HeroViewUnsubscribe,
-} from './HeroViewRepository'
+} from '../../Domain/repository/HeroViewRepository'
 import {
   type HeroViewConfig,
   createDefaultHeroViewConfig,
-} from '../Domain/HeroViewConfig'
+} from '../../Domain/HeroViewConfig'
 
 // ============================================================
 // Repository Implementation

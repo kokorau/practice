@@ -748,3 +748,13 @@ export {
   type MaskPatternConfig,
 } from './ReverseLookup'
 
+// ============================================================
+// Repository Interfaces
+// ============================================================
+
+export type {
+  HeroViewRepository,
+  HeroViewSubscriber,
+  HeroViewUnsubscribe,
+} from './repository'
+

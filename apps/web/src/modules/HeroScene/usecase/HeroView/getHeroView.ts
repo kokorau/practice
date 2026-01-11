@@ -4,9 +4,9 @@
  * 現在のHeroViewConfigを取得する
  */
 
-import type { HeroViewConfig } from '../Domain/HeroViewConfig'
-import type { HeroViewRepository } from './HeroViewRepository'
-import { createHeroViewInMemoryRepository } from './HeroViewInMemoryRepository'
+import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
+import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
 
 /**
  * HeroViewConfigを取得する
