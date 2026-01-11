@@ -1,4 +1,4 @@
-import { fullscreenVertex } from './common'
+import { fullscreenVertex, moduloUtils } from './common'
 import type { Viewport } from '../Domain'
 
 /**
@@ -35,6 +35,8 @@ struct Uniforms {
 
 ${fullscreenVertex}
 
+${moduloUtils}
+
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let texSize = vec2f(u.viewportWidth, u.viewportHeight);
@@ -61,8 +63,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let centered = pos.xy - center;
   let rotatedY = centered.x * sinA + centered.y * cosA;
 
-  // 線のパターン内での位置を計算（負の値でも正しく動作するモジュロ）
-  let linePos = ((rotatedY % u.spacing) + u.spacing) % u.spacing;
+  // 線のパターン内での位置を計算（共通ユーティリティ使用）
+  let linePos = safeModulo(rotatedY, u.spacing);
 
   // 線の中心からの距離
   let centerDist = abs(linePos - u.spacing * 0.5);

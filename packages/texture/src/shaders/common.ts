@@ -25,6 +25,19 @@ fn aaMix(color1: vec4f, color2: vec4f, edge: f32, x: f32) -> vec4f {
 }
 `
 
+/** 負のモジュロ対応ユーティリティ関数 */
+export const moduloUtils = /* wgsl */ `
+// 負の値でも正しく動作するモジュロ（スカラー版）
+fn safeModulo(x: f32, period: f32) -> f32 {
+  return ((x % period) + period) % period;
+}
+
+// 負の値でも正しく動作するモジュロ（ベクトル版）
+fn safeModulo2(v: vec2f, period: f32) -> vec2f {
+  return ((v % period) + period) % period;
+}
+`
+
 /** マスク用ブレンドステート（アルファブレンド） */
 export const maskBlendState: GPUBlendState = {
   color: {

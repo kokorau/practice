@@ -1,4 +1,4 @@
-import { fullscreenVertex, aaUtils } from './common'
+import { fullscreenVertex, aaUtils, moduloUtils } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 /**
@@ -36,6 +36,8 @@ ${fullscreenVertex}
 
 ${aaUtils}
 
+${moduloUtils}
+
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let cosA = cos(params.angle);
@@ -43,8 +45,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let rotatedX = pos.x * cosA + pos.y * sinA;
 
   let period = params.width1 + params.width2;
-  let t = rotatedX % period;
-  let normalizedT = select(t, t + period, t < 0.0);
+  let normalizedT = safeModulo(rotatedX, period);
 
   // 両方のエッジでアンチエイリアス
   let edge1 = aaStep(params.width1, normalizedT);

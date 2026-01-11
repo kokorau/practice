@@ -87,12 +87,9 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let center = vec2f(params.centerX, params.centerY);
   var delta = uv - center;
 
-  // アスペクト比補正（横長の場合はXを縮める）
-  if (aspectRatio > 1.0) {
-    delta.x *= aspectRatio;
-  } else {
-    delta.y /= aspectRatio;
-  }
+  // アスペクト比補正（分岐なしで統一的に処理）
+  delta.x *= max(aspectRatio, 1.0);
+  delta.y *= max(1.0 / aspectRatio, 1.0);
 
   let dist = length(delta);
 
@@ -133,22 +130,15 @@ struct RectMaskParams {
 // Signed distance function for rounded rectangle with per-corner radii
 // radii: vec4f(topLeft, topRight, bottomRight, bottomLeft)
 fn sdRoundedRectVar(p: vec2f, halfSize: vec2f, radii: vec4f) -> f32 {
-  // 象限に応じて適切なradiusを選択
-  // p.x < 0 なら左側、p.y < 0 なら上側
-  var r: f32;
-  if (p.x < 0.0) {
-    if (p.y < 0.0) {
-      r = radii.x; // top-left
-    } else {
-      r = radii.w; // bottom-left
-    }
-  } else {
-    if (p.y < 0.0) {
-      r = radii.y; // top-right
-    } else {
-      r = radii.z; // bottom-right
-    }
-  }
+  // 象限に応じて適切なradiusを選択（step関数で分岐を排除）
+  // p.x >= 0 なら右側、p.y >= 0 なら下側
+  let sx = step(0.0, p.x);
+  let sy = step(0.0, p.y);
+  let r = mix(
+    mix(radii.x, radii.y, sx),  // 上側: top-left / top-right
+    mix(radii.w, radii.z, sx),  // 下側: bottom-left / bottom-right
+    sy
+  );
 
   let q = abs(p) - halfSize + r;
   return length(max(q, vec2f(0.0))) + min(max(q.x, q.y), 0.0) - r;
@@ -171,16 +161,14 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   var correctedHalfSize = halfSize;
   var radii = vec4f(params.radiusTopLeft, params.radiusTopRight, params.radiusBottomRight, params.radiusBottomLeft);
 
-  // アスペクト比補正（正方形空間に変換して計算）
-  if (aspectRatio > 1.0) {
-    p.x *= aspectRatio;
-    correctedHalfSize.x *= aspectRatio;
-    radii *= aspectRatio;
-  } else {
-    p.y /= aspectRatio;
-    correctedHalfSize.y /= aspectRatio;
-    radii /= aspectRatio;
-  }
+  // アスペクト比補正（分岐なしで統一的に処理）
+  let scaleX = max(aspectRatio, 1.0);
+  let scaleY = max(1.0 / aspectRatio, 1.0);
+  p.x *= scaleX;
+  p.y *= scaleY;
+  correctedHalfSize.x *= scaleX;
+  correctedHalfSize.y *= scaleY;
+  radii *= max(aspectRatio, 1.0 / aspectRatio);
 
   // 各radiusを矩形の短辺の半分までにクランプ
   let maxRadius = min(correctedHalfSize.x, correctedHalfSize.y);

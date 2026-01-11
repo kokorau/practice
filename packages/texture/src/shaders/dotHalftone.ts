@@ -1,4 +1,4 @@
-import { fullscreenVertex } from './common'
+import { fullscreenVertex, moduloUtils } from './common'
 import type { Viewport } from '../Domain'
 
 /**
@@ -35,6 +35,8 @@ struct Uniforms {
 
 ${fullscreenVertex}
 
+${moduloUtils}
+
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let texSize = vec2f(u.viewportWidth, u.viewportHeight);
@@ -64,8 +66,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     centered.x * sinA + centered.y * cosA
   );
 
-  // グリッド内の位置を計算（負の値でも正しく動作するモジュロ）
-  let cellPos = ((rotatedPos % u.spacing) + u.spacing) % u.spacing;
+  // グリッド内の位置を計算（共通ユーティリティ使用）
+  let cellPos = safeModulo2(rotatedPos, u.spacing);
   let cellCenter = u.spacing * 0.5;
 
   // セルの中心からの距離
