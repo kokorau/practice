@@ -665,13 +665,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const surfacePresets = getSurfacePresets()
 
+  /**
+   * Initialize background surface params from preset
+   * Uses unidirectional flow: Usecase -> Repository -> View (via subscribe)
+   * Note: gradientGrain is not supported by Repository, so it's handled directly in View layer
+   */
   const initBackgroundSurfaceParamsFromPreset = () => {
     const idx = selectedBackgroundIndex.value
     const preset = surfacePresets[idx]
     if (preset) {
       const params = extractBackgroundSurfaceParams(preset.params, textureColor1.value, textureColor2.value)
-      customBackgroundSurfaceParams.value = params
-      // Usecaseを通じてRepositoryを更新 (gradientGrain is not supported by BackgroundSurfaceUsecase yet)
+      // Usecaseを通じてRepositoryを更新（View層はsubscribeで自動同期）
       if (params.type === 'solid') {
         backgroundSurfaceUsecase.selectSurface({ type: 'solid' })
       } else if (params.type === 'stripe') {
@@ -682,6 +686,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         backgroundSurfaceUsecase.selectSurface({ type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
       } else if (params.type === 'checker') {
         backgroundSurfaceUsecase.selectSurface({ type: 'checker', cellSize: params.cellSize, angle: params.angle })
+      } else if (params.type === 'gradientGrain') {
+        // gradientGrain is not supported by Repository, handle directly in View layer
+        customBackgroundSurfaceParams.value = params
       }
     } else {
       customBackgroundSurfaceParams.value = null
@@ -706,16 +713,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Update custom background surface params
+   * Uses unidirectional flow: Usecase -> Repository -> View (via subscribe)
    */
   const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => {
     if (!customBackgroundSurfaceParams.value) return
     const type = customBackgroundSurfaceParams.value.type
     if (type === 'gradientGrain') return
 
-    // View層のステート更新
-    customBackgroundSurfaceParams.value = { ...customBackgroundSurfaceParams.value, ...updates } as CustomBackgroundSurfaceParams
-
-    // Usecaseを通じてRepositoryを更新
+    // Usecaseを通じてRepositoryを更新（View層はsubscribeで自動同期）
     backgroundSurfaceUsecase.updateSurfaceParams({ type, ...updates } as SurfaceParamsUpdate)
   }
 
@@ -3081,18 +3086,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Background surface (from base layer)
     if (baseLayer) {
       const bgSurface = baseLayer.surface
-      if (bgSurface.type === 'solid') {
-        customBackgroundSurfaceParams.value = { type: 'solid' }
-      } else if (bgSurface.type === 'stripe') {
-        customBackgroundSurfaceParams.value = { type: 'stripe', width1: bgSurface.width1, width2: bgSurface.width2, angle: bgSurface.angle }
-      } else if (bgSurface.type === 'grid') {
-        customBackgroundSurfaceParams.value = { type: 'grid', lineWidth: bgSurface.lineWidth, cellSize: bgSurface.cellSize }
-      } else if (bgSurface.type === 'polkaDot') {
-        customBackgroundSurfaceParams.value = { type: 'polkaDot', dotRadius: bgSurface.dotRadius, spacing: bgSurface.spacing, rowOffset: bgSurface.rowOffset }
-      } else if (bgSurface.type === 'checker') {
-        customBackgroundSurfaceParams.value = { type: 'checker', cellSize: bgSurface.cellSize, angle: bgSurface.angle }
-      } else if (bgSurface.type === 'image') {
-        // Restore background image from imageId (URL)
+
+      // Sync customBackgroundSurfaceParams from config (reuse shared function)
+      syncBackgroundSurfaceParamsFromRepository(config)
+
+      // Handle image type separately (requires async restore)
+      if (bgSurface.type === 'image') {
         await restoreBackgroundImage(bgSurface.imageId)
       }
 
@@ -3299,6 +3298,37 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Track repository subscription for cleanup
   let repositoryUnsubscribe: (() => void) | null = null
+  let heroViewRepositoryUnsubscribe: (() => void) | null = null
+
+  /**
+   * Sync customBackgroundSurfaceParams from Repository's base layer surface
+   * This enables unidirectional data flow: Usecase -> Repository -> View
+   */
+  const syncBackgroundSurfaceParamsFromRepository = (config: HeroViewConfig): void => {
+    const baseLayer = config.layers.find((layer): layer is BaseLayerNodeConfig => layer.type === 'base')
+    if (!baseLayer) return
+
+    const bgSurface = baseLayer.surface
+    if (bgSurface.type === 'solid') {
+      customBackgroundSurfaceParams.value = { type: 'solid' }
+    } else if (bgSurface.type === 'stripe') {
+      customBackgroundSurfaceParams.value = { type: 'stripe', width1: bgSurface.width1, width2: bgSurface.width2, angle: bgSurface.angle }
+    } else if (bgSurface.type === 'grid') {
+      customBackgroundSurfaceParams.value = { type: 'grid', lineWidth: bgSurface.lineWidth, cellSize: bgSurface.cellSize }
+    } else if (bgSurface.type === 'polkaDot') {
+      customBackgroundSurfaceParams.value = { type: 'polkaDot', dotRadius: bgSurface.dotRadius, spacing: bgSurface.spacing, rowOffset: bgSurface.rowOffset }
+    } else if (bgSurface.type === 'checker') {
+      customBackgroundSurfaceParams.value = { type: 'checker', cellSize: bgSurface.cellSize, angle: bgSurface.angle }
+    }
+    // Note: 'image' type is handled separately via customBackgroundImage
+  }
+
+  // Subscribe to internal heroViewRepository changes for unidirectional flow
+  heroViewRepositoryUnsubscribe = heroViewRepository.subscribe((config: HeroViewConfig) => {
+    // Skip during fromHeroViewConfig to avoid redundant updates
+    if (isLoadingFromConfig) return
+    syncBackgroundSurfaceParamsFromRepository(config)
+  })
 
   // Subscribe to repository changes (if provided)
   if (repository) {
@@ -3310,8 +3340,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     })
   }
 
-  // Cleanup repository subscription on unmount
+  // Cleanup repository subscriptions on unmount
   onUnmounted(() => {
+    if (heroViewRepositoryUnsubscribe) {
+      heroViewRepositoryUnsubscribe()
+      heroViewRepositoryUnsubscribe = null
+    }
     if (repositoryUnsubscribe) {
       repositoryUnsubscribe()
       repositoryUnsubscribe = null
