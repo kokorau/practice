@@ -375,7 +375,7 @@ const handleDrop = (e: DragEvent) => {
     </template>
 
     <!-- Children (Recursive) -->
-    <template v-if="isExpanded && children.length > 0">
+    <template v-if="isExpanded && children.length > 0 && node.visible">
       <DraggableLayerNode
         v-for="child in children"
         :key="child.id"
