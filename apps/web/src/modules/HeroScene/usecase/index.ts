@@ -20,3 +20,10 @@ export {
   moveLayer,
   updateLayer,
 } from './Layer'
+export {
+  applyPreset,
+  exportPreset,
+  createPreset,
+  type PresetExportPort,
+  type ExportPresetOptions,
+} from './Preset'
