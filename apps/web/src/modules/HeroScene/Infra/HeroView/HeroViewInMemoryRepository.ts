@@ -13,6 +13,10 @@ import type {
 } from '../../Domain/repository/HeroViewRepository'
 import {
   type HeroViewConfig,
+  type HeroColorsConfig,
+  type ViewportConfig,
+  type ForegroundLayerConfig,
+  type LayerNodeConfig,
   createDefaultHeroViewConfig,
 } from '../../Domain/HeroViewConfig'
 
@@ -57,6 +61,82 @@ export const createHeroViewInMemoryRepository = (
       return () => {
         subscribers.delete(subscriber)
       }
+    },
+
+    // ============================================================
+    // セクション単位の部分更新
+    // ============================================================
+
+    updateColors(colors: Partial<HeroColorsConfig>): void {
+      currentConfig = {
+        ...currentConfig,
+        colors: { ...currentConfig.colors, ...colors },
+      }
+      notifySubscribers()
+    },
+
+    updateViewport(viewport: Partial<ViewportConfig>): void {
+      currentConfig = {
+        ...currentConfig,
+        viewport: { ...currentConfig.viewport, ...viewport },
+      }
+      notifySubscribers()
+    },
+
+    updateForeground(foreground: Partial<ForegroundLayerConfig>): void {
+      currentConfig = {
+        ...currentConfig,
+        foreground: { ...currentConfig.foreground, ...foreground },
+      }
+      notifySubscribers()
+    },
+
+    // ============================================================
+    // レイヤー操作
+    // ============================================================
+
+    updateLayer(layerId: string, updates: Partial<LayerNodeConfig>): void {
+      currentConfig = {
+        ...currentConfig,
+        layers: currentConfig.layers.map((layer) =>
+          layer.id === layerId ? ({ ...layer, ...updates } as LayerNodeConfig) : layer
+        ),
+      }
+      notifySubscribers()
+    },
+
+    addLayer(layer: LayerNodeConfig, index?: number): void {
+      const newLayers = [...currentConfig.layers]
+      if (index !== undefined && index >= 0 && index <= newLayers.length) {
+        newLayers.splice(index, 0, layer)
+      } else {
+        newLayers.push(layer)
+      }
+      currentConfig = {
+        ...currentConfig,
+        layers: newLayers,
+      }
+      notifySubscribers()
+    },
+
+    removeLayer(layerId: string): void {
+      currentConfig = {
+        ...currentConfig,
+        layers: currentConfig.layers.filter((layer) => layer.id !== layerId),
+      }
+      notifySubscribers()
+    },
+
+    reorderLayers(layerIds: string[]): void {
+      const layerMap = new Map(currentConfig.layers.map((l) => [l.id, l]))
+      const reordered = layerIds
+        .map((id) => layerMap.get(id))
+        .filter((l): l is LayerNodeConfig => l !== undefined)
+      currentConfig = {
+        ...currentConfig,
+        layers: reordered,
+      }
+      notifySubscribers()
     },
   }
 }
