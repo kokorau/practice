@@ -42,6 +42,9 @@ const props = defineProps<{
   // Contrast scores for HTML elements
   titleContrastScore?: number | null
   descriptionContrastScore?: number | null
+  // HTML element visibility
+  titleVisible?: boolean
+  descriptionVisible?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -68,6 +71,7 @@ const emit = defineEmits<{
   (e: 'open-foreground-title'): void
   (e: 'open-foreground-description'): void
   (e: 'add-html-element', type: HtmlElementType): void
+  (e: 'remove-html-element', type: HtmlElementType): void
 }>()
 
 // ============================================================
@@ -267,6 +271,8 @@ const selectedPresetName = computed(() => {
           :layers="layers"
           :title-contrast-score="titleContrastScore"
           :description-contrast-score="descriptionContrastScore"
+          :title-visible="titleVisible"
+          :description-visible="descriptionVisible"
           @select-layer="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
@@ -277,6 +283,7 @@ const selectedPresetName = computed(() => {
           @open-foreground-title="emit('open-foreground-title')"
           @open-foreground-description="emit('open-foreground-description')"
           @add-html-element="(type: HtmlElementType) => emit('add-html-element', type)"
+          @remove-html-element="(type: HtmlElementType) => emit('remove-html-element', type)"
         />
       </div>
     </template>

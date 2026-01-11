@@ -408,14 +408,40 @@ const openForegroundDescription = () => {
 }
 
 const handleAddHtmlElement = (type: 'title' | 'description' | 'button' | 'link') => {
-  // For now, just open the corresponding panel
-  // Future: could add new HTML elements dynamically
+  // Set the element as visible and select it
   if (type === 'title') {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      title: { ...foregroundConfig.value.title, visible: true },
+    }
     selectHtmlLayer('title')
   } else if (type === 'description') {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      description: { ...foregroundConfig.value.description, visible: true },
+    }
     selectHtmlLayer('description')
   }
   // button and link are WIP
+}
+
+const handleRemoveHtmlElement = (type: 'title' | 'description' | 'button' | 'link') => {
+  // Set the element as not visible
+  if (type === 'title') {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      title: { ...foregroundConfig.value.title, visible: false },
+    }
+  } else if (type === 'description') {
+    foregroundConfig.value = {
+      ...foregroundConfig.value,
+      description: { ...foregroundConfig.value.description, visible: false },
+    }
+  }
+  // Clear selection if the removed element was selected
+  if (selectedHtmlLayerId.value === type) {
+    clearSelection()
+  }
 }
 
 // ============================================================
@@ -640,6 +666,7 @@ const {
   selectCanvasLayer,
   selectProcessor,
   selectHtmlLayer,
+  clearSelection,
 } = useLayerSelection()
 
 const layers = ref<LayerNode[]>([
@@ -958,6 +985,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       :layers="layers"
       :title-contrast-score="titleContrastResult?.score ?? null"
       :description-contrast-score="descriptionContrastResult?.score ?? null"
+      :title-visible="foregroundConfig.title.visible"
+      :description-visible="foregroundConfig.description.visible"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"
@@ -979,6 +1008,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       @open-foreground-title="openForegroundTitle"
       @open-foreground-description="openForegroundDescription"
       @add-html-element="handleAddHtmlElement"
+      @remove-html-element="handleRemoveHtmlElement"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->

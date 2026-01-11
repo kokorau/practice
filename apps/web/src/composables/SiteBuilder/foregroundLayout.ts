@@ -63,11 +63,13 @@ export interface PositionedGroup {
 // Compile Function
 // ============================================================
 export function compileForegroundLayout(config: ForegroundConfig): PositionedGroup[] {
-  // Collect all elements with their types
-  const allElements: Array<{ type: ForegroundElementType; config: ForegroundElementConfig }> = [
-    { type: 'title', config: config.title },
-    { type: 'description', config: config.description },
-  ]
+  // Collect all elements with their types (only visible ones)
+  const allElements: Array<{ type: ForegroundElementType; config: ForegroundElementConfig }> = (
+    [
+      { type: 'title' as const, config: config.title },
+      { type: 'description' as const, config: config.description },
+    ] as const
+  ).filter(({ config: elConfig }) => elConfig.visible)
 
   // Group by position
   const groupMap = new Map<GridPosition, PositionedElement[]>()

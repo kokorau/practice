@@ -38,6 +38,8 @@ const props = defineProps<{
   layers: LayerNode[]
   titleContrastScore?: number | null
   descriptionContrastScore?: number | null
+  titleVisible?: boolean
+  descriptionVisible?: boolean
 }>()
 
 // Layer selection from store
@@ -57,6 +59,7 @@ const emit = defineEmits<{
   'open-foreground-title': []
   'open-foreground-description': []
   'add-html-element': [type: HtmlElementType]
+  'remove-html-element': [type: HtmlElementType]
 }>()
 
 // ============================================================
@@ -122,16 +125,29 @@ const handleAddLayer = (type: LayerType) => {
 
 const showHtmlAddMenu = ref(false)
 
-const htmlElementTypes: { type: HtmlElementType; label: string; icon: string; disabled?: boolean }[] = [
+const allHtmlElementTypes: { type: HtmlElementType; label: string; icon: string; disabled?: boolean }[] = [
   { type: 'title', label: 'Title', icon: 'title' },
   { type: 'description', label: 'Description', icon: 'notes' },
   { type: 'button', label: 'Button (WIP)', icon: 'smart_button', disabled: true },
   { type: 'link', label: 'Link (WIP)', icon: 'link', disabled: true },
 ]
 
+// Filter HTML element types to show only those not yet visible
+const addableHtmlElementTypes = computed(() => {
+  return allHtmlElementTypes.filter(item => {
+    if (item.type === 'title' && props.titleVisible) return false
+    if (item.type === 'description' && props.descriptionVisible) return false
+    return true
+  })
+})
+
 const handleAddHtmlElement = (type: HtmlElementType) => {
   emit('add-html-element', type)
   showHtmlAddMenu.value = false
+}
+
+const handleRemoveHtmlElement = (type: HtmlElementType) => {
+  emit('remove-html-element', type)
 }
 
 // Get score level class for contrast badge
@@ -219,24 +235,29 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
           <Transition name="fade">
             <div v-if="showHtmlAddMenu" class="add-layer-menu">
-              <button
-                v-for="item in htmlElementTypes"
-                :key="item.type"
-                class="add-menu-item"
-                :class="{ disabled: item.disabled }"
-                :disabled="item.disabled"
-                @click="!item.disabled && handleAddHtmlElement(item.type)"
-              >
-                <span class="material-icons">{{ item.icon }}</span>
-                <span>{{ item.label }}</span>
-              </button>
+              <template v-if="addableHtmlElementTypes.length > 0">
+                <button
+                  v-for="item in addableHtmlElementTypes"
+                  :key="item.type"
+                  class="add-menu-item"
+                  :class="{ disabled: item.disabled }"
+                  :disabled="item.disabled"
+                  @click="!item.disabled && handleAddHtmlElement(item.type)"
+                >
+                  <span class="material-icons">{{ item.icon }}</span>
+                  <span>{{ item.label }}</span>
+                </button>
+              </template>
+              <div v-else class="add-menu-empty">
+                All elements added
+              </div>
             </div>
           </Transition>
         </div>
       </div>
 
       <div class="html-layer-list">
-        <button class="html-layer-item" @click="emit('open-foreground-title')">
+        <div v-if="titleVisible" class="html-layer-item" @click="emit('open-foreground-title')">
           <span class="material-icons html-layer-icon">title</span>
           <span class="html-layer-name">Title</span>
           <span
@@ -244,9 +265,16 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             class="contrast-badge"
             :class="getScoreLevel(titleContrastScore)"
           >Lc {{ titleContrastScore }}</span>
-        </button>
+          <button
+            class="html-layer-remove"
+            title="Remove"
+            @click.stop="handleRemoveHtmlElement('title')"
+          >
+            <span class="material-icons">close</span>
+          </button>
+        </div>
 
-        <button class="html-layer-item" @click="emit('open-foreground-description')">
+        <div v-if="descriptionVisible" class="html-layer-item" @click="emit('open-foreground-description')">
           <span class="material-icons html-layer-icon">notes</span>
           <span class="html-layer-name">Description</span>
           <span
@@ -254,7 +282,18 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             class="contrast-badge"
             :class="getScoreLevel(descriptionContrastScore)"
           >Lc {{ descriptionContrastScore }}</span>
-        </button>
+          <button
+            class="html-layer-remove"
+            title="Remove"
+            @click.stop="handleRemoveHtmlElement('description')"
+          >
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <div v-if="!titleVisible && !descriptionVisible" class="html-layer-empty">
+          No HTML elements
+        </div>
       </div>
     </div>
   </div>
@@ -507,6 +546,56 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 .contrast-badge.poor {
   background: oklch(0.75 0.15 30);
   color: oklch(0.25 0.05 30);
+}
+
+/* HTML Layer Remove Button */
+.html-layer-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 0.25rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: oklch(0.55 0.02 260);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.html-layer-item:hover .html-layer-remove {
+  opacity: 1;
+}
+
+.html-layer-remove:hover {
+  color: oklch(0.50 0.15 25);
+  background: oklch(0.90 0.05 25);
+}
+
+:global(.dark) .html-layer-remove:hover {
+  color: oklch(0.70 0.15 25);
+  background: oklch(0.28 0.05 25);
+}
+
+.html-layer-remove .material-icons {
+  font-size: 0.875rem;
+}
+
+/* Empty States */
+.html-layer-empty,
+.add-menu-empty {
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  color: oklch(0.55 0.02 260);
+  text-align: center;
+}
+
+:global(.dark) .html-layer-empty,
+:global(.dark) .add-menu-empty {
+  color: oklch(0.55 0.02 260);
 }
 
 /* Transitions */
