@@ -35,17 +35,16 @@ import {
   type LayerNodeType,
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
-import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
 import { getGoogleFontPresets } from '@practice/font'
-import PrimitiveColorPicker from '../components/HeroGenerator/PrimitiveColorPicker.vue'
-import MaskPatternThumbnail from '../components/HeroGenerator/MaskPatternThumbnail.vue'
-import SchemaFields from '../components/SchemaFields.vue'
 import {
-  VignetteEffectSchema,
-  ChromaticAberrationEffectSchema,
-  DotHalftoneEffectSchema,
-  LineHalftoneEffectSchema,
+  BackgroundSectionPanel,
+  ClipGroupShapePanel,
+  ClipGroupSurfacePanel,
+  EffectSectionPanel,
+  TextLayerSectionPanel,
+} from '../components/HeroGenerator/FloatingPanelContent'
+import {
   createForegroundElementUsecase,
 } from '../modules/HeroScene'
 import {
@@ -1036,333 +1035,84 @@ const handleGlobalContextMenu = (e: MouseEvent) => {
       @close="closeSection"
     >
         <!-- 後景: テクスチャ選択 -->
-        <template v-if="activeSection === 'background'">
-          <!-- Color selection (at top for easy access) -->
-          <div class="color-selection-section no-border">
-            <PrimitiveColorPicker
-              v-model="backgroundColorKey1"
-              :palette="primitivePalette"
-              label="Primary Color"
-            />
-            <PrimitiveColorPicker
-              v-model="backgroundColorKey2"
-              :palette="primitivePalette"
-              label="Secondary Color"
-              :show-auto="true"
-            />
-          </div>
-          <!-- Background surface params (shown when non-solid pattern is selected) -->
-          <div v-if="currentBackgroundSurfaceSchema && customBackgroundSurfaceParams && customBackgroundSurfaceParams.type !== 'solid'" class="surface-params">
-            <SchemaFields
-              :schema="currentBackgroundSurfaceSchema"
-              :model-value="customBackgroundSurfaceParams"
-              @update:model-value="updateBackgroundSurfaceParams($event)"
-            />
-          </div>
-          <SurfaceSelector
-            :custom-image="customBackgroundImage"
-            :custom-file-name="customBackgroundFile?.name ?? null"
-            :patterns="backgroundPatterns"
-            :selected-index="selectedBackgroundIndex"
-            :show-random-button="true"
-            :is-loading-random="isLoadingRandomBackground"
-            @upload-image="setBackgroundImage"
-            @clear-image="clearBackgroundImage"
-            @select-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
-            @load-random="loadRandomBackgroundImage()"
-          />
-        </template>
+        <BackgroundSectionPanel
+          v-if="activeSection === 'background'"
+          :color-key1="backgroundColorKey1"
+          :color-key2="backgroundColorKey2"
+          :palette="primitivePalette"
+          :surface-schema="currentBackgroundSurfaceSchema"
+          :surface-params="customBackgroundSurfaceParams"
+          :patterns="backgroundPatterns"
+          :selected-index="selectedBackgroundIndex"
+          :custom-image="customBackgroundImage"
+          :custom-file-name="customBackgroundFile?.name ?? null"
+          :is-loading-random="isLoadingRandomBackground"
+          @update:color-key1="(v) => { if (v !== 'auto') backgroundColorKey1 = v }"
+          @update:color-key2="backgroundColorKey2 = $event"
+          @update:surface-params="updateBackgroundSurfaceParams($event)"
+          @upload-image="setBackgroundImage"
+          @clear-image="clearBackgroundImage"
+          @select-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
+          @load-random="loadRandomBackgroundImage()"
+        />
 
         <!-- クリップグループ形状選択 -->
-        <template v-else-if="activeSection === 'clip-group-shape'">
-          <!-- Shape params (shown when mask is selected) -->
-          <div v-if="currentMaskShapeSchema && customMaskShapeParams" class="shape-params">
-            <SchemaFields
-              :schema="currentMaskShapeSchema"
-              :model-value="customMaskShapeParams"
-              :exclude="['cutout']"
-              @update:model-value="updateMaskShapeParams($event)"
-            />
-          </div>
-          <div class="pattern-grid">
-            <button
-              v-for="(pattern, i) in maskPatterns"
-              :key="i"
-              class="pattern-button"
-              :class="{ active: selectedMaskIndex === i }"
-              @click="selectedMaskIndex = i"
-            >
-              <MaskPatternThumbnail
-                :create-background-spec="createBackgroundThumbnailSpec"
-                :create-mask-spec="pattern.createSpec"
-                :mask-color1="maskOuterColor"
-                :mask-color2="maskInnerColor"
-              />
-              <span class="pattern-label">{{ pattern.label }}</span>
-            </button>
-          </div>
-        </template>
+        <ClipGroupShapePanel
+          v-else-if="activeSection === 'clip-group-shape'"
+          :shape-schema="currentMaskShapeSchema"
+          :shape-params="customMaskShapeParams"
+          :patterns="maskPatterns"
+          :selected-index="selectedMaskIndex"
+          :mask-outer-color="maskOuterColor"
+          :mask-inner-color="maskInnerColor"
+          :create-background-thumbnail-spec="createBackgroundThumbnailSpec"
+          @update:shape-params="updateMaskShapeParams($event)"
+          @update:selected-index="selectedMaskIndex = $event"
+        />
 
         <!-- クリップグループテクスチャ選択 -->
-        <template v-else-if="activeSection === 'clip-group-surface'">
-          <!-- Mask color selection (at top for easy access) -->
-          <div class="color-selection-section no-border">
-            <PrimitiveColorPicker
-              v-model="maskColorKey1"
-              :palette="primitivePalette"
-              label="Mask Primary Color"
-              :show-auto="true"
-            />
-            <PrimitiveColorPicker
-              v-model="maskColorKey2"
-              :palette="primitivePalette"
-              label="Mask Secondary Color"
-              :show-auto="true"
-            />
-          </div>
-          <!-- Surface params (shown when texture is selected) -->
-          <div v-if="currentSurfaceSchema && customSurfaceParams" class="surface-params">
-            <SchemaFields
-              :schema="currentSurfaceSchema"
-              :model-value="customSurfaceParams"
-              @update:model-value="updateSurfaceParams($event)"
-            />
-          </div>
-          <SurfaceSelector
-            :custom-image="customMaskImage"
-            :custom-file-name="customMaskFile?.name ?? null"
-            :patterns="maskSurfacePatterns"
-            :selected-index="selectedMidgroundTextureIndex"
-            :show-random-button="true"
-            :is-loading-random="isLoadingRandomMask"
-            @upload-image="setMaskImage"
-            @clear-image="clearMaskImage"
-            @select-pattern="(i) => { if (i !== null) selectedMidgroundTextureIndex = i }"
-            @load-random="loadRandomMaskImage()"
-          />
-        </template>
+        <ClipGroupSurfacePanel
+          v-else-if="activeSection === 'clip-group-surface'"
+          :color-key1="maskColorKey1"
+          :color-key2="maskColorKey2"
+          :palette="primitivePalette"
+          :surface-schema="currentSurfaceSchema"
+          :surface-params="customSurfaceParams"
+          :patterns="maskSurfacePatterns"
+          :selected-index="selectedMidgroundTextureIndex"
+          :custom-image="customMaskImage"
+          :custom-file-name="customMaskFile?.name ?? null"
+          :is-loading-random="isLoadingRandomMask"
+          @update:color-key1="maskColorKey1 = $event"
+          @update:color-key2="maskColorKey2 = $event"
+          @update:surface-params="updateSurfaceParams($event)"
+          @upload-image="setMaskImage"
+          @clear-image="clearMaskImage"
+          @select-pattern="(i) => { if (i !== null) selectedMidgroundTextureIndex = i }"
+          @load-random="loadRandomMaskImage()"
+        />
 
         <!-- エフェクト設定 (排他選択) -->
-        <template v-else-if="activeSection === 'filter' || activeSection === 'effect'">
-          <div class="filter-section">
-            <!-- Effect params (shown when effect is active) -->
-            <div v-if="selectedFilterType === 'vignette'" class="filter-params">
-              <SchemaFields
-                :schema="VignetteEffectSchema"
-                :model-value="currentVignetteConfig"
-                :exclude="['enabled']"
-                @update:model-value="currentVignetteConfig = $event"
-              />
-            </div>
-            <div v-else-if="selectedFilterType === 'chromaticAberration'" class="filter-params">
-              <SchemaFields
-                :schema="ChromaticAberrationEffectSchema"
-                :model-value="currentChromaticConfig"
-                :exclude="['enabled']"
-                @update:model-value="currentChromaticConfig = $event"
-              />
-            </div>
-            <div v-else-if="selectedFilterType === 'dotHalftone'" class="filter-params">
-              <SchemaFields
-                :schema="DotHalftoneEffectSchema"
-                :model-value="currentDotHalftoneConfig"
-                :exclude="['enabled']"
-                @update:model-value="currentDotHalftoneConfig = $event"
-              />
-            </div>
-            <div v-else-if="selectedFilterType === 'lineHalftone'" class="filter-params">
-              <SchemaFields
-                :schema="LineHalftoneEffectSchema"
-                :model-value="currentLineHalftoneConfig"
-                :exclude="['enabled']"
-                @update:model-value="currentLineHalftoneConfig = $event"
-              />
-            </div>
-
-            <!-- Filter type selection -->
-            <div class="filter-options">
-              <label class="filter-option" :class="{ active: selectedFilterType === 'void' }">
-                <input type="radio" v-model="selectedFilterType" value="void" />
-                <span class="filter-name">None</span>
-              </label>
-              <label class="filter-option" :class="{ active: selectedFilterType === 'vignette' }">
-                <input type="radio" v-model="selectedFilterType" value="vignette" />
-                <span class="filter-name">Vignette</span>
-              </label>
-              <label class="filter-option" :class="{ active: selectedFilterType === 'chromaticAberration' }">
-                <input type="radio" v-model="selectedFilterType" value="chromaticAberration" />
-                <span class="filter-name">Chromatic Aberration</span>
-              </label>
-              <label class="filter-option" :class="{ active: selectedFilterType === 'dotHalftone' }">
-                <input type="radio" v-model="selectedFilterType" value="dotHalftone" />
-                <span class="filter-name">Dot Halftone</span>
-              </label>
-              <label class="filter-option" :class="{ active: selectedFilterType === 'lineHalftone' }">
-                <input type="radio" v-model="selectedFilterType" value="lineHalftone" />
-                <span class="filter-name">Line Halftone</span>
-              </label>
-            </div>
-          </div>
-        </template>
+        <EffectSectionPanel
+          v-else-if="activeSection === 'filter' || activeSection === 'effect'"
+          :selected-filter-type="selectedFilterType"
+          :vignette-config="currentVignetteConfig"
+          :chromatic-config="currentChromaticConfig"
+          :dot-halftone-config="currentDotHalftoneConfig"
+          :line-halftone-config="currentLineHalftoneConfig"
+          @update:selected-filter-type="selectedFilterType = $event"
+          @update:vignette-config="currentVignetteConfig = $event"
+          @update:chromatic-config="currentChromaticConfig = $event"
+          @update:dot-halftone-config="currentDotHalftoneConfig = $event"
+          @update:line-halftone-config="currentLineHalftoneConfig = $event"
+        />
 
         <!-- テキストレイヤー設定 -->
-        <template v-else-if="activeSection === 'text-content'">
-          <div v-if="selectedTextLayerConfig" class="text-layer-section">
-            <div class="text-layer-field">
-              <label class="text-layer-label">Text</label>
-              <textarea
-                :value="selectedTextLayerConfig.text"
-                @input="updateTextLayerConfig({ text: ($event.target as HTMLTextAreaElement).value })"
-                class="text-layer-textarea"
-                placeholder="Enter text..."
-                rows="3"
-              />
-            </div>
-
-            <div class="text-layer-field">
-              <label class="text-layer-label">Font Family</label>
-              <select
-                :value="selectedTextLayerConfig.fontFamily"
-                @change="updateTextLayerConfig({ fontFamily: ($event.target as HTMLSelectElement).value })"
-                class="text-layer-select"
-              >
-                <option value="sans-serif">Sans Serif</option>
-                <option value="serif">Serif</option>
-                <option value="monospace">Monospace</option>
-                <option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
-                <option value="'Noto Serif JP', serif">Noto Serif JP</option>
-              </select>
-            </div>
-
-            <div class="text-layer-row">
-              <div class="text-layer-field">
-                <label class="text-layer-label">Size (px)</label>
-                <input
-                  type="number"
-                  :value="selectedTextLayerConfig.fontSize"
-                  @input="updateTextLayerConfig({ fontSize: Number(($event.target as HTMLInputElement).value) })"
-                  class="text-layer-input"
-                  min="8"
-                  max="200"
-                />
-              </div>
-
-              <div class="text-layer-field">
-                <label class="text-layer-label">Weight</label>
-                <select
-                  :value="selectedTextLayerConfig.fontWeight"
-                  @change="updateTextLayerConfig({ fontWeight: Number(($event.target as HTMLSelectElement).value) })"
-                  class="text-layer-select"
-                >
-                  <option :value="100">Thin</option>
-                  <option :value="300">Light</option>
-                  <option :value="400">Regular</option>
-                  <option :value="500">Medium</option>
-                  <option :value="700">Bold</option>
-                  <option :value="900">Black</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="text-layer-row">
-              <div class="text-layer-field">
-                <label class="text-layer-label">Letter Spacing (em)</label>
-                <input
-                  type="number"
-                  :value="selectedTextLayerConfig.letterSpacing"
-                  @input="updateTextLayerConfig({ letterSpacing: Number(($event.target as HTMLInputElement).value) })"
-                  class="text-layer-input"
-                  min="-0.2"
-                  max="1"
-                  step="0.01"
-                />
-              </div>
-
-              <div class="text-layer-field">
-                <label class="text-layer-label">Line Height</label>
-                <input
-                  type="number"
-                  :value="selectedTextLayerConfig.lineHeight"
-                  @input="updateTextLayerConfig({ lineHeight: Number(($event.target as HTMLInputElement).value) })"
-                  class="text-layer-input"
-                  min="0.5"
-                  max="3"
-                  step="0.1"
-                />
-              </div>
-            </div>
-
-            <div class="text-layer-field">
-              <label class="text-layer-label">Color</label>
-              <input
-                type="color"
-                :value="selectedTextLayerConfig.color"
-                @input="updateTextLayerConfig({ color: ($event.target as HTMLInputElement).value })"
-                class="text-layer-color"
-              />
-            </div>
-
-            <div class="text-layer-row">
-              <div class="text-layer-field">
-                <label class="text-layer-label">Position X</label>
-                <input
-                  type="range"
-                  :value="selectedTextLayerConfig.position.x"
-                  @input="updateTextLayerConfig({ x: Number(($event.target as HTMLInputElement).value) })"
-                  class="text-layer-slider"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                />
-              </div>
-
-              <div class="text-layer-field">
-                <label class="text-layer-label">Position Y</label>
-                <input
-                  type="range"
-                  :value="selectedTextLayerConfig.position.y"
-                  @input="updateTextLayerConfig({ y: Number(($event.target as HTMLInputElement).value) })"
-                  class="text-layer-slider"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                />
-              </div>
-            </div>
-
-            <div class="text-layer-field">
-              <label class="text-layer-label">Anchor</label>
-              <select
-                :value="selectedTextLayerConfig.position.anchor"
-                @change="updateTextLayerConfig({ anchor: ($event.target as HTMLSelectElement).value })"
-                class="text-layer-select"
-              >
-                <option value="top-left">Top Left</option>
-                <option value="top-center">Top Center</option>
-                <option value="top-right">Top Right</option>
-                <option value="center-left">Center Left</option>
-                <option value="center">Center</option>
-                <option value="center-right">Center Right</option>
-                <option value="bottom-left">Bottom Left</option>
-                <option value="bottom-center">Bottom Center</option>
-                <option value="bottom-right">Bottom Right</option>
-              </select>
-            </div>
-
-            <div class="text-layer-field">
-              <label class="text-layer-label">Rotation (deg)</label>
-              <input
-                type="range"
-                :value="selectedTextLayerConfig.rotation * (180 / Math.PI)"
-                @input="updateTextLayerConfig({ rotation: Number(($event.target as HTMLInputElement).value) * (Math.PI / 180) })"
-                class="text-layer-slider"
-                min="-180"
-                max="180"
-                step="1"
-              />
-            </div>
-          </div>
-        </template>
+        <TextLayerSectionPanel
+          v-else-if="activeSection === 'text-content'"
+          :config="selectedTextLayerConfig"
+          @update:config="updateTextLayerConfig($event)"
+        />
 
     </FloatingPanel>
 
@@ -1507,286 +1257,4 @@ const handleGlobalContextMenu = (e: MouseEvent) => {
   </div>
 </template>
 
-<style scoped>
-/* Pattern Grid */
-.pattern-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.pattern-button {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  border: 2px solid oklch(0.85 0.01 260);
-  border-radius: 0.5rem;
-  background: transparent;
-  overflow: hidden;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.dark .pattern-button {
-  border-color: oklch(0.30 0.02 260);
-}
-
-.pattern-button:hover {
-  border-color: oklch(0.75 0.01 260);
-}
-
-.dark .pattern-button:hover {
-  border-color: oklch(0.40 0.02 260);
-}
-
-.pattern-button.active {
-  border-color: oklch(0.55 0.20 250);
-  background: oklch(0.55 0.20 250 / 0.1);
-}
-
-/* Filter Section */
-.filter-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.filter-option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: oklch(0.92 0.01 260);
-  border: 2px solid transparent;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.dark .filter-option {
-  background: oklch(0.20 0.02 260);
-}
-
-.filter-option:hover {
-  background: oklch(0.88 0.01 260);
-}
-
-.dark .filter-option:hover {
-  background: oklch(0.24 0.02 260);
-}
-
-.filter-option.active {
-  border-color: oklch(0.55 0.20 250);
-  background: oklch(0.55 0.20 250 / 0.15);
-}
-
-.filter-option input[type="radio"] {
-  width: 1rem;
-  height: 1rem;
-  accent-color: oklch(0.55 0.20 250);
-}
-
-.filter-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: oklch(0.25 0.02 260);
-}
-
-.dark .filter-name {
-  color: oklch(0.85 0.02 260);
-}
-
-.filter-params {
-  padding: 0.75rem;
-  background: oklch(0.94 0.01 260);
-  border-radius: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.dark .filter-params {
-  background: oklch(0.18 0.02 260);
-}
-
-.shape-params,
-.surface-params {
-  padding: 0.75rem;
-  background: oklch(0.94 0.01 260);
-  border-radius: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.dark .shape-params,
-.dark .surface-params {
-  background: oklch(0.18 0.02 260);
-}
-
-.filter-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* Color Selection Section */
-.color-selection-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid oklch(0.85 0.01 260);
-}
-
-.color-selection-section.no-border {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-  margin-bottom: 1rem;
-}
-
-.dark .color-selection-section {
-  border-top-color: oklch(0.30 0.02 260);
-}
-
-/* Text Layer Section */
-.text-layer-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.text-layer-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-
-.text-layer-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.text-layer-label {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: oklch(0.45 0.02 260);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.dark .text-layer-label {
-  color: oklch(0.65 0.02 260);
-}
-
-.text-layer-textarea {
-  padding: 0.5rem 0.625rem;
-  background: oklch(0.96 0.01 260);
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  color: oklch(0.20 0.02 260);
-  font-size: 0.875rem;
-  font-family: inherit;
-  resize: vertical;
-  min-height: 3rem;
-}
-
-.dark .text-layer-textarea {
-  background: oklch(0.18 0.02 260);
-  border-color: oklch(0.30 0.02 260);
-  color: oklch(0.90 0.02 260);
-}
-
-.text-layer-textarea:focus {
-  outline: none;
-  border-color: oklch(0.55 0.20 250);
-}
-
-.text-layer-input {
-  padding: 0.5rem 0.625rem;
-  background: oklch(0.96 0.01 260);
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  color: oklch(0.20 0.02 260);
-  font-size: 0.8125rem;
-  font-family: inherit;
-}
-
-.dark .text-layer-input {
-  background: oklch(0.18 0.02 260);
-  border-color: oklch(0.30 0.02 260);
-  color: oklch(0.90 0.02 260);
-}
-
-.text-layer-input:focus {
-  outline: none;
-  border-color: oklch(0.55 0.20 250);
-}
-
-.text-layer-select {
-  padding: 0.5rem 0.625rem;
-  background: oklch(0.96 0.01 260);
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  color: oklch(0.20 0.02 260);
-  font-size: 0.8125rem;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.dark .text-layer-select {
-  background: oklch(0.18 0.02 260);
-  border-color: oklch(0.30 0.02 260);
-  color: oklch(0.90 0.02 260);
-}
-
-.text-layer-select:focus {
-  outline: none;
-  border-color: oklch(0.55 0.20 250);
-}
-
-.text-layer-color {
-  width: 100%;
-  height: 2rem;
-  padding: 0.125rem;
-  background: oklch(0.96 0.01 260);
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  cursor: pointer;
-}
-
-.dark .text-layer-color {
-  background: oklch(0.18 0.02 260);
-  border-color: oklch(0.30 0.02 260);
-}
-
-.text-layer-slider {
-  width: 100%;
-  height: 4px;
-  appearance: none;
-  background: oklch(0.85 0.01 260);
-  border-radius: 2px;
-  cursor: pointer;
-}
-
-.dark .text-layer-slider {
-  background: oklch(0.30 0.02 260);
-}
-
-.text-layer-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  background: oklch(0.55 0.20 250);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.text-layer-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  background: oklch(0.55 0.20 250);
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-}
-</style>
+<!-- Styles moved to FloatingPanelContent components -->
