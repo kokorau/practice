@@ -17,7 +17,7 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { LayerNode, HeroPrimitiveKey, SurfaceConfig } from '../modules/HeroScene'
+import type { LayerNode, HeroPrimitiveKey } from '../modules/HeroScene'
 import {
   createGroupLayerNode,
   createSurfaceLayerNode,
@@ -53,6 +53,7 @@ import {
 import {
   useSiteColors,
   useHeroScene,
+  createSurfacePatterns,
   type GridPosition,
 } from '../composables/SiteBuilder'
 import { getSurfacePresets } from '@practice/texture'
@@ -276,26 +277,20 @@ const currentLineHalftoneConfig = computed({
 const surfacePresets = getSurfacePresets()
 
 // Convert texture patterns to SurfaceSelector format with createSpec and surfaceConfig
-const backgroundPatterns = computed(() => {
-  return texturePatterns.map((p, index) => ({
-    label: p.label,
-    createSpec: (viewport: { width: number; height: number }) =>
-      p.createSpec(textureColor1.value, textureColor2.value, viewport),
-    // Map surfaceConfig from presets (same order as texturePatterns)
-    // Cast to SurfaceConfig since SurfacePresetParams is compatible with SurfaceConfig
-    surfaceConfig: surfacePresets[index]?.params as SurfaceConfig | undefined,
-  }))
+const backgroundPatterns = createSurfacePatterns({
+  patterns: texturePatterns,
+  color1: textureColor1,
+  color2: textureColor2,
+  createSpec: (p, c1, c2, viewport) => p.createSpec(c1, c2, viewport),
+  surfacePresets,
 })
 
-const maskSurfacePatterns = computed(() => {
-  return midgroundTexturePatterns.map((p, index) => ({
-    label: p.label,
-    createSpec: (viewport: { width: number; height: number }) =>
-      createMidgroundThumbnailSpec(p, midgroundTextureColor1.value, midgroundTextureColor2.value, viewport),
-    // Map surfaceConfig from presets (same order as midgroundTexturePatterns)
-    // Cast to SurfaceConfig since SurfacePresetParams is compatible with SurfaceConfig
-    surfaceConfig: surfacePresets[index]?.params as SurfaceConfig | undefined,
-  }))
+const maskSurfacePatterns = createSurfacePatterns({
+  patterns: midgroundTexturePatterns,
+  color1: midgroundTextureColor1,
+  color2: midgroundTextureColor2,
+  createSpec: createMidgroundThumbnailSpec,
+  surfacePresets,
 })
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
