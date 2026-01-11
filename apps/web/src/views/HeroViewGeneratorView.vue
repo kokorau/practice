@@ -1462,11 +1462,11 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             </div>
             <div class="settings-section">
               <p class="settings-label">Text</p>
-              <input
+              <textarea
                 v-model="selectedElementContent"
-                type="text"
-                class="foreground-input"
-                placeholder="Enter title text"
+                class="foreground-textarea"
+                placeholder="Enter text"
+                rows="2"
               />
             </div>
             <div class="settings-section">
@@ -1484,16 +1484,16 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             </div>
             <div class="settings-section">
               <p class="settings-label">Font Size</p>
-              <div class="font-size-control">
+              <div class="font-size-input-wrapper">
                 <input
                   v-model.number="selectedElementFontSize"
-                  type="range"
-                  min="1"
-                  max="6"
+                  type="number"
+                  min="0.5"
+                  max="10"
                   step="0.25"
-                  class="font-size-slider"
+                  class="font-size-input"
                 />
-                <span class="font-size-value">{{ selectedElementFontSize }}rem</span>
+                <span class="font-size-unit">rem</span>
               </div>
             </div>
           </div>
@@ -1540,8 +1540,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
               <textarea
                 v-model="selectedElementContent"
                 class="foreground-textarea"
-                placeholder="Enter description text"
-                rows="3"
+                placeholder="Enter text"
+                rows="2"
               />
             </div>
             <div class="settings-section">
@@ -1559,16 +1559,16 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             </div>
             <div class="settings-section">
               <p class="settings-label">Font Size</p>
-              <div class="font-size-control">
+              <div class="font-size-input-wrapper">
                 <input
                   v-model.number="selectedElementFontSize"
-                  type="range"
+                  type="number"
                   min="0.5"
-                  max="3"
-                  step="0.125"
-                  class="font-size-slider"
+                  max="10"
+                  step="0.25"
+                  class="font-size-input"
                 />
-                <span class="font-size-value">{{ selectedElementFontSize }}rem</span>
+                <span class="font-size-unit">rem</span>
               </div>
             </div>
           </div>
@@ -2086,7 +2086,6 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
   color: oklch(0.70 0.02 260);
 }
 
-.foreground-input,
 .foreground-textarea {
   padding: 0.625rem 0.75rem;
   background: oklch(0.96 0.01 260);
@@ -2098,14 +2097,12 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
   transition: border-color 0.15s;
 }
 
-.dark .foreground-input,
 .dark .foreground-textarea {
   background: oklch(0.18 0.02 260);
   border-color: oklch(0.30 0.02 260);
   color: oklch(0.90 0.02 260);
 }
 
-.foreground-input:focus,
 .foreground-textarea:focus {
   outline: none;
   border-color: oklch(0.55 0.20 250);
@@ -2116,58 +2113,43 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
   min-height: 4rem;
 }
 
-.font-size-control {
+.font-size-input-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.font-size-slider {
-  flex: 1;
-  height: 4px;
-  appearance: none;
-  background: oklch(0.85 0.01 260);
-  border-radius: 2px;
-  cursor: pointer;
+.font-size-input {
+  width: 5rem;
+  padding: 0.5rem 0.625rem;
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  color: oklch(0.25 0.02 260);
+  font-size: 0.875rem;
+  text-align: right;
+  transition: border-color 0.15s;
 }
 
-.dark .font-size-slider {
-  background: oklch(0.30 0.02 260);
+.dark .font-size-input {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
 }
 
-.font-size-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  background: oklch(0.55 0.20 250);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.1s;
+.font-size-input:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
 }
 
-.font-size-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-}
-
-.font-size-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  background: oklch(0.55 0.20 250);
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.font-size-value {
-  min-width: 4rem;
+.font-size-unit {
   font-size: 0.75rem;
   font-weight: 500;
-  color: oklch(0.40 0.02 260);
-  text-align: right;
+  color: oklch(0.50 0.02 260);
 }
 
-.dark .font-size-value {
-  color: oklch(0.70 0.02 260);
+.dark .font-size-unit {
+  color: oklch(0.60 0.02 260);
 }
 
 /* Font Trigger */
