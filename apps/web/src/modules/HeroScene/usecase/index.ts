@@ -28,6 +28,19 @@ export {
   type ExportPresetOptions,
 } from './Preset'
 export {
+  selectFilterType,
+  getFilterType,
+  updateVignetteParams,
+  updateChromaticAberrationParams,
+  updateDotHalftoneParams,
+  updateLineHalftoneParams,
+  getVignetteParams,
+  getChromaticAberrationParams,
+  getDotHalftoneParams,
+  getLineHalftoneParams,
+  type FilterType,
+} from './Filter'
+export {
   updateTextLayerText,
   updateTextLayerFont,
   updateTextLayerColor,

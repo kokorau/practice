@@ -329,6 +329,18 @@ export {
   getHeroView,
   setHeroView,
   subscribeHeroView,
+  // Filter UseCases
+  selectFilterType,
+  getFilterType,
+  updateVignetteParams,
+  updateChromaticAberrationParams,
+  updateDotHalftoneParams,
+  updateLineHalftoneParams,
+  getVignetteParams,
+  getChromaticAberrationParams,
+  getDotHalftoneParams,
+  getLineHalftoneParams,
+  type FilterType,
   // TextLayer UseCases
   updateTextLayerText,
   updateTextLayerFont,

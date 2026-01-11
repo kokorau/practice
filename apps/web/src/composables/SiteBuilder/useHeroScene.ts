@@ -124,6 +124,7 @@ import {
   type TextLayerConfig,
   type Object3DRendererPort,
   type HeroViewRepository,
+  type FilterType,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
@@ -585,6 +586,65 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         l.id === layerId ? { ...l, filters: updated } : l
       ),
     }
+  }
+
+  // ============================================================
+  // Filter Usecase Wrappers
+  // Provides Usecase-pattern API for filter operations
+  // ============================================================
+
+  /**
+   * Select filter type (exclusive selection)
+   * Uses FilterUsecase pattern internally
+   */
+  const selectFilterType = (layerId: string, type: FilterType) => {
+    updateLayerFilters(layerId, {
+      vignette: { enabled: type === 'vignette' },
+      chromaticAberration: { enabled: type === 'chromaticAberration' },
+      dotHalftone: { enabled: type === 'dotHalftone' },
+      lineHalftone: { enabled: type === 'lineHalftone' },
+    })
+  }
+
+  /**
+   * Get current filter type for a layer
+   */
+  const getFilterType = (layerId: string): FilterType => {
+    const filters = layerFilterConfigs.value.get(layerId)
+    if (!filters) return 'void'
+    if (filters.vignette.enabled) return 'vignette'
+    if (filters.chromaticAberration.enabled) return 'chromaticAberration'
+    if (filters.dotHalftone.enabled) return 'dotHalftone'
+    if (filters.lineHalftone.enabled) return 'lineHalftone'
+    return 'void'
+  }
+
+  /**
+   * Update vignette parameters
+   */
+  const updateVignetteParams = (layerId: string, params: Partial<{ intensity: number; radius: number; softness: number }>) => {
+    updateLayerFilters(layerId, { vignette: params })
+  }
+
+  /**
+   * Update chromatic aberration parameters
+   */
+  const updateChromaticAberrationParams = (layerId: string, params: Partial<{ intensity: number }>) => {
+    updateLayerFilters(layerId, { chromaticAberration: params })
+  }
+
+  /**
+   * Update dot halftone parameters
+   */
+  const updateDotHalftoneParams = (layerId: string, params: Partial<{ dotSize: number; spacing: number; angle: number }>) => {
+    updateLayerFilters(layerId, { dotHalftone: params })
+  }
+
+  /**
+   * Update line halftone parameters
+   */
+  const updateLineHalftoneParams = (layerId: string, params: Partial<{ lineWidth: number; spacing: number; angle: number }>) => {
+    updateLayerFilters(layerId, { lineHalftone: params })
   }
 
   // ============================================================
@@ -3062,6 +3122,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     selectedLayerFilters,
     layerFilterConfigs,
     updateLayerFilters,
+    // Filter Usecase API
+    selectFilterType,
+    getFilterType,
+    updateVignetteParams,
+    updateChromaticAberrationParams,
+    updateDotHalftoneParams,
+    updateLineHalftoneParams,
 
     // Custom shape/surface params
     customMaskShapeParams,

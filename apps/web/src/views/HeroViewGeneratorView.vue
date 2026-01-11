@@ -164,7 +164,13 @@ const {
   // Per-layer filters
   selectedFilterLayerId,
   selectedLayerFilters,
-  updateLayerFilters,
+  // Filter Usecase API
+  selectFilterType: selectFilterTypeUsecase,
+  getFilterType: getFilterTypeUsecase,
+  updateVignetteParams,
+  updateChromaticAberrationParams,
+  updateDotHalftoneParams,
+  updateLineHalftoneParams,
   // Custom shape/surface params
   customMaskShapeParams,
   customSurfaceParams,
@@ -209,35 +215,29 @@ const {
 } = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
 // Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
+// Using Usecase API for filter operations
 type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone'
 const selectedFilterType = computed<FilterType>({
   get: () => {
-    const filters = selectedLayerFilters.value
-    if (filters?.vignette.enabled) return 'vignette'
-    if (filters?.chromaticAberration.enabled) return 'chromaticAberration'
-    if (filters?.dotHalftone.enabled) return 'dotHalftone'
-    if (filters?.lineHalftone.enabled) return 'lineHalftone'
-    return 'void'
+    const layerId = selectedFilterLayerId.value
+    if (!layerId) return 'void'
+    return getFilterTypeUsecase(layerId)
   },
   set: (type) => {
     const layerId = selectedFilterLayerId.value
     if (!layerId) return
-    updateLayerFilters(layerId, {
-      vignette: { enabled: type === 'vignette' },
-      chromaticAberration: { enabled: type === 'chromaticAberration' },
-      dotHalftone: { enabled: type === 'dotHalftone' },
-      lineHalftone: { enabled: type === 'lineHalftone' },
-    })
+    selectFilterTypeUsecase(layerId, type)
   },
 })
 
 // Current filter params for SchemaFields binding
+// Using Usecase API for filter parameter updates
 const currentVignetteConfig = computed({
   get: () => selectedLayerFilters.value?.vignette ?? {},
   set: (value) => {
     const layerId = selectedFilterLayerId.value
     if (!layerId) return
-    updateLayerFilters(layerId, { vignette: value })
+    updateVignetteParams(layerId, value)
   },
 })
 
@@ -246,7 +246,7 @@ const currentChromaticConfig = computed({
   set: (value) => {
     const layerId = selectedFilterLayerId.value
     if (!layerId) return
-    updateLayerFilters(layerId, { chromaticAberration: value })
+    updateChromaticAberrationParams(layerId, value)
   },
 })
 
@@ -255,7 +255,7 @@ const currentDotHalftoneConfig = computed({
   set: (value) => {
     const layerId = selectedFilterLayerId.value
     if (!layerId) return
-    updateLayerFilters(layerId, { dotHalftone: value })
+    updateDotHalftoneParams(layerId, value)
   },
 })
 
@@ -264,7 +264,7 @@ const currentLineHalftoneConfig = computed({
   set: (value) => {
     const layerId = selectedFilterLayerId.value
     if (!layerId) return
-    updateLayerFilters(layerId, { lineHalftone: value })
+    updateLineHalftoneParams(layerId, value)
   },
 })
 
