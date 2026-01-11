@@ -1,5 +1,5 @@
-import { fullscreenVertex, maskBlendState } from './common'
-import type { TextureRenderSpec, Viewport } from '../Domain'
+import { fullscreenVertex } from './common'
+import type { Viewport } from '../Domain'
 
 /**
  * ビネットフィルターのパラメータ
@@ -16,7 +16,8 @@ export interface VignetteParams {
 }
 
 /**
- * ビネットシェーダー（静的、viewportはuniformで渡す）
+ * ビネットシェーダー（入力テクスチャベース、他のエフェクトと同じパターン）
+ * 透明領域はスキップしてマスク境界外への漏れを防止
  */
 export const vignetteShader = /* wgsl */ `
 struct Uniforms {
@@ -31,24 +32,39 @@ struct Uniforms {
 }
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
+@group(0) @binding(1) var inputSampler: sampler;
+@group(0) @binding(2) var inputTexture: texture_2d<f32>;
 
 ${fullscreenVertex}
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let texSize = vec2f(u.viewportWidth, u.viewportHeight);
+  let uv = pos.xy / texSize;
+
+  // 現在ピクセルの色を取得
+  let originalColor = textureSample(inputTexture, inputSampler, uv);
+
+  // 透明領域はEffectをスキップ（Mask範囲外を保護）
+  if (originalColor.a < 0.01) {
+    return originalColor;
+  }
+
   // 正規化座標（-1.0 to 1.0）
-  let uv = (pos.xy / vec2f(u.viewportWidth, u.viewportHeight)) * 2.0 - 1.0;
+  let normUv = uv * 2.0 - 1.0;
 
   // 画面中心からの距離（アスペクト比補正）
   let aspect = u.viewportWidth / u.viewportHeight;
-  let correctedUv = vec2f(uv.x, uv.y * aspect);
+  let correctedUv = vec2f(normUv.x, normUv.y * aspect);
   let dist = length(correctedUv);
 
-  // ビネット効果の計算
-  let vignette = smoothstep(u.radius, u.radius + u.softness, dist);
-  let alpha = vignette * u.intensity;
+  // ビネット効果の計算（0.0 = 効果なし、1.0 = 最大暗さ）
+  let vignetteFactor = smoothstep(u.radius, u.radius + u.softness, dist) * u.intensity;
 
-  return vec4f(u.color.rgb, alpha * u.color.a);
+  // 元の色にビネット色をブレンド
+  let resultColor = mix(originalColor.rgb, u.color.rgb, vignetteFactor);
+
+  return vec4f(resultColor, originalColor.a);
 }
 `
 
@@ -83,19 +99,4 @@ export const createVignetteUniforms = (
   view.setFloat32(44, 0, true) // padding
 
   return uniforms
-}
-
-/**
- * ビネットフィルター用のTextureRenderSpecを生成
- */
-export const createVignetteSpec = (
-  params: VignetteParams,
-  viewport: Viewport
-): TextureRenderSpec => {
-  return {
-    shader: vignetteShader,
-    uniforms: createVignetteUniforms(params, viewport),
-    bufferSize: VIGNETTE_BUFFER_SIZE,
-    blend: maskBlendState,
-  }
 }
