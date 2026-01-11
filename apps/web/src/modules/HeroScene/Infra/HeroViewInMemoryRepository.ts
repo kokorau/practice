@@ -5,9 +5,19 @@
  * subscribeパターンで変更通知をサポート
  */
 
-import type { HeroViewRepository, LayerUpdate } from '../Application/ports/HeroViewRepository'
-import type { HeroViewConfig, LayerNodeConfig, GroupLayerNodeConfig } from '../Domain/HeroViewConfig'
+import type { HeroViewRepository } from '../Domain/repository/HeroViewRepository'
+import type {
+  HeroViewConfig,
+  LayerNodeConfig,
+  GroupLayerNodeConfig,
+  HeroColorsConfig,
+  ViewportConfig,
+  ForegroundLayerConfig,
+} from '../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
+
+// Re-export LayerUpdate type for backward compatibility
+export type { LayerUpdate } from '../Application/ports/HeroViewRepository'
 
 /**
  * レイヤーツリーから特定のIDを検索
@@ -29,7 +39,7 @@ const findLayerInTree = (layers: LayerNodeConfig[], id: string): LayerNodeConfig
 const updateLayerInTree = (
   layers: LayerNodeConfig[],
   id: string,
-  updates: LayerUpdate
+  updates: Partial<LayerNodeConfig>
 ): LayerNodeConfig[] => {
   return layers.map(layer => {
     if (layer.id === id) {
@@ -44,6 +54,27 @@ const updateLayerInTree = (
     }
     return layer
   })
+}
+
+/**
+ * レイヤーツリーからレイヤーを削除（イミュータブル）
+ */
+const removeLayerFromTree = (
+  layers: LayerNodeConfig[],
+  id: string
+): LayerNodeConfig[] => {
+  return layers
+    .filter(layer => layer.id !== id)
+    .map(layer => {
+      if (layer.type === 'group') {
+        const group = layer as GroupLayerNodeConfig
+        return {
+          ...group,
+          children: removeLayerFromTree(group.children, id),
+        }
+      }
+      return layer
+    })
 }
 
 /**
@@ -70,7 +101,63 @@ export const createHeroViewInMemoryRepository = (
       notifySubscribers()
     },
 
-    updateLayer: (layerId: string, updates: LayerUpdate) => {
+    subscribe: (callback: (config: HeroViewConfig) => void) => {
+      subscribers.add(callback)
+      return () => {
+        subscribers.delete(callback)
+      }
+    },
+
+    // ============================================================
+    // セクション単位の部分更新
+    // ============================================================
+
+    updateColors: (colors: Partial<HeroColorsConfig>) => {
+      config = {
+        ...config,
+        colors: {
+          ...config.colors,
+          ...colors,
+          background: {
+            ...config.colors.background,
+            ...(colors.background ?? {}),
+          },
+          mask: {
+            ...config.colors.mask,
+            ...(colors.mask ?? {}),
+          },
+        },
+      }
+      notifySubscribers()
+    },
+
+    updateViewport: (viewport: Partial<ViewportConfig>) => {
+      config = {
+        ...config,
+        viewport: {
+          ...config.viewport,
+          ...viewport,
+        },
+      }
+      notifySubscribers()
+    },
+
+    updateForeground: (foreground: Partial<ForegroundLayerConfig>) => {
+      config = {
+        ...config,
+        foreground: {
+          ...config.foreground,
+          ...foreground,
+        },
+      }
+      notifySubscribers()
+    },
+
+    // ============================================================
+    // レイヤー操作
+    // ============================================================
+
+    updateLayer: (layerId: string, updates: Partial<LayerNodeConfig>) => {
       const layer = findLayerInTree(config.layers, layerId)
       if (!layer) return
 
@@ -85,11 +172,55 @@ export const createHeroViewInMemoryRepository = (
       return findLayerInTree(config.layers, layerId)
     },
 
-    subscribe: (callback: (config: HeroViewConfig) => void) => {
-      subscribers.add(callback)
-      return () => {
-        subscribers.delete(callback)
+    addLayer: (layer: LayerNodeConfig, index?: number) => {
+      const layers = [...config.layers]
+      if (index !== undefined && index >= 0 && index <= layers.length) {
+        layers.splice(index, 0, layer)
+      } else {
+        layers.push(layer)
       }
+      config = {
+        ...config,
+        layers,
+      }
+      notifySubscribers()
+    },
+
+    removeLayer: (layerId: string) => {
+      config = {
+        ...config,
+        layers: removeLayerFromTree(config.layers, layerId),
+      }
+      notifySubscribers()
+    },
+
+    reorderLayers: (layerIds: string[]) => {
+      // IDの順序に従ってレイヤーを並び替え
+      const layerMap = new Map<string, LayerNodeConfig>()
+      for (const layer of config.layers) {
+        layerMap.set(layer.id, layer)
+      }
+
+      const reorderedLayers: LayerNodeConfig[] = []
+      for (const id of layerIds) {
+        const layer = layerMap.get(id)
+        if (layer) {
+          reorderedLayers.push(layer)
+        }
+      }
+
+      // 指定されなかったレイヤーは末尾に追加
+      for (const layer of config.layers) {
+        if (!layerIds.includes(layer.id)) {
+          reorderedLayers.push(layer)
+        }
+      }
+
+      config = {
+        ...config,
+        layers: reorderedLayers,
+      }
+      notifySubscribers()
     },
   }
 }

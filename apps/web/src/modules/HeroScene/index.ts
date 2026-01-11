@@ -335,6 +335,10 @@ export {
   updateTextLayerColor,
   updateTextLayerPosition,
   updateTextLayerRotation,
+  // Preset UseCases
+  applyPreset as applyPresetUsecase,
+  exportPreset as exportPresetUsecase,
+  createPreset,
 } from './usecase'
 
 // TextLayer UseCase types
@@ -343,6 +347,9 @@ export type {
   UpdateTextLayerPositionParams,
   TextAnchor,
 } from './usecase'
+
+// Preset UseCase types
+export type { PresetExportPort, ExportPresetOptions } from './usecase'
 
 // HeroView Infra (re-export from Infra for convenience)
 export {
@@ -359,6 +366,8 @@ export {
   createHeroSceneRenderer,
   // Preset Repository
   createInMemoryHeroViewPresetRepository,
+  // Preset Export
+  createBrowserPresetExporter,
   // 3D Object Renderer
   ThreeJsObject3DRenderer,
   createObject3DRenderer,

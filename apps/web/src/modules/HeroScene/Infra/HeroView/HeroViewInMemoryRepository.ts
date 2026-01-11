@@ -95,6 +95,10 @@ export const createHeroViewInMemoryRepository = (
     // レイヤー操作
     // ============================================================
 
+    findLayer(layerId: string): LayerNodeConfig | undefined {
+      return currentConfig.layers.find((layer) => layer.id === layerId)
+    },
+
     updateLayer(layerId: string, updates: Partial<LayerNodeConfig>): void {
       currentConfig = {
         ...currentConfig,
