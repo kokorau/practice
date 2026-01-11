@@ -715,10 +715,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Update custom background surface params
    * Uses unidirectional flow: Usecase -> Repository -> View (via subscribe)
    */
-  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => {
+  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams | GradientGrainSurfaceParams>) => {
     if (!customBackgroundSurfaceParams.value) return
     const type = customBackgroundSurfaceParams.value.type
-    if (type === 'gradientGrain') return
 
     // Usecaseを通じてRepositoryを更新（View層はsubscribeで自動同期）
     backgroundSurfaceUsecase.updateSurfaceParams({ type, ...updates } as SurfaceParamsUpdate)
