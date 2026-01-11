@@ -36,7 +36,6 @@ import {
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
-import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
 import { getGoogleFontPresets } from '@practice/font'
 import PrimitiveColorPicker from '../components/HeroGenerator/PrimitiveColorPicker.vue'
@@ -57,6 +56,7 @@ import { createGradientGrainSpec, createDefaultGradientGrainParams, type DepthMa
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
+import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
@@ -970,14 +970,6 @@ watch(canvasImageData, () => {
   checkTitleContrast()
   checkDescriptionContrast()
 })
-
-// Helper to get score level class
-const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' => {
-  if (score >= 75) return 'excellent'
-  if (score >= 60) return 'good'
-  if (score >= 45) return 'fair'
-  return 'poor'
-}
 </script>
 
 <template>
@@ -1419,425 +1411,82 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
     </main>
 
     <!-- 右パネル: 選択要素のプロパティ -->
-    <aside ref="rightPanelRef" v-if="activeTab === 'generator'" class="hero-right-panel">
-      <div class="right-panel-header">
-        <span class="right-panel-title">
-          {{
-            selectedForegroundElement?.type === 'title' ? 'Title' :
-            selectedForegroundElement?.type === 'description' ? 'Description' :
-            selectedProcessorType === 'processor' ? 'Processor' :
-            selectedProcessorType === 'effect' ? 'Effect Settings' :
-            selectedProcessorType === 'mask' ? 'Mask Settings' :
-            selectedLayerVariant === 'base' ? 'Background' :
-            selectedLayerVariant === 'surface' ? 'Surface' :
-            'Properties'
-          }}
-        </span>
-        <button class="export-button" @click="exportPreset" title="Export Preset">
-          <span class="material-icons">download</span>
-        </button>
-      </div>
-      <div class="property-panel">
-        <!-- HTML Title Settings -->
-        <template v-if="selectedForegroundElement?.type === 'title'">
-          <div class="layer-settings">
-            <!-- APCA Contrast Score -->
-            <div v-if="titleContrastResult" class="contrast-score-section">
-              <div class="contrast-score-header">
-                <span class="contrast-score-label">APCA Contrast</span>
-                <span
-                  class="contrast-score-badge"
-                  :class="getScoreLevel(titleContrastResult.score)"
-                >
-                  Lc {{ titleContrastResult.score }}
-                </span>
-              </div>
-              <div class="contrast-histogram">
-                <div
-                  v-for="(percent, i) in titleContrastResult.histogram.bins"
-                  :key="i"
-                  class="histogram-bar"
-                  :style="{ height: `${Math.min(percent, 100)}%` }"
-                  :title="`${i * 10}-${(i + 1) * 10}: ${percent.toFixed(1)}%`"
-                />
-              </div>
-              <div class="contrast-score-hint">
-                {{ titleContrastResult.score >= 60 ? 'Good readability' : titleContrastResult.score >= 45 ? 'Minimum for body text' : 'Poor contrast' }}
-              </div>
-            </div>
-            <div class="settings-section">
-              <p class="settings-label">Color</p>
-              <PrimitiveColorPicker
-                v-model="selectedElementColorKey"
-                :palette="primitivePalette"
-                label="Text Color"
-                :show-auto="true"
-              />
-              <!-- Auto-selected neutral indicator for Title -->
-              <div v-if="selectedElementColorKey === 'auto'" class="auto-neutral-indicator">
-                <div
-                  v-for="key in NEUTRAL_KEYS"
-                  :key="key"
-                  class="auto-neutral-chip-wrapper"
-                >
-                  <div
-                    class="auto-neutral-chip"
-                    :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
-                    :title="key"
-                  />
-                  <span
-                    v-if="foregroundTitleAutoKey === key"
-                    class="material-icons auto-indicator-arrow"
-                  >expand_less</span>
-                </div>
-              </div>
-            </div>
-            <div class="settings-section">
-              <p class="settings-label">Text</p>
-              <textarea
-                v-model="selectedElementContent"
-                class="foreground-textarea"
-                placeholder="Enter text"
-                rows="2"
-              />
-            </div>
-            <div class="settings-section">
-              <GridPositionPicker v-model="selectedElementPosition" label="Position" />
-            </div>
-            <div class="settings-section">
-              <p class="settings-label">Font</p>
-              <button class="font-trigger" @click="openFontPanel">
-                <span
-                  class="font-trigger-name"
-                  :style="{ fontFamily: selectedFontPreset?.family }"
-                >{{ selectedFontDisplayName }}</span>
-                <span class="material-icons font-trigger-arrow">chevron_right</span>
-              </button>
-            </div>
-            <div class="settings-section">
-              <p class="settings-label">Font Size</p>
-              <div class="font-size-input-wrapper">
-                <input
-                  v-model.number="selectedElementFontSize"
-                  type="number"
-                  min="0.5"
-                  max="10"
-                  step="0.25"
-                  class="font-size-input"
-                />
-                <span class="font-size-unit">rem</span>
-              </div>
-            </div>
-          </div>
-        </template>
-
-        <!-- HTML Description Settings -->
-        <template v-else-if="selectedForegroundElement?.type === 'description'">
-          <div class="layer-settings">
-            <!-- APCA Contrast Score -->
-            <div v-if="descriptionContrastResult" class="contrast-score-section">
-              <div class="contrast-score-header">
-                <span class="contrast-score-label">APCA Contrast</span>
-                <span
-                  class="contrast-score-badge"
-                  :class="getScoreLevel(descriptionContrastResult.score)"
-                >
-                  Lc {{ descriptionContrastResult.score }}
-                </span>
-              </div>
-              <div class="contrast-histogram">
-                <div
-                  v-for="(percent, i) in descriptionContrastResult.histogram.bins"
-                  :key="i"
-                  class="histogram-bar"
-                  :style="{ height: `${Math.min(percent, 100)}%` }"
-                  :title="`${i * 10}-${(i + 1) * 10}: ${percent.toFixed(1)}%`"
-                />
-              </div>
-              <div class="contrast-score-hint">
-                {{ descriptionContrastResult.score >= 60 ? 'Good readability' : descriptionContrastResult.score >= 45 ? 'Minimum for body text' : 'Poor contrast' }}
-              </div>
-            </div>
-            <div class="settings-section">
-              <p class="settings-label">Color</p>
-              <PrimitiveColorPicker
-                v-model="selectedElementColorKey"
-                :palette="primitivePalette"
-                label="Text Color"
-                :show-auto="true"
-              />
-              <!-- Auto-selected neutral indicator for Description -->
-              <div v-if="selectedElementColorKey === 'auto'" class="auto-neutral-indicator">
-                <div
-                  v-for="key in NEUTRAL_KEYS"
-                  :key="key"
-                  class="auto-neutral-chip-wrapper"
-                >
-                  <div
-                    class="auto-neutral-chip"
-                    :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
-                    :title="key"
-                  />
-                  <span
-                    v-if="foregroundBodyAutoKey === key"
-                    class="material-icons auto-indicator-arrow"
-                  >expand_less</span>
-                </div>
-              </div>
-            </div>
-            <div class="settings-section">
-              <p class="settings-label">Text</p>
-              <textarea
-                v-model="selectedElementContent"
-                class="foreground-textarea"
-                placeholder="Enter text"
-                rows="2"
-              />
-            </div>
-            <div class="settings-section">
-              <GridPositionPicker v-model="selectedElementPosition" label="Position" />
-            </div>
-            <div class="settings-section">
-              <p class="settings-label">Font</p>
-              <button class="font-trigger" @click="openFontPanel">
-                <span
-                  class="font-trigger-name"
-                  :style="{ fontFamily: selectedFontPreset?.family }"
-                >{{ selectedFontDisplayName }}</span>
-                <span class="material-icons font-trigger-arrow">chevron_right</span>
-              </button>
-            </div>
-            <div class="settings-section">
-              <p class="settings-label">Font Size</p>
-              <div class="font-size-input-wrapper">
-                <input
-                  v-model.number="selectedElementFontSize"
-                  type="number"
-                  min="0.5"
-                  max="10"
-                  step="0.25"
-                  class="font-size-input"
-                />
-                <span class="font-size-unit">rem</span>
-              </div>
-            </div>
-          </div>
-        </template>
-
-        <!-- Background (Base Layer) Settings -->
-        <template v-else-if="!selectedProcessorType && selectedLayerVariant === 'base'">
-          <div class="layer-settings">
-            <!-- Color selection -->
-            <div class="settings-section">
-              <p class="settings-label">Colors</p>
-              <PrimitiveColorPicker
-                v-model="backgroundColorKey1"
-                :palette="primitivePalette"
-                label="Primary"
-              />
-              <PrimitiveColorPicker
-                v-model="backgroundColorKey2"
-                :palette="primitivePalette"
-                label="Secondary"
-                :show-auto="true"
-              />
-            </div>
-            <!-- Background surface params -->
-            <div v-if="currentBackgroundSurfaceSchema && customBackgroundSurfaceParams && customBackgroundSurfaceParams.type !== 'solid'" class="settings-section">
-              <p class="settings-label">Parameters</p>
-              <SchemaFields
-                :schema="currentBackgroundSurfaceSchema"
-                :model-value="customBackgroundSurfaceParams"
-                @update:model-value="updateBackgroundSurfaceParams($event)"
-              />
-            </div>
-            <!-- Texture selection -->
-            <div class="settings-section">
-              <p class="settings-label">Texture</p>
-              <SurfaceSelector
-                :custom-image="customBackgroundImage"
-                :custom-file-name="customBackgroundFile?.name ?? null"
-                :patterns="backgroundPatterns"
-                :selected-index="selectedBackgroundIndex"
-                :show-random-button="true"
-                :is-loading-random="isLoadingRandomBackground"
-                @upload-image="setBackgroundImage"
-                @clear-image="clearBackgroundImage"
-                @select-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
-                @load-random="loadRandomBackgroundImage()"
-              />
-            </div>
-          </div>
-        </template>
-
-        <!-- Surface Layer Settings -->
-        <template v-else-if="!selectedProcessorType && selectedLayerVariant === 'surface'">
-          <div class="layer-settings">
-            <!-- Color selection -->
-            <div class="settings-section">
-              <p class="settings-label">Colors</p>
-              <PrimitiveColorPicker
-                v-model="maskColorKey1"
-                :palette="primitivePalette"
-                label="Primary"
-                :show-auto="true"
-              />
-              <PrimitiveColorPicker
-                v-model="maskColorKey2"
-                :palette="primitivePalette"
-                label="Secondary"
-                :show-auto="true"
-              />
-            </div>
-            <!-- Surface params -->
-            <div v-if="currentSurfaceSchema && customSurfaceParams" class="settings-section">
-              <p class="settings-label">Parameters</p>
-              <SchemaFields
-                :schema="currentSurfaceSchema"
-                :model-value="customSurfaceParams"
-                @update:model-value="updateSurfaceParams($event)"
-              />
-            </div>
-            <!-- Texture selection -->
-            <div class="settings-section">
-              <p class="settings-label">Texture</p>
-              <SurfaceSelector
-                :custom-image="customMaskImage"
-                :custom-file-name="customMaskFile?.name ?? null"
-                :patterns="maskSurfacePatterns"
-                :selected-index="selectedMidgroundTextureIndex"
-                :show-random-button="true"
-                :is-loading-random="isLoadingRandomMask"
-                @upload-image="setMaskImage"
-                @clear-image="clearMaskImage"
-                @select-pattern="(i) => { if (i !== null) selectedMidgroundTextureIndex = i }"
-                @load-random="loadRandomMaskImage()"
-              />
-            </div>
-          </div>
-        </template>
-
-        <!-- Effect Processor Settings -->
-        <template v-else-if="selectedProcessorType === 'effect'">
-          <div class="processor-settings">
-            <!-- Effect params (shown when effect is active) -->
-            <div v-if="selectedFilterType === 'vignette'" class="filter-params">
-              <SchemaFields
-                :schema="VignetteEffectSchema"
-                :model-value="currentVignetteConfig"
-                :exclude="['enabled']"
-                @update:model-value="currentVignetteConfig = $event"
-              />
-            </div>
-            <div v-else-if="selectedFilterType === 'chromaticAberration'" class="filter-params">
-              <SchemaFields
-                :schema="ChromaticAberrationEffectSchema"
-                :model-value="currentChromaticConfig"
-                :exclude="['enabled']"
-                @update:model-value="currentChromaticConfig = $event"
-              />
-            </div>
-            <div v-else-if="selectedFilterType === 'dotHalftone'" class="filter-params">
-              <SchemaFields
-                :schema="DotHalftoneEffectSchema"
-                :model-value="currentDotHalftoneConfig"
-                :exclude="['enabled']"
-                @update:model-value="currentDotHalftoneConfig = $event"
-              />
-            </div>
-            <div v-else-if="selectedFilterType === 'lineHalftone'" class="filter-params">
-              <SchemaFields
-                :schema="LineHalftoneEffectSchema"
-                :model-value="currentLineHalftoneConfig"
-                :exclude="['enabled']"
-                @update:model-value="currentLineHalftoneConfig = $event"
-              />
-            </div>
-
-            <!-- Filter type selection -->
-            <div class="filter-options">
-              <label class="filter-option" :class="{ active: selectedFilterType === 'void' }">
-                <input type="radio" v-model="selectedFilterType" value="void" />
-                <span class="filter-name">None</span>
-              </label>
-              <label class="filter-option" :class="{ active: selectedFilterType === 'vignette' }">
-                <input type="radio" v-model="selectedFilterType" value="vignette" />
-                <span class="filter-name">Vignette</span>
-              </label>
-              <label class="filter-option" :class="{ active: selectedFilterType === 'chromaticAberration' }">
-                <input type="radio" v-model="selectedFilterType" value="chromaticAberration" />
-                <span class="filter-name">Chromatic Aberration</span>
-              </label>
-              <label class="filter-option" :class="{ active: selectedFilterType === 'dotHalftone' }">
-                <input type="radio" v-model="selectedFilterType" value="dotHalftone" />
-                <span class="filter-name">Dot Halftone</span>
-              </label>
-              <label class="filter-option" :class="{ active: selectedFilterType === 'lineHalftone' }">
-                <input type="radio" v-model="selectedFilterType" value="lineHalftone" />
-                <span class="filter-name">Line Halftone</span>
-              </label>
-            </div>
-          </div>
-        </template>
-
-        <!-- Mask Processor Settings -->
-        <template v-else-if="selectedProcessorType === 'mask'">
-          <div class="processor-settings">
-            <!-- Shape params (shown when mask is selected) -->
-            <div v-if="currentMaskShapeSchema && customMaskShapeParams" class="shape-params">
-              <SchemaFields
-                :schema="currentMaskShapeSchema"
-                :model-value="customMaskShapeParams"
-                :exclude="['cutout']"
-                @update:model-value="updateMaskShapeParams($event)"
-              />
-            </div>
-            <div class="pattern-grid">
-              <button
-                v-for="(pattern, i) in maskPatterns"
-                :key="i"
-                class="pattern-button"
-                :class="{ active: selectedMaskIndex === i }"
-                @click="selectedMaskIndex = i"
-              >
-                <MaskPatternThumbnail
-                  :create-background-spec="createBackgroundThumbnailSpec"
-                  :create-mask-spec="pattern.createSpec"
-                  :mask-color1="maskOuterColor"
-                  :mask-color2="maskInnerColor"
-                />
-                <span class="pattern-label">{{ pattern.label }}</span>
-              </button>
-            </div>
-          </div>
-        </template>
-
-        <!-- Processor Selected -->
-        <template v-else-if="selectedProcessorType === 'processor'">
-          <div class="property-placeholder">
-            <span class="material-icons property-icon">tune</span>
-            <p class="property-text">Processor</p>
-            <p class="property-hint">Processors modify how layers are rendered. Select Effect or Mask below to configure.</p>
-          </div>
-        </template>
-
-        <!-- Default: Other layer types or Group selected -->
-        <template v-else-if="selectedLayer && selectedLayerVariant !== 'base' && selectedLayerVariant !== 'surface'">
-          <div class="property-placeholder">
-            <span class="material-icons property-icon">tune</span>
-            <p class="property-text">{{ selectedLayer.name }}</p>
-            <p class="property-hint">Click Effect or Mask to edit processor settings</p>
-          </div>
-        </template>
-        <template v-else>
-          <div class="property-placeholder">
-            <span class="material-icons property-icon">layers</span>
-            <p class="property-text">No layer selected</p>
-            <p class="property-hint">Select a layer from the left panel to edit its properties</p>
-          </div>
-        </template>
-      </div>
-    </aside>
+    <RightPropertyPanel
+      v-if="activeTab === 'generator'"
+      ref="rightPanelRef"
+      :selected-foreground-element="selectedForegroundElement"
+      :selected-layer="selectedLayer"
+      :selected-layer-variant="selectedLayerVariant"
+      :selected-processor-type="selectedProcessorType"
+      :primitive-palette="primitivePalette"
+      :title-contrast-result="titleContrastResult"
+      :description-contrast-result="descriptionContrastResult"
+      :foreground-title-auto-key="foregroundTitleAutoKey"
+      :foreground-body-auto-key="foregroundBodyAutoKey"
+      :selected-element-color-key="selectedElementColorKey"
+      :selected-element-content="selectedElementContent"
+      :selected-element-position="selectedElementPosition"
+      :selected-element-font-size="selectedElementFontSize"
+      :selected-font-preset="selectedFontPreset"
+      :selected-font-display-name="selectedFontDisplayName"
+      :background-color-key1="backgroundColorKey1"
+      :background-color-key2="backgroundColorKey2"
+      :custom-background-image="customBackgroundImage"
+      :custom-background-file-name="customBackgroundFile?.name ?? null"
+      :background-patterns="backgroundPatterns"
+      :selected-background-index="selectedBackgroundIndex"
+      :is-loading-random-background="isLoadingRandomBackground"
+      :current-background-surface-schema="currentBackgroundSurfaceSchema"
+      :custom-background-surface-params="customBackgroundSurfaceParams"
+      :mask-color-key1="maskColorKey1"
+      :mask-color-key2="maskColorKey2"
+      :custom-mask-image="customMaskImage"
+      :custom-mask-file-name="customMaskFile?.name ?? null"
+      :mask-surface-patterns="maskSurfacePatterns"
+      :selected-midground-texture-index="selectedMidgroundTextureIndex"
+      :is-loading-random-mask="isLoadingRandomMask"
+      :current-surface-schema="currentSurfaceSchema"
+      :custom-surface-params="customSurfaceParams"
+      :selected-filter-type="selectedFilterType"
+      :vignette-config="currentVignetteConfig"
+      :chromatic-config="currentChromaticConfig"
+      :dot-halftone-config="currentDotHalftoneConfig"
+      :line-halftone-config="currentLineHalftoneConfig"
+      :mask-patterns="maskPatterns"
+      :selected-mask-index="selectedMaskIndex"
+      :current-mask-shape-schema="currentMaskShapeSchema"
+      :custom-mask-shape-params="customMaskShapeParams"
+      :mask-outer-color="maskOuterColor"
+      :mask-inner-color="maskInnerColor"
+      :create-background-thumbnail-spec="createBackgroundThumbnailSpec"
+      @export-preset="exportPreset"
+      @update:selected-element-color-key="selectedElementColorKey = $event as HeroPrimitiveKey"
+      @update:selected-element-content="selectedElementContent = $event"
+      @update:selected-element-position="selectedElementPosition = $event"
+      @update:selected-element-font-size="selectedElementFontSize = $event"
+      @open-font-panel="openFontPanel"
+      @update:background-color-key1="backgroundColorKey1 = $event"
+      @update:background-color-key2="backgroundColorKey2 = $event"
+      @upload-background-image="setBackgroundImage"
+      @clear-background-image="clearBackgroundImage"
+      @select-background-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
+      @load-random-background="loadRandomBackgroundImage()"
+      @update:background-surface-params="updateBackgroundSurfaceParams($event)"
+      @update:mask-color-key1="maskColorKey1 = $event"
+      @update:mask-color-key2="maskColorKey2 = $event"
+      @upload-mask-image="setMaskImage"
+      @clear-mask-image="clearMaskImage"
+      @select-mask-pattern="(i) => { if (i !== null) selectedMidgroundTextureIndex = i }"
+      @load-random-mask="loadRandomMaskImage()"
+      @update:surface-params="updateSurfaceParams($event)"
+      @update:selected-filter-type="selectedFilterType = $event"
+      @update:vignette-config="currentVignetteConfig = $event"
+      @update:chromatic-config="currentChromaticConfig = $event"
+      @update:dot-halftone-config="currentDotHalftoneConfig = $event"
+      @update:line-halftone-config="currentLineHalftoneConfig = $event"
+      @update:selected-mask-index="selectedMaskIndex = $event"
+      @update:mask-shape-params="updateMaskShapeParams($event)"
+    />
   </div>
 </template>
 
@@ -1876,159 +1525,6 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 .pattern-button.active {
   border-color: oklch(0.55 0.20 250);
   background: oklch(0.55 0.20 250 / 0.1);
-}
-
-.pattern-canvas {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-}
-
-.pattern-none {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: oklch(0.92 0.01 260);
-  color: oklch(0.50 0.02 260);
-  font-size: 0.875rem;
-}
-
-.dark .pattern-none {
-  background: oklch(0.22 0.02 260);
-  color: oklch(0.60 0.02 260);
-}
-
-.pattern-label {
-  padding: 0.375rem 0.5rem;
-  font-size: 0.75rem;
-  color: oklch(0.40 0.02 260);
-  text-align: left;
-}
-
-.dark .pattern-label {
-  color: oklch(0.70 0.02 260);
-}
-
-/* Empty State */
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  color: oklch(0.50 0.02 260);
-}
-
-/* Layout Grid */
-.layout-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.375rem;
-}
-
-.layout-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.625rem 0.5rem;
-  border: 2px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  background: transparent;
-  color: oklch(0.40 0.02 260);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.dark .layout-button {
-  border-color: oklch(0.30 0.02 260);
-  color: oklch(0.70 0.02 260);
-}
-
-.layout-button:hover {
-  border-color: oklch(0.75 0.01 260);
-  background: oklch(0.92 0.01 260);
-}
-
-.dark .layout-button:hover {
-  border-color: oklch(0.40 0.02 260);
-  background: oklch(0.20 0.02 260);
-}
-
-.layout-button.active {
-  border-color: oklch(0.55 0.20 250);
-  background: oklch(0.55 0.20 250 / 0.15);
-  color: oklch(0.25 0.02 260);
-}
-
-.dark .layout-button.active {
-  color: oklch(0.90 0.02 260);
-}
-
-.layout-icon {
-  font-size: 1.25rem;
-}
-
-.layout-label {
-  font-size: 0.625rem;
-  font-weight: 500;
-}
-
-/* Texture Grid */
-.texture-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.375rem;
-}
-
-.texture-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0.25rem;
-  border: 2px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  background: transparent;
-  color: oklch(0.40 0.02 260);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.dark .texture-button {
-  border-color: oklch(0.30 0.02 260);
-  color: oklch(0.70 0.02 260);
-}
-
-.texture-button:hover {
-  border-color: oklch(0.75 0.01 260);
-  background: oklch(0.92 0.01 260);
-}
-
-.dark .texture-button:hover {
-  border-color: oklch(0.40 0.02 260);
-  background: oklch(0.20 0.02 260);
-}
-
-.texture-button.active {
-  border-color: oklch(0.55 0.20 250);
-  background: oklch(0.55 0.20 250 / 0.15);
-  color: oklch(0.25 0.02 260);
-}
-
-.dark .texture-button.active {
-  color: oklch(0.90 0.02 260);
-}
-
-.texture-icon {
-  font-size: 1rem;
-}
-
-.texture-label {
-  font-size: 0.5rem;
-  font-weight: 500;
-  text-align: center;
-  line-height: 1.2;
 }
 
 /* Filter Section */
@@ -2113,162 +1609,6 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
   gap: 0.5rem;
 }
 
-/* Foreground Section */
-.foreground-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.foreground-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.foreground-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: oklch(0.40 0.02 260);
-}
-
-.dark .foreground-label {
-  color: oklch(0.70 0.02 260);
-}
-
-.foreground-textarea {
-  padding: 0.625rem 0.75rem;
-  background: oklch(0.96 0.01 260);
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  color: oklch(0.25 0.02 260);
-  font-size: 0.875rem;
-  font-family: inherit;
-  transition: border-color 0.15s;
-}
-
-.dark .foreground-textarea {
-  background: oklch(0.18 0.02 260);
-  border-color: oklch(0.30 0.02 260);
-  color: oklch(0.90 0.02 260);
-}
-
-.foreground-textarea:focus {
-  outline: none;
-  border-color: oklch(0.55 0.20 250);
-}
-
-.foreground-textarea {
-  resize: vertical;
-  min-height: 4rem;
-}
-
-.font-size-input-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.25rem;
-  width: 50%;
-  padding: 0.375rem 0.5rem;
-  background: oklch(0.96 0.01 260);
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  transition: border-color 0.15s;
-}
-
-.dark .font-size-input-wrapper {
-  background: oklch(0.18 0.02 260);
-  border-color: oklch(0.30 0.02 260);
-}
-
-.font-size-input-wrapper:focus-within {
-  border-color: oklch(0.55 0.20 250);
-}
-
-.font-size-input {
-  width: 3rem;
-  padding: 0;
-  background: transparent;
-  border: none;
-  color: oklch(0.25 0.02 260);
-  font-size: 0.875rem;
-  text-align: right;
-  outline: none;
-  -moz-appearance: textfield;
-}
-
-.font-size-input::-webkit-outer-spin-button,
-.font-size-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.dark .font-size-input {
-  color: oklch(0.90 0.02 260);
-}
-
-.font-size-unit {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: oklch(0.50 0.02 260);
-}
-
-.dark .font-size-unit {
-  color: oklch(0.60 0.02 260);
-}
-
-/* Font Trigger */
-.font-trigger {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.625rem 0.75rem;
-  background: oklch(0.94 0.01 260);
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.dark .font-trigger {
-  background: oklch(0.22 0.02 260);
-  border-color: oklch(0.30 0.02 260);
-}
-
-.font-trigger:hover {
-  border-color: oklch(0.70 0.01 260);
-  background: oklch(0.90 0.01 260);
-}
-
-.dark .font-trigger:hover {
-  border-color: oklch(0.40 0.02 260);
-  background: oklch(0.26 0.02 260);
-}
-
-.font-trigger-name {
-  flex: 1;
-  font-size: 0.875rem;
-  color: oklch(0.25 0.02 260);
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dark .font-trigger-name {
-  color: oklch(0.90 0.02 260);
-}
-
-.font-trigger-arrow {
-  font-size: 1.125rem;
-  color: oklch(0.50 0.02 260);
-}
-
-.dark .font-trigger-arrow {
-  color: oklch(0.60 0.02 260);
-}
-
 /* Color Selection Section */
 .color-selection-section {
   display: flex;
@@ -2288,152 +1628,6 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
 .dark .color-selection-section {
   border-top-color: oklch(0.30 0.02 260);
-}
-
-/* Right Panel Header */
-.right-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid oklch(0.85 0.01 260);
-  margin-bottom: 0.75rem;
-}
-
-.dark .right-panel-header {
-  border-bottom-color: oklch(0.30 0.02 260);
-}
-
-.right-panel-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: oklch(0.25 0.02 260);
-}
-
-.dark .right-panel-title {
-  color: oklch(0.85 0.02 260);
-}
-
-.export-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  background: oklch(0.92 0.01 260);
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  color: oklch(0.40 0.02 260);
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.dark .export-button {
-  background: oklch(0.22 0.02 260);
-  border-color: oklch(0.30 0.02 260);
-  color: oklch(0.70 0.02 260);
-}
-
-.export-button:hover {
-  background: oklch(0.55 0.20 250);
-  border-color: oklch(0.55 0.20 250);
-  color: oklch(0.98 0.01 260);
-}
-
-.dark .export-button:hover {
-  background: oklch(0.55 0.20 250);
-  border-color: oklch(0.55 0.20 250);
-  color: oklch(0.98 0.01 260);
-}
-
-.export-button .material-icons {
-  font-size: 1.125rem;
-}
-
-/* Contrast Score Section */
-.contrast-score-section {
-  padding: 0.75rem;
-  background: oklch(0.94 0.01 260);
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.dark .contrast-score-section {
-  background: oklch(0.18 0.02 260);
-}
-
-.contrast-score-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.contrast-score-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: oklch(0.40 0.02 260);
-}
-
-.dark .contrast-score-label {
-  color: oklch(0.70 0.02 260);
-}
-
-.contrast-score-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.contrast-score-badge.excellent {
-  background: oklch(0.75 0.15 145);
-  color: oklch(0.25 0.05 145);
-}
-
-.contrast-score-badge.good {
-  background: oklch(0.80 0.12 130);
-  color: oklch(0.30 0.05 130);
-}
-
-.contrast-score-badge.fair {
-  background: oklch(0.80 0.12 85);
-  color: oklch(0.30 0.05 85);
-}
-
-.contrast-score-badge.poor {
-  background: oklch(0.75 0.15 30);
-  color: oklch(0.25 0.05 30);
-}
-
-.contrast-histogram {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 2rem;
-  padding: 0.25rem 0;
-}
-
-.histogram-bar {
-  flex: 1;
-  min-height: 2px;
-  background: oklch(0.55 0.15 250);
-  border-radius: 1px;
-  transition: height 0.2s;
-}
-
-.dark .histogram-bar {
-  background: oklch(0.65 0.15 250);
-}
-
-.contrast-score-hint {
-  font-size: 0.6875rem;
-  color: oklch(0.50 0.02 260);
-  margin-top: 0.25rem;
-}
-
-.dark .contrast-score-hint {
-  color: oklch(0.60 0.02 260);
 }
 
 /* Text Layer Section */
@@ -2578,114 +1772,4 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
   border-radius: 50%;
   cursor: pointer;
 }
-
-/* Property Panel */
-.property-panel {
-  flex: 1;
-  min-height: 0;
-}
-
-/* Layer Settings */
-.layer-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.settings-label {
-  margin: 0;
-  font-size: 0.625rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: oklch(0.50 0.02 260);
-}
-
-.dark .settings-label {
-  color: oklch(0.60 0.02 260);
-}
-
-/* Processor Settings */
-.processor-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.property-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
-  text-align: center;
-  color: oklch(0.50 0.02 260);
-}
-
-.dark .property-placeholder {
-  color: oklch(0.60 0.02 260);
-}
-
-.property-icon {
-  font-size: 2rem;
-  margin-bottom: 0.75rem;
-  opacity: 0.5;
-}
-
-.property-text {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: oklch(0.35 0.02 260);
-}
-
-.dark .property-text {
-  color: oklch(0.75 0.02 260);
-}
-
-.property-hint {
-  margin: 0.5rem 0 0;
-  font-size: 0.75rem;
-  opacity: 0.7;
-}
-
-/* Auto Neutral Indicator */
-.auto-neutral-indicator {
-  display: flex;
-  gap: 0.125rem;
-  align-items: flex-start;
-  margin-top: 0.5rem;
-}
-
-.auto-neutral-chip-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-}
-
-.auto-neutral-chip {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.125rem;
-  border: 1px solid oklch(0.80 0.01 260 / 0.5);
-}
-
-.dark .auto-neutral-chip {
-  border-color: oklch(0.35 0.02 260 / 0.5);
-}
-
-.auto-indicator-arrow {
-  font-size: 0.875rem;
-  color: oklch(0.55 0.20 250);
-  margin-top: -0.125rem;
-  line-height: 1;
-}
-
 </style>

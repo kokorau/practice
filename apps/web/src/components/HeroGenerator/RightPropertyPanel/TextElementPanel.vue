@@ -1,0 +1,404 @@
+<script setup lang="ts">
+import { $Oklch } from '@practice/color'
+import type { PrimitivePalette, PrimitiveKey } from '../../../modules/SemanticColorPalette/Domain'
+import { NEUTRAL_KEYS } from '../../../modules/SemanticColorPalette/Domain'
+import type { GridPosition } from '../../../modules/HeroScene'
+import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
+import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
+import GridPositionPicker from '../GridPositionPicker.vue'
+
+interface FontPreset {
+  id: string
+  name: string
+  family: string
+}
+
+defineProps<{
+  elementType: 'title' | 'description'
+  contrastResult: ContrastAnalysisResult | null
+  autoColorKey: PrimitiveKey | null
+  primitivePalette: PrimitivePalette
+  colorKey: PrimitiveKey | 'auto'
+  content: string
+  position: GridPosition
+  fontSize: number
+  fontPreset: FontPreset | null
+  fontDisplayName: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'update:colorKey', value: PrimitiveKey | 'auto'): void
+  (e: 'update:content', value: string): void
+  (e: 'update:position', value: GridPosition): void
+  (e: 'update:fontSize', value: number): void
+  (e: 'open-font-panel'): void
+}>()
+
+// Helper to get score level class
+const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' => {
+  if (score >= 75) return 'excellent'
+  if (score >= 60) return 'good'
+  if (score >= 45) return 'fair'
+  return 'poor'
+}
+
+const getContrastHint = (score: number): string => {
+  if (score >= 60) return 'Good readability'
+  if (score >= 45) return 'Minimum for body text'
+  return 'Poor contrast'
+}
+</script>
+
+<template>
+  <div class="layer-settings">
+    <!-- APCA Contrast Score -->
+    <div v-if="contrastResult" class="contrast-score-section">
+      <div class="contrast-score-header">
+        <span class="contrast-score-label">APCA Contrast</span>
+        <span
+          class="contrast-score-badge"
+          :class="getScoreLevel(contrastResult.score)"
+        >
+          Lc {{ contrastResult.score }}
+        </span>
+      </div>
+      <div class="contrast-histogram">
+        <div
+          v-for="(percent, i) in contrastResult.histogram.bins"
+          :key="i"
+          class="histogram-bar"
+          :style="{ height: `${Math.min(percent, 100)}%` }"
+          :title="`${i * 10}-${(i + 1) * 10}: ${percent.toFixed(1)}%`"
+        />
+      </div>
+      <div class="contrast-score-hint">
+        {{ getContrastHint(contrastResult.score) }}
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-label">Color</p>
+      <PrimitiveColorPicker
+        :model-value="colorKey"
+        :palette="primitivePalette"
+        label="Text Color"
+        :show-auto="true"
+        @update:model-value="emit('update:colorKey', $event)"
+      />
+      <!-- Auto-selected neutral indicator -->
+      <div v-if="colorKey === 'auto'" class="auto-neutral-indicator">
+        <div
+          v-for="key in NEUTRAL_KEYS"
+          :key="key"
+          class="auto-neutral-chip-wrapper"
+        >
+          <div
+            class="auto-neutral-chip"
+            :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+            :title="key"
+          />
+          <span
+            v-if="autoColorKey === key"
+            class="material-icons auto-indicator-arrow"
+          >expand_less</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-label">Text</p>
+      <textarea
+        :value="content"
+        class="foreground-textarea"
+        placeholder="Enter text"
+        rows="2"
+        @input="emit('update:content', ($event.target as HTMLTextAreaElement).value)"
+      />
+    </div>
+
+    <div class="settings-section">
+      <GridPositionPicker
+        :model-value="position"
+        label="Position"
+        @update:model-value="emit('update:position', $event)"
+      />
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-label">Font</p>
+      <button class="font-trigger" @click="emit('open-font-panel')">
+        <span
+          class="font-trigger-name"
+          :style="{ fontFamily: fontPreset?.family }"
+        >{{ fontDisplayName }}</span>
+        <span class="material-icons font-trigger-arrow">chevron_right</span>
+      </button>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-label">Font Size</p>
+      <div class="font-size-input-wrapper">
+        <input
+          :value="fontSize"
+          type="number"
+          min="0.5"
+          max="10"
+          step="0.25"
+          class="font-size-input"
+          @input="emit('update:fontSize', Number(($event.target as HTMLInputElement).value))"
+        />
+        <span class="font-size-unit">rem</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.layer-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.settings-section {
+  padding: 0.5rem 0;
+}
+
+.settings-section:not(:last-child) {
+  border-bottom: 1px solid oklch(0.90 0.01 260);
+}
+
+:global(.dark) .settings-section:not(:last-child) {
+  border-bottom-color: oklch(0.22 0.02 260);
+}
+
+.settings-label {
+  margin: 0 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.40 0.02 260);
+}
+
+:global(.dark) .settings-label {
+  color: oklch(0.70 0.02 260);
+}
+
+/* APCA Contrast Score */
+.contrast-score-section {
+  padding: 0.75rem;
+  background: oklch(0.97 0.01 260);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+:global(.dark) .contrast-score-section {
+  background: oklch(0.14 0.02 260);
+}
+
+.contrast-score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.contrast-score-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: oklch(0.45 0.02 260);
+}
+
+:global(.dark) .contrast-score-label {
+  color: oklch(0.65 0.02 260);
+}
+
+.contrast-score-badge {
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.contrast-score-badge.excellent {
+  background: oklch(0.85 0.15 145);
+  color: oklch(0.30 0.10 145);
+}
+
+.contrast-score-badge.good {
+  background: oklch(0.88 0.12 130);
+  color: oklch(0.35 0.08 130);
+}
+
+.contrast-score-badge.fair {
+  background: oklch(0.90 0.12 85);
+  color: oklch(0.40 0.10 85);
+}
+
+.contrast-score-badge.poor {
+  background: oklch(0.88 0.12 25);
+  color: oklch(0.40 0.10 25);
+}
+
+.contrast-histogram {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 24px;
+  margin-bottom: 0.375rem;
+}
+
+.histogram-bar {
+  flex: 1;
+  min-height: 2px;
+  background: oklch(0.55 0.15 250);
+  border-radius: 1px;
+  transition: height 0.2s;
+}
+
+.contrast-score-hint {
+  font-size: 0.625rem;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .contrast-score-hint {
+  color: oklch(0.60 0.02 260);
+}
+
+/* Auto neutral indicator */
+.auto-neutral-indicator {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.auto-neutral-chip-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auto-neutral-chip {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.1875rem;
+  border: 1px solid oklch(0.80 0.01 260);
+}
+
+:global(.dark) .auto-neutral-chip {
+  border-color: oklch(0.35 0.02 260);
+}
+
+.auto-indicator-arrow {
+  font-size: 0.875rem;
+  color: oklch(0.55 0.20 250);
+  margin-top: -0.125rem;
+}
+
+/* Textarea */
+.foreground-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  background: oklch(0.98 0.01 260);
+  color: oklch(0.25 0.02 260);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 2.5rem;
+}
+
+:global(.dark) .foreground-textarea {
+  background: oklch(0.16 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
+}
+
+.foreground-textarea:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
+}
+
+/* Font trigger */
+.font-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  background: oklch(0.98 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+:global(.dark) .font-trigger {
+  background: oklch(0.16 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+}
+
+.font-trigger:hover {
+  border-color: oklch(0.70 0.01 260);
+}
+
+:global(.dark) .font-trigger:hover {
+  border-color: oklch(0.40 0.02 260);
+}
+
+.font-trigger-name {
+  font-size: 0.8125rem;
+  color: oklch(0.25 0.02 260);
+}
+
+:global(.dark) .font-trigger-name {
+  color: oklch(0.90 0.02 260);
+}
+
+.font-trigger-arrow {
+  font-size: 1.125rem;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .font-trigger-arrow {
+  color: oklch(0.60 0.02 260);
+}
+
+/* Font size input */
+.font-size-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.font-size-input {
+  width: 4rem;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  background: oklch(0.98 0.01 260);
+  color: oklch(0.25 0.02 260);
+  font-size: 0.8125rem;
+  font-family: inherit;
+}
+
+:global(.dark) .font-size-input {
+  background: oklch(0.16 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
+}
+
+.font-size-input:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
+}
+
+.font-size-unit {
+  font-size: 0.75rem;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .font-size-unit {
+  color: oklch(0.60 0.02 260);
+}
+</style>
