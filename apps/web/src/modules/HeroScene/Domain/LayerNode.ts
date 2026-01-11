@@ -683,4 +683,3 @@ export const wrapNodeInMaskedGroup = (
 
   return replaceWithGroup(nodes)
 }
-

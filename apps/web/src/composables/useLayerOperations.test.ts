@@ -10,7 +10,7 @@ import {
   createSurfaceLayer,
   createEffectModifier,
   createMaskModifier,
-  type LayerNode,
+  type SceneNode,
 } from '../modules/HeroScene'
 
 // ============================================================
@@ -25,7 +25,7 @@ const createMockSceneCallbacks = (): SceneOperationCallbacks => ({
   toggleLayerVisibility: vi.fn(),
 })
 
-const createInitialLayers = (): LayerNode[] => [
+const createInitialLayers = (): SceneNode[] => [
   createGroup(
     'background-group',
     [
@@ -183,7 +183,7 @@ describe('useLayerOperations', () => {
       const findSurface = () => {
         const mainGroup = layers.value.find((l) => l.id === 'main-group')
         if (mainGroup && 'children' in mainGroup) {
-          return mainGroup.children.find((c) => c.id === 'surface-1')
+          return (mainGroup.children as SceneNode[]).find((c: SceneNode) => c.id === 'surface-1')
         }
         return null
       }
@@ -345,7 +345,7 @@ describe('useLayerOperations', () => {
       handleGroupSelection('surface-1')
 
       // Find if surface-1 is now wrapped in a new group
-      const findLayer = (nodes: LayerNode[], id: string): LayerNode | null => {
+      const findLayer = (nodes: SceneNode[], id: string): SceneNode | null => {
         for (const node of nodes) {
           if (node.id === id) return node
           if ('children' in node) {
@@ -371,7 +371,7 @@ describe('useLayerOperations', () => {
       handleUseAsMask('surface-1')
 
       // The structure should change but surface-1 should still exist
-      const findLayer = (nodes: LayerNode[], id: string): LayerNode | null => {
+      const findLayer = (nodes: SceneNode[], id: string): SceneNode | null => {
         for (const node of nodes) {
           if (node.id === id) return node
           if ('children' in node) {

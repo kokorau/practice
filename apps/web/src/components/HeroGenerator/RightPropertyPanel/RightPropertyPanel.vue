@@ -2,7 +2,7 @@
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '../../../modules/SemanticColorPalette/Domain'
-import type { LayerNode, GridPosition } from '../../../modules/HeroScene'
+import type { SceneNode, GridPosition } from '../../../modules/HeroScene'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import type { BackgroundSpecCreator } from '../MaskPatternThumbnail.vue'
@@ -38,7 +38,7 @@ type LayerVariant = 'base' | 'surface' | 'text' | 'model3d' | 'image' | null
 const props = defineProps<{
   // Selection state
   selectedForegroundElement: ForegroundElementConfig | null
-  selectedLayer: LayerNode | null | undefined
+  selectedLayer: SceneNode | null | undefined
   selectedLayerVariant: LayerVariant
   selectedProcessorType: ProcessorType
 
