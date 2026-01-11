@@ -380,6 +380,10 @@ export {
   moveNode,
   wrapNodeInGroup,
   wrapNodeInMaskedGroup,
+  // Scene layer ID mapping
+  SCENE_LAYER_IDS,
+  type SceneLayerId,
+  getSceneLayerId,
   // Legacy aliases (deprecated)
   type LayerNodeType,
   type LayerNodeBase,

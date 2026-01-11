@@ -216,6 +216,9 @@ export {
   moveNode,
   wrapNodeInGroup,
   wrapNodeInMaskedGroup,
+  // Scene layer ID mapping
+  SCENE_LAYER_IDS,
+  getSceneLayerId,
   // Legacy LayerNode factories
   createBaseLayerNode,
   createGroupLayerNode,
