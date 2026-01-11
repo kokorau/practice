@@ -137,6 +137,22 @@ const emit = defineEmits<{
   'update:maskShapeParams': [value: Record<string, unknown>]
 }>()
 
+// Check if selected layer is a background layer based on its ID
+const isBackgroundLayer = (): boolean => {
+  const layerId = props.selectedLayer?.id
+  if (!layerId) return false
+  return layerId.startsWith('background')
+}
+
+// Handle surface params update based on which layer is selected
+const handleSurfaceParamsUpdate = (value: Record<string, unknown>) => {
+  if (isBackgroundLayer()) {
+    emit('update:backgroundSurfaceParams', value)
+  } else {
+    emit('update:surfaceParams', value)
+  }
+}
+
 // Compute panel title based on selection state
 const panelTitle = (): string => {
   if (props.selectedForegroundElement?.type === 'title') return 'Title'
@@ -144,7 +160,7 @@ const panelTitle = (): string => {
   if (props.selectedProcessorType === 'processor') return 'Processor'
   if (props.selectedProcessorType === 'effect') return 'Effect Settings'
   if (props.selectedProcessorType === 'mask') return 'Mask Settings'
-  if (props.selectedLayerVariant === 'base') return 'Background'
+  if (isBackgroundLayer()) return 'Background'
   if (props.selectedLayerVariant === 'surface') return 'Surface'
   return 'Properties'
 }
@@ -200,7 +216,8 @@ const panelTitle = (): string => {
 
       <!-- Background (Base Layer) Settings -->
       <LayerSettingsPanel
-        v-else-if="!selectedProcessorType && selectedLayerVariant === 'base'"
+        v-else-if="!selectedProcessorType && isBackgroundLayer()"
+        key="base-layer-settings"
         layer-type="base"
         :primitive-palette="primitivePalette"
         :color-key1="backgroundColorKey1"
@@ -220,12 +237,13 @@ const panelTitle = (): string => {
         @clear-image="emit('clear-background-image')"
         @select-pattern="emit('select-background-pattern', $event)"
         @load-random="emit('load-random-background')"
-        @update:surface-params="emit('update:backgroundSurfaceParams', $event)"
+        @update:surface-params="(value) => handleSurfaceParamsUpdate(value)"
       />
 
       <!-- Surface Layer Settings -->
       <LayerSettingsPanel
-        v-else-if="!selectedProcessorType && selectedLayerVariant === 'surface'"
+        v-else-if="!selectedProcessorType && selectedLayerVariant === 'surface' && !isBackgroundLayer()"
+        key="surface-layer-settings"
         layer-type="surface"
         :primitive-palette="primitivePalette"
         :color-key1="maskColorKey1"
@@ -245,7 +263,7 @@ const panelTitle = (): string => {
         @clear-image="emit('clear-mask-image')"
         @select-pattern="emit('select-mask-pattern', $event)"
         @load-random="emit('load-random-mask')"
-        @update:surface-params="emit('update:surfaceParams', $event)"
+        @update:surface-params="(value) => handleSurfaceParamsUpdate(value)"
       />
 
       <!-- Effect Processor Settings -->
