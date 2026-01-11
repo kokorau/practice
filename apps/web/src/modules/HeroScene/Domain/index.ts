@@ -339,7 +339,7 @@ export {
 // ============================================================
 
 export {
-  // New types
+  // Types
   type Layer,
   type Group,
   type SceneNode,
@@ -353,7 +353,7 @@ export {
   type TextConfig,
   type Model3DConfig,
   type DropPosition,
-  // New factory functions
+  // Factory functions
   createLayer,
   createBaseLayer,
   createSurfaceLayer,
@@ -361,7 +361,7 @@ export {
   createModel3DLayer,
   createImageLayer as createSceneImageLayer,
   createGroup,
-  // New type guards
+  // Type guards
   isLayer,
   isGroup,
   isBaseLayer,
@@ -369,7 +369,7 @@ export {
   isTextLayer,
   isModel3DLayer,
   isImageLayer,
-  // New tree utilities
+  // Tree utilities
   findNode,
   updateNode,
   removeNode,
@@ -384,37 +384,6 @@ export {
   SCENE_LAYER_IDS,
   type SceneLayerId,
   getSceneLayerId,
-  // Legacy aliases (deprecated)
-  type LayerNodeType,
-  type LayerNodeBase,
-  type BaseLayerNode,
-  type GroupLayerNode,
-  type SurfaceLayerNode,
-  type ObjectLayerNode,
-  type TextLayerNode,
-  type LayerNode,
-  type SurfaceConfig,
-  type TexturePatternSurface,
-  createBaseLayerNode,
-  createGroupLayerNode,
-  createSurfaceLayerNode,
-  createTextLayerNode,
-  createModel3DLayerNode,
-  createImageLayerNode,
-  createObjectLayerNode,
-  isBaseLayerNode,
-  isGroupLayerNode,
-  isSurfaceLayerNode,
-  isTextLayerNode,
-  isModel3DLayerNode,
-  isImageLayerNode,
-  isObjectLayerNode,
-  findLayerNode,
-  updateLayerNode,
-  removeLayerNode,
-  flattenLayerNodes,
-  insertLayerNode,
-  moveLayerNode,
 } from './LayerNode'
 
 // ============================================================
