@@ -27,3 +27,13 @@ export {
   type PresetExportPort,
   type ExportPresetOptions,
 } from './Preset'
+export {
+  updateTextLayerText,
+  updateTextLayerFont,
+  updateTextLayerColor,
+  updateTextLayerPosition,
+  updateTextLayerRotation,
+  type UpdateTextLayerFontParams,
+  type UpdateTextLayerPositionParams,
+  type TextAnchor,
+} from './TextLayer'
