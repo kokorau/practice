@@ -317,6 +317,18 @@ export {
   getHeroView,
   setHeroView,
   subscribeHeroView,
+  // Filter UseCases
+  selectFilterType,
+  getFilterType,
+  updateVignetteParams,
+  updateChromaticAberrationParams,
+  updateDotHalftoneParams,
+  updateLineHalftoneParams,
+  getVignetteParams,
+  getChromaticAberrationParams,
+  getDotHalftoneParams,
+  getLineHalftoneParams,
+  type FilterType,
 } from './usecase'
 
 // HeroView Infra (re-export from Infra for convenience)
