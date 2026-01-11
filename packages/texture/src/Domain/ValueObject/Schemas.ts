@@ -129,6 +129,21 @@ export const CheckerSurfaceSchema = defineSchema({
 export type CheckerSurfaceParams = Infer<typeof CheckerSurfaceSchema>
 
 /**
+ * Default curve points for gradient grain (quadratic easing)
+ * Values represent Y coordinates at equal X intervals: [0/6, 1/6, 2/6, 3/6, 4/6, 5/6, 6/6]
+ * Pattern: (i/6)² where i = 0,1,2,3,4,5,6
+ */
+export const DEFAULT_GRADIENT_GRAIN_CURVE_POINTS: readonly number[] = [
+  0,     // (0/6)² = 0
+  1/36,  // (1/6)² = 1/36
+  4/36,  // (2/6)² = 4/36
+  9/36,  // (3/6)² = 9/36
+  16/36, // (4/6)² = 16/36
+  25/36, // (5/6)² = 25/36
+  1,     // (6/6)² = 1
+] as const
+
+/**
  * Depth Map Type options for select field
  */
 const depthMapTypeOptions = [
