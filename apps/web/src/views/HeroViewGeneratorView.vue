@@ -49,6 +49,7 @@ import { useContrastChecker } from '../composables/useContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useTextLayerEditor } from '../composables/useTextLayerEditor'
+import { useFilterEditor } from '../composables/useFilterEditor'
 import { useContextMenu } from '../composables/useContextMenu'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
@@ -208,58 +209,24 @@ const {
   toHeroViewConfig,
 } = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
-// Filter type: single selection (void, vignette, chromaticAberration, dotHalftone, lineHalftone)
-// Using Usecase API for filter operations
-type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone'
-const selectedFilterType = computed<FilterType>({
-  get: () => {
-    const layerId = selectedFilterLayerId.value
-    if (!layerId) return 'void'
-    return getFilterTypeUsecase(layerId)
-  },
-  set: (type) => {
-    const layerId = selectedFilterLayerId.value
-    if (!layerId) return
-    selectFilterTypeUsecase(layerId, type)
-  },
-})
-
-// Current filter params for SchemaFields binding
-// Using Usecase API for filter parameter updates
-const currentVignetteConfig = computed({
-  get: () => selectedLayerFilters.value?.vignette ?? {},
-  set: (value) => {
-    const layerId = selectedFilterLayerId.value
-    if (!layerId) return
-    updateVignetteParams(layerId, value)
-  },
-})
-
-const currentChromaticConfig = computed({
-  get: () => selectedLayerFilters.value?.chromaticAberration ?? {},
-  set: (value) => {
-    const layerId = selectedFilterLayerId.value
-    if (!layerId) return
-    updateChromaticAberrationParams(layerId, value)
-  },
-})
-
-const currentDotHalftoneConfig = computed({
-  get: () => selectedLayerFilters.value?.dotHalftone ?? {},
-  set: (value) => {
-    const layerId = selectedFilterLayerId.value
-    if (!layerId) return
-    updateDotHalftoneParams(layerId, value)
-  },
-})
-
-const currentLineHalftoneConfig = computed({
-  get: () => selectedLayerFilters.value?.lineHalftone ?? {},
-  set: (value) => {
-    const layerId = selectedFilterLayerId.value
-    if (!layerId) return
-    updateLineHalftoneParams(layerId, value)
-  },
+// ============================================================
+// Filter Editor (Composable)
+// ============================================================
+const {
+  selectedFilterType,
+  currentVignetteConfig,
+  currentChromaticConfig,
+  currentDotHalftoneConfig,
+  currentLineHalftoneConfig,
+} = useFilterEditor({
+  selectedFilterLayerId,
+  selectedLayerFilters,
+  getFilterType: getFilterTypeUsecase,
+  selectFilterType: selectFilterTypeUsecase,
+  updateVignetteParams,
+  updateChromaticAberrationParams,
+  updateDotHalftoneParams,
+  updateLineHalftoneParams,
 })
 
 // Get surface presets for surfaceConfig mapping
