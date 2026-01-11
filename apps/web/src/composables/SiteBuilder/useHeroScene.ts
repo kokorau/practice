@@ -123,6 +123,7 @@ import {
   type HeroViewPreset,
   type TextLayerConfig,
   type Object3DRendererPort,
+  type HeroViewRepository,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
@@ -206,6 +207,14 @@ export type CustomBackgroundSurfaceParams =
 export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
   isDark: Ref<boolean> | ComputedRef<boolean>
+  /**
+   * Optional repository for persisting HeroViewConfig
+   * When provided:
+   * - Initial state is loaded from repository.get()
+   * - Changes are synced via repository.set()
+   * - External changes are subscribed via repository.subscribe()
+   */
+  repository?: HeroViewRepository
 }
 
 // ============================================================
@@ -262,7 +271,7 @@ const paletteToRgba = (oklch: Oklch, alpha: number = 1.0): RGBA => {
 // ============================================================
 
 export const useHeroScene = (options: UseHeroSceneOptions) => {
-  const { primitivePalette, isDark } = options
+  const { primitivePalette, isDark, repository } = options
 
   // ============================================================
   // Pattern Definitions
@@ -2650,6 +2659,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
+   * Save current state to repository (if provided)
+   */
+  const saveToRepository = () => {
+    if (repository) {
+      repository.set(toHeroViewConfig())
+    }
+  }
+
+  /**
    * Restore editor state from HeroViewConfig
    * Note: Image restoration requires additional handling (imageId → ImageBitmap)
    */
@@ -2892,6 +2910,31 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
+  // Repository Integration
+  // ============================================================
+
+  // Track repository subscription for cleanup
+  let repositoryUnsubscribe: (() => void) | null = null
+
+  // Subscribe to repository changes (if provided)
+  if (repository) {
+    repositoryUnsubscribe = repository.subscribe(async (config) => {
+      // Skip if we're the ones who triggered the update
+      if (isLoadingFromConfig) return
+      // Load external changes
+      await fromHeroViewConfig(config)
+    })
+  }
+
+  // Cleanup repository subscription on unmount
+  onUnmounted(() => {
+    if (repositoryUnsubscribe) {
+      repositoryUnsubscribe()
+      repositoryUnsubscribe = null
+    }
+  })
+
+  // ============================================================
   // Public API
   // ============================================================
 
@@ -3000,9 +3043,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     canvasImageData,
     setElementBounds,
 
-    // Serialization
+    // Serialization & Repository
     toHeroViewConfig,
     fromHeroViewConfig,
+    saveToRepository,
 
     // Presets
     presets,

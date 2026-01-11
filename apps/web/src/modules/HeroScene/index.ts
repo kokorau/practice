@@ -297,6 +297,25 @@ export {
   createGetHeroViewPresetsUseCase,
 } from './Application'
 
+// HeroView Repository types (from Domain)
+export type {
+  HeroViewRepository,
+  HeroViewSubscriber,
+  HeroViewUnsubscribe,
+} from './Domain'
+
+// HeroView UseCases
+export {
+  getHeroView,
+  setHeroView,
+  subscribeHeroView,
+} from './usecase'
+
+// HeroView Infra (re-export from Infra for convenience)
+export {
+  createHeroViewInMemoryRepository,
+} from './Infra'
+
 // Infra
 export type { TextTextureRendererConfig, HeroSceneRendererDeps, RenderHeroConfigOptions, TextureRendererLike } from './Infra'
 
