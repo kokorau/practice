@@ -39,6 +39,9 @@ export type {
 export type { GetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
 export { createGetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
 
+// Re-export HeroView UseCases
+export { getHeroView, setHeroView, subscribeHeroView } from './usecase'
+
 // Re-export Compile functions
 export type {
   MidgroundTexturePattern,

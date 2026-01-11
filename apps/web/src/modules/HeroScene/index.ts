@@ -299,6 +299,10 @@ export {
   compileHeroScene,
   // Preset UseCase
   createGetHeroViewPresetsUseCase,
+  // HeroView UseCases
+  getHeroView,
+  setHeroView,
+  subscribeHeroView,
 } from './Application'
 
 // Infra
