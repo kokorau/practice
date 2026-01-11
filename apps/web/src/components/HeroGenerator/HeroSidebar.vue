@@ -6,7 +6,7 @@ import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
 import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
-import type { HeroViewPreset, LayerNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
+import type { HeroViewPreset, SceneNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
 import type { ContextTargetType } from './DraggableLayerNode.vue'
 type NeutralRampItem = {
   key: string
@@ -39,7 +39,7 @@ const props = defineProps<{
   presets: HeroViewPreset[]
   selectedPresetId: string | null
   // Layers
-  layers: LayerNode[]
+  layers: SceneNode[]
   // Foreground elements
   foregroundElements: ForegroundElementConfig[]
   // Selected foreground element ID for highlighting

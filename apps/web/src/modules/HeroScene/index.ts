@@ -79,7 +79,7 @@ export type {
   EffectProcessor,
   MaskProcessor,
   Processor,
-  // Layer & Group types (new)
+  // Layer & Group types
   Layer,
   Group,
   SceneNode,
@@ -90,17 +90,6 @@ export type {
   PatternSurface,
   TextConfig,
   Model3DConfig,
-  // Legacy LayerNode aliases
-  LayerNodeType,
-  LayerNodeBase,
-  BaseLayerNode,
-  GroupLayerNode,
-  SurfaceLayerNode,
-  ObjectLayerNode as ObjectLayerNodeType,
-  TextLayerNode,
-  LayerNode,
-  SurfaceConfig,
-  TexturePatternSurface,
   ImageSurface,
   SolidSurface,
   DropPosition,
@@ -191,7 +180,7 @@ export {
   createMaskProcessor,
   isEffectProcessor,
   isMaskProcessor,
-  // Layer & Group factories (new)
+  // Layer & Group factories
   createLayer,
   createBaseLayer,
   createSurfaceLayer,
@@ -219,27 +208,6 @@ export {
   // Scene layer ID mapping
   SCENE_LAYER_IDS,
   getSceneLayerId,
-  // Legacy LayerNode factories
-  createBaseLayerNode,
-  createGroupLayerNode,
-  createSurfaceLayerNode,
-  createTextLayerNode,
-  createModel3DLayerNode,
-  createImageLayerNode,
-  createObjectLayerNode,
-  isBaseLayerNode,
-  isGroupLayerNode,
-  isSurfaceLayerNode,
-  isTextLayerNode,
-  isModel3DLayerNode,
-  isImageLayerNode,
-  isObjectLayerNode,
-  findLayerNode,
-  updateLayerNode,
-  removeLayerNode,
-  flattenLayerNodes,
-  insertLayerNode,
-  moveLayerNode,
   // Layer factories
   createCanvasLayer,
   createTextureLayer,

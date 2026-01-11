@@ -1,31 +1,20 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { LayerNode, LayerNodeType, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
-import { flattenLayerNodes, isLayer } from '../../modules/HeroScene'
+import type { SceneNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
+import { flattenNodes, isLayer } from '../../modules/HeroScene'
 import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
 import { useLayerDragDrop } from './useLayerDragDrop'
 import { useLayerSelection } from '../../composables/useLayerSelection'
 
 // ============================================================
-// Types (kept for backward compatibility)
+// Types
 // ============================================================
 
 /**
- * Layer types in the UI
+ * Layer types in the UI (for add layer menu)
+ * Combines LayerVariant values with 'group' for the UI
  */
-export type LayerType = LayerNodeType
-
-/** @deprecated Use LayerType instead */
-export type LegacyLayerType = 'base' | 'group' | 'object' | 'text' | 'clipGroup'
-
-/** @deprecated Use LayerNode instead */
-export interface LayerItem {
-  id: string
-  type: LayerType
-  name: string
-  visible: boolean
-  expanded: boolean
-}
+export type LayerType = 'base' | 'group' | 'surface' | 'model3d' | 'text' | 'image'
 
 /** Sub-item types within a layer */
 export type SubItemType = 'surface' | 'shape' | 'effect' | 'source' | 'filter'
@@ -38,7 +27,7 @@ export type SubItemType = 'surface' | 'shape' | 'effect' | 'source' | 'filter'
 export type HtmlElementType = ForegroundElementType
 
 const props = defineProps<{
-  layers: LayerNode[]
+  layers: SceneNode[]
   foregroundElements: ForegroundElementConfig[]
   selectedForegroundElementId: string | null
 }>()
@@ -108,7 +97,7 @@ const allLayerTypes: { type: LayerType; label: string; icon: string; disabled?: 
 
 // Filter out layer types that have reached their limit
 const addableLayerTypes = computed(() => {
-  const flatLayers = flattenLayerNodes(props.layers)
+  const flatLayers = flattenNodes(props.layers)
   const hasSurface = flatLayers.some(l => isLayer(l) && l.variant === 'surface')
   return allLayerTypes.filter(item => {
     // Currently limiting to 1 surface layer (can be expanded later)

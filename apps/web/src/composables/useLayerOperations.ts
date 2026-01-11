@@ -1,9 +1,7 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type {
-  LayerNode,
   SceneNode,
   LayerVariant,
-  LayerNodeType,
   DropPosition,
   TextAnchor,
 } from '../modules/HeroScene'
@@ -65,11 +63,16 @@ export interface SceneOperationCallbacks {
 }
 
 /**
+ * Layer type for UI (combines LayerVariant with 'group')
+ */
+export type UILayerType = LayerVariant | 'group'
+
+/**
  * Composable options
  */
 export interface UseLayerOperationsOptions {
   /** Initial layers tree */
-  initialLayers: LayerNode[]
+  initialLayers: SceneNode[]
   /** Scene operation callbacks from useHeroScene */
   sceneCallbacks: SceneOperationCallbacks
   /** Selected layer ID ref from useLayerSelection (optional) */
@@ -89,7 +92,7 @@ export interface UseLayerOperationsOptions {
  */
 export interface UseLayerOperationsReturn {
   // State
-  layers: Ref<LayerNode[]>
+  layers: Ref<SceneNode[]>
 
   // Computed
   selectedLayer: ComputedRef<SceneNode | null>
@@ -105,7 +108,7 @@ export interface UseLayerOperationsReturn {
   handleMoveLayer: (sourceId: string, targetId: string, position: DropPosition) => void
 
   // Layer CRUD
-  handleAddLayer: (type: LayerNodeType) => void
+  handleAddLayer: (type: UILayerType) => void
   handleRemoveLayer: (layerId: string) => void
 
   // Grouping
@@ -152,7 +155,7 @@ export function useLayerOperations(
   // ============================================================
   // State
   // ============================================================
-  const layers = ref<LayerNode[]>(initialLayers)
+  const layers = ref<SceneNode[]>(initialLayers)
 
   // ============================================================
   // ID Mapping
@@ -215,9 +218,9 @@ export function useLayerOperations(
   // ============================================================
   // Handlers - CRUD
   // ============================================================
-  const handleAddLayer = (type: LayerNodeType) => {
+  const handleAddLayer = (type: UILayerType) => {
     let sceneLayerId: string | null = null
-    let newLayer: LayerNode | null = null
+    let newLayer: SceneNode | null = null
 
     switch (type) {
       case 'surface': {
@@ -313,7 +316,7 @@ export function useLayerOperations(
 
     // If it's a Group, remove all children from the scene first
     if (isGroup(layer)) {
-      const removeChildrenFromScene = (node: LayerNode) => {
+      const removeChildrenFromScene = (node: SceneNode) => {
         if (isGroup(node)) {
           for (const child of node.children) {
             removeChildrenFromScene(child)

@@ -13,7 +13,7 @@
 import { computed } from 'vue'
 import PatternThumbnail, { type SpecCreator } from './PatternThumbnail.vue'
 import HeroPreviewThumbnail from './HeroPreviewThumbnail.vue'
-import type { HeroViewConfig, SurfaceConfig } from '../../modules/HeroScene'
+import type { HeroViewConfig, HeroSurfaceConfig } from '../../modules/HeroScene'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
 
 export interface PatternItem {
@@ -21,7 +21,7 @@ export interface PatternItem {
   type?: string
   createSpec: SpecCreator
   /** Surface config for hero preview mode */
-  surfaceConfig?: SurfaceConfig
+  surfaceConfig?: HeroSurfaceConfig
 }
 
 const emit = defineEmits<{
@@ -73,7 +73,7 @@ const isHeroMode = computed(() => props.previewMode === 'hero' && props.baseConf
  * Create a preview config with a specific surface
  * Filters to show only the target layer type
  */
-const createSurfacePreviewConfig = (base: HeroViewConfig, surface: SurfaceConfig): HeroViewConfig => {
+const createSurfacePreviewConfig = (base: HeroViewConfig, surface: HeroSurfaceConfig): HeroViewConfig => {
   const targetType = props.targetLayerType ?? 'base'
 
   return {
@@ -101,7 +101,7 @@ const previewConfigs = computed(() => {
 // Solid preview config (hero mode only)
 const solidPreviewConfig = computed(() => {
   if (!props.baseConfig) return null
-  return createSurfacePreviewConfig(props.baseConfig, { type: 'solid' } as SurfaceConfig)
+  return createSurfacePreviewConfig(props.baseConfig, { type: 'solid' } as HeroSurfaceConfig)
 })
 </script>
 
