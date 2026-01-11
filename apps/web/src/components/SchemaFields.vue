@@ -78,8 +78,8 @@ const updateField = (key: string, value: unknown) => {
 
 <style scoped>
 .schema-fields {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
 }
 
