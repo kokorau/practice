@@ -87,11 +87,8 @@ onUnmounted(() => {
         :class="{ 'auto-swatch': modelValue === 'auto' }"
         :style="selectedColorStyle"
       />
-      <span class="trigger-label">
-        <span v-if="label" class="trigger-title">{{ label }}</span>
-        <span class="trigger-value">{{ selectedLabel }}</span>
-      </span>
-      <span class="trigger-arrow" :class="{ open: isOpen }">▼</span>
+      <span class="trigger-value">{{ selectedLabel }}</span>
+      <span class="material-icons trigger-arrow" :class="{ open: isOpen }">expand_more</span>
     </button>
 
     <!-- Popup panel -->
@@ -142,9 +139,9 @@ onUnmounted(() => {
 .picker-trigger {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
+  gap: 0.375rem;
+  width: 50%;
+  padding: 0.375rem 0.5rem;
   background: oklch(0.96 0.01 260);
   border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.375rem;
@@ -166,9 +163,9 @@ onUnmounted(() => {
 }
 
 .trigger-swatch {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.1875rem;
   border: 1px solid oklch(0.80 0.01 260);
   flex-shrink: 0;
 }
@@ -193,29 +190,12 @@ onUnmounted(() => {
   );
 }
 
-.trigger-label {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  flex: 1;
-  min-width: 0;
-}
-
-.trigger-title {
-  font-size: 0.625rem;
-  color: oklch(0.50 0.02 260);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.dark .trigger-title {
-  color: oklch(0.60 0.02 260);
-}
-
 .trigger-value {
+  flex: 1;
   font-size: 0.75rem;
   font-weight: 500;
   color: oklch(0.25 0.02 260);
+  text-align: left;
 }
 
 .dark .trigger-value {
@@ -223,7 +203,7 @@ onUnmounted(() => {
 }
 
 .trigger-arrow {
-  font-size: 0.5rem;
+  font-size: 1rem;
   color: oklch(0.50 0.02 260);
   transition: transform 0.15s;
 }

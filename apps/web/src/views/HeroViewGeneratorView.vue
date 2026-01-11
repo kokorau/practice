@@ -2116,30 +2116,45 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 .font-size-input-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-}
-
-.font-size-input {
-  width: 5rem;
-  padding: 0.5rem 0.625rem;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  width: 50%;
+  padding: 0.375rem 0.5rem;
   background: oklch(0.96 0.01 260);
   border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.375rem;
-  color: oklch(0.25 0.02 260);
-  font-size: 0.875rem;
-  text-align: right;
   transition: border-color 0.15s;
 }
 
-.dark .font-size-input {
+.dark .font-size-input-wrapper {
   background: oklch(0.18 0.02 260);
   border-color: oklch(0.30 0.02 260);
-  color: oklch(0.90 0.02 260);
 }
 
-.font-size-input:focus {
-  outline: none;
+.font-size-input-wrapper:focus-within {
   border-color: oklch(0.55 0.20 250);
+}
+
+.font-size-input {
+  width: 3rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: oklch(0.25 0.02 260);
+  font-size: 0.875rem;
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.font-size-input::-webkit-outer-spin-button,
+.font-size-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.dark .font-size-input {
+  color: oklch(0.90 0.02 260);
 }
 
 .font-size-unit {
