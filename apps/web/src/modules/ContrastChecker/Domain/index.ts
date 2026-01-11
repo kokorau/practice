@@ -12,3 +12,12 @@ export {
   getLuminanceAt,
   $LuminanceMap,
 } from './ValueObject/LuminanceMap'
+
+export {
+  type StatisticsRegion,
+  type RepresentativeYResult,
+  extractRepresentativeY,
+  calculatePercentile,
+  calculateLuminanceStats,
+  $LuminanceStatistics,
+} from './ValueObject/LuminanceStatistics'

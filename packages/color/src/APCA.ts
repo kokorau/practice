@@ -244,6 +244,92 @@ export const apcaFromY = (textY: number, bgY: number): number => {
 }
 
 // ============================================================================
+// APCA Reverse Calculation
+// ============================================================================
+
+/**
+ * Determine optimal polarity based on background luminance
+ *
+ * @param bgY - Background luminance (0-1)
+ * @returns 'dark-on-light' for light backgrounds, 'light-on-dark' for dark backgrounds
+ */
+export const getOptimalPolarity = (
+  bgY: number
+): 'dark-on-light' | 'light-on-dark' => {
+  return bgY > 0.5 ? 'dark-on-light' : 'light-on-dark'
+}
+
+/**
+ * Reverse APCA calculation: given background Y and target Lc, calculate required text Y
+ *
+ * This is the mathematical inverse of the APCA formula.
+ * Useful for selecting text colors that achieve a specific contrast level.
+ *
+ * @param bgY - Background luminance (0-1)
+ * @param targetLc - Target absolute Lc value (positive, e.g., 60 or 75)
+ * @param polarity - 'dark-on-light' for dark text, 'light-on-dark' for light text, or 'auto' to determine from bgY
+ * @returns Required text Y value (0-1), or null if the target is infeasible
+ *
+ * @example
+ * // Find text Y needed for Lc=75 on a light background (Y=0.9)
+ * const textY = reverseForTextY(0.9, 75)
+ * // Returns approximately 0.05 (dark text)
+ */
+export const reverseForTextY = (
+  bgY: number,
+  targetLc: number,
+  polarity: 'dark-on-light' | 'light-on-dark' | 'auto' = 'auto'
+): number | null => {
+  // Apply soft clamp to bgY
+  const Ybg = softClamp(bgY)
+
+  // Determine polarity if auto
+  const actualPolarity =
+    polarity === 'auto' ? getOptimalPolarity(bgY) : polarity
+
+  // Ensure targetLc is positive
+  const absLc = Math.abs(targetLc)
+
+  if (actualPolarity === 'dark-on-light') {
+    // Dark text on light background
+    // Forward: SAPC = (Ybg^Nbg - Ytxt^Ntx) * Scale
+    //          Lc = (SAPC - OffsetPos) * 100
+    // Reverse: SAPC = Lc / 100 + OffsetPos
+    //          Ytxt^Ntx = Ybg^Nbg - SAPC / Scale
+    //          Ytxt = (Ybg^Nbg - SAPC / Scale)^(1/Ntx)
+    const SAPC = absLc / 100 + OffsetPos
+    const YbgPow = Math.pow(Ybg, Nbg)
+    const term = YbgPow - SAPC / Scale
+
+    if (term <= 0) {
+      // Infeasible: cannot achieve this Lc with this background
+      return null
+    }
+
+    const textY = Math.pow(term, 1 / Ntx)
+    return Math.max(0, Math.min(1, textY))
+  } else {
+    // Light text on dark background
+    // Forward: SAPC = (Ybg^Rbg - Ytxt^Rtx) * Scale (SAPC is negative)
+    //          Lc = (SAPC + OffsetNeg) * 100
+    // Reverse: SAPC = -Lc / 100 - OffsetNeg
+    //          Ytxt^Rtx = Ybg^Rbg - SAPC / Scale
+    //          Ytxt = (Ybg^Rbg - SAPC / Scale)^(1/Rtx)
+    const SAPC = -(absLc / 100) - OffsetNeg
+    const YbgPow = Math.pow(Ybg, Rbg)
+    const term = YbgPow - SAPC / Scale
+
+    if (term <= 0) {
+      // Infeasible: cannot achieve this Lc with this background
+      return null
+    }
+
+    const textY = Math.pow(term, 1 / Rtx)
+    return Math.max(0, Math.min(1, textY))
+  }
+}
+
+// ============================================================================
 // APCA Thresholds
 // ============================================================================
 
@@ -298,6 +384,8 @@ export const $APCA = {
   fromOklch: apcaFromOklch,
   fromY: apcaFromY,
   srgbToY,
+  reverseForTextY,
+  getOptimalPolarity,
   meetsBodyText,
   meetsLargeText,
   meetsHeadline,

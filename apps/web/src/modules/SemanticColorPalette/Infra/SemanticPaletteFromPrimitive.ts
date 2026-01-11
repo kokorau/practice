@@ -7,6 +7,7 @@ import { $SemanticColorPalette } from '../Domain/ValueObject/SemanticColorPalett
 import type { ActionState } from '../Domain/ValueObject/SemanticNames'
 import {
   selectNeutralByApca,
+  selectNeutralByReverseApca,
   APCA_INK_TARGETS,
   APCA_DISABLED_TARGETS,
   type NeutralEntry,
@@ -528,4 +529,31 @@ export const selectAllInksForSurface = (
     linkText: selectInkForSurface(p, surface, 'linkText'),
     highlight: selectInkForSurface(p, surface, 'highlight'),
   }
+}
+
+/**
+ * Select ink color for text using background luminance Y value.
+ * This uses reverse APCA calculation for more accurate color selection
+ * when the actual background luminance is known (e.g., from image analysis).
+ *
+ * @param p - PrimitivePalette to select neutrals from
+ * @param bgY - Background luminance Y value (0-1)
+ * @param role - InkRole to determine target Lc
+ * @returns Oklch color for the text
+ */
+export const selectInkForSurfaceWithBgY = (
+  p: PrimitivePalette,
+  bgY: number,
+  role: InkRole
+): Oklch => {
+  // Special case: highlight uses accent color (A) for emphasis
+  if (role === 'highlight') {
+    return p.A
+  }
+
+  const neutrals = toNeutralEntries(p)
+  const target = APCA_INK_TARGETS[role]
+  const result = selectNeutralByReverseApca(neutrals, bgY, target)
+
+  return p[result.key as NeutralKey]
 }

@@ -5,8 +5,8 @@ import type { PrimitivePalette, PrimitiveKey } from '../../modules/SemanticColor
 import {
   BRAND_KEYS,
   ACCENT_KEYS,
-  NEUTRAL_KEYS,
   FOUNDATION_KEYS,
+  NEUTRAL_KEYS,
   ACCENT_RAMP_KEYS,
 } from '../../modules/SemanticColorPalette/Domain/ValueObject/PrimitivePalette'
 

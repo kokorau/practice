@@ -5,6 +5,8 @@ import {
   apcaFromOklch,
   apcaFromY,
   srgbToY,
+  reverseForTextY,
+  getOptimalPolarity,
   meetsBodyText,
   meetsLargeText,
   meetsHeadline,
@@ -208,11 +210,91 @@ describe('APCA', () => {
       expect($APCA.fromOklch).toBeDefined()
       expect($APCA.fromY).toBeDefined()
       expect($APCA.srgbToY).toBeDefined()
+      expect($APCA.reverseForTextY).toBeDefined()
+      expect($APCA.getOptimalPolarity).toBeDefined()
       expect($APCA.meetsBodyText).toBeDefined()
       expect($APCA.meetsLargeText).toBeDefined()
       expect($APCA.meetsHeadline).toBeDefined()
       expect($APCA.meetsNonText).toBeDefined()
       expect($APCA.THRESHOLD).toBe(APCA_THRESHOLD)
+    })
+  })
+
+  describe('getOptimalPolarity', () => {
+    it('returns dark-on-light for light backgrounds', () => {
+      expect(getOptimalPolarity(0.9)).toBe('dark-on-light')
+      expect(getOptimalPolarity(0.7)).toBe('dark-on-light')
+      expect(getOptimalPolarity(0.51)).toBe('dark-on-light')
+    })
+
+    it('returns light-on-dark for dark backgrounds', () => {
+      expect(getOptimalPolarity(0.1)).toBe('light-on-dark')
+      expect(getOptimalPolarity(0.3)).toBe('light-on-dark')
+      expect(getOptimalPolarity(0.5)).toBe('light-on-dark')
+    })
+  })
+
+  describe('reverseForTextY', () => {
+    it('calculates textY that achieves target Lc (round-trip verification)', () => {
+      const testCases = [
+        { bgY: 0.9, targetLc: 75 }, // Light bg, body text
+        { bgY: 0.8, targetLc: 60 }, // Light bg, large text
+        { bgY: 0.1, targetLc: 75 }, // Dark bg, body text
+        { bgY: 0.2, targetLc: 60 }, // Dark bg, large text
+      ]
+
+      for (const { bgY, targetLc } of testCases) {
+        const textY = reverseForTextY(bgY, targetLc)
+        expect(textY).not.toBeNull()
+
+        // Verify: apcaFromY(textY, bgY) should approximately equal targetLc
+        const actualLc = Math.abs(apcaFromY(textY!, bgY))
+        expect(actualLc).toBeCloseTo(targetLc, 0) // Within 1 Lc point
+      }
+    })
+
+    it('returns null for infeasible targets', () => {
+      // Very high Lc targets on mid-gray are infeasible
+      // With dark-on-light polarity (bgY=0.5 treated as light), Lc=110 requires textY < 0
+      const result = reverseForTextY(0.5, 110, 'dark-on-light')
+      expect(result).toBeNull()
+    })
+
+    it('returns value in valid range [0, 1]', () => {
+      const testCases = [
+        { bgY: 0.95, targetLc: 75 },
+        { bgY: 0.05, targetLc: 75 },
+        { bgY: 0.7, targetLc: 45 },
+        { bgY: 0.3, targetLc: 45 },
+      ]
+
+      for (const { bgY, targetLc } of testCases) {
+        const textY = reverseForTextY(bgY, targetLc)
+        if (textY !== null) {
+          expect(textY).toBeGreaterThanOrEqual(0)
+          expect(textY).toBeLessThanOrEqual(1)
+        }
+      }
+    })
+
+    it('produces dark textY for light backgrounds', () => {
+      const textY = reverseForTextY(0.9, 75)
+      expect(textY).not.toBeNull()
+      expect(textY!).toBeLessThan(0.3) // Should be a dark color
+    })
+
+    it('produces light textY for dark backgrounds', () => {
+      const textY = reverseForTextY(0.1, 75)
+      expect(textY).not.toBeNull()
+      expect(textY!).toBeGreaterThan(0.7) // Should be a light color
+    })
+
+    it('respects explicit polarity parameter', () => {
+      // Force light-on-dark on a light background (unusual but valid)
+      const textY = reverseForTextY(0.8, 45, 'light-on-dark')
+      if (textY !== null) {
+        expect(textY).toBeGreaterThan(0.8) // Text should be lighter than bg
+      }
     })
   })
 })

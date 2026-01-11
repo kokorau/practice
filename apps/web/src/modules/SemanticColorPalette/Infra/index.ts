@@ -24,6 +24,7 @@ export {
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
   selectInkForSurface,
+  selectInkForSurfaceWithBgY,
   selectAllInksForSurface,
   type PrimitiveRef,
   type InkRefs,

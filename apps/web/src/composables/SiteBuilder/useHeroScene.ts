@@ -98,8 +98,10 @@ import {
 } from '@practice/texture/filters'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import type { PrimitivePalette, ContextName, PrimitiveKey } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette, ContextName, PrimitiveKey, NeutralKey } from '../../modules/SemanticColorPalette/Domain'
+import { NEUTRAL_KEYS, selectNeutralByHistogram, APCA_INK_TARGETS, type NeutralEntry } from '../../modules/SemanticColorPalette/Domain'
 import { selectInkForSurface, type InkRole } from '../../modules/SemanticColorPalette/Infra'
+import { generateLuminanceMap } from '../../modules/ContrastChecker'
 import { fetchUnsplashPhotoUrl } from '../../modules/PhotoUnsplash/Infra/fetchUnsplashPhoto'
 import {
   type LayerFilterConfig,
@@ -575,6 +577,23 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Cached canvas ImageData for contrast analysis (updated after each render)
   const canvasImageData = shallowRef<ImageData | null>(null)
 
+  // Element bounds for per-element background analysis (scaled to canvas dimensions)
+  type ElementBounds = { x: number; y: number; width: number; height: number }
+  const titleElementBounds = shallowRef<ElementBounds | null>(null)
+  const descriptionElementBounds = shallowRef<ElementBounds | null>(null)
+
+  /**
+   * Update element bounds for background analysis.
+   * Bounds should be scaled to match canvasImageData dimensions.
+   */
+  const setElementBounds = (elementType: 'title' | 'description', bounds: ElementBounds | null) => {
+    if (elementType === 'title') {
+      titleElementBounds.value = bounds
+    } else {
+      descriptionElementBounds.value = bounds
+    }
+  }
+
   // ============================================================
   // Semantic Context for Mask Layer (fixed to 'canvas' for now)
   // ============================================================
@@ -668,15 +687,76 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   /**
+   * Create neutral entries from the current primitive palette.
+   */
+  const getNeutralEntries = (): NeutralEntry[] => {
+    return NEUTRAL_KEYS.map(key => ({
+      key,
+      color: primitivePalette.value[key],
+    }))
+  }
+
+  /**
+   * Select ink color using histogram-based worst-case analysis.
+   * Ensures readability across all background pixels in the element region.
+   */
+  const selectInkByHistogram = (
+    bounds: ElementBounds | null,
+    targetLc: number
+  ): Oklch | null => {
+    const imageData = canvasImageData.value
+    if (!imageData || !bounds) return null
+
+    // Generate luminance map from canvas
+    const luminanceMap = generateLuminanceMap(imageData)
+
+    // Create region from bounds
+    const region = {
+      x: Math.round(bounds.x),
+      y: Math.round(bounds.y),
+      width: Math.round(bounds.width),
+      height: Math.round(bounds.height),
+    }
+
+    // Select using histogram analysis
+    const result = selectNeutralByHistogram(
+      getNeutralEntries(),
+      luminanceMap,
+      targetLc,
+      region,
+      2 // 2% threshold (same as contrast histogram)
+    )
+
+    return primitivePalette.value[result.key as NeutralKey]
+  }
+
+  /**
    * Computed ink colors for foreground text elements.
-   * These are automatically calculated based on the mask primary color (the surface text appears on).
+   * Uses histogram-based worst-case analysis for reliable readability,
+   * otherwise falls back to surface-based selection.
    */
   const foregroundTitleInk = computed((): Oklch => {
+    const histogramResult = selectInkByHistogram(
+      titleElementBounds.value,
+      APCA_INK_TARGETS.title
+    )
+    if (histogramResult) {
+      return histogramResult
+    }
+    // Fallback: surface-based selection
     const surface = resolvedMaskPrimaryColorOklch.value
     return selectInkForSurface(primitivePalette.value, surface, 'title')
   })
 
   const foregroundBodyInk = computed((): Oklch => {
+    const histogramResult = selectInkByHistogram(
+      descriptionElementBounds.value,
+      APCA_INK_TARGETS.body
+    )
+    if (histogramResult) {
+      return histogramResult
+    }
+    // Fallback: surface-based selection
     const surface = resolvedMaskPrimaryColorOklch.value
     return selectInkForSurface(primitivePalette.value, surface, 'body')
   })
@@ -686,6 +766,42 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    */
   const foregroundTitleColor = computed((): string => $Oklch.toCss(foregroundTitleInk.value))
   const foregroundBodyColor = computed((): string => $Oklch.toCss(foregroundBodyInk.value))
+
+  /**
+   * Find the neutral key that matches the given Oklch color.
+   * Uses simple L value comparison for efficiency.
+   */
+  const findMatchingNeutralKey = (color: Oklch): NeutralKey | null => {
+    let bestKey: NeutralKey | null = null
+    let bestDiff = Infinity
+
+    for (const key of NEUTRAL_KEYS) {
+      const neutralColor = primitivePalette.value[key]
+      const diff = Math.abs(neutralColor.L - color.L)
+      if (diff < bestDiff) {
+        bestDiff = diff
+        bestKey = key
+      }
+    }
+
+    return bestKey
+  }
+
+  /**
+   * Get the neutral key that was auto-selected for title text.
+   * Returns null if auto is not being used or no match found.
+   */
+  const foregroundTitleAutoKey = computed((): NeutralKey | null => {
+    return findMatchingNeutralKey(foregroundTitleInk.value)
+  })
+
+  /**
+   * Get the neutral key that was auto-selected for body text.
+   * Returns null if auto is not being used or no match found.
+   */
+  const foregroundBodyAutoKey = computed((): NeutralKey | null => {
+    return findMatchingNeutralKey(foregroundBodyInk.value)
+  })
 
   /**
    * Resolve color for a foreground element based on its colorKey.
@@ -2876,9 +2992,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foregroundTitleColor,
     foregroundBodyColor,
     foregroundElementColors,
+    foregroundTitleAutoKey,
+    foregroundBodyAutoKey,
 
     // Canvas ImageData for contrast analysis
     canvasImageData,
+    setElementBounds,
 
     // Serialization
     toHeroViewConfig,

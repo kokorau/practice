@@ -3,12 +3,18 @@ export {
   type ContrastHistogram,
   type ContrastAnalysisResult,
   type LuminanceMap,
+  type StatisticsRegion,
+  type RepresentativeYResult,
   calculateMinimumScore,
   createEmptyHistogram,
   createLuminanceMap,
   getLuminanceAt,
+  extractRepresentativeY,
+  calculatePercentile,
+  calculateLuminanceStats,
   $ContrastScore,
   $LuminanceMap,
+  $LuminanceStatistics,
 } from './Domain'
 
 // Infra

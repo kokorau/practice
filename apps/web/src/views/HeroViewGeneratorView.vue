@@ -188,8 +188,11 @@ const {
   foregroundTitleColor,
   foregroundBodyColor,
   foregroundElementColors,
+  foregroundTitleAutoKey,
+  foregroundBodyAutoKey,
   // Canvas ImageData for contrast analysis
   canvasImageData,
+  setElementBounds,
   // PrimitiveKey color selection
   backgroundColorKey1,
   backgroundColorKey2,
@@ -910,6 +913,7 @@ const checkTitleContrast = async () => {
 
   if (!imageData || !bounds || !textColor) {
     titleContrastResult.value = null
+    setElementBounds('title', null)
     return
   }
 
@@ -922,6 +926,9 @@ const checkTitleContrast = async () => {
     width: bounds.width * scaleX,
     height: bounds.height * scaleY,
   }
+
+  // Update element bounds for auto color selection
+  setElementBounds('title', scaledRegion)
 
   titleContrastResult.value = await checkContrastAsync(imageData, textColor, scaledRegion)
 }
@@ -934,6 +941,7 @@ const checkDescriptionContrast = async () => {
 
   if (!imageData || !bounds || !textColor) {
     descriptionContrastResult.value = null
+    setElementBounds('description', null)
     return
   }
 
@@ -946,6 +954,9 @@ const checkDescriptionContrast = async () => {
     width: bounds.width * scaleX,
     height: bounds.height * scaleY,
   }
+
+  // Update element bounds for auto color selection
+  setElementBounds('description', scaledRegion)
 
   descriptionContrastResult.value = await checkContrastAsync(imageData, textColor, scaledRegion)
 }
@@ -1462,6 +1473,24 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
                 label="Text Color"
                 :show-auto="true"
               />
+              <!-- Auto-selected neutral indicator for Title -->
+              <div v-if="selectedElementColorKey === 'auto'" class="auto-neutral-indicator">
+                <div
+                  v-for="key in NEUTRAL_KEYS"
+                  :key="key"
+                  class="auto-neutral-chip-wrapper"
+                >
+                  <div
+                    class="auto-neutral-chip"
+                    :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+                    :title="key"
+                  />
+                  <span
+                    v-if="foregroundTitleAutoKey === key"
+                    class="material-icons auto-indicator-arrow"
+                  >expand_less</span>
+                </div>
+              </div>
             </div>
             <div class="settings-section">
               <p class="settings-label">Text</p>
@@ -1537,6 +1566,24 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
                 label="Text Color"
                 :show-auto="true"
               />
+              <!-- Auto-selected neutral indicator for Description -->
+              <div v-if="selectedElementColorKey === 'auto'" class="auto-neutral-indicator">
+                <div
+                  v-for="key in NEUTRAL_KEYS"
+                  :key="key"
+                  class="auto-neutral-chip-wrapper"
+                >
+                  <div
+                    class="auto-neutral-chip"
+                    :style="{ backgroundColor: $Oklch.toCss(primitivePalette[key]) }"
+                    :title="key"
+                  />
+                  <span
+                    v-if="foregroundBodyAutoKey === key"
+                    class="material-icons auto-indicator-arrow"
+                  >expand_less</span>
+                </div>
+              </div>
             </div>
             <div class="settings-section">
               <p class="settings-label">Text</p>
@@ -2606,6 +2653,39 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
   margin: 0.5rem 0 0;
   font-size: 0.75rem;
   opacity: 0.7;
+}
+
+/* Auto Neutral Indicator */
+.auto-neutral-indicator {
+  display: flex;
+  gap: 0.125rem;
+  align-items: flex-start;
+  margin-top: 0.5rem;
+}
+
+.auto-neutral-chip-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.auto-neutral-chip {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.125rem;
+  border: 1px solid oklch(0.80 0.01 260 / 0.5);
+}
+
+.dark .auto-neutral-chip {
+  border-color: oklch(0.35 0.02 260 / 0.5);
+}
+
+.auto-indicator-arrow {
+  font-size: 0.875rem;
+  color: oklch(0.55 0.20 250);
+  margin-top: -0.125rem;
+  line-height: 1;
 }
 
 </style>

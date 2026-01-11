@@ -86,3 +86,21 @@ export type {
   HsvColor,
   ColorPreset,
 } from './ColorPreset'
+
+export type {
+  NeutralEntry,
+  NeutralSelectionResult,
+  NeutralHistogramResult,
+  InkRole,
+  AnalysisRegion,
+  LuminanceMapInput,
+} from '../NeutralSelection'
+
+export {
+  selectNeutralByHistogram,
+  selectNeutralByApca,
+  selectNeutralByReverseApca,
+  APCA_INK_TARGETS,
+  APCA_DISABLED_TARGETS,
+  $NeutralSelection,
+} from '../NeutralSelection'
