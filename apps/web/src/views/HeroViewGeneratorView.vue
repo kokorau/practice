@@ -44,13 +44,13 @@ import {
   type GridPosition,
 } from '../composables/SiteBuilder'
 import { getSurfacePresets } from '@practice/texture'
-import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import { useContrastChecker } from '../composables/useContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useTextLayerEditor } from '../composables/useTextLayerEditor'
 import { useFilterEditor } from '../composables/useFilterEditor'
 import { useContextMenu } from '../composables/useContextMenu'
+import { usePresetActions } from '../composables/usePresetActions'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
 import './HeroViewGeneratorView.css'
@@ -227,6 +227,29 @@ const {
   updateChromaticAberrationParams,
   updateDotHalftoneParams,
   updateLineHalftoneParams,
+})
+
+// ============================================================
+// Preset Actions (Composable)
+// ============================================================
+const {
+  applyColorPreset: handleApplyColorPreset,
+  applyLayoutPreset: handleApplyLayoutPreset,
+  exportPreset,
+} = usePresetActions({
+  colorState: {
+    hue,
+    saturation,
+    value,
+    accentHue,
+    accentSaturation,
+    accentValue,
+    foundationHue,
+    foundationSaturation,
+    foundationValue,
+  },
+  toHeroViewConfig,
+  applyPreset,
 })
 
 // Get surface presets for surfaceConfig mapping
@@ -406,15 +429,7 @@ onMounted(async () => {
   // Load layout presets and apply initial preset (including colors)
   const initialColorPreset = await loadPresets()
   if (initialColorPreset) {
-    hue.value = initialColorPreset.brand.hue
-    saturation.value = initialColorPreset.brand.saturation
-    value.value = initialColorPreset.brand.value
-    accentHue.value = initialColorPreset.accent.hue
-    accentSaturation.value = initialColorPreset.accent.saturation
-    accentValue.value = initialColorPreset.accent.value
-    foundationHue.value = initialColorPreset.foundation.hue
-    foundationSaturation.value = initialColorPreset.foundation.saturation
-    foundationValue.value = initialColorPreset.foundation.value
+    handleApplyColorPreset(initialColorPreset)
   }
 
   // テクスチャプレビュー用キャンバス初期化 (HeroPreviewのcanvasを使用)
@@ -427,82 +442,6 @@ onUnmounted(() => {
     paletteStyleElement = null
   }
 })
-
-// Handle color preset application
-const handleApplyColorPreset = (preset: ColorPreset) => {
-  // Apply brand
-  hue.value = preset.brand.hue
-  saturation.value = preset.brand.saturation
-  value.value = preset.brand.value
-  // Apply accent
-  accentHue.value = preset.accent.hue
-  accentSaturation.value = preset.accent.saturation
-  accentValue.value = preset.accent.value
-  // Apply foundation
-  foundationHue.value = preset.foundation.hue
-  foundationSaturation.value = preset.foundation.saturation
-  foundationValue.value = preset.foundation.value
-}
-
-// Handle layout preset application (also applies color preset if available)
-const handleApplyLayoutPreset = async (presetId: string) => {
-  const colorPreset = await applyPreset(presetId)
-  if (colorPreset) {
-    // Apply brand
-    hue.value = colorPreset.brand.hue
-    saturation.value = colorPreset.brand.saturation
-    value.value = colorPreset.brand.value
-    // Apply accent
-    accentHue.value = colorPreset.accent.hue
-    accentSaturation.value = colorPreset.accent.saturation
-    accentValue.value = colorPreset.accent.value
-    // Apply foundation
-    foundationHue.value = colorPreset.foundation.hue
-    foundationSaturation.value = colorPreset.foundation.saturation
-    foundationValue.value = colorPreset.foundation.value
-  }
-}
-
-// ============================================================
-// Export Preset
-// ============================================================
-const exportPreset = () => {
-  // Build preset with current config and colors
-  const preset = {
-    id: `custom-${Date.now()}`,
-    name: 'Custom Preset',
-    config: toHeroViewConfig(),
-    colorPreset: {
-      brand: {
-        hue: hue.value,
-        saturation: saturation.value,
-        value: value.value,
-      },
-      accent: {
-        hue: accentHue.value,
-        saturation: accentSaturation.value,
-        value: accentValue.value,
-      },
-      foundation: {
-        hue: foundationHue.value,
-        saturation: foundationSaturation.value,
-        value: foundationValue.value,
-      },
-    },
-  }
-
-  // Download as JSON
-  const json = JSON.stringify(preset, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `hero-preset-${Date.now()}.json`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
 
 // ============================================================
 // Hero Preview Config (for panel previews)
