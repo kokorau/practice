@@ -155,6 +155,7 @@ export type {
   RectMaskShapeParams,
   BlobMaskShapeParams,
   PerlinMaskShapeParams,
+  SolidSurfaceParams,
   StripeSurfaceParams,
   GridSurfaceParams,
   PolkaDotSurfaceParams,
@@ -170,6 +171,7 @@ export {
   PerlinMaskShapeSchema,
   MaskShapeSchemas,
   // Surface Schemas
+  SolidSurfaceSchema,
   StripeSurfaceSchema,
   GridSurfaceSchema,
   PolkaDotSurfaceSchema,
@@ -181,6 +183,7 @@ export {
   createDefaultRectMaskParams,
   createDefaultBlobMaskParams,
   createDefaultPerlinMaskParams,
+  createDefaultSolidParams,
   createDefaultStripeParams,
   createDefaultGridParams,
   createDefaultPolkaDotParams,

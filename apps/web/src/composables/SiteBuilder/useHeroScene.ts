@@ -77,6 +77,7 @@ import {
   type GridSurfaceParams,
   type PolkaDotSurfaceParams,
   type CheckerSurfaceParams,
+  type SolidSurfaceParams,
   type DepthMapType,
   // Text rendering
   renderTextToBitmap,
@@ -631,14 +632,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const currentSurfaceSchema = computed(() => {
     if (!customSurfaceParams.value) return null
     const type = customSurfaceParams.value.type
-    if (type === 'solid') return null // solid has no params
     return SurfaceSchemas[type] as ObjectSchema
   })
 
   const currentBackgroundSurfaceSchema = computed(() => {
     if (!customBackgroundSurfaceParams.value) return null
     const type = customBackgroundSurfaceParams.value.type
-    if (type === 'solid') return null // solid has no params
     return SurfaceSchemas[type] as ObjectSchema
   })
 
@@ -707,10 +706,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   /**
    * Update custom background surface params
    */
-  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => {
+  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => {
     if (!customBackgroundSurfaceParams.value) return
     const type = customBackgroundSurfaceParams.value.type
-    if (type === 'solid' || type === 'gradientGrain') return
+    if (type === 'gradientGrain') return
 
     // View層のステート更新
     customBackgroundSurfaceParams.value = { ...customBackgroundSurfaceParams.value, ...updates } as CustomBackgroundSurfaceParams
