@@ -1792,9 +1792,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Apply filters to current canvas content for a layer
+   * Note: ClipGroup layers handle effects internally via offscreen rendering,
+   * so they are skipped here to avoid double-application
    */
   const applyLayerFilters = (layer: EditorCanvasLayer, viewport: Viewport) => {
     if (!previewRenderer) return
+
+    // Skip clipGroup layers - effects are applied in offscreen rendering pipeline
+    if (layer.config.type === 'clipGroup') return
 
     const { filters } = layer
 
@@ -2211,22 +2216,114 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               return null
             }
 
+            // Helper to apply effects to offscreen texture (for ClipGroup)
+            // Effects are applied before clip mask so they stay within mask boundaries
+            const applyEffectsToOffscreen = (inputTexture: GPUTexture): GPUTexture => {
+              // previewRenderer is guaranteed non-null here (checked at renderScene start)
+              const renderer = previewRenderer!
+              let currentTexture = inputTexture
+              const { filters } = layer
+
+              // Dot Halftone
+              if (filters.dotHalftone.enabled) {
+                const uniforms = createDotHalftoneUniforms(
+                  {
+                    dotSize: filters.dotHalftone.dotSize,
+                    spacing: filters.dotHalftone.spacing,
+                    angle: filters.dotHalftone.angle,
+                  },
+                  viewport
+                )
+                // Toggle between buffer 0 and 1 for ping-pong rendering
+                const outputIndex = currentTexture === renderer.getOffscreenTexture(0) ? 1 : 0
+                currentTexture = renderer.applyPostEffectToOffscreen(
+                  { shader: dotHalftoneShader, uniforms, bufferSize: DOT_HALFTONE_BUFFER_SIZE },
+                  currentTexture,
+                  outputIndex as 0 | 1
+                )
+              }
+
+              // Line Halftone
+              if (filters.lineHalftone.enabled) {
+                const uniforms = createLineHalftoneUniforms(
+                  {
+                    lineWidth: filters.lineHalftone.lineWidth,
+                    spacing: filters.lineHalftone.spacing,
+                    angle: filters.lineHalftone.angle,
+                  },
+                  viewport
+                )
+                const outputIndex = currentTexture === renderer.getOffscreenTexture(0) ? 1 : 0
+                currentTexture = renderer.applyPostEffectToOffscreen(
+                  { shader: lineHalftoneShader, uniforms, bufferSize: LINE_HALFTONE_BUFFER_SIZE },
+                  currentTexture,
+                  outputIndex as 0 | 1
+                )
+              }
+
+              // Chromatic Aberration
+              if (filters.chromaticAberration.enabled) {
+                const uniforms = createChromaticAberrationUniforms(
+                  { intensity: filters.chromaticAberration.intensity, angle: 0 },
+                  viewport
+                )
+                const outputIndex = currentTexture === renderer.getOffscreenTexture(0) ? 1 : 0
+                currentTexture = renderer.applyPostEffectToOffscreen(
+                  { shader: chromaticAberrationShader, uniforms, bufferSize: CHROMATIC_ABERRATION_BUFFER_SIZE },
+                  currentTexture,
+                  outputIndex as 0 | 1
+                )
+              }
+
+              return currentTexture
+            }
+
             // Handle custom mask image (customMaskBitmap)
             if (customMaskBitmap && clipSpec) {
-              // Render custom image to offscreen, then apply clip mask
-              const offscreenTexture = await previewRenderer.renderImageToOffscreen(customMaskBitmap, 0)
+              // Render custom image to offscreen, then apply effects and clip mask
+              let offscreenTexture = await previewRenderer.renderImageToOffscreen(customMaskBitmap, 0)
+              // Apply effects to offscreen texture (stays within mask bounds)
+              offscreenTexture = applyEffectsToOffscreen(offscreenTexture)
               previewRenderer.applyClipMask(clipSpec, offscreenTexture, { clear: false })
+              // Apply vignette overlay after clip mask (on main canvas)
+              if (layer.filters.vignette.enabled) {
+                const vignetteSpec = createVignetteSpec(
+                  {
+                    color: [0, 0, 0, 1],
+                    intensity: layer.filters.vignette.intensity,
+                    radius: layer.filters.vignette.radius,
+                    softness: layer.filters.vignette.softness,
+                  },
+                  viewport
+                )
+                previewRenderer.render(vignetteSpec, { clear: false })
+              }
               break
             }
 
             if (hasTexture && clipSpec) {
-              // New approach: Render texture to offscreen, then apply clip mask
+              // New approach: Render texture to offscreen, apply effects, then apply clip mask
               const textureSpec = createPureTextureSpec()
               if (textureSpec) {
                 // Render texture to offscreen buffer
-                const offscreenTexture = previewRenderer.renderToOffscreen(textureSpec, 0)
+                let offscreenTexture = previewRenderer.renderToOffscreen(textureSpec, 0)
+                // Apply effects to offscreen texture (stays within mask bounds)
+                offscreenTexture = applyEffectsToOffscreen(offscreenTexture)
                 // Apply clip mask and render to main canvas
                 previewRenderer.applyClipMask(clipSpec, offscreenTexture, { clear: false })
+                // Apply vignette overlay after clip mask (on main canvas)
+                if (layer.filters.vignette.enabled) {
+                  const vignetteSpec = createVignetteSpec(
+                    {
+                      color: [0, 0, 0, 1],
+                      intensity: layer.filters.vignette.intensity,
+                      radius: layer.filters.vignette.radius,
+                      softness: layer.filters.vignette.softness,
+                    },
+                    viewport
+                  )
+                  previewRenderer.render(vignetteSpec, { clear: false })
+                }
                 break
               }
             }

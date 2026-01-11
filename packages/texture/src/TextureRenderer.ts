@@ -469,6 +469,55 @@ export class TextureRenderer {
     this.executeRender(cached.pipeline, bindGroup, options)
   }
 
+  /**
+   * Apply post-effect shader to offscreen texture (for ClipGroup Effect)
+   * Renders to offscreen buffer instead of main canvas
+   * Returns the output texture for further processing (e.g., clip mask)
+   */
+  applyPostEffectToOffscreen(
+    spec: PostEffectSpec,
+    inputTexture: GPUTexture,
+    outputTextureIndex: 0 | 1
+  ): GPUTexture {
+    const target = this.getOrCreateOffscreenTexture(outputTextureIndex)
+    const cached = this.getOrCreatePostEffectPipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Create bind group for this specific texture
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: inputTexture.createView() },
+      ],
+    })
+
+    // Render to offscreen texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: target.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cached.pipeline)
+    renderPass.setBindGroup(0, bindGroup)
+    renderPass.draw(3)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+
+    return target
+  }
+
   private getOrCreatePostEffectPipeline(spec: PostEffectSpec): PostEffectPipelineCache {
     const existing = this.postEffectCache.get(spec.shader)
     if (existing) {

@@ -43,6 +43,11 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   // 現在ピクセルの色を取得
   let originalColor = textureSample(inputTexture, inputSampler, uv);
 
+  // 透明領域はEffectをスキップ（Mask範囲外を保護）
+  if (originalColor.a < 0.01) {
+    return originalColor;
+  }
+
   // 輝度を計算（Rec. 709）
   let luminance = dot(originalColor.rgb, vec3f(0.2126, 0.7152, 0.0722));
 
