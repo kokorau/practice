@@ -5,8 +5,16 @@
  * subscribeパターンで変更通知をサポート
  */
 
-import type { HeroViewRepository, LayerUpdate } from '../Application/ports/HeroViewRepository'
-import type { HeroViewConfig, LayerNodeConfig, GroupLayerNodeConfig } from '../Domain/HeroViewConfig'
+import type { HeroViewRepository as DomainHeroViewRepository } from '../Domain/repository/HeroViewRepository'
+import type { LayerUpdate } from '../Application/ports/HeroViewRepository'
+import type {
+  HeroViewConfig,
+  LayerNodeConfig,
+  GroupLayerNodeConfig,
+  HeroColorsConfig,
+  ViewportConfig,
+  ForegroundLayerConfig,
+} from '../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
 
 /**
@@ -52,7 +60,7 @@ const updateLayerInTree = (
  */
 export const createHeroViewInMemoryRepository = (
   initialConfig?: HeroViewConfig
-): HeroViewRepository => {
+): DomainHeroViewRepository => {
   let config = initialConfig ?? createDefaultHeroViewConfig()
   const subscribers = new Set<(config: HeroViewConfig) => void>()
 
@@ -70,13 +78,13 @@ export const createHeroViewInMemoryRepository = (
       notifySubscribers()
     },
 
-    updateLayer: (layerId: string, updates: LayerUpdate) => {
+    updateLayer: (layerId: string, updates: Partial<LayerNodeConfig>) => {
       const layer = findLayerInTree(config.layers, layerId)
       if (!layer) return
 
       config = {
         ...config,
-        layers: updateLayerInTree(config.layers, layerId, updates),
+        layers: updateLayerInTree(config.layers, layerId, updates as LayerUpdate),
       }
       notifySubscribers()
     },
@@ -90,6 +98,84 @@ export const createHeroViewInMemoryRepository = (
       return () => {
         subscribers.delete(callback)
       }
+    },
+
+    // ============================================================
+    // セクション単位の部分更新
+    // ============================================================
+
+    updateColors: (colors: Partial<HeroColorsConfig>) => {
+      config = {
+        ...config,
+        colors: { ...config.colors, ...colors },
+      }
+      notifySubscribers()
+    },
+
+    updateViewport: (viewport: Partial<ViewportConfig>) => {
+      config = {
+        ...config,
+        viewport: { ...config.viewport, ...viewport },
+      }
+      notifySubscribers()
+    },
+
+    updateForeground: (foreground: Partial<ForegroundLayerConfig>) => {
+      config = {
+        ...config,
+        foreground: { ...config.foreground, ...foreground },
+      }
+      notifySubscribers()
+    },
+
+    // ============================================================
+    // レイヤー操作
+    // ============================================================
+
+    addLayer: (layer: LayerNodeConfig, index?: number) => {
+      const newLayers = [...config.layers]
+      if (index !== undefined && index >= 0 && index <= newLayers.length) {
+        newLayers.splice(index, 0, layer)
+      } else {
+        newLayers.push(layer)
+      }
+      config = {
+        ...config,
+        layers: newLayers,
+      }
+      notifySubscribers()
+    },
+
+    removeLayer: (layerId: string) => {
+      const newLayers = config.layers.filter((l) => l.id !== layerId)
+      if (newLayers.length === config.layers.length) return
+      config = {
+        ...config,
+        layers: newLayers,
+      }
+      notifySubscribers()
+    },
+
+    reorderLayers: (layerIds: string[]) => {
+      const layerMap = new Map(config.layers.map((l) => [l.id, l]))
+      const newLayers: LayerNodeConfig[] = []
+      for (const id of layerIds) {
+        const layer = layerMap.get(id)
+        if (layer) {
+          newLayers.push(layer)
+        }
+      }
+      // Keep any layers not in the reorder list at the end
+      for (const layer of config.layers) {
+        if (!layerIds.includes(layer.id)) {
+          newLayers.push(layer)
+        }
+      }
+      config = {
+        ...config,
+        layers: newLayers,
+      }
+      notifySubscribers()
     },
   }
 }

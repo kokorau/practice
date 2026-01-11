@@ -144,6 +144,26 @@ import {
   createMaskUsecase,
   createBackgroundSurfaceUsecase,
   createUnsplashImageUploadAdapter,
+  // Color UseCases
+  updateBrandColor,
+  updateAccentColor,
+  updateFoundationColor,
+  applyColorPreset,
+  // Layer UseCases
+  addLayer as addLayerUsecase,
+  removeLayer as removeLayerUsecase,
+  moveLayer as moveLayerUsecase,
+  toggleExpand as toggleExpandUsecase,
+  toggleVisibility as toggleVisibilityUsecase,
+  updateLayer as updateLayerUsecase,
+  // Preset UseCases
+  exportPreset,
+  createPreset,
+  type PresetExportPort,
+  // ForegroundElement Usecase
+  createForegroundElementUsecase,
+  type ForegroundConfigPort,
+  type SelectionPort,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -322,6 +342,120 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     repository: heroViewRepository,
     imageUpload: imageUploadAdapter,
   })
+
+  // ============================================================
+  // Color Usecase wrappers
+  // ============================================================
+  const colorUsecase = {
+    updateBrandColor: (params: { hue?: number; saturation?: number; value?: number }) => {
+      updateBrandColor(params, heroViewRepository)
+    },
+    updateAccentColor: (params: { hue?: number; saturation?: number; value?: number }) => {
+      updateAccentColor(params, heroViewRepository)
+    },
+    updateFoundationColor: (params: { hue?: number; saturation?: number; value?: number }) => {
+      updateFoundationColor(params, heroViewRepository)
+    },
+    applyColorPreset: (preset: {
+      id: string
+      name: string
+      description: string
+      brand: { hue: number; saturation: number; value: number }
+      accent: { hue: number; saturation: number; value: number }
+      foundation: { hue: number; saturation: number; value: number }
+    }) => {
+      applyColorPreset(preset, heroViewRepository)
+    },
+  }
+
+  // ============================================================
+  // Layer Usecase wrappers
+  // ============================================================
+  const layerUsecase = {
+    addLayer: (layer: LayerNodeConfig, index?: number) => addLayerUsecase(layer, heroViewRepository, index),
+    removeLayer: (layerId: string) => removeLayerUsecase(layerId, heroViewRepository),
+    moveLayer: (sourceId: string, targetId: string, position: 'before' | 'after' | 'into') =>
+      moveLayerUsecase(sourceId, targetId, position, heroViewRepository),
+    toggleExpand: (layerId: string) => toggleExpandUsecase(layerId, heroViewRepository),
+    toggleVisibility: (layerId: string) => toggleVisibilityUsecase(layerId, heroViewRepository),
+    updateLayer: (layerId: string, updates: Partial<LayerNodeConfig>) => updateLayerUsecase(layerId, updates, heroViewRepository),
+  }
+
+  // ============================================================
+  // Preset Usecase wrappers
+  // ============================================================
+  const presetExportPort: PresetExportPort = {
+    downloadAsJson: (preset: HeroViewPreset) => {
+      const blob = new Blob([JSON.stringify(preset, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${preset.name || 'preset'}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    },
+  }
+
+  const presetUsecase = {
+    exportPreset: (options?: { id?: string; name?: string }) => {
+      return exportPreset(heroViewRepository, presetExportPort, options)
+    },
+    createPreset: (options?: { id?: string; name?: string }) => {
+      return createPreset(heroViewRepository, options)
+    },
+  }
+
+  // ============================================================
+  // ForegroundElement Usecase
+  // ============================================================
+  // Selection state for foreground elements
+  const selectedForegroundElementId = ref<string | null>(null)
+
+  // ForegroundElement usecase will be initialized after foregroundConfig is available
+  // We'll create a lazy initialization pattern
+  let _foregroundElementUsecase: ReturnType<typeof createForegroundElementUsecase> | null = null
+
+  const getForegroundElementUsecase = () => {
+    if (!_foregroundElementUsecase) {
+      // Lazy initialization - foregroundConfig is defined later in the file
+      // This will be properly initialized when first accessed
+      const foregroundConfigPort: ForegroundConfigPort = {
+        get: () => foregroundConfig.value,
+        set: (config: ForegroundLayerConfig) => {
+          foregroundConfig.value = config
+        },
+      }
+
+      const selectionPort: SelectionPort = {
+        getSelectedId: () => selectedForegroundElementId.value,
+        setSelectedId: (id: string | null) => {
+          selectedForegroundElementId.value = id
+        },
+        clearCanvasSelection: () => {
+          // Clear canvas layer selection when foreground element is selected
+          selectedFilterLayerId.value = null
+        },
+      }
+
+      _foregroundElementUsecase = createForegroundElementUsecase({
+        foregroundConfig: foregroundConfigPort,
+        selection: selectionPort,
+      })
+    }
+    return _foregroundElementUsecase
+  }
+
+  // Expose foreground element usecase methods
+  const foregroundElementUsecase = {
+    getSelectedElement: () => getForegroundElementUsecase().getSelectedElement(),
+    selectElement: (elementId: string | null) => getForegroundElementUsecase().selectElement(elementId),
+    addElement: (type: 'title' | 'description') => getForegroundElementUsecase().addElement(type),
+    removeElement: (elementId: string) => getForegroundElementUsecase().removeElement(elementId),
+    updateElement: (elementId: string, updates: { position?: string; content?: string; fontId?: string; fontSize?: number; colorKey?: string }) => getForegroundElementUsecase().updateElement(elementId, updates as Parameters<ReturnType<typeof createForegroundElementUsecase>['updateElement']>[1]),
+    updateSelectedElement: (updates: { position?: string; content?: string; fontId?: string; fontSize?: number; colorKey?: string }) => getForegroundElementUsecase().updateSelectedElement(updates as Parameters<ReturnType<typeof createForegroundElementUsecase>['updateSelectedElement']>[0]),
+  }
 
   // ============================================================
   // Custom Shape/Surface Params State
@@ -3223,8 +3357,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     loadPresets,
     applyPreset,
 
-    // Usecases (for future migration)
+    // Usecases
     heroViewRepository,
     maskUsecase,
+    backgroundSurfaceUsecase,
+    colorUsecase,
+    layerUsecase,
+    foregroundElementUsecase,
+    presetUsecase,
+    selectedForegroundElementId,
   }
 }

@@ -63,6 +63,10 @@ export const createHeroViewInMemoryRepository = (
       }
     },
 
+    findLayer(layerId: string): LayerNodeConfig | undefined {
+      return currentConfig.layers.find((layer) => layer.id === layerId)
+    },
+
     // ============================================================
     // セクション単位の部分更新
     // ============================================================
