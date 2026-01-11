@@ -35,14 +35,12 @@ const handleInput = (e: Event) => {
 <style scoped>
 .range-input {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .range-label {
   font-size: 0.75rem;
-  width: 4rem;
-  flex-shrink: 0;
   color: oklch(0.50 0.02 260);
 }
 
@@ -51,13 +49,14 @@ const handleInput = (e: Event) => {
 }
 
 .number-input {
-  flex: 1;
+  width: 100%;
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
   background: oklch(0.96 0.01 260);
   border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.25rem;
   color: oklch(0.25 0.02 260);
+  box-sizing: border-box;
 }
 
 :global(.dark) .number-input {
