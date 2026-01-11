@@ -34,6 +34,8 @@ const emit = defineEmits<{
   'toggle-visibility': [nodeId: string]
   'select-processor': [nodeId: string, processorType: 'effect' | 'mask' | 'processor']
   'remove-layer': [nodeId: string]
+  // Context menu event
+  contextmenu: [nodeId: string, x: number, y: number]
   // Drag & drop events
   'drag-start': [nodeId: string]
   'drag-end': []
@@ -172,6 +174,12 @@ const handleRemove = (e: Event) => {
   emit('remove-layer', props.node.id)
 }
 
+const handleContextMenu = (e: MouseEvent) => {
+  e.preventDefault()
+  e.stopPropagation()
+  emit('contextmenu', props.node.id, e.clientX, e.clientY)
+}
+
 const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
   emit('select-processor', props.node.id, type)
 }
@@ -256,6 +264,7 @@ const handleDrop = (e: DragEvent) => {
       :style="indentStyle"
       :draggable="isDraggable"
       @click="handleSelect"
+      @contextmenu="handleContextMenu"
       @dragstart="handleDragStart"
       @dragend="handleDragEnd"
       @dragover="handleDragOver"
@@ -376,6 +385,7 @@ const handleDrop = (e: DragEvent) => {
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
         @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
+        @contextmenu="(id: string, x: number, y: number) => emit('contextmenu', id, x, y)"
         @drag-start="(id: string) => emit('drag-start', id)"
         @drag-end="() => emit('drag-end')"
         @drag-over="(id: string, pos: DropPosition, e: DragEvent) => emit('drag-over', id, pos, e)"

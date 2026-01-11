@@ -54,6 +54,7 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'move-layer': [sourceId: string, targetId: string, position: DropPosition]
+  'layer-contextmenu': [layerId: string, x: number, y: number]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
   'remove-foreground-element': [elementId: string]
@@ -200,6 +201,7 @@ const handleSelectForegroundElement = (elementId: string) => {
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
           @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
+          @contextmenu="(id: string, x: number, y: number) => emit('layer-contextmenu', id, x, y)"
           @drag-start="handleDragStart"
           @drag-end="handleDragEnd"
           @drag-over="handleDragOver"

@@ -29,6 +29,7 @@ import {
   updateLayerNode,
   removeNode,
   moveLayerNode as moveLayerNodeInTree,
+  wrapNodeInGroup,
   isLayer,
   isGroup,
   type DropPosition,
@@ -858,6 +859,11 @@ const handleRemoveLayer = (layerId: string) => {
   }
 }
 
+const handleGroupSelection = (layerId: string) => {
+  // Wrap the selected layer in a new group
+  layers.value = wrapNodeInGroup(layers.value, layerId)
+}
+
 // ============================================================
 // APCA Contrast Check
 // ============================================================
@@ -976,6 +982,7 @@ watch(canvasImageData, () => {
       @add-layer="handleAddLayer"
       @remove-layer="handleRemoveLayer"
       @move-layer="handleMoveLayer"
+      @group-selection="handleGroupSelection"
       @select-foreground-element="handleSelectForegroundElement"
       @add-foreground-element="handleAddForegroundElement"
       @remove-foreground-element="handleRemoveForegroundElement"

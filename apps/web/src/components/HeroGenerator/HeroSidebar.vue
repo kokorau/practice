@@ -5,8 +5,10 @@ import ColorPresets from '../SiteBuilder/ColorPresets.vue'
 import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
 import LayerPanel, { type LayerType } from './LayerPanel.vue'
+import LayerContextMenu from './LayerContextMenu.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import type { HeroViewPreset, LayerNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
+import { findLayerNode, isLayer as checkIsLayer } from '../../modules/HeroScene'
 type NeutralRampItem = {
   key: string
   css: string
@@ -65,6 +67,7 @@ const emit = defineEmits<{
   (e: 'add-layer', type: LayerType): void
   (e: 'remove-layer', layerId: string): void
   (e: 'move-layer', sourceId: string, targetId: string, position: DropPosition): void
+  (e: 'group-selection', layerId: string): void
   // Foreground events
   (e: 'select-foreground-element', elementId: string): void
   (e: 'add-foreground-element', type: ForegroundElementType): void
@@ -136,6 +139,68 @@ const selectedPresetName = computed(() => {
   const preset = props.presets.find(p => p.id === props.selectedPresetId)
   return preset?.name ?? 'Select preset'
 })
+
+// ============================================================
+// Layer Context Menu State
+// ============================================================
+const contextMenuState = ref<{
+  isOpen: boolean
+  x: number
+  y: number
+  layerId: string | null
+}>({
+  isOpen: false,
+  x: 0,
+  y: 0,
+  layerId: null,
+})
+
+// Get the layer for context menu
+const contextMenuLayer = computed(() => {
+  if (!contextMenuState.value.layerId) return null
+  return findLayerNode(props.layers, contextMenuState.value.layerId)
+})
+
+const contextMenuIsVisible = computed(() => contextMenuLayer.value?.visible ?? true)
+
+const contextMenuIsBaseLayer = computed(() => {
+  const layer = contextMenuLayer.value
+  if (!layer) return false
+  return checkIsLayer(layer) && layer.variant === 'base'
+})
+
+const handleLayerContextMenu = (layerId: string, x: number, y: number) => {
+  contextMenuState.value = {
+    isOpen: true,
+    x,
+    y,
+    layerId,
+  }
+}
+
+const closeContextMenu = () => {
+  contextMenuState.value = {
+    isOpen: false,
+    x: 0,
+    y: 0,
+    layerId: null,
+  }
+}
+
+const handleContextMenuGroupSelection = (layerId: string) => {
+  emit('group-selection', layerId)
+  closeContextMenu()
+}
+
+const handleContextMenuToggleVisibility = (layerId: string) => {
+  emit('toggle-visibility', layerId)
+  closeContextMenu()
+}
+
+const handleContextMenuRemove = (layerId: string) => {
+  emit('remove-layer', layerId)
+  closeContextMenu()
+}
 </script>
 
 <template>
@@ -275,12 +340,27 @@ const selectedPresetName = computed(() => {
           @add-layer="(type: LayerType) => emit('add-layer', type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @move-layer="(src: string, tgt: string, pos: DropPosition) => emit('move-layer', src, tgt, pos)"
+          @layer-contextmenu="handleLayerContextMenu"
           @select-foreground-element="(id: string) => emit('select-foreground-element', id)"
           @add-foreground-element="(type: ForegroundElementType) => emit('add-foreground-element', type)"
           @remove-foreground-element="(id: string) => emit('remove-foreground-element', id)"
         />
       </div>
     </template>
+
+    <!-- Layer Context Menu -->
+    <LayerContextMenu
+      :is-open="contextMenuState.isOpen"
+      :x="contextMenuState.x"
+      :y="contextMenuState.y"
+      :layer-id="contextMenuState.layerId ?? ''"
+      :is-visible="contextMenuIsVisible"
+      :is-base-layer="contextMenuIsBaseLayer"
+      @close="closeContextMenu"
+      @group-selection="handleContextMenuGroupSelection"
+      @toggle-visibility="handleContextMenuToggleVisibility"
+      @remove-layer="handleContextMenuRemove"
+    />
 
     <!-- カラーポップアップ -->
     <FloatingPanel

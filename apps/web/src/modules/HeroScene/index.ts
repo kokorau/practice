@@ -214,6 +214,7 @@ export {
   isAncestorOf,
   insertNode,
   moveNode,
+  wrapNodeInGroup,
   // Legacy LayerNode factories
   createBaseLayerNode,
   createGroupLayerNode,
