@@ -176,6 +176,8 @@ export {
   CheckerSurfaceSchema,
   GradientGrainSurfaceSchema,
   SurfaceSchemas,
+  // Constants
+  DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
   // Factory functions
   createDefaultCircleMaskParams,
   createDefaultRectMaskParams,

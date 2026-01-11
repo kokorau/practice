@@ -53,6 +53,7 @@ import {
   // Schemas and types
   MaskShapeSchemas,
   SurfaceSchemas,
+  DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
   type TexturePattern,
   type MaskPattern,
   type MaskShapeConfig,
@@ -567,7 +568,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         sparsity: params.sparsity,
         colorA,
         colorB,
-        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
       }
     }
     // checker
@@ -607,7 +608,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         sparsity: params.sparsity,
         colorA,
         colorB,
-        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
       }
     }
     // checker
@@ -2126,8 +2127,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     color: color1,
                   })
                 case 'gradientGrain': {
-                  const defaultCurvePoints: number[] = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
-                  const curvePoints: number[] = 'curvePoints' in params && Array.isArray(params.curvePoints) ? params.curvePoints : defaultCurvePoints
+                  const curvePoints: number[] = 'curvePoints' in params && Array.isArray(params.curvePoints) ? params.curvePoints : [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS]
                   return createGradientGrainSpec({
                     depthMapType: params.depthMapType,
                     angle: params.angle,
@@ -2447,7 +2447,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           angle: params.angle,
         })
       case 'gradientGrain': {
-        const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
         return createGradientGrainSpec({
           depthMapType: params.depthMapType,
           angle: params.angle,
@@ -2463,7 +2462,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           colorB: color2,
           seed: params.seed,
           sparsity: params.sparsity,
-          curvePoints: defaultCurvePoints,
+          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
         }, _viewport)
       }
     }

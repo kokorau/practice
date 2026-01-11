@@ -1,4 +1,5 @@
 import type { SurfacePreset, TexturePattern, RGBA, Viewport } from '../Domain'
+import { DEFAULT_GRADIENT_GRAIN_CURVE_POINTS } from '../Domain'
 import {
   createSolidSpec,
   createStripeSpec,
@@ -68,7 +69,6 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
           }),
       }
     case 'gradientGrain': {
-      const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
       return {
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
@@ -87,7 +87,7 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             colorB: c2,
             seed: params.seed,
             sparsity: params.sparsity,
-            curvePoints: defaultCurvePoints,
+            curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
           }, viewport ?? { width: 1920, height: 1080 }),
       }
     }

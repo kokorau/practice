@@ -173,7 +173,10 @@ describe('useForegroundElement', () => {
     it('returns default font size for title when not set', () => {
       const options = createMockOptions()
       // Remove fontSize from title
-      options.foregroundConfig.value.elements[0].fontSize = undefined as unknown as number
+      const titleElement = options.foregroundConfig.value.elements[0]
+      if (titleElement) {
+        titleElement.fontSize = undefined as unknown as number
+      }
 
       const { handleSelectForegroundElement, selectedElementFontSize } = useForegroundElement(options)
 
@@ -185,7 +188,10 @@ describe('useForegroundElement', () => {
     it('returns default font size for description when not set', () => {
       const options = createMockOptions()
       // Remove fontSize from description
-      options.foregroundConfig.value.elements[1].fontSize = undefined as unknown as number
+      const descElement = options.foregroundConfig.value.elements[1]
+      if (descElement) {
+        descElement.fontSize = undefined as unknown as number
+      }
 
       const { handleSelectForegroundElement, selectedElementFontSize } = useForegroundElement(options)
 
