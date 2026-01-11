@@ -479,8 +479,6 @@ export const createPrimitiveRefMap = (
 // Ink Selection for Arbitrary Surfaces (for Hero/Canvas rendering)
 // ============================================================================
 
-// InkRole is imported from Domain/NeutralSelection
-
 /**
  * Select an appropriate ink color for a given surface using APCA contrast.
  * This is useful for Hero/Canvas rendering where surfaces are chosen from

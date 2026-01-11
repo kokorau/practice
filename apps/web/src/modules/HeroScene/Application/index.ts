@@ -43,6 +43,15 @@ export type {
 } from './BackgroundSurfaceUsecase'
 export { createBackgroundSurfaceUsecase } from './BackgroundSurfaceUsecase'
 
+// Re-export Mask UseCase
+export type {
+  MaskUsecase,
+  MaskUsecaseDeps,
+  MaskShapeParamsUpdate,
+  SurfaceParamsUpdate as MaskSurfaceParamsUpdate,
+} from './MaskUsecase'
+export { createMaskUsecase } from './MaskUsecase'
+
 // Re-export Preset UseCase
 export type { GetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
 export { createGetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'

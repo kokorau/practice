@@ -40,3 +40,13 @@ export {
   getLineHalftoneParams,
   type FilterType,
 } from './Filter'
+export {
+  updateTextLayerText,
+  updateTextLayerFont,
+  updateTextLayerColor,
+  updateTextLayerPosition,
+  updateTextLayerRotation,
+  type UpdateTextLayerFontParams,
+  type UpdateTextLayerPositionParams,
+  type TextAnchor,
+} from './TextLayer'

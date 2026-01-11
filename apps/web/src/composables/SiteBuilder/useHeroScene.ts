@@ -134,6 +134,14 @@ import {
   findSurfacePresetIndex,
   findMaskPatternIndex,
   createObject3DRenderer,
+  // TextLayer UseCases
+  updateTextLayerText,
+  updateTextLayerFont,
+  updateTextLayerColor,
+  updateTextLayerPosition,
+  updateTextLayerRotation,
+  createHeroViewInMemoryRepository,
+  createMaskUsecase,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -301,6 +309,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const customMaskImage = ref<string | null>(null)
   const customMaskFile = ref<File | null>(null)
   let customMaskBitmap: ImageBitmap | null = null
+
+  // ============================================================
+  // HeroViewRepository & MaskUsecase
+  // ============================================================
+  const heroViewRepository = createHeroViewInMemoryRepository()
+  const maskUsecase = createMaskUsecase({ repository: heroViewRepository })
 
   // ============================================================
   // Custom Shape/Surface Params State
@@ -1218,13 +1232,45 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Update text layer config and re-render
+   * Uses TextLayerUsecase when repository is available
    */
   const updateTextLayerConfig = (id: string, updates: Partial<TextLayerConfig>) => {
     const layer = editorState.value.canvasLayers.find(l => l.id === id)
     if (!layer || layer.config.type !== 'text') return
 
-    // Update the config properties
+    // Update the config properties (editorState)
     Object.assign(layer.config, updates)
+
+    // Also update repository using TextLayerUsecases if available
+    if (repository) {
+      if (updates.text !== undefined) {
+        updateTextLayerText(id, updates.text, repository)
+      }
+      if (updates.fontFamily !== undefined || updates.fontSize !== undefined ||
+          updates.fontWeight !== undefined || updates.letterSpacing !== undefined ||
+          updates.lineHeight !== undefined) {
+        updateTextLayerFont(id, {
+          fontFamily: updates.fontFamily,
+          fontSize: updates.fontSize,
+          fontWeight: updates.fontWeight,
+          letterSpacing: updates.letterSpacing,
+          lineHeight: updates.lineHeight,
+        }, repository)
+      }
+      if (updates.color !== undefined) {
+        updateTextLayerColor(id, updates.color, repository)
+      }
+      if (updates.position !== undefined) {
+        updateTextLayerPosition(id, {
+          x: updates.position.x,
+          y: updates.position.y,
+          anchor: updates.position.anchor as 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right',
+        }, repository)
+      }
+      if (updates.rotation !== undefined) {
+        updateTextLayerRotation(id, updates.rotation, repository)
+      }
+    }
 
     // Trigger reactivity and re-render
     editorState.value = { ...editorState.value }
@@ -2710,7 +2756,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       layers.push(surfaceLayer)
     }
 
-    return {
+    const config: HeroViewConfig = {
       viewport: {
         width: editorState.value.config.width,
         height: editorState.value.config.height,
@@ -2719,6 +2765,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       layers,
       foreground: foregroundConfig.value,
     }
+
+    // Sync to HeroViewRepository for Usecase access
+    heroViewRepository.set(config)
+
+    return config
   }
 
   /**
@@ -2737,6 +2788,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const fromHeroViewConfig = async (config: HeroViewConfig) => {
     // Prevent watchers from overwriting custom params during config load
     isLoadingFromConfig = true
+
+    // Sync to HeroViewRepository for Usecase access
+    heroViewRepository.set(config)
 
     // Viewport
     editorState.value = {
@@ -2981,7 +3035,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Subscribe to repository changes (if provided)
   if (repository) {
-    repositoryUnsubscribe = repository.subscribe(async (config) => {
+    repositoryUnsubscribe = repository.subscribe(async (config: HeroViewConfig) => {
       // Skip if we're the ones who triggered the update
       if (isLoadingFromConfig) return
       // Load external changes
@@ -3123,5 +3177,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     selectedPresetId,
     loadPresets,
     applyPreset,
+
+    // Usecases (for future migration)
+    heroViewRepository,
+    maskUsecase,
   }
 }

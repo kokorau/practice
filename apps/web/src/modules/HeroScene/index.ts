@@ -292,6 +292,15 @@ export type {
   SelectionPort,
   ForegroundElementUsecase,
   ForegroundElementUsecaseDeps,
+  // Usecase types
+  BackgroundSurfaceUsecase,
+  BackgroundSurfaceUsecaseDeps,
+  ImageUploadPort,
+  SurfaceParamsUpdate,
+  MaskUsecase,
+  MaskUsecaseDeps,
+  MaskShapeParamsUpdate,
+  LayerUpdate,
 } from './Application'
 
 export {
@@ -303,6 +312,9 @@ export {
   createGetHeroViewPresetsUseCase,
   // ForegroundElement UseCase
   createForegroundElementUsecase,
+  // Usecases
+  createBackgroundSurfaceUsecase,
+  createMaskUsecase,
 } from './Application'
 
 // HeroView Repository types (from Domain)
@@ -329,6 +341,19 @@ export {
   getDotHalftoneParams,
   getLineHalftoneParams,
   type FilterType,
+  // TextLayer UseCases
+  updateTextLayerText,
+  updateTextLayerFont,
+  updateTextLayerColor,
+  updateTextLayerPosition,
+  updateTextLayerRotation,
+} from './usecase'
+
+// TextLayer UseCase types
+export type {
+  UpdateTextLayerFontParams,
+  UpdateTextLayerPositionParams,
+  TextAnchor,
 } from './usecase'
 
 // HeroView Infra (re-export from Infra for convenience)
