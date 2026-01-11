@@ -12,3 +12,11 @@ export {
   type UpdateAccentColorParams,
   type UpdateFoundationColorParams,
 } from './Color'
+export {
+  toggleExpand,
+  toggleVisibility,
+  addLayer,
+  removeLayer,
+  moveLayer,
+  updateLayer,
+} from './Layer'
