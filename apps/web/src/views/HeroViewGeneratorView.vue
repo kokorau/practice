@@ -687,6 +687,8 @@ const selectedLayerVariant = computed(() => {
 
 const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
   if (uiLayerId === 'base') return 'base-layer'
+  // Background layers map to base-layer in the scene
+  if (uiLayerId.startsWith('background-')) return 'base-layer'
   // Surface layers map to mask-layer in the scene (LAYER_IDS.MASK)
   if (uiLayerId.startsWith('surface')) return 'mask-layer'
   // Legacy support for old IDs
