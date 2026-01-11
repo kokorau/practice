@@ -1452,6 +1452,15 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
               </div>
             </div>
             <div class="settings-section">
+              <p class="settings-label">Color</p>
+              <PrimitiveColorPicker
+                v-model="selectedElementColorKey"
+                :palette="primitivePalette"
+                label="Text Color"
+                :show-auto="true"
+              />
+            </div>
+            <div class="settings-section">
               <p class="settings-label">Text</p>
               <input
                 v-model="selectedElementContent"
@@ -1487,15 +1496,6 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
                 <span class="font-size-value">{{ selectedElementFontSize }}rem</span>
               </div>
             </div>
-            <div class="settings-section">
-              <p class="settings-label">Color</p>
-              <PrimitiveColorPicker
-                v-model="selectedElementColorKey"
-                :palette="primitivePalette"
-                label="Text Color"
-                :show-auto="true"
-              />
-            </div>
           </div>
         </template>
 
@@ -1525,6 +1525,15 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
               <div class="contrast-score-hint">
                 {{ descriptionContrastResult.score >= 60 ? 'Good readability' : descriptionContrastResult.score >= 45 ? 'Minimum for body text' : 'Poor contrast' }}
               </div>
+            </div>
+            <div class="settings-section">
+              <p class="settings-label">Color</p>
+              <PrimitiveColorPicker
+                v-model="selectedElementColorKey"
+                :palette="primitivePalette"
+                label="Text Color"
+                :show-auto="true"
+              />
             </div>
             <div class="settings-section">
               <p class="settings-label">Text</p>
@@ -1561,15 +1570,6 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
                 />
                 <span class="font-size-value">{{ selectedElementFontSize }}rem</span>
               </div>
-            </div>
-            <div class="settings-section">
-              <p class="settings-label">Color</p>
-              <PrimitiveColorPicker
-                v-model="selectedElementColorKey"
-                :palette="primitivePalette"
-                label="Text Color"
-                :show-auto="true"
-              />
             </div>
           </div>
         </template>
@@ -2534,8 +2534,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
 /* Property Panel */
 .property-panel {
-  overflow-y: auto;
-  max-height: calc(100vh - 8rem);
+  flex: 1;
+  min-height: 0;
 }
 
 /* Layer Settings */
