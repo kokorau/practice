@@ -72,8 +72,10 @@
       }
     ],
     "foreground": {
-      "title": { "position": "middle-center", "content": "Simplicity", "fontSize": 3, "fontId": "cormorant-garamond" },
-      "description": { "position": "middle-center", "content": "Less is more.", "fontSize": 1, "fontId": "quicksand" }
+      "elements": [
+        { "id": "title-1", "type": "title", "visible": true, "position": "middle-center", "content": "Simplicity", "fontSize": 3, "fontId": "cormorant-garamond" },
+        { "id": "description-1", "type": "description", "visible": true, "position": "middle-center", "content": "Less is more.", "fontSize": 1, "fontId": "quicksand" }
+      ]
     }
   },
   "colorPreset": {

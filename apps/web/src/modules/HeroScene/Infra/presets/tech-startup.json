@@ -71,8 +71,10 @@
       }
     ],
     "foreground": {
-      "title": { "position": "middle-left", "content": "Build the Future", "fontSize": 3.5, "fontId": "space-grotesk" },
-      "description": { "position": "middle-left", "content": "Next-gen tools for next-gen teams.", "fontSize": 1.25, "fontId": "dm-sans" }
+      "elements": [
+        { "id": "title-1", "type": "title", "visible": true, "position": "middle-left", "content": "Build the Future", "fontSize": 3.5, "fontId": "space-grotesk" },
+        { "id": "description-1", "type": "description", "visible": true, "position": "middle-left", "content": "Next-gen tools for next-gen teams.", "fontSize": 1.25, "fontId": "dm-sans" }
+      ]
     }
   },
   "colorPreset": {

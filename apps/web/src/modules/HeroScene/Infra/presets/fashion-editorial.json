@@ -77,8 +77,10 @@
       }
     ],
     "foreground": {
-      "title": { "position": "top-center", "content": "SPRING 2025", "fontSize": 2, "fontId": "josefin-sans" },
-      "description": { "position": "bottom-center", "content": "The New Collection", "fontSize": 4, "fontId": "playfair-display" }
+      "elements": [
+        { "id": "title-1", "type": "title", "visible": true, "position": "top-center", "content": "SPRING 2025", "fontSize": 2, "fontId": "josefin-sans" },
+        { "id": "description-1", "type": "description", "visible": true, "position": "bottom-center", "content": "The New Collection", "fontSize": 4, "fontId": "playfair-display" }
+      ]
     }
   },
   "colorPreset": {

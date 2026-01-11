@@ -75,8 +75,10 @@
       }
     ],
     "foreground": {
-      "title": { "position": "middle-left", "content": "Think Different", "fontSize": 4, "fontId": "poppins" },
-      "description": { "position": "bottom-left", "content": "Where creativity meets innovation.", "fontSize": 1.5, "fontId": "montserrat" }
+      "elements": [
+        { "id": "title-1", "type": "title", "visible": true, "position": "middle-left", "content": "Think Different", "fontSize": 4, "fontId": "poppins" },
+        { "id": "description-1", "type": "description", "visible": true, "position": "bottom-left", "content": "Where creativity meets innovation.", "fontSize": 1.5, "fontId": "montserrat" }
+      ]
     }
   },
   "colorPreset": {

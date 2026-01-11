@@ -277,7 +277,11 @@ export type GridPosition =
   | 'middle-left' | 'middle-center' | 'middle-right'
   | 'bottom-left' | 'bottom-center' | 'bottom-right'
 
+export type ForegroundElementType = 'title' | 'description'
+
 export interface ForegroundElementConfig {
+  id: string
+  type: ForegroundElementType
   visible: boolean
   position: GridPosition
   content: string
@@ -286,8 +290,7 @@ export interface ForegroundElementConfig {
 }
 
 export interface ForegroundLayerConfig {
-  title: ForegroundElementConfig
-  description: ForegroundElementConfig
+  elements: ForegroundElementConfig[]
 }
 
 // ============================================================
@@ -349,8 +352,10 @@ export interface HeroViewConfig {
 // ============================================================
 
 export const createDefaultForegroundConfig = (): ForegroundLayerConfig => ({
-  title: { visible: true, position: 'middle-center', content: 'Build Amazing' },
-  description: { visible: true, position: 'middle-center', content: 'Create beautiful, responsive websites.\nDesign with confidence.' },
+  elements: [
+    { id: 'title-1', type: 'title', visible: true, position: 'middle-center', content: 'Build Amazing' },
+    { id: 'description-1', type: 'description', visible: true, position: 'middle-center', content: 'Create beautiful, responsive websites.\nDesign with confidence.' },
+  ],
 })
 
 export const createDefaultColorsConfig = (): HeroColorsConfig => ({

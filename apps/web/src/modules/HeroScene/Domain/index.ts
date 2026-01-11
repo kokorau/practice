@@ -707,6 +707,7 @@ export type {
   GroupLayerNodeConfig,
   // Foreground
   GridPosition,
+  ForegroundElementType,
   ForegroundElementConfig,
   ForegroundLayerConfig,
   HeroViewConfig,

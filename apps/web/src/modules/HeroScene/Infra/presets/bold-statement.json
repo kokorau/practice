@@ -72,8 +72,10 @@
       }
     ],
     "foreground": {
-      "title": { "position": "middle-center", "content": "MAKE IT HAPPEN", "fontSize": 6, "fontId": "anton" },
-      "description": { "position": "bottom-center", "content": "Your vision, our mission.", "fontSize": 1.5, "fontId": "archivo" }
+      "elements": [
+        { "id": "title-1", "type": "title", "visible": true, "position": "middle-center", "content": "MAKE IT HAPPEN", "fontSize": 6, "fontId": "anton" },
+        { "id": "description-1", "type": "description", "visible": true, "position": "bottom-center", "content": "Your vision, our mission.", "fontSize": 1.5, "fontId": "archivo" }
+      ]
     }
   },
   "colorPreset": {

@@ -5,10 +5,11 @@ import type {
   GridPosition,
   ForegroundElementConfig,
   ForegroundLayerConfig,
+  ForegroundElementType,
 } from '../../modules/HeroScene'
 import { createDefaultForegroundConfig } from '../../modules/HeroScene'
 
-export type { GridPosition, ForegroundElementConfig }
+export type { GridPosition, ForegroundElementConfig, ForegroundElementType }
 
 /** @deprecated Use ForegroundLayerConfig from HeroScene instead */
 export type ForegroundConfig = ForegroundLayerConfig
@@ -18,11 +19,6 @@ export const GRID_POSITIONS: GridPosition[] = [
   'middle-left', 'middle-center', 'middle-right',
   'bottom-left', 'bottom-center', 'bottom-right',
 ]
-
-// ============================================================
-// Foreground Element Types
-// ============================================================
-export type ForegroundElementType = 'title' | 'description'
 
 // Element type → render order (lower = first)
 const ELEMENT_ORDER: Record<ForegroundElementType, number> = {
@@ -63,28 +59,23 @@ export interface PositionedGroup {
 // Compile Function
 // ============================================================
 export function compileForegroundLayout(config: ForegroundConfig): PositionedGroup[] {
-  // Collect all elements with their types (only visible ones)
-  const allElements: Array<{ type: ForegroundElementType; config: ForegroundElementConfig }> = (
-    [
-      { type: 'title' as const, config: config.title },
-      { type: 'description' as const, config: config.description },
-    ] as const
-  ).filter(({ config: elConfig }) => elConfig.visible)
+  // Filter visible elements
+  const visibleElements = config.elements.filter(el => el.visible)
 
   // Group by position
   const groupMap = new Map<GridPosition, PositionedElement[]>()
 
-  for (const { type, config: elConfig } of allElements) {
-    const existing = groupMap.get(elConfig.position) ?? []
+  for (const el of visibleElements) {
+    const existing = groupMap.get(el.position) ?? []
     existing.push({
-      type,
-      content: elConfig.content,
-      className: ELEMENT_CLASS[type],
-      tag: ELEMENT_TAG[type],
-      fontId: elConfig.fontId,
-      fontSize: elConfig.fontSize,
+      type: el.type,
+      content: el.content,
+      className: ELEMENT_CLASS[el.type],
+      tag: ELEMENT_TAG[el.type],
+      fontId: el.fontId,
+      fontSize: el.fontSize,
     })
-    groupMap.set(elConfig.position, existing)
+    groupMap.set(el.position, existing)
   }
 
   // Sort elements within each group by order

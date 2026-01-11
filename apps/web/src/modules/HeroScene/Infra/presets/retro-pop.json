@@ -71,8 +71,10 @@
       }
     ],
     "foreground": {
-      "title": { "position": "middle-center", "content": "GROOVY", "fontSize": 5, "fontId": "bebas-neue" },
-      "description": { "position": "bottom-center", "content": "Back to the classics", "fontSize": 1.5, "fontId": "comfortaa" }
+      "elements": [
+        { "id": "title-1", "type": "title", "visible": true, "position": "middle-center", "content": "GROOVY", "fontSize": 5, "fontId": "bebas-neue" },
+        { "id": "description-1", "type": "description", "visible": true, "position": "bottom-center", "content": "Back to the classics", "fontSize": 1.5, "fontId": "comfortaa" }
+      ]
     }
   },
   "colorPreset": {

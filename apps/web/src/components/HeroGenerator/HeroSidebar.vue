@@ -4,9 +4,9 @@ import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'
 import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
-import LayerPanel, { type LayerType, type HtmlElementType } from './LayerPanel.vue'
+import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
-import type { HeroViewPreset, LayerNode, DropPosition } from '../../modules/HeroScene'
+import type { HeroViewPreset, LayerNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
 type NeutralRampItem = {
   key: string
   css: string
@@ -39,12 +39,8 @@ const props = defineProps<{
   selectedPresetId: string | null
   // Layers
   layers: LayerNode[]
-  // Contrast scores for HTML elements
-  titleContrastScore?: number | null
-  descriptionContrastScore?: number | null
-  // HTML element visibility
-  titleVisible?: boolean
-  descriptionVisible?: boolean
+  // Foreground elements
+  foregroundElements: ForegroundElementConfig[]
 }>()
 
 const emit = defineEmits<{
@@ -68,10 +64,9 @@ const emit = defineEmits<{
   (e: 'remove-layer', layerId: string): void
   (e: 'move-layer', sourceId: string, targetId: string, position: DropPosition): void
   // Foreground events
-  (e: 'open-foreground-title'): void
-  (e: 'open-foreground-description'): void
-  (e: 'add-html-element', type: HtmlElementType): void
-  (e: 'remove-html-element', type: HtmlElementType): void
+  (e: 'select-foreground-element', elementId: string): void
+  (e: 'add-foreground-element', type: ForegroundElementType): void
+  (e: 'remove-foreground-element', elementId: string): void
 }>()
 
 // ============================================================
@@ -269,10 +264,7 @@ const selectedPresetName = computed(() => {
       <div class="sidebar-section layers-section">
         <LayerPanel
           :layers="layers"
-          :title-contrast-score="titleContrastScore"
-          :description-contrast-score="descriptionContrastScore"
-          :title-visible="titleVisible"
-          :description-visible="descriptionVisible"
+          :foreground-elements="foregroundElements"
           @select-layer="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
@@ -280,10 +272,9 @@ const selectedPresetName = computed(() => {
           @add-layer="(type: LayerType) => emit('add-layer', type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @move-layer="(src: string, tgt: string, pos: DropPosition) => emit('move-layer', src, tgt, pos)"
-          @open-foreground-title="emit('open-foreground-title')"
-          @open-foreground-description="emit('open-foreground-description')"
-          @add-html-element="(type: HtmlElementType) => emit('add-html-element', type)"
-          @remove-html-element="(type: HtmlElementType) => emit('remove-html-element', type)"
+          @select-foreground-element="(id: string) => emit('select-foreground-element', id)"
+          @add-foreground-element="(type: ForegroundElementType) => emit('add-foreground-element', type)"
+          @remove-foreground-element="(id: string) => emit('remove-foreground-element', id)"
         />
       </div>
     </template>

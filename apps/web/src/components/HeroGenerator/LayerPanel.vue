@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { LayerNode, LayerNodeType, DropPosition } from '../../modules/HeroScene'
+import type { LayerNode, LayerNodeType, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
 import { flattenLayerNodes, isLayer } from '../../modules/HeroScene'
 import DraggableLayerNode from './DraggableLayerNode.vue'
 import { useLayerDragDrop } from './useLayerDragDrop'
@@ -34,19 +34,16 @@ export type SubItemType = 'surface' | 'shape' | 'effect' | 'source' | 'filter'
 // Props & Emits
 // ============================================================
 
+/** HTML element types (re-exported for backward compatibility) */
+export type HtmlElementType = ForegroundElementType
+
 const props = defineProps<{
   layers: LayerNode[]
-  titleContrastScore?: number | null
-  descriptionContrastScore?: number | null
-  titleVisible?: boolean
-  descriptionVisible?: boolean
+  foregroundElements: ForegroundElementConfig[]
 }>()
 
 // Layer selection from store
 const { layerId: selectedLayerId, processorType: selectedProcessorType } = useLayerSelection()
-
-/** HTML element types */
-export type HtmlElementType = 'title' | 'description' | 'button' | 'link'
 
 const emit = defineEmits<{
   'select-layer': [layerId: string]
@@ -56,10 +53,9 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'move-layer': [sourceId: string, targetId: string, position: DropPosition]
-  'open-foreground-title': []
-  'open-foreground-description': []
-  'add-html-element': [type: HtmlElementType]
-  'remove-html-element': [type: HtmlElementType]
+  'select-foreground-element': [elementId: string]
+  'add-foreground-element': [type: ForegroundElementType]
+  'remove-foreground-element': [elementId: string]
 }>()
 
 // ============================================================
@@ -125,37 +121,31 @@ const handleAddLayer = (type: LayerType) => {
 
 const showHtmlAddMenu = ref(false)
 
-const allHtmlElementTypes: { type: HtmlElementType; label: string; icon: string; disabled?: boolean }[] = [
+const htmlElementTypes: { type: ForegroundElementType; label: string; icon: string }[] = [
   { type: 'title', label: 'Title', icon: 'title' },
   { type: 'description', label: 'Description', icon: 'notes' },
-  { type: 'button', label: 'Button (WIP)', icon: 'smart_button', disabled: true },
-  { type: 'link', label: 'Link (WIP)', icon: 'link', disabled: true },
 ]
 
-// Filter HTML element types to show only those not yet visible
-const addableHtmlElementTypes = computed(() => {
-  return allHtmlElementTypes.filter(item => {
-    if (item.type === 'title' && props.titleVisible) return false
-    if (item.type === 'description' && props.descriptionVisible) return false
-    return true
-  })
-})
+// Get visible foreground elements
+const visibleForegroundElements = computed(() =>
+  props.foregroundElements.filter(el => el.visible)
+)
 
-const handleAddHtmlElement = (type: HtmlElementType) => {
-  emit('add-html-element', type)
+// Get icon for element type
+const getElementIcon = (type: ForegroundElementType) =>
+  type === 'title' ? 'title' : 'notes'
+
+const handleAddForegroundElement = (type: ForegroundElementType) => {
+  emit('add-foreground-element', type)
   showHtmlAddMenu.value = false
 }
 
-const handleRemoveHtmlElement = (type: HtmlElementType) => {
-  emit('remove-html-element', type)
+const handleRemoveForegroundElement = (elementId: string) => {
+  emit('remove-foreground-element', elementId)
 }
 
-// Get score level class for contrast badge
-const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' => {
-  if (score >= 75) return 'excellent'
-  if (score >= 60) return 'good'
-  if (score >= 45) return 'fair'
-  return 'poor'
+const handleSelectForegroundElement = (elementId: string) => {
+  emit('select-foreground-element', elementId)
 }
 </script>
 
@@ -235,63 +225,39 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
           <Transition name="fade">
             <div v-if="showHtmlAddMenu" class="add-layer-menu">
-              <template v-if="addableHtmlElementTypes.length > 0">
-                <button
-                  v-for="item in addableHtmlElementTypes"
-                  :key="item.type"
-                  class="add-menu-item"
-                  :class="{ disabled: item.disabled }"
-                  :disabled="item.disabled"
-                  @click="!item.disabled && handleAddHtmlElement(item.type)"
-                >
-                  <span class="material-icons">{{ item.icon }}</span>
-                  <span>{{ item.label }}</span>
-                </button>
-              </template>
-              <div v-else class="add-menu-empty">
-                All elements added
-              </div>
+              <button
+                v-for="item in htmlElementTypes"
+                :key="item.type"
+                class="add-menu-item"
+                @click="handleAddForegroundElement(item.type)"
+              >
+                <span class="material-icons">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </button>
             </div>
           </Transition>
         </div>
       </div>
 
       <div class="html-layer-list">
-        <div v-if="titleVisible" class="html-layer-item" @click="emit('open-foreground-title')">
-          <span class="material-icons html-layer-icon">title</span>
-          <span class="html-layer-name">Title</span>
-          <span
-            v-if="titleContrastScore != null"
-            class="contrast-badge"
-            :class="getScoreLevel(titleContrastScore)"
-          >Lc {{ titleContrastScore }}</span>
+        <div
+          v-for="element in visibleForegroundElements"
+          :key="element.id"
+          class="html-layer-item"
+          @click="handleSelectForegroundElement(element.id)"
+        >
+          <span class="material-icons html-layer-icon">{{ getElementIcon(element.type) }}</span>
+          <span class="html-layer-name">{{ element.type === 'title' ? 'Title' : 'Description' }}</span>
           <button
             class="html-layer-remove"
             title="Remove"
-            @click.stop="handleRemoveHtmlElement('title')"
+            @click.stop="handleRemoveForegroundElement(element.id)"
           >
             <span class="material-icons">close</span>
           </button>
         </div>
 
-        <div v-if="descriptionVisible" class="html-layer-item" @click="emit('open-foreground-description')">
-          <span class="material-icons html-layer-icon">notes</span>
-          <span class="html-layer-name">Description</span>
-          <span
-            v-if="descriptionContrastScore != null"
-            class="contrast-badge"
-            :class="getScoreLevel(descriptionContrastScore)"
-          >Lc {{ descriptionContrastScore }}</span>
-          <button
-            class="html-layer-remove"
-            title="Remove"
-            @click.stop="handleRemoveHtmlElement('description')"
-          >
-            <span class="material-icons">close</span>
-          </button>
-        </div>
-
-        <div v-if="!titleVisible && !descriptionVisible" class="html-layer-empty">
+        <div v-if="visibleForegroundElements.length === 0" class="html-layer-empty">
           No HTML elements
         </div>
       </div>

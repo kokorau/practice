@@ -399,131 +399,102 @@ const closeSection = () => {
   activeSection.value = null
 }
 
-const openForegroundTitle = () => {
-  selectHtmlLayer('title')
+// Selected foreground element ID
+const selectedForegroundElementId = ref<string | null>(null)
+
+// Get selected foreground element
+const selectedForegroundElement = computed(() => {
+  if (!selectedForegroundElementId.value) return null
+  return foregroundConfig.value.elements.find(el => el.id === selectedForegroundElementId.value) ?? null
+})
+
+const handleSelectForegroundElement = (elementId: string) => {
+  selectedForegroundElementId.value = elementId
+  clearSelection() // Clear canvas layer selection
 }
 
-const openForegroundDescription = () => {
-  selectHtmlLayer('description')
-}
-
-const handleAddHtmlElement = (type: 'title' | 'description' | 'button' | 'link') => {
-  // Set the element as visible and select it
-  if (type === 'title') {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      title: { ...foregroundConfig.value.title, visible: true },
-    }
-    selectHtmlLayer('title')
-  } else if (type === 'description') {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      description: { ...foregroundConfig.value.description, visible: true },
-    }
-    selectHtmlLayer('description')
+const handleAddForegroundElement = (type: 'title' | 'description') => {
+  // Generate unique ID
+  const id = `${type}-${Date.now()}`
+  const newElement = {
+    id,
+    type,
+    visible: true,
+    position: 'middle-center' as const,
+    content: type === 'title' ? 'New Title' : 'New description text',
+    fontSize: type === 'title' ? 3 : 1,
   }
-  // button and link are WIP
+  foregroundConfig.value = {
+    ...foregroundConfig.value,
+    elements: [...foregroundConfig.value.elements, newElement],
+  }
+  // Select the newly added element
+  selectedForegroundElementId.value = id
+  clearSelection()
 }
 
-const handleRemoveHtmlElement = (type: 'title' | 'description' | 'button' | 'link') => {
-  // Set the element as not visible
-  if (type === 'title') {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      title: { ...foregroundConfig.value.title, visible: false },
-    }
-  } else if (type === 'description') {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      description: { ...foregroundConfig.value.description, visible: false },
-    }
+const handleRemoveForegroundElement = (elementId: string) => {
+  foregroundConfig.value = {
+    ...foregroundConfig.value,
+    elements: foregroundConfig.value.elements.filter(el => el.id !== elementId),
   }
   // Clear selection if the removed element was selected
-  if (selectedHtmlLayerId.value === type) {
-    clearSelection()
+  if (selectedForegroundElementId.value === elementId) {
+    selectedForegroundElementId.value = null
+  }
+}
+
+// Helper to update a foreground element by ID
+const updateForegroundElement = (elementId: string, updates: Partial<{
+  position: GridPosition
+  content: string
+  fontId: string
+  fontSize: number
+}>) => {
+  foregroundConfig.value = {
+    ...foregroundConfig.value,
+    elements: foregroundConfig.value.elements.map(el =>
+      el.id === elementId ? { ...el, ...updates } : el
+    ),
   }
 }
 
 // ============================================================
-// Foreground Layout Config (from useHeroScene)
+// Selected Foreground Element Config (computed with setter)
 // ============================================================
 
-const titlePosition = computed({
-  get: () => foregroundConfig.value.title.position,
+const selectedElementPosition = computed({
+  get: () => selectedForegroundElement.value?.position ?? 'middle-center',
   set: (pos: GridPosition) => {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      title: { ...foregroundConfig.value.title, position: pos },
+    if (selectedForegroundElementId.value) {
+      updateForegroundElement(selectedForegroundElementId.value, { position: pos })
     }
   },
 })
 
-const descriptionPosition = computed({
-  get: () => foregroundConfig.value.description.position,
-  set: (pos: GridPosition) => {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      description: { ...foregroundConfig.value.description, position: pos },
-    }
-  },
-})
-
-const titleFont = computed({
-  get: () => foregroundConfig.value.title.fontId,
+const selectedElementFont = computed({
+  get: () => selectedForegroundElement.value?.fontId,
   set: (fontId: string | undefined) => {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      title: { ...foregroundConfig.value.title, fontId },
+    if (selectedForegroundElementId.value) {
+      updateForegroundElement(selectedForegroundElementId.value, { fontId })
     }
   },
 })
 
-const descriptionFont = computed({
-  get: () => foregroundConfig.value.description.fontId,
-  set: (fontId: string | undefined) => {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      description: { ...foregroundConfig.value.description, fontId },
-    }
-  },
-})
-
-const titleFontSize = computed({
-  get: () => foregroundConfig.value.title.fontSize ?? 3,
+const selectedElementFontSize = computed({
+  get: () => selectedForegroundElement.value?.fontSize ?? (selectedForegroundElement.value?.type === 'title' ? 3 : 1),
   set: (fontSize: number) => {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      title: { ...foregroundConfig.value.title, fontSize },
+    if (selectedForegroundElementId.value) {
+      updateForegroundElement(selectedForegroundElementId.value, { fontSize })
     }
   },
 })
 
-const descriptionFontSize = computed({
-  get: () => foregroundConfig.value.description.fontSize ?? 1,
-  set: (fontSize: number) => {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      description: { ...foregroundConfig.value.description, fontSize },
-    }
-  },
-})
-
-const titleContent = computed({
-  get: () => foregroundConfig.value.title.content,
+const selectedElementContent = computed({
+  get: () => selectedForegroundElement.value?.content ?? '',
   set: (content: string) => {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      title: { ...foregroundConfig.value.title, content },
-    }
-  },
-})
-
-const descriptionContent = computed({
-  get: () => foregroundConfig.value.description.content,
-  set: (content: string) => {
-    foregroundConfig.value = {
-      ...foregroundConfig.value,
-      description: { ...foregroundConfig.value.description, content },
+    if (selectedForegroundElementId.value) {
+      updateForegroundElement(selectedForegroundElementId.value, { content })
     }
   },
 })
@@ -662,10 +633,8 @@ const activeTab = ref<TabId>('generator')
 const {
   layerId: selectedLayerId,
   processorType: selectedProcessorType,
-  htmlLayerId: selectedHtmlLayerId,
   selectCanvasLayer,
   selectProcessor,
-  selectHtmlLayer,
   clearSelection,
 } = useLayerSelection()
 
@@ -944,8 +913,8 @@ const checkDescriptionContrast = async () => {
 }
 
 // Watch for changes that affect contrast
-watch([foregroundTitleColor, titlePosition, titleFontSize], checkTitleContrast)
-watch([foregroundBodyColor, descriptionPosition, descriptionFontSize], checkDescriptionContrast)
+watch([foregroundTitleColor, selectedElementPosition, selectedElementFontSize], checkTitleContrast)
+watch([foregroundBodyColor, selectedElementPosition, selectedElementFontSize], checkDescriptionContrast)
 
 // Update contrast when canvas ImageData changes (after each render)
 watch(canvasImageData, () => {
@@ -983,10 +952,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       :presets="presets"
       :selected-preset-id="selectedPresetId"
       :layers="layers"
-      :title-contrast-score="titleContrastResult?.score ?? null"
-      :description-contrast-score="descriptionContrastResult?.score ?? null"
-      :title-visible="foregroundConfig.title.visible"
-      :description-visible="foregroundConfig.description.visible"
+      :foreground-elements="foregroundConfig.elements"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"
@@ -1005,10 +971,9 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       @add-layer="handleAddLayer"
       @remove-layer="handleRemoveLayer"
       @move-layer="handleMoveLayer"
-      @open-foreground-title="openForegroundTitle"
-      @open-foreground-description="openForegroundDescription"
-      @add-html-element="handleAddHtmlElement"
-      @remove-html-element="handleRemoveHtmlElement"
+      @select-foreground-element="handleSelectForegroundElement"
+      @add-foreground-element="handleAddForegroundElement"
+      @remove-foreground-element="handleRemoveForegroundElement"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->
@@ -1395,8 +1360,8 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       <div class="right-panel-header">
         <span class="right-panel-title">
           {{
-            selectedHtmlLayerId === 'title' ? 'Title' :
-            selectedHtmlLayerId === 'description' ? 'Description' :
+            selectedForegroundElement?.type === 'title' ? 'Title' :
+            selectedForegroundElement?.type === 'description' ? 'Description' :
             selectedProcessorType === 'processor' ? 'Processor' :
             selectedProcessorType === 'effect' ? 'Effect Settings' :
             selectedProcessorType === 'mask' ? 'Mask Settings' :
@@ -1411,7 +1376,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       </div>
       <div class="property-panel">
         <!-- HTML Title Settings -->
-        <template v-if="selectedHtmlLayerId === 'title'">
+        <template v-if="selectedForegroundElement?.type === 'title'">
           <div class="layer-settings">
             <!-- APCA Contrast Score -->
             <div v-if="titleContrastResult" class="contrast-score-section">
@@ -1440,38 +1405,38 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             <div class="settings-section">
               <p class="settings-label">Text</p>
               <input
-                v-model="titleContent"
+                v-model="selectedElementContent"
                 type="text"
                 class="foreground-input"
                 placeholder="Enter title text"
               />
             </div>
             <div class="settings-section">
-              <GridPositionPicker v-model="titlePosition" label="Position" />
+              <GridPositionPicker v-model="selectedElementPosition" label="Position" />
             </div>
             <div class="settings-section">
               <p class="settings-label">Font</p>
-              <FontSelector v-model="titleFont" />
+              <FontSelector v-model="selectedElementFont" />
             </div>
             <div class="settings-section">
               <p class="settings-label">Font Size</p>
               <div class="font-size-control">
                 <input
-                  v-model.number="titleFontSize"
+                  v-model.number="selectedElementFontSize"
                   type="range"
                   min="1"
                   max="6"
                   step="0.25"
                   class="font-size-slider"
                 />
-                <span class="font-size-value">{{ titleFontSize }}rem</span>
+                <span class="font-size-value">{{ selectedElementFontSize }}rem</span>
               </div>
             </div>
           </div>
         </template>
 
         <!-- HTML Description Settings -->
-        <template v-else-if="selectedHtmlLayerId === 'description'">
+        <template v-else-if="selectedForegroundElement?.type === 'description'">
           <div class="layer-settings">
             <!-- APCA Contrast Score -->
             <div v-if="descriptionContrastResult" class="contrast-score-section">
@@ -1500,31 +1465,31 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             <div class="settings-section">
               <p class="settings-label">Text</p>
               <textarea
-                v-model="descriptionContent"
+                v-model="selectedElementContent"
                 class="foreground-textarea"
                 placeholder="Enter description text"
                 rows="3"
               />
             </div>
             <div class="settings-section">
-              <GridPositionPicker v-model="descriptionPosition" label="Position" />
+              <GridPositionPicker v-model="selectedElementPosition" label="Position" />
             </div>
             <div class="settings-section">
               <p class="settings-label">Font</p>
-              <FontSelector v-model="descriptionFont" />
+              <FontSelector v-model="selectedElementFont" />
             </div>
             <div class="settings-section">
               <p class="settings-label">Font Size</p>
               <div class="font-size-control">
                 <input
-                  v-model.number="descriptionFontSize"
+                  v-model.number="selectedElementFontSize"
                   type="range"
                   min="0.5"
                   max="3"
                   step="0.125"
                   class="font-size-slider"
                 />
-                <span class="font-size-value">{{ descriptionFontSize }}rem</span>
+                <span class="font-size-value">{{ selectedElementFontSize }}rem</span>
               </div>
             </div>
           </div>

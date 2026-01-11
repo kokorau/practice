@@ -331,8 +331,10 @@ const corporateCleanConfig: HeroViewConfig = {
     },
   ],
   foreground: {
-    title: { visible: true, position: 'middle-right', content: 'Enterprise Solutions', fontSize: 3.5, fontId: 'inter' },
-    description: { visible: true, position: 'middle-right', content: 'Streamline your business with our platform.', fontSize: 1.25, fontId: 'ibm-plex-sans' },
+    elements: [
+      { id: 'title-1', type: 'title', visible: true, position: 'middle-right', content: 'Enterprise Solutions', fontSize: 3.5, fontId: 'inter' },
+      { id: 'description-1', type: 'description', visible: true, position: 'middle-right', content: 'Streamline your business with our platform.', fontSize: 1.25, fontId: 'ibm-plex-sans' },
+    ],
   },
 }
 
