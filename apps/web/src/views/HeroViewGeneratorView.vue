@@ -17,25 +17,12 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { LayerNode, HeroPrimitiveKey } from '../modules/HeroScene'
+import type { HeroPrimitiveKey } from '../modules/HeroScene'
 import {
   createGroupLayerNode,
   createSurfaceLayerNode,
-  createTextLayerNode,
-  createModel3DLayerNode,
   createEffectProcessor,
   createMaskProcessor,
-  findLayerNode,
-  updateLayerNode,
-  removeNode,
-  moveLayerNode as moveLayerNodeInTree,
-  wrapNodeInGroup,
-  wrapNodeInMaskedGroup,
-  isLayer,
-  isGroup,
-  getSceneLayerId,
-  type DropPosition,
-  type LayerNodeType,
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
@@ -60,6 +47,7 @@ import { getSurfacePresets } from '@practice/texture'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import { useContrastChecker } from '../composables/useContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
+import { useLayerOperations } from '../composables/useLayerOperations'
 import { useContextMenu } from '../composables/useContextMenu'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
@@ -617,224 +605,77 @@ const {
   clearSelection,
 } = useLayerSelection()
 
-const layers = ref<LayerNode[]>([
-  createGroupLayerNode(
-    'background-group',
-    [
-      createSurfaceLayerNode(
-        'background-surface',
-        { type: 'solid', color: 'BN1' },
-        {
-          name: 'Surface',
-          processors: [createEffectProcessor()],
-        }
-      ),
-    ],
-    { name: 'Background', expanded: true }
-  ),
-  createGroupLayerNode(
-    'main-group',
-    [
-      createSurfaceLayerNode(
-        'surface-1',
-        { type: 'solid', color: 'B' },
-        {
-          name: 'Surface',
-          processors: [createEffectProcessor(), createMaskProcessor()],
-        }
-      ),
-    ],
-    { name: 'Main Group', expanded: true }
-  ),
-])
-
-// Get selected layer for right panel display
-const selectedLayer = computed(() => {
-  if (!selectedLayerId.value) return null
-  return findLayerNode(layers.value, selectedLayerId.value)
-})
-
-// Helper to get layer variant (for Layer nodes)
-const selectedLayerVariant = computed(() => {
-  const layer = selectedLayer.value
-  if (!layer || !isLayer(layer)) return null
-  return layer.variant
-})
-
-const handleSelectLayer = (id: string) => {
-  selectCanvasLayer(id)
-  selectedForegroundElementId.value = null
-}
-
-const handleToggleExpand = (layerId: string) => {
-  layers.value = updateLayerNode(layers.value, layerId, {
-    expanded: !findLayerNode(layers.value, layerId)?.expanded,
-  })
-}
-
-const handleToggleVisibility = (layerId: string) => {
-  const layer = findLayerNode(layers.value, layerId)
-  if (!layer) return
-
-  layers.value = updateLayerNode(layers.value, layerId, {
-    visible: !layer.visible,
-  })
-
-  if (isLayer(layer)) {
-    toggleLayerVisibility(getSceneLayerId(layer))
-  }
-}
-
-const handleSelectProcessor = (layerId: string, type: 'effect' | 'mask' | 'processor') => {
-  const layer = findLayerNode(layers.value, layerId)
-  if (!layer) return
-
-  selectProcessor(layerId, type)
-  selectedForegroundElementId.value = null
-
-  if (type === 'effect' && isLayer(layer)) {
-    selectedFilterLayerId.value = getSceneLayerId(layer)
-  }
-}
-
-const handleMoveLayer = (sourceId: string, targetId: string, position: DropPosition) => {
-  layers.value = moveLayerNodeInTree(layers.value, sourceId, targetId, position)
-}
-
-const handleAddLayer = (type: LayerNodeType) => {
-  let sceneLayerId: string | null = null
-  let newLayer: LayerNode | null = null
-
-  switch (type) {
-    case 'surface': {
-      // Add to scene (this adds to editorState.canvasLayers and renders)
-      sceneLayerId = sceneAddMaskLayer()
-      if (!sceneLayerId) {
-        // Surface layer limit reached
-        return
-      }
-      // Create UI layer node
-      newLayer = createSurfaceLayerNode(
-        sceneLayerId,
-        { type: 'solid', color: 'B' },
-        {
-          name: 'Surface',
-          processors: [createEffectProcessor(), createMaskProcessor()],
-        }
-      )
-      break
-    }
-    case 'group': {
-      // Groups are UI-only for now (no scene representation)
-      const id = `group-${Date.now()}`
-      newLayer = createGroupLayerNode(id, [], { name: 'Group', expanded: true })
-      break
-    }
-    case 'text': {
-      // Add to scene
-      sceneLayerId = sceneAddTextLayer({
-        text: 'New Text',
-        fontFamily: 'sans-serif',
-        fontSize: 48,
-        fontWeight: 400,
-        letterSpacing: 0,
-        lineHeight: 1.2,
-        color: '#ffffff',
-        x: 0.5,
-        y: 0.5,
-        anchor: 'center',
-        rotation: 0,
-      })
-      // Create UI layer node (no processors by default)
-      newLayer = createTextLayerNode(
-        sceneLayerId,
-        {
-          type: 'text',
-          text: 'New Text',
-          fontFamily: 'sans-serif',
-          fontSize: 48,
-          fontWeight: 400,
-          letterSpacing: 0,
-          lineHeight: 1.2,
-          color: '#ffffff',
-          position: { x: 0.5, y: 0.5, anchor: 'center' },
-          rotation: 0,
-        },
-        { name: 'Text', processors: [] }
-      )
-      break
-    }
-    case 'model3d': {
-      // Add to scene (requires a model URL)
-      sceneLayerId = sceneAddObjectLayer({ modelUrl: '' })
-      // Create UI layer node (no processors by default)
-      newLayer = createModel3DLayerNode(
-        sceneLayerId,
-        {
-          type: 'model3d',
-          modelUrl: '',
-          scale: 1,
-          rotation: { x: 0, y: 0, z: 0 },
-          position: { x: 0, y: 0, z: 0 },
-        },
-        { name: '3D Model', processors: [] }
-      )
-      break
-    }
-    case 'image':
-      // Image is WIP, should not reach here
-      return
-    default:
-      return
-  }
-
-  if (newLayer) {
-    // Add to the end of the layers array
-    layers.value = [...layers.value, newLayer]
-  }
-}
-
-const handleRemoveLayer = (layerId: string) => {
-  // Find the layer to check if it's a Group
-  const layer = findLayerNode(layers.value, layerId)
-  if (!layer) return
-
-  // If it's a Group, remove all children from the scene first
-  if (isGroup(layer)) {
-    const removeChildrenFromScene = (node: LayerNode) => {
-      if (isGroup(node)) {
-        for (const child of node.children) {
-          removeChildrenFromScene(child)
-        }
-      } else if (isLayer(node)) {
-        // It's a Layer node, remove from scene
-        sceneRemoveLayer(getSceneLayerId(node))
+// ============================================================
+// Layer Operations (Composable)
+// ============================================================
+const {
+  layers,
+  selectedLayer,
+  selectedLayerVariant,
+  handleSelectLayer,
+  handleToggleExpand,
+  handleToggleVisibility,
+  handleSelectProcessor,
+  handleMoveLayer,
+  handleAddLayer,
+  handleRemoveLayer,
+  handleGroupSelection,
+  handleUseAsMask,
+} = useLayerOperations({
+  initialLayers: [
+    createGroupLayerNode(
+      'background-group',
+      [
+        createSurfaceLayerNode(
+          'background-surface',
+          { type: 'solid', color: 'BN1' },
+          {
+            name: 'Surface',
+            processors: [createEffectProcessor()],
+          },
+        ),
+      ],
+      { name: 'Background', expanded: true },
+    ),
+    createGroupLayerNode(
+      'main-group',
+      [
+        createSurfaceLayerNode(
+          'surface-1',
+          { type: 'solid', color: 'B' },
+          {
+            name: 'Surface',
+            processors: [createEffectProcessor(), createMaskProcessor()],
+          },
+        ),
+      ],
+      { name: 'Main Group', expanded: true },
+    ),
+  ],
+  selectedLayerId,
+  sceneCallbacks: {
+    addMaskLayer: sceneAddMaskLayer,
+    addTextLayer: sceneAddTextLayer,
+    addObjectLayer: sceneAddObjectLayer,
+    removeLayer: sceneRemoveLayer,
+    toggleLayerVisibility: toggleLayerVisibility,
+  },
+  onSelectLayer: (id) => {
+    selectCanvasLayer(id)
+    selectedForegroundElementId.value = null
+  },
+  onSelectProcessor: (layerId, type) => {
+    selectProcessor(layerId, type)
+    selectedForegroundElementId.value = null
+    if (type === 'effect') {
+      const layer = selectedLayer.value
+      if (layer && 'variant' in layer) {
+        selectedFilterLayerId.value = layer.id
       }
     }
-    removeChildrenFromScene(layer)
-  } else if (isLayer(layer)) {
-    // Single layer, remove from scene
-    sceneRemoveLayer(getSceneLayerId(layer))
-  }
-
-  // Remove from UI layers tree
-  layers.value = removeNode(layers.value, layerId)
-
-  // Clear selection if the removed layer was selected
-  if (selectedLayerId.value === layerId) {
-    selectCanvasLayer('')
-  }
-}
-
-const handleGroupSelection = (layerId: string) => {
-  // Wrap the selected layer in a new group
-  layers.value = wrapNodeInGroup(layers.value, layerId)
-}
-
-const handleUseAsMask = (layerId: string) => {
-  // Wrap the selected layer in a new group with a mask modifier
-  layers.value = wrapNodeInMaskedGroup(layers.value, layerId)
-}
+  },
+  onClearSelection: () => selectCanvasLayer(''),
+})
 
 // ============================================================
 // APCA Contrast Check
