@@ -8,18 +8,18 @@ import type {
   TextAnchor,
 } from '../modules/HeroScene'
 import {
-  findLayerNode,
-  updateLayerNode,
+  findNode,
+  updateNode,
   removeNode,
-  moveLayerNode,
+  moveNode,
   wrapNodeInGroup,
   wrapNodeInMaskedGroup,
-  createSurfaceLayerNode,
-  createGroupLayerNode,
-  createTextLayerNode,
-  createModel3DLayerNode,
-  createEffectProcessor,
-  createMaskProcessor,
+  createSurfaceLayer,
+  createGroup,
+  createSceneTextLayer,
+  createModel3DLayer,
+  createEffectModifier,
+  createMaskModifier,
   isLayer,
   isGroup,
   getSceneLayerId,
@@ -164,7 +164,7 @@ export function useLayerOperations(
   // ============================================================
   const selectedLayer = computed(() => {
     if (!selectedLayerId?.value) return null
-    return findLayerNode(layers.value, selectedLayerId.value) ?? null
+    return findNode(layers.value, selectedLayerId.value) ?? null
   })
 
   const selectedLayerVariant = computed(() => {
@@ -181,7 +181,7 @@ export function useLayerOperations(
   }
 
   const handleSelectProcessor = (layerId: string, type: ProcessorType) => {
-    const layer = findLayerNode(layers.value, layerId)
+    const layer = findNode(layers.value, layerId)
     if (!layer) return
     onSelectProcessor?.(layerId, type)
   }
@@ -190,16 +190,16 @@ export function useLayerOperations(
   // Handlers - Tree Operations
   // ============================================================
   const handleToggleExpand = (layerId: string) => {
-    layers.value = updateLayerNode(layers.value, layerId, {
-      expanded: !findLayerNode(layers.value, layerId)?.expanded,
+    layers.value = updateNode(layers.value, layerId, {
+      expanded: !findNode(layers.value, layerId)?.expanded,
     })
   }
 
   const handleToggleVisibility = (layerId: string) => {
-    const layer = findLayerNode(layers.value, layerId)
+    const layer = findNode(layers.value, layerId)
     if (!layer) return
 
-    layers.value = updateLayerNode(layers.value, layerId, {
+    layers.value = updateNode(layers.value, layerId, {
       visible: !layer.visible,
     })
 
@@ -209,7 +209,7 @@ export function useLayerOperations(
   }
 
   const handleMoveLayer = (sourceId: string, targetId: string, position: DropPosition) => {
-    layers.value = moveLayerNode(layers.value, sourceId, targetId, position)
+    layers.value = moveNode(layers.value, sourceId, targetId, position)
   }
 
   // ============================================================
@@ -228,12 +228,12 @@ export function useLayerOperations(
           return
         }
         // Create UI layer node
-        newLayer = createSurfaceLayerNode(
+        newLayer = createSurfaceLayer(
           sceneLayerId,
           { type: 'solid', color: 'B' },
           {
             name: 'Surface',
-            processors: [createEffectProcessor(), createMaskProcessor()],
+            modifiers: [createEffectModifier(), createMaskModifier()],
           },
         )
         break
@@ -241,7 +241,7 @@ export function useLayerOperations(
       case 'group': {
         // Groups are UI-only for now (no scene representation)
         const id = `group-${Date.now()}`
-        newLayer = createGroupLayerNode(id, [], { name: 'Group', expanded: true })
+        newLayer = createGroup(id, [], { name: 'Group', expanded: true })
         break
       }
       case 'text': {
@@ -259,11 +259,10 @@ export function useLayerOperations(
           anchor: 'center',
           rotation: 0,
         })
-        // Create UI layer node (no processors by default)
-        newLayer = createTextLayerNode(
+        // Create UI layer node (no modifiers by default)
+        newLayer = createSceneTextLayer(
           sceneLayerId,
           {
-            type: 'text',
             text: 'New Text',
             fontFamily: 'sans-serif',
             fontSize: 48,
@@ -274,24 +273,23 @@ export function useLayerOperations(
             position: { x: 0.5, y: 0.5, anchor: 'center' },
             rotation: 0,
           },
-          { name: 'Text', processors: [] },
+          { name: 'Text', modifiers: [] },
         )
         break
       }
       case 'model3d': {
         // Add to scene (requires a model URL)
         sceneLayerId = sceneCallbacks.addObjectLayer({ modelUrl: '' })
-        // Create UI layer node (no processors by default)
-        newLayer = createModel3DLayerNode(
+        // Create UI layer node (no modifiers by default)
+        newLayer = createModel3DLayer(
           sceneLayerId,
           {
-            type: 'model3d',
             modelUrl: '',
             scale: 1,
             rotation: { x: 0, y: 0, z: 0 },
             position: { x: 0, y: 0, z: 0 },
           },
-          { name: '3D Model', processors: [] },
+          { name: '3D Model', modifiers: [] },
         )
         break
       }
@@ -310,7 +308,7 @@ export function useLayerOperations(
 
   const handleRemoveLayer = (layerId: string) => {
     // Find the layer to check if it's a Group
-    const layer = findLayerNode(layers.value, layerId)
+    const layer = findNode(layers.value, layerId)
     if (!layer) return
 
     // If it's a Group, remove all children from the scene first

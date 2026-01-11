@@ -17,10 +17,10 @@ import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import type { HeroPrimitiveKey } from '../modules/HeroScene'
 import {
-  createGroupLayerNode,
-  createSurfaceLayerNode,
-  createEffectProcessor,
-  createMaskProcessor,
+  createGroup,
+  createSurfaceLayer,
+  createEffectModifier,
+  createMaskModifier,
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
@@ -445,29 +445,29 @@ const {
   handleUseAsMask,
 } = useLayerOperations({
   initialLayers: [
-    createGroupLayerNode(
+    createGroup(
       'background-group',
       [
-        createSurfaceLayerNode(
+        createSurfaceLayer(
           'background-surface',
           { type: 'solid', color: 'BN1' },
           {
             name: 'Surface',
-            processors: [createEffectProcessor()],
+            modifiers: [createEffectModifier()],
           },
         ),
       ],
       { name: 'Background', expanded: true },
     ),
-    createGroupLayerNode(
+    createGroup(
       'main-group',
       [
-        createSurfaceLayerNode(
+        createSurfaceLayer(
           'surface-1',
           { type: 'solid', color: 'B' },
           {
             name: 'Surface',
-            processors: [createEffectProcessor(), createMaskProcessor()],
+            modifiers: [createEffectModifier(), createMaskModifier()],
           },
         ),
       ],
