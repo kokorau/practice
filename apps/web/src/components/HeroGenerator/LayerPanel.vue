@@ -128,6 +128,32 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       <div class="section-header">
         <span class="material-icons section-icon">layers</span>
         <span class="section-title">Canvas</span>
+        <div class="add-layer-container">
+          <button
+            class="add-layer-icon-button"
+            :class="{ active: showAddMenu }"
+            title="Add Layer"
+            @click="showAddMenu = !showAddMenu"
+          >
+            <span class="material-icons">add</span>
+          </button>
+
+          <Transition name="fade">
+            <div v-if="showAddMenu" class="add-layer-menu">
+              <button
+                v-for="item in addableLayerTypes"
+                :key="item.type"
+                class="add-menu-item"
+                :class="{ disabled: item.disabled }"
+                :disabled="item.disabled"
+                @click="!item.disabled && handleAddLayer(item.type)"
+              >
+                <span class="material-icons">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </button>
+            </div>
+          </Transition>
+        </div>
       </div>
 
       <div class="layer-list">
@@ -151,30 +177,6 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
           @drag-leave="handleDragLeave"
           @drop="handleDrop"
         />
-      </div>
-
-      <!-- Add Layer Button -->
-      <div class="add-layer-container">
-        <button class="add-layer-button" @click="showAddMenu = !showAddMenu">
-          <span class="material-icons">add</span>
-          <span>Add Layer</span>
-        </button>
-
-        <Transition name="fade">
-          <div v-if="showAddMenu" class="add-layer-menu">
-            <button
-              v-for="item in addableLayerTypes"
-              :key="item.type"
-              class="add-menu-item"
-              :class="{ disabled: item.disabled }"
-              :disabled="item.disabled"
-              @click="!item.disabled && handleAddLayer(item.type)"
-            >
-              <span class="material-icons">{{ item.icon }}</span>
-              <span>{{ item.label }}</span>
-            </button>
-          </div>
-        </Transition>
       </div>
     </div>
 
@@ -266,50 +268,57 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 /* Add Layer */
 .add-layer-container {
   position: relative;
-  margin-top: 0.5rem;
+  margin-left: auto;
 }
 
-.add-layer-button {
+.add-layer-icon-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.375rem;
-  width: 100%;
-  padding: 0.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
   background: transparent;
-  border: 1px dashed oklch(0.75 0.01 260);
-  border-radius: 0.375rem;
+  border: none;
+  border-radius: 0.25rem;
   color: oklch(0.50 0.02 260);
-  font-size: 0.75rem;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
 
-:global(.dark) .add-layer-button {
-  border-color: oklch(0.35 0.02 260);
+:global(.dark) .add-layer-icon-button {
   color: oklch(0.60 0.02 260);
 }
 
-.add-layer-button:hover {
-  border-color: oklch(0.50 0.15 250);
+.add-layer-icon-button:hover {
   color: oklch(0.35 0.02 260);
+  background: oklch(0.88 0.01 260);
+}
+
+:global(.dark) .add-layer-icon-button:hover {
+  color: oklch(0.80 0.02 260);
+  background: oklch(0.28 0.02 260);
+}
+
+.add-layer-icon-button.active {
+  color: oklch(0.50 0.15 250);
   background: oklch(0.90 0.01 260);
 }
 
-:global(.dark) .add-layer-button:hover {
-  color: oklch(0.80 0.02 260);
-  background: oklch(0.22 0.02 260);
+:global(.dark) .add-layer-icon-button.active {
+  color: oklch(0.65 0.15 250);
+  background: oklch(0.28 0.02 260);
 }
 
-.add-layer-button .material-icons {
+.add-layer-icon-button .material-icons {
   font-size: 1rem;
 }
 
 .add-layer-menu {
   position: absolute;
   top: 100%;
-  left: 0;
   right: 0;
+  min-width: 9rem;
   margin-top: 0.25rem;
   background: oklch(0.96 0.01 260);
   border: 1px solid oklch(0.85 0.01 260);
