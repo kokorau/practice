@@ -21,12 +21,12 @@ const handleInput = (e: Event) => {
   <div class="range-input">
     <span class="range-label">{{ label }}</span>
     <input
-      type="range"
+      type="number"
       :min="min"
       :max="max"
       :step="step ?? 0.01"
       :value="modelValue"
-      class="range-slider"
+      class="number-input"
       @input="handleInput"
     />
   </div>
@@ -35,14 +35,12 @@ const handleInput = (e: Event) => {
 <style scoped>
 .range-input {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .range-label {
   font-size: 0.75rem;
-  width: 4rem;
-  flex-shrink: 0;
   color: oklch(0.50 0.02 260);
 }
 
@@ -50,39 +48,32 @@ const handleInput = (e: Event) => {
   color: oklch(0.60 0.02 260);
 }
 
-.range-slider {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  appearance: none;
-  cursor: pointer;
-  background: oklch(0.85 0.01 260);
+.number-input {
+  width: 100%;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.25rem;
+  color: oklch(0.25 0.02 260);
+  box-sizing: border-box;
+  -moz-appearance: textfield;
 }
 
-:global(.dark) .range-slider {
-  background: oklch(0.30 0.02 260);
+.number-input::-webkit-outer-spin-button,
+.number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-.range-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  background: oklch(0.55 0.20 250);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.1s;
+:global(.dark) .number-input {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
 }
 
-.range-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-}
-
-.range-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  background: oklch(0.55 0.20 250);
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
+.number-input:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
 }
 </style>
