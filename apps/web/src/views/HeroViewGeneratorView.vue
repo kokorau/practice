@@ -730,6 +730,7 @@ const mapLayerIdToSceneLayerId = (uiLayerId: string): string => {
 
 const handleSelectLayer = (id: string) => {
   selectCanvasLayer(id)
+  selectedForegroundElementId.value = null
 }
 
 const handleToggleExpand = (layerId: string) => {
@@ -753,6 +754,7 @@ const handleSelectProcessor = (layerId: string, type: 'effect' | 'mask' | 'proce
   if (!layer) return
 
   selectProcessor(layerId, type)
+  selectedForegroundElementId.value = null
 
   if (type === 'effect') {
     selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layerId)
@@ -989,6 +991,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       :selected-preset-id="selectedPresetId"
       :layers="layers"
       :foreground-elements="foregroundConfig.elements"
+      :selected-foreground-element-id="selectedForegroundElementId"
       @update:hue="hue = $event"
       @update:saturation="saturation = $event"
       @update:value="value = $event"

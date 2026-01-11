@@ -41,6 +41,8 @@ const props = defineProps<{
   layers: LayerNode[]
   // Foreground elements
   foregroundElements: ForegroundElementConfig[]
+  // Selected foreground element ID for highlighting
+  selectedForegroundElementId: string | null
 }>()
 
 const emit = defineEmits<{
@@ -265,6 +267,7 @@ const selectedPresetName = computed(() => {
         <LayerPanel
           :layers="layers"
           :foreground-elements="foregroundElements"
+          :selected-foreground-element-id="selectedForegroundElementId"
           @select-layer="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"

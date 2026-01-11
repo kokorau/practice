@@ -40,6 +40,7 @@ export type HtmlElementType = ForegroundElementType
 const props = defineProps<{
   layers: LayerNode[]
   foregroundElements: ForegroundElementConfig[]
+  selectedForegroundElementId: string | null
 }>()
 
 // Layer selection from store
@@ -244,6 +245,7 @@ const handleSelectForegroundElement = (elementId: string) => {
           v-for="element in visibleForegroundElements"
           :key="element.id"
           class="html-layer-item"
+          :class="{ selected: selectedForegroundElementId === element.id }"
           @click="handleSelectForegroundElement(element.id)"
         >
           <span class="material-icons html-layer-icon">{{ getElementIcon(element.type) }}</span>
@@ -460,6 +462,14 @@ const handleSelectForegroundElement = (elementId: string) => {
 
 :global(.dark) .html-layer-item:hover {
   background: oklch(0.24 0.02 260);
+}
+
+.html-layer-item.selected {
+  background: oklch(0.55 0.15 250 / 0.15);
+}
+
+:global(.dark) .html-layer-item.selected {
+  background: oklch(0.55 0.15 250 / 0.25);
 }
 
 .html-layer-icon {
