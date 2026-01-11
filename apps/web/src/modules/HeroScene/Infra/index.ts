@@ -22,3 +22,5 @@ export { renderHeroConfig } from './renderHeroConfig'
 export type { RenderHeroConfigOptions, TextureRendererLike } from './renderHeroConfig'
 
 export { createBrowserPresetExporter } from './Preset'
+
+export { createUnsplashImageUploadAdapter } from './UnsplashImageUploadAdapter'
