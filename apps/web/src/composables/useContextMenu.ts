@@ -1,10 +1,10 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { ContextTargetType } from '../components/HeroGenerator/DraggableLayerNode.vue'
 import type { ContextMenuItem } from '../components/HeroGenerator/ContextMenu.vue'
-import type { LayerNode, Modifier } from '../modules/HeroScene'
+import type { SceneNode, Modifier } from '../modules/HeroScene'
 import {
-  findLayerNode,
-  updateLayerNode,
+  findNode,
+  updateNode,
   isLayer,
   isEffectModifier,
   isMaskModifier,
@@ -47,7 +47,7 @@ export interface UseContextMenuReturn {
 // ============================================================
 
 export function useContextMenu(
-  layers: Ref<LayerNode[]>,
+  layers: Ref<SceneNode[]>,
   callbacks: ContextMenuCallbacks,
 ): UseContextMenuReturn {
   // ============================================================
@@ -64,14 +64,14 @@ export function useContextMenu(
 
   const isContextMenuTargetBaseLayer = computed(() => {
     if (!contextMenuLayerId.value) return false
-    const layer = findLayerNode(layers.value, contextMenuLayerId.value)
+    const layer = findNode(layers.value, contextMenuLayerId.value)
     if (!layer) return false
     return isLayer(layer) && layer.variant === 'base'
   })
 
   const contextMenuTargetVisible = computed(() => {
     if (!contextMenuLayerId.value) return true
-    const layer = findLayerNode(layers.value, contextMenuLayerId.value)
+    const layer = findNode(layers.value, contextMenuLayerId.value)
     return layer?.visible ?? true
   })
 
@@ -142,7 +142,7 @@ export function useContextMenu(
   }
 
   const handleRemoveModifier = (layerId: string, modifierType: 'effect' | 'mask') => {
-    const layer = findLayerNode(layers.value, layerId)
+    const layer = findNode(layers.value, layerId)
     if (!layer || !isLayer(layer)) return
 
     // Filter out the modifier of the specified type
@@ -152,7 +152,7 @@ export function useContextMenu(
       return true
     })
 
-    layers.value = updateLayerNode(layers.value, layerId, {
+    layers.value = updateNode(layers.value, layerId, {
       modifiers: newModifiers,
     })
   }
