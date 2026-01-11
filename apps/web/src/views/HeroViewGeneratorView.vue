@@ -33,13 +33,9 @@ import {
   wrapNodeInMaskedGroup,
   isLayer,
   isGroup,
-  isEffectModifier,
-  isMaskModifier,
   type DropPosition,
   type LayerNodeType,
-  type Modifier,
 } from '../modules/HeroScene'
-import type { ContextTargetType } from '../components/HeroGenerator/DraggableLayerNode.vue'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
 import { getGoogleFontPresets } from '@practice/font'
@@ -62,9 +58,9 @@ import { createGradientGrainSpec, createDefaultGradientGrainParams, getSurfacePr
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
+import { useContextMenu } from '../composables/useContextMenu'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
-import type { ContextMenuItem } from '../components/HeroGenerator/ContextMenu.vue'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
@@ -974,142 +970,22 @@ watch(canvasImageData, () => {
 // ============================================================
 // Context Menu
 // ============================================================
-const contextMenuOpen = ref(false)
-const contextMenuPosition = ref({ x: 0, y: 0 })
-const contextMenuLayerId = ref<string | null>(null)
-const contextMenuTargetType = ref<ContextTargetType | 'html'>('layer')
-
-// Check if target layer is base layer
-const isContextMenuTargetBaseLayer = computed(() => {
-  if (!contextMenuLayerId.value) return false
-  const layer = findLayerNode(layers.value, contextMenuLayerId.value)
-  if (!layer) return false
-  return isLayer(layer) && layer.variant === 'base'
+const {
+  contextMenuOpen,
+  contextMenuPosition,
+  contextMenuItems,
+  handleLayerContextMenu,
+  handleForegroundContextMenu,
+  handleContextMenuClose,
+  handleContextMenuSelect,
+  handleGlobalContextMenu,
+} = useContextMenu(layers, {
+  handleGroupSelection,
+  handleUseAsMask,
+  handleToggleVisibility,
+  handleRemoveLayer,
+  handleRemoveForegroundElement,
 })
-
-// Get target layer visibility
-const contextMenuTargetVisible = computed(() => {
-  if (!contextMenuLayerId.value) return true
-  const layer = findLayerNode(layers.value, contextMenuLayerId.value)
-  return layer?.visible ?? true
-})
-
-const contextMenuItems = computed((): ContextMenuItem[] => {
-  const targetType = contextMenuTargetType.value
-
-  // HTML elements: only Remove
-  if (targetType === 'html') {
-    return [
-      { id: 'remove', label: 'Remove', icon: 'delete' },
-    ]
-  }
-
-  // Effect/Mask modifiers: only Remove (removes modifier from layer)
-  if (targetType === 'effect' || targetType === 'mask') {
-    return [
-      { id: 'remove-modifier', label: 'Remove', icon: 'delete' },
-    ]
-  }
-
-  // Processor group: no actions
-  if (targetType === 'processor') {
-    return [
-      { id: 'processor-info', label: 'Processor', disabled: true },
-    ]
-  }
-
-  // Base layer: no actions
-  if (isContextMenuTargetBaseLayer.value) {
-    return [
-      { id: 'base-info', label: 'Base layer', disabled: true },
-    ]
-  }
-
-  // Regular layer/group: full menu
-  return [
-    { id: 'group-selection', label: 'Group Selection', icon: 'folder' },
-    { id: 'use-as-mask', label: 'Use as Mask', icon: 'vignette' },
-    { id: 'sep-1', label: '', separator: true },
-    { id: 'toggle-visibility', label: contextMenuTargetVisible.value ? 'Hide' : 'Show', icon: contextMenuTargetVisible.value ? 'visibility_off' : 'visibility' },
-    { id: 'sep-2', label: '', separator: true },
-    { id: 'remove', label: 'Remove', icon: 'delete' },
-  ]
-})
-
-const handleLayerContextMenu = (layerId: string, event: MouseEvent, targetType: ContextTargetType) => {
-  contextMenuLayerId.value = layerId
-  contextMenuTargetType.value = targetType
-  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
-  contextMenuOpen.value = true
-}
-
-const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
-  contextMenuLayerId.value = elementId
-  contextMenuTargetType.value = 'html'
-  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
-  contextMenuOpen.value = true
-}
-
-const handleContextMenuClose = () => {
-  contextMenuOpen.value = false
-  contextMenuLayerId.value = null
-  contextMenuTargetType.value = 'layer'
-}
-
-const handleRemoveModifier = (layerId: string, modifierType: 'effect' | 'mask') => {
-  const layer = findLayerNode(layers.value, layerId)
-  if (!layer || !isLayer(layer)) return
-
-  // Filter out the modifier of the specified type
-  const newModifiers = layer.modifiers.filter((mod: Modifier) => {
-    if (modifierType === 'effect') return !isEffectModifier(mod)
-    if (modifierType === 'mask') return !isMaskModifier(mod)
-    return true
-  })
-
-  layers.value = updateLayerNode(layers.value, layerId, {
-    modifiers: newModifiers,
-  })
-}
-
-const handleContextMenuSelect = (itemId: string) => {
-  const layerId = contextMenuLayerId.value
-  if (!layerId) return
-
-  const targetType = contextMenuTargetType.value
-
-  switch (itemId) {
-    case 'group-selection':
-      handleGroupSelection(layerId)
-      break
-    case 'use-as-mask':
-      handleUseAsMask(layerId)
-      break
-    case 'toggle-visibility':
-      handleToggleVisibility(layerId)
-      break
-    case 'remove':
-      // For HTML elements, use foreground remove
-      if (targetType === 'html') {
-        handleRemoveForegroundElement(layerId)
-      } else {
-        handleRemoveLayer(layerId)
-      }
-      break
-    case 'remove-modifier':
-      // Remove the specific modifier (effect or mask)
-      if (targetType === 'effect' || targetType === 'mask') {
-        handleRemoveModifier(layerId, targetType)
-      }
-      break
-  }
-  handleContextMenuClose()
-}
-
-// Prevent default context menu on the entire generator
-const handleGlobalContextMenu = (e: MouseEvent) => {
-  e.preventDefault()
-}
 </script>
 
 <template>
