@@ -674,6 +674,7 @@ export const updateCanvasLayer = (
 // ============================================================
 
 export type {
+  HsvColor,
   HeroPrimitiveKey,
   HeroContextName,
   HeroColorsConfig,

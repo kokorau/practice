@@ -2590,6 +2590,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       secondary: maskColorKey2.value as HeroPrimitiveKey | 'auto',
     },
     semanticContext: maskSemanticContext.value as HeroContextName,
+    brand: { hue: 198, saturation: 70, value: 65 },
+    accent: { hue: 30, saturation: 80, value: 60 },
+    foundation: { hue: 0, saturation: 0, value: 97 },
   })
 
   /**

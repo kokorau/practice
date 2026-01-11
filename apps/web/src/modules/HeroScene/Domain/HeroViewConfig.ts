@@ -31,6 +31,15 @@ export type HeroPrimitiveKey =
 export type HeroContextName = 'canvas' | 'sectionNeutral' | 'sectionTint' | 'sectionContrast'
 
 /**
+ * HSV color value
+ */
+export interface HsvColor {
+  hue: number
+  saturation: number
+  value: number
+}
+
+/**
  * Color configuration for HeroView
  * Contains all color-related state needed for rendering
  */
@@ -51,6 +60,12 @@ export interface HeroColorsConfig {
   }
   /** Semantic context for mask layer color resolution */
   semanticContext: HeroContextName
+  /** Brand color (HSV) */
+  brand: HsvColor
+  /** Accent color (HSV) */
+  accent: HsvColor
+  /** Foundation color (HSV) */
+  foundation: HsvColor
 }
 
 // ============================================================
@@ -370,6 +385,9 @@ export const createDefaultColorsConfig = (): HeroColorsConfig => ({
     secondary: 'auto',
   },
   semanticContext: 'canvas',
+  brand: { hue: 198, saturation: 70, value: 65 },
+  accent: { hue: 30, saturation: 80, value: 60 },
+  foundation: { hue: 0, saturation: 0, value: 97 },
 })
 
 export const createDefaultEffectProcessorConfig = (): EffectProcessorConfig => ({
