@@ -35,4 +35,7 @@ export {
   type PrimitiveRefMap,
 } from './SemanticPaletteFromPrimitive'
 
+// Re-export InkRole from Domain (used by selectInkForSurface)
+export type { InkRole } from '../Domain/NeutralSelection'
+
 export { COLOR_PRESETS } from './ColorPresets'

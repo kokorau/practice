@@ -292,6 +292,15 @@ export type {
   SelectionPort,
   ForegroundElementUsecase,
   ForegroundElementUsecaseDeps,
+  // Usecase types
+  BackgroundSurfaceUsecase,
+  BackgroundSurfaceUsecaseDeps,
+  ImageUploadPort,
+  SurfaceParamsUpdate,
+  MaskUsecase,
+  MaskUsecaseDeps,
+  MaskShapeParamsUpdate,
+  LayerUpdate,
 } from './Application'
 
 export {
@@ -303,6 +312,9 @@ export {
   createGetHeroViewPresetsUseCase,
   // ForegroundElement UseCase
   createForegroundElementUsecase,
+  // Usecases
+  createBackgroundSurfaceUsecase,
+  createMaskUsecase,
 } from './Application'
 
 // HeroView Repository types (from Domain)

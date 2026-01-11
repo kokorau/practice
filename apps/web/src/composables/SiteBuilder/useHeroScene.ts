@@ -139,6 +139,8 @@ import {
   updateTextLayerColor,
   updateTextLayerPosition,
   updateTextLayerRotation,
+  createHeroViewInMemoryRepository,
+  createMaskUsecase,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -306,6 +308,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const customMaskImage = ref<string | null>(null)
   const customMaskFile = ref<File | null>(null)
   let customMaskBitmap: ImageBitmap | null = null
+
+  // ============================================================
+  // HeroViewRepository & MaskUsecase
+  // ============================================================
+  const heroViewRepository = createHeroViewInMemoryRepository()
+  const maskUsecase = createMaskUsecase({ repository: heroViewRepository })
 
   // ============================================================
   // Custom Shape/Surface Params State
@@ -2688,7 +2696,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       layers.push(surfaceLayer)
     }
 
-    return {
+    const config: HeroViewConfig = {
       viewport: {
         width: editorState.value.config.width,
         height: editorState.value.config.height,
@@ -2697,6 +2705,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       layers,
       foreground: foregroundConfig.value,
     }
+
+    // Sync to HeroViewRepository for Usecase access
+    heroViewRepository.set(config)
+
+    return config
   }
 
   /**
@@ -2715,6 +2728,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const fromHeroViewConfig = async (config: HeroViewConfig) => {
     // Prevent watchers from overwriting custom params during config load
     isLoadingFromConfig = true
+
+    // Sync to HeroViewRepository for Usecase access
+    heroViewRepository.set(config)
 
     // Viewport
     editorState.value = {
@@ -2959,7 +2975,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Subscribe to repository changes (if provided)
   if (repository) {
-    repositoryUnsubscribe = repository.subscribe(async (config) => {
+    repositoryUnsubscribe = repository.subscribe(async (config: HeroViewConfig) => {
       // Skip if we're the ones who triggered the update
       if (isLoadingFromConfig) return
       // Load external changes
@@ -3094,5 +3110,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     selectedPresetId,
     loadPresets,
     applyPreset,
+
+    // Usecases (for future migration)
+    heroViewRepository,
+    maskUsecase,
   }
 }
