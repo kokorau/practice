@@ -53,6 +53,7 @@ import {
   // Schemas and types
   MaskShapeSchemas,
   SurfaceSchemas,
+  DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
   type TexturePattern,
   type MaskPattern,
   type MaskShapeConfig,
@@ -77,6 +78,7 @@ import {
   type GridSurfaceParams,
   type PolkaDotSurfaceParams,
   type CheckerSurfaceParams,
+  type SolidSurfaceParams,
   type DepthMapType,
   // Text rendering
   renderTextToBitmap,
@@ -567,7 +569,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         sparsity: params.sparsity,
         colorA,
         colorB,
-        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
       }
     }
     // checker
@@ -607,7 +609,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         sparsity: params.sparsity,
         colorA,
         colorB,
-        curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
       }
     }
     // checker
@@ -631,14 +633,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const currentSurfaceSchema = computed(() => {
     if (!customSurfaceParams.value) return null
     const type = customSurfaceParams.value.type
-    if (type === 'solid') return null // solid has no params
     return SurfaceSchemas[type] as ObjectSchema
   })
 
   const currentBackgroundSurfaceSchema = computed(() => {
     if (!customBackgroundSurfaceParams.value) return null
     const type = customBackgroundSurfaceParams.value.type
-    if (type === 'solid') return null // solid has no params
     return SurfaceSchemas[type] as ObjectSchema
   })
 
@@ -707,10 +707,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   /**
    * Update custom background surface params
    */
-  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => {
+  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => {
     if (!customBackgroundSurfaceParams.value) return
     const type = customBackgroundSurfaceParams.value.type
-    if (type === 'solid' || type === 'gradientGrain') return
+    if (type === 'gradientGrain') return
 
     // View層のステート更新
     customBackgroundSurfaceParams.value = { ...customBackgroundSurfaceParams.value, ...updates } as CustomBackgroundSurfaceParams
@@ -2126,8 +2126,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     color: color1,
                   })
                 case 'gradientGrain': {
-                  const defaultCurvePoints: number[] = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
-                  const curvePoints: number[] = 'curvePoints' in params && Array.isArray(params.curvePoints) ? params.curvePoints : defaultCurvePoints
+                  const curvePoints: number[] = 'curvePoints' in params && Array.isArray(params.curvePoints) ? params.curvePoints : [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS]
                   return createGradientGrainSpec({
                     depthMapType: params.depthMapType,
                     angle: params.angle,
@@ -2447,7 +2446,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           angle: params.angle,
         })
       case 'gradientGrain': {
-        const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
         return createGradientGrainSpec({
           depthMapType: params.depthMapType,
           angle: params.angle,
@@ -2463,7 +2461,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           colorB: color2,
           seed: params.seed,
           sparsity: params.sparsity,
-          curvePoints: defaultCurvePoints,
+          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
         }, _viewport)
       }
     }
