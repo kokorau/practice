@@ -80,6 +80,7 @@ const emit = defineEmits<{
     :preview-mode="previewMode"
     :base-config="baseConfig"
     :palette="palette"
+    target-layer-type="group"
     @upload-image="emit('upload-image', $event)"
     @clear-image="emit('clear-image')"
     @select-pattern="emit('select-pattern', $event)"

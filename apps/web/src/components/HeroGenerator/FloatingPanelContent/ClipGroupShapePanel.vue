@@ -44,44 +44,36 @@ const emit = defineEmits<{
 const isHeroMode = computed(() => props.previewMode === 'hero' && props.baseConfig && props.palette)
 
 /**
- * Create a preview config with a specific mask shape
+ * Create a preview config with a specific mask shape (group layer only)
+ * Filters out other layers to focus on the Main Group
  */
 const createMaskPreviewConfig = (base: HeroViewConfig, shape: MaskShapeConfig): HeroViewConfig => {
   return {
     ...base,
-    layers: base.layers.map(layer => {
-      if (layer.type === 'surface') {
-        return {
-          ...layer,
-          processors: layer.processors.map(p => {
-            if (p.type === 'mask') {
-              return { ...p, shape } as MaskProcessorConfig
-            }
-            return p
-          }),
-        }
-      }
-      if (layer.type === 'group' && 'children' in layer && layer.children) {
-        return {
-          ...layer,
-          children: layer.children.map(child => {
-            if (child.type === 'surface') {
-              return {
-                ...child,
-                processors: child.processors.map(p => {
-                  if (p.type === 'mask') {
-                    return { ...p, shape } as MaskProcessorConfig
-                  }
-                  return p
-                }),
+    layers: base.layers
+      .filter(layer => layer.type === 'group')
+      .map(layer => {
+        if ('children' in layer && layer.children) {
+          return {
+            ...layer,
+            children: layer.children.map(child => {
+              if (child.type === 'surface') {
+                return {
+                  ...child,
+                  processors: child.processors.map(p => {
+                    if (p.type === 'mask') {
+                      return { ...p, shape } as MaskProcessorConfig
+                    }
+                    return p
+                  }),
+                }
               }
-            }
-            return child
-          }),
+              return child
+            }),
+          }
         }
-      }
-      return layer
-    }),
+        return layer
+      }),
   }
 }
 
