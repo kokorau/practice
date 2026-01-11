@@ -58,6 +58,8 @@ import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
+import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
+import type { ContextMenuItem } from '../components/HeroGenerator/ContextMenu.vue'
 import './HeroViewGeneratorView.css'
 
 // ============================================================
@@ -933,10 +935,51 @@ watch(canvasImageData, () => {
   checkTitleContrast()
   checkDescriptionContrast()
 })
+
+// ============================================================
+// Context Menu
+// ============================================================
+const contextMenuOpen = ref(false)
+const contextMenuPosition = ref({ x: 0, y: 0 })
+const contextMenuLayerId = ref<string | null>(null)
+
+// WIP items - will be expanded in future issues
+const contextMenuItems = computed((): ContextMenuItem[] => {
+  return [
+    { id: 'wip', label: 'WIP', disabled: true },
+  ]
+})
+
+const handleLayerContextMenu = (layerId: string, event: MouseEvent) => {
+  contextMenuLayerId.value = layerId
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
+  contextMenuOpen.value = true
+}
+
+const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
+  contextMenuLayerId.value = elementId
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
+  contextMenuOpen.value = true
+}
+
+const handleContextMenuClose = () => {
+  contextMenuOpen.value = false
+  contextMenuLayerId.value = null
+}
+
+const handleContextMenuSelect = (itemId: string) => {
+  // Will be implemented in future issues (#42, #43)
+  console.log('Context menu item selected:', itemId, 'for layer:', contextMenuLayerId.value)
+}
+
+// Prevent default context menu on the entire generator
+const handleGlobalContextMenu = (e: MouseEvent) => {
+  e.preventDefault()
+}
 </script>
 
 <template>
-  <div class="hero-generator" :class="{ dark: uiDarkMode }">
+  <div class="hero-generator" :class="{ dark: uiDarkMode }" @contextmenu="handleGlobalContextMenu">
     <!-- 左パネル: カラー設定 & レイヤー -->
     <HeroSidebar
       :active-tab="activeTab"
@@ -976,7 +1019,9 @@ watch(canvasImageData, () => {
       @add-layer="handleAddLayer"
       @remove-layer="handleRemoveLayer"
       @move-layer="handleMoveLayer"
+      @layer-contextmenu="handleLayerContextMenu"
       @select-foreground-element="handleSelectForegroundElement"
+      @foreground-contextmenu="handleForegroundContextMenu"
       @add-foreground-element="handleAddForegroundElement"
       @remove-foreground-element="handleRemoveForegroundElement"
     />
@@ -1449,6 +1494,15 @@ watch(canvasImageData, () => {
       @update:line-halftone-config="currentLineHalftoneConfig = $event"
       @update:selected-mask-index="selectedMaskIndex = $event"
       @update:mask-shape-params="updateMaskShapeParams($event)"
+    />
+
+    <!-- Context Menu -->
+    <ContextMenu
+      :items="contextMenuItems"
+      :position="contextMenuPosition"
+      :is-open="contextMenuOpen"
+      @close="handleContextMenuClose"
+      @select="handleContextMenuSelect"
     />
   </div>
 </template>

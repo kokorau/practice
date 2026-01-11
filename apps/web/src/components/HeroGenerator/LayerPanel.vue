@@ -57,6 +57,8 @@ const emit = defineEmits<{
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
   'remove-foreground-element': [elementId: string]
+  'layer-contextmenu': [layerId: string, event: MouseEvent]
+  'foreground-contextmenu': [elementId: string, event: MouseEvent]
 }>()
 
 // ============================================================
@@ -84,6 +86,10 @@ const handleDragLeave = (nodeId: string) => {
 const handleDrop = (sourceId: string, targetId: string, position: DropPosition) => {
   emit('move-layer', sourceId, targetId, position)
   endDrag()
+}
+
+const handleLayerContextMenu = (layerId: string, event: MouseEvent) => {
+  emit('layer-contextmenu', layerId, event)
 }
 
 // ============================================================
@@ -148,6 +154,12 @@ const handleRemoveForegroundElement = (elementId: string) => {
 const handleSelectForegroundElement = (elementId: string) => {
   emit('select-foreground-element', elementId)
 }
+
+const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
+  event.preventDefault()
+  event.stopPropagation()
+  emit('foreground-contextmenu', elementId, event)
+}
 </script>
 
 <template>
@@ -205,6 +217,7 @@ const handleSelectForegroundElement = (elementId: string) => {
           @drag-over="handleDragOver"
           @drag-leave="handleDragLeave"
           @drop="handleDrop"
+          @contextmenu="handleLayerContextMenu"
         />
       </div>
     </div>
@@ -247,6 +260,7 @@ const handleSelectForegroundElement = (elementId: string) => {
           class="html-layer-item"
           :class="{ selected: selectedForegroundElementId === element.id }"
           @click="handleSelectForegroundElement(element.id)"
+          @contextmenu="handleForegroundContextMenu(element.id, $event)"
         >
           <span class="material-icons html-layer-icon">{{ getElementIcon(element.type) }}</span>
           <span class="html-layer-name">{{ element.type === 'title' ? 'Title' : 'Description' }}</span>
