@@ -30,6 +30,7 @@ import {
   removeNode,
   moveLayerNode as moveLayerNodeInTree,
   wrapNodeInGroup,
+  wrapNodeInMaskedGroup,
   isLayer,
   isGroup,
   isEffectModifier,
@@ -871,6 +872,11 @@ const handleGroupSelection = (layerId: string) => {
   layers.value = wrapNodeInGroup(layers.value, layerId)
 }
 
+const handleUseAsMask = (layerId: string) => {
+  // Wrap the selected layer in a new group with a mask modifier
+  layers.value = wrapNodeInMaskedGroup(layers.value, layerId)
+}
+
 // ============================================================
 // APCA Contrast Check
 // ============================================================
@@ -1004,6 +1010,7 @@ const contextMenuItems = computed((): ContextMenuItem[] => {
   // Regular layer/group: full menu
   return [
     { id: 'group-selection', label: 'Group Selection', icon: 'folder' },
+    { id: 'use-as-mask', label: 'Use as Mask', icon: 'vignette' },
     { id: 'sep-1', label: '', separator: true },
     { id: 'toggle-visibility', label: contextMenuTargetVisible.value ? 'Hide' : 'Show', icon: contextMenuTargetVisible.value ? 'visibility_off' : 'visibility' },
     { id: 'sep-2', label: '', separator: true },
@@ -1056,6 +1063,9 @@ const handleContextMenuSelect = (itemId: string) => {
   switch (itemId) {
     case 'group-selection':
       handleGroupSelection(layerId)
+      break
+    case 'use-as-mask':
+      handleUseAsMask(layerId)
       break
     case 'toggle-visibility':
       handleToggleVisibility(layerId)
