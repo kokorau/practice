@@ -103,7 +103,6 @@ import { NEUTRAL_KEYS, selectNeutralByHistogram, APCA_INK_TARGETS, type NeutralE
 import { selectInkForSurface } from '../../modules/SemanticColorPalette/Infra'
 import type { InkRole } from '../../modules/SemanticColorPalette/Domain'
 import { generateLuminanceMap } from '../../modules/ContrastChecker'
-import { fetchUnsplashPhotoUrl } from '../../modules/PhotoUnsplash/Infra/fetchUnsplashPhoto'
 import {
   type LayerFilterConfig,
   type HeroSceneEditorState,
@@ -125,6 +124,7 @@ import {
   type Object3DRendererPort,
   type HeroViewRepository,
   type FilterType,
+  type SurfaceParamsUpdate,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
@@ -142,6 +142,8 @@ import {
   updateTextLayerRotation,
   createHeroViewInMemoryRepository,
   createMaskUsecase,
+  createBackgroundSurfaceUsecase,
+  createUnsplashImageUploadAdapter,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -311,10 +313,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   let customMaskBitmap: ImageBitmap | null = null
 
   // ============================================================
-  // HeroViewRepository & MaskUsecase
+  // HeroViewRepository & Usecases
   // ============================================================
   const heroViewRepository = createHeroViewInMemoryRepository()
   const maskUsecase = createMaskUsecase({ repository: heroViewRepository })
+  const imageUploadAdapter = createUnsplashImageUploadAdapter()
+  const backgroundSurfaceUsecase = createBackgroundSurfaceUsecase({
+    repository: heroViewRepository,
+    imageUpload: imageUploadAdapter,
+  })
 
   // ============================================================
   // Custom Shape/Surface Params State
@@ -511,11 +518,25 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
       }
       customBackgroundSurfaceParams.value = { type: 'gradientGrain', ...defaults }
+      // Note: gradientGrain is not supported by BackgroundSurfaceUsecase yet
       return
     }
     const preset = surfacePresets[idx]
     if (preset) {
-      customBackgroundSurfaceParams.value = extractBackgroundSurfaceParams(preset.params)
+      const params = extractBackgroundSurfaceParams(preset.params)
+      customBackgroundSurfaceParams.value = params
+      // Usecaseを通じてRepositoryを更新
+      if (params.type === 'solid') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'solid' })
+      } else if (params.type === 'stripe') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle })
+      } else if (params.type === 'grid') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize })
+      } else if (params.type === 'polkaDot') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
+      } else if (params.type === 'checker') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'checker', cellSize: params.cellSize, angle: params.angle })
+      }
     } else {
       customBackgroundSurfaceParams.value = null
     }
@@ -541,8 +562,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Update custom background surface params
    */
   const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => {
-    if (!customBackgroundSurfaceParams.value || customBackgroundSurfaceParams.value.type === 'solid') return
+    if (!customBackgroundSurfaceParams.value) return
+    const type = customBackgroundSurfaceParams.value.type
+    if (type === 'solid' || type === 'gradientGrain') return
+
+    // View層のステート更新
     customBackgroundSurfaceParams.value = { ...customBackgroundSurfaceParams.value, ...updates } as CustomBackgroundSurfaceParams
+
+    // Usecaseを通じてRepositoryを更新
+    backgroundSurfaceUsecase.updateSurfaceParams({ type, ...updates } as SurfaceParamsUpdate)
   }
 
   // ============================================================
@@ -2407,6 +2435,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
 
   const setBackgroundImage = async (file: File) => {
+    // View層のクリーンアップ
     if (customBackgroundImage.value) {
       URL.revokeObjectURL(customBackgroundImage.value)
     }
@@ -2415,15 +2444,21 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       customBackgroundBitmap = null
     }
 
+    // View層のステート更新
     customBackgroundFile.value = file
-    customBackgroundImage.value = URL.createObjectURL(file)
+    const imageId = URL.createObjectURL(file)
+    customBackgroundImage.value = imageId
     customBackgroundBitmap = await createImageBitmap(file)
+
+    // Usecaseを通じてRepositoryを更新
+    backgroundSurfaceUsecase.selectSurface({ type: 'image', imageId })
 
     syncLayerConfigs()
     await renderScene()
   }
 
   const clearBackgroundImage = () => {
+    // View層のクリーンアップ
     if (customBackgroundImage.value) {
       URL.revokeObjectURL(customBackgroundImage.value)
     }
@@ -2434,6 +2469,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customBackgroundFile.value = null
     customBackgroundImage.value = null
 
+    // Usecaseを通じてRepositoryを更新
+    backgroundSurfaceUsecase.clearImage()
+
     syncLayerConfigs()
     renderScene()
   }
@@ -2443,10 +2481,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const loadRandomBackgroundImage = async (query?: string) => {
     isLoadingRandomBackground.value = true
     try {
-      const url = await fetchUnsplashPhotoUrl({ query })
-      const response = await fetch(url)
-      const blob = await response.blob()
-      const file = new File([blob], `unsplash-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      // ImageUploadAdapterでUnsplashからファイル取得
+      const file = await imageUploadAdapter.fetchRandom(query)
       await setBackgroundImage(file)
     } finally {
       isLoadingRandomBackground.value = false
@@ -2494,10 +2530,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const loadRandomMaskImage = async (query?: string) => {
     isLoadingRandomMask.value = true
     try {
-      const url = await fetchUnsplashPhotoUrl({ query })
-      const response = await fetch(url)
-      const blob = await response.blob()
-      const file = new File([blob], `unsplash-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      // ImageUploadAdapterでUnsplashからファイル取得
+      const file = await imageUploadAdapter.fetchRandom(query)
       await setMaskImage(file)
     } finally {
       isLoadingRandomMask.value = false
@@ -2570,6 +2604,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     () => renderScene(),
     { deep: true }
   )
+
+  // Background color key watchers - sync with Usecase when changed
+  watch(backgroundColorKey1, (newValue) => {
+    if (isLoadingFromConfig) return
+    backgroundSurfaceUsecase.updateColorKey('primary', newValue as HeroPrimitiveKey)
+  })
+
+  watch(backgroundColorKey2, (newValue) => {
+    if (isLoadingFromConfig) return
+    backgroundSurfaceUsecase.updateColorKey('secondary', newValue as HeroPrimitiveKey | 'auto')
+  })
 
   onUnmounted(() => {
     destroyPreview()

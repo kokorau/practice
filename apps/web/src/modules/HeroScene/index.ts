@@ -376,4 +376,6 @@ export {
   createObject3DRenderer,
   // Config-based rendering
   renderHeroConfig,
+  // ImageUpload Adapter
+  createUnsplashImageUploadAdapter,
 } from './Infra'
