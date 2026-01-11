@@ -687,6 +687,40 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const foregroundTitleColor = computed((): string => $Oklch.toCss(foregroundTitleInk.value))
   const foregroundBodyColor = computed((): string => $Oklch.toCss(foregroundBodyInk.value))
 
+  /**
+   * Resolve color for a foreground element based on its colorKey.
+   * - If colorKey is undefined or 'auto': use automatic contrast-based color
+   * - If colorKey is a PrimitiveKey: use that color directly from the palette
+   */
+  const resolveForegroundElementColor = (
+    colorKey: HeroPrimitiveKey | 'auto' | undefined,
+    elementType: 'title' | 'description'
+  ): string => {
+    // If no colorKey or 'auto', use the automatic ink color
+    if (colorKey === undefined || colorKey === 'auto') {
+      return elementType === 'title' ? foregroundTitleColor.value : foregroundBodyColor.value
+    }
+    // Use the specified color from the palette
+    const color = primitivePalette.value[colorKey as PrimitiveKey]
+    return $Oklch.toCss(color)
+  }
+
+  /**
+   * Computed map of element ID to resolved CSS color string.
+   * This allows HeroPreview to look up colors by element ID.
+   */
+  const foregroundElementColors = computed((): Map<string, string> => {
+    const colorMap = new Map<string, string>()
+    for (const el of foregroundConfig.value.elements) {
+      const color = resolveForegroundElementColor(
+        el.colorKey as HeroPrimitiveKey | 'auto' | undefined,
+        el.type
+      )
+      colorMap.set(el.id, color)
+    }
+    return colorMap
+  })
+
   // ============================================================
   // Layer Management (internal)
   // ============================================================
@@ -2841,6 +2875,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foregroundConfig,
     foregroundTitleColor,
     foregroundBodyColor,
+    foregroundElementColors,
 
     // Canvas ImageData for contrast analysis
     canvasImageData,

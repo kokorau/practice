@@ -287,6 +287,8 @@ export interface ForegroundElementConfig {
   content: string
   fontId?: string
   fontSize?: number
+  /** Color key from primitive palette, or 'auto' for automatic contrast-based color */
+  colorKey?: HeroPrimitiveKey | 'auto'
 }
 
 export interface ForegroundLayerConfig {

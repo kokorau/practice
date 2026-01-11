@@ -17,7 +17,7 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { LayerNode } from '../modules/HeroScene'
+import type { LayerNode, HeroPrimitiveKey } from '../modules/HeroScene'
 import {
   createGroupLayerNode,
   createSurfaceLayerNode,
@@ -186,6 +186,7 @@ const {
   foregroundConfig,
   foregroundTitleColor,
   foregroundBodyColor,
+  foregroundElementColors,
   // Canvas ImageData for contrast analysis
   canvasImageData,
   // PrimitiveKey color selection
@@ -450,6 +451,7 @@ const updateForegroundElement = (elementId: string, updates: Partial<{
   content: string
   fontId: string
   fontSize: number
+  colorKey: HeroPrimitiveKey | 'auto'
 }>) => {
   foregroundConfig.value = {
     ...foregroundConfig.value,
@@ -495,6 +497,15 @@ const selectedElementContent = computed({
   set: (content: string) => {
     if (selectedForegroundElementId.value) {
       updateForegroundElement(selectedForegroundElementId.value, { content })
+    }
+  },
+})
+
+const selectedElementColorKey = computed({
+  get: (): HeroPrimitiveKey | 'auto' => (selectedForegroundElement.value?.colorKey ?? 'auto') as HeroPrimitiveKey | 'auto',
+  set: (colorKey: HeroPrimitiveKey | 'auto') => {
+    if (selectedForegroundElementId.value) {
+      updateForegroundElement(selectedForegroundElementId.value, { colorKey })
     }
   },
 })
@@ -1342,6 +1353,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
         :foreground-config="foregroundConfig"
         :title-color="foregroundTitleColor"
         :body-color="foregroundBodyColor"
+        :element-colors="foregroundElementColors"
         class="hero-tab-content"
       />
 
@@ -1432,6 +1444,15 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
                 <span class="font-size-value">{{ selectedElementFontSize }}rem</span>
               </div>
             </div>
+            <div class="settings-section">
+              <p class="settings-label">Color</p>
+              <PrimitiveColorPicker
+                v-model="selectedElementColorKey"
+                :palette="primitivePalette"
+                label="Text Color"
+                :show-auto="true"
+              />
+            </div>
           </div>
         </template>
 
@@ -1491,6 +1512,15 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
                 />
                 <span class="font-size-value">{{ selectedElementFontSize }}rem</span>
               </div>
+            </div>
+            <div class="settings-section">
+              <p class="settings-label">Color</p>
+              <PrimitiveColorPicker
+                v-model="selectedElementColorKey"
+                :palette="primitivePalette"
+                label="Text Color"
+                :show-auto="true"
+              />
             </div>
           </div>
         </template>

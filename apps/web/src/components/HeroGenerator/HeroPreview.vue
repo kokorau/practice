@@ -28,10 +28,12 @@ const props = withDefaults(defineProps<{
   foregroundConfig?: ForegroundConfig
   titleColor?: string
   bodyColor?: string
+  elementColors?: Map<string, string>
 }>(), {
   foregroundConfig: () => DEFAULT_FOREGROUND_CONFIG,
   titleColor: undefined,
   bodyColor: undefined,
+  elementColors: undefined,
 })
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -79,8 +81,11 @@ const getElementStyle = (el: PositionedElement): Record<string, string> => {
     // Convert rem to px for consistent rendering at base size
     style.fontSize = `${el.fontSize * BASE_FONT_SIZE}px`
   }
-  // Apply color based on element type (title uses titleColor, description uses bodyColor)
-  if (el.type === 'title' && props.titleColor) {
+  // Apply color: first check element-specific color from elementColors map
+  if (props.elementColors?.has(el.id)) {
+    style.color = props.elementColors.get(el.id)!
+  } else if (el.type === 'title' && props.titleColor) {
+    // Fallback to type-based color
     style.color = props.titleColor
   } else if (el.type === 'description' && props.bodyColor) {
     style.color = props.bodyColor

@@ -6,6 +6,7 @@ import type {
   ForegroundElementConfig,
   ForegroundLayerConfig,
   ForegroundElementType,
+  HeroPrimitiveKey,
 } from '../../modules/HeroScene'
 import { createDefaultForegroundConfig } from '../../modules/HeroScene'
 
@@ -42,12 +43,14 @@ export const ELEMENT_TAG: Record<ForegroundElementType, 'h1' | 'p'> = {
 // Output: Template-ready grouped data
 // ============================================================
 export interface PositionedElement {
+  id: string
   type: ForegroundElementType
   content: string
   className: string
   tag: 'h1' | 'p'
   fontId?: string
   fontSize?: number
+  colorKey?: HeroPrimitiveKey | 'auto'
 }
 
 export interface PositionedGroup {
@@ -68,12 +71,14 @@ export function compileForegroundLayout(config: ForegroundConfig): PositionedGro
   for (const el of visibleElements) {
     const existing = groupMap.get(el.position) ?? []
     existing.push({
+      id: el.id,
       type: el.type,
       content: el.content,
       className: ELEMENT_CLASS[el.type],
       tag: ELEMENT_TAG[el.type],
       fontId: el.fontId,
       fontSize: el.fontSize,
+      colorKey: el.colorKey,
     })
     groupMap.set(el.position, existing)
   }
