@@ -262,6 +262,10 @@ export {
   approxEqual,
   findSurfacePresetIndex,
   findMaskPatternIndex,
+  // Constants
+  HERO_CANVAS_WIDTH,
+  HERO_CANVAS_HEIGHT,
+  HERO_CANVAS_DIMENSIONS,
 } from './Domain'
 
 // Application

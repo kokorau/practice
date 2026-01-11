@@ -1,5 +1,6 @@
 import { ref, watch, nextTick, type Ref, type ComputedRef } from 'vue'
 import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
+import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '../modules/HeroScene'
 
 // ============================================================
 // Types
@@ -36,14 +37,6 @@ export interface UseContrastCheckerOptions {
 }
 
 // ============================================================
-// Constants
-// ============================================================
-
-// Base dimensions used in HeroPreview (must match)
-const BASE_WIDTH = 1920
-const BASE_HEIGHT = 1080
-
-// ============================================================
 // Composable
 // ============================================================
 
@@ -65,8 +58,8 @@ export function useContrastChecker(options: UseContrastCheckerOptions) {
   // Internal: Scale bounds from BASE dimensions to ImageData dimensions
   // ============================================================
   const scaleBounds = (bounds: ElementBounds, imageData: ImageData): ScaledRegion => {
-    const scaleX = imageData.width / BASE_WIDTH
-    const scaleY = imageData.height / BASE_HEIGHT
+    const scaleX = imageData.width / HERO_CANVAS_WIDTH
+    const scaleY = imageData.height / HERO_CANVAS_HEIGHT
     return {
       x: bounds.x * scaleX,
       y: bounds.y * scaleY,

@@ -171,6 +171,8 @@ import {
   createForegroundElementUsecase,
   type ForegroundConfigPort,
   type SelectionPort,
+  // Constants
+  HERO_CANVAS_DIMENSIONS,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -333,7 +335,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // Editor State (index-based for UI management)
   // ============================================================
-  const editorState = ref<HeroSceneEditorState>(createHeroSceneEditorState({ width: 1920, height: 1080 }))
+  const editorState = ref<HeroSceneEditorState>(createHeroSceneEditorState(HERO_CANVAS_DIMENSIONS))
 
   // Selection state (UI bindings)
   const selectedBackgroundIndex = ref(3)

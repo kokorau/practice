@@ -1,6 +1,7 @@
 import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 import { type Media, type Photo, $Media, mediaRepository } from '../../modules/Media'
 import { uploadLocalPhoto } from '../../modules/PhotoLocal/Infra/localPhotoUploader'
+import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '../../modules/HeroScene'
 
 export type UseMediaReturn = {
   /** 現在のメディア */
@@ -128,7 +129,7 @@ export const useMedia = (): UseMediaReturn => {
   const startScreenCapture = async (options: ScreenCaptureOptions = {}) => {
     error.value = null
     stopAllStreams()
-    const { width = 1920, height = 1080 } = options
+    const { width = HERO_CANVAS_WIDTH, height = HERO_CANVAS_HEIGHT } = options
 
     if (!navigator.mediaDevices?.getDisplayMedia) {
       error.value = 'Screen Capture API not supported'
