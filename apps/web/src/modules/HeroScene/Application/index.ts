@@ -47,6 +47,16 @@ export { createBackgroundSurfaceUsecase } from './BackgroundSurfaceUsecase'
 export type { GetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
 export { createGetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
 
+// Re-export ForegroundElement UseCase
+export type {
+  ForegroundElementUpdate,
+  ForegroundConfigPort,
+  SelectionPort,
+  ForegroundElementUsecase,
+  ForegroundElementUsecaseDeps,
+} from './ForegroundElementUsecase'
+export { createForegroundElementUsecase } from './ForegroundElementUsecase'
+
 // Re-export Compile functions
 export type {
   MidgroundTexturePattern,

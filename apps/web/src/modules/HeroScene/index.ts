@@ -286,6 +286,12 @@ export type {
   // Preset types
   HeroViewPresetRepository,
   GetHeroViewPresetsUseCase,
+  // ForegroundElement UseCase types
+  ForegroundElementUpdate,
+  ForegroundConfigPort,
+  SelectionPort,
+  ForegroundElementUsecase,
+  ForegroundElementUsecaseDeps,
 } from './Application'
 
 export {
@@ -295,6 +301,8 @@ export {
   compileHeroScene,
   // Preset UseCase
   createGetHeroViewPresetsUseCase,
+  // ForegroundElement UseCase
+  createForegroundElementUsecase,
 } from './Application'
 
 // HeroView Repository types (from Domain)
