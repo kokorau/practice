@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
 import {
@@ -57,7 +57,7 @@ import {
 } from '../composables/SiteBuilder'
 import { getSurfacePresets } from '@practice/texture'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
-import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
+import { useContrastChecker } from '../composables/useContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
 import { useContextMenu } from '../composables/useContextMenu'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
@@ -844,77 +844,13 @@ const handleUseAsMask = (layerId: string) => {
 // ============================================================
 // APCA Contrast Check
 // ============================================================
-const titleContrastResult = ref<ContrastAnalysisResult | null>(null)
-const descriptionContrastResult = ref<ContrastAnalysisResult | null>(null)
-
-// Base dimensions used in HeroPreview (must match)
-const BASE_WIDTH = 1920
-const BASE_HEIGHT = 1080
-
-const checkTitleContrast = async () => {
-  await nextTick()
-  const imageData = canvasImageData.value
-  const bounds = heroPreviewRef.value?.getElementBounds('title')
-  const textColor = foregroundTitleColor.value
-
-  if (!imageData || !bounds || !textColor) {
-    titleContrastResult.value = null
-    setElementBounds('title', null)
-    return
-  }
-
-  // Scale bounds from BASE dimensions to actual ImageData dimensions
-  const scaleX = imageData.width / BASE_WIDTH
-  const scaleY = imageData.height / BASE_HEIGHT
-  const scaledRegion = {
-    x: bounds.x * scaleX,
-    y: bounds.y * scaleY,
-    width: bounds.width * scaleX,
-    height: bounds.height * scaleY,
-  }
-
-  // Update element bounds for auto color selection
-  setElementBounds('title', scaledRegion)
-
-  titleContrastResult.value = await checkContrastAsync(imageData, textColor, scaledRegion)
-}
-
-const checkDescriptionContrast = async () => {
-  await nextTick()
-  const imageData = canvasImageData.value
-  const bounds = heroPreviewRef.value?.getElementBounds('description')
-  const textColor = foregroundBodyColor.value
-
-  if (!imageData || !bounds || !textColor) {
-    descriptionContrastResult.value = null
-    setElementBounds('description', null)
-    return
-  }
-
-  // Scale bounds from BASE dimensions to actual ImageData dimensions
-  const scaleX = imageData.width / BASE_WIDTH
-  const scaleY = imageData.height / BASE_HEIGHT
-  const scaledRegion = {
-    x: bounds.x * scaleX,
-    y: bounds.y * scaleY,
-    width: bounds.width * scaleX,
-    height: bounds.height * scaleY,
-  }
-
-  // Update element bounds for auto color selection
-  setElementBounds('description', scaledRegion)
-
-  descriptionContrastResult.value = await checkContrastAsync(imageData, textColor, scaledRegion)
-}
-
-// Watch for changes that affect contrast
-watch([foregroundTitleColor, selectedElementPosition, selectedElementFontSize], checkTitleContrast)
-watch([foregroundBodyColor, selectedElementPosition, selectedElementFontSize], checkDescriptionContrast)
-
-// Update contrast when canvas ImageData changes (after each render)
-watch(canvasImageData, () => {
-  checkTitleContrast()
-  checkDescriptionContrast()
+const { titleContrastResult, descriptionContrastResult } = useContrastChecker({
+  canvasImageData,
+  heroPreviewRef,
+  foregroundTitleColor,
+  foregroundBodyColor,
+  setElementBounds,
+  watchDependencies: [selectedElementPosition, selectedElementFontSize],
 })
 
 // ============================================================
