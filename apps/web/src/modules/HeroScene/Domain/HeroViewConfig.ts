@@ -81,6 +81,34 @@ export interface ViewportConfig {
 // Surface Config (テクスチャパターン)
 // ============================================================
 
+/**
+ * SurfaceConfig - JSON-serializable surface definition
+ *
+ * ## Surface vs SurfaceConfig
+ *
+ * This codebase uses a two-layer type system for surfaces:
+ *
+ * | Aspect | Surface (LayerNode.ts) | SurfaceConfig (this file) |
+ * |--------|------------------------|---------------------------|
+ * | Purpose | Runtime rendering | JSON serialization/persistence |
+ * | Image data | `ImageBitmap \| string` | `imageId: string` |
+ * | Pattern | `TexturePatternSpec` | Individual params (width1, angle, etc.) |
+ * | Serializable | No (contains runtime objects) | Yes (JSON.stringify safe) |
+ *
+ * ## Usage Guidelines by Layer
+ *
+ * - **Domain**: Use `SurfaceConfig` for persistence schemas and config types
+ * - **Application**: Use `SurfaceConfig` for usecase inputs/outputs (repository operations)
+ * - **Infra**: Use `SurfaceConfig` for storage, convert to `Surface` for rendering
+ *
+ * ## Naming Convention for Conversion Functions
+ *
+ * - `toSurfaceConfig(surface: Surface): SurfaceConfig` - Extract serializable data
+ * - `fromSurfaceConfig(config: SurfaceConfig, ...deps): Surface` - Create runtime objects
+ *
+ * @see LayerNode.ts for Surface (runtime) definition
+ */
+
 export interface StripeSurfaceConfig {
   type: 'stripe'
   width1: number

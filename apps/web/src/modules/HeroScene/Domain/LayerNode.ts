@@ -23,7 +23,31 @@ import type { TexturePatternSpec } from '@practice/texture'
 // ============================================================
 
 /**
- * Surface configuration - defines what content to render
+ * Surface - Runtime rendering definition
+ *
+ * ## Surface vs SurfaceConfig
+ *
+ * This codebase uses a two-layer type system for surfaces:
+ *
+ * | Aspect | Surface (this file) | SurfaceConfig (HeroViewConfig.ts) |
+ * |--------|---------------------|-----------------------------------|
+ * | Purpose | Runtime rendering | JSON serialization/persistence |
+ * | Image data | `ImageBitmap \| string` | `imageId: string` |
+ * | Pattern | `TexturePatternSpec` | Individual params (width1, angle, etc.) |
+ * | Serializable | No (contains runtime objects) | Yes (JSON.stringify safe) |
+ *
+ * ## Usage Guidelines by Layer
+ *
+ * - **Domain**: Use `Surface` for runtime logic, `SurfaceConfig` for persistence schemas
+ * - **Application**: Use `SurfaceConfig` for usecase inputs/outputs (repository operations)
+ * - **Infra**: Use `SurfaceConfig` for storage, convert to `Surface` for rendering
+ *
+ * ## Conversion Patterns
+ *
+ * - `SurfaceConfig → Surface`: Infra layer (load from storage, create runtime objects)
+ * - `Surface → SurfaceConfig`: Infra layer (save to storage, extract serializable data)
+ *
+ * @see HeroViewConfig.ts for SurfaceConfig definition
  */
 export type Surface =
   | PatternSurface
@@ -689,7 +713,19 @@ export type LayerNodeType = 'base' | 'group' | 'surface' | 'model3d' | 'text' | 
 // Surface types (keep for compatibility)
 /** @deprecated Use PatternSurface instead */
 export type TexturePatternSurface = PatternSurface
-/** @deprecated Use Surface instead */
+/**
+ * @deprecated MISLEADING ALIAS - This is actually `Surface`, NOT `SurfaceConfig`!
+ *
+ * This alias exists for backward compatibility but is confusing because:
+ * - It's named `SurfaceConfig` but is actually the runtime `Surface` type
+ * - The real `SurfaceConfig` (for JSON serialization) is in `HeroViewConfig.ts`
+ *
+ * Use the appropriate type for your use case:
+ * - For runtime rendering: `import { Surface } from './LayerNode'`
+ * - For JSON serialization: `import { SurfaceConfig } from './HeroViewConfig'`
+ *
+ * @see Surface type JSDoc for detailed usage guidelines
+ */
 export type SurfaceConfig = Surface
 
 // Factory functions
