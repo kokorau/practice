@@ -8,10 +8,8 @@ import {
   type ForegroundElementType,
 } from '../../composables/SiteBuilder'
 import { ensureFontLoaded } from '@practice/font'
+import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '../../modules/HeroScene'
 
-// Fixed base dimensions for consistent rendering
-const BASE_WIDTH = 1920
-const BASE_HEIGHT = 1080
 const BASE_FONT_SIZE = 16 // px per rem for consistent sizing
 
 /**
@@ -51,7 +49,7 @@ const updateScale = () => {
   const containerWidth = containerRef.value.clientWidth
   // Calculate scale based on available width (with some padding)
   const availableWidth = containerWidth - 32 // 16px padding on each side
-  scale.value = Math.min(1, availableWidth / BASE_WIDTH)
+  scale.value = Math.min(1, availableWidth / HERO_CANVAS_WIDTH)
 }
 
 onMounted(() => {
@@ -95,20 +93,20 @@ const getElementStyle = (el: PositionedElement): Record<string, string> => {
 
 // Computed style for the scaled frame
 const frameStyle = computed(() => ({
-  width: `${BASE_WIDTH}px`,
-  height: `${BASE_HEIGHT}px`,
+  width: `${HERO_CANVAS_WIDTH}px`,
+  height: `${HERO_CANVAS_HEIGHT}px`,
   transform: `scale(${scale.value})`,
   transformOrigin: 'top left',
 }))
 
 // Computed style for the wrapper (maintains aspect ratio in layout)
 const wrapperStyle = computed(() => ({
-  width: `${BASE_WIDTH * scale.value}px`,
-  height: `${BASE_HEIGHT * scale.value}px`,
+  width: `${HERO_CANVAS_WIDTH * scale.value}px`,
+  height: `${HERO_CANVAS_HEIGHT * scale.value}px`,
 }))
 
 /**
- * Get element bounds in canvas coordinate system (BASE_WIDTH x BASE_HEIGHT)
+ * Get element bounds in canvas coordinate system (HERO_CANVAS_WIDTH x HERO_CANVAS_HEIGHT)
  * The frame is scaled for display, so we need to convert DOM coordinates back to canvas space
  */
 const getElementBounds = (type: ForegroundElementType): ElementBounds | null => {
@@ -153,7 +151,7 @@ defineExpose({
     <div class="hero-preview-wrapper" :style="wrapperStyle">
       <div ref="frameRef" class="hero-preview-frame hero-palette-preview context-canvas" :style="frameStyle">
         <!-- 後景: テクスチャ or カスタム画像 (Canvas に描画) -->
-        <canvas ref="canvasRef" class="layer-background" :width="BASE_WIDTH" :height="BASE_HEIGHT" />
+        <canvas ref="canvasRef" class="layer-background" :width="HERO_CANVAS_WIDTH" :height="HERO_CANVAS_HEIGHT" />
 
         <!-- 中景: グラフィック（後で実装） -->
         <div class="layer-midground">

@@ -34,6 +34,8 @@ import {
   isLayer,
   isGroup,
   getSceneLayerId,
+  HERO_CANVAS_WIDTH,
+  HERO_CANVAS_HEIGHT,
   type DropPosition,
   type LayerNodeType,
 } from '../modules/HeroScene'
@@ -847,10 +849,6 @@ const handleUseAsMask = (layerId: string) => {
 const titleContrastResult = ref<ContrastAnalysisResult | null>(null)
 const descriptionContrastResult = ref<ContrastAnalysisResult | null>(null)
 
-// Base dimensions used in HeroPreview (must match)
-const BASE_WIDTH = 1920
-const BASE_HEIGHT = 1080
-
 const checkTitleContrast = async () => {
   await nextTick()
   const imageData = canvasImageData.value
@@ -864,8 +862,8 @@ const checkTitleContrast = async () => {
   }
 
   // Scale bounds from BASE dimensions to actual ImageData dimensions
-  const scaleX = imageData.width / BASE_WIDTH
-  const scaleY = imageData.height / BASE_HEIGHT
+  const scaleX = imageData.width / HERO_CANVAS_WIDTH
+  const scaleY = imageData.height / HERO_CANVAS_HEIGHT
   const scaledRegion = {
     x: bounds.x * scaleX,
     y: bounds.y * scaleY,
@@ -892,8 +890,8 @@ const checkDescriptionContrast = async () => {
   }
 
   // Scale bounds from BASE dimensions to actual ImageData dimensions
-  const scaleX = imageData.width / BASE_WIDTH
-  const scaleY = imageData.height / BASE_HEIGHT
+  const scaleX = imageData.width / HERO_CANVAS_WIDTH
+  const scaleY = imageData.height / HERO_CANVAS_HEIGHT
   const scaledRegion = {
     x: bounds.x * scaleX,
     y: bounds.y * scaleY,
