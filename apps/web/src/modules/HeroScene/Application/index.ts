@@ -30,7 +30,18 @@ export type {
   Object3DRendererPort,
   Object3DRenderParams,
   LightingConfig,
+  HeroViewRepository,
+  LayerUpdate,
 } from './ports'
+
+// Re-export Background Surface UseCase
+export type {
+  BackgroundSurfaceUsecase,
+  BackgroundSurfaceUsecaseDeps,
+  ImageUploadPort,
+  SurfaceParamsUpdate,
+} from './BackgroundSurfaceUsecase'
+export { createBackgroundSurfaceUsecase } from './BackgroundSurfaceUsecase'
 
 // Re-export Preset UseCase
 export type { GetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
