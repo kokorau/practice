@@ -12,6 +12,7 @@ import {
   APCA_DISABLED_TARGETS,
   type NeutralEntry,
   type SearchOrder,
+  type InkRole,
 } from '../Domain/NeutralSelection'
 
 /**
@@ -478,10 +479,7 @@ export const createPrimitiveRefMap = (
 // Ink Selection for Arbitrary Surfaces (for Hero/Canvas rendering)
 // ============================================================================
 
-/**
- * Ink role types for text/UI elements
- */
-export type InkRole = 'title' | 'body' | 'meta' | 'linkText' | 'highlight'
+// InkRole is imported from Domain/NeutralSelection
 
 /**
  * Select an appropriate ink color for a given surface using APCA contrast.
@@ -512,7 +510,7 @@ export const selectInkForSurface = (
 
 /**
  * Select all ink colors for a given surface.
- * Returns a complete set of ink colors (title, body, meta, linkText, highlight).
+ * Returns a complete set of ink colors for all InkRole types.
  *
  * @param p - PrimitivePalette to select neutrals from
  * @param surface - The surface color (background) in Oklch
@@ -528,6 +526,8 @@ export const selectAllInksForSurface = (
     meta: selectInkForSurface(p, surface, 'meta'),
     linkText: selectInkForSurface(p, surface, 'linkText'),
     highlight: selectInkForSurface(p, surface, 'highlight'),
+    border: selectInkForSurface(p, surface, 'border'),
+    divider: selectInkForSurface(p, surface, 'divider'),
   }
 }
 

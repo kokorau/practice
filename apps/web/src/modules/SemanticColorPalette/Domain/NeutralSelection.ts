@@ -299,8 +299,15 @@ export type LuminanceMapInput = {
 
 /**
  * Extended result with histogram-based selection
+ * Note: This is a standalone type (not extending NeutralSelectionResult)
+ * to avoid type intersection issues with the 'method' discriminant.
  */
-export type NeutralHistogramResult = NeutralSelectionResult & {
+export type NeutralHistogramResult = {
+  /** Selected neutral key */
+  key: string
+  /** APCA Lc value (absolute) */
+  absLc: number
+  /** How the selection was made */
   method: 'histogram-soft' | 'histogram-fallback'
   /** Minimum guaranteed Lc (based on threshold) */
   guaranteedLc: number
