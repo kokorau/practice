@@ -382,3 +382,27 @@ export {
   // ImageUpload Adapter
   createUnsplashImageUploadAdapter,
 } from './Infra'
+
+// Types (grouped state definitions for useHeroScene)
+export type {
+  // Custom params types
+  CustomMaskShapeParams,
+  GradientGrainSurfaceParams,
+  CustomSurfaceParams,
+  CustomBackgroundSurfaceParams,
+  SectionType,
+  // Grouped state types
+  PatternState,
+  BackgroundState,
+  MaskState,
+  FilterState,
+  ForegroundState,
+  PresetState,
+  LayerOperations,
+  InkColorHelpers,
+  CanvasState,
+  SerializationState,
+  UsecaseState,
+  EditorStateRef,
+  RendererActions,
+} from './types'
