@@ -140,7 +140,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  width: 50%;
+  width: 100%;
   padding: 0.375rem 0.5rem;
   background: oklch(0.96 0.01 260);
   border: 1px solid oklch(0.85 0.01 260);

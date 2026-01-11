@@ -51,20 +51,22 @@ const shouldShowSurfaceParams = (): boolean => {
     <!-- Color selection -->
     <div class="settings-section">
       <p class="settings-label">Colors</p>
-      <PrimitiveColorPicker
-        :model-value="colorKey1"
-        :palette="primitivePalette"
-        label="Primary"
-        :show-auto="showAuto1"
-        @update:model-value="emit('update:colorKey1', $event)"
-      />
-      <PrimitiveColorPicker
-        :model-value="colorKey2"
-        :palette="primitivePalette"
-        label="Secondary"
-        :show-auto="showAuto2"
-        @update:model-value="emit('update:colorKey2', $event)"
-      />
+      <div class="colors-row">
+        <PrimitiveColorPicker
+          :model-value="colorKey1"
+          :palette="primitivePalette"
+          label="Primary"
+          :show-auto="showAuto1"
+          @update:model-value="emit('update:colorKey1', $event)"
+        />
+        <PrimitiveColorPicker
+          :model-value="colorKey2"
+          :palette="primitivePalette"
+          label="Secondary"
+          :show-auto="showAuto2"
+          @update:model-value="emit('update:colorKey2', $event)"
+        />
+      </div>
     </div>
 
     <!-- Surface params -->
@@ -120,6 +122,17 @@ const shouldShowSurfaceParams = (): boolean => {
   font-size: 0.75rem;
   font-weight: 600;
   color: oklch(0.40 0.02 260);
+}
+
+.colors-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.colors-row > * {
+  flex: 1;
+  min-width: 0;
 }
 
 :global(.dark) .settings-label {
