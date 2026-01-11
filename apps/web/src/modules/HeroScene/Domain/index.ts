@@ -378,6 +378,7 @@ export {
   isAncestorOf,
   insertNode,
   moveNode,
+  wrapNodeInGroup,
   // Legacy aliases (deprecated)
   type LayerNodeType,
   type LayerNodeBase,

@@ -214,6 +214,7 @@ export {
   isAncestorOf,
   insertNode,
   moveNode,
+  wrapNodeInGroup,
   // Legacy LayerNode factories
   createBaseLayerNode,
   createGroupLayerNode,
@@ -346,10 +347,10 @@ export {
   updateLayer,
   // Preset UseCases
   applyPreset,
+  applyPreset as applyPresetUsecase,
   exportPreset,
+  exportPreset as exportPresetUsecase,
   createPreset,
-  type PresetExportPort,
-  type ExportPresetOptions,
   // Filter UseCases
   selectFilterType,
   getFilterType,
@@ -377,6 +378,9 @@ export type {
   TextAnchor,
 } from './usecase'
 
+// Preset UseCase types
+export type { PresetExportPort, ExportPresetOptions } from './usecase'
+
 // HeroView Infra (re-export from Infra for convenience)
 export {
   createHeroViewInMemoryRepository,
@@ -392,6 +396,8 @@ export {
   createHeroSceneRenderer,
   // Preset Repository
   createInMemoryHeroViewPresetRepository,
+  // Preset Export
+  createBrowserPresetExporter,
   // 3D Object Renderer
   ThreeJsObject3DRenderer,
   createObject3DRenderer,

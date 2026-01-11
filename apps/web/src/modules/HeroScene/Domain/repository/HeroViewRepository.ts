@@ -77,6 +77,13 @@ export interface HeroViewRepository {
   // ============================================================
 
   /**
+   * レイヤーIDで検索
+   * @param layerId レイヤーID
+   * @returns 見つかったレイヤー、なければundefined
+   */
+  findLayer(layerId: string): LayerNodeConfig | undefined
+
+  /**
    * 特定レイヤーを更新
    */
   updateLayer(layerId: string, updates: Partial<LayerNodeConfig>): void

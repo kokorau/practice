@@ -536,6 +536,43 @@ export const moveNode = (
   return insertNode(withoutSource, sourceNode, targetId, position)
 }
 
+/**
+ * Wrap a node in a new group
+ * Creates a new Group containing the target node and replaces the node with the group
+ */
+export const wrapNodeInGroup = (
+  nodes: SceneNode[],
+  targetId: string,
+  groupId?: string
+): SceneNode[] => {
+  const targetNode = findNode(nodes, targetId)
+  if (!targetNode) return nodes
+
+  // Prevent wrapping base layer
+  if (isLayer(targetNode) && targetNode.variant === 'base') return nodes
+
+  const newGroupId = groupId ?? `group-${Date.now()}`
+  const newGroup = createGroup(newGroupId, [targetNode], { name: 'Group', expanded: true })
+
+  // Replace target node with new group (recursive)
+  const replaceWithGroup = (nodeList: SceneNode[]): SceneNode[] => {
+    return nodeList.map(node => {
+      if (node.id === targetId) {
+        return newGroup
+      }
+      if (isGroup(node)) {
+        return {
+          ...node,
+          children: replaceWithGroup(node.children),
+        }
+      }
+      return node
+    })
+  }
+
+  return replaceWithGroup(nodes)
+}
+
 // ============================================================
 // Legacy Aliases (for backward compatibility)
 // ============================================================

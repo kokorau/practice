@@ -63,10 +63,6 @@ export const createHeroViewInMemoryRepository = (
       }
     },
 
-    findLayer(layerId: string): LayerNodeConfig | undefined {
-      return currentConfig.layers.find((layer) => layer.id === layerId)
-    },
-
     // ============================================================
     // セクション単位の部分更新
     // ============================================================
@@ -98,6 +94,10 @@ export const createHeroViewInMemoryRepository = (
     // ============================================================
     // レイヤー操作
     // ============================================================
+
+    findLayer(layerId: string): LayerNodeConfig | undefined {
+      return currentConfig.layers.find((layer) => layer.id === layerId)
+    },
 
     updateLayer(layerId: string, updates: Partial<LayerNodeConfig>): void {
       currentConfig = {

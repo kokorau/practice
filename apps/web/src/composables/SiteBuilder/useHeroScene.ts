@@ -131,6 +131,11 @@ import {
   createDefaultColorsConfig,
   createGetHeroViewPresetsUseCase,
   createInMemoryHeroViewPresetRepository,
+  // Preset UseCases
+  applyPresetUsecase,
+  exportPresetUsecase,
+  createBrowserPresetExporter,
+  type ExportPresetOptions,
   findSurfacePresetIndex,
   findMaskPatternIndex,
   createObject3DRenderer,
@@ -157,8 +162,8 @@ import {
   toggleVisibility as toggleVisibilityUsecase,
   updateLayer as updateLayerUsecase,
   // Preset UseCases
-  exportPreset,
-  createPreset,
+  exportPreset as exportPresetFn,
+  createPreset as createPresetFn,
   type PresetExportPort,
   // ForegroundElement Usecase
   createForegroundElementUsecase,
@@ -400,10 +405,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const presetUsecase = {
     exportPreset: (options?: { id?: string; name?: string }) => {
-      return exportPreset(heroViewRepository, presetExportPort, options)
+      return exportPresetFn(heroViewRepository, presetExportPort, options)
     },
     createPreset: (options?: { id?: string; name?: string }) => {
-      return createPreset(heroViewRepository, options)
+      return createPresetFn(heroViewRepository, options)
     },
   }
 
@@ -3271,6 +3276,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (applyInitial && selectedPresetId.value) {
       const preset = await presetUseCase.findById(selectedPresetId.value)
       if (preset) {
+        // Apply preset using Usecase (updates repository with config and colors)
+        applyPresetUsecase(preset, heroViewRepository)
+        // Update editor state from config
         await fromHeroViewConfig(preset.config)
         return preset.colorPreset ?? null
       }
@@ -3286,10 +3294,25 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const preset = await presetUseCase.findById(presetId)
     if (preset) {
       selectedPresetId.value = presetId
+      // Apply preset using Usecase (updates repository with config and colors)
+      applyPresetUsecase(preset, heroViewRepository)
+      // Update editor state from config
       await fromHeroViewConfig(preset.config)
       return preset.colorPreset ?? null
     }
     return null
+  }
+
+  // Preset export adapter (browser file download)
+  const presetExportAdapter = createBrowserPresetExporter()
+
+  /**
+   * Export current configuration as a preset JSON file
+   * @param options - Export options (id, name)
+   * @returns The exported preset
+   */
+  const exportPreset = (options: ExportPresetOptions = {}) => {
+    return exportPresetUsecase(heroViewRepository, presetExportAdapter, options)
   }
 
   // ============================================================
@@ -3443,6 +3466,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     selectedPresetId,
     loadPresets,
     applyPreset,
+    exportPreset,
 
     // Usecases
     heroViewRepository,

@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import type { LayerNode, LayerNodeType, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
 import { flattenLayerNodes, isLayer } from '../../modules/HeroScene'
-import DraggableLayerNode from './DraggableLayerNode.vue'
+import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
 import { useLayerDragDrop } from './useLayerDragDrop'
 import { useLayerSelection } from '../../composables/useLayerSelection'
 
@@ -54,10 +54,10 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'move-layer': [sourceId: string, targetId: string, position: DropPosition]
+  'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
   'remove-foreground-element': [elementId: string]
-  'layer-contextmenu': [layerId: string, event: MouseEvent]
   'foreground-contextmenu': [elementId: string, event: MouseEvent]
 }>()
 
@@ -88,8 +88,8 @@ const handleDrop = (sourceId: string, targetId: string, position: DropPosition) 
   endDrag()
 }
 
-const handleLayerContextMenu = (layerId: string, event: MouseEvent) => {
-  emit('layer-contextmenu', layerId, event)
+const handleLayerContextMenu = (layerId: string, event: MouseEvent, targetType: ContextTargetType) => {
+  emit('layer-contextmenu', layerId, event, targetType)
 }
 
 // ============================================================
@@ -212,12 +212,12 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
           @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
+          @contextmenu="handleLayerContextMenu"
           @drag-start="handleDragStart"
           @drag-end="handleDragEnd"
           @drag-over="handleDragOver"
           @drag-leave="handleDragLeave"
           @drop="handleDrop"
-          @contextmenu="handleLayerContextMenu"
         />
       </div>
     </div>
