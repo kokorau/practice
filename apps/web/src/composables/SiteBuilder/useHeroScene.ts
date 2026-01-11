@@ -103,7 +103,6 @@ import { NEUTRAL_KEYS, selectNeutralByHistogram, APCA_INK_TARGETS, type NeutralE
 import { selectInkForSurface } from '../../modules/SemanticColorPalette/Infra'
 import type { InkRole } from '../../modules/SemanticColorPalette/Domain'
 import { generateLuminanceMap } from '../../modules/ContrastChecker'
-import { fetchUnsplashPhotoUrl } from '../../modules/PhotoUnsplash/Infra/fetchUnsplashPhoto'
 import {
   type LayerFilterConfig,
   type HeroSceneEditorState,
@@ -124,6 +123,8 @@ import {
   type TextLayerConfig,
   type Object3DRendererPort,
   type HeroViewRepository,
+  type FilterType,
+  type SurfaceParamsUpdate,
   createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
@@ -146,6 +147,28 @@ import {
   updateTextLayerRotation,
   createHeroViewInMemoryRepository,
   createMaskUsecase,
+  createBackgroundSurfaceUsecase,
+  createUnsplashImageUploadAdapter,
+  // Color UseCases
+  updateBrandColor,
+  updateAccentColor,
+  updateFoundationColor,
+  applyColorPreset,
+  // Layer UseCases
+  addLayer as addLayerUsecase,
+  removeLayer as removeLayerUsecase,
+  moveLayer as moveLayerUsecase,
+  toggleExpand as toggleExpandUsecase,
+  toggleVisibility as toggleVisibilityUsecase,
+  updateLayer as updateLayerUsecase,
+  // Preset UseCases
+  exportPreset as exportPresetFn,
+  createPreset as createPresetFn,
+  type PresetExportPort,
+  // ForegroundElement Usecase
+  createForegroundElementUsecase,
+  type ForegroundConfigPort,
+  type SelectionPort,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -315,10 +338,129 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   let customMaskBitmap: ImageBitmap | null = null
 
   // ============================================================
-  // HeroViewRepository & MaskUsecase
+  // HeroViewRepository & Usecases
   // ============================================================
   const heroViewRepository = createHeroViewInMemoryRepository()
   const maskUsecase = createMaskUsecase({ repository: heroViewRepository })
+  const imageUploadAdapter = createUnsplashImageUploadAdapter()
+  const backgroundSurfaceUsecase = createBackgroundSurfaceUsecase({
+    repository: heroViewRepository,
+    imageUpload: imageUploadAdapter,
+  })
+
+  // ============================================================
+  // Color Usecase wrappers
+  // ============================================================
+  const colorUsecase = {
+    updateBrandColor: (params: { hue?: number; saturation?: number; value?: number }) => {
+      updateBrandColor(params, heroViewRepository)
+    },
+    updateAccentColor: (params: { hue?: number; saturation?: number; value?: number }) => {
+      updateAccentColor(params, heroViewRepository)
+    },
+    updateFoundationColor: (params: { hue?: number; saturation?: number; value?: number }) => {
+      updateFoundationColor(params, heroViewRepository)
+    },
+    applyColorPreset: (preset: {
+      id: string
+      name: string
+      description: string
+      brand: { hue: number; saturation: number; value: number }
+      accent: { hue: number; saturation: number; value: number }
+      foundation: { hue: number; saturation: number; value: number }
+    }) => {
+      applyColorPreset(preset, heroViewRepository)
+    },
+  }
+
+  // ============================================================
+  // Layer Usecase wrappers
+  // ============================================================
+  const layerUsecase = {
+    addLayer: (layer: LayerNodeConfig, index?: number) => addLayerUsecase(layer, heroViewRepository, index),
+    removeLayer: (layerId: string) => removeLayerUsecase(layerId, heroViewRepository),
+    moveLayer: (sourceId: string, targetId: string, position: 'before' | 'after' | 'into') =>
+      moveLayerUsecase(sourceId, targetId, position, heroViewRepository),
+    toggleExpand: (layerId: string) => toggleExpandUsecase(layerId, heroViewRepository),
+    toggleVisibility: (layerId: string) => toggleVisibilityUsecase(layerId, heroViewRepository),
+    updateLayer: (layerId: string, updates: Partial<LayerNodeConfig>) => updateLayerUsecase(layerId, updates, heroViewRepository),
+  }
+
+  // ============================================================
+  // Preset Usecase wrappers
+  // ============================================================
+  const presetExportPort: PresetExportPort = {
+    downloadAsJson: (preset: HeroViewPreset) => {
+      const blob = new Blob([JSON.stringify(preset, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${preset.name || 'preset'}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    },
+  }
+
+  const presetUsecase = {
+    exportPreset: (options?: { id?: string; name?: string }) => {
+      return exportPresetFn(heroViewRepository, presetExportPort, options)
+    },
+    createPreset: (options?: { id?: string; name?: string }) => {
+      return createPresetFn(heroViewRepository, options)
+    },
+  }
+
+  // ============================================================
+  // ForegroundElement Usecase
+  // ============================================================
+  // Selection state for foreground elements
+  const selectedForegroundElementId = ref<string | null>(null)
+
+  // ForegroundElement usecase will be initialized after foregroundConfig is available
+  // We'll create a lazy initialization pattern
+  let _foregroundElementUsecase: ReturnType<typeof createForegroundElementUsecase> | null = null
+
+  const getForegroundElementUsecase = () => {
+    if (!_foregroundElementUsecase) {
+      // Lazy initialization - foregroundConfig is defined later in the file
+      // This will be properly initialized when first accessed
+      const foregroundConfigPort: ForegroundConfigPort = {
+        get: () => foregroundConfig.value,
+        set: (config: ForegroundLayerConfig) => {
+          foregroundConfig.value = config
+        },
+      }
+
+      const selectionPort: SelectionPort = {
+        getSelectedId: () => selectedForegroundElementId.value,
+        setSelectedId: (id: string | null) => {
+          selectedForegroundElementId.value = id
+        },
+        clearCanvasSelection: () => {
+          // Clear canvas layer selection when foreground element is selected
+          selectedFilterLayerId.value = null
+        },
+      }
+
+      _foregroundElementUsecase = createForegroundElementUsecase({
+        foregroundConfig: foregroundConfigPort,
+        selection: selectionPort,
+      })
+    }
+    return _foregroundElementUsecase
+  }
+
+  // Expose foreground element usecase methods
+  const foregroundElementUsecase = {
+    getSelectedElement: () => getForegroundElementUsecase().getSelectedElement(),
+    selectElement: (elementId: string | null) => getForegroundElementUsecase().selectElement(elementId),
+    addElement: (type: 'title' | 'description') => getForegroundElementUsecase().addElement(type),
+    removeElement: (elementId: string) => getForegroundElementUsecase().removeElement(elementId),
+    updateElement: (elementId: string, updates: { position?: string; content?: string; fontId?: string; fontSize?: number; colorKey?: string }) => getForegroundElementUsecase().updateElement(elementId, updates as Parameters<ReturnType<typeof createForegroundElementUsecase>['updateElement']>[1]),
+    updateSelectedElement: (updates: { position?: string; content?: string; fontId?: string; fontSize?: number; colorKey?: string }) => getForegroundElementUsecase().updateSelectedElement(updates as Parameters<ReturnType<typeof createForegroundElementUsecase>['updateSelectedElement']>[0]),
+  }
 
   // ============================================================
   // Custom Shape/Surface Params State
@@ -462,7 +604,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // gradientGrain is added after midgroundTexturePatterns, so check if idx is beyond length
     const gradientGrainIndex = midgroundTexturePatterns.length
     if (idx === gradientGrainIndex) {
-      // GradientGrain selected - initialize with defaults
+      // GradientGrain selected - initialize with defaults using dynamic colors
       const defaults: GradientGrainSurfaceParams = {
         depthMapType: 'linear' as const,
         angle: 90,
@@ -474,8 +616,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         perlinOctaves: 4,
         perlinContrast: 1,
         perlinOffset: 0,
-        colorA: [0, 0, 0, 1],
-        colorB: [1, 1, 1, 1],
+        colorA: midgroundTextureColor1.value,
+        colorB: midgroundTextureColor2.value,
         seed: Math.floor(Math.random() * 10000),
         sparsity: 0.75,
         curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
@@ -515,11 +657,25 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1],
       }
       customBackgroundSurfaceParams.value = { type: 'gradientGrain', ...defaults }
+      // Note: gradientGrain is not supported by BackgroundSurfaceUsecase yet
       return
     }
     const preset = surfacePresets[idx]
     if (preset) {
-      customBackgroundSurfaceParams.value = extractBackgroundSurfaceParams(preset.params)
+      const params = extractBackgroundSurfaceParams(preset.params)
+      customBackgroundSurfaceParams.value = params
+      // Usecaseを通じてRepositoryを更新
+      if (params.type === 'solid') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'solid' })
+      } else if (params.type === 'stripe') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle })
+      } else if (params.type === 'grid') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize })
+      } else if (params.type === 'polkaDot') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
+      } else if (params.type === 'checker') {
+        backgroundSurfaceUsecase.selectSurface({ type: 'checker', cellSize: params.cellSize, angle: params.angle })
+      }
     } else {
       customBackgroundSurfaceParams.value = null
     }
@@ -545,8 +701,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Update custom background surface params
    */
   const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => {
-    if (!customBackgroundSurfaceParams.value || customBackgroundSurfaceParams.value.type === 'solid') return
+    if (!customBackgroundSurfaceParams.value) return
+    const type = customBackgroundSurfaceParams.value.type
+    if (type === 'solid' || type === 'gradientGrain') return
+
+    // View層のステート更新
     customBackgroundSurfaceParams.value = { ...customBackgroundSurfaceParams.value, ...updates } as CustomBackgroundSurfaceParams
+
+    // Usecaseを通じてRepositoryを更新
+    backgroundSurfaceUsecase.updateSurfaceParams({ type, ...updates } as SurfaceParamsUpdate)
   }
 
   // ============================================================
@@ -590,6 +753,65 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         l.id === layerId ? { ...l, filters: updated } : l
       ),
     }
+  }
+
+  // ============================================================
+  // Filter Usecase Wrappers
+  // Provides Usecase-pattern API for filter operations
+  // ============================================================
+
+  /**
+   * Select filter type (exclusive selection)
+   * Uses FilterUsecase pattern internally
+   */
+  const selectFilterType = (layerId: string, type: FilterType) => {
+    updateLayerFilters(layerId, {
+      vignette: { enabled: type === 'vignette' },
+      chromaticAberration: { enabled: type === 'chromaticAberration' },
+      dotHalftone: { enabled: type === 'dotHalftone' },
+      lineHalftone: { enabled: type === 'lineHalftone' },
+    })
+  }
+
+  /**
+   * Get current filter type for a layer
+   */
+  const getFilterType = (layerId: string): FilterType => {
+    const filters = layerFilterConfigs.value.get(layerId)
+    if (!filters) return 'void'
+    if (filters.vignette.enabled) return 'vignette'
+    if (filters.chromaticAberration.enabled) return 'chromaticAberration'
+    if (filters.dotHalftone.enabled) return 'dotHalftone'
+    if (filters.lineHalftone.enabled) return 'lineHalftone'
+    return 'void'
+  }
+
+  /**
+   * Update vignette parameters
+   */
+  const updateVignetteParams = (layerId: string, params: Partial<{ intensity: number; radius: number; softness: number }>) => {
+    updateLayerFilters(layerId, { vignette: params })
+  }
+
+  /**
+   * Update chromatic aberration parameters
+   */
+  const updateChromaticAberrationParams = (layerId: string, params: Partial<{ intensity: number }>) => {
+    updateLayerFilters(layerId, { chromaticAberration: params })
+  }
+
+  /**
+   * Update dot halftone parameters
+   */
+  const updateDotHalftoneParams = (layerId: string, params: Partial<{ dotSize: number; spacing: number; angle: number }>) => {
+    updateLayerFilters(layerId, { dotHalftone: params })
+  }
+
+  /**
+   * Update line halftone parameters
+   */
+  const updateLineHalftoneParams = (layerId: string, params: Partial<{ lineWidth: number; spacing: number; angle: number }>) => {
+    updateLayerFilters(layerId, { lineHalftone: params })
   }
 
   // ============================================================
@@ -1965,6 +2187,27 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                   color: color1,
                 })
               }
+              // GradientGrain type
+              if (params.type === 'gradientGrain') {
+                return createGradientGrainSpec({
+                  depthMapType: params.depthMapType,
+                  angle: params.angle,
+                  centerX: params.centerX,
+                  centerY: params.centerY,
+                  radialStartAngle: params.radialStartAngle,
+                  radialSweepAngle: params.radialSweepAngle,
+                  perlinScale: params.perlinScale,
+                  perlinOctaves: params.perlinOctaves,
+                  perlinSeed: params.seed,
+                  perlinContrast: params.perlinContrast,
+                  perlinOffset: params.perlinOffset,
+                  colorA: color1,
+                  colorB: color2,
+                  seed: params.seed,
+                  sparsity: params.sparsity,
+                  curvePoints: params.curvePoints,
+                }, viewport)
+              }
               return null
             }
 
@@ -2182,6 +2425,35 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return null
   }
 
+  /**
+   * Create a GradientGrain spec for thumbnail rendering
+   */
+  const createGradientGrainThumbnailSpec = (
+    params: CustomSurfaceParams & { type: 'gradientGrain' },
+    color1: RGBA,
+    color2: RGBA,
+    viewport: Viewport
+  ): TextureRenderSpec => {
+    return createGradientGrainSpec({
+      depthMapType: params.depthMapType,
+      angle: params.angle,
+      centerX: params.centerX,
+      centerY: params.centerY,
+      radialStartAngle: params.radialStartAngle,
+      radialSweepAngle: params.radialSweepAngle,
+      perlinScale: params.perlinScale,
+      perlinOctaves: params.perlinOctaves,
+      perlinSeed: params.seed,
+      perlinContrast: params.perlinContrast,
+      perlinOffset: params.perlinOffset,
+      colorA: color1,
+      colorB: color2,
+      seed: params.seed,
+      sparsity: params.sparsity,
+      curvePoints: params.curvePoints,
+    }, viewport)
+  }
+
   const getPatterns = (section: SectionType): (TexturePattern | MaskPattern)[] => {
     if (section === 'background') return texturePatterns
     if (section === 'clip-group-shape') return maskPatterns
@@ -2201,11 +2473,48 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Handle clip-group-surface section separately
     if (section === 'clip-group-surface') {
+      const gradientGrainIndex = midgroundTexturePatterns.length
       for (let i = 0; i < thumbnailRenderers.length; i++) {
         const renderer = thumbnailRenderers[i]
+        if (!renderer) continue
+
+        const viewport = renderer.getViewport()
+
+        // Handle GradientGrain thumbnail (last index after patterns)
+        if (i === gradientGrainIndex) {
+          // Use current customSurfaceParams if it's gradientGrain, otherwise use defaults
+          const params = customSurfaceParams.value?.type === 'gradientGrain'
+            ? customSurfaceParams.value
+            : {
+                type: 'gradientGrain' as const,
+                depthMapType: 'linear' as const,
+                angle: 90,
+                centerX: 0.5,
+                centerY: 0.5,
+                radialStartAngle: 0,
+                radialSweepAngle: 360,
+                perlinScale: 4,
+                perlinOctaves: 4,
+                perlinContrast: 1,
+                perlinOffset: 0,
+                colorA: midgroundTextureColor1.value,
+                colorB: midgroundTextureColor2.value,
+                seed: 12345,
+                sparsity: 0.75,
+                curvePoints: [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1] as number[],
+              }
+          const spec = createGradientGrainThumbnailSpec(
+            params,
+            midgroundTextureColor1.value,
+            midgroundTextureColor2.value,
+            viewport
+          )
+          renderer.render(spec)
+          continue
+        }
+
         const pattern = midgroundTexturePatterns[i]
-        if (renderer && pattern) {
-          const viewport = renderer.getViewport()
+        if (pattern) {
           const spec = createMidgroundThumbnailSpec(
             pattern,
             midgroundTextureColor1.value,
@@ -2352,6 +2661,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
 
   const setBackgroundImage = async (file: File) => {
+    // View層のクリーンアップ
     if (customBackgroundImage.value) {
       URL.revokeObjectURL(customBackgroundImage.value)
     }
@@ -2360,15 +2670,21 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       customBackgroundBitmap = null
     }
 
+    // View層のステート更新
     customBackgroundFile.value = file
-    customBackgroundImage.value = URL.createObjectURL(file)
+    const imageId = URL.createObjectURL(file)
+    customBackgroundImage.value = imageId
     customBackgroundBitmap = await createImageBitmap(file)
+
+    // Usecaseを通じてRepositoryを更新
+    backgroundSurfaceUsecase.selectSurface({ type: 'image', imageId })
 
     syncLayerConfigs()
     await renderScene()
   }
 
   const clearBackgroundImage = () => {
+    // View層のクリーンアップ
     if (customBackgroundImage.value) {
       URL.revokeObjectURL(customBackgroundImage.value)
     }
@@ -2379,6 +2695,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customBackgroundFile.value = null
     customBackgroundImage.value = null
 
+    // Usecaseを通じてRepositoryを更新
+    backgroundSurfaceUsecase.clearImage()
+
     syncLayerConfigs()
     renderScene()
   }
@@ -2388,10 +2707,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const loadRandomBackgroundImage = async (query?: string) => {
     isLoadingRandomBackground.value = true
     try {
-      const url = await fetchUnsplashPhotoUrl({ query })
-      const response = await fetch(url)
-      const blob = await response.blob()
-      const file = new File([blob], `unsplash-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      // ImageUploadAdapterでUnsplashからファイル取得
+      const file = await imageUploadAdapter.fetchRandom(query)
       await setBackgroundImage(file)
     } finally {
       isLoadingRandomBackground.value = false
@@ -2439,10 +2756,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const loadRandomMaskImage = async (query?: string) => {
     isLoadingRandomMask.value = true
     try {
-      const url = await fetchUnsplashPhotoUrl({ query })
-      const response = await fetch(url)
-      const blob = await response.blob()
-      const file = new File([blob], `unsplash-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      // ImageUploadAdapterでUnsplashからファイル取得
+      const file = await imageUploadAdapter.fetchRandom(query)
       await setMaskImage(file)
     } finally {
       isLoadingRandomMask.value = false
@@ -2515,6 +2830,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     () => renderScene(),
     { deep: true }
   )
+
+  // Background color key watchers - sync with Usecase when changed
+  watch(backgroundColorKey1, (newValue) => {
+    if (isLoadingFromConfig) return
+    backgroundSurfaceUsecase.updateColorKey('primary', newValue as HeroPrimitiveKey)
+  })
+
+  watch(backgroundColorKey2, (newValue) => {
+    if (isLoadingFromConfig) return
+    backgroundSurfaceUsecase.updateColorKey('secondary', newValue as HeroPrimitiveKey | 'auto')
+  })
 
   onUnmounted(() => {
     destroyPreview()
@@ -3085,6 +3411,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     selectedLayerFilters,
     layerFilterConfigs,
     updateLayerFilters,
+    // Filter Usecase API
+    selectFilterType,
+    getFilterType,
+    updateVignetteParams,
+    updateChromaticAberrationParams,
+    updateDotHalftoneParams,
+    updateLineHalftoneParams,
 
     // Custom shape/surface params
     customMaskShapeParams,
@@ -3135,8 +3468,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     applyPreset,
     exportPreset,
 
-    // Usecases (for future migration)
+    // Usecases
     heroViewRepository,
     maskUsecase,
+    backgroundSurfaceUsecase,
+    colorUsecase,
+    layerUsecase,
+    foregroundElementUsecase,
+    presetUsecase,
+    selectedForegroundElementId,
   }
 }

@@ -46,6 +46,13 @@ export interface HeroViewRepository {
    */
   subscribe(subscriber: HeroViewSubscriber): HeroViewUnsubscribe
 
+  /**
+   * レイヤーIDで検索
+   * @param layerId レイヤーID
+   * @returns 見つかったレイヤー、なければundefined
+   */
+  findLayer(layerId: string): LayerNodeConfig | undefined
+
   // ============================================================
   // セクション単位の部分更新
   // ============================================================

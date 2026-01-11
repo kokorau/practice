@@ -54,10 +54,11 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'move-layer': [sourceId: string, targetId: string, position: DropPosition]
-  'layer-contextmenu': [layerId: string, x: number, y: number]
+  'layer-contextmenu': [layerId: string, event: MouseEvent]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
   'remove-foreground-element': [elementId: string]
+  'foreground-contextmenu': [elementId: string, event: MouseEvent]
 }>()
 
 // ============================================================
@@ -85,6 +86,10 @@ const handleDragLeave = (nodeId: string) => {
 const handleDrop = (sourceId: string, targetId: string, position: DropPosition) => {
   emit('move-layer', sourceId, targetId, position)
   endDrag()
+}
+
+const handleLayerContextMenu = (layerId: string, event: MouseEvent) => {
+  emit('layer-contextmenu', layerId, event)
 }
 
 // ============================================================
@@ -149,6 +154,12 @@ const handleRemoveForegroundElement = (elementId: string) => {
 const handleSelectForegroundElement = (elementId: string) => {
   emit('select-foreground-element', elementId)
 }
+
+const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
+  event.preventDefault()
+  event.stopPropagation()
+  emit('foreground-contextmenu', elementId, event)
+}
 </script>
 
 <template>
@@ -201,7 +212,7 @@ const handleSelectForegroundElement = (elementId: string) => {
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
           @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
-          @contextmenu="(id: string, x: number, y: number) => emit('layer-contextmenu', id, x, y)"
+          @contextmenu="handleLayerContextMenu"
           @drag-start="handleDragStart"
           @drag-end="handleDragEnd"
           @drag-over="handleDragOver"
@@ -249,6 +260,7 @@ const handleSelectForegroundElement = (elementId: string) => {
           class="html-layer-item"
           :class="{ selected: selectedForegroundElementId === element.id }"
           @click="handleSelectForegroundElement(element.id)"
+          @contextmenu="handleForegroundContextMenu(element.id, $event)"
         >
           <span class="material-icons html-layer-icon">{{ getElementIcon(element.type) }}</span>
           <span class="html-layer-name">{{ element.type === 'title' ? 'Title' : 'Description' }}</span>

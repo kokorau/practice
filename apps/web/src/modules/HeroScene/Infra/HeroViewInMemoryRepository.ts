@@ -5,7 +5,8 @@
  * subscribeパターンで変更通知をサポート
  */
 
-import type { HeroViewRepository } from '../Domain/repository/HeroViewRepository'
+import type { HeroViewRepository as DomainHeroViewRepository } from '../Domain/repository/HeroViewRepository'
+import type { LayerUpdate } from '../Application/ports/HeroViewRepository'
 import type {
   HeroViewConfig,
   LayerNodeConfig,
@@ -83,7 +84,7 @@ const removeLayerFromTree = (
  */
 export const createHeroViewInMemoryRepository = (
   initialConfig?: HeroViewConfig
-): HeroViewRepository => {
+): DomainHeroViewRepository => {
   let config = initialConfig ?? createDefaultHeroViewConfig()
   const subscribers = new Set<(config: HeroViewConfig) => void>()
 
@@ -163,7 +164,7 @@ export const createHeroViewInMemoryRepository = (
 
       config = {
         ...config,
-        layers: updateLayerInTree(config.layers, layerId, updates),
+        layers: updateLayerInTree(config.layers, layerId, updates as LayerUpdate),
       }
       notifySubscribers()
     },

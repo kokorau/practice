@@ -330,16 +330,45 @@ export {
   getHeroView,
   setHeroView,
   subscribeHeroView,
+  // Color UseCases
+  updateBrandColor,
+  updateAccentColor,
+  updateFoundationColor,
+  applyColorPreset,
+  type UpdateBrandColorParams,
+  type UpdateAccentColorParams,
+  type UpdateFoundationColorParams,
+  // Layer UseCases
+  toggleExpand,
+  toggleVisibility,
+  addLayer,
+  removeLayer,
+  moveLayer,
+  updateLayer,
+  // Preset UseCases
+  applyPreset,
+  applyPreset as applyPresetUsecase,
+  exportPreset,
+  exportPreset as exportPresetUsecase,
+  createPreset,
+  // Filter UseCases
+  selectFilterType,
+  getFilterType,
+  updateVignetteParams,
+  updateChromaticAberrationParams,
+  updateDotHalftoneParams,
+  updateLineHalftoneParams,
+  getVignetteParams,
+  getChromaticAberrationParams,
+  getDotHalftoneParams,
+  getLineHalftoneParams,
+  type FilterType,
   // TextLayer UseCases
   updateTextLayerText,
   updateTextLayerFont,
   updateTextLayerColor,
   updateTextLayerPosition,
   updateTextLayerRotation,
-  // Preset UseCases
-  applyPreset as applyPresetUsecase,
-  exportPreset as exportPresetUsecase,
-  createPreset,
 } from './usecase'
 
 // TextLayer UseCase types
@@ -374,4 +403,6 @@ export {
   createObject3DRenderer,
   // Config-based rendering
   renderHeroConfig,
+  // ImageUpload Adapter
+  createUnsplashImageUploadAdapter,
 } from './Infra'
