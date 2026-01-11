@@ -40,6 +40,8 @@ const emit = defineEmits<{
   'drag-over': [nodeId: string, position: DropPosition, event: DragEvent]
   'drag-leave': [nodeId: string]
   drop: [sourceId: string, targetId: string, position: DropPosition]
+  // Context menu event
+  contextmenu: [nodeId: string, event: MouseEvent]
 }>()
 
 // ============================================================
@@ -153,6 +155,12 @@ const handleSelect = () => {
   emit('select', props.node.id)
 }
 
+const handleContextMenu = (e: MouseEvent) => {
+  e.preventDefault()
+  e.stopPropagation()
+  emit('contextmenu', props.node.id, e)
+}
+
 const handleToggleExpand = (e: Event) => {
   e.stopPropagation()
   emit('toggle-expand', props.node.id)
@@ -256,6 +264,7 @@ const handleDrop = (e: DragEvent) => {
       :style="indentStyle"
       :draggable="isDraggable"
       @click="handleSelect"
+      @contextmenu="handleContextMenu"
       @dragstart="handleDragStart"
       @dragend="handleDragEnd"
       @dragover="handleDragOver"
@@ -381,6 +390,7 @@ const handleDrop = (e: DragEvent) => {
         @drag-over="(id: string, pos: DropPosition, e: DragEvent) => emit('drag-over', id, pos, e)"
         @drag-leave="(id: string) => emit('drag-leave', id)"
         @drop="(src: string, tgt: string, pos: DropPosition) => emit('drop', src, tgt, pos)"
+        @contextmenu="(id: string, e: MouseEvent) => emit('contextmenu', id, e)"
       />
     </template>
   </div>

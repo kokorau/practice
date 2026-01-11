@@ -65,6 +65,7 @@ const emit = defineEmits<{
   (e: 'add-layer', type: LayerType): void
   (e: 'remove-layer', layerId: string): void
   (e: 'move-layer', sourceId: string, targetId: string, position: DropPosition): void
+  (e: 'layer-contextmenu', layerId: string, event: MouseEvent): void
   // Foreground events
   (e: 'select-foreground-element', elementId: string): void
   (e: 'add-foreground-element', type: ForegroundElementType): void
@@ -275,6 +276,7 @@ const selectedPresetName = computed(() => {
           @add-layer="(type: LayerType) => emit('add-layer', type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @move-layer="(src: string, tgt: string, pos: DropPosition) => emit('move-layer', src, tgt, pos)"
+          @layer-contextmenu="(id: string, e: MouseEvent) => emit('layer-contextmenu', id, e)"
           @select-foreground-element="(id: string) => emit('select-foreground-element', id)"
           @add-foreground-element="(type: ForegroundElementType) => emit('add-foreground-element', type)"
           @remove-foreground-element="(id: string) => emit('remove-foreground-element', id)"

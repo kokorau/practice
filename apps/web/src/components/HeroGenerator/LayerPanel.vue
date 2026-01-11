@@ -57,6 +57,7 @@ const emit = defineEmits<{
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
   'remove-foreground-element': [elementId: string]
+  'layer-contextmenu': [layerId: string, event: MouseEvent]
 }>()
 
 // ============================================================
@@ -84,6 +85,10 @@ const handleDragLeave = (nodeId: string) => {
 const handleDrop = (sourceId: string, targetId: string, position: DropPosition) => {
   emit('move-layer', sourceId, targetId, position)
   endDrag()
+}
+
+const handleLayerContextMenu = (layerId: string, event: MouseEvent) => {
+  emit('layer-contextmenu', layerId, event)
 }
 
 // ============================================================
@@ -205,6 +210,7 @@ const handleSelectForegroundElement = (elementId: string) => {
           @drag-over="handleDragOver"
           @drag-leave="handleDragLeave"
           @drop="handleDrop"
+          @contextmenu="handleLayerContextMenu"
         />
       </div>
     </div>
