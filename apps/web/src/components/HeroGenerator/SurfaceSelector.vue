@@ -4,14 +4,24 @@
  *
  * 共通のSurface選択UI（画像アップロード + テクスチャパターン）
  * Background, Mask Surface両方で使用
+ *
+ * previewMode:
+ * - 'pattern': 従来のPatternThumbnailを使用
+ * - 'hero': HeroPreviewThumbnailで完全なHeroViewプレビューを表示
  */
 
+import { computed } from 'vue'
 import PatternThumbnail, { type SpecCreator } from './PatternThumbnail.vue'
+import HeroPreviewThumbnail from './HeroPreviewThumbnail.vue'
+import type { HeroViewConfig, SurfaceConfig } from '../../modules/HeroScene'
+import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
 
 export interface PatternItem {
   label: string
   type?: string
   createSpec: SpecCreator
+  /** Surface config for hero preview mode */
+  surfaceConfig?: SurfaceConfig
 }
 
 const emit = defineEmits<{
@@ -33,6 +43,12 @@ const props = defineProps<{
   // オプション: Random Photo ボタンを表示するか
   showRandomButton?: boolean
   isLoadingRandom?: boolean
+  // Hero preview mode
+  previewMode?: 'pattern' | 'hero'
+  baseConfig?: HeroViewConfig
+  palette?: PrimitivePalette
+  // Target layer type for preview ('base' for Background, 'surface' for Main Group)
+  targetLayerType?: 'base' | 'surface'
 }>()
 
 const handleFileChange = (e: Event) => {
@@ -49,6 +65,44 @@ const handleSelectPattern = (index: number | null) => {
   }
   emit('select-pattern', index)
 }
+
+// Check if hero preview mode is enabled
+const isHeroMode = computed(() => props.previewMode === 'hero' && props.baseConfig && props.palette)
+
+/**
+ * Create a preview config with a specific surface
+ * Filters to show only the target layer type
+ */
+const createSurfacePreviewConfig = (base: HeroViewConfig, surface: SurfaceConfig): HeroViewConfig => {
+  const targetType = props.targetLayerType ?? 'base'
+
+  return {
+    ...base,
+    layers: base.layers
+      .filter(layer => layer.type === targetType)
+      .map(layer => ({ ...layer, surface }) as typeof layer),
+  }
+}
+
+// Preview configs for each pattern (hero mode only)
+const previewConfigs = computed(() => {
+  if (!props.baseConfig) return null
+
+  const configs: (HeroViewConfig | null)[] = props.patterns.map(pattern => {
+    if (pattern.surfaceConfig) {
+      return createSurfacePreviewConfig(props.baseConfig!, pattern.surfaceConfig)
+    }
+    return null
+  })
+
+  return configs
+})
+
+// Solid preview config (hero mode only)
+const solidPreviewConfig = computed(() => {
+  if (!props.baseConfig) return null
+  return createSurfacePreviewConfig(props.baseConfig, { type: 'solid' } as SurfaceConfig)
+})
 </script>
 
 <template>
@@ -92,7 +146,12 @@ const handleSelectPattern = (index: number | null) => {
         :class="{ active: !customImage && selectedIndex === null }"
         @click="handleSelectPattern(null)"
       >
-        <span class="pattern-none">Solid</span>
+        <HeroPreviewThumbnail
+          v-if="isHeroMode && solidPreviewConfig && palette"
+          :config="solidPreviewConfig"
+          :palette="palette"
+        />
+        <span v-else class="pattern-none">Solid</span>
         <span class="pattern-label">べた塗り</span>
       </button>
 
@@ -104,7 +163,12 @@ const handleSelectPattern = (index: number | null) => {
         :class="{ active: !customImage && selectedIndex === i }"
         @click="handleSelectPattern(i)"
       >
-        <PatternThumbnail :create-spec="pattern.createSpec" />
+        <HeroPreviewThumbnail
+          v-if="isHeroMode && previewConfigs && previewConfigs[i] && palette"
+          :config="previewConfigs[i]!"
+          :palette="palette"
+        />
+        <PatternThumbnail v-else :create-spec="pattern.createSpec" />
         <span class="pattern-label">{{ pattern.label }}</span>
       </button>
     </div>

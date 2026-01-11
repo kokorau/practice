@@ -17,7 +17,7 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { LayerNode, HeroPrimitiveKey } from '../modules/HeroScene'
+import type { LayerNode, HeroPrimitiveKey, SurfaceConfig } from '../modules/HeroScene'
 import {
   createGroupLayerNode,
   createSurfaceLayerNode,
@@ -58,7 +58,7 @@ import {
   useHeroScene,
   type GridPosition,
 } from '../composables/SiteBuilder'
-import { createGradientGrainSpec, createDefaultGradientGrainParams, type DepthMapType } from '@practice/texture'
+import { createGradientGrainSpec, createDefaultGradientGrainParams, getSurfacePresets, type DepthMapType } from '@practice/texture'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
@@ -275,15 +275,21 @@ const currentLineHalftoneConfig = computed({
   },
 })
 
-// Convert texture patterns to SurfaceSelector format with createSpec
+// Get surface presets for surfaceConfig mapping
+const surfacePresets = getSurfacePresets()
+
+// Convert texture patterns to SurfaceSelector format with createSpec and surfaceConfig
 const backgroundPatterns = computed(() => {
-  const textureItems = texturePatterns.map((p) => ({
+  const textureItems = texturePatterns.map((p, index) => ({
     label: p.label,
     createSpec: (viewport: { width: number; height: number }) =>
       p.createSpec(textureColor1.value, textureColor2.value, viewport),
+    // Map surfaceConfig from presets (same order as texturePatterns)
+    // Cast to SurfaceConfig since SurfacePresetParams is compatible with SurfaceConfig
+    surfaceConfig: surfacePresets[index]?.params as SurfaceConfig | undefined,
   }))
 
-  // Add gradient grain option
+  // Add gradient grain option (no hero preview support for now)
   const defaultGradientParams = createDefaultGradientGrainParams()
   const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
   const gradientGrainItem = {
@@ -297,19 +303,24 @@ const backgroundPatterns = computed(() => {
         colorB: textureColor2.value,
         curvePoints: defaultCurvePoints,
       }, viewport),
+    // Gradient grain doesn't have a standard surfaceConfig
+    surfaceConfig: undefined,
   }
 
   return [...textureItems, gradientGrainItem]
 })
 
 const maskSurfacePatterns = computed(() => {
-  const textureItems = midgroundTexturePatterns.map((p) => ({
+  const textureItems = midgroundTexturePatterns.map((p, index) => ({
     label: p.label,
     createSpec: (viewport: { width: number; height: number }) =>
       createMidgroundThumbnailSpec(p, midgroundTextureColor1.value, midgroundTextureColor2.value, viewport),
+    // Map surfaceConfig from presets (same order as midgroundTexturePatterns)
+    // Cast to SurfaceConfig since SurfacePresetParams is compatible with SurfaceConfig
+    surfaceConfig: surfacePresets[index]?.params as SurfaceConfig | undefined,
   }))
 
-  // Add gradient grain option (same as background)
+  // Add gradient grain option (no hero preview support for now)
   const defaultGradientParams = createDefaultGradientGrainParams()
   const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
   const gradientGrainItem = {
@@ -323,6 +334,8 @@ const maskSurfacePatterns = computed(() => {
         colorB: midgroundTextureColor2.value,
         curvePoints: defaultCurvePoints,
       }, viewport),
+    // Gradient grain doesn't have a standard surfaceConfig
+    surfaceConfig: undefined,
   }
 
   return [...textureItems, gradientGrainItem]
@@ -629,6 +642,11 @@ const exportPreset = () => {
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
+
+// ============================================================
+// Hero Preview Config (for panel previews)
+// ============================================================
+const currentHeroConfig = computed(() => toHeroViewConfig())
 
 // ============================================================
 // Tab State
@@ -1164,6 +1182,8 @@ const handleGlobalContextMenu = (e: MouseEvent) => {
           :custom-image="customBackgroundImage"
           :custom-file-name="customBackgroundFile?.name ?? null"
           :is-loading-random="isLoadingRandomBackground"
+          preview-mode="hero"
+          :base-config="currentHeroConfig"
           @update:color-key1="(v) => { if (v !== 'auto') backgroundColorKey1 = v }"
           @update:color-key2="backgroundColorKey2 = $event"
           @update:surface-params="updateBackgroundSurfaceParams($event)"
@@ -1183,6 +1203,9 @@ const handleGlobalContextMenu = (e: MouseEvent) => {
           :mask-outer-color="maskOuterColor"
           :mask-inner-color="maskInnerColor"
           :create-background-thumbnail-spec="createBackgroundThumbnailSpec"
+          preview-mode="hero"
+          :base-config="currentHeroConfig"
+          :palette="primitivePalette"
           @update:shape-params="updateMaskShapeParams($event)"
           @update:selected-index="selectedMaskIndex = $event"
         />
@@ -1200,6 +1223,8 @@ const handleGlobalContextMenu = (e: MouseEvent) => {
           :custom-image="customMaskImage"
           :custom-file-name="customMaskFile?.name ?? null"
           :is-loading-random="isLoadingRandomMask"
+          preview-mode="hero"
+          :base-config="currentHeroConfig"
           @update:color-key1="maskColorKey1 = $event"
           @update:color-key2="maskColorKey2 = $event"
           @update:surface-params="updateSurfaceParams($event)"
@@ -1217,6 +1242,9 @@ const handleGlobalContextMenu = (e: MouseEvent) => {
           :chromatic-config="currentChromaticConfig"
           :dot-halftone-config="currentDotHalftoneConfig"
           :line-halftone-config="currentLineHalftoneConfig"
+          :base-config="currentHeroConfig"
+          :palette="primitivePalette"
+          :show-preview="true"
           @update:selected-filter-type="selectedFilterType = $event"
           @update:vignette-config="currentVignetteConfig = $event"
           @update:chromatic-config="currentChromaticConfig = $event"
