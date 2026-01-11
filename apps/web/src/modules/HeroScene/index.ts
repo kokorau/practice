@@ -309,6 +309,19 @@ export {
   getHeroView,
   setHeroView,
   subscribeHeroView,
+  // TextLayer UseCases
+  updateTextLayerText,
+  updateTextLayerFont,
+  updateTextLayerColor,
+  updateTextLayerPosition,
+  updateTextLayerRotation,
+} from './usecase'
+
+// TextLayer UseCase types
+export type {
+  UpdateTextLayerFontParams,
+  UpdateTextLayerPositionParams,
+  TextAnchor,
 } from './usecase'
 
 // HeroView Infra (re-export from Infra for convenience)
