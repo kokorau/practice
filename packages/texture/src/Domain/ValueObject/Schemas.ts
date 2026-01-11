@@ -80,6 +80,13 @@ export type PerlinMaskShapeParams = Infer<typeof PerlinMaskShapeSchema>
 // ============================================================
 
 /**
+ * Solid Surface Schema (empty - no configurable params)
+ */
+export const SolidSurfaceSchema = defineSchema({})
+
+export type SolidSurfaceParams = Infer<typeof SolidSurfaceSchema>
+
+/**
  * Stripe Surface Schema
  */
 export const StripeSurfaceSchema = defineSchema({
@@ -167,6 +174,9 @@ export const createDefaultBlobMaskParams = (): BlobMaskShapeParams =>
 export const createDefaultPerlinMaskParams = (): PerlinMaskShapeParams =>
   getDefaults(PerlinMaskShapeSchema)
 
+export const createDefaultSolidParams = (): SolidSurfaceParams =>
+  getDefaults(SolidSurfaceSchema)
+
 export const createDefaultStripeParams = (): StripeSurfaceParams =>
   getDefaults(StripeSurfaceSchema)
 
@@ -194,6 +204,7 @@ export const MaskShapeSchemas = {
 } as const
 
 export const SurfaceSchemas = {
+  solid: SolidSurfaceSchema,
   stripe: StripeSurfaceSchema,
   grid: GridSurfaceSchema,
   polkaDot: PolkaDotSurfaceSchema,
