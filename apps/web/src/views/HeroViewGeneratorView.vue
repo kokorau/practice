@@ -26,7 +26,6 @@ import {
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
-import { getGoogleFontPresets } from '@practice/font'
 import {
   BackgroundSectionPanel,
   ClipGroupShapePanel,
@@ -35,13 +34,9 @@ import {
   TextLayerSectionPanel,
 } from '../components/HeroGenerator/FloatingPanelContent'
 import {
-  createForegroundElementUsecase,
-} from '../modules/HeroScene'
-import {
   useSiteColors,
   useHeroScene,
   createSurfacePatterns,
-  type GridPosition,
 } from '../composables/SiteBuilder'
 import { getSurfacePresets } from '@practice/texture'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
@@ -50,6 +45,7 @@ import { useLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useTextLayerEditor } from '../composables/useTextLayerEditor'
 import { useFilterEditor } from '../composables/useFilterEditor'
+import { useForegroundElement } from '../composables/useForegroundElement'
 import { useContextMenu } from '../composables/useContextMenu'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
@@ -287,102 +283,6 @@ const closeSection = () => {
 }
 
 // ============================================================
-// Foreground Element Usecase
-// ============================================================
-const selectedForegroundElementId = ref<string | null>(null)
-
-const foregroundUsecase = createForegroundElementUsecase({
-  foregroundConfig: {
-    get: () => foregroundConfig.value,
-    set: (config) => { foregroundConfig.value = config },
-  },
-  selection: {
-    getSelectedId: () => selectedForegroundElementId.value,
-    setSelectedId: (id) => { selectedForegroundElementId.value = id },
-    clearCanvasSelection: () => clearSelection(),
-  },
-})
-
-// Get selected foreground element (computed wrapper for reactivity)
-const selectedForegroundElement = computed(() => foregroundUsecase.getSelectedElement())
-
-// Handler functions delegating to usecase
-const handleSelectForegroundElement = (elementId: string) => {
-  foregroundUsecase.selectElement(elementId)
-}
-
-const handleAddForegroundElement = (type: 'title' | 'description') => {
-  foregroundUsecase.addElement(type)
-}
-
-const handleRemoveForegroundElement = (elementId: string) => {
-  foregroundUsecase.removeElement(elementId)
-}
-
-// ============================================================
-// Selected Foreground Element Config (computed with setter)
-// ============================================================
-
-const selectedElementPosition = computed({
-  get: () => selectedForegroundElement.value?.position ?? 'middle-center',
-  set: (pos: GridPosition) => {
-    foregroundUsecase.updateSelectedElement({ position: pos })
-  },
-})
-
-const selectedElementFont = computed({
-  get: () => selectedForegroundElement.value?.fontId,
-  set: (fontId: string | undefined) => {
-    foregroundUsecase.updateSelectedElement({ fontId })
-  },
-})
-
-const selectedElementFontSize = computed({
-  get: () => selectedForegroundElement.value?.fontSize ?? (selectedForegroundElement.value?.type === 'title' ? 3 : 1),
-  set: (fontSize: number) => {
-    foregroundUsecase.updateSelectedElement({ fontSize })
-  },
-})
-
-const selectedElementContent = computed({
-  get: () => selectedForegroundElement.value?.content ?? '',
-  set: (content: string) => {
-    foregroundUsecase.updateSelectedElement({ content })
-  },
-})
-
-const selectedElementColorKey = computed({
-  get: (): HeroPrimitiveKey | 'auto' => (selectedForegroundElement.value?.colorKey ?? 'auto') as HeroPrimitiveKey | 'auto',
-  set: (colorKey: HeroPrimitiveKey | 'auto') => {
-    foregroundUsecase.updateSelectedElement({ colorKey })
-  },
-})
-
-// ============================================================
-// Font Panel State
-// ============================================================
-const isFontPanelOpen = ref(false)
-const allFontPresets = computed(() => getGoogleFontPresets({ excludeIconFonts: true }))
-
-const selectedFontPreset = computed(() => {
-  const fontId = selectedElementFont.value
-  if (!fontId) return null
-  return allFontPresets.value.find(p => p.id === fontId) ?? null
-})
-
-const selectedFontDisplayName = computed(() => {
-  return selectedFontPreset.value?.name ?? 'System Default'
-})
-
-const openFontPanel = () => {
-  isFontPanelOpen.value = true
-}
-
-const closeFontPanel = () => {
-  isFontPanelOpen.value = false
-}
-
-// ============================================================
 // Dynamic CSS Injection for Palette Preview
 // ============================================================
 let paletteStyleElement: HTMLStyleElement | null = null
@@ -525,6 +425,30 @@ const {
   selectProcessor,
   clearSelection,
 } = useLayerSelection()
+
+// ============================================================
+// Foreground Element (Composable)
+// ============================================================
+const {
+  selectedForegroundElementId,
+  selectedForegroundElement,
+  handleSelectForegroundElement,
+  handleAddForegroundElement,
+  handleRemoveForegroundElement,
+  selectedElementPosition,
+  selectedElementFont,
+  selectedElementFontSize,
+  selectedElementContent,
+  selectedElementColorKey,
+  isFontPanelOpen,
+  selectedFontPreset,
+  selectedFontDisplayName,
+  openFontPanel,
+  closeFontPanel,
+} = useForegroundElement({
+  foregroundConfig,
+  clearCanvasSelection: clearSelection,
+})
 
 // ============================================================
 // Layer Operations (Composable)
