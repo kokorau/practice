@@ -329,6 +329,27 @@ export {
   getHeroView,
   setHeroView,
   subscribeHeroView,
+  // Color UseCases
+  updateBrandColor,
+  updateAccentColor,
+  updateFoundationColor,
+  applyColorPreset,
+  type UpdateBrandColorParams,
+  type UpdateAccentColorParams,
+  type UpdateFoundationColorParams,
+  // Layer UseCases
+  toggleExpand,
+  toggleVisibility,
+  addLayer,
+  removeLayer,
+  moveLayer,
+  updateLayer,
+  // Preset UseCases
+  applyPreset,
+  exportPreset,
+  createPreset,
+  type PresetExportPort,
+  type ExportPresetOptions,
   // Filter UseCases
   selectFilterType,
   getFilterType,
