@@ -328,6 +328,7 @@ const handleDrop = (e: DragEvent) => {
         :class="{ selected: isProcessorSelected }"
         :style="{ paddingLeft: `${depth * 0.75}rem` }"
         @click="handleSelectProcessor('processor')"
+        @contextmenu="handleContextMenu"
       >
         <!-- L字コーナー SVG -->
         <svg class="processor-link-icon" viewBox="0 0 12 24" fill="none">
@@ -357,6 +358,7 @@ const handleDrop = (e: DragEvent) => {
           class="processor-child-node"
           :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
           @click="handleSelectProcessor(mod.type)"
+          @contextmenu="handleContextMenu"
         >
           <span class="expand-spacer" />
           <span class="material-icons layer-icon">{{ mod.icon }}</span>

@@ -956,6 +956,12 @@ const handleLayerContextMenu = (layerId: string, event: MouseEvent) => {
   contextMenuOpen.value = true
 }
 
+const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
+  contextMenuLayerId.value = elementId
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
+  contextMenuOpen.value = true
+}
+
 const handleContextMenuClose = () => {
   contextMenuOpen.value = false
   contextMenuLayerId.value = null
@@ -1015,6 +1021,7 @@ const handleGlobalContextMenu = (e: MouseEvent) => {
       @move-layer="handleMoveLayer"
       @layer-contextmenu="handleLayerContextMenu"
       @select-foreground-element="handleSelectForegroundElement"
+      @foreground-contextmenu="handleForegroundContextMenu"
       @add-foreground-element="handleAddForegroundElement"
       @remove-foreground-element="handleRemoveForegroundElement"
     />

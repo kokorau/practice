@@ -50,6 +50,8 @@ const menuRef = ref<HTMLElement | null>(null)
 
 const handleClickOutside = (e: MouseEvent) => {
   if (!props.isOpen) return
+  // Ignore right-click (contextmenu will handle re-opening)
+  if (e.button === 2) return
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
     emit('close')
   }
@@ -73,12 +75,13 @@ const handleItemClick = (item: ContextMenuItem) => {
 // ============================================================
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
+  // Use mousedown to close before contextmenu fires for consecutive right-clicks
+  document.addEventListener('mousedown', handleClickOutside)
   document.addEventListener('keydown', handleKeyDown)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('mousedown', handleClickOutside)
   document.removeEventListener('keydown', handleKeyDown)
 })
 
