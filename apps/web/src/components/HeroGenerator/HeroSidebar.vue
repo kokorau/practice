@@ -7,6 +7,7 @@ import FloatingPanel from './FloatingPanel.vue'
 import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import type { HeroViewPreset, LayerNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
+import type { ContextTargetType } from './DraggableLayerNode.vue'
 type NeutralRampItem = {
   key: string
   css: string
@@ -66,7 +67,7 @@ const emit = defineEmits<{
   (e: 'remove-layer', layerId: string): void
   (e: 'move-layer', sourceId: string, targetId: string, position: DropPosition): void
   (e: 'group-selection', layerId: string): void
-  (e: 'layer-contextmenu', layerId: string, event: MouseEvent): void
+  (e: 'layer-contextmenu', layerId: string, event: MouseEvent, targetType: ContextTargetType): void
   // Foreground events
   (e: 'select-foreground-element', elementId: string): void
   (e: 'foreground-contextmenu', elementId: string, event: MouseEvent): void
@@ -278,7 +279,7 @@ const selectedPresetName = computed(() => {
           @add-layer="(type: LayerType) => emit('add-layer', type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @move-layer="(src: string, tgt: string, pos: DropPosition) => emit('move-layer', src, tgt, pos)"
-          @layer-contextmenu="(id: string, e: MouseEvent) => emit('layer-contextmenu', id, e)"
+          @layer-contextmenu="(id: string, e: MouseEvent, type: ContextTargetType) => emit('layer-contextmenu', id, e, type)"
           @select-foreground-element="(id: string) => emit('select-foreground-element', id)"
           @foreground-contextmenu="(id: string, e: MouseEvent) => emit('foreground-contextmenu', id, e)"
           @add-foreground-element="(type: ForegroundElementType) => emit('add-foreground-element', type)"

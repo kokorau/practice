@@ -28,6 +28,9 @@ const props = defineProps<{
   dropTarget: DropTarget | null
 }>()
 
+/** Context menu target type */
+export type ContextTargetType = 'layer' | 'processor' | 'effect' | 'mask'
+
 const emit = defineEmits<{
   select: [nodeId: string]
   'toggle-expand': [nodeId: string]
@@ -40,8 +43,8 @@ const emit = defineEmits<{
   'drag-over': [nodeId: string, position: DropPosition, event: DragEvent]
   'drag-leave': [nodeId: string]
   drop: [sourceId: string, targetId: string, position: DropPosition]
-  // Context menu event
-  contextmenu: [nodeId: string, event: MouseEvent]
+  // Context menu event (with target type)
+  contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType]
 }>()
 
 // ============================================================
@@ -155,10 +158,10 @@ const handleSelect = () => {
   emit('select', props.node.id)
 }
 
-const handleContextMenu = (e: MouseEvent) => {
+const handleContextMenu = (e: MouseEvent, targetType: ContextTargetType = 'layer') => {
   e.preventDefault()
   e.stopPropagation()
-  emit('contextmenu', props.node.id, e)
+  emit('contextmenu', props.node.id, e, targetType)
 }
 
 const handleToggleExpand = (e: Event) => {
@@ -264,7 +267,7 @@ const handleDrop = (e: DragEvent) => {
       :style="indentStyle"
       :draggable="isDraggable"
       @click="handleSelect"
-      @contextmenu="handleContextMenu"
+      @contextmenu="(e: MouseEvent) => handleContextMenu(e, 'layer')"
       @dragstart="handleDragStart"
       @dragend="handleDragEnd"
       @dragover="handleDragOver"
@@ -328,7 +331,7 @@ const handleDrop = (e: DragEvent) => {
         :class="{ selected: isProcessorSelected }"
         :style="{ paddingLeft: `${depth * 0.75}rem` }"
         @click="handleSelectProcessor('processor')"
-        @contextmenu="handleContextMenu"
+        @contextmenu="(e: MouseEvent) => handleContextMenu(e, 'processor')"
       >
         <!-- L字コーナー SVG -->
         <svg class="processor-link-icon" viewBox="0 0 12 24" fill="none">
@@ -358,7 +361,7 @@ const handleDrop = (e: DragEvent) => {
           class="processor-child-node"
           :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
           @click="handleSelectProcessor(mod.type)"
-          @contextmenu="handleContextMenu"
+          @contextmenu="(e: MouseEvent) => handleContextMenu(e, mod.type)"
         >
           <span class="expand-spacer" />
           <span class="material-icons layer-icon">{{ mod.icon }}</span>
@@ -387,7 +390,7 @@ const handleDrop = (e: DragEvent) => {
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
         @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
-        @contextmenu="(id: string, e: MouseEvent) => emit('contextmenu', id, e)"
+        @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType) => emit('contextmenu', id, e, targetType)"
         @drag-start="(id: string) => emit('drag-start', id)"
         @drag-end="() => emit('drag-end')"
         @drag-over="(id: string, pos: DropPosition, e: DragEvent) => emit('drag-over', id, pos, e)"
