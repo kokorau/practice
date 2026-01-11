@@ -10,3 +10,4 @@ export type {
   Object3DRenderParams,
   LightingConfig,
 } from './Object3DRendererPort'
+export type { HeroViewRepository, LayerUpdate } from './HeroViewRepository'
