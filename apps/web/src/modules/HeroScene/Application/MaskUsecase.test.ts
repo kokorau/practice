@@ -19,6 +19,9 @@ describe('MaskUsecase', () => {
       background: { primary: 'B', secondary: 'auto' },
       mask: { primary: 'auto', secondary: 'auto' },
       semanticContext: 'canvas',
+      brand: { hue: 220, saturation: 0.8, value: 0.6 },
+      accent: { hue: 340, saturation: 0.7, value: 0.5 },
+      foundation: { hue: 0, saturation: 0, value: 0.5 },
     },
     layers: [
       {
