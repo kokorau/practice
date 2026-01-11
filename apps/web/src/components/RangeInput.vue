@@ -57,6 +57,13 @@ const handleInput = (e: Event) => {
   border-radius: 0.25rem;
   color: oklch(0.25 0.02 260);
   box-sizing: border-box;
+  -moz-appearance: textfield;
+}
+
+.number-input::-webkit-outer-spin-button,
+.number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 :global(.dark) .number-input {
