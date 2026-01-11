@@ -36,7 +36,6 @@ import {
   useHeroScene,
   createSurfacePatterns,
 } from '../composables/SiteBuilder'
-import { getSurfacePresets } from '@practice/texture'
 import { useContrastChecker } from '../composables/useContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
@@ -247,16 +246,13 @@ const {
   applyPreset,
 })
 
-// Get surface presets for surfaceConfig mapping
-const surfacePresets = getSurfacePresets()
-
 // Convert texture patterns to SurfaceSelector format with createSpec and surfaceConfig
+// surfaceConfig is derived from pattern.params (no separate surfacePresets array needed)
 const backgroundPatterns = createSurfacePatterns({
   patterns: texturePatterns,
   color1: textureColor1,
   color2: textureColor2,
   createSpec: (p, c1, c2, viewport) => p.createSpec(c1, c2, viewport),
-  surfacePresets,
 })
 
 const maskSurfacePatterns = createSurfacePatterns({
@@ -264,7 +260,6 @@ const maskSurfacePatterns = createSurfacePatterns({
   color1: midgroundTextureColor1,
   color2: midgroundTextureColor2,
   createSpec: createMidgroundThumbnailSpec,
-  surfacePresets,
 })
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)

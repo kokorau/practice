@@ -21,6 +21,7 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
       return {
         label,
         createSpec: (c1: RGBA) => createSolidSpec({ color: c1 }),
+        params,
       }
     case 'stripe':
       return {
@@ -33,6 +34,7 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             color1: c1,
             color2: c2,
           }),
+        params,
       }
     case 'grid':
       return {
@@ -44,6 +46,7 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             lineColor: c1,
             bgColor: c2,
           }),
+        params,
       }
     case 'polkaDot':
       return {
@@ -56,6 +59,7 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             dotColor: c1,
             bgColor: c2,
           }),
+        params,
       }
     case 'checker':
       return {
@@ -67,6 +71,7 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             color1: c1,
             color2: c2,
           }),
+        params,
       }
     case 'gradientGrain': {
       return {
@@ -89,6 +94,7 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             sparsity: params.sparsity,
             curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
           }, viewport ?? { width: 1920, height: 1080 }),
+        params,
       }
     }
   }

@@ -1,6 +1,6 @@
 import { computed, type Ref, type ComputedRef } from 'vue'
 import type { SurfaceConfig } from '../../modules/HeroScene'
-import type { RGBA, TextureRenderSpec, SurfacePreset } from '@practice/texture'
+import type { RGBA, TextureRenderSpec, SurfacePresetParams } from '@practice/texture'
 
 type Viewport = { width: number; height: number }
 
@@ -17,8 +17,6 @@ export type CreateSurfacePatternsOptions<P> = {
   color2: Ref<RGBA> | ComputedRef<RGBA>
   /** Function to create the texture spec from a pattern */
   createSpec: (pattern: P, color1: RGBA, color2: RGBA, viewport: Viewport) => TextureRenderSpec | null
-  /** Optional surface presets for surfaceConfig mapping */
-  surfacePresets?: SurfacePreset[]
 }
 
 /**
@@ -34,6 +32,9 @@ export type SurfacePatternItem = {
  * Factory function to create surface patterns computed property.
  * Reduces duplication between backgroundPatterns and maskSurfacePatterns.
  *
+ * Pattern objects must include a `params` field containing SurfacePresetParams,
+ * which is used directly for surfaceConfig mapping (no index-based lookup needed).
+ *
  * @example
  * ```ts
  * const backgroundPatterns = createSurfacePatterns({
@@ -41,21 +42,20 @@ export type SurfacePatternItem = {
  *   color1: textureColor1,
  *   color2: textureColor2,
  *   createSpec: (p, c1, c2, viewport) => p.createSpec(c1, c2, viewport),
- *   surfacePresets,
  * })
  * ```
  */
-export function createSurfacePatterns<P extends { label: string }>(
+export function createSurfacePatterns<P extends { label: string; params?: SurfacePresetParams }>(
   options: CreateSurfacePatternsOptions<P>
 ): ComputedRef<SurfacePatternItem[]> {
-  const { patterns, color1, color2, createSpec, surfacePresets } = options
+  const { patterns, color1, color2, createSpec } = options
 
   return computed(() => {
-    return patterns.map((pattern, index) => ({
+    return patterns.map((pattern) => ({
       label: pattern.label,
       createSpec: (viewport: Viewport) =>
         createSpec(pattern, color1.value, color2.value, viewport),
-      surfaceConfig: surfacePresets?.[index]?.params as SurfaceConfig | undefined,
+      surfaceConfig: pattern.params as SurfaceConfig | undefined,
     }))
   })
 }
