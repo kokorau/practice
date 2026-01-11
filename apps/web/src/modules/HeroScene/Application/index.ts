@@ -27,6 +27,9 @@ export { createHeroSceneEditorState } from './EditorState'
 // Re-export Ports
 export type {
   HeroViewPresetRepository,
+  HeroViewRepository,
+  HeroViewSubscriber,
+  HeroViewUnsubscribe,
   Object3DRendererPort,
   Object3DRenderParams,
   LightingConfig,

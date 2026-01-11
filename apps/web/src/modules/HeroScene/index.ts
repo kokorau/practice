@@ -286,6 +286,10 @@ export type {
   // Preset types
   HeroViewPresetRepository,
   GetHeroViewPresetsUseCase,
+  // HeroView Repository types
+  HeroViewRepository,
+  HeroViewSubscriber,
+  HeroViewUnsubscribe,
 } from './Application'
 
 export {
@@ -307,6 +311,8 @@ export {
   createHeroSceneRenderer,
   // Preset Repository
   createInMemoryHeroViewPresetRepository,
+  // HeroView Repository
+  createHeroViewInMemoryRepository,
   // 3D Object Renderer
   ThreeJsObject3DRenderer,
   createObject3DRenderer,
