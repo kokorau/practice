@@ -6,10 +6,10 @@ import {
   type UseLayerOperationsOptions,
 } from './useLayerOperations'
 import {
-  createGroupLayerNode,
-  createSurfaceLayerNode,
-  createEffectProcessor,
-  createMaskProcessor,
+  createGroup,
+  createSurfaceLayer,
+  createEffectModifier,
+  createMaskModifier,
   type LayerNode,
 } from '../modules/HeroScene'
 
@@ -26,21 +26,21 @@ const createMockSceneCallbacks = (): SceneOperationCallbacks => ({
 })
 
 const createInitialLayers = (): LayerNode[] => [
-  createGroupLayerNode(
+  createGroup(
     'background-group',
     [
-      createSurfaceLayerNode('background-surface', { type: 'solid', color: 'BN1' }),
+      createSurfaceLayer('background-surface', { type: 'solid', color: 'BN1' }),
     ],
     { name: 'Background', expanded: true },
   ),
-  createGroupLayerNode(
+  createGroup(
     'main-group',
     [
-      createSurfaceLayerNode(
+      createSurfaceLayer(
         'surface-1',
         { type: 'solid', color: 'B' },
         {
-          processors: [createEffectProcessor(), createMaskProcessor()],
+          modifiers: [createEffectModifier(), createMaskModifier()],
         },
       ),
     ],
