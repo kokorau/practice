@@ -18,6 +18,24 @@ const defaultSurfacePresets: SurfacePreset[] = [
   { label: 'Dot Orthogonal', params: { type: 'polkaDot', dotRadius: 1.5, spacing: 12, rowOffset: 0 } },
   { label: 'Checker', params: { type: 'checker', cellSize: 30, angle: 0 } },
   { label: 'Diamond', params: { type: 'checker', cellSize: 30, angle: Math.PI / 4 } },
+  {
+    label: 'Gradient Grain',
+    params: {
+      type: 'gradientGrain',
+      depthMapType: 'linear',
+      angle: 90,
+      centerX: 0.5,
+      centerY: 0.5,
+      radialStartAngle: 0,
+      radialSweepAngle: 360,
+      perlinScale: 4,
+      perlinOctaves: 4,
+      perlinContrast: 1,
+      perlinOffset: 0,
+      seed: 12345,
+      sparsity: 0.75,
+    },
+  },
 ]
 
 /**

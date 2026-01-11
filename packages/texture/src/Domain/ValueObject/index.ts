@@ -13,11 +13,13 @@ export type {
 } from './TexturePattern'
 export type {
   SurfacePresetType,
+  DepthMapType,
   SolidPresetParams,
   StripePresetParams,
   GridPresetParams,
   PolkaDotPresetParams,
   CheckerPresetParams,
+  GradientGrainPresetParams,
   SurfacePresetParams,
   SurfacePreset,
 } from './SurfacePreset'

@@ -123,6 +123,7 @@ export type {
   GridPresetParams,
   PolkaDotPresetParams,
   CheckerPresetParams,
+  GradientGrainPresetParams,
   SurfacePresetParams,
   SurfacePreset,
   // TexturePatternSpec types

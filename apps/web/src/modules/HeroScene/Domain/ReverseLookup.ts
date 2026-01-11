@@ -17,7 +17,7 @@ export const approxEqual = (a: number, b: number, epsilon = 0.0001): boolean =>
  * Surface preset params type (for matching)
  */
 export interface SurfacePresetParams {
-  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker'
+  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain'
   width1?: number
   width2?: number
   angle?: number
@@ -26,6 +26,18 @@ export interface SurfacePresetParams {
   dotRadius?: number
   spacing?: number
   rowOffset?: number
+  // GradientGrain params
+  depthMapType?: string
+  centerX?: number
+  centerY?: number
+  radialStartAngle?: number
+  radialSweepAngle?: number
+  perlinScale?: number
+  perlinOctaves?: number
+  perlinContrast?: number
+  perlinOffset?: number
+  seed?: number
+  sparsity?: number
 }
 
 /**
@@ -100,6 +112,18 @@ export const findSurfacePresetIndex = (
       if (
         approxEqual(surfaceConfig.cellSize, preset.params.cellSize ?? 0) &&
         approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'gradientGrain' && preset.params.type === 'gradientGrain') {
+      if (
+        surfaceConfig.depthMapType === preset.params.depthMapType &&
+        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0) &&
+        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
+        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
+        approxEqual(surfaceConfig.seed, preset.params.seed ?? 0) &&
+        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
       ) {
         return i
       }

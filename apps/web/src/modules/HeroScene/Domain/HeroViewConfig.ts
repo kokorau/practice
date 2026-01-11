@@ -117,6 +117,24 @@ export interface ImageSurfaceConfig {
   imageId: string
 }
 
+export type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin'
+
+export interface GradientGrainSurfaceConfig {
+  type: 'gradientGrain'
+  depthMapType: DepthMapType
+  angle: number
+  centerX: number
+  centerY: number
+  radialStartAngle: number
+  radialSweepAngle: number
+  perlinScale: number
+  perlinOctaves: number
+  perlinContrast: number
+  perlinOffset: number
+  seed: number
+  sparsity: number
+}
+
 export type SurfaceConfig =
   | SolidSurfaceConfig
   | StripeSurfaceConfig
@@ -124,6 +142,7 @@ export type SurfaceConfig =
   | PolkaDotSurfaceConfig
   | CheckerSurfaceConfig
   | ImageSurfaceConfig
+  | GradientGrainSurfaceConfig
 
 /** @deprecated Use SurfaceConfig instead */
 export type BackgroundSurfaceConfig = SurfaceConfig

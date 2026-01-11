@@ -54,7 +54,7 @@ import {
   useHeroScene,
   type GridPosition,
 } from '../composables/SiteBuilder'
-import { createGradientGrainSpec, createDefaultGradientGrainParams, getSurfacePresets, type DepthMapType } from '@practice/texture'
+import { getSurfacePresets } from '@practice/texture'
 import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
 import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
 import { useLayerSelection } from '../composables/useLayerSelection'
@@ -276,7 +276,7 @@ const surfacePresets = getSurfacePresets()
 
 // Convert texture patterns to SurfaceSelector format with createSpec and surfaceConfig
 const backgroundPatterns = computed(() => {
-  const textureItems = texturePatterns.map((p, index) => ({
+  return texturePatterns.map((p, index) => ({
     label: p.label,
     createSpec: (viewport: { width: number; height: number }) =>
       p.createSpec(textureColor1.value, textureColor2.value, viewport),
@@ -284,30 +284,10 @@ const backgroundPatterns = computed(() => {
     // Cast to SurfaceConfig since SurfacePresetParams is compatible with SurfaceConfig
     surfaceConfig: surfacePresets[index]?.params as SurfaceConfig | undefined,
   }))
-
-  // Add gradient grain option (no hero preview support for now)
-  const defaultGradientParams = createDefaultGradientGrainParams()
-  const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
-  const gradientGrainItem = {
-    label: 'Gradient Grain',
-    type: 'gradientGrain',
-    createSpec: (viewport: { width: number; height: number }) =>
-      createGradientGrainSpec({
-        ...defaultGradientParams,
-        depthMapType: defaultGradientParams.depthMapType as DepthMapType,
-        colorA: textureColor1.value,
-        colorB: textureColor2.value,
-        curvePoints: defaultCurvePoints,
-      }, viewport),
-    // Gradient grain doesn't have a standard surfaceConfig
-    surfaceConfig: undefined,
-  }
-
-  return [...textureItems, gradientGrainItem]
 })
 
 const maskSurfacePatterns = computed(() => {
-  const textureItems = midgroundTexturePatterns.map((p, index) => ({
+  return midgroundTexturePatterns.map((p, index) => ({
     label: p.label,
     createSpec: (viewport: { width: number; height: number }) =>
       createMidgroundThumbnailSpec(p, midgroundTextureColor1.value, midgroundTextureColor2.value, viewport),
@@ -315,26 +295,6 @@ const maskSurfacePatterns = computed(() => {
     // Cast to SurfaceConfig since SurfacePresetParams is compatible with SurfaceConfig
     surfaceConfig: surfacePresets[index]?.params as SurfaceConfig | undefined,
   }))
-
-  // Add gradient grain option (no hero preview support for now)
-  const defaultGradientParams = createDefaultGradientGrainParams()
-  const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
-  const gradientGrainItem = {
-    label: 'Gradient Grain',
-    type: 'gradientGrain',
-    createSpec: (viewport: { width: number; height: number }) =>
-      createGradientGrainSpec({
-        ...defaultGradientParams,
-        depthMapType: defaultGradientParams.depthMapType as DepthMapType,
-        colorA: midgroundTextureColor1.value,
-        colorB: midgroundTextureColor2.value,
-        curvePoints: defaultCurvePoints,
-      }, viewport),
-    // Gradient grain doesn't have a standard surfaceConfig
-    surfaceConfig: undefined,
-  }
-
-  return [...textureItems, gradientGrainItem]
 })
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
