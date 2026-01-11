@@ -100,7 +100,7 @@ export {
 } from './shaders'
 
 // Filter specs are now available via '@practice/texture/filters'
-// import { createVignetteSpec, createChromaticAberrationShader } from '@practice/texture/filters'
+// import { vignetteShader, createVignetteUniforms, chromaticAberrationShader } from '@practice/texture/filters'
 
 // Domain
 export type {

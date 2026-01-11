@@ -86,7 +86,9 @@ import {
 import type { ObjectSchema } from '@practice/schema'
 // Filters (separate subpath for tree-shaking)
 import {
-  createVignetteSpec,
+  vignetteShader,
+  createVignetteUniforms,
+  VIGNETTE_BUFFER_SIZE,
   chromaticAberrationShader,
   createChromaticAberrationUniforms,
   CHROMATIC_ABERRATION_BUFFER_SIZE,
@@ -1450,40 +1452,41 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     color2: RGBA,
     viewport: Viewport
   ): TextureRenderSpec | null => {
-    if (params.type === 'solid') return null
-    if (params.type === 'stripe') {
-      return createStripeSpec({ color1, color2, width1: params.width1, width2: params.width2, angle: params.angle })
+    switch (params.type) {
+      case 'solid':
+        return null
+      case 'stripe':
+        return createStripeSpec({ color1, color2, width1: params.width1, width2: params.width2, angle: params.angle })
+      case 'grid':
+        return createGridSpec({ lineColor: color1, bgColor: color2, lineWidth: params.lineWidth, cellSize: params.cellSize })
+      case 'polkaDot':
+        return createPolkaDotSpec({ dotColor: color1, bgColor: color2, dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
+      case 'checker':
+        return createCheckerSpec({ color1, color2, cellSize: params.cellSize, angle: params.angle })
+      case 'gradientGrain':
+        return createGradientGrainSpec({
+          depthMapType: params.depthMapType,
+          angle: params.angle,
+          centerX: params.centerX,
+          centerY: params.centerY,
+          radialStartAngle: params.radialStartAngle,
+          radialSweepAngle: params.radialSweepAngle,
+          perlinScale: params.perlinScale,
+          perlinOctaves: params.perlinOctaves,
+          perlinSeed: params.seed,
+          perlinContrast: params.perlinContrast,
+          perlinOffset: params.perlinOffset,
+          colorA: color1,
+          colorB: color2,
+          seed: params.seed,
+          sparsity: params.sparsity,
+          curvePoints: params.curvePoints,
+        }, viewport)
+      default: {
+        const _exhaustive: never = params
+        throw new Error(`Unknown background surface type: ${(_exhaustive as CustomBackgroundSurfaceParams).type}`)
+      }
     }
-    if (params.type === 'grid') {
-      return createGridSpec({ lineColor: color1, bgColor: color2, lineWidth: params.lineWidth, cellSize: params.cellSize })
-    }
-    if (params.type === 'polkaDot') {
-      return createPolkaDotSpec({ dotColor: color1, bgColor: color2, dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
-    }
-    if (params.type === 'checker') {
-      return createCheckerSpec({ color1, color2, cellSize: params.cellSize, angle: params.angle })
-    }
-    if (params.type === 'gradientGrain') {
-      return createGradientGrainSpec({
-        depthMapType: params.depthMapType,
-        angle: params.angle,
-        centerX: params.centerX,
-        centerY: params.centerY,
-        radialStartAngle: params.radialStartAngle,
-        radialSweepAngle: params.radialSweepAngle,
-        perlinScale: params.perlinScale,
-        perlinOctaves: params.perlinOctaves,
-        perlinSeed: params.seed,
-        perlinContrast: params.perlinContrast,
-        perlinOffset: params.perlinOffset,
-        colorA: color1,  // Use reactive color from palette
-        colorB: color2,  // Use reactive color from palette
-        seed: params.seed,
-        sparsity: params.sparsity,
-        curvePoints: params.curvePoints,
-      }, viewport)
-    }
-    return null
   }
 
   // ============================================================
@@ -1504,11 +1507,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   ): TextureRenderSpec | null => {
     // Build mask config from custom params or preset
     const buildMaskConfig = (): CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig => {
-      if (customShapeParams) {
-        if (customShapeParams.type === 'circle') {
+      if (!customShapeParams) {
+        return maskPattern.maskConfig
+      }
+      switch (customShapeParams.type) {
+        case 'circle':
           return { type: 'circle', centerX: customShapeParams.centerX, centerY: customShapeParams.centerY, radius: customShapeParams.radius, cutout: customShapeParams.cutout }
-        }
-        if (customShapeParams.type === 'rect') {
+        case 'rect':
           return {
             type: 'rect',
             left: customShapeParams.left, right: customShapeParams.right,
@@ -1517,58 +1522,57 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             radiusBottomLeft: customShapeParams.radiusBottomLeft, radiusBottomRight: customShapeParams.radiusBottomRight,
             cutout: customShapeParams.cutout,
           }
-        }
-        if (customShapeParams.type === 'perlin') {
+        case 'perlin':
           return {
             type: 'perlin',
             seed: customShapeParams.seed, threshold: customShapeParams.threshold,
             scale: customShapeParams.scale, octaves: customShapeParams.octaves,
             cutout: customShapeParams.cutout,
           }
-        }
-        // blob
-        return {
-          type: 'blob',
-          centerX: customShapeParams.centerX, centerY: customShapeParams.centerY,
-          baseRadius: customShapeParams.baseRadius, amplitude: customShapeParams.amplitude,
-          octaves: customShapeParams.octaves, seed: customShapeParams.seed,
-          cutout: customShapeParams.cutout,
+        case 'blob':
+          return {
+            type: 'blob',
+            centerX: customShapeParams.centerX, centerY: customShapeParams.centerY,
+            baseRadius: customShapeParams.baseRadius, amplitude: customShapeParams.amplitude,
+            octaves: customShapeParams.octaves, seed: customShapeParams.seed,
+            cutout: customShapeParams.cutout,
+          }
+        default: {
+          const _exhaustive: never = customShapeParams
+          throw new Error(`Unknown mask shape type: ${(_exhaustive as CustomMaskShapeParams).type}`)
         }
       }
-      // Fall back to maskPattern
-      return maskPattern.maskConfig
     }
 
     // Build surface params from custom params or preset
     // Returns null for solid type (triggers fallback to solid mask)
     type SurfaceParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams | { type: 'gradientGrain' } | null
     const buildSurfaceParams = (): SurfaceParams => {
-      if (customSurfParams) {
-        if (customSurfParams.type === 'solid') {
+      if (!customSurfParams) {
+        // Fall back to preset - check for solid type
+        if (preset.params.type === 'solid') {
           return null
         }
-        if (customSurfParams.type === 'stripe') {
+        return preset.params as StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
+      }
+      switch (customSurfParams.type) {
+        case 'solid':
+          return null
+        case 'stripe':
           return { type: 'stripe', width1: customSurfParams.width1, width2: customSurfParams.width2, angle: customSurfParams.angle }
-        }
-        if (customSurfParams.type === 'grid') {
+        case 'grid':
           return { type: 'grid', lineWidth: customSurfParams.lineWidth, cellSize: customSurfParams.cellSize }
-        }
-        if (customSurfParams.type === 'polkaDot') {
+        case 'polkaDot':
           return { type: 'polkaDot', dotRadius: customSurfParams.dotRadius, spacing: customSurfParams.spacing, rowOffset: customSurfParams.rowOffset }
-        }
-        if (customSurfParams.type === 'checker') {
+        case 'checker':
           return { type: 'checker', cellSize: customSurfParams.cellSize, angle: customSurfParams.angle }
-        }
-        if (customSurfParams.type === 'gradientGrain') {
+        case 'gradientGrain':
           return { type: 'gradientGrain' }
+        default: {
+          const _exhaustive: never = customSurfParams
+          throw new Error(`Unknown surface type: ${(_exhaustive as CustomSurfaceParams).type}`)
         }
-        return null
       }
-      // Fall back to preset - check for solid type
-      if (preset.params.type === 'solid') {
-        return null
-      }
-      return preset.params as StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
     }
 
     // Build gradientGrain texture config from custom params
@@ -1601,185 +1605,104 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       return null
     }
 
-    if (maskConfig.type === 'circle') {
-      const circleMask: CircleMaskShapeConfig = maskConfig
-      if (params.type === 'stripe') {
-        return createCircleStripeSpec(
-          color1, color2,
-          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'grid') {
-        return createCircleGridSpec(
-          color1, color2,
-          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'polkaDot') {
-        return createCirclePolkaDotSpec(
-          color1, color2,
-          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'checker') {
-        return createCircleCheckerSpec(
-          color1, color2,
-          { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'gradientGrain') {
-        const ggConfig = buildGradientGrainConfig()
-        if (ggConfig) {
-          return createCircleGradientGrainSpec(
-            color1, color2,
-            { type: 'circle', centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout },
-            ggConfig,
-            viewport
-          )
+    // Helper to create texture spec for a given mask and surface type combination
+    const createSpecForMaskAndSurface = (): TextureRenderSpec | null => {
+      switch (maskConfig.type) {
+        case 'circle': {
+          const circleMask: CircleMaskShapeConfig = maskConfig
+          const maskSpec = { type: 'circle' as const, centerX: circleMask.centerX, centerY: circleMask.centerY, radius: circleMask.radius, cutout: circleMask.cutout }
+          switch (params.type) {
+            case 'stripe':
+              return createCircleStripeSpec(color1, color2, maskSpec, params, viewport)
+            case 'grid':
+              return createCircleGridSpec(color1, color2, maskSpec, params, viewport)
+            case 'polkaDot':
+              return createCirclePolkaDotSpec(color1, color2, maskSpec, params, viewport)
+            case 'checker':
+              return createCircleCheckerSpec(color1, color2, maskSpec, params, viewport)
+            case 'gradientGrain': {
+              const ggConfig = buildGradientGrainConfig()
+              return ggConfig ? createCircleGradientGrainSpec(color1, color2, maskSpec, ggConfig, viewport) : null
+            }
+            default: {
+              const _exhaustive: never = params
+              throw new Error(`Unknown surface type for circle mask: ${(_exhaustive as NonNullable<SurfaceParams>).type}`)
+            }
+          }
+        }
+        case 'rect': {
+          const rectMask: RectMaskShapeConfig = maskConfig
+          const maskSpec = { type: 'rect' as const, left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout }
+          switch (params.type) {
+            case 'stripe':
+              return createRectStripeSpec(color1, color2, maskSpec, params, viewport)
+            case 'grid':
+              return createRectGridSpec(color1, color2, maskSpec, params, viewport)
+            case 'polkaDot':
+              return createRectPolkaDotSpec(color1, color2, maskSpec, params, viewport)
+            case 'checker':
+              return createRectCheckerSpec(color1, color2, maskSpec, params, viewport)
+            case 'gradientGrain': {
+              const ggConfig = buildGradientGrainConfig()
+              return ggConfig ? createRectGradientGrainSpec(color1, color2, maskSpec, ggConfig, viewport) : null
+            }
+            default: {
+              const _exhaustive: never = params
+              throw new Error(`Unknown surface type for rect mask: ${(_exhaustive as NonNullable<SurfaceParams>).type}`)
+            }
+          }
+        }
+        case 'blob': {
+          const blobMask: BlobMaskShapeConfig = maskConfig
+          const maskSpec = { type: 'blob' as const, centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout }
+          switch (params.type) {
+            case 'stripe':
+              return createBlobStripeSpec(color1, color2, maskSpec, params, viewport)
+            case 'grid':
+              return createBlobGridSpec(color1, color2, maskSpec, params, viewport)
+            case 'polkaDot':
+              return createBlobPolkaDotSpec(color1, color2, maskSpec, params, viewport)
+            case 'checker':
+              return createBlobCheckerSpec(color1, color2, maskSpec, params, viewport)
+            case 'gradientGrain': {
+              const ggConfig = buildGradientGrainConfig()
+              return ggConfig ? createBlobGradientGrainSpec(color1, color2, maskSpec, ggConfig, viewport) : null
+            }
+            default: {
+              const _exhaustive: never = params
+              throw new Error(`Unknown surface type for blob mask: ${(_exhaustive as NonNullable<SurfaceParams>).type}`)
+            }
+          }
+        }
+        case 'perlin': {
+          const perlinMask: PerlinMaskShapeConfig = maskConfig
+          const maskSpec = { type: 'perlin' as const, seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout }
+          switch (params.type) {
+            case 'stripe':
+              return createPerlinStripeSpec(color1, color2, maskSpec, params, viewport)
+            case 'grid':
+              return createPerlinGridSpec(color1, color2, maskSpec, params, viewport)
+            case 'polkaDot':
+              return createPerlinPolkaDotSpec(color1, color2, maskSpec, params, viewport)
+            case 'checker':
+              return createPerlinCheckerSpec(color1, color2, maskSpec, params, viewport)
+            case 'gradientGrain':
+              // Note: gradientGrain with perlin mask is not supported yet
+              return null
+            default: {
+              const _exhaustive: never = params
+              throw new Error(`Unknown surface type for perlin mask: ${(_exhaustive as NonNullable<SurfaceParams>).type}`)
+            }
+          }
+        }
+        default: {
+          const _exhaustive: never = maskConfig
+          throw new Error(`Unknown mask type: ${(_exhaustive as CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig).type}`)
         }
       }
     }
 
-    if (maskConfig.type === 'rect') {
-      const rectMask: RectMaskShapeConfig = maskConfig
-      if (params.type === 'stripe') {
-        return createRectStripeSpec(
-          color1, color2,
-          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'grid') {
-        return createRectGridSpec(
-          color1, color2,
-          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'polkaDot') {
-        return createRectPolkaDotSpec(
-          color1, color2,
-          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'checker') {
-        return createRectCheckerSpec(
-          color1, color2,
-          { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'gradientGrain') {
-        const ggConfig = buildGradientGrainConfig()
-        if (ggConfig) {
-          return createRectGradientGrainSpec(
-            color1, color2,
-            { type: 'rect', left: rectMask.left, right: rectMask.right, top: rectMask.top, bottom: rectMask.bottom, radiusTopLeft: rectMask.radiusTopLeft, radiusTopRight: rectMask.radiusTopRight, radiusBottomLeft: rectMask.radiusBottomLeft, radiusBottomRight: rectMask.radiusBottomRight, cutout: rectMask.cutout },
-            ggConfig,
-            viewport
-          )
-        }
-      }
-    }
-
-    if (maskConfig.type === 'blob') {
-      const blobMask: BlobMaskShapeConfig = maskConfig
-      if (params.type === 'stripe') {
-        return createBlobStripeSpec(
-          color1, color2,
-          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'grid') {
-        return createBlobGridSpec(
-          color1, color2,
-          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'polkaDot') {
-        return createBlobPolkaDotSpec(
-          color1, color2,
-          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'checker') {
-        return createBlobCheckerSpec(
-          color1, color2,
-          { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'gradientGrain') {
-        const ggConfig = buildGradientGrainConfig()
-        if (ggConfig) {
-          return createBlobGradientGrainSpec(
-            color1, color2,
-            { type: 'blob', centerX: blobMask.centerX, centerY: blobMask.centerY, baseRadius: blobMask.baseRadius, amplitude: blobMask.amplitude, octaves: blobMask.octaves, seed: blobMask.seed, cutout: blobMask.cutout },
-            ggConfig,
-            viewport
-          )
-        }
-      }
-    }
-
-    if (maskConfig.type === 'perlin') {
-      const perlinMask: PerlinMaskShapeConfig = maskConfig
-      if (params.type === 'stripe') {
-        return createPerlinStripeSpec(
-          color1, color2,
-          { type: 'perlin', seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'grid') {
-        return createPerlinGridSpec(
-          color1, color2,
-          { type: 'perlin', seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'polkaDot') {
-        return createPerlinPolkaDotSpec(
-          color1, color2,
-          { type: 'perlin', seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout },
-          params,
-          viewport
-        )
-      }
-      if (params.type === 'checker') {
-        return createPerlinCheckerSpec(
-          color1, color2,
-          { type: 'perlin', seed: perlinMask.seed, threshold: perlinMask.threshold, scale: perlinMask.scale, octaves: perlinMask.octaves, cutout: perlinMask.cutout },
-          params,
-          viewport
-        )
-      }
-      // Note: gradientGrain with perlin mask is not supported yet
-    }
-
-    return null
+    return createSpecForMaskAndSurface()
   }
 
   /**
@@ -1845,9 +1768,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       )
     }
 
-    // Vignette (overlay, applied last)
+    // Vignette (requires texture input, applied last)
     if (filters.vignette.enabled) {
-      const vignetteSpec = createVignetteSpec(
+      const inputTexture = previewRenderer.copyCanvasToTexture()
+      const uniforms = createVignetteUniforms(
         {
           color: [0, 0, 0, 1],
           intensity: filters.vignette.intensity,
@@ -1856,7 +1780,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         },
         viewport
       )
-      previewRenderer.render(vignetteSpec, { clear: false })
+      previewRenderer.applyPostEffect(
+        { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
+        inputTexture,
+        { clear: true }
+      )
     }
   }
 
@@ -2144,70 +2072,68 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               const color1 = midgroundTextureColor1.value
               const color2 = midgroundTextureColor2.value
 
-              if (params.type === 'stripe') {
-                return createStripeSpec({
-                  color1,
-                  color2,
-                  width1: params.width1,
-                  width2: params.width2,
-                  angle: params.angle,
-                })
+              switch (params.type) {
+                case 'stripe':
+                  return createStripeSpec({
+                    color1,
+                    color2,
+                    width1: params.width1,
+                    width2: params.width2,
+                    angle: params.angle,
+                  })
+                case 'grid':
+                  return createGridSpec({
+                    lineColor: color1,
+                    bgColor: color2,
+                    lineWidth: params.lineWidth,
+                    cellSize: params.cellSize,
+                  })
+                case 'polkaDot':
+                  return createPolkaDotSpec({
+                    dotColor: color1,
+                    bgColor: color2,
+                    dotRadius: params.dotRadius,
+                    spacing: params.spacing,
+                    rowOffset: params.rowOffset,
+                  })
+                case 'checker':
+                  return createCheckerSpec({
+                    color1,
+                    color2,
+                    cellSize: params.cellSize,
+                    angle: params.angle,
+                  })
+                case 'solid':
+                  return createSolidSpec({
+                    color: color1,
+                  })
+                case 'gradientGrain': {
+                  const defaultCurvePoints: number[] = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
+                  const curvePoints: number[] = 'curvePoints' in params && Array.isArray(params.curvePoints) ? params.curvePoints : defaultCurvePoints
+                  return createGradientGrainSpec({
+                    depthMapType: params.depthMapType,
+                    angle: params.angle,
+                    centerX: params.centerX,
+                    centerY: params.centerY,
+                    radialStartAngle: params.radialStartAngle,
+                    radialSweepAngle: params.radialSweepAngle,
+                    perlinScale: params.perlinScale,
+                    perlinOctaves: params.perlinOctaves,
+                    perlinSeed: params.seed,
+                    perlinContrast: params.perlinContrast,
+                    perlinOffset: params.perlinOffset,
+                    colorA: color1,
+                    colorB: color2,
+                    seed: params.seed,
+                    sparsity: params.sparsity,
+                    curvePoints,
+                  }, viewport)
+                }
+                default: {
+                  const _exhaustive: never = params
+                  throw new Error(`Unknown surface type: ${(_exhaustive as CustomSurfaceParams).type}`)
+                }
               }
-              if (params.type === 'grid') {
-                return createGridSpec({
-                  lineColor: color1,
-                  bgColor: color2,
-                  lineWidth: params.lineWidth,
-                  cellSize: params.cellSize,
-                })
-              }
-              if (params.type === 'polkaDot') {
-                return createPolkaDotSpec({
-                  dotColor: color1,
-                  bgColor: color2,
-                  dotRadius: params.dotRadius,
-                  spacing: params.spacing,
-                  rowOffset: params.rowOffset,
-                })
-              }
-              if (params.type === 'checker') {
-                return createCheckerSpec({
-                  color1,
-                  color2,
-                  cellSize: params.cellSize,
-                  angle: params.angle,
-                })
-              }
-              // Solid type - use solid spec
-              if (params.type === 'solid') {
-                return createSolidSpec({
-                  color: color1,
-                })
-              }
-              // GradientGrain type
-              if (params.type === 'gradientGrain') {
-                const defaultCurvePoints: number[] = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
-                const curvePoints: number[] = 'curvePoints' in params && Array.isArray(params.curvePoints) ? params.curvePoints : defaultCurvePoints
-                return createGradientGrainSpec({
-                  depthMapType: params.depthMapType,
-                  angle: params.angle,
-                  centerX: params.centerX,
-                  centerY: params.centerY,
-                  radialStartAngle: params.radialStartAngle,
-                  radialSweepAngle: params.radialSweepAngle,
-                  perlinScale: params.perlinScale,
-                  perlinOctaves: params.perlinOctaves,
-                  perlinSeed: params.seed,
-                  perlinContrast: params.perlinContrast,
-                  perlinOffset: params.perlinOffset,
-                  colorA: color1,
-                  colorB: color2,
-                  seed: params.seed,
-                  sparsity: params.sparsity,
-                  curvePoints,
-                }, viewport)
-              }
-              return null
             }
 
             // Helper to apply effects to offscreen texture (for ClipGroup)
@@ -2269,6 +2195,25 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 )
               }
 
+              // Vignette
+              if (filters.vignette.enabled) {
+                const uniforms = createVignetteUniforms(
+                  {
+                    color: [0, 0, 0, 1],
+                    intensity: filters.vignette.intensity,
+                    radius: filters.vignette.radius,
+                    softness: filters.vignette.softness,
+                  },
+                  viewport
+                )
+                const outputIndex = currentTexture === renderer.getOffscreenTexture(0) ? 1 : 0
+                currentTexture = renderer.applyPostEffectToOffscreen(
+                  { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
+                  currentTexture,
+                  outputIndex as 0 | 1
+                )
+              }
+
               return currentTexture
             }
 
@@ -2279,19 +2224,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               // Apply effects to offscreen texture (stays within mask bounds)
               offscreenTexture = applyEffectsToOffscreen(offscreenTexture)
               previewRenderer.applyClipMask(clipSpec, offscreenTexture, { clear: false })
-              // Apply vignette overlay after clip mask (on main canvas)
-              if (layer.filters.vignette.enabled) {
-                const vignetteSpec = createVignetteSpec(
-                  {
-                    color: [0, 0, 0, 1],
-                    intensity: layer.filters.vignette.intensity,
-                    radius: layer.filters.vignette.radius,
-                    softness: layer.filters.vignette.softness,
-                  },
-                  viewport
-                )
-                previewRenderer.render(vignetteSpec, { clear: false })
-              }
               break
             }
 
@@ -2305,19 +2237,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 offscreenTexture = applyEffectsToOffscreen(offscreenTexture)
                 // Apply clip mask and render to main canvas
                 previewRenderer.applyClipMask(clipSpec, offscreenTexture, { clear: false })
-                // Apply vignette overlay after clip mask (on main canvas)
-                if (layer.filters.vignette.enabled) {
-                  const vignetteSpec = createVignetteSpec(
-                    {
-                      color: [0, 0, 0, 1],
-                      intensity: layer.filters.vignette.intensity,
-                      radius: layer.filters.vignette.radius,
-                      softness: layer.filters.vignette.softness,
-                    },
-                    viewport
-                  )
-                  previewRenderer.render(vignetteSpec, { clear: false })
-                }
                 break
               }
             }
@@ -2476,64 +2395,60 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   ): TextureRenderSpec | null => {
     const { params } = preset
 
-    if (params.type === 'solid') {
-      return createSolidSpec({ color: color1 })
+    switch (params.type) {
+      case 'solid':
+        return createSolidSpec({ color: color1 })
+      case 'stripe':
+        return createStripeSpec({
+          color1,
+          color2,
+          width1: params.width1,
+          width2: params.width2,
+          angle: params.angle,
+        })
+      case 'grid':
+        return createGridSpec({
+          lineColor: color1,
+          bgColor: color2,
+          lineWidth: params.lineWidth,
+          cellSize: params.cellSize,
+        })
+      case 'polkaDot':
+        return createPolkaDotSpec({
+          dotColor: color1,
+          bgColor: color2,
+          dotRadius: params.dotRadius,
+          spacing: params.spacing,
+          rowOffset: params.rowOffset,
+        })
+      case 'checker':
+        return createCheckerSpec({
+          color1,
+          color2,
+          cellSize: params.cellSize,
+          angle: params.angle,
+        })
+      case 'gradientGrain': {
+        const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
+        return createGradientGrainSpec({
+          depthMapType: params.depthMapType,
+          angle: params.angle,
+          centerX: params.centerX,
+          centerY: params.centerY,
+          radialStartAngle: params.radialStartAngle,
+          radialSweepAngle: params.radialSweepAngle,
+          perlinScale: params.perlinScale,
+          perlinOctaves: params.perlinOctaves,
+          perlinContrast: params.perlinContrast,
+          perlinOffset: params.perlinOffset,
+          colorA: color1,
+          colorB: color2,
+          seed: params.seed,
+          sparsity: params.sparsity,
+          curvePoints: defaultCurvePoints,
+        }, _viewport)
+      }
     }
-    if (params.type === 'stripe') {
-      return createStripeSpec({
-        color1,
-        color2,
-        width1: params.width1,
-        width2: params.width2,
-        angle: params.angle,
-      })
-    }
-    if (params.type === 'grid') {
-      return createGridSpec({
-        lineColor: color1,
-        bgColor: color2,
-        lineWidth: params.lineWidth,
-        cellSize: params.cellSize,
-      })
-    }
-    if (params.type === 'polkaDot') {
-      return createPolkaDotSpec({
-        dotColor: color1,
-        bgColor: color2,
-        dotRadius: params.dotRadius,
-        spacing: params.spacing,
-        rowOffset: params.rowOffset,
-      })
-    }
-    if (params.type === 'checker') {
-      return createCheckerSpec({
-        color1,
-        color2,
-        cellSize: params.cellSize,
-        angle: params.angle,
-      })
-    }
-    if (params.type === 'gradientGrain') {
-      const defaultCurvePoints = [0, 1/36, 4/36, 9/36, 16/36, 25/36, 1]
-      return createGradientGrainSpec({
-        depthMapType: params.depthMapType,
-        angle: params.angle,
-        centerX: params.centerX,
-        centerY: params.centerY,
-        radialStartAngle: params.radialStartAngle,
-        radialSweepAngle: params.radialSweepAngle,
-        perlinScale: params.perlinScale,
-        perlinOctaves: params.perlinOctaves,
-        perlinContrast: params.perlinContrast,
-        perlinOffset: params.perlinOffset,
-        colorA: color1,
-        colorB: color2,
-        seed: params.seed,
-        sparsity: params.sparsity,
-        curvePoints: defaultCurvePoints,
-      }, _viewport)
-    }
-    return null
   }
 
   const getPatterns = (section: SectionType): (TexturePattern | MaskPattern)[] => {

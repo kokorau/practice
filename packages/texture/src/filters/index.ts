@@ -7,7 +7,6 @@
 export {
   vignetteShader,
   createVignetteUniforms,
-  createVignetteSpec,
   VIGNETTE_BUFFER_SIZE,
   type VignetteParams,
 } from '../shaders/vignette'

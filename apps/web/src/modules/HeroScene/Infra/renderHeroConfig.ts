@@ -20,7 +20,9 @@ import {
   type RGBA,
 } from '@practice/texture'
 import {
-  createVignetteSpec,
+  vignetteShader,
+  createVignetteUniforms,
+  VIGNETTE_BUFFER_SIZE,
   chromaticAberrationShader,
   createChromaticAberrationUniforms,
   CHROMATIC_ABERRATION_BUFFER_SIZE,
@@ -371,9 +373,10 @@ function applyEffects(
     )
   }
 
-  // Vignette (overlay, applied last)
+  // Vignette (requires texture input, applied last)
   if (effects.vignette?.enabled) {
-    const vignetteSpec = createVignetteSpec(
+    const inputTexture = renderer.copyCanvasToTexture()
+    const uniforms = createVignetteUniforms(
       {
         color: [0, 0, 0, 1],
         intensity: effects.vignette.intensity,
@@ -382,7 +385,11 @@ function applyEffects(
       },
       viewport
     )
-    renderer.render(vignetteSpec, { clear: false })
+    renderer.applyPostEffect(
+      { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
+      inputTexture,
+      { clear: true }
+    )
   }
 }
 
