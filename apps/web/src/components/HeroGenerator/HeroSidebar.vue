@@ -67,6 +67,7 @@ const emit = defineEmits<{
   (e: 'remove-layer', layerId: string): void
   (e: 'move-layer', sourceId: string, targetId: string, position: DropPosition): void
   (e: 'group-selection', layerId: string): void
+  (e: 'use-as-mask', layerId: string): void
   (e: 'layer-contextmenu', layerId: string, event: MouseEvent, targetType: ContextTargetType): void
   // Foreground events
   (e: 'select-foreground-element', elementId: string): void

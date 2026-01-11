@@ -379,6 +379,7 @@ export {
   insertNode,
   moveNode,
   wrapNodeInGroup,
+  wrapNodeInMaskedGroup,
   // Legacy aliases (deprecated)
   type LayerNodeType,
   type LayerNodeBase,

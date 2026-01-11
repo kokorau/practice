@@ -215,6 +215,7 @@ export {
   insertNode,
   moveNode,
   wrapNodeInGroup,
+  wrapNodeInMaskedGroup,
   // Legacy LayerNode factories
   createBaseLayerNode,
   createGroupLayerNode,

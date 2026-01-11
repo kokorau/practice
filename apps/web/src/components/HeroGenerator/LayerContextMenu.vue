@@ -27,6 +27,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   'group-selection': [layerId: string]
+  'use-as-mask': [layerId: string]
   'toggle-visibility': [layerId: string]
   'remove-layer': [layerId: string]
 }>()
@@ -90,6 +91,11 @@ const handleGroupSelection = () => {
   emit('close')
 }
 
+const handleUseAsMask = () => {
+  emit('use-as-mask', props.layerId)
+  emit('close')
+}
+
 const handleToggleVisibility = () => {
   emit('toggle-visibility', props.layerId)
   emit('close')
@@ -146,6 +152,16 @@ onUnmounted(() => {
         >
           <span class="material-icons">folder</span>
           <span class="menu-label">Group Selection</span>
+        </button>
+
+        <!-- Use as Mask -->
+        <button
+          v-if="!isBaseLayer"
+          class="menu-item"
+          @click="handleUseAsMask"
+        >
+          <span class="material-icons">vignette</span>
+          <span class="menu-label">Use as Mask</span>
         </button>
 
         <div v-if="!isBaseLayer" class="menu-divider" />
