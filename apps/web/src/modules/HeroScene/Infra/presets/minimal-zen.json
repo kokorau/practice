@@ -20,7 +20,7 @@
             "type": "effect",
             "enabled": true,
             "config": {
-              "vignette": { "enabled": true, "intensity": 0.2, "radius": 0.9, "softness": 0.8 },
+              "vignette": { "enabled": false, "intensity": 0.2, "radius": 0.9, "softness": 0.8 },
               "chromaticAberration": { "enabled": false, "intensity": 0.01 },
               "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
               "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
