@@ -38,6 +38,7 @@ import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import SurfaceSelector from '../components/HeroGenerator/SurfaceSelector.vue'
 import GridPositionPicker from '../components/HeroGenerator/GridPositionPicker.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
+import { getGoogleFontPresets } from '@practice/font'
 import PrimitiveColorPicker from '../components/HeroGenerator/PrimitiveColorPicker.vue'
 import MaskPatternThumbnail from '../components/HeroGenerator/MaskPatternThumbnail.vue'
 import SchemaFields from '../components/SchemaFields.vue'
@@ -509,6 +510,30 @@ const selectedElementColorKey = computed({
     }
   },
 })
+
+// ============================================================
+// Font Panel State
+// ============================================================
+const isFontPanelOpen = ref(false)
+const allFontPresets = computed(() => getGoogleFontPresets({ excludeIconFonts: true }))
+
+const selectedFontPreset = computed(() => {
+  const fontId = selectedElementFont.value
+  if (!fontId) return null
+  return allFontPresets.value.find(p => p.id === fontId) ?? null
+})
+
+const selectedFontDisplayName = computed(() => {
+  return selectedFontPreset.value?.name ?? 'System Default'
+})
+
+const openFontPanel = () => {
+  isFontPanelOpen.value = true
+}
+
+const closeFontPanel = () => {
+  isFontPanelOpen.value = false
+}
 
 // ============================================================
 // Dynamic CSS Injection for Palette Preview
@@ -1327,6 +1352,18 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
     </FloatingPanel>
 
+    <!-- フォント選択パネル (右パネルの左側に表示) -->
+    <FloatingPanel
+      v-if="activeTab === 'generator'"
+      title="Font"
+      :is-open="isFontPanelOpen"
+      position="right"
+      :ignore-refs="[rightPanelRef]"
+      @close="closeFontPanel"
+    >
+      <FontSelector v-model="selectedElementFont" />
+    </FloatingPanel>
+
     <!-- 中央: メインコンテンツ -->
     <main class="hero-main">
       <!-- ヘッダー -->
@@ -1428,7 +1465,13 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             </div>
             <div class="settings-section">
               <p class="settings-label">Font</p>
-              <FontSelector v-model="selectedElementFont" />
+              <button class="font-trigger" @click="openFontPanel">
+                <span
+                  class="font-trigger-name"
+                  :style="{ fontFamily: selectedFontPreset?.family }"
+                >{{ selectedFontDisplayName }}</span>
+                <span class="material-icons font-trigger-arrow">chevron_right</span>
+              </button>
             </div>
             <div class="settings-section">
               <p class="settings-label">Font Size</p>
@@ -1497,7 +1540,13 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
             </div>
             <div class="settings-section">
               <p class="settings-label">Font</p>
-              <FontSelector v-model="selectedElementFont" />
+              <button class="font-trigger" @click="openFontPanel">
+                <span
+                  class="font-trigger-name"
+                  :style="{ fontFamily: selectedFontPreset?.family }"
+                >{{ selectedFontDisplayName }}</span>
+                <span class="material-icons font-trigger-arrow">chevron_right</span>
+              </button>
             </div>
             <div class="settings-section">
               <p class="settings-label">Font Size</p>
@@ -2119,6 +2168,58 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
 
 .dark .font-size-value {
   color: oklch(0.70 0.02 260);
+}
+
+/* Font Trigger */
+.font-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: oklch(0.94 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.dark .font-trigger {
+  background: oklch(0.22 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+}
+
+.font-trigger:hover {
+  border-color: oklch(0.70 0.01 260);
+  background: oklch(0.90 0.01 260);
+}
+
+.dark .font-trigger:hover {
+  border-color: oklch(0.40 0.02 260);
+  background: oklch(0.26 0.02 260);
+}
+
+.font-trigger-name {
+  flex: 1;
+  font-size: 0.875rem;
+  color: oklch(0.25 0.02 260);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .font-trigger-name {
+  color: oklch(0.90 0.02 260);
+}
+
+.font-trigger-arrow {
+  font-size: 1.125rem;
+  color: oklch(0.50 0.02 260);
+}
+
+.dark .font-trigger-arrow {
+  color: oklch(0.60 0.02 260);
 }
 
 /* Color Selection Section */

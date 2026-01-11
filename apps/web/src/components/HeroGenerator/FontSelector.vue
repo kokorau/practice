@@ -76,10 +76,6 @@ const handleSelect = (preset: FontPreset) => {
   emit('update:modelValue', preset.id)
 }
 
-const handleClear = () => {
-  emit('update:modelValue', undefined)
-}
-
 // ============================================================
 // Preload visible fonts
 // ============================================================
@@ -111,10 +107,7 @@ onMounted(() => {
       >
         {{ selectedPreset.name }}
       </span>
-      <span v-else class="current-font-placeholder">Default</span>
-      <button v-if="selectedPreset" class="clear-button" @click="handleClear">
-        <span class="material-icons">close</span>
-      </button>
+      <span v-else class="current-font-name">System Default</span>
     </div>
 
     <!-- Search -->
