@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { subscribeHeroView } from './subscribeHeroView'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
-import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
+import { createHeroViewInMemoryRepository } from './HeroViewInMemoryRepository'
+import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
 
 describe('subscribeHeroView', () => {
   it('should call subscriber immediately with current config', () => {

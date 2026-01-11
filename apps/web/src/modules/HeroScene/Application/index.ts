@@ -27,9 +27,6 @@ export { createHeroSceneEditorState } from './EditorState'
 // Re-export Ports
 export type {
   HeroViewPresetRepository,
-  HeroViewRepository,
-  HeroViewSubscriber,
-  HeroViewUnsubscribe,
   Object3DRendererPort,
   Object3DRenderParams,
   LightingConfig,
@@ -38,9 +35,6 @@ export type {
 // Re-export Preset UseCase
 export type { GetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
 export { createGetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
-
-// Re-export HeroView UseCases
-export { getHeroView, setHeroView, subscribeHeroView } from './usecase'
 
 // Re-export Compile functions
 export type {

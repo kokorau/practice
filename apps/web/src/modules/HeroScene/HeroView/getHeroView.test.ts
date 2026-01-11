@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { getHeroView } from './getHeroView'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
-import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
+import { createHeroViewInMemoryRepository } from './HeroViewInMemoryRepository'
+import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
 
 describe('getHeroView', () => {
   it('should return default config when using default repository', () => {

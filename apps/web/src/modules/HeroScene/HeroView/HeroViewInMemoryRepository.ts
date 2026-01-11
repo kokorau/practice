@@ -10,7 +10,7 @@ import type {
   HeroViewRepository,
   HeroViewSubscriber,
   HeroViewUnsubscribe,
-} from '../Application/ports/HeroViewRepository'
+} from './HeroViewRepository'
 import {
   type HeroViewConfig,
   createDefaultHeroViewConfig,

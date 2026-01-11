@@ -286,10 +286,6 @@ export type {
   // Preset types
   HeroViewPresetRepository,
   GetHeroViewPresetsUseCase,
-  // HeroView Repository types
-  HeroViewRepository,
-  HeroViewSubscriber,
-  HeroViewUnsubscribe,
 } from './Application'
 
 export {
@@ -299,11 +295,21 @@ export {
   compileHeroScene,
   // Preset UseCase
   createGetHeroViewPresetsUseCase,
-  // HeroView UseCases
+} from './Application'
+
+// HeroView Module
+export type {
+  HeroViewRepository,
+  HeroViewSubscriber,
+  HeroViewUnsubscribe,
+} from './HeroView'
+
+export {
+  createHeroViewInMemoryRepository,
   getHeroView,
   setHeroView,
   subscribeHeroView,
-} from './Application'
+} from './HeroView'
 
 // Infra
 export type { TextTextureRendererConfig, HeroSceneRendererDeps, RenderHeroConfigOptions, TextureRendererLike } from './Infra'
@@ -315,8 +321,6 @@ export {
   createHeroSceneRenderer,
   // Preset Repository
   createInMemoryHeroViewPresetRepository,
-  // HeroView Repository
-  createHeroViewInMemoryRepository,
   // 3D Object Renderer
   ThreeJsObject3DRenderer,
   createObject3DRenderer,

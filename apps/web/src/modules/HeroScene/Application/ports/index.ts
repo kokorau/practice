@@ -6,11 +6,6 @@
 
 export type { HeroViewPresetRepository } from './HeroViewPresetRepository'
 export type {
-  HeroViewRepository,
-  HeroViewSubscriber,
-  HeroViewUnsubscribe,
-} from './HeroViewRepository'
-export type {
   Object3DRendererPort,
   Object3DRenderParams,
   LightingConfig,
