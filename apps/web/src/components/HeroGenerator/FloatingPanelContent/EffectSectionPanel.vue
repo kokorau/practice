@@ -4,22 +4,31 @@
  *
  * エフェクト設定パネルのコンテンツ
  */
+import { computed } from 'vue'
 import SchemaFields from '../../SchemaFields.vue'
+import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
 import {
   VignetteEffectSchema,
   ChromaticAberrationEffectSchema,
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
+  createDefaultEffectConfig,
 } from '../../../modules/HeroScene'
+import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
+import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
 
 export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone'
 
-defineProps<{
+const props = defineProps<{
   selectedFilterType: FilterType
   vignetteConfig: Record<string, unknown>
   chromaticConfig: Record<string, unknown>
   dotHalftoneConfig: Record<string, unknown>
   lineHalftoneConfig: Record<string, unknown>
+  // Hero preview props
+  baseConfig?: HeroViewConfig
+  palette?: PrimitivePalette
+  showPreview?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -29,6 +38,77 @@ const emit = defineEmits<{
   (e: 'update:dotHalftoneConfig', value: Record<string, unknown>): void
   (e: 'update:lineHalftoneConfig', value: Record<string, unknown>): void
 }>()
+
+/**
+ * Create a config with specific effect enabled
+ */
+const createEffectPreviewConfig = (
+  base: HeroViewConfig,
+  effectType: FilterType,
+  effectConfig?: LayerEffectConfig
+): HeroViewConfig => {
+  const defaultEffects = createDefaultEffectConfig()
+
+  // Create effects config based on type
+  const effects: LayerEffectConfig = {
+    vignette: { ...defaultEffects.vignette, enabled: effectType === 'vignette' },
+    chromaticAberration: { ...defaultEffects.chromaticAberration, enabled: effectType === 'chromaticAberration' },
+    dotHalftone: { ...defaultEffects.dotHalftone, enabled: effectType === 'dotHalftone' },
+    lineHalftone: { ...defaultEffects.lineHalftone, enabled: effectType === 'lineHalftone' },
+  }
+
+  // Apply current config values if provided
+  if (effectConfig) {
+    if (effectType === 'vignette') {
+      effects.vignette = { ...effectConfig.vignette, enabled: true }
+    } else if (effectType === 'chromaticAberration') {
+      effects.chromaticAberration = { ...effectConfig.chromaticAberration, enabled: true }
+    } else if (effectType === 'dotHalftone') {
+      effects.dotHalftone = { ...effectConfig.dotHalftone, enabled: true }
+    } else if (effectType === 'lineHalftone') {
+      effects.lineHalftone = { ...effectConfig.lineHalftone, enabled: true }
+    }
+  }
+
+  return {
+    ...base,
+    layers: base.layers.map(layer => {
+      if (layer.type === 'base') {
+        return {
+          ...layer,
+          processors: layer.processors.map(p => {
+            if (p.type === 'effect') {
+              return { ...p, enabled: true, config: effects }
+            }
+            return p
+          }),
+        }
+      }
+      return layer
+    }),
+  }
+}
+
+// Current effect config for preview
+const currentEffectConfig = computed((): LayerEffectConfig => ({
+  vignette: props.vignetteConfig as LayerEffectConfig['vignette'],
+  chromaticAberration: props.chromaticConfig as LayerEffectConfig['chromaticAberration'],
+  dotHalftone: props.dotHalftoneConfig as LayerEffectConfig['dotHalftone'],
+  lineHalftone: props.lineHalftoneConfig as LayerEffectConfig['lineHalftone'],
+}))
+
+// Preview configs for each effect type
+const previewConfigs = computed(() => {
+  if (!props.baseConfig) return null
+
+  return {
+    void: props.baseConfig,
+    vignette: createEffectPreviewConfig(props.baseConfig, 'vignette', currentEffectConfig.value),
+    chromaticAberration: createEffectPreviewConfig(props.baseConfig, 'chromaticAberration', currentEffectConfig.value),
+    dotHalftone: createEffectPreviewConfig(props.baseConfig, 'dotHalftone', currentEffectConfig.value),
+    lineHalftone: createEffectPreviewConfig(props.baseConfig, 'lineHalftone', currentEffectConfig.value),
+  }
+})
 </script>
 
 <template>
@@ -69,26 +149,66 @@ const emit = defineEmits<{
 
     <!-- Filter type selection -->
     <div class="filter-options">
-      <label class="filter-option" :class="{ active: selectedFilterType === 'void' }">
-        <input type="radio" :checked="selectedFilterType === 'void'" @change="emit('update:selectedFilterType', 'void')" />
+      <button
+        class="filter-option"
+        :class="{ active: selectedFilterType === 'void' }"
+        @click="emit('update:selectedFilterType', 'void')"
+      >
+        <HeroPreviewThumbnail
+          v-if="showPreview && previewConfigs && palette"
+          :config="previewConfigs.void"
+          :palette="palette"
+        />
         <span class="filter-name">None</span>
-      </label>
-      <label class="filter-option" :class="{ active: selectedFilterType === 'vignette' }">
-        <input type="radio" :checked="selectedFilterType === 'vignette'" @change="emit('update:selectedFilterType', 'vignette')" />
+      </button>
+      <button
+        class="filter-option"
+        :class="{ active: selectedFilterType === 'vignette' }"
+        @click="emit('update:selectedFilterType', 'vignette')"
+      >
+        <HeroPreviewThumbnail
+          v-if="showPreview && previewConfigs && palette"
+          :config="previewConfigs.vignette"
+          :palette="palette"
+        />
         <span class="filter-name">Vignette</span>
-      </label>
-      <label class="filter-option" :class="{ active: selectedFilterType === 'chromaticAberration' }">
-        <input type="radio" :checked="selectedFilterType === 'chromaticAberration'" @change="emit('update:selectedFilterType', 'chromaticAberration')" />
+      </button>
+      <button
+        class="filter-option"
+        :class="{ active: selectedFilterType === 'chromaticAberration' }"
+        @click="emit('update:selectedFilterType', 'chromaticAberration')"
+      >
+        <HeroPreviewThumbnail
+          v-if="showPreview && previewConfigs && palette"
+          :config="previewConfigs.chromaticAberration"
+          :palette="palette"
+        />
         <span class="filter-name">Chromatic Aberration</span>
-      </label>
-      <label class="filter-option" :class="{ active: selectedFilterType === 'dotHalftone' }">
-        <input type="radio" :checked="selectedFilterType === 'dotHalftone'" @change="emit('update:selectedFilterType', 'dotHalftone')" />
+      </button>
+      <button
+        class="filter-option"
+        :class="{ active: selectedFilterType === 'dotHalftone' }"
+        @click="emit('update:selectedFilterType', 'dotHalftone')"
+      >
+        <HeroPreviewThumbnail
+          v-if="showPreview && previewConfigs && palette"
+          :config="previewConfigs.dotHalftone"
+          :palette="palette"
+        />
         <span class="filter-name">Dot Halftone</span>
-      </label>
-      <label class="filter-option" :class="{ active: selectedFilterType === 'lineHalftone' }">
-        <input type="radio" :checked="selectedFilterType === 'lineHalftone'" @change="emit('update:selectedFilterType', 'lineHalftone')" />
+      </button>
+      <button
+        class="filter-option"
+        :class="{ active: selectedFilterType === 'lineHalftone' }"
+        @click="emit('update:selectedFilterType', 'lineHalftone')"
+      >
+        <HeroPreviewThumbnail
+          v-if="showPreview && previewConfigs && palette"
+          :config="previewConfigs.lineHalftone"
+          :palette="palette"
+        />
         <span class="filter-name">Line Halftone</span>
-      </label>
+      </button>
     </div>
   </div>
 </template>
@@ -102,47 +222,44 @@ const emit = defineEmits<{
 
 .filter-option {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: oklch(0.92 0.01 260);
-  border: 2px solid transparent;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 2px solid oklch(0.85 0.01 260);
   border-radius: 0.5rem;
   cursor: pointer;
+  overflow: hidden;
   transition: border-color 0.15s, background 0.15s;
 }
 
 :global(.dark) .filter-option {
-  background: oklch(0.20 0.02 260);
+  border-color: oklch(0.30 0.02 260);
 }
 
 .filter-option:hover {
-  background: oklch(0.88 0.01 260);
+  border-color: oklch(0.75 0.01 260);
 }
 
 :global(.dark) .filter-option:hover {
-  background: oklch(0.24 0.02 260);
+  border-color: oklch(0.40 0.02 260);
 }
 
 .filter-option.active {
   border-color: oklch(0.55 0.20 250);
-  background: oklch(0.55 0.20 250 / 0.15);
-}
-
-.filter-option input[type="radio"] {
-  width: 1rem;
-  height: 1rem;
-  accent-color: oklch(0.55 0.20 250);
+  background: oklch(0.55 0.20 250 / 0.1);
 }
 
 .filter-name {
-  font-size: 0.875rem;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: oklch(0.25 0.02 260);
+  color: oklch(0.40 0.02 260);
+  text-align: left;
 }
 
 :global(.dark) .filter-name {
-  color: oklch(0.85 0.02 260);
+  color: oklch(0.70 0.02 260);
 }
 
 .filter-params {

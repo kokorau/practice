@@ -6,6 +6,7 @@
  */
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '../../../modules/SemanticColorPalette/Domain'
+import type { HeroViewConfig } from '../../../modules/HeroScene'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import SchemaFields from '../../SchemaFields.vue'
@@ -27,6 +28,9 @@ defineProps<{
   customFileName: string | null
   // Random loading
   isLoadingRandom: boolean
+  // Hero preview mode
+  previewMode?: 'pattern' | 'hero'
+  baseConfig?: HeroViewConfig
 }>()
 
 const emit = defineEmits<{
@@ -73,6 +77,9 @@ const emit = defineEmits<{
     :selected-index="selectedIndex"
     :show-random-button="true"
     :is-loading-random="isLoadingRandom"
+    :preview-mode="previewMode"
+    :base-config="baseConfig"
+    :palette="palette"
     @upload-image="emit('upload-image', $event)"
     @clear-image="emit('clear-image')"
     @select-pattern="emit('select-pattern', $event)"

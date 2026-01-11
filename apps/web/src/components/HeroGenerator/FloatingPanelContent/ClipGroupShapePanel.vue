@@ -3,13 +3,21 @@
  * ClipGroupShapePanel
  *
  * クリップグループ形状選択パネルのコンテンツ
+ *
+ * previewMode:
+ * - 'mask': 従来のMaskPatternThumbnailを使用
+ * - 'hero': HeroPreviewThumbnailで完全なHeroViewプレビューを表示
  */
+import { computed } from 'vue'
 import type { ObjectSchema } from '@practice/schema'
 import type { MaskPattern, TextureRenderSpec, RGBA } from '@practice/texture'
 import SchemaFields from '../../SchemaFields.vue'
 import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
+import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
+import type { HeroViewConfig, MaskShapeConfig, MaskProcessorConfig } from '../../../modules/HeroScene'
+import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
 
-defineProps<{
+const props = defineProps<{
   // Shape params
   shapeSchema: ObjectSchema | null
   shapeParams: Record<string, unknown> | null
@@ -21,12 +29,79 @@ defineProps<{
   maskInnerColor: RGBA
   // Background thumbnail spec creator
   createBackgroundThumbnailSpec: (viewport: { width: number; height: number }) => TextureRenderSpec | null
+  // Hero preview mode
+  previewMode?: 'mask' | 'hero'
+  baseConfig?: HeroViewConfig
+  palette?: PrimitivePalette
 }>()
 
 const emit = defineEmits<{
   (e: 'update:shapeParams', value: Record<string, unknown>): void
   (e: 'update:selectedIndex', value: number): void
 }>()
+
+// Check if hero preview mode is enabled
+const isHeroMode = computed(() => props.previewMode === 'hero' && props.baseConfig && props.palette)
+
+/**
+ * Create a preview config with a specific mask shape
+ */
+const createMaskPreviewConfig = (base: HeroViewConfig, shape: MaskShapeConfig): HeroViewConfig => {
+  return {
+    ...base,
+    layers: base.layers.map(layer => {
+      if (layer.type === 'surface') {
+        return {
+          ...layer,
+          processors: layer.processors.map(p => {
+            if (p.type === 'mask') {
+              return { ...p, shape } as MaskProcessorConfig
+            }
+            return p
+          }),
+        }
+      }
+      if (layer.type === 'group' && 'children' in layer && layer.children) {
+        return {
+          ...layer,
+          children: layer.children.map(child => {
+            if (child.type === 'surface') {
+              return {
+                ...child,
+                processors: child.processors.map(p => {
+                  if (p.type === 'mask') {
+                    return { ...p, shape } as MaskProcessorConfig
+                  }
+                  return p
+                }),
+              }
+            }
+            return child
+          }),
+        }
+      }
+      return layer
+    }),
+  }
+}
+
+// Preview configs for each pattern (hero mode only)
+const previewConfigs = computed(() => {
+  if (!props.baseConfig) return null
+
+  return props.patterns.map(pattern => {
+    if (pattern.maskConfig) {
+      // Convert @practice/texture MaskShapeConfig to HeroViewConfig MaskShapeConfig
+      // by ensuring cutout has a default value
+      const shape: MaskShapeConfig = {
+        ...pattern.maskConfig,
+        cutout: pattern.maskConfig.cutout ?? false,
+      } as MaskShapeConfig
+      return createMaskPreviewConfig(props.baseConfig!, shape)
+    }
+    return null
+  })
+})
 </script>
 
 <template>
@@ -47,7 +122,13 @@ const emit = defineEmits<{
       :class="{ active: selectedIndex === i }"
       @click="emit('update:selectedIndex', i)"
     >
+      <HeroPreviewThumbnail
+        v-if="isHeroMode && previewConfigs && previewConfigs[i] && palette"
+        :config="previewConfigs[i]!"
+        :palette="palette"
+      />
       <MaskPatternThumbnail
+        v-else
         :create-background-spec="createBackgroundThumbnailSpec"
         :create-mask-spec="pattern.createSpec"
         :mask-color1="maskOuterColor"
