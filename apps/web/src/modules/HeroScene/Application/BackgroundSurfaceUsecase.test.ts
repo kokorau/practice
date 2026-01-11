@@ -19,6 +19,9 @@ describe('BackgroundSurfaceUsecase', () => {
       background: { primary: 'B', secondary: 'auto' },
       mask: { primary: 'auto', secondary: 'auto' },
       semanticContext: 'canvas',
+      brand: { hue: 198, saturation: 70, value: 65 },
+      accent: { hue: 30, saturation: 80, value: 60 },
+      foundation: { hue: 0, saturation: 0, value: 97 },
     },
     layers: [
       {
