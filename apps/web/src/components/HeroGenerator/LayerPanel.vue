@@ -43,6 +43,9 @@ const props = defineProps<{
 // Layer selection from store
 const { layerId: selectedLayerId, processorType: selectedProcessorType } = useLayerSelection()
 
+/** HTML element types */
+export type HtmlElementType = 'title' | 'description' | 'button' | 'link'
+
 const emit = defineEmits<{
   'select-layer': [layerId: string]
   'toggle-expand': [layerId: string]
@@ -53,6 +56,7 @@ const emit = defineEmits<{
   'move-layer': [sourceId: string, targetId: string, position: DropPosition]
   'open-foreground-title': []
   'open-foreground-description': []
+  'add-html-element': [type: HtmlElementType]
 }>()
 
 // ============================================================
@@ -110,6 +114,24 @@ const addableLayerTypes = computed(() => {
 const handleAddLayer = (type: LayerType) => {
   emit('add-layer', type)
   showAddMenu.value = false
+}
+
+// ============================================================
+// Add HTML Element Menu
+// ============================================================
+
+const showHtmlAddMenu = ref(false)
+
+const htmlElementTypes: { type: HtmlElementType; label: string; icon: string; disabled?: boolean }[] = [
+  { type: 'title', label: 'Title', icon: 'title' },
+  { type: 'description', label: 'Description', icon: 'notes' },
+  { type: 'button', label: 'Button (WIP)', icon: 'smart_button', disabled: true },
+  { type: 'link', label: 'Link (WIP)', icon: 'link', disabled: true },
+]
+
+const handleAddHtmlElement = (type: HtmlElementType) => {
+  emit('add-html-element', type)
+  showHtmlAddMenu.value = false
 }
 
 // Get score level class for contrast badge
@@ -185,6 +207,32 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       <div class="section-header">
         <span class="material-icons section-icon">code</span>
         <span class="section-title">HTML</span>
+        <div class="add-layer-container">
+          <button
+            class="add-layer-icon-button"
+            :class="{ active: showHtmlAddMenu }"
+            title="Add HTML Element"
+            @click="showHtmlAddMenu = !showHtmlAddMenu"
+          >
+            <span class="material-icons">add</span>
+          </button>
+
+          <Transition name="fade">
+            <div v-if="showHtmlAddMenu" class="add-layer-menu">
+              <button
+                v-for="item in htmlElementTypes"
+                :key="item.type"
+                class="add-menu-item"
+                :class="{ disabled: item.disabled }"
+                :disabled="item.disabled"
+                @click="!item.disabled && handleAddHtmlElement(item.type)"
+              >
+                <span class="material-icons">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </button>
+            </div>
+          </Transition>
+        </div>
       </div>
 
       <div class="html-layer-list">

@@ -407,6 +407,17 @@ const openForegroundDescription = () => {
   selectHtmlLayer('description')
 }
 
+const handleAddHtmlElement = (type: 'title' | 'description' | 'button' | 'link') => {
+  // For now, just open the corresponding panel
+  // Future: could add new HTML elements dynamically
+  if (type === 'title') {
+    selectHtmlLayer('title')
+  } else if (type === 'description') {
+    selectHtmlLayer('description')
+  }
+  // button and link are WIP
+}
+
 // ============================================================
 // Foreground Layout Config (from useHeroScene)
 // ============================================================
@@ -967,6 +978,7 @@ const getScoreLevel = (score: number): 'excellent' | 'good' | 'fair' | 'poor' =>
       @move-layer="handleMoveLayer"
       @open-foreground-title="openForegroundTitle"
       @open-foreground-description="openForegroundDescription"
+      @add-html-element="handleAddHtmlElement"
     />
 
     <!-- サブパネル: パターン選択 (Generator タブのみ, 右パネルに沿って表示) -->

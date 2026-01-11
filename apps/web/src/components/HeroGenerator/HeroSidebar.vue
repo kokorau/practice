@@ -4,7 +4,7 @@ import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import ColorPresets from '../SiteBuilder/ColorPresets.vue'
 import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
-import LayerPanel, { type LayerType } from './LayerPanel.vue'
+import LayerPanel, { type LayerType, type HtmlElementType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import type { HeroViewPreset, LayerNode, DropPosition } from '../../modules/HeroScene'
 type NeutralRampItem = {
@@ -67,6 +67,7 @@ const emit = defineEmits<{
   // Foreground events
   (e: 'open-foreground-title'): void
   (e: 'open-foreground-description'): void
+  (e: 'add-html-element', type: HtmlElementType): void
 }>()
 
 // ============================================================
@@ -275,6 +276,7 @@ const selectedPresetName = computed(() => {
           @move-layer="(src: string, tgt: string, pos: DropPosition) => emit('move-layer', src, tgt, pos)"
           @open-foreground-title="emit('open-foreground-title')"
           @open-foreground-description="emit('open-foreground-description')"
+          @add-html-element="(type: HtmlElementType) => emit('add-html-element', type)"
         />
       </div>
     </template>
