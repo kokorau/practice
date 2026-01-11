@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
 import {
@@ -11,8 +11,6 @@ import {
   createPrimitivePalette,
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
-  toCSSText,
-  toCSSRuleSetsText,
 } from '../modules/SemanticColorPalette/Infra'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
@@ -47,6 +45,7 @@ import { useTextLayerEditor } from '../composables/useTextLayerEditor'
 import { useFilterEditor } from '../composables/useFilterEditor'
 import { useForegroundElement } from '../composables/useForegroundElement'
 import { useContextMenu } from '../composables/useContextMenu'
+import { usePaletteStyles } from '../composables/usePaletteStyles'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
 import './HeroViewGeneratorView.css'
@@ -285,24 +284,9 @@ const closeSection = () => {
 // ============================================================
 // Dynamic CSS Injection for Palette Preview
 // ============================================================
-let paletteStyleElement: HTMLStyleElement | null = null
-
-const updatePaletteStyles = () => {
-  if (!paletteStyleElement) return
-  const colorVariables = toCSSText(semanticPalette.value, '.hero-palette-preview')
-  const cssRuleSets = toCSSRuleSetsText()
-  paletteStyleElement.textContent = `${colorVariables}\n\n${cssRuleSets}`
-}
-
-watch(semanticPalette, updatePaletteStyles)
+usePaletteStyles(semanticPalette)
 
 onMounted(async () => {
-  // Palette用スタイル要素を作成
-  paletteStyleElement = document.createElement('style')
-  paletteStyleElement.setAttribute('data-hero-palette', '')
-  document.head.appendChild(paletteStyleElement)
-  updatePaletteStyles()
-
   // Load layout presets and apply initial preset (including colors)
   const initialColorPreset = await loadPresets()
   if (initialColorPreset) {
@@ -319,13 +303,6 @@ onMounted(async () => {
 
   // テクスチャプレビュー用キャンバス初期化 (HeroPreviewのcanvasを使用)
   await initPreview(heroPreviewRef.value?.canvasRef)
-})
-
-onUnmounted(() => {
-  if (paletteStyleElement) {
-    document.head.removeChild(paletteStyleElement)
-    paletteStyleElement = null
-  }
 })
 
 // Handle color preset application
