@@ -1353,16 +1353,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Add a new clip group layer
-   * TODO: In future, allow multiple clip groups
-   * Returns null if a clip group layer already exists (current limitation)
+   * Multiple clip groups are supported
    */
   const addMaskLayer = (): string | null => {
-    // Check if clip group layer already exists (temporary limitation)
-    const existingClipGroup = editorState.value.canvasLayers.find(
-      l => l.config.type === 'clipGroup'
-    )
-    if (existingClipGroup) return null
-
     const id = `clipgroup-${Date.now()}`
     const newLayer: EditorCanvasLayer = {
       id,
