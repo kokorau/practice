@@ -216,7 +216,10 @@ import {
   // Vignette shape support
   migrateVignetteConfig,
   type VignetteConfig,
+  // Effect types
+  type EffectType,
 } from '../../modules/HeroScene'
+import { useEffectManager } from '../useEffectManager'
 
 // ============================================================
 // Types
@@ -924,51 +927,66 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
-  // Per-Layer Filter State
+  // Per-Layer Filter State (delegated to useEffectManager)
   // ============================================================
-  // 選択中のレイヤーのフィルター編集用
-  const selectedFilterLayerId = ref<string | null>(LAYER_IDS.BASE)
 
-  // レイヤーごとのフィルター設定を保持（syncSceneLayersで再生成されても維持）
-  const layerFilterConfigs = ref<Map<string, LayerFilterConfig>>(new Map([
-    [LAYER_IDS.BASE, createDefaultFilterConfig()],
-    [LAYER_IDS.MASK, createDefaultFilterConfig()],
-  ]))
+  // Initialize effect manager and setup default layers
+  const effectManager = useEffectManager()
 
-  // 選択中レイヤーのフィルター設定へのアクセサ
-  const selectedLayerFilters = computed(() => {
-    const layerId = selectedFilterLayerId.value
-    if (!layerId) return null
-    return layerFilterConfigs.value.get(layerId) ?? null
-  })
+  // Initialize default layers (BASE and MASK)
+  effectManager.selectLayer(LAYER_IDS.BASE)
+  effectManager.selectLayer(LAYER_IDS.MASK)
+  // Select BASE layer as default
+  effectManager.selectLayer(LAYER_IDS.BASE)
+
+  // Expose selectedLayerId as selectedFilterLayerId (backward compatible alias)
+  const selectedFilterLayerId = effectManager.selectedLayerId
+
+  // Expose effects as layerFilterConfigs (backward compatible alias)
+  const layerFilterConfigs = computed(() => effectManager.effects.value)
+
+  // Expose selectedEffect as selectedLayerFilters (backward compatible alias)
+  const selectedLayerFilters = effectManager.selectedEffect
 
   // フィルター設定を更新（部分更新をサポート）
+  // DeepPartial型を定義（FilterState型との互換性のため）
   type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
   }
 
+  /**
+   * Update layer filters with deep partial merge
+   * Delegates to effectManager while maintaining editorState sync
+   */
   const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerFilterConfig>) => {
-    const current = layerFilterConfigs.value.get(layerId) ?? createDefaultFilterConfig()
-    // Fallback for old data that may not have blur property
-    const defaults = createDefaultFilterConfig()
-    const updated: LayerFilterConfig = {
-      vignette: { ...(current.vignette ?? defaults.vignette), ...(updates.vignette ?? {}) } as VignetteConfig,
-      chromaticAberration: { ...(current.chromaticAberration ?? defaults.chromaticAberration), ...(updates.chromaticAberration ?? {}) },
-      dotHalftone: { ...(current.dotHalftone ?? defaults.dotHalftone), ...(updates.dotHalftone ?? {}) },
-      lineHalftone: { ...(current.lineHalftone ?? defaults.lineHalftone), ...(updates.lineHalftone ?? {}) },
-      blur: { ...(current.blur ?? defaults.blur), ...(updates.blur ?? {}) },
+    // Update each effect type if present in updates
+    const effectTypes: EffectType[] = ['vignette', 'chromaticAberration', 'dotHalftone', 'lineHalftone', 'blur']
+    for (const effectType of effectTypes) {
+      const effectUpdate = updates[effectType]
+      if (effectUpdate) {
+        // Extract enabled separately if present
+        const { enabled, ...params } = effectUpdate as { enabled?: boolean; [key: string]: unknown }
+        if (Object.keys(params).length > 0) {
+          effectManager.updateEffectParams(layerId, effectType, params as Parameters<typeof effectManager.updateEffectParams>[2])
+        }
+        // Handle enabled state through setEffectType if explicitly set
+        if (enabled !== undefined) {
+          if (enabled) {
+            effectManager.setEffectType(layerId, effectType)
+          }
+        }
+      }
     }
-    // Create new Map to trigger Vue reactivity (Map.set() doesn't change the ref value)
-    const newMap = new Map(layerFilterConfigs.value)
-    newMap.set(layerId, updated)
-    layerFilterConfigs.value = newMap
 
-    // エディタ状態のレイヤーも更新
-    editorState.value = {
-      ...editorState.value,
-      canvasLayers: editorState.value.canvasLayers.map(l =>
-        l.id === layerId ? { ...l, filters: updated } : l
-      ),
+    // Sync with editorState.canvasLayers
+    const updatedFilters = effectManager.effects.value.get(layerId)
+    if (updatedFilters) {
+      editorState.value = {
+        ...editorState.value,
+        canvasLayers: editorState.value.canvasLayers.map(l =>
+          l.id === layerId ? { ...l, filters: updatedFilters } : l
+        ),
+      }
     }
   }
 
@@ -979,23 +997,31 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Select filter type (exclusive selection)
-   * Uses FilterUsecase pattern internally
+   * Delegates to effectManager.setEffectType
    */
   const selectFilterType = (layerId: string, type: FilterType) => {
-    updateLayerFilters(layerId, {
-      vignette: { enabled: type === 'vignette' },
-      chromaticAberration: { enabled: type === 'chromaticAberration' },
-      dotHalftone: { enabled: type === 'dotHalftone' },
-      lineHalftone: { enabled: type === 'lineHalftone' },
-      blur: { enabled: type === 'blur' },
-    })
+    // Convert FilterType 'void' to null for effectManager
+    const effectType: EffectType | null = type === 'void' ? null : type
+    effectManager.setEffectType(layerId, effectType)
+
+    // Sync with editorState.canvasLayers
+    const updatedFilters = effectManager.effects.value.get(layerId)
+    if (updatedFilters) {
+      editorState.value = {
+        ...editorState.value,
+        canvasLayers: editorState.value.canvasLayers.map(l =>
+          l.id === layerId ? { ...l, filters: updatedFilters } : l
+        ),
+      }
+    }
   }
 
   /**
    * Get current filter type for a layer
+   * Reads from effectManager.effects
    */
   const getFilterType = (layerId: string): FilterType => {
-    const filters = layerFilterConfigs.value.get(layerId)
+    const filters = effectManager.effects.value.get(layerId)
     if (!filters) return 'void'
     if (filters.vignette?.enabled) return 'vignette'
     if (filters.chromaticAberration?.enabled) return 'chromaticAberration'
@@ -1007,34 +1033,43 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Update vignette parameters
+   * Delegates to effectManager.updateEffectParams
    */
   const updateVignetteParams = (layerId: string, params: Partial<{ intensity: number; radius: number; softness: number }>) => {
-    updateLayerFilters(layerId, { vignette: params })
+    effectManager.updateEffectParams(layerId, 'vignette', params)
+    syncEditorStateFilters(layerId)
   }
 
   /**
    * Update chromatic aberration parameters
+   * Delegates to effectManager.updateEffectParams
    */
   const updateChromaticAberrationParams = (layerId: string, params: Partial<{ intensity: number }>) => {
-    updateLayerFilters(layerId, { chromaticAberration: params })
+    effectManager.updateEffectParams(layerId, 'chromaticAberration', params)
+    syncEditorStateFilters(layerId)
   }
 
   /**
    * Update dot halftone parameters
+   * Delegates to effectManager.updateEffectParams
    */
   const updateDotHalftoneParams = (layerId: string, params: Partial<{ dotSize: number; spacing: number; angle: number }>) => {
-    updateLayerFilters(layerId, { dotHalftone: params })
+    effectManager.updateEffectParams(layerId, 'dotHalftone', params)
+    syncEditorStateFilters(layerId)
   }
 
   /**
    * Update line halftone parameters
+   * Delegates to effectManager.updateEffectParams
    */
   const updateLineHalftoneParams = (layerId: string, params: Partial<{ lineWidth: number; spacing: number; angle: number }>) => {
-    updateLayerFilters(layerId, { lineHalftone: params })
+    effectManager.updateEffectParams(layerId, 'lineHalftone', params)
+    syncEditorStateFilters(layerId)
   }
 
   /**
    * Update blur parameters
+   * Delegates to effectManager.updateEffectParams
    */
   const updateBlurParams = (layerId: string, params: Partial<{
     radius: number
@@ -1051,7 +1086,23 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     rectWidth: number
     rectHeight: number
   }>) => {
-    updateLayerFilters(layerId, { blur: params })
+    effectManager.updateEffectParams(layerId, 'blur', params)
+    syncEditorStateFilters(layerId)
+  }
+
+  /**
+   * Sync editorState.canvasLayers with effectManager state
+   */
+  const syncEditorStateFilters = (layerId: string) => {
+    const updatedFilters = effectManager.effects.value.get(layerId)
+    if (updatedFilters) {
+      editorState.value = {
+        ...editorState.value,
+        canvasLayers: editorState.value.canvasLayers.map(l =>
+          l.id === layerId ? { ...l, filters: updatedFilters } : l
+        ),
+      }
+    }
   }
 
   // ============================================================
@@ -1421,8 +1472,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
     }
 
-    // Trigger reactivity for layerFilterConfigs (Map needs explicit trigger)
-    layerFilterConfigs.value = new Map(layerFilterConfigs.value)
+    // Note: layerFilterConfigs is now a computed from effectManager.effects
+    // Reactivity is automatically triggered when effectManager state changes
 
     // Trigger reactivity
     editorState.value = { ...editorState.value }
