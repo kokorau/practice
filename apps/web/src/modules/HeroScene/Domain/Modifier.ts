@@ -9,23 +9,21 @@
  * @see LayerNode.ts for MaskNode definition
  */
 
-import type { LayerEffectConfig } from './EffectSchema'
-import { createDefaultEffectConfig } from './EffectSchema'
-
 // ============================================================
-// Effect Modifier
+// Effect Modifier (Placeholder)
 // ============================================================
 
 /**
- * Effect modifier configuration.
- * Applies visual effects to a layer or group.
+ * Effect modifier placeholder.
+ * Indicates that a layer has effects attached.
+ * Actual effect data is managed by useEffectManager.
+ *
+ * @see useEffectManager for effect configuration
  */
 export interface EffectModifier {
   type: 'effect'
-  /** Whether this modifier is enabled */
-  enabled: boolean
-  /** Effect configuration */
-  config: LayerEffectConfig
+  /** Indicates effects are attached to this layer */
+  hasEffect: true
 }
 
 // ============================================================
@@ -44,18 +42,19 @@ export type Modifier = EffectModifier | MaskModifier
 // ============================================================
 
 /**
- * Create a default effect modifier
+ * Create an effect placeholder.
+ * This indicates that a layer has effects attached.
+ * Actual effect configuration is managed by useEffectManager.
  */
-export const createEffectModifier = (
-  config?: Partial<LayerEffectConfig>
-): EffectModifier => ({
+export const createEffectPlaceholder = (): EffectModifier => ({
   type: 'effect',
-  enabled: true,
-  config: {
-    ...createDefaultEffectConfig(),
-    ...config,
-  },
+  hasEffect: true,
 })
+
+/**
+ * @deprecated Use createEffectPlaceholder instead
+ */
+export const createEffectModifier = createEffectPlaceholder
 
 // ============================================================
 // Utility Functions
@@ -68,10 +67,15 @@ export const isEffectModifier = (modifier: Modifier): modifier is EffectModifier
   modifier.type === 'effect'
 
 /**
- * Get enabled effects from modifier list
+ * Get effect placeholders from modifier list
  */
-export const getEnabledEffects = (modifiers: Modifier[]): EffectModifier[] =>
-  modifiers.filter((m): m is EffectModifier => isEffectModifier(m) && m.enabled)
+export const getEffectPlaceholders = (modifiers: Modifier[]): EffectModifier[] =>
+  modifiers.filter((m): m is EffectModifier => isEffectModifier(m))
+
+/**
+ * @deprecated Use getEffectPlaceholders instead
+ */
+export const getEnabledEffects = getEffectPlaceholders
 
 // ============================================================
 // Deprecated: Mask Modifier (use MaskNode instead)
@@ -175,8 +179,8 @@ export type EffectProcessor = EffectModifier
 export type MaskProcessor = MaskModifier
 /** @deprecated Use Modifier instead */
 export type Processor = EffectModifier | MaskModifier
-/** @deprecated Use createEffectModifier instead */
-export const createEffectProcessor = createEffectModifier
+/** @deprecated Use createEffectPlaceholder instead */
+export const createEffectProcessor = createEffectPlaceholder
 /** @deprecated Use createMaskNode from LayerNode.ts instead */
 export const createMaskProcessor = createMaskModifier
 /** @deprecated Use isEffectModifier instead */
