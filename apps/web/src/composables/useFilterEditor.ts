@@ -1,8 +1,7 @@
-import { computed, type Ref, type ComputedRef, type WritableComputedRef } from 'vue'
+import { computed, type WritableComputedRef } from 'vue'
 import type {
   FilterType,
   EffectType,
-  LayerFilterConfig,
   LayerEffectConfig,
   VignetteFilterConfig,
   ChromaticAberrationFilterConfig,
@@ -10,44 +9,19 @@ import type {
   LineHalftoneFilterConfig,
   BlurEffectConfig,
 } from '../modules/HeroScene'
+import type { UseEffectManagerReturn } from './useEffectManager'
 
 // ============================================================
 // Types
 // ============================================================
 
 /**
- * Options for useFilterEditor composable (new API)
+ * Options for useFilterEditor composable
+ * Accepts effectManager directly for simplified integration
  */
 export interface UseFilterEditorOptions {
-  /** Currently selected filter layer ID */
-  selectedFilterLayerId: Ref<string | null>
-  /** Filter config for the selected layer */
-  selectedLayerFilters: ComputedRef<LayerFilterConfig | null>
-  /** Get filter type for a layer */
-  getFilterType: (layerId: string) => FilterType
-  /** Select filter type for a layer (exclusive selection) */
-  selectFilterType: (layerId: string, type: FilterType) => void
-  /** Generic effect params update function */
-  updateEffectParams: <T extends EffectType>(
-    layerId: string,
-    effectType: T,
-    params: Partial<Omit<LayerEffectConfig[T], 'enabled'>>
-  ) => void
-}
-
-/**
- * Legacy options interface for backward compatibility
- */
-export interface UseFilterEditorLegacyOptions {
-  selectedFilterLayerId: Ref<string | null>
-  selectedLayerFilters: ComputedRef<LayerFilterConfig | null>
-  getFilterType: (layerId: string) => FilterType
-  selectFilterType: (layerId: string, type: FilterType) => void
-  updateVignetteParams: (layerId: string, params: Partial<Omit<VignetteFilterConfig, 'enabled'>>) => void
-  updateChromaticAberrationParams: (layerId: string, params: Partial<Omit<ChromaticAberrationFilterConfig, 'enabled'>>) => void
-  updateDotHalftoneParams: (layerId: string, params: Partial<Omit<DotHalftoneFilterConfig, 'enabled'>>) => void
-  updateLineHalftoneParams: (layerId: string, params: Partial<Omit<LineHalftoneFilterConfig, 'enabled'>>) => void
-  updateBlurParams: (layerId: string, params: Partial<Omit<BlurEffectConfig, 'enabled'>>) => void
+  /** Effect manager composable instance */
+  effectManager: UseEffectManagerReturn
 }
 
 /**
@@ -72,9 +46,8 @@ export type EffectConfigsMap = {
 export interface UseFilterEditorReturn {
   /** Currently selected filter type (writable computed for v-model binding) */
   selectedFilterType: WritableComputedRef<FilterType>
-  /** Dynamic effect configs map (new API) */
+  /** Dynamic effect configs map */
   effectConfigs: EffectConfigsMap
-  // Legacy individual configs (deprecated, for backward compatibility)
   /** @deprecated Use effectConfigs.vignette instead */
   currentVignetteConfig: WritableComputedRef<VignetteConfigParams>
   /** @deprecated Use effectConfigs.chromaticAberration instead */
@@ -88,11 +61,21 @@ export interface UseFilterEditorReturn {
 }
 
 // ============================================================
-// Type Guards
+// Helper Functions
 // ============================================================
 
-function isNewAPI(options: UseFilterEditorOptions | UseFilterEditorLegacyOptions): options is UseFilterEditorOptions {
-  return 'updateEffectParams' in options
+/**
+ * Get current filter type from effect config
+ * Returns the first enabled effect type, or 'void' if none enabled
+ */
+function getFilterTypeFromConfig(config: LayerEffectConfig | null): FilterType {
+  if (!config) return 'void'
+  if (config.vignette?.enabled) return 'vignette'
+  if (config.chromaticAberration?.enabled) return 'chromaticAberration'
+  if (config.dotHalftone?.enabled) return 'dotHalftone'
+  if (config.lineHalftone?.enabled) return 'lineHalftone'
+  if (config.blur?.enabled) return 'blur'
+  return 'void'
 }
 
 // ============================================================
@@ -107,44 +90,23 @@ function isNewAPI(options: UseFilterEditorOptions | UseFilterEditorLegacyOptions
  * - Filter parameter updates via writable computed properties
  * - Binding helpers for SchemaFields components
  *
- * Supports both new generic API and legacy individual update functions
+ * @example
+ * ```ts
+ * const { effectManager } = heroScene.filter
+ * const {
+ *   selectedFilterType,
+ *   effectConfigs,
+ * } = useFilterEditor({ effectManager })
+ *
+ * // Use with v-model
+ * <select v-model="selectedFilterType">
+ * <SchemaFields v-model="effectConfigs.vignette" />
+ * ```
  */
 export function useFilterEditor(
-  options: UseFilterEditorOptions | UseFilterEditorLegacyOptions
+  options: UseFilterEditorOptions
 ): UseFilterEditorReturn {
-  const {
-    selectedFilterLayerId,
-    selectedLayerFilters,
-    getFilterType,
-    selectFilterType,
-  } = options
-
-  // Create generic update function from options
-  const updateEffectParams = isNewAPI(options)
-    ? options.updateEffectParams
-    : <T extends EffectType>(
-        layerId: string,
-        effectType: T,
-        params: Partial<Omit<LayerEffectConfig[T], 'enabled'>>
-      ) => {
-        switch (effectType) {
-          case 'vignette':
-            options.updateVignetteParams(layerId, params as VignetteConfigParams)
-            break
-          case 'chromaticAberration':
-            options.updateChromaticAberrationParams(layerId, params as ChromaticConfigParams)
-            break
-          case 'dotHalftone':
-            options.updateDotHalftoneParams(layerId, params as DotHalftoneConfigParams)
-            break
-          case 'lineHalftone':
-            options.updateLineHalftoneParams(layerId, params as LineHalftoneConfigParams)
-            break
-          case 'blur':
-            options.updateBlurParams(layerId, params as BlurConfigParams)
-            break
-        }
-      }
+  const { effectManager } = options
 
   // ============================================================
   // Filter Type Selection
@@ -154,21 +116,21 @@ export function useFilterEditor(
    * Writable computed for filter type selection
    * Enables exclusive filter selection (only one filter active at a time)
    */
-  const selectedFilterTypeComputed = computed<FilterType>({
+  const selectedFilterType = computed<FilterType>({
     get: () => {
-      const layerId = selectedFilterLayerId.value
-      if (!layerId) return 'void'
-      return getFilterType(layerId)
+      return getFilterTypeFromConfig(effectManager.selectedEffect.value)
     },
     set: (type) => {
-      const layerId = selectedFilterLayerId.value
+      const layerId = effectManager.selectedLayerId.value
       if (!layerId) return
-      selectFilterType(layerId, type)
+      // Convert FilterType to EffectType (void -> null)
+      const effectType: EffectType | null = type === 'void' ? null : type
+      effectManager.setEffectType(layerId, effectType)
     },
   })
 
   // ============================================================
-  // Dynamic Effect Configs (Registry-based)
+  // Dynamic Effect Configs
   // ============================================================
 
   /**
@@ -176,11 +138,11 @@ export function useFilterEditor(
    */
   function createEffectConfig<T extends EffectType>(effectType: T) {
     return computed({
-      get: () => (selectedLayerFilters.value?.[effectType] ?? {}) as Partial<Omit<LayerEffectConfig[T], 'enabled'>>,
+      get: () => (effectManager.selectedEffect.value?.[effectType] ?? {}) as Partial<Omit<LayerEffectConfig[T], 'enabled'>>,
       set: (value: Partial<Omit<LayerEffectConfig[T], 'enabled'>>) => {
-        const layerId = selectedFilterLayerId.value
+        const layerId = effectManager.selectedLayerId.value
         if (!layerId) return
-        updateEffectParams(layerId, effectType, value)
+        effectManager.updateEffectParams(layerId, effectType, value)
       },
     })
   }
@@ -201,11 +163,11 @@ export function useFilterEditor(
   }
 
   // ============================================================
-  // Legacy Individual Configs (for backward compatibility)
+  // Return
   // ============================================================
 
   return {
-    selectedFilterType: selectedFilterTypeComputed,
+    selectedFilterType,
     effectConfigs,
     // Legacy individual configs (point to effectConfigs for compatibility)
     currentVignetteConfig: vignetteConfig,
