@@ -16,8 +16,6 @@ import {
   createGroup,
   createSceneTextLayer,
   createModel3DLayer,
-  createEffectModifier,
-  createMaskModifier,
   isLayer,
   isGroup,
   getSceneLayerId,
@@ -236,7 +234,7 @@ export function useLayerOperations(
           { type: 'solid', color: 'B' },
           {
             name: 'Surface',
-            modifiers: [createEffectModifier(), createMaskModifier()],
+            modifiers: [],
           },
         )
         break

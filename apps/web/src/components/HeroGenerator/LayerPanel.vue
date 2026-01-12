@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { SceneNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
-import { flattenNodes, isLayer } from '../../modules/HeroScene'
 import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
 import { useLayerDragDrop } from './useLayerDragDrop'
 import { useLayerSelection } from '../../composables/useLayerSelection'
@@ -95,15 +94,9 @@ const allLayerTypes: { type: LayerType; label: string; icon: string; disabled?: 
   { type: 'text', label: 'Text', icon: 'text_fields' },
 ]
 
-// Filter out layer types that have reached their limit
+// Filter out layer types that are disabled
 const addableLayerTypes = computed(() => {
-  const flatLayers = flattenNodes(props.layers)
-  const hasSurface = flatLayers.some(l => isLayer(l) && l.variant === 'surface')
-  return allLayerTypes.filter(item => {
-    // Currently limiting to 1 surface layer (can be expanded later)
-    if (item.type === 'surface' && hasSurface) return false
-    return true
-  })
+  return allLayerTypes.filter(item => !item.disabled)
 })
 
 const handleAddLayer = (type: LayerType) => {
