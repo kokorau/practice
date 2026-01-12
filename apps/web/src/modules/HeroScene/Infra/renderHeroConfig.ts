@@ -26,31 +26,7 @@ import {
   type RGBA,
   type GreymapMaskSpec,
 } from '@practice/texture'
-import {
-  // New vignette shape variants
-  ellipseVignetteShader,
-  createEllipseVignetteUniforms,
-  ELLIPSE_VIGNETTE_BUFFER_SIZE,
-  circleVignetteShader,
-  createCircleVignetteUniforms,
-  CIRCLE_VIGNETTE_BUFFER_SIZE,
-  rectVignetteShader,
-  createRectVignetteUniforms,
-  RECT_VIGNETTE_BUFFER_SIZE,
-  linearVignetteShader,
-  createLinearVignetteUniforms,
-  LINEAR_VIGNETTE_BUFFER_SIZE,
-  // Other effects
-  chromaticAberrationShader,
-  createChromaticAberrationUniforms,
-  CHROMATIC_ABERRATION_BUFFER_SIZE,
-  dotHalftoneShader,
-  createDotHalftoneUniforms,
-  DOT_HALFTONE_BUFFER_SIZE,
-  lineHalftoneShader,
-  createLineHalftoneUniforms,
-  LINE_HALFTONE_BUFFER_SIZE,
-} from '@practice/texture/filters'
+// Note: Shader imports moved to EffectRegistry.ts for centralized effect management
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../SemanticColorPalette/Domain'
@@ -65,8 +41,8 @@ import type {
   GroupLayerNodeConfig,
 } from '../Domain/HeroViewConfig'
 import { getLayerFilters, getLayerMaskProcessor } from '../Domain/HeroViewConfig'
-import type { LayerEffectConfig, VignetteConfig } from '../Domain/EffectSchema'
-import { migrateVignetteConfig } from '../Domain/EffectSchema'
+import type { LayerEffectConfig } from '../Domain/EffectSchema'
+import { EFFECT_REGISTRY, EFFECT_TYPES } from '../Domain/EffectRegistry'
 
 // ============================================================
 // Types
@@ -424,6 +400,7 @@ function renderMaskWithGreymapPipeline(
 
 /**
  * Apply effect filters to current canvas content
+ * Uses EFFECT_REGISTRY for dynamic effect application
  */
 function applyEffects(
   renderer: TextureRendererLike,
@@ -431,146 +408,17 @@ function applyEffects(
   viewport: Viewport,
   scale: number
 ): void {
-  // Dot Halftone (requires texture input, applied first)
-  if (effects.dotHalftone?.enabled) {
+  // Apply effects in registry order
+  for (const effectType of EFFECT_TYPES) {
+    const config = effects[effectType]
+    if (!config?.enabled) continue
+
+    const definition = EFFECT_REGISTRY[effectType]
+    const spec = definition.createShaderSpec(config as never, viewport, scale)
+    if (!spec) continue
+
     const inputTexture = renderer.copyCanvasToTexture()
-    const uniforms = createDotHalftoneUniforms(
-      {
-        dotSize: scaleValue(effects.dotHalftone.dotSize, scale),
-        spacing: scaleValue(effects.dotHalftone.spacing, scale),
-        angle: effects.dotHalftone.angle,
-      },
-      viewport
-    )
-    renderer.applyPostEffect(
-      { shader: dotHalftoneShader, uniforms, bufferSize: DOT_HALFTONE_BUFFER_SIZE },
-      inputTexture,
-      { clear: true }
-    )
-  }
-
-  // Line Halftone (requires texture input)
-  if (effects.lineHalftone?.enabled) {
-    const inputTexture = renderer.copyCanvasToTexture()
-    const uniforms = createLineHalftoneUniforms(
-      {
-        lineWidth: scaleValue(effects.lineHalftone.lineWidth, scale),
-        spacing: scaleValue(effects.lineHalftone.spacing, scale),
-        angle: effects.lineHalftone.angle,
-      },
-      viewport
-    )
-    renderer.applyPostEffect(
-      { shader: lineHalftoneShader, uniforms, bufferSize: LINE_HALFTONE_BUFFER_SIZE },
-      inputTexture,
-      { clear: true }
-    )
-  }
-
-  // Chromatic Aberration (requires texture input)
-  if (effects.chromaticAberration?.enabled) {
-    const inputTexture = renderer.copyCanvasToTexture()
-    const uniforms = createChromaticAberrationUniforms(
-      { intensity: effects.chromaticAberration.intensity, angle: 0 },
-      viewport
-    )
-    renderer.applyPostEffect(
-      { shader: chromaticAberrationShader, uniforms, bufferSize: CHROMATIC_ABERRATION_BUFFER_SIZE },
-      inputTexture,
-      { clear: true }
-    )
-  }
-
-  // Vignette (requires texture input, applied last)
-  if (effects.vignette?.enabled) {
-    const inputTexture = renderer.copyCanvasToTexture()
-    const vignetteSpec = createVignetteSpec(effects.vignette, viewport)
-    renderer.applyPostEffect(vignetteSpec, inputTexture, { clear: true })
-  }
-}
-
-/**
- * Create vignette effect specification based on shape type
- */
-function createVignetteSpec(
-  config: VignetteConfig | { enabled: boolean; intensity: number; radius: number; softness: number },
-  viewport: Viewport
-): { shader: string; uniforms: ArrayBuffer; bufferSize: number } {
-  // Migrate legacy config if needed
-  const vignetteConfig = migrateVignetteConfig(config as VignetteConfig)
-  const color = vignetteConfig.color ?? [0, 0, 0, 1]
-
-  switch (vignetteConfig.shape) {
-    case 'circle':
-      return {
-        shader: circleVignetteShader,
-        uniforms: createCircleVignetteUniforms(
-          {
-            color,
-            intensity: vignetteConfig.intensity,
-            radius: vignetteConfig.radius,
-            softness: vignetteConfig.softness,
-            centerX: vignetteConfig.centerX,
-            centerY: vignetteConfig.centerY,
-          },
-          viewport
-        ),
-        bufferSize: CIRCLE_VIGNETTE_BUFFER_SIZE,
-      }
-
-    case 'rectangle':
-      return {
-        shader: rectVignetteShader,
-        uniforms: createRectVignetteUniforms(
-          {
-            color,
-            intensity: vignetteConfig.intensity,
-            softness: vignetteConfig.softness,
-            centerX: vignetteConfig.centerX,
-            centerY: vignetteConfig.centerY,
-            width: vignetteConfig.width,
-            height: vignetteConfig.height,
-            cornerRadius: vignetteConfig.cornerRadius,
-          },
-          viewport
-        ),
-        bufferSize: RECT_VIGNETTE_BUFFER_SIZE,
-      }
-
-    case 'linear':
-      return {
-        shader: linearVignetteShader,
-        uniforms: createLinearVignetteUniforms(
-          {
-            color,
-            intensity: vignetteConfig.intensity,
-            angle: vignetteConfig.angle,
-            startOffset: vignetteConfig.startOffset,
-            endOffset: vignetteConfig.endOffset,
-          },
-          viewport
-        ),
-        bufferSize: LINEAR_VIGNETTE_BUFFER_SIZE,
-      }
-
-    case 'ellipse':
-    default:
-      return {
-        shader: ellipseVignetteShader,
-        uniforms: createEllipseVignetteUniforms(
-          {
-            color,
-            intensity: vignetteConfig.intensity,
-            radius: vignetteConfig.radius,
-            softness: vignetteConfig.softness,
-            centerX: vignetteConfig.centerX,
-            centerY: vignetteConfig.centerY,
-            aspectRatio: vignetteConfig.aspectRatio ?? viewport.width / viewport.height,
-          },
-          viewport
-        ),
-        bufferSize: ELLIPSE_VIGNETTE_BUFFER_SIZE,
-      }
+    renderer.applyPostEffect(spec, inputTexture, { clear: true })
   }
 }
 

@@ -1,7 +1,7 @@
 /**
  * UpdateFilterParams UseCase
  *
- * 各フィルター（エフェクト）のパラメータを更新する
+ * エフェクトパラメータを更新する汎用関数
  */
 
 import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
@@ -10,14 +10,8 @@ import type {
   ProcessorConfig,
   EffectProcessorConfig,
 } from '../../Domain/HeroViewConfig'
-import type {
-  VignetteEffectConfig,
-  VignetteConfig,
-  ChromaticAberrationEffectConfig,
-  DotHalftoneEffectConfig,
-  LineHalftoneEffectConfig,
-  BlurEffectConfig,
-} from '../../Domain/EffectSchema'
+import type { LayerEffectConfig } from '../../Domain/EffectSchema'
+import { type EffectType } from '../../Domain/EffectRegistry'
 
 /**
  * エフェクトプロセッサを取得
@@ -38,226 +32,152 @@ function updateProcessors(
 }
 
 /**
- * Vignetteパラメータを更新
+ * 汎用エフェクトパラメータ更新
  *
  * @param repository - HeroViewRepository
  * @param layerId - 対象レイヤーID
+ * @param effectType - エフェクトタイプ
  * @param params - 更新するパラメータ
  */
+export function updateEffectParams<T extends EffectType>(
+  repository: HeroViewRepository,
+  layerId: string,
+  effectType: T,
+  params: Partial<Omit<LayerEffectConfig[T], 'enabled'>>
+): void {
+  const config = repository.get()
+  const layer = config.layers.find((l) => l.id === layerId)
+  if (!layer || !('processors' in layer)) return
+
+  const effectProcessor = findEffectProcessor(layer)
+  if (!effectProcessor) return
+
+  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
+    ...p,
+    config: {
+      ...p.config,
+      [effectType]: { ...p.config[effectType], ...params },
+    },
+  }))
+
+  repository.updateLayer(layerId, { processors: updatedProcessors })
+}
+
+/**
+ * 汎用エフェクトパラメータ取得
+ *
+ * @param repository - HeroViewRepository
+ * @param layerId - 対象レイヤーID
+ * @param effectType - エフェクトタイプ
+ * @returns エフェクト設定
+ */
+export function getEffectParams<T extends EffectType>(
+  repository: HeroViewRepository,
+  layerId: string,
+  effectType: T
+): LayerEffectConfig[T] | undefined {
+  const config = repository.get()
+  const layer = config.layers.find((l) => l.id === layerId)
+  if (!layer || !('processors' in layer)) return undefined
+
+  const effectProcessor = findEffectProcessor(layer)
+  return effectProcessor?.config[effectType]
+}
+
+// ============================================================
+// Legacy Aliases (for backward compatibility)
+// ============================================================
+
+import type {
+  VignetteEffectConfig,
+  VignetteConfig,
+  ChromaticAberrationEffectConfig,
+  DotHalftoneEffectConfig,
+  LineHalftoneEffectConfig,
+  BlurEffectConfig,
+} from '../../Domain/EffectSchema'
+
+/** @deprecated Use updateEffectParams(repo, id, 'vignette', params) instead */
 export function updateVignetteParams(
   repository: HeroViewRepository,
   layerId: string,
   params: Partial<Omit<VignetteEffectConfig, 'enabled'>>
 ): void {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return
-
-  const effectProcessor = findEffectProcessor(layer)
-  if (!effectProcessor) return
-
-  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
-    ...p,
-    config: {
-      ...p.config,
-      vignette: { ...p.config.vignette, ...params },
-    },
-  }))
-
-  repository.updateLayer(layerId, { processors: updatedProcessors })
+  updateEffectParams(repository, layerId, 'vignette', params)
 }
 
-/**
- * ChromaticAberrationパラメータを更新
- *
- * @param repository - HeroViewRepository
- * @param layerId - 対象レイヤーID
- * @param params - 更新するパラメータ
- */
+/** @deprecated Use updateEffectParams(repo, id, 'chromaticAberration', params) instead */
 export function updateChromaticAberrationParams(
   repository: HeroViewRepository,
   layerId: string,
   params: Partial<Omit<ChromaticAberrationEffectConfig, 'enabled'>>
 ): void {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return
-
-  const effectProcessor = findEffectProcessor(layer)
-  if (!effectProcessor) return
-
-  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
-    ...p,
-    config: {
-      ...p.config,
-      chromaticAberration: { ...p.config.chromaticAberration, ...params },
-    },
-  }))
-
-  repository.updateLayer(layerId, { processors: updatedProcessors })
+  updateEffectParams(repository, layerId, 'chromaticAberration', params)
 }
 
-/**
- * DotHalftoneパラメータを更新
- *
- * @param repository - HeroViewRepository
- * @param layerId - 対象レイヤーID
- * @param params - 更新するパラメータ
- */
+/** @deprecated Use updateEffectParams(repo, id, 'dotHalftone', params) instead */
 export function updateDotHalftoneParams(
   repository: HeroViewRepository,
   layerId: string,
   params: Partial<Omit<DotHalftoneEffectConfig, 'enabled'>>
 ): void {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return
-
-  const effectProcessor = findEffectProcessor(layer)
-  if (!effectProcessor) return
-
-  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
-    ...p,
-    config: {
-      ...p.config,
-      dotHalftone: { ...p.config.dotHalftone, ...params },
-    },
-  }))
-
-  repository.updateLayer(layerId, { processors: updatedProcessors })
+  updateEffectParams(repository, layerId, 'dotHalftone', params)
 }
 
-/**
- * LineHalftoneパラメータを更新
- *
- * @param repository - HeroViewRepository
- * @param layerId - 対象レイヤーID
- * @param params - 更新するパラメータ
- */
+/** @deprecated Use updateEffectParams(repo, id, 'lineHalftone', params) instead */
 export function updateLineHalftoneParams(
   repository: HeroViewRepository,
   layerId: string,
   params: Partial<Omit<LineHalftoneEffectConfig, 'enabled'>>
 ): void {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return
-
-  const effectProcessor = findEffectProcessor(layer)
-  if (!effectProcessor) return
-
-  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
-    ...p,
-    config: {
-      ...p.config,
-      lineHalftone: { ...p.config.lineHalftone, ...params },
-    },
-  }))
-
-  repository.updateLayer(layerId, { processors: updatedProcessors })
+  updateEffectParams(repository, layerId, 'lineHalftone', params)
 }
 
-/**
- * 現在のVignetteパラメータを取得
- */
-export function getVignetteParams(
-  repository: HeroViewRepository,
-  layerId: string
-): VignetteConfig | undefined {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return undefined
-
-  const effectProcessor = findEffectProcessor(layer)
-  return effectProcessor?.config.vignette
-}
-
-/**
- * 現在のChromaticAberrationパラメータを取得
- */
-export function getChromaticAberrationParams(
-  repository: HeroViewRepository,
-  layerId: string
-): ChromaticAberrationEffectConfig | undefined {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return undefined
-
-  const effectProcessor = findEffectProcessor(layer)
-  return effectProcessor?.config.chromaticAberration
-}
-
-/**
- * 現在のDotHalftoneパラメータを取得
- */
-export function getDotHalftoneParams(
-  repository: HeroViewRepository,
-  layerId: string
-): DotHalftoneEffectConfig | undefined {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return undefined
-
-  const effectProcessor = findEffectProcessor(layer)
-  return effectProcessor?.config.dotHalftone
-}
-
-/**
- * 現在のLineHalftoneパラメータを取得
- */
-export function getLineHalftoneParams(
-  repository: HeroViewRepository,
-  layerId: string
-): LineHalftoneEffectConfig | undefined {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return undefined
-
-  const effectProcessor = findEffectProcessor(layer)
-  return effectProcessor?.config.lineHalftone
-}
-
-/**
- * Blurパラメータを更新
- *
- * @param repository - HeroViewRepository
- * @param layerId - 対象レイヤーID
- * @param params - 更新するパラメータ
- */
+/** @deprecated Use updateEffectParams(repo, id, 'blur', params) instead */
 export function updateBlurParams(
   repository: HeroViewRepository,
   layerId: string,
   params: Partial<Omit<BlurEffectConfig, 'enabled'>>
 ): void {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return
-
-  const effectProcessor = findEffectProcessor(layer)
-  if (!effectProcessor) return
-
-  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
-    ...p,
-    config: {
-      ...p.config,
-      blur: { ...p.config.blur, ...params },
-    },
-  }))
-
-  repository.updateLayer(layerId, { processors: updatedProcessors })
+  updateEffectParams(repository, layerId, 'blur', params)
 }
 
-/**
- * 現在のBlurパラメータを取得
- */
+/** @deprecated Use getEffectParams(repo, id, 'vignette') instead */
+export function getVignetteParams(
+  repository: HeroViewRepository,
+  layerId: string
+): VignetteConfig | undefined {
+  return getEffectParams(repository, layerId, 'vignette')
+}
+
+/** @deprecated Use getEffectParams(repo, id, 'chromaticAberration') instead */
+export function getChromaticAberrationParams(
+  repository: HeroViewRepository,
+  layerId: string
+): ChromaticAberrationEffectConfig | undefined {
+  return getEffectParams(repository, layerId, 'chromaticAberration')
+}
+
+/** @deprecated Use getEffectParams(repo, id, 'dotHalftone') instead */
+export function getDotHalftoneParams(
+  repository: HeroViewRepository,
+  layerId: string
+): DotHalftoneEffectConfig | undefined {
+  return getEffectParams(repository, layerId, 'dotHalftone')
+}
+
+/** @deprecated Use getEffectParams(repo, id, 'lineHalftone') instead */
+export function getLineHalftoneParams(
+  repository: HeroViewRepository,
+  layerId: string
+): LineHalftoneEffectConfig | undefined {
+  return getEffectParams(repository, layerId, 'lineHalftone')
+}
+
+/** @deprecated Use getEffectParams(repo, id, 'blur') instead */
 export function getBlurParams(
   repository: HeroViewRepository,
   layerId: string
 ): BlurEffectConfig | undefined {
-  const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return undefined
-
-  const effectProcessor = findEffectProcessor(layer)
-  return effectProcessor?.config.blur
+  return getEffectParams(repository, layerId, 'blur')
 }

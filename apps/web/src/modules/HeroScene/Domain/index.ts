@@ -778,6 +778,22 @@ export {
 } from './ReverseLookup'
 
 // ============================================================
+// Effect Registry
+// ============================================================
+
+export {
+  EFFECT_REGISTRY,
+  EFFECT_TYPES,
+  getEffectDefinition,
+  isValidEffectType,
+  type EffectType,
+  type FilterType,
+  type EffectDefinition,
+  type VignetteEffectDefinition,
+  type EffectShaderSpec,
+} from './EffectRegistry'
+
+// ============================================================
 // Constants
 // ============================================================
 

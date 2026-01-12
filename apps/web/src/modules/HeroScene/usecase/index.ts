@@ -27,8 +27,12 @@ export {
   type ExportPresetOptions,
 } from './Preset'
 export {
+  // New generic functions
   selectFilterType,
   getFilterType,
+  updateEffectParams,
+  getEffectParams,
+  // Legacy aliases (deprecated)
   updateVignetteParams,
   updateChromaticAberrationParams,
   updateDotHalftoneParams,
@@ -39,7 +43,6 @@ export {
   getDotHalftoneParams,
   getLineHalftoneParams,
   getBlurParams,
-  type FilterType,
 } from './Filter'
 export {
   updateTextLayerText,
