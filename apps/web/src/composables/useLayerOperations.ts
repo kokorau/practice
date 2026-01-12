@@ -73,8 +73,6 @@ export interface UseLayerOperationsOptions {
   sceneCallbacks: SceneOperationCallbacks
   /** Selected layer ID ref from useLayerSelection (optional) */
   selectedLayerId?: Ref<string | null>
-  /** Custom ID mapper function (optional) */
-  mapLayerIdToSceneLayerId?: (uiLayerId: string) => string
   /** Callback when layer is selected */
   onSelectLayer?: (layerId: string) => void
   /** Callback when processor is selected */
@@ -109,25 +107,6 @@ export interface UseLayerOperationsReturn {
   // Grouping
   handleGroupSelection: (layerId: string) => void
   handleUseAsMask: (layerId: string) => void
-
-  // Utility
-  mapLayerIdToSceneLayerId: (uiLayerId: string) => string
-}
-
-// ============================================================
-// Default ID Mapper
-// ============================================================
-
-const defaultMapLayerIdToSceneLayerId = (uiLayerId: string): string => {
-  if (uiLayerId === 'base') return 'base-layer'
-  // Background layers map to base-layer in the scene
-  if (uiLayerId.startsWith('background-')) return 'base-layer'
-  // Surface layers map to mask-layer in the scene (LAYER_IDS.MASK)
-  if (uiLayerId.startsWith('surface')) return 'mask-layer'
-  // Legacy support for old IDs
-  if (uiLayerId.startsWith('clip-group')) return 'mask-layer'
-  if (uiLayerId.startsWith('mask')) return 'mask-layer'
-  return uiLayerId
 }
 
 // ============================================================
@@ -141,7 +120,6 @@ export function useLayerOperations(
     initialLayers,
     sceneCallbacks,
     selectedLayerId,
-    mapLayerIdToSceneLayerId: customMapper,
     onSelectLayer,
     onSelectProcessor,
     onClearSelection,
@@ -151,11 +129,6 @@ export function useLayerOperations(
   // State
   // ============================================================
   const layers = ref<SceneNode[]>(initialLayers)
-
-  // ============================================================
-  // ID Mapping
-  // ============================================================
-  const mapLayerIdToSceneLayerId = customMapper ?? defaultMapLayerIdToSceneLayerId
 
   // ============================================================
   // Computed
@@ -371,8 +344,5 @@ export function useLayerOperations(
     // Grouping
     handleGroupSelection,
     handleUseAsMask,
-
-    // Utility
-    mapLayerIdToSceneLayerId,
   }
 }

@@ -19,6 +19,9 @@ import {
   createSurfaceLayer,
   createEffectPlaceholder,
   createMaskModifier,
+  SCENE_LAYER_IDS,
+  getSceneLayerId,
+  isLayer,
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
@@ -299,14 +302,13 @@ const {
   handleRemoveLayer,
   handleGroupSelection,
   handleUseAsMask,
-  mapLayerIdToSceneLayerId,
 } = useLayerOperations({
   initialLayers: [
     createGroup(
       'background-group',
       [
         createSurfaceLayer(
-          'background-surface',
+          SCENE_LAYER_IDS.BASE,
           { type: 'solid', color: 'BN1' },
           {
             name: 'Surface',
@@ -320,7 +322,7 @@ const {
       'main-group',
       [
         createSurfaceLayer(
-          'surface-1',
+          SCENE_LAYER_IDS.MASK,
           { type: 'solid', color: 'B' },
           {
             name: 'Surface',
@@ -348,9 +350,9 @@ const {
     selectedForegroundElementId.value = null
     if (type === 'effect') {
       const layer = selectedLayer.value
-      if (layer && 'variant' in layer) {
-        // Map UI layer ID to scene layer ID for filter operations
-        heroScene.filter.selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layer.id)
+      if (layer && isLayer(layer)) {
+        // Get scene layer ID from layer variant
+        heroScene.filter.selectedFilterLayerId.value = getSceneLayerId(layer)
       }
     }
   },
