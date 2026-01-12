@@ -120,6 +120,9 @@ import {
   lineHalftoneShader,
   createLineHalftoneUniforms,
   LINE_HALFTONE_BUFFER_SIZE,
+  blurShader,
+  createBlurUniforms,
+  BLUR_BUFFER_SIZE,
 } from '@practice/texture/filters'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
@@ -949,11 +952,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerFilterConfig>) => {
     const current = layerFilterConfigs.value.get(layerId) ?? createDefaultFilterConfig()
+    // Fallback for old data that may not have blur property
+    const defaults = createDefaultFilterConfig()
     const updated: LayerFilterConfig = {
-      vignette: { ...current.vignette, ...(updates.vignette ?? {}) } as VignetteConfig,
-      chromaticAberration: { ...current.chromaticAberration, ...(updates.chromaticAberration ?? {}) },
-      dotHalftone: { ...current.dotHalftone, ...(updates.dotHalftone ?? {}) },
-      lineHalftone: { ...current.lineHalftone, ...(updates.lineHalftone ?? {}) },
+      vignette: { ...(current.vignette ?? defaults.vignette), ...(updates.vignette ?? {}) } as VignetteConfig,
+      chromaticAberration: { ...(current.chromaticAberration ?? defaults.chromaticAberration), ...(updates.chromaticAberration ?? {}) },
+      dotHalftone: { ...(current.dotHalftone ?? defaults.dotHalftone), ...(updates.dotHalftone ?? {}) },
+      lineHalftone: { ...(current.lineHalftone ?? defaults.lineHalftone), ...(updates.lineHalftone ?? {}) },
+      blur: { ...(current.blur ?? defaults.blur), ...(updates.blur ?? {}) },
     }
     // Create new Map to trigger Vue reactivity (Map.set() doesn't change the ref value)
     const newMap = new Map(layerFilterConfigs.value)
@@ -984,6 +990,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       chromaticAberration: { enabled: type === 'chromaticAberration' },
       dotHalftone: { enabled: type === 'dotHalftone' },
       lineHalftone: { enabled: type === 'lineHalftone' },
+      blur: { enabled: type === 'blur' },
     })
   }
 
@@ -993,10 +1000,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const getFilterType = (layerId: string): FilterType => {
     const filters = layerFilterConfigs.value.get(layerId)
     if (!filters) return 'void'
-    if (filters.vignette.enabled) return 'vignette'
-    if (filters.chromaticAberration.enabled) return 'chromaticAberration'
-    if (filters.dotHalftone.enabled) return 'dotHalftone'
-    if (filters.lineHalftone.enabled) return 'lineHalftone'
+    if (filters.vignette?.enabled) return 'vignette'
+    if (filters.chromaticAberration?.enabled) return 'chromaticAberration'
+    if (filters.dotHalftone?.enabled) return 'dotHalftone'
+    if (filters.lineHalftone?.enabled) return 'lineHalftone'
+    if (filters.blur?.enabled) return 'blur'
     return 'void'
   }
 
@@ -1026,6 +1034,27 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    */
   const updateLineHalftoneParams = (layerId: string, params: Partial<{ lineWidth: number; spacing: number; angle: number }>) => {
     updateLayerFilters(layerId, { lineHalftone: params })
+  }
+
+  /**
+   * Update blur parameters
+   */
+  const updateBlurParams = (layerId: string, params: Partial<{
+    radius: number
+    shapeType: string
+    invert: boolean
+    centerX: number
+    centerY: number
+    feather: number
+    angle: number
+    focusWidth: number
+    innerRadius: number
+    outerRadius: number
+    aspectRatio: number
+    rectWidth: number
+    rectHeight: number
+  }>) => {
+    updateLayerFilters(layerId, { blur: params })
   }
 
   // ============================================================
@@ -2139,6 +2168,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       )
       previewRenderer.applyPostEffect(
         { shader: chromaticAberrationShader, uniforms, bufferSize: CHROMATIC_ABERRATION_BUFFER_SIZE },
+        inputTexture,
+        { clear: true }
+      )
+    }
+
+    // Blur (requires texture input)
+    if (filters.blur?.enabled) {
+      const inputTexture = previewRenderer.copyCanvasToTexture()
+      const uniforms = createBlurUniforms(
+        { radius: filters.blur.radius },
+        viewport
+      )
+      previewRenderer.applyPostEffect(
+        { shader: blurShader, uniforms, bufferSize: BLUR_BUFFER_SIZE },
         inputTexture,
         { clear: true }
       )
@@ -3615,10 +3658,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
       selectedBackgroundIndex.value = bgPresetIndex ?? 0
 
-      // Background filters (from effect processor)
+      // Background filters (from effect processor, merged with defaults for backward compatibility)
       const effectProcessor = (baseLayer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
       if (effectProcessor) {
-        layerFilterConfigs.value.set(LAYER_IDS.BASE, effectProcessor.config)
+        const defaults = createDefaultFilterConfig()
+        const merged: LayerFilterConfig = {
+          vignette: { ...defaults.vignette, ...effectProcessor.config.vignette },
+          chromaticAberration: { ...defaults.chromaticAberration, ...effectProcessor.config.chromaticAberration },
+          dotHalftone: { ...defaults.dotHalftone, ...effectProcessor.config.dotHalftone },
+          lineHalftone: { ...defaults.lineHalftone, ...effectProcessor.config.lineHalftone },
+          blur: { ...defaults.blur, ...(effectProcessor.config.blur ?? {}) },
+        }
+        layerFilterConfigs.value.set(LAYER_IDS.BASE, merged)
       }
     }
 
@@ -3739,10 +3790,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
-        // Mask filters (from effect processor)
-        const effectProcessor = (surfaceLayer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
-        if (effectProcessor) {
-          layerFilterConfigs.value.set(LAYER_IDS.MASK, effectProcessor.config)
+        // Mask filters (from effect processor, merged with defaults for backward compatibility)
+        const maskEffectProcessor = (surfaceLayer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
+        if (maskEffectProcessor) {
+          const defaults = createDefaultFilterConfig()
+          const merged: LayerFilterConfig = {
+            vignette: { ...defaults.vignette, ...maskEffectProcessor.config.vignette },
+            chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectProcessor.config.chromaticAberration },
+            dotHalftone: { ...defaults.dotHalftone, ...maskEffectProcessor.config.dotHalftone },
+            lineHalftone: { ...defaults.lineHalftone, ...maskEffectProcessor.config.lineHalftone },
+            blur: { ...defaults.blur, ...(maskEffectProcessor.config.blur ?? {}) },
+          }
+          layerFilterConfigs.value.set(LAYER_IDS.MASK, merged)
         }
       }
     } else {
@@ -4021,6 +4080,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     updateChromaticAberrationParams,
     updateDotHalftoneParams,
     updateLineHalftoneParams,
+    updateBlurParams,
   }
 
   /**

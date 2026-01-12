@@ -16,6 +16,7 @@ import type {
   ChromaticAberrationEffectConfig,
   DotHalftoneEffectConfig,
   LineHalftoneEffectConfig,
+  BlurEffectConfig,
 } from '../../Domain/EffectSchema'
 
 /**
@@ -214,4 +215,49 @@ export function getLineHalftoneParams(
 
   const effectProcessor = findEffectProcessor(layer)
   return effectProcessor?.config.lineHalftone
+}
+
+/**
+ * Blurパラメータを更新
+ *
+ * @param repository - HeroViewRepository
+ * @param layerId - 対象レイヤーID
+ * @param params - 更新するパラメータ
+ */
+export function updateBlurParams(
+  repository: HeroViewRepository,
+  layerId: string,
+  params: Partial<Omit<BlurEffectConfig, 'enabled'>>
+): void {
+  const config = repository.get()
+  const layer = config.layers.find((l) => l.id === layerId)
+  if (!layer || !('processors' in layer)) return
+
+  const effectProcessor = findEffectProcessor(layer)
+  if (!effectProcessor) return
+
+  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
+    ...p,
+    config: {
+      ...p.config,
+      blur: { ...p.config.blur, ...params },
+    },
+  }))
+
+  repository.updateLayer(layerId, { processors: updatedProcessors })
+}
+
+/**
+ * 現在のBlurパラメータを取得
+ */
+export function getBlurParams(
+  repository: HeroViewRepository,
+  layerId: string
+): BlurEffectConfig | undefined {
+  const config = repository.get()
+  const layer = config.layers.find((l) => l.id === layerId)
+  if (!layer || !('processors' in layer)) return undefined
+
+  const effectProcessor = findEffectProcessor(layer)
+  return effectProcessor?.config.blur
 }

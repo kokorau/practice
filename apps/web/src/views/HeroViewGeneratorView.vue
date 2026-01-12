@@ -121,6 +121,7 @@ const {
   currentChromaticConfig,
   currentDotHalftoneConfig,
   currentLineHalftoneConfig,
+  currentBlurConfig,
 } = useFilterEditor({
   selectedFilterLayerId: heroScene.filter.selectedFilterLayerId,
   selectedLayerFilters: heroScene.filter.selectedLayerFilters,
@@ -130,6 +131,7 @@ const {
   updateChromaticAberrationParams: heroScene.filter.updateChromaticAberrationParams,
   updateDotHalftoneParams: heroScene.filter.updateDotHalftoneParams,
   updateLineHalftoneParams: heroScene.filter.updateLineHalftoneParams,
+  updateBlurParams: heroScene.filter.updateBlurParams,
 })
 
 // ============================================================
@@ -523,6 +525,9 @@ const handleFilterUpdate = (key: string, value: unknown) => {
     case 'lineHalftoneConfig':
       currentLineHalftoneConfig.value = value as typeof currentLineHalftoneConfig.value
       break
+    case 'blurConfig':
+      currentBlurConfig.value = value as typeof currentBlurConfig.value
+      break
   }
 }
 </script>
@@ -645,6 +650,7 @@ const handleFilterUpdate = (key: string, value: unknown) => {
           :chromatic-config="currentChromaticConfig"
           :dot-halftone-config="currentDotHalftoneConfig"
           :line-halftone-config="currentLineHalftoneConfig"
+          :blur-config="currentBlurConfig"
           :base-config="currentHeroConfig"
           :palette="primitivePalette"
           :show-preview="true"
@@ -653,6 +659,7 @@ const handleFilterUpdate = (key: string, value: unknown) => {
           @update:chromatic-config="currentChromaticConfig = $event"
           @update:dot-halftone-config="currentDotHalftoneConfig = $event"
           @update:line-halftone-config="currentLineHalftoneConfig = $event"
+          @update:blur-config="currentBlurConfig = $event"
         />
 
         <!-- テキストレイヤー設定 -->
@@ -777,6 +784,7 @@ const handleFilterUpdate = (key: string, value: unknown) => {
         chromaticConfig: currentChromaticConfig,
         dotHalftoneConfig: currentDotHalftoneConfig,
         lineHalftoneConfig: currentLineHalftoneConfig,
+        blurConfig: currentBlurConfig,
       }"
       :palette="primitivePalette"
       @export-preset="exportPreset"

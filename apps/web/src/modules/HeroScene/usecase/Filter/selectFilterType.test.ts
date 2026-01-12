@@ -30,6 +30,7 @@ describe('selectFilterType', () => {
               chromaticAberration: { enabled: false, intensity: 3 },
               dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
               lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+              blur: { enabled: false, radius: 8 },
             },
           },
         ],
@@ -51,6 +52,7 @@ describe('selectFilterType', () => {
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
     expect(effectProcessor.config.dotHalftone.enabled).toBe(false)
     expect(effectProcessor.config.lineHalftone.enabled).toBe(false)
+    expect(effectProcessor.config.blur.enabled).toBe(false)
   })
 
   it('should select chromaticAberration filter and disable others', () => {
@@ -66,6 +68,7 @@ describe('selectFilterType', () => {
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(true)
     expect(effectProcessor.config.dotHalftone.enabled).toBe(false)
     expect(effectProcessor.config.lineHalftone.enabled).toBe(false)
+    expect(effectProcessor.config.blur.enabled).toBe(false)
   })
 
   it('should select dotHalftone filter and disable others', () => {
@@ -81,6 +84,7 @@ describe('selectFilterType', () => {
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
     expect(effectProcessor.config.dotHalftone.enabled).toBe(true)
     expect(effectProcessor.config.lineHalftone.enabled).toBe(false)
+    expect(effectProcessor.config.blur.enabled).toBe(false)
   })
 
   it('should select lineHalftone filter and disable others', () => {
@@ -96,6 +100,7 @@ describe('selectFilterType', () => {
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
     expect(effectProcessor.config.dotHalftone.enabled).toBe(false)
     expect(effectProcessor.config.lineHalftone.enabled).toBe(true)
+    expect(effectProcessor.config.blur.enabled).toBe(false)
   })
 
   it('should disable all filters when selecting void', () => {
@@ -115,6 +120,7 @@ describe('selectFilterType', () => {
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
     expect(effectProcessor.config.dotHalftone.enabled).toBe(false)
     expect(effectProcessor.config.lineHalftone.enabled).toBe(false)
+    expect(effectProcessor.config.blur.enabled).toBe(false)
   })
 
   it('should preserve other effect parameters when switching filter type', () => {
@@ -151,7 +157,7 @@ describe('selectFilterType', () => {
 })
 
 describe('getFilterType', () => {
-  const createTestConfig = (enabledFilter?: 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone'): HeroViewConfig => ({
+  const createTestConfig = (enabledFilter?: 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'): HeroViewConfig => ({
     viewport: { width: 1280, height: 720 },
     colors: {
       background: { primary: 'B', secondary: 'auto' },
@@ -177,6 +183,7 @@ describe('getFilterType', () => {
               chromaticAberration: { enabled: enabledFilter === 'chromaticAberration', intensity: 3 },
               dotHalftone: { enabled: enabledFilter === 'dotHalftone', dotSize: 8, spacing: 16, angle: 45 },
               lineHalftone: { enabled: enabledFilter === 'lineHalftone', lineWidth: 4, spacing: 12, angle: 45 },
+              blur: { enabled: enabledFilter === 'blur', radius: 8 },
             },
           },
         ],

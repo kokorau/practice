@@ -62,3 +62,10 @@ export {
   LINE_HALFTONE_BUFFER_SIZE,
   type LineHalftoneParams,
 } from '../shaders/lineHalftone'
+
+export {
+  blurShader,
+  createBlurUniforms,
+  BLUR_BUFFER_SIZE,
+  type BlurParams,
+} from '../shaders/blur'

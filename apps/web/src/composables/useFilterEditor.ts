@@ -6,6 +6,7 @@ import type {
   ChromaticAberrationFilterConfig,
   DotHalftoneFilterConfig,
   LineHalftoneFilterConfig,
+  BlurEffectConfig,
 } from '../modules/HeroScene'
 
 // ============================================================
@@ -32,6 +33,8 @@ export interface UseFilterEditorOptions {
   updateDotHalftoneParams: (layerId: string, params: Partial<Omit<DotHalftoneFilterConfig, 'enabled'>>) => void
   /** Update line halftone parameters */
   updateLineHalftoneParams: (layerId: string, params: Partial<Omit<LineHalftoneFilterConfig, 'enabled'>>) => void
+  /** Update blur parameters */
+  updateBlurParams: (layerId: string, params: Partial<Omit<BlurEffectConfig, 'enabled'>>) => void
 }
 
 /**
@@ -41,6 +44,7 @@ export type VignetteConfigParams = Partial<Omit<VignetteFilterConfig, 'enabled'>
 export type ChromaticConfigParams = Partial<Omit<ChromaticAberrationFilterConfig, 'enabled'>>
 export type DotHalftoneConfigParams = Partial<Omit<DotHalftoneFilterConfig, 'enabled'>>
 export type LineHalftoneConfigParams = Partial<Omit<LineHalftoneFilterConfig, 'enabled'>>
+export type BlurConfigParams = Partial<Omit<BlurEffectConfig, 'enabled'>>
 
 /**
  * Return type for useFilterEditor composable
@@ -56,6 +60,8 @@ export interface UseFilterEditorReturn {
   currentDotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
   /** Current line halftone config (writable computed for v-model binding) */
   currentLineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
+  /** Current blur config (writable computed for v-model binding) */
+  currentBlurConfig: WritableComputedRef<BlurConfigParams>
 }
 
 // ============================================================
@@ -82,6 +88,7 @@ export function useFilterEditor(
     updateChromaticAberrationParams,
     updateDotHalftoneParams,
     updateLineHalftoneParams,
+    updateBlurParams,
   } = options
 
   // ============================================================
@@ -161,11 +168,25 @@ export function useFilterEditor(
     },
   })
 
+  /**
+   * Writable computed for blur config
+   * Used for SchemaFields binding
+   */
+  const currentBlurConfig = computed({
+    get: () => selectedLayerFilters.value?.blur ?? {},
+    set: (value) => {
+      const layerId = selectedFilterLayerId.value
+      if (!layerId) return
+      updateBlurParams(layerId, value)
+    },
+  })
+
   return {
     selectedFilterType: selectedFilterTypeComputed,
     currentVignetteConfig,
     currentChromaticConfig,
     currentDotHalftoneConfig,
     currentLineHalftoneConfig,
+    currentBlurConfig,
   }
 }

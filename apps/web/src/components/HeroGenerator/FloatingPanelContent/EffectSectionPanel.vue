@@ -13,6 +13,7 @@ import {
   ChromaticAberrationEffectSchema,
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
+  BlurEffectSchema,
   createDefaultEffectConfig,
   migrateVignetteConfig,
   type VignetteShape,
@@ -21,7 +22,7 @@ import {
 import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
 import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
 
-export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone'
+export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'
 
 const props = defineProps<{
   selectedFilterType: FilterType
@@ -29,6 +30,7 @@ const props = defineProps<{
   chromaticConfig: Record<string, unknown>
   dotHalftoneConfig: Record<string, unknown>
   lineHalftoneConfig: Record<string, unknown>
+  blurConfig: Record<string, unknown>
   // Hero preview props
   baseConfig?: HeroViewConfig
   palette?: PrimitivePalette
@@ -41,6 +43,7 @@ const emit = defineEmits<{
   (e: 'update:chromaticConfig', value: Record<string, unknown>): void
   (e: 'update:dotHalftoneConfig', value: Record<string, unknown>): void
   (e: 'update:lineHalftoneConfig', value: Record<string, unknown>): void
+  (e: 'update:blurConfig', value: Record<string, unknown>): void
 }>()
 
 // Migrate legacy config to new format
@@ -101,6 +104,7 @@ const createEffectPreviewConfig = (
     chromaticAberration: { ...defaultEffects.chromaticAberration, enabled: effectType === 'chromaticAberration' },
     dotHalftone: { ...defaultEffects.dotHalftone, enabled: effectType === 'dotHalftone' },
     lineHalftone: { ...defaultEffects.lineHalftone, enabled: effectType === 'lineHalftone' },
+    blur: { ...defaultEffects.blur, enabled: effectType === 'blur' },
   }
 
   // Apply current config values if provided
@@ -113,6 +117,8 @@ const createEffectPreviewConfig = (
       effects.dotHalftone = { ...effectConfig.dotHalftone, enabled: true }
     } else if (effectType === 'lineHalftone') {
       effects.lineHalftone = { ...effectConfig.lineHalftone, enabled: true }
+    } else if (effectType === 'blur') {
+      effects.blur = { ...effectConfig.blur, enabled: true }
     }
   }
 
@@ -141,6 +147,7 @@ const currentEffectConfig = computed((): LayerEffectConfig => ({
   chromaticAberration: props.chromaticConfig as LayerEffectConfig['chromaticAberration'],
   dotHalftone: props.dotHalftoneConfig as LayerEffectConfig['dotHalftone'],
   lineHalftone: props.lineHalftoneConfig as LayerEffectConfig['lineHalftone'],
+  blur: props.blurConfig as LayerEffectConfig['blur'],
 }))
 
 // Preview configs for each effect type
@@ -153,6 +160,7 @@ const previewConfigs = computed(() => {
     chromaticAberration: createEffectPreviewConfig(props.baseConfig, 'chromaticAberration', currentEffectConfig.value),
     dotHalftone: createEffectPreviewConfig(props.baseConfig, 'dotHalftone', currentEffectConfig.value),
     lineHalftone: createEffectPreviewConfig(props.baseConfig, 'lineHalftone', currentEffectConfig.value),
+    blur: createEffectPreviewConfig(props.baseConfig, 'blur', currentEffectConfig.value),
   }
 })
 </script>
@@ -207,6 +215,14 @@ const previewConfigs = computed(() => {
         :model-value="lineHalftoneConfig"
         :exclude="['enabled']"
         @update:model-value="emit('update:lineHalftoneConfig', $event)"
+      />
+    </div>
+    <div v-else-if="selectedFilterType === 'blur'" class="filter-params">
+      <SchemaFields
+        :schema="BlurEffectSchema"
+        :model-value="blurConfig"
+        :exclude="['enabled']"
+        @update:model-value="emit('update:blurConfig', $event)"
       />
     </div>
 
@@ -271,6 +287,18 @@ const previewConfigs = computed(() => {
           :palette="palette"
         />
         <span class="filter-name">Line Halftone</span>
+      </button>
+      <button
+        class="filter-option"
+        :class="{ active: selectedFilterType === 'blur' }"
+        @click="emit('update:selectedFilterType', 'blur')"
+      >
+        <HeroPreviewThumbnail
+          v-if="showPreview && previewConfigs && palette"
+          :config="previewConfigs.blur"
+          :palette="palette"
+        />
+        <span class="filter-name">Blur</span>
       </button>
     </div>
   </div>

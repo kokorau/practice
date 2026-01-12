@@ -6,6 +6,7 @@ import {
   ChromaticAberrationEffectSchema,
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
+  BlurEffectSchema,
   migrateVignetteConfig,
   createVignetteConfigForShape,
   type VignetteShape,
@@ -13,7 +14,7 @@ import {
 } from '../../../modules/HeroScene'
 import SchemaFields from '../../SchemaFields.vue'
 
-export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone'
+export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'
 
 const props = defineProps<{
   selectedFilterType: FilterType
@@ -21,6 +22,7 @@ const props = defineProps<{
   chromaticConfig: Record<string, unknown>
   dotHalftoneConfig: Record<string, unknown>
   lineHalftoneConfig: Record<string, unknown>
+  blurConfig: Record<string, unknown>
 }>()
 
 const emit = defineEmits<{
@@ -29,6 +31,7 @@ const emit = defineEmits<{
   'update:chromaticConfig': [value: Record<string, unknown>]
   'update:dotHalftoneConfig': [value: Record<string, unknown>]
   'update:lineHalftoneConfig': [value: Record<string, unknown>]
+  'update:blurConfig': [value: Record<string, unknown>]
 }>()
 
 // Migrate legacy config to new format
@@ -140,12 +143,21 @@ const handleColorChange = (event: Event) => {
         @update:model-value="emit('update:lineHalftoneConfig', $event)"
       />
     </div>
+    <div v-else-if="selectedFilterType === 'blur'" class="filter-params">
+      <SchemaFields
+        :schema="BlurEffectSchema"
+        :model-value="blurConfig"
+        :exclude="['enabled']"
+        @update:model-value="emit('update:blurConfig', $event)"
+      />
+    </div>
 
     <!-- Filter type selection -->
     <div class="filter-options">
       <label class="filter-option" :class="{ active: selectedFilterType === 'void' }">
         <input
           type="radio"
+          name="filter-type"
           :checked="selectedFilterType === 'void'"
           @change="handleFilterTypeChange('void')"
         />
@@ -154,6 +166,7 @@ const handleColorChange = (event: Event) => {
       <label class="filter-option" :class="{ active: selectedFilterType === 'vignette' }">
         <input
           type="radio"
+          name="filter-type"
           :checked="selectedFilterType === 'vignette'"
           @change="handleFilterTypeChange('vignette')"
         />
@@ -162,6 +175,7 @@ const handleColorChange = (event: Event) => {
       <label class="filter-option" :class="{ active: selectedFilterType === 'chromaticAberration' }">
         <input
           type="radio"
+          name="filter-type"
           :checked="selectedFilterType === 'chromaticAberration'"
           @change="handleFilterTypeChange('chromaticAberration')"
         />
@@ -170,6 +184,7 @@ const handleColorChange = (event: Event) => {
       <label class="filter-option" :class="{ active: selectedFilterType === 'dotHalftone' }">
         <input
           type="radio"
+          name="filter-type"
           :checked="selectedFilterType === 'dotHalftone'"
           @change="handleFilterTypeChange('dotHalftone')"
         />
@@ -178,10 +193,20 @@ const handleColorChange = (event: Event) => {
       <label class="filter-option" :class="{ active: selectedFilterType === 'lineHalftone' }">
         <input
           type="radio"
+          name="filter-type"
           :checked="selectedFilterType === 'lineHalftone'"
           @change="handleFilterTypeChange('lineHalftone')"
         />
         <span class="filter-name">Line Halftone</span>
+      </label>
+      <label class="filter-option" :class="{ active: selectedFilterType === 'blur' }">
+        <input
+          type="radio"
+          name="filter-type"
+          :checked="selectedFilterType === 'blur'"
+          @change="handleFilterTypeChange('blur')"
+        />
+        <span class="filter-name">Blur</span>
       </label>
     </div>
   </div>
