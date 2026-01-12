@@ -193,6 +193,73 @@ export const HexagonSurfaceSchema = defineSchema({
 
 export type HexagonSurfaceParams = Infer<typeof HexagonSurfaceSchema>
 
+/**
+ * Asanoha Surface Schema
+ */
+export const AsanohaSurfaceSchema = defineSchema({
+  size: number({ label: 'Size', min: 10, max: 100, step: 1, default: 40 }),
+  lineWidth: number({ label: 'Line Width', min: 0.5, max: 5, step: 0.5, default: 1 }),
+})
+
+export type AsanohaSurfaceParams = Infer<typeof AsanohaSurfaceSchema>
+
+/**
+ * Seigaiha Surface Schema
+ */
+export const SeigaihaSurfaceSchema = defineSchema({
+  radius: number({ label: 'Radius', min: 10, max: 80, step: 1, default: 30 }),
+  rings: number({ label: 'Rings', min: 2, max: 5, step: 1, default: 3 }),
+  lineWidth: number({ label: 'Line Width', min: 0.5, max: 5, step: 0.5, default: 1 }),
+})
+
+export type SeigaihaSurfaceParams = Infer<typeof SeigaihaSurfaceSchema>
+
+/**
+ * Wave Surface Schema
+ */
+export const WaveSurfaceSchema = defineSchema({
+  amplitude: number({ label: 'Amplitude', min: 1, max: 50, step: 1, default: 10 }),
+  wavelength: number({ label: 'Wavelength', min: 10, max: 100, step: 1, default: 40 }),
+  thickness: number({ label: 'Thickness', min: 1, max: 30, step: 1, default: 8 }),
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+})
+
+export type WaveSurfaceParams = Infer<typeof WaveSurfaceSchema>
+
+/**
+ * Scales Surface Schema
+ */
+export const ScalesSurfaceSchema = defineSchema({
+  size: number({ label: 'Size', min: 10, max: 60, step: 1, default: 24 }),
+  overlap: number({ label: 'Overlap', min: 0, max: 1, step: 0.1, default: 0.5 }),
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+})
+
+export type ScalesSurfaceParams = Infer<typeof ScalesSurfaceSchema>
+
+/**
+ * Ogee Surface Schema
+ */
+export const OgeeSurfaceSchema = defineSchema({
+  width: number({ label: 'Width', min: 20, max: 100, step: 1, default: 40 }),
+  height: number({ label: 'Height', min: 30, max: 120, step: 1, default: 60 }),
+  lineWidth: number({ label: 'Line Width', min: 0.5, max: 5, step: 0.5, default: 2 }),
+})
+
+export type OgeeSurfaceParams = Infer<typeof OgeeSurfaceSchema>
+
+/**
+ * Sunburst Surface Schema
+ */
+export const SunburstSurfaceSchema = defineSchema({
+  rays: number({ label: 'Rays', min: 4, max: 32, step: 1, default: 12 }),
+  centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  twist: number({ label: 'Twist', min: 0, max: 2, step: 0.1, default: 0 }),
+})
+
+export type SunburstSurfaceParams = Infer<typeof SunburstSurfaceSchema>
+
 // ============================================================
 // Factory Functions
 // ============================================================
@@ -233,6 +300,24 @@ export const createDefaultTriangleParams = (): TriangleSurfaceParams =>
 export const createDefaultHexagonParams = (): HexagonSurfaceParams =>
   getDefaults(HexagonSurfaceSchema)
 
+export const createDefaultAsanohaParams = (): AsanohaSurfaceParams =>
+  getDefaults(AsanohaSurfaceSchema)
+
+export const createDefaultSeigaihaParams = (): SeigaihaSurfaceParams =>
+  getDefaults(SeigaihaSurfaceSchema)
+
+export const createDefaultWaveParams = (): WaveSurfaceParams =>
+  getDefaults(WaveSurfaceSchema)
+
+export const createDefaultScalesParams = (): ScalesSurfaceParams =>
+  getDefaults(ScalesSurfaceSchema)
+
+export const createDefaultOgeeParams = (): OgeeSurfaceParams =>
+  getDefaults(OgeeSurfaceSchema)
+
+export const createDefaultSunburstParams = (): SunburstSurfaceParams =>
+  getDefaults(SunburstSurfaceSchema)
+
 // ============================================================
 // Schema Maps (for dynamic access by type)
 // ============================================================
@@ -253,4 +338,10 @@ export const SurfaceSchemas = {
   gradientGrain: GradientGrainSurfaceSchema,
   triangle: TriangleSurfaceSchema,
   hexagon: HexagonSurfaceSchema,
+  asanoha: AsanohaSurfaceSchema,
+  seigaiha: SeigaihaSurfaceSchema,
+  wave: WaveSurfaceSchema,
+  scales: ScalesSurfaceSchema,
+  ogee: OgeeSurfaceSchema,
+  sunburst: SunburstSurfaceSchema,
 } as const

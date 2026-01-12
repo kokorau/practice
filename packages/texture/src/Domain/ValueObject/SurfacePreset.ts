@@ -2,7 +2,21 @@
  * Surface Preset Type
  * Defines the available surface pattern types
  */
-export type SurfacePresetType = 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain' | 'triangle' | 'hexagon'
+export type SurfacePresetType =
+  | 'solid'
+  | 'stripe'
+  | 'grid'
+  | 'polkaDot'
+  | 'checker'
+  | 'gradientGrain'
+  | 'triangle'
+  | 'hexagon'
+  | 'asanoha'
+  | 'seigaiha'
+  | 'wave'
+  | 'scales'
+  | 'ogee'
+  | 'sunburst'
 
 /**
  * Depth Map Type for Gradient Grain
@@ -85,6 +99,36 @@ export interface TrianglePresetParams {
 }
 
 /**
+ * Asanoha (麻の葉) surface params
+ */
+export interface AsanohaPresetParams {
+  type: 'asanoha'
+  size: number
+  lineWidth: number
+}
+
+/**
+ * Seigaiha (青海波) surface params
+ */
+export interface SeigaihaPresetParams {
+  type: 'seigaiha'
+  radius: number
+  rings: number
+  lineWidth: number
+}
+
+/**
+ * Wave surface params
+ */
+export interface WavePresetParams {
+  type: 'wave'
+  amplitude: number
+  wavelength: number
+  thickness: number
+  angle: number
+}
+
+/**
  * Hexagon tessellation surface params
  */
 export interface HexagonPresetParams {
@@ -93,6 +137,37 @@ export interface HexagonPresetParams {
   size: number
   /** Rotation angle (radians) */
   angle: number
+}
+
+/**
+ * Scales surface params
+ */
+export interface ScalesPresetParams {
+  type: 'scales'
+  size: number
+  overlap: number
+  angle: number
+}
+
+/**
+ * Ogee surface params
+ */
+export interface OgeePresetParams {
+  type: 'ogee'
+  width: number
+  height: number
+  lineWidth: number
+}
+
+/**
+ * Sunburst (放射) surface params
+ */
+export interface SunburstPresetParams {
+  type: 'sunburst'
+  rays: number
+  centerX: number
+  centerY: number
+  twist: number
 }
 
 /**
@@ -107,6 +182,12 @@ export type SurfacePresetParams =
   | GradientGrainPresetParams
   | TrianglePresetParams
   | HexagonPresetParams
+  | AsanohaPresetParams
+  | SeigaihaPresetParams
+  | WavePresetParams
+  | ScalesPresetParams
+  | OgeePresetParams
+  | SunburstPresetParams
 
 /**
  * Surface Preset

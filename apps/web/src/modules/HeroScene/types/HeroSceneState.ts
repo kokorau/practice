@@ -95,6 +95,46 @@ export interface GradientGrainSurfaceParams {
 }
 
 /**
+ * Textile pattern surface params
+ */
+export interface AsanohaSurfaceParams {
+  size: number
+  lineWidth: number
+}
+
+export interface SeigaihaSurfaceParams {
+  radius: number
+  rings: number
+  lineWidth: number
+}
+
+export interface WaveSurfaceParams {
+  amplitude: number
+  wavelength: number
+  thickness: number
+  angle: number
+}
+
+export interface ScalesSurfaceParams {
+  size: number
+  overlap: number
+  angle: number
+}
+
+export interface OgeeSurfaceParams {
+  width: number
+  height: number
+  lineWidth: number
+}
+
+export interface SunburstSurfaceParams {
+  rays: number
+  centerX: number
+  centerY: number
+  twist: number
+}
+
+/**
  * Custom surface params union type (for midground - includes solid, checker, and gradientGrain)
  */
 export type CustomSurfaceParams =
@@ -106,6 +146,12 @@ export type CustomSurfaceParams =
   | ({ type: 'triangle' } & TriangleSurfaceParams)
   | ({ type: 'hexagon' } & HexagonSurfaceParams)
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ type: 'asanoha' } & AsanohaSurfaceParams)
+  | ({ type: 'seigaiha' } & SeigaihaSurfaceParams)
+  | ({ type: 'wave' } & WaveSurfaceParams)
+  | ({ type: 'scales' } & ScalesSurfaceParams)
+  | ({ type: 'ogee' } & OgeeSurfaceParams)
+  | ({ type: 'sunburst' } & SunburstSurfaceParams)
 
 /**
  * Custom background surface params union type
@@ -119,6 +165,12 @@ export type CustomBackgroundSurfaceParams =
   | ({ type: 'triangle' } & TriangleSurfaceParams)
   | ({ type: 'hexagon' } & HexagonSurfaceParams)
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ type: 'asanoha' } & AsanohaSurfaceParams)
+  | ({ type: 'seigaiha' } & SeigaihaSurfaceParams)
+  | ({ type: 'wave' } & WaveSurfaceParams)
+  | ({ type: 'scales' } & ScalesSurfaceParams)
+  | ({ type: 'ogee' } & OgeeSurfaceParams)
+  | ({ type: 'sunburst' } & SunburstSurfaceParams)
 
 // ============================================================
 // Section Type

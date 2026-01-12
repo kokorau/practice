@@ -40,6 +40,15 @@ const defaultSurfacePresets: SurfacePreset[] = [
   { label: 'Triangle Rotated', params: { type: 'triangle', size: 30, angle: Math.PI / 6 } },
   { label: 'Hexagon', params: { type: 'hexagon', size: 20, angle: 0 } },
   { label: 'Hexagon Rotated', params: { type: 'hexagon', size: 20, angle: Math.PI / 6 } },
+  // Textile patterns
+  { label: '麻の葉', params: { type: 'asanoha', size: 40, lineWidth: 1 } },
+  { label: '青海波', params: { type: 'seigaiha', radius: 30, rings: 3, lineWidth: 1 } },
+  { label: 'Wave', params: { type: 'wave', amplitude: 10, wavelength: 40, thickness: 8, angle: 0 } },
+  { label: 'Wave Vertical', params: { type: 'wave', amplitude: 10, wavelength: 40, thickness: 8, angle: Math.PI / 2 } },
+  { label: 'Scales', params: { type: 'scales', size: 24, overlap: 0.5, angle: 0 } },
+  { label: 'Ogee', params: { type: 'ogee', width: 40, height: 60, lineWidth: 2 } },
+  { label: 'Sunburst', params: { type: 'sunburst', rays: 12, centerX: 0.5, centerY: 0.5, twist: 0 } },
+  { label: 'Spiral', params: { type: 'sunburst', rays: 8, centerX: 0.5, centerY: 0.5, twist: 0.5 } },
 ]
 
 /**

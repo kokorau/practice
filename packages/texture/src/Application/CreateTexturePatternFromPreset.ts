@@ -9,6 +9,12 @@ import {
   createGradientGrainSpec,
   createTriangleSpec,
   createHexagonSpec,
+  createAsanohaSpec,
+  createSeigaihaSpec,
+  createWaveSpec,
+  createScalesSpec,
+  createOgeeSpec,
+  createSunburstSpec,
 } from '../shaders'
 
 /**
@@ -120,6 +126,87 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             angle: params.angle,
             color1: c1,
             color2: c2,
+          }),
+        params,
+      }
+    case 'asanoha':
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA) =>
+          createAsanohaSpec({
+            size: params.size,
+            lineWidth: params.lineWidth,
+            lineColor: c1,
+            bgColor: c2,
+          }),
+        params,
+      }
+    case 'seigaiha':
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA) =>
+          createSeigaihaSpec({
+            radius: params.radius,
+            rings: params.rings,
+            lineWidth: params.lineWidth,
+            lineColor: c1,
+            bgColor: c2,
+          }),
+        params,
+      }
+    case 'wave':
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA) =>
+          createWaveSpec({
+            amplitude: params.amplitude,
+            wavelength: params.wavelength,
+            thickness: params.thickness,
+            angle: params.angle,
+            color1: c1,
+            color2: c2,
+          }),
+        params,
+      }
+    case 'scales':
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA) =>
+          createScalesSpec({
+            size: params.size,
+            overlap: params.overlap,
+            angle: params.angle,
+            color1: c1,
+            color2: c2,
+          }),
+        params,
+      }
+    case 'ogee':
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA) =>
+          createOgeeSpec({
+            width: params.width,
+            height: params.height,
+            lineWidth: params.lineWidth,
+            lineColor: c1,
+            bgColor: c2,
+          }),
+        params,
+      }
+    case 'sunburst':
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
+          createSunburstSpec({
+            rays: params.rays,
+            centerX: params.centerX,
+            centerY: params.centerY,
+            twist: params.twist,
+            color1: c1,
+            color2: c2,
+            viewportWidth: viewport?.width ?? 1920,
+            viewportHeight: viewport?.height ?? 1080,
           }),
         params,
       }
