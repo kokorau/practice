@@ -51,11 +51,6 @@ export const createEffectPlaceholder = (): EffectModifier => ({
   hasEffect: true,
 })
 
-/**
- * @deprecated Use createEffectPlaceholder instead
- */
-export const createEffectModifier = createEffectPlaceholder
-
 // ============================================================
 // Utility Functions
 // ============================================================
