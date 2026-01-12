@@ -106,7 +106,6 @@ export type {
   SolidSurface,
   TextConfig,
   Model3DConfig,
-  DropPosition,
   // HTML types
   HtmlContentItem,
   HtmlLayer,
@@ -231,9 +230,6 @@ export {
   removeNode,
   flattenNodes,
   findParentNode,
-  isAncestorOf,
-  insertNode,
-  moveNode,
   wrapNodeInGroup,
   wrapNodeInMaskedGroup,
   // Scene layer ID mapping
@@ -350,7 +346,6 @@ export {
   toggleVisibility,
   addLayer,
   removeLayer,
-  moveLayer,
   updateLayer,
   // Preset UseCases
   applyPreset,

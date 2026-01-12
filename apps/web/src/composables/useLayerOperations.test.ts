@@ -476,19 +476,4 @@ describe('useLayerOperations', () => {
       expect(onSelectProcessor).not.toHaveBeenCalled()
     })
   })
-
-  // ============================================================
-  // handleMoveLayer
-  // ============================================================
-  describe('handleMoveLayer', () => {
-    it('should move layer in tree', () => {
-      const { layers, handleMoveLayer } = useLayerOperations(createOptions())
-
-      // Move main-group before background-group
-      handleMoveLayer('main-group', 'background-group', 'before')
-
-      expect(layers.value[0]?.id).toBe('main-group')
-      expect(layers.value[1]?.id).toBe('background-group')
-    })
-  })
 })

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { SceneNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
+import type { SceneNode, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
 import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
-import { useLayerDragDrop } from './useLayerDragDrop'
 import { useLayerSelection } from '../../composables/useLayerSelection'
 
 // ============================================================
@@ -41,7 +40,6 @@ const emit = defineEmits<{
   'select-processor': [layerId: string, processorType: 'effect' | 'mask' | 'processor']
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
-  'move-layer': [sourceId: string, targetId: string, position: DropPosition]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
@@ -50,31 +48,8 @@ const emit = defineEmits<{
 }>()
 
 // ============================================================
-// Drag & Drop State
+// Context Menu
 // ============================================================
-
-const { draggedId, dropTarget, startDrag, endDrag, setDropTarget, clearDropTarget } = useLayerDragDrop()
-
-const handleDragStart = (nodeId: string) => {
-  startDrag(nodeId)
-}
-
-const handleDragEnd = () => {
-  endDrag()
-}
-
-const handleDragOver = (nodeId: string, position: DropPosition) => {
-  setDropTarget({ nodeId, position })
-}
-
-const handleDragLeave = (nodeId: string) => {
-  clearDropTarget(nodeId)
-}
-
-const handleDrop = (sourceId: string, targetId: string, position: DropPosition) => {
-  emit('move-layer', sourceId, targetId, position)
-  endDrag()
-}
 
 const handleLayerContextMenu = (layerId: string, event: MouseEvent, targetType: ContextTargetType) => {
   emit('layer-contextmenu', layerId, event, targetType)
@@ -187,19 +162,12 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           :depth="0"
           :selected-id="selectedLayerId"
           :selected-processor-type="selectedProcessorType ?? null"
-          :dragged-id="draggedId"
-          :drop-target="dropTarget"
           @select="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
           @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @contextmenu="handleLayerContextMenu"
-          @drag-start="handleDragStart"
-          @drag-end="handleDragEnd"
-          @drag-over="handleDragOver"
-          @drag-leave="handleDragLeave"
-          @drop="handleDrop"
         />
       </div>
     </div>

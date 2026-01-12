@@ -17,7 +17,6 @@ export {
   toggleVisibility,
   addLayer,
   removeLayer,
-  moveLayer,
   updateLayer,
 } from './Layer'
 export {

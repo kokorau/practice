@@ -6,7 +6,7 @@ import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
 import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
-import type { HeroViewPreset, SceneNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
+import type { HeroViewPreset, SceneNode, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
 import type { ContextTargetType } from './DraggableLayerNode.vue'
 
 // ============================================================
@@ -75,7 +75,6 @@ const emit = defineEmits<{
   'select-processor': [layerId: string, processorType: 'effect' | 'mask' | 'processor']
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
-  'move-layer': [sourceId: string, targetId: string, position: DropPosition]
   'group-selection': [layerId: string]
   'use-as-mask': [layerId: string]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
@@ -280,7 +279,6 @@ const selectedPresetName = computed(() => {
           @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
           @add-layer="(type: LayerType) => emit('add-layer', type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
-          @move-layer="(src: string, tgt: string, pos: DropPosition) => emit('move-layer', src, tgt, pos)"
           @layer-contextmenu="(id: string, e: MouseEvent, type: ContextTargetType) => emit('layer-contextmenu', id, e, type)"
           @select-foreground-element="(id: string) => emit('select-foreground-element', id)"
           @foreground-contextmenu="(id: string, e: MouseEvent) => emit('foreground-contextmenu', id, e)"

@@ -536,7 +536,6 @@ export interface UsecaseState {
   readonly layerUsecase: {
     addLayer: (layer: LayerNodeConfig, index?: number) => void
     removeLayer: (layerId: string) => void
-    moveLayer: (sourceId: string, targetId: string, position: 'before' | 'after' | 'into') => void
     toggleExpand: (layerId: string) => void
     toggleVisibility: (layerId: string) => void
     updateLayer: (layerId: string, updates: Partial<LayerNodeConfig>) => void
