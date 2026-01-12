@@ -6,11 +6,14 @@
  * Features:
  * - Visual depth indication via indentation
  * - Expand/collapse for groups
+ * - Drag & drop reordering
  */
 
-import { computed, ref } from 'vue'
+import { computed, ref, inject } from 'vue'
 import type { SceneNode, Group, LayerVariant } from '../../modules/HeroScene'
 import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
+import { LAYER_DRAG_KEY, type DropTarget } from '../../composables/useLayerDragAndDrop'
+import DropIndicator from './DropIndicator.vue'
 
 // ============================================================
 // Props & Emits
@@ -21,6 +24,8 @@ const props = defineProps<{
   depth: number
   selectedId: string | null
   selectedProcessorType: 'effect' | 'mask' | 'processor' | null
+  /** All nodes in the tree (for DnD validation) */
+  nodes: SceneNode[]
 }>()
 
 /** Context menu target type */
@@ -34,6 +39,8 @@ const emit = defineEmits<{
   'remove-layer': [nodeId: string]
   // Context menu event (with target type)
   contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType]
+  // DnD move event
+  'move-node': [nodeId: string, position: import('../../modules/HeroScene').DropPosition]
 }>()
 
 // ============================================================
@@ -165,18 +172,64 @@ const handleRemove = (e: Event) => {
 const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
   emit('select-processor', props.node.id, type)
 }
+
+// ============================================================
+// Drag & Drop
+// ============================================================
+
+const dragContext = inject(LAYER_DRAG_KEY, null)
+const nodeRef = ref<HTMLElement | null>(null)
+
+// Current drop target for this node
+const localDropTarget = computed((): DropTarget | null => {
+  if (!dragContext) return null
+  const target = dragContext.state.dropTarget.value
+  if (!target || target.nodeId !== props.node.id) return null
+  return target
+})
+
+// Check if this node is being dragged
+const isBeingDragged = computed(() => {
+  if (!dragContext) return false
+  return dragContext.state.isDragging.value &&
+    dragContext.state.dragItem.value?.nodeId === props.node.id
+})
+
+// Handle pointer down to start drag
+const handlePointerDown = (e: PointerEvent) => {
+  if (!dragContext) return
+  // Only start drag on primary button
+  if (e.button !== 0) return
+  // Don't start drag on buttons
+  if ((e.target as HTMLElement).closest('button')) return
+
+  dragContext.actions.startDrag(
+    { type: 'sceneNode', nodeId: props.node.id },
+    e
+  )
+  // Note: Don't use setPointerCapture here - we need events to reach other nodes
+}
 </script>
 
 <template>
   <div class="draggable-layer-node">
     <!-- Node Header -->
     <div
+      ref="nodeRef"
       class="node-header"
-      :class="{ selected: isSelected }"
+      :class="{ selected: isSelected, dragging: isBeingDragged }"
       :style="indentStyle"
+      :data-node-id="node.id"
+      :data-is-group="isGroupNode"
       @click="handleSelect"
       @contextmenu="(e: MouseEvent) => handleContextMenu(e, 'layer')"
+      @pointerdown="handlePointerDown"
     >
+      <!-- Drop Indicator -->
+      <DropIndicator
+        v-if="localDropTarget"
+        :position="localDropTarget.position"
+      />
       <!-- Processor Link: 上向き矢印 (対象レイヤーの先頭) -->
       <svg v-if="hasModifiers" class="processor-link-icon" viewBox="0 0 12 24" fill="none">
         <!-- 縦線 (矢印先端から下へ、次の要素まで伸ばす) -->
@@ -282,12 +335,14 @@ const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
         :depth="depth + 1"
         :selected-id="selectedId"
         :selected-processor-type="selectedProcessorType"
+        :nodes="nodes"
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
         @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
         @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType) => emit('contextmenu', id, e, targetType)"
+        @move-node="(id: string, position: import('../../modules/HeroScene').DropPosition) => emit('move-node', id, position)"
       />
     </template>
   </div>
@@ -328,6 +383,15 @@ const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
   background: oklch(0.55 0.15 250 / 0.25);
 }
 
+.node-header.dragging {
+  opacity: 0.5;
+}
+
+.node-header {
+  position: relative;
+  touch-action: none;
+  user-select: none;
+}
 
 /* Expand Toggle */
 .expand-toggle {

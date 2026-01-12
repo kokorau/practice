@@ -385,6 +385,7 @@ export {
   type SolidSurface,
   type TextConfig,
   type Model3DConfig,
+  type DropPosition,
   // Factory functions
   createLayer,
   createBaseLayer,
@@ -408,6 +409,9 @@ export {
   flattenNodes,
   findParentNode,
   wrapNodeInGroup,
+  // DnD move utilities
+  canMoveSceneNode,
+  moveSceneNode,
   // Scene layer ID mapping
   SCENE_LAYER_IDS,
   type SceneLayerId,

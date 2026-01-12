@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { SceneNode, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
+import { ref, computed, provide } from 'vue'
+import type { SceneNode, ForegroundElementConfig, ForegroundElementType, DropPosition } from '../../modules/HeroScene'
 import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
+import DragPreview from './DragPreview.vue'
 import { useLayerSelection } from '../../composables/useLayerSelection'
+import { useLayerDragAndDrop, LAYER_DRAG_KEY, calculateDropPosition } from '../../composables/useLayerDragAndDrop'
 
 // ============================================================
 // Types
@@ -41,11 +43,81 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
+  'move-node': [nodeId: string, position: DropPosition]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
   'remove-foreground-element': [elementId: string]
   'foreground-contextmenu': [elementId: string, event: MouseEvent]
 }>()
+
+// ============================================================
+// Drag & Drop
+// ============================================================
+
+const dragAndDrop = useLayerDragAndDrop()
+provide(LAYER_DRAG_KEY, dragAndDrop)
+
+const handleMoveNode = (nodeId: string, position: DropPosition) => {
+  emit('move-node', nodeId, position)
+}
+
+// Global pointer move handler for DnD
+const handleLayerListPointerMove = (e: PointerEvent) => {
+  if (!dragAndDrop.state.dragItem.value) return
+
+  dragAndDrop.actions.updatePointer(e)
+
+  if (!dragAndDrop.state.isDragging.value) return
+
+  // Find the node element under the pointer
+  const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY)
+  const nodeElement = elementsAtPoint.find(
+    el => el.hasAttribute('data-node-id')
+  ) as HTMLElement | undefined
+
+  if (!nodeElement) {
+    dragAndDrop.actions.updateDropTarget(null)
+    return
+  }
+
+  const targetNodeId = nodeElement.dataset.nodeId
+  if (!targetNodeId) {
+    dragAndDrop.actions.updateDropTarget(null)
+    return
+  }
+
+  // Don't allow dropping on self
+  if (dragAndDrop.state.dragItem.value.nodeId === targetNodeId) {
+    dragAndDrop.actions.updateDropTarget(null)
+    return
+  }
+
+  // Calculate drop position
+  const rect = nodeElement.getBoundingClientRect()
+  const isGroupTarget = nodeElement.dataset.isGroup === 'true'
+  const position = calculateDropPosition(rect, e.clientY, isGroupTarget)
+
+  const target = { nodeId: targetNodeId, position }
+
+  // Check if drop is valid
+  if (dragAndDrop.canDrop(props.layers, target)) {
+    dragAndDrop.actions.updateDropTarget(target)
+  } else {
+    dragAndDrop.actions.updateDropTarget(null)
+  }
+}
+
+// Global pointer up handler for DnD
+const handleLayerListPointerUp = () => {
+  if (!dragAndDrop.state.dragItem.value) return
+
+  const draggedNodeId = dragAndDrop.state.dragItem.value.nodeId
+  const dropPosition = dragAndDrop.actions.endDrag()
+
+  if (dropPosition) {
+    emit('move-node', draggedNodeId, dropPosition)
+  }
+}
 
 // ============================================================
 // Context Menu
@@ -154,7 +226,11 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
         </div>
       </div>
 
-      <div class="layer-list">
+      <div
+        class="layer-list"
+        @pointermove="handleLayerListPointerMove"
+        @pointerup="handleLayerListPointerUp"
+      >
         <DraggableLayerNode
           v-for="layer in layers"
           :key="layer.id"
@@ -162,14 +238,24 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           :depth="0"
           :selected-id="selectedLayerId"
           :selected-processor-type="selectedProcessorType ?? null"
+          :nodes="layers"
           @select="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
           @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @contextmenu="handleLayerContextMenu"
+          @move-node="handleMoveNode"
         />
       </div>
+
+      <!-- Drag Preview -->
+      <DragPreview
+        v-if="dragAndDrop.state.isDragging.value && dragAndDrop.state.dragItem.value"
+        :nodes="layers"
+        :node-id="dragAndDrop.state.dragItem.value.nodeId"
+        :position="dragAndDrop.state.pointerPosition.value"
+      />
     </div>
 
     <!-- HTML Section -->
