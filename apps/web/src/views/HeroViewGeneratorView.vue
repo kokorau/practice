@@ -369,6 +369,7 @@ const {
   handleRemoveLayer,
   handleGroupSelection,
   handleUseAsMask,
+  mapLayerIdToSceneLayerId,
 } = useLayerOperations({
   initialLayers: [
     createGroup(
@@ -418,7 +419,8 @@ const {
     if (type === 'effect') {
       const layer = selectedLayer.value
       if (layer && 'variant' in layer) {
-        selectedFilterLayerId.value = layer.id
+        // Map UI layer ID to scene layer ID for filter operations
+        selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layer.id)
       }
     }
   },
