@@ -67,10 +67,6 @@ import {
   type MaskPattern,
   type MaskShapeConfig,
   type RGBA,
-  type CircleMaskShapeConfig,
-  type RectMaskShapeConfig,
-  type BlobMaskShapeConfig,
-  type PerlinMaskShapeConfig,
   type Viewport,
   type TextureRenderSpec,
   type SurfacePreset,
@@ -83,6 +79,7 @@ import {
   type RectMaskShapeParams,
   type BlobMaskShapeParams,
   type PerlinMaskShapeParams,
+  type LinearGradientMaskShapeParams,
   type StripeSurfaceParams,
   type GridSurfaceParams,
   type PolkaDotSurfaceParams,
@@ -238,6 +235,7 @@ export type CustomMaskShapeParams =
   | ({ type: 'rect' } & RectMaskShapeParams)
   | ({ type: 'blob' } & BlobMaskShapeParams)
   | ({ type: 'perlin' } & PerlinMaskShapeParams)
+  | ({ type: 'linearGradient' } & LinearGradientMaskShapeParams)
 
 /**
  * Textile pattern surface params
@@ -601,6 +599,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         scale: maskConfig.scale,
         octaves: maskConfig.octaves,
         cutout: maskConfig.cutout ?? true,
+      }
+    }
+    if (maskConfig.type === 'linearGradient') {
+      return {
+        type: 'linearGradient',
+        angle: maskConfig.angle,
+        startOffset: maskConfig.startOffset,
+        endOffset: maskConfig.endOffset,
+        cutout: maskConfig.cutout ?? false,
       }
     }
     // blob
@@ -1680,7 +1687,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customSurfParams?: CustomSurfaceParams | null
   ): TextureRenderSpec | null => {
     // Build mask config from custom params or preset
-    const buildMaskConfig = (): CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig => {
+    const buildMaskConfig = (): MaskShapeConfig => {
       if (!customShapeParams) {
         return maskPattern.maskConfig
       }
@@ -1710,6 +1717,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             baseRadius: customShapeParams.baseRadius, amplitude: customShapeParams.amplitude,
             octaves: customShapeParams.octaves, seed: customShapeParams.seed,
             cutout: customShapeParams.cutout,
+          }
+        case 'linearGradient':
+          return {
+            type: 'linearGradient',
+            angle: customShapeParams.angle, startOffset: customShapeParams.startOffset,
+            endOffset: customShapeParams.endOffset, cutout: customShapeParams.cutout,
           }
         default: {
           const _exhaustive: never = customShapeParams
@@ -1902,9 +1915,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             }
           }
         }
+        case 'linearGradient':
+          // Linear gradient mask with surface patterns is not supported yet - fall back to solid
+          return null
         default: {
           const _exhaustive: never = maskConfig
-          throw new Error(`Unknown mask type: ${(_exhaustive as CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig).type}`)
+          throw new Error(`Unknown mask type: ${(_exhaustive as MaskShapeConfig).type}`)
         }
       }
     }
@@ -3238,6 +3254,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         cutout: params.cutout,
       }
     }
+    if (params.type === 'linearGradient') {
+      return {
+        type: 'linearGradient',
+        angle: params.angle,
+        startOffset: params.startOffset,
+        endOffset: params.endOffset,
+        cutout: params.cutout,
+      }
+    }
     // blob
     return {
       type: 'blob',
@@ -3456,6 +3481,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             threshold: shape.threshold,
             scale: shape.scale,
             octaves: shape.octaves,
+            cutout: shape.cutout,
+          }
+        } else if (shape.type === 'linearGradient') {
+          customMaskShapeParams.value = {
+            type: 'linearGradient',
+            angle: shape.angle,
+            startOffset: shape.startOffset,
+            endOffset: shape.endOffset,
             cutout: shape.cutout,
           }
         } else {

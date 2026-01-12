@@ -30,6 +30,7 @@ import type {
   RectMaskShapeParams,
   BlobMaskShapeParams,
   PerlinMaskShapeParams,
+  LinearGradientMaskShapeParams,
   StripeSurfaceParams,
   GridSurfaceParams,
   PolkaDotSurfaceParams,
@@ -72,6 +73,7 @@ export type CustomMaskShapeParams =
   | ({ type: 'rect' } & RectMaskShapeParams)
   | ({ type: 'blob' } & BlobMaskShapeParams)
   | ({ type: 'perlin' } & PerlinMaskShapeParams)
+  | ({ type: 'linearGradient' } & LinearGradientMaskShapeParams)
 
 /**
  * Gradient grain surface params
@@ -301,7 +303,7 @@ export interface MaskState {
   /** Current surface schema for UI */
   readonly currentSurfaceSchema: ComputedRef<ObjectSchema | null>
   /** Update mask shape params */
-  readonly updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams | PerlinMaskShapeParams>) => void
+  readonly updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams | PerlinMaskShapeParams | LinearGradientMaskShapeParams>) => void
   /** Update surface params */
   readonly updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => void
 }

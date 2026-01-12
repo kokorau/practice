@@ -37,7 +37,7 @@ export interface TexturePattern {
 /**
  * Mask type enumeration
  */
-export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin'
+export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient'
 
 /**
  * Circle mask configuration
@@ -97,7 +97,23 @@ export interface PerlinMaskShapeConfig {
   cutout?: boolean
 }
 
-export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig
+/**
+ * Linear gradient mask configuration
+ * Smooth gradient fade along a direction
+ */
+export interface LinearGradientMaskShapeConfig {
+  type: 'linearGradient'
+  /** Gradient direction in degrees (0-360) */
+  angle: number
+  /** Start offset (0.0-1.0, normalized coordinate) */
+  startOffset: number
+  /** End offset (0.0-1.0, normalized coordinate) */
+  endOffset: number
+  /** If true (default), gradient goes from transparent to opaque. If false, reversed. */
+  cutout?: boolean
+}
+
+export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | LinearGradientMaskShapeConfig
 
 /**
  * Mask pattern definition with shape configuration

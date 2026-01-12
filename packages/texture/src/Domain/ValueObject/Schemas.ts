@@ -75,6 +75,19 @@ export const PerlinMaskShapeSchema = defineSchema({
 
 export type PerlinMaskShapeParams = Infer<typeof PerlinMaskShapeSchema>
 
+/**
+ * Linear Gradient Mask Shape Schema
+ * Smooth gradient fade along a direction
+ */
+export const LinearGradientMaskShapeSchema = defineSchema({
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+  startOffset: number({ label: 'Start', min: 0, max: 1, step: 0.01, default: 0.3 }),
+  endOffset: number({ label: 'End', min: 0, max: 1, step: 0.01, default: 0.7 }),
+  cutout: boolean({ label: 'Cutout', default: false }),
+})
+
+export type LinearGradientMaskShapeParams = Infer<typeof LinearGradientMaskShapeSchema>
+
 // ============================================================
 // Surface Schemas (Texture Patterns)
 // ============================================================
@@ -276,6 +289,9 @@ export const createDefaultBlobMaskParams = (): BlobMaskShapeParams =>
 export const createDefaultPerlinMaskParams = (): PerlinMaskShapeParams =>
   getDefaults(PerlinMaskShapeSchema)
 
+export const createDefaultLinearGradientMaskParams = (): LinearGradientMaskShapeParams =>
+  getDefaults(LinearGradientMaskShapeSchema)
+
 export const createDefaultSolidParams = (): SolidSurfaceParams =>
   getDefaults(SolidSurfaceSchema)
 
@@ -327,6 +343,7 @@ export const MaskShapeSchemas = {
   rect: RectMaskShapeSchema,
   blob: BlobMaskShapeSchema,
   perlin: PerlinMaskShapeSchema,
+  linearGradient: LinearGradientMaskShapeSchema,
 } as const
 
 export const SurfaceSchemas = {

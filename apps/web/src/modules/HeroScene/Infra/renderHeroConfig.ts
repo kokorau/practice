@@ -15,6 +15,7 @@ import {
   createRectMaskSpec,
   createBlobMaskSpec,
   createPerlinMaskSpec,
+  createLinearGradientMaskSpec,
   type TextureRenderSpec,
   type Viewport,
   type RGBA,
@@ -303,6 +304,19 @@ function createMaskSpecFromShape(
         octaves: shape.octaves,
         innerColor,
         outerColor,
+      },
+      viewport
+    )
+  }
+  if (shape.type === 'linearGradient') {
+    return createLinearGradientMaskSpec(
+      {
+        angle: shape.angle,
+        startOffset: shape.startOffset,
+        endOffset: shape.endOffset,
+        innerColor,
+        outerColor,
+        cutout,
       },
       viewport
     )
