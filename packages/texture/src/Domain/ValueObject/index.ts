@@ -20,6 +20,8 @@ export type {
   PolkaDotPresetParams,
   CheckerPresetParams,
   GradientGrainPresetParams,
+  TrianglePresetParams,
+  HexagonPresetParams,
   SurfacePresetParams,
   SurfacePreset,
 } from './SurfacePreset'
@@ -77,6 +79,8 @@ export {
   PolkaDotSurfaceSchema,
   CheckerSurfaceSchema,
   GradientGrainSurfaceSchema,
+  TriangleSurfaceSchema,
+  HexagonSurfaceSchema,
   SurfaceSchemas,
   // Constants
   DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
@@ -91,6 +95,8 @@ export {
   createDefaultPolkaDotParams,
   createDefaultCheckerParams,
   createDefaultGradientGrainParams,
+  createDefaultTriangleParams,
+  createDefaultHexagonParams,
 } from './Schemas'
 export type {
   CircleMaskShapeParams,
@@ -103,4 +109,6 @@ export type {
   PolkaDotSurfaceParams,
   CheckerSurfaceParams,
   GradientGrainSurfaceParams,
+  TriangleSurfaceParams,
+  HexagonSurfaceParams,
 } from './Schemas'

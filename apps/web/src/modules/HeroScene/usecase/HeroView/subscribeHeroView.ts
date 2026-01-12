@@ -5,7 +5,7 @@
  */
 
 import type { HeroViewSubscriber, HeroViewUnsubscribe, HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 
 /**
  * HeroViewConfigの変更を購読する

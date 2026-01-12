@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { moveLayer } from './moveLayer'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 
 describe('moveLayer', () => {

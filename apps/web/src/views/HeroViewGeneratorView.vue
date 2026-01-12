@@ -747,7 +747,7 @@ const handleFilterUpdate = (key: string, value: unknown) => {
 
       <!-- Generator タブ: プレビュー -->
       <HeroPreview
-        v-if="activeTab === 'generator'"
+        v-show="activeTab === 'generator'"
         ref="heroPreviewRef"
         :foreground-config="foregroundConfig"
         :title-color="foregroundTitleColor"

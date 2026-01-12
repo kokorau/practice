@@ -34,6 +34,8 @@ import type {
   GridSurfaceParams,
   PolkaDotSurfaceParams,
   CheckerSurfaceParams,
+  TriangleSurfaceParams,
+  HexagonSurfaceParams,
   Viewport,
   DepthMapType,
 } from '@practice/texture'
@@ -101,6 +103,8 @@ export type CustomSurfaceParams =
   | ({ type: 'grid' } & GridSurfaceParams)
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ type: 'checker' } & CheckerSurfaceParams)
+  | ({ type: 'triangle' } & TriangleSurfaceParams)
+  | ({ type: 'hexagon' } & HexagonSurfaceParams)
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
 
 /**
@@ -112,6 +116,8 @@ export type CustomBackgroundSurfaceParams =
   | ({ type: 'grid' } & GridSurfaceParams)
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ type: 'checker' } & CheckerSurfaceParams)
+  | ({ type: 'triangle' } & TriangleSurfaceParams)
+  | ({ type: 'hexagon' } & HexagonSurfaceParams)
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
 
 // ============================================================

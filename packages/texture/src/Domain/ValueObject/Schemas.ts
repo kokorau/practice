@@ -173,6 +173,26 @@ export const GradientGrainSurfaceSchema = defineSchema({
 
 export type GradientGrainSurfaceParams = Infer<typeof GradientGrainSurfaceSchema>
 
+/**
+ * Triangle Surface Schema
+ */
+export const TriangleSurfaceSchema = defineSchema({
+  size: number({ label: 'Size', min: 10, max: 100, step: 1, default: 30 }),
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+})
+
+export type TriangleSurfaceParams = Infer<typeof TriangleSurfaceSchema>
+
+/**
+ * Hexagon Surface Schema
+ */
+export const HexagonSurfaceSchema = defineSchema({
+  size: number({ label: 'Size', min: 10, max: 100, step: 1, default: 20 }),
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+})
+
+export type HexagonSurfaceParams = Infer<typeof HexagonSurfaceSchema>
+
 // ============================================================
 // Factory Functions
 // ============================================================
@@ -207,6 +227,12 @@ export const createDefaultCheckerParams = (): CheckerSurfaceParams =>
 export const createDefaultGradientGrainParams = (): GradientGrainSurfaceParams =>
   getDefaults(GradientGrainSurfaceSchema)
 
+export const createDefaultTriangleParams = (): TriangleSurfaceParams =>
+  getDefaults(TriangleSurfaceSchema)
+
+export const createDefaultHexagonParams = (): HexagonSurfaceParams =>
+  getDefaults(HexagonSurfaceSchema)
+
 // ============================================================
 // Schema Maps (for dynamic access by type)
 // ============================================================
@@ -225,4 +251,6 @@ export const SurfaceSchemas = {
   polkaDot: PolkaDotSurfaceSchema,
   checker: CheckerSurfaceSchema,
   gradientGrain: GradientGrainSurfaceSchema,
+  triangle: TriangleSurfaceSchema,
+  hexagon: HexagonSurfaceSchema,
 } as const

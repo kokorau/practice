@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { updateAccentColor } from './updateAccentColor'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 
 describe('updateAccentColor', () => {
   it('should update accent color hue', () => {

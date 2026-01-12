@@ -24,6 +24,8 @@ export { stripeShader, createStripeSpec, type StripeTextureParams } from './stri
 export { gridShader, createGridSpec, type GridTextureParams } from './grid'
 export { polkaDotShader, createPolkaDotSpec, type PolkaDotTextureParams } from './polkaDot'
 export { checkerShader, createCheckerSpec, type CheckerTextureParams } from './checker'
+export { triangleShader, createTriangleSpec, type TriangleTextureParams } from './triangle'
+export { hexagonShader, createHexagonSpec, type HexagonTextureParams } from './hexagon'
 export {
   circleMaskShader,
   rectMaskShader,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { toggleVisibility } from './toggleVisibility'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 
 describe('toggleVisibility', () => {

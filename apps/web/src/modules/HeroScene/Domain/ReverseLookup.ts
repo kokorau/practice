@@ -17,7 +17,7 @@ export const approxEqual = (a: number, b: number, epsilon = 0.0001): boolean =>
  * Surface preset params type (for matching)
  */
 export interface SurfacePresetParams {
-  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain'
+  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain' | 'triangle' | 'hexagon'
   width1?: number
   width2?: number
   angle?: number
@@ -38,6 +38,8 @@ export interface SurfacePresetParams {
   perlinOffset?: number
   seed?: number
   sparsity?: number
+  // Triangle/Hexagon params
+  size?: number
 }
 
 /**
@@ -124,6 +126,22 @@ export const findSurfacePresetIndex = (
         approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
         approxEqual(surfaceConfig.seed, preset.params.seed ?? 0) &&
         approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'triangle' && preset.params.type === 'triangle') {
+      if (
+        approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
+        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'hexagon' && preset.params.type === 'hexagon') {
+      if (
+        approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
+        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
       ) {
         return i
       }
