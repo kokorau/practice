@@ -34,9 +34,10 @@ export interface EffectModifier {
 
 /**
  * Modifier type.
- * Now only supports effects. Masks are handled as MaskNode in the scene tree.
+ * Supports effects and legacy mask modifiers.
+ * Note: New code should use MaskNode in the scene tree for masks.
  */
-export type Modifier = EffectModifier
+export type Modifier = EffectModifier | MaskModifier
 
 // ============================================================
 // Factory Functions

@@ -12,7 +12,7 @@
 
 import { computed, ref } from 'vue'
 import type { SceneNode, Group, LayerVariant, DropPosition } from '../../modules/HeroScene'
-import { isGroup, isLayer, isMaskNode, isEffectModifier } from '../../modules/HeroScene'
+import { isGroup, isLayer, isMaskNode, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
 import type { DropTarget } from './useLayerDragDrop'
 
 // ============================================================
@@ -125,8 +125,18 @@ const modifiers = computed(() => {
     })
   }
 
-  // Note: Masks are now MaskNode (sibling node in group), not modifiers
-  // MaskNode display will be handled when rendering MaskNode type
+  // MaskModifier (legacy: mask as modifier on layer)
+  for (const mod of nodeModifiers) {
+    if (isMaskModifier(mod)) {
+      result.push({
+        type: 'mask',
+        label: 'Mask',
+        value: mod.config.shape,
+        icon: 'content_cut',
+        enabled: mod.enabled,
+      })
+    }
+  }
 
   return result
 })
