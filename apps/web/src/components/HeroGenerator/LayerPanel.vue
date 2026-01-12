@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { SceneNode, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
+import { ref, computed, provide } from 'vue'
+import type { SceneNode, ForegroundElementConfig, ForegroundElementType, DropPosition } from '../../modules/HeroScene'
 import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
+import DragPreview from './DragPreview.vue'
 import { useLayerSelection } from '../../composables/useLayerSelection'
+import { useLayerDragAndDrop, LAYER_DRAG_KEY } from '../../composables/useLayerDragAndDrop'
 
 // ============================================================
 // Types
@@ -41,11 +43,23 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
+  'move-node': [nodeId: string, position: DropPosition]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
   'remove-foreground-element': [elementId: string]
   'foreground-contextmenu': [elementId: string, event: MouseEvent]
 }>()
+
+// ============================================================
+// Drag & Drop
+// ============================================================
+
+const dragAndDrop = useLayerDragAndDrop()
+provide(LAYER_DRAG_KEY, dragAndDrop)
+
+const handleMoveNode = (nodeId: string, position: DropPosition) => {
+  emit('move-node', nodeId, position)
+}
 
 // ============================================================
 // Context Menu
@@ -162,14 +176,24 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           :depth="0"
           :selected-id="selectedLayerId"
           :selected-processor-type="selectedProcessorType ?? null"
+          :nodes="layers"
           @select="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
           @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @contextmenu="handleLayerContextMenu"
+          @move-node="handleMoveNode"
         />
       </div>
+
+      <!-- Drag Preview -->
+      <DragPreview
+        v-if="dragAndDrop.state.isDragging.value && dragAndDrop.state.dragItem.value"
+        :nodes="layers"
+        :node-id="dragAndDrop.state.dragItem.value.nodeId"
+        :position="dragAndDrop.state.pointerPosition.value"
+      />
     </div>
 
     <!-- HTML Section -->

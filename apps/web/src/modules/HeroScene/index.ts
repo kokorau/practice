@@ -104,6 +104,7 @@ export type {
   SolidSurface,
   TextConfig,
   Model3DConfig,
+  DropPosition,
   // HTML types
   HtmlContentItem,
   HtmlLayer,
@@ -233,6 +234,9 @@ export {
   flattenNodes,
   findParentNode,
   wrapNodeInGroup,
+  // DnD move utilities
+  canMoveSceneNode,
+  moveSceneNode,
   // Scene layer ID mapping
   SCENE_LAYER_IDS,
   getSceneLayerId,

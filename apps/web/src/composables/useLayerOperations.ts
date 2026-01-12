@@ -3,6 +3,7 @@ import type {
   SceneNode,
   LayerVariant,
   TextAnchor,
+  DropPosition,
 } from '../modules/HeroScene'
 import {
   findNode,
@@ -16,6 +17,7 @@ import {
   isLayer,
   isGroup,
   getSceneLayerId,
+  moveSceneNode,
 } from '../modules/HeroScene'
 import type { ProcessorType } from './useLayerSelection'
 
@@ -106,6 +108,9 @@ export interface UseLayerOperationsReturn {
   // Grouping
   handleGroupSelection: (layerId: string) => void
   handleUseAsMask: (layerId: string) => void
+
+  // DnD Move
+  handleMoveNode: (nodeId: string, position: DropPosition) => void
 }
 
 // ============================================================
@@ -319,6 +324,13 @@ export function useLayerOperations(
   }
 
   // ============================================================
+  // Handlers - DnD Move
+  // ============================================================
+  const handleMoveNode = (nodeId: string, position: DropPosition) => {
+    layers.value = moveSceneNode(layers.value, nodeId, position)
+  }
+
+  // ============================================================
   // Return
   // ============================================================
   return {
@@ -344,5 +356,8 @@ export function useLayerOperations(
     // Grouping
     handleGroupSelection,
     handleUseAsMask,
+
+    // DnD Move
+    handleMoveNode,
   }
 }
