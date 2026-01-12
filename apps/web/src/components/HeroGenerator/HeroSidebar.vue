@@ -13,11 +13,6 @@ import type { ContextTargetType } from './DraggableLayerNode.vue'
 // Grouped Props Types
 // ============================================================
 
-type NeutralRampItem = {
-  key: string
-  css: string
-}
-
 /** Single color HSV state with hex display */
 interface ColorHSV {
   hue: number
@@ -46,11 +41,6 @@ interface LayersProps {
   selectedForegroundElementId: string | null
 }
 
-/** Palette display (neutral ramp) */
-interface PaletteDisplayProps {
-  neutralRamp: NeutralRampItem[]
-}
-
 // Sidebar tab
 type SidebarTab = 'theme' | 'layers'
 
@@ -67,8 +57,6 @@ const props = defineProps<{
   layoutPresets: LayoutPresetsProps
   /** Layers and foreground elements */
   layers: LayersProps
-  /** Palette display (neutral ramp) */
-  paletteDisplay: PaletteDisplayProps
 }>()
 
 // ============================================================
@@ -102,7 +90,7 @@ const emit = defineEmits<{
 // Export types for parent components
 // ============================================================
 
-export type { ColorHSV, ColorStateProps, LayoutPresetsProps, LayersProps, PaletteDisplayProps }
+export type { ColorHSV, ColorStateProps, LayoutPresetsProps, LayersProps }
 
 // ============================================================
 // Sidebar Tab State
@@ -277,21 +265,6 @@ const selectedPresetName = computed(() => {
       </button>
     </div>
 
-      <!-- Palette タブ: Neutral Ramp -->
-      <template v-if="activeTab === 'palette'">
-        <div class="sidebar-section">
-          <p class="sidebar-label">Neutral Ramp</p>
-          <div class="neutral-ramp">
-            <span
-              v-for="item in paletteDisplay.neutralRamp"
-              :key="item.key"
-              class="ramp-step"
-              :style="{ backgroundColor: item.css }"
-              :title="`${item.key}: ${item.css}`"
-            />
-          </div>
-        </div>
-      </template>
     </template>
 
     <!-- Layers タブ -->
@@ -533,25 +506,6 @@ const selectedPresetName = computed(() => {
   font-size: 0.625rem;
   opacity: 0.7;
   font-family: ui-monospace, monospace;
-}
-
-/* Neutral Ramp */
-.neutral-ramp {
-  display: flex;
-  gap: 2px;
-}
-
-.ramp-step {
-  flex: 1;
-  height: 2rem;
-}
-
-.ramp-step:first-child {
-  border-radius: 0.25rem 0 0 0.25rem;
-}
-
-.ramp-step:last-child {
-  border-radius: 0 0.25rem 0.25rem 0;
 }
 
 /* Layout Icon */

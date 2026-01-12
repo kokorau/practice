@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { $Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
 import {
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
-  NEUTRAL_KEYS,
 } from '../modules/SemanticColorPalette/Domain'
 import {
   createPrimitivePalette,
@@ -88,15 +86,6 @@ const primitivePalette = computed((): PrimitivePalette => {
 
 const semanticPalette = computed(() => createSemanticFromPrimitive(primitivePalette.value))
 const primitiveRefMap = computed(() => createPrimitiveRefMap(primitivePalette.value))
-
-// Neutral ramp display
-const neutralRampDisplay = computed(() => {
-  return NEUTRAL_KEYS.map((key) => ({
-    key,
-    color: primitivePalette.value[key],
-    css: $Oklch.toCss(primitivePalette.value[key]),
-  }))
-})
 
 // Context surfaces
 const contexts = computed(() => [
@@ -623,9 +612,6 @@ const handleFilterUpdate = (key: string, value: unknown) => {
         items: layers,
         foregroundElements: foregroundConfig.elements,
         selectedForegroundElementId,
-      }"
-      :palette-display="{
-        neutralRamp: neutralRampDisplay,
       }"
       @update:color-state="handleColorStateUpdate"
       @apply-color-preset="handleApplyColorPreset"
