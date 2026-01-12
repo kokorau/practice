@@ -18,6 +18,7 @@ import {
   createGroup,
   createSurfaceLayer,
   createEffectModifier,
+  createMaskModifier,
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
@@ -392,7 +393,7 @@ const {
           { type: 'solid', color: 'B' },
           {
             name: 'Surface',
-            modifiers: [createEffectModifier()],
+            modifiers: [createEffectModifier(), createMaskModifier()],
           },
         ),
       ],
