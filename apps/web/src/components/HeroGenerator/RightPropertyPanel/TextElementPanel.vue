@@ -231,14 +231,6 @@ const getContrastHint = (score: number): string => {
   padding: 0.5rem 0;
 }
 
-.settings-section:not(:last-child) {
-  border-bottom: 1px solid oklch(0.90 0.01 260);
-}
-
-:global(.dark) .settings-section:not(:last-child) {
-  border-bottom-color: oklch(0.22 0.02 260);
-}
-
 .settings-label {
   margin: 0 0 0.375rem;
   font-size: 0.75rem;
