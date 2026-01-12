@@ -4,6 +4,7 @@ import type {
   LayerVariant,
   DropPosition,
   TextAnchor,
+  Modifier,
 } from '../modules/HeroScene'
 import {
   findNode,
@@ -18,9 +19,14 @@ import {
   createModel3DLayer,
   isLayer,
   isGroup,
+  isEffectModifier,
+  isMaskModifier,
   getSceneLayerId,
 } from '../modules/HeroScene'
 import type { ProcessorType } from './useLayerSelection'
+
+/** Modifier drag identifier: layerId:modifierType */
+export type ModifierDragId = `${string}:${'effect' | 'mask'}`
 
 // ============================================================
 // Types
@@ -104,7 +110,7 @@ export interface UseLayerOperationsReturn {
   handleToggleExpand: (layerId: string) => void
   handleToggleVisibility: (layerId: string) => void
   handleMoveLayer: (sourceId: string, targetId: string, position: DropPosition) => void
-  handleDropToProcessor: (sourceId: string, targetLayerId: string) => void
+  handleMoveModifier: (modifierId: ModifierDragId, targetLayerId: string) => void
 
   // Layer CRUD
   handleAddLayer: (type: UILayerType) => void
@@ -214,10 +220,50 @@ export function useLayerOperations(
     layers.value = moveNode(layers.value, sourceId, targetId, position)
   }
 
-  const handleDropToProcessor = (sourceId: string, targetLayerId: string) => {
-    // Move the source node to be a sibling of the target layer (after it)
-    // This allows dropping elements between a layer and its processor
-    layers.value = moveNode(layers.value, sourceId, targetLayerId, 'after')
+  const handleMoveModifier = (modifierId: ModifierDragId, targetLayerId: string) => {
+    // Parse modifierId: "layerId:effect" or "layerId:mask"
+    const [sourceLayerId, modifierType] = modifierId.split(':') as [string, 'effect' | 'mask']
+
+    // Find source and target layers
+    const sourceLayer = findNode(layers.value, sourceLayerId)
+    const targetLayer = findNode(layers.value, targetLayerId)
+
+    if (!sourceLayer || !targetLayer) return
+    if (!isLayer(sourceLayer) && !isGroup(sourceLayer)) return
+    if (!isLayer(targetLayer) && !isGroup(targetLayer)) return
+
+    // Find the modifier in source layer
+    const sourceModifiers = sourceLayer.modifiers
+    const modifierToMove = modifierType === 'effect'
+      ? sourceModifiers.find(isEffectModifier)
+      : sourceModifiers.find(isMaskModifier)
+
+    if (!modifierToMove) return
+
+    // Check if target already has this modifier type
+    const targetModifiers = targetLayer.modifiers
+    const targetHasModifier = modifierType === 'effect'
+      ? targetModifiers.some(isEffectModifier)
+      : targetModifiers.some(isMaskModifier)
+
+    // If target already has this modifier type, replace it
+    const newTargetModifiers: Modifier[] = targetHasModifier
+      ? targetModifiers.map(m => {
+          if (modifierType === 'effect' && isEffectModifier(m)) return modifierToMove
+          if (modifierType === 'mask' && isMaskModifier(m)) return modifierToMove
+          return m
+        })
+      : [...targetModifiers, modifierToMove]
+
+    // Remove modifier from source
+    const newSourceModifiers = sourceModifiers.filter(m => {
+      if (modifierType === 'effect') return !isEffectModifier(m)
+      return !isMaskModifier(m)
+    })
+
+    // Update both layers
+    layers.value = updateNode(layers.value, sourceLayerId, { modifiers: newSourceModifiers })
+    layers.value = updateNode(layers.value, targetLayerId, { modifiers: newTargetModifiers })
   }
 
   // ============================================================
@@ -378,7 +424,7 @@ export function useLayerOperations(
     handleToggleExpand,
     handleToggleVisibility,
     handleMoveLayer,
-    handleDropToProcessor,
+    handleMoveModifier,
 
     // Layer CRUD
     handleAddLayer,

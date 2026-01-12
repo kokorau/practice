@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { SceneNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
-import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
+import DraggableLayerNode, { type ContextTargetType, type ModifierDragId } from './DraggableLayerNode.vue'
 import { useLayerDragDrop } from './useLayerDragDrop'
 import { useLayerSelection } from '../../composables/useLayerSelection'
 
@@ -42,7 +42,7 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'move-layer': [sourceId: string, targetId: string, position: DropPosition]
-  'drop-to-processor': [sourceId: string, targetLayerId: string]
+  'move-modifier': [modifierId: ModifierDragId, targetLayerId: string]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
@@ -54,7 +54,17 @@ const emit = defineEmits<{
 // Drag & Drop State
 // ============================================================
 
-const { draggedId, dropTarget, startDrag, endDrag, setDropTarget, clearDropTarget } = useLayerDragDrop()
+const {
+  draggedId,
+  draggedModifierId,
+  dropTarget,
+  startDrag,
+  endDrag,
+  startModifierDrag,
+  endModifierDrag,
+  setDropTarget,
+  clearDropTarget,
+} = useLayerDragDrop()
 
 const handleDragStart = (nodeId: string) => {
   startDrag(nodeId)
@@ -77,9 +87,18 @@ const handleDrop = (sourceId: string, targetId: string, position: DropPosition) 
   endDrag()
 }
 
-const handleDropToProcessor = (sourceId: string, targetLayerId: string) => {
-  emit('drop-to-processor', sourceId, targetLayerId)
-  endDrag()
+// Modifier drag handlers
+const handleModifierDragStart = (modifierId: ModifierDragId) => {
+  startModifierDrag(modifierId)
+}
+
+const handleModifierDragEnd = () => {
+  endModifierDrag()
+}
+
+const handleDropModifierToProcessor = (modifierId: ModifierDragId, targetLayerId: string) => {
+  emit('move-modifier', modifierId, targetLayerId)
+  endModifierDrag()
 }
 
 const handleLayerContextMenu = (layerId: string, event: MouseEvent, targetType: ContextTargetType) => {
@@ -194,6 +213,7 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           :selected-id="selectedLayerId"
           :selected-processor-type="selectedProcessorType ?? null"
           :dragged-id="draggedId"
+          :dragged-modifier-id="draggedModifierId"
           :drop-target="dropTarget"
           @select="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
@@ -206,7 +226,9 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           @drag-over="handleDragOver"
           @drag-leave="handleDragLeave"
           @drop="handleDrop"
-          @drop-to-processor="handleDropToProcessor"
+          @modifier-drag-start="handleModifierDragStart"
+          @modifier-drag-end="handleModifierDragEnd"
+          @drop-modifier-to-processor="handleDropModifierToProcessor"
         />
       </div>
     </div>

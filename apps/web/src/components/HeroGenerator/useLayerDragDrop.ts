@@ -7,6 +7,7 @@
 
 import { ref, computed } from 'vue'
 import type { DropPosition } from '../../modules/HeroScene'
+import type { ModifierDragId } from './DraggableLayerNode.vue'
 
 /**
  * Drop target information
@@ -22,14 +23,20 @@ export interface DropTarget {
  * Drag & drop state management composable
  */
 export function useLayerDragDrop() {
-  /** Currently dragged node ID (null if not dragging) */
+  /** Currently dragged node ID (null if not dragging a layer) */
   const draggedId = ref<string | null>(null)
+
+  /** Currently dragged modifier ID (null if not dragging a modifier) */
+  const draggedModifierId = ref<ModifierDragId | null>(null)
 
   /** Current drop target (null if no valid target) */
   const dropTarget = ref<DropTarget | null>(null)
 
-  /** Whether a drag operation is in progress */
+  /** Whether a layer drag operation is in progress */
   const isDragging = computed(() => draggedId.value !== null)
+
+  /** Whether a modifier drag operation is in progress */
+  const isDraggingModifier = computed(() => draggedModifierId.value !== null)
 
   /**
    * Start a drag operation
@@ -44,6 +51,20 @@ export function useLayerDragDrop() {
   const endDrag = () => {
     draggedId.value = null
     dropTarget.value = null
+  }
+
+  /**
+   * Start a modifier drag operation
+   */
+  const startModifierDrag = (modifierId: ModifierDragId) => {
+    draggedModifierId.value = modifierId
+  }
+
+  /**
+   * End the current modifier drag operation
+   */
+  const endModifierDrag = () => {
+    draggedModifierId.value = null
   }
 
   /**
@@ -101,11 +122,15 @@ export function useLayerDragDrop() {
   return {
     // State
     draggedId,
+    draggedModifierId,
     dropTarget,
     isDragging,
+    isDraggingModifier,
     // Actions
     startDrag,
     endDrag,
+    startModifierDrag,
+    endModifierDrag,
     setDropTarget,
     clearDropTarget,
     calculateDropPosition,

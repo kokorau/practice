@@ -25,11 +25,15 @@ const props = defineProps<{
   selectedId: string | null
   selectedProcessorType: 'effect' | 'mask' | 'processor' | null
   draggedId: string | null
+  draggedModifierId: ModifierDragId | null
   dropTarget: DropTarget | null
 }>()
 
 /** Context menu target type */
 export type ContextTargetType = 'layer' | 'processor' | 'effect' | 'mask'
+
+/** Modifier drag identifier: layerId:modifierType */
+export type ModifierDragId = `${string}:${'effect' | 'mask'}`
 
 const emit = defineEmits<{
   select: [nodeId: string]
@@ -37,14 +41,16 @@ const emit = defineEmits<{
   'toggle-visibility': [nodeId: string]
   'select-processor': [nodeId: string, processorType: 'effect' | 'mask' | 'processor']
   'remove-layer': [nodeId: string]
-  // Drag & drop events
+  // Drag & drop events for layers
   'drag-start': [nodeId: string]
   'drag-end': []
   'drag-over': [nodeId: string, position: DropPosition, event: DragEvent]
   'drag-leave': [nodeId: string]
   drop: [sourceId: string, targetId: string, position: DropPosition]
-  // Processor drop zone event
-  'drop-to-processor': [sourceId: string, targetLayerId: string]
+  // Modifier drag & drop events
+  'modifier-drag-start': [modifierId: ModifierDragId]
+  'modifier-drag-end': []
+  'drop-modifier-to-processor': [modifierId: ModifierDragId, targetLayerId: string]
   // Context menu event (with target type)
   contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType]
 }>()
@@ -254,12 +260,16 @@ const handleDrop = (e: DragEvent) => {
 const isProcessorDropZoneActive = ref(false)
 
 const handleProcessorDropZoneDragOver = (e: DragEvent) => {
-  if (!props.draggedId || props.draggedId === props.node.id) {
+  // Allow drop if dragging a modifier from a different layer
+  if (props.draggedModifierId) {
+    const [sourceLayerId] = props.draggedModifierId.split(':')
+    if (sourceLayerId === props.node.id) return // Can't drop to same layer
+    e.preventDefault()
+    e.dataTransfer!.dropEffect = 'move'
+    isProcessorDropZoneActive.value = true
     return
   }
-  e.preventDefault()
-  e.dataTransfer!.dropEffect = 'move'
-  isProcessorDropZoneActive.value = true
+  // Don't allow layer drops for now
 }
 
 const handleProcessorDropZoneDragLeave = () => {
@@ -269,10 +279,42 @@ const handleProcessorDropZoneDragLeave = () => {
 const handleProcessorDropZoneDrop = (e: DragEvent) => {
   e.preventDefault()
   e.stopPropagation()
-  if (!props.draggedId) return
 
-  emit('drop-to-processor', props.draggedId, props.node.id)
+  // Handle modifier drop
+  if (props.draggedModifierId) {
+    // Don't allow dropping onto the same layer's processor
+    const [sourceLayerId] = props.draggedModifierId.split(':')
+    if (sourceLayerId !== props.node.id) {
+      emit('drop-modifier-to-processor', props.draggedModifierId, props.node.id)
+    }
+    isProcessorDropZoneActive.value = false
+    return
+  }
+
+  // Handle layer drop (not implemented in this context)
   isProcessorDropZoneActive.value = false
+}
+
+// ============================================================
+// Modifier Drag & Drop Handlers
+// ============================================================
+
+const isDraggingModifier = (modType: 'effect' | 'mask') => {
+  if (!props.draggedModifierId) return false
+  return props.draggedModifierId === `${props.node.id}:${modType}`
+}
+
+const handleModifierDragStart = (e: DragEvent, modType: 'effect' | 'mask') => {
+  e.stopPropagation()
+  const modifierId: ModifierDragId = `${props.node.id}:${modType}`
+  e.dataTransfer!.effectAllowed = 'move'
+  e.dataTransfer!.setData('text/plain', modifierId)
+  emit('modifier-drag-start', modifierId)
+}
+
+const handleModifierDragEnd = (e: Event) => {
+  e.stopPropagation()
+  emit('modifier-drag-end')
 }
 </script>
 
@@ -350,9 +392,9 @@ const handleProcessorDropZoneDrop = (e: DragEvent) => {
       <span v-else class="visibility-spacer" />
     </div>
 
-    <!-- Processor Drop Zone (visible when dragging, between surface and processor) -->
+    <!-- Processor Drop Zone (visible when dragging modifier from another layer) -->
     <div
-      v-if="hasModifiers && draggedId && draggedId !== node.id"
+      v-if="hasModifiers && draggedModifierId && !draggedModifierId.startsWith(node.id + ':')"
       class="processor-drop-zone"
       :class="{ active: isProcessorDropZoneActive }"
       :style="{ paddingLeft: `${depth * 0.75 + 1.5}rem` }"
@@ -361,7 +403,7 @@ const handleProcessorDropZoneDrop = (e: DragEvent) => {
       @drop="handleProcessorDropZoneDrop"
     >
       <span class="material-icons drop-zone-icon">add</span>
-      <span class="drop-zone-text">Drop here to add to processor</span>
+      <span class="drop-zone-text">Drop here to move modifier</span>
     </div>
 
     <!-- Processor group (contains Effect/Mask as children) -->
@@ -394,17 +436,21 @@ const handleProcessorDropZoneDrop = (e: DragEvent) => {
           <span class="layer-name">Processor</span>
         </div>
       </div>
-      <!-- Processor children (Effect, Mask) -->
+      <!-- Processor children (Effect, Mask) - Draggable -->
       <template v-if="isProcessorExpanded">
         <div
           v-for="mod in modifiers"
           :key="mod.type"
           class="processor-child-node"
+          :class="{ 'is-dragging': isDraggingModifier(mod.type) }"
           :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
+          draggable="true"
           @click="handleSelectProcessor(mod.type)"
           @contextmenu="(e: MouseEvent) => handleContextMenu(e, mod.type)"
+          @dragstart="(e: DragEvent) => handleModifierDragStart(e, mod.type)"
+          @dragend="handleModifierDragEnd"
         >
-          <span class="expand-spacer" />
+          <span class="material-icons drag-handle">drag_indicator</span>
           <span class="material-icons layer-icon">{{ mod.icon }}</span>
           <div class="layer-info">
             <span class="layer-name">{{ mod.label }}</span>
@@ -425,6 +471,7 @@ const handleProcessorDropZoneDrop = (e: DragEvent) => {
         :selected-id="selectedId"
         :selected-processor-type="selectedProcessorType"
         :dragged-id="draggedId"
+        :dragged-modifier-id="draggedModifierId"
         :drop-target="dropTarget"
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
@@ -437,7 +484,9 @@ const handleProcessorDropZoneDrop = (e: DragEvent) => {
         @drag-over="(id: string, pos: DropPosition, e: DragEvent) => emit('drag-over', id, pos, e)"
         @drag-leave="(id: string) => emit('drag-leave', id)"
         @drop="(src: string, tgt: string, pos: DropPosition) => emit('drop', src, tgt, pos)"
-        @drop-to-processor="(src: string, tgt: string) => emit('drop-to-processor', src, tgt)"
+        @modifier-drag-start="(modId: ModifierDragId) => emit('modifier-drag-start', modId)"
+        @modifier-drag-end="() => emit('modifier-drag-end')"
+        @drop-modifier-to-processor="(modId: ModifierDragId, tgt: string) => emit('drop-modifier-to-processor', modId, tgt)"
       />
     </template>
   </div>
@@ -728,8 +777,8 @@ const handleProcessorDropZoneDrop = (e: DragEvent) => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.375rem 0.5rem;
-  cursor: pointer;
-  transition: background 0.15s;
+  cursor: grab;
+  transition: background 0.15s, opacity 0.15s;
   border-radius: 0.25rem;
 }
 
@@ -739,6 +788,28 @@ const handleProcessorDropZoneDrop = (e: DragEvent) => {
 
 :global(.dark) .processor-child-node:hover {
   background: oklch(0.24 0.02 260);
+}
+
+.processor-child-node.is-dragging {
+  opacity: 0.5;
+}
+
+/* Drag handle for modifiers */
+.drag-handle {
+  font-size: 0.875rem;
+  color: oklch(0.60 0.02 260);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s;
+  margin-right: -0.25rem;
+}
+
+:global(.dark) .drag-handle {
+  color: oklch(0.50 0.02 260);
+}
+
+.processor-child-node:hover .drag-handle {
+  opacity: 1;
 }
 
 .processor-value {
