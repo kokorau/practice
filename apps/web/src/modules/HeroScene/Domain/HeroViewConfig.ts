@@ -163,6 +163,18 @@ export interface GradientGrainSurfaceConfig {
   sparsity: number
 }
 
+export interface TriangleSurfaceConfig {
+  type: 'triangle'
+  size: number
+  angle: number
+}
+
+export interface HexagonSurfaceConfig {
+  type: 'hexagon'
+  size: number
+  angle: number
+}
+
 export type SurfaceConfig =
   | SolidSurfaceConfig
   | StripeSurfaceConfig
@@ -171,6 +183,8 @@ export type SurfaceConfig =
   | CheckerSurfaceConfig
   | ImageSurfaceConfig
   | GradientGrainSurfaceConfig
+  | TriangleSurfaceConfig
+  | HexagonSurfaceConfig
 
 /** @deprecated Use SurfaceConfig instead */
 export type BackgroundSurfaceConfig = SurfaceConfig

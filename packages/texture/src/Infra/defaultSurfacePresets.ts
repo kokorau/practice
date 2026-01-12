@@ -36,6 +36,10 @@ const defaultSurfacePresets: SurfacePreset[] = [
       sparsity: 0.75,
     },
   },
+  { label: 'Triangle', params: { type: 'triangle', size: 30, angle: 0 } },
+  { label: 'Triangle Rotated', params: { type: 'triangle', size: 30, angle: Math.PI / 6 } },
+  { label: 'Hexagon', params: { type: 'hexagon', size: 20, angle: 0 } },
+  { label: 'Hexagon Rotated', params: { type: 'hexagon', size: 20, angle: Math.PI / 6 } },
 ]
 
 /**

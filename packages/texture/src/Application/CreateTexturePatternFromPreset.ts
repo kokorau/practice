@@ -7,6 +7,8 @@ import {
   createPolkaDotSpec,
   createCheckerSpec,
   createGradientGrainSpec,
+  createTriangleSpec,
+  createHexagonSpec,
 } from '../shaders'
 
 /**
@@ -97,6 +99,30 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         params,
       }
     }
+    case 'triangle':
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA) =>
+          createTriangleSpec({
+            size: params.size,
+            angle: params.angle,
+            color1: c1,
+            color2: c2,
+          }),
+        params,
+      }
+    case 'hexagon':
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA) =>
+          createHexagonSpec({
+            size: params.size,
+            angle: params.angle,
+            color1: c1,
+            color2: c2,
+          }),
+        params,
+      }
   }
 }
 

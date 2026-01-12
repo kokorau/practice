@@ -10,6 +10,8 @@ export type {
   GridTextureParams,
   PolkaDotTextureParams,
   CheckerTextureParams,
+  TriangleTextureParams,
+  HexagonTextureParams,
   CircleMaskParams,
   RectMaskParams,
   BlobMaskParams,
@@ -56,6 +58,8 @@ export {
   createGridSpec,
   createPolkaDotSpec,
   createCheckerSpec,
+  createTriangleSpec,
+  createHexagonSpec,
   createCircleMaskSpec,
   createRectMaskSpec,
   createBlobMaskSpec,
@@ -124,6 +128,8 @@ export type {
   PolkaDotPresetParams,
   CheckerPresetParams,
   GradientGrainPresetParams,
+  TrianglePresetParams,
+  HexagonPresetParams,
   SurfacePresetParams,
   SurfacePreset,
   // TexturePatternSpec types
@@ -160,6 +166,8 @@ export type {
   GridSurfaceParams,
   PolkaDotSurfaceParams,
   CheckerSurfaceParams,
+  TriangleSurfaceParams,
+  HexagonSurfaceParams,
 } from './Domain'
 
 // Shape and Surface Schemas

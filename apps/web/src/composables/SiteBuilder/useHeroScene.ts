@@ -38,6 +38,8 @@ import {
   createGridSpec,
   createPolkaDotSpec,
   createCheckerSpec,
+  createTriangleSpec,
+  createHexagonSpec,
   // Gradient specs
   createGradientGrainSpec,
   // Mask specs (for solid fallback with custom cutout)
@@ -79,6 +81,8 @@ import {
   type PolkaDotSurfaceParams,
   type CheckerSurfaceParams,
   type SolidSurfaceParams,
+  type TriangleSurfaceParams,
+  type HexagonSurfaceParams,
   type DepthMapType,
   // Text rendering
   renderTextToBitmap,
@@ -238,6 +242,8 @@ export type CustomSurfaceParams =
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ type: 'checker' } & CheckerSurfaceParams)
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ type: 'triangle' } & TriangleSurfaceParams)
+  | ({ type: 'hexagon' } & HexagonSurfaceParams)
 
 /**
  * Gradient grain surface params (from GradientLab)
@@ -269,6 +275,8 @@ export type CustomBackgroundSurfaceParams =
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ type: 'checker' } & CheckerSurfaceParams)
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ type: 'triangle' } & TriangleSurfaceParams)
+  | ({ type: 'hexagon' } & HexagonSurfaceParams)
   | { type: 'solid' }
 
 export interface UseHeroSceneOptions {
@@ -586,6 +594,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
       }
     }
+    if (params.type === 'triangle') {
+      return { type: 'triangle', size: params.size, angle: params.angle }
+    }
+    if (params.type === 'hexagon') {
+      return { type: 'hexagon', size: params.size, angle: params.angle }
+    }
     // checker
     return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
   }
@@ -625,6 +639,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         colorB,
         curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
       }
+    }
+    if (params.type === 'triangle') {
+      return { type: 'triangle', size: params.size, angle: params.angle }
+    }
+    if (params.type === 'hexagon') {
+      return { type: 'hexagon', size: params.size, angle: params.angle }
     }
     // checker
     return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
@@ -1513,6 +1533,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           sparsity: params.sparsity,
           curvePoints: params.curvePoints,
         }, viewport)
+      case 'triangle':
+        return createTriangleSpec({ color1, color2, size: params.size, angle: params.angle })
+      case 'hexagon':
+        return createHexagonSpec({ color1, color2, size: params.size, angle: params.angle })
       default: {
         const _exhaustive: never = params
         throw new Error(`Unknown background surface type: ${(_exhaustive as CustomBackgroundSurfaceParams).type}`)
@@ -1577,7 +1601,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Build surface params from custom params or preset
     // Returns null for solid type (triggers fallback to solid mask)
-    type SurfaceParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams | { type: 'gradientGrain' } | null
+    type SurfaceParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams | { type: 'gradientGrain' } | { type: 'triangle'; size: number; angle: number } | { type: 'hexagon'; size: number; angle: number } | null
     const buildSurfaceParams = (): SurfaceParams => {
       if (!customSurfParams) {
         // Fall back to preset - use type guard for safe narrowing
@@ -1602,6 +1626,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           return { type: 'checker', cellSize: customSurfParams.cellSize, angle: customSurfParams.angle }
         case 'gradientGrain':
           return { type: 'gradientGrain' }
+        case 'triangle':
+          return { type: 'triangle', size: customSurfParams.size, angle: customSurfParams.angle }
+        case 'hexagon':
+          return { type: 'hexagon', size: customSurfParams.size, angle: customSurfParams.angle }
         default: {
           const _exhaustive: never = customSurfParams
           throw new Error(`Unknown surface type: ${(_exhaustive as CustomSurfaceParams).type}`)
@@ -1660,6 +1688,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               const ggConfig = buildGradientGrainConfig()
               return ggConfig ? createCircleGradientGrainSpec(color1, color2, maskSpec, ggConfig, viewport) : null
             }
+            case 'triangle':
+            case 'hexagon':
+              // Triangle/Hexagon with mask is not supported yet - fall back to solid
+              return null
             default: {
               const _exhaustive: never = params
               throw new Error(`Unknown surface type for circle mask: ${(_exhaustive as NonNullable<SurfaceParams>).type}`)
@@ -1682,6 +1714,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               const ggConfig = buildGradientGrainConfig()
               return ggConfig ? createRectGradientGrainSpec(color1, color2, maskSpec, ggConfig, viewport) : null
             }
+            case 'triangle':
+            case 'hexagon':
+              // Triangle/Hexagon with mask is not supported yet - fall back to solid
+              return null
             default: {
               const _exhaustive: never = params
               throw new Error(`Unknown surface type for rect mask: ${(_exhaustive as NonNullable<SurfaceParams>).type}`)
@@ -1704,6 +1740,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               const ggConfig = buildGradientGrainConfig()
               return ggConfig ? createBlobGradientGrainSpec(color1, color2, maskSpec, ggConfig, viewport) : null
             }
+            case 'triangle':
+            case 'hexagon':
+              // Triangle/Hexagon with mask is not supported yet - fall back to solid
+              return null
             default: {
               const _exhaustive: never = params
               throw new Error(`Unknown surface type for blob mask: ${(_exhaustive as NonNullable<SurfaceParams>).type}`)
@@ -1724,6 +1764,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               return createPerlinCheckerSpec(color1, color2, maskSpec, params, viewport)
             case 'gradientGrain':
               // Note: gradientGrain with perlin mask is not supported yet
+              return null
+            case 'triangle':
+            case 'hexagon':
+              // Triangle/Hexagon with mask is not supported yet - fall back to solid
               return null
             default: {
               const _exhaustive: never = params
@@ -2164,6 +2208,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     curvePoints,
                   }, viewport)
                 }
+                case 'triangle':
+                  return createTriangleSpec({
+                    color1,
+                    color2,
+                    size: params.size,
+                    angle: params.angle,
+                  })
+                case 'hexagon':
+                  return createHexagonSpec({
+                    color1,
+                    color2,
+                    size: params.size,
+                    angle: params.angle,
+                  })
                 default: {
                   const _exhaustive: never = params
                   throw new Error(`Unknown surface type: ${(_exhaustive as CustomSurfaceParams).type}`)
@@ -2482,6 +2540,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
         }, _viewport)
       }
+      case 'triangle':
+        return createTriangleSpec({
+          color1,
+          color2,
+          size: params.size,
+          angle: params.angle,
+        })
+      case 'hexagon':
+        return createHexagonSpec({
+          color1,
+          color2,
+          size: params.size,
+          angle: params.angle,
+        })
     }
   }
 
