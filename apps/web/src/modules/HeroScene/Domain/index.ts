@@ -360,7 +360,6 @@ export {
   type EffectProcessor,
   type MaskProcessor,
   type Processor,
-  createEffectModifier,
   createEffectProcessor,
   createMaskProcessor,
   isEffectProcessor,
