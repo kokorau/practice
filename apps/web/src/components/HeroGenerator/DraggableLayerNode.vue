@@ -10,7 +10,7 @@
 
 import { computed, ref } from 'vue'
 import type { SceneNode, Group, LayerVariant } from '../../modules/HeroScene'
-import { isGroup, isLayer, isMaskNode, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
+import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
 
 // ============================================================
 // Props & Emits
@@ -70,11 +70,8 @@ const children = computed(() => {
   return []
 })
 
-// Get node variant for Layer nodes (including mask)
-const nodeVariant = computed((): LayerVariant | 'group' | 'mask' => {
-  if (isMaskNode(props.node)) {
-    return 'mask'
-  }
+// Get node variant for Layer nodes
+const nodeVariant = computed((): LayerVariant | 'group' => {
   if (isLayer(props.node)) {
     return props.node.variant
   }
@@ -86,11 +83,6 @@ const nodeVariant = computed((): LayerVariant | 'group' | 'mask' => {
 // Layer tree only shows whether effect/mask modifiers exist
 const modifiers = computed(() => {
   const result: { type: 'effect' | 'mask'; label: string; value: string; icon: string; enabled: boolean }[] = []
-
-  // MaskNode doesn't have modifiers property
-  if (props.node.type === 'mask') {
-    return result
-  }
 
   const nodeModifiers = props.node.modifiers
   // Effect placeholder - details are in useEffectManager
@@ -105,7 +97,7 @@ const modifiers = computed(() => {
     })
   }
 
-  // MaskModifier (legacy: mask as modifier on layer)
+  // MaskModifier
   for (const mod of nodeModifiers) {
     if (isMaskModifier(mod)) {
       result.push({
@@ -125,7 +117,7 @@ const modifiers = computed(() => {
 // Icon & Label Helpers
 // ============================================================
 
-const getLayerIcon = (variant: LayerVariant | 'group' | 'mask'): string => {
+const getLayerIcon = (variant: LayerVariant | 'group'): string => {
   switch (variant) {
     case 'base': return 'gradient'
     case 'surface': return 'texture'
@@ -133,7 +125,6 @@ const getLayerIcon = (variant: LayerVariant | 'group' | 'mask'): string => {
     case 'model3d': return 'view_in_ar'
     case 'image': return 'image'
     case 'text': return 'text_fields'
-    case 'mask': return 'content_cut'
     default: return 'layers'
   }
 }

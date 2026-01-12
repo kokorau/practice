@@ -1,12 +1,7 @@
 /**
  * Modifier Type Definitions
  *
- * Modifiers are visual transformations (effects) that can be applied to layers.
- *
- * Note: Masks are now handled as MaskNode (SceneNode) in LayerNode.ts
- * following Figma-style architecture where masks are sibling nodes.
- *
- * @see LayerNode.ts for MaskNode definition
+ * Modifiers are visual transformations (effects, masks) that can be applied to layers.
  */
 
 // ============================================================
@@ -27,13 +22,48 @@ export interface EffectModifier {
 }
 
 // ============================================================
-// Modifier Type (Effect only - masks are now MaskNode)
+// Mask Modifier
 // ============================================================
 
 /**
- * Modifier type.
- * Supports effects and legacy mask modifiers.
- * Note: New code should use MaskNode in the scene tree for masks.
+ * Mask shape type
+ */
+export type ClipMaskShape = 'circle' | 'rect' | 'blob' | 'perlin' | 'image'
+
+/**
+ * Mask shape parameters
+ */
+export interface ClipMaskShapeParams {
+  type: ClipMaskShape
+  [key: string]: unknown
+}
+
+/**
+ * Clip mask configuration
+ */
+export interface ClipMaskConfig {
+  shape: ClipMaskShape
+  shapeParams: ClipMaskShapeParams
+  invert: boolean
+  feather: number
+  surface?: unknown
+}
+
+/**
+ * Mask modifier for layer-based masking
+ */
+export interface MaskModifier {
+  type: 'mask'
+  enabled: boolean
+  config: ClipMaskConfig
+}
+
+// ============================================================
+// Modifier Type
+// ============================================================
+
+/**
+ * Modifier type union
  */
 export type Modifier = EffectModifier | MaskModifier
 
@@ -56,66 +86,8 @@ export const createEffectPlaceholder = (): EffectModifier => ({
  */
 export const createEffectModifier = createEffectPlaceholder
 
-// ============================================================
-// Utility Functions
-// ============================================================
-
 /**
- * Check if modifier is an effect
- */
-export const isEffectModifier = (modifier: Modifier): modifier is EffectModifier =>
-  modifier.type === 'effect'
-
-/**
- * Get effect placeholders from modifier list
- */
-export const getEffectPlaceholders = (modifiers: Modifier[]): EffectModifier[] =>
-  modifiers.filter((m): m is EffectModifier => isEffectModifier(m))
-
-/**
- * @deprecated Use getEffectPlaceholders instead
- */
-export const getEnabledEffects = getEffectPlaceholders
-
-// ============================================================
-// Deprecated: Mask Modifier (use MaskNode instead)
-// ============================================================
-
-/**
- * @deprecated Mask shape type - use MaskShape from LayerNode.ts instead
- */
-export type ClipMaskShape = 'circle' | 'rect' | 'blob' | 'perlin' | 'image'
-
-/**
- * @deprecated Mask shape parameters - masks are now MaskNode
- */
-export interface ClipMaskShapeParams {
-  type: ClipMaskShape
-  [key: string]: unknown
-}
-
-/**
- * @deprecated Clip mask configuration - masks are now MaskNode
- */
-export interface ClipMaskConfig {
-  shape: ClipMaskShape
-  shapeParams: ClipMaskShapeParams
-  invert: boolean
-  feather: number
-  surface?: unknown
-}
-
-/**
- * @deprecated Use MaskNode from LayerNode.ts instead
- */
-export interface MaskModifier {
-  type: 'mask'
-  enabled: boolean
-  config: ClipMaskConfig
-}
-
-/**
- * @deprecated Use createMaskNode from LayerNode.ts instead
+ * Create default shape params for a mask shape
  */
 const createDefaultShapeParams = (shape: ClipMaskShape): ClipMaskShapeParams => {
   switch (shape) {
@@ -133,7 +105,7 @@ const createDefaultShapeParams = (shape: ClipMaskShape): ClipMaskShapeParams => 
 }
 
 /**
- * @deprecated Use createMaskNode from LayerNode.ts instead
+ * Create default clip mask config
  */
 const createDefaultClipMaskConfig = (
   shape: ClipMaskShape = 'circle',
@@ -147,7 +119,7 @@ const createDefaultClipMaskConfig = (
 })
 
 /**
- * @deprecated Use createMaskNode from LayerNode.ts instead
+ * Create a mask modifier
  */
 export const createMaskModifier = (
   config?: Partial<ClipMaskConfig>
@@ -157,14 +129,35 @@ export const createMaskModifier = (
   config: createDefaultClipMaskConfig(config?.shape ?? 'circle', config),
 })
 
+// ============================================================
+// Utility Functions
+// ============================================================
+
 /**
- * @deprecated Masks are now MaskNode, not modifiers
+ * Check if modifier is an effect
+ */
+export const isEffectModifier = (modifier: Modifier): modifier is EffectModifier =>
+  modifier.type === 'effect'
+
+/**
+ * Check if modifier is a mask
  */
 export const isMaskModifier = (modifier: { type: string }): modifier is MaskModifier =>
   modifier.type === 'mask'
 
 /**
- * @deprecated Use MaskNode filtering instead
+ * Get effect placeholders from modifier list
+ */
+export const getEffectPlaceholders = (modifiers: Modifier[]): EffectModifier[] =>
+  modifiers.filter((m): m is EffectModifier => isEffectModifier(m))
+
+/**
+ * @deprecated Use getEffectPlaceholders instead
+ */
+export const getEnabledEffects = getEffectPlaceholders
+
+/**
+ * Get enabled mask modifiers from modifier list
  */
 export const getEnabledMasks = (modifiers: Array<{ type: string; enabled: boolean }>): MaskModifier[] =>
   modifiers.filter((m): m is MaskModifier => isMaskModifier(m) && m.enabled)
@@ -175,15 +168,15 @@ export const getEnabledMasks = (modifiers: Array<{ type: string; enabled: boolea
 
 /** @deprecated Use EffectModifier instead */
 export type EffectProcessor = EffectModifier
-/** @deprecated Use MaskNode from LayerNode.ts instead */
+/** @deprecated Use MaskModifier instead */
 export type MaskProcessor = MaskModifier
 /** @deprecated Use Modifier instead */
 export type Processor = EffectModifier | MaskModifier
 /** @deprecated Use createEffectPlaceholder instead */
 export const createEffectProcessor = createEffectPlaceholder
-/** @deprecated Use createMaskNode from LayerNode.ts instead */
+/** @deprecated Use createMaskModifier instead */
 export const createMaskProcessor = createMaskModifier
 /** @deprecated Use isEffectModifier instead */
 export const isEffectProcessor = isEffectModifier
-/** @deprecated Use isMaskNode from LayerNode.ts instead */
+/** @deprecated Use isMaskModifier instead */
 export const isMaskProcessor = isMaskModifier

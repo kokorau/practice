@@ -376,8 +376,6 @@ export {
   // Types
   type Layer,
   type Group,
-  type MaskNode,
-  type MaskShape,
   type SceneNode,
   type LayerType,
   type LayerVariant,
@@ -396,11 +394,9 @@ export {
   createModel3DLayer,
   createImageLayer as createSceneImageLayer,
   createGroup,
-  createMaskNode,
   // Type guards
   isLayer,
   isGroup,
-  isMaskNode,
   isBaseLayer,
   isSurfaceLayer,
   isTextLayer,
@@ -413,22 +409,11 @@ export {
   flattenNodes,
   findParentNode,
   wrapNodeInGroup,
-  wrapNodeInMaskedGroup,
   // Scene layer ID mapping
   SCENE_LAYER_IDS,
   type SceneLayerId,
   getSceneLayerId,
 } from './LayerNode'
-
-// ============================================================
-// Mask Utilities
-// ============================================================
-
-export {
-  getMaskedNodes,
-  findApplicableMask,
-  isNodeMasked,
-} from './MoveRules'
 
 // ============================================================
 // HTML Layer Types
@@ -718,7 +703,6 @@ export type {
   EffectFilterConfig,
   // LayerNodeConfig types (for JSON serialization)
   LayerNodeConfig,
-  MaskNodeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   TextLayerNodeConfig,

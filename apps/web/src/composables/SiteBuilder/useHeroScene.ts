@@ -146,7 +146,6 @@ import {
   type SurfaceLayerNodeConfig,
   type EffectProcessorConfig,
   type MaskProcessorConfig,
-  type MaskNodeConfig,
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
@@ -3666,9 +3665,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
 
     // Surface layer may be nested inside a group
-    // Also find Figma-style MaskNode in group.children
     let surfaceLayer: SurfaceLayerNodeConfig | undefined
-    let figmaMaskNode: MaskNodeConfig | undefined
     for (const layer of config.layers) {
       if (layer.type === 'surface') {
         surfaceLayer = layer
@@ -3678,13 +3675,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         const nested = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
         if (nested) {
           surfaceLayer = nested
-        }
-        // Find Figma-style MaskNode in group.children
-        const maskNode = layer.children.find((c): c is MaskNodeConfig => c.type === 'mask')
-        if (maskNode) {
-          figmaMaskNode = maskNode
-        }
-        if (surfaceLayer || figmaMaskNode) {
           break
         }
       }
@@ -3721,15 +3711,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
     }
 
-    // Surface layer with mask (supports both Figma-style MaskNode and legacy processor)
-    if (surfaceLayer || figmaMaskNode) {
-      // Find mask processor (legacy) or use Figma-style MaskNode
-      const maskProcessor = surfaceLayer
-        ? (surfaceLayer.processors ?? []).find((p): p is MaskProcessorConfig => p.type === 'mask')
-        : undefined
-
-      // Prefer Figma-style MaskNode over legacy processor
-      const maskShape = figmaMaskNode?.shape ?? maskProcessor?.shape
+    // Surface layer with mask
+    if (surfaceLayer) {
+      // Find mask processor
+      const maskProcessor = (surfaceLayer.processors ?? []).find((p): p is MaskProcessorConfig => p.type === 'mask')
+      const maskShape = maskProcessor?.shape
 
       if (maskShape) {
         // Mask shape

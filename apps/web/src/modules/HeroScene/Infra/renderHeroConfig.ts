@@ -37,8 +37,6 @@ import type {
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   LayerNodeConfig,
-  MaskNodeConfig,
-  GroupLayerNodeConfig,
 } from '../Domain/HeroViewConfig'
 import { getLayerFilters, getLayerMaskProcessor } from '../Domain/HeroViewConfig'
 import type { LayerEffectConfig } from '../Domain/EffectSchema'
@@ -437,42 +435,18 @@ function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | null {
 }
 
 /**
- * Result of finding a surface layer with its context
- */
-interface SurfaceLayerResult {
-  surfaceLayer: SurfaceLayerNodeConfig
-  /** Parent group containing this surface (for Figma-style mask lookup) */
-  parentGroup: GroupLayerNodeConfig | null
-}
-
-/**
  * Find surface layer from layers array (may be nested in group)
- * Returns both the surface and its parent group for mask lookup
  */
-function findSurfaceLayer(layers: LayerNodeConfig[]): SurfaceLayerResult | null {
+function findSurfaceLayer(layers: LayerNodeConfig[]): SurfaceLayerNodeConfig | null {
   for (const layer of layers) {
     if (layer.type === 'surface') {
-      return { surfaceLayer: layer, parentGroup: null }
+      return layer
     }
     if (layer.type === 'group' && 'children' in layer && layer.children) {
       const nested = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
       if (nested) {
-        return { surfaceLayer: nested, parentGroup: layer }
+        return nested
       }
-    }
-  }
-  return null
-}
-
-/**
- * Find MaskNodeConfig from group children (Figma-style)
- * In Figma-style, mask is a sibling node before the masked layers
- */
-function findMaskNodeInGroup(group: GroupLayerNodeConfig): MaskNodeConfig | null {
-  if (!group.children) return null
-  for (const child of group.children) {
-    if (child.type === 'mask' && child.visible !== false) {
-      return child as MaskNodeConfig
     }
   }
   return null
@@ -548,28 +522,11 @@ export async function renderHeroConfig(
   }
 
   // 2. Render surface layer with mask
-  const surfaceResult = findSurfaceLayer(config.layers)
-  if (surfaceResult) {
-    const { surfaceLayer, parentGroup } = surfaceResult
-
-    // Find mask shape - try Figma-style first (MaskNode in group), then legacy (processor)
-    let maskShape: MaskShapeConfig | null = null
-
-    // Figma-style: MaskNode as sibling in parent group
-    if (parentGroup) {
-      const maskNode = findMaskNodeInGroup(parentGroup)
-      if (maskNode) {
-        maskShape = maskNode.shape
-      }
-    }
-
-    // Legacy fallback: mask in processors
-    if (!maskShape) {
-      const maskProcessor = getLayerMaskProcessor(surfaceLayer)
-      if (maskProcessor?.enabled) {
-        maskShape = maskProcessor.shape
-      }
-    }
+  const surfaceLayer = findSurfaceLayer(config.layers)
+  if (surfaceLayer) {
+    // Find mask shape from processors
+    const maskProcessor = getLayerMaskProcessor(surfaceLayer)
+    const maskShape = maskProcessor?.enabled ? maskProcessor.shape : null
 
     // Render the mask if found (using 2-stage greymap pipeline)
     if (maskShape) {

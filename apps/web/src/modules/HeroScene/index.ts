@@ -94,8 +94,6 @@ export type {
   // Layer & Group types
   Layer,
   Group,
-  MaskNode,
-  MaskShape,
   SceneNode,
   LayerType,
   LayerVariant,
@@ -135,7 +133,6 @@ export type {
   MaskProcessorConfig,
   // LayerNodeConfig types (JSON serialization)
   LayerNodeConfig,
-  MaskNodeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   TextLayerNodeConfig as TextLayerNodeConfigType,
@@ -224,10 +221,8 @@ export {
   createModel3DLayer,
   createSceneImageLayer,
   createGroup,
-  createMaskNode,
   isLayer,
   isGroup,
-  isMaskNode,
   isBaseLayer,
   isSurfaceLayer,
   isTextLayer,
@@ -239,7 +234,6 @@ export {
   flattenNodes,
   findParentNode,
   wrapNodeInGroup,
-  wrapNodeInMaskedGroup,
   // Scene layer ID mapping
   SCENE_LAYER_IDS,
   getSceneLayerId,
