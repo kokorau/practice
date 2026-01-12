@@ -2,7 +2,7 @@
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '../../../modules/SemanticColorPalette/Domain'
-import type { SceneNode, GridPosition } from '../../../modules/HeroScene'
+import type { SceneNode, GridPosition, HeroViewConfig } from '../../../modules/HeroScene'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import type { BackgroundSpecCreator } from '../MaskPatternThumbnail.vue'
@@ -44,6 +44,9 @@ const props = defineProps<{
 
   // Palette
   primitivePalette: PrimitivePalette
+
+  // Hero preview config (for composite preview)
+  baseConfig?: HeroViewConfig
 
   // Text element props
   titleContrastResult: ContrastAnalysisResult | null
@@ -231,6 +234,8 @@ const panelTitle = (): string => {
         :is-loading-random="isLoadingRandomBackground"
         :surface-schema="currentBackgroundSurfaceSchema"
         :surface-params="customBackgroundSurfaceParams"
+        preview-mode="hero"
+        :base-config="baseConfig"
         @update:color-key1="emit('update:backgroundColorKey1', $event as PrimitiveKey)"
         @update:color-key2="emit('update:backgroundColorKey2', $event)"
         @upload-image="emit('upload-background-image', $event)"
@@ -257,6 +262,8 @@ const panelTitle = (): string => {
         :is-loading-random="isLoadingRandomMask"
         :surface-schema="currentSurfaceSchema"
         :surface-params="customSurfaceParams"
+        preview-mode="hero"
+        :base-config="baseConfig"
         @update:color-key1="emit('update:maskColorKey1', $event)"
         @update:color-key2="emit('update:maskColorKey2', $event)"
         @upload-image="emit('upload-mask-image', $event)"
@@ -291,6 +298,9 @@ const panelTitle = (): string => {
         :mask-outer-color="maskOuterColor"
         :mask-inner-color="maskInnerColor"
         :create-background-thumbnail-spec="createBackgroundThumbnailSpec"
+        preview-mode="hero"
+        :base-config="baseConfig"
+        :palette="primitivePalette"
         @update:selected-mask-index="emit('update:selectedMaskIndex', $event)"
         @update:mask-shape-params="emit('update:maskShapeParams', $event)"
       />

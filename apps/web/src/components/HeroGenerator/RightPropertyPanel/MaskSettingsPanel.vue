@@ -1,18 +1,24 @@
 <script setup lang="ts">
-import type { RGBA } from '@practice/texture'
+import { computed } from 'vue'
+import type { RGBA, MaskPattern } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
+import type { HeroViewConfig, MaskShapeConfig, MaskProcessorConfig } from '../../../modules/HeroScene'
+import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
 import SchemaFields from '../../SchemaFields.vue'
 import MaskPatternThumbnail, {
   type BackgroundSpecCreator,
   type MaskSpecCreator,
 } from '../MaskPatternThumbnail.vue'
+import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
 
 export interface MaskPatternItem {
   label: string
   createSpec: MaskSpecCreator
+  /** Mask config for hero preview mode */
+  maskConfig?: MaskPattern['maskConfig']
 }
 
-defineProps<{
+const props = defineProps<{
   maskPatterns: MaskPatternItem[]
   selectedMaskIndex: number | null
   maskShapeSchema: ObjectSchema | null
@@ -20,12 +26,62 @@ defineProps<{
   maskOuterColor: RGBA
   maskInnerColor: RGBA
   createBackgroundThumbnailSpec: BackgroundSpecCreator
+  // Hero preview mode
+  previewMode?: 'mask' | 'hero'
+  baseConfig?: HeroViewConfig
+  palette?: PrimitivePalette
 }>()
 
 const emit = defineEmits<{
   'update:selectedMaskIndex': [value: number]
   'update:maskShapeParams': [value: Record<string, unknown>]
 }>()
+
+// Check if hero preview mode is enabled
+const isHeroMode = computed(() => props.previewMode === 'hero' && props.baseConfig && props.palette)
+
+/**
+ * Create a preview config with a specific mask shape
+ * Updates only the surface layer's mask shape, keeping all other layers for composite preview
+ */
+const createMaskPreviewConfig = (base: HeroViewConfig, shape: MaskShapeConfig): HeroViewConfig => {
+  return {
+    ...base,
+    layers: base.layers.map(layer => {
+      // Only update mask shape for surface layers
+      if (layer.type === 'surface') {
+        return {
+          ...layer,
+          processors: layer.processors.map(p => {
+            if (p.type === 'mask') {
+              return { ...p, shape } as MaskProcessorConfig
+            }
+            return p
+          }),
+        }
+      }
+      return layer
+    }),
+  }
+}
+
+// Preview configs for each pattern (hero mode only)
+const previewConfigs = computed(() => {
+  if (!props.baseConfig) return null
+
+  return props.maskPatterns.map(pattern => {
+    if (pattern.maskConfig) {
+      // Convert @practice/texture MaskShapeConfig to HeroViewConfig MaskShapeConfig
+      // by ensuring cutout has a default value
+      const shape: MaskShapeConfig = {
+        ...pattern.maskConfig,
+        cutout: pattern.maskConfig.cutout ?? false,
+      } as MaskShapeConfig
+      return createMaskPreviewConfig(props.baseConfig!, shape)
+    }
+    return null
+  })
+})
 </script>
 
 <template>
@@ -47,7 +103,13 @@ const emit = defineEmits<{
         :class="{ active: selectedMaskIndex === i }"
         @click="emit('update:selectedMaskIndex', i)"
       >
+        <HeroPreviewThumbnail
+          v-if="isHeroMode && previewConfigs && previewConfigs[i] && palette"
+          :config="previewConfigs[i]!"
+          :palette="palette"
+        />
         <MaskPatternThumbnail
+          v-else
           :create-background-spec="createBackgroundThumbnailSpec"
           :create-mask-spec="pattern.createSpec"
           :mask-color1="maskOuterColor"

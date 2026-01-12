@@ -676,6 +676,7 @@ const {
       :selected-layer-variant="selectedLayerVariant"
       :selected-processor-type="selectedProcessorType"
       :primitive-palette="primitivePalette"
+      :base-config="currentHeroConfig"
       :title-contrast-result="titleContrastResult"
       :description-contrast-result="descriptionContrastResult"
       :foreground-title-auto-key="foregroundTitleAutoKey"

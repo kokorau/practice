@@ -71,16 +71,20 @@ const isHeroMode = computed(() => props.previewMode === 'hero' && props.baseConf
 
 /**
  * Create a preview config with a specific surface
- * Filters to show only the target layer type
+ * Updates only the target layer type's surface, keeping all other layers for composite preview
  */
 const createSurfacePreviewConfig = (base: HeroViewConfig, surface: HeroSurfaceConfig): HeroViewConfig => {
   const targetType = props.targetLayerType ?? 'base'
 
   return {
     ...base,
-    layers: base.layers
-      .filter(layer => layer.type === targetType)
-      .map(layer => ({ ...layer, surface }) as typeof layer),
+    layers: base.layers.map(layer => {
+      // Only update surface for target layer type
+      if (layer.type === targetType) {
+        return { ...layer, surface } as typeof layer
+      }
+      return layer
+    }),
   }
 }
 

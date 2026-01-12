@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PrimitivePalette, PrimitiveKey } from '../../../modules/SemanticColorPalette/Domain'
 import type { ObjectSchema } from '@practice/schema'
+import type { HeroViewConfig } from '../../../modules/HeroScene'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import SurfaceSelector, { type PatternItem } from '../SurfaceSelector.vue'
 import SchemaFields from '../../SchemaFields.vue'
@@ -19,6 +20,9 @@ const props = withDefaults(defineProps<{
   isLoadingRandom: boolean
   surfaceSchema: ObjectSchema | null
   surfaceParams: Record<string, unknown> | null
+  // Hero preview mode
+  previewMode?: 'pattern' | 'hero'
+  baseConfig?: HeroViewConfig
 }>(), {
   showAuto1: false,
   showAuto2: true,
@@ -89,6 +93,10 @@ const shouldShowSurfaceParams = (): boolean => {
         :selected-index="selectedIndex"
         :show-random-button="true"
         :is-loading-random="isLoadingRandom"
+        :preview-mode="previewMode"
+        :base-config="baseConfig"
+        :palette="primitivePalette"
+        :target-layer-type="layerType"
         @upload-image="emit('upload-image', $event)"
         @clear-image="emit('clear-image')"
         @select-pattern="emit('select-pattern', $event)"

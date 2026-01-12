@@ -44,23 +44,27 @@ const emit = defineEmits<{
 const isHeroMode = computed(() => props.previewMode === 'hero' && props.baseConfig && props.palette)
 
 /**
- * Create a preview config with a specific mask shape (surface layer only)
- * Filters out base layer to focus on the mask surface
+ * Create a preview config with a specific mask shape
+ * Updates only the surface layer's mask shape, keeping all other layers for composite preview
  */
 const createMaskPreviewConfig = (base: HeroViewConfig, shape: MaskShapeConfig): HeroViewConfig => {
   return {
     ...base,
-    layers: base.layers
-      .filter(layer => layer.type === 'surface')
-      .map(layer => ({
-        ...layer,
-        processors: layer.processors.map(p => {
-          if (p.type === 'mask') {
-            return { ...p, shape } as MaskProcessorConfig
-          }
-          return p
-        }),
-      })),
+    layers: base.layers.map(layer => {
+      // Only update mask shape for surface layers
+      if (layer.type === 'surface') {
+        return {
+          ...layer,
+          processors: layer.processors.map(p => {
+            if (p.type === 'mask') {
+              return { ...p, shape } as MaskProcessorConfig
+            }
+            return p
+          }),
+        }
+      }
+      return layer
+    }),
   }
 }
 
