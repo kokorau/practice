@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { applyColorPreset } from './applyColorPreset'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 import type { ColorPreset } from '../../../SemanticColorPalette/Domain/ValueObject/ColorPreset'
 
 describe('applyColorPreset', () => {

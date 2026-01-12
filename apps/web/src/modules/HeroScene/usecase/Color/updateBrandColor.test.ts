@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { updateBrandColor } from './updateBrandColor'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 
 describe('updateBrandColor', () => {
   it('should update brand color hue', () => {

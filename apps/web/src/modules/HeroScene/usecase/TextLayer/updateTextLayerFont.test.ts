@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { updateTextLayerFont } from './updateTextLayerFont'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 import type { HeroViewConfig, TextLayerNodeConfig } from '../../Domain/HeroViewConfig'
 
 describe('updateTextLayerFont', () => {

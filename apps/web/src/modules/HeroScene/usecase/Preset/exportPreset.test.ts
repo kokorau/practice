@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createPreset, exportPreset } from './exportPreset'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 import type { PresetExportPort } from './PresetExportPort'
 
