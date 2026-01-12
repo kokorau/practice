@@ -12,7 +12,7 @@
 
 import { computed, ref } from 'vue'
 import type { SceneNode, Group, LayerVariant, DropPosition } from '../../modules/HeroScene'
-import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
+import { isGroup, isLayer, isMaskNode, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
 import type { DropTarget } from './useLayerDragDrop'
 
 // ============================================================
@@ -88,8 +88,11 @@ const children = computed(() => {
   return []
 })
 
-// Get node variant for Layer nodes
-const nodeVariant = computed((): LayerVariant | 'group' => {
+// Get node variant for Layer nodes (including mask)
+const nodeVariant = computed((): LayerVariant | 'group' | 'mask' => {
+  if (isMaskNode(props.node)) {
+    return 'mask'
+  }
   if (isLayer(props.node)) {
     return props.node.variant
   }
@@ -99,6 +102,11 @@ const nodeVariant = computed((): LayerVariant | 'group' => {
 // Modifier info
 const modifiers = computed(() => {
   const result: { type: 'effect' | 'mask'; label: string; value: string; icon: string; enabled: boolean }[] = []
+
+  // MaskNode doesn't have modifiers property
+  if (props.node.type === 'mask') {
+    return result
+  }
 
   const nodeModifiers = props.node.modifiers
   const effectMod = nodeModifiers.find(isEffectModifier)
@@ -117,16 +125,15 @@ const modifiers = computed(() => {
     })
   }
 
-  if (!isBaseLayer.value) {
-    const maskMod = nodeModifiers.find(isMaskModifier)
-    if (maskMod) {
-      const shapeType = maskMod.config.shape
+  // MaskModifier (legacy: mask as modifier on layer)
+  for (const mod of nodeModifiers) {
+    if (isMaskModifier(mod)) {
       result.push({
         type: 'mask',
         label: 'Mask',
-        value: shapeType.charAt(0).toUpperCase() + shapeType.slice(1),
-        icon: 'crop',
-        enabled: maskMod.enabled,
+        value: mod.config.shape,
+        icon: 'content_cut',
+        enabled: mod.enabled,
       })
     }
   }
@@ -138,7 +145,7 @@ const modifiers = computed(() => {
 // Icon & Label Helpers
 // ============================================================
 
-const getLayerIcon = (variant: LayerVariant | 'group'): string => {
+const getLayerIcon = (variant: LayerVariant | 'group' | 'mask'): string => {
   switch (variant) {
     case 'base': return 'gradient'
     case 'surface': return 'texture'
@@ -146,6 +153,7 @@ const getLayerIcon = (variant: LayerVariant | 'group'): string => {
     case 'model3d': return 'view_in_ar'
     case 'image': return 'image'
     case 'text': return 'text_fields'
+    case 'mask': return 'content_cut'
     default: return 'layers'
   }
 }

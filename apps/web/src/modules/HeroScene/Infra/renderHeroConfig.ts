@@ -23,9 +23,20 @@ import {
   type RGBA,
 } from '@practice/texture'
 import {
-  vignetteShader,
-  createVignetteUniforms,
-  VIGNETTE_BUFFER_SIZE,
+  // New vignette shape variants
+  ellipseVignetteShader,
+  createEllipseVignetteUniforms,
+  ELLIPSE_VIGNETTE_BUFFER_SIZE,
+  circleVignetteShader,
+  createCircleVignetteUniforms,
+  CIRCLE_VIGNETTE_BUFFER_SIZE,
+  rectVignetteShader,
+  createRectVignetteUniforms,
+  RECT_VIGNETTE_BUFFER_SIZE,
+  linearVignetteShader,
+  createLinearVignetteUniforms,
+  LINEAR_VIGNETTE_BUFFER_SIZE,
+  // Other effects
   chromaticAberrationShader,
   createChromaticAberrationUniforms,
   CHROMATIC_ABERRATION_BUFFER_SIZE,
@@ -45,10 +56,13 @@ import type {
   MaskShapeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
-  EffectProcessorConfig,
   LayerNodeConfig,
+  MaskNodeConfig,
+  GroupLayerNodeConfig,
 } from '../Domain/HeroViewConfig'
-import type { LayerEffectConfig } from '../Domain/EffectSchema'
+import { getLayerFilters, getLayerMaskProcessor } from '../Domain/HeroViewConfig'
+import type { LayerEffectConfig, VignetteConfig } from '../Domain/EffectSchema'
+import { migrateVignetteConfig } from '../Domain/EffectSchema'
 
 // ============================================================
 // Types
@@ -273,6 +287,9 @@ function createMaskSpecFromShape(
         radiusTopRight: shape.radiusTopRight,
         radiusBottomLeft: shape.radiusBottomLeft,
         radiusBottomRight: shape.radiusBottomRight,
+        rotation: shape.rotation,
+        perspectiveX: shape.perspectiveX,
+        perspectiveY: shape.perspectiveY,
         innerColor,
         outerColor,
         cutout,
@@ -423,20 +440,93 @@ function applyEffects(
   // Vignette (requires texture input, applied last)
   if (effects.vignette?.enabled) {
     const inputTexture = renderer.copyCanvasToTexture()
-    const uniforms = createVignetteUniforms(
-      {
-        color: [0, 0, 0, 1],
-        intensity: effects.vignette.intensity,
-        radius: effects.vignette.radius,
-        softness: effects.vignette.softness,
-      },
-      viewport
-    )
-    renderer.applyPostEffect(
-      { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
-      inputTexture,
-      { clear: true }
-    )
+    const vignetteSpec = createVignetteSpec(effects.vignette, viewport)
+    renderer.applyPostEffect(vignetteSpec, inputTexture, { clear: true })
+  }
+}
+
+/**
+ * Create vignette effect specification based on shape type
+ */
+function createVignetteSpec(
+  config: VignetteConfig | { enabled: boolean; intensity: number; radius: number; softness: number },
+  viewport: Viewport
+): { shader: string; uniforms: ArrayBuffer; bufferSize: number } {
+  // Migrate legacy config if needed
+  const vignetteConfig = migrateVignetteConfig(config as VignetteConfig)
+  const color = vignetteConfig.color ?? [0, 0, 0, 1]
+
+  switch (vignetteConfig.shape) {
+    case 'circle':
+      return {
+        shader: circleVignetteShader,
+        uniforms: createCircleVignetteUniforms(
+          {
+            color,
+            intensity: vignetteConfig.intensity,
+            radius: vignetteConfig.radius,
+            softness: vignetteConfig.softness,
+            centerX: vignetteConfig.centerX,
+            centerY: vignetteConfig.centerY,
+          },
+          viewport
+        ),
+        bufferSize: CIRCLE_VIGNETTE_BUFFER_SIZE,
+      }
+
+    case 'rectangle':
+      return {
+        shader: rectVignetteShader,
+        uniforms: createRectVignetteUniforms(
+          {
+            color,
+            intensity: vignetteConfig.intensity,
+            softness: vignetteConfig.softness,
+            centerX: vignetteConfig.centerX,
+            centerY: vignetteConfig.centerY,
+            width: vignetteConfig.width,
+            height: vignetteConfig.height,
+            cornerRadius: vignetteConfig.cornerRadius,
+          },
+          viewport
+        ),
+        bufferSize: RECT_VIGNETTE_BUFFER_SIZE,
+      }
+
+    case 'linear':
+      return {
+        shader: linearVignetteShader,
+        uniforms: createLinearVignetteUniforms(
+          {
+            color,
+            intensity: vignetteConfig.intensity,
+            angle: vignetteConfig.angle,
+            startOffset: vignetteConfig.startOffset,
+            endOffset: vignetteConfig.endOffset,
+          },
+          viewport
+        ),
+        bufferSize: LINEAR_VIGNETTE_BUFFER_SIZE,
+      }
+
+    case 'ellipse':
+    default:
+      return {
+        shader: ellipseVignetteShader,
+        uniforms: createEllipseVignetteUniforms(
+          {
+            color,
+            intensity: vignetteConfig.intensity,
+            radius: vignetteConfig.radius,
+            softness: vignetteConfig.softness,
+            centerX: vignetteConfig.centerX,
+            centerY: vignetteConfig.centerY,
+            aspectRatio: vignetteConfig.aspectRatio ?? viewport.width / viewport.height,
+          },
+          viewport
+        ),
+        bufferSize: ELLIPSE_VIGNETTE_BUFFER_SIZE,
+      }
   }
 }
 
@@ -455,28 +545,43 @@ function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | null {
 }
 
 /**
- * Find surface layer from layers array (may be nested in group)
+ * Result of finding a surface layer with its context
  */
-function findSurfaceLayer(layers: LayerNodeConfig[]): SurfaceLayerNodeConfig | null {
+interface SurfaceLayerResult {
+  surfaceLayer: SurfaceLayerNodeConfig
+  /** Parent group containing this surface (for Figma-style mask lookup) */
+  parentGroup: GroupLayerNodeConfig | null
+}
+
+/**
+ * Find surface layer from layers array (may be nested in group)
+ * Returns both the surface and its parent group for mask lookup
+ */
+function findSurfaceLayer(layers: LayerNodeConfig[]): SurfaceLayerResult | null {
   for (const layer of layers) {
-    if (layer.type === 'surface') return layer
+    if (layer.type === 'surface') {
+      return { surfaceLayer: layer, parentGroup: null }
+    }
     if (layer.type === 'group' && 'children' in layer && layer.children) {
       const nested = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
-      if (nested) return nested
+      if (nested) {
+        return { surfaceLayer: nested, parentGroup: layer }
+      }
     }
   }
   return null
 }
 
 /**
- * Find effect processor from processors array
+ * Find MaskNodeConfig from group children (Figma-style)
+ * In Figma-style, mask is a sibling node before the masked layers
  */
-function findEffectProcessor(
-  processors: Array<{ type: string }>
-): EffectProcessorConfig | null {
-  const processor = processors.find((p) => p.type === 'effect')
-  if (processor && 'config' in processor) {
-    return processor as EffectProcessorConfig
+function findMaskNodeInGroup(group: GroupLayerNodeConfig): MaskNodeConfig | null {
+  if (!group.children) return null
+  for (const child of group.children) {
+    if (child.type === 'mask' && child.visible !== false) {
+      return child as MaskNodeConfig
+    }
   }
   return null
 }
@@ -542,37 +647,57 @@ export async function renderHeroConfig(
       renderer.render(bgSpec, { clear: true })
     }
 
-    // Apply base layer effects
-    const effectProcessor = findEffectProcessor(baseLayer.processors)
-    if (effectProcessor?.enabled && effectProcessor.config) {
-      applyEffects(renderer, effectProcessor.config, viewport, scale)
+    // Apply base layer effects (supports both filters and processors)
+    const effectFilters = getLayerFilters(baseLayer)
+    const effectFilter = effectFilters.find((f) => f.enabled)
+    if (effectFilter?.config) {
+      applyEffects(renderer, effectFilter.config, viewport, scale)
     }
   }
 
   // 2. Render surface layer with mask
-  const surfaceLayer = findSurfaceLayer(config.layers)
-  if (surfaceLayer) {
-    // Find mask processor
-    const maskProcessor = surfaceLayer.processors.find((p) => p.type === 'mask')
-    if (maskProcessor && 'shape' in maskProcessor) {
-      const shape = maskProcessor.shape as MaskShapeConfig
+  const surfaceResult = findSurfaceLayer(config.layers)
+  if (surfaceResult) {
+    const { surfaceLayer, parentGroup } = surfaceResult
 
+    // Find mask shape - try Figma-style first (MaskNode in group), then legacy (processor)
+    let maskShape: MaskShapeConfig | null = null
+
+    // Figma-style: MaskNode as sibling in parent group
+    if (parentGroup) {
+      const maskNode = findMaskNodeInGroup(parentGroup)
+      if (maskNode) {
+        maskShape = maskNode.shape
+      }
+    }
+
+    // Legacy fallback: mask in processors
+    if (!maskShape) {
+      const maskProcessor = getLayerMaskProcessor(surfaceLayer)
+      if (maskProcessor?.enabled) {
+        maskShape = maskProcessor.shape
+      }
+    }
+
+    // Render the mask if found
+    if (maskShape) {
       // Pass colors directly - mask spec functions handle cutout internally
       // innerColor = transparent (shows background through), outerColor = mask color
       // The mask spec functions (createBlobMaskSpec, etc.) swap colors based on cutout
       const innerColor = maskInnerColor
       const outerColor = midgroundTextureColor1
 
-      const maskSpec = createMaskSpecFromShape(shape, innerColor, outerColor, viewport)
+      const maskSpec = createMaskSpecFromShape(maskShape, innerColor, outerColor, viewport)
       if (maskSpec) {
         renderer.render(maskSpec, { clear: false })
       }
     }
 
-    // Apply surface layer effects
-    const effectProcessor = findEffectProcessor(surfaceLayer.processors)
-    if (effectProcessor?.enabled && effectProcessor.config) {
-      applyEffects(renderer, effectProcessor.config, viewport, scale)
+    // Apply surface layer effects (supports both filters and processors)
+    const effectFilters = getLayerFilters(surfaceLayer)
+    const effectFilter = effectFilters.find((f) => f.enabled)
+    if (effectFilter?.config) {
+      applyEffects(renderer, effectFilter.config, viewport, scale)
     }
   }
 }

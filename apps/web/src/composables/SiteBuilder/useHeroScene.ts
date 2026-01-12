@@ -97,9 +97,20 @@ import {
 import type { ObjectSchema } from '@practice/schema'
 // Filters (separate subpath for tree-shaking)
 import {
-  vignetteShader,
-  createVignetteUniforms,
-  VIGNETTE_BUFFER_SIZE,
+  // Shape-specific vignette shaders
+  ellipseVignetteShader,
+  createEllipseVignetteUniforms,
+  ELLIPSE_VIGNETTE_BUFFER_SIZE,
+  circleVignetteShader,
+  createCircleVignetteUniforms,
+  CIRCLE_VIGNETTE_BUFFER_SIZE,
+  rectVignetteShader,
+  createRectVignetteUniforms,
+  RECT_VIGNETTE_BUFFER_SIZE,
+  linearVignetteShader,
+  createLinearVignetteUniforms,
+  LINEAR_VIGNETTE_BUFFER_SIZE,
+  // Other effects
   chromaticAberrationShader,
   createChromaticAberrationUniforms,
   CHROMATIC_ABERRATION_BUFFER_SIZE,
@@ -135,6 +146,7 @@ import {
   type SurfaceLayerNodeConfig,
   type EffectProcessorConfig,
   type MaskProcessorConfig,
+  type MaskNodeConfig,
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
@@ -202,6 +214,9 @@ import {
   type UsecaseState,
   type EditorStateRef,
   type RendererActions,
+  // Vignette shape support
+  migrateVignetteConfig,
+  type VignetteConfig,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -427,7 +442,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Selection state (UI bindings)
   const selectedBackgroundIndex = ref(3)
-  const selectedMaskIndex = ref<number | null>(0)
+  const selectedMaskIndex = ref<number | null>(null)
   const selectedMidgroundTextureIndex = ref<number>(0) // 0 = Solid
   const activeSection = ref<SectionType | null>(null)
 
@@ -595,6 +610,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         radiusTopRight: maskConfig.radiusTopRight ?? 0,
         radiusBottomLeft: maskConfig.radiusBottomLeft ?? 0,
         radiusBottomRight: maskConfig.radiusBottomRight ?? 0,
+        rotation: maskConfig.rotation ?? 0,
+        perspectiveX: maskConfig.perspectiveX ?? 0,
+        perspectiveY: maskConfig.perspectiveY ?? 0,
         cutout: maskConfig.cutout ?? true,
       }
     }
@@ -937,7 +955,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Fallback for old data that may not have blur property
     const defaults = createDefaultFilterConfig()
     const updated: LayerFilterConfig = {
-      vignette: { ...(current.vignette ?? defaults.vignette), ...(updates.vignette ?? {}) },
+      vignette: { ...(current.vignette ?? defaults.vignette), ...(updates.vignette ?? {}) } as VignetteConfig,
       chromaticAberration: { ...(current.chromaticAberration ?? defaults.chromaticAberration), ...(updates.chromaticAberration ?? {}) },
       dotHalftone: { ...(current.dotHalftone ?? defaults.dotHalftone), ...(updates.dotHalftone ?? {}) },
       lineHalftone: { ...(current.lineHalftone ?? defaults.lineHalftone), ...(updates.lineHalftone ?? {}) },
@@ -2010,6 +2028,89 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
+   * Create vignette shader spec based on config shape
+   */
+  const createVignetteSpec = (
+    config: VignetteConfig,
+    viewport: Viewport
+  ): { shader: string; uniforms: ArrayBuffer; bufferSize: number } => {
+    const color = config.color ?? [0, 0, 0, 1]
+
+    switch (config.shape) {
+      case 'ellipse':
+        return {
+          shader: ellipseVignetteShader,
+          uniforms: createEllipseVignetteUniforms(
+            {
+              color,
+              intensity: config.intensity,
+              radius: config.radius,
+              softness: config.softness,
+              centerX: config.centerX,
+              centerY: config.centerY,
+              aspectRatio: config.aspectRatio,
+            },
+            viewport
+          ),
+          bufferSize: ELLIPSE_VIGNETTE_BUFFER_SIZE,
+        }
+      case 'circle':
+        return {
+          shader: circleVignetteShader,
+          uniforms: createCircleVignetteUniforms(
+            {
+              color,
+              intensity: config.intensity,
+              radius: config.radius,
+              softness: config.softness,
+              centerX: config.centerX,
+              centerY: config.centerY,
+            },
+            viewport
+          ),
+          bufferSize: CIRCLE_VIGNETTE_BUFFER_SIZE,
+        }
+      case 'rectangle':
+        return {
+          shader: rectVignetteShader,
+          uniforms: createRectVignetteUniforms(
+            {
+              color,
+              intensity: config.intensity,
+              softness: config.softness,
+              centerX: config.centerX,
+              centerY: config.centerY,
+              width: config.width,
+              height: config.height,
+              cornerRadius: config.cornerRadius,
+            },
+            viewport
+          ),
+          bufferSize: RECT_VIGNETTE_BUFFER_SIZE,
+        }
+      case 'linear':
+        return {
+          shader: linearVignetteShader,
+          uniforms: createLinearVignetteUniforms(
+            {
+              color,
+              intensity: config.intensity,
+              angle: config.angle,
+              startOffset: config.startOffset,
+              endOffset: config.endOffset,
+            },
+            viewport
+          ),
+          bufferSize: LINEAR_VIGNETTE_BUFFER_SIZE,
+        }
+      default: {
+        const _exhaustive: never = config
+        throw new Error(`Unknown vignette shape: ${(_exhaustive as VignetteConfig).shape}`)
+      }
+    }
+  }
+
+  /**
    * Apply filters to current canvas content for a layer
    * Note: ClipGroup layers handle effects internally via offscreen rendering,
    * so they are skipped here to avoid double-application
@@ -2089,20 +2190,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Vignette (requires texture input, applied last)
     if (filters.vignette.enabled) {
       const inputTexture = previewRenderer.copyCanvasToTexture()
-      const uniforms = createVignetteUniforms(
-        {
-          color: [0, 0, 0, 1],
-          intensity: filters.vignette.intensity,
-          radius: filters.vignette.radius,
-          softness: filters.vignette.softness,
-        },
-        viewport
-      )
-      previewRenderer.applyPostEffect(
-        { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
-        inputTexture,
-        { clear: true }
-      )
+      const vignetteConfig = migrateVignetteConfig(filters.vignette)
+      const spec = createVignetteSpec(vignetteConfig, viewport)
+      previewRenderer.applyPostEffect(spec, inputTexture, { clear: true })
     }
   }
 
@@ -2166,7 +2256,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           const maskFeather = layer.config.maskFeather
 
           // Use selectedMaskIndex to get the mask pattern for fallback rendering
-          const maskPattern = maskPatterns[selectedMaskIndex.value ?? 0]
+          // When selectedMaskIndex is null, no mask should be applied (Issue #199)
+          const maskPattern = selectedMaskIndex.value !== null ? maskPatterns[selectedMaskIndex.value] : undefined
 
           // Helper to create clip mask spec from layer's maskShapeParams
           const createClipSpec = (): TextureRenderSpec | null => {
@@ -2213,6 +2304,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                       shapeParams.radiusBottomRight,
                       shapeParams.radiusBottomLeft,
                     ],
+                    rotation: shapeParams.rotation ?? 0,
+                    perspectiveX: shapeParams.perspectiveX ?? 0,
+                    perspectiveY: shapeParams.perspectiveY ?? 0,
                     invert,
                     feather,
                   },
@@ -2220,6 +2314,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 )
               } else {
                 // New format with centerX/centerY/width/height
+                // Note: new format layer config doesn't have rotation/perspective yet
                 return createRectClipSpec(
                   {
                     type: 'rect',
@@ -2228,6 +2323,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     width: shapeParams.width,
                     height: shapeParams.height,
                     cornerRadius: shapeParams.cornerRadius,
+                    rotation: 0,
+                    perspectiveX: 0,
+                    perspectiveY: 0,
                     invert,
                     feather,
                   },
@@ -2306,6 +2404,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     radiusTopRight: shapeParams.radiusTopRight,
                     radiusBottomLeft: shapeParams.radiusBottomLeft,
                     radiusBottomRight: shapeParams.radiusBottomRight,
+                    rotation: shapeParams.rotation,
+                    perspectiveX: shapeParams.perspectiveX,
+                    perspectiveY: shapeParams.perspectiveY,
                     innerColor: solidInnerColor,
                     outerColor: solidOuterColor,
                     cutout,
@@ -2579,21 +2680,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
               // Vignette
               if (filters.vignette.enabled) {
-                const uniforms = createVignetteUniforms(
-                  {
-                    color: [0, 0, 0, 1],
-                    intensity: filters.vignette.intensity,
-                    radius: filters.vignette.radius,
-                    softness: filters.vignette.softness,
-                  },
-                  viewport
-                )
+                const vignetteConfig = migrateVignetteConfig(filters.vignette)
+                const spec = createVignetteSpec(vignetteConfig, viewport)
                 const outputIndex = currentTexture === renderer.getOffscreenTexture(0) ? 1 : 0
-                currentTexture = renderer.applyPostEffectToOffscreen(
-                  { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
-                  currentTexture,
-                  outputIndex as 0 | 1
-                )
+                currentTexture = renderer.applyPostEffectToOffscreen(spec, currentTexture, outputIndex as 0 | 1)
               }
 
               return currentTexture
@@ -3336,6 +3426,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         radiusTopRight: params.radiusTopRight,
         radiusBottomLeft: params.radiusBottomLeft,
         radiusBottomRight: params.radiusBottomRight,
+        rotation: params.rotation,
+        perspectiveX: params.perspectiveX,
+        perspectiveY: params.perspectiveY,
         cutout: params.cutout,
       }
     }
@@ -3525,7 +3618,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
 
     // Surface layer may be nested inside a group
+    // Also find Figma-style MaskNode in group.children
     let surfaceLayer: SurfaceLayerNodeConfig | undefined
+    let figmaMaskNode: MaskNodeConfig | undefined
     for (const layer of config.layers) {
       if (layer.type === 'surface') {
         surfaceLayer = layer
@@ -3535,6 +3630,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         const nested = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
         if (nested) {
           surfaceLayer = nested
+        }
+        // Find Figma-style MaskNode in group.children
+        const maskNode = layer.children.find((c): c is MaskNodeConfig => c.type === 'mask')
+        if (maskNode) {
+          figmaMaskNode = maskNode
+        }
+        if (surfaceLayer || figmaMaskNode) {
           break
         }
       }
@@ -3557,7 +3659,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       selectedBackgroundIndex.value = bgPresetIndex ?? 0
 
       // Background filters (from effect processor, merged with defaults for backward compatibility)
-      const effectProcessor = baseLayer.processors.find((p): p is EffectProcessorConfig => p.type === 'effect')
+      const effectProcessor = (baseLayer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
       if (effectProcessor) {
         const defaults = createDefaultFilterConfig()
         const merged: LayerFilterConfig = {
@@ -3571,14 +3673,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
     }
 
-    // Surface layer with mask
-    if (surfaceLayer) {
-      // Find mask processor
-      const maskProcessor = surfaceLayer.processors.find((p): p is MaskProcessorConfig => p.type === 'mask')
+    // Surface layer with mask (supports both Figma-style MaskNode and legacy processor)
+    if (surfaceLayer || figmaMaskNode) {
+      // Find mask processor (legacy) or use Figma-style MaskNode
+      const maskProcessor = surfaceLayer
+        ? (surfaceLayer.processors ?? []).find((p): p is MaskProcessorConfig => p.type === 'mask')
+        : undefined
 
-      if (maskProcessor) {
+      // Prefer Figma-style MaskNode over legacy processor
+      const maskShape = figmaMaskNode?.shape ?? maskProcessor?.shape
+
+      if (maskShape) {
         // Mask shape
-        const shape = maskProcessor.shape
+        const shape = maskShape
         if (shape.type === 'circle') {
           customMaskShapeParams.value = {
             type: 'circle',
@@ -3598,6 +3705,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             radiusTopRight: shape.radiusTopRight,
             radiusBottomLeft: shape.radiusBottomLeft,
             radiusBottomRight: shape.radiusBottomRight,
+            rotation: shape.rotation,
+            perspectiveX: shape.perspectiveX,
+            perspectiveY: shape.perspectiveY,
             cutout: shape.cutout,
           }
         } else if (shape.type === 'perlin') {
@@ -3658,39 +3768,41 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         customMaskShapeParams.value = null
       }
 
-      // Mask surface
-      const maskSurface = surfaceLayer.surface
-      if (maskSurface.type === 'solid') {
-        customSurfaceParams.value = { type: 'solid' }
-      } else if (maskSurface.type === 'stripe') {
-        customSurfaceParams.value = { type: 'stripe', width1: maskSurface.width1, width2: maskSurface.width2, angle: maskSurface.angle }
-      } else if (maskSurface.type === 'grid') {
-        customSurfaceParams.value = { type: 'grid', lineWidth: maskSurface.lineWidth, cellSize: maskSurface.cellSize }
-      } else if (maskSurface.type === 'polkaDot') {
-        customSurfaceParams.value = { type: 'polkaDot', dotRadius: maskSurface.dotRadius, spacing: maskSurface.spacing, rowOffset: maskSurface.rowOffset }
-      } else if (maskSurface.type === 'checker') {
-        customSurfaceParams.value = { type: 'checker', cellSize: maskSurface.cellSize, angle: maskSurface.angle }
-      } else if (maskSurface.type === 'image') {
-        // Restore mask image from imageId (URL)
-        await restoreMaskImage(maskSurface.imageId)
-      }
-
-      // Reverse-lookup mask surface preset index
-      const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
-      selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
-
-      // Mask filters (from effect processor, merged with defaults for backward compatibility)
-      const maskEffectProcessor = surfaceLayer.processors.find((p): p is EffectProcessorConfig => p.type === 'effect')
-      if (maskEffectProcessor) {
-        const defaults = createDefaultFilterConfig()
-        const merged: LayerFilterConfig = {
-          vignette: { ...defaults.vignette, ...maskEffectProcessor.config.vignette },
-          chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectProcessor.config.chromaticAberration },
-          dotHalftone: { ...defaults.dotHalftone, ...maskEffectProcessor.config.dotHalftone },
-          lineHalftone: { ...defaults.lineHalftone, ...maskEffectProcessor.config.lineHalftone },
-          blur: { ...defaults.blur, ...(maskEffectProcessor.config.blur ?? {}) },
+      // Mask surface (only if surfaceLayer exists)
+      if (surfaceLayer) {
+        const maskSurface = surfaceLayer.surface
+        if (maskSurface.type === 'solid') {
+          customSurfaceParams.value = { type: 'solid' }
+        } else if (maskSurface.type === 'stripe') {
+          customSurfaceParams.value = { type: 'stripe', width1: maskSurface.width1, width2: maskSurface.width2, angle: maskSurface.angle }
+        } else if (maskSurface.type === 'grid') {
+          customSurfaceParams.value = { type: 'grid', lineWidth: maskSurface.lineWidth, cellSize: maskSurface.cellSize }
+        } else if (maskSurface.type === 'polkaDot') {
+          customSurfaceParams.value = { type: 'polkaDot', dotRadius: maskSurface.dotRadius, spacing: maskSurface.spacing, rowOffset: maskSurface.rowOffset }
+        } else if (maskSurface.type === 'checker') {
+          customSurfaceParams.value = { type: 'checker', cellSize: maskSurface.cellSize, angle: maskSurface.angle }
+        } else if (maskSurface.type === 'image') {
+          // Restore mask image from imageId (URL)
+          await restoreMaskImage(maskSurface.imageId)
         }
-        layerFilterConfigs.value.set(LAYER_IDS.MASK, merged)
+
+        // Reverse-lookup mask surface preset index
+        const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
+        selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
+
+        // Mask filters (from effect processor, merged with defaults for backward compatibility)
+        const maskEffectProcessor = (surfaceLayer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
+        if (maskEffectProcessor) {
+          const defaults = createDefaultFilterConfig()
+          const merged: LayerFilterConfig = {
+            vignette: { ...defaults.vignette, ...maskEffectProcessor.config.vignette },
+            chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectProcessor.config.chromaticAberration },
+            dotHalftone: { ...defaults.dotHalftone, ...maskEffectProcessor.config.dotHalftone },
+            lineHalftone: { ...defaults.lineHalftone, ...maskEffectProcessor.config.lineHalftone },
+            blur: { ...defaults.blur, ...(maskEffectProcessor.config.blur ?? {}) },
+          }
+          layerFilterConfigs.value.set(LAYER_IDS.MASK, merged)
+        }
       }
     } else {
       selectedMaskIndex.value = null

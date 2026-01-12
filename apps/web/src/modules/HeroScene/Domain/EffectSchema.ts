@@ -12,8 +12,28 @@ import {
   type Infer,
 } from '@practice/schema'
 
+// Re-export new vignette schemas and types
+export {
+  VignetteBaseSchema,
+  VignetteShapeSchemas,
+  EllipseVignetteSchema,
+  CircleVignetteSchema,
+  RectVignetteSchema,
+  LinearVignetteSchema,
+  VignetteShapeOptions,
+  createDefaultVignetteConfig as createDefaultVignetteShapeConfig,
+  migrateVignetteConfig,
+  type VignetteShape,
+  type VignetteConfig,
+  type EllipseVignetteConfig,
+  type CircleVignetteConfig,
+  type RectVignetteConfig,
+  type LinearVignetteConfig,
+} from './VignetteSchema'
+import { createDefaultVignetteConfig as createDefaultVignetteShapeConfigInternal, type VignetteConfig } from './VignetteSchema'
+
 // ============================================================
-// Vignette Effect Schema
+// Vignette Effect Schema (Legacy - for backward compatibility)
 // ============================================================
 
 export const VignetteEffectSchema = defineSchema({
@@ -23,6 +43,7 @@ export const VignetteEffectSchema = defineSchema({
   softness: number({ label: 'Softness', min: 0.1, max: 1, default: 0.4 }),
 })
 
+/** @deprecated Use VignetteConfig instead */
 export type VignetteEffectConfig = Infer<typeof VignetteEffectSchema>
 
 // ============================================================
@@ -93,7 +114,7 @@ export type LayerEffectSchemaMap = typeof LayerEffectSchemas
 
 /** Layer effect config (inferred from schemas) */
 export interface LayerEffectConfig {
-  vignette: VignetteEffectConfig
+  vignette: VignetteConfig
   chromaticAberration: ChromaticAberrationEffectConfig
   dotHalftone: DotHalftoneEffectConfig
   lineHalftone: LineHalftoneEffectConfig
@@ -126,7 +147,7 @@ export const createDefaultBlurConfig = (): BlurEffectConfig =>
 
 /** Create default layer effect config */
 export const createDefaultEffectConfig = (): LayerEffectConfig => ({
-  vignette: createDefaultVignetteConfig(),
+  vignette: createDefaultVignetteShapeConfigInternal(),
   chromaticAberration: createDefaultChromaticAberrationConfig(),
   dotHalftone: createDefaultDotHalftoneConfig(),
   lineHalftone: createDefaultLineHalftoneConfig(),

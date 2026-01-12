@@ -35,7 +35,7 @@ describe('updateFilterParams', () => {
             type: 'effect',
             enabled: true,
             config: {
-              vignette: { enabled: true, intensity: 0.5, radius: 0.8, softness: 0.4 },
+              vignette: { shape: 'ellipse', enabled: true, intensity: 0.5, softness: 0.4, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
               chromaticAberration: { enabled: false, intensity: 3 },
               dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
               lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
@@ -56,10 +56,14 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.vignette.intensity).toBe(0.8)
-      expect(effectProcessor.config.vignette.radius).toBe(0.8) // unchanged
+      // Check shape-specific params for ellipse
+      const vignetteConfig = effectProcessor.config.vignette
+      if (vignetteConfig.shape === 'ellipse') {
+        expect(vignetteConfig.radius).toBe(0.8) // unchanged
+      }
       expect(effectProcessor.config.vignette.softness).toBe(0.4) // unchanged
     })
 
@@ -70,10 +74,14 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.vignette.intensity).toBe(0.9)
-      expect(effectProcessor.config.vignette.radius).toBe(1.0)
+      // Check shape-specific params for ellipse
+      const vignetteConfig = effectProcessor.config.vignette
+      if (vignetteConfig.shape === 'ellipse') {
+        expect(vignetteConfig.radius).toBe(1.0)
+      }
       expect(effectProcessor.config.vignette.softness).toBe(0.6)
     })
 
@@ -84,7 +92,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.vignette.enabled).toBe(true)
     })
@@ -98,7 +106,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.chromaticAberration.intensity).toBe(10)
     })
@@ -112,7 +120,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.dotHalftone.dotSize).toBe(12)
       expect(effectProcessor.config.dotHalftone.spacing).toBe(20)
@@ -128,7 +136,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.lineHalftone.lineWidth).toBe(8)
       expect(effectProcessor.config.lineHalftone.spacing).toBe(24)
@@ -172,7 +180,7 @@ describe('getFilterParams', () => {
             type: 'effect',
             enabled: true,
             config: {
-              vignette: { enabled: true, intensity: 0.5, radius: 0.8, softness: 0.4 },
+              vignette: { shape: 'ellipse', enabled: true, intensity: 0.5, softness: 0.4, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
               chromaticAberration: { enabled: false, intensity: 3 },
               dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
               lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
@@ -192,10 +200,15 @@ describe('getFilterParams', () => {
       const params = getVignetteParams(repository, 'base')
 
       expect(params).toEqual({
+        shape: 'ellipse',
         enabled: true,
         intensity: 0.5,
-        radius: 0.8,
         softness: 0.4,
+        color: [0, 0, 0, 1],
+        radius: 0.8,
+        centerX: 0.5,
+        centerY: 0.5,
+        aspectRatio: 1,
       })
     })
 

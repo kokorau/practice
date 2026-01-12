@@ -15,7 +15,7 @@
         "name": "Background",
         "visible": true,
         "surface": { "type": "solid" },
-        "processors": [
+        "filters": [
           {
             "type": "effect",
             "enabled": true,
@@ -34,15 +34,34 @@
         "name": "Main Group",
         "visible": true,
         "expanded": true,
-        "processors": [],
         "children": [
+          {
+            "type": "mask",
+            "id": "mask-1",
+            "name": "Mask",
+            "visible": true,
+            "shape": {
+              "type": "rect",
+              "left": 0.32,
+              "right": 0.68,
+              "top": 0.05,
+              "bottom": 0.95,
+              "radiusTopLeft": 0.18,
+              "radiusTopRight": 0.18,
+              "radiusBottomLeft": 0.18,
+              "radiusBottomRight": 0.18,
+              "cutout": false
+            },
+            "invert": false,
+            "feather": 0
+          },
           {
             "type": "surface",
             "id": "surface-1",
             "name": "Surface",
             "visible": true,
             "surface": { "type": "stripe", "width1": 2, "width2": 8, "angle": 0 },
-            "processors": [
+            "filters": [
               {
                 "type": "effect",
                 "enabled": true,
@@ -52,24 +71,6 @@
                   "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
                   "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
                 }
-              },
-              {
-                "type": "mask",
-                "enabled": true,
-                "shape": {
-                  "type": "rect",
-                  "left": 0.32,
-                  "right": 0.68,
-                  "top": 0.05,
-                  "bottom": 0.95,
-                  "radiusTopLeft": 0.18,
-                  "radiusTopRight": 0.18,
-                  "radiusBottomLeft": 0.18,
-                  "radiusBottomRight": 0.18,
-                  "cutout": false
-                },
-                "invert": false,
-                "feather": 0
               }
             ]
           }

@@ -263,6 +263,12 @@ export interface RectMaskShapeConfig {
   radiusTopRight: number
   radiusBottomLeft: number
   radiusBottomRight: number
+  /** Z-axis rotation in degrees (0-360) */
+  rotation: number
+  /** Horizontal perspective (-0.5 to 0.5, negative=left narrow, positive=right narrow) */
+  perspectiveX: number
+  /** Vertical perspective (-0.5 to 0.5, negative=top narrow, positive=bottom narrow) */
+  perspectiveY: number
   cutout: boolean
 }
 
@@ -339,15 +345,33 @@ export type MaskShapeConfig =
   | BoxGradientMaskShapeConfig
 
 // ============================================================
-// Processor Config (JSON シリアライズ用)
+// Filter Config (JSON シリアライズ用) - Effects only
 // ============================================================
 
-export interface EffectProcessorConfig {
+/**
+ * Effect filter configuration for JSON serialization
+ * Note: Masks are now MaskNodeConfig, not filters
+ */
+export interface EffectFilterConfig {
   type: 'effect'
   enabled: boolean
   config: LayerEffectConfig
 }
 
+/**
+ * Filter config type (effects only)
+ * Masks are handled as MaskNodeConfig in the layer tree
+ */
+export type FilterConfig = EffectFilterConfig
+
+// ============================================================
+// Processor Config (deprecated - use FilterConfig)
+// ============================================================
+
+/** @deprecated Use EffectFilterConfig instead */
+export type EffectProcessorConfig = EffectFilterConfig
+
+/** @deprecated Masks are now MaskNodeConfig in the layer tree */
 export interface MaskProcessorConfig {
   type: 'mask'
   enabled: boolean
@@ -356,7 +380,8 @@ export interface MaskProcessorConfig {
   feather: number
 }
 
-export type ProcessorConfig = EffectProcessorConfig | MaskProcessorConfig
+/** @deprecated Use FilterConfig instead */
+export type ProcessorConfig = EffectFilterConfig | MaskProcessorConfig
 
 // ============================================================
 // Layer Node Config (JSON シリアライズ用)
@@ -368,16 +393,38 @@ interface LayerNodeConfigBase {
   visible: boolean
 }
 
+/**
+ * MaskNodeConfig - Figma-style mask as a scene node
+ *
+ * Masks are sibling nodes within a group. All nodes after a mask
+ * (within the same group) are masked.
+ */
+export interface MaskNodeConfig extends LayerNodeConfigBase {
+  type: 'mask'
+  /** Mask shape configuration */
+  shape: MaskShapeConfig
+  /** Whether to invert the mask */
+  invert: boolean
+  /** Feather amount for soft edges (0-1) */
+  feather: number
+}
+
 export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   type: 'base'
   surface: SurfaceConfig
-  processors: ProcessorConfig[]
+  /** Effect filters (masks are now separate MaskNodeConfig) */
+  filters?: EffectFilterConfig[]
+  /** @deprecated Use filters instead */
+  processors?: ProcessorConfig[]
 }
 
 export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
   type: 'surface'
   surface: SurfaceConfig
-  processors: ProcessorConfig[]
+  /** Effect filters (masks are now separate MaskNodeConfig) */
+  filters?: EffectFilterConfig[]
+  /** @deprecated Use filters instead */
+  processors?: ProcessorConfig[]
 }
 
 export interface TextLayerNodeConfig extends LayerNodeConfigBase {
@@ -391,7 +438,10 @@ export interface TextLayerNodeConfig extends LayerNodeConfigBase {
   color: string
   position: { x: number; y: number; anchor: string }
   rotation: number
-  processors: ProcessorConfig[]
+  /** Effect filters (masks are now separate MaskNodeConfig) */
+  filters?: EffectFilterConfig[]
+  /** @deprecated Use filters instead */
+  processors?: ProcessorConfig[]
 }
 
 export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
@@ -400,19 +450,30 @@ export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
   position: { x: number; y: number; z: number }
   rotation: { x: number; y: number; z: number }
   scale: number
-  processors: ProcessorConfig[]
+  /** Effect filters (masks are now separate MaskNodeConfig) */
+  filters?: EffectFilterConfig[]
+  /** @deprecated Use filters instead */
+  processors?: ProcessorConfig[]
 }
 
 export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   type: 'image'
   imageId: string
-  processors: ProcessorConfig[]
+  /** Effect filters (masks are now separate MaskNodeConfig) */
+  filters?: EffectFilterConfig[]
+  /** @deprecated Use filters instead */
+  processors?: ProcessorConfig[]
 }
 
 export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
-  processors: ProcessorConfig[]
+  /** Effect filters applied to the group */
+  filters?: EffectFilterConfig[]
+  /** @deprecated Use filters instead */
+  processors?: ProcessorConfig[]
+  /** Whether the group is expanded in UI */
+  expanded?: boolean
 }
 
 export type LayerNodeConfig =
@@ -422,6 +483,7 @@ export type LayerNodeConfig =
   | Model3DLayerNodeConfig
   | ImageLayerNodeConfig
   | GroupLayerNodeConfig
+  | MaskNodeConfig
 
 // ============================================================
 // Legacy Layer Configs (deprecated, for backward compatibility)
@@ -553,17 +615,30 @@ export const createDefaultColorsConfig = (): HeroColorsConfig => ({
   foundation: { hue: 0, saturation: 0, value: 97 },
 })
 
-export const createDefaultEffectProcessorConfig = (): EffectProcessorConfig => ({
+export const createDefaultEffectFilterConfig = (): EffectFilterConfig => ({
   type: 'effect',
   enabled: true,
   config: {
-    vignette: { enabled: false, intensity: 0.5, radius: 0.5, softness: 0.5 },
+    vignette: {
+      enabled: false,
+      shape: 'ellipse',
+      intensity: 0.5,
+      softness: 0.4,
+      color: [0, 0, 0, 1],
+      radius: 0.8,
+      centerX: 0.5,
+      centerY: 0.5,
+      aspectRatio: 1,
+    },
     chromaticAberration: { enabled: false, intensity: 0.01 },
     dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
     lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
     blur: { enabled: false, radius: 8 },
   },
 })
+
+/** @deprecated Use createDefaultEffectFilterConfig instead */
+export const createDefaultEffectProcessorConfig = createDefaultEffectFilterConfig
 
 export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
   viewport: { width: 1280, height: 720 },
@@ -575,8 +650,47 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
       name: 'Background',
       visible: true,
       surface: { type: 'solid' },
-      processors: [createDefaultEffectProcessorConfig()],
+      filters: [createDefaultEffectFilterConfig()],
     },
   ],
   foreground: createDefaultForegroundConfig(),
 })
+
+// ============================================================
+// Migration Helpers (processors → filters)
+// ============================================================
+
+/**
+ * Get effect filters from a layer config (supports both filters and processors)
+ * Use this helper during migration from processors to filters
+ */
+export const getLayerFilters = (layer: Exclude<LayerNodeConfig, MaskNodeConfig>): EffectFilterConfig[] => {
+  // Prefer filters if available
+  if (layer.filters && layer.filters.length > 0) {
+    return layer.filters
+  }
+  // Fall back to processors (filtering out mask processors)
+  if (layer.processors) {
+    return layer.processors.filter((p): p is EffectFilterConfig => p.type === 'effect')
+  }
+  return []
+}
+
+/**
+ * Get mask processor from a layer config (for backward compatibility)
+ * @deprecated Masks are now MaskNodeConfig in the layer tree
+ */
+export const getLayerMaskProcessor = (layer: Exclude<LayerNodeConfig, MaskNodeConfig>): MaskProcessorConfig | undefined => {
+  if (layer.processors) {
+    return layer.processors.find((p): p is MaskProcessorConfig => p.type === 'mask')
+  }
+  return undefined
+}
+
+/**
+ * Check if layer config has mask processor (for backward compatibility)
+ * @deprecated Masks are now MaskNodeConfig in the layer tree
+ */
+export const hasLayerMaskProcessor = (layer: Exclude<LayerNodeConfig, MaskNodeConfig>): boolean => {
+  return getLayerMaskProcessor(layer) !== undefined
+}

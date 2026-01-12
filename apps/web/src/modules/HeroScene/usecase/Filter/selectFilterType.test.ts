@@ -26,7 +26,7 @@ describe('selectFilterType', () => {
             type: 'effect',
             enabled: true,
             config: {
-              vignette: { enabled: false, intensity: 0.5, radius: 0.8, softness: 0.4 },
+              vignette: { shape: 'ellipse', enabled: false, intensity: 0.5, softness: 0.4, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
               chromaticAberration: { enabled: false, intensity: 3 },
               dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
               lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
@@ -46,7 +46,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(true)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
@@ -62,7 +62,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(false)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(true)
@@ -78,7 +78,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(false)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
@@ -94,7 +94,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(false)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
@@ -114,7 +114,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(false)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
@@ -134,11 +134,15 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     // Vignette params should be preserved (just disabled)
     expect(effectProcessor.config.vignette.intensity).toBe(0.5)
-    expect(effectProcessor.config.vignette.radius).toBe(0.8)
+    // Check shape-specific params for ellipse
+    const vignetteConfig = effectProcessor.config.vignette
+    if (vignetteConfig.shape === 'ellipse') {
+      expect(vignetteConfig.radius).toBe(0.8)
+    }
   })
 
   it('should not modify anything for non-existent layer', () => {
@@ -175,7 +179,7 @@ describe('getFilterType', () => {
             type: 'effect',
             enabled: true,
             config: {
-              vignette: { enabled: enabledFilter === 'vignette', intensity: 0.5, radius: 0.8, softness: 0.4 },
+              vignette: { shape: 'ellipse', enabled: enabledFilter === 'vignette', intensity: 0.5, softness: 0.4, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
               chromaticAberration: { enabled: enabledFilter === 'chromaticAberration', intensity: 3 },
               dotHalftone: { enabled: enabledFilter === 'dotHalftone', dotSize: 8, spacing: 16, angle: 45 },
               lineHalftone: { enabled: enabledFilter === 'lineHalftone', lineWidth: 4, spacing: 12, angle: 45 },

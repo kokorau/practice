@@ -292,7 +292,7 @@ const corporateCleanConfig: HeroViewConfig = {
           type: 'effect',
           enabled: true,
           config: {
-            vignette: { enabled: true, intensity: 0.3, radius: 0.8, softness: 0.6 },
+            vignette: { enabled: true, shape: 'ellipse', intensity: 0.3, softness: 0.6, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
             chromaticAberration: { enabled: false, intensity: 0.01 },
             dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
             lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
@@ -312,7 +312,7 @@ const corporateCleanConfig: HeroViewConfig = {
           type: 'effect',
           enabled: true,
           config: {
-            vignette: { enabled: false, intensity: 0.5, radius: 0.5, softness: 0.5 },
+            vignette: { enabled: false, shape: 'ellipse', intensity: 0.5, softness: 0.4, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
             chromaticAberration: { enabled: false, intensity: 0.01 },
             dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
             lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
@@ -327,6 +327,7 @@ const corporateCleanConfig: HeroViewConfig = {
             left: 0.05, right: 0.55, top: 0.1, bottom: 0.9,
             radiusTopLeft: 0.02, radiusTopRight: 0.02,
             radiusBottomLeft: 0.02, radiusBottomRight: 0.02,
+            rotation: 0, perspectiveX: 0, perspectiveY: 0,
             cutout: true,
           },
           invert: false,

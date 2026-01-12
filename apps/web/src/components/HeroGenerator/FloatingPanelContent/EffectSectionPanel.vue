@@ -8,12 +8,16 @@ import { computed } from 'vue'
 import SchemaFields from '../../SchemaFields.vue'
 import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
 import {
-  VignetteEffectSchema,
+  VignetteBaseSchema,
+  VignetteShapeSchemas,
   ChromaticAberrationEffectSchema,
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
   createDefaultEffectConfig,
+  migrateVignetteConfig,
+  type VignetteShape,
+  type VignetteConfig,
 } from '../../../modules/HeroScene'
 import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
 import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
@@ -41,6 +45,48 @@ const emit = defineEmits<{
   (e: 'update:lineHalftoneConfig', value: Record<string, unknown>): void
   (e: 'update:blurConfig', value: Record<string, unknown>): void
 }>()
+
+// Migrate legacy config to new format
+const migratedVignetteConfig = computed<VignetteConfig>(() =>
+  migrateVignetteConfig(props.vignetteConfig as unknown as VignetteConfig)
+)
+
+// Get shape-specific schema based on current vignette shape
+const vignetteShapeSchema = computed(() => {
+  const shape = migratedVignetteConfig.value.shape as VignetteShape
+  return VignetteShapeSchemas[shape] ?? VignetteShapeSchemas.ellipse
+})
+
+// Extract shape-specific params for SchemaFields
+const vignetteShapeParams = computed(() => {
+  const { enabled, shape, intensity, softness, color, ...shapeParams } = migratedVignetteConfig.value
+  return shapeParams
+})
+
+// Handle vignette base params update
+const handleVignetteBaseUpdate = (update: Record<string, unknown>) => {
+  emit('update:vignetteConfig', { ...migratedVignetteConfig.value, ...update })
+}
+
+// Handle vignette shape-specific params update
+const handleVignetteShapeUpdate = (update: Record<string, unknown>) => {
+  emit('update:vignetteConfig', { ...migratedVignetteConfig.value, ...update })
+}
+
+// Color handling utilities
+const vignetteColorHex = computed(() => {
+  const [r, g, b] = migratedVignetteConfig.value.color
+  return `#${Math.round(r * 255).toString(16).padStart(2, '0')}${Math.round(g * 255).toString(16).padStart(2, '0')}${Math.round(b * 255).toString(16).padStart(2, '0')}`
+})
+
+const handleColorChange = (event: Event) => {
+  const hex = (event.target as HTMLInputElement).value
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+  const a = migratedVignetteConfig.value.color[3]
+  emit('update:vignetteConfig', { ...migratedVignetteConfig.value, color: [r, g, b, a] })
+}
 
 /**
  * Create a config with specific effect enabled
@@ -82,7 +128,7 @@ const createEffectPreviewConfig = (
       if (layer.type === 'base') {
         return {
           ...layer,
-          processors: layer.processors.map(p => {
+          processors: (layer.processors ?? []).map(p => {
             if (p.type === 'effect') {
               return { ...p, enabled: true, config: effects }
             }
@@ -97,7 +143,7 @@ const createEffectPreviewConfig = (
 
 // Current effect config for preview
 const currentEffectConfig = computed((): LayerEffectConfig => ({
-  vignette: props.vignetteConfig as LayerEffectConfig['vignette'],
+  vignette: migratedVignetteConfig.value,
   chromaticAberration: props.chromaticConfig as LayerEffectConfig['chromaticAberration'],
   dotHalftone: props.dotHalftoneConfig as LayerEffectConfig['dotHalftone'],
   lineHalftone: props.lineHalftoneConfig as LayerEffectConfig['lineHalftone'],
@@ -123,12 +169,29 @@ const previewConfigs = computed(() => {
   <div class="filter-section">
     <!-- Effect params (shown when effect is active) -->
     <div v-if="selectedFilterType === 'vignette'" class="filter-params">
+      <!-- Base vignette params (shape, intensity, softness) -->
       <SchemaFields
-        :schema="VignetteEffectSchema"
-        :model-value="vignetteConfig"
+        :schema="VignetteBaseSchema"
+        :model-value="vignetteConfig as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:vignetteConfig', $event)"
+        @update:model-value="handleVignetteBaseUpdate"
       />
+      <!-- Shape-specific params -->
+      <SchemaFields
+        :schema="vignetteShapeSchema"
+        :model-value="vignetteShapeParams"
+        @update:model-value="handleVignetteShapeUpdate"
+      />
+      <!-- Color picker -->
+      <div class="color-picker-group">
+        <label class="color-picker-label">Color</label>
+        <input
+          type="color"
+          class="color-picker-input"
+          :value="vignetteColorHex"
+          @input="handleColorChange"
+        />
+      </div>
     </div>
     <div v-else-if="selectedFilterType === 'chromaticAberration'" class="filter-params">
       <SchemaFields
@@ -291,6 +354,9 @@ const previewConfigs = computed(() => {
 }
 
 .filter-params {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 0.75rem;
   background: oklch(0.94 0.01 260);
   border-radius: 0.5rem;
@@ -305,5 +371,34 @@ const previewConfigs = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.color-picker-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-picker-label {
+  font-size: 0.75rem;
+  color: oklch(0.40 0.02 260);
+  min-width: 4rem;
+}
+
+:global(.dark) .color-picker-label {
+  color: oklch(0.70 0.02 260);
+}
+
+.color-picker-input {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+:global(.dark) .color-picker-input {
+  border-color: oklch(0.30 0.02 260);
 }
 </style>

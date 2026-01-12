@@ -293,6 +293,22 @@ export {
   type LayerEffectSchemaMap,
   createDefaultEffectConfig,
   createDefaultBlurConfig,
+  // Vignette shape schemas and types
+  VignetteBaseSchema,
+  VignetteShapeSchemas,
+  EllipseVignetteSchema,
+  CircleVignetteSchema,
+  RectVignetteSchema,
+  LinearVignetteSchema,
+  VignetteShapeOptions,
+  createDefaultVignetteShapeConfig,
+  migrateVignetteConfig,
+  type VignetteShape,
+  type VignetteConfig,
+  type EllipseVignetteConfig,
+  type CircleVignetteConfig,
+  type RectVignetteConfig,
+  type LinearVignetteConfig,
   // Legacy aliases (deprecated)
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
@@ -311,6 +327,19 @@ export {
   createDefaultLineHalftoneConfig,
   createDefaultFilterConfig,
 } from './EffectSchema'
+
+// ============================================================
+// Vignette Shape Params Types (additional exports from VignetteSchema)
+// ============================================================
+
+export {
+  type EllipseVignetteParams,
+  type CircleVignetteParams,
+  type RectVignetteParams,
+  type LinearVignetteParams,
+  createDefaultVignetteConfig as createDefaultShapeVignetteConfig,
+  createVignetteConfigForShape,
+} from './VignetteSchema'
 
 // ============================================================
 // Modifier Types (new naming)
@@ -345,6 +374,8 @@ export {
   // Types
   type Layer,
   type Group,
+  type MaskNode,
+  type MaskShape,
   type SceneNode,
   type LayerType,
   type LayerVariant,
@@ -364,9 +395,11 @@ export {
   createModel3DLayer,
   createImageLayer as createSceneImageLayer,
   createGroup,
+  createMaskNode,
   // Type guards
   isLayer,
   isGroup,
+  isMaskNode,
   isBaseLayer,
   isSurfaceLayer,
   isTextLayer,
@@ -388,6 +421,24 @@ export {
   type SceneLayerId,
   getSceneLayerId,
 } from './LayerNode'
+
+// ============================================================
+// Move Rules (for Drag & Drop)
+// ============================================================
+
+export {
+  type MoveValidationResult,
+  canMoveBaseLayer,
+  canDropBeforeBaseLayer,
+  canPlaceMaskInBaseLayer,
+  canDropIntoNonGroup,
+  validateMove,
+  getMaskedNodes,
+  findApplicableMask,
+  isNodeMasked,
+  ensureBaseLayerFirst,
+  isValidLayerStructure,
+} from './MoveRules'
 
 // ============================================================
 // HTML Layer Types
@@ -672,18 +723,22 @@ export type {
   PerlinMaskShapeConfig as HeroPerlinMaskShapeConfig,
   MaskShapeConfig,
   MaskShapeConfig as HeroMaskShapeConfig,
-  // Processor config types (for JSON serialization)
-  ProcessorConfig,
-  EffectProcessorConfig,
-  MaskProcessorConfig,
+  // Filter config types (for JSON serialization)
+  FilterConfig,
+  EffectFilterConfig,
   // LayerNodeConfig types (for JSON serialization)
   LayerNodeConfig,
+  MaskNodeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   TextLayerNodeConfig,
   Model3DLayerNodeConfig,
   ImageLayerNodeConfig,
   GroupLayerNodeConfig,
+  // Deprecated processor config types
+  ProcessorConfig,
+  EffectProcessorConfig,
+  MaskProcessorConfig,
   // Foreground
   GridPosition,
   ForegroundElementType,
@@ -700,8 +755,13 @@ export type {
 export {
   createDefaultColorsConfig,
   createDefaultForegroundConfig,
+  createDefaultEffectFilterConfig,
   createDefaultEffectProcessorConfig,
   createDefaultHeroViewConfig,
+  // Migration helpers
+  getLayerFilters,
+  getLayerMaskProcessor,
+  hasLayerMaskProcessor,
 } from './HeroViewConfig'
 
 // ============================================================

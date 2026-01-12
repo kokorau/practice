@@ -190,4 +190,99 @@ defineExpose({
   </div>
 </template>
 
-<!-- Styles are defined in HeroViewGeneratorView.css -->
+<style scoped>
+/* Generator Preview */
+.hero-preview-container {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.hero-preview-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.hero-preview-frame {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid oklch(0.85 0.01 260);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+:global(.dark) .hero-preview-frame {
+  border-color: oklch(0.25 0.02 260);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* context-canvasのbackground-colorを上書きしてテクスチャを見せる */
+.hero-preview-frame.context-canvas {
+  background-color: transparent;
+}
+
+/* Layer System */
+.layer-background,
+.layer-midground,
+.layer-foreground {
+  position: absolute;
+  inset: 0;
+}
+
+.layer-background {
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.layer-midground {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.layer-foreground {
+  z-index: 2;
+  display: flex;
+  padding: 80px;
+}
+
+/* Foreground 9-Grid Layout */
+.foreground-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  grid-template-areas:
+    "top-left top-center top-right"
+    "middle-left middle-center middle-right"
+    "bottom-left bottom-center bottom-right";
+}
+
+.grid-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: visible;
+}
+
+/* Foreground text elements - no wrap, overflow allowed */
+.grid-cell :deep(.scp-title),
+.grid-cell :deep(.scp-body) {
+  white-space: nowrap;
+}
+
+/* Position classes - grid area assignment */
+.position-top-left { grid-area: top-left; align-items: flex-start; justify-content: flex-start; }
+.position-top-center { grid-area: top-center; align-items: center; justify-content: flex-start; text-align: center; }
+.position-top-right { grid-area: top-right; align-items: flex-end; justify-content: flex-start; text-align: right; }
+
+.position-middle-left { grid-area: middle-left; align-items: flex-start; justify-content: center; }
+.position-middle-center { grid-area: middle-center; align-items: center; justify-content: center; text-align: center; }
+.position-middle-right { grid-area: middle-right; align-items: flex-end; justify-content: center; text-align: right; }
+
+.position-bottom-left { grid-area: bottom-left; align-items: flex-start; justify-content: flex-end; }
+.position-bottom-center { grid-area: bottom-center; align-items: center; justify-content: flex-end; text-align: center; }
+.position-bottom-right { grid-area: bottom-right; align-items: flex-end; justify-content: flex-end; text-align: right; }
+</style>

@@ -15,7 +15,7 @@
         "name": "Background",
         "visible": true,
         "surface": { "type": "stripe", "width1": 32, "width2": 16, "angle": -15 },
-        "processors": [
+        "filters": [
           {
             "type": "effect",
             "enabled": true,
@@ -34,15 +34,32 @@
         "name": "Main Group",
         "visible": true,
         "expanded": true,
-        "processors": [],
         "children": [
+          {
+            "type": "mask",
+            "id": "mask-1",
+            "name": "Mask",
+            "visible": true,
+            "shape": {
+              "type": "blob",
+              "centerX": 0.5,
+              "centerY": 0.5,
+              "baseRadius": 0.4,
+              "amplitude": 0.08,
+              "octaves": 2,
+              "seed": 1,
+              "cutout": false
+            },
+            "invert": false,
+            "feather": 0
+          },
           {
             "type": "surface",
             "id": "surface-1",
             "name": "Surface",
             "visible": true,
             "surface": { "type": "polkaDot", "dotRadius": 4, "spacing": 16, "rowOffset": 0.5 },
-            "processors": [
+            "filters": [
               {
                 "type": "effect",
                 "enabled": true,
@@ -52,22 +69,6 @@
                   "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
                   "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
                 }
-              },
-              {
-                "type": "mask",
-                "enabled": true,
-                "shape": {
-                  "type": "blob",
-                  "centerX": 0.5,
-                  "centerY": 0.5,
-                  "baseRadius": 0.4,
-                  "amplitude": 0.08,
-                  "octaves": 2,
-                  "seed": 1,
-                  "cutout": false
-                },
-                "invert": false,
-                "feather": 0
               }
             ]
           }

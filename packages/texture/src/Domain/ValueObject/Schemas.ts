@@ -41,6 +41,9 @@ export const RectMaskShapeSchema = defineSchema({
   radiusTopRight: number({ label: 'TR Radius', min: 0, max: 0.5, step: 0.01, default: 0 }),
   radiusBottomLeft: number({ label: 'BL Radius', min: 0, max: 0.5, step: 0.01, default: 0 }),
   radiusBottomRight: number({ label: 'BR Radius', min: 0, max: 0.5, step: 0.01, default: 0 }),
+  rotation: number({ label: 'Rotation', min: 0, max: 360, step: 1, default: 0 }),
+  perspectiveX: number({ label: 'Perspective X', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
+  perspectiveY: number({ label: 'Perspective Y', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
   cutout: boolean({ label: 'Cutout', default: true }),
 })
 
