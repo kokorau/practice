@@ -9,7 +9,7 @@ import 'prismjs/components/prism-json'
 import 'prismjs/components/prism-css'
 import 'prismjs/components/prism-markup'
 import type { Asset } from '../../modules/Asset'
-import { $Asset } from '../../modules/Asset'
+import { $Asset, FontLoaderService } from '../../modules/Asset'
 
 const props = defineProps<{
   asset: Asset | null
@@ -20,8 +20,8 @@ const textContent = ref<string | null>(null)
 const fontFamily = ref<string | null>(null)
 const isLoading = ref(false)
 
-/** フォントカウンター（一意なフォント名生成用） */
-let fontCounter = 0
+/** Font loader service instance (scoped to this component) */
+const fontLoader = new FontLoaderService()
 
 /** MIMEタイプからプレビュータイプを判定 */
 type PreviewType = 'image' | 'markdown' | 'code' | 'text' | 'font' | 'video' | 'audio' | 'none'
@@ -109,15 +109,6 @@ const revokeUrl = () => {
   previewUrl.value = null
 }
 
-/** フォントを動的に読み込む */
-const loadFont = async (url: string, name: string): Promise<string> => {
-  const familyName = `preview-font-${++fontCounter}-${name.replace(/[^a-zA-Z0-9]/g, '-')}`
-  const fontFace = new FontFace(familyName, `url(${url})`)
-  await fontFace.load()
-  document.fonts.add(fontFace)
-  return familyName
-}
-
 /** フォントサンプルテキスト */
 const fontSamples = [
   { label: 'English', text: 'The quick brown fox jumps over the lazy dog.' },
@@ -145,7 +136,7 @@ watch(
       } else if (type === 'font') {
         const url = await $Asset.toObjectUrl(asset)
         previewUrl.value = url
-        fontFamily.value = await loadFont(url, asset.name)
+        fontFamily.value = await fontLoader.loadFont(url, asset.name)
       } else if (type === 'markdown' || type === 'code' || type === 'text') {
         const blob = await $Asset.toBlob(asset)
         textContent.value = await blob.text()
@@ -159,6 +150,7 @@ watch(
 
 onUnmounted(() => {
   revokeUrl()
+  fontLoader.unloadAll()
 })
 </script>
 
