@@ -732,7 +732,7 @@ export function createBoxGradientMaskSpec(
   return {
     shader: boxGradientMaskShader,
     uniforms: data.buffer,
-    bufferSize: 64,
+    bufferSize: 80, // 18 floats = 72 bytes, aligned to 16 = 80
     blend: maskBlendState,
   }
 }
