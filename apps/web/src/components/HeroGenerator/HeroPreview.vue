@@ -10,8 +10,7 @@ import {
 import { ensureFontLoaded } from '@practice/font'
 import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '../../modules/HeroScene'
 import { useResponsiveScale } from '../../composables/useResponsiveScale'
-
-const BASE_FONT_SIZE = 16 // px per rem for consistent sizing
+import { PREVIEW_CONTAINER_PADDING, BASE_FONT_SIZE_PX } from '../../constants/preview'
 
 /**
  * Element bounds in canvas coordinate system
@@ -44,7 +43,7 @@ const descriptionRef = ref<HTMLElement | null>(null)
 const scale = useResponsiveScale(containerRef, {
   originalWidth: HERO_CANVAS_WIDTH,
   originalHeight: HERO_CANVAS_HEIGHT,
-  padding: 32, // 16px padding on each side
+  padding: PREVIEW_CONTAINER_PADDING,
 })
 
 const positionedGroups = computed(() => compileForegroundLayout(props.foregroundConfig))
@@ -60,7 +59,7 @@ const getElementStyle = (el: PositionedElement): Record<string, string> => {
   }
   if (el.fontSize !== undefined) {
     // Convert rem to px for consistent rendering at base size
-    style.fontSize = `${el.fontSize * BASE_FONT_SIZE}px`
+    style.fontSize = `${el.fontSize * BASE_FONT_SIZE_PX}px`
   }
   if (el.fontWeight !== undefined) {
     style.fontWeight = String(el.fontWeight)
