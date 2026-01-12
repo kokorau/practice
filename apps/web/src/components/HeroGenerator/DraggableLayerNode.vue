@@ -43,6 +43,8 @@ const emit = defineEmits<{
   'drag-over': [nodeId: string, position: DropPosition, event: DragEvent]
   'drag-leave': [nodeId: string]
   drop: [sourceId: string, targetId: string, position: DropPosition]
+  // Processor drop zone event
+  'drop-to-processor': [sourceId: string, targetLayerId: string]
   // Context menu event (with target type)
   contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType]
 }>()
@@ -247,6 +249,31 @@ const handleDrop = (e: DragEvent) => {
 
   emit('drop', props.draggedId, props.dropTarget.nodeId, props.dropTarget.position)
 }
+
+// Processor Drop Zone State & Handlers
+const isProcessorDropZoneActive = ref(false)
+
+const handleProcessorDropZoneDragOver = (e: DragEvent) => {
+  if (!props.draggedId || props.draggedId === props.node.id) {
+    return
+  }
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'move'
+  isProcessorDropZoneActive.value = true
+}
+
+const handleProcessorDropZoneDragLeave = () => {
+  isProcessorDropZoneActive.value = false
+}
+
+const handleProcessorDropZoneDrop = (e: DragEvent) => {
+  e.preventDefault()
+  e.stopPropagation()
+  if (!props.draggedId) return
+
+  emit('drop-to-processor', props.draggedId, props.node.id)
+  isProcessorDropZoneActive.value = false
+}
 </script>
 
 <template>
@@ -323,6 +350,20 @@ const handleDrop = (e: DragEvent) => {
       <span v-else class="visibility-spacer" />
     </div>
 
+    <!-- Processor Drop Zone (visible when dragging, between surface and processor) -->
+    <div
+      v-if="hasModifiers && draggedId && draggedId !== node.id"
+      class="processor-drop-zone"
+      :class="{ active: isProcessorDropZoneActive }"
+      :style="{ paddingLeft: `${depth * 0.75 + 1.5}rem` }"
+      @dragover="handleProcessorDropZoneDragOver"
+      @dragleave="handleProcessorDropZoneDragLeave"
+      @drop="handleProcessorDropZoneDrop"
+    >
+      <span class="material-icons drop-zone-icon">add</span>
+      <span class="drop-zone-text">Drop here to add to processor</span>
+    </div>
+
     <!-- Processor group (contains Effect/Mask as children) -->
     <template v-if="modifiers.length > 0">
       <!-- Processor parent node with L-shape connector -->
@@ -396,6 +437,7 @@ const handleDrop = (e: DragEvent) => {
         @drag-over="(id: string, pos: DropPosition, e: DragEvent) => emit('drag-over', id, pos, e)"
         @drag-leave="(id: string) => emit('drag-leave', id)"
         @drop="(src: string, tgt: string, pos: DropPosition) => emit('drop', src, tgt, pos)"
+        @drop-to-processor="(src: string, tgt: string) => emit('drop-to-processor', src, tgt)"
       />
     </template>
   </div>
@@ -724,5 +766,50 @@ const handleDrop = (e: DragEvent) => {
 
 .processor-child-node:hover .processor-arrow {
   opacity: 1;
+}
+
+/* ============================================================
+   Processor Drop Zone
+   ============================================================ */
+
+.processor-drop-zone {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  margin: 0.125rem 0;
+  border: 2px dashed oklch(0.65 0.10 250 / 0.5);
+  border-radius: 0.25rem;
+  background: oklch(0.95 0.02 250 / 0.3);
+  color: oklch(0.50 0.10 250);
+  font-size: 0.75rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+:global(.dark) .processor-drop-zone {
+  border-color: oklch(0.50 0.10 250 / 0.5);
+  background: oklch(0.25 0.02 250 / 0.3);
+  color: oklch(0.60 0.10 250);
+}
+
+.processor-drop-zone.active {
+  border-color: oklch(0.55 0.20 250);
+  background: oklch(0.90 0.05 250 / 0.5);
+  color: oklch(0.45 0.15 250);
+}
+
+:global(.dark) .processor-drop-zone.active {
+  border-color: oklch(0.55 0.20 250);
+  background: oklch(0.30 0.05 250 / 0.5);
+  color: oklch(0.65 0.15 250);
+}
+
+.drop-zone-icon {
+  font-size: 1rem;
+}
+
+.drop-zone-text {
+  font-weight: 500;
 }
 </style>

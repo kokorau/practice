@@ -104,6 +104,7 @@ export interface UseLayerOperationsReturn {
   handleToggleExpand: (layerId: string) => void
   handleToggleVisibility: (layerId: string) => void
   handleMoveLayer: (sourceId: string, targetId: string, position: DropPosition) => void
+  handleDropToProcessor: (sourceId: string, targetLayerId: string) => void
 
   // Layer CRUD
   handleAddLayer: (type: UILayerType) => void
@@ -211,6 +212,12 @@ export function useLayerOperations(
 
   const handleMoveLayer = (sourceId: string, targetId: string, position: DropPosition) => {
     layers.value = moveNode(layers.value, sourceId, targetId, position)
+  }
+
+  const handleDropToProcessor = (sourceId: string, targetLayerId: string) => {
+    // Move the source node to be a sibling of the target layer (after it)
+    // This allows dropping elements between a layer and its processor
+    layers.value = moveNode(layers.value, sourceId, targetLayerId, 'after')
   }
 
   // ============================================================
@@ -371,6 +378,7 @@ export function useLayerOperations(
     handleToggleExpand,
     handleToggleVisibility,
     handleMoveLayer,
+    handleDropToProcessor,
 
     // Layer CRUD
     handleAddLayer,
