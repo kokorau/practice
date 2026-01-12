@@ -520,13 +520,8 @@ export const flattenNodes = (nodes: SceneNode[]): SceneNode[] => {
 }
 
 // ============================================================
-// Tree Manipulation Functions (for Drag & Drop)
+// Tree Manipulation Functions
 // ============================================================
-
-/**
- * Drop position for move operations
- */
-export type DropPosition = 'before' | 'after' | 'into'
 
 /**
  * Find the parent of a node by ID
@@ -545,111 +540,6 @@ export const findParentNode = (
     }
   }
   return undefined
-}
-
-/**
- * Check if sourceId is an ancestor of targetId (to prevent circular moves)
- */
-export const isAncestorOf = (
-  nodes: SceneNode[],
-  sourceId: string,
-  targetId: string
-): boolean => {
-  const sourceNode = findNode(nodes, sourceId)
-  if (!sourceNode || !isGroup(sourceNode)) return false
-
-  const checkDescendants = (children: SceneNode[]): boolean => {
-    for (const child of children) {
-      if (child.id === targetId) return true
-      if (isGroup(child) && checkDescendants(child.children)) return true
-    }
-    return false
-  }
-
-  return checkDescendants(sourceNode.children)
-}
-
-/**
- * Insert a node at a specific position (before/after target, or into group)
- * Returns new tree (immutable)
- */
-export const insertNode = (
-  nodes: SceneNode[],
-  nodeToInsert: SceneNode,
-  targetId: string,
-  position: DropPosition
-): SceneNode[] => {
-  if (position === 'into') {
-    return nodes.map(node => {
-      if (node.id === targetId && isGroup(node)) {
-        return {
-          ...node,
-          children: [nodeToInsert, ...node.children],
-          expanded: true,
-        }
-      }
-      if (isGroup(node)) {
-        return {
-          ...node,
-          children: insertNode(node.children, nodeToInsert, targetId, position),
-        }
-      }
-      return node
-    })
-  }
-
-  const result: SceneNode[] = []
-  for (const node of nodes) {
-    if (node.id === targetId) {
-      if (position === 'before') {
-        result.push(nodeToInsert, node)
-      } else {
-        result.push(node, nodeToInsert)
-      }
-    } else if (isGroup(node)) {
-      result.push({
-        ...node,
-        children: insertNode(node.children, nodeToInsert, targetId, position),
-      })
-    } else {
-      result.push(node)
-    }
-  }
-
-  if (!nodes.some(n => n.id === targetId)) {
-    return result
-  }
-
-  return result
-}
-
-/**
- * Move a node from its current position to a new position
- * Combines remove + insert in an immutable way
- */
-export const moveNode = (
-  nodes: SceneNode[],
-  sourceId: string,
-  targetId: string,
-  position: DropPosition
-): SceneNode[] => {
-  if (sourceId === targetId) return nodes
-  if (isAncestorOf(nodes, sourceId, targetId)) return nodes
-
-  const sourceNode = findNode(nodes, sourceId)
-  if (!sourceNode) return nodes
-
-  // Prevent moving base layer
-  if (isLayer(sourceNode) && sourceNode.variant === 'base') return nodes
-
-  // 'into' position only valid for group targets
-  if (position === 'into') {
-    const targetNode = findNode(nodes, targetId)
-    if (!targetNode || !isGroup(targetNode)) return nodes
-  }
-
-  const withoutSource = removeNode(nodes, sourceId)
-  return insertNode(withoutSource, sourceNode, targetId, position)
 }
 
 /**

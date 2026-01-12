@@ -2,18 +2,15 @@
 /**
  * DraggableLayerNode
  *
- * Recursive tree node component with drag & drop support.
+ * Recursive tree node component for layer hierarchy.
  * Features:
- * - Native HTML5 drag and drop
  * - Visual depth indication via indentation
- * - Three drop zones: before, into (groups only), after
  * - Expand/collapse for groups
  */
 
 import { computed, ref } from 'vue'
-import type { SceneNode, Group, LayerVariant, DropPosition } from '../../modules/HeroScene'
+import type { SceneNode, Group, LayerVariant } from '../../modules/HeroScene'
 import { isGroup, isLayer, isMaskNode, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
-import type { DropTarget } from './useLayerDragDrop'
 
 // ============================================================
 // Props & Emits
@@ -24,8 +21,6 @@ const props = defineProps<{
   depth: number
   selectedId: string | null
   selectedProcessorType: 'effect' | 'mask' | 'processor' | null
-  draggedId: string | null
-  dropTarget: DropTarget | null
 }>()
 
 /** Context menu target type */
@@ -37,12 +32,6 @@ const emit = defineEmits<{
   'toggle-visibility': [nodeId: string]
   'select-processor': [nodeId: string, processorType: 'effect' | 'mask' | 'processor']
   'remove-layer': [nodeId: string]
-  // Drag & drop events
-  'drag-start': [nodeId: string]
-  'drag-end': []
-  'drag-over': [nodeId: string, position: DropPosition, event: DragEvent]
-  'drag-leave': [nodeId: string]
-  drop: [sourceId: string, targetId: string, position: DropPosition]
   // Context menu event (with target type)
   contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType]
 }>()
@@ -58,9 +47,7 @@ const isExpanded = computed(() => props.node.expanded)
 
 // Check if this node has expandable content (only children, modifiers are always visible)
 const hasExpandableContent = computed(() => hasChildren.value)
-const isDragging = computed(() => props.draggedId === props.node.id)
 const isBaseLayer = computed(() => isLayer(props.node) && props.node.variant === 'base')
-const isDraggable = computed(() => !isBaseLayer.value)
 const hasModifiers = computed(() => modifiers.value.length > 0)
 
 // Check if this node's processor is selected
@@ -70,10 +57,6 @@ const isProcessorSelected = computed(() =>
 
 // Processor expand state (local, not persisted)
 const isProcessorExpanded = ref(true)
-
-// Check if this node is the current drop target
-const isDropTarget = computed(() => props.dropTarget?.nodeId === props.node.id)
-const dropPosition = computed(() => props.dropTarget?.nodeId === props.node.id ? props.dropTarget.position : null)
 
 // Indent style based on depth
 const indentStyle = computed(() => ({
@@ -194,93 +177,17 @@ const handleRemove = (e: Event) => {
 const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
   emit('select-processor', props.node.id, type)
 }
-
-// Drag & Drop Handlers
-const handleDragStart = (e: DragEvent) => {
-  if (!isDraggable.value) {
-    e.preventDefault()
-    return
-  }
-  e.dataTransfer!.effectAllowed = 'move'
-  e.dataTransfer!.setData('text/plain', props.node.id)
-  emit('drag-start', props.node.id)
-}
-
-const handleDragEnd = () => {
-  emit('drag-end')
-}
-
-const handleDragOver = (e: DragEvent) => {
-  // Don't allow dropping onto self or if not dragging
-  if (!props.draggedId || props.draggedId === props.node.id) {
-    return
-  }
-  e.preventDefault()
-  e.dataTransfer!.dropEffect = 'move'
-
-  // Calculate drop position based on mouse position
-  const target = e.currentTarget as HTMLElement
-  const rect = target.getBoundingClientRect()
-  const y = e.clientY - rect.top
-  const height = rect.height
-
-  const topZone = height * 0.25
-  const bottomZone = height * 0.75
-
-  let position: DropPosition
-  if (y < topZone) {
-    position = 'before'
-  } else if (y > bottomZone) {
-    position = 'after'
-  } else {
-    position = isGroupNode.value ? 'into' : 'after'
-  }
-
-  emit('drag-over', props.node.id, position, e)
-}
-
-const handleDragLeave = (e: DragEvent) => {
-  // Check if we're leaving to a child element
-  const relatedTarget = e.relatedTarget as HTMLElement | null
-  const currentTarget = e.currentTarget as HTMLElement
-  if (relatedTarget && currentTarget.contains(relatedTarget)) {
-    return
-  }
-  emit('drag-leave', props.node.id)
-}
-
-const handleDrop = (e: DragEvent) => {
-  e.preventDefault()
-  if (!props.draggedId || !props.dropTarget) return
-
-  emit('drop', props.draggedId, props.dropTarget.nodeId, props.dropTarget.position)
-}
 </script>
 
 <template>
-  <div
-    class="draggable-layer-node"
-    :class="{
-      'is-dragging': isDragging,
-      'is-drop-target': isDropTarget,
-      'drop-before': dropPosition === 'before',
-      'drop-into': dropPosition === 'into',
-      'drop-after': dropPosition === 'after',
-    }"
-  >
+  <div class="draggable-layer-node">
     <!-- Node Header -->
     <div
       class="node-header"
       :class="{ selected: isSelected }"
       :style="indentStyle"
-      :draggable="isDraggable"
       @click="handleSelect"
       @contextmenu="(e: MouseEvent) => handleContextMenu(e, 'layer')"
-      @dragstart="handleDragStart"
-      @dragend="handleDragEnd"
-      @dragover="handleDragOver"
-      @dragleave="handleDragLeave"
-      @drop="handleDrop"
     >
       <!-- Processor Link: 上向き矢印 (対象レイヤーの先頭) -->
       <svg v-if="hasModifiers" class="processor-link-icon" viewBox="0 0 12 24" fill="none">
@@ -391,19 +298,12 @@ const handleDrop = (e: DragEvent) => {
         :depth="depth + 1"
         :selected-id="selectedId"
         :selected-processor-type="selectedProcessorType"
-        :dragged-id="draggedId"
-        :drop-target="dropTarget"
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
         @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
         @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType) => emit('contextmenu', id, e, targetType)"
-        @drag-start="(id: string) => emit('drag-start', id)"
-        @drag-end="() => emit('drag-end')"
-        @drag-over="(id: string, pos: DropPosition, e: DragEvent) => emit('drag-over', id, pos, e)"
-        @drag-leave="(id: string) => emit('drag-leave', id)"
-        @drop="(src: string, tgt: string, pos: DropPosition) => emit('drop', src, tgt, pos)"
       />
     </template>
   </div>
@@ -414,40 +314,6 @@ const handleDrop = (e: DragEvent) => {
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-/* Dragging state */
-.draggable-layer-node.is-dragging {
-  opacity: 0.5;
-}
-
-/* Drop target indicators */
-.draggable-layer-node.is-drop-target.drop-before::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: oklch(0.55 0.20 250);
-  z-index: 10;
-}
-
-.draggable-layer-node.is-drop-target.drop-after::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: oklch(0.55 0.20 250);
-  z-index: 10;
-}
-
-.draggable-layer-node.is-drop-target.drop-into > .node-header {
-  background: oklch(0.55 0.20 250 / 0.2);
-  outline: 2px solid oklch(0.55 0.20 250);
-  outline-offset: -2px;
 }
 
 /* Node Header */

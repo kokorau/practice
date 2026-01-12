@@ -2,14 +2,12 @@ import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type {
   SceneNode,
   LayerVariant,
-  DropPosition,
   TextAnchor,
 } from '../modules/HeroScene'
 import {
   findNode,
   updateNode,
   removeNode,
-  moveNode,
   wrapNodeInGroup,
   wrapNodeInMaskedGroup,
   createSurfaceLayer,
@@ -103,7 +101,6 @@ export interface UseLayerOperationsReturn {
   // Layer Tree Operations
   handleToggleExpand: (layerId: string) => void
   handleToggleVisibility: (layerId: string) => void
-  handleMoveLayer: (sourceId: string, targetId: string, position: DropPosition) => void
 
   // Layer CRUD
   handleAddLayer: (type: UILayerType) => void
@@ -207,10 +204,6 @@ export function useLayerOperations(
     if (isLayer(layer)) {
       sceneCallbacks.toggleLayerVisibility(getSceneLayerId(layer))
     }
-  }
-
-  const handleMoveLayer = (sourceId: string, targetId: string, position: DropPosition) => {
-    layers.value = moveNode(layers.value, sourceId, targetId, position)
   }
 
   // ============================================================
@@ -370,7 +363,6 @@ export function useLayerOperations(
     // Layer Tree Operations
     handleToggleExpand,
     handleToggleVisibility,
-    handleMoveLayer,
 
     // Layer CRUD
     handleAddLayer,

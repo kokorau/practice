@@ -386,7 +386,6 @@ export {
   type SolidSurface,
   type TextConfig,
   type Model3DConfig,
-  type DropPosition,
   // Factory functions
   createLayer,
   createBaseLayer,
@@ -411,9 +410,6 @@ export {
   removeNode,
   flattenNodes,
   findParentNode,
-  isAncestorOf,
-  insertNode,
-  moveNode,
   wrapNodeInGroup,
   wrapNodeInMaskedGroup,
   // Scene layer ID mapping
@@ -423,16 +419,10 @@ export {
 } from './LayerNode'
 
 // ============================================================
-// Move Rules (for Drag & Drop)
+// Mask Utilities
 // ============================================================
 
 export {
-  type MoveValidationResult,
-  canMoveBaseLayer,
-  canDropBeforeBaseLayer,
-  canPlaceMaskInBaseLayer,
-  canDropIntoNonGroup,
-  validateMove,
   getMaskedNodes,
   findApplicableMask,
   isNodeMasked,

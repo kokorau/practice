@@ -186,7 +186,6 @@ import {
   // Layer UseCases
   addLayer as addLayerUsecase,
   removeLayer as removeLayerUsecase,
-  moveLayer as moveLayerUsecase,
   toggleExpand as toggleExpandUsecase,
   toggleVisibility as toggleVisibilityUsecase,
   updateLayer as updateLayerUsecase,
@@ -498,8 +497,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const layerUsecase = {
     addLayer: (layer: LayerNodeConfig, index?: number) => addLayerUsecase(layer, heroViewRepository, index),
     removeLayer: (layerId: string) => removeLayerUsecase(layerId, heroViewRepository),
-    moveLayer: (sourceId: string, targetId: string, position: 'before' | 'after' | 'into') =>
-      moveLayerUsecase(sourceId, targetId, position, heroViewRepository),
     toggleExpand: (layerId: string) => toggleExpandUsecase(layerId, heroViewRepository),
     toggleVisibility: (layerId: string) => toggleVisibilityUsecase(layerId, heroViewRepository),
     updateLayer: (layerId: string, updates: Partial<LayerNodeConfig>) => updateLayerUsecase(layerId, updates, heroViewRepository),
