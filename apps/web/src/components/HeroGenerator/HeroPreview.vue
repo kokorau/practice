@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
+import { ref, computed, type ComponentPublicInstance } from 'vue'
 import {
   compileForegroundLayout,
   DEFAULT_FOREGROUND_CONFIG,
@@ -9,6 +9,7 @@ import {
 } from '../../composables/SiteBuilder'
 import { ensureFontLoaded } from '@practice/font'
 import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '../../modules/HeroScene'
+import { useResponsiveScale } from '../../composables/useResponsiveScale'
 
 const BASE_FONT_SIZE = 16 // px per rem for consistent sizing
 
@@ -39,29 +40,11 @@ const containerRef = ref<HTMLElement | null>(null)
 const frameRef = ref<HTMLElement | null>(null)
 const titleRef = ref<HTMLElement | null>(null)
 const descriptionRef = ref<HTMLElement | null>(null)
-const scale = ref(1)
 
-// ResizeObserver to track container width and calculate scale
-let resizeObserver: ResizeObserver | null = null
-
-const updateScale = () => {
-  if (!containerRef.value) return
-  const containerWidth = containerRef.value.clientWidth
-  // Calculate scale based on available width (with some padding)
-  const availableWidth = containerWidth - 32 // 16px padding on each side
-  scale.value = Math.min(1, availableWidth / HERO_CANVAS_WIDTH)
-}
-
-onMounted(() => {
-  if (containerRef.value) {
-    resizeObserver = new ResizeObserver(updateScale)
-    resizeObserver.observe(containerRef.value)
-    updateScale()
-  }
-})
-
-onUnmounted(() => {
-  resizeObserver?.disconnect()
+const scale = useResponsiveScale(containerRef, {
+  originalWidth: HERO_CANVAS_WIDTH,
+  originalHeight: HERO_CANVAS_HEIGHT,
+  padding: 32, // 16px padding on each side
 })
 
 const positionedGroups = computed(() => compileForegroundLayout(props.foregroundConfig))
