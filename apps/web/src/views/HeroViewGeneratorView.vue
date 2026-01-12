@@ -349,6 +349,9 @@ const {
   selectedElementPosition,
   selectedElementFont,
   selectedElementFontSize,
+  selectedElementFontWeight,
+  selectedElementLetterSpacing,
+  selectedElementLineHeight,
   selectedElementContent,
   selectedElementColorKey,
   isFontPanelOpen,
@@ -510,6 +513,15 @@ const handleForegroundUpdate = (key: string, value: unknown) => {
       break
     case 'elementFontSize':
       selectedElementFontSize.value = value as number
+      break
+    case 'elementFontWeight':
+      selectedElementFontWeight.value = value as number
+      break
+    case 'elementLetterSpacing':
+      selectedElementLetterSpacing.value = value as number
+      break
+    case 'elementLineHeight':
+      selectedElementLineHeight.value = value as number
       break
   }
 }
@@ -802,6 +814,9 @@ const handleFilterUpdate = (key: string, value: unknown) => {
         elementContent: selectedElementContent,
         elementPosition: selectedElementPosition,
         elementFontSize: selectedElementFontSize,
+        elementFontWeight: selectedElementFontWeight,
+        elementLetterSpacing: selectedElementLetterSpacing,
+        elementLineHeight: selectedElementLineHeight,
         fontPreset: selectedFontPreset,
         fontDisplayName: selectedFontDisplayName,
       }"

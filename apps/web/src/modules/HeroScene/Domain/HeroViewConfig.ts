@@ -363,6 +363,12 @@ export interface ForegroundElementConfig {
   content: string
   fontId?: string
   fontSize?: number
+  /** Font weight (100-900). Default: 400 */
+  fontWeight?: number
+  /** Letter spacing in em units. Default: 0 */
+  letterSpacing?: number
+  /** Line height (unitless multiplier). Default: 1.2 (title), 1.5 (description) */
+  lineHeight?: number
   /** Color key from primitive palette, or 'auto' for automatic contrast-based color */
   colorKey?: HeroPrimitiveKey | 'auto'
 }

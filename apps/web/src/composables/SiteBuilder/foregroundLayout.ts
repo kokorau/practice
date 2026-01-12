@@ -50,6 +50,9 @@ export interface PositionedElement {
   tag: 'h1' | 'p'
   fontId?: string
   fontSize?: number
+  fontWeight?: number
+  letterSpacing?: number
+  lineHeight?: number
   colorKey?: HeroPrimitiveKey | 'auto'
 }
 
@@ -78,6 +81,9 @@ export function compileForegroundLayout(config: ForegroundConfig): PositionedGro
       tag: ELEMENT_TAG[el.type],
       fontId: el.fontId,
       fontSize: el.fontSize,
+      fontWeight: el.fontWeight,
+      letterSpacing: el.letterSpacing,
+      lineHeight: el.lineHeight,
       colorKey: el.colorKey,
     })
     groupMap.set(el.position, existing)

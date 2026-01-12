@@ -47,6 +47,12 @@ export interface UseForegroundElementReturn {
   selectedElementFont: WritableComputedRef<string | undefined>
   /** Font size of selected element (writable) */
   selectedElementFontSize: WritableComputedRef<number>
+  /** Font weight of selected element (writable, 100-900) */
+  selectedElementFontWeight: WritableComputedRef<number>
+  /** Letter spacing of selected element (writable, em units) */
+  selectedElementLetterSpacing: WritableComputedRef<number>
+  /** Line height of selected element (writable, unitless multiplier) */
+  selectedElementLineHeight: WritableComputedRef<number>
   /** Content of selected element (writable) */
   selectedElementContent: WritableComputedRef<string>
   /** Color key of selected element (writable) */
@@ -154,6 +160,27 @@ export function useForegroundElement(
     },
   })
 
+  const selectedElementFontWeight = computed<number>({
+    get: () => selectedForegroundElement.value?.fontWeight ?? 400,
+    set: (fontWeight) => {
+      foregroundUsecase.updateSelectedElement({ fontWeight })
+    },
+  })
+
+  const selectedElementLetterSpacing = computed<number>({
+    get: () => selectedForegroundElement.value?.letterSpacing ?? 0,
+    set: (letterSpacing) => {
+      foregroundUsecase.updateSelectedElement({ letterSpacing })
+    },
+  })
+
+  const selectedElementLineHeight = computed<number>({
+    get: () => selectedForegroundElement.value?.lineHeight ?? (selectedForegroundElement.value?.type === 'title' ? 1.2 : 1.5),
+    set: (lineHeight) => {
+      foregroundUsecase.updateSelectedElement({ lineHeight })
+    },
+  })
+
   const selectedElementContent = computed<string>({
     get: () => selectedForegroundElement.value?.content ?? '',
     set: (content) => {
@@ -212,6 +239,9 @@ export function useForegroundElement(
     selectedElementPosition,
     selectedElementFont,
     selectedElementFontSize,
+    selectedElementFontWeight,
+    selectedElementLetterSpacing,
+    selectedElementLineHeight,
     selectedElementContent,
     selectedElementColorKey,
 
