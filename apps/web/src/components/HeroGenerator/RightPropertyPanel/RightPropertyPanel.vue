@@ -1,13 +1,20 @@
 <script setup lang="ts">
+import type { WritableComputedRef } from 'vue'
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '../../../modules/SemanticColorPalette/Domain'
-import type { SceneNode, GridPosition } from '../../../modules/HeroScene'
+import type { SceneNode, GridPosition, FilterType } from '../../../modules/HeroScene'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import type { BackgroundSpecCreator } from '../MaskPatternThumbnail.vue'
-import type { FilterType } from './EffectSettingsPanel.vue'
 import type { MaskPatternItem } from './MaskSettingsPanel.vue'
+import type {
+  VignetteConfigParams,
+  ChromaticConfigParams,
+  DotHalftoneConfigParams,
+  LineHalftoneConfigParams,
+  BlurConfigParams,
+} from '../../../composables/useFilterEditor'
 import PanelHeader from './PanelHeader.vue'
 import TextElementPanel from './TextElementPanel.vue'
 import LayerSettingsPanel from './LayerSettingsPanel.vue'
@@ -104,14 +111,14 @@ interface MaskProps {
   createBackgroundThumbnailSpec: BackgroundSpecCreator
 }
 
-/** Filter/effect state */
+/** Filter/effect state - WritableComputedRef for direct binding */
 interface FilterProps {
-  selectedType: FilterType
-  vignetteConfig: Record<string, unknown>
-  chromaticConfig: Record<string, unknown>
-  dotHalftoneConfig: Record<string, unknown>
-  lineHalftoneConfig: Record<string, unknown>
-  blurConfig: Record<string, unknown>
+  selectedType: WritableComputedRef<FilterType>
+  vignetteConfig: WritableComputedRef<VignetteConfigParams>
+  chromaticConfig: WritableComputedRef<ChromaticConfigParams>
+  dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
+  lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
+  blurConfig: WritableComputedRef<BlurConfigParams>
 }
 
 // ============================================================
@@ -152,9 +159,6 @@ const emit = defineEmits<{
 
   // Mask updates
   'update:mask': [key: keyof MaskProps | 'uploadImage' | 'clearImage' | 'selectPattern' | 'loadRandom', value: unknown]
-
-  // Filter updates
-  'update:filter': [key: keyof FilterProps, value: unknown]
 }>()
 
 // ============================================================
@@ -311,12 +315,6 @@ const panelTitle = (): string => {
         :dot-halftone-config="filter.dotHalftoneConfig"
         :line-halftone-config="filter.lineHalftoneConfig"
         :blur-config="filter.blurConfig"
-        @update:selected-filter-type="emit('update:filter', 'selectedType', $event)"
-        @update:vignette-config="emit('update:filter', 'vignetteConfig', $event)"
-        @update:chromatic-config="emit('update:filter', 'chromaticConfig', $event)"
-        @update:dot-halftone-config="emit('update:filter', 'dotHalftoneConfig', $event)"
-        @update:line-halftone-config="emit('update:filter', 'lineHalftoneConfig', $event)"
-        @update:blur-config="emit('update:filter', 'blurConfig', $event)"
       />
 
       <!-- Mask Processor Settings -->

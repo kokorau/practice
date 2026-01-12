@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type WritableComputedRef } from 'vue'
 import {
   VignetteBaseSchema,
   VignetteShapeSchemas,
@@ -11,36 +11,33 @@ import {
   createVignetteConfigForShape,
   type VignetteShape,
   type VignetteConfig,
+  type FilterType,
 } from '../../../modules/HeroScene'
+import type {
+  VignetteConfigParams,
+  ChromaticConfigParams,
+  DotHalftoneConfigParams,
+  LineHalftoneConfigParams,
+  BlurConfigParams,
+} from '../../../composables/useFilterEditor'
 import SchemaFields from '../../SchemaFields.vue'
 
-export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'
-
 const props = defineProps<{
-  selectedFilterType: FilterType
-  vignetteConfig: Record<string, unknown>
-  chromaticConfig: Record<string, unknown>
-  dotHalftoneConfig: Record<string, unknown>
-  lineHalftoneConfig: Record<string, unknown>
-  blurConfig: Record<string, unknown>
-}>()
-
-const emit = defineEmits<{
-  'update:selectedFilterType': [value: FilterType]
-  'update:vignetteConfig': [value: Record<string, unknown>]
-  'update:chromaticConfig': [value: Record<string, unknown>]
-  'update:dotHalftoneConfig': [value: Record<string, unknown>]
-  'update:lineHalftoneConfig': [value: Record<string, unknown>]
-  'update:blurConfig': [value: Record<string, unknown>]
+  selectedFilterType: WritableComputedRef<FilterType>
+  vignetteConfig: WritableComputedRef<VignetteConfigParams>
+  chromaticConfig: WritableComputedRef<ChromaticConfigParams>
+  dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
+  lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
+  blurConfig: WritableComputedRef<BlurConfigParams>
 }>()
 
 // Migrate legacy config to new format
 const migratedVignetteConfig = computed<VignetteConfig>(() =>
-  migrateVignetteConfig(props.vignetteConfig as unknown as VignetteConfig)
+  migrateVignetteConfig(props.vignetteConfig.value as unknown as VignetteConfig)
 )
 
 const handleFilterTypeChange = (type: FilterType) => {
-  emit('update:selectedFilterType', type)
+  props.selectedFilterType.value = type
 }
 
 // Get shape-specific schema based on current vignette shape
@@ -64,15 +61,15 @@ const handleVignetteBaseUpdate = (update: Record<string, unknown>) => {
       update.shape as VignetteShape,
       migratedVignetteConfig.value
     )
-    emit('update:vignetteConfig', { ...newConfig, ...update })
+    props.vignetteConfig.value = { ...newConfig, ...update } as unknown as VignetteConfigParams
   } else {
-    emit('update:vignetteConfig', { ...migratedVignetteConfig.value, ...update })
+    props.vignetteConfig.value = { ...migratedVignetteConfig.value, ...update } as unknown as VignetteConfigParams
   }
 }
 
 // Handle vignette shape-specific params update
 const handleVignetteShapeUpdate = (update: Record<string, unknown>) => {
-  emit('update:vignetteConfig', { ...migratedVignetteConfig.value, ...update })
+  props.vignetteConfig.value = { ...migratedVignetteConfig.value, ...update } as unknown as VignetteConfigParams
 }
 
 // Color handling utilities
@@ -87,18 +84,18 @@ const handleColorChange = (event: Event) => {
   const g = parseInt(hex.slice(3, 5), 16) / 255
   const b = parseInt(hex.slice(5, 7), 16) / 255
   const a = migratedVignetteConfig.value.color[3]
-  emit('update:vignetteConfig', { ...migratedVignetteConfig.value, color: [r, g, b, a] })
+  props.vignetteConfig.value = { ...migratedVignetteConfig.value, color: [r, g, b, a] } as unknown as VignetteConfigParams
 }
 </script>
 
 <template>
   <div class="processor-settings">
     <!-- Effect params (shown when effect is active) -->
-    <div v-if="selectedFilterType === 'vignette'" class="filter-params">
+    <div v-if="selectedFilterType.value === 'vignette'" class="filter-params">
       <!-- Base vignette params (shape, intensity, softness) -->
       <SchemaFields
         :schema="VignetteBaseSchema"
-        :model-value="vignetteConfig as Record<string, unknown>"
+        :model-value="vignetteConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
         @update:model-value="handleVignetteBaseUpdate"
       />
@@ -119,91 +116,91 @@ const handleColorChange = (event: Event) => {
         />
       </div>
     </div>
-    <div v-else-if="selectedFilterType === 'chromaticAberration'" class="filter-params">
+    <div v-else-if="selectedFilterType.value === 'chromaticAberration'" class="filter-params">
       <SchemaFields
         :schema="ChromaticAberrationEffectSchema"
-        :model-value="chromaticConfig"
+        :model-value="chromaticConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:chromaticConfig', $event)"
+        @update:model-value="(v) => chromaticConfig.value = v as ChromaticConfigParams"
       />
     </div>
-    <div v-else-if="selectedFilterType === 'dotHalftone'" class="filter-params">
+    <div v-else-if="selectedFilterType.value === 'dotHalftone'" class="filter-params">
       <SchemaFields
         :schema="DotHalftoneEffectSchema"
-        :model-value="dotHalftoneConfig"
+        :model-value="dotHalftoneConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:dotHalftoneConfig', $event)"
+        @update:model-value="(v) => dotHalftoneConfig.value = v as DotHalftoneConfigParams"
       />
     </div>
-    <div v-else-if="selectedFilterType === 'lineHalftone'" class="filter-params">
+    <div v-else-if="selectedFilterType.value === 'lineHalftone'" class="filter-params">
       <SchemaFields
         :schema="LineHalftoneEffectSchema"
-        :model-value="lineHalftoneConfig"
+        :model-value="lineHalftoneConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:lineHalftoneConfig', $event)"
+        @update:model-value="(v) => lineHalftoneConfig.value = v as LineHalftoneConfigParams"
       />
     </div>
-    <div v-else-if="selectedFilterType === 'blur'" class="filter-params">
+    <div v-else-if="selectedFilterType.value === 'blur'" class="filter-params">
       <SchemaFields
         :schema="BlurEffectSchema"
-        :model-value="blurConfig"
+        :model-value="blurConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:blurConfig', $event)"
+        @update:model-value="(v) => blurConfig.value = v as BlurConfigParams"
       />
     </div>
 
     <!-- Filter type selection -->
     <div class="filter-options">
-      <label class="filter-option" :class="{ active: selectedFilterType === 'void' }">
+      <label class="filter-option" :class="{ active: selectedFilterType.value === 'void' }">
         <input
           type="radio"
           name="filter-type"
-          :checked="selectedFilterType === 'void'"
+          :checked="selectedFilterType.value === 'void'"
           @change="handleFilterTypeChange('void')"
         />
         <span class="filter-name">None</span>
       </label>
-      <label class="filter-option" :class="{ active: selectedFilterType === 'vignette' }">
+      <label class="filter-option" :class="{ active: selectedFilterType.value === 'vignette' }">
         <input
           type="radio"
           name="filter-type"
-          :checked="selectedFilterType === 'vignette'"
+          :checked="selectedFilterType.value === 'vignette'"
           @change="handleFilterTypeChange('vignette')"
         />
         <span class="filter-name">Vignette</span>
       </label>
-      <label class="filter-option" :class="{ active: selectedFilterType === 'chromaticAberration' }">
+      <label class="filter-option" :class="{ active: selectedFilterType.value === 'chromaticAberration' }">
         <input
           type="radio"
           name="filter-type"
-          :checked="selectedFilterType === 'chromaticAberration'"
+          :checked="selectedFilterType.value === 'chromaticAberration'"
           @change="handleFilterTypeChange('chromaticAberration')"
         />
         <span class="filter-name">Chromatic Aberration</span>
       </label>
-      <label class="filter-option" :class="{ active: selectedFilterType === 'dotHalftone' }">
+      <label class="filter-option" :class="{ active: selectedFilterType.value === 'dotHalftone' }">
         <input
           type="radio"
           name="filter-type"
-          :checked="selectedFilterType === 'dotHalftone'"
+          :checked="selectedFilterType.value === 'dotHalftone'"
           @change="handleFilterTypeChange('dotHalftone')"
         />
         <span class="filter-name">Dot Halftone</span>
       </label>
-      <label class="filter-option" :class="{ active: selectedFilterType === 'lineHalftone' }">
+      <label class="filter-option" :class="{ active: selectedFilterType.value === 'lineHalftone' }">
         <input
           type="radio"
           name="filter-type"
-          :checked="selectedFilterType === 'lineHalftone'"
+          :checked="selectedFilterType.value === 'lineHalftone'"
           @change="handleFilterTypeChange('lineHalftone')"
         />
         <span class="filter-name">Line Halftone</span>
       </label>
-      <label class="filter-option" :class="{ active: selectedFilterType === 'blur' }">
+      <label class="filter-option" :class="{ active: selectedFilterType.value === 'blur' }">
         <input
           type="radio"
           name="filter-type"
-          :checked="selectedFilterType === 'blur'"
+          :checked="selectedFilterType.value === 'blur'"
           @change="handleFilterTypeChange('blur')"
         />
         <span class="filter-name">Blur</span>
