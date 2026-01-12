@@ -4118,6 +4118,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Filter/effect state and actions
    */
   const filter: FilterState = {
+    effectManager,
     selectedFilterLayerId,
     selectedLayerFilters,
     layerFilterConfigs,

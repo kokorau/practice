@@ -20,6 +20,7 @@
 
 import type { Ref, ComputedRef, ShallowRef } from 'vue'
 import type { ObjectSchema } from '@practice/schema'
+import type { UseEffectManagerReturn } from '../../../composables/useEffectManager'
 import type {
   TexturePattern,
   MaskPattern,
@@ -320,6 +321,8 @@ export interface MaskState {
  * Filter/effect state and actions
  */
 export interface FilterState {
+  /** Effect manager composable instance */
+  readonly effectManager: UseEffectManagerReturn
   /** Currently selected layer for filter editing */
   readonly selectedFilterLayerId: Ref<string | null>
   /** Filter config for selected layer */

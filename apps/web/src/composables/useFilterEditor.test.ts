@@ -1,123 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
-import { ref, computed } from 'vue'
+import { describe, it, expect } from 'vitest'
 import { useFilterEditor } from './useFilterEditor'
-import type { LayerFilterConfig } from '../modules/HeroScene'
-
-// ============================================================
-// Test Helpers
-// ============================================================
-
-const createMockFilterConfig = (): LayerFilterConfig => ({
-  vignette: {
-    shape: 'ellipse',
-    enabled: false,
-    intensity: 0.5,
-    softness: 0.5,
-    color: [0, 0, 0, 1],
-    radius: 0.8,
-    centerX: 0.5,
-    centerY: 0.5,
-    aspectRatio: 1,
-  },
-  chromaticAberration: { enabled: false, intensity: 0.3 },
-  dotHalftone: { enabled: false, dotSize: 4, spacing: 8, angle: 45 },
-  lineHalftone: { enabled: false, lineWidth: 2, spacing: 6, angle: 0 },
-  blur: { enabled: false, radius: 8 },
-})
-
-const createMockOptions = () => {
-  const selectedFilterLayerId = ref<string | null>('layer-1')
-  const filterConfigs = ref(new Map<string, LayerFilterConfig>([
-    ['layer-1', createMockFilterConfig()],
-  ]))
-
-  const selectedLayerFilters = computed(() => {
-    const layerId = selectedFilterLayerId.value
-    if (!layerId) return null
-    return filterConfigs.value.get(layerId) ?? null
-  })
-
-  const getFilterType = vi.fn((layerId: string) => {
-    const config = filterConfigs.value.get(layerId)
-    if (!config) return 'void' as const
-    if (config.vignette.enabled) return 'vignette' as const
-    if (config.chromaticAberration.enabled) return 'chromaticAberration' as const
-    if (config.dotHalftone.enabled) return 'dotHalftone' as const
-    if (config.lineHalftone.enabled) return 'lineHalftone' as const
-    if (config.blur.enabled) return 'blur' as const
-    return 'void' as const
-  })
-
-  const selectFilterType = vi.fn((layerId: string, type: string) => {
-    const config = filterConfigs.value.get(layerId) ?? createMockFilterConfig()
-    filterConfigs.value.set(layerId, {
-      ...config,
-      vignette: { ...config.vignette, enabled: type === 'vignette' },
-      chromaticAberration: { ...config.chromaticAberration, enabled: type === 'chromaticAberration' },
-      dotHalftone: { ...config.dotHalftone, enabled: type === 'dotHalftone' },
-      lineHalftone: { ...config.lineHalftone, enabled: type === 'lineHalftone' },
-      blur: { ...config.blur, enabled: type === 'blur' },
-    })
-  })
-
-  const updateVignetteParams = vi.fn((layerId: string, params: Record<string, unknown>) => {
-    const config = filterConfigs.value.get(layerId)
-    if (!config) return
-    filterConfigs.value.set(layerId, {
-      ...config,
-      vignette: { ...config.vignette, ...params },
-    })
-  })
-
-  const updateChromaticAberrationParams = vi.fn((layerId: string, params: Record<string, unknown>) => {
-    const config = filterConfigs.value.get(layerId)
-    if (!config) return
-    filterConfigs.value.set(layerId, {
-      ...config,
-      chromaticAberration: { ...config.chromaticAberration, ...params },
-    })
-  })
-
-  const updateDotHalftoneParams = vi.fn((layerId: string, params: Record<string, unknown>) => {
-    const config = filterConfigs.value.get(layerId)
-    if (!config) return
-    filterConfigs.value.set(layerId, {
-      ...config,
-      dotHalftone: { ...config.dotHalftone, ...params },
-    })
-  })
-
-  const updateLineHalftoneParams = vi.fn((layerId: string, params: Record<string, unknown>) => {
-    const config = filterConfigs.value.get(layerId)
-    if (!config) return
-    filterConfigs.value.set(layerId, {
-      ...config,
-      lineHalftone: { ...config.lineHalftone, ...params },
-    })
-  })
-
-  const updateBlurParams = vi.fn((layerId: string, params: Record<string, unknown>) => {
-    const config = filterConfigs.value.get(layerId)
-    if (!config) return
-    filterConfigs.value.set(layerId, {
-      ...config,
-      blur: { ...config.blur, ...params },
-    })
-  })
-
-  return {
-    selectedFilterLayerId,
-    filterConfigs,
-    selectedLayerFilters,
-    getFilterType,
-    selectFilterType,
-    updateVignetteParams,
-    updateChromaticAberrationParams,
-    updateDotHalftoneParams,
-    updateLineHalftoneParams,
-    updateBlurParams,
-  }
-}
+import { useEffectManager } from './useEffectManager'
 
 // ============================================================
 // Tests
@@ -126,182 +9,239 @@ const createMockOptions = () => {
 describe('useFilterEditor', () => {
   describe('selectedFilterType', () => {
     it('returns void when no layer is selected', () => {
-      const options = createMockOptions()
-      options.selectedFilterLayerId.value = null
+      const effectManager = useEffectManager()
+      // Don't select any layer
+      effectManager.selectedLayerId.value = null
 
-      const { selectedFilterType } = useFilterEditor(options)
+      const { selectedFilterType } = useFilterEditor({ effectManager })
 
       expect(selectedFilterType.value).toBe('void')
     })
 
-    it('returns current filter type from getFilterType', () => {
-      const options = createMockOptions()
-      options.getFilterType.mockReturnValue('vignette')
+    it('returns current filter type based on enabled effect', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
+      effectManager.setEffectType('layer-1', 'vignette')
 
-      const { selectedFilterType } = useFilterEditor(options)
+      const { selectedFilterType } = useFilterEditor({ effectManager })
 
       expect(selectedFilterType.value).toBe('vignette')
-      expect(options.getFilterType).toHaveBeenCalledWith('layer-1')
     })
 
-    it('calls selectFilterType when setting filter type', () => {
-      const options = createMockOptions()
+    it('calls setEffectType when setting filter type', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
 
-      const { selectedFilterType } = useFilterEditor(options)
+      const { selectedFilterType } = useFilterEditor({ effectManager })
       selectedFilterType.value = 'chromaticAberration'
 
-      expect(options.selectFilterType).toHaveBeenCalledWith('layer-1', 'chromaticAberration')
+      // Verify the effect was set
+      const config = effectManager.effects.value.get('layer-1')
+      expect(config?.chromaticAberration.enabled).toBe(true)
+      expect(config?.vignette.enabled).toBe(false)
     })
 
-    it('does not call selectFilterType when no layer is selected', () => {
-      const options = createMockOptions()
-      options.selectedFilterLayerId.value = null
+    it('does not call setEffectType when no layer is selected', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectedLayerId.value = null
 
-      const { selectedFilterType } = useFilterEditor(options)
+      const { selectedFilterType } = useFilterEditor({ effectManager })
       selectedFilterType.value = 'vignette'
 
-      expect(options.selectFilterType).not.toHaveBeenCalled()
+      // No effect should be created since no layer is selected
+      expect(effectManager.effects.value.size).toBe(0)
+    })
+
+    it('sets void filter type by passing null to setEffectType', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
+      effectManager.setEffectType('layer-1', 'vignette')
+
+      const { selectedFilterType } = useFilterEditor({ effectManager })
+      expect(selectedFilterType.value).toBe('vignette')
+
+      selectedFilterType.value = 'void'
+
+      // All effects should be disabled
+      const config = effectManager.effects.value.get('layer-1')
+      expect(config?.vignette.enabled).toBe(false)
+      expect(config?.chromaticAberration.enabled).toBe(false)
     })
   })
 
   describe('currentVignetteConfig', () => {
     it('returns empty object when no layer is selected', () => {
-      const options = createMockOptions()
-      options.selectedFilterLayerId.value = null
+      const effectManager = useEffectManager()
+      effectManager.selectedLayerId.value = null
 
-      const { currentVignetteConfig } = useFilterEditor(options)
+      const { currentVignetteConfig } = useFilterEditor({ effectManager })
 
       expect(currentVignetteConfig.value).toEqual({})
     })
 
     it('returns vignette config from selected layer', () => {
-      const options = createMockOptions()
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
 
-      const { currentVignetteConfig } = useFilterEditor(options)
+      const { currentVignetteConfig } = useFilterEditor({ effectManager })
 
-      expect(currentVignetteConfig.value).toEqual({
-        shape: 'ellipse',
-        enabled: false,
-        intensity: 0.5,
-        softness: 0.5,
-        color: [0, 0, 0, 1],
-        radius: 0.8,
-        centerX: 0.5,
-        centerY: 0.5,
-        aspectRatio: 1,
-      })
+      // Should return the default vignette config (without 'enabled')
+      expect(currentVignetteConfig.value).toHaveProperty('intensity')
+      expect(currentVignetteConfig.value).toHaveProperty('radius')
     })
 
-    it('calls updateVignetteParams when setting config', () => {
-      const options = createMockOptions()
+    it('calls updateEffectParams when setting config', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
 
-      const { currentVignetteConfig } = useFilterEditor(options)
+      const { currentVignetteConfig } = useFilterEditor({ effectManager })
       currentVignetteConfig.value = { intensity: 0.7 }
 
-      expect(options.updateVignetteParams).toHaveBeenCalledWith('layer-1', { intensity: 0.7 })
+      const config = effectManager.effects.value.get('layer-1')
+      expect(config?.vignette.intensity).toBe(0.7)
     })
   })
 
   describe('currentChromaticConfig', () => {
     it('returns chromatic aberration config from selected layer', () => {
-      const options = createMockOptions()
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
 
-      const { currentChromaticConfig } = useFilterEditor(options)
+      const { currentChromaticConfig } = useFilterEditor({ effectManager })
 
-      expect(currentChromaticConfig.value).toEqual({
-        enabled: false,
-        intensity: 0.3,
-      })
+      expect(currentChromaticConfig.value).toHaveProperty('intensity')
     })
 
-    it('calls updateChromaticAberrationParams when setting config', () => {
-      const options = createMockOptions()
+    it('calls updateEffectParams when setting config', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
 
-      const { currentChromaticConfig } = useFilterEditor(options)
+      const { currentChromaticConfig } = useFilterEditor({ effectManager })
       currentChromaticConfig.value = { intensity: 0.5 }
 
-      expect(options.updateChromaticAberrationParams).toHaveBeenCalledWith('layer-1', { intensity: 0.5 })
+      const config = effectManager.effects.value.get('layer-1')
+      expect(config?.chromaticAberration.intensity).toBe(0.5)
     })
   })
 
   describe('currentDotHalftoneConfig', () => {
     it('returns dot halftone config from selected layer', () => {
-      const options = createMockOptions()
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
 
-      const { currentDotHalftoneConfig } = useFilterEditor(options)
+      const { currentDotHalftoneConfig } = useFilterEditor({ effectManager })
 
-      expect(currentDotHalftoneConfig.value).toEqual({
-        enabled: false,
-        dotSize: 4,
-        spacing: 8,
-        angle: 45,
-      })
+      expect(currentDotHalftoneConfig.value).toHaveProperty('dotSize')
+      expect(currentDotHalftoneConfig.value).toHaveProperty('spacing')
     })
 
-    it('calls updateDotHalftoneParams when setting config', () => {
-      const options = createMockOptions()
+    it('calls updateEffectParams when setting config', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
 
-      const { currentDotHalftoneConfig } = useFilterEditor(options)
+      const { currentDotHalftoneConfig } = useFilterEditor({ effectManager })
       currentDotHalftoneConfig.value = { dotSize: 6, angle: 30 }
 
-      expect(options.updateDotHalftoneParams).toHaveBeenCalledWith('layer-1', { dotSize: 6, angle: 30 })
+      const config = effectManager.effects.value.get('layer-1')
+      expect(config?.dotHalftone.dotSize).toBe(6)
+      expect(config?.dotHalftone.angle).toBe(30)
     })
   })
 
   describe('currentLineHalftoneConfig', () => {
     it('returns line halftone config from selected layer', () => {
-      const options = createMockOptions()
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
 
-      const { currentLineHalftoneConfig } = useFilterEditor(options)
+      const { currentLineHalftoneConfig } = useFilterEditor({ effectManager })
 
-      expect(currentLineHalftoneConfig.value).toEqual({
-        enabled: false,
-        lineWidth: 2,
-        spacing: 6,
-        angle: 0,
-      })
+      expect(currentLineHalftoneConfig.value).toHaveProperty('lineWidth')
+      expect(currentLineHalftoneConfig.value).toHaveProperty('spacing')
     })
 
-    it('calls updateLineHalftoneParams when setting config', () => {
-      const options = createMockOptions()
+    it('calls updateEffectParams when setting config', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
 
-      const { currentLineHalftoneConfig } = useFilterEditor(options)
+      const { currentLineHalftoneConfig } = useFilterEditor({ effectManager })
       currentLineHalftoneConfig.value = { lineWidth: 3, spacing: 10 }
 
-      expect(options.updateLineHalftoneParams).toHaveBeenCalledWith('layer-1', { lineWidth: 3, spacing: 10 })
+      const config = effectManager.effects.value.get('layer-1')
+      expect(config?.lineHalftone.lineWidth).toBe(3)
+      expect(config?.lineHalftone.spacing).toBe(10)
+    })
+  })
+
+  describe('currentBlurConfig', () => {
+    it('returns blur config from selected layer', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
+
+      const { currentBlurConfig } = useFilterEditor({ effectManager })
+
+      expect(currentBlurConfig.value).toHaveProperty('radius')
+    })
+
+    it('calls updateEffectParams when setting config', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
+
+      const { currentBlurConfig } = useFilterEditor({ effectManager })
+      currentBlurConfig.value = { radius: 15 }
+
+      const config = effectManager.effects.value.get('layer-1')
+      expect(config?.blur.radius).toBe(15)
     })
   })
 
   describe('layer selection changes', () => {
     it('updates configs when selected layer changes', () => {
-      const options = createMockOptions()
-      options.filterConfigs.value.set('layer-2', {
-        vignette: {
-          shape: 'ellipse',
-          enabled: true,
-          intensity: 0.9,
-          softness: 0.3,
-          color: [0, 0, 0, 1],
-          radius: 0.5,
-          centerX: 0.5,
-          centerY: 0.5,
-          aspectRatio: 1,
-        },
-        chromaticAberration: { enabled: false, intensity: 0.1 },
-        dotHalftone: { enabled: false, dotSize: 2, spacing: 4, angle: 90 },
-        lineHalftone: { enabled: false, lineWidth: 1, spacing: 3, angle: 45 },
-        blur: { enabled: false, radius: 8 },
-      })
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
+      effectManager.updateEffectParams('layer-1', 'vignette', { intensity: 0.5 })
 
-      const { currentVignetteConfig } = useFilterEditor(options)
+      effectManager.selectLayer('layer-2')
+      effectManager.updateEffectParams('layer-2', 'vignette', { intensity: 0.9 })
 
-      // Initial state
-      expect(currentVignetteConfig.value.intensity).toBe(0.5)
+      const { currentVignetteConfig } = useFilterEditor({ effectManager })
+
+      // Current selection is layer-2
+      expect(currentVignetteConfig.value.intensity).toBe(0.9)
 
       // Change selected layer
-      options.selectedFilterLayerId.value = 'layer-2'
+      effectManager.selectLayer('layer-1')
 
-      expect(currentVignetteConfig.value.intensity).toBe(0.9)
+      expect(currentVignetteConfig.value.intensity).toBe(0.5)
+    })
+  })
+
+  describe('effectConfigs map', () => {
+    it('provides access to all effect configs via map', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
+
+      const { effectConfigs } = useFilterEditor({ effectManager })
+
+      expect(effectConfigs.vignette).toBeDefined()
+      expect(effectConfigs.chromaticAberration).toBeDefined()
+      expect(effectConfigs.dotHalftone).toBeDefined()
+      expect(effectConfigs.lineHalftone).toBeDefined()
+      expect(effectConfigs.blur).toBeDefined()
+    })
+
+    it('effectConfigs and legacy configs reference the same computed', () => {
+      const effectManager = useEffectManager()
+      effectManager.selectLayer('layer-1')
+
+      const {
+        effectConfigs,
+        currentVignetteConfig,
+        currentChromaticConfig,
+      } = useFilterEditor({ effectManager })
+
+      // They should be the same reference
+      expect(effectConfigs.vignette).toBe(currentVignetteConfig)
+      expect(effectConfigs.chromaticAberration).toBe(currentChromaticConfig)
     })
   })
 })

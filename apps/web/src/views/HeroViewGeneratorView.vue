@@ -122,15 +122,7 @@ const {
   currentLineHalftoneConfig,
   currentBlurConfig,
 } = useFilterEditor({
-  selectedFilterLayerId: heroScene.filter.selectedFilterLayerId,
-  selectedLayerFilters: heroScene.filter.selectedLayerFilters,
-  getFilterType: heroScene.filter.getFilterType,
-  selectFilterType: heroScene.filter.selectFilterType,
-  updateVignetteParams: heroScene.filter.updateVignetteParams,
-  updateChromaticAberrationParams: heroScene.filter.updateChromaticAberrationParams,
-  updateDotHalftoneParams: heroScene.filter.updateDotHalftoneParams,
-  updateLineHalftoneParams: heroScene.filter.updateLineHalftoneParams,
-  updateBlurParams: heroScene.filter.updateBlurParams,
+  effectManager: heroScene.filter.effectManager,
 })
 
 // ============================================================
