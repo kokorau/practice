@@ -8,6 +8,7 @@ import {
 import {
   createGroup,
   createSurfaceLayer,
+  createBaseLayer,
   createEffectPlaceholder,
   SCENE_LAYER_IDS,
   type SceneNode,
@@ -29,7 +30,7 @@ const createInitialLayers = (): SceneNode[] => [
   createGroup(
     'background-group',
     [
-      createSurfaceLayer(SCENE_LAYER_IDS.BASE, { type: 'solid', color: 'BN1' }),
+      createBaseLayer({ type: 'solid', color: 'BN1' }, { id: SCENE_LAYER_IDS.BASE }),
     ],
     { name: 'Background', expanded: true },
   ),
@@ -365,12 +366,12 @@ describe('useLayerOperations', () => {
   // handleUseAsMask
   // ============================================================
   describe('handleUseAsMask', () => {
-    it('should wrap layer in masked group', () => {
+    it('should wrap layer in masked group with MaskModifier added', () => {
       const { layers, handleUseAsMask } = useLayerOperations(createOptions())
 
       handleUseAsMask('mask-layer')
 
-      // The structure should change but mask-layer should still exist
+      // Helper to find a layer by ID
       const findLayer = (nodes: SceneNode[], id: string): SceneNode | null => {
         for (const node of nodes) {
           if (node.id === id) return node
@@ -382,8 +383,45 @@ describe('useLayerOperations', () => {
         return null
       }
 
+      // mask-layer should still exist
       const surface = findLayer(layers.value, 'mask-layer')
       expect(surface).not.toBeNull()
+
+      // The layer should now have a MaskModifier added
+      if (surface && 'modifiers' in surface) {
+        const hasMaskModifier = surface.modifiers.some(
+          (m: { type: string }) => m.type === 'mask'
+        )
+        expect(hasMaskModifier).toBe(true)
+      }
+
+      // Should be wrapped in a new group with name 'Masked Group'
+      const findParentGroup = (nodes: SceneNode[], targetId: string): SceneNode | null => {
+        for (const node of nodes) {
+          if ('children' in node) {
+            const hasTarget = node.children.some((c: SceneNode) => c.id === targetId)
+            if (hasTarget) return node
+            const found = findParentGroup(node.children, targetId)
+            if (found) return found
+          }
+        }
+        return null
+      }
+
+      const parentGroup = findParentGroup(layers.value, 'mask-layer')
+      expect(parentGroup).not.toBeNull()
+      expect(parentGroup?.name).toBe('Masked Group')
+    })
+
+    it('should not wrap base layer', () => {
+      const { layers, handleUseAsMask } = useLayerOperations(createOptions())
+
+      const initialLength = JSON.stringify(layers.value).length
+      handleUseAsMask('base-layer')
+      const afterLength = JSON.stringify(layers.value).length
+
+      // Structure should not change for base layer
+      expect(afterLength).toBe(initialLength)
     })
   })
 

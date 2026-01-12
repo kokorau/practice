@@ -410,6 +410,7 @@ export {
   flattenNodes,
   findParentNode,
   wrapNodeInGroup,
+  wrapNodeInMaskedGroup,
   // DnD move utilities (SceneNode)
   canMoveSceneNode,
   moveSceneNode,

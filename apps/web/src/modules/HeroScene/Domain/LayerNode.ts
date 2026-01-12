@@ -15,7 +15,7 @@
  */
 
 import type { Modifier } from './Modifier'
-import { createEffectPlaceholder } from './Modifier'
+import { createEffectPlaceholder, createMaskModifier } from './Modifier'
 import type { TexturePatternSpec } from '@practice/texture'
 
 // ============================================================
@@ -499,6 +499,57 @@ export const wrapNodeInGroup = (
 
   const newGroupId = groupId ?? `group-${Date.now()}`
   const newGroup = createGroup(newGroupId, [targetNode], { name: 'Group', expanded: true })
+
+  // Replace target node with new group (recursive)
+  const replaceWithGroup = (nodeList: SceneNode[]): SceneNode[] => {
+    return nodeList.map(node => {
+      if (node.id === targetId) {
+        return newGroup
+      }
+      if (isGroup(node)) {
+        return {
+          ...node,
+          children: replaceWithGroup(node.children),
+        }
+      }
+      return node
+    })
+  }
+
+  return replaceWithGroup(nodes)
+}
+
+/**
+ * Wrap a node in a new group with a mask modifier applied
+ * Creates a new Group containing the target node (with MaskModifier added) and replaces the node with the group
+ */
+export const wrapNodeInMaskedGroup = (
+  nodes: SceneNode[],
+  targetId: string,
+  groupId?: string
+): SceneNode[] => {
+  const targetNode = findNode(nodes, targetId)
+  if (!targetNode) return nodes
+
+  // Prevent wrapping base layer
+  if (isLayer(targetNode) && targetNode.variant === 'base') return nodes
+
+  const newGroupId = groupId ?? `masked-group-${Date.now()}`
+
+  // Add mask modifier to the target node (if it's a Layer)
+  let maskedNode: SceneNode = targetNode
+  if (isLayer(targetNode)) {
+    maskedNode = {
+      ...targetNode,
+      modifiers: [...targetNode.modifiers, createMaskModifier()],
+    }
+  }
+
+  // Create new group with the masked node as child
+  const newGroup = createGroup(newGroupId, [maskedNode], {
+    name: 'Masked Group',
+    expanded: true,
+  })
 
   // Replace target node with new group (recursive)
   const replaceWithGroup = (nodeList: SceneNode[]): SceneNode[] => {
