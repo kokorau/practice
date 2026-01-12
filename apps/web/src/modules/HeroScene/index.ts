@@ -275,6 +275,8 @@ export {
   toCustomMaskShapeParams,
   toCustomSurfaceParams,
   toCustomBackgroundSurfaceParams,
+  // Layer helpers
+  getLayerFilters,
 } from './Domain'
 
 // Application

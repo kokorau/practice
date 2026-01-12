@@ -14,6 +14,7 @@ import {
   LineHalftoneEffectSchema,
   BlurEffectSchema,
   createDefaultEffectConfig,
+  getLayerFilters,
   type FilterType,
 } from '../../../modules/HeroScene'
 import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
@@ -96,11 +97,11 @@ const createEffectPreviewConfig = (
       if (layer.type === 'base') {
         return {
           ...layer,
-          processors: (layer.processors ?? []).map(p => {
-            if (p.type === 'effect') {
-              return { ...p, enabled: true, config: effects }
+          filters: getLayerFilters(layer).map(f => {
+            if (f.type === 'effect') {
+              return { ...f, enabled: true, config: effects }
             }
-            return p
+            return f
           }),
         }
       }
