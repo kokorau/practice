@@ -9,6 +9,7 @@ import {
   createGroup,
   createSurfaceLayer,
   createEffectPlaceholder,
+  SCENE_LAYER_IDS,
   type SceneNode,
 } from '../modules/HeroScene'
 
@@ -28,7 +29,7 @@ const createInitialLayers = (): SceneNode[] => [
   createGroup(
     'background-group',
     [
-      createSurfaceLayer('background-surface', { type: 'solid', color: 'BN1' }),
+      createSurfaceLayer(SCENE_LAYER_IDS.BASE, { type: 'solid', color: 'BN1' }),
     ],
     { name: 'Background', expanded: true },
   ),
@@ -36,7 +37,7 @@ const createInitialLayers = (): SceneNode[] => [
     'main-group',
     [
       createSurfaceLayer(
-        'surface-1',
+        SCENE_LAYER_IDS.MASK,
         { type: 'solid', color: 'B' },
         {
           modifiers: [createEffectPlaceholder()],
@@ -90,17 +91,17 @@ describe('useLayerOperations', () => {
   // ============================================================
   describe('selection with selectedLayerId', () => {
     it('should return selected layer when selectedLayerId is provided', () => {
-      const selectedLayerId = ref<string | null>('surface-1')
+      const selectedLayerId = ref<string | null>('mask-layer')
       const { selectedLayer } = useLayerOperations(
         createOptions({ selectedLayerId }),
       )
 
       expect(selectedLayer.value).not.toBeNull()
-      expect(selectedLayer.value?.id).toBe('surface-1')
+      expect(selectedLayer.value?.id).toBe('mask-layer')
     })
 
     it('should return layer variant for selected layer', () => {
-      const selectedLayerId = ref<string | null>('surface-1')
+      const selectedLayerId = ref<string | null>('mask-layer')
       const { selectedLayerVariant } = useLayerOperations(
         createOptions({ selectedLayerId }),
       )
@@ -158,7 +159,7 @@ describe('useLayerOperations', () => {
         createOptions({ sceneCallbacks: callbacks }),
       )
 
-      handleToggleVisibility('surface-1')
+      handleToggleVisibility('mask-layer')
 
       // getSceneLayerId returns SCENE_LAYER_IDS.MASK for surface layers
       expect(callbacks.toggleLayerVisibility).toHaveBeenCalled()
@@ -178,17 +179,17 @@ describe('useLayerOperations', () => {
     it('should update visibility in layers tree', () => {
       const { layers, handleToggleVisibility } = useLayerOperations(createOptions())
 
-      // Find surface-1 initial visibility
+      // Find mask-layer initial visibility
       const findSurface = () => {
         const mainGroup = layers.value.find((l) => l.id === 'main-group')
         if (mainGroup && 'children' in mainGroup) {
-          return (mainGroup.children as SceneNode[]).find((c: SceneNode) => c.id === 'surface-1')
+          return (mainGroup.children as SceneNode[]).find((c: SceneNode) => c.id === 'mask-layer')
         }
         return null
       }
 
       const initialVisible = findSurface()?.visible
-      handleToggleVisibility('surface-1')
+      handleToggleVisibility('mask-layer')
       const afterToggle = findSurface()?.visible
 
       expect(afterToggle).toBe(!initialVisible)
@@ -285,7 +286,7 @@ describe('useLayerOperations', () => {
     it('should remove layer and call scene callback', () => {
       const callbacks = createMockSceneCallbacks()
       const onClearSelection = vi.fn()
-      const selectedLayerId = ref<string | null>('surface-1')
+      const selectedLayerId = ref<string | null>('mask-layer')
       const { handleRemoveLayer } = useLayerOperations(
         createOptions({
           sceneCallbacks: callbacks,
@@ -294,7 +295,7 @@ describe('useLayerOperations', () => {
         }),
       )
 
-      handleRemoveLayer('surface-1')
+      handleRemoveLayer('mask-layer')
 
       // getSceneLayerId returns SCENE_LAYER_IDS.MASK for surface layers
       expect(callbacks.removeLayer).toHaveBeenCalled()
@@ -309,7 +310,7 @@ describe('useLayerOperations', () => {
 
       handleRemoveLayer('main-group')
 
-      // Group内のsurface-1もシーンから削除される
+      // Group内のmask-layerもシーンから削除される
       expect(callbacks.removeLayer).toHaveBeenCalled()
     })
 
@@ -323,12 +324,12 @@ describe('useLayerOperations', () => {
 
     it('should not call onClearSelection when removed layer is not selected', () => {
       const onClearSelection = vi.fn()
-      const selectedLayerId = ref<string | null>('background-surface')
+      const selectedLayerId = ref<string | null>('base-layer')
       const { handleRemoveLayer } = useLayerOperations(
         createOptions({ onClearSelection, selectedLayerId }),
       )
 
-      handleRemoveLayer('surface-1')
+      handleRemoveLayer('mask-layer')
 
       expect(onClearSelection).not.toHaveBeenCalled()
     })
@@ -341,9 +342,9 @@ describe('useLayerOperations', () => {
     it('should wrap layer in new group', () => {
       const { layers, handleGroupSelection } = useLayerOperations(createOptions())
 
-      handleGroupSelection('surface-1')
+      handleGroupSelection('mask-layer')
 
-      // Find if surface-1 is now wrapped in a new group
+      // Find if mask-layer is now wrapped in a new group
       const findLayer = (nodes: SceneNode[], id: string): SceneNode | null => {
         for (const node of nodes) {
           if (node.id === id) return node
@@ -355,7 +356,7 @@ describe('useLayerOperations', () => {
         return null
       }
 
-      const surface = findLayer(layers.value, 'surface-1')
+      const surface = findLayer(layers.value, 'mask-layer')
       expect(surface).not.toBeNull()
     })
   })
@@ -367,9 +368,9 @@ describe('useLayerOperations', () => {
     it('should wrap layer in masked group', () => {
       const { layers, handleUseAsMask } = useLayerOperations(createOptions())
 
-      handleUseAsMask('surface-1')
+      handleUseAsMask('mask-layer')
 
-      // The structure should change but surface-1 should still exist
+      // The structure should change but mask-layer should still exist
       const findLayer = (nodes: SceneNode[], id: string): SceneNode | null => {
         for (const node of nodes) {
           if (node.id === id) return node
@@ -381,61 +382,8 @@ describe('useLayerOperations', () => {
         return null
       }
 
-      const surface = findLayer(layers.value, 'surface-1')
+      const surface = findLayer(layers.value, 'mask-layer')
       expect(surface).not.toBeNull()
-    })
-  })
-
-  // ============================================================
-  // mapLayerIdToSceneLayerId
-  // ============================================================
-  describe('mapLayerIdToSceneLayerId', () => {
-    it('should map base to base-layer', () => {
-      const { mapLayerIdToSceneLayerId } = useLayerOperations(createOptions())
-
-      expect(mapLayerIdToSceneLayerId('base')).toBe('base-layer')
-    })
-
-    it('should map background- prefix to base-layer', () => {
-      const { mapLayerIdToSceneLayerId } = useLayerOperations(createOptions())
-
-      expect(mapLayerIdToSceneLayerId('background-surface')).toBe('base-layer')
-    })
-
-    it('should map surface prefix to mask-layer', () => {
-      const { mapLayerIdToSceneLayerId } = useLayerOperations(createOptions())
-
-      expect(mapLayerIdToSceneLayerId('surface-1')).toBe('mask-layer')
-    })
-
-    it('should map clip-group prefix to mask-layer', () => {
-      const { mapLayerIdToSceneLayerId } = useLayerOperations(createOptions())
-
-      expect(mapLayerIdToSceneLayerId('clip-group-1')).toBe('mask-layer')
-    })
-
-    it('should map mask prefix to mask-layer', () => {
-      const { mapLayerIdToSceneLayerId } = useLayerOperations(createOptions())
-
-      expect(mapLayerIdToSceneLayerId('mask-1')).toBe('mask-layer')
-    })
-
-    it('should return original id for unknown prefix', () => {
-      const { mapLayerIdToSceneLayerId } = useLayerOperations(createOptions())
-
-      expect(mapLayerIdToSceneLayerId('text-1')).toBe('text-1')
-    })
-
-    it('should use custom mapper when provided', () => {
-      const customMapper = vi.fn((id: string) => `custom-${id}`)
-      const { mapLayerIdToSceneLayerId } = useLayerOperations(
-        createOptions({ mapLayerIdToSceneLayerId: customMapper }),
-      )
-
-      const result = mapLayerIdToSceneLayerId('test-id')
-
-      expect(customMapper).toHaveBeenCalledWith('test-id')
-      expect(result).toBe('custom-test-id')
     })
   })
 
@@ -449,9 +397,9 @@ describe('useLayerOperations', () => {
         createOptions({ onSelectLayer }),
       )
 
-      handleSelectLayer('surface-1')
+      handleSelectLayer('mask-layer')
 
-      expect(onSelectLayer).toHaveBeenCalledWith('surface-1')
+      expect(onSelectLayer).toHaveBeenCalledWith('mask-layer')
     })
 
     it('should call onSelectProcessor when handleSelectProcessor is called', () => {
@@ -460,9 +408,9 @@ describe('useLayerOperations', () => {
         createOptions({ onSelectProcessor }),
       )
 
-      handleSelectProcessor('surface-1', 'effect')
+      handleSelectProcessor('mask-layer', 'effect')
 
-      expect(onSelectProcessor).toHaveBeenCalledWith('surface-1', 'effect')
+      expect(onSelectProcessor).toHaveBeenCalledWith('mask-layer', 'effect')
     })
 
     it('should not call onSelectProcessor for non-existent layer', () => {
