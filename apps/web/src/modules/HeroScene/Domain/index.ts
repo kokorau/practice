@@ -335,6 +335,7 @@ export {
   type RectVignetteParams,
   type LinearVignetteParams,
   createDefaultVignetteConfig as createDefaultShapeVignetteConfig,
+  createVignetteConfigForShape,
 } from './VignetteSchema'
 
 // ============================================================

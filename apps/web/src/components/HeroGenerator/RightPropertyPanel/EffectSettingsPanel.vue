@@ -7,6 +7,7 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   migrateVignetteConfig,
+  createVignetteConfigForShape,
   type VignetteShape,
   type VignetteConfig,
 } from '../../../modules/HeroScene'
@@ -53,7 +54,17 @@ const vignetteShapeParams = computed(() => {
 
 // Handle vignette base params update
 const handleVignetteBaseUpdate = (update: Record<string, unknown>) => {
-  emit('update:vignetteConfig', { ...migratedVignetteConfig.value, ...update })
+  // Check if shape is changing
+  if ('shape' in update && update.shape !== migratedVignetteConfig.value.shape) {
+    // Create new config with proper defaults for the new shape
+    const newConfig = createVignetteConfigForShape(
+      update.shape as VignetteShape,
+      migratedVignetteConfig.value
+    )
+    emit('update:vignetteConfig', { ...newConfig, ...update })
+  } else {
+    emit('update:vignetteConfig', { ...migratedVignetteConfig.value, ...update })
+  }
 }
 
 // Handle vignette shape-specific params update

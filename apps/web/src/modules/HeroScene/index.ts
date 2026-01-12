@@ -180,6 +180,7 @@ export {
   LinearVignetteSchema,
   VignetteShapeOptions,
   createDefaultVignetteShapeConfig,
+  createVignetteConfigForShape,
   migrateVignetteConfig,
   // Effect Schemas (legacy aliases)
   VignetteFilterSchema,
