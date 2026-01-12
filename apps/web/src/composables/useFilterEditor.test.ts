@@ -22,7 +22,7 @@ const createMockFilterConfig = (): LayerFilterConfig => ({
   chromaticAberration: { enabled: false, intensity: 0.3 },
   dotHalftone: { enabled: false, dotSize: 4, spacing: 8, angle: 45 },
   lineHalftone: { enabled: false, lineWidth: 2, spacing: 6, angle: 0 },
-  blur: { enabled: false, radius: 8 },
+  blur: { enabled: false, radius: 8, maskShape: 'none', invert: false },
 })
 
 const createMockOptions = () => {
@@ -290,7 +290,7 @@ describe('useFilterEditor', () => {
         chromaticAberration: { enabled: false, intensity: 0.1 },
         dotHalftone: { enabled: false, dotSize: 2, spacing: 4, angle: 90 },
         lineHalftone: { enabled: false, lineWidth: 1, spacing: 3, angle: 45 },
-        blur: { enabled: false, radius: 8 },
+        blur: { enabled: false, radius: 8, maskShape: 'none', invert: false },
       })
 
       const { currentVignetteConfig } = useFilterEditor(options)

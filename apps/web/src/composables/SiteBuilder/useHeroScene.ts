@@ -216,6 +216,9 @@ import {
   // Vignette shape support
   migrateVignetteConfig,
   type VignetteConfig,
+  // Blur mask shape support
+  migrateBlurConfig,
+  type BlurConfig,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -956,7 +959,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       chromaticAberration: { ...(current.chromaticAberration ?? defaults.chromaticAberration), ...(updates.chromaticAberration ?? {}) },
       dotHalftone: { ...(current.dotHalftone ?? defaults.dotHalftone), ...(updates.dotHalftone ?? {}) },
       lineHalftone: { ...(current.lineHalftone ?? defaults.lineHalftone), ...(updates.lineHalftone ?? {}) },
-      blur: { ...(current.blur ?? defaults.blur), ...(updates.blur ?? {}) },
+      blur: migrateBlurConfig({ ...(current.blur ?? defaults.blur), ...(updates.blur ?? {}) } as BlurConfig),
     }
     // Create new Map to trigger Vue reactivity (Map.set() doesn't change the ref value)
     const newMap = new Map(layerFilterConfigs.value)
@@ -2173,8 +2176,36 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Blur (requires texture input)
     if (filters.blur?.enabled) {
       const inputTexture = previewRenderer.copyCanvasToTexture()
+      const blurConfig = migrateBlurConfig(filters.blur as BlurConfig)
       const uniforms = createBlurUniforms(
-        { radius: filters.blur.radius },
+        {
+          radius: blurConfig.radius,
+          maskShape: blurConfig.maskShape,
+          invert: blurConfig.invert,
+          // Pass shape-specific params
+          ...(blurConfig.maskShape === 'linear' && {
+            angle: blurConfig.angle,
+            centerX: blurConfig.centerX,
+            centerY: blurConfig.centerY,
+            focusWidth: blurConfig.focusWidth,
+            feather: blurConfig.feather,
+          }),
+          ...(blurConfig.maskShape === 'radial' && {
+            centerX: blurConfig.centerX,
+            centerY: blurConfig.centerY,
+            innerRadius: blurConfig.innerRadius,
+            outerRadius: blurConfig.outerRadius,
+            aspectRatio: blurConfig.aspectRatio,
+          }),
+          ...(blurConfig.maskShape === 'rectangular' && {
+            centerX: blurConfig.centerX,
+            centerY: blurConfig.centerY,
+            width: blurConfig.width,
+            height: blurConfig.height,
+            feather: blurConfig.feather,
+            cornerRadius: blurConfig.cornerRadius,
+          }),
+        },
         viewport
       )
       previewRenderer.applyPostEffect(

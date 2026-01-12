@@ -76,6 +76,16 @@ export type {
   CircleVignetteParams,
   RectVignetteParams,
   LinearVignetteParams,
+  // Blur mask shape types (new)
+  BlurMaskShape,
+  BlurConfig,
+  NoneBlurConfig,
+  LinearBlurConfig,
+  RadialBlurConfig,
+  RectangularBlurConfig,
+  LinearBlurParams,
+  RadialBlurParams,
+  RectangularBlurParams,
   // Effect types (legacy aliases)
   VignetteFilterConfig,
   ChromaticAberrationFilterConfig,
@@ -184,6 +194,16 @@ export {
   createDefaultVignetteShapeConfig,
   createVignetteConfigForShape,
   migrateVignetteConfig,
+  // Blur mask shape schemas and types
+  BlurBaseSchema,
+  BlurMaskShapeSchemas,
+  LinearBlurSchema,
+  RadialBlurSchema,
+  RectangularBlurSchema,
+  BlurMaskShapeOptions,
+  createDefaultBlurShapeConfig,
+  createBlurConfigForShape,
+  migrateBlurConfig,
   // Effect Schemas (legacy aliases)
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,

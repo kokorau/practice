@@ -13,11 +13,16 @@ import {
   ChromaticAberrationEffectSchema,
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
-  BlurEffectSchema,
+  BlurBaseSchema,
+  BlurMaskShapeSchemas,
   createDefaultEffectConfig,
   migrateVignetteConfig,
+  migrateBlurConfig,
+  createBlurConfigForShape,
   type VignetteShape,
   type VignetteConfig,
+  type BlurMaskShape,
+  type BlurConfig,
 } from '../../../modules/HeroScene'
 import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
 import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
@@ -49,6 +54,11 @@ const emit = defineEmits<{
 // Migrate legacy config to new format
 const migratedVignetteConfig = computed<VignetteConfig>(() =>
   migrateVignetteConfig(props.vignetteConfig as unknown as VignetteConfig)
+)
+
+// Migrate legacy blur config to new format
+const migratedBlurConfig = computed<BlurConfig>(() =>
+  migrateBlurConfig(props.blurConfig as unknown as BlurConfig)
 )
 
 // Get shape-specific schema based on current vignette shape
@@ -147,8 +157,41 @@ const currentEffectConfig = computed((): LayerEffectConfig => ({
   chromaticAberration: props.chromaticConfig as LayerEffectConfig['chromaticAberration'],
   dotHalftone: props.dotHalftoneConfig as LayerEffectConfig['dotHalftone'],
   lineHalftone: props.lineHalftoneConfig as LayerEffectConfig['lineHalftone'],
-  blur: props.blurConfig as LayerEffectConfig['blur'],
+  blur: migratedBlurConfig.value,
 }))
+
+// Get mask-shape-specific schema based on current blur mask shape
+const blurMaskShapeSchema = computed(() => {
+  const maskShape = migratedBlurConfig.value.maskShape as BlurMaskShape
+  if (maskShape === 'none') return null
+  return BlurMaskShapeSchemas[maskShape] ?? null
+})
+
+// Extract mask-shape-specific params for SchemaFields
+const blurMaskShapeParams = computed(() => {
+  const { enabled, radius, maskShape, invert, ...shapeParams } = migratedBlurConfig.value
+  return shapeParams
+})
+
+// Handle blur base params update
+const handleBlurBaseUpdate = (update: Record<string, unknown>) => {
+  // Check if maskShape is changing
+  if ('maskShape' in update && update.maskShape !== migratedBlurConfig.value.maskShape) {
+    // Create new config with proper defaults for the new shape
+    const newConfig = createBlurConfigForShape(
+      update.maskShape as BlurMaskShape,
+      migratedBlurConfig.value
+    )
+    emit('update:blurConfig', { ...newConfig, ...update })
+  } else {
+    emit('update:blurConfig', { ...migratedBlurConfig.value, ...update })
+  }
+}
+
+// Handle blur mask-shape-specific params update
+const handleBlurMaskShapeUpdate = (update: Record<string, unknown>) => {
+  emit('update:blurConfig', { ...migratedBlurConfig.value, ...update })
+}
 
 // Preview configs for each effect type
 const previewConfigs = computed(() => {
@@ -218,11 +261,19 @@ const previewConfigs = computed(() => {
       />
     </div>
     <div v-else-if="selectedFilterType === 'blur'" class="filter-params">
+      <!-- Base blur params (radius, maskShape, invert) -->
       <SchemaFields
-        :schema="BlurEffectSchema"
-        :model-value="blurConfig"
+        :schema="BlurBaseSchema"
+        :model-value="blurConfig as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:blurConfig', $event)"
+        @update:model-value="handleBlurBaseUpdate"
+      />
+      <!-- Mask-shape-specific params -->
+      <SchemaFields
+        v-if="blurMaskShapeSchema"
+        :schema="blurMaskShapeSchema"
+        :model-value="blurMaskShapeParams"
+        @update:model-value="handleBlurMaskShapeUpdate"
       />
     </div>
 

@@ -32,6 +32,29 @@ export {
 } from './VignetteSchema'
 import { createDefaultVignetteConfig as createDefaultVignetteShapeConfigInternal, type VignetteConfig } from './VignetteSchema'
 
+// Re-export new blur schemas and types
+export {
+  BlurBaseSchema,
+  BlurMaskShapeSchemas,
+  LinearBlurSchema,
+  RadialBlurSchema,
+  RectangularBlurSchema,
+  BlurMaskShapeOptions,
+  createDefaultBlurConfig as createDefaultBlurShapeConfig,
+  createBlurConfigForShape,
+  migrateBlurConfig,
+  type BlurMaskShape,
+  type BlurConfig,
+  type NoneBlurConfig,
+  type LinearBlurConfig,
+  type RadialBlurConfig,
+  type RectangularBlurConfig,
+  type LinearBlurParams,
+  type RadialBlurParams,
+  type RectangularBlurParams,
+} from './BlurSchema'
+import { createDefaultBlurConfig as createDefaultBlurShapeConfigInternal, type BlurConfig } from './BlurSchema'
+
 // ============================================================
 // Vignette Effect Schema (Legacy - for backward compatibility)
 // ============================================================
@@ -118,7 +141,7 @@ export interface LayerEffectConfig {
   chromaticAberration: ChromaticAberrationEffectConfig
   dotHalftone: DotHalftoneEffectConfig
   lineHalftone: LineHalftoneEffectConfig
-  blur: BlurEffectConfig
+  blur: BlurConfig
 }
 
 // ============================================================
@@ -142,8 +165,8 @@ export const createDefaultLineHalftoneConfig = (): LineHalftoneEffectConfig =>
   getDefaults(LineHalftoneEffectSchema)
 
 /** Create default blur effect config */
-export const createDefaultBlurConfig = (): BlurEffectConfig =>
-  getDefaults(BlurEffectSchema)
+export const createDefaultBlurConfig = (): BlurConfig =>
+  createDefaultBlurShapeConfigInternal()
 
 /** Create default layer effect config */
 export const createDefaultEffectConfig = (): LayerEffectConfig => ({
@@ -151,7 +174,7 @@ export const createDefaultEffectConfig = (): LayerEffectConfig => ({
   chromaticAberration: createDefaultChromaticAberrationConfig(),
   dotHalftone: createDefaultDotHalftoneConfig(),
   lineHalftone: createDefaultLineHalftoneConfig(),
-  blur: createDefaultBlurConfig(),
+  blur: createDefaultBlurShapeConfigInternal(),
 })
 
 // ============================================================
