@@ -161,3 +161,9 @@ export {
   PERLIN_DEPTH_MAP_BUFFER_SIZE,
   type PerlinDepthMapParams,
 } from './perlinDepthMap'
+export { asanohaShader, createAsanohaSpec, type AsanohaTextureParams } from './asanoha'
+export { seigaihaShader, createSeigaihaSpec, type SeigaihaTextureParams } from './seigaiha'
+export { waveShader, createWaveSpec, type WaveTextureParams } from './wave'
+export { scalesShader, createScalesSpec, type ScalesTextureParams } from './scales'
+export { ogeeShader, createOgeeSpec, type OgeeTextureParams } from './ogee'
+export { sunburstShader, createSunburstSpec, type SunburstTextureParams } from './sunburst'

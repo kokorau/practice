@@ -175,6 +175,50 @@ export interface HexagonSurfaceConfig {
   angle: number
 }
 
+export interface AsanohaSurfaceConfig {
+  type: 'asanoha'
+  size: number
+  lineWidth: number
+}
+
+export interface SeigaihaSurfaceConfig {
+  type: 'seigaiha'
+  radius: number
+  rings: number
+  lineWidth: number
+}
+
+export interface WaveSurfaceConfig {
+  type: 'wave'
+  amplitude: number
+  wavelength: number
+  thickness: number
+  angle: number
+}
+
+export interface ScalesSurfaceConfig {
+  type: 'scales'
+  size: number
+  overlap: number
+  angle: number
+}
+
+export interface OgeeSurfaceConfig {
+  type: 'ogee'
+  width: number
+  height: number
+  lineWidth: number
+}
+
+export interface SunburstSurfaceConfig {
+  type: 'sunburst'
+  rays: number
+  centerX: number
+  centerY: number
+  twist: number
+}
+
+
 export type SurfaceConfig =
   | SolidSurfaceConfig
   | StripeSurfaceConfig
@@ -185,6 +229,12 @@ export type SurfaceConfig =
   | GradientGrainSurfaceConfig
   | TriangleSurfaceConfig
   | HexagonSurfaceConfig
+  | AsanohaSurfaceConfig
+  | SeigaihaSurfaceConfig
+  | WaveSurfaceConfig
+  | ScalesSurfaceConfig
+  | OgeeSurfaceConfig
+  | SunburstSurfaceConfig
 
 /** @deprecated Use SurfaceConfig instead */
 export type BackgroundSurfaceConfig = SurfaceConfig

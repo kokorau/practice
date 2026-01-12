@@ -40,6 +40,13 @@ import {
   createCheckerSpec,
   createTriangleSpec,
   createHexagonSpec,
+  // Textile pattern specs
+  createAsanohaSpec,
+  createSeigaihaSpec,
+  createWaveSpec,
+  createScalesSpec,
+  createOgeeSpec,
+  createSunburstSpec,
   // Gradient specs
   createGradientGrainSpec,
   // Mask specs (for solid fallback with custom cutout)
@@ -233,6 +240,46 @@ export type CustomMaskShapeParams =
   | ({ type: 'perlin' } & PerlinMaskShapeParams)
 
 /**
+ * Textile pattern surface params
+ */
+export interface AsanohaSurfaceParams {
+  size: number
+  lineWidth: number
+}
+
+export interface SeigaihaSurfaceParams {
+  radius: number
+  rings: number
+  lineWidth: number
+}
+
+export interface WaveSurfaceParams {
+  amplitude: number
+  wavelength: number
+  thickness: number
+  angle: number
+}
+
+export interface ScalesSurfaceParams {
+  size: number
+  overlap: number
+  angle: number
+}
+
+export interface OgeeSurfaceParams {
+  width: number
+  height: number
+  lineWidth: number
+}
+
+export interface SunburstSurfaceParams {
+  rays: number
+  centerX: number
+  centerY: number
+  twist: number
+}
+
+/**
  * Custom surface params union type (for midground - includes solid, checker, and gradientGrain)
  */
 export type CustomSurfaceParams =
@@ -244,6 +291,12 @@ export type CustomSurfaceParams =
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
   | ({ type: 'triangle' } & TriangleSurfaceParams)
   | ({ type: 'hexagon' } & HexagonSurfaceParams)
+  | ({ type: 'asanoha' } & AsanohaSurfaceParams)
+  | ({ type: 'seigaiha' } & SeigaihaSurfaceParams)
+  | ({ type: 'wave' } & WaveSurfaceParams)
+  | ({ type: 'scales' } & ScalesSurfaceParams)
+  | ({ type: 'ogee' } & OgeeSurfaceParams)
+  | ({ type: 'sunburst' } & SunburstSurfaceParams)
 
 /**
  * Gradient grain surface params (from GradientLab)
@@ -277,6 +330,12 @@ export type CustomBackgroundSurfaceParams =
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
   | ({ type: 'triangle' } & TriangleSurfaceParams)
   | ({ type: 'hexagon' } & HexagonSurfaceParams)
+  | ({ type: 'asanoha' } & AsanohaSurfaceParams)
+  | ({ type: 'seigaiha' } & SeigaihaSurfaceParams)
+  | ({ type: 'wave' } & WaveSurfaceParams)
+  | ({ type: 'scales' } & ScalesSurfaceParams)
+  | ({ type: 'ogee' } & OgeeSurfaceParams)
+  | ({ type: 'sunburst' } & SunburstSurfaceParams)
   | { type: 'solid' }
 
 export interface UseHeroSceneOptions {
@@ -594,14 +653,35 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
       }
     }
+    if (params.type === 'checker') {
+      return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
+    }
     if (params.type === 'triangle') {
       return { type: 'triangle', size: params.size, angle: params.angle }
     }
     if (params.type === 'hexagon') {
       return { type: 'hexagon', size: params.size, angle: params.angle }
     }
-    // checker
-    return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
+    if (params.type === 'asanoha') {
+      return { type: 'asanoha', size: params.size, lineWidth: params.lineWidth }
+    }
+    if (params.type === 'seigaiha') {
+      return { type: 'seigaiha', radius: params.radius, rings: params.rings, lineWidth: params.lineWidth }
+    }
+    if (params.type === 'wave') {
+      return { type: 'wave', amplitude: params.amplitude, wavelength: params.wavelength, thickness: params.thickness, angle: params.angle }
+    }
+    if (params.type === 'scales') {
+      return { type: 'scales', size: params.size, overlap: params.overlap, angle: params.angle }
+    }
+    if (params.type === 'ogee') {
+      return { type: 'ogee', width: params.width, height: params.height, lineWidth: params.lineWidth }
+    }
+    if (params.type === 'sunburst') {
+      return { type: 'sunburst', rays: params.rays, centerX: params.centerX, centerY: params.centerY, twist: params.twist }
+    }
+    // fallback to solid
+    return { type: 'solid' }
   }
 
   /**
@@ -640,14 +720,35 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
       }
     }
+    if (params.type === 'checker') {
+      return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
+    }
     if (params.type === 'triangle') {
       return { type: 'triangle', size: params.size, angle: params.angle }
     }
     if (params.type === 'hexagon') {
       return { type: 'hexagon', size: params.size, angle: params.angle }
     }
-    // checker
-    return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
+    if (params.type === 'asanoha') {
+      return { type: 'asanoha', size: params.size, lineWidth: params.lineWidth }
+    }
+    if (params.type === 'seigaiha') {
+      return { type: 'seigaiha', radius: params.radius, rings: params.rings, lineWidth: params.lineWidth }
+    }
+    if (params.type === 'wave') {
+      return { type: 'wave', amplitude: params.amplitude, wavelength: params.wavelength, thickness: params.thickness, angle: params.angle }
+    }
+    if (params.type === 'scales') {
+      return { type: 'scales', size: params.size, overlap: params.overlap, angle: params.angle }
+    }
+    if (params.type === 'ogee') {
+      return { type: 'ogee', width: params.width, height: params.height, lineWidth: params.lineWidth }
+    }
+    if (params.type === 'sunburst') {
+      return { type: 'sunburst', rays: params.rays, centerX: params.centerX, centerY: params.centerY, twist: params.twist }
+    }
+    // fallback to solid
+    return { type: 'solid' }
   }
 
   // Current custom params (initialized from selected preset)
@@ -1537,6 +1638,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         return createTriangleSpec({ color1, color2, size: params.size, angle: params.angle })
       case 'hexagon':
         return createHexagonSpec({ color1, color2, size: params.size, angle: params.angle })
+      case 'asanoha':
+        return createAsanohaSpec({ lineColor: color1, bgColor: color2, size: params.size, lineWidth: params.lineWidth })
+      case 'seigaiha':
+        return createSeigaihaSpec({ lineColor: color1, bgColor: color2, radius: params.radius, rings: params.rings, lineWidth: params.lineWidth })
+      case 'wave':
+        return createWaveSpec({ color1, color2, amplitude: params.amplitude, wavelength: params.wavelength, thickness: params.thickness, angle: params.angle })
+      case 'scales':
+        return createScalesSpec({ color1, color2, size: params.size, overlap: params.overlap, angle: params.angle })
+      case 'ogee':
+        return createOgeeSpec({ lineColor: color1, bgColor: color2, width: params.width, height: params.height, lineWidth: params.lineWidth })
+      case 'sunburst':
+        return createSunburstSpec({ color1, color2, rays: params.rays, centerX: params.centerX, centerY: params.centerY, twist: params.twist, viewportWidth: viewport.width, viewportHeight: viewport.height })
       default: {
         const _exhaustive: never = params
         throw new Error(`Unknown background surface type: ${(_exhaustive as CustomBackgroundSurfaceParams).type}`)
@@ -1630,6 +1743,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           return { type: 'triangle', size: customSurfParams.size, angle: customSurfParams.angle }
         case 'hexagon':
           return { type: 'hexagon', size: customSurfParams.size, angle: customSurfParams.angle }
+        case 'asanoha':
+        case 'seigaiha':
+        case 'wave':
+        case 'scales':
+        case 'ogee':
+        case 'sunburst':
+          // Textile patterns are not supported in masked textures yet
+          return null
         default: {
           const _exhaustive: never = customSurfParams
           throw new Error(`Unknown surface type: ${(_exhaustive as CustomSurfaceParams).type}`)
@@ -2222,6 +2343,57 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     size: params.size,
                     angle: params.angle,
                   })
+                case 'asanoha':
+                  return createAsanohaSpec({
+                    lineColor: color1,
+                    bgColor: color2,
+                    size: params.size,
+                    lineWidth: params.lineWidth,
+                  })
+                case 'seigaiha':
+                  return createSeigaihaSpec({
+                    lineColor: color1,
+                    bgColor: color2,
+                    radius: params.radius,
+                    rings: params.rings,
+                    lineWidth: params.lineWidth,
+                  })
+                case 'wave':
+                  return createWaveSpec({
+                    color1,
+                    color2,
+                    amplitude: params.amplitude,
+                    wavelength: params.wavelength,
+                    thickness: params.thickness,
+                    angle: params.angle,
+                  })
+                case 'scales':
+                  return createScalesSpec({
+                    color1,
+                    color2,
+                    size: params.size,
+                    overlap: params.overlap,
+                    angle: params.angle,
+                  })
+                case 'ogee':
+                  return createOgeeSpec({
+                    lineColor: color1,
+                    bgColor: color2,
+                    width: params.width,
+                    height: params.height,
+                    lineWidth: params.lineWidth,
+                  })
+                case 'sunburst':
+                  return createSunburstSpec({
+                    color1,
+                    color2,
+                    rays: params.rays,
+                    centerX: params.centerX,
+                    centerY: params.centerY,
+                    twist: params.twist,
+                    viewportWidth: viewport.width,
+                    viewportHeight: viewport.height,
+                  })
                 default: {
                   const _exhaustive: never = params
                   throw new Error(`Unknown surface type: ${(_exhaustive as CustomSurfaceParams).type}`)
@@ -2553,6 +2725,57 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           color2,
           size: params.size,
           angle: params.angle,
+        })
+      case 'asanoha':
+        return createAsanohaSpec({
+          lineColor: color1,
+          bgColor: color2,
+          size: params.size,
+          lineWidth: params.lineWidth,
+        })
+      case 'seigaiha':
+        return createSeigaihaSpec({
+          lineColor: color1,
+          bgColor: color2,
+          radius: params.radius,
+          rings: params.rings,
+          lineWidth: params.lineWidth,
+        })
+      case 'wave':
+        return createWaveSpec({
+          color1,
+          color2,
+          amplitude: params.amplitude,
+          wavelength: params.wavelength,
+          thickness: params.thickness,
+          angle: params.angle,
+        })
+      case 'scales':
+        return createScalesSpec({
+          color1,
+          color2,
+          size: params.size,
+          overlap: params.overlap,
+          angle: params.angle,
+        })
+      case 'ogee':
+        return createOgeeSpec({
+          lineColor: color1,
+          bgColor: color2,
+          width: params.width,
+          height: params.height,
+          lineWidth: params.lineWidth,
+        })
+      case 'sunburst':
+        return createSunburstSpec({
+          color1,
+          color2,
+          rays: params.rays,
+          centerX: params.centerX,
+          centerY: params.centerY,
+          twist: params.twist,
+          viewportWidth: _viewport.width,
+          viewportHeight: _viewport.height,
         })
     }
   }

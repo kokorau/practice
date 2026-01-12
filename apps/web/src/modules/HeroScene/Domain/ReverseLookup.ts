@@ -17,7 +17,7 @@ export const approxEqual = (a: number, b: number, epsilon = 0.0001): boolean =>
  * Surface preset params type (for matching)
  */
 export interface SurfacePresetParams {
-  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain' | 'triangle' | 'hexagon'
+  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain' | 'triangle' | 'hexagon' | 'asanoha' | 'seigaiha' | 'wave' | 'scales' | 'ogee' | 'sunburst'
   width1?: number
   width2?: number
   angle?: number
@@ -38,8 +38,18 @@ export interface SurfacePresetParams {
   perlinOffset?: number
   seed?: number
   sparsity?: number
-  // Triangle/Hexagon params
+  // Triangle/Hexagon/Textile pattern params
   size?: number
+  radius?: number
+  rings?: number
+  amplitude?: number
+  wavelength?: number
+  thickness?: number
+  overlap?: number
+  width?: number
+  height?: number
+  rays?: number
+  twist?: number
 }
 
 /**
@@ -142,6 +152,61 @@ export const findSurfacePresetIndex = (
       if (
         approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
         approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'asanoha' && preset.params.type === 'asanoha') {
+      if (
+        approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
+        approxEqual(surfaceConfig.lineWidth, preset.params.lineWidth ?? 0)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'seigaiha' && preset.params.type === 'seigaiha') {
+      if (
+        approxEqual(surfaceConfig.radius, preset.params.radius ?? 0) &&
+        approxEqual(surfaceConfig.rings, preset.params.rings ?? 0) &&
+        approxEqual(surfaceConfig.lineWidth, preset.params.lineWidth ?? 0)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'wave' && preset.params.type === 'wave') {
+      if (
+        approxEqual(surfaceConfig.amplitude, preset.params.amplitude ?? 0) &&
+        approxEqual(surfaceConfig.wavelength, preset.params.wavelength ?? 0) &&
+        approxEqual(surfaceConfig.thickness, preset.params.thickness ?? 0) &&
+        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'scales' && preset.params.type === 'scales') {
+      if (
+        approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
+        approxEqual(surfaceConfig.overlap, preset.params.overlap ?? 0) &&
+        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'ogee' && preset.params.type === 'ogee') {
+      if (
+        approxEqual(surfaceConfig.width, preset.params.width ?? 0) &&
+        approxEqual(surfaceConfig.height, preset.params.height ?? 0) &&
+        approxEqual(surfaceConfig.lineWidth, preset.params.lineWidth ?? 0)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'sunburst' && preset.params.type === 'sunburst') {
+      if (
+        approxEqual(surfaceConfig.rays, preset.params.rays ?? 0) &&
+        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
+        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
+        approxEqual(surfaceConfig.twist, preset.params.twist ?? 0)
       ) {
         return i
       }

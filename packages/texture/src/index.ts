@@ -60,6 +60,13 @@ export {
   createCheckerSpec,
   createTriangleSpec,
   createHexagonSpec,
+  // Textile pattern specs
+  createAsanohaSpec,
+  createSeigaihaSpec,
+  createWaveSpec,
+  createScalesSpec,
+  createOgeeSpec,
+  createSunburstSpec,
   createCircleMaskSpec,
   createRectMaskSpec,
   createBlobMaskSpec,
