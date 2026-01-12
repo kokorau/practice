@@ -9,15 +9,11 @@ import SchemaFields from '../../SchemaFields.vue'
 import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
 import {
   VignetteBaseSchema,
-  VignetteShapeSchemas,
   ChromaticAberrationEffectSchema,
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
   createDefaultEffectConfig,
-  migrateVignetteConfig,
-  type VignetteShape,
-  type VignetteConfig,
   type FilterType,
 } from '../../../modules/HeroScene'
 import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
@@ -29,6 +25,7 @@ import type {
   LineHalftoneConfigParams,
   BlurConfigParams,
 } from '../../../composables/useFilterEditor'
+import { useVignetteEditor } from '../../../composables/useVignetteEditor'
 
 /** Filter props object - WritableComputedRef for direct binding */
 interface FilterProps {
@@ -48,47 +45,16 @@ const props = defineProps<{
   showPreview?: boolean
 }>()
 
-// Migrate legacy config to new format
-const migratedVignetteConfig = computed<VignetteConfig>(() =>
-  migrateVignetteConfig(props.filter.vignetteConfig.value as unknown as VignetteConfig)
-)
-
-// Get shape-specific schema based on current vignette shape
-const vignetteShapeSchema = computed(() => {
-  const shape = migratedVignetteConfig.value.shape as VignetteShape
-  return VignetteShapeSchemas[shape] ?? VignetteShapeSchemas.ellipse
-})
-
-// Extract shape-specific params for SchemaFields
-const vignetteShapeParams = computed(() => {
-  const { enabled, shape, intensity, softness, color, ...shapeParams } = migratedVignetteConfig.value
-  return shapeParams
-})
-
-// Handle vignette base params update
-const handleVignetteBaseUpdate = (update: Record<string, unknown>) => {
-  props.filter.vignetteConfig.value = { ...migratedVignetteConfig.value, ...update } as unknown as VignetteConfigParams
-}
-
-// Handle vignette shape-specific params update
-const handleVignetteShapeUpdate = (update: Record<string, unknown>) => {
-  props.filter.vignetteConfig.value = { ...migratedVignetteConfig.value, ...update } as unknown as VignetteConfigParams
-}
-
-// Color handling utilities
-const vignetteColorHex = computed(() => {
-  const [r, g, b] = migratedVignetteConfig.value.color
-  return `#${Math.round(r * 255).toString(16).padStart(2, '0')}${Math.round(g * 255).toString(16).padStart(2, '0')}${Math.round(b * 255).toString(16).padStart(2, '0')}`
-})
-
-const handleColorChange = (event: Event) => {
-  const hex = (event.target as HTMLInputElement).value
-  const r = parseInt(hex.slice(1, 3), 16) / 255
-  const g = parseInt(hex.slice(3, 5), 16) / 255
-  const b = parseInt(hex.slice(5, 7), 16) / 255
-  const a = migratedVignetteConfig.value.color[3]
-  props.filter.vignetteConfig.value = { ...migratedVignetteConfig.value, color: [r, g, b, a] } as unknown as VignetteConfigParams
-}
+// Use vignette editor composable for common vignette logic
+const {
+  migratedConfig: migratedVignetteConfig,
+  shapeSchema: vignetteShapeSchema,
+  shapeParams: vignetteShapeParams,
+  colorHex: vignetteColorHex,
+  handleBaseUpdate: handleVignetteBaseUpdate,
+  handleShapeUpdate: handleVignetteShapeUpdate,
+  handleColorChange,
+} = useVignetteEditor({ vignetteConfig: props.filter.vignetteConfig })
 
 /**
  * Create a config with specific effect enabled
