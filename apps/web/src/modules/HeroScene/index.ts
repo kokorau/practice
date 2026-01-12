@@ -170,6 +170,16 @@ export {
   LineHalftoneEffectSchema,
   LayerEffectSchemas,
   createDefaultEffectConfig,
+  // Vignette shape schemas and types
+  VignetteBaseSchema,
+  VignetteShapeSchemas,
+  EllipseVignetteSchema,
+  CircleVignetteSchema,
+  RectVignetteSchema,
+  LinearVignetteSchema,
+  VignetteShapeOptions,
+  createDefaultVignetteShapeConfig,
+  migrateVignetteConfig,
   // Effect Schemas (legacy aliases)
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
