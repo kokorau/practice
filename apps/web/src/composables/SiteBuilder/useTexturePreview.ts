@@ -24,6 +24,12 @@ import {
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import {
+  PREVIEW_ORIGINAL_WIDTH,
+  PREVIEW_ORIGINAL_HEIGHT,
+  PREVIEW_THUMBNAIL_WIDTH,
+  PREVIEW_THUMBNAIL_HEIGHT,
+} from '../../constants/preview'
 
 /**
  * Midground texture pattern definition
@@ -203,8 +209,8 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
         const canvas = canvases[i]
         if (!canvas) continue
         // 16:9 aspect ratio for thumbnails
-        canvas.width = 256
-        canvas.height = 144
+        canvas.width = PREVIEW_THUMBNAIL_WIDTH
+        canvas.height = PREVIEW_THUMBNAIL_HEIGHT
         try {
           const renderer = await TextureRenderer.create(canvas)
           // Guard: activeSection may have changed during async renderer creation
@@ -413,8 +419,8 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
     const canvas = externalCanvas ?? previewCanvasRef.value
     if (!canvas) return
 
-    canvas.width = 1280
-    canvas.height = 720
+    canvas.width = PREVIEW_ORIGINAL_WIDTH
+    canvas.height = PREVIEW_ORIGINAL_HEIGHT
     try {
       previewRenderer = await TextureRenderer.create(canvas)
       updatePreview()

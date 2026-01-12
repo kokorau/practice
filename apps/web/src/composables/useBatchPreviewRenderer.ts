@@ -12,26 +12,29 @@ import { TextureRenderer } from '@practice/texture'
 import type { HeroViewConfig } from '../modules/HeroScene'
 import { renderHeroConfig } from '../modules/HeroScene'
 import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
+import {
+  PREVIEW_ORIGINAL_WIDTH,
+  PREVIEW_THUMBNAIL_WIDTH,
+  PREVIEW_THUMBNAIL_HEIGHT,
+} from '../constants/preview'
 
 export interface BatchPreviewRendererOptions {
-  /** Preview width (default: 256) */
+  /** Preview width (default: PREVIEW_THUMBNAIL_WIDTH) */
   width?: number
-  /** Preview height (default: 144 for 16:9) */
+  /** Preview height (default: PREVIEW_THUMBNAIL_HEIGHT for 16:9) */
   height?: number
   /** Texture scale for rendering (default: calculated from width) */
   scale?: number
 }
-
-const ORIGINAL_WIDTH = 1280
 
 export function useBatchPreviewRenderer(
   configs: Ref<(HeroViewConfig | null)[]>,
   palette: Ref<PrimitivePalette | undefined>,
   options: BatchPreviewRendererOptions = {}
 ) {
-  const width = options.width ?? 256
-  const height = options.height ?? Math.round(width * 9 / 16)
-  const scale = options.scale ?? width / ORIGINAL_WIDTH
+  const width = options.width ?? PREVIEW_THUMBNAIL_WIDTH
+  const height = options.height ?? PREVIEW_THUMBNAIL_HEIGHT
+  const scale = options.scale ?? width / PREVIEW_ORIGINAL_WIDTH
 
   // Cached preview data URLs
   const previews = ref<(string | null)[]>([])

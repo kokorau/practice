@@ -11,9 +11,11 @@ import { TextureRenderer } from '@practice/texture'
 import type { HeroViewConfig } from '../../modules/HeroScene'
 import { renderHeroConfig } from '../../modules/HeroScene'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
-
-// Base preview width for texture scale calculation
-const ORIGINAL_WIDTH = 1280
+import {
+  PREVIEW_ORIGINAL_WIDTH,
+  PREVIEW_THUMBNAIL_WIDTH,
+  PREVIEW_THUMBNAIL_HEIGHT,
+} from '../../constants/preview'
 
 const props = defineProps<{
   config: HeroViewConfig
@@ -28,13 +30,13 @@ let renderer: TextureRenderer | null = null
 let resizeObserver: ResizeObserver | null = null
 
 // Canvas dimensions (updated by ResizeObserver)
-const canvasWidth = ref(256)
-const canvasHeight = ref(144)
+const canvasWidth = ref(PREVIEW_THUMBNAIL_WIDTH)
+const canvasHeight = ref(PREVIEW_THUMBNAIL_HEIGHT)
 
 // Calculate texture scale based on canvas width
 const textureScale = computed(() => {
   if (props.scale !== undefined) return props.scale
-  return canvasWidth.value / ORIGINAL_WIDTH
+  return canvasWidth.value / PREVIEW_ORIGINAL_WIDTH
 })
 
 const render = async () => {
