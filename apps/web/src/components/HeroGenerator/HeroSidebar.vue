@@ -349,6 +349,23 @@ const selectedPresetName = computed(() => {
 </template>
 
 <style scoped>
+/* Left Sidebar */
+.hero-sidebar {
+  width: 16rem;
+  flex-shrink: 0;
+  background: oklch(0.94 0.01 260);
+  border-right: 1px solid oklch(0.88 0.01 260);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+:global(.dark) .hero-sidebar {
+  background: oklch(0.18 0.02 260);
+  border-right-color: oklch(0.25 0.02 260);
+}
+
 /* Sidebar Tabs */
 .sidebar-tabs {
   display: flex;
