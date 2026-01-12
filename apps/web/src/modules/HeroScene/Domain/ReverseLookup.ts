@@ -56,7 +56,7 @@ export interface SurfacePresetParams {
  * Mask pattern config type (for matching)
  */
 export interface MaskPatternConfig {
-  type: 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient' | 'radialGradient'
+  type: 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient' | 'radialGradient' | 'boxGradient'
   centerX?: number
   centerY?: number
   radius?: number
@@ -83,6 +83,9 @@ export interface MaskPatternConfig {
   innerRadius?: number
   outerRadius?: number
   aspectRatio?: number
+  // BoxGradient params
+  cornerRadius?: number
+  curve?: 'linear' | 'smooth' | 'easeIn' | 'easeOut'
 }
 
 /**
@@ -302,6 +305,18 @@ export const findMaskPatternIndex = (
         approxEqual(shapeConfig.innerRadius, maskConfig.innerRadius ?? 0) &&
         approxEqual(shapeConfig.outerRadius, maskConfig.outerRadius ?? 0.5) &&
         approxEqual(shapeConfig.aspectRatio, maskConfig.aspectRatio ?? 1)
+      ) {
+        return i
+      }
+    }
+    if (shapeConfig.type === 'boxGradient' && maskConfig.type === 'boxGradient') {
+      if (
+        approxEqual(shapeConfig.left, maskConfig.left ?? 0.15) &&
+        approxEqual(shapeConfig.right, maskConfig.right ?? 0.15) &&
+        approxEqual(shapeConfig.top, maskConfig.top ?? 0.15) &&
+        approxEqual(shapeConfig.bottom, maskConfig.bottom ?? 0.15) &&
+        approxEqual(shapeConfig.cornerRadius, maskConfig.cornerRadius ?? 0) &&
+        shapeConfig.curve === maskConfig.curve
       ) {
         return i
       }

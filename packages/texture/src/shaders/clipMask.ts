@@ -102,6 +102,23 @@ export interface RadialGradientClipParams extends ClipMaskBaseParams {
   aspectRatio: number
 }
 
+/** BoxGradientクリップマスクのパラメータ */
+export interface BoxGradientClipParams extends ClipMaskBaseParams {
+  type: 'boxGradient'
+  /** 左辺からの減衰幅 (0.0-1.0, 正規化座標) */
+  left: number
+  /** 右辺からの減衰幅 (0.0-1.0, 正規化座標) */
+  right: number
+  /** 上辺からの減衰幅 (0.0-1.0, 正規化座標) */
+  top: number
+  /** 下辺からの減衰幅 (0.0-1.0, 正規化座標) */
+  bottom: number
+  /** 角丸半径 */
+  cornerRadius: number
+  /** フェードカーブタイプ (0=linear, 1=smooth, 2=easeIn, 3=easeOut) */
+  curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut'
+}
+
 /** クリップマスクパラメータのUnion型 */
 export type ClipMaskParams =
   | CircleClipParams
@@ -110,6 +127,7 @@ export type ClipMaskParams =
   | PerlinClipParams
   | LinearGradientClipParams
   | RadialGradientClipParams
+  | BoxGradientClipParams
 
 // ============================================================
 // Common WGSL Utilities
@@ -759,6 +777,167 @@ export function createRadialGradientClipSpec(
   }
 }
 
+// ============================================================
+// Box Gradient Clip Shader
+// ============================================================
+
+/** Convert curve type string to number for shader */
+function curveTypeToNumber(curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut'): number {
+  switch (curve) {
+    case 'linear': return 0
+    case 'smooth': return 1
+    case 'easeIn': return 2
+    case 'easeOut': return 3
+    default: return 1
+  }
+}
+
+export const boxGradientClipShader = /* wgsl */ `
+${fullscreenVertex}
+
+struct BoxGradientClipParams {
+  left: f32,
+  right: f32,
+  top: f32,
+  bottom: f32,
+  cornerRadius: f32,
+  curve: f32,
+  feather: f32,
+  invert: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+  _padding1: f32,
+  _padding2: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: BoxGradientClipParams;
+@group(0) @binding(1) var inputSampler: sampler;
+@group(0) @binding(2) var inputTexture: texture_2d<f32>;
+
+// Apply curve function based on curve type
+fn applyCurve(t: f32, curveType: f32) -> f32 {
+  let curveInt = i32(curveType);
+  if (curveInt == 0) {
+    // linear
+    return t;
+  } else if (curveInt == 1) {
+    // smooth (smoothstep-like)
+    return t * t * (3.0 - 2.0 * t);
+  } else if (curveInt == 2) {
+    // easeIn (quadratic)
+    return t * t;
+  } else {
+    // easeOut (inverse quadratic)
+    return 1.0 - (1.0 - t) * (1.0 - t);
+  }
+}
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  // Sample input texture
+  let texColor = textureSample(inputTexture, inputSampler, uv);
+
+  // Calculate distance from each edge, inverted so t=0 at center, t=1 at edges
+  var dLeft = 0.0;
+  var dRight = 0.0;
+  var dTop = 0.0;
+  var dBottom = 0.0;
+
+  if (params.left > 0.0) {
+    dLeft = 1.0 - clamp(uv.x / params.left, 0.0, 1.0);
+  }
+  if (params.right > 0.0) {
+    dRight = 1.0 - clamp((1.0 - uv.x) / params.right, 0.0, 1.0);
+  }
+  if (params.top > 0.0) {
+    dTop = 1.0 - clamp(uv.y / params.top, 0.0, 1.0);
+  }
+  if (params.bottom > 0.0) {
+    dBottom = 1.0 - clamp((1.0 - uv.y) / params.bottom, 0.0, 1.0);
+  }
+
+  // Maximum of all edges forms the box gradient (t=0 at center, t=1 at edges)
+  var t = max(max(dLeft, dRight), max(dTop, dBottom));
+
+  // Apply corner radius effect in corners
+  if (params.cornerRadius > 0.0) {
+    let cr = params.cornerRadius;
+
+    // Check if we're in a corner region
+    let inLeftTop = uv.x < params.left && uv.y < params.top;
+    let inRightTop = uv.x > (1.0 - params.right) && uv.y < params.top;
+    let inLeftBottom = uv.x < params.left && uv.y > (1.0 - params.bottom);
+    let inRightBottom = uv.x > (1.0 - params.right) && uv.y > (1.0 - params.bottom);
+
+    if (inLeftTop) {
+      let cornerCenter = vec2f(params.left, params.top);
+      let dist = length((uv - cornerCenter) / vec2f(params.left, params.top));
+      let cornerT = clamp(dist, 0.0, 1.0);
+      t = mix(t, cornerT, cr);
+    } else if (inRightTop) {
+      let cornerCenter = vec2f(1.0 - params.right, params.top);
+      let dist = length((uv - cornerCenter) / vec2f(params.right, params.top));
+      let cornerT = clamp(dist, 0.0, 1.0);
+      t = mix(t, cornerT, cr);
+    } else if (inLeftBottom) {
+      let cornerCenter = vec2f(params.left, 1.0 - params.bottom);
+      let dist = length((uv - cornerCenter) / vec2f(params.left, params.bottom));
+      let cornerT = clamp(dist, 0.0, 1.0);
+      t = mix(t, cornerT, cr);
+    } else if (inRightBottom) {
+      let cornerCenter = vec2f(1.0 - params.right, 1.0 - params.bottom);
+      let dist = length((uv - cornerCenter) / vec2f(params.right, params.bottom));
+      let cornerT = clamp(dist, 0.0, 1.0);
+      t = mix(t, cornerT, cr);
+    }
+  }
+
+  // Apply curve
+  t = applyCurve(t, params.curve);
+
+  // Apply feather - mask is 1 at center (t=0), 0 at edges (t=1)
+  let featherAmount = max(params.feather * 0.1, 0.01);
+  let mask = 1.0 - smoothstep(0.0, featherAmount, t);
+
+  // Apply invert
+  let finalMask = select(mask, 1.0 - mask, params.invert > 0.5);
+
+  return vec4f(texColor.rgb, texColor.a * finalMask);
+}
+`
+
+/**
+ * Create render spec for box gradient clip mask
+ */
+export function createBoxGradientClipSpec(
+  params: BoxGradientClipParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const data = new Float32Array([
+    params.left,
+    params.right,
+    params.top,
+    params.bottom,
+    params.cornerRadius,
+    curveTypeToNumber(params.curve),
+    params.feather,
+    params.invert ? 1.0 : 0.0,
+    viewport.width,
+    viewport.height,
+    0, // padding
+    0, // padding
+  ])
+  return {
+    shader: boxGradientClipShader,
+    uniforms: data.buffer,
+    bufferSize: 48,
+    blend: maskBlendState,
+    requiresTexture: true,
+  }
+}
+
 /**
  * Create render spec for any clip mask type
  */
@@ -779,5 +958,7 @@ export function createClipMaskSpec(
       return createLinearGradientClipSpec(params, viewport)
     case 'radialGradient':
       return createRadialGradientClipSpec(params, viewport)
+    case 'boxGradient':
+      return createBoxGradientClipSpec(params, viewport)
   }
 }

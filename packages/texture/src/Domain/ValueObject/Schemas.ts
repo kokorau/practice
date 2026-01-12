@@ -103,6 +103,40 @@ export const RadialGradientMaskShapeSchema = defineSchema({
 
 export type RadialGradientMaskShapeParams = Infer<typeof RadialGradientMaskShapeSchema>
 
+/**
+ * Box Gradient curve type options for select field
+ */
+const boxGradientCurveOptions = [
+  { value: 'linear' as const, label: 'Linear' },
+  { value: 'smooth' as const, label: 'Smooth' },
+  { value: 'easeIn' as const, label: 'Ease In' },
+  { value: 'easeOut' as const, label: 'Ease Out' },
+] as const
+
+/**
+ * Box Gradient Mask Shape Schema
+ * Rectangular vignette effect with fade from edges toward center
+ */
+export const BoxGradientMaskShapeSchema = defineSchema({
+  left: number({ label: 'Left', min: 0, max: 0.5, step: 0.01, default: 0.15 }),
+  right: number({ label: 'Right', min: 0, max: 0.5, step: 0.01, default: 0.15 }),
+  top: number({ label: 'Top', min: 0, max: 0.5, step: 0.01, default: 0.15 }),
+  bottom: number({ label: 'Bottom', min: 0, max: 0.5, step: 0.01, default: 0.15 }),
+  cornerRadius: number({ label: 'Corner Radius', min: 0, max: 1, step: 0.01, default: 0 }),
+  curve: select({ label: 'Curve', options: boxGradientCurveOptions, default: 'smooth' }),
+  cutout: boolean({ label: 'Cutout', default: false }),
+})
+
+export interface BoxGradientMaskShapeParams {
+  left: number
+  right: number
+  top: number
+  bottom: number
+  cornerRadius: number
+  curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut'
+  cutout: boolean
+}
+
 // ============================================================
 // Surface Schemas (Texture Patterns)
 // ============================================================
@@ -310,6 +344,9 @@ export const createDefaultLinearGradientMaskParams = (): LinearGradientMaskShape
 export const createDefaultRadialGradientMaskParams = (): RadialGradientMaskShapeParams =>
   getDefaults(RadialGradientMaskShapeSchema)
 
+export const createDefaultBoxGradientMaskParams = (): BoxGradientMaskShapeParams =>
+  getDefaults(BoxGradientMaskShapeSchema) as BoxGradientMaskShapeParams
+
 export const createDefaultSolidParams = (): SolidSurfaceParams =>
   getDefaults(SolidSurfaceSchema)
 
@@ -363,6 +400,7 @@ export const MaskShapeSchemas = {
   perlin: PerlinMaskShapeSchema,
   linearGradient: LinearGradientMaskShapeSchema,
   radialGradient: RadialGradientMaskShapeSchema,
+  boxGradient: BoxGradientMaskShapeSchema,
 } as const
 
 export const SurfaceSchemas = {

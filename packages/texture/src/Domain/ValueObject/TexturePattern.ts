@@ -37,7 +37,7 @@ export interface TexturePattern {
 /**
  * Mask type enumeration
  */
-export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient' | 'radialGradient'
+export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient' | 'radialGradient' | 'boxGradient'
 
 /**
  * Circle mask configuration
@@ -133,7 +133,29 @@ export interface RadialGradientMaskShapeConfig {
   cutout?: boolean
 }
 
-export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig
+/**
+ * Box gradient mask configuration
+ * Rectangular vignette effect with fade from edges toward center
+ */
+export interface BoxGradientMaskShapeConfig {
+  type: 'boxGradient'
+  /** Left edge fade width (0.0-1.0, normalized coordinate) */
+  left: number
+  /** Right edge fade width (0.0-1.0, normalized coordinate) */
+  right: number
+  /** Top edge fade width (0.0-1.0, normalized coordinate) */
+  top: number
+  /** Bottom edge fade width (0.0-1.0, normalized coordinate) */
+  bottom: number
+  /** Corner radius (0.0-1.0, controls corner rounding) */
+  cornerRadius: number
+  /** Fade curve type */
+  curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut'
+  /** If true (default), gradient goes from opaque center to transparent edges. If false, reversed. */
+  cutout?: boolean
+}
+
+export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig | BoxGradientMaskShapeConfig
 
 /**
  * Mask pattern definition with shape configuration

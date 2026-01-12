@@ -312,6 +312,23 @@ export interface RadialGradientMaskShapeConfig {
   cutout: boolean
 }
 
+export interface BoxGradientMaskShapeConfig {
+  type: 'boxGradient'
+  /** 左辺からの減衰幅 (0-1, 正規化座標) */
+  left: number
+  /** 右辺からの減衰幅 (0-1, 正規化座標) */
+  right: number
+  /** 上辺からの減衰幅 (0-1, 正規化座標) */
+  top: number
+  /** 下辺からの減衰幅 (0-1, 正規化座標) */
+  bottom: number
+  /** 角丸半径 */
+  cornerRadius: number
+  /** フェードカーブ (0=linear, 1=smooth, 2=easeIn, 3=easeOut) */
+  curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut'
+  cutout: boolean
+}
+
 export type MaskShapeConfig =
   | CircleMaskShapeConfig
   | RectMaskShapeConfig
@@ -319,6 +336,7 @@ export type MaskShapeConfig =
   | PerlinMaskShapeConfig
   | LinearGradientMaskShapeConfig
   | RadialGradientMaskShapeConfig
+  | BoxGradientMaskShapeConfig
 
 // ============================================================
 // Processor Config (JSON シリアライズ用)
