@@ -33,12 +33,16 @@ vi.mock('prismjs/components/prism-json', () => ({}))
 vi.mock('prismjs/components/prism-css', () => ({}))
 vi.mock('prismjs/components/prism-markup', () => ({}))
 
-vi.mock('../../modules/Asset', () => ({
-  $Asset: {
-    toObjectUrl: vi.fn(() => Promise.resolve('blob:mock-url')),
-    toBlob: vi.fn(() => Promise.resolve(new Blob(['test content'], { type: 'text/plain' }))),
-  },
-}))
+vi.mock('../../modules/Asset', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../modules/Asset')>()
+  return {
+    ...actual,
+    $Asset: {
+      toObjectUrl: vi.fn(() => Promise.resolve('blob:mock-url')),
+      toBlob: vi.fn(() => Promise.resolve(new Blob(['test content'], { type: 'text/plain' }))),
+    },
+  }
+})
 
 // Mock FontFace
 class MockFontFace {
