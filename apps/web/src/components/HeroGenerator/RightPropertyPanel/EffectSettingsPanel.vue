@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import { computed, type WritableComputedRef } from 'vue'
+import { type WritableComputedRef } from 'vue'
 import {
   VignetteBaseSchema,
-  VignetteShapeSchemas,
   ChromaticAberrationEffectSchema,
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
-  migrateVignetteConfig,
-  createVignetteConfigForShape,
-  type VignetteShape,
-  type VignetteConfig,
   type FilterType,
 } from '../../../modules/HeroScene'
 import type {
@@ -20,6 +15,7 @@ import type {
   LineHalftoneConfigParams,
   BlurConfigParams,
 } from '../../../composables/useFilterEditor'
+import { useVignetteEditor } from '../../../composables/useVignetteEditor'
 import SchemaFields from '../../SchemaFields.vue'
 
 const props = defineProps<{
@@ -31,60 +27,18 @@ const props = defineProps<{
   blurConfig: WritableComputedRef<BlurConfigParams>
 }>()
 
-// Migrate legacy config to new format
-const migratedVignetteConfig = computed<VignetteConfig>(() =>
-  migrateVignetteConfig(props.vignetteConfig.value as unknown as VignetteConfig)
-)
+// Use vignette editor composable for common vignette logic
+const {
+  shapeSchema: vignetteShapeSchema,
+  shapeParams: vignetteShapeParams,
+  colorHex: vignetteColorHex,
+  handleBaseUpdate: handleVignetteBaseUpdate,
+  handleShapeUpdate: handleVignetteShapeUpdate,
+  handleColorChange,
+} = useVignetteEditor({ vignetteConfig: props.vignetteConfig })
 
 const handleFilterTypeChange = (type: FilterType) => {
   props.selectedFilterType.value = type
-}
-
-// Get shape-specific schema based on current vignette shape
-const vignetteShapeSchema = computed(() => {
-  const shape = migratedVignetteConfig.value.shape as VignetteShape
-  return VignetteShapeSchemas[shape] ?? VignetteShapeSchemas.ellipse
-})
-
-// Extract shape-specific params for SchemaFields
-const vignetteShapeParams = computed(() => {
-  const { enabled, shape, intensity, softness, color, ...shapeParams } = migratedVignetteConfig.value
-  return shapeParams
-})
-
-// Handle vignette base params update
-const handleVignetteBaseUpdate = (update: Record<string, unknown>) => {
-  // Check if shape is changing
-  if ('shape' in update && update.shape !== migratedVignetteConfig.value.shape) {
-    // Create new config with proper defaults for the new shape
-    const newConfig = createVignetteConfigForShape(
-      update.shape as VignetteShape,
-      migratedVignetteConfig.value
-    )
-    props.vignetteConfig.value = { ...newConfig, ...update } as unknown as VignetteConfigParams
-  } else {
-    props.vignetteConfig.value = { ...migratedVignetteConfig.value, ...update } as unknown as VignetteConfigParams
-  }
-}
-
-// Handle vignette shape-specific params update
-const handleVignetteShapeUpdate = (update: Record<string, unknown>) => {
-  props.vignetteConfig.value = { ...migratedVignetteConfig.value, ...update } as unknown as VignetteConfigParams
-}
-
-// Color handling utilities
-const vignetteColorHex = computed(() => {
-  const [r, g, b] = migratedVignetteConfig.value.color
-  return `#${Math.round(r * 255).toString(16).padStart(2, '0')}${Math.round(g * 255).toString(16).padStart(2, '0')}${Math.round(b * 255).toString(16).padStart(2, '0')}`
-})
-
-const handleColorChange = (event: Event) => {
-  const hex = (event.target as HTMLInputElement).value
-  const r = parseInt(hex.slice(1, 3), 16) / 255
-  const g = parseInt(hex.slice(3, 5), 16) / 255
-  const b = parseInt(hex.slice(5, 7), 16) / 255
-  const a = migratedVignetteConfig.value.color[3]
-  props.vignetteConfig.value = { ...migratedVignetteConfig.value, color: [r, g, b, a] } as unknown as VignetteConfigParams
 }
 </script>
 

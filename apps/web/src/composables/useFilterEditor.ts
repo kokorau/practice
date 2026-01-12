@@ -3,7 +3,7 @@ import type {
   FilterType,
   EffectType,
   LayerEffectConfig,
-  VignetteFilterConfig,
+  VignetteConfig,
   ChromaticAberrationFilterConfig,
   DotHalftoneFilterConfig,
   LineHalftoneFilterConfig,
@@ -27,7 +27,7 @@ export interface UseFilterEditorOptions {
 /**
  * Filter config types for SchemaFields binding (excludes 'enabled' field)
  */
-export type VignetteConfigParams = Partial<Omit<VignetteFilterConfig, 'enabled'>>
+export type VignetteConfigParams = Partial<Omit<VignetteConfig, 'enabled'>>
 export type ChromaticConfigParams = Partial<Omit<ChromaticAberrationFilterConfig, 'enabled'>>
 export type DotHalftoneConfigParams = Partial<Omit<DotHalftoneFilterConfig, 'enabled'>>
 export type LineHalftoneConfigParams = Partial<Omit<LineHalftoneFilterConfig, 'enabled'>>
