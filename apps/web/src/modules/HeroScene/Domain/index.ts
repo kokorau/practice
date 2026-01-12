@@ -801,6 +801,42 @@ export type {
 } from './repository'
 
 // ============================================================
+// HeroEditorState (統合状態管理)
+// ============================================================
+
+export type {
+  EditorSectionType,
+  BackgroundUIState,
+  MaskUIState,
+  FilterUIState,
+  ForegroundUIState,
+  PresetUIState,
+  ColorUIState,
+  HeroEditorUIState,
+  HeroEditorState,
+  CustomMaskShapeParams,
+  CustomSurfaceParams,
+  CustomBackgroundSurfaceParams,
+} from './HeroEditorState'
+
+export {
+  createDefaultBackgroundUIState,
+  createDefaultMaskUIState,
+  createDefaultFilterUIState,
+  createDefaultForegroundUIState,
+  createDefaultPresetUIState,
+  createDefaultColorUIState,
+  createDefaultHeroEditorUIState,
+  isValidEditorSection,
+} from './HeroEditorState'
+
+export type {
+  HeroEditorRepository,
+  HeroEditorSubscriber,
+  HeroEditorUnsubscribe,
+} from './repository/HeroEditorRepository'
+
+// ============================================================
 // Mappers
 // ============================================================
 
