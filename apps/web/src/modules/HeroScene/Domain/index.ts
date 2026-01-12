@@ -426,8 +426,6 @@ export {
   getMaskedNodes,
   findApplicableMask,
   isNodeMasked,
-  ensureBaseLayerFirst,
-  isValidLayerStructure,
 } from './MoveRules'
 
 // ============================================================

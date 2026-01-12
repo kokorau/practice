@@ -3,8 +3,6 @@ import {
   getMaskedNodes,
   findApplicableMask,
   isNodeMasked,
-  ensureBaseLayerFirst,
-  isValidLayerStructure,
 } from './MoveRules'
 import {
   createBaseLayer,
@@ -120,59 +118,6 @@ describe('MoveRules', () => {
       ]
 
       expect(isNodeMasked(nodes, 'surface-1')).toBe(false)
-    })
-  })
-
-  describe('ensureBaseLayerFirst', () => {
-    it('should move base layer to index 0', () => {
-      const nodes: SceneNode[] = [
-        createSurfaceLayer('surface-1', solidSurface),
-        createBaseLayer(solidSurface),
-      ]
-
-      const fixed = ensureBaseLayerFirst(nodes)
-      expect(fixed[0]?.id).toBe('base')
-      expect(fixed).toHaveLength(2)
-    })
-
-    it('should not modify already valid structure', () => {
-      const nodes: SceneNode[] = [
-        createBaseLayer(solidSurface),
-        createSurfaceLayer('surface-1', solidSurface),
-      ]
-
-      const fixed = ensureBaseLayerFirst(nodes)
-      expect(fixed).toEqual(nodes)
-    })
-
-    it('should handle empty array', () => {
-      const nodes: SceneNode[] = []
-      const fixed = ensureBaseLayerFirst(nodes)
-      expect(fixed).toHaveLength(0)
-    })
-  })
-
-  describe('isValidLayerStructure', () => {
-    it('should return true for valid structure', () => {
-      const nodes: SceneNode[] = [
-        createBaseLayer(solidSurface),
-        createSurfaceLayer('surface-1', solidSurface),
-      ]
-
-      expect(isValidLayerStructure(nodes)).toBe(true)
-    })
-
-    it('should return false for invalid structure', () => {
-      const nodes: SceneNode[] = [
-        createSurfaceLayer('surface-1', solidSurface),
-        createBaseLayer(solidSurface),
-      ]
-
-      expect(isValidLayerStructure(nodes)).toBe(false)
-    })
-
-    it('should return true for empty array', () => {
-      expect(isValidLayerStructure([])).toBe(true)
     })
   })
 })

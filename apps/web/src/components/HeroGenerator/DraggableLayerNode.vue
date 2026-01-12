@@ -47,7 +47,6 @@ const isExpanded = computed(() => props.node.expanded)
 
 // Check if this node has expandable content (only children, modifiers are always visible)
 const hasExpandableContent = computed(() => hasChildren.value)
-const isBaseLayer = computed(() => isLayer(props.node) && props.node.variant === 'base')
 const hasModifiers = computed(() => modifiers.value.length > 0)
 
 // Check if this node's processor is selected
@@ -206,7 +205,7 @@ const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
       >
         <span class="material-icons">chevron_right</span>
       </button>
-      <span v-else-if="!isBaseLayer && !hasModifiers" class="expand-spacer" />
+      <span v-else-if="!hasModifiers" class="expand-spacer" />
 
       <!-- Type Icon -->
       <span class="material-icons layer-icon">{{ getLayerIcon(nodeVariant) }}</span>
@@ -218,24 +217,20 @@ const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
 
       <!-- Visibility Toggle -->
       <button
-        v-if="!isBaseLayer"
         class="visibility-toggle"
         :class="{ hidden: !node.visible }"
         @click="handleToggleVisibility"
       >
         <span class="material-icons">{{ node.visible ? 'visibility' : 'visibility_off' }}</span>
       </button>
-      <span v-else class="visibility-spacer" />
 
       <!-- Remove Button -->
       <button
-        v-if="!isBaseLayer"
         class="remove-toggle"
         @click="handleRemove"
       >
         <span class="material-icons">close</span>
       </button>
-      <span v-else class="visibility-spacer" />
     </div>
 
     <!-- Processor group (contains Effect/Mask as children) -->

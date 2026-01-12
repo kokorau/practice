@@ -39,7 +39,6 @@ const isSelected = computed(() => props.selectedId === props.node.id)
 const isGroupNode = computed(() => isGroup(props.node))
 const hasChildren = computed(() => isGroupNode.value && (props.node as Group).children.length > 0)
 const isExpanded = computed(() => props.node.expanded)
-const isBaseLayer = computed(() => isLayer(props.node) && props.node.variant === 'base')
 
 // Get node variant for Layer nodes (including mask)
 const nodeVariant = computed((): LayerVariant | 'group' | 'mask' => {
@@ -180,24 +179,20 @@ const handleSelectProcessor = (type: 'effect' | 'mask') => {
 
       <!-- Visibility Toggle -->
       <button
-        v-if="!isBaseLayer"
         class="visibility-toggle"
         :class="{ hidden: !node.visible }"
         @click="handleToggleVisibility"
       >
         <span class="material-icons">{{ node.visible ? 'visibility' : 'visibility_off' }}</span>
       </button>
-      <span v-else class="visibility-spacer" />
 
       <!-- Remove Button -->
       <button
-        v-if="!isBaseLayer"
         class="remove-toggle"
         @click="handleRemove"
       >
         <span class="material-icons">close</span>
       </button>
-      <span v-else class="visibility-spacer" />
     </div>
 
     <!-- Modifiers (Effect/Mask) - Visual sub-items when selected -->
