@@ -2,7 +2,6 @@ import { ref, shallowRef, computed, type Ref, type ComputedRef } from 'vue'
 import {
   type EffectType,
   type LayerEffectConfig,
-  EFFECT_TYPES,
   createDefaultEffectConfig,
 } from '../modules/HeroScene'
 
@@ -118,14 +117,13 @@ export function useEffectManager(): UseEffectManagerReturn {
     const current = effectsMap.value.get(layerId) ?? createDefaultEffectConfig()
 
     // Build new config with exclusive selection
-    const updated = { ...current } as LayerEffectConfig
-
-    // Disable all effects first, then enable the selected one
-    for (const effectType of EFFECT_TYPES) {
-      updated[effectType] = {
-        ...current[effectType],
-        enabled: type === effectType,
-      }
+    // Update each effect type individually to maintain type safety
+    const updated: LayerEffectConfig = {
+      vignette: { ...current.vignette, enabled: type === 'vignette' },
+      chromaticAberration: { ...current.chromaticAberration, enabled: type === 'chromaticAberration' },
+      dotHalftone: { ...current.dotHalftone, enabled: type === 'dotHalftone' },
+      lineHalftone: { ...current.lineHalftone, enabled: type === 'lineHalftone' },
+      blur: { ...current.blur, enabled: type === 'blur' },
     }
 
     // Update map (trigger reactivity)
