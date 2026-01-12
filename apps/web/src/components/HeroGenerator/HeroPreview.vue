@@ -67,7 +67,7 @@ onUnmounted(() => {
 const positionedGroups = computed(() => compileForegroundLayout(props.foregroundConfig))
 
 /**
- * Get inline style for an element, including font-family, fontSize, and color
+ * Get inline style for an element, including font-family, fontSize, fontWeight, letterSpacing, lineHeight, and color
  */
 const getElementStyle = (el: PositionedElement): Record<string, string> => {
   const style: Record<string, string> = {}
@@ -78,6 +78,15 @@ const getElementStyle = (el: PositionedElement): Record<string, string> => {
   if (el.fontSize !== undefined) {
     // Convert rem to px for consistent rendering at base size
     style.fontSize = `${el.fontSize * BASE_FONT_SIZE}px`
+  }
+  if (el.fontWeight !== undefined) {
+    style.fontWeight = String(el.fontWeight)
+  }
+  if (el.letterSpacing !== undefined) {
+    style.letterSpacing = `${el.letterSpacing}em`
+  }
+  if (el.lineHeight !== undefined) {
+    style.lineHeight = String(el.lineHeight)
   }
   // Apply color: first check element-specific color from elementColors map
   if (props.elementColors?.has(el.id)) {

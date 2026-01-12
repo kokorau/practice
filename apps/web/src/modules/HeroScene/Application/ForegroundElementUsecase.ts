@@ -24,6 +24,9 @@ export interface ForegroundElementUpdate {
   content?: string
   fontId?: string
   fontSize?: number
+  fontWeight?: number
+  letterSpacing?: number
+  lineHeight?: number
   colorKey?: HeroPrimitiveKey | 'auto'
 }
 

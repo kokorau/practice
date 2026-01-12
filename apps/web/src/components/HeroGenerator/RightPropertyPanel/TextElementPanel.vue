@@ -22,6 +22,9 @@ defineProps<{
   content: string
   position: GridPosition
   fontSize: number
+  fontWeight: number
+  letterSpacing: number
+  lineHeight: number
   fontPreset: FontPreset | null
   fontDisplayName: string
 }>()
@@ -31,6 +34,9 @@ const emit = defineEmits<{
   (e: 'update:content', value: string): void
   (e: 'update:position', value: GridPosition): void
   (e: 'update:fontSize', value: number): void
+  (e: 'update:fontWeight', value: number): void
+  (e: 'update:letterSpacing', value: number): void
+  (e: 'update:lineHeight', value: number): void
   (e: 'open-font-panel'): void
 }>()
 
@@ -148,6 +154,56 @@ const getContrastHint = (score: number): string => {
           @input="emit('update:fontSize', Number(($event.target as HTMLInputElement).value))"
         />
         <span class="font-size-unit">rem</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-label">Font Weight</p>
+      <select
+        :value="fontWeight"
+        class="font-weight-select"
+        @change="emit('update:fontWeight', Number(($event.target as HTMLSelectElement).value))"
+      >
+        <option :value="100">100 - Thin</option>
+        <option :value="200">200 - Extra Light</option>
+        <option :value="300">300 - Light</option>
+        <option :value="400">400 - Regular</option>
+        <option :value="500">500 - Medium</option>
+        <option :value="600">600 - Semi Bold</option>
+        <option :value="700">700 - Bold</option>
+        <option :value="800">800 - Extra Bold</option>
+        <option :value="900">900 - Black</option>
+      </select>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-label">Letter Spacing</p>
+      <div class="font-size-input-wrapper">
+        <input
+          :value="letterSpacing"
+          type="number"
+          min="-0.1"
+          max="0.5"
+          step="0.01"
+          class="font-size-input"
+          @input="emit('update:letterSpacing', Number(($event.target as HTMLInputElement).value))"
+        />
+        <span class="font-size-unit">em</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <p class="settings-label">Line Height</p>
+      <div class="font-size-input-wrapper">
+        <input
+          :value="lineHeight"
+          type="number"
+          min="1.0"
+          max="3.0"
+          step="0.1"
+          class="font-size-input"
+          @input="emit('update:lineHeight', Number(($event.target as HTMLInputElement).value))"
+        />
       </div>
     </div>
   </div>
@@ -400,5 +456,29 @@ const getContrastHint = (score: number): string => {
 
 :global(.dark) .font-size-unit {
   color: oklch(0.60 0.02 260);
+}
+
+/* Font weight select */
+.font-weight-select {
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  background: oklch(0.98 0.01 260);
+  color: oklch(0.25 0.02 260);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+:global(.dark) .font-weight-select {
+  background: oklch(0.16 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.90 0.02 260);
+}
+
+.font-weight-select:focus {
+  outline: none;
+  border-color: oklch(0.55 0.20 250);
 }
 </style>

@@ -27,6 +27,9 @@ interface ForegroundElementConfig {
   content: string
   fontId?: string
   fontSize?: number
+  fontWeight?: number
+  letterSpacing?: number
+  lineHeight?: number
   colorKey?: PrimitiveKey | 'auto'
 }
 
@@ -55,6 +58,9 @@ interface ForegroundProps {
   elementContent: string
   elementPosition: GridPosition
   elementFontSize: number
+  elementFontWeight: number
+  elementLetterSpacing: number
+  elementLineHeight: number
   fontPreset: FontPreset | null
   fontDisplayName: string
 }
@@ -202,12 +208,18 @@ const panelTitle = (): string => {
         :content="foreground.elementContent"
         :position="foreground.elementPosition"
         :font-size="foreground.elementFontSize"
+        :font-weight="foreground.elementFontWeight"
+        :letter-spacing="foreground.elementLetterSpacing"
+        :line-height="foreground.elementLineHeight"
         :font-preset="foreground.fontPreset"
         :font-display-name="foreground.fontDisplayName"
         @update:color-key="emit('update:foreground', 'elementColorKey', $event)"
         @update:content="emit('update:foreground', 'elementContent', $event)"
         @update:position="emit('update:foreground', 'elementPosition', $event)"
         @update:font-size="emit('update:foreground', 'elementFontSize', $event)"
+        @update:font-weight="emit('update:foreground', 'elementFontWeight', $event)"
+        @update:letter-spacing="emit('update:foreground', 'elementLetterSpacing', $event)"
+        @update:line-height="emit('update:foreground', 'elementLineHeight', $event)"
         @open-font-panel="emit('open-font-panel')"
       />
 
@@ -222,12 +234,18 @@ const panelTitle = (): string => {
         :content="foreground.elementContent"
         :position="foreground.elementPosition"
         :font-size="foreground.elementFontSize"
+        :font-weight="foreground.elementFontWeight"
+        :letter-spacing="foreground.elementLetterSpacing"
+        :line-height="foreground.elementLineHeight"
         :font-preset="foreground.fontPreset"
         :font-display-name="foreground.fontDisplayName"
         @update:color-key="emit('update:foreground', 'elementColorKey', $event)"
         @update:content="emit('update:foreground', 'elementContent', $event)"
         @update:position="emit('update:foreground', 'elementPosition', $event)"
         @update:font-size="emit('update:foreground', 'elementFontSize', $event)"
+        @update:font-weight="emit('update:foreground', 'elementFontWeight', $event)"
+        @update:letter-spacing="emit('update:foreground', 'elementLetterSpacing', $event)"
+        @update:line-height="emit('update:foreground', 'elementLineHeight', $event)"
         @open-font-panel="emit('open-font-panel')"
       />
 
