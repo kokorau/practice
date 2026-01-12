@@ -42,6 +42,7 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'move-layer': [sourceId: string, targetId: string, position: DropPosition]
+  'drop-to-processor': [sourceId: string, targetLayerId: string]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
@@ -73,6 +74,11 @@ const handleDragLeave = (nodeId: string) => {
 
 const handleDrop = (sourceId: string, targetId: string, position: DropPosition) => {
   emit('move-layer', sourceId, targetId, position)
+  endDrag()
+}
+
+const handleDropToProcessor = (sourceId: string, targetLayerId: string) => {
+  emit('drop-to-processor', sourceId, targetLayerId)
   endDrag()
 }
 
@@ -200,6 +206,7 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           @drag-over="handleDragOver"
           @drag-leave="handleDragLeave"
           @drop="handleDrop"
+          @drop-to-processor="handleDropToProcessor"
         />
       </div>
     </div>

@@ -296,6 +296,7 @@ const {
   handleToggleVisibility,
   handleSelectProcessor,
   handleMoveLayer,
+  handleDropToProcessor,
   handleAddLayer,
   handleRemoveLayer,
   handleGroupSelection,
@@ -556,6 +557,7 @@ const handleFilterUpdate = (key: string, value: unknown) => {
       @add-layer="handleAddLayer"
       @remove-layer="handleRemoveLayer"
       @move-layer="handleMoveLayer"
+      @drop-to-processor="handleDropToProcessor"
       @layer-contextmenu="handleLayerContextMenu"
       @select-foreground-element="handleSelectForegroundElement"
       @foreground-contextmenu="handleForegroundContextMenu"
