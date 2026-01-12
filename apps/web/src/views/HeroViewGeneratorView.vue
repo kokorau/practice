@@ -529,6 +529,9 @@ const handleFilterUpdate = (key: string, value: unknown) => {
     case 'blurConfig':
       currentBlurConfig.value = value as typeof currentBlurConfig.value
       break
+    case 'blockMosaicConfig':
+      currentBlockMosaicConfig.value = value as typeof currentBlockMosaicConfig.value
+      break
   }
 }
 </script>
