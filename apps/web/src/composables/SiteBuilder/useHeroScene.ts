@@ -424,7 +424,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Selection state (UI bindings)
   const selectedBackgroundIndex = ref(3)
-  const selectedMaskIndex = ref<number | null>(0)
+  const selectedMaskIndex = ref<number | null>(null)
   const selectedMidgroundTextureIndex = ref<number>(0) // 0 = Solid
   const activeSection = ref<SectionType | null>(null)
 
@@ -2123,7 +2123,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           const maskFeather = layer.config.maskFeather
 
           // Use selectedMaskIndex to get the mask pattern for fallback rendering
-          const maskPattern = maskPatterns[selectedMaskIndex.value ?? 0]
+          // When selectedMaskIndex is null, no mask should be applied (Issue #199)
+          const maskPattern = selectedMaskIndex.value !== null ? maskPatterns[selectedMaskIndex.value] : undefined
 
           // Helper to create clip mask spec from layer's maskShapeParams
           const createClipSpec = (): TextureRenderSpec | null => {
