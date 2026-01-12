@@ -2261,6 +2261,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                       shapeParams.radiusBottomRight,
                       shapeParams.radiusBottomLeft,
                     ],
+                    rotation: shapeParams.rotation ?? 0,
+                    perspectiveX: shapeParams.perspectiveX ?? 0,
+                    perspectiveY: shapeParams.perspectiveY ?? 0,
                     invert,
                     feather,
                   },
@@ -2268,6 +2271,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 )
               } else {
                 // New format with centerX/centerY/width/height
+                // Note: new format layer config doesn't have rotation/perspective yet
                 return createRectClipSpec(
                   {
                     type: 'rect',
@@ -2276,6 +2280,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     width: shapeParams.width,
                     height: shapeParams.height,
                     cornerRadius: shapeParams.cornerRadius,
+                    rotation: 0,
+                    perspectiveX: 0,
+                    perspectiveY: 0,
                     invert,
                     feather,
                   },

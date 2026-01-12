@@ -44,6 +44,12 @@ export interface RectClipParams extends ClipMaskBaseParams {
   height: number
   /** 角丸半径 [top-left, top-right, bottom-right, bottom-left] */
   cornerRadius: [number, number, number, number]
+  /** 回転角度 (0-360度) */
+  rotation?: number
+  /** X軸パースペクティブ (-0.5〜0.5) */
+  perspectiveX?: number
+  /** Y軸パースペクティブ (-0.5〜0.5) */
+  perspectiveY?: number
 }
 
 /** Blobクリップマスクのパラメータ */
@@ -294,9 +300,9 @@ struct RectClipParams {
   aspectRatio: f32,
   viewportWidth: f32,
   viewportHeight: f32,
-  _padding1: f32,
-  _padding2: f32,
-  _padding3: f32,
+  rotation: f32,
+  perspectiveX: f32,
+  perspectiveY: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: RectClipParams;
@@ -327,6 +333,32 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     p.y /= params.aspectRatio;
     correctedHalfSize.y /= params.aspectRatio;
     radii /= params.aspectRatio;
+  }
+
+  // Apply perspective transformation
+  if (params.perspectiveX != 0.0 || params.perspectiveY != 0.0) {
+    // Use center-relative coordinates for perspective
+    let perspX = params.perspectiveX;
+    let perspY = params.perspectiveY;
+
+    // Simple perspective: scale based on position
+    let perspFactorX = 1.0 + p.y * perspX * 2.0;
+    let perspFactorY = 1.0 + p.x * perspY * 2.0;
+
+    p.x = p.x / perspFactorX;
+    p.y = p.y / perspFactorY;
+  }
+
+  // Apply rotation
+  if (params.rotation != 0.0) {
+    let angle = params.rotation * 3.14159265359 / 180.0;
+    let cosA = cos(angle);
+    let sinA = sin(angle);
+    let rotatedP = vec2f(
+      p.x * cosA + p.y * sinA,
+      -p.x * sinA + p.y * cosA
+    );
+    p = rotatedP;
   }
 
   // Clamp radii
@@ -507,6 +539,10 @@ export function createRectClipSpec(
   viewport: Viewport
 ): TextureRenderSpec {
   const aspectRatio = viewport.width / viewport.height
+  const rotation = params.rotation ?? 0
+  const perspectiveX = params.perspectiveX ?? 0
+  const perspectiveY = params.perspectiveY ?? 0
+
   const data = new Float32Array([
     params.centerX,
     params.centerY,
@@ -521,9 +557,9 @@ export function createRectClipSpec(
     aspectRatio,
     viewport.width,
     viewport.height,
-    0, // padding
-    0, // padding
-    0, // padding
+    rotation,
+    perspectiveX,
+    perspectiveY,
   ])
   return {
     shader: rectClipShader,
