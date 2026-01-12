@@ -158,6 +158,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  height: 100%;
 }
 
 .font-selector-label {
@@ -334,7 +335,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  max-height: 240px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
