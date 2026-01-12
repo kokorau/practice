@@ -8,73 +8,101 @@ import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import type { HeroViewPreset, SceneNode, DropPosition, ForegroundElementConfig, ForegroundElementType } from '../../modules/HeroScene'
 import type { ContextTargetType } from './DraggableLayerNode.vue'
+
+// ============================================================
+// Grouped Props Types
+// ============================================================
+
 type NeutralRampItem = {
   key: string
   css: string
 }
 
-// Sidebar tab
-type SidebarTab = 'theme' | 'layers'
-
-const props = defineProps<{
-  activeTab: 'generator' | 'palette'
-  // Color state (Brand)
+/** Single color HSV state with hex display */
+interface ColorHSV {
   hue: number
   saturation: number
   value: number
-  selectedHex: string
-  // Color state (Accent)
-  accentHue: number
-  accentSaturation: number
-  accentValue: number
-  accentHex: string
-  // Foundation (HSV values)
-  foundationHue: number
-  foundationSaturation: number
-  foundationValue: number
-  foundationHex: string
-  // Palette tab
-  neutralRampDisplay: NeutralRampItem[]
-  // Layout presets
+  hex: string
+}
+
+/** All color states (brand, accent, foundation) */
+interface ColorStateProps {
+  brand: ColorHSV
+  accent: ColorHSV
+  foundation: ColorHSV
+}
+
+/** Layout presets state */
+interface LayoutPresetsProps {
   presets: HeroViewPreset[]
-  selectedPresetId: string | null
-  // Layers
-  layers: SceneNode[]
-  // Foreground elements
+  selectedId: string | null
+}
+
+/** Layers and foreground elements state */
+interface LayersProps {
+  items: SceneNode[]
   foregroundElements: ForegroundElementConfig[]
-  // Selected foreground element ID for highlighting
   selectedForegroundElementId: string | null
+}
+
+/** Palette display (neutral ramp) */
+interface PaletteDisplayProps {
+  neutralRamp: NeutralRampItem[]
+}
+
+// Sidebar tab
+type SidebarTab = 'theme' | 'layers'
+
+// ============================================================
+// Props (Grouped)
+// ============================================================
+
+const props = defineProps<{
+  /** Active main tab */
+  activeTab: 'generator' | 'palette'
+  /** Color state (brand, accent, foundation) */
+  colorState: ColorStateProps
+  /** Layout presets */
+  layoutPresets: LayoutPresetsProps
+  /** Layers and foreground elements */
+  layers: LayersProps
+  /** Palette display (neutral ramp) */
+  paletteDisplay: PaletteDisplayProps
 }>()
 
+// ============================================================
+// Emits (Grouped)
+// ============================================================
+
 const emit = defineEmits<{
-  (e: 'update:hue', value: number): void
-  (e: 'update:saturation', value: number): void
-  (e: 'update:value', value: number): void
-  (e: 'update:accentHue', value: number): void
-  (e: 'update:accentSaturation', value: number): void
-  (e: 'update:accentValue', value: number): void
-  (e: 'update:foundationHue', value: number): void
-  (e: 'update:foundationSaturation', value: number): void
-  (e: 'update:foundationValue', value: number): void
-  (e: 'applyColorPreset', preset: ColorPreset): void
-  (e: 'applyLayoutPreset', presetId: string): void
+  // Color updates
+  'update:colorState': [colorType: 'brand' | 'accent' | 'foundation', key: keyof ColorHSV, value: number]
+  'apply-color-preset': [preset: ColorPreset]
+  'apply-layout-preset': [presetId: string]
   // Layer events
-  (e: 'select-layer', layerId: string): void
-  (e: 'toggle-expand', layerId: string): void
-  (e: 'toggle-visibility', layerId: string): void
-  (e: 'select-processor', layerId: string, processorType: 'effect' | 'mask' | 'processor'): void
-  (e: 'add-layer', type: LayerType): void
-  (e: 'remove-layer', layerId: string): void
-  (e: 'move-layer', sourceId: string, targetId: string, position: DropPosition): void
-  (e: 'group-selection', layerId: string): void
-  (e: 'use-as-mask', layerId: string): void
-  (e: 'layer-contextmenu', layerId: string, event: MouseEvent, targetType: ContextTargetType): void
+  'select-layer': [layerId: string]
+  'toggle-expand': [layerId: string]
+  'toggle-visibility': [layerId: string]
+  'select-processor': [layerId: string, processorType: 'effect' | 'mask' | 'processor']
+  'add-layer': [type: LayerType]
+  'remove-layer': [layerId: string]
+  'move-layer': [sourceId: string, targetId: string, position: DropPosition]
+  'group-selection': [layerId: string]
+  'use-as-mask': [layerId: string]
+  'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
   // Foreground events
-  (e: 'select-foreground-element', elementId: string): void
-  (e: 'foreground-contextmenu', elementId: string, event: MouseEvent): void
-  (e: 'add-foreground-element', type: ForegroundElementType): void
-  (e: 'remove-foreground-element', elementId: string): void
+  'select-foreground-element': [elementId: string]
+  'foreground-contextmenu': [elementId: string, event: MouseEvent]
+  'add-foreground-element': [type: ForegroundElementType]
+  'remove-foreground-element': [elementId: string]
 }>()
+
+// ============================================================
+// Export types for parent components
+// ============================================================
+
+export type { ColorHSV, ColorStateProps, LayoutPresetsProps, LayersProps, PaletteDisplayProps }
 
 // ============================================================
 // Sidebar Tab State
@@ -138,7 +166,7 @@ const popupTitle = computed(() => {
 
 // Get currently selected preset name
 const selectedPresetName = computed(() => {
-  const preset = props.presets.find(p => p.id === props.selectedPresetId)
+  const preset = props.layoutPresets.presets.find(p => p.id === props.layoutPresets.selectedId)
   return preset?.name ?? 'Select preset'
 })
 </script>
@@ -196,9 +224,9 @@ const selectedPresetName = computed(() => {
         @click="toggleColorPopup('presets')"
       >
         <span class="color-swatches">
-          <span class="color-swatch-mini" :style="{ backgroundColor: selectedHex }" />
-          <span class="color-swatch-mini" :style="{ backgroundColor: accentHex }" />
-          <span class="color-swatch-mini" :style="{ backgroundColor: foundationHex }" />
+          <span class="color-swatch-mini" :style="{ backgroundColor: colorState.brand.hex }" />
+          <span class="color-swatch-mini" :style="{ backgroundColor: colorState.accent.hex }" />
+          <span class="color-swatch-mini" :style="{ backgroundColor: colorState.foundation.hex }" />
         </span>
         <span class="color-info">
           <span class="color-name">Presets</span>
@@ -213,10 +241,10 @@ const selectedPresetName = computed(() => {
         :class="{ active: activeColorPopup === 'brand' }"
         @click="toggleColorPopup('brand')"
       >
-        <span class="color-swatch" :style="{ backgroundColor: selectedHex }" />
+        <span class="color-swatch" :style="{ backgroundColor: colorState.brand.hex }" />
         <span class="color-info">
           <span class="color-name">Brand</span>
-          <span class="color-value">{{ selectedHex }}</span>
+          <span class="color-value">{{ colorState.brand.hex }}</span>
         </span>
       </button>
 
@@ -227,10 +255,10 @@ const selectedPresetName = computed(() => {
         :class="{ active: activeColorPopup === 'accent' }"
         @click="toggleColorPopup('accent')"
       >
-        <span class="color-swatch" :style="{ backgroundColor: accentHex }" />
+        <span class="color-swatch" :style="{ backgroundColor: colorState.accent.hex }" />
         <span class="color-info">
           <span class="color-name">Accent</span>
-          <span class="color-value">{{ accentHex }}</span>
+          <span class="color-value">{{ colorState.accent.hex }}</span>
         </span>
       </button>
 
@@ -241,10 +269,10 @@ const selectedPresetName = computed(() => {
         :class="{ active: activeColorPopup === 'foundation' }"
         @click="toggleColorPopup('foundation')"
       >
-        <span class="color-swatch" :style="{ backgroundColor: foundationHex }" />
+        <span class="color-swatch" :style="{ backgroundColor: colorState.foundation.hex }" />
         <span class="color-info">
           <span class="color-name">Foundation</span>
-          <span class="color-value">{{ foundationHex }}</span>
+          <span class="color-value">{{ colorState.foundation.hex }}</span>
         </span>
       </button>
     </div>
@@ -255,7 +283,7 @@ const selectedPresetName = computed(() => {
           <p class="sidebar-label">Neutral Ramp</p>
           <div class="neutral-ramp">
             <span
-              v-for="item in neutralRampDisplay"
+              v-for="item in paletteDisplay.neutralRamp"
               :key="item.key"
               class="ramp-step"
               :style="{ backgroundColor: item.css }"
@@ -270,9 +298,9 @@ const selectedPresetName = computed(() => {
     <template v-if="sidebarTab === 'layers'">
       <div class="sidebar-section layers-section">
         <LayerPanel
-          :layers="layers"
-          :foreground-elements="foregroundElements"
-          :selected-foreground-element-id="selectedForegroundElementId"
+          :layers="layers.items"
+          :foreground-elements="layers.foregroundElements"
+          :selected-foreground-element-id="layers.selectedForegroundElementId"
           @select-layer="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
@@ -299,49 +327,49 @@ const selectedPresetName = computed(() => {
     >
       <LayoutPresetSelector
         v-if="activeColorPopup === 'layout'"
-        :presets="presets"
-        :selected-preset-id="selectedPresetId"
-        @select-preset="emit('applyLayoutPreset', $event); closePopup()"
+        :presets="layoutPresets.presets"
+        :selected-preset-id="layoutPresets.selectedId"
+        @select-preset="emit('apply-layout-preset', $event); closePopup()"
       />
       <ColorPresets
         v-if="activeColorPopup === 'presets'"
-        :brand-hue="hue"
-        :brand-saturation="saturation"
-        :brand-value="value"
-        :accent-hue="accentHue"
-        :accent-saturation="accentSaturation"
-        :accent-value="accentValue"
-        :foundation-hue="foundationHue"
-        :foundation-saturation="foundationSaturation"
-        :foundation-value="foundationValue"
-        @apply-preset="emit('applyColorPreset', $event)"
+        :brand-hue="colorState.brand.hue"
+        :brand-saturation="colorState.brand.saturation"
+        :brand-value="colorState.brand.value"
+        :accent-hue="colorState.accent.hue"
+        :accent-saturation="colorState.accent.saturation"
+        :accent-value="colorState.accent.value"
+        :foundation-hue="colorState.foundation.hue"
+        :foundation-saturation="colorState.foundation.saturation"
+        :foundation-value="colorState.foundation.value"
+        @apply-preset="emit('apply-color-preset', $event)"
       />
       <BrandColorPicker
         v-else-if="activeColorPopup === 'brand'"
-        :hue="hue"
-        :saturation="saturation"
-        :value="value"
-        @update:hue="emit('update:hue', $event)"
-        @update:saturation="emit('update:saturation', $event)"
-        @update:value="emit('update:value', $event)"
+        :hue="colorState.brand.hue"
+        :saturation="colorState.brand.saturation"
+        :value="colorState.brand.value"
+        @update:hue="emit('update:colorState', 'brand', 'hue', $event)"
+        @update:saturation="emit('update:colorState', 'brand', 'saturation', $event)"
+        @update:value="emit('update:colorState', 'brand', 'value', $event)"
       />
       <BrandColorPicker
         v-if="activeColorPopup === 'accent'"
-        :hue="accentHue"
-        :saturation="accentSaturation"
-        :value="accentValue"
-        @update:hue="emit('update:accentHue', $event)"
-        @update:saturation="emit('update:accentSaturation', $event)"
-        @update:value="emit('update:accentValue', $event)"
+        :hue="colorState.accent.hue"
+        :saturation="colorState.accent.saturation"
+        :value="colorState.accent.value"
+        @update:hue="emit('update:colorState', 'accent', 'hue', $event)"
+        @update:saturation="emit('update:colorState', 'accent', 'saturation', $event)"
+        @update:value="emit('update:colorState', 'accent', 'value', $event)"
       />
       <BrandColorPicker
         v-if="activeColorPopup === 'foundation'"
-        :hue="foundationHue"
-        :saturation="foundationSaturation"
-        :value="foundationValue"
-        @update:hue="emit('update:foundationHue', $event)"
-        @update:saturation="emit('update:foundationSaturation', $event)"
-        @update:value="emit('update:foundationValue', $event)"
+        :hue="colorState.foundation.hue"
+        :saturation="colorState.foundation.saturation"
+        :value="colorState.foundation.value"
+        @update:hue="emit('update:colorState', 'foundation', 'hue', $event)"
+        @update:saturation="emit('update:colorState', 'foundation', 'saturation', $event)"
+        @update:value="emit('update:colorState', 'foundation', 'value', $event)"
       />
     </FloatingPanel>
   </aside>

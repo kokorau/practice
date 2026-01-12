@@ -466,6 +466,34 @@ const {
 })
 
 // ============================================================
+// HeroSidebar Event Handlers
+// ============================================================
+
+const handleColorStateUpdate = (
+  colorType: 'brand' | 'accent' | 'foundation',
+  key: 'hue' | 'saturation' | 'value' | 'hex',
+  newValue: number
+) => {
+  switch (colorType) {
+    case 'brand':
+      if (key === 'hue') hue.value = newValue
+      else if (key === 'saturation') saturation.value = newValue
+      else if (key === 'value') value.value = newValue
+      break
+    case 'accent':
+      if (key === 'hue') accentHue.value = newValue
+      else if (key === 'saturation') accentSaturation.value = newValue
+      else if (key === 'value') accentValue.value = newValue
+      break
+    case 'foundation':
+      if (key === 'hue') foundationHue.value = newValue
+      else if (key === 'saturation') foundationSaturation.value = newValue
+      else if (key === 'value') foundationValue.value = newValue
+      break
+  }
+}
+
+// ============================================================
 // RightPropertyPanel Event Handlers
 // ============================================================
 
@@ -570,33 +598,24 @@ const handleFilterUpdate = (key: string, value: unknown) => {
     <!-- 左パネル: カラー設定 & レイヤー -->
     <HeroSidebar
       :active-tab="activeTab"
-      :hue="hue"
-      :saturation="saturation"
-      :value="value"
-      :selected-hex="selectedHex"
-      :accent-hue="accentHue"
-      :accent-saturation="accentSaturation"
-      :accent-value="accentValue"
-      :accent-hex="accentHex"
-      :foundation-hue="foundationHue"
-      :foundation-saturation="foundationSaturation"
-      :foundation-value="foundationValue"
-      :foundation-hex="foundationHex"
-      :neutral-ramp-display="neutralRampDisplay"
-      :presets="presets"
-      :selected-preset-id="selectedPresetId"
-      :layers="layers"
-      :foreground-elements="foregroundConfig.elements"
-      :selected-foreground-element-id="selectedForegroundElementId"
-      @update:hue="hue = $event"
-      @update:saturation="saturation = $event"
-      @update:value="value = $event"
-      @update:accent-hue="accentHue = $event"
-      @update:accent-saturation="accentSaturation = $event"
-      @update:accent-value="accentValue = $event"
-      @update:foundation-hue="foundationHue = $event"
-      @update:foundation-saturation="foundationSaturation = $event"
-      @update:foundation-value="foundationValue = $event"
+      :color-state="{
+        brand: { hue, saturation, value, hex: selectedHex },
+        accent: { hue: accentHue, saturation: accentSaturation, value: accentValue, hex: accentHex },
+        foundation: { hue: foundationHue, saturation: foundationSaturation, value: foundationValue, hex: foundationHex },
+      }"
+      :layout-presets="{
+        presets,
+        selectedId: selectedPresetId,
+      }"
+      :layers="{
+        items: layers,
+        foregroundElements: foregroundConfig.elements,
+        selectedForegroundElementId,
+      }"
+      :palette-display="{
+        neutralRamp: neutralRampDisplay,
+      }"
+      @update:color-state="handleColorStateUpdate"
       @apply-color-preset="handleApplyColorPreset"
       @apply-layout-preset="handleApplyLayoutPreset"
       @select-layer="handleSelectLayer"
