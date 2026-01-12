@@ -5,8 +5,15 @@ import {
   moveModifier,
   createGroup,
   createLayer,
+  createProcessor,
+  isProcessor,
+  isLayer,
+  isGroup,
+  findNode,
+  flattenNodes,
   type Group,
   type Layer,
+  type Processor,
   moveSceneNode,
   type SceneNode,
   type ModifierDropPosition,
@@ -522,5 +529,199 @@ describe('moveModifier', () => {
       expect(result).not.toBe(nodes)
       expect((nodes[0] as Layer).modifiers).toEqual(originalModifiers)
     })
+  })
+})
+
+// ============================================================
+// Processor Tests
+// ============================================================
+
+describe('createProcessor', () => {
+  it('creates a processor with default values', () => {
+    const processor = createProcessor('p1')
+
+    expect(processor.id).toBe('p1')
+    expect(processor.type).toBe('processor')
+    expect(processor.name).toBe('Processor')
+    expect(processor.visible).toBe(true)
+    expect(processor.expanded).toBe(true)
+    expect(processor.modifiers.length).toBe(1)
+    expect(processor.modifiers[0].type).toBe('mask')
+  })
+
+  it('creates a processor with custom options', () => {
+    const processor = createProcessor('p2', {
+      name: 'Custom Processor',
+      visible: false,
+      modifiers: [createEffectPlaceholder()],
+    })
+
+    expect(processor.id).toBe('p2')
+    expect(processor.name).toBe('Custom Processor')
+    expect(processor.visible).toBe(false)
+    expect(processor.modifiers.length).toBe(1)
+    expect(processor.modifiers[0].type).toBe('effect')
+  })
+})
+
+describe('isProcessor', () => {
+  it('returns true for processor nodes', () => {
+    const processor = createProcessor('p1')
+    expect(isProcessor(processor)).toBe(true)
+  })
+
+  it('returns false for layer nodes', () => {
+    const layer = createTestLayer('l1')
+    expect(isProcessor(layer)).toBe(false)
+  })
+
+  it('returns false for group nodes', () => {
+    const group = createGroup('g1')
+    expect(isProcessor(group)).toBe(false)
+  })
+})
+
+describe('type guards with Processor', () => {
+  it('isLayer returns false for processor', () => {
+    const processor = createProcessor('p1')
+    expect(isLayer(processor)).toBe(false)
+  })
+
+  it('isGroup returns false for processor', () => {
+    const processor = createProcessor('p1')
+    expect(isGroup(processor)).toBe(false)
+  })
+})
+
+describe('tree operations with Processor', () => {
+  describe('findNode', () => {
+    it('finds a processor at root level', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createProcessor('p1'),
+      ]
+
+      const found = findNode(nodes, 'p1')
+      expect(found).toBeDefined()
+      expect(found?.id).toBe('p1')
+      expect(isProcessor(found!)).toBe(true)
+    })
+
+    it('finds a processor inside a group', () => {
+      const processor = createProcessor('p1')
+      const group = createGroup('g1', [createTestLayer('l1'), processor])
+      const nodes: SceneNode[] = [group]
+
+      const found = findNode(nodes, 'p1')
+      expect(found).toBeDefined()
+      expect(found?.id).toBe('p1')
+      expect(isProcessor(found!)).toBe(true)
+    })
+  })
+
+  describe('flattenNodes', () => {
+    it('includes processors in flattened output', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createProcessor('p1'),
+        createGroup('g1', [createTestLayer('l2'), createProcessor('p2')]),
+      ]
+
+      const flattened = flattenNodes(nodes)
+      expect(flattened.map(n => n.id)).toEqual(['l1', 'p1', 'g1', 'l2', 'p2'])
+    })
+  })
+})
+
+describe('moveSceneNode with Processor', () => {
+  it('moves processor to different position', () => {
+    const nodes: SceneNode[] = [
+      createTestLayer('l1'),
+      createProcessor('p1'),
+      createTestLayer('l2'),
+    ]
+
+    const result = moveSceneNode(nodes, 'p1', { type: 'after', targetId: 'l2' })
+    expect(result.map(n => n.id)).toEqual(['l1', 'l2', 'p1'])
+  })
+
+  it('moves processor into a group', () => {
+    const nodes: SceneNode[] = [
+      createProcessor('p1'),
+      createGroup('g1', [createTestLayer('l1')]),
+    ]
+
+    const result = moveSceneNode(nodes, 'p1', { type: 'into', targetId: 'g1' })
+    expect(result.length).toBe(1)
+    const group = result[0] as Group
+    expect(group.children.map(c => c.id)).toEqual(['l1', 'p1'])
+  })
+
+  it('cannot move processor into itself', () => {
+    const nodes: SceneNode[] = [createProcessor('p1')]
+    const result = canMoveSceneNode(nodes, 'p1', { type: 'into', targetId: 'p1' })
+    expect(result).toBe(false)
+  })
+
+  it('cannot move into processor (processor is not a group)', () => {
+    const nodes: SceneNode[] = [
+      createTestLayer('l1'),
+      createProcessor('p1'),
+    ]
+
+    const result = canMoveSceneNode(nodes, 'l1', { type: 'into', targetId: 'p1' })
+    expect(result).toBe(false)
+  })
+})
+
+describe('moveModifier with Processor', () => {
+  it('moves modifier within a processor', () => {
+    const processor = createProcessor('p1', {
+      modifiers: [createMaskModifier(), createEffectPlaceholder(), createMaskModifier()],
+    })
+    const nodes: SceneNode[] = [processor]
+
+    const position: ModifierDropPosition = { type: 'before', targetNodeId: 'p1', targetIndex: 0 }
+    const result = moveModifier(nodes, 'p1', 2, position)
+
+    const updatedProcessor = result[0] as Processor
+    expect(updatedProcessor.modifiers[0].type).toBe('mask')
+    expect(updatedProcessor.modifiers[1].type).toBe('mask')
+    expect(updatedProcessor.modifiers[2].type).toBe('effect')
+  })
+
+  it('moves modifier from layer to processor', () => {
+    const nodes: SceneNode[] = [
+      createTestLayerWithModifiers('l1', 2),
+      createProcessor('p1'),
+    ]
+
+    const position: ModifierDropPosition = { type: 'after', targetNodeId: 'p1', targetIndex: 0 }
+    const result = moveModifier(nodes, 'l1', 0, position)
+
+    const layer = result[0] as Layer
+    const processor = result[1] as Processor
+
+    expect(layer.modifiers.length).toBe(1)
+    expect(processor.modifiers.length).toBe(2)
+  })
+
+  it('moves modifier from processor to layer', () => {
+    const processor = createProcessor('p1', {
+      modifiers: [createMaskModifier(), createEffectPlaceholder()],
+    })
+    const nodes: SceneNode[] = [
+      createLayer('l1', 'surface', [], { modifiers: [createEffectPlaceholder()] }),
+      processor,
+    ]
+
+    const position: ModifierDropPosition = { type: 'after', targetNodeId: 'l1', targetIndex: 0 }
+    const result = moveModifier(nodes, 'p1', 0, position)
+
+    const layer = result[0] as Layer
+    const updatedProcessor = result[1] as Processor
+
+    expect(layer.modifiers.length).toBe(2)
+    expect(updatedProcessor.modifiers.length).toBe(1)
   })
 })

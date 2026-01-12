@@ -375,7 +375,9 @@ export {
   // Types
   type Layer,
   type Group,
+  type Processor,
   type SceneNode,
+  type NodeType,
   type LayerType,
   type LayerVariant,
   type NodeBase,
@@ -395,9 +397,11 @@ export {
   createModel3DLayer,
   createImageLayer as createSceneImageLayer,
   createGroup,
+  createProcessor,
   // Type guards
   isLayer,
   isGroup,
+  isProcessor,
   isBaseLayer,
   isSurfaceLayer,
   isTextLayer,

@@ -77,7 +77,13 @@ export interface SolidSurface {
 // ============================================================
 
 /**
+ * Node type discriminator
+ */
+export type NodeType = 'layer' | 'group' | 'processor'
+
+/**
  * Layer type discriminator
+ * @deprecated Use NodeType instead
  */
 export type LayerType = 'layer' | 'group'
 
@@ -170,9 +176,25 @@ export interface Group extends NodeBase {
 }
 
 /**
+ * Processor - applies modifiers to nodes above it in the tree
+ *
+ * Follows Figma-style mask application rules:
+ * - A Processor applies its modifiers to all sibling nodes that appear
+ *   ABOVE it in the layer panel (lower index = rendered first = affected by processor)
+ * - Similar to how Figma masks affect layers above them
+ *
+ * @see docs/design/processor-target-specification.md for detailed rules
+ */
+export interface Processor extends NodeBase {
+  type: 'processor'
+  /** Modifiers to apply (effects, masks) */
+  modifiers: Modifier[]
+}
+
+/**
  * Scene node union type
  */
-export type SceneNode = Layer | Group
+export type SceneNode = Layer | Group | Processor
 
 // ============================================================
 // Factory Functions
@@ -297,6 +319,25 @@ export const createGroup = (
 })
 
 /**
+ * Create a processor
+ *
+ * Creates a Processor node that applies its modifiers to sibling nodes
+ * above it in the layer tree (Figma-style mask application).
+ */
+export const createProcessor = (
+  id: string,
+  options?: Partial<Omit<Processor, 'type' | 'id'>>
+): Processor => ({
+  id,
+  name: 'Processor',
+  visible: true,
+  expanded: true,
+  ...options,
+  type: 'processor',
+  modifiers: options?.modifiers ?? [createMaskModifier()],
+})
+
+/**
  * Get default name for a layer variant
  */
 const getDefaultName = (variant: LayerVariant): string => {
@@ -360,6 +401,12 @@ export const isLayer = (node: SceneNode): node is Layer =>
  */
 export const isGroup = (node: SceneNode): node is Group =>
   node.type === 'group'
+
+/**
+ * Check if node is a Processor
+ */
+export const isProcessor = (node: SceneNode): node is Processor =>
+  node.type === 'processor'
 
 /**
  * Check if layer is a base layer
@@ -588,9 +635,10 @@ export type DropPosition =
 
 /**
  * Get all descendant IDs of a node (recursive)
+ * Only Groups have children, Layer and Processor are leaf nodes
  */
 const getDescendantIds = (node: SceneNode): string[] => {
-  if (isLayer(node)) return []
+  if (!isGroup(node)) return []
   const ids: string[] = []
   for (const child of node.children) {
     ids.push(child.id)
