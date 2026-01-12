@@ -4,7 +4,7 @@ import type { SceneNode, ForegroundElementConfig, ForegroundElementType, DropPos
 import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
 import DragPreview from './DragPreview.vue'
 import { useLayerSelection } from '../../composables/useLayerSelection'
-import { useLayerDragAndDrop, LAYER_DRAG_KEY } from '../../composables/useLayerDragAndDrop'
+import { useLayerDragAndDrop, LAYER_DRAG_KEY, calculateDropPosition } from '../../composables/useLayerDragAndDrop'
 
 // ============================================================
 // Types
@@ -59,6 +59,64 @@ provide(LAYER_DRAG_KEY, dragAndDrop)
 
 const handleMoveNode = (nodeId: string, position: DropPosition) => {
   emit('move-node', nodeId, position)
+}
+
+// Global pointer move handler for DnD
+const handleLayerListPointerMove = (e: PointerEvent) => {
+  if (!dragAndDrop.state.dragItem.value) return
+
+  dragAndDrop.actions.updatePointer(e)
+
+  if (!dragAndDrop.state.isDragging.value) return
+
+  // Find the node element under the pointer
+  const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY)
+  const nodeElement = elementsAtPoint.find(
+    el => el.hasAttribute('data-node-id')
+  ) as HTMLElement | undefined
+
+  if (!nodeElement) {
+    dragAndDrop.actions.updateDropTarget(null)
+    return
+  }
+
+  const targetNodeId = nodeElement.dataset.nodeId
+  if (!targetNodeId) {
+    dragAndDrop.actions.updateDropTarget(null)
+    return
+  }
+
+  // Don't allow dropping on self
+  if (dragAndDrop.state.dragItem.value.nodeId === targetNodeId) {
+    dragAndDrop.actions.updateDropTarget(null)
+    return
+  }
+
+  // Calculate drop position
+  const rect = nodeElement.getBoundingClientRect()
+  const isGroupTarget = nodeElement.dataset.isGroup === 'true'
+  const position = calculateDropPosition(rect, e.clientY, isGroupTarget)
+
+  const target = { nodeId: targetNodeId, position }
+
+  // Check if drop is valid
+  if (dragAndDrop.canDrop(props.layers, target)) {
+    dragAndDrop.actions.updateDropTarget(target)
+  } else {
+    dragAndDrop.actions.updateDropTarget(null)
+  }
+}
+
+// Global pointer up handler for DnD
+const handleLayerListPointerUp = () => {
+  if (!dragAndDrop.state.dragItem.value) return
+
+  const draggedNodeId = dragAndDrop.state.dragItem.value.nodeId
+  const dropPosition = dragAndDrop.actions.endDrag()
+
+  if (dropPosition) {
+    emit('move-node', draggedNodeId, dropPosition)
+  }
 }
 
 // ============================================================
@@ -168,7 +226,11 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
         </div>
       </div>
 
-      <div class="layer-list">
+      <div
+        class="layer-list"
+        @pointermove="handleLayerListPointerMove"
+        @pointerup="handleLayerListPointerUp"
+      >
         <DraggableLayerNode
           v-for="layer in layers"
           :key="layer.id"

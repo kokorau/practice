@@ -302,6 +302,7 @@ const {
   handleRemoveLayer,
   handleGroupSelection,
   handleUseAsMask,
+  handleMoveNode,
 } = useLayerOperations({
   initialLayers: [
     createGroup(
@@ -538,6 +539,7 @@ const handleMaskUpdate = (key: string, value: unknown) => {
       @add-layer="handleAddLayer"
       @remove-layer="handleRemoveLayer"
       @layer-contextmenu="handleLayerContextMenu"
+      @move-node="handleMoveNode"
       @select-foreground-element="handleSelectForegroundElement"
       @foreground-contextmenu="handleForegroundContextMenu"
       @add-foreground-element="handleAddForegroundElement"

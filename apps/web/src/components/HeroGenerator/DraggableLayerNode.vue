@@ -12,7 +12,7 @@
 import { computed, ref, inject } from 'vue'
 import type { SceneNode, Group, LayerVariant } from '../../modules/HeroScene'
 import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
-import { LAYER_DRAG_KEY, calculateDropPosition, type DropTarget } from '../../composables/useLayerDragAndDrop'
+import { LAYER_DRAG_KEY, type DropTarget } from '../../composables/useLayerDragAndDrop'
 import DropIndicator from './DropIndicator.vue'
 
 // ============================================================
@@ -207,67 +207,7 @@ const handlePointerDown = (e: PointerEvent) => {
     { type: 'sceneNode', nodeId: props.node.id },
     e
   )
-
-  // Capture pointer for this element
-  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-}
-
-// Handle pointer move during drag
-const handlePointerMove = (e: PointerEvent) => {
-  if (!dragContext) return
-  if (!dragContext.state.dragItem.value) return
-
-  dragContext.actions.updatePointer(e)
-
-  // If we're dragging, check if we're over this node
-  if (dragContext.state.isDragging.value) {
-    // Don't allow dropping on self
-    if (dragContext.state.dragItem.value.nodeId === props.node.id) {
-      dragContext.actions.updateDropTarget(null)
-      return
-    }
-
-    // Calculate drop position based on pointer position
-    const rect = nodeRef.value?.getBoundingClientRect()
-    if (!rect) return
-
-    const isGroupTarget = isGroupNode.value
-    const position = calculateDropPosition(rect, e.clientY, isGroupTarget)
-
-    const target: DropTarget = {
-      nodeId: props.node.id,
-      position,
-    }
-
-    // Check if drop is valid
-    if (dragContext.canDrop(props.nodes, target)) {
-      dragContext.actions.updateDropTarget(target)
-    } else {
-      dragContext.actions.updateDropTarget(null)
-    }
-  }
-}
-
-// Handle pointer up to end drag
-const handlePointerUp = (e: PointerEvent) => {
-  if (!dragContext) return
-  if (!dragContext.state.dragItem.value) return
-
-  const draggedNodeId = dragContext.state.dragItem.value.nodeId
-  const dropPosition = dragContext.actions.endDrag()
-
-  // Release pointer capture
-  ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
-
-  // Execute move if we have a valid drop
-  if (dropPosition) {
-    emit('move-node', draggedNodeId, dropPosition)
-  }
-}
-
-// Handle pointer leave to clear drop target (when moving to another node)
-const handlePointerLeave = () => {
-  // Drop target will be updated by the next node's pointermove
+  // Note: Don't use setPointerCapture here - we need events to reach other nodes
 }
 </script>
 
@@ -280,12 +220,10 @@ const handlePointerLeave = () => {
       :class="{ selected: isSelected, dragging: isBeingDragged }"
       :style="indentStyle"
       :data-node-id="node.id"
+      :data-is-group="isGroupNode"
       @click="handleSelect"
       @contextmenu="(e: MouseEvent) => handleContextMenu(e, 'layer')"
       @pointerdown="handlePointerDown"
-      @pointermove="handlePointerMove"
-      @pointerup="handlePointerUp"
-      @pointerleave="handlePointerLeave"
     >
       <!-- Drop Indicator -->
       <DropIndicator
