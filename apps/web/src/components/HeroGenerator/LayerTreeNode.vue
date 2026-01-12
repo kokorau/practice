@@ -11,7 +11,7 @@
 
 import { computed } from 'vue'
 import type { SceneNode, Group, LayerVariant } from '../../modules/HeroScene'
-import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
+import { isGroup, isLayer, isEffectModifier } from '../../modules/HeroScene'
 
 // ============================================================
 // Props & Emits
@@ -61,6 +61,11 @@ const children = computed(() => {
 const modifiers = computed(() => {
   const result: { type: 'effect' | 'mask'; label: string; value: string; enabled: boolean }[] = []
 
+  // MaskNode doesn't have modifiers property
+  if (props.node.type === 'mask') {
+    return result
+  }
+
   const nodeModifiers = props.node.modifiers
   // Effect modifier
   const effectMod = nodeModifiers.find(isEffectModifier)
@@ -78,19 +83,8 @@ const modifiers = computed(() => {
     })
   }
 
-  // Mask modifier (only for non-base layers)
-  if (!isBaseLayer.value) {
-    const maskMod = nodeModifiers.find(isMaskModifier)
-    if (maskMod) {
-      const shapeType = maskMod.config.shape
-      result.push({
-        type: 'mask',
-        label: 'Mask',
-        value: shapeType.charAt(0).toUpperCase() + shapeType.slice(1),
-        enabled: maskMod.enabled,
-      })
-    }
-  }
+  // Note: Masks are now MaskNode (sibling node in group), not modifiers
+  // MaskNode display will be handled when rendering MaskNode type
 
   return result
 })

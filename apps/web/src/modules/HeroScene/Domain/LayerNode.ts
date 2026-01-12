@@ -15,8 +15,8 @@
  */
 
 import type { Modifier } from './Modifier'
-import { createEffectModifier, createMaskModifier } from './Modifier'
-import type { TexturePatternSpec } from '@practice/texture'
+import { createEffectModifier } from './Modifier'
+import type { TexturePatternSpec, MaskPattern } from '@practice/texture'
 
 // ============================================================
 // Surface Types (what to render)
@@ -79,7 +79,7 @@ export interface SolidSurface {
 /**
  * Layer type discriminator
  */
-export type LayerType = 'layer' | 'group'
+export type LayerType = 'layer' | 'group' | 'mask'
 
 /**
  * Layer variant for specialized rendering
@@ -170,9 +170,41 @@ export interface Group extends NodeBase {
 }
 
 /**
+ * Mask shape type for MaskNode
+ */
+export type MaskShape = 'circle' | 'rect' | 'blob' | 'perlin' | 'image'
+
+/**
+ * MaskNode - Figma-style mask as a scene node
+ *
+ * Masks are treated as sibling nodes within a group.
+ * All nodes after a mask node (within the same group) are masked.
+ *
+ * Structure:
+ * ```
+ * <group>
+ *   <mask />              <!-- Mask node defines the clipping shape -->
+ *   <surface />           <!-- Masked by the above mask -->
+ *   <surface />           <!-- Also masked -->
+ * </group>
+ * ```
+ */
+export interface MaskNode extends NodeBase {
+  type: 'mask'
+  /** Mask shape type */
+  shape: MaskShape
+  /** Mask pattern (for pattern-based masks) */
+  pattern?: MaskPattern
+  /** Whether to invert the mask */
+  invert: boolean
+  /** Feather amount for soft edges (0-1) */
+  feather: number
+}
+
+/**
  * Scene node union type
  */
-export type SceneNode = Layer | Group
+export type SceneNode = Layer | Group | MaskNode
 
 // ============================================================
 // Factory Functions
@@ -223,7 +255,7 @@ export const createSurfaceLayer = (
   'surface',
   [surface],
   {
-    modifiers: [createEffectModifier(), createMaskModifier()],
+    modifiers: [createEffectModifier()],
     ...options,
   }
 )
@@ -297,6 +329,25 @@ export const createGroup = (
 })
 
 /**
+ * Create a mask node (Figma-style mask)
+ */
+export const createMaskNode = (
+  id: string,
+  shape: MaskShape = 'circle',
+  options?: Partial<Omit<MaskNode, 'type' | 'id' | 'shape'>>
+): MaskNode => ({
+  id,
+  name: 'Mask',
+  visible: true,
+  expanded: true,
+  shape,
+  invert: false,
+  feather: 0,
+  ...options,
+  type: 'mask',
+})
+
+/**
  * Get default name for a layer variant
  */
 const getDefaultName = (variant: LayerVariant): string => {
@@ -360,6 +411,12 @@ export const isLayer = (node: SceneNode): node is Layer =>
  */
 export const isGroup = (node: SceneNode): node is Group =>
   node.type === 'group'
+
+/**
+ * Check if node is a MaskNode
+ */
+export const isMaskNode = (node: SceneNode): node is MaskNode =>
+  node.type === 'mask'
 
 /**
  * Check if layer is a base layer
@@ -633,14 +690,23 @@ export const wrapNodeInGroup = (
 }
 
 /**
- * Wrap a node in a new group with a mask modifier
- * Creates a new Group containing the target node with a mask modifier added to the node
- * (Mask is applied to the child layer, not the group itself)
+ * Wrap a node in a new group with a mask node (Figma-style)
+ * Creates a new Group containing a MaskNode followed by the target node.
+ * The mask node comes first, and subsequent siblings are masked.
+ *
+ * Structure:
+ * ```
+ * <group name="Masked Group">
+ *   <mask />        <!-- Mask defines the clipping shape -->
+ *   <target />      <!-- Target node is masked -->
+ * </group>
+ * ```
  */
 export const wrapNodeInMaskedGroup = (
   nodes: SceneNode[],
   targetId: string,
-  groupId?: string
+  groupId?: string,
+  maskId?: string
 ): SceneNode[] => {
   const targetNode = findNode(nodes, targetId)
   if (!targetNode) return nodes
@@ -649,18 +715,13 @@ export const wrapNodeInMaskedGroup = (
   if (isLayer(targetNode) && targetNode.variant === 'base') return nodes
 
   const newGroupId = groupId ?? `masked-group-${Date.now()}`
+  const newMaskId = maskId ?? `mask-${Date.now()}`
 
-  // Add mask modifier to the target node (if it's a Layer)
-  let maskedNode: SceneNode = targetNode
-  if (isLayer(targetNode)) {
-    maskedNode = {
-      ...targetNode,
-      modifiers: [...targetNode.modifiers, createMaskModifier()],
-    }
-  }
+  // Create mask node (Figma-style: mask comes before masked content)
+  const maskNode = createMaskNode(newMaskId, 'circle')
 
-  // Create new group with the masked node as child
-  const newGroup = createGroup(newGroupId, [maskedNode], {
+  // Create new group with mask node followed by the target node
+  const newGroup = createGroup(newGroupId, [maskNode, targetNode], {
     name: 'Masked Group',
     expanded: true,
   })

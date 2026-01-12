@@ -9,7 +9,6 @@ import {
   createGroup,
   createSurfaceLayer,
   createEffectModifier,
-  createMaskModifier,
   type SceneNode,
 } from '../modules/HeroScene'
 
@@ -40,7 +39,7 @@ const createInitialLayers = (): SceneNode[] => [
         'surface-1',
         { type: 'solid', color: 'B' },
         {
-          modifiers: [createEffectModifier(), createMaskModifier()],
+          modifiers: [createEffectModifier()],
         },
       ),
     ],

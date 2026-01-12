@@ -342,6 +342,8 @@ export {
   // Types
   type Layer,
   type Group,
+  type MaskNode,
+  type MaskShape,
   type SceneNode,
   type LayerType,
   type LayerVariant,
@@ -361,9 +363,11 @@ export {
   createModel3DLayer,
   createImageLayer as createSceneImageLayer,
   createGroup,
+  createMaskNode,
   // Type guards
   isLayer,
   isGroup,
+  isMaskNode,
   isBaseLayer,
   isSurfaceLayer,
   isTextLayer,
@@ -385,6 +389,24 @@ export {
   type SceneLayerId,
   getSceneLayerId,
 } from './LayerNode'
+
+// ============================================================
+// Move Rules (for Drag & Drop)
+// ============================================================
+
+export {
+  type MoveValidationResult,
+  canMoveBaseLayer,
+  canDropBeforeBaseLayer,
+  canPlaceMaskInBaseLayer,
+  canDropIntoNonGroup,
+  validateMove,
+  getMaskedNodes,
+  findApplicableMask,
+  isNodeMasked,
+  ensureBaseLayerFirst,
+  isValidLayerStructure,
+} from './MoveRules'
 
 // ============================================================
 // HTML Layer Types
