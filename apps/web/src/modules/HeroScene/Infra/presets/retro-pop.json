@@ -15,7 +15,7 @@
         "name": "Background",
         "visible": true,
         "surface": { "type": "checker", "cellSize": 48, "angle": 0 },
-        "processors": [
+        "filters": [
           {
             "type": "effect",
             "enabled": true,
@@ -34,15 +34,28 @@
         "name": "Main Group",
         "visible": true,
         "expanded": true,
-        "processors": [],
         "children": [
+          {
+            "type": "mask",
+            "id": "mask-1",
+            "name": "Mask",
+            "visible": true,
+            "shape": {
+              "type": "circle",
+              "centerX": 0.5,
+              "centerY": 0.5,
+              "radius": 0.3
+            },
+            "invert": false,
+            "feather": 0
+          },
           {
             "type": "surface",
             "id": "surface-1",
             "name": "Surface",
             "visible": true,
             "surface": { "type": "polkaDot", "dotRadius": 12, "spacing": 36, "rowOffset": 0.5 },
-            "processors": [
+            "filters": [
               {
                 "type": "effect",
                 "enabled": true,
@@ -52,18 +65,6 @@
                   "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
                   "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
                 }
-              },
-              {
-                "type": "mask",
-                "enabled": true,
-                "shape": {
-                  "type": "circle",
-                  "centerX": 0.5,
-                  "centerY": 0.5,
-                  "radius": 0.3
-                },
-                "invert": false,
-                "feather": 0
               }
             ]
           }

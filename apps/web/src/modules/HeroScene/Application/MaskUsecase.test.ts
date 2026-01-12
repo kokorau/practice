@@ -73,7 +73,7 @@ describe('MaskUsecase', () => {
       expect(layer).toBeDefined()
       expect(layer?.type).toBe('surface')
       if (layer?.type === 'surface') {
-        const maskProcessor = layer.processors.find(p => p.type === 'mask')
+        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         expect(maskProcessor?.type).toBe('mask')
         if (maskProcessor?.type === 'mask') {
           expect(maskProcessor.shape).toEqual(circleShape)
@@ -98,7 +98,7 @@ describe('MaskUsecase', () => {
 
       const layer = repository.findLayer('mask')
       if (layer?.type === 'surface') {
-        const maskProcessor = layer.processors.find(p => p.type === 'mask')
+        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
           expect(maskProcessor.shape).toEqual(rectShape)
         }
@@ -120,7 +120,7 @@ describe('MaskUsecase', () => {
 
       const layer = repository.findLayer('mask')
       if (layer?.type === 'surface') {
-        const maskProcessor = layer.processors.find(p => p.type === 'mask')
+        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
           expect(maskProcessor.shape).toEqual(blobShape)
         }
@@ -140,7 +140,7 @@ describe('MaskUsecase', () => {
 
       const layer = repository.findLayer('mask')
       if (layer?.type === 'surface') {
-        const maskProcessor = layer.processors.find(p => p.type === 'mask')
+        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
           expect(maskProcessor.shape).toEqual(perlinShape)
         }
@@ -154,7 +154,7 @@ describe('MaskUsecase', () => {
 
       const layer = repository.findLayer('mask')
       if (layer?.type === 'surface') {
-        const maskProcessor = layer.processors.find(p => p.type === 'mask')
+        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
           expect(maskProcessor.shape).toEqual({
             type: 'circle',
@@ -172,7 +172,7 @@ describe('MaskUsecase', () => {
 
       const layer = repository.findLayer('mask')
       if (layer?.type === 'surface') {
-        const maskProcessor = layer.processors.find(p => p.type === 'mask')
+        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
           expect(maskProcessor.shape.type).toBe('circle')
         }
@@ -197,7 +197,7 @@ describe('MaskUsecase', () => {
 
       const layer = repository.findLayer('mask')
       if (layer?.type === 'surface') {
-        const maskProcessor = layer.processors.find(p => p.type === 'mask')
+        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
           expect(maskProcessor.shape).toEqual({
             type: 'rect',

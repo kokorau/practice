@@ -1,0 +1,172 @@
+/**
+ * useBatchPreviewRenderer
+ *
+ * 複数のHeroViewConfigを単一のオフスクリーンレンダラーで順次レンダリングし、
+ * 結果をdata URLとしてキャッシュするcomposable
+ *
+ * これにより、複数のHeroPreviewThumbnailが同時にWebGPUコンテキストを作成する問題を回避
+ */
+
+import { ref, watch, onUnmounted, type Ref } from 'vue'
+import { TextureRenderer } from '@practice/texture'
+import type { HeroViewConfig } from '../modules/HeroScene'
+import { renderHeroConfig } from '../modules/HeroScene'
+import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
+
+export interface BatchPreviewRendererOptions {
+  /** Preview width (default: 256) */
+  width?: number
+  /** Preview height (default: 144 for 16:9) */
+  height?: number
+  /** Texture scale for rendering (default: calculated from width) */
+  scale?: number
+}
+
+const ORIGINAL_WIDTH = 1280
+
+export function useBatchPreviewRenderer(
+  configs: Ref<(HeroViewConfig | null)[]>,
+  palette: Ref<PrimitivePalette | undefined>,
+  options: BatchPreviewRendererOptions = {}
+) {
+  const width = options.width ?? 256
+  const height = options.height ?? Math.round(width * 9 / 16)
+  const scale = options.scale ?? width / ORIGINAL_WIDTH
+
+  // Cached preview data URLs
+  const previews = ref<(string | null)[]>([])
+  const isRendering = ref(false)
+  const error = ref<Error | null>(null)
+
+  // Offscreen canvas and renderer (created lazily)
+  let canvas: OffscreenCanvas | null = null
+  let renderer: TextureRenderer | null = null
+  let isDestroyed = false
+  let initFailed = false // Track if WebGPU initialization has already failed
+
+  /**
+   * Initialize renderer lazily
+   */
+  const initRenderer = async (): Promise<TextureRenderer | null> => {
+    if (isDestroyed) return null
+    if (renderer) return renderer
+    if (initFailed) return null // Skip if WebGPU initialization has already failed
+
+    try {
+      canvas = new OffscreenCanvas(width, height)
+      renderer = await TextureRenderer.create(canvas as unknown as HTMLCanvasElement)
+      return renderer
+    } catch (e) {
+      initFailed = true // Mark as failed to prevent repeated attempts
+      error.value = e instanceof Error ? e : new Error('Failed to create renderer')
+      console.error('WebGPU not available:', e)
+      return null
+    }
+  }
+
+  /**
+   * Render a single config and return data URL
+   */
+  const renderSingle = async (
+    r: TextureRenderer,
+    config: HeroViewConfig,
+    pal: PrimitivePalette
+  ): Promise<string | null> => {
+    try {
+      await renderHeroConfig(r, config, pal, { scale })
+
+      // Convert to blob then data URL
+      if (!canvas) return null
+      const blob = await canvas.convertToBlob({ type: 'image/png' })
+      return URL.createObjectURL(blob)
+    } catch (e) {
+      console.error('Failed to render preview:', e)
+      return null
+    }
+  }
+
+  /**
+   * Render all configs sequentially
+   */
+  const renderAll = async () => {
+    if (isDestroyed) return
+
+    const configList = configs.value
+    const pal = palette.value
+    if (!pal || configList.length === 0) {
+      previews.value = []
+      return
+    }
+
+    isRendering.value = true
+    error.value = null
+
+    try {
+      const r = await initRenderer()
+      if (!r || isDestroyed) {
+        isRendering.value = false
+        return
+      }
+
+      const results: (string | null)[] = []
+
+      for (const config of configList) {
+        if (isDestroyed) break
+        if (config) {
+          const dataUrl = await renderSingle(r, config, pal)
+          results.push(dataUrl)
+        } else {
+          results.push(null)
+        }
+      }
+
+      if (!isDestroyed) {
+        // Revoke old URLs
+        for (const url of previews.value) {
+          if (url) URL.revokeObjectURL(url)
+        }
+        previews.value = results
+      }
+    } finally {
+      if (!isDestroyed) {
+        isRendering.value = false
+      }
+    }
+  }
+
+  /**
+   * Cleanup
+   */
+  const destroy = () => {
+    isDestroyed = true
+    // Revoke all URLs
+    for (const url of previews.value) {
+      if (url) URL.revokeObjectURL(url)
+    }
+    previews.value = []
+    renderer?.destroy()
+    renderer = null
+    canvas = null
+  }
+
+  // Watch for config/palette changes and re-render
+  watch(
+    [configs, palette],
+    () => {
+      renderAll()
+    },
+    { immediate: true, deep: true }
+  )
+
+  onUnmounted(() => {
+    destroy()
+  })
+
+  return {
+    previews,
+    isRendering,
+    error,
+    refresh: renderAll,
+    destroy,
+  }
+}

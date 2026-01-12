@@ -11,7 +11,7 @@
 
 import { computed } from 'vue'
 import type { SceneNode, Group, LayerVariant } from '../../modules/HeroScene'
-import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
+import { isGroup, isLayer, isMaskNode, isEffectModifier } from '../../modules/HeroScene'
 
 // ============================================================
 // Props & Emits
@@ -41,8 +41,11 @@ const hasChildren = computed(() => isGroupNode.value && (props.node as Group).ch
 const isExpanded = computed(() => props.node.expanded)
 const isBaseLayer = computed(() => isLayer(props.node) && props.node.variant === 'base')
 
-// Get node variant for Layer nodes
-const nodeVariant = computed((): LayerVariant | 'group' => {
+// Get node variant for Layer nodes (including mask)
+const nodeVariant = computed((): LayerVariant | 'group' | 'mask' => {
+  if (isMaskNode(props.node)) {
+    return 'mask'
+  }
   if (isLayer(props.node)) {
     return props.node.variant
   }
@@ -61,6 +64,11 @@ const children = computed(() => {
 const modifiers = computed(() => {
   const result: { type: 'effect' | 'mask'; label: string; value: string; enabled: boolean }[] = []
 
+  // MaskNode doesn't have modifiers property
+  if (props.node.type === 'mask') {
+    return result
+  }
+
   const nodeModifiers = props.node.modifiers
   // Effect modifier
   const effectMod = nodeModifiers.find(isEffectModifier)
@@ -78,19 +86,8 @@ const modifiers = computed(() => {
     })
   }
 
-  // Mask modifier (only for non-base layers)
-  if (!isBaseLayer.value) {
-    const maskMod = nodeModifiers.find(isMaskModifier)
-    if (maskMod) {
-      const shapeType = maskMod.config.shape
-      result.push({
-        type: 'mask',
-        label: 'Mask',
-        value: shapeType.charAt(0).toUpperCase() + shapeType.slice(1),
-        enabled: maskMod.enabled,
-      })
-    }
-  }
+  // Note: Masks are now MaskNode (sibling node in group), not modifiers
+  // MaskNode display will be handled when rendering MaskNode type
 
   return result
 })
@@ -99,7 +96,7 @@ const modifiers = computed(() => {
 // Icon & Label Helpers
 // ============================================================
 
-const getLayerIcon = (variant: LayerVariant | 'group'): string => {
+const getLayerIcon = (variant: LayerVariant | 'group' | 'mask'): string => {
   switch (variant) {
     case 'base': return 'gradient'
     case 'surface': return 'texture'
@@ -107,11 +104,12 @@ const getLayerIcon = (variant: LayerVariant | 'group'): string => {
     case 'model3d': return 'view_in_ar'
     case 'image': return 'image'
     case 'text': return 'text_fields'
+    case 'mask': return 'content_cut'
     default: return 'layers'
   }
 }
 
-const getLayerTypeLabel = (variant: LayerVariant | 'group'): string => {
+const getLayerTypeLabel = (variant: LayerVariant | 'group' | 'mask'): string => {
   switch (variant) {
     case 'base': return 'Base'
     case 'surface': return 'Surface'
@@ -119,6 +117,7 @@ const getLayerTypeLabel = (variant: LayerVariant | 'group'): string => {
     case 'model3d': return '3D Model'
     case 'image': return 'Image'
     case 'text': return 'Text'
+    case 'mask': return 'Mask'
     default: return 'Layer'
   }
 }

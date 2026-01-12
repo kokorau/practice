@@ -24,7 +24,7 @@ export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalft
  */
 function findEffectProcessor(layer: LayerNodeConfig): EffectProcessorConfig | undefined {
   if (!('processors' in layer)) return undefined
-  return layer.processors.find((p): p is EffectProcessorConfig => p.type === 'effect')
+  return (layer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
 }
 
 /**
@@ -66,7 +66,7 @@ export function selectFilterType(
     lineHalftone: { ...currentConfig.lineHalftone, enabled: filterType === 'lineHalftone' },
   }
 
-  const updatedProcessors = updateProcessors(layer.processors, (p) => ({
+  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
     ...p,
     config: newEffectConfig,
   }))

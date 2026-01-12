@@ -22,7 +22,7 @@ import type {
  */
 function findEffectProcessor(layer: LayerNodeConfig): EffectProcessorConfig | undefined {
   if (!('processors' in layer)) return undefined
-  return layer.processors.find((p): p is EffectProcessorConfig => p.type === 'effect')
+  return (layer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
 }
 
 /**
@@ -54,7 +54,7 @@ export function updateVignetteParams(
   const effectProcessor = findEffectProcessor(layer)
   if (!effectProcessor) return
 
-  const updatedProcessors = updateProcessors(layer.processors, (p) => ({
+  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
     ...p,
     config: {
       ...p.config,
@@ -84,7 +84,7 @@ export function updateChromaticAberrationParams(
   const effectProcessor = findEffectProcessor(layer)
   if (!effectProcessor) return
 
-  const updatedProcessors = updateProcessors(layer.processors, (p) => ({
+  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
     ...p,
     config: {
       ...p.config,
@@ -114,7 +114,7 @@ export function updateDotHalftoneParams(
   const effectProcessor = findEffectProcessor(layer)
   if (!effectProcessor) return
 
-  const updatedProcessors = updateProcessors(layer.processors, (p) => ({
+  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
     ...p,
     config: {
       ...p.config,
@@ -144,7 +144,7 @@ export function updateLineHalftoneParams(
   const effectProcessor = findEffectProcessor(layer)
   if (!effectProcessor) return
 
-  const updatedProcessors = updateProcessors(layer.processors, (p) => ({
+  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
     ...p,
     config: {
       ...p.config,
