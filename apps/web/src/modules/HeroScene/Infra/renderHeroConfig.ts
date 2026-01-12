@@ -17,6 +17,7 @@ import {
   createPerlinMaskSpec,
   createLinearGradientMaskSpec,
   createRadialGradientMaskSpec,
+  createBoxGradientMaskSpec,
   type TextureRenderSpec,
   type Viewport,
   type RGBA,
@@ -330,6 +331,22 @@ function createMaskSpecFromShape(
         innerRadius: shape.innerRadius,
         outerRadius: shape.outerRadius,
         aspectRatio: shape.aspectRatio,
+        innerColor,
+        outerColor,
+        cutout,
+      },
+      viewport
+    )
+  }
+  if (shape.type === 'boxGradient') {
+    return createBoxGradientMaskSpec(
+      {
+        left: shape.left,
+        right: shape.right,
+        top: shape.top,
+        bottom: shape.bottom,
+        cornerRadius: shape.cornerRadius,
+        curve: shape.curve,
         innerColor,
         outerColor,
         cutout,

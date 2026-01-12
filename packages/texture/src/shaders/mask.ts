@@ -562,3 +562,177 @@ export function createRadialGradientMaskSpec(
   }
 }
 
+/** Box gradient mask parameters */
+export interface BoxGradientMaskParams {
+  /** Left edge fade width (0.0-1.0, normalized coordinate) */
+  left: number
+  /** Right edge fade width (0.0-1.0, normalized coordinate) */
+  right: number
+  /** Top edge fade width (0.0-1.0, normalized coordinate) */
+  top: number
+  /** Bottom edge fade width (0.0-1.0, normalized coordinate) */
+  bottom: number
+  /** Corner radius */
+  cornerRadius: number
+  /** Fade curve type (0=linear, 1=smooth, 2=easeIn, 3=easeOut) */
+  curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut'
+  /** Inner color (center of gradient) */
+  innerColor: [number, number, number, number]
+  /** Outer color (edges of gradient) */
+  outerColor: [number, number, number, number]
+  /** If true (default), gradient goes from inner to outer. If false, reversed. */
+  cutout?: boolean
+}
+
+/** Convert curve type string to number for shader */
+function curveTypeToNumber(curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut'): number {
+  switch (curve) {
+    case 'linear': return 0
+    case 'smooth': return 1
+    case 'easeIn': return 2
+    case 'easeOut': return 3
+    default: return 1
+  }
+}
+
+/** Box gradient mask shader */
+export const boxGradientMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+struct BoxGradientMaskParams {
+  innerColor: vec4f,
+  outerColor: vec4f,
+  left: f32,
+  right: f32,
+  top: f32,
+  bottom: f32,
+  cornerRadius: f32,
+  curve: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+  viewportAspectRatio: f32,
+  _padding: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: BoxGradientMaskParams;
+
+// Apply curve function based on curve type
+fn applyCurve(t: f32, curveType: f32) -> f32 {
+  let curveInt = i32(curveType);
+  if (curveInt == 0) {
+    // linear
+    return t;
+  } else if (curveInt == 1) {
+    // smooth (smoothstep-like)
+    return t * t * (3.0 - 2.0 * t);
+  } else if (curveInt == 2) {
+    // easeIn (quadratic)
+    return t * t;
+  } else {
+    // easeOut (inverse quadratic)
+    return 1.0 - (1.0 - t) * (1.0 - t);
+  }
+}
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  // Calculate distance from each edge (0 at edge, 1 at full fade width)
+  // Then invert so t=0 at center, t=1 at edges (like RadialGradient)
+  var dLeft = 0.0;
+  var dRight = 0.0;
+  var dTop = 0.0;
+  var dBottom = 0.0;
+
+  if (params.left > 0.0) {
+    dLeft = 1.0 - clamp(uv.x / params.left, 0.0, 1.0);
+  }
+  if (params.right > 0.0) {
+    dRight = 1.0 - clamp((1.0 - uv.x) / params.right, 0.0, 1.0);
+  }
+  if (params.top > 0.0) {
+    dTop = 1.0 - clamp(uv.y / params.top, 0.0, 1.0);
+  }
+  if (params.bottom > 0.0) {
+    dBottom = 1.0 - clamp((1.0 - uv.y) / params.bottom, 0.0, 1.0);
+  }
+
+  // Maximum of all edges forms the box gradient (t=0 at center, t=1 at edges)
+  var t = max(max(dLeft, dRight), max(dTop, dBottom));
+
+  // Apply corner radius effect in corners
+  if (params.cornerRadius > 0.0) {
+    let cr = params.cornerRadius;
+
+    // Check if we're in a corner region
+    let inLeftTop = uv.x < params.left && uv.y < params.top;
+    let inRightTop = uv.x > (1.0 - params.right) && uv.y < params.top;
+    let inLeftBottom = uv.x < params.left && uv.y > (1.0 - params.bottom);
+    let inRightBottom = uv.x > (1.0 - params.right) && uv.y > (1.0 - params.bottom);
+
+    if (inLeftTop) {
+      let cornerCenter = vec2f(params.left, params.top);
+      let dist = length((uv - cornerCenter) / vec2f(params.left, params.top));
+      let cornerT = clamp(dist, 0.0, 1.0);
+      t = mix(t, cornerT, cr);
+    } else if (inRightTop) {
+      let cornerCenter = vec2f(1.0 - params.right, params.top);
+      let dist = length((uv - cornerCenter) / vec2f(params.right, params.top));
+      let cornerT = clamp(dist, 0.0, 1.0);
+      t = mix(t, cornerT, cr);
+    } else if (inLeftBottom) {
+      let cornerCenter = vec2f(params.left, 1.0 - params.bottom);
+      let dist = length((uv - cornerCenter) / vec2f(params.left, params.bottom));
+      let cornerT = clamp(dist, 0.0, 1.0);
+      t = mix(t, cornerT, cr);
+    } else if (inRightBottom) {
+      let cornerCenter = vec2f(1.0 - params.right, 1.0 - params.bottom);
+      let dist = length((uv - cornerCenter) / vec2f(params.right, params.bottom));
+      let cornerT = clamp(dist, 0.0, 1.0);
+      t = mix(t, cornerT, cr);
+    }
+  }
+
+  // Apply curve
+  t = applyCurve(t, params.curve);
+
+  // Mix like RadialGradient: t=0 -> innerColor (center), t=1 -> outerColor (edges)
+  return mix(params.innerColor, params.outerColor, t);
+}
+`
+
+/**
+ * Create render spec for box gradient mask
+ */
+export function createBoxGradientMaskSpec(
+  params: BoxGradientMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const cutout = params.cutout ?? true
+  // When cutout=false, swap inner/outer colors
+  const innerColor = cutout ? params.innerColor : params.outerColor
+  const outerColor = cutout ? params.outerColor : params.innerColor
+  const viewportAspectRatio = viewport.width / viewport.height
+
+  const data = new Float32Array([
+    ...innerColor,
+    ...outerColor,
+    params.left,
+    params.right,
+    params.top,
+    params.bottom,
+    params.cornerRadius,
+    curveTypeToNumber(params.curve),
+    viewport.width,
+    viewport.height,
+    viewportAspectRatio,
+    0, // padding
+  ])
+  return {
+    shader: boxGradientMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 80, // 18 floats = 72 bytes, aligned to 16 = 80
+    blend: maskBlendState,
+  }
+}

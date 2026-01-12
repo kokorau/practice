@@ -7,6 +7,7 @@ import {
   createPerlinMaskSpec,
   createLinearGradientMaskSpec,
   createRadialGradientMaskSpec,
+  createBoxGradientMaskSpec,
 } from '../shaders'
 
 /**
@@ -470,6 +471,81 @@ const defaultMaskPatterns: MaskPattern[] = [
     createSpec: (c1, c2, viewport) =>
       createRadialGradientMaskSpec(
         { centerX: 0.5, centerY: 0.5, innerRadius: 0.2, outerRadius: 0.6, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: true },
+        viewport!
+      ),
+  },
+  // ============================================================
+  // Box Gradient patterns (rectangular vignette)
+  // ============================================================
+  {
+    label: 'Box Frame',
+    maskConfig: { type: 'boxGradient', left: 0.15, right: 0.15, top: 0.15, bottom: 0.15, cornerRadius: 0, curve: 'smooth', cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createBoxGradientMaskSpec(
+        { left: 0.15, right: 0.15, top: 0.15, bottom: 0.15, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Box Frame Narrow',
+    maskConfig: { type: 'boxGradient', left: 0.08, right: 0.08, top: 0.08, bottom: 0.08, cornerRadius: 0, curve: 'smooth', cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createBoxGradientMaskSpec(
+        { left: 0.08, right: 0.08, top: 0.08, bottom: 0.08, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Box Frame Wide',
+    maskConfig: { type: 'boxGradient', left: 0.25, right: 0.25, top: 0.25, bottom: 0.25, cornerRadius: 0, curve: 'smooth', cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createBoxGradientMaskSpec(
+        { left: 0.25, right: 0.25, top: 0.25, bottom: 0.25, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Box Rounded',
+    maskConfig: { type: 'boxGradient', left: 0.15, right: 0.15, top: 0.15, bottom: 0.15, cornerRadius: 0.5, curve: 'smooth', cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createBoxGradientMaskSpec(
+        { left: 0.15, right: 0.15, top: 0.15, bottom: 0.15, cornerRadius: 0.5, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Box Top-Bottom',
+    maskConfig: { type: 'boxGradient', left: 0, right: 0, top: 0.2, bottom: 0.2, cornerRadius: 0, curve: 'smooth', cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createBoxGradientMaskSpec(
+        { left: 0, right: 0, top: 0.2, bottom: 0.2, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Box Left-Right',
+    maskConfig: { type: 'boxGradient', left: 0.2, right: 0.2, top: 0, bottom: 0, cornerRadius: 0, curve: 'smooth', cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createBoxGradientMaskSpec(
+        { left: 0.2, right: 0.2, top: 0, bottom: 0, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Letterbox',
+    maskConfig: { type: 'boxGradient', left: 0, right: 0, top: 0.12, bottom: 0.12, cornerRadius: 0, curve: 'linear', cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createBoxGradientMaskSpec(
+        { left: 0, right: 0, top: 0.12, bottom: 0.12, cornerRadius: 0, curve: 'linear', innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Box Asymmetric',
+    maskConfig: { type: 'boxGradient', left: 0.1, right: 0.2, top: 0.15, bottom: 0.25, cornerRadius: 0, curve: 'smooth', cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createBoxGradientMaskSpec(
+        { left: 0.1, right: 0.2, top: 0.15, bottom: 0.25, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
         viewport!
       ),
   },
