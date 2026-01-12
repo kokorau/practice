@@ -55,7 +55,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.vignette.intensity).toBe(0.8)
       expect(effectProcessor.config.vignette.radius).toBe(0.8) // unchanged
@@ -69,7 +69,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.vignette.intensity).toBe(0.9)
       expect(effectProcessor.config.vignette.radius).toBe(1.0)
@@ -83,7 +83,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.vignette.enabled).toBe(true)
     })
@@ -97,7 +97,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.chromaticAberration.intensity).toBe(10)
     })
@@ -111,7 +111,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.dotHalftone.dotSize).toBe(12)
       expect(effectProcessor.config.dotHalftone.spacing).toBe(20)
@@ -127,7 +127,7 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = layer.processors[0] as EffectProcessorConfig
+      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
       expect(effectProcessor.config.lineHalftone.lineWidth).toBe(8)
       expect(effectProcessor.config.lineHalftone.spacing).toBe(24)

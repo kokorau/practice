@@ -691,18 +691,22 @@ export type {
   PerlinMaskShapeConfig as HeroPerlinMaskShapeConfig,
   MaskShapeConfig,
   MaskShapeConfig as HeroMaskShapeConfig,
-  // Processor config types (for JSON serialization)
-  ProcessorConfig,
-  EffectProcessorConfig,
-  MaskProcessorConfig,
+  // Filter config types (for JSON serialization)
+  FilterConfig,
+  EffectFilterConfig,
   // LayerNodeConfig types (for JSON serialization)
   LayerNodeConfig,
+  MaskNodeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   TextLayerNodeConfig,
   Model3DLayerNodeConfig,
   ImageLayerNodeConfig,
   GroupLayerNodeConfig,
+  // Deprecated processor config types
+  ProcessorConfig,
+  EffectProcessorConfig,
+  MaskProcessorConfig,
   // Foreground
   GridPosition,
   ForegroundElementType,
@@ -719,8 +723,13 @@ export type {
 export {
   createDefaultColorsConfig,
   createDefaultForegroundConfig,
+  createDefaultEffectFilterConfig,
   createDefaultEffectProcessorConfig,
   createDefaultHeroViewConfig,
+  // Migration helpers
+  getLayerFilters,
+  getLayerMaskProcessor,
+  hasLayerMaskProcessor,
 } from './HeroViewConfig'
 
 // ============================================================

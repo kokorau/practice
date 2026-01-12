@@ -54,7 +54,7 @@ const createMaskPreviewConfig = (base: HeroViewConfig, shape: MaskShapeConfig): 
       .filter(layer => layer.type === 'surface')
       .map(layer => ({
         ...layer,
-        processors: layer.processors.map(p => {
+        processors: (layer.processors ?? []).map(p => {
           if (p.type === 'mask') {
             return { ...p, shape } as MaskProcessorConfig
           }

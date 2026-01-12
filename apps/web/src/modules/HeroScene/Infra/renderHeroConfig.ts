@@ -526,7 +526,7 @@ export async function renderHeroConfig(
     }
 
     // Apply base layer effects
-    const effectProcessor = findEffectProcessor(baseLayer.processors)
+    const effectProcessor = findEffectProcessor(baseLayer.processors ?? [])
     if (effectProcessor?.enabled && effectProcessor.config) {
       applyEffects(renderer, effectProcessor.config, viewport, scale)
     }
@@ -536,7 +536,7 @@ export async function renderHeroConfig(
   const surfaceLayer = findSurfaceLayer(config.layers)
   if (surfaceLayer) {
     // Find mask processor
-    const maskProcessor = surfaceLayer.processors.find((p) => p.type === 'mask')
+    const maskProcessor = (surfaceLayer.processors ?? []).find((p) => p.type === 'mask')
     if (maskProcessor && 'shape' in maskProcessor) {
       const shape = maskProcessor.shape as MaskShapeConfig
 
@@ -553,7 +553,7 @@ export async function renderHeroConfig(
     }
 
     // Apply surface layer effects
-    const effectProcessor = findEffectProcessor(surfaceLayer.processors)
+    const effectProcessor = findEffectProcessor(surfaceLayer.processors ?? [])
     if (effectProcessor?.enabled && effectProcessor.config) {
       applyEffects(renderer, effectProcessor.config, viewport, scale)
     }

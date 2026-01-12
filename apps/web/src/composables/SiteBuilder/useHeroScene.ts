@@ -3473,7 +3473,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       selectedBackgroundIndex.value = bgPresetIndex ?? 0
 
       // Background filters (from effect processor)
-      const effectProcessor = baseLayer.processors.find((p): p is EffectProcessorConfig => p.type === 'effect')
+      const effectProcessor = (baseLayer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
       if (effectProcessor) {
         layerFilterConfigs.value.set(LAYER_IDS.BASE, effectProcessor.config)
       }
@@ -3482,7 +3482,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Surface layer with mask
     if (surfaceLayer) {
       // Find mask processor
-      const maskProcessor = surfaceLayer.processors.find((p): p is MaskProcessorConfig => p.type === 'mask')
+      const maskProcessor = (surfaceLayer.processors ?? []).find((p): p is MaskProcessorConfig => p.type === 'mask')
 
       if (maskProcessor) {
         // Mask shape
@@ -3577,7 +3577,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
       // Mask filters (from effect processor)
-      const effectProcessor = surfaceLayer.processors.find((p): p is EffectProcessorConfig => p.type === 'effect')
+      const effectProcessor = (surfaceLayer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
       if (effectProcessor) {
         layerFilterConfigs.value.set(LAYER_IDS.MASK, effectProcessor.config)
       }

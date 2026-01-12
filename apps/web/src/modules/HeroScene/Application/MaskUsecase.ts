@@ -150,7 +150,7 @@ const getMaskLayer = (repository: HeroViewRepository): SurfaceLayerNodeConfig | 
  * マスクprocessorを取得するヘルパー
  */
 const getMaskProcessor = (layer: SurfaceLayerNodeConfig) => {
-  return layer.processors.find(p => p.type === 'mask')
+  return (layer.processors ?? []).find(p => p.type === 'mask')
 }
 
 /**
@@ -171,7 +171,7 @@ export const createMaskUsecase = (deps: MaskUsecaseDeps): MaskUsecase => {
       const maskProcessor = getMaskProcessor(layer)
       if (!maskProcessor || maskProcessor.type !== 'mask') return
 
-      const updatedProcessors = layer.processors.map(p =>
+      const updatedProcessors = (layer.processors ?? []).map(p =>
         p.type === 'mask' ? { ...p, shape } : p
       )
 
@@ -187,7 +187,7 @@ export const createMaskUsecase = (deps: MaskUsecaseDeps): MaskUsecase => {
       if (maskProcessor.shape.type !== params.type) return
 
       const newShape = { ...maskProcessor.shape, ...params } as MaskShapeConfig
-      const updatedProcessors = layer.processors.map(p =>
+      const updatedProcessors = (layer.processors ?? []).map(p =>
         p.type === 'mask' ? { ...p, shape: newShape } : p
       )
 

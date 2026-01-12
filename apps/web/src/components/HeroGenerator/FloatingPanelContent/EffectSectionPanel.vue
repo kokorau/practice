@@ -76,7 +76,7 @@ const createEffectPreviewConfig = (
       if (layer.type === 'base') {
         return {
           ...layer,
-          processors: layer.processors.map(p => {
+          processors: (layer.processors ?? []).map(p => {
             if (p.type === 'effect') {
               return { ...p, enabled: true, config: effects }
             }

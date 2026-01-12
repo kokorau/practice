@@ -45,7 +45,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(true)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
@@ -60,7 +60,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(false)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(true)
@@ -75,7 +75,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(false)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
@@ -90,7 +90,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(false)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
@@ -109,7 +109,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     expect(effectProcessor.config.vignette.enabled).toBe(false)
     expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
@@ -128,7 +128,7 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = layer.processors[0] as EffectProcessorConfig
+    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
 
     // Vignette params should be preserved (just disabled)
     expect(effectProcessor.config.vignette.intensity).toBe(0.5)
