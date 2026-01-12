@@ -270,8 +270,6 @@ describe('SurfaceWorkflow Integration', () => {
       backgroundUsecase.selectSurface({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
       maskUsecase.selectMidgroundSurface({ type: 'grid', lineWidth: 2, cellSize: 30 })
 
-      const config = repository.get()
-
       // Background
       const baseLayer = repository.findLayer('base')
       if (baseLayer?.type === 'base') {

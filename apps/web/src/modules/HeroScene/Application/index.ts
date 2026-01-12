@@ -75,6 +75,10 @@ export type {
 } from './CompileHeroScene'
 export { compileHeroScene } from './CompileHeroScene'
 
+// Re-export ConfigSyncer
+export type { SyncBackgroundSurfaceResult } from './ConfigSyncer'
+export { syncBackgroundSurfaceParams } from './ConfigSyncer'
+
 // ============================================================
 // Ports (Interfaces for Infrastructure)
 // ============================================================

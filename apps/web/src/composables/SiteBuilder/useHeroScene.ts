@@ -198,6 +198,12 @@ import {
   type SelectionPort,
   // Constants
   HERO_CANVAS_DIMENSIONS,
+  // Domain Mappers
+  toCustomMaskShapeParams,
+  toCustomSurfaceParams,
+  toCustomBackgroundSurfaceParams,
+  // Application Syncer
+  syncBackgroundSurfaceParams,
   // Grouped state types
   type PatternState,
   type BackgroundState,
@@ -585,224 +591,22 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
 
 
-  /**
-   * Extract custom shape params from a MaskPattern's maskConfig
-   */
-  const extractMaskShapeParams = (maskConfig: MaskShapeConfig): CustomMaskShapeParams => {
-    if (maskConfig.type === 'circle') {
-      return {
-        type: 'circle',
-        centerX: maskConfig.centerX,
-        centerY: maskConfig.centerY,
-        radius: maskConfig.radius,
-        cutout: maskConfig.cutout ?? true,
-      }
-    }
-    if (maskConfig.type === 'rect') {
-      return {
-        type: 'rect',
-        left: maskConfig.left,
-        right: maskConfig.right,
-        top: maskConfig.top,
-        bottom: maskConfig.bottom,
-        radiusTopLeft: maskConfig.radiusTopLeft ?? 0,
-        radiusTopRight: maskConfig.radiusTopRight ?? 0,
-        radiusBottomLeft: maskConfig.radiusBottomLeft ?? 0,
-        radiusBottomRight: maskConfig.radiusBottomRight ?? 0,
-        rotation: maskConfig.rotation ?? 0,
-        perspectiveX: maskConfig.perspectiveX ?? 0,
-        perspectiveY: maskConfig.perspectiveY ?? 0,
-        cutout: maskConfig.cutout ?? true,
-      }
-    }
-    if (maskConfig.type === 'perlin') {
-      return {
-        type: 'perlin',
-        seed: maskConfig.seed,
-        threshold: maskConfig.threshold,
-        scale: maskConfig.scale,
-        octaves: maskConfig.octaves,
-        cutout: maskConfig.cutout ?? true,
-      }
-    }
-    if (maskConfig.type === 'linearGradient') {
-      return {
-        type: 'linearGradient',
-        angle: maskConfig.angle,
-        startOffset: maskConfig.startOffset,
-        endOffset: maskConfig.endOffset,
-        cutout: maskConfig.cutout ?? false,
-      }
-    }
-    if (maskConfig.type === 'radialGradient') {
-      return {
-        type: 'radialGradient',
-        centerX: maskConfig.centerX,
-        centerY: maskConfig.centerY,
-        innerRadius: maskConfig.innerRadius,
-        outerRadius: maskConfig.outerRadius,
-        aspectRatio: maskConfig.aspectRatio,
-        cutout: maskConfig.cutout ?? false,
-      }
-    }
-    if (maskConfig.type === 'boxGradient') {
-      return {
-        type: 'boxGradient',
-        left: maskConfig.left,
-        right: maskConfig.right,
-        top: maskConfig.top,
-        bottom: maskConfig.bottom,
-        cornerRadius: maskConfig.cornerRadius,
-        curve: maskConfig.curve,
-        cutout: maskConfig.cutout ?? false,
-      }
-    }
-    // blob
-    return {
-      type: 'blob',
-      centerX: maskConfig.centerX,
-      centerY: maskConfig.centerY,
-      baseRadius: maskConfig.baseRadius,
-      amplitude: maskConfig.amplitude,
-      octaves: maskConfig.octaves,
-      seed: maskConfig.seed,
-      cutout: maskConfig.cutout ?? true,
-    }
-  }
+  // extractMaskShapeParams is now imported from Domain/MaskShapeMapper as toCustomMaskShapeParams
 
   /**
    * Extract surface params from a MidgroundSurfacePreset
+   * Now delegates to toCustomSurfaceParams from Domain/SurfaceMapper
    */
   const extractSurfaceParams = (preset: MidgroundSurfacePreset, colorA: RGBA, colorB: RGBA): CustomSurfaceParams => {
-    const { params } = preset
-    if (params.type === 'solid') {
-      return { type: 'solid' }
-    }
-    if (params.type === 'stripe') {
-      return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
-    }
-    if (params.type === 'grid') {
-      return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
-    }
-    if (params.type === 'polkaDot') {
-      return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
-    }
-    if (params.type === 'gradientGrain') {
-      return {
-        type: 'gradientGrain',
-        depthMapType: params.depthMapType,
-        angle: params.angle,
-        centerX: params.centerX,
-        centerY: params.centerY,
-        radialStartAngle: params.radialStartAngle,
-        radialSweepAngle: params.radialSweepAngle,
-        perlinScale: params.perlinScale,
-        perlinOctaves: params.perlinOctaves,
-        perlinContrast: params.perlinContrast,
-        perlinOffset: params.perlinOffset,
-        seed: params.seed,
-        sparsity: params.sparsity,
-        colorA,
-        colorB,
-        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
-      }
-    }
-    if (params.type === 'checker') {
-      return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
-    }
-    if (params.type === 'triangle') {
-      return { type: 'triangle', size: params.size, angle: params.angle }
-    }
-    if (params.type === 'hexagon') {
-      return { type: 'hexagon', size: params.size, angle: params.angle }
-    }
-    if (params.type === 'asanoha') {
-      return { type: 'asanoha', size: params.size, lineWidth: params.lineWidth }
-    }
-    if (params.type === 'seigaiha') {
-      return { type: 'seigaiha', radius: params.radius, rings: params.rings, lineWidth: params.lineWidth }
-    }
-    if (params.type === 'wave') {
-      return { type: 'wave', amplitude: params.amplitude, wavelength: params.wavelength, thickness: params.thickness, angle: params.angle }
-    }
-    if (params.type === 'scales') {
-      return { type: 'scales', size: params.size, overlap: params.overlap, angle: params.angle }
-    }
-    if (params.type === 'ogee') {
-      return { type: 'ogee', width: params.width, height: params.height, lineWidth: params.lineWidth }
-    }
-    if (params.type === 'sunburst') {
-      return { type: 'sunburst', rays: params.rays, centerX: params.centerX, centerY: params.centerY, twist: params.twist }
-    }
-    // fallback to solid
-    return { type: 'solid' }
+    return toCustomSurfaceParams(preset.params, colorA, colorB)
   }
 
   /**
    * Extract background surface params from a SurfacePreset
+   * Now delegates to toCustomBackgroundSurfaceParams from Domain/SurfaceMapper
    */
   const extractBackgroundSurfaceParams = (params: SurfacePresetParams, colorA: RGBA, colorB: RGBA): CustomBackgroundSurfaceParams => {
-    if (params.type === 'solid') {
-      return { type: 'solid' }
-    }
-    if (params.type === 'stripe') {
-      return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
-    }
-    if (params.type === 'grid') {
-      return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
-    }
-    if (params.type === 'polkaDot') {
-      return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
-    }
-    if (params.type === 'gradientGrain') {
-      return {
-        type: 'gradientGrain',
-        depthMapType: params.depthMapType,
-        angle: params.angle,
-        centerX: params.centerX,
-        centerY: params.centerY,
-        radialStartAngle: params.radialStartAngle,
-        radialSweepAngle: params.radialSweepAngle,
-        perlinScale: params.perlinScale,
-        perlinOctaves: params.perlinOctaves,
-        perlinContrast: params.perlinContrast,
-        perlinOffset: params.perlinOffset,
-        seed: params.seed,
-        sparsity: params.sparsity,
-        colorA,
-        colorB,
-        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
-      }
-    }
-    if (params.type === 'checker') {
-      return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
-    }
-    if (params.type === 'triangle') {
-      return { type: 'triangle', size: params.size, angle: params.angle }
-    }
-    if (params.type === 'hexagon') {
-      return { type: 'hexagon', size: params.size, angle: params.angle }
-    }
-    if (params.type === 'asanoha') {
-      return { type: 'asanoha', size: params.size, lineWidth: params.lineWidth }
-    }
-    if (params.type === 'seigaiha') {
-      return { type: 'seigaiha', radius: params.radius, rings: params.rings, lineWidth: params.lineWidth }
-    }
-    if (params.type === 'wave') {
-      return { type: 'wave', amplitude: params.amplitude, wavelength: params.wavelength, thickness: params.thickness, angle: params.angle }
-    }
-    if (params.type === 'scales') {
-      return { type: 'scales', size: params.size, overlap: params.overlap, angle: params.angle }
-    }
-    if (params.type === 'ogee') {
-      return { type: 'ogee', width: params.width, height: params.height, lineWidth: params.lineWidth }
-    }
-    if (params.type === 'sunburst') {
-      return { type: 'sunburst', rays: params.rays, centerX: params.centerX, centerY: params.centerY, twist: params.twist }
-    }
-    // fallback to solid
-    return { type: 'solid' }
+    return toCustomBackgroundSurfaceParams(params, colorA, colorB)
   }
 
   // Current custom params (initialized from selected preset)
@@ -840,7 +644,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
     const pattern = maskPatterns[idx]
     if (pattern) {
-      customMaskShapeParams.value = extractMaskShapeParams(pattern.maskConfig)
+      customMaskShapeParams.value = toCustomMaskShapeParams(pattern.maskConfig)
     }
   }
 
@@ -3951,55 +3755,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   /**
    * Sync customBackgroundSurfaceParams from Repository's base layer surface
    * This enables unidirectional data flow: Usecase -> Repository -> View
+   * Now delegates to syncBackgroundSurfaceParams from Application/ConfigSyncer
    */
   const syncBackgroundSurfaceParamsFromRepository = (config: HeroViewConfig): void => {
-    const baseLayer = config.layers.find((layer): layer is BaseLayerNodeConfig => layer.type === 'base')
-    if (!baseLayer) return
-
-    const bgSurface = baseLayer.surface
-    if (bgSurface.type === 'solid') {
-      customBackgroundSurfaceParams.value = { type: 'solid' }
-    } else if (bgSurface.type === 'stripe') {
-      customBackgroundSurfaceParams.value = { type: 'stripe', width1: bgSurface.width1, width2: bgSurface.width2, angle: bgSurface.angle }
-    } else if (bgSurface.type === 'grid') {
-      customBackgroundSurfaceParams.value = { type: 'grid', lineWidth: bgSurface.lineWidth, cellSize: bgSurface.cellSize }
-    } else if (bgSurface.type === 'polkaDot') {
-      customBackgroundSurfaceParams.value = { type: 'polkaDot', dotRadius: bgSurface.dotRadius, spacing: bgSurface.spacing, rowOffset: bgSurface.rowOffset }
-    } else if (bgSurface.type === 'checker') {
-      customBackgroundSurfaceParams.value = { type: 'checker', cellSize: bgSurface.cellSize, angle: bgSurface.angle }
-    } else if (bgSurface.type === 'gradientGrain') {
-      customBackgroundSurfaceParams.value = {
-        type: 'gradientGrain',
-        depthMapType: bgSurface.depthMapType,
-        angle: bgSurface.angle,
-        centerX: bgSurface.centerX,
-        centerY: bgSurface.centerY,
-        radialStartAngle: bgSurface.radialStartAngle,
-        radialSweepAngle: bgSurface.radialSweepAngle,
-        perlinScale: bgSurface.perlinScale,
-        perlinOctaves: bgSurface.perlinOctaves,
-        perlinContrast: bgSurface.perlinContrast,
-        perlinOffset: bgSurface.perlinOffset,
-        colorA: textureColor1.value,
-        colorB: textureColor2.value,
-        seed: bgSurface.seed,
-        sparsity: bgSurface.sparsity,
-        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
-      }
-    } else if (bgSurface.type === 'asanoha') {
-      customBackgroundSurfaceParams.value = { type: 'asanoha', size: bgSurface.size, lineWidth: bgSurface.lineWidth }
-    } else if (bgSurface.type === 'seigaiha') {
-      customBackgroundSurfaceParams.value = { type: 'seigaiha', radius: bgSurface.radius, rings: bgSurface.rings, lineWidth: bgSurface.lineWidth }
-    } else if (bgSurface.type === 'wave') {
-      customBackgroundSurfaceParams.value = { type: 'wave', amplitude: bgSurface.amplitude, wavelength: bgSurface.wavelength, thickness: bgSurface.thickness, angle: bgSurface.angle }
-    } else if (bgSurface.type === 'scales') {
-      customBackgroundSurfaceParams.value = { type: 'scales', size: bgSurface.size, overlap: bgSurface.overlap, angle: bgSurface.angle }
-    } else if (bgSurface.type === 'ogee') {
-      customBackgroundSurfaceParams.value = { type: 'ogee', width: bgSurface.width, height: bgSurface.height, lineWidth: bgSurface.lineWidth }
-    } else if (bgSurface.type === 'sunburst') {
-      customBackgroundSurfaceParams.value = { type: 'sunburst', rays: bgSurface.rays, centerX: bgSurface.centerX, centerY: bgSurface.centerY, twist: bgSurface.twist }
+    const result = syncBackgroundSurfaceParams(config, textureColor1.value, textureColor2.value)
+    if (result.surfaceParams !== null) {
+      customBackgroundSurfaceParams.value = result.surfaceParams
     }
-    // Note: 'image' type is handled separately via customBackgroundImage
+    // Note: 'image' type returns null and is handled separately via customBackgroundImage
   }
 
   // Subscribe to internal heroViewRepository changes for unidirectional flow
