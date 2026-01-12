@@ -135,6 +135,7 @@ export type {
   MaskProcessorConfig,
   // LayerNodeConfig types (JSON serialization)
   LayerNodeConfig,
+  MaskNodeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   TextLayerNodeConfig as TextLayerNodeConfigType,
@@ -170,6 +171,17 @@ export {
   LineHalftoneEffectSchema,
   LayerEffectSchemas,
   createDefaultEffectConfig,
+  // Vignette shape schemas and types
+  VignetteBaseSchema,
+  VignetteShapeSchemas,
+  EllipseVignetteSchema,
+  CircleVignetteSchema,
+  RectVignetteSchema,
+  LinearVignetteSchema,
+  VignetteShapeOptions,
+  createDefaultVignetteShapeConfig,
+  createVignetteConfigForShape,
+  migrateVignetteConfig,
   // Effect Schemas (legacy aliases)
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
@@ -181,15 +193,6 @@ export {
   createDefaultDotHalftoneConfig,
   createDefaultLineHalftoneConfig,
   createDefaultFilterConfig,
-  // Vignette shape support (new)
-  VignetteShapeOptions,
-  VignetteBaseSchema,
-  EllipseVignetteSchema,
-  CircleVignetteSchema,
-  RectVignetteSchema,
-  LinearVignetteSchema,
-  VignetteShapeSchemas,
-  migrateVignetteConfig,
   createDefaultShapeVignetteConfig,
   // Modifier factories (new)
   createEffectModifier,

@@ -76,12 +76,38 @@ export {
   type BoxGradientClipParams,
   type ClipMaskParams,
 } from './clipMask'
+// Legacy vignette export (for backward compatibility)
 export {
   vignetteShader,
   createVignetteUniforms,
   VIGNETTE_BUFFER_SIZE,
   type VignetteParams,
 } from './vignette'
+// New vignette shape variants
+export {
+  ellipseVignetteShader,
+  createEllipseVignetteUniforms,
+  ELLIPSE_VIGNETTE_BUFFER_SIZE,
+  type EllipseVignetteParams,
+} from './vignette-ellipse'
+export {
+  circleVignetteShader,
+  createCircleVignetteUniforms,
+  CIRCLE_VIGNETTE_BUFFER_SIZE,
+  type CircleVignetteParams,
+} from './vignette-circle'
+export {
+  rectVignetteShader,
+  createRectVignetteUniforms,
+  RECT_VIGNETTE_BUFFER_SIZE,
+  type RectVignetteParams,
+} from './vignette-rect'
+export {
+  linearVignetteShader,
+  createLinearVignetteUniforms,
+  LINEAR_VIGNETTE_BUFFER_SIZE,
+  type LinearVignetteParams,
+} from './vignette-linear'
 export {
   chromaticAberrationShader,
   createChromaticAberrationUniforms,

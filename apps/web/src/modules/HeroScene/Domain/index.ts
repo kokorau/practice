@@ -290,6 +290,22 @@ export {
   type LayerEffectConfig,
   type LayerEffectSchemaMap,
   createDefaultEffectConfig,
+  // Vignette shape schemas and types
+  VignetteBaseSchema,
+  VignetteShapeSchemas,
+  EllipseVignetteSchema,
+  CircleVignetteSchema,
+  RectVignetteSchema,
+  LinearVignetteSchema,
+  VignetteShapeOptions,
+  createDefaultVignetteShapeConfig,
+  migrateVignetteConfig,
+  type VignetteShape,
+  type VignetteConfig,
+  type EllipseVignetteConfig,
+  type CircleVignetteConfig,
+  type RectVignetteConfig,
+  type LinearVignetteConfig,
   // Legacy aliases (deprecated)
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
@@ -310,32 +326,16 @@ export {
 } from './EffectSchema'
 
 // ============================================================
-// Vignette Shape Types (new)
+// Vignette Shape Params Types (additional exports from VignetteSchema)
 // ============================================================
 
 export {
-  // Types
-  type VignetteShape,
-  type VignetteConfig,
-  type EllipseVignetteConfig,
-  type CircleVignetteConfig,
-  type RectVignetteConfig,
-  type LinearVignetteConfig,
   type EllipseVignetteParams,
   type CircleVignetteParams,
   type RectVignetteParams,
   type LinearVignetteParams,
-  // Schemas
-  VignetteShapeOptions,
-  VignetteBaseSchema,
-  EllipseVignetteSchema,
-  CircleVignetteSchema,
-  RectVignetteSchema,
-  LinearVignetteSchema,
-  VignetteShapeSchemas,
-  // Helpers
-  migrateVignetteConfig,
   createDefaultVignetteConfig as createDefaultShapeVignetteConfig,
+  createVignetteConfigForShape,
 } from './VignetteSchema'
 
 // ============================================================

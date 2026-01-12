@@ -8,7 +8,17 @@ import type { LayerFilterConfig } from '../modules/HeroScene'
 // ============================================================
 
 const createMockFilterConfig = (): LayerFilterConfig => ({
-  vignette: { enabled: false, intensity: 0.5, radius: 0.8, softness: 0.5 },
+  vignette: {
+    shape: 'ellipse',
+    enabled: false,
+    intensity: 0.5,
+    softness: 0.5,
+    color: [0, 0, 0, 1],
+    radius: 0.8,
+    centerX: 0.5,
+    centerY: 0.5,
+    aspectRatio: 1,
+  },
   chromaticAberration: { enabled: false, intensity: 0.3 },
   dotHalftone: { enabled: false, dotSize: 4, spacing: 8, angle: 45 },
   lineHalftone: { enabled: false, lineWidth: 2, spacing: 6, angle: 0 },
@@ -157,10 +167,15 @@ describe('useFilterEditor', () => {
       const { currentVignetteConfig } = useFilterEditor(options)
 
       expect(currentVignetteConfig.value).toEqual({
+        shape: 'ellipse',
         enabled: false,
         intensity: 0.5,
-        radius: 0.8,
         softness: 0.5,
+        color: [0, 0, 0, 1],
+        radius: 0.8,
+        centerX: 0.5,
+        centerY: 0.5,
+        aspectRatio: 1,
       })
     })
 
@@ -248,7 +263,17 @@ describe('useFilterEditor', () => {
     it('updates configs when selected layer changes', () => {
       const options = createMockOptions()
       options.filterConfigs.value.set('layer-2', {
-        vignette: { enabled: true, intensity: 0.9, radius: 0.5, softness: 0.3 },
+        vignette: {
+          shape: 'ellipse',
+          enabled: true,
+          intensity: 0.9,
+          softness: 0.3,
+          color: [0, 0, 0, 1],
+          radius: 0.5,
+          centerX: 0.5,
+          centerY: 0.5,
+          aspectRatio: 1,
+        },
         chromaticAberration: { enabled: false, intensity: 0.1 },
         dotHalftone: { enabled: false, dotSize: 2, spacing: 4, angle: 90 },
         lineHalftone: { enabled: false, lineWidth: 1, spacing: 3, angle: 45 },
