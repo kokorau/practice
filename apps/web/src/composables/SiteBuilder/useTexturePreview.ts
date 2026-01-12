@@ -169,10 +169,37 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
 
     // Initialize renderers after DOM update
     nextTick(async () => {
+      // Guard: activeSection may have changed during nextTick
+      if (activeSection.value !== section) {
+        return
+      }
+
+      // Ensure clean slate before creating new renderers
+      destroyThumbnailRenderers()
+
       const patterns = getPatterns(section)
       const canvases = document.querySelectorAll<HTMLCanvasElement>('[data-thumbnail-canvas]')
 
+      // Validate DOM query result
+      if (canvases.length === 0) {
+        console.warn('[useTexturePreview] No thumbnail canvases found')
+        return
+      }
+
+      // Warn if canvas count doesn't match pattern count
+      if (canvases.length !== patterns.length) {
+        console.warn(
+          `[useTexturePreview] Canvas count (${canvases.length}) doesn't match pattern count (${patterns.length})`
+        )
+      }
+
       for (let i = 0; i < canvases.length; i++) {
+        // Guard: activeSection may have changed during async iteration
+        if (activeSection.value !== section) {
+          destroyThumbnailRenderers()
+          return
+        }
+
         const canvas = canvases[i]
         if (!canvas) continue
         // 16:9 aspect ratio for thumbnails
@@ -180,6 +207,12 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
         canvas.height = 144
         try {
           const renderer = await TextureRenderer.create(canvas)
+          // Guard: activeSection may have changed during async renderer creation
+          if (activeSection.value !== section) {
+            renderer.destroy()
+            destroyThumbnailRenderers()
+            return
+          }
           thumbnailRenderers.push(renderer)
           const pattern = patterns[i]
           if (pattern) {
