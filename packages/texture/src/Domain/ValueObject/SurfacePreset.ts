@@ -2,7 +2,7 @@
  * Surface Preset Type
  * Defines the available surface pattern types
  */
-export type SurfacePresetType = 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain'
+export type SurfacePresetType = 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain' | 'triangle' | 'hexagon'
 
 /**
  * Depth Map Type for Gradient Grain
@@ -74,6 +74,28 @@ export interface GradientGrainPresetParams {
 }
 
 /**
+ * Triangle tessellation surface params
+ */
+export interface TrianglePresetParams {
+  type: 'triangle'
+  /** Triangle edge length (px) */
+  size: number
+  /** Rotation angle (radians) */
+  angle: number
+}
+
+/**
+ * Hexagon tessellation surface params
+ */
+export interface HexagonPresetParams {
+  type: 'hexagon'
+  /** Hexagon radius (px) - center to vertex */
+  size: number
+  /** Rotation angle (radians) */
+  angle: number
+}
+
+/**
  * Union of all surface preset params
  */
 export type SurfacePresetParams =
@@ -83,6 +105,8 @@ export type SurfacePresetParams =
   | PolkaDotPresetParams
   | CheckerPresetParams
   | GradientGrainPresetParams
+  | TrianglePresetParams
+  | HexagonPresetParams
 
 /**
  * Surface Preset
