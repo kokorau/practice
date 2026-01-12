@@ -80,6 +80,18 @@ export {
   createLinearGradientMaskSpec,
   createRadialGradientMaskSpec,
   createBoxGradientMaskSpec,
+  // Greymap mask specs (2-stage pipeline)
+  createCircleGreymapMaskSpec,
+  createRectGreymapMaskSpec,
+  createBlobGreymapMaskSpec,
+  createPerlinGreymapMaskSpec,
+  createLinearGradientGreymapMaskSpec,
+  createRadialGradientGreymapMaskSpec,
+  createBoxGradientGreymapMaskSpec,
+  // Colorize spec
+  createColorizeSpec,
+  createMaskColorizeParams,
+  createDualColorParams,
   // Masked texture specs
   createCircleStripeSpec,
   createCircleGridSpec,
@@ -142,6 +154,17 @@ export type {
   BoxGradientMaskShapeConfig,
   MaskShapeConfig,
   MaskPattern,
+  // Greymap types (2-stage mask pipeline)
+  GreymapMaskSpec,
+  GreymapMaskParams,
+  CircleGreymapMaskParams,
+  RectGreymapMaskParams,
+  BlobGreymapMaskParams,
+  PerlinGreymapMaskParams,
+  LinearGradientGreymapMaskParams,
+  RadialGradientGreymapMaskParams,
+  BoxGradientGreymapMaskParams,
+  ColorizeParams,
   // Surface Presets
   SurfacePresetType,
   SolidPresetParams,

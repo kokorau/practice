@@ -11,16 +11,20 @@ import {
   createGridSpec,
   createPolkaDotSpec,
   createCheckerSpec,
-  createCircleMaskSpec,
-  createRectMaskSpec,
-  createBlobMaskSpec,
-  createPerlinMaskSpec,
-  createLinearGradientMaskSpec,
-  createRadialGradientMaskSpec,
-  createBoxGradientMaskSpec,
+  // Greymap mask shaders (new 2-stage pipeline)
+  createCircleGreymapMaskSpec,
+  createRectGreymapMaskSpec,
+  createBlobGreymapMaskSpec,
+  createPerlinGreymapMaskSpec,
+  createLinearGradientGreymapMaskSpec,
+  createRadialGradientGreymapMaskSpec,
+  createBoxGradientGreymapMaskSpec,
+  // Colorize shader
+  createColorizeSpec,
   type TextureRenderSpec,
   type Viewport,
   type RGBA,
+  type GreymapMaskSpec,
 } from '@practice/texture'
 import {
   // New vignette shape variants
@@ -81,6 +85,8 @@ export interface TextureRendererLike {
     inputTexture: GPUTexture,
     options?: { clear?: boolean }
   ): void
+  /** Render to offscreen texture for 2-stage pipeline */
+  renderToOffscreen(spec: TextureRenderSpec, textureIndex?: 0 | 1): GPUTexture
 }
 
 export interface RenderHeroConfigOptions {
@@ -249,35 +255,37 @@ function createBackgroundSpecFromSurface(
 }
 
 // ============================================================
-// Mask Spec Creation
+// Mask Spec Creation (Greymap-based 2-stage pipeline)
 // ============================================================
 
 /**
- * Create mask shape spec from mask config
+ * Create greymap mask spec from mask config
+ * Outputs grayscale values (0.0-1.0) instead of RGBA
  */
-function createMaskSpecFromShape(
+function createGreymapMaskSpecFromShape(
   shape: MaskShapeConfig,
-  innerColor: RGBA,
-  outerColor: RGBA,
   viewport: Viewport
-): TextureRenderSpec | null {
+): GreymapMaskSpec | null {
   const cutout = shape.cutout ?? false
+  // Greymap values: innerValue=0 (transparent/cutout), outerValue=1 (opaque/keep)
+  const innerValue = 0.0
+  const outerValue = 1.0
 
   if (shape.type === 'circle') {
-    return createCircleMaskSpec(
+    return createCircleGreymapMaskSpec(
       {
         centerX: shape.centerX,
         centerY: shape.centerY,
         radius: shape.radius,
-        innerColor,
-        outerColor,
+        innerValue,
+        outerValue,
         cutout,
       },
       viewport
     )
   }
   if (shape.type === 'rect') {
-    return createRectMaskSpec(
+    return createRectGreymapMaskSpec(
       {
         left: shape.left,
         right: shape.right,
@@ -290,73 +298,73 @@ function createMaskSpecFromShape(
         rotation: shape.rotation,
         perspectiveX: shape.perspectiveX,
         perspectiveY: shape.perspectiveY,
-        innerColor,
-        outerColor,
+        innerValue,
+        outerValue,
         cutout,
       },
       viewport
     )
   }
   if (shape.type === 'blob') {
-    return createBlobMaskSpec(
+    return createBlobGreymapMaskSpec(
       {
         centerX: shape.centerX,
         centerY: shape.centerY,
         baseRadius: shape.baseRadius,
         amplitude: shape.amplitude,
-        frequency: 0,
         octaves: shape.octaves,
         seed: shape.seed,
-        innerColor,
-        outerColor,
+        innerValue,
+        outerValue,
         cutout,
       },
       viewport
     )
   }
   if (shape.type === 'perlin') {
-    return createPerlinMaskSpec(
+    return createPerlinGreymapMaskSpec(
       {
         seed: shape.seed,
         threshold: shape.threshold,
         scale: shape.scale,
         octaves: shape.octaves,
-        innerColor,
-        outerColor,
+        innerValue,
+        outerValue,
+        cutout,
       },
       viewport
     )
   }
   if (shape.type === 'linearGradient') {
-    return createLinearGradientMaskSpec(
+    return createLinearGradientGreymapMaskSpec(
       {
         angle: shape.angle,
         startOffset: shape.startOffset,
         endOffset: shape.endOffset,
-        innerColor,
-        outerColor,
+        innerValue,
+        outerValue,
         cutout,
       },
       viewport
     )
   }
   if (shape.type === 'radialGradient') {
-    return createRadialGradientMaskSpec(
+    return createRadialGradientGreymapMaskSpec(
       {
         centerX: shape.centerX,
         centerY: shape.centerY,
         innerRadius: shape.innerRadius,
         outerRadius: shape.outerRadius,
         aspectRatio: shape.aspectRatio,
-        innerColor,
-        outerColor,
+        innerValue,
+        outerValue,
         cutout,
       },
       viewport
     )
   }
   if (shape.type === 'boxGradient') {
-    return createBoxGradientMaskSpec(
+    return createBoxGradientGreymapMaskSpec(
       {
         left: shape.left,
         right: shape.right,
@@ -364,14 +372,50 @@ function createMaskSpecFromShape(
         bottom: shape.bottom,
         cornerRadius: shape.cornerRadius,
         curve: shape.curve,
-        innerColor,
-        outerColor,
+        innerValue,
+        outerValue,
         cutout,
       },
       viewport
     )
   }
   return null
+}
+
+/**
+ * Render mask using 2-stage greymap pipeline
+ * Stage 1: Render greymap to offscreen texture
+ * Stage 2: Apply colorize shader to convert to final RGBA
+ */
+function renderMaskWithGreymapPipeline(
+  renderer: TextureRendererLike,
+  greymapSpec: GreymapMaskSpec,
+  maskColor: RGBA,
+  viewport: Viewport
+): void {
+  // Stage 1: Render greymap to offscreen texture
+  const greymapTexture = renderer.renderToOffscreen(
+    {
+      shader: greymapSpec.shader,
+      uniforms: greymapSpec.uniforms,
+      bufferSize: greymapSpec.bufferSize,
+    },
+    0
+  )
+
+  // Stage 2: Apply colorize shader to convert greymap to final RGBA
+  // keepColor = maskColor (where greymap is white/1.0)
+  // cutoutColor = transparent (where greymap is black/0.0)
+  const colorizeSpec = createColorizeSpec(
+    {
+      keepColor: maskColor,
+      cutoutColor: [0, 0, 0, 0], // Transparent for cutout areas
+      alphaMode: 0, // Luminance becomes alpha
+    },
+    viewport
+  )
+
+  renderer.applyPostEffect(colorizeSpec, greymapTexture, { clear: false })
 }
 
 // ============================================================
@@ -623,8 +667,8 @@ export async function renderHeroConfig(
     : getColorFromPalette(palette, colors.background.secondary)
 
   // Resolve mask colors (matching useHeroScene logic)
-  // maskInnerColor: semantic context surface with alpha=0 (transparent)
-  const maskInnerColor = getColorFromPalette(palette, maskSurfaceKey, 0)
+  // Note: maskInnerColor is no longer used in greymap pipeline (kept for reference)
+  // const maskInnerColor = getColorFromPalette(palette, maskSurfaceKey, 0)
   // midgroundTextureColor1: mask.primary or auto-shifted from surface
   const midgroundTextureColor1 = getMidgroundTextureColor(
     palette,
@@ -679,17 +723,15 @@ export async function renderHeroConfig(
       }
     }
 
-    // Render the mask if found
+    // Render the mask if found (using 2-stage greymap pipeline)
     if (maskShape) {
-      // Pass colors directly - mask spec functions handle cutout internally
-      // innerColor = transparent (shows background through), outerColor = mask color
-      // The mask spec functions (createBlobMaskSpec, etc.) swap colors based on cutout
-      const innerColor = maskInnerColor
-      const outerColor = midgroundTextureColor1
-
-      const maskSpec = createMaskSpecFromShape(maskShape, innerColor, outerColor, viewport)
-      if (maskSpec) {
-        renderer.render(maskSpec, { clear: false })
+      // Create greymap spec (outputs grayscale values)
+      const greymapSpec = createGreymapMaskSpecFromShape(maskShape, viewport)
+      if (greymapSpec) {
+        // Render using 2-stage pipeline:
+        // Stage 1: Greymap to offscreen
+        // Stage 2: Colorize to final RGBA
+        renderMaskWithGreymapPipeline(renderer, greymapSpec, midgroundTextureColor1, viewport)
       }
     }
 
