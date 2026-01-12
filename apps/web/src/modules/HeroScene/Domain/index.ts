@@ -310,6 +310,35 @@ export {
 } from './EffectSchema'
 
 // ============================================================
+// Vignette Shape Types (new)
+// ============================================================
+
+export {
+  // Types
+  type VignetteShape,
+  type VignetteConfig,
+  type EllipseVignetteConfig,
+  type CircleVignetteConfig,
+  type RectVignetteConfig,
+  type LinearVignetteConfig,
+  type EllipseVignetteParams,
+  type CircleVignetteParams,
+  type RectVignetteParams,
+  type LinearVignetteParams,
+  // Schemas
+  VignetteShapeOptions,
+  VignetteBaseSchema,
+  EllipseVignetteSchema,
+  CircleVignetteSchema,
+  RectVignetteSchema,
+  LinearVignetteSchema,
+  VignetteShapeSchemas,
+  // Helpers
+  migrateVignetteConfig,
+  createDefaultVignetteConfig as createDefaultShapeVignetteConfig,
+} from './VignetteSchema'
+
+// ============================================================
 // Modifier Types (new naming)
 // ============================================================
 
