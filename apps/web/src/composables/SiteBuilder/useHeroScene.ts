@@ -910,7 +910,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       dotHalftone: { ...current.dotHalftone, ...(updates.dotHalftone ?? {}) },
       lineHalftone: { ...current.lineHalftone, ...(updates.lineHalftone ?? {}) },
     }
-    layerFilterConfigs.value.set(layerId, updated)
+    // Create new Map to trigger Vue reactivity (Map.set() doesn't change the ref value)
+    const newMap = new Map(layerFilterConfigs.value)
+    newMap.set(layerId, updated)
+    layerFilterConfigs.value = newMap
 
     // エディタ状態のレイヤーも更新
     editorState.value = {
