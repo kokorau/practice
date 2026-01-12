@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { addLayer } from './addLayer'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 import type { HeroViewConfig, SurfaceLayerNodeConfig } from '../../Domain/HeroViewConfig'
 
 describe('addLayer', () => {

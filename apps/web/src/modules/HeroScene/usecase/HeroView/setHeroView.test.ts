@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { setHeroView } from './setHeroView'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
 
 describe('setHeroView', () => {

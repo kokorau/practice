@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createHeroViewInMemoryRepository } from './HeroViewInMemoryRepository'
-import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
+import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
 
 describe('HeroViewInMemoryRepository', () => {
   describe('createHeroViewInMemoryRepository', () => {
@@ -41,9 +41,8 @@ describe('HeroViewInMemoryRepository', () => {
 
       repository.subscribe(subscriber)
 
-      // Should be called immediately with current value
-      expect(subscriber).toHaveBeenCalledTimes(1)
-      expect(subscriber).toHaveBeenCalledWith(createDefaultHeroViewConfig())
+      // Should NOT be called immediately (lazy subscription)
+      expect(subscriber).toHaveBeenCalledTimes(0)
 
       // Update config
       const newConfig = {
@@ -52,8 +51,8 @@ describe('HeroViewInMemoryRepository', () => {
       }
       repository.set(newConfig)
 
-      // Should be called again with new value
-      expect(subscriber).toHaveBeenCalledTimes(2)
+      // Should be called with new value
+      expect(subscriber).toHaveBeenCalledTimes(1)
       expect(subscriber).toHaveBeenLastCalledWith(newConfig)
     })
 
@@ -62,7 +61,7 @@ describe('HeroViewInMemoryRepository', () => {
       const subscriber = vi.fn()
 
       const unsubscribe = repository.subscribe(subscriber)
-      expect(subscriber).toHaveBeenCalledTimes(1)
+      expect(subscriber).toHaveBeenCalledTimes(0)
 
       // Unsubscribe
       unsubscribe()
@@ -74,8 +73,8 @@ describe('HeroViewInMemoryRepository', () => {
       }
       repository.set(newConfig)
 
-      // Should NOT be called again
-      expect(subscriber).toHaveBeenCalledTimes(1)
+      // Should NOT be called at all
+      expect(subscriber).toHaveBeenCalledTimes(0)
     })
 
     it('should support multiple subscribers', () => {
@@ -86,8 +85,8 @@ describe('HeroViewInMemoryRepository', () => {
       repository.subscribe(subscriber1)
       repository.subscribe(subscriber2)
 
-      expect(subscriber1).toHaveBeenCalledTimes(1)
-      expect(subscriber2).toHaveBeenCalledTimes(1)
+      expect(subscriber1).toHaveBeenCalledTimes(0)
+      expect(subscriber2).toHaveBeenCalledTimes(0)
 
       // Update config
       const newConfig = {
@@ -96,8 +95,8 @@ describe('HeroViewInMemoryRepository', () => {
       }
       repository.set(newConfig)
 
-      expect(subscriber1).toHaveBeenCalledTimes(2)
-      expect(subscriber2).toHaveBeenCalledTimes(2)
+      expect(subscriber1).toHaveBeenCalledTimes(1)
+      expect(subscriber2).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -109,7 +108,7 @@ describe('HeroViewInMemoryRepository', () => {
 
       repository.updateColors({ semanticContext: 'sectionTint' })
 
-      expect(subscriber).toHaveBeenCalledTimes(2)
+      expect(subscriber).toHaveBeenCalledTimes(1)
       expect(repository.get().colors.semanticContext).toBe('sectionTint')
       // Other color properties should remain unchanged
       expect(repository.get().colors.background.primary).toBe('B')
@@ -124,7 +123,7 @@ describe('HeroViewInMemoryRepository', () => {
 
       repository.updateViewport({ width: 1920 })
 
-      expect(subscriber).toHaveBeenCalledTimes(2)
+      expect(subscriber).toHaveBeenCalledTimes(1)
       expect(repository.get().viewport.width).toBe(1920)
       expect(repository.get().viewport.height).toBe(720) // unchanged
     })
@@ -138,7 +137,7 @@ describe('HeroViewInMemoryRepository', () => {
 
       repository.updateForeground({ elements: [] })
 
-      expect(subscriber).toHaveBeenCalledTimes(2)
+      expect(subscriber).toHaveBeenCalledTimes(1)
       expect(repository.get().foreground.elements).toEqual([])
     })
   })
@@ -151,7 +150,7 @@ describe('HeroViewInMemoryRepository', () => {
 
       repository.updateLayer('base', { name: 'Updated Background' })
 
-      expect(subscriber).toHaveBeenCalledTimes(2)
+      expect(subscriber).toHaveBeenCalledTimes(1)
       const layer = repository.get().layers.find((l) => l.id === 'base')
       expect(layer?.name).toBe('Updated Background')
     })

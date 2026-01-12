@@ -9,7 +9,7 @@ import {
   getDotHalftoneParams,
   getLineHalftoneParams,
 } from './updateFilterParams'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 import type { HeroViewConfig, BaseLayerNodeConfig, EffectProcessorConfig } from '../../Domain/HeroViewConfig'
 
 describe('updateFilterParams', () => {

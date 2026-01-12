@@ -6,7 +6,7 @@
 
 import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
-import { createHeroViewInMemoryRepository } from '../../Infra/HeroView/HeroViewInMemoryRepository'
+import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 
 /**
  * HeroViewConfigを更新する
