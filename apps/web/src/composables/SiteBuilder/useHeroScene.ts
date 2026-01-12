@@ -97,9 +97,20 @@ import {
 import type { ObjectSchema } from '@practice/schema'
 // Filters (separate subpath for tree-shaking)
 import {
-  vignetteShader,
-  createVignetteUniforms,
-  VIGNETTE_BUFFER_SIZE,
+  // Shape-specific vignette
+  ellipseVignetteShader,
+  createEllipseVignetteUniforms,
+  ELLIPSE_VIGNETTE_BUFFER_SIZE,
+  circleVignetteShader,
+  createCircleVignetteUniforms,
+  CIRCLE_VIGNETTE_BUFFER_SIZE,
+  rectVignetteShader,
+  createRectVignetteUniforms,
+  RECT_VIGNETTE_BUFFER_SIZE,
+  linearVignetteShader,
+  createLinearVignetteUniforms,
+  LINEAR_VIGNETTE_BUFFER_SIZE,
+  // Other effects
   chromaticAberrationShader,
   createChromaticAberrationUniforms,
   CHROMATIC_ABERRATION_BUFFER_SIZE,
@@ -199,6 +210,9 @@ import {
   type UsecaseState,
   type EditorStateRef,
   type RendererActions,
+  // Vignette shape support
+  migrateVignetteConfig,
+  type VignetteConfig,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -931,8 +945,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerFilterConfig>) => {
     const current = layerFilterConfigs.value.get(layerId) ?? createDefaultFilterConfig()
+    // Use migrateVignetteConfig to ensure proper type after spread
+    const mergedVignette = { ...current.vignette, ...(updates.vignette ?? {}) }
     const updated: LayerFilterConfig = {
-      vignette: { ...current.vignette, ...(updates.vignette ?? {}) },
+      vignette: migrateVignetteConfig(mergedVignette as VignetteConfig),
       chromaticAberration: { ...current.chromaticAberration, ...(updates.chromaticAberration ?? {}) },
       dotHalftone: { ...current.dotHalftone, ...(updates.dotHalftone ?? {}) },
       lineHalftone: { ...current.lineHalftone, ...(updates.lineHalftone ?? {}) },
@@ -1981,6 +1997,75 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
+   * Create vignette shader spec based on shape type
+   */
+  const createVignetteSpec = (config: VignetteConfig, viewport: Viewport) => {
+    const vignetteConfig = migrateVignetteConfig(config)
+
+    switch (vignetteConfig.shape) {
+      case 'circle': {
+        const uniforms = createCircleVignetteUniforms(
+          {
+            color: vignetteConfig.color,
+            intensity: vignetteConfig.intensity,
+            radius: vignetteConfig.radius,
+            softness: vignetteConfig.softness,
+            centerX: vignetteConfig.centerX,
+            centerY: vignetteConfig.centerY,
+          },
+          viewport
+        )
+        return { shader: circleVignetteShader, uniforms, bufferSize: CIRCLE_VIGNETTE_BUFFER_SIZE }
+      }
+      case 'rectangle': {
+        const uniforms = createRectVignetteUniforms(
+          {
+            color: vignetteConfig.color,
+            intensity: vignetteConfig.intensity,
+            softness: vignetteConfig.softness,
+            centerX: vignetteConfig.centerX,
+            centerY: vignetteConfig.centerY,
+            width: vignetteConfig.width,
+            height: vignetteConfig.height,
+            cornerRadius: vignetteConfig.cornerRadius,
+          },
+          viewport
+        )
+        return { shader: rectVignetteShader, uniforms, bufferSize: RECT_VIGNETTE_BUFFER_SIZE }
+      }
+      case 'linear': {
+        const uniforms = createLinearVignetteUniforms(
+          {
+            color: vignetteConfig.color,
+            intensity: vignetteConfig.intensity,
+            angle: vignetteConfig.angle,
+            startOffset: vignetteConfig.startOffset,
+            endOffset: vignetteConfig.endOffset,
+          },
+          viewport
+        )
+        return { shader: linearVignetteShader, uniforms, bufferSize: LINEAR_VIGNETTE_BUFFER_SIZE }
+      }
+      case 'ellipse':
+      default: {
+        const uniforms = createEllipseVignetteUniforms(
+          {
+            color: vignetteConfig.color,
+            intensity: vignetteConfig.intensity,
+            radius: vignetteConfig.radius,
+            softness: vignetteConfig.softness,
+            centerX: vignetteConfig.centerX,
+            centerY: vignetteConfig.centerY,
+            aspectRatio: vignetteConfig.aspectRatio,
+          },
+          viewport
+        )
+        return { shader: ellipseVignetteShader, uniforms, bufferSize: ELLIPSE_VIGNETTE_BUFFER_SIZE }
+      }
+    }
+  }
+
+  /**
    * Apply filters to current canvas content for a layer
    * Note: ClipGroup layers handle effects internally via offscreen rendering,
    * so they are skipped here to avoid double-application
@@ -2046,20 +2131,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Vignette (requires texture input, applied last)
     if (filters.vignette.enabled) {
       const inputTexture = previewRenderer.copyCanvasToTexture()
-      const uniforms = createVignetteUniforms(
-        {
-          color: [0, 0, 0, 1],
-          intensity: filters.vignette.intensity,
-          radius: filters.vignette.radius,
-          softness: filters.vignette.softness,
-        },
-        viewport
-      )
-      previewRenderer.applyPostEffect(
-        { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
-        inputTexture,
-        { clear: true }
-      )
+      const vignetteSpec = createVignetteSpec(filters.vignette, viewport)
+      previewRenderer.applyPostEffect(vignetteSpec, inputTexture, { clear: true })
     }
   }
 
@@ -2536,18 +2609,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
               // Vignette
               if (filters.vignette.enabled) {
-                const uniforms = createVignetteUniforms(
-                  {
-                    color: [0, 0, 0, 1],
-                    intensity: filters.vignette.intensity,
-                    radius: filters.vignette.radius,
-                    softness: filters.vignette.softness,
-                  },
-                  viewport
-                )
+                const vignetteSpec = createVignetteSpec(filters.vignette, viewport)
                 const outputIndex = currentTexture === renderer.getOffscreenTexture(0) ? 1 : 0
                 currentTexture = renderer.applyPostEffectToOffscreen(
-                  { shader: vignetteShader, uniforms, bufferSize: VIGNETTE_BUFFER_SIZE },
+                  vignetteSpec,
                   currentTexture,
                   outputIndex as 0 | 1
                 )

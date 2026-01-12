@@ -64,6 +64,13 @@ export type {
   LineHalftoneEffectConfig,
   LayerEffectConfig,
   LayerEffectSchemaMap,
+  // Vignette shape config types
+  VignetteShape,
+  VignetteConfig,
+  EllipseVignetteConfig,
+  CircleVignetteConfig,
+  RectVignetteConfig,
+  LinearVignetteConfig,
   // Effect types (legacy aliases)
   VignetteFilterConfig,
   ChromaticAberrationFilterConfig,
@@ -157,6 +164,16 @@ export {
   LineHalftoneEffectSchema,
   LayerEffectSchemas,
   createDefaultEffectConfig,
+  // Vignette shape schemas and types
+  VignetteBaseSchema,
+  VignetteShapeSchemas,
+  EllipseVignetteSchema,
+  CircleVignetteSchema,
+  RectVignetteSchema,
+  LinearVignetteSchema,
+  VignetteShapeOptions,
+  createDefaultVignetteShapeConfig,
+  migrateVignetteConfig,
   // Effect Schemas (legacy aliases)
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
