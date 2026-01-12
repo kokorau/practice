@@ -25,4 +25,7 @@ export type {
   UsecaseState,
   EditorStateRef,
   RendererActions,
+  // Helper types
+  TextAnchorPosition,
+  AddObjectLayerOptions,
 } from './HeroSceneState'

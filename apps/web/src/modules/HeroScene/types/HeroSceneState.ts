@@ -35,6 +35,7 @@ import type {
   PolkaDotSurfaceParams,
   CheckerSurfaceParams,
   Viewport,
+  DepthMapType,
 } from '@practice/texture'
 import type { Oklch } from '@practice/color'
 import type { PrimitiveKey } from '../../SemanticColorPalette/Domain'
@@ -53,6 +54,8 @@ import type {
   MaskUsecase,
   BackgroundSurfaceUsecase,
   ForegroundElementUpdate,
+  PresetColorConfig,
+  ExportPresetOptions,
 } from '../index'
 
 // ============================================================
@@ -72,7 +75,7 @@ export type CustomMaskShapeParams =
  * Gradient grain surface params
  */
 export interface GradientGrainSurfaceParams {
-  depthMapType: 'linear' | 'radial' | 'perlin'
+  depthMapType: DepthMapType
   angle: number
   centerX: number
   centerY: number
@@ -154,9 +157,9 @@ export interface PatternState {
   readonly maskOuterColor: ComputedRef<RGBA>
 
   /** Create spec for midground thumbnail rendering */
-  readonly createMidgroundThumbnailSpec: (viewport: Viewport) => TextureRenderSpec | null
+  readonly createMidgroundThumbnailSpec: (preset: SurfacePreset, color1: RGBA, color2: RGBA, viewport: Viewport) => TextureRenderSpec | null
   /** Create spec for background thumbnail rendering */
-  readonly createBackgroundThumbnailSpec: (viewport: Viewport) => TextureRenderSpec | null
+  readonly createBackgroundThumbnailSpec: (viewport: { width: number; height: number }) => TextureRenderSpec | null
 
   /** Selected background texture index */
   readonly selectedBackgroundIndex: Ref<number>
@@ -293,12 +296,12 @@ export interface ForegroundState {
   /** Foreground layer configuration */
   readonly foregroundConfig: Ref<ForegroundLayerConfig>
 
-  /** Computed title text color */
-  readonly foregroundTitleColor: ComputedRef<Oklch>
-  /** Computed body text color */
-  readonly foregroundBodyColor: ComputedRef<Oklch>
-  /** Computed element colors map */
-  readonly foregroundElementColors: ComputedRef<Map<string, Oklch>>
+  /** Computed title text color (CSS string) */
+  readonly foregroundTitleColor: ComputedRef<string>
+  /** Computed body text color (CSS string) */
+  readonly foregroundBodyColor: ComputedRef<string>
+  /** Computed element colors map (CSS strings) */
+  readonly foregroundElementColors: ComputedRef<Map<string, string>>
 
   /** Auto-selected title color key */
   readonly foregroundTitleAutoKey: ComputedRef<PrimitiveKey | null>
@@ -319,17 +322,32 @@ export interface PresetState {
   /** Currently selected preset ID */
   readonly selectedPresetId: Ref<string | null>
 
-  /** Load presets from repository */
-  readonly loadPresets: () => Promise<void>
-  /** Apply a preset */
-  readonly applyPreset: (presetId: string) => Promise<void>
+  /** Load presets from repository (returns color preset if initial preset applied) */
+  readonly loadPresets: (applyInitial?: boolean) => Promise<PresetColorConfig | null>
+  /** Apply a preset (returns color preset if available) */
+  readonly applyPreset: (presetId: string) => Promise<PresetColorConfig | null>
   /** Export current state as preset */
-  readonly exportPreset: (options?: { name?: string }) => Promise<HeroViewPreset>
+  readonly exportPreset: (options?: ExportPresetOptions) => HeroViewPreset
 }
 
 // ============================================================
 // LayerOperations - Layer CRUD Operations
 // ============================================================
+
+/** Anchor position type for text layers */
+export type TextAnchorPosition = 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
+
+/** Add object layer options */
+export interface AddObjectLayerOptions {
+  modelUrl?: string
+  x?: number
+  y?: number
+  z?: number
+  rotationX?: number
+  rotationY?: number
+  rotationZ?: number
+  scale?: number
+}
 
 /**
  * Layer operation actions
@@ -339,8 +357,8 @@ export interface LayerOperations {
   readonly addMaskLayer: () => void
   /** Add a text layer */
   readonly addTextLayer: (config?: Partial<{ text: string; fontFamily: string; fontSize: number }>) => void
-  /** Add a 3D object layer */
-  readonly addObjectLayer: (modelUrl: string) => void
+  /** Add a 3D object layer (returns layer ID) */
+  readonly addObjectLayer: (options?: Partial<AddObjectLayerOptions>) => string
   /** Remove a layer by ID */
   readonly removeLayer: (layerId: string) => void
 
@@ -357,7 +375,7 @@ export interface LayerOperations {
     letterSpacing: number
     lineHeight: number
     color: string
-    position: { x: number; y: number; anchor: string }
+    position: { x: number; y: number; anchor: TextAnchorPosition }
     rotation: number
   }>) => void
 }
@@ -482,7 +500,7 @@ export interface EditorStateRef {
  */
 export interface RendererActions {
   /** Initialize preview renderer */
-  readonly initPreview: (canvas: HTMLCanvasElement | OffscreenCanvas) => void
+  readonly initPreview: (canvas?: HTMLCanvasElement | null) => Promise<void>
   /** Destroy preview renderer */
   readonly destroyPreview: () => void
   /** Open a UI section */

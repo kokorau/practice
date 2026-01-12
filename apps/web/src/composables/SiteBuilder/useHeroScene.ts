@@ -175,6 +175,20 @@ import {
   type SelectionPort,
   // Constants
   HERO_CANVAS_DIMENSIONS,
+  // Grouped state types
+  type PatternState,
+  type BackgroundState,
+  type MaskState,
+  type FilterState,
+  type ForegroundState,
+  type PresetState,
+  type LayerOperations,
+  type InkColorHelpers,
+  type CanvasState,
+  type SerializationState,
+  type UsecaseState,
+  type EditorStateRef,
+  type RendererActions,
 } from '../../modules/HeroScene'
 
 // ============================================================
@@ -3352,6 +3366,182 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   // ============================================================
+  // Grouped State Objects (Phase 2: #131)
+  // ============================================================
+
+  /**
+   * Pattern state for texture/mask selection and thumbnails
+   */
+  const pattern: PatternState = {
+    texturePatterns,
+    maskPatterns,
+    midgroundTexturePatterns,
+    textureColor1,
+    textureColor2,
+    midgroundTextureColor1,
+    midgroundTextureColor2,
+    maskInnerColor,
+    maskOuterColor,
+    createMidgroundThumbnailSpec,
+    createBackgroundThumbnailSpec: (viewport: { width: number; height: number }) => {
+      const bgPattern = texturePatterns[selectedBackgroundIndex.value]
+      if (bgPattern) {
+        return bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
+      }
+      return null
+    },
+    selectedBackgroundIndex,
+    selectedMaskIndex,
+    selectedMidgroundTextureIndex,
+    activeSection,
+  }
+
+  /**
+   * Background layer state and actions
+   */
+  const background: BackgroundState = {
+    backgroundColorKey1,
+    backgroundColorKey2,
+    customBackgroundImage,
+    customBackgroundFile,
+    setBackgroundImage,
+    clearBackgroundImage,
+    loadRandomBackgroundImage,
+    isLoadingRandomBackground,
+    customBackgroundSurfaceParams,
+    currentBackgroundSurfaceSchema,
+    updateBackgroundSurfaceParams,
+  }
+
+  /**
+   * Mask (clip group) state and actions
+   */
+  const mask: MaskState = {
+    maskColorKey1,
+    maskColorKey2,
+    maskSemanticContext,
+    customMaskImage,
+    customMaskFile,
+    setMaskImage,
+    clearMaskImage,
+    loadRandomMaskImage,
+    isLoadingRandomMask,
+    customMaskShapeParams,
+    customSurfaceParams,
+    currentMaskShapeSchema,
+    currentSurfaceSchema,
+    updateMaskShapeParams,
+    updateSurfaceParams,
+  }
+
+  /**
+   * Filter/effect state and actions
+   */
+  const filter: FilterState = {
+    selectedFilterLayerId,
+    selectedLayerFilters,
+    layerFilterConfigs,
+    updateLayerFilters,
+    selectFilterType,
+    getFilterType,
+    updateVignetteParams,
+    updateChromaticAberrationParams,
+    updateDotHalftoneParams,
+    updateLineHalftoneParams,
+  }
+
+  /**
+   * Foreground (HTML layer) state
+   */
+  const foreground: ForegroundState = {
+    foregroundConfig,
+    foregroundTitleColor,
+    foregroundBodyColor,
+    foregroundElementColors,
+    foregroundTitleAutoKey,
+    foregroundBodyAutoKey,
+  }
+
+  /**
+   * Preset management state and actions
+   */
+  const preset: PresetState = {
+    presets,
+    selectedPresetId,
+    loadPresets,
+    applyPreset,
+    exportPreset,
+  }
+
+  /**
+   * Layer operation actions
+   */
+  const layer: LayerOperations = {
+    addMaskLayer,
+    addTextLayer,
+    addObjectLayer,
+    removeLayer,
+    updateLayerVisibility,
+    toggleLayerVisibility,
+    updateTextLayerConfig,
+  }
+
+  /**
+   * Ink color helper functions
+   */
+  const inkColor: InkColorHelpers = {
+    getInkColorForSurface,
+    getInkRgbaForSurface,
+  }
+
+  /**
+   * Canvas and rendering state
+   */
+  const canvas: CanvasState = {
+    canvasImageData,
+    setElementBounds,
+  }
+
+  /**
+   * Serialization and repository operations
+   */
+  const serialization: SerializationState = {
+    toHeroViewConfig,
+    fromHeroViewConfig,
+    saveToRepository,
+  }
+
+  /**
+   * Direct access to underlying usecases
+   */
+  const usecase: UsecaseState = {
+    heroViewRepository,
+    maskUsecase,
+    backgroundSurfaceUsecase,
+    colorUsecase,
+    layerUsecase,
+    foregroundElementUsecase,
+    presetUsecase,
+    selectedForegroundElementId,
+  }
+
+  /**
+   * Editor state for debugging/inspection
+   */
+  const editor: EditorStateRef = {
+    editorState,
+  }
+
+  /**
+   * Preview renderer control actions
+   */
+  const renderer: RendererActions = {
+    initPreview,
+    destroyPreview,
+    openSection,
+  }
+
+  // ============================================================
   // Public API
   // ============================================================
 
@@ -3488,5 +3678,22 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foregroundElementUsecase,
     presetUsecase,
     selectedForegroundElementId,
+
+    // ============================================================
+    // Grouped State Objects (new API)
+    // ============================================================
+    pattern,
+    background,
+    mask,
+    filter,
+    foreground,
+    preset,
+    layer,
+    inkColor,
+    canvas,
+    serialization,
+    usecase,
+    editor,
+    renderer,
   }
 }
