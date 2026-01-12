@@ -144,7 +144,6 @@ import {
   type EffectProcessorConfig,
   type MaskProcessorConfig,
   type MaskNodeConfig,
-  type GroupLayerNodeConfig,
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
@@ -948,7 +947,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerFilterConfig>) => {
     const current = layerFilterConfigs.value.get(layerId) ?? createDefaultFilterConfig()
     const updated: LayerFilterConfig = {
-      vignette: { ...current.vignette, ...(updates.vignette ?? {}) },
+      vignette: { ...current.vignette, ...(updates.vignette ?? {}) } as VignetteConfig,
       chromaticAberration: { ...current.chromaticAberration, ...(updates.chromaticAberration ?? {}) },
       dotHalftone: { ...current.dotHalftone, ...(updates.dotHalftone ?? {}) },
       lineHalftone: { ...current.lineHalftone, ...(updates.lineHalftone ?? {}) },
