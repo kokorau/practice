@@ -271,6 +271,10 @@ export {
   EFFECT_TYPES,
   getEffectDefinition,
   isValidEffectType,
+  // Mappers
+  toCustomMaskShapeParams,
+  toCustomSurfaceParams,
+  toCustomBackgroundSurfaceParams,
 } from './Domain'
 
 // Application
@@ -329,7 +333,12 @@ export {
   // Usecases
   createBackgroundSurfaceUsecase,
   createMaskUsecase,
+  // ConfigSyncer
+  syncBackgroundSurfaceParams,
 } from './Application'
+
+// Re-export ConfigSyncer types
+export type { SyncBackgroundSurfaceResult } from './Application'
 
 // HeroView Repository types (from Domain)
 export type {

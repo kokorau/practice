@@ -800,3 +800,10 @@ export type {
   HeroViewUnsubscribe,
 } from './repository'
 
+// ============================================================
+// Mappers
+// ============================================================
+
+export { toCustomMaskShapeParams } from './MaskShapeMapper'
+export { toCustomSurfaceParams, toCustomBackgroundSurfaceParams } from './SurfaceMapper'
+

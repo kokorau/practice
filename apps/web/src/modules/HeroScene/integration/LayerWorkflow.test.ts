@@ -10,7 +10,7 @@ import { createHeroViewInMemoryRepository } from '../Infra/HeroViewInMemoryRepos
 import { addLayer } from '../usecase/Layer/addLayer'
 import { removeLayer } from '../usecase/Layer/removeLayer'
 import { toggleVisibility } from '../usecase/Layer/toggleVisibility'
-import { toggleExpand } from '../usecase/Layer/toggleExpand'
+// toggleExpand import removed - not used in current tests
 import { updateLayer } from '../usecase/Layer/updateLayer'
 import type { HeroViewRepository } from '../Domain/repository/HeroViewRepository'
 import type { HeroViewConfig, SurfaceLayerNodeConfig, GroupLayerNodeConfig } from '../Domain/HeroViewConfig'

@@ -13,7 +13,7 @@ import { updateFoundationColor } from '../usecase/Color/updateFoundationColor'
 import { applyColorPreset } from '../usecase/Color/applyColorPreset'
 import type { HeroViewRepository } from '../Domain/repository/HeroViewRepository'
 import type { HeroViewConfig } from '../Domain/HeroViewConfig'
-import type { ColorPreset } from '../../../SemanticColorPalette/Domain/ValueObject/ColorPreset'
+import type { ColorPreset } from '../../SemanticColorPalette/Domain/ValueObject/ColorPreset'
 
 describe('ColorWorkflow Integration', () => {
   let repository: HeroViewRepository
