@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, provide } from 'vue'
-import type { SceneNode, ForegroundElementConfig, ForegroundElementType, DropPosition } from '../../modules/HeroScene'
+import type { SceneNode, ForegroundElementConfig, ForegroundElementType, DropPosition, ModifierDropPosition } from '../../modules/HeroScene'
 import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
 import DragPreview from './DragPreview.vue'
+import ModifierDragPreview from './ModifierDragPreview.vue'
 import { useLayerSelection } from '../../composables/useLayerSelection'
 import { useLayerDragAndDrop, LAYER_DRAG_KEY, calculateDropPosition } from '../../composables/useLayerDragAndDrop'
+import { useModifierDragAndDrop, MODIFIER_DRAG_KEY, calculateModifierDropPosition } from '../../composables/useModifierDragAndDrop'
 
 // ============================================================
 // Types
@@ -44,6 +46,7 @@ const emit = defineEmits<{
   'remove-layer': [layerId: string]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
   'move-node': [nodeId: string, position: DropPosition]
+  'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
   'remove-foreground-element': [elementId: string]
@@ -51,7 +54,7 @@ const emit = defineEmits<{
 }>()
 
 // ============================================================
-// Drag & Drop
+// Drag & Drop (SceneNode)
 // ============================================================
 
 const dragAndDrop = useLayerDragAndDrop()
@@ -61,8 +64,64 @@ const handleMoveNode = (nodeId: string, position: DropPosition) => {
   emit('move-node', nodeId, position)
 }
 
-// Global pointer move handler for DnD
+// ============================================================
+// Drag & Drop (Modifier)
+// ============================================================
+
+const modifierDragAndDrop = useModifierDragAndDrop()
+provide(MODIFIER_DRAG_KEY, modifierDragAndDrop)
+
+const handleMoveModifier = (sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => {
+  emit('move-modifier', sourceNodeId, modifierIndex, position)
+}
+
+// Global pointer move handler for DnD (handles both SceneNode and Modifier)
 const handleLayerListPointerMove = (e: PointerEvent) => {
+  // Handle Modifier drag
+  if (modifierDragAndDrop.state.dragItem.value) {
+    modifierDragAndDrop.actions.updatePointer(e)
+
+    if (modifierDragAndDrop.state.isDragging.value) {
+      // Find the modifier element under the pointer
+      const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY)
+      const modifierElement = elementsAtPoint.find(
+        el => el.hasAttribute('data-modifier-node-id')
+      ) as HTMLElement | undefined
+
+      if (!modifierElement) {
+        modifierDragAndDrop.actions.updateDropTarget(null)
+      } else {
+        const targetNodeId = modifierElement.dataset.modifierNodeId
+        const targetIndexStr = modifierElement.dataset.modifierIndex
+
+        if (!targetNodeId || targetIndexStr === undefined) {
+          modifierDragAndDrop.actions.updateDropTarget(null)
+        } else {
+          const targetModifierIndex = parseInt(targetIndexStr, 10)
+
+          // Calculate drop position
+          const rect = modifierElement.getBoundingClientRect()
+          const position = calculateModifierDropPosition(rect, e.clientY)
+
+          const target = {
+            nodeId: targetNodeId,
+            modifierIndex: targetModifierIndex,
+            position,
+          }
+
+          // Check if drop is valid
+          if (modifierDragAndDrop.canDrop(props.layers, target)) {
+            modifierDragAndDrop.actions.updateDropTarget(target)
+          } else {
+            modifierDragAndDrop.actions.updateDropTarget(null)
+          }
+        }
+      }
+    }
+    return // Don't process SceneNode drag when modifier drag is active
+  }
+
+  // Handle SceneNode drag
   if (!dragAndDrop.state.dragItem.value) return
 
   dragAndDrop.actions.updatePointer(e)
@@ -107,8 +166,20 @@ const handleLayerListPointerMove = (e: PointerEvent) => {
   }
 }
 
-// Global pointer up handler for DnD
+// Global pointer up handler for DnD (handles both SceneNode and Modifier)
 const handleLayerListPointerUp = () => {
+  // Handle Modifier drop
+  if (modifierDragAndDrop.state.dragItem.value) {
+    const source = modifierDragAndDrop.getSource()
+    const dropPosition = modifierDragAndDrop.actions.endDrag()
+
+    if (source && dropPosition) {
+      emit('move-modifier', source.nodeId, source.modifierIndex, dropPosition)
+    }
+    return
+  }
+
+  // Handle SceneNode drop
   if (!dragAndDrop.state.dragItem.value) return
 
   const draggedNodeId = dragAndDrop.state.dragItem.value.nodeId
@@ -246,15 +317,23 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @contextmenu="handleLayerContextMenu"
           @move-node="handleMoveNode"
+          @move-modifier="handleMoveModifier"
         />
       </div>
 
-      <!-- Drag Preview -->
+      <!-- Drag Preview (SceneNode) -->
       <DragPreview
         v-if="dragAndDrop.state.isDragging.value && dragAndDrop.state.dragItem.value"
         :nodes="layers"
         :node-id="dragAndDrop.state.dragItem.value.nodeId"
         :position="dragAndDrop.state.pointerPosition.value"
+      />
+
+      <!-- Drag Preview (Modifier) -->
+      <ModifierDragPreview
+        v-if="modifierDragAndDrop.state.isDragging.value && modifierDragAndDrop.state.dragItem.value"
+        :modifier-type="modifierDragAndDrop.state.dragItem.value.modifierType"
+        :position="modifierDragAndDrop.state.pointerPosition.value"
       />
     </div>
 

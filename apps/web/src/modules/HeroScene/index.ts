@@ -105,6 +105,7 @@ export type {
   TextConfig,
   Model3DConfig,
   DropPosition,
+  ModifierDropPosition,
   // HTML types
   HtmlContentItem,
   HtmlLayer,
@@ -234,9 +235,12 @@ export {
   flattenNodes,
   findParentNode,
   wrapNodeInGroup,
-  // DnD move utilities
+  // DnD move utilities (SceneNode)
   canMoveSceneNode,
   moveSceneNode,
+  // DnD move utilities (Modifier)
+  canMoveModifier,
+  moveModifier,
   // Scene layer ID mapping
   SCENE_LAYER_IDS,
   getSceneLayerId,
