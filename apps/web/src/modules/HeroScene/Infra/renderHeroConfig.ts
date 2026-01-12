@@ -50,6 +50,9 @@ import {
   lineHalftoneShader,
   createLineHalftoneUniforms,
   LINE_HALFTONE_BUFFER_SIZE,
+  blockMosaicShader,
+  createBlockMosaicUniforms,
+  BLOCK_MOSAIC_BUFFER_SIZE,
 } from '@practice/texture/filters'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
@@ -462,6 +465,22 @@ function applyEffects(
     )
     renderer.applyPostEffect(
       { shader: lineHalftoneShader, uniforms, bufferSize: LINE_HALFTONE_BUFFER_SIZE },
+      inputTexture,
+      { clear: true }
+    )
+  }
+
+  // Block Mosaic (requires texture input)
+  if (effects.blockMosaic?.enabled) {
+    const inputTexture = renderer.copyCanvasToTexture()
+    const uniforms = createBlockMosaicUniforms(
+      {
+        blockSize: scaleValue(effects.blockMosaic.blockSize, scale),
+      },
+      viewport
+    )
+    renderer.applyPostEffect(
+      { shader: blockMosaicShader, uniforms, bufferSize: BLOCK_MOSAIC_BUFFER_SIZE },
       inputTexture,
       { clear: true }
     )
