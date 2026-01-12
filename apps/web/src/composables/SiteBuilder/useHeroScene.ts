@@ -824,6 +824,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       } else if (params.type === 'gradientGrain') {
         // gradientGrain is not supported by Repository, handle directly in View layer
         customBackgroundSurfaceParams.value = params
+      } else if (params.type === 'asanoha') {
+        // Textile patterns - handle directly in View layer
+        customBackgroundSurfaceParams.value = params
+      } else if (params.type === 'seigaiha') {
+        customBackgroundSurfaceParams.value = params
+      } else if (params.type === 'wave') {
+        customBackgroundSurfaceParams.value = params
+      } else if (params.type === 'scales') {
+        customBackgroundSurfaceParams.value = params
+      } else if (params.type === 'ogee') {
+        customBackgroundSurfaceParams.value = params
+      } else if (params.type === 'sunburst') {
+        customBackgroundSurfaceParams.value = params
       }
     } else {
       customBackgroundSurfaceParams.value = null
@@ -3627,6 +3640,37 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       customBackgroundSurfaceParams.value = { type: 'polkaDot', dotRadius: bgSurface.dotRadius, spacing: bgSurface.spacing, rowOffset: bgSurface.rowOffset }
     } else if (bgSurface.type === 'checker') {
       customBackgroundSurfaceParams.value = { type: 'checker', cellSize: bgSurface.cellSize, angle: bgSurface.angle }
+    } else if (bgSurface.type === 'gradientGrain') {
+      customBackgroundSurfaceParams.value = {
+        type: 'gradientGrain',
+        depthMapType: bgSurface.depthMapType,
+        angle: bgSurface.angle,
+        centerX: bgSurface.centerX,
+        centerY: bgSurface.centerY,
+        radialStartAngle: bgSurface.radialStartAngle,
+        radialSweepAngle: bgSurface.radialSweepAngle,
+        perlinScale: bgSurface.perlinScale,
+        perlinOctaves: bgSurface.perlinOctaves,
+        perlinContrast: bgSurface.perlinContrast,
+        perlinOffset: bgSurface.perlinOffset,
+        colorA: textureColor1.value,
+        colorB: textureColor2.value,
+        seed: bgSurface.seed,
+        sparsity: bgSurface.sparsity,
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+      }
+    } else if (bgSurface.type === 'asanoha') {
+      customBackgroundSurfaceParams.value = { type: 'asanoha', size: bgSurface.size, lineWidth: bgSurface.lineWidth }
+    } else if (bgSurface.type === 'seigaiha') {
+      customBackgroundSurfaceParams.value = { type: 'seigaiha', radius: bgSurface.radius, rings: bgSurface.rings, lineWidth: bgSurface.lineWidth }
+    } else if (bgSurface.type === 'wave') {
+      customBackgroundSurfaceParams.value = { type: 'wave', amplitude: bgSurface.amplitude, wavelength: bgSurface.wavelength, thickness: bgSurface.thickness, angle: bgSurface.angle }
+    } else if (bgSurface.type === 'scales') {
+      customBackgroundSurfaceParams.value = { type: 'scales', size: bgSurface.size, overlap: bgSurface.overlap, angle: bgSurface.angle }
+    } else if (bgSurface.type === 'ogee') {
+      customBackgroundSurfaceParams.value = { type: 'ogee', width: bgSurface.width, height: bgSurface.height, lineWidth: bgSurface.lineWidth }
+    } else if (bgSurface.type === 'sunburst') {
+      customBackgroundSurfaceParams.value = { type: 'sunburst', rays: bgSurface.rays, centerX: bgSurface.centerX, centerY: bgSurface.centerY, twist: bgSurface.twist }
     }
     // Note: 'image' type is handled separately via customBackgroundImage
   }
