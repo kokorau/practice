@@ -207,7 +207,6 @@ export {
   getEffectPlaceholders,
   getEnabledMasks,
   // Legacy Processor factories (deprecated)
-  createEffectModifier,
   createEffectProcessor,
   createMaskProcessor,
   isEffectProcessor,
