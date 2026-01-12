@@ -478,18 +478,14 @@ const getContrastHint = (score: number): string => {
 }
 
 .unit-label {
-  padding: 0.375rem 0.5rem;
+  padding-right: 0.5rem;
   font-size: 0.6875rem;
   color: oklch(0.50 0.02 260);
-  background: oklch(0.94 0.01 260);
-  border-left: 1px solid oklch(0.85 0.01 260);
   white-space: nowrap;
 }
 
 :global(.dark) .unit-label {
   color: oklch(0.60 0.02 260);
-  background: oklch(0.22 0.02 260);
-  border-left-color: oklch(0.30 0.02 260);
 }
 
 /* Unit select (for font weight) */
