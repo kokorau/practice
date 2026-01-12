@@ -64,6 +64,12 @@ export interface RectMaskShapeConfig {
   radiusTopRight?: number
   radiusBottomLeft?: number
   radiusBottomRight?: number
+  /** Z-axis rotation in degrees (0-360) */
+  rotation?: number
+  /** Horizontal perspective (-0.5 to 0.5, negative=left narrow, positive=right narrow) */
+  perspectiveX?: number
+  /** Vertical perspective (-0.5 to 0.5, negative=top narrow, positive=bottom narrow) */
+  perspectiveY?: number
   /** If true (default), texture is rendered outside the shape (cutout). If false, texture fills the shape (solid). */
   cutout?: boolean
 }

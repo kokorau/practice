@@ -39,6 +39,12 @@ interface RectMaskBaseParams {
 interface RectMaskUniformRadius extends RectMaskBaseParams {
   /** 角丸の半径 (全角に適用) */
   radius?: number
+  /** Z-axis rotation in degrees (0-360) */
+  rotation?: number
+  /** Horizontal perspective (-0.5 to 0.5, negative=left narrow, positive=right narrow) */
+  perspectiveX?: number
+  /** Vertical perspective (-0.5 to 0.5, negative=top narrow, positive=bottom narrow) */
+  perspectiveY?: number
 }
 
 /** 各角に個別の角丸を適用 */
@@ -51,6 +57,12 @@ interface RectMaskIndividualRadius extends RectMaskBaseParams {
   radiusBottomLeft: number
   /** 右下の角丸半径 */
   radiusBottomRight: number
+  /** Z-axis rotation in degrees (0-360) */
+  rotation?: number
+  /** Horizontal perspective (-0.5 to 0.5, negative=left narrow, positive=right narrow) */
+  perspectiveX?: number
+  /** Vertical perspective (-0.5 to 0.5, negative=top narrow, positive=bottom narrow) */
+  perspectiveY?: number
 }
 
 /** 長方形マスクのパラメータ */
@@ -102,7 +114,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 }
 `
 
-/** 長方形マスクシェーダー（4角個別の角丸対応） */
+/** 長方形マスクシェーダー（4角個別の角丸対応 + 回転/パース） */
 export const rectMaskShader = /* wgsl */ `
 ${fullscreenVertex}
 
@@ -119,10 +131,12 @@ struct RectMaskParams {
   radiusTopRight: f32,
   radiusBottomLeft: f32,
   radiusBottomRight: f32,
+  rotation: f32,
+  perspectiveX: f32,
+  perspectiveY: f32,
   aspectRatio: f32,
   viewportWidth: f32,
   viewportHeight: f32,
-  _padding: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: RectMaskParams;
@@ -158,6 +172,33 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   // uvから中心への距離
   var p = uv - center;
+
+  // パース変換: Y位置に応じてX方向をスケール（perspectiveY）
+  // perspectiveY > 0: 下に行くほど幅が狭くなる
+  if (abs(params.perspectiveY) > 0.001) {
+    let yFactor = (p.y / halfSize.y) * params.perspectiveY;
+    p.x *= 1.0 + yFactor;
+  }
+
+  // パース変換: X位置に応じてY方向をスケール（perspectiveX）
+  // perspectiveX > 0: 右に行くほど高さが狭くなる
+  if (abs(params.perspectiveX) > 0.001) {
+    let xFactor = (p.x / halfSize.x) * params.perspectiveX;
+    p.y *= 1.0 + xFactor;
+  }
+
+  // 回転変換（中心周り）
+  if (abs(params.rotation) > 0.001) {
+    let rotRad = params.rotation * 3.14159265359 / 180.0;
+    let cosR = cos(rotRad);
+    let sinR = sin(rotRad);
+    let rotatedP = vec2f(
+      p.x * cosR - p.y * sinR,
+      p.x * sinR + p.y * cosR
+    );
+    p = rotatedP;
+  }
+
   var correctedHalfSize = halfSize;
   var radii = vec4f(params.radiusTopLeft, params.radiusTopRight, params.radiusBottomRight, params.radiusBottomLeft);
 
@@ -235,6 +276,11 @@ export function createRectMaskSpec(
   const radiusBottomLeft = isIndividual ? params.radiusBottomLeft : (params.radius ?? 0)
   const radiusBottomRight = isIndividual ? params.radiusBottomRight : (params.radius ?? 0)
 
+  // Rotation and perspective parameters
+  const rotation = params.rotation ?? 0
+  const perspectiveX = params.perspectiveX ?? 0
+  const perspectiveY = params.perspectiveY ?? 0
+
   const data = new Float32Array([
     ...innerColor,
     ...outerColor,
@@ -246,15 +292,17 @@ export function createRectMaskSpec(
     radiusTopRight,
     radiusBottomLeft,
     radiusBottomRight,
+    rotation,
+    perspectiveX,
+    perspectiveY,
     aspectRatio,
     viewport.width,
     viewport.height,
-    0, // padding
   ])
   return {
     shader: rectMaskShader,
     uniforms: data.buffer,
-    bufferSize: 96,
+    bufferSize: 96, // 24 floats = 96 bytes (16-byte aligned)
     blend: maskBlendState,
   }
 }

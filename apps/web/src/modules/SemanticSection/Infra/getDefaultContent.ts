@@ -325,6 +325,7 @@ const corporateCleanConfig: HeroViewConfig = {
             left: 0.05, right: 0.55, top: 0.1, bottom: 0.9,
             radiusTopLeft: 0.02, radiusTopRight: 0.02,
             radiusBottomLeft: 0.02, radiusBottomRight: 0.02,
+            rotation: 0, perspectiveX: 0, perspectiveY: 0,
             cutout: true,
           },
           invert: false,

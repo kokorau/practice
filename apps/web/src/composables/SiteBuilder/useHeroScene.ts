@@ -607,6 +607,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         radiusTopRight: maskConfig.radiusTopRight ?? 0,
         radiusBottomLeft: maskConfig.radiusBottomLeft ?? 0,
         radiusBottomRight: maskConfig.radiusBottomRight ?? 0,
+        rotation: maskConfig.rotation ?? 0,
+        perspectiveX: maskConfig.perspectiveX ?? 0,
+        perspectiveY: maskConfig.perspectiveY ?? 0,
         cutout: maskConfig.cutout ?? true,
       }
     }
@@ -2258,6 +2261,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                       shapeParams.radiusBottomRight,
                       shapeParams.radiusBottomLeft,
                     ],
+                    rotation: shapeParams.rotation ?? 0,
+                    perspectiveX: shapeParams.perspectiveX ?? 0,
+                    perspectiveY: shapeParams.perspectiveY ?? 0,
                     invert,
                     feather,
                   },
@@ -2265,6 +2271,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                 )
               } else {
                 // New format with centerX/centerY/width/height
+                // Note: new format layer config doesn't have rotation/perspective yet
                 return createRectClipSpec(
                   {
                     type: 'rect',
@@ -2273,6 +2280,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     width: shapeParams.width,
                     height: shapeParams.height,
                     cornerRadius: shapeParams.cornerRadius,
+                    rotation: 0,
+                    perspectiveX: 0,
+                    perspectiveY: 0,
                     invert,
                     feather,
                   },
@@ -2351,6 +2361,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
                     radiusTopRight: shapeParams.radiusTopRight,
                     radiusBottomLeft: shapeParams.radiusBottomLeft,
                     radiusBottomRight: shapeParams.radiusBottomRight,
+                    rotation: shapeParams.rotation,
+                    perspectiveX: shapeParams.perspectiveX,
+                    perspectiveY: shapeParams.perspectiveY,
                     innerColor: solidInnerColor,
                     outerColor: solidOuterColor,
                     cutout,
@@ -3370,6 +3383,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         radiusTopRight: params.radiusTopRight,
         radiusBottomLeft: params.radiusBottomLeft,
         radiusBottomRight: params.radiusBottomRight,
+        rotation: params.rotation,
+        perspectiveX: params.perspectiveX,
+        perspectiveY: params.perspectiveY,
         cutout: params.cutout,
       }
     }
@@ -3638,6 +3654,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             radiusTopRight: shape.radiusTopRight,
             radiusBottomLeft: shape.radiusBottomLeft,
             radiusBottomRight: shape.radiusBottomRight,
+            rotation: shape.rotation,
+            perspectiveX: shape.perspectiveX,
+            perspectiveY: shape.perspectiveY,
             cutout: shape.cutout,
           }
         } else if (shape.type === 'perlin') {

@@ -86,12 +86,12 @@ describe('ReverseLookup', () => {
     })
 
     it('finds rect mask without corner radius', () => {
-      const config = { type: 'rect' as const, left: 0, right: 1, top: 0, bottom: 0.5, radiusTopLeft: 0, radiusTopRight: 0, radiusBottomLeft: 0, radiusBottomRight: 0, cutout: true }
+      const config = { type: 'rect' as const, left: 0, right: 1, top: 0, bottom: 0.5, radiusTopLeft: 0, radiusTopRight: 0, radiusBottomLeft: 0, radiusBottomRight: 0, rotation: 0, perspectiveX: 0, perspectiveY: 0, cutout: true }
       expect(findMaskPatternIndex(config, patterns)).toBe(2)
     })
 
     it('finds rect mask with corner radius', () => {
-      const config = { type: 'rect' as const, left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radiusTopLeft: 0.05, radiusTopRight: 0.05, radiusBottomLeft: 0.05, radiusBottomRight: 0.05, cutout: true }
+      const config = { type: 'rect' as const, left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radiusTopLeft: 0.05, radiusTopRight: 0.05, radiusBottomLeft: 0.05, radiusBottomRight: 0.05, rotation: 0, perspectiveX: 0, perspectiveY: 0, cutout: true }
       expect(findMaskPatternIndex(config, patterns)).toBe(3)
     })
 

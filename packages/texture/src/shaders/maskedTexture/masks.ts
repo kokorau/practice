@@ -67,7 +67,7 @@ fn blobMaskSDF(uv: vec2f, centerX: f32, centerY: f32, baseRadius: f32, amplitude
 }
 `
 
-/** Rect mask SDF function with per-corner radii */
+/** Rect mask SDF function with per-corner radii, rotation, and perspective */
 export const rectMaskFn = /* wgsl */ `
 fn sdRoundedRectMasked(p: vec2f, halfSize: vec2f, radii: vec4f) -> f32 {
   var r: f32;
@@ -95,10 +95,47 @@ fn rectMaskSDF(
   radiusTL: f32, radiusTR: f32, radiusBL: f32, radiusBR: f32,
   aspectRatio: f32
 ) -> f32 {
+  return rectMaskSDFWithTransform(uv, left, right, top, bottom, radiusTL, radiusTR, radiusBL, radiusBR, 0.0, 0.0, 0.0, aspectRatio);
+}
+
+fn rectMaskSDFWithTransform(
+  uv: vec2f,
+  left: f32, right: f32, top: f32, bottom: f32,
+  radiusTL: f32, radiusTR: f32, radiusBL: f32, radiusBR: f32,
+  rotation: f32, perspectiveX: f32, perspectiveY: f32,
+  aspectRatio: f32
+) -> f32 {
   let center = vec2f((left + right) / 2.0, (top + bottom) / 2.0);
   let halfSize = vec2f((right - left) / 2.0, (bottom - top) / 2.0);
 
   var p = uv - center;
+
+  // パース変換: Y位置に応じてX方向をスケール（perspectiveY）
+  // perspectiveY > 0: 下に行くほど幅が狭くなる
+  if (abs(perspectiveY) > 0.001) {
+    let yFactor = (p.y / halfSize.y) * perspectiveY;
+    p.x *= 1.0 + yFactor;
+  }
+
+  // パース変換: X位置に応じてY方向をスケール（perspectiveX）
+  // perspectiveX > 0: 右に行くほど高さが狭くなる
+  if (abs(perspectiveX) > 0.001) {
+    let xFactor = (p.x / halfSize.x) * perspectiveX;
+    p.y *= 1.0 + xFactor;
+  }
+
+  // 回転変換（中心周り）
+  if (abs(rotation) > 0.001) {
+    let rotRad = rotation * 3.14159265359 / 180.0;
+    let cosR = cos(rotRad);
+    let sinR = sin(rotRad);
+    let rotatedP = vec2f(
+      p.x * cosR - p.y * sinR,
+      p.x * sinR + p.y * cosR
+    );
+    p = rotatedP;
+  }
+
   var correctedHalfSize = halfSize;
   var radii = vec4f(radiusTL, radiusTR, radiusBR, radiusBL);
 
