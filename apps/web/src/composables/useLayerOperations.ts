@@ -11,6 +11,7 @@ import {
   updateNode,
   removeNode,
   wrapNodeInGroup,
+  wrapNodeInMaskedGroup,
   createSurfaceLayer,
   createGroup,
   createSceneTextLayer,
@@ -321,9 +322,8 @@ export function useLayerOperations(
   }
 
   const handleUseAsMask = (layerId: string) => {
-    // Wrap the selected layer in a new group
-    // Note: MaskModifier is now added via layer modifiers, not as MaskNode
-    layers.value = wrapNodeInGroup(layers.value, layerId)
+    // Wrap the selected layer in a new group with MaskModifier applied
+    layers.value = wrapNodeInMaskedGroup(layers.value, layerId)
   }
 
   // ============================================================
