@@ -518,3 +518,169 @@ export const wrapNodeInGroup = (
 
   return replaceWithGroup(nodes)
 }
+
+// ============================================================
+// Node Move Functions
+// ============================================================
+
+/**
+ * Drop position for drag & drop operations
+ *
+ * - before: Insert before the target node (same parent)
+ * - after: Insert after the target node (same parent)
+ * - into: Insert as last child of target group
+ */
+export type DropPosition =
+  | { type: 'before'; targetId: string }
+  | { type: 'after'; targetId: string }
+  | { type: 'into'; targetId: string }
+
+/**
+ * Get all descendant IDs of a node (recursive)
+ */
+const getDescendantIds = (node: SceneNode): string[] => {
+  if (isLayer(node)) return []
+  const ids: string[] = []
+  for (const child of node.children) {
+    ids.push(child.id)
+    ids.push(...getDescendantIds(child))
+  }
+  return ids
+}
+
+/**
+ * Check if a node can be moved to the specified position
+ *
+ * Rules:
+ * - Cannot move a node to itself
+ * - Cannot move a group into its own descendant (circular reference)
+ * - Target must exist
+ * - 'into' position target must be a group
+ */
+export const canMoveSceneNode = (
+  nodes: SceneNode[],
+  nodeId: string,
+  position: DropPosition
+): boolean => {
+  const sourceNode = findNode(nodes, nodeId)
+  if (!sourceNode) return false
+
+  const targetNode = findNode(nodes, position.targetId)
+  if (!targetNode) return false
+
+  // Cannot move to itself
+  if (nodeId === position.targetId) return false
+
+  // 'into' position requires target to be a group
+  if (position.type === 'into' && !isGroup(targetNode)) return false
+
+  // Check circular reference: cannot move a group into its own descendant
+  if (isGroup(sourceNode)) {
+    const descendantIds = getDescendantIds(sourceNode)
+    if (descendantIds.includes(position.targetId)) return false
+  }
+
+  return true
+}
+
+/**
+ * Move a scene node to a new position
+ *
+ * @param nodes - Current node tree
+ * @param nodeId - ID of the node to move
+ * @param position - Target position
+ * @returns New node tree with the node moved, or original tree if move is invalid
+ */
+export const moveSceneNode = (
+  nodes: SceneNode[],
+  nodeId: string,
+  position: DropPosition
+): SceneNode[] => {
+  // Validate the move
+  if (!canMoveSceneNode(nodes, nodeId, position)) return nodes
+
+  const nodeToMove = findNode(nodes, nodeId)
+  if (!nodeToMove) return nodes
+
+  // Step 1: Remove the node from its current position
+  const nodesWithoutSource = removeNode(nodes, nodeId)
+
+  // Step 2: Insert at new position
+  return insertNode(nodesWithoutSource, nodeToMove, position)
+}
+
+/**
+ * Insert a node at the specified position
+ */
+const insertNode = (
+  nodes: SceneNode[],
+  nodeToInsert: SceneNode,
+  position: DropPosition
+): SceneNode[] => {
+  if (position.type === 'into') {
+    // Insert as last child of target group
+    return insertIntoGroup(nodes, nodeToInsert, position.targetId)
+  }
+
+  // Insert before or after target
+  return insertBeforeOrAfter(nodes, nodeToInsert, position.targetId, position.type)
+}
+
+/**
+ * Insert node as last child of a group
+ */
+const insertIntoGroup = (
+  nodes: SceneNode[],
+  nodeToInsert: SceneNode,
+  targetGroupId: string
+): SceneNode[] => {
+  return nodes.map(node => {
+    if (node.id === targetGroupId && isGroup(node)) {
+      return {
+        ...node,
+        children: [...node.children, nodeToInsert],
+      }
+    }
+    if (isGroup(node)) {
+      return {
+        ...node,
+        children: insertIntoGroup(node.children, nodeToInsert, targetGroupId),
+      }
+    }
+    return node
+  })
+}
+
+/**
+ * Insert node before or after target (at same level)
+ */
+const insertBeforeOrAfter = (
+  nodes: SceneNode[],
+  nodeToInsert: SceneNode,
+  targetId: string,
+  type: 'before' | 'after'
+): SceneNode[] => {
+  // Check if target is at this level
+  const targetIndex = nodes.findIndex(n => n.id === targetId)
+
+  if (targetIndex !== -1) {
+    // Target found at this level - insert here
+    const insertIndex = type === 'before' ? targetIndex : targetIndex + 1
+    return [
+      ...nodes.slice(0, insertIndex),
+      nodeToInsert,
+      ...nodes.slice(insertIndex),
+    ]
+  }
+
+  // Target not at this level - search in children
+  return nodes.map(node => {
+    if (isGroup(node)) {
+      return {
+        ...node,
+        children: insertBeforeOrAfter(node.children, nodeToInsert, targetId, type),
+      }
+    }
+    return node
+  })
+}
