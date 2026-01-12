@@ -10,8 +10,10 @@ export {
   updateChromaticAberrationParams,
   updateDotHalftoneParams,
   updateLineHalftoneParams,
+  updateBlurParams,
   getVignetteParams,
   getChromaticAberrationParams,
   getDotHalftoneParams,
   getLineHalftoneParams,
+  getBlurParams,
 } from './updateFilterParams'

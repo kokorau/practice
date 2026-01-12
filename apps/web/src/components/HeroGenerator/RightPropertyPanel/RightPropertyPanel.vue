@@ -111,6 +111,7 @@ interface FilterProps {
   chromaticConfig: Record<string, unknown>
   dotHalftoneConfig: Record<string, unknown>
   lineHalftoneConfig: Record<string, unknown>
+  blurConfig: Record<string, unknown>
 }
 
 // ============================================================
@@ -309,11 +310,13 @@ const panelTitle = (): string => {
         :chromatic-config="filter.chromaticConfig"
         :dot-halftone-config="filter.dotHalftoneConfig"
         :line-halftone-config="filter.lineHalftoneConfig"
+        :blur-config="filter.blurConfig"
         @update:selected-filter-type="emit('update:filter', 'selectedType', $event)"
         @update:vignette-config="emit('update:filter', 'vignetteConfig', $event)"
         @update:chromatic-config="emit('update:filter', 'chromaticConfig', $event)"
         @update:dot-halftone-config="emit('update:filter', 'dotHalftoneConfig', $event)"
         @update:line-halftone-config="emit('update:filter', 'lineHalftoneConfig', $event)"
+        @update:blur-config="emit('update:filter', 'blurConfig', $event)"
       />
 
       <!-- Mask Processor Settings -->

@@ -296,6 +296,7 @@ const corporateCleanConfig: HeroViewConfig = {
             chromaticAberration: { enabled: false, intensity: 0.01 },
             dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
             lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+            blur: { enabled: false, radius: 8 },
           },
         },
       ],
@@ -315,6 +316,7 @@ const corporateCleanConfig: HeroViewConfig = {
             chromaticAberration: { enabled: false, intensity: 0.01 },
             dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
             lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+            blur: { enabled: false, radius: 8 },
           },
         },
         {

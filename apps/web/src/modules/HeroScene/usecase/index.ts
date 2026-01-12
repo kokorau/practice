@@ -34,10 +34,12 @@ export {
   updateChromaticAberrationParams,
   updateDotHalftoneParams,
   updateLineHalftoneParams,
+  updateBlurParams,
   getVignetteParams,
   getChromaticAberrationParams,
   getDotHalftoneParams,
   getLineHalftoneParams,
+  getBlurParams,
   type FilterType,
 } from './Filter'
 export {

@@ -63,6 +63,17 @@ export const LineHalftoneEffectSchema = defineSchema({
 export type LineHalftoneEffectConfig = Infer<typeof LineHalftoneEffectSchema>
 
 // ============================================================
+// Blur Effect Schema
+// ============================================================
+
+export const BlurEffectSchema = defineSchema({
+  enabled: boolean({ label: 'Enabled', default: false }),
+  radius: number({ label: 'Blur Radius', min: 1, max: 30, default: 8 }),
+})
+
+export type BlurEffectConfig = Infer<typeof BlurEffectSchema>
+
+// ============================================================
 // Layer Effect Schema (composite)
 // ============================================================
 
@@ -75,6 +86,7 @@ export const LayerEffectSchemas = {
   chromaticAberration: ChromaticAberrationEffectSchema,
   dotHalftone: DotHalftoneEffectSchema,
   lineHalftone: LineHalftoneEffectSchema,
+  blur: BlurEffectSchema,
 } as const
 
 export type LayerEffectSchemaMap = typeof LayerEffectSchemas
@@ -85,6 +97,7 @@ export interface LayerEffectConfig {
   chromaticAberration: ChromaticAberrationEffectConfig
   dotHalftone: DotHalftoneEffectConfig
   lineHalftone: LineHalftoneEffectConfig
+  blur: BlurEffectConfig
 }
 
 // ============================================================
@@ -107,12 +120,17 @@ export const createDefaultDotHalftoneConfig = (): DotHalftoneEffectConfig =>
 export const createDefaultLineHalftoneConfig = (): LineHalftoneEffectConfig =>
   getDefaults(LineHalftoneEffectSchema)
 
+/** Create default blur effect config */
+export const createDefaultBlurConfig = (): BlurEffectConfig =>
+  getDefaults(BlurEffectSchema)
+
 /** Create default layer effect config */
 export const createDefaultEffectConfig = (): LayerEffectConfig => ({
   vignette: createDefaultVignetteConfig(),
   chromaticAberration: createDefaultChromaticAberrationConfig(),
   dotHalftone: createDefaultDotHalftoneConfig(),
   lineHalftone: createDefaultLineHalftoneConfig(),
+  blur: createDefaultBlurConfig(),
 })
 
 // ============================================================

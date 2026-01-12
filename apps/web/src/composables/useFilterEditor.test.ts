@@ -12,6 +12,7 @@ const createMockFilterConfig = (): LayerFilterConfig => ({
   chromaticAberration: { enabled: false, intensity: 0.3 },
   dotHalftone: { enabled: false, dotSize: 4, spacing: 8, angle: 45 },
   lineHalftone: { enabled: false, lineWidth: 2, spacing: 6, angle: 0 },
+  blur: { enabled: false, radius: 8 },
 })
 
 const createMockOptions = () => {
@@ -33,6 +34,7 @@ const createMockOptions = () => {
     if (config.chromaticAberration.enabled) return 'chromaticAberration' as const
     if (config.dotHalftone.enabled) return 'dotHalftone' as const
     if (config.lineHalftone.enabled) return 'lineHalftone' as const
+    if (config.blur.enabled) return 'blur' as const
     return 'void' as const
   })
 
@@ -44,6 +46,7 @@ const createMockOptions = () => {
       chromaticAberration: { ...config.chromaticAberration, enabled: type === 'chromaticAberration' },
       dotHalftone: { ...config.dotHalftone, enabled: type === 'dotHalftone' },
       lineHalftone: { ...config.lineHalftone, enabled: type === 'lineHalftone' },
+      blur: { ...config.blur, enabled: type === 'blur' },
     })
   })
 
@@ -83,6 +86,15 @@ const createMockOptions = () => {
     })
   })
 
+  const updateBlurParams = vi.fn((layerId: string, params: Record<string, unknown>) => {
+    const config = filterConfigs.value.get(layerId)
+    if (!config) return
+    filterConfigs.value.set(layerId, {
+      ...config,
+      blur: { ...config.blur, ...params },
+    })
+  })
+
   return {
     selectedFilterLayerId,
     filterConfigs,
@@ -93,6 +105,7 @@ const createMockOptions = () => {
     updateChromaticAberrationParams,
     updateDotHalftoneParams,
     updateLineHalftoneParams,
+    updateBlurParams,
   }
 }
 
@@ -252,6 +265,7 @@ describe('useFilterEditor', () => {
         chromaticAberration: { enabled: false, intensity: 0.1 },
         dotHalftone: { enabled: false, dotSize: 2, spacing: 4, angle: 90 },
         lineHalftone: { enabled: false, lineWidth: 1, spacing: 3, angle: 45 },
+        blur: { enabled: false, radius: 8 },
       })
 
       const { currentVignetteConfig } = useFilterEditor(options)

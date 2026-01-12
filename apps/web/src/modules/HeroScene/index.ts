@@ -62,6 +62,7 @@ export type {
   ChromaticAberrationEffectConfig,
   DotHalftoneEffectConfig,
   LineHalftoneEffectConfig,
+  BlurEffectConfig,
   LayerEffectConfig,
   LayerEffectSchemaMap,
   // Effect types (legacy aliases)
@@ -155,8 +156,10 @@ export {
   ChromaticAberrationEffectSchema,
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
+  BlurEffectSchema,
   LayerEffectSchemas,
   createDefaultEffectConfig,
+  createDefaultBlurConfig,
   // Effect Schemas (legacy aliases)
   VignetteFilterSchema,
   ChromaticAberrationFilterSchema,
@@ -334,10 +337,12 @@ export {
   updateChromaticAberrationParams,
   updateDotHalftoneParams,
   updateLineHalftoneParams,
+  updateBlurParams,
   getVignetteParams,
   getChromaticAberrationParams,
   getDotHalftoneParams,
   getLineHalftoneParams,
+  getBlurParams,
   type FilterType,
   // TextLayer UseCases
   updateTextLayerText,

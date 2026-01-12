@@ -342,6 +342,22 @@ export interface FilterState {
   readonly updateDotHalftoneParams: (layerId: string, params: Partial<{ dotSize: number; spacing: number; angle: number }>) => void
   /** Update line halftone parameters */
   readonly updateLineHalftoneParams: (layerId: string, params: Partial<{ lineWidth: number; spacing: number; angle: number }>) => void
+  /** Update blur parameters */
+  readonly updateBlurParams: (layerId: string, params: Partial<{
+    radius: number
+    shapeType: string
+    invert: boolean
+    centerX: number
+    centerY: number
+    feather: number
+    angle: number
+    focusWidth: number
+    innerRadius: number
+    outerRadius: number
+    aspectRatio: number
+    rectWidth: number
+    rectHeight: number
+  }>) => void
 }
 
 /** Deep partial utility type */
@@ -669,4 +685,6 @@ export interface RightPanelFilterProps {
   readonly dotHalftoneConfig: Record<string, unknown>
   /** Line halftone configuration */
   readonly lineHalftoneConfig: Record<string, unknown>
+  /** Blur configuration */
+  readonly blurConfig: Record<string, unknown>
 }
