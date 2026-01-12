@@ -17,7 +17,7 @@ import type { HeroPrimitiveKey } from '../modules/HeroScene'
 import {
   createGroup,
   createSurfaceLayer,
-  createEffectModifier,
+  createEffectPlaceholder,
   createMaskModifier,
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
@@ -310,7 +310,7 @@ const {
           { type: 'solid', color: 'BN1' },
           {
             name: 'Surface',
-            modifiers: [createEffectModifier()],
+            modifiers: [createEffectPlaceholder()],
           },
         ),
       ],
@@ -324,7 +324,7 @@ const {
           { type: 'solid', color: 'B' },
           {
             name: 'Surface',
-            modifiers: [createEffectModifier(), createMaskModifier()],
+            modifiers: [createEffectPlaceholder(), createMaskModifier()],
           },
         ),
       ],

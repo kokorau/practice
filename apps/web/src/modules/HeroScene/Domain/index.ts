@@ -350,20 +350,22 @@ export {
   type EffectModifier,
   type MaskModifier,
   type Modifier,
-  createEffectModifier,
+  createEffectPlaceholder,
   createMaskModifier,
   isEffectModifier,
   isMaskModifier,
-  getEnabledEffects,
+  getEffectPlaceholders,
   getEnabledMasks,
   // Legacy aliases (deprecated)
   type EffectProcessor,
   type MaskProcessor,
   type Processor,
+  createEffectModifier,
   createEffectProcessor,
   createMaskProcessor,
   isEffectProcessor,
   isMaskProcessor,
+  getEnabledEffects,
 } from './Modifier'
 
 // ============================================================

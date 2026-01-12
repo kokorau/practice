@@ -15,7 +15,7 @@
  */
 
 import type { Modifier } from './Modifier'
-import { createEffectModifier } from './Modifier'
+import { createEffectPlaceholder } from './Modifier'
 import type { TexturePatternSpec, MaskPattern } from '@practice/texture'
 
 // ============================================================
@@ -227,7 +227,7 @@ export const createLayer = (
   type: 'layer',
   variant,
   sources,
-  modifiers: options?.modifiers ?? [createEffectModifier()],
+  modifiers: options?.modifiers ?? [createEffectPlaceholder()],
 })
 
 /**
@@ -255,7 +255,7 @@ export const createSurfaceLayer = (
   'surface',
   [surface],
   {
-    modifiers: [createEffectModifier()],
+    modifiers: [createEffectPlaceholder()],
     ...options,
   }
 )

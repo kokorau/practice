@@ -60,6 +60,8 @@ const children = computed(() => {
 })
 
 // Get modifier info for display
+// Note: Effect details are managed by useEffectManager and shown in property panel
+// Layer tree only shows whether effect modifiers exist
 const modifiers = computed(() => {
   const result: { type: 'effect' | 'mask'; label: string; value: string; enabled: boolean }[] = []
 
@@ -69,19 +71,14 @@ const modifiers = computed(() => {
   }
 
   const nodeModifiers = props.node.modifiers
-  // Effect modifier
+  // Effect placeholder - details are in useEffectManager
   const effectMod = nodeModifiers.find(isEffectModifier)
   if (effectMod) {
-    const activeEffects: string[] = []
-    if (effectMod.config.vignette.enabled) activeEffects.push('Vignette')
-    if (effectMod.config.chromaticAberration.enabled) activeEffects.push('CA')
-    if (effectMod.config.dotHalftone.enabled) activeEffects.push('Dot HT')
-    if (effectMod.config.lineHalftone.enabled) activeEffects.push('Line HT')
     result.push({
       type: 'effect',
       label: 'Effect',
-      value: activeEffects.length > 0 ? activeEffects.join(' / ') : 'None',
-      enabled: effectMod.enabled,
+      value: '', // Details shown in property panel
+      enabled: true,
     })
   }
 

@@ -203,17 +203,19 @@ export {
   createDefaultFilterConfig,
   createDefaultShapeVignetteConfig,
   // Modifier factories (new)
-  createEffectModifier,
+  createEffectPlaceholder,
   createMaskModifier,
   isEffectModifier,
   isMaskModifier,
-  getEnabledEffects,
+  getEffectPlaceholders,
   getEnabledMasks,
-  // Legacy Processor factories
+  // Legacy Processor factories (deprecated)
+  createEffectModifier,
   createEffectProcessor,
   createMaskProcessor,
   isEffectProcessor,
   isMaskProcessor,
+  getEnabledEffects,
   // Layer & Group factories
   createLayer,
   createBaseLayer,
