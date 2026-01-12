@@ -286,11 +286,23 @@ export interface PerlinMaskShapeConfig {
   cutout: boolean
 }
 
+export interface LinearGradientMaskShapeConfig {
+  type: 'linearGradient'
+  /** グラデーション方向 (0-360度) */
+  angle: number
+  /** 開始位置 (0-1, 正規化座標) */
+  startOffset: number
+  /** 終了位置 (0-1, 正規化座標) */
+  endOffset: number
+  cutout: boolean
+}
+
 export type MaskShapeConfig =
   | CircleMaskShapeConfig
   | RectMaskShapeConfig
   | BlobMaskShapeConfig
   | PerlinMaskShapeConfig
+  | LinearGradientMaskShapeConfig
 
 // ============================================================
 // Processor Config (JSON シリアライズ用)

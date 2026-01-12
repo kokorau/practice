@@ -371,3 +371,86 @@ export function createPerlinMaskSpec(
   }
 }
 
+/** Linear gradient mask parameters */
+export interface LinearGradientMaskParams {
+  /** Gradient angle in degrees (0-360) */
+  angle: number
+  /** Start offset (0.0-1.0, normalized coordinate) */
+  startOffset: number
+  /** End offset (0.0-1.0, normalized coordinate) */
+  endOffset: number
+  /** Inner color (where gradient value is 0) */
+  innerColor: [number, number, number, number]
+  /** Outer color (where gradient value is 1) */
+  outerColor: [number, number, number, number]
+  /** If true (default), gradient goes from inner to outer. If false, reversed. */
+  cutout?: boolean
+}
+
+/** Linear gradient mask shader */
+export const linearGradientMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+struct LinearGradientMaskParams {
+  innerColor: vec4f,
+  outerColor: vec4f,
+  angle: f32,
+  startOffset: f32,
+  endOffset: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: LinearGradientMaskParams;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  // Convert angle from degrees to radians
+  let angleRad = params.angle * 3.14159265359 / 180.0;
+
+  // Calculate direction vector from angle
+  let dir = vec2f(cos(angleRad), sin(angleRad));
+
+  // Project UV onto gradient direction
+  // Center at 0.5, 0.5 for symmetric gradient
+  let projected = dot(uv - 0.5, dir) + 0.5;
+
+  // Apply gradient with start/end offsets
+  let t = smoothstep(params.startOffset, params.endOffset, projected);
+
+  return mix(params.innerColor, params.outerColor, t);
+}
+`
+
+/**
+ * Create render spec for linear gradient mask
+ */
+export function createLinearGradientMaskSpec(
+  params: LinearGradientMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const cutout = params.cutout ?? true
+  // When cutout=false, swap inner/outer colors
+  const innerColor = cutout ? params.innerColor : params.outerColor
+  const outerColor = cutout ? params.outerColor : params.innerColor
+
+  const data = new Float32Array([
+    ...innerColor,
+    ...outerColor,
+    params.angle,
+    params.startOffset,
+    params.endOffset,
+    viewport.width,
+    viewport.height,
+    0, // padding for 16-byte alignment
+  ])
+  return {
+    shader: linearGradientMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 64,
+    blend: maskBlendState,
+  }
+}
+

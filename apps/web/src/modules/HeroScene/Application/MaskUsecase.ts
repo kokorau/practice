@@ -40,6 +40,7 @@ export type MaskShapeParamsUpdate =
   | { type: 'rect'; left?: number; right?: number; top?: number; bottom?: number; radiusTopLeft?: number; radiusTopRight?: number; radiusBottomLeft?: number; radiusBottomRight?: number; cutout?: boolean }
   | { type: 'blob'; centerX?: number; centerY?: number; baseRadius?: number; amplitude?: number; octaves?: number; seed?: number; cutout?: boolean }
   | { type: 'perlin'; seed?: number; threshold?: number; scale?: number; octaves?: number; cutout?: boolean }
+  | { type: 'linearGradient'; angle?: number; startOffset?: number; endOffset?: number; cutout?: boolean }
 
 /**
  * サーフェスパラメータの更新型（各パターンタイプに対応）

@@ -5,6 +5,7 @@ import {
   createRectMaskSpec,
   createBlobMaskSpec,
   createPerlinMaskSpec,
+  createLinearGradientMaskSpec,
 } from '../shaders'
 
 /**
@@ -336,6 +337,63 @@ const defaultMaskPatterns: MaskPattern[] = [
     createSpec: (c1, c2, viewport) =>
       createPerlinMaskSpec(
         { seed: 42, threshold: 0.6, scale: 3, octaves: 3, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  // ============================================================
+  // Linear Gradient patterns
+  // ============================================================
+  {
+    label: 'Fade Right',
+    maskConfig: { type: 'linearGradient', angle: 0, startOffset: 0.3, endOffset: 0.7, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createLinearGradientMaskSpec(
+        { angle: 0, startOffset: 0.3, endOffset: 0.7, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Fade Left',
+    maskConfig: { type: 'linearGradient', angle: 180, startOffset: 0.3, endOffset: 0.7, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createLinearGradientMaskSpec(
+        { angle: 180, startOffset: 0.3, endOffset: 0.7, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Fade Down',
+    maskConfig: { type: 'linearGradient', angle: 90, startOffset: 0.3, endOffset: 0.7, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createLinearGradientMaskSpec(
+        { angle: 90, startOffset: 0.3, endOffset: 0.7, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Fade Up',
+    maskConfig: { type: 'linearGradient', angle: 270, startOffset: 0.3, endOffset: 0.7, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createLinearGradientMaskSpec(
+        { angle: 270, startOffset: 0.3, endOffset: 0.7, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Fade Diagonal',
+    maskConfig: { type: 'linearGradient', angle: 45, startOffset: 0.2, endOffset: 0.8, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createLinearGradientMaskSpec(
+        { angle: 45, startOffset: 0.2, endOffset: 0.8, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Fade Sharp Right',
+    maskConfig: { type: 'linearGradient', angle: 0, startOffset: 0.45, endOffset: 0.55, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createLinearGradientMaskSpec(
+        { angle: 0, startOffset: 0.45, endOffset: 0.55, innerColor: c1, outerColor: c2, cutout: false },
         viewport!
       ),
   },

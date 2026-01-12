@@ -56,7 +56,7 @@ export interface SurfacePresetParams {
  * Mask pattern config type (for matching)
  */
 export interface MaskPatternConfig {
-  type: 'circle' | 'rect' | 'blob' | 'perlin'
+  type: 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient'
   centerX?: number
   centerY?: number
   radius?: number
@@ -75,6 +75,10 @@ export interface MaskPatternConfig {
   threshold?: number
   scale?: number
   cutout?: boolean
+  // LinearGradient params
+  angle?: number
+  startOffset?: number
+  endOffset?: number
 }
 
 /**
@@ -274,6 +278,15 @@ export const findMaskPatternIndex = (
         approxEqual(shapeConfig.threshold, maskConfig.threshold ?? 0.5) &&
         approxEqual(shapeConfig.scale, maskConfig.scale ?? 4) &&
         shapeConfig.octaves === maskConfig.octaves
+      ) {
+        return i
+      }
+    }
+    if (shapeConfig.type === 'linearGradient' && maskConfig.type === 'linearGradient') {
+      if (
+        approxEqual(shapeConfig.angle, maskConfig.angle ?? 0) &&
+        approxEqual(shapeConfig.startOffset, maskConfig.startOffset ?? 0.3) &&
+        approxEqual(shapeConfig.endOffset, maskConfig.endOffset ?? 0.7)
       ) {
         return i
       }

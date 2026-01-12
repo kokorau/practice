@@ -76,12 +76,24 @@ export interface PerlinClipParams extends ClipMaskBaseParams {
   seed: number
 }
 
+/** LinearGradientクリップマスクのパラメータ */
+export interface LinearGradientClipParams extends ClipMaskBaseParams {
+  type: 'linearGradient'
+  /** グラデーション方向 (0-360度) */
+  angle: number
+  /** 開始位置 (0.0-1.0, 正規化座標) */
+  startOffset: number
+  /** 終了位置 (0.0-1.0, 正規化座標) */
+  endOffset: number
+}
+
 /** クリップマスクパラメータのUnion型 */
 export type ClipMaskParams =
   | CircleClipParams
   | RectClipParams
   | BlobClipParams
   | PerlinClipParams
+  | LinearGradientClipParams
 
 // ============================================================
 // Common WGSL Utilities
@@ -550,6 +562,85 @@ export function createPerlinClipSpec(
   }
 }
 
+// ============================================================
+// Linear Gradient Clip Shader
+// ============================================================
+
+export const linearGradientClipShader = /* wgsl */ `
+${fullscreenVertex}
+
+struct LinearGradientClipParams {
+  angle: f32,
+  startOffset: f32,
+  endOffset: f32,
+  feather: f32,
+  invert: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+  _padding: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: LinearGradientClipParams;
+@group(0) @binding(1) var inputSampler: sampler;
+@group(0) @binding(2) var inputTexture: texture_2d<f32>;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  // Sample input texture
+  let texColor = textureSample(inputTexture, inputSampler, uv);
+
+  // Convert angle from degrees to radians
+  let angleRad = params.angle * 3.14159265359 / 180.0;
+
+  // Calculate direction vector from angle
+  let dir = vec2f(cos(angleRad), sin(angleRad));
+
+  // Project UV onto gradient direction
+  let projected = dot(uv - 0.5, dir) + 0.5;
+
+  // Calculate feather range
+  let featherAmount = max(params.feather * 0.1, 0.01);
+  let start = params.startOffset;
+  let end = params.endOffset;
+
+  // Apply gradient with feather
+  let mask = smoothstep(start - featherAmount, end + featherAmount, projected);
+
+  // Apply invert
+  let finalMask = select(mask, 1.0 - mask, params.invert > 0.5);
+
+  return vec4f(texColor.rgb, texColor.a * finalMask);
+}
+`
+
+/**
+ * Create render spec for linear gradient clip mask
+ */
+export function createLinearGradientClipSpec(
+  params: LinearGradientClipParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const data = new Float32Array([
+    params.angle,
+    params.startOffset,
+    params.endOffset,
+    params.feather,
+    params.invert ? 1.0 : 0.0,
+    viewport.width,
+    viewport.height,
+    0, // padding
+  ])
+  return {
+    shader: linearGradientClipShader,
+    uniforms: data.buffer,
+    bufferSize: 32,
+    blend: maskBlendState,
+    requiresTexture: true,
+  }
+}
+
 /**
  * Create render spec for any clip mask type
  */
@@ -566,5 +657,7 @@ export function createClipMaskSpec(
       return createBlobClipSpec(params, viewport)
     case 'perlin':
       return createPerlinClipSpec(params, viewport)
+    case 'linearGradient':
+      return createLinearGradientClipSpec(params, viewport)
   }
 }
