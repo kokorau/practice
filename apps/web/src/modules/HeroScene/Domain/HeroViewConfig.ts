@@ -350,7 +350,6 @@ export type MaskShapeConfig =
 
 /**
  * Effect filter configuration for JSON serialization
- * Note: Masks are now MaskNodeConfig, not filters
  */
 export interface EffectFilterConfig {
   type: 'effect'
@@ -360,7 +359,7 @@ export interface EffectFilterConfig {
 
 /**
  * Filter config type (effects only)
- * Masks are handled as MaskNodeConfig in the layer tree
+ * Masks are handled as MaskProcessorConfig in processors
  */
 export type FilterConfig = EffectFilterConfig
 
@@ -371,7 +370,9 @@ export type FilterConfig = EffectFilterConfig
 /** @deprecated Use EffectFilterConfig instead */
 export type EffectProcessorConfig = EffectFilterConfig
 
-/** @deprecated Masks are now MaskNodeConfig in the layer tree */
+/**
+ * Mask processor configuration
+ */
 export interface MaskProcessorConfig {
   type: 'mask'
   enabled: boolean
@@ -393,26 +394,10 @@ interface LayerNodeConfigBase {
   visible: boolean
 }
 
-/**
- * MaskNodeConfig - Figma-style mask as a scene node
- *
- * Masks are sibling nodes within a group. All nodes after a mask
- * (within the same group) are masked.
- */
-export interface MaskNodeConfig extends LayerNodeConfigBase {
-  type: 'mask'
-  /** Mask shape configuration */
-  shape: MaskShapeConfig
-  /** Whether to invert the mask */
-  invert: boolean
-  /** Feather amount for soft edges (0-1) */
-  feather: number
-}
-
 export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   type: 'base'
   surface: SurfaceConfig
-  /** Effect filters (masks are now separate MaskNodeConfig) */
+  /** Effect filters */
   filters?: EffectFilterConfig[]
   /** @deprecated Use filters instead */
   processors?: ProcessorConfig[]
@@ -421,7 +406,7 @@ export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
 export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
   type: 'surface'
   surface: SurfaceConfig
-  /** Effect filters (masks are now separate MaskNodeConfig) */
+  /** Effect filters */
   filters?: EffectFilterConfig[]
   /** @deprecated Use filters instead */
   processors?: ProcessorConfig[]
@@ -438,7 +423,7 @@ export interface TextLayerNodeConfig extends LayerNodeConfigBase {
   color: string
   position: { x: number; y: number; anchor: string }
   rotation: number
-  /** Effect filters (masks are now separate MaskNodeConfig) */
+  /** Effect filters */
   filters?: EffectFilterConfig[]
   /** @deprecated Use filters instead */
   processors?: ProcessorConfig[]
@@ -450,7 +435,7 @@ export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
   position: { x: number; y: number; z: number }
   rotation: { x: number; y: number; z: number }
   scale: number
-  /** Effect filters (masks are now separate MaskNodeConfig) */
+  /** Effect filters */
   filters?: EffectFilterConfig[]
   /** @deprecated Use filters instead */
   processors?: ProcessorConfig[]
@@ -459,7 +444,7 @@ export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
 export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   type: 'image'
   imageId: string
-  /** Effect filters (masks are now separate MaskNodeConfig) */
+  /** Effect filters */
   filters?: EffectFilterConfig[]
   /** @deprecated Use filters instead */
   processors?: ProcessorConfig[]
@@ -483,7 +468,6 @@ export type LayerNodeConfig =
   | Model3DLayerNodeConfig
   | ImageLayerNodeConfig
   | GroupLayerNodeConfig
-  | MaskNodeConfig
 
 // ============================================================
 // Legacy Layer Configs (deprecated, for backward compatibility)
@@ -664,7 +648,7 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
  * Get effect filters from a layer config (supports both filters and processors)
  * Use this helper during migration from processors to filters
  */
-export const getLayerFilters = (layer: Exclude<LayerNodeConfig, MaskNodeConfig>): EffectFilterConfig[] => {
+export const getLayerFilters = (layer: LayerNodeConfig): EffectFilterConfig[] => {
   // Prefer filters if available
   if (layer.filters && layer.filters.length > 0) {
     return layer.filters
@@ -677,10 +661,9 @@ export const getLayerFilters = (layer: Exclude<LayerNodeConfig, MaskNodeConfig>)
 }
 
 /**
- * Get mask processor from a layer config (for backward compatibility)
- * @deprecated Masks are now MaskNodeConfig in the layer tree
+ * Get mask processor from a layer config
  */
-export const getLayerMaskProcessor = (layer: Exclude<LayerNodeConfig, MaskNodeConfig>): MaskProcessorConfig | undefined => {
+export const getLayerMaskProcessor = (layer: LayerNodeConfig): MaskProcessorConfig | undefined => {
   if (layer.processors) {
     return layer.processors.find((p): p is MaskProcessorConfig => p.type === 'mask')
   }
@@ -688,9 +671,8 @@ export const getLayerMaskProcessor = (layer: Exclude<LayerNodeConfig, MaskNodeCo
 }
 
 /**
- * Check if layer config has mask processor (for backward compatibility)
- * @deprecated Masks are now MaskNodeConfig in the layer tree
+ * Check if layer config has mask processor
  */
-export const hasLayerMaskProcessor = (layer: Exclude<LayerNodeConfig, MaskNodeConfig>): boolean => {
+export const hasLayerMaskProcessor = (layer: LayerNodeConfig): boolean => {
   return getLayerMaskProcessor(layer) !== undefined
 }

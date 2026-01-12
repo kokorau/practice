@@ -11,9 +11,6 @@ import type {
   SurfaceConfig,
   MaskShapeConfig,
   SurfaceLayerNodeConfig,
-  MaskNodeConfig,
-  GroupLayerNodeConfig,
-  LayerNodeConfig,
 } from '../Domain/HeroViewConfig'
 
 // ============================================================
@@ -140,36 +137,7 @@ export interface MaskUsecaseDeps {
 }
 
 /**
- * Figma-styleマスクノードとその親グループを検索する結果
- */
-interface FigmaMaskResult {
-  maskNode: MaskNodeConfig
-  parentGroup: GroupLayerNodeConfig
-  groupId: string
-}
-
-/**
- * Figma-styleマスクノードを検索するヘルパー
- * グループ内の最初のMaskNodeを探す
- */
-const findFigmaMask = (layers: LayerNodeConfig[]): FigmaMaskResult | undefined => {
-  for (const layer of layers) {
-    if (layer.type === 'group' && 'children' in layer && layer.children) {
-      const maskNode = layer.children.find((c): c is MaskNodeConfig => c.type === 'mask')
-      if (maskNode) {
-        return {
-          maskNode,
-          parentGroup: layer,
-          groupId: layer.id,
-        }
-      }
-    }
-  }
-  return undefined
-}
-
-/**
- * マスクレイヤーを取得するヘルパー (レガシー: processors方式)
+ * マスクレイヤーを取得するヘルパー
  */
 const getMaskLayer = (repository: HeroViewRepository): SurfaceLayerNodeConfig | undefined => {
   const layer = repository.findLayer(MASK_LAYER_ID)
@@ -180,8 +148,7 @@ const getMaskLayer = (repository: HeroViewRepository): SurfaceLayerNodeConfig | 
 }
 
 /**
- * マスクprocessorを取得するヘルパー (レガシー)
- * @deprecated Use findFigmaMask for new Figma-style structure
+ * マスクprocessorを取得するヘルパー
  */
 const getMaskProcessor = (layer: SurfaceLayerNodeConfig) => {
   return (layer.processors ?? []).find(p => p.type === 'mask')
@@ -193,42 +160,12 @@ const getMaskProcessor = (layer: SurfaceLayerNodeConfig) => {
 export const createMaskUsecase = (deps: MaskUsecaseDeps): MaskUsecase => {
   const { repository, imageUpload } = deps
 
-  /**
-   * グループ内のMaskNodeを更新するヘルパー
-   */
-  const updateMaskNodeInGroup = (
-    groupId: string,
-    maskId: string,
-    updates: Partial<MaskNodeConfig>
-  ): void => {
-    const config = repository.get()
-    const updatedLayers = config.layers.map(layer => {
-      if (layer.type !== 'group' || layer.id !== groupId) return layer
-      const updatedChildren = layer.children.map(child => {
-        if (child.type !== 'mask' || child.id !== maskId) return child
-        return { ...child, ...updates }
-      })
-      return { ...layer, children: updatedChildren }
-    })
-    repository.set({ ...config, layers: updatedLayers })
-  }
-
   return {
     // ----------------------------------------
     // マスク形状操作
     // ----------------------------------------
 
     selectMaskShape(shape: MaskShapeConfig): void {
-      const config = repository.get()
-
-      // Try Figma-style first (MaskNode in group)
-      const figmaMask = findFigmaMask(config.layers)
-      if (figmaMask) {
-        updateMaskNodeInGroup(figmaMask.groupId, figmaMask.maskNode.id, { shape })
-        return
-      }
-
-      // Legacy fallback: processor in surface layer
       const layer = getMaskLayer(repository)
       if (!layer) return
 
@@ -243,20 +180,6 @@ export const createMaskUsecase = (deps: MaskUsecaseDeps): MaskUsecase => {
     },
 
     updateMaskShapeParams(params: MaskShapeParamsUpdate): void {
-      const config = repository.get()
-
-      // Try Figma-style first (MaskNode in group)
-      const figmaMask = findFigmaMask(config.layers)
-      if (figmaMask) {
-        const currentShape = figmaMask.maskNode.shape
-        if (currentShape.type !== params.type) return
-
-        const newShape = { ...currentShape, ...params } as MaskShapeConfig
-        updateMaskNodeInGroup(figmaMask.groupId, figmaMask.maskNode.id, { shape: newShape })
-        return
-      }
-
-      // Legacy fallback: processor in surface layer
       const layer = getMaskLayer(repository)
       if (!layer) return
 
