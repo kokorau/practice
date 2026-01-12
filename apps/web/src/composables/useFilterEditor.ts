@@ -48,16 +48,6 @@ export interface UseFilterEditorReturn {
   selectedFilterType: WritableComputedRef<FilterType>
   /** Dynamic effect configs map */
   effectConfigs: EffectConfigsMap
-  /** @deprecated Use effectConfigs.vignette instead */
-  currentVignetteConfig: WritableComputedRef<VignetteConfigParams>
-  /** @deprecated Use effectConfigs.chromaticAberration instead */
-  currentChromaticConfig: WritableComputedRef<ChromaticConfigParams>
-  /** @deprecated Use effectConfigs.dotHalftone instead */
-  currentDotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
-  /** @deprecated Use effectConfigs.lineHalftone instead */
-  currentLineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
-  /** @deprecated Use effectConfigs.blur instead */
-  currentBlurConfig: WritableComputedRef<BlurConfigParams>
 }
 
 // ============================================================
@@ -169,11 +159,5 @@ export function useFilterEditor(
   return {
     selectedFilterType,
     effectConfigs,
-    // Legacy individual configs (point to effectConfigs for compatibility)
-    currentVignetteConfig: vignetteConfig,
-    currentChromaticConfig: chromaticAberrationConfig,
-    currentDotHalftoneConfig: dotHalftoneConfig,
-    currentLineHalftoneConfig: lineHalftoneConfig,
-    currentBlurConfig: blurConfig,
   }
 }

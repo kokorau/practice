@@ -69,78 +69,78 @@ describe('useFilterEditor', () => {
     })
   })
 
-  describe('currentVignetteConfig', () => {
+  describe('effectConfigs.vignette', () => {
     it('returns empty object when no layer is selected', () => {
       const effectManager = useEffectManager()
       effectManager.selectedLayerId.value = null
 
-      const { currentVignetteConfig } = useFilterEditor({ effectManager })
+      const { effectConfigs } = useFilterEditor({ effectManager })
 
-      expect(currentVignetteConfig.value).toEqual({})
+      expect(effectConfigs.vignette.value).toEqual({})
     })
 
     it('returns vignette config from selected layer', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentVignetteConfig } = useFilterEditor({ effectManager })
+      const { effectConfigs } = useFilterEditor({ effectManager })
 
       // Should return the default vignette config (without 'enabled')
-      expect(currentVignetteConfig.value).toHaveProperty('intensity')
-      expect(currentVignetteConfig.value).toHaveProperty('radius')
+      expect(effectConfigs.vignette.value).toHaveProperty('intensity')
+      expect(effectConfigs.vignette.value).toHaveProperty('radius')
     })
 
     it('calls updateEffectParams when setting config', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentVignetteConfig } = useFilterEditor({ effectManager })
-      currentVignetteConfig.value = { intensity: 0.7 }
+      const { effectConfigs } = useFilterEditor({ effectManager })
+      effectConfigs.vignette.value = { intensity: 0.7 }
 
       const config = effectManager.effects.value.get('layer-1')
       expect(config?.vignette.intensity).toBe(0.7)
     })
   })
 
-  describe('currentChromaticConfig', () => {
+  describe('effectConfigs.chromaticAberration', () => {
     it('returns chromatic aberration config from selected layer', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentChromaticConfig } = useFilterEditor({ effectManager })
+      const { effectConfigs } = useFilterEditor({ effectManager })
 
-      expect(currentChromaticConfig.value).toHaveProperty('intensity')
+      expect(effectConfigs.chromaticAberration.value).toHaveProperty('intensity')
     })
 
     it('calls updateEffectParams when setting config', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentChromaticConfig } = useFilterEditor({ effectManager })
-      currentChromaticConfig.value = { intensity: 0.5 }
+      const { effectConfigs } = useFilterEditor({ effectManager })
+      effectConfigs.chromaticAberration.value = { intensity: 0.5 }
 
       const config = effectManager.effects.value.get('layer-1')
       expect(config?.chromaticAberration.intensity).toBe(0.5)
     })
   })
 
-  describe('currentDotHalftoneConfig', () => {
+  describe('effectConfigs.dotHalftone', () => {
     it('returns dot halftone config from selected layer', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentDotHalftoneConfig } = useFilterEditor({ effectManager })
+      const { effectConfigs } = useFilterEditor({ effectManager })
 
-      expect(currentDotHalftoneConfig.value).toHaveProperty('dotSize')
-      expect(currentDotHalftoneConfig.value).toHaveProperty('spacing')
+      expect(effectConfigs.dotHalftone.value).toHaveProperty('dotSize')
+      expect(effectConfigs.dotHalftone.value).toHaveProperty('spacing')
     })
 
     it('calls updateEffectParams when setting config', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentDotHalftoneConfig } = useFilterEditor({ effectManager })
-      currentDotHalftoneConfig.value = { dotSize: 6, angle: 30 }
+      const { effectConfigs } = useFilterEditor({ effectManager })
+      effectConfigs.dotHalftone.value = { dotSize: 6, angle: 30 }
 
       const config = effectManager.effects.value.get('layer-1')
       expect(config?.dotHalftone.dotSize).toBe(6)
@@ -148,23 +148,23 @@ describe('useFilterEditor', () => {
     })
   })
 
-  describe('currentLineHalftoneConfig', () => {
+  describe('effectConfigs.lineHalftone', () => {
     it('returns line halftone config from selected layer', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentLineHalftoneConfig } = useFilterEditor({ effectManager })
+      const { effectConfigs } = useFilterEditor({ effectManager })
 
-      expect(currentLineHalftoneConfig.value).toHaveProperty('lineWidth')
-      expect(currentLineHalftoneConfig.value).toHaveProperty('spacing')
+      expect(effectConfigs.lineHalftone.value).toHaveProperty('lineWidth')
+      expect(effectConfigs.lineHalftone.value).toHaveProperty('spacing')
     })
 
     it('calls updateEffectParams when setting config', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentLineHalftoneConfig } = useFilterEditor({ effectManager })
-      currentLineHalftoneConfig.value = { lineWidth: 3, spacing: 10 }
+      const { effectConfigs } = useFilterEditor({ effectManager })
+      effectConfigs.lineHalftone.value = { lineWidth: 3, spacing: 10 }
 
       const config = effectManager.effects.value.get('layer-1')
       expect(config?.lineHalftone.lineWidth).toBe(3)
@@ -172,22 +172,22 @@ describe('useFilterEditor', () => {
     })
   })
 
-  describe('currentBlurConfig', () => {
+  describe('effectConfigs.blur', () => {
     it('returns blur config from selected layer', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentBlurConfig } = useFilterEditor({ effectManager })
+      const { effectConfigs } = useFilterEditor({ effectManager })
 
-      expect(currentBlurConfig.value).toHaveProperty('radius')
+      expect(effectConfigs.blur.value).toHaveProperty('radius')
     })
 
     it('calls updateEffectParams when setting config', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const { currentBlurConfig } = useFilterEditor({ effectManager })
-      currentBlurConfig.value = { radius: 15 }
+      const { effectConfigs } = useFilterEditor({ effectManager })
+      effectConfigs.blur.value = { radius: 15 }
 
       const config = effectManager.effects.value.get('layer-1')
       expect(config?.blur.radius).toBe(15)
@@ -203,15 +203,15 @@ describe('useFilterEditor', () => {
       effectManager.selectLayer('layer-2')
       effectManager.updateEffectParams('layer-2', 'vignette', { intensity: 0.9 })
 
-      const { currentVignetteConfig } = useFilterEditor({ effectManager })
+      const { effectConfigs } = useFilterEditor({ effectManager })
 
       // Current selection is layer-2
-      expect(currentVignetteConfig.value.intensity).toBe(0.9)
+      expect(effectConfigs.vignette.value.intensity).toBe(0.9)
 
       // Change selected layer
       effectManager.selectLayer('layer-1')
 
-      expect(currentVignetteConfig.value.intensity).toBe(0.5)
+      expect(effectConfigs.vignette.value.intensity).toBe(0.5)
     })
   })
 
@@ -229,19 +229,19 @@ describe('useFilterEditor', () => {
       expect(effectConfigs.blur).toBeDefined()
     })
 
-    it('effectConfigs and legacy configs reference the same computed', () => {
+    it('effectConfigs values are writable computed refs', () => {
       const effectManager = useEffectManager()
       effectManager.selectLayer('layer-1')
 
-      const {
-        effectConfigs,
-        currentVignetteConfig,
-        currentChromaticConfig,
-      } = useFilterEditor({ effectManager })
+      const { effectConfigs } = useFilterEditor({ effectManager })
 
-      // They should be the same reference
-      expect(effectConfigs.vignette).toBe(currentVignetteConfig)
-      expect(effectConfigs.chromaticAberration).toBe(currentChromaticConfig)
+      // Verify they are writable by checking we can set values
+      effectConfigs.vignette.value = { intensity: 0.8 }
+      effectConfigs.chromaticAberration.value = { intensity: 0.3 }
+
+      const config = effectManager.effects.value.get('layer-1')
+      expect(config?.vignette.intensity).toBe(0.8)
+      expect(config?.chromaticAberration.intensity).toBe(0.3)
     })
   })
 })

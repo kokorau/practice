@@ -4,7 +4,7 @@
  *
  * エフェクト設定パネルのコンテンツ
  */
-import { computed } from 'vue'
+import { computed, type WritableComputedRef } from 'vue'
 import SchemaFields from '../../SchemaFields.vue'
 import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
 import {
@@ -18,37 +18,39 @@ import {
   migrateVignetteConfig,
   type VignetteShape,
   type VignetteConfig,
+  type FilterType,
 } from '../../../modules/HeroScene'
 import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
 import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
+import type {
+  VignetteConfigParams,
+  ChromaticConfigParams,
+  DotHalftoneConfigParams,
+  LineHalftoneConfigParams,
+  BlurConfigParams,
+} from '../../../composables/useFilterEditor'
 
-export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'
+/** Filter props object - WritableComputedRef for direct binding */
+interface FilterProps {
+  selectedType: WritableComputedRef<FilterType>
+  vignetteConfig: WritableComputedRef<VignetteConfigParams>
+  chromaticConfig: WritableComputedRef<ChromaticConfigParams>
+  dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
+  lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
+  blurConfig: WritableComputedRef<BlurConfigParams>
+}
 
 const props = defineProps<{
-  selectedFilterType: FilterType
-  vignetteConfig: Record<string, unknown>
-  chromaticConfig: Record<string, unknown>
-  dotHalftoneConfig: Record<string, unknown>
-  lineHalftoneConfig: Record<string, unknown>
-  blurConfig: Record<string, unknown>
+  filter: FilterProps
   // Hero preview props
   baseConfig?: HeroViewConfig
   palette?: PrimitivePalette
   showPreview?: boolean
 }>()
 
-const emit = defineEmits<{
-  (e: 'update:selectedFilterType', value: FilterType): void
-  (e: 'update:vignetteConfig', value: Record<string, unknown>): void
-  (e: 'update:chromaticConfig', value: Record<string, unknown>): void
-  (e: 'update:dotHalftoneConfig', value: Record<string, unknown>): void
-  (e: 'update:lineHalftoneConfig', value: Record<string, unknown>): void
-  (e: 'update:blurConfig', value: Record<string, unknown>): void
-}>()
-
 // Migrate legacy config to new format
 const migratedVignetteConfig = computed<VignetteConfig>(() =>
-  migrateVignetteConfig(props.vignetteConfig as unknown as VignetteConfig)
+  migrateVignetteConfig(props.filter.vignetteConfig.value as unknown as VignetteConfig)
 )
 
 // Get shape-specific schema based on current vignette shape
@@ -65,12 +67,12 @@ const vignetteShapeParams = computed(() => {
 
 // Handle vignette base params update
 const handleVignetteBaseUpdate = (update: Record<string, unknown>) => {
-  emit('update:vignetteConfig', { ...migratedVignetteConfig.value, ...update })
+  props.filter.vignetteConfig.value = { ...migratedVignetteConfig.value, ...update } as unknown as VignetteConfigParams
 }
 
 // Handle vignette shape-specific params update
 const handleVignetteShapeUpdate = (update: Record<string, unknown>) => {
-  emit('update:vignetteConfig', { ...migratedVignetteConfig.value, ...update })
+  props.filter.vignetteConfig.value = { ...migratedVignetteConfig.value, ...update } as unknown as VignetteConfigParams
 }
 
 // Color handling utilities
@@ -85,7 +87,7 @@ const handleColorChange = (event: Event) => {
   const g = parseInt(hex.slice(3, 5), 16) / 255
   const b = parseInt(hex.slice(5, 7), 16) / 255
   const a = migratedVignetteConfig.value.color[3]
-  emit('update:vignetteConfig', { ...migratedVignetteConfig.value, color: [r, g, b, a] })
+  props.filter.vignetteConfig.value = { ...migratedVignetteConfig.value, color: [r, g, b, a] } as unknown as VignetteConfigParams
 }
 
 /**
@@ -144,10 +146,10 @@ const createEffectPreviewConfig = (
 // Current effect config for preview
 const currentEffectConfig = computed((): LayerEffectConfig => ({
   vignette: migratedVignetteConfig.value,
-  chromaticAberration: props.chromaticConfig as LayerEffectConfig['chromaticAberration'],
-  dotHalftone: props.dotHalftoneConfig as LayerEffectConfig['dotHalftone'],
-  lineHalftone: props.lineHalftoneConfig as LayerEffectConfig['lineHalftone'],
-  blur: props.blurConfig as LayerEffectConfig['blur'],
+  chromaticAberration: props.filter.chromaticConfig.value as LayerEffectConfig['chromaticAberration'],
+  dotHalftone: props.filter.dotHalftoneConfig.value as LayerEffectConfig['dotHalftone'],
+  lineHalftone: props.filter.lineHalftoneConfig.value as LayerEffectConfig['lineHalftone'],
+  blur: props.filter.blurConfig.value as LayerEffectConfig['blur'],
 }))
 
 // Preview configs for each effect type
@@ -168,11 +170,11 @@ const previewConfigs = computed(() => {
 <template>
   <div class="filter-section">
     <!-- Effect params (shown when effect is active) -->
-    <div v-if="selectedFilterType === 'vignette'" class="filter-params">
+    <div v-if="filter.selectedType.value === 'vignette'" class="filter-params">
       <!-- Base vignette params (shape, intensity, softness) -->
       <SchemaFields
         :schema="VignetteBaseSchema"
-        :model-value="vignetteConfig as Record<string, unknown>"
+        :model-value="filter.vignetteConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
         @update:model-value="handleVignetteBaseUpdate"
       />
@@ -193,36 +195,36 @@ const previewConfigs = computed(() => {
         />
       </div>
     </div>
-    <div v-else-if="selectedFilterType === 'chromaticAberration'" class="filter-params">
+    <div v-else-if="filter.selectedType.value === 'chromaticAberration'" class="filter-params">
       <SchemaFields
         :schema="ChromaticAberrationEffectSchema"
-        :model-value="chromaticConfig"
+        :model-value="filter.chromaticConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:chromaticConfig', $event)"
+        @update:model-value="(v) => filter.chromaticConfig.value = v as ChromaticConfigParams"
       />
     </div>
-    <div v-else-if="selectedFilterType === 'dotHalftone'" class="filter-params">
+    <div v-else-if="filter.selectedType.value === 'dotHalftone'" class="filter-params">
       <SchemaFields
         :schema="DotHalftoneEffectSchema"
-        :model-value="dotHalftoneConfig"
+        :model-value="filter.dotHalftoneConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:dotHalftoneConfig', $event)"
+        @update:model-value="(v) => filter.dotHalftoneConfig.value = v as DotHalftoneConfigParams"
       />
     </div>
-    <div v-else-if="selectedFilterType === 'lineHalftone'" class="filter-params">
+    <div v-else-if="filter.selectedType.value === 'lineHalftone'" class="filter-params">
       <SchemaFields
         :schema="LineHalftoneEffectSchema"
-        :model-value="lineHalftoneConfig"
+        :model-value="filter.lineHalftoneConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:lineHalftoneConfig', $event)"
+        @update:model-value="(v) => filter.lineHalftoneConfig.value = v as LineHalftoneConfigParams"
       />
     </div>
-    <div v-else-if="selectedFilterType === 'blur'" class="filter-params">
+    <div v-else-if="filter.selectedType.value === 'blur'" class="filter-params">
       <SchemaFields
         :schema="BlurEffectSchema"
-        :model-value="blurConfig"
+        :model-value="filter.blurConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
-        @update:model-value="emit('update:blurConfig', $event)"
+        @update:model-value="(v) => filter.blurConfig.value = v as BlurConfigParams"
       />
     </div>
 
@@ -230,8 +232,8 @@ const previewConfigs = computed(() => {
     <div class="filter-options">
       <button
         class="filter-option"
-        :class="{ active: selectedFilterType === 'void' }"
-        @click="emit('update:selectedFilterType', 'void')"
+        :class="{ active: filter.selectedType.value === 'void' }"
+        @click="filter.selectedType.value = 'void'"
       >
         <HeroPreviewThumbnail
           v-if="showPreview && previewConfigs && palette"
@@ -242,8 +244,8 @@ const previewConfigs = computed(() => {
       </button>
       <button
         class="filter-option"
-        :class="{ active: selectedFilterType === 'vignette' }"
-        @click="emit('update:selectedFilterType', 'vignette')"
+        :class="{ active: filter.selectedType.value === 'vignette' }"
+        @click="filter.selectedType.value = 'vignette'"
       >
         <HeroPreviewThumbnail
           v-if="showPreview && previewConfigs && palette"
@@ -254,8 +256,8 @@ const previewConfigs = computed(() => {
       </button>
       <button
         class="filter-option"
-        :class="{ active: selectedFilterType === 'chromaticAberration' }"
-        @click="emit('update:selectedFilterType', 'chromaticAberration')"
+        :class="{ active: filter.selectedType.value === 'chromaticAberration' }"
+        @click="filter.selectedType.value = 'chromaticAberration'"
       >
         <HeroPreviewThumbnail
           v-if="showPreview && previewConfigs && palette"
@@ -266,8 +268,8 @@ const previewConfigs = computed(() => {
       </button>
       <button
         class="filter-option"
-        :class="{ active: selectedFilterType === 'dotHalftone' }"
-        @click="emit('update:selectedFilterType', 'dotHalftone')"
+        :class="{ active: filter.selectedType.value === 'dotHalftone' }"
+        @click="filter.selectedType.value = 'dotHalftone'"
       >
         <HeroPreviewThumbnail
           v-if="showPreview && previewConfigs && palette"
@@ -278,8 +280,8 @@ const previewConfigs = computed(() => {
       </button>
       <button
         class="filter-option"
-        :class="{ active: selectedFilterType === 'lineHalftone' }"
-        @click="emit('update:selectedFilterType', 'lineHalftone')"
+        :class="{ active: filter.selectedType.value === 'lineHalftone' }"
+        @click="filter.selectedType.value = 'lineHalftone'"
       >
         <HeroPreviewThumbnail
           v-if="showPreview && previewConfigs && palette"
@@ -290,8 +292,8 @@ const previewConfigs = computed(() => {
       </button>
       <button
         class="filter-option"
-        :class="{ active: selectedFilterType === 'blur' }"
-        @click="emit('update:selectedFilterType', 'blur')"
+        :class="{ active: filter.selectedType.value === 'blur' }"
+        @click="filter.selectedType.value = 'blur'"
       >
         <HeroPreviewThumbnail
           v-if="showPreview && previewConfigs && palette"

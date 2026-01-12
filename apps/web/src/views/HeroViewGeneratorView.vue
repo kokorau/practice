@@ -116,14 +116,21 @@ const heroScene = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 // ============================================================
 const {
   selectedFilterType,
-  currentVignetteConfig,
-  currentChromaticConfig,
-  currentDotHalftoneConfig,
-  currentLineHalftoneConfig,
-  currentBlurConfig,
+  effectConfigs,
 } = useFilterEditor({
   effectManager: heroScene.filter.effectManager,
 })
+
+// Filter props object for passing to child components
+// Using plain object to avoid Vue's auto-unwrapping of refs in templates
+const filterProps = {
+  selectedType: selectedFilterType,
+  vignetteConfig: effectConfigs.vignette,
+  chromaticConfig: effectConfigs.chromaticAberration,
+  dotHalftoneConfig: effectConfigs.dotHalftone,
+  lineHalftoneConfig: effectConfigs.lineHalftone,
+  blurConfig: effectConfigs.blur,
+}
 
 // ============================================================
 // Preset Actions (Composable)
@@ -498,28 +505,6 @@ const handleMaskUpdate = (key: string, value: unknown) => {
   }
 }
 
-const handleFilterUpdate = (key: string, value: unknown) => {
-  switch (key) {
-    case 'selectedType':
-      selectedFilterType.value = value as typeof selectedFilterType.value
-      break
-    case 'vignetteConfig':
-      currentVignetteConfig.value = value as typeof currentVignetteConfig.value
-      break
-    case 'chromaticConfig':
-      currentChromaticConfig.value = value as typeof currentChromaticConfig.value
-      break
-    case 'dotHalftoneConfig':
-      currentDotHalftoneConfig.value = value as typeof currentDotHalftoneConfig.value
-      break
-    case 'lineHalftoneConfig':
-      currentLineHalftoneConfig.value = value as typeof currentLineHalftoneConfig.value
-      break
-    case 'blurConfig':
-      currentBlurConfig.value = value as typeof currentBlurConfig.value
-      break
-  }
-}
 </script>
 
 <template>
@@ -634,21 +619,10 @@ const handleFilterUpdate = (key: string, value: unknown) => {
         <!-- エフェクト設定 (排他選択) -->
         <EffectSectionPanel
           v-else-if="heroScene.pattern.activeSection.value === 'filter' || heroScene.pattern.activeSection.value === 'effect'"
-          :selected-filter-type="selectedFilterType"
-          :vignette-config="currentVignetteConfig"
-          :chromatic-config="currentChromaticConfig"
-          :dot-halftone-config="currentDotHalftoneConfig"
-          :line-halftone-config="currentLineHalftoneConfig"
-          :blur-config="currentBlurConfig"
+          :filter="filterProps"
           :base-config="currentHeroConfig"
           :palette="primitivePalette"
           :show-preview="true"
-          @update:selected-filter-type="selectedFilterType = $event"
-          @update:vignette-config="currentVignetteConfig = $event"
-          @update:chromatic-config="currentChromaticConfig = $event"
-          @update:dot-halftone-config="currentDotHalftoneConfig = $event"
-          @update:line-halftone-config="currentLineHalftoneConfig = $event"
-          @update:blur-config="currentBlurConfig = $event"
         />
 
         <!-- テキストレイヤー設定 -->
@@ -767,21 +741,13 @@ const handleFilterUpdate = (key: string, value: unknown) => {
         innerColor: heroScene.pattern.maskInnerColor.value,
         createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
       }"
-      :filter="{
-        selectedType: selectedFilterType,
-        vignetteConfig: currentVignetteConfig,
-        chromaticConfig: currentChromaticConfig,
-        dotHalftoneConfig: currentDotHalftoneConfig,
-        lineHalftoneConfig: currentLineHalftoneConfig,
-        blurConfig: currentBlurConfig,
-      }"
+      :filter="filterProps"
       :palette="primitivePalette"
       @export-preset="exportPreset"
       @open-font-panel="openFontPanel"
       @update:foreground="handleForegroundUpdate"
       @update:background="handleBackgroundUpdate"
       @update:mask="handleMaskUpdate"
-      @update:filter="handleFilterUpdate"
     />
 
     <!-- Context Menu -->
