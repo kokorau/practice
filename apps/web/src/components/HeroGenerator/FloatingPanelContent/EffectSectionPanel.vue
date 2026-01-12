@@ -14,6 +14,7 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  BlockMosaicEffectSchema,
   createDefaultEffectConfig,
   migrateVignetteConfig,
   type VignetteShape,
@@ -22,7 +23,7 @@ import {
 import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
 import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
 
-export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'
+export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur' | 'blockMosaic'
 
 const props = defineProps<{
   selectedFilterType: FilterType
@@ -31,6 +32,7 @@ const props = defineProps<{
   dotHalftoneConfig: Record<string, unknown>
   lineHalftoneConfig: Record<string, unknown>
   blurConfig: Record<string, unknown>
+  blockMosaicConfig: Record<string, unknown>
   // Hero preview props
   baseConfig?: HeroViewConfig
   palette?: PrimitivePalette
@@ -44,6 +46,7 @@ const emit = defineEmits<{
   (e: 'update:dotHalftoneConfig', value: Record<string, unknown>): void
   (e: 'update:lineHalftoneConfig', value: Record<string, unknown>): void
   (e: 'update:blurConfig', value: Record<string, unknown>): void
+  (e: 'update:blockMosaicConfig', value: Record<string, unknown>): void
 }>()
 
 // Migrate legacy config to new format
@@ -105,6 +108,7 @@ const createEffectPreviewConfig = (
     dotHalftone: { ...defaultEffects.dotHalftone, enabled: effectType === 'dotHalftone' },
     lineHalftone: { ...defaultEffects.lineHalftone, enabled: effectType === 'lineHalftone' },
     blur: { ...defaultEffects.blur, enabled: effectType === 'blur' },
+    blockMosaic: { ...defaultEffects.blockMosaic, enabled: effectType === 'blockMosaic' },
   }
 
   // Apply current config values if provided
@@ -119,6 +123,8 @@ const createEffectPreviewConfig = (
       effects.lineHalftone = { ...effectConfig.lineHalftone, enabled: true }
     } else if (effectType === 'blur') {
       effects.blur = { ...effectConfig.blur, enabled: true }
+    } else if (effectType === 'blockMosaic') {
+      effects.blockMosaic = { ...effectConfig.blockMosaic, enabled: true }
     }
   }
 
@@ -148,6 +154,7 @@ const currentEffectConfig = computed((): LayerEffectConfig => ({
   dotHalftone: props.dotHalftoneConfig as LayerEffectConfig['dotHalftone'],
   lineHalftone: props.lineHalftoneConfig as LayerEffectConfig['lineHalftone'],
   blur: props.blurConfig as LayerEffectConfig['blur'],
+  blockMosaic: props.blockMosaicConfig as LayerEffectConfig['blockMosaic'],
 }))
 
 // Preview configs for each effect type
@@ -161,6 +168,7 @@ const previewConfigs = computed(() => {
     dotHalftone: createEffectPreviewConfig(props.baseConfig, 'dotHalftone', currentEffectConfig.value),
     lineHalftone: createEffectPreviewConfig(props.baseConfig, 'lineHalftone', currentEffectConfig.value),
     blur: createEffectPreviewConfig(props.baseConfig, 'blur', currentEffectConfig.value),
+    blockMosaic: createEffectPreviewConfig(props.baseConfig, 'blockMosaic', currentEffectConfig.value),
   }
 })
 </script>
@@ -223,6 +231,14 @@ const previewConfigs = computed(() => {
         :model-value="blurConfig"
         :exclude="['enabled']"
         @update:model-value="emit('update:blurConfig', $event)"
+      />
+    </div>
+    <div v-else-if="selectedFilterType === 'blockMosaic'" class="filter-params">
+      <SchemaFields
+        :schema="BlockMosaicEffectSchema"
+        :model-value="blockMosaicConfig"
+        :exclude="['enabled']"
+        @update:model-value="emit('update:blockMosaicConfig', $event)"
       />
     </div>
 
@@ -299,6 +315,18 @@ const previewConfigs = computed(() => {
           :palette="palette"
         />
         <span class="filter-name">Blur</span>
+      </button>
+      <button
+        class="filter-option"
+        :class="{ active: selectedFilterType === 'blockMosaic' }"
+        @click="emit('update:selectedFilterType', 'blockMosaic')"
+      >
+        <HeroPreviewThumbnail
+          v-if="showPreview && previewConfigs && palette"
+          :config="previewConfigs.blockMosaic"
+          :palette="palette"
+        />
+        <span class="filter-name">Block Mosaic</span>
       </button>
     </div>
   </div>

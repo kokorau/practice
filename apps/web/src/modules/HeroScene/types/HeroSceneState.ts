@@ -358,6 +358,8 @@ export interface FilterState {
     rectWidth: number
     rectHeight: number
   }>) => void
+  /** Update block mosaic parameters */
+  readonly updateBlockMosaicParams: (layerId: string, params: Partial<{ blockSize: number }>) => void
 }
 
 /** Deep partial utility type */
@@ -686,4 +688,6 @@ export interface RightPanelFilterProps {
   readonly lineHalftoneConfig: Record<string, unknown>
   /** Blur configuration */
   readonly blurConfig: Record<string, unknown>
+  /** Block mosaic configuration */
+  readonly blockMosaicConfig: Record<string, unknown>
 }

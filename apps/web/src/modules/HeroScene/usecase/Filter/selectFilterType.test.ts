@@ -31,6 +31,7 @@ describe('selectFilterType', () => {
               dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
               lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
               blur: { enabled: false, radius: 8 },
+              blockMosaic: { enabled: false, blockSize: 8 },
             },
           },
         ],
@@ -157,7 +158,7 @@ describe('selectFilterType', () => {
 })
 
 describe('getFilterType', () => {
-  const createTestConfig = (enabledFilter?: 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'): HeroViewConfig => ({
+  const createTestConfig = (enabledFilter?: 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur' | 'blockMosaic'): HeroViewConfig => ({
     viewport: { width: 1280, height: 720 },
     colors: {
       background: { primary: 'B', secondary: 'auto' },
@@ -184,6 +185,7 @@ describe('getFilterType', () => {
               dotHalftone: { enabled: enabledFilter === 'dotHalftone', dotSize: 8, spacing: 16, angle: 45 },
               lineHalftone: { enabled: enabledFilter === 'lineHalftone', lineWidth: 4, spacing: 12, angle: 45 },
               blur: { enabled: enabledFilter === 'blur', radius: 8 },
+              blockMosaic: { enabled: enabledFilter === 'blockMosaic', blockSize: 8 },
             },
           },
         ],

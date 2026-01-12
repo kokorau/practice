@@ -23,6 +23,7 @@ const createMockFilterConfig = (): LayerFilterConfig => ({
   dotHalftone: { enabled: false, dotSize: 4, spacing: 8, angle: 45 },
   lineHalftone: { enabled: false, lineWidth: 2, spacing: 6, angle: 0 },
   blur: { enabled: false, radius: 8 },
+  blockMosaic: { enabled: false, blockSize: 8 },
 })
 
 const createMockOptions = () => {
@@ -45,6 +46,7 @@ const createMockOptions = () => {
     if (config.dotHalftone.enabled) return 'dotHalftone' as const
     if (config.lineHalftone.enabled) return 'lineHalftone' as const
     if (config.blur.enabled) return 'blur' as const
+    if (config.blockMosaic.enabled) return 'blockMosaic' as const
     return 'void' as const
   })
 
@@ -57,6 +59,7 @@ const createMockOptions = () => {
       dotHalftone: { ...config.dotHalftone, enabled: type === 'dotHalftone' },
       lineHalftone: { ...config.lineHalftone, enabled: type === 'lineHalftone' },
       blur: { ...config.blur, enabled: type === 'blur' },
+      blockMosaic: { ...config.blockMosaic, enabled: type === 'blockMosaic' },
     })
   })
 
@@ -105,6 +108,15 @@ const createMockOptions = () => {
     })
   })
 
+  const updateBlockMosaicParams = vi.fn((layerId: string, params: Record<string, unknown>) => {
+    const config = filterConfigs.value.get(layerId)
+    if (!config) return
+    filterConfigs.value.set(layerId, {
+      ...config,
+      blockMosaic: { ...config.blockMosaic, ...params },
+    })
+  })
+
   return {
     selectedFilterLayerId,
     filterConfigs,
@@ -116,6 +128,7 @@ const createMockOptions = () => {
     updateDotHalftoneParams,
     updateLineHalftoneParams,
     updateBlurParams,
+    updateBlockMosaicParams,
   }
 }
 
@@ -291,6 +304,7 @@ describe('useFilterEditor', () => {
         dotHalftone: { enabled: false, dotSize: 2, spacing: 4, angle: 90 },
         lineHalftone: { enabled: false, lineWidth: 1, spacing: 3, angle: 45 },
         blur: { enabled: false, radius: 8 },
+        blockMosaic: { enabled: false, blockSize: 8 },
       })
 
       const { currentVignetteConfig } = useFilterEditor(options)

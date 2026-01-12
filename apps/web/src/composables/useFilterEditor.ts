@@ -7,6 +7,7 @@ import type {
   DotHalftoneFilterConfig,
   LineHalftoneFilterConfig,
   BlurEffectConfig,
+  BlockMosaicEffectConfig,
 } from '../modules/HeroScene'
 
 // ============================================================
@@ -35,6 +36,8 @@ export interface UseFilterEditorOptions {
   updateLineHalftoneParams: (layerId: string, params: Partial<Omit<LineHalftoneFilterConfig, 'enabled'>>) => void
   /** Update blur parameters */
   updateBlurParams: (layerId: string, params: Partial<Omit<BlurEffectConfig, 'enabled'>>) => void
+  /** Update block mosaic parameters */
+  updateBlockMosaicParams: (layerId: string, params: Partial<Omit<BlockMosaicEffectConfig, 'enabled'>>) => void
 }
 
 /**
@@ -45,6 +48,7 @@ export type ChromaticConfigParams = Partial<Omit<ChromaticAberrationFilterConfig
 export type DotHalftoneConfigParams = Partial<Omit<DotHalftoneFilterConfig, 'enabled'>>
 export type LineHalftoneConfigParams = Partial<Omit<LineHalftoneFilterConfig, 'enabled'>>
 export type BlurConfigParams = Partial<Omit<BlurEffectConfig, 'enabled'>>
+export type BlockMosaicConfigParams = Partial<Omit<BlockMosaicEffectConfig, 'enabled'>>
 
 /**
  * Return type for useFilterEditor composable
@@ -62,6 +66,8 @@ export interface UseFilterEditorReturn {
   currentLineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
   /** Current blur config (writable computed for v-model binding) */
   currentBlurConfig: WritableComputedRef<BlurConfigParams>
+  /** Current block mosaic config (writable computed for v-model binding) */
+  currentBlockMosaicConfig: WritableComputedRef<BlockMosaicConfigParams>
 }
 
 // ============================================================
@@ -89,6 +95,7 @@ export function useFilterEditor(
     updateDotHalftoneParams,
     updateLineHalftoneParams,
     updateBlurParams,
+    updateBlockMosaicParams,
   } = options
 
   // ============================================================
@@ -181,6 +188,19 @@ export function useFilterEditor(
     },
   })
 
+  /**
+   * Writable computed for block mosaic config
+   * Used for SchemaFields binding
+   */
+  const currentBlockMosaicConfig = computed({
+    get: () => selectedLayerFilters.value?.blockMosaic ?? {},
+    set: (value) => {
+      const layerId = selectedFilterLayerId.value
+      if (!layerId) return
+      updateBlockMosaicParams(layerId, value)
+    },
+  })
+
   return {
     selectedFilterType: selectedFilterTypeComputed,
     currentVignetteConfig,
@@ -188,5 +208,6 @@ export function useFilterEditor(
     currentDotHalftoneConfig,
     currentLineHalftoneConfig,
     currentBlurConfig,
+    currentBlockMosaicConfig,
   }
 }

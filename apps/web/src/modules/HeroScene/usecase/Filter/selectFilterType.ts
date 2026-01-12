@@ -17,7 +17,7 @@ import type { LayerEffectConfig } from '../../Domain/EffectSchema'
  * フィルタータイプ
  * 'void' = すべてのフィルターを無効化
  */
-export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'
+export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur' | 'blockMosaic'
 
 /**
  * エフェクトプロセッサを取得
@@ -65,6 +65,7 @@ export function selectFilterType(
     dotHalftone: { ...currentConfig.dotHalftone, enabled: filterType === 'dotHalftone' },
     lineHalftone: { ...currentConfig.lineHalftone, enabled: filterType === 'lineHalftone' },
     blur: { ...currentConfig.blur, enabled: filterType === 'blur' },
+    blockMosaic: { ...currentConfig.blockMosaic, enabled: filterType === 'blockMosaic' },
   }
 
   const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
@@ -96,6 +97,7 @@ export function getFilterType(repository: HeroViewRepository, layerId: string): 
   if (effectConfig.dotHalftone.enabled) return 'dotHalftone'
   if (effectConfig.lineHalftone.enabled) return 'lineHalftone'
   if (effectConfig.blur.enabled) return 'blur'
+  if (effectConfig.blockMosaic.enabled) return 'blockMosaic'
 
   return 'void'
 }

@@ -63,6 +63,7 @@ export type {
   DotHalftoneEffectConfig,
   LineHalftoneEffectConfig,
   BlurEffectConfig,
+  BlockMosaicEffectConfig,
   LayerEffectConfig,
   LayerEffectSchemaMap,
   // Vignette shape types (new)
@@ -170,9 +171,11 @@ export {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  BlockMosaicEffectSchema,
   LayerEffectSchemas,
   createDefaultEffectConfig,
   createDefaultBlurConfig,
+  createDefaultBlockMosaicConfig,
   // Vignette shape schemas and types
   VignetteBaseSchema,
   VignetteShapeSchemas,
@@ -361,11 +364,13 @@ export {
   updateDotHalftoneParams,
   updateLineHalftoneParams,
   updateBlurParams,
+  updateBlockMosaicParams,
   getVignetteParams,
   getChromaticAberrationParams,
   getDotHalftoneParams,
   getLineHalftoneParams,
   getBlurParams,
+  getBlockMosaicParams,
   type FilterType,
   // TextLayer UseCases
   updateTextLayerText,

@@ -11,9 +11,11 @@ export {
   updateDotHalftoneParams,
   updateLineHalftoneParams,
   updateBlurParams,
+  updateBlockMosaicParams,
   getVignetteParams,
   getChromaticAberrationParams,
   getDotHalftoneParams,
   getLineHalftoneParams,
   getBlurParams,
+  getBlockMosaicParams,
 } from './updateFilterParams'

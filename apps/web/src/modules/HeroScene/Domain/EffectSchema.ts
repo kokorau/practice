@@ -95,6 +95,17 @@ export const BlurEffectSchema = defineSchema({
 export type BlurEffectConfig = Infer<typeof BlurEffectSchema>
 
 // ============================================================
+// Block Mosaic Effect Schema
+// ============================================================
+
+export const BlockMosaicEffectSchema = defineSchema({
+  enabled: boolean({ label: 'Enabled', default: false }),
+  blockSize: number({ label: 'Block Size', min: 2, max: 64, default: 8 }),
+})
+
+export type BlockMosaicEffectConfig = Infer<typeof BlockMosaicEffectSchema>
+
+// ============================================================
 // Layer Effect Schema (composite)
 // ============================================================
 
@@ -108,6 +119,7 @@ export const LayerEffectSchemas = {
   dotHalftone: DotHalftoneEffectSchema,
   lineHalftone: LineHalftoneEffectSchema,
   blur: BlurEffectSchema,
+  blockMosaic: BlockMosaicEffectSchema,
 } as const
 
 export type LayerEffectSchemaMap = typeof LayerEffectSchemas
@@ -119,6 +131,7 @@ export interface LayerEffectConfig {
   dotHalftone: DotHalftoneEffectConfig
   lineHalftone: LineHalftoneEffectConfig
   blur: BlurEffectConfig
+  blockMosaic: BlockMosaicEffectConfig
 }
 
 // ============================================================
@@ -145,6 +158,10 @@ export const createDefaultLineHalftoneConfig = (): LineHalftoneEffectConfig =>
 export const createDefaultBlurConfig = (): BlurEffectConfig =>
   getDefaults(BlurEffectSchema)
 
+/** Create default block mosaic effect config */
+export const createDefaultBlockMosaicConfig = (): BlockMosaicEffectConfig =>
+  getDefaults(BlockMosaicEffectSchema)
+
 /** Create default layer effect config */
 export const createDefaultEffectConfig = (): LayerEffectConfig => ({
   vignette: createDefaultVignetteShapeConfigInternal(),
@@ -152,6 +169,7 @@ export const createDefaultEffectConfig = (): LayerEffectConfig => ({
   dotHalftone: createDefaultDotHalftoneConfig(),
   lineHalftone: createDefaultLineHalftoneConfig(),
   blur: createDefaultBlurConfig(),
+  blockMosaic: createDefaultBlockMosaicConfig(),
 })
 
 // ============================================================

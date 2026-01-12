@@ -7,6 +7,7 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  BlockMosaicEffectSchema,
   migrateVignetteConfig,
   createVignetteConfigForShape,
   type VignetteShape,
@@ -14,7 +15,7 @@ import {
 } from '../../../modules/HeroScene'
 import SchemaFields from '../../SchemaFields.vue'
 
-export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'
+export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur' | 'blockMosaic'
 
 const props = defineProps<{
   selectedFilterType: FilterType
@@ -23,6 +24,7 @@ const props = defineProps<{
   dotHalftoneConfig: Record<string, unknown>
   lineHalftoneConfig: Record<string, unknown>
   blurConfig: Record<string, unknown>
+  blockMosaicConfig: Record<string, unknown>
 }>()
 
 const emit = defineEmits<{
@@ -32,6 +34,7 @@ const emit = defineEmits<{
   'update:dotHalftoneConfig': [value: Record<string, unknown>]
   'update:lineHalftoneConfig': [value: Record<string, unknown>]
   'update:blurConfig': [value: Record<string, unknown>]
+  'update:blockMosaicConfig': [value: Record<string, unknown>]
 }>()
 
 // Migrate legacy config to new format
@@ -151,6 +154,14 @@ const handleColorChange = (event: Event) => {
         @update:model-value="emit('update:blurConfig', $event)"
       />
     </div>
+    <div v-else-if="selectedFilterType === 'blockMosaic'" class="filter-params">
+      <SchemaFields
+        :schema="BlockMosaicEffectSchema"
+        :model-value="blockMosaicConfig"
+        :exclude="['enabled']"
+        @update:model-value="emit('update:blockMosaicConfig', $event)"
+      />
+    </div>
 
     <!-- Filter type selection -->
     <div class="filter-options">
@@ -207,6 +218,15 @@ const handleColorChange = (event: Event) => {
           @change="handleFilterTypeChange('blur')"
         />
         <span class="filter-name">Blur</span>
+      </label>
+      <label class="filter-option" :class="{ active: selectedFilterType === 'blockMosaic' }">
+        <input
+          type="radio"
+          name="filter-type"
+          :checked="selectedFilterType === 'blockMosaic'"
+          @change="handleFilterTypeChange('blockMosaic')"
+        />
+        <span class="filter-name">Block Mosaic</span>
       </label>
     </div>
   </div>

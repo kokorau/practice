@@ -297,6 +297,7 @@ const corporateCleanConfig: HeroViewConfig = {
             dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
             lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
             blur: { enabled: false, radius: 8 },
+            blockMosaic: { enabled: false, blockSize: 8 },
           },
         },
       ],
@@ -317,6 +318,7 @@ const corporateCleanConfig: HeroViewConfig = {
             dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
             lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
             blur: { enabled: false, radius: 8 },
+            blockMosaic: { enabled: false, blockSize: 8 },
           },
         },
         {

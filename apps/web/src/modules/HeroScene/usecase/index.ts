@@ -34,11 +34,13 @@ export {
   updateDotHalftoneParams,
   updateLineHalftoneParams,
   updateBlurParams,
+  updateBlockMosaicParams,
   getVignetteParams,
   getChromaticAberrationParams,
   getDotHalftoneParams,
   getLineHalftoneParams,
   getBlurParams,
+  getBlockMosaicParams,
   type FilterType,
 } from './Filter'
 export {

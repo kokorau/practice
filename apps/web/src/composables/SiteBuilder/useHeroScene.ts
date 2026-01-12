@@ -957,6 +957,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       dotHalftone: { ...(current.dotHalftone ?? defaults.dotHalftone), ...(updates.dotHalftone ?? {}) },
       lineHalftone: { ...(current.lineHalftone ?? defaults.lineHalftone), ...(updates.lineHalftone ?? {}) },
       blur: { ...(current.blur ?? defaults.blur), ...(updates.blur ?? {}) },
+      blockMosaic: { ...(current.blockMosaic ?? defaults.blockMosaic), ...(updates.blockMosaic ?? {}) },
     }
     // Create new Map to trigger Vue reactivity (Map.set() doesn't change the ref value)
     const newMap = new Map(layerFilterConfigs.value)
@@ -1052,6 +1053,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     rectHeight: number
   }>) => {
     updateLayerFilters(layerId, { blur: params })
+  }
+
+  /**
+   * Update block mosaic parameters
+   */
+  const updateBlockMosaicParams = (layerId: string, params: Partial<{ blockSize: number }>) => {
+    updateLayerFilters(layerId, { blockMosaic: params })
   }
 
   // ============================================================
@@ -3665,6 +3673,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           dotHalftone: { ...defaults.dotHalftone, ...effectProcessor.config.dotHalftone },
           lineHalftone: { ...defaults.lineHalftone, ...effectProcessor.config.lineHalftone },
           blur: { ...defaults.blur, ...(effectProcessor.config.blur ?? {}) },
+          blockMosaic: { ...defaults.blockMosaic, ...(effectProcessor.config.blockMosaic ?? {}) },
         }
         layerFilterConfigs.value.set(LAYER_IDS.BASE, merged)
       }
@@ -3797,6 +3806,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             dotHalftone: { ...defaults.dotHalftone, ...maskEffectProcessor.config.dotHalftone },
             lineHalftone: { ...defaults.lineHalftone, ...maskEffectProcessor.config.lineHalftone },
             blur: { ...defaults.blur, ...(maskEffectProcessor.config.blur ?? {}) },
+            blockMosaic: { ...defaults.blockMosaic, ...(maskEffectProcessor.config.blockMosaic ?? {}) },
           }
           layerFilterConfigs.value.set(LAYER_IDS.MASK, merged)
         }
@@ -4078,6 +4088,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     updateDotHalftoneParams,
     updateLineHalftoneParams,
     updateBlurParams,
+    updateBlockMosaicParams,
   }
 
   /**

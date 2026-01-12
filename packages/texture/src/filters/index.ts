@@ -69,3 +69,10 @@ export {
   BLUR_BUFFER_SIZE,
   type BlurParams,
 } from '../shaders/blur'
+
+export {
+  blockMosaicShader,
+  createBlockMosaicUniforms,
+  BLOCK_MOSAIC_BUFFER_SIZE,
+  type BlockMosaicParams,
+} from '../shaders/blockMosaic'

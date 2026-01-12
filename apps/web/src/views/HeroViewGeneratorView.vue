@@ -122,6 +122,7 @@ const {
   currentDotHalftoneConfig,
   currentLineHalftoneConfig,
   currentBlurConfig,
+  currentBlockMosaicConfig,
 } = useFilterEditor({
   selectedFilterLayerId: heroScene.filter.selectedFilterLayerId,
   selectedLayerFilters: heroScene.filter.selectedLayerFilters,
@@ -132,6 +133,7 @@ const {
   updateDotHalftoneParams: heroScene.filter.updateDotHalftoneParams,
   updateLineHalftoneParams: heroScene.filter.updateLineHalftoneParams,
   updateBlurParams: heroScene.filter.updateBlurParams,
+  updateBlockMosaicParams: heroScene.filter.updateBlockMosaicParams,
 })
 
 // ============================================================
@@ -649,6 +651,7 @@ const handleFilterUpdate = (key: string, value: unknown) => {
           :dot-halftone-config="currentDotHalftoneConfig"
           :line-halftone-config="currentLineHalftoneConfig"
           :blur-config="currentBlurConfig"
+          :block-mosaic-config="currentBlockMosaicConfig"
           :base-config="currentHeroConfig"
           :palette="primitivePalette"
           :show-preview="true"
@@ -658,6 +661,7 @@ const handleFilterUpdate = (key: string, value: unknown) => {
           @update:dot-halftone-config="currentDotHalftoneConfig = $event"
           @update:line-halftone-config="currentLineHalftoneConfig = $event"
           @update:blur-config="currentBlurConfig = $event"
+          @update:block-mosaic-config="currentBlockMosaicConfig = $event"
         />
 
         <!-- テキストレイヤー設定 -->
@@ -783,6 +787,7 @@ const handleFilterUpdate = (key: string, value: unknown) => {
         dotHalftoneConfig: currentDotHalftoneConfig,
         lineHalftoneConfig: currentLineHalftoneConfig,
         blurConfig: currentBlurConfig,
+        blockMosaicConfig: currentBlockMosaicConfig,
       }"
       :palette="primitivePalette"
       @export-preset="exportPreset"

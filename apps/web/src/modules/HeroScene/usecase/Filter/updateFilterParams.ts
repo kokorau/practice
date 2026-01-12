@@ -17,6 +17,7 @@ import type {
   DotHalftoneEffectConfig,
   LineHalftoneEffectConfig,
   BlurEffectConfig,
+  BlockMosaicEffectConfig,
 } from '../../Domain/EffectSchema'
 
 /**
@@ -260,4 +261,49 @@ export function getBlurParams(
 
   const effectProcessor = findEffectProcessor(layer)
   return effectProcessor?.config.blur
+}
+
+/**
+ * BlockMosaicパラメータを更新
+ *
+ * @param repository - HeroViewRepository
+ * @param layerId - 対象レイヤーID
+ * @param params - 更新するパラメータ
+ */
+export function updateBlockMosaicParams(
+  repository: HeroViewRepository,
+  layerId: string,
+  params: Partial<Omit<BlockMosaicEffectConfig, 'enabled'>>
+): void {
+  const config = repository.get()
+  const layer = config.layers.find((l) => l.id === layerId)
+  if (!layer || !('processors' in layer)) return
+
+  const effectProcessor = findEffectProcessor(layer)
+  if (!effectProcessor) return
+
+  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
+    ...p,
+    config: {
+      ...p.config,
+      blockMosaic: { ...p.config.blockMosaic, ...params },
+    },
+  }))
+
+  repository.updateLayer(layerId, { processors: updatedProcessors })
+}
+
+/**
+ * 現在のBlockMosaicパラメータを取得
+ */
+export function getBlockMosaicParams(
+  repository: HeroViewRepository,
+  layerId: string
+): BlockMosaicEffectConfig | undefined {
+  const config = repository.get()
+  const layer = config.layers.find((l) => l.id === layerId)
+  if (!layer || !('processors' in layer)) return undefined
+
+  const effectProcessor = findEffectProcessor(layer)
+  return effectProcessor?.config.blockMosaic
 }
