@@ -799,7 +799,6 @@ const handleFilterUpdate = (key: string, value: unknown) => {
 
     <!-- 右パネル: 選択要素のプロパティ -->
     <RightPropertyPanel
-      v-if="activeTab === 'generator'"
       ref="rightPanelRef"
       :selection="{
         foregroundElement: selectedForegroundElement,
