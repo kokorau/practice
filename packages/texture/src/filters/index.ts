@@ -5,7 +5,7 @@
  * in your bundle (tree-shakeable).
  */
 
-// Legacy vignette (deprecated - use shape-specific versions)
+// Legacy vignette (for backward compatibility)
 export {
   vignetteShader,
   createVignetteUniforms,
@@ -13,7 +13,7 @@ export {
   type VignetteParams,
 } from '../shaders/vignette'
 
-// Shape-specific vignette shaders
+// New vignette shape variants
 export {
   ellipseVignetteShader,
   createEllipseVignetteUniforms,

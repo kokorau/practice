@@ -12,6 +12,7 @@ import type {
 } from '../../Domain/HeroViewConfig'
 import type {
   VignetteEffectConfig,
+  VignetteConfig,
   ChromaticAberrationEffectConfig,
   DotHalftoneEffectConfig,
   LineHalftoneEffectConfig,
@@ -161,7 +162,7 @@ export function updateLineHalftoneParams(
 export function getVignetteParams(
   repository: HeroViewRepository,
   layerId: string
-): VignetteEffectConfig | undefined {
+): VignetteConfig | undefined {
   const config = repository.get()
   const layer = config.layers.find((l) => l.id === layerId)
   if (!layer || !('processors' in layer)) return undefined

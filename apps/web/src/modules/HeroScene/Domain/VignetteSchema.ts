@@ -146,6 +146,60 @@ export const createDefaultVignetteConfig = (): EllipseVignetteConfig => ({
   aspectRatio: 1,
 })
 
+/**
+ * Create vignette config with proper defaults for a given shape
+ * Preserves common properties (enabled, intensity, softness, color) from existing config
+ */
+export function createVignetteConfigForShape(
+  shape: VignetteShape,
+  existing?: Partial<VignetteConfig>
+): VignetteConfig {
+  const base = {
+    enabled: existing?.enabled ?? false,
+    intensity: existing?.intensity ?? 0.5,
+    softness: existing?.softness ?? 0.4,
+    color: existing?.color ?? [0, 0, 0, 1] as [number, number, number, number],
+  }
+
+  switch (shape) {
+    case 'ellipse':
+      return {
+        ...base,
+        shape: 'ellipse',
+        radius: 0.8,
+        centerX: 0.5,
+        centerY: 0.5,
+        aspectRatio: 1,
+      }
+    case 'circle':
+      return {
+        ...base,
+        shape: 'circle',
+        radius: 0.8,
+        centerX: 0.5,
+        centerY: 0.5,
+      }
+    case 'rectangle':
+      return {
+        ...base,
+        shape: 'rectangle',
+        centerX: 0.5,
+        centerY: 0.5,
+        width: 0.8,
+        height: 0.6,
+        cornerRadius: 0,
+      }
+    case 'linear':
+      return {
+        ...base,
+        shape: 'linear',
+        angle: 0,
+        startOffset: 0.3,
+        endOffset: 0.7,
+      }
+  }
+}
+
 // ============================================================
 // Migration Helper
 // ============================================================
