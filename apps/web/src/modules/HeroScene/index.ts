@@ -135,6 +135,7 @@ export type {
   MaskProcessorConfig,
   // LayerNodeConfig types (JSON serialization)
   LayerNodeConfig,
+  MaskNodeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   TextLayerNodeConfig as TextLayerNodeConfigType,

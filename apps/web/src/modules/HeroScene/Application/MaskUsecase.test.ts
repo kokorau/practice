@@ -92,6 +92,9 @@ describe('MaskUsecase', () => {
         radiusTopRight: 10,
         radiusBottomLeft: 10,
         radiusBottomRight: 10,
+        rotation: 0,
+        perspectiveX: 0,
+        perspectiveY: 0,
         cutout: true,
       }
       usecase.selectMaskShape(rectShape)
@@ -190,6 +193,9 @@ describe('MaskUsecase', () => {
         radiusTopRight: 0,
         radiusBottomLeft: 0,
         radiusBottomRight: 0,
+        rotation: 0,
+        perspectiveX: 0,
+        perspectiveY: 0,
         cutout: true,
       })
 
@@ -209,6 +215,9 @@ describe('MaskUsecase', () => {
             radiusTopRight: 0,
             radiusBottomLeft: 0,
             radiusBottomRight: 0,
+            rotation: 0,
+            perspectiveX: 0,
+            perspectiveY: 0,
             cutout: true,
           })
         }
