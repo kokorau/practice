@@ -37,7 +37,7 @@ export interface TexturePattern {
 /**
  * Mask type enumeration
  */
-export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient'
+export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient' | 'radialGradient'
 
 /**
  * Circle mask configuration
@@ -113,7 +113,27 @@ export interface LinearGradientMaskShapeConfig {
   cutout?: boolean
 }
 
-export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | LinearGradientMaskShapeConfig
+/**
+ * Radial gradient mask configuration
+ * Circular/elliptical gradient from center outward (vignette effect)
+ */
+export interface RadialGradientMaskShapeConfig {
+  type: 'radialGradient'
+  /** Center X coordinate (0.0-1.0, normalized) */
+  centerX: number
+  /** Center Y coordinate (0.0-1.0, normalized) */
+  centerY: number
+  /** Inner radius (fully opaque area) */
+  innerRadius: number
+  /** Outer radius (fully transparent area) */
+  outerRadius: number
+  /** Aspect ratio for ellipse (1.0 = circle) */
+  aspectRatio: number
+  /** If true (default), gradient goes from opaque center to transparent edge. If false, reversed. */
+  cutout?: boolean
+}
+
+export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig
 
 /**
  * Mask pattern definition with shape configuration

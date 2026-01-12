@@ -31,14 +31,17 @@ export {
   rectMaskShader,
   perlinMaskShader,
   linearGradientMaskShader,
+  radialGradientMaskShader,
   createCircleMaskSpec,
   createRectMaskSpec,
   createPerlinMaskSpec,
   createLinearGradientMaskSpec,
+  createRadialGradientMaskSpec,
   type CircleMaskParams,
   type RectMaskParams,
   type PerlinMaskParams,
   type LinearGradientMaskParams,
+  type RadialGradientMaskParams,
 } from './mask'
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'
 export {
@@ -48,12 +51,14 @@ export {
   blobClipShader,
   perlinClipShader,
   linearGradientClipShader,
+  radialGradientClipShader,
   // Clip mask spec creators
   createCircleClipSpec,
   createRectClipSpec,
   createBlobClipSpec,
   createPerlinClipSpec,
   createLinearGradientClipSpec,
+  createRadialGradientClipSpec,
   createClipMaskSpec,
   // Clip mask types
   type ClipMaskBaseParams,
@@ -62,6 +67,7 @@ export {
   type BlobClipParams,
   type PerlinClipParams,
   type LinearGradientClipParams,
+  type RadialGradientClipParams,
   type ClipMaskParams,
 } from './clipMask'
 export {
