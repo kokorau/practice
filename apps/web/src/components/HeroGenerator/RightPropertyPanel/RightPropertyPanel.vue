@@ -15,6 +15,10 @@ import EffectSettingsPanel from './EffectSettingsPanel.vue'
 import MaskSettingsPanel from './MaskSettingsPanel.vue'
 import PlaceholderPanel from './PlaceholderPanel.vue'
 
+// ============================================================
+// Grouped Props Types
+// ============================================================
+
 interface ForegroundElementConfig {
   id: string
   type: 'title' | 'description'
@@ -35,111 +39,124 @@ interface FontPreset {
 type ProcessorType = 'effect' | 'mask' | 'processor' | null
 type LayerVariant = 'base' | 'surface' | 'text' | 'model3d' | 'image' | null
 
-const props = defineProps<{
-  // Selection state
-  selectedForegroundElement: ForegroundElementConfig | null
-  selectedLayer: SceneNode | null | undefined
-  selectedLayerVariant: LayerVariant
-  selectedProcessorType: ProcessorType
+/** Selection state */
+interface SelectionProps {
+  foregroundElement: ForegroundElementConfig | null
+  layer: SceneNode | null | undefined
+  layerVariant: LayerVariant
+  processorType: ProcessorType
+}
 
-  // Palette
-  primitivePalette: PrimitivePalette
+/** Foreground/text element state */
+interface ForegroundProps {
+  titleAutoKey: PrimitiveKey | null
+  bodyAutoKey: PrimitiveKey | null
+  elementColorKey: PrimitiveKey | 'auto'
+  elementContent: string
+  elementPosition: GridPosition
+  elementFontSize: number
+  fontPreset: FontPreset | null
+  fontDisplayName: string
+}
 
-  // Text element props
-  titleContrastResult: ContrastAnalysisResult | null
-  descriptionContrastResult: ContrastAnalysisResult | null
-  foregroundTitleAutoKey: PrimitiveKey | null
-  foregroundBodyAutoKey: PrimitiveKey | null
-  selectedElementColorKey: PrimitiveKey | 'auto'
-  selectedElementContent: string
-  selectedElementPosition: GridPosition
-  selectedElementFontSize: number
-  selectedFontPreset: FontPreset | null
-  selectedFontDisplayName: string
+/** Contrast analysis results */
+interface ContrastProps {
+  title: ContrastAnalysisResult | null
+  description: ContrastAnalysisResult | null
+}
 
-  // Background layer props
-  backgroundColorKey1: PrimitiveKey
-  backgroundColorKey2: PrimitiveKey | 'auto'
-  customBackgroundImage: string | null
-  customBackgroundFileName: string | null
-  backgroundPatterns: PatternItem[]
-  selectedBackgroundIndex: number | null
-  isLoadingRandomBackground: boolean
-  currentBackgroundSurfaceSchema: ObjectSchema | null
-  customBackgroundSurfaceParams: Record<string, unknown> | null
+/** Background layer state */
+interface BackgroundProps {
+  colorKey1: PrimitiveKey
+  colorKey2: PrimitiveKey | 'auto'
+  customImage: string | null
+  customFileName: string | null
+  patterns: PatternItem[]
+  selectedIndex: number | null
+  isLoadingRandom: boolean
+  surfaceSchema: ObjectSchema | null
+  surfaceParams: Record<string, unknown> | null
+}
 
-  // Surface layer props
-  maskColorKey1: PrimitiveKey | 'auto'
-  maskColorKey2: PrimitiveKey | 'auto'
-  customMaskImage: string | null
-  customMaskFileName: string | null
-  maskSurfacePatterns: PatternItem[]
-  selectedMidgroundTextureIndex: number | null
-  isLoadingRandomMask: boolean
-  currentSurfaceSchema: ObjectSchema | null
-  customSurfaceParams: Record<string, unknown> | null
+/** Mask/surface layer state */
+interface MaskProps {
+  colorKey1: PrimitiveKey | 'auto'
+  colorKey2: PrimitiveKey | 'auto'
+  customImage: string | null
+  customFileName: string | null
+  surfacePatterns: PatternItem[]
+  selectedSurfaceIndex: number | null
+  isLoadingRandom: boolean
+  surfaceSchema: ObjectSchema | null
+  surfaceParams: Record<string, unknown> | null
+  shapePatterns: MaskPatternItem[]
+  selectedShapeIndex: number | null
+  shapeSchema: ObjectSchema | null
+  shapeParams: Record<string, unknown> | null
+  outerColor: RGBA
+  innerColor: RGBA
+  createBackgroundThumbnailSpec: BackgroundSpecCreator
+}
 
-  // Effect processor props
-  selectedFilterType: FilterType
+/** Filter/effect state */
+interface FilterProps {
+  selectedType: FilterType
   vignetteConfig: Record<string, unknown>
   chromaticConfig: Record<string, unknown>
   dotHalftoneConfig: Record<string, unknown>
   lineHalftoneConfig: Record<string, unknown>
+}
 
-  // Mask processor props
-  maskPatterns: MaskPatternItem[]
-  selectedMaskIndex: number | null
-  currentMaskShapeSchema: ObjectSchema | null
-  customMaskShapeParams: Record<string, unknown> | null
-  maskOuterColor: RGBA
-  maskInnerColor: RGBA
-  createBackgroundThumbnailSpec: BackgroundSpecCreator
+// ============================================================
+// Props (Grouped)
+// ============================================================
+
+const props = defineProps<{
+  /** Selection state */
+  selection: SelectionProps
+  /** Foreground/text element state */
+  foreground: ForegroundProps
+  /** Contrast analysis results */
+  contrast: ContrastProps
+  /** Background layer state */
+  background: BackgroundProps
+  /** Mask/surface layer state */
+  mask: MaskProps
+  /** Filter/effect state */
+  filter: FilterProps
+  /** Primitive color palette */
+  palette: PrimitivePalette
 }>()
+
+// ============================================================
+// Emits (Grouped)
+// ============================================================
 
 const emit = defineEmits<{
   // Export
   'export-preset': []
 
   // Text element updates
-  'update:selectedElementColorKey': [value: PrimitiveKey | 'auto']
-  'update:selectedElementContent': [value: string]
-  'update:selectedElementPosition': [value: GridPosition]
-  'update:selectedElementFontSize': [value: number]
+  'update:foreground': [key: keyof ForegroundProps, value: unknown]
   'open-font-panel': []
 
   // Background updates
-  'update:backgroundColorKey1': [value: PrimitiveKey]
-  'update:backgroundColorKey2': [value: PrimitiveKey | 'auto']
-  'upload-background-image': [file: File]
-  'clear-background-image': []
-  'select-background-pattern': [index: number | null]
-  'load-random-background': []
-  'update:backgroundSurfaceParams': [value: Record<string, unknown>]
-
-  // Surface updates
-  'update:maskColorKey1': [value: PrimitiveKey | 'auto']
-  'update:maskColorKey2': [value: PrimitiveKey | 'auto']
-  'upload-mask-image': [file: File]
-  'clear-mask-image': []
-  'select-mask-pattern': [index: number | null]
-  'load-random-mask': []
-  'update:surfaceParams': [value: Record<string, unknown>]
-
-  // Effect updates
-  'update:selectedFilterType': [value: FilterType]
-  'update:vignetteConfig': [value: Record<string, unknown>]
-  'update:chromaticConfig': [value: Record<string, unknown>]
-  'update:dotHalftoneConfig': [value: Record<string, unknown>]
-  'update:lineHalftoneConfig': [value: Record<string, unknown>]
+  'update:background': [key: keyof BackgroundProps | 'uploadImage' | 'clearImage' | 'selectPattern' | 'loadRandom', value: unknown]
 
   // Mask updates
-  'update:selectedMaskIndex': [value: number]
-  'update:maskShapeParams': [value: Record<string, unknown>]
+  'update:mask': [key: keyof MaskProps | 'uploadImage' | 'clearImage' | 'selectPattern' | 'loadRandom', value: unknown]
+
+  // Filter updates
+  'update:filter': [key: keyof FilterProps, value: unknown]
 }>()
+
+// ============================================================
+// Computed Helpers
+// ============================================================
 
 // Check if selected layer is a background layer based on its ID
 const isBackgroundLayer = (): boolean => {
-  const layerId = props.selectedLayer?.id
+  const layerId = props.selection.layer?.id
   if (!layerId) return false
   return layerId.startsWith('background')
 }
@@ -147,21 +164,21 @@ const isBackgroundLayer = (): boolean => {
 // Handle surface params update based on which layer is selected
 const handleSurfaceParamsUpdate = (value: Record<string, unknown>) => {
   if (isBackgroundLayer()) {
-    emit('update:backgroundSurfaceParams', value)
+    emit('update:background', 'surfaceParams', value)
   } else {
-    emit('update:surfaceParams', value)
+    emit('update:mask', 'surfaceParams', value)
   }
 }
 
 // Compute panel title based on selection state
 const panelTitle = (): string => {
-  if (props.selectedForegroundElement?.type === 'title') return 'Title'
-  if (props.selectedForegroundElement?.type === 'description') return 'Description'
-  if (props.selectedProcessorType === 'processor') return 'Processor'
-  if (props.selectedProcessorType === 'effect') return 'Effect Settings'
-  if (props.selectedProcessorType === 'mask') return 'Mask Settings'
+  if (props.selection.foregroundElement?.type === 'title') return 'Title'
+  if (props.selection.foregroundElement?.type === 'description') return 'Description'
+  if (props.selection.processorType === 'processor') return 'Processor'
+  if (props.selection.processorType === 'effect') return 'Effect Settings'
+  if (props.selection.processorType === 'mask') return 'Mask Settings'
   if (isBackgroundLayer()) return 'Background'
-  if (props.selectedLayerVariant === 'surface') return 'Surface'
+  if (props.selection.layerVariant === 'surface') return 'Surface'
   return 'Properties'
 }
 </script>
@@ -176,136 +193,136 @@ const panelTitle = (): string => {
     <div class="property-panel">
       <!-- Title Settings -->
       <TextElementPanel
-        v-if="selectedForegroundElement?.type === 'title'"
+        v-if="selection.foregroundElement?.type === 'title'"
         element-type="title"
-        :contrast-result="titleContrastResult"
-        :auto-color-key="foregroundTitleAutoKey"
-        :primitive-palette="primitivePalette"
-        :color-key="selectedElementColorKey"
-        :content="selectedElementContent"
-        :position="selectedElementPosition"
-        :font-size="selectedElementFontSize"
-        :font-preset="selectedFontPreset"
-        :font-display-name="selectedFontDisplayName"
-        @update:color-key="emit('update:selectedElementColorKey', $event)"
-        @update:content="emit('update:selectedElementContent', $event)"
-        @update:position="emit('update:selectedElementPosition', $event)"
-        @update:font-size="emit('update:selectedElementFontSize', $event)"
+        :contrast-result="contrast.title"
+        :auto-color-key="foreground.titleAutoKey"
+        :primitive-palette="palette"
+        :color-key="foreground.elementColorKey"
+        :content="foreground.elementContent"
+        :position="foreground.elementPosition"
+        :font-size="foreground.elementFontSize"
+        :font-preset="foreground.fontPreset"
+        :font-display-name="foreground.fontDisplayName"
+        @update:color-key="emit('update:foreground', 'elementColorKey', $event)"
+        @update:content="emit('update:foreground', 'elementContent', $event)"
+        @update:position="emit('update:foreground', 'elementPosition', $event)"
+        @update:font-size="emit('update:foreground', 'elementFontSize', $event)"
         @open-font-panel="emit('open-font-panel')"
       />
 
       <!-- Description Settings -->
       <TextElementPanel
-        v-else-if="selectedForegroundElement?.type === 'description'"
+        v-else-if="selection.foregroundElement?.type === 'description'"
         element-type="description"
-        :contrast-result="descriptionContrastResult"
-        :auto-color-key="foregroundBodyAutoKey"
-        :primitive-palette="primitivePalette"
-        :color-key="selectedElementColorKey"
-        :content="selectedElementContent"
-        :position="selectedElementPosition"
-        :font-size="selectedElementFontSize"
-        :font-preset="selectedFontPreset"
-        :font-display-name="selectedFontDisplayName"
-        @update:color-key="emit('update:selectedElementColorKey', $event)"
-        @update:content="emit('update:selectedElementContent', $event)"
-        @update:position="emit('update:selectedElementPosition', $event)"
-        @update:font-size="emit('update:selectedElementFontSize', $event)"
+        :contrast-result="contrast.description"
+        :auto-color-key="foreground.bodyAutoKey"
+        :primitive-palette="palette"
+        :color-key="foreground.elementColorKey"
+        :content="foreground.elementContent"
+        :position="foreground.elementPosition"
+        :font-size="foreground.elementFontSize"
+        :font-preset="foreground.fontPreset"
+        :font-display-name="foreground.fontDisplayName"
+        @update:color-key="emit('update:foreground', 'elementColorKey', $event)"
+        @update:content="emit('update:foreground', 'elementContent', $event)"
+        @update:position="emit('update:foreground', 'elementPosition', $event)"
+        @update:font-size="emit('update:foreground', 'elementFontSize', $event)"
         @open-font-panel="emit('open-font-panel')"
       />
 
       <!-- Background (Base Layer) Settings -->
       <LayerSettingsPanel
-        v-else-if="!selectedProcessorType && isBackgroundLayer()"
+        v-else-if="!selection.processorType && isBackgroundLayer()"
         key="base-layer-settings"
         layer-type="base"
-        :primitive-palette="primitivePalette"
-        :color-key1="backgroundColorKey1"
-        :color-key2="backgroundColorKey2"
+        :primitive-palette="palette"
+        :color-key1="background.colorKey1"
+        :color-key2="background.colorKey2"
         :show-auto1="false"
         :show-auto2="true"
-        :custom-image="customBackgroundImage"
-        :custom-file-name="customBackgroundFileName"
-        :patterns="backgroundPatterns"
-        :selected-index="selectedBackgroundIndex"
-        :is-loading-random="isLoadingRandomBackground"
-        :surface-schema="currentBackgroundSurfaceSchema"
-        :surface-params="customBackgroundSurfaceParams"
-        @update:color-key1="emit('update:backgroundColorKey1', $event as PrimitiveKey)"
-        @update:color-key2="emit('update:backgroundColorKey2', $event)"
-        @upload-image="emit('upload-background-image', $event)"
-        @clear-image="emit('clear-background-image')"
-        @select-pattern="emit('select-background-pattern', $event)"
-        @load-random="emit('load-random-background')"
-        @update:surface-params="(value) => handleSurfaceParamsUpdate(value)"
+        :custom-image="background.customImage"
+        :custom-file-name="background.customFileName"
+        :patterns="background.patterns"
+        :selected-index="background.selectedIndex"
+        :is-loading-random="background.isLoadingRandom"
+        :surface-schema="background.surfaceSchema"
+        :surface-params="background.surfaceParams"
+        @update:color-key1="emit('update:background', 'colorKey1', $event)"
+        @update:color-key2="emit('update:background', 'colorKey2', $event)"
+        @upload-image="emit('update:background', 'uploadImage', $event)"
+        @clear-image="emit('update:background', 'clearImage', null)"
+        @select-pattern="emit('update:background', 'selectPattern', $event)"
+        @load-random="emit('update:background', 'loadRandom', null)"
+        @update:surface-params="handleSurfaceParamsUpdate"
       />
 
       <!-- Surface Layer Settings -->
       <LayerSettingsPanel
-        v-else-if="!selectedProcessorType && selectedLayerVariant === 'surface' && !isBackgroundLayer()"
+        v-else-if="!selection.processorType && selection.layerVariant === 'surface' && !isBackgroundLayer()"
         key="surface-layer-settings"
         layer-type="surface"
-        :primitive-palette="primitivePalette"
-        :color-key1="maskColorKey1"
-        :color-key2="maskColorKey2"
+        :primitive-palette="palette"
+        :color-key1="mask.colorKey1"
+        :color-key2="mask.colorKey2"
         :show-auto1="true"
         :show-auto2="true"
-        :custom-image="customMaskImage"
-        :custom-file-name="customMaskFileName"
-        :patterns="maskSurfacePatterns"
-        :selected-index="selectedMidgroundTextureIndex"
-        :is-loading-random="isLoadingRandomMask"
-        :surface-schema="currentSurfaceSchema"
-        :surface-params="customSurfaceParams"
-        @update:color-key1="emit('update:maskColorKey1', $event)"
-        @update:color-key2="emit('update:maskColorKey2', $event)"
-        @upload-image="emit('upload-mask-image', $event)"
-        @clear-image="emit('clear-mask-image')"
-        @select-pattern="emit('select-mask-pattern', $event)"
-        @load-random="emit('load-random-mask')"
-        @update:surface-params="(value) => handleSurfaceParamsUpdate(value)"
+        :custom-image="mask.customImage"
+        :custom-file-name="mask.customFileName"
+        :patterns="mask.surfacePatterns"
+        :selected-index="mask.selectedSurfaceIndex"
+        :is-loading-random="mask.isLoadingRandom"
+        :surface-schema="mask.surfaceSchema"
+        :surface-params="mask.surfaceParams"
+        @update:color-key1="emit('update:mask', 'colorKey1', $event)"
+        @update:color-key2="emit('update:mask', 'colorKey2', $event)"
+        @upload-image="emit('update:mask', 'uploadImage', $event)"
+        @clear-image="emit('update:mask', 'clearImage', null)"
+        @select-pattern="emit('update:mask', 'selectPattern', $event)"
+        @load-random="emit('update:mask', 'loadRandom', null)"
+        @update:surface-params="handleSurfaceParamsUpdate"
       />
 
       <!-- Effect Processor Settings -->
       <EffectSettingsPanel
-        v-else-if="selectedProcessorType === 'effect'"
-        :selected-filter-type="selectedFilterType"
-        :vignette-config="vignetteConfig"
-        :chromatic-config="chromaticConfig"
-        :dot-halftone-config="dotHalftoneConfig"
-        :line-halftone-config="lineHalftoneConfig"
-        @update:selected-filter-type="emit('update:selectedFilterType', $event)"
-        @update:vignette-config="emit('update:vignetteConfig', $event)"
-        @update:chromatic-config="emit('update:chromaticConfig', $event)"
-        @update:dot-halftone-config="emit('update:dotHalftoneConfig', $event)"
-        @update:line-halftone-config="emit('update:lineHalftoneConfig', $event)"
+        v-else-if="selection.processorType === 'effect'"
+        :selected-filter-type="filter.selectedType"
+        :vignette-config="filter.vignetteConfig"
+        :chromatic-config="filter.chromaticConfig"
+        :dot-halftone-config="filter.dotHalftoneConfig"
+        :line-halftone-config="filter.lineHalftoneConfig"
+        @update:selected-filter-type="emit('update:filter', 'selectedType', $event)"
+        @update:vignette-config="emit('update:filter', 'vignetteConfig', $event)"
+        @update:chromatic-config="emit('update:filter', 'chromaticConfig', $event)"
+        @update:dot-halftone-config="emit('update:filter', 'dotHalftoneConfig', $event)"
+        @update:line-halftone-config="emit('update:filter', 'lineHalftoneConfig', $event)"
       />
 
       <!-- Mask Processor Settings -->
       <MaskSettingsPanel
-        v-else-if="selectedProcessorType === 'mask'"
-        :mask-patterns="maskPatterns"
-        :selected-mask-index="selectedMaskIndex"
-        :mask-shape-schema="currentMaskShapeSchema"
-        :mask-shape-params="customMaskShapeParams"
-        :mask-outer-color="maskOuterColor"
-        :mask-inner-color="maskInnerColor"
-        :create-background-thumbnail-spec="createBackgroundThumbnailSpec"
-        @update:selected-mask-index="emit('update:selectedMaskIndex', $event)"
-        @update:mask-shape-params="emit('update:maskShapeParams', $event)"
+        v-else-if="selection.processorType === 'mask'"
+        :mask-patterns="mask.shapePatterns"
+        :selected-mask-index="mask.selectedShapeIndex"
+        :mask-shape-schema="mask.shapeSchema"
+        :mask-shape-params="mask.shapeParams"
+        :mask-outer-color="mask.outerColor"
+        :mask-inner-color="mask.innerColor"
+        :create-background-thumbnail-spec="mask.createBackgroundThumbnailSpec"
+        @update:selected-mask-index="emit('update:mask', 'selectedShapeIndex', $event)"
+        @update:mask-shape-params="emit('update:mask', 'shapeParams', $event)"
       />
 
       <!-- Processor placeholder -->
       <PlaceholderPanel
-        v-else-if="selectedProcessorType === 'processor'"
+        v-else-if="selection.processorType === 'processor'"
         type="processor"
       />
 
       <!-- Layer placeholder (non-base, non-surface layers) -->
       <PlaceholderPanel
-        v-else-if="selectedLayer && selectedLayerVariant !== 'base' && selectedLayerVariant !== 'surface'"
+        v-else-if="selection.layer && selection.layerVariant !== 'base' && selection.layerVariant !== 'surface'"
         type="layer"
-        :layer-name="selectedLayer.name"
+        :layer-name="selection.layer.name"
       />
 
       <!-- Empty state -->

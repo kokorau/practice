@@ -34,6 +34,8 @@ import type {
   GridSurfaceParams,
   PolkaDotSurfaceParams,
   CheckerSurfaceParams,
+  TriangleSurfaceParams,
+  HexagonSurfaceParams,
   Viewport,
   DepthMapType,
 } from '@practice/texture'
@@ -101,6 +103,8 @@ export type CustomSurfaceParams =
   | ({ type: 'grid' } & GridSurfaceParams)
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ type: 'checker' } & CheckerSurfaceParams)
+  | ({ type: 'triangle' } & TriangleSurfaceParams)
+  | ({ type: 'hexagon' } & HexagonSurfaceParams)
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
 
 /**
@@ -112,6 +116,8 @@ export type CustomBackgroundSurfaceParams =
   | ({ type: 'grid' } & GridSurfaceParams)
   | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ type: 'checker' } & CheckerSurfaceParams)
+  | ({ type: 'triangle' } & TriangleSurfaceParams)
+  | ({ type: 'hexagon' } & HexagonSurfaceParams)
   | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
 
 // ============================================================
@@ -505,4 +511,104 @@ export interface RendererActions {
   readonly destroyPreview: () => void
   /** Open a UI section */
   readonly openSection: (section: SectionType) => void
+}
+
+// ============================================================
+// RightPropertyPanel Props Types
+// ============================================================
+
+/**
+ * Selection state for RightPropertyPanel
+ */
+export interface RightPanelSelectionProps {
+  /** Currently selected foreground element ID */
+  readonly selectedForegroundElementId: string | null
+  /** Currently selected layer */
+  readonly selectedLayer: unknown | null
+  /** Selected layer variant type */
+  readonly selectedLayerVariant: 'base' | 'surface' | 'text' | 'model3d' | 'image' | null
+  /** Selected processor type */
+  readonly selectedProcessorType: 'effect' | 'mask' | 'processor' | null
+}
+
+/**
+ * Foreground element props for RightPropertyPanel (text elements)
+ */
+export interface RightPanelForegroundProps {
+  /** Foreground configuration */
+  readonly foregroundConfig: ForegroundLayerConfig
+  /** Auto-selected title color key */
+  readonly foregroundTitleAutoKey: PrimitiveKey | null
+  /** Auto-selected body color key */
+  readonly foregroundBodyAutoKey: PrimitiveKey | null
+}
+
+/**
+ * Background layer props for RightPropertyPanel
+ */
+export interface RightPanelBackgroundProps {
+  /** Primary color key for background */
+  readonly colorKey1: PrimitiveKey
+  /** Secondary color key for background */
+  readonly colorKey2: PrimitiveKey | 'auto'
+  /** Custom background image URL */
+  readonly customImage: string | null
+  /** Custom background file name */
+  readonly customFileName: string | null
+  /** Selected pattern index */
+  readonly selectedIndex: number | null
+  /** Loading state for random background */
+  readonly isLoadingRandom: boolean
+  /** Surface schema for UI */
+  readonly surfaceSchema: ObjectSchema | null
+  /** Custom surface params */
+  readonly surfaceParams: Record<string, unknown> | null
+}
+
+/**
+ * Mask (surface) layer props for RightPropertyPanel
+ */
+export interface RightPanelMaskProps {
+  /** Primary color key for mask surface */
+  readonly colorKey1: PrimitiveKey | 'auto'
+  /** Secondary color key for mask surface */
+  readonly colorKey2: PrimitiveKey | 'auto'
+  /** Custom mask image URL */
+  readonly customImage: string | null
+  /** Custom mask file name */
+  readonly customFileName: string | null
+  /** Selected surface pattern index */
+  readonly selectedSurfaceIndex: number | null
+  /** Loading state for random mask */
+  readonly isLoadingRandom: boolean
+  /** Surface schema for UI */
+  readonly surfaceSchema: ObjectSchema | null
+  /** Custom surface params */
+  readonly surfaceParams: Record<string, unknown> | null
+  /** Selected mask shape index */
+  readonly selectedShapeIndex: number | null
+  /** Mask shape schema for UI */
+  readonly shapeSchema: ObjectSchema | null
+  /** Custom mask shape params */
+  readonly shapeParams: Record<string, unknown> | null
+  /** Outer color for mask */
+  readonly outerColor: RGBA
+  /** Inner color for mask */
+  readonly innerColor: RGBA
+}
+
+/**
+ * Filter/effect props for RightPropertyPanel
+ */
+export interface RightPanelFilterProps {
+  /** Currently selected filter type */
+  readonly selectedType: FilterType
+  /** Vignette configuration */
+  readonly vignetteConfig: Record<string, unknown>
+  /** Chromatic aberration configuration */
+  readonly chromaticConfig: Record<string, unknown>
+  /** Dot halftone configuration */
+  readonly dotHalftoneConfig: Record<string, unknown>
+  /** Line halftone configuration */
+  readonly lineHalftoneConfig: Record<string, unknown>
 }

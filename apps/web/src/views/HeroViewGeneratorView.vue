@@ -464,6 +464,105 @@ const {
   handleRemoveLayer,
   handleRemoveForegroundElement,
 })
+
+// ============================================================
+// RightPropertyPanel Event Handlers
+// ============================================================
+
+const handleForegroundUpdate = (key: string, value: unknown) => {
+  switch (key) {
+    case 'elementColorKey':
+      selectedElementColorKey.value = value as HeroPrimitiveKey
+      break
+    case 'elementContent':
+      selectedElementContent.value = value as string
+      break
+    case 'elementPosition':
+      selectedElementPosition.value = value as typeof selectedElementPosition.value
+      break
+    case 'elementFontSize':
+      selectedElementFontSize.value = value as number
+      break
+  }
+}
+
+const handleBackgroundUpdate = (key: string, value: unknown) => {
+  switch (key) {
+    case 'colorKey1':
+      backgroundColorKey1.value = value as typeof backgroundColorKey1.value
+      break
+    case 'colorKey2':
+      backgroundColorKey2.value = value as typeof backgroundColorKey2.value
+      break
+    case 'uploadImage':
+      setBackgroundImage(value as File)
+      break
+    case 'clearImage':
+      clearBackgroundImage()
+      break
+    case 'selectPattern':
+      if (value !== null) selectedBackgroundIndex.value = value as number
+      break
+    case 'loadRandom':
+      loadRandomBackgroundImage()
+      break
+    case 'surfaceParams':
+      updateBackgroundSurfaceParams(value as Record<string, unknown>)
+      break
+  }
+}
+
+const handleMaskUpdate = (key: string, value: unknown) => {
+  switch (key) {
+    case 'colorKey1':
+      maskColorKey1.value = value as typeof maskColorKey1.value
+      break
+    case 'colorKey2':
+      maskColorKey2.value = value as typeof maskColorKey2.value
+      break
+    case 'uploadImage':
+      setMaskImage(value as File)
+      break
+    case 'clearImage':
+      clearMaskImage()
+      break
+    case 'selectPattern':
+      if (value !== null) selectedMidgroundTextureIndex.value = value as number
+      break
+    case 'loadRandom':
+      loadRandomMaskImage()
+      break
+    case 'surfaceParams':
+      updateSurfaceParams(value as Record<string, unknown>)
+      break
+    case 'selectedShapeIndex':
+      selectedMaskIndex.value = value as number
+      break
+    case 'shapeParams':
+      updateMaskShapeParams(value as Record<string, unknown>)
+      break
+  }
+}
+
+const handleFilterUpdate = (key: string, value: unknown) => {
+  switch (key) {
+    case 'selectedType':
+      selectedFilterType.value = value as typeof selectedFilterType.value
+      break
+    case 'vignetteConfig':
+      currentVignetteConfig.value = value as typeof currentVignetteConfig.value
+      break
+    case 'chromaticConfig':
+      currentChromaticConfig.value = value as typeof currentChromaticConfig.value
+      break
+    case 'dotHalftoneConfig':
+      currentDotHalftoneConfig.value = value as typeof currentDotHalftoneConfig.value
+      break
+    case 'lineHalftoneConfig':
+      currentLineHalftoneConfig.value = value as typeof currentLineHalftoneConfig.value
+      break
+  }
+}
 </script>
 
 <template>
@@ -671,78 +770,69 @@ const {
     <RightPropertyPanel
       v-if="activeTab === 'generator'"
       ref="rightPanelRef"
-      :selected-foreground-element="selectedForegroundElement"
-      :selected-layer="selectedLayer"
-      :selected-layer-variant="selectedLayerVariant"
-      :selected-processor-type="selectedProcessorType"
-      :primitive-palette="primitivePalette"
-      :title-contrast-result="titleContrastResult"
-      :description-contrast-result="descriptionContrastResult"
-      :foreground-title-auto-key="foregroundTitleAutoKey"
-      :foreground-body-auto-key="foregroundBodyAutoKey"
-      :selected-element-color-key="selectedElementColorKey"
-      :selected-element-content="selectedElementContent"
-      :selected-element-position="selectedElementPosition"
-      :selected-element-font-size="selectedElementFontSize"
-      :selected-font-preset="selectedFontPreset"
-      :selected-font-display-name="selectedFontDisplayName"
-      :background-color-key1="backgroundColorKey1"
-      :background-color-key2="backgroundColorKey2"
-      :custom-background-image="customBackgroundImage"
-      :custom-background-file-name="customBackgroundFile?.name ?? null"
-      :background-patterns="backgroundPatterns"
-      :selected-background-index="selectedBackgroundIndex"
-      :is-loading-random-background="isLoadingRandomBackground"
-      :current-background-surface-schema="currentBackgroundSurfaceSchema"
-      :custom-background-surface-params="customBackgroundSurfaceParams"
-      :mask-color-key1="maskColorKey1"
-      :mask-color-key2="maskColorKey2"
-      :custom-mask-image="customMaskImage"
-      :custom-mask-file-name="customMaskFile?.name ?? null"
-      :mask-surface-patterns="maskSurfacePatterns"
-      :selected-midground-texture-index="selectedMidgroundTextureIndex"
-      :is-loading-random-mask="isLoadingRandomMask"
-      :current-surface-schema="currentSurfaceSchema"
-      :custom-surface-params="customSurfaceParams"
-      :selected-filter-type="selectedFilterType"
-      :vignette-config="currentVignetteConfig"
-      :chromatic-config="currentChromaticConfig"
-      :dot-halftone-config="currentDotHalftoneConfig"
-      :line-halftone-config="currentLineHalftoneConfig"
-      :mask-patterns="maskPatterns"
-      :selected-mask-index="selectedMaskIndex"
-      :current-mask-shape-schema="currentMaskShapeSchema"
-      :custom-mask-shape-params="customMaskShapeParams"
-      :mask-outer-color="maskOuterColor"
-      :mask-inner-color="maskInnerColor"
-      :create-background-thumbnail-spec="createBackgroundThumbnailSpec"
+      :selection="{
+        foregroundElement: selectedForegroundElement,
+        layer: selectedLayer,
+        layerVariant: selectedLayerVariant,
+        processorType: selectedProcessorType,
+      }"
+      :foreground="{
+        titleAutoKey: foregroundTitleAutoKey,
+        bodyAutoKey: foregroundBodyAutoKey,
+        elementColorKey: selectedElementColorKey,
+        elementContent: selectedElementContent,
+        elementPosition: selectedElementPosition,
+        elementFontSize: selectedElementFontSize,
+        fontPreset: selectedFontPreset,
+        fontDisplayName: selectedFontDisplayName,
+      }"
+      :contrast="{
+        title: titleContrastResult,
+        description: descriptionContrastResult,
+      }"
+      :background="{
+        colorKey1: backgroundColorKey1,
+        colorKey2: backgroundColorKey2,
+        customImage: customBackgroundImage,
+        customFileName: customBackgroundFile?.name ?? null,
+        patterns: backgroundPatterns,
+        selectedIndex: selectedBackgroundIndex,
+        isLoadingRandom: isLoadingRandomBackground,
+        surfaceSchema: currentBackgroundSurfaceSchema,
+        surfaceParams: customBackgroundSurfaceParams,
+      }"
+      :mask="{
+        colorKey1: maskColorKey1,
+        colorKey2: maskColorKey2,
+        customImage: customMaskImage,
+        customFileName: customMaskFile?.name ?? null,
+        surfacePatterns: maskSurfacePatterns,
+        selectedSurfaceIndex: selectedMidgroundTextureIndex,
+        isLoadingRandom: isLoadingRandomMask,
+        surfaceSchema: currentSurfaceSchema,
+        surfaceParams: customSurfaceParams,
+        shapePatterns: maskPatterns,
+        selectedShapeIndex: selectedMaskIndex,
+        shapeSchema: currentMaskShapeSchema,
+        shapeParams: customMaskShapeParams,
+        outerColor: maskOuterColor,
+        innerColor: maskInnerColor,
+        createBackgroundThumbnailSpec: createBackgroundThumbnailSpec,
+      }"
+      :filter="{
+        selectedType: selectedFilterType,
+        vignetteConfig: currentVignetteConfig,
+        chromaticConfig: currentChromaticConfig,
+        dotHalftoneConfig: currentDotHalftoneConfig,
+        lineHalftoneConfig: currentLineHalftoneConfig,
+      }"
+      :palette="primitivePalette"
       @export-preset="exportPreset"
-      @update:selected-element-color-key="selectedElementColorKey = $event as HeroPrimitiveKey"
-      @update:selected-element-content="selectedElementContent = $event"
-      @update:selected-element-position="selectedElementPosition = $event"
-      @update:selected-element-font-size="selectedElementFontSize = $event"
       @open-font-panel="openFontPanel"
-      @update:background-color-key1="backgroundColorKey1 = $event"
-      @update:background-color-key2="backgroundColorKey2 = $event"
-      @upload-background-image="setBackgroundImage"
-      @clear-background-image="clearBackgroundImage"
-      @select-background-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
-      @load-random-background="loadRandomBackgroundImage()"
-      @update:background-surface-params="updateBackgroundSurfaceParams($event)"
-      @update:mask-color-key1="maskColorKey1 = $event"
-      @update:mask-color-key2="maskColorKey2 = $event"
-      @upload-mask-image="setMaskImage"
-      @clear-mask-image="clearMaskImage"
-      @select-mask-pattern="(i) => { if (i !== null) selectedMidgroundTextureIndex = i }"
-      @load-random-mask="loadRandomMaskImage()"
-      @update:surface-params="updateSurfaceParams($event)"
-      @update:selected-filter-type="selectedFilterType = $event"
-      @update:vignette-config="currentVignetteConfig = $event"
-      @update:chromatic-config="currentChromaticConfig = $event"
-      @update:dot-halftone-config="currentDotHalftoneConfig = $event"
-      @update:line-halftone-config="currentLineHalftoneConfig = $event"
-      @update:selected-mask-index="selectedMaskIndex = $event"
-      @update:mask-shape-params="updateMaskShapeParams($event)"
+      @update:foreground="handleForegroundUpdate"
+      @update:background="handleBackgroundUpdate"
+      @update:mask="handleMaskUpdate"
+      @update:filter="handleFilterUpdate"
     />
 
     <!-- Context Menu -->

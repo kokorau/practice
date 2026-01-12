@@ -408,4 +408,10 @@ export type {
   // Helper types
   TextAnchorPosition,
   AddObjectLayerOptions,
+  // RightPropertyPanel props types
+  RightPanelSelectionProps,
+  RightPanelForegroundProps,
+  RightPanelBackgroundProps,
+  RightPanelMaskProps,
+  RightPanelFilterProps,
 } from './types'
