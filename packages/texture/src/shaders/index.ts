@@ -211,3 +211,52 @@ export { waveShader, createWaveSpec, type WaveTextureParams } from './wave'
 export { scalesShader, createScalesSpec, type ScalesTextureParams } from './scales'
 export { ogeeShader, createOgeeSpec, type OgeeTextureParams } from './ogee'
 export { sunburstShader, createSunburstSpec, type SunburstTextureParams } from './sunburst'
+// Greymap mask shaders (2-stage pipeline)
+export {
+  // Circle greymap mask
+  circleGreymapMaskShader,
+  createCircleGreymapMaskSpec,
+  // Rect greymap mask
+  rectGreymapMaskShader,
+  createRectGreymapMaskSpec,
+  // Blob greymap mask
+  blobGreymapMaskShader,
+  createBlobGreymapMaskSpec,
+  // Perlin greymap mask
+  perlinGreymapMaskShader,
+  createPerlinGreymapMaskSpec,
+  // Linear gradient greymap mask
+  linearGradientGreymapMaskShader,
+  createLinearGradientGreymapMaskSpec,
+  // Radial gradient greymap mask
+  radialGradientGreymapMaskShader,
+  createRadialGradientGreymapMaskSpec,
+  // Box gradient greymap mask
+  boxGradientGreymapMaskShader,
+  createBoxGradientGreymapMaskSpec,
+} from './greymapMask'
+// Greymap pattern shaders
+export {
+  stripeGreymapShader,
+  createStripeGreymapSpec,
+  gridGreymapShader,
+  createGridGreymapSpec,
+  polkaDotGreymapShader,
+  createPolkaDotGreymapSpec,
+  checkerGreymapShader,
+  createCheckerGreymapSpec,
+} from './greymapPattern'
+// Colorize shader (greymap to RGBA)
+export {
+  colorizeShader,
+  createColorizeSpec,
+  createMaskColorizeParams,
+  createDualColorParams,
+} from './colorize'
+// Image greymap shader
+export {
+  imageGreymapShader,
+  createImageGreymapSpec,
+  createImageGreymapUniforms,
+  IMAGE_GREYMAP_BUFFER_SIZE,
+} from './imageGreymap'
