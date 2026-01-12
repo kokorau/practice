@@ -4,12 +4,43 @@
  * Import from '@practice/texture/filters' to include only filter-related code
  * in your bundle (tree-shakeable).
  */
+
+// Legacy vignette (deprecated - use shape-specific versions)
 export {
   vignetteShader,
   createVignetteUniforms,
   VIGNETTE_BUFFER_SIZE,
   type VignetteParams,
 } from '../shaders/vignette'
+
+// Shape-specific vignette shaders
+export {
+  ellipseVignetteShader,
+  createEllipseVignetteUniforms,
+  ELLIPSE_VIGNETTE_BUFFER_SIZE,
+  type EllipseVignetteParams,
+} from '../shaders/vignette-ellipse'
+
+export {
+  circleVignetteShader,
+  createCircleVignetteUniforms,
+  CIRCLE_VIGNETTE_BUFFER_SIZE,
+  type CircleVignetteParams,
+} from '../shaders/vignette-circle'
+
+export {
+  rectVignetteShader,
+  createRectVignetteUniforms,
+  RECT_VIGNETTE_BUFFER_SIZE,
+  type RectVignetteParams,
+} from '../shaders/vignette-rect'
+
+export {
+  linearVignetteShader,
+  createLinearVignetteUniforms,
+  LINEAR_VIGNETTE_BUFFER_SIZE,
+  type LinearVignetteParams,
+} from '../shaders/vignette-linear'
 
 export {
   chromaticAberrationShader,
