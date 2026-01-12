@@ -167,5 +167,27 @@ const clickOutsideOptions = computed(() => ({
   padding: 0.5rem;
 }
 
-/* Transitions - defined globally in HeroViewGeneratorView.css */
+/* Popup Transitions (left position) */
+.popup-enter-active,
+.popup-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.popup-enter-from,
+.popup-leave-to {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+/* Subpanel Transitions (right position) */
+.subpanel-right-enter-active,
+.subpanel-right-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.subpanel-right-enter-from,
+.subpanel-right-leave-to {
+  opacity: 0;
+  transform: translateX(16px);
+}
 </style>
