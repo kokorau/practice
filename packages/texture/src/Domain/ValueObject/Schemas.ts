@@ -88,6 +88,21 @@ export const LinearGradientMaskShapeSchema = defineSchema({
 
 export type LinearGradientMaskShapeParams = Infer<typeof LinearGradientMaskShapeSchema>
 
+/**
+ * Radial Gradient Mask Shape Schema
+ * Circular/elliptical gradient from center outward (vignette effect)
+ */
+export const RadialGradientMaskShapeSchema = defineSchema({
+  centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  innerRadius: number({ label: 'Inner Radius', min: 0, max: 1, step: 0.01, default: 0.2 }),
+  outerRadius: number({ label: 'Outer Radius', min: 0, max: 1.5, step: 0.01, default: 0.6 }),
+  aspectRatio: number({ label: 'Aspect Ratio', min: 0.25, max: 4, step: 0.05, default: 1 }),
+  cutout: boolean({ label: 'Cutout', default: false }),
+})
+
+export type RadialGradientMaskShapeParams = Infer<typeof RadialGradientMaskShapeSchema>
+
 // ============================================================
 // Surface Schemas (Texture Patterns)
 // ============================================================
@@ -292,6 +307,9 @@ export const createDefaultPerlinMaskParams = (): PerlinMaskShapeParams =>
 export const createDefaultLinearGradientMaskParams = (): LinearGradientMaskShapeParams =>
   getDefaults(LinearGradientMaskShapeSchema)
 
+export const createDefaultRadialGradientMaskParams = (): RadialGradientMaskShapeParams =>
+  getDefaults(RadialGradientMaskShapeSchema)
+
 export const createDefaultSolidParams = (): SolidSurfaceParams =>
   getDefaults(SolidSurfaceSchema)
 
@@ -344,6 +362,7 @@ export const MaskShapeSchemas = {
   blob: BlobMaskShapeSchema,
   perlin: PerlinMaskShapeSchema,
   linearGradient: LinearGradientMaskShapeSchema,
+  radialGradient: RadialGradientMaskShapeSchema,
 } as const
 
 export const SurfaceSchemas = {

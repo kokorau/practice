@@ -297,12 +297,28 @@ export interface LinearGradientMaskShapeConfig {
   cutout: boolean
 }
 
+export interface RadialGradientMaskShapeConfig {
+  type: 'radialGradient'
+  /** 中心X座標 (0-1, 正規化) */
+  centerX: number
+  /** 中心Y座標 (0-1, 正規化) */
+  centerY: number
+  /** 完全不透明の内側半径 */
+  innerRadius: number
+  /** 完全透明の外側半径 */
+  outerRadius: number
+  /** 楕円形対応 (1.0 = 真円) */
+  aspectRatio: number
+  cutout: boolean
+}
+
 export type MaskShapeConfig =
   | CircleMaskShapeConfig
   | RectMaskShapeConfig
   | BlobMaskShapeConfig
   | PerlinMaskShapeConfig
   | LinearGradientMaskShapeConfig
+  | RadialGradientMaskShapeConfig
 
 // ============================================================
 // Processor Config (JSON シリアライズ用)

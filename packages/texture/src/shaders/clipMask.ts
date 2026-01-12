@@ -87,6 +87,21 @@ export interface LinearGradientClipParams extends ClipMaskBaseParams {
   endOffset: number
 }
 
+/** RadialGradientクリップマスクのパラメータ */
+export interface RadialGradientClipParams extends ClipMaskBaseParams {
+  type: 'radialGradient'
+  /** 中心X座標 (0.0-1.0, 正規化座標) */
+  centerX: number
+  /** 中心Y座標 (0.0-1.0, 正規化座標) */
+  centerY: number
+  /** 内側半径 (完全不透明) */
+  innerRadius: number
+  /** 外側半径 (完全透明) */
+  outerRadius: number
+  /** 楕円形対応 (1.0 = 真円) */
+  aspectRatio: number
+}
+
 /** クリップマスクパラメータのUnion型 */
 export type ClipMaskParams =
   | CircleClipParams
@@ -94,6 +109,7 @@ export type ClipMaskParams =
   | BlobClipParams
   | PerlinClipParams
   | LinearGradientClipParams
+  | RadialGradientClipParams
 
 // ============================================================
 // Common WGSL Utilities
@@ -641,6 +657,108 @@ export function createLinearGradientClipSpec(
   }
 }
 
+// ============================================================
+// Radial Gradient Clip Shader
+// ============================================================
+
+export const radialGradientClipShader = /* wgsl */ `
+${fullscreenVertex}
+
+struct RadialGradientClipParams {
+  centerX: f32,
+  centerY: f32,
+  innerRadius: f32,
+  outerRadius: f32,
+  aspectRatio: f32,
+  feather: f32,
+  invert: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+  viewportAspectRatio: f32,
+  _padding1: f32,
+  _padding2: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: RadialGradientClipParams;
+@group(0) @binding(1) var inputSampler: sampler;
+@group(0) @binding(2) var inputTexture: texture_2d<f32>;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  // Sample input texture
+  let texColor = textureSample(inputTexture, inputSampler, uv);
+
+  // Calculate center
+  let center = vec2f(params.centerX, params.centerY);
+
+  // Apply aspect ratio correction for ellipse
+  var scaledUV = uv;
+  var scaledCenter = center;
+
+  // Apply ellipse aspect ratio
+  if (params.aspectRatio > 1.0) {
+    scaledUV.x = (uv.x - center.x) * params.aspectRatio + center.x;
+  } else {
+    scaledUV.y = (uv.y - center.y) / params.aspectRatio + center.y;
+  }
+
+  // Also correct for viewport aspect ratio
+  if (params.viewportAspectRatio > 1.0) {
+    scaledUV.x = (scaledUV.x - scaledCenter.x) * params.viewportAspectRatio + scaledCenter.x;
+  } else {
+    scaledUV.y = (scaledUV.y - scaledCenter.y) / params.viewportAspectRatio + scaledCenter.y;
+  }
+
+  let dist = distance(scaledUV, scaledCenter);
+
+  // Calculate feather range
+  let featherAmount = max(params.feather * 0.1, 0.01);
+  let inner = params.innerRadius;
+  let outer = params.outerRadius;
+
+  // Apply gradient with feather
+  let mask = 1.0 - smoothstep(inner - featherAmount, outer + featherAmount, dist);
+
+  // Apply invert
+  let finalMask = select(mask, 1.0 - mask, params.invert > 0.5);
+
+  return vec4f(texColor.rgb, texColor.a * finalMask);
+}
+`
+
+/**
+ * Create render spec for radial gradient clip mask
+ */
+export function createRadialGradientClipSpec(
+  params: RadialGradientClipParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const viewportAspectRatio = viewport.width / viewport.height
+  const data = new Float32Array([
+    params.centerX,
+    params.centerY,
+    params.innerRadius,
+    params.outerRadius,
+    params.aspectRatio,
+    params.feather,
+    params.invert ? 1.0 : 0.0,
+    viewport.width,
+    viewport.height,
+    viewportAspectRatio,
+    0, // padding
+    0, // padding
+  ])
+  return {
+    shader: radialGradientClipShader,
+    uniforms: data.buffer,
+    bufferSize: 48,
+    blend: maskBlendState,
+    requiresTexture: true,
+  }
+}
+
 /**
  * Create render spec for any clip mask type
  */
@@ -659,5 +777,7 @@ export function createClipMaskSpec(
       return createPerlinClipSpec(params, viewport)
     case 'linearGradient':
       return createLinearGradientClipSpec(params, viewport)
+    case 'radialGradient':
+      return createRadialGradientClipSpec(params, viewport)
   }
 }

@@ -454,3 +454,111 @@ export function createLinearGradientMaskSpec(
   }
 }
 
+/** Radial gradient mask parameters */
+export interface RadialGradientMaskParams {
+  /** Center X coordinate (0.0-1.0, normalized) */
+  centerX: number
+  /** Center Y coordinate (0.0-1.0, normalized) */
+  centerY: number
+  /** Inner radius (fully opaque) */
+  innerRadius: number
+  /** Outer radius (fully transparent) */
+  outerRadius: number
+  /** Aspect ratio for ellipse (1.0 = circle) */
+  aspectRatio: number
+  /** Inner color (where gradient value is 0) */
+  innerColor: [number, number, number, number]
+  /** Outer color (where gradient value is 1) */
+  outerColor: [number, number, number, number]
+  /** If true (default), gradient goes from inner to outer. If false, reversed. */
+  cutout?: boolean
+}
+
+/** Radial gradient mask shader */
+export const radialGradientMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+struct RadialGradientMaskParams {
+  innerColor: vec4f,
+  outerColor: vec4f,
+  centerX: f32,
+  centerY: f32,
+  innerRadius: f32,
+  outerRadius: f32,
+  aspectRatio: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+  viewportAspectRatio: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: RadialGradientMaskParams;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  // Calculate center
+  let center = vec2f(params.centerX, params.centerY);
+
+  // Apply aspect ratio correction for ellipse
+  var scaledUV = uv;
+  var scaledCenter = center;
+
+  // Apply ellipse aspect ratio
+  if (params.aspectRatio > 1.0) {
+    scaledUV.x = (uv.x - center.x) * params.aspectRatio + center.x;
+    scaledCenter.x = center.x;
+  } else {
+    scaledUV.y = (uv.y - center.y) / params.aspectRatio + center.y;
+    scaledCenter.y = center.y;
+  }
+
+  // Also correct for viewport aspect ratio
+  if (params.viewportAspectRatio > 1.0) {
+    scaledUV.x = (scaledUV.x - scaledCenter.x) * params.viewportAspectRatio + scaledCenter.x;
+  } else {
+    scaledUV.y = (scaledUV.y - scaledCenter.y) / params.viewportAspectRatio + scaledCenter.y;
+  }
+
+  let dist = distance(scaledUV, scaledCenter);
+
+  // Apply gradient with smooth interpolation
+  let t = smoothstep(params.innerRadius, params.outerRadius, dist);
+
+  return mix(params.innerColor, params.outerColor, t);
+}
+`
+
+/**
+ * Create render spec for radial gradient mask
+ */
+export function createRadialGradientMaskSpec(
+  params: RadialGradientMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const cutout = params.cutout ?? true
+  // When cutout=false, swap inner/outer colors
+  const innerColor = cutout ? params.innerColor : params.outerColor
+  const outerColor = cutout ? params.outerColor : params.innerColor
+  const viewportAspectRatio = viewport.width / viewport.height
+
+  const data = new Float32Array([
+    ...innerColor,
+    ...outerColor,
+    params.centerX,
+    params.centerY,
+    params.innerRadius,
+    params.outerRadius,
+    params.aspectRatio,
+    viewport.width,
+    viewport.height,
+    viewportAspectRatio,
+  ])
+  return {
+    shader: radialGradientMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 64,
+    blend: maskBlendState,
+  }
+}
+

@@ -9,6 +9,7 @@ export type {
   BlobMaskShapeConfig,
   PerlinMaskShapeConfig,
   LinearGradientMaskShapeConfig,
+  RadialGradientMaskShapeConfig,
   MaskShapeConfig,
   MaskPattern,
 } from './TexturePattern'
@@ -79,6 +80,7 @@ export {
   BlobMaskShapeSchema,
   PerlinMaskShapeSchema,
   LinearGradientMaskShapeSchema,
+  RadialGradientMaskShapeSchema,
   MaskShapeSchemas,
   // Surface Schemas
   SolidSurfaceSchema,
@@ -104,6 +106,7 @@ export {
   createDefaultBlobMaskParams,
   createDefaultPerlinMaskParams,
   createDefaultLinearGradientMaskParams,
+  createDefaultRadialGradientMaskParams,
   createDefaultSolidParams,
   createDefaultStripeParams,
   createDefaultGridParams,
@@ -119,6 +122,7 @@ export type {
   BlobMaskShapeParams,
   PerlinMaskShapeParams,
   LinearGradientMaskShapeParams,
+  RadialGradientMaskShapeParams,
   SolidSurfaceParams,
   StripeSurfaceParams,
   GridSurfaceParams,

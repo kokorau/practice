@@ -6,6 +6,7 @@ import {
   createBlobMaskSpec,
   createPerlinMaskSpec,
   createLinearGradientMaskSpec,
+  createRadialGradientMaskSpec,
 } from '../shaders'
 
 /**
@@ -394,6 +395,81 @@ const defaultMaskPatterns: MaskPattern[] = [
     createSpec: (c1, c2, viewport) =>
       createLinearGradientMaskSpec(
         { angle: 0, startOffset: 0.45, endOffset: 0.55, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  // ============================================================
+  // Radial Gradient patterns
+  // ============================================================
+  {
+    label: 'Vignette Center',
+    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.2, outerRadius: 0.6, aspectRatio: 1, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createRadialGradientMaskSpec(
+        { centerX: 0.5, centerY: 0.5, innerRadius: 0.2, outerRadius: 0.6, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Vignette Large',
+    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.3, outerRadius: 0.8, aspectRatio: 1, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createRadialGradientMaskSpec(
+        { centerX: 0.5, centerY: 0.5, innerRadius: 0.3, outerRadius: 0.8, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Spotlight',
+    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0, outerRadius: 0.4, aspectRatio: 1, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createRadialGradientMaskSpec(
+        { centerX: 0.5, centerY: 0.5, innerRadius: 0, outerRadius: 0.4, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Spotlight Top-Left',
+    maskConfig: { type: 'radialGradient', centerX: 0.25, centerY: 0.25, innerRadius: 0, outerRadius: 0.5, aspectRatio: 1, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createRadialGradientMaskSpec(
+        { centerX: 0.25, centerY: 0.25, innerRadius: 0, outerRadius: 0.5, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Spotlight Bottom-Right',
+    maskConfig: { type: 'radialGradient', centerX: 0.75, centerY: 0.75, innerRadius: 0, outerRadius: 0.5, aspectRatio: 1, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createRadialGradientMaskSpec(
+        { centerX: 0.75, centerY: 0.75, innerRadius: 0, outerRadius: 0.5, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Ellipse Horizontal',
+    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.1, outerRadius: 0.5, aspectRatio: 0.5, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createRadialGradientMaskSpec(
+        { centerX: 0.5, centerY: 0.5, innerRadius: 0.1, outerRadius: 0.5, aspectRatio: 0.5, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Ellipse Vertical',
+    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.1, outerRadius: 0.5, aspectRatio: 2, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createRadialGradientMaskSpec(
+        { centerX: 0.5, centerY: 0.5, innerRadius: 0.1, outerRadius: 0.5, aspectRatio: 2, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Vignette Inverted',
+    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.2, outerRadius: 0.6, aspectRatio: 1, cutout: true },
+    createSpec: (c1, c2, viewport) =>
+      createRadialGradientMaskSpec(
+        { centerX: 0.5, centerY: 0.5, innerRadius: 0.2, outerRadius: 0.6, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: true },
         viewport!
       ),
   },

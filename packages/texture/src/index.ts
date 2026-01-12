@@ -17,6 +17,7 @@ export type {
   BlobMaskParams,
   PerlinMaskParams,
   LinearGradientMaskParams,
+  RadialGradientMaskParams,
   // Masked texture types
   MaskType,
   TextureType,
@@ -51,6 +52,7 @@ export type {
   BlobClipParams,
   PerlinClipParams,
   LinearGradientClipParams,
+  RadialGradientClipParams,
   ClipMaskParams,
 } from './shaders'
 
@@ -74,6 +76,7 @@ export {
   createBlobMaskSpec,
   createPerlinMaskSpec,
   createLinearGradientMaskSpec,
+  createRadialGradientMaskSpec,
   // Masked texture specs
   createCircleStripeSpec,
   createCircleGridSpec,
@@ -111,6 +114,7 @@ export {
   createBlobClipSpec,
   createPerlinClipSpec,
   createLinearGradientClipSpec,
+  createRadialGradientClipSpec,
   createClipMaskSpec,
 } from './shaders'
 
@@ -130,6 +134,7 @@ export type {
   BlobMaskShapeConfig,
   PerlinMaskShapeConfig,
   LinearGradientMaskShapeConfig,
+  RadialGradientMaskShapeConfig,
   MaskShapeConfig,
   MaskPattern,
   // Surface Presets
@@ -174,6 +179,7 @@ export type {
   BlobMaskShapeParams,
   PerlinMaskShapeParams,
   LinearGradientMaskShapeParams,
+  RadialGradientMaskShapeParams,
   SolidSurfaceParams,
   StripeSurfaceParams,
   GridSurfaceParams,

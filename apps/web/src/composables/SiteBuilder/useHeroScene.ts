@@ -80,6 +80,7 @@ import {
   type BlobMaskShapeParams,
   type PerlinMaskShapeParams,
   type LinearGradientMaskShapeParams,
+  type RadialGradientMaskShapeParams,
   type StripeSurfaceParams,
   type GridSurfaceParams,
   type PolkaDotSurfaceParams,
@@ -236,6 +237,7 @@ export type CustomMaskShapeParams =
   | ({ type: 'blob' } & BlobMaskShapeParams)
   | ({ type: 'perlin' } & PerlinMaskShapeParams)
   | ({ type: 'linearGradient' } & LinearGradientMaskShapeParams)
+  | ({ type: 'radialGradient' } & RadialGradientMaskShapeParams)
 
 /**
  * Textile pattern surface params
@@ -607,6 +609,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         angle: maskConfig.angle,
         startOffset: maskConfig.startOffset,
         endOffset: maskConfig.endOffset,
+        cutout: maskConfig.cutout ?? false,
+      }
+    }
+    if (maskConfig.type === 'radialGradient') {
+      return {
+        type: 'radialGradient',
+        centerX: maskConfig.centerX,
+        centerY: maskConfig.centerY,
+        innerRadius: maskConfig.innerRadius,
+        outerRadius: maskConfig.outerRadius,
+        aspectRatio: maskConfig.aspectRatio,
         cutout: maskConfig.cutout ?? false,
       }
     }
@@ -1724,6 +1737,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             angle: customShapeParams.angle, startOffset: customShapeParams.startOffset,
             endOffset: customShapeParams.endOffset, cutout: customShapeParams.cutout,
           }
+        case 'radialGradient':
+          return {
+            type: 'radialGradient',
+            centerX: customShapeParams.centerX, centerY: customShapeParams.centerY,
+            innerRadius: customShapeParams.innerRadius, outerRadius: customShapeParams.outerRadius,
+            aspectRatio: customShapeParams.aspectRatio, cutout: customShapeParams.cutout,
+          }
         default: {
           const _exhaustive: never = customShapeParams
           throw new Error(`Unknown mask shape type: ${(_exhaustive as CustomMaskShapeParams).type}`)
@@ -1917,6 +1937,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         }
         case 'linearGradient':
           // Linear gradient mask with surface patterns is not supported yet - fall back to solid
+          return null
+        case 'radialGradient':
+          // Radial gradient mask with surface patterns is not supported yet - fall back to solid
           return null
         default: {
           const _exhaustive: never = maskConfig
@@ -3263,6 +3286,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         cutout: params.cutout,
       }
     }
+    if (params.type === 'radialGradient') {
+      return {
+        type: 'radialGradient',
+        centerX: params.centerX,
+        centerY: params.centerY,
+        innerRadius: params.innerRadius,
+        outerRadius: params.outerRadius,
+        aspectRatio: params.aspectRatio,
+        cutout: params.cutout,
+      }
+    }
     // blob
     return {
       type: 'blob',
@@ -3491,6 +3525,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             endOffset: shape.endOffset,
             cutout: shape.cutout,
           }
+        } else if (shape.type === 'radialGradient') {
+          customMaskShapeParams.value = {
+            type: 'radialGradient',
+            centerX: shape.centerX,
+            centerY: shape.centerY,
+            innerRadius: shape.innerRadius,
+            outerRadius: shape.outerRadius,
+            aspectRatio: shape.aspectRatio,
+            cutout: shape.cutout,
+          } as CustomMaskShapeParams
         } else {
           customMaskShapeParams.value = {
             type: 'blob',

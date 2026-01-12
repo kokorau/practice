@@ -16,6 +16,7 @@ import {
   createBlobMaskSpec,
   createPerlinMaskSpec,
   createLinearGradientMaskSpec,
+  createRadialGradientMaskSpec,
   type TextureRenderSpec,
   type Viewport,
   type RGBA,
@@ -314,6 +315,21 @@ function createMaskSpecFromShape(
         angle: shape.angle,
         startOffset: shape.startOffset,
         endOffset: shape.endOffset,
+        innerColor,
+        outerColor,
+        cutout,
+      },
+      viewport
+    )
+  }
+  if (shape.type === 'radialGradient') {
+    return createRadialGradientMaskSpec(
+      {
+        centerX: shape.centerX,
+        centerY: shape.centerY,
+        innerRadius: shape.innerRadius,
+        outerRadius: shape.outerRadius,
+        aspectRatio: shape.aspectRatio,
         innerColor,
         outerColor,
         cutout,
