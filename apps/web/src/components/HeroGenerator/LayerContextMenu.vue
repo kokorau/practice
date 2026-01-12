@@ -21,7 +21,6 @@ const props = defineProps<{
   y: number
   layerId: string
   isVisible: boolean
-  isBaseLayer: boolean
 }>()
 
 const emit = defineEmits<{
@@ -146,7 +145,6 @@ onUnmounted(() => {
       >
         <!-- Group Selection -->
         <button
-          v-if="!isBaseLayer"
           class="menu-item"
           @click="handleGroupSelection"
         >
@@ -156,7 +154,6 @@ onUnmounted(() => {
 
         <!-- Use as Mask -->
         <button
-          v-if="!isBaseLayer"
           class="menu-item"
           @click="handleUseAsMask"
         >
@@ -164,11 +161,10 @@ onUnmounted(() => {
           <span class="menu-label">Use as Mask</span>
         </button>
 
-        <div v-if="!isBaseLayer" class="menu-divider" />
+        <div class="menu-divider" />
 
         <!-- Show / Hide -->
         <button
-          v-if="!isBaseLayer"
           class="menu-item"
           @click="handleToggleVisibility"
         >
@@ -176,22 +172,16 @@ onUnmounted(() => {
           <span class="menu-label">{{ visibilityLabel }}</span>
         </button>
 
-        <div v-if="!isBaseLayer" class="menu-divider" />
+        <div class="menu-divider" />
 
         <!-- Remove -->
         <button
-          v-if="!isBaseLayer"
           class="menu-item menu-item-danger"
           @click="handleRemove"
         >
           <span class="material-icons">delete</span>
           <span class="menu-label">Remove</span>
         </button>
-
-        <!-- Base layer message -->
-        <div v-if="isBaseLayer" class="menu-disabled-message">
-          Base layer cannot be modified
-        </div>
       </div>
     </Transition>
   </Teleport>
@@ -282,17 +272,6 @@ onUnmounted(() => {
 
 :global(.dark) .menu-divider {
   background: oklch(0.28 0.02 260);
-}
-
-.menu-disabled-message {
-  padding: 0.75rem;
-  font-size: 0.75rem;
-  color: oklch(0.55 0.02 260);
-  text-align: center;
-}
-
-:global(.dark) .menu-disabled-message {
-  color: oklch(0.55 0.02 260);
 }
 
 /* Transitions */

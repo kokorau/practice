@@ -30,7 +30,6 @@ export interface UseContextMenuReturn {
   contextMenuTargetType: Ref<ContextTargetType | 'html'>
 
   // Computed
-  isContextMenuTargetBaseLayer: ComputedRef<boolean>
   contextMenuTargetVisible: ComputedRef<boolean>
   contextMenuItems: ComputedRef<ContextMenuItem[]>
 
@@ -62,13 +61,6 @@ export function useContextMenu(
   // Computed
   // ============================================================
 
-  const isContextMenuTargetBaseLayer = computed(() => {
-    if (!contextMenuLayerId.value) return false
-    const layer = findNode(layers.value, contextMenuLayerId.value)
-    if (!layer) return false
-    return isLayer(layer) && layer.variant === 'base'
-  })
-
   const contextMenuTargetVisible = computed(() => {
     if (!contextMenuLayerId.value) return true
     const layer = findNode(layers.value, contextMenuLayerId.value)
@@ -96,13 +88,6 @@ export function useContextMenu(
     if (targetType === 'processor') {
       return [
         { id: 'processor-info', label: 'Processor', disabled: true },
-      ]
-    }
-
-    // Base layer: no actions
-    if (isContextMenuTargetBaseLayer.value) {
-      return [
-        { id: 'base-info', label: 'Base layer', disabled: true },
       ]
     }
 
@@ -204,7 +189,6 @@ export function useContextMenu(
     contextMenuTargetType,
 
     // Computed
-    isContextMenuTargetBaseLayer,
     contextMenuTargetVisible,
     contextMenuItems,
 

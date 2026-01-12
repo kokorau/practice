@@ -554,9 +554,6 @@ export const wrapNodeInGroup = (
   const targetNode = findNode(nodes, targetId)
   if (!targetNode) return nodes
 
-  // Prevent wrapping base layer
-  if (isLayer(targetNode) && targetNode.variant === 'base') return nodes
-
   const newGroupId = groupId ?? `group-${Date.now()}`
   const newGroup = createGroup(newGroupId, [targetNode], { name: 'Group', expanded: true })
 
@@ -600,9 +597,6 @@ export const wrapNodeInMaskedGroup = (
 ): SceneNode[] => {
   const targetNode = findNode(nodes, targetId)
   if (!targetNode) return nodes
-
-  // Prevent wrapping base layer
-  if (isLayer(targetNode) && targetNode.variant === 'base') return nodes
 
   const newGroupId = groupId ?? `masked-group-${Date.now()}`
   const newMaskId = maskId ?? `mask-${Date.now()}`

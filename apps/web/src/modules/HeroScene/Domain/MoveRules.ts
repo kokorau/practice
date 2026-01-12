@@ -3,14 +3,11 @@
  *
  * Provides utilities for Figma-style mask architecture.
  *
- * Rules:
- * 1. BaseLayer position is fixed at layers[0]
- * 2. BaseLayer cannot have MaskNode as a child
- * 3. Within a Group, nodes after a MaskNode are masked by it
+ * Rule: Within a Group, nodes after a MaskNode are masked by it
  */
 
 import type { SceneNode } from './LayerNode'
-import { isGroup, isMaskNode, isBaseLayer, findParentNode } from './LayerNode'
+import { isGroup, isMaskNode, findParentNode } from './LayerNode'
 
 // ============================================================
 // Mask Scope Utilities
@@ -86,41 +83,4 @@ export const isNodeMasked = (
   }
 
   return findApplicableMask(parent.children, nodeId) !== undefined
-}
-
-// ============================================================
-// BaseLayer Utilities
-// ============================================================
-
-/**
- * Ensure BaseLayer is at index 0
- * This is a recovery function that fixes incorrect layer order
- */
-export const ensureBaseLayerFirst = (nodes: SceneNode[]): SceneNode[] => {
-  const baseLayerIndex = nodes.findIndex(isBaseLayer)
-
-  if (baseLayerIndex === -1 || baseLayerIndex === 0) {
-    return nodes
-  }
-
-  // Move base layer to index 0
-  const baseLayer = nodes[baseLayerIndex]
-  if (!baseLayer) {
-    return nodes
-  }
-  const withoutBase = nodes.filter((_, i) => i !== baseLayerIndex)
-  return [baseLayer, ...withoutBase]
-}
-
-/**
- * Check if the layer structure is valid
- * Returns true if BaseLayer is at index 0
- */
-export const isValidLayerStructure = (nodes: SceneNode[]): boolean => {
-  if (nodes.length === 0) {
-    return true
-  }
-
-  const firstNode = nodes[0]
-  return firstNode ? isBaseLayer(firstNode) : true
 }
