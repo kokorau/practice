@@ -38,6 +38,32 @@ export {
   type PerlinMaskParams,
 } from './mask'
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'
+// Grayscale mask shaders (Phase 1 of grayscale-based mask unification)
+export {
+  circleGrayscaleMaskShader,
+  rectGrayscaleMaskShader,
+  blobGrayscaleMaskShader,
+  perlinGrayscaleMaskShader,
+  createCircleGrayscaleMaskSpec,
+  createRectGrayscaleMaskSpec,
+  createBlobGrayscaleMaskSpec,
+  createPerlinGrayscaleMaskSpec,
+  createGrayscaleMaskSpec,
+  type CircleGrayscaleMaskParams,
+  type RectGrayscaleMaskParams,
+  type BlobGrayscaleMaskParams,
+  type PerlinGrayscaleMaskParams,
+  type GrayscaleMaskParams,
+} from './maskGrayscale'
+// Mask cutout shader (Phase 2 of grayscale-based mask unification)
+export {
+  maskCutoutShader,
+  createMaskCutoutSpec,
+  convertLegacyToGrayscale,
+  MASK_CUTOUT_BUFFER_SIZE,
+  type MaskCutoutParams,
+  type StandaloneCutoutParams,
+} from './maskCutout'
 export {
   // Clip mask shaders
   circleClipShader,

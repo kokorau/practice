@@ -15,6 +15,13 @@ import {
   createRectMaskSpec,
   createBlobMaskSpec,
   createPerlinMaskSpec,
+  // Grayscale mask shaders (Phase 1)
+  createCircleGrayscaleMaskSpec,
+  createRectGrayscaleMaskSpec,
+  createBlobGrayscaleMaskSpec,
+  createPerlinGrayscaleMaskSpec,
+  // Cutout shader (Phase 2)
+  convertLegacyToGrayscale,
   type TextureRenderSpec,
   type Viewport,
   type RGBA,
@@ -309,6 +316,93 @@ function createMaskSpecFromShape(
   }
   return null
 }
+
+/**
+ * Create grayscale mask spec from mask config (Phase 1)
+ * Outputs grayscale values instead of colors:
+ * - innerValue/outerValue (0.0-1.0) instead of innerColor/outerColor
+ * - 1.0 = white (keep), 0.0 = black (cutout)
+ */
+function createGrayscaleMaskSpecFromShape(
+  shape: MaskShapeConfig,
+  innerValue: number,
+  outerValue: number,
+  viewport: Viewport
+): TextureRenderSpec | null {
+  if (shape.type === 'circle') {
+    return createCircleGrayscaleMaskSpec(
+      {
+        centerX: shape.centerX,
+        centerY: shape.centerY,
+        radius: shape.radius,
+        innerValue,
+        outerValue,
+      },
+      viewport
+    )
+  }
+  if (shape.type === 'rect') {
+    return createRectGrayscaleMaskSpec(
+      {
+        left: shape.left,
+        right: shape.right,
+        top: shape.top,
+        bottom: shape.bottom,
+        radiusTopLeft: shape.radiusTopLeft,
+        radiusTopRight: shape.radiusTopRight,
+        radiusBottomLeft: shape.radiusBottomLeft,
+        radiusBottomRight: shape.radiusBottomRight,
+        innerValue,
+        outerValue,
+      },
+      viewport
+    )
+  }
+  if (shape.type === 'blob') {
+    return createBlobGrayscaleMaskSpec(
+      {
+        centerX: shape.centerX,
+        centerY: shape.centerY,
+        baseRadius: shape.baseRadius,
+        amplitude: shape.amplitude,
+        frequency: 0,
+        octaves: shape.octaves,
+        seed: shape.seed,
+        innerValue,
+        outerValue,
+      },
+      viewport
+    )
+  }
+  if (shape.type === 'perlin') {
+    return createPerlinGrayscaleMaskSpec(
+      {
+        seed: shape.seed,
+        threshold: shape.threshold,
+        scale: shape.scale,
+        octaves: shape.octaves,
+        innerValue,
+        outerValue,
+      },
+      viewport
+    )
+  }
+  return null
+}
+
+/**
+ * Convert legacy color-based mask parameters to grayscale values
+ * This enables backward compatibility with existing innerColor/outerColor API
+ */
+export function convertMaskColorsToGrayscale(
+  innerColor: RGBA,
+  outerColor: RGBA
+): { innerValue: number; outerValue: number; maskColor: RGBA } {
+  return convertLegacyToGrayscale(innerColor, outerColor)
+}
+
+// Export grayscale mask spec creator for external use
+export { createGrayscaleMaskSpecFromShape }
 
 // ============================================================
 // Effect Application

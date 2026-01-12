@@ -50,6 +50,15 @@ export type {
   BlobClipParams,
   PerlinClipParams,
   ClipMaskParams,
+  // Grayscale mask types (Phase 1)
+  CircleGrayscaleMaskParams,
+  RectGrayscaleMaskParams,
+  BlobGrayscaleMaskParams,
+  PerlinGrayscaleMaskParams,
+  GrayscaleMaskParams,
+  // Mask cutout types (Phase 2)
+  MaskCutoutParams,
+  StandaloneCutoutParams,
 } from './shaders'
 
 export {
@@ -108,6 +117,16 @@ export {
   createBlobClipSpec,
   createPerlinClipSpec,
   createClipMaskSpec,
+  // Grayscale mask specs (Phase 1)
+  createCircleGrayscaleMaskSpec,
+  createRectGrayscaleMaskSpec,
+  createBlobGrayscaleMaskSpec,
+  createPerlinGrayscaleMaskSpec,
+  createGrayscaleMaskSpec,
+  // Mask cutout specs (Phase 2)
+  createMaskCutoutSpec,
+  convertLegacyToGrayscale,
+  MASK_CUTOUT_BUFFER_SIZE,
 } from './shaders'
 
 // Filter specs are now available via '@practice/texture/filters'
