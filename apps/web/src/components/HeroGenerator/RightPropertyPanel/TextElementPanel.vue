@@ -57,6 +57,83 @@ const getContrastHint = (score: number): string => {
 
 <template>
   <div class="layer-settings">
+    <!-- Font Size & Weight -->
+    <div class="settings-section">
+      <div class="input-row">
+        <div class="input-group">
+          <p class="settings-label">Size</p>
+          <div class="unit-input-wrapper">
+            <input
+              :value="fontSize"
+              type="number"
+              min="0.5"
+              max="10"
+              step="0.25"
+              class="unit-input"
+              @input="emit('update:fontSize', Number(($event.target as HTMLInputElement).value))"
+            />
+            <span class="unit-label">rem</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <p class="settings-label">Weight</p>
+          <div class="unit-input-wrapper">
+            <select
+              :value="fontWeight"
+              class="unit-select"
+              @change="emit('update:fontWeight', Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option :value="100">100</option>
+              <option :value="200">200</option>
+              <option :value="300">300</option>
+              <option :value="400">400</option>
+              <option :value="500">500</option>
+              <option :value="600">600</option>
+              <option :value="700">700</option>
+              <option :value="800">800</option>
+              <option :value="900">900</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Letter Spacing & Line Height -->
+    <div class="settings-section">
+      <div class="input-row">
+        <div class="input-group">
+          <p class="settings-label">Spacing</p>
+          <div class="unit-input-wrapper">
+            <input
+              :value="letterSpacing"
+              type="number"
+              min="-0.1"
+              max="0.5"
+              step="0.01"
+              class="unit-input"
+              @input="emit('update:letterSpacing', Number(($event.target as HTMLInputElement).value))"
+            />
+            <span class="unit-label">em</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <p class="settings-label">Height</p>
+          <div class="unit-input-wrapper">
+            <input
+              :value="lineHeight"
+              type="number"
+              min="1.0"
+              max="3.0"
+              step="0.1"
+              class="unit-input"
+              @input="emit('update:lineHeight', Number(($event.target as HTMLInputElement).value))"
+            />
+            <span class="unit-label">×</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- APCA Contrast Score -->
     <div v-if="contrastResult" class="contrast-score-section">
       <div class="contrast-score-header">
@@ -139,81 +216,6 @@ const getContrastHint = (score: number): string => {
         >{{ fontDisplayName }}</span>
         <span class="material-icons font-trigger-arrow">chevron_right</span>
       </button>
-    </div>
-
-    <div class="settings-section">
-      <div class="input-row">
-        <div class="input-group">
-          <p class="settings-label">Size</p>
-          <div class="unit-input-wrapper">
-            <input
-              :value="fontSize"
-              type="number"
-              min="0.5"
-              max="10"
-              step="0.25"
-              class="unit-input"
-              @input="emit('update:fontSize', Number(($event.target as HTMLInputElement).value))"
-            />
-            <span class="unit-label">rem</span>
-          </div>
-        </div>
-        <div class="input-group">
-          <p class="settings-label">Weight</p>
-          <div class="unit-input-wrapper">
-            <select
-              :value="fontWeight"
-              class="unit-select"
-              @change="emit('update:fontWeight', Number(($event.target as HTMLSelectElement).value))"
-            >
-              <option :value="100">100</option>
-              <option :value="200">200</option>
-              <option :value="300">300</option>
-              <option :value="400">400</option>
-              <option :value="500">500</option>
-              <option :value="600">600</option>
-              <option :value="700">700</option>
-              <option :value="800">800</option>
-              <option :value="900">900</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <div class="input-row">
-        <div class="input-group">
-          <p class="settings-label">Spacing</p>
-          <div class="unit-input-wrapper">
-            <input
-              :value="letterSpacing"
-              type="number"
-              min="-0.1"
-              max="0.5"
-              step="0.01"
-              class="unit-input"
-              @input="emit('update:letterSpacing', Number(($event.target as HTMLInputElement).value))"
-            />
-            <span class="unit-label">em</span>
-          </div>
-        </div>
-        <div class="input-group">
-          <p class="settings-label">Height</p>
-          <div class="unit-input-wrapper">
-            <input
-              :value="lineHeight"
-              type="number"
-              min="1.0"
-              max="3.0"
-              step="0.1"
-              class="unit-input"
-              @input="emit('update:lineHeight', Number(($event.target as HTMLInputElement).value))"
-            />
-            <span class="unit-label">×</span>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -475,6 +477,17 @@ const getContrastHint = (score: number): string => {
 
 .unit-input:focus {
   outline: none;
+}
+
+/* Hide number input spinners */
+.unit-input::-webkit-outer-spin-button,
+.unit-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.unit-input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 .unit-label {
