@@ -161,6 +161,12 @@ export type {
   // ReverseLookup types
   SurfacePresetParams,
   MaskPatternConfig,
+  // Effect Registry types
+  EffectType,
+  FilterType,
+  EffectDefinition,
+  VignetteEffectDefinition,
+  EffectShaderSpec,
 } from './Domain'
 
 export {
@@ -261,6 +267,11 @@ export {
   HERO_CANVAS_WIDTH,
   HERO_CANVAS_HEIGHT,
   HERO_CANVAS_DIMENSIONS,
+  // Effect Registry
+  EFFECT_REGISTRY,
+  EFFECT_TYPES,
+  getEffectDefinition,
+  isValidEffectType,
 } from './Domain'
 
 // Application
@@ -353,9 +364,12 @@ export {
   exportPreset,
   exportPreset as exportPresetUsecase,
   createPreset,
-  // Filter UseCases
+  // Filter UseCases (new generic functions)
   selectFilterType,
   getFilterType,
+  updateEffectParams,
+  getEffectParams,
+  // Filter UseCases (legacy aliases)
   updateVignetteParams,
   updateChromaticAberrationParams,
   updateDotHalftoneParams,
@@ -366,7 +380,6 @@ export {
   getDotHalftoneParams,
   getLineHalftoneParams,
   getBlurParams,
-  type FilterType,
   // TextLayer UseCases
   updateTextLayerText,
   updateTextLayerFont,

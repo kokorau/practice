@@ -1,7 +1,9 @@
 import { computed, type Ref, type ComputedRef, type WritableComputedRef } from 'vue'
 import type {
   FilterType,
+  EffectType,
   LayerFilterConfig,
+  LayerEffectConfig,
   VignetteFilterConfig,
   ChromaticAberrationFilterConfig,
   DotHalftoneFilterConfig,
@@ -14,7 +16,7 @@ import type {
 // ============================================================
 
 /**
- * Options for useFilterEditor composable
+ * Options for useFilterEditor composable (new API)
  */
 export interface UseFilterEditorOptions {
   /** Currently selected filter layer ID */
@@ -25,15 +27,26 @@ export interface UseFilterEditorOptions {
   getFilterType: (layerId: string) => FilterType
   /** Select filter type for a layer (exclusive selection) */
   selectFilterType: (layerId: string, type: FilterType) => void
-  /** Update vignette parameters */
+  /** Generic effect params update function */
+  updateEffectParams: <T extends EffectType>(
+    layerId: string,
+    effectType: T,
+    params: Partial<Omit<LayerEffectConfig[T], 'enabled'>>
+  ) => void
+}
+
+/**
+ * Legacy options interface for backward compatibility
+ */
+export interface UseFilterEditorLegacyOptions {
+  selectedFilterLayerId: Ref<string | null>
+  selectedLayerFilters: ComputedRef<LayerFilterConfig | null>
+  getFilterType: (layerId: string) => FilterType
+  selectFilterType: (layerId: string, type: FilterType) => void
   updateVignetteParams: (layerId: string, params: Partial<Omit<VignetteFilterConfig, 'enabled'>>) => void
-  /** Update chromatic aberration parameters */
   updateChromaticAberrationParams: (layerId: string, params: Partial<Omit<ChromaticAberrationFilterConfig, 'enabled'>>) => void
-  /** Update dot halftone parameters */
   updateDotHalftoneParams: (layerId: string, params: Partial<Omit<DotHalftoneFilterConfig, 'enabled'>>) => void
-  /** Update line halftone parameters */
   updateLineHalftoneParams: (layerId: string, params: Partial<Omit<LineHalftoneFilterConfig, 'enabled'>>) => void
-  /** Update blur parameters */
   updateBlurParams: (layerId: string, params: Partial<Omit<BlurEffectConfig, 'enabled'>>) => void
 }
 
@@ -47,21 +60,39 @@ export type LineHalftoneConfigParams = Partial<Omit<LineHalftoneFilterConfig, 'e
 export type BlurConfigParams = Partial<Omit<BlurEffectConfig, 'enabled'>>
 
 /**
+ * Dynamic effect configs map type
+ */
+export type EffectConfigsMap = {
+  [K in EffectType]: WritableComputedRef<Partial<Omit<LayerEffectConfig[K], 'enabled'>>>
+}
+
+/**
  * Return type for useFilterEditor composable
  */
 export interface UseFilterEditorReturn {
   /** Currently selected filter type (writable computed for v-model binding) */
   selectedFilterType: WritableComputedRef<FilterType>
-  /** Current vignette config (writable computed for v-model binding) */
+  /** Dynamic effect configs map (new API) */
+  effectConfigs: EffectConfigsMap
+  // Legacy individual configs (deprecated, for backward compatibility)
+  /** @deprecated Use effectConfigs.vignette instead */
   currentVignetteConfig: WritableComputedRef<VignetteConfigParams>
-  /** Current chromatic aberration config (writable computed for v-model binding) */
+  /** @deprecated Use effectConfigs.chromaticAberration instead */
   currentChromaticConfig: WritableComputedRef<ChromaticConfigParams>
-  /** Current dot halftone config (writable computed for v-model binding) */
+  /** @deprecated Use effectConfigs.dotHalftone instead */
   currentDotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
-  /** Current line halftone config (writable computed for v-model binding) */
+  /** @deprecated Use effectConfigs.lineHalftone instead */
   currentLineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
-  /** Current blur config (writable computed for v-model binding) */
+  /** @deprecated Use effectConfigs.blur instead */
   currentBlurConfig: WritableComputedRef<BlurConfigParams>
+}
+
+// ============================================================
+// Type Guards
+// ============================================================
+
+function isNewAPI(options: UseFilterEditorOptions | UseFilterEditorLegacyOptions): options is UseFilterEditorOptions {
+  return 'updateEffectParams' in options
 }
 
 // ============================================================
@@ -72,24 +103,48 @@ export interface UseFilterEditorReturn {
  * Composable for managing filter/effect editor state
  *
  * Handles:
- * - Filter type selection (exclusive: void, vignette, chromaticAberration, dotHalftone, lineHalftone)
+ * - Filter type selection (exclusive: void, vignette, chromaticAberration, dotHalftone, lineHalftone, blur)
  * - Filter parameter updates via writable computed properties
  * - Binding helpers for SchemaFields components
+ *
+ * Supports both new generic API and legacy individual update functions
  */
 export function useFilterEditor(
-  options: UseFilterEditorOptions
+  options: UseFilterEditorOptions | UseFilterEditorLegacyOptions
 ): UseFilterEditorReturn {
   const {
     selectedFilterLayerId,
     selectedLayerFilters,
     getFilterType,
     selectFilterType,
-    updateVignetteParams,
-    updateChromaticAberrationParams,
-    updateDotHalftoneParams,
-    updateLineHalftoneParams,
-    updateBlurParams,
   } = options
+
+  // Create generic update function from options
+  const updateEffectParams = isNewAPI(options)
+    ? options.updateEffectParams
+    : <T extends EffectType>(
+        layerId: string,
+        effectType: T,
+        params: Partial<Omit<LayerEffectConfig[T], 'enabled'>>
+      ) => {
+        switch (effectType) {
+          case 'vignette':
+            options.updateVignetteParams(layerId, params as VignetteConfigParams)
+            break
+          case 'chromaticAberration':
+            options.updateChromaticAberrationParams(layerId, params as ChromaticConfigParams)
+            break
+          case 'dotHalftone':
+            options.updateDotHalftoneParams(layerId, params as DotHalftoneConfigParams)
+            break
+          case 'lineHalftone':
+            options.updateLineHalftoneParams(layerId, params as LineHalftoneConfigParams)
+            break
+          case 'blur':
+            options.updateBlurParams(layerId, params as BlurConfigParams)
+            break
+        }
+      }
 
   // ============================================================
   // Filter Type Selection
@@ -113,80 +168,50 @@ export function useFilterEditor(
   })
 
   // ============================================================
-  // Filter Parameter Configs
+  // Dynamic Effect Configs (Registry-based)
   // ============================================================
 
   /**
-   * Writable computed for vignette config
-   * Used for SchemaFields binding
+   * Create writable computed for an effect type
    */
-  const currentVignetteConfig = computed({
-    get: () => selectedLayerFilters.value?.vignette ?? {},
-    set: (value) => {
-      const layerId = selectedFilterLayerId.value
-      if (!layerId) return
-      updateVignetteParams(layerId, value)
-    },
-  })
+  function createEffectConfig<T extends EffectType>(effectType: T) {
+    return computed({
+      get: () => (selectedLayerFilters.value?.[effectType] ?? {}) as Partial<Omit<LayerEffectConfig[T], 'enabled'>>,
+      set: (value: Partial<Omit<LayerEffectConfig[T], 'enabled'>>) => {
+        const layerId = selectedFilterLayerId.value
+        if (!layerId) return
+        updateEffectParams(layerId, effectType, value)
+      },
+    })
+  }
 
-  /**
-   * Writable computed for chromatic aberration config
-   * Used for SchemaFields binding
-   */
-  const currentChromaticConfig = computed({
-    get: () => selectedLayerFilters.value?.chromaticAberration ?? {},
-    set: (value) => {
-      const layerId = selectedFilterLayerId.value
-      if (!layerId) return
-      updateChromaticAberrationParams(layerId, value)
-    },
-  })
+  // Generate effect configs for each type
+  const vignetteConfig = createEffectConfig('vignette')
+  const chromaticAberrationConfig = createEffectConfig('chromaticAberration')
+  const dotHalftoneConfig = createEffectConfig('dotHalftone')
+  const lineHalftoneConfig = createEffectConfig('lineHalftone')
+  const blurConfig = createEffectConfig('blur')
 
-  /**
-   * Writable computed for dot halftone config
-   * Used for SchemaFields binding
-   */
-  const currentDotHalftoneConfig = computed({
-    get: () => selectedLayerFilters.value?.dotHalftone ?? {},
-    set: (value) => {
-      const layerId = selectedFilterLayerId.value
-      if (!layerId) return
-      updateDotHalftoneParams(layerId, value)
-    },
-  })
+  const effectConfigs: EffectConfigsMap = {
+    vignette: vignetteConfig,
+    chromaticAberration: chromaticAberrationConfig,
+    dotHalftone: dotHalftoneConfig,
+    lineHalftone: lineHalftoneConfig,
+    blur: blurConfig,
+  }
 
-  /**
-   * Writable computed for line halftone config
-   * Used for SchemaFields binding
-   */
-  const currentLineHalftoneConfig = computed({
-    get: () => selectedLayerFilters.value?.lineHalftone ?? {},
-    set: (value) => {
-      const layerId = selectedFilterLayerId.value
-      if (!layerId) return
-      updateLineHalftoneParams(layerId, value)
-    },
-  })
-
-  /**
-   * Writable computed for blur config
-   * Used for SchemaFields binding
-   */
-  const currentBlurConfig = computed({
-    get: () => selectedLayerFilters.value?.blur ?? {},
-    set: (value) => {
-      const layerId = selectedFilterLayerId.value
-      if (!layerId) return
-      updateBlurParams(layerId, value)
-    },
-  })
+  // ============================================================
+  // Legacy Individual Configs (for backward compatibility)
+  // ============================================================
 
   return {
     selectedFilterType: selectedFilterTypeComputed,
-    currentVignetteConfig,
-    currentChromaticConfig,
-    currentDotHalftoneConfig,
-    currentLineHalftoneConfig,
-    currentBlurConfig,
+    effectConfigs,
+    // Legacy individual configs (point to effectConfigs for compatibility)
+    currentVignetteConfig: vignetteConfig,
+    currentChromaticConfig: chromaticAberrationConfig,
+    currentDotHalftoneConfig: dotHalftoneConfig,
+    currentLineHalftoneConfig: lineHalftoneConfig,
+    currentBlurConfig: blurConfig,
   }
 }

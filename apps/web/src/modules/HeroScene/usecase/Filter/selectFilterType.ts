@@ -12,12 +12,7 @@ import type {
   EffectProcessorConfig,
 } from '../../Domain/HeroViewConfig'
 import type { LayerEffectConfig } from '../../Domain/EffectSchema'
-
-/**
- * フィルタータイプ
- * 'void' = すべてのフィルターを無効化
- */
-export type FilterType = 'void' | 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'
+import { EFFECT_TYPES, type FilterType } from '../../Domain/EffectRegistry'
 
 /**
  * エフェクトプロセッサを取得
@@ -58,14 +53,13 @@ export function selectFilterType(
 
   const currentConfig = effectProcessor.config
 
-  // 排他選択: 選択されたフィルターのみenabled
-  const newEffectConfig: LayerEffectConfig = {
-    vignette: { ...currentConfig.vignette, enabled: filterType === 'vignette' },
-    chromaticAberration: { ...currentConfig.chromaticAberration, enabled: filterType === 'chromaticAberration' },
-    dotHalftone: { ...currentConfig.dotHalftone, enabled: filterType === 'dotHalftone' },
-    lineHalftone: { ...currentConfig.lineHalftone, enabled: filterType === 'lineHalftone' },
-    blur: { ...currentConfig.blur, enabled: filterType === 'blur' },
-  }
+  // Registry-based: update all effects' enabled state dynamically
+  const newEffectConfig = Object.fromEntries(
+    EFFECT_TYPES.map((type) => [
+      type,
+      { ...currentConfig[type], enabled: filterType === type },
+    ])
+  ) as unknown as LayerEffectConfig
 
   const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
     ...p,
@@ -91,11 +85,13 @@ export function getFilterType(repository: HeroViewRepository, layerId: string): 
   if (!effectProcessor) return 'void'
 
   const effectConfig = effectProcessor.config
-  if (effectConfig.vignette.enabled) return 'vignette'
-  if (effectConfig.chromaticAberration.enabled) return 'chromaticAberration'
-  if (effectConfig.dotHalftone.enabled) return 'dotHalftone'
-  if (effectConfig.lineHalftone.enabled) return 'lineHalftone'
-  if (effectConfig.blur.enabled) return 'blur'
+
+  // Registry-based: check enabled state dynamically
+  for (const type of EFFECT_TYPES) {
+    if (effectConfig[type]?.enabled) {
+      return type
+    }
+  }
 
   return 'void'
 }
