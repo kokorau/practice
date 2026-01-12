@@ -417,14 +417,14 @@ export interface AddObjectLayerOptions {
  * Layer operation actions
  */
 export interface LayerOperations {
-  /** Add a mask layer */
-  readonly addMaskLayer: () => void
-  /** Add a text layer */
-  readonly addTextLayer: (config?: Partial<{ text: string; fontFamily: string; fontSize: number }>) => void
+  /** Add a mask layer (returns layer ID or null if limit reached) */
+  readonly addMaskLayer: () => string | null
+  /** Add a text layer (returns layer ID) */
+  readonly addTextLayer: (config?: Partial<{ text: string; fontFamily: string; fontSize: number }>) => string
   /** Add a 3D object layer (returns layer ID) */
   readonly addObjectLayer: (options?: Partial<AddObjectLayerOptions>) => string
-  /** Remove a layer by ID */
-  readonly removeLayer: (layerId: string) => void
+  /** Remove a layer by ID (returns true if removed) */
+  readonly removeLayer: (layerId: string) => boolean
 
   /** Update layer visibility */
   readonly updateLayerVisibility: (layerId: string, visible: boolean) => void

@@ -736,4 +736,3 @@ export function createBoxGradientMaskSpec(
     blend: maskBlendState,
   }
 }
-

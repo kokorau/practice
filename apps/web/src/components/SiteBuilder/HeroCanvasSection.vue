@@ -23,28 +23,21 @@ const isDarkRef = computed(() => props.isDark ?? false)
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
 
-const {
-  initPreview,
-  fromHeroViewConfig,
-  foregroundConfig,
-  foregroundTitleColor,
-  foregroundBodyColor,
-  destroyPreview,
-} = useHeroScene({
+const heroScene = useHeroScene({
   primitivePalette: primitivePaletteRef,
   isDark: isDarkRef,
 })
 
 onMounted(async () => {
   // Initialize WebGPU on the canvas
-  await initPreview(heroPreviewRef.value?.canvasRef)
+  await heroScene.renderer.initPreview(heroPreviewRef.value?.canvasRef)
 
   // Apply the HeroViewConfig
-  await fromHeroViewConfig(props.config)
+  await heroScene.serialization.fromHeroViewConfig(props.config)
 })
 
 onUnmounted(() => {
-  destroyPreview()
+  heroScene.renderer.destroyPreview()
 })
 </script>
 
@@ -52,9 +45,9 @@ onUnmounted(() => {
   <section class="hero-canvas-section context-canvas">
     <HeroPreview
       ref="heroPreviewRef"
-      :foreground-config="foregroundConfig"
-      :title-color="foregroundTitleColor"
-      :body-color="foregroundBodyColor"
+      :foreground-config="heroScene.foreground.foregroundConfig.value"
+      :title-color="heroScene.foreground.foregroundTitleColor.value"
+      :body-color="heroScene.foreground.foregroundBodyColor.value"
     />
   </section>
 </template>

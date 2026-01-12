@@ -45,7 +45,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let cellY = floor(rotatedY / params.cellSize);
 
   // チェッカーパターン: (x + y) が偶数か奇数かで色を決定
-  let checker = (i32(cellX) + i32(cellY)) % 2;
+  // ビット演算を使用（負の値でも正しく0または1を返す）
+  let checker = (i32(cellX) + i32(cellY)) & 1;
 
   return mix(params.color1, params.color2, f32(checker));
 }

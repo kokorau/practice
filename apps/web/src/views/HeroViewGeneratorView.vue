@@ -110,87 +110,7 @@ const actions = computed(() => [
 // ============================================================
 // Hero Scene (WebGPU rendering with layer system)
 // ============================================================
-const {
-  texturePatterns,
-  maskPatterns,
-  midgroundTexturePatterns,
-  textureColor1,
-  textureColor2,
-  midgroundTextureColor1,
-  midgroundTextureColor2,
-  maskInnerColor,
-  maskOuterColor,
-  createMidgroundThumbnailSpec,
-  createBackgroundThumbnailSpec,
-  selectedBackgroundIndex,
-  selectedMaskIndex,
-  selectedMidgroundTextureIndex,
-  activeSection,
-  initPreview,
-  customBackgroundImage,
-  customBackgroundFile,
-  setBackgroundImage,
-  clearBackgroundImage,
-  loadRandomBackgroundImage,
-  isLoadingRandomBackground,
-  customMaskImage,
-  customMaskFile,
-  setMaskImage,
-  clearMaskImage,
-  loadRandomMaskImage,
-  isLoadingRandomMask,
-  // Per-layer filters
-  selectedFilterLayerId,
-  selectedLayerFilters,
-  // Filter Usecase API
-  selectFilterType: selectFilterTypeUsecase,
-  getFilterType: getFilterTypeUsecase,
-  updateVignetteParams,
-  updateChromaticAberrationParams,
-  updateDotHalftoneParams,
-  updateLineHalftoneParams,
-  // Custom shape/surface params
-  customMaskShapeParams,
-  customSurfaceParams,
-  customBackgroundSurfaceParams,
-  currentMaskShapeSchema,
-  currentSurfaceSchema,
-  currentBackgroundSurfaceSchema,
-  updateMaskShapeParams,
-  updateSurfaceParams,
-  updateBackgroundSurfaceParams,
-  // Layer operations
-  addMaskLayer: sceneAddMaskLayer,
-  addTextLayer: sceneAddTextLayer,
-  addObjectLayer: sceneAddObjectLayer,
-  removeLayer: sceneRemoveLayer,
-  toggleLayerVisibility,
-  updateTextLayerConfig: heroUpdateTextLayerConfig,
-  // Editor state (for text layer editing)
-  editorState,
-  // Foreground
-  foregroundConfig,
-  foregroundTitleColor,
-  foregroundBodyColor,
-  foregroundElementColors,
-  foregroundTitleAutoKey,
-  foregroundBodyAutoKey,
-  // Canvas ImageData for contrast analysis
-  canvasImageData,
-  setElementBounds,
-  // PrimitiveKey color selection
-  backgroundColorKey1,
-  backgroundColorKey2,
-  maskColorKey1,
-  maskColorKey2,
-  // Presets
-  presets,
-  selectedPresetId,
-  loadPresets,
-  applyPreset,
-  // Serialization
-  toHeroViewConfig,
-} = useHeroScene({ primitivePalette, isDark: uiDarkMode })
+const heroScene = useHeroScene({ primitivePalette, isDark: uiDarkMode })
 
 // ============================================================
 // Filter Editor (Composable)
@@ -202,14 +122,14 @@ const {
   currentDotHalftoneConfig,
   currentLineHalftoneConfig,
 } = useFilterEditor({
-  selectedFilterLayerId,
-  selectedLayerFilters,
-  getFilterType: getFilterTypeUsecase,
-  selectFilterType: selectFilterTypeUsecase,
-  updateVignetteParams,
-  updateChromaticAberrationParams,
-  updateDotHalftoneParams,
-  updateLineHalftoneParams,
+  selectedFilterLayerId: heroScene.filter.selectedFilterLayerId,
+  selectedLayerFilters: heroScene.filter.selectedLayerFilters,
+  getFilterType: heroScene.filter.getFilterType,
+  selectFilterType: heroScene.filter.selectFilterType,
+  updateVignetteParams: heroScene.filter.updateVignetteParams,
+  updateChromaticAberrationParams: heroScene.filter.updateChromaticAberrationParams,
+  updateDotHalftoneParams: heroScene.filter.updateDotHalftoneParams,
+  updateLineHalftoneParams: heroScene.filter.updateLineHalftoneParams,
 })
 
 // ============================================================
@@ -231,32 +151,43 @@ const {
     foundationSaturation,
     foundationValue,
   },
-  toHeroViewConfig,
-  applyPreset,
+  toHeroViewConfig: heroScene.serialization.toHeroViewConfig,
+  applyPreset: heroScene.preset.applyPreset,
 })
 
 // Convert texture patterns to SurfaceSelector format with createSpec and surfaceConfig
 // surfaceConfig is derived from pattern.params (no separate surfacePresets array needed)
 const backgroundPatterns = createSurfacePatterns({
-  patterns: texturePatterns,
-  color1: textureColor1,
-  color2: textureColor2,
+  patterns: heroScene.pattern.texturePatterns,
+  color1: heroScene.pattern.textureColor1,
+  color2: heroScene.pattern.textureColor2,
   createSpec: (p, c1, c2, viewport) => p.createSpec(c1, c2, viewport),
 })
 
 const maskSurfacePatterns = createSurfacePatterns({
-  patterns: midgroundTexturePatterns,
-  color1: midgroundTextureColor1,
-  color2: midgroundTextureColor2,
-  createSpec: createMidgroundThumbnailSpec,
+  patterns: heroScene.pattern.midgroundTexturePatterns,
+  color1: heroScene.pattern.midgroundTextureColor1,
+  color2: heroScene.pattern.midgroundTextureColor2,
+  createSpec: heroScene.pattern.createMidgroundThumbnailSpec,
 })
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
 const rightPanelRef = ref<HTMLElement | null>(null)
 
+// Type helpers for props (converts specific union types to Record<string, unknown>)
+const backgroundSurfaceParamsForUI = computed(() =>
+  heroScene.background.customBackgroundSurfaceParams.value as Record<string, unknown> | null
+)
+const maskSurfaceParamsForUI = computed(() =>
+  heroScene.mask.customSurfaceParams.value as Record<string, unknown> | null
+)
+const maskShapeParamsForUI = computed(() =>
+  heroScene.mask.customMaskShapeParams.value as Record<string, unknown> | null
+)
+
 // Subpanel title
 const sectionTitle = computed(() => {
-  switch (activeSection.value) {
+  switch (heroScene.pattern.activeSection.value) {
     case 'background':
       return 'テクスチャ選択'
     case 'clip-group-surface':
@@ -280,12 +211,12 @@ const {
   selectedTextLayerConfig,
   updateTextLayerConfig,
 } = useTextLayerEditor({
-  editorState,
-  onUpdateConfig: heroUpdateTextLayerConfig,
+  editorState: heroScene.editor.editorState,
+  onUpdateConfig: heroScene.layer.updateTextLayerConfig,
 })
 
 const closeSection = () => {
-  activeSection.value = null
+  heroScene.pattern.activeSection.value = null
 }
 
 // ============================================================
@@ -295,19 +226,19 @@ usePaletteStyles(semanticPalette)
 
 onMounted(async () => {
   // Load layout presets and apply initial preset (including colors)
-  const initialColorPreset = await loadPresets()
+  const initialColorPreset = await heroScene.preset.loadPresets()
   if (initialColorPreset) {
     handleApplyColorPreset(initialColorPreset)
   }
 
   // テクスチャプレビュー用キャンバス初期化 (HeroPreviewのcanvasを使用)
-  await initPreview(heroPreviewRef.value?.canvasRef)
+  await heroScene.renderer.initPreview(heroPreviewRef.value?.canvasRef)
 })
 
 // ============================================================
 // Hero Preview Config (for panel previews)
 // ============================================================
-const currentHeroConfig = computed(() => toHeroViewConfig())
+const currentHeroConfig = computed(() => heroScene.serialization.toHeroViewConfig())
 
 // ============================================================
 // Tab State
@@ -349,7 +280,7 @@ const {
   openFontPanel,
   closeFontPanel,
 } = useForegroundElement({
-  foregroundConfig,
+  foregroundConfig: heroScene.foreground.foregroundConfig,
   clearCanvasSelection: clearSelection,
 })
 
@@ -369,6 +300,7 @@ const {
   handleRemoveLayer,
   handleGroupSelection,
   handleUseAsMask,
+  mapLayerIdToSceneLayerId,
 } = useLayerOperations({
   initialLayers: [
     createGroup(
@@ -402,11 +334,11 @@ const {
   ],
   selectedLayerId,
   sceneCallbacks: {
-    addMaskLayer: sceneAddMaskLayer,
-    addTextLayer: sceneAddTextLayer,
-    addObjectLayer: sceneAddObjectLayer,
-    removeLayer: sceneRemoveLayer,
-    toggleLayerVisibility: toggleLayerVisibility,
+    addMaskLayer: heroScene.layer.addMaskLayer,
+    addTextLayer: heroScene.layer.addTextLayer,
+    addObjectLayer: heroScene.layer.addObjectLayer,
+    removeLayer: heroScene.layer.removeLayer,
+    toggleLayerVisibility: heroScene.layer.toggleLayerVisibility,
   },
   onSelectLayer: (id) => {
     selectCanvasLayer(id)
@@ -418,7 +350,8 @@ const {
     if (type === 'effect') {
       const layer = selectedLayer.value
       if (layer && 'variant' in layer) {
-        selectedFilterLayerId.value = layer.id
+        // Map UI layer ID to scene layer ID for filter operations
+        heroScene.filter.selectedFilterLayerId.value = mapLayerIdToSceneLayerId(layer.id)
       }
     }
   },
@@ -429,11 +362,11 @@ const {
 // APCA Contrast Check
 // ============================================================
 const { titleContrastResult, descriptionContrastResult } = useContrastChecker({
-  canvasImageData,
+  canvasImageData: heroScene.canvas.canvasImageData,
   heroPreviewRef,
-  foregroundTitleColor,
-  foregroundBodyColor,
-  setElementBounds,
+  foregroundTitleColor: heroScene.foreground.foregroundTitleColor,
+  foregroundBodyColor: heroScene.foreground.foregroundBodyColor,
+  setElementBounds: heroScene.canvas.setElementBounds,
   watchDependencies: [selectedElementPosition, selectedElementFontSize],
 })
 
@@ -518,25 +451,25 @@ const handleForegroundUpdate = (key: string, value: unknown) => {
 const handleBackgroundUpdate = (key: string, value: unknown) => {
   switch (key) {
     case 'colorKey1':
-      backgroundColorKey1.value = value as typeof backgroundColorKey1.value
+      heroScene.background.backgroundColorKey1.value = value as typeof heroScene.background.backgroundColorKey1.value
       break
     case 'colorKey2':
-      backgroundColorKey2.value = value as typeof backgroundColorKey2.value
+      heroScene.background.backgroundColorKey2.value = value as typeof heroScene.background.backgroundColorKey2.value
       break
     case 'uploadImage':
-      setBackgroundImage(value as File)
+      heroScene.background.setBackgroundImage(value as File)
       break
     case 'clearImage':
-      clearBackgroundImage()
+      heroScene.background.clearBackgroundImage()
       break
     case 'selectPattern':
-      if (value !== null) selectedBackgroundIndex.value = value as number
+      if (value !== null) heroScene.pattern.selectedBackgroundIndex.value = value as number
       break
     case 'loadRandom':
-      loadRandomBackgroundImage()
+      heroScene.background.loadRandomBackgroundImage()
       break
     case 'surfaceParams':
-      updateBackgroundSurfaceParams(value as Record<string, unknown>)
+      heroScene.background.updateBackgroundSurfaceParams(value as Record<string, unknown>)
       break
   }
 }
@@ -544,31 +477,31 @@ const handleBackgroundUpdate = (key: string, value: unknown) => {
 const handleMaskUpdate = (key: string, value: unknown) => {
   switch (key) {
     case 'colorKey1':
-      maskColorKey1.value = value as typeof maskColorKey1.value
+      heroScene.mask.maskColorKey1.value = value as typeof heroScene.mask.maskColorKey1.value
       break
     case 'colorKey2':
-      maskColorKey2.value = value as typeof maskColorKey2.value
+      heroScene.mask.maskColorKey2.value = value as typeof heroScene.mask.maskColorKey2.value
       break
     case 'uploadImage':
-      setMaskImage(value as File)
+      heroScene.mask.setMaskImage(value as File)
       break
     case 'clearImage':
-      clearMaskImage()
+      heroScene.mask.clearMaskImage()
       break
     case 'selectPattern':
-      if (value !== null) selectedMidgroundTextureIndex.value = value as number
+      if (value !== null) heroScene.pattern.selectedMidgroundTextureIndex.value = value as number
       break
     case 'loadRandom':
-      loadRandomMaskImage()
+      heroScene.mask.loadRandomMaskImage()
       break
     case 'surfaceParams':
-      updateSurfaceParams(value as Record<string, unknown>)
+      heroScene.mask.updateSurfaceParams(value as Record<string, unknown>)
       break
     case 'selectedShapeIndex':
-      selectedMaskIndex.value = value as number
+      heroScene.pattern.selectedMaskIndex.value = value as number
       break
     case 'shapeParams':
-      updateMaskShapeParams(value as Record<string, unknown>)
+      heroScene.mask.updateMaskShapeParams(value as Record<string, unknown>)
       break
   }
 }
@@ -605,12 +538,12 @@ const handleFilterUpdate = (key: string, value: unknown) => {
         foundation: { hue: foundationHue, saturation: foundationSaturation, value: foundationValue, hex: foundationHex },
       }"
       :layout-presets="{
-        presets,
-        selectedId: selectedPresetId,
+        presets: heroScene.preset.presets.value,
+        selectedId: heroScene.preset.selectedPresetId.value,
       }"
       :layers="{
         items: layers,
-        foregroundElements: foregroundConfig.elements,
+        foregroundElements: heroScene.foreground.foregroundConfig.value.elements,
         selectedForegroundElementId,
       }"
       @update:color-state="handleColorStateUpdate"
@@ -634,79 +567,79 @@ const handleFilterUpdate = (key: string, value: unknown) => {
     <FloatingPanel
       v-if="activeTab === 'generator'"
       :title="sectionTitle"
-      :is-open="!!activeSection"
+      :is-open="!!heroScene.pattern.activeSection.value"
       position="right"
       :ignore-refs="[rightPanelRef]"
       @close="closeSection"
     >
         <!-- 後景: テクスチャ選択 -->
         <BackgroundSectionPanel
-          v-if="activeSection === 'background'"
-          :color-key1="backgroundColorKey1"
-          :color-key2="backgroundColorKey2"
+          v-if="heroScene.pattern.activeSection.value === 'background'"
+          :color-key1="heroScene.background.backgroundColorKey1.value"
+          :color-key2="heroScene.background.backgroundColorKey2.value"
           :palette="primitivePalette"
-          :surface-schema="currentBackgroundSurfaceSchema"
-          :surface-params="customBackgroundSurfaceParams"
+          :surface-schema="heroScene.background.currentBackgroundSurfaceSchema.value"
+          :surface-params="backgroundSurfaceParamsForUI"
           :patterns="backgroundPatterns"
-          :selected-index="selectedBackgroundIndex"
-          :custom-image="customBackgroundImage"
-          :custom-file-name="customBackgroundFile?.name ?? null"
-          :is-loading-random="isLoadingRandomBackground"
+          :selected-index="heroScene.pattern.selectedBackgroundIndex.value"
+          :custom-image="heroScene.background.customBackgroundImage.value"
+          :custom-file-name="heroScene.background.customBackgroundFile.value?.name ?? null"
+          :is-loading-random="heroScene.background.isLoadingRandomBackground.value"
           preview-mode="hero"
           :base-config="currentHeroConfig"
-          @update:color-key1="(v) => { if (v !== 'auto') backgroundColorKey1 = v }"
-          @update:color-key2="backgroundColorKey2 = $event"
-          @update:surface-params="updateBackgroundSurfaceParams($event)"
-          @upload-image="setBackgroundImage"
-          @clear-image="clearBackgroundImage"
-          @select-pattern="(i) => { if (i !== null) selectedBackgroundIndex = i }"
-          @load-random="loadRandomBackgroundImage()"
+          @update:color-key1="(v) => { if (v !== 'auto') heroScene.background.backgroundColorKey1.value = v }"
+          @update:color-key2="heroScene.background.backgroundColorKey2.value = $event"
+          @update:surface-params="heroScene.background.updateBackgroundSurfaceParams($event)"
+          @upload-image="heroScene.background.setBackgroundImage"
+          @clear-image="heroScene.background.clearBackgroundImage"
+          @select-pattern="(i) => { if (i !== null) heroScene.pattern.selectedBackgroundIndex.value = i }"
+          @load-random="heroScene.background.loadRandomBackgroundImage()"
         />
 
         <!-- クリップグループ形状選択 -->
         <ClipGroupShapePanel
-          v-else-if="activeSection === 'clip-group-shape'"
-          :shape-schema="currentMaskShapeSchema"
-          :shape-params="customMaskShapeParams"
-          :patterns="maskPatterns"
-          :selected-index="selectedMaskIndex"
-          :mask-outer-color="maskOuterColor"
-          :mask-inner-color="maskInnerColor"
-          :create-background-thumbnail-spec="createBackgroundThumbnailSpec"
+          v-else-if="heroScene.pattern.activeSection.value === 'clip-group-shape'"
+          :shape-schema="heroScene.mask.currentMaskShapeSchema.value"
+          :shape-params="maskShapeParamsForUI"
+          :patterns="heroScene.pattern.maskPatterns"
+          :selected-index="heroScene.pattern.selectedMaskIndex.value"
+          :mask-outer-color="heroScene.pattern.maskOuterColor.value"
+          :mask-inner-color="heroScene.pattern.maskInnerColor.value"
+          :create-background-thumbnail-spec="heroScene.pattern.createBackgroundThumbnailSpec"
           preview-mode="hero"
           :base-config="currentHeroConfig"
           :palette="primitivePalette"
-          @update:shape-params="updateMaskShapeParams($event)"
-          @update:selected-index="selectedMaskIndex = $event"
+          @update:shape-params="heroScene.mask.updateMaskShapeParams($event)"
+          @update:selected-index="heroScene.pattern.selectedMaskIndex.value = $event"
         />
 
         <!-- クリップグループテクスチャ選択 -->
         <ClipGroupSurfacePanel
-          v-else-if="activeSection === 'clip-group-surface'"
-          :color-key1="maskColorKey1"
-          :color-key2="maskColorKey2"
+          v-else-if="heroScene.pattern.activeSection.value === 'clip-group-surface'"
+          :color-key1="heroScene.mask.maskColorKey1.value"
+          :color-key2="heroScene.mask.maskColorKey2.value"
           :palette="primitivePalette"
-          :surface-schema="currentSurfaceSchema"
-          :surface-params="customSurfaceParams"
+          :surface-schema="heroScene.mask.currentSurfaceSchema.value"
+          :surface-params="maskSurfaceParamsForUI"
           :patterns="maskSurfacePatterns"
-          :selected-index="selectedMidgroundTextureIndex"
-          :custom-image="customMaskImage"
-          :custom-file-name="customMaskFile?.name ?? null"
-          :is-loading-random="isLoadingRandomMask"
+          :selected-index="heroScene.pattern.selectedMidgroundTextureIndex.value"
+          :custom-image="heroScene.mask.customMaskImage.value"
+          :custom-file-name="heroScene.mask.customMaskFile.value?.name ?? null"
+          :is-loading-random="heroScene.mask.isLoadingRandomMask.value"
           preview-mode="hero"
           :base-config="currentHeroConfig"
-          @update:color-key1="maskColorKey1 = $event"
-          @update:color-key2="maskColorKey2 = $event"
-          @update:surface-params="updateSurfaceParams($event)"
-          @upload-image="setMaskImage"
-          @clear-image="clearMaskImage"
-          @select-pattern="(i) => { if (i !== null) selectedMidgroundTextureIndex = i }"
-          @load-random="loadRandomMaskImage()"
+          @update:color-key1="heroScene.mask.maskColorKey1.value = $event"
+          @update:color-key2="heroScene.mask.maskColorKey2.value = $event"
+          @update:surface-params="heroScene.mask.updateSurfaceParams($event)"
+          @upload-image="heroScene.mask.setMaskImage"
+          @clear-image="heroScene.mask.clearMaskImage"
+          @select-pattern="(i) => { if (i !== null) heroScene.pattern.selectedMidgroundTextureIndex.value = i }"
+          @load-random="heroScene.mask.loadRandomMaskImage()"
         />
 
         <!-- エフェクト設定 (排他選択) -->
         <EffectSectionPanel
-          v-else-if="activeSection === 'filter' || activeSection === 'effect'"
+          v-else-if="heroScene.pattern.activeSection.value === 'filter' || heroScene.pattern.activeSection.value === 'effect'"
           :selected-filter-type="selectedFilterType"
           :vignette-config="currentVignetteConfig"
           :chromatic-config="currentChromaticConfig"
@@ -724,7 +657,7 @@ const handleFilterUpdate = (key: string, value: unknown) => {
 
         <!-- テキストレイヤー設定 -->
         <TextLayerSectionPanel
-          v-else-if="activeSection === 'text-content'"
+          v-else-if="heroScene.pattern.activeSection.value === 'text-content'"
           :config="selectedTextLayerConfig"
           @update:config="updateTextLayerConfig($event)"
         />
@@ -766,10 +699,10 @@ const handleFilterUpdate = (key: string, value: unknown) => {
       <HeroPreview
         v-show="activeTab === 'generator'"
         ref="heroPreviewRef"
-        :foreground-config="foregroundConfig"
-        :title-color="foregroundTitleColor"
-        :body-color="foregroundBodyColor"
-        :element-colors="foregroundElementColors"
+        :foreground-config="heroScene.foreground.foregroundConfig.value"
+        :title-color="heroScene.foreground.foregroundTitleColor.value"
+        :body-color="heroScene.foreground.foregroundBodyColor.value"
+        :element-colors="heroScene.foreground.foregroundElementColors.value"
         class="hero-tab-content"
       />
 
@@ -793,8 +726,8 @@ const handleFilterUpdate = (key: string, value: unknown) => {
         processorType: selectedProcessorType,
       }"
       :foreground="{
-        titleAutoKey: foregroundTitleAutoKey,
-        bodyAutoKey: foregroundBodyAutoKey,
+        titleAutoKey: heroScene.foreground.foregroundTitleAutoKey.value,
+        bodyAutoKey: heroScene.foreground.foregroundBodyAutoKey.value,
         elementColorKey: selectedElementColorKey,
         elementContent: selectedElementContent,
         elementPosition: selectedElementPosition,
@@ -810,33 +743,33 @@ const handleFilterUpdate = (key: string, value: unknown) => {
         description: descriptionContrastResult,
       }"
       :background="{
-        colorKey1: backgroundColorKey1,
-        colorKey2: backgroundColorKey2,
-        customImage: customBackgroundImage,
-        customFileName: customBackgroundFile?.name ?? null,
+        colorKey1: heroScene.background.backgroundColorKey1.value,
+        colorKey2: heroScene.background.backgroundColorKey2.value,
+        customImage: heroScene.background.customBackgroundImage.value,
+        customFileName: heroScene.background.customBackgroundFile.value?.name ?? null,
         patterns: backgroundPatterns,
-        selectedIndex: selectedBackgroundIndex,
-        isLoadingRandom: isLoadingRandomBackground,
-        surfaceSchema: currentBackgroundSurfaceSchema,
-        surfaceParams: customBackgroundSurfaceParams,
+        selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
+        isLoadingRandom: heroScene.background.isLoadingRandomBackground.value,
+        surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
+        surfaceParams: backgroundSurfaceParamsForUI,
       }"
       :mask="{
-        colorKey1: maskColorKey1,
-        colorKey2: maskColorKey2,
-        customImage: customMaskImage,
-        customFileName: customMaskFile?.name ?? null,
+        colorKey1: heroScene.mask.maskColorKey1.value,
+        colorKey2: heroScene.mask.maskColorKey2.value,
+        customImage: heroScene.mask.customMaskImage.value,
+        customFileName: heroScene.mask.customMaskFile.value?.name ?? null,
         surfacePatterns: maskSurfacePatterns,
-        selectedSurfaceIndex: selectedMidgroundTextureIndex,
-        isLoadingRandom: isLoadingRandomMask,
-        surfaceSchema: currentSurfaceSchema,
-        surfaceParams: customSurfaceParams,
-        shapePatterns: maskPatterns,
-        selectedShapeIndex: selectedMaskIndex,
-        shapeSchema: currentMaskShapeSchema,
-        shapeParams: customMaskShapeParams,
-        outerColor: maskOuterColor,
-        innerColor: maskInnerColor,
-        createBackgroundThumbnailSpec: createBackgroundThumbnailSpec,
+        selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
+        isLoadingRandom: heroScene.mask.isLoadingRandomMask.value,
+        surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
+        surfaceParams: maskSurfaceParamsForUI,
+        shapePatterns: heroScene.pattern.maskPatterns,
+        selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
+        shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
+        shapeParams: maskShapeParamsForUI,
+        outerColor: heroScene.pattern.maskOuterColor.value,
+        innerColor: heroScene.pattern.maskInnerColor.value,
+        createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
       }"
       :filter="{
         selectedType: selectedFilterType,
