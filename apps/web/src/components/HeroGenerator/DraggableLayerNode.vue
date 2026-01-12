@@ -71,6 +71,9 @@ const isProcessorSelected = computed(() =>
 // Processor expand state (local, not persisted)
 const isProcessorExpanded = ref(true)
 
+// Drop zone active state
+const isDropZoneActive = ref(false)
+
 // Check if this node is the current drop target
 const isDropTarget = computed(() => props.dropTarget?.nodeId === props.node.id)
 const dropPosition = computed(() => props.dropTarget?.nodeId === props.node.id ? props.dropTarget.position : null)
@@ -247,6 +250,29 @@ const handleDrop = (e: DragEvent) => {
 
   emit('drop', props.draggedId, props.dropTarget.nodeId, props.dropTarget.position)
 }
+
+// Drop Zone Event Handlers
+const handleDropZoneDragOver = (e: DragEvent) => {
+  if (!props.draggedId || props.draggedId === props.node.id) return
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'move'
+  isDropZoneActive.value = true
+  // Set drop target to this node with 'after' position
+  emit('drag-over', props.node.id, 'after', e)
+}
+
+const handleDropZoneDragLeave = () => {
+  isDropZoneActive.value = false
+}
+
+const handleDropZoneDrop = (e: DragEvent) => {
+  e.preventDefault()
+  e.stopPropagation()
+  isDropZoneActive.value = false
+  if (!props.draggedId) return
+  // Drop after this layer (before processors visually, but after in tree order)
+  emit('drop', props.draggedId, props.node.id, 'after')
+}
 </script>
 
 <template>
@@ -321,6 +347,22 @@ const handleDrop = (e: DragEvent) => {
         <span class="material-icons">close</span>
       </button>
       <span v-else class="visibility-spacer" />
+    </div>
+
+    <!-- Drop Zone between Surface and Processors -->
+    <div
+      v-if="hasModifiers && draggedId && draggedId !== node.id"
+      class="layer-drop-zone"
+      :class="{ 'drop-zone-active': isDropZoneActive }"
+      :style="{ paddingLeft: `${depth * 0.75 + 0.75}rem` }"
+      @dragover="handleDropZoneDragOver"
+      @dragleave="handleDropZoneDragLeave"
+      @drop="handleDropZoneDrop"
+    >
+      <div class="drop-zone-indicator">
+        <span class="material-icons">add</span>
+        <span class="drop-zone-label">Drop here to add</span>
+      </div>
     </div>
 
     <!-- Processor group (contains Effect/Mask as children) -->
@@ -724,5 +766,66 @@ const handleDrop = (e: DragEvent) => {
 
 .processor-child-node:hover .processor-arrow {
   opacity: 1;
+}
+
+/* ============================================================
+   Drop Zone (between Surface and Processors)
+   ============================================================ */
+
+.layer-drop-zone {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  min-height: 2rem;
+  border: 2px dashed oklch(0.70 0.02 260);
+  border-radius: 0.375rem;
+  margin: 0.25rem 0;
+  background: oklch(0.95 0.01 260);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+:global(.dark) .layer-drop-zone {
+  border-color: oklch(0.40 0.02 260);
+  background: oklch(0.20 0.02 260);
+}
+
+.layer-drop-zone.drop-zone-active {
+  border-color: oklch(0.55 0.20 250);
+  background: oklch(0.55 0.20 250 / 0.15);
+  border-style: solid;
+}
+
+:global(.dark) .layer-drop-zone.drop-zone-active {
+  border-color: oklch(0.60 0.20 250);
+  background: oklch(0.55 0.20 250 / 0.25);
+}
+
+.drop-zone-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: oklch(0.55 0.02 260);
+  font-size: 0.6875rem;
+}
+
+:global(.dark) .drop-zone-indicator {
+  color: oklch(0.55 0.02 260);
+}
+
+.layer-drop-zone.drop-zone-active .drop-zone-indicator {
+  color: oklch(0.50 0.18 250);
+}
+
+:global(.dark) .layer-drop-zone.drop-zone-active .drop-zone-indicator {
+  color: oklch(0.65 0.18 250);
+}
+
+.drop-zone-indicator .material-icons {
+  font-size: 0.875rem;
+}
+
+.drop-zone-label {
+  font-weight: 500;
 }
 </style>
