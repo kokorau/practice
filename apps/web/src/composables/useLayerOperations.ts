@@ -51,9 +51,9 @@ export interface SceneOperationCallbacks {
   /** Add mask layer to scene. Returns layer ID or null if limit reached */
   addMaskLayer: () => string | null
   /** Add text layer to scene. Returns layer ID */
-  addTextLayer: (options: TextLayerOptions) => string
+  addTextLayer: (options?: Partial<TextLayerOptions>) => string
   /** Add object layer to scene. Returns layer ID */
-  addObjectLayer: (options: ObjectLayerOptions) => string
+  addObjectLayer: (options?: Partial<ObjectLayerOptions>) => string
   /** Remove layer from scene */
   removeLayer: (sceneLayerId: string) => boolean
   /** Toggle layer visibility in scene */
