@@ -142,3 +142,26 @@ export type {
   OgeeSurfaceParams,
   SunburstSurfaceParams,
 } from './Schemas'
+// Greymap types (2-stage mask pipeline)
+export type {
+  GreymapMaskParams,
+  GreymapMaskSpec,
+  // Mask greymap types
+  CircleGreymapMaskParams,
+  RectGreymapMaskParams,
+  BlobGreymapMaskParams,
+  PerlinGreymapMaskParams,
+  LinearGradientGreymapMaskParams,
+  RadialGradientGreymapMaskParams,
+  BoxGradientGreymapMaskParams,
+  // Pattern greymap types
+  StripeGreymapParams,
+  GridGreymapParams,
+  PolkaDotGreymapParams,
+  CheckerGreymapParams,
+  // Image greymap types
+  ImageGreymapParams,
+  // Colorize types
+  ColorizeParams,
+  CreateGreymapMaskSpecFn,
+} from './GreymapSpec'
