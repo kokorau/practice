@@ -684,3 +684,136 @@ const insertBeforeOrAfter = (
     return node
   })
 }
+
+// ============================================================
+// Modifier Move Functions
+// ============================================================
+
+/**
+ * Modifier drop position for drag & drop operations
+ *
+ * - before: Insert before the target modifier at the specified index
+ * - after: Insert after the target modifier at the specified index
+ */
+export type ModifierDropPosition =
+  | { type: 'before'; targetNodeId: string; targetIndex: number }
+  | { type: 'after'; targetNodeId: string; targetIndex: number }
+
+/**
+ * Check if a modifier can be moved to the specified position
+ *
+ * Rules:
+ * - Source node must exist and have modifiers
+ * - Target node must exist
+ * - Modifier must exist at source index
+ * - Cannot drop at the exact same position (same node, same index, before position when index matches)
+ */
+export const canMoveModifier = (
+  nodes: SceneNode[],
+  sourceNodeId: string,
+  sourceModifierIndex: number,
+  position: ModifierDropPosition
+): boolean => {
+  const sourceNode = findNode(nodes, sourceNodeId)
+  if (!sourceNode) return false
+
+  const targetNode = findNode(nodes, position.targetNodeId)
+  if (!targetNode) return false
+
+  // Check if modifier exists at source index
+  if (sourceModifierIndex < 0 || sourceModifierIndex >= sourceNode.modifiers.length) {
+    return false
+  }
+
+  // Check if target index is valid
+  const targetModifiersCount = targetNode.modifiers.length
+  if (position.targetIndex < 0 || position.targetIndex > targetModifiersCount) {
+    return false
+  }
+
+  // If same node, check if it's a no-op move
+  if (sourceNodeId === position.targetNodeId) {
+    const effectiveTargetIndex = position.type === 'before'
+      ? position.targetIndex
+      : position.targetIndex + 1
+
+    // Same position (accounting for removal shift)
+    if (effectiveTargetIndex === sourceModifierIndex ||
+        effectiveTargetIndex === sourceModifierIndex + 1) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Move a modifier to a new position
+ *
+ * @param nodes - Current node tree
+ * @param sourceNodeId - ID of the node containing the modifier
+ * @param sourceModifierIndex - Index of the modifier to move
+ * @param position - Target position
+ * @returns New node tree with the modifier moved, or original tree if move is invalid
+ */
+export const moveModifier = (
+  nodes: SceneNode[],
+  sourceNodeId: string,
+  sourceModifierIndex: number,
+  position: ModifierDropPosition
+): SceneNode[] => {
+  // Validate the move
+  if (!canMoveModifier(nodes, sourceNodeId, sourceModifierIndex, position)) {
+    return nodes
+  }
+
+  const sourceNode = findNode(nodes, sourceNodeId)
+  if (!sourceNode) return nodes
+
+  const modifierToMove = sourceNode.modifiers[sourceModifierIndex]
+  if (!modifierToMove) return nodes
+
+  // Same node move (reorder within modifiers array)
+  if (sourceNodeId === position.targetNodeId) {
+    const newModifiers = [...sourceNode.modifiers]
+
+    // Remove from source
+    newModifiers.splice(sourceModifierIndex, 1)
+
+    // Calculate insert index (accounting for the removal)
+    let insertIndex = position.type === 'before'
+      ? position.targetIndex
+      : position.targetIndex + 1
+
+    // Adjust for removal if necessary
+    if (sourceModifierIndex < insertIndex) {
+      insertIndex -= 1
+    }
+
+    // Insert at new position
+    newModifiers.splice(insertIndex, 0, modifierToMove)
+
+    return updateNode(nodes, sourceNodeId, { modifiers: newModifiers })
+  }
+
+  // Cross-node move
+  // Step 1: Remove modifier from source node
+  const nodesWithoutSourceModifier = updateNode(nodes, sourceNodeId, {
+    modifiers: sourceNode.modifiers.filter((_, i) => i !== sourceModifierIndex),
+  })
+
+  // Step 2: Add modifier to target node
+  const targetNode = findNode(nodesWithoutSourceModifier, position.targetNodeId)
+  if (!targetNode) return nodes
+
+  const targetModifiers = [...targetNode.modifiers]
+  const insertIndex = position.type === 'before'
+    ? position.targetIndex
+    : position.targetIndex + 1
+
+  targetModifiers.splice(insertIndex, 0, modifierToMove)
+
+  return updateNode(nodesWithoutSourceModifier, position.targetNodeId, {
+    modifiers: targetModifiers,
+  })
+}

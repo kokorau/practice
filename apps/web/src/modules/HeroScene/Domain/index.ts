@@ -386,6 +386,7 @@ export {
   type TextConfig,
   type Model3DConfig,
   type DropPosition,
+  type ModifierDropPosition,
   // Factory functions
   createLayer,
   createBaseLayer,
@@ -409,9 +410,12 @@ export {
   flattenNodes,
   findParentNode,
   wrapNodeInGroup,
-  // DnD move utilities
+  // DnD move utilities (SceneNode)
   canMoveSceneNode,
   moveSceneNode,
+  // DnD move utilities (Modifier)
+  canMoveModifier,
+  moveModifier,
   // Scene layer ID mapping
   SCENE_LAYER_IDS,
   type SceneLayerId,

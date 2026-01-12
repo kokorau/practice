@@ -10,9 +10,10 @@
  */
 
 import { computed, ref, inject } from 'vue'
-import type { SceneNode, Group, LayerVariant } from '../../modules/HeroScene'
+import type { SceneNode, Group, LayerVariant, ModifierDropPosition } from '../../modules/HeroScene'
 import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
 import { LAYER_DRAG_KEY, type DropTarget } from '../../composables/useLayerDragAndDrop'
+import { MODIFIER_DRAG_KEY, type ModifierDropTarget } from '../../composables/useModifierDragAndDrop'
 import DropIndicator from './DropIndicator.vue'
 
 // ============================================================
@@ -39,8 +40,9 @@ const emit = defineEmits<{
   'remove-layer': [nodeId: string]
   // Context menu event (with target type)
   contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType]
-  // DnD move event
+  // DnD move events
   'move-node': [nodeId: string, position: import('../../modules/HeroScene').DropPosition]
+  'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
 }>()
 
 // ============================================================
@@ -85,37 +87,34 @@ const nodeVariant = computed((): LayerVariant | 'group' => {
   return 'group'
 })
 
-// Modifier info
+// Modifier info with index for DnD
 // Note: Effect details are managed by useEffectManager and shown in property panel
 // Layer tree only shows whether effect/mask modifiers exist
 const modifiers = computed(() => {
-  const result: { type: 'effect' | 'mask'; label: string; value: string; icon: string; enabled: boolean }[] = []
+  const result: { type: 'effect' | 'mask'; label: string; value: string; icon: string; enabled: boolean; index: number }[] = []
 
   const nodeModifiers = props.node.modifiers
-  // Effect placeholder - details are in useEffectManager
-  const effectMod = nodeModifiers.find(isEffectModifier)
-  if (effectMod) {
-    result.push({
-      type: 'effect',
-      label: 'Effect',
-      value: '', // Details shown in property panel
-      icon: 'auto_fix_high',
-      enabled: true,
-    })
-  }
-
-  // MaskModifier
-  for (const mod of nodeModifiers) {
-    if (isMaskModifier(mod)) {
+  nodeModifiers.forEach((mod, index) => {
+    if (isEffectModifier(mod)) {
+      result.push({
+        type: 'effect',
+        label: 'Effect',
+        value: '', // Details shown in property panel
+        icon: 'auto_fix_high',
+        enabled: true,
+        index,
+      })
+    } else if (isMaskModifier(mod)) {
       result.push({
         type: 'mask',
         label: 'Mask',
         value: mod.config.shape,
         icon: 'content_cut',
         enabled: mod.enabled,
+        index,
       })
     }
-  }
+  })
 
   return result
 })
@@ -174,7 +173,7 @@ const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
 }
 
 // ============================================================
-// Drag & Drop
+// Drag & Drop (SceneNode)
 // ============================================================
 
 const dragContext = inject(LAYER_DRAG_KEY, null)
@@ -208,6 +207,49 @@ const handlePointerDown = (e: PointerEvent) => {
     e
   )
   // Note: Don't use setPointerCapture here - we need events to reach other nodes
+}
+
+// ============================================================
+// Drag & Drop (Modifier)
+// ============================================================
+
+const modifierDragContext = inject(MODIFIER_DRAG_KEY, null)
+
+// Get local modifier drop target (if targeting a modifier in this node)
+const getLocalModifierDropTarget = (modifierIndex: number): ModifierDropTarget | null => {
+  if (!modifierDragContext) return null
+  const target = modifierDragContext.state.dropTarget.value
+  if (!target || target.nodeId !== props.node.id || target.modifierIndex !== modifierIndex) return null
+  return target
+}
+
+// Check if a modifier is being dragged from this node
+const isModifierBeingDragged = (modifierIndex: number): boolean => {
+  if (!modifierDragContext) return false
+  return modifierDragContext.state.isDragging.value &&
+    modifierDragContext.state.dragItem.value?.nodeId === props.node.id &&
+    modifierDragContext.state.dragItem.value?.modifierIndex === modifierIndex
+}
+
+// Handle pointer down on modifier to start drag
+const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modifierType: 'effect' | 'mask') => {
+  if (!modifierDragContext) return
+  // Only start drag on primary button
+  if (e.button !== 0) return
+  // Don't start drag on buttons
+  if ((e.target as HTMLElement).closest('button')) return
+
+  e.stopPropagation() // Prevent node drag from starting
+
+  modifierDragContext.actions.startDrag(
+    {
+      type: 'modifier',
+      nodeId: props.node.id,
+      modifierIndex,
+      modifierType,
+    },
+    e
+  )
 }
 </script>
 
@@ -309,12 +351,21 @@ const handlePointerDown = (e: PointerEvent) => {
       <template v-if="isProcessorExpanded">
         <div
           v-for="mod in modifiers"
-          :key="mod.type"
+          :key="`${mod.type}-${mod.index}`"
           class="processor-child-node"
+          :class="{ dragging: isModifierBeingDragged(mod.index) }"
           :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
+          :data-modifier-node-id="node.id"
+          :data-modifier-index="mod.index"
           @click="handleSelectProcessor(mod.type)"
           @contextmenu="(e: MouseEvent) => handleContextMenu(e, mod.type)"
+          @pointerdown="(e: PointerEvent) => handleModifierPointerDown(e, mod.index, mod.type)"
         >
+          <!-- Drop Indicator for Modifier -->
+          <DropIndicator
+            v-if="getLocalModifierDropTarget(mod.index)"
+            :position="getLocalModifierDropTarget(mod.index)!.position"
+          />
           <span class="expand-spacer" />
           <span class="material-icons layer-icon">{{ mod.icon }}</span>
           <div class="layer-info">
@@ -343,6 +394,7 @@ const handlePointerDown = (e: PointerEvent) => {
         @remove-layer="(id: string) => emit('remove-layer', id)"
         @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType) => emit('contextmenu', id, e, targetType)"
         @move-node="(id: string, position: import('../../modules/HeroScene').DropPosition) => emit('move-node', id, position)"
+        @move-modifier="(sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => emit('move-modifier', sourceNodeId, modifierIndex, position)"
       />
     </template>
   </div>
@@ -611,6 +663,13 @@ const handlePointerDown = (e: PointerEvent) => {
   cursor: pointer;
   transition: background 0.15s;
   border-radius: 0.25rem;
+  position: relative;
+  touch-action: none;
+  user-select: none;
+}
+
+.processor-child-node.dragging {
+  opacity: 0.5;
 }
 
 .processor-child-node:hover {
