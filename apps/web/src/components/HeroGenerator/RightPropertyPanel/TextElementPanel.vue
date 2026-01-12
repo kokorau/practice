@@ -142,68 +142,77 @@ const getContrastHint = (score: number): string => {
     </div>
 
     <div class="settings-section">
-      <p class="settings-label">Font Size</p>
-      <div class="font-size-input-wrapper">
-        <input
-          :value="fontSize"
-          type="number"
-          min="0.5"
-          max="10"
-          step="0.25"
-          class="font-size-input"
-          @input="emit('update:fontSize', Number(($event.target as HTMLInputElement).value))"
-        />
-        <span class="font-size-unit">rem</span>
+      <div class="input-row">
+        <div class="input-group">
+          <p class="settings-label">Size</p>
+          <div class="unit-input-wrapper">
+            <input
+              :value="fontSize"
+              type="number"
+              min="0.5"
+              max="10"
+              step="0.25"
+              class="unit-input"
+              @input="emit('update:fontSize', Number(($event.target as HTMLInputElement).value))"
+            />
+            <span class="unit-label">rem</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <p class="settings-label">Weight</p>
+          <div class="unit-input-wrapper">
+            <select
+              :value="fontWeight"
+              class="unit-select"
+              @change="emit('update:fontWeight', Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option :value="100">100</option>
+              <option :value="200">200</option>
+              <option :value="300">300</option>
+              <option :value="400">400</option>
+              <option :value="500">500</option>
+              <option :value="600">600</option>
+              <option :value="700">700</option>
+              <option :value="800">800</option>
+              <option :value="900">900</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="settings-section">
-      <p class="settings-label">Font Weight</p>
-      <select
-        :value="fontWeight"
-        class="font-weight-select"
-        @change="emit('update:fontWeight', Number(($event.target as HTMLSelectElement).value))"
-      >
-        <option :value="100">100 - Thin</option>
-        <option :value="200">200 - Extra Light</option>
-        <option :value="300">300 - Light</option>
-        <option :value="400">400 - Regular</option>
-        <option :value="500">500 - Medium</option>
-        <option :value="600">600 - Semi Bold</option>
-        <option :value="700">700 - Bold</option>
-        <option :value="800">800 - Extra Bold</option>
-        <option :value="900">900 - Black</option>
-      </select>
-    </div>
-
-    <div class="settings-section">
-      <p class="settings-label">Letter Spacing</p>
-      <div class="font-size-input-wrapper">
-        <input
-          :value="letterSpacing"
-          type="number"
-          min="-0.1"
-          max="0.5"
-          step="0.01"
-          class="font-size-input"
-          @input="emit('update:letterSpacing', Number(($event.target as HTMLInputElement).value))"
-        />
-        <span class="font-size-unit">em</span>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <p class="settings-label">Line Height</p>
-      <div class="font-size-input-wrapper">
-        <input
-          :value="lineHeight"
-          type="number"
-          min="1.0"
-          max="3.0"
-          step="0.1"
-          class="font-size-input"
-          @input="emit('update:lineHeight', Number(($event.target as HTMLInputElement).value))"
-        />
+      <div class="input-row">
+        <div class="input-group">
+          <p class="settings-label">Spacing</p>
+          <div class="unit-input-wrapper">
+            <input
+              :value="letterSpacing"
+              type="number"
+              min="-0.1"
+              max="0.5"
+              step="0.01"
+              class="unit-input"
+              @input="emit('update:letterSpacing', Number(($event.target as HTMLInputElement).value))"
+            />
+            <span class="unit-label">em</span>
+          </div>
+        </div>
+        <div class="input-group">
+          <p class="settings-label">Height</p>
+          <div class="unit-input-wrapper">
+            <input
+              :value="lineHeight"
+              type="number"
+              min="1.0"
+              max="3.0"
+              step="0.1"
+              class="unit-input"
+              @input="emit('update:lineHeight', Number(($event.target as HTMLInputElement).value))"
+            />
+            <span class="unit-label">×</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -420,65 +429,87 @@ const getContrastHint = (score: number): string => {
   color: oklch(0.60 0.02 260);
 }
 
-/* Font size input */
-.font-size-input-wrapper {
+/* Input row - horizontal layout */
+.input-row {
   display: flex;
-  align-items: center;
-  gap: 0.375rem;
+  gap: 0.5rem;
 }
 
-.font-size-input {
-  width: 4rem;
-  padding: 0.375rem 0.5rem;
+.input-group {
+  flex: 1;
+}
+
+/* Unit input wrapper - contains input + unit label inside border */
+.unit-input-wrapper {
+  display: flex;
+  align-items: center;
   border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.375rem;
   background: oklch(0.98 0.01 260);
+  overflow: hidden;
+}
+
+:global(.dark) .unit-input-wrapper {
+  background: oklch(0.16 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+}
+
+.unit-input-wrapper:focus-within {
+  border-color: oklch(0.55 0.20 250);
+}
+
+.unit-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.375rem 0.5rem;
+  border: none;
+  background: transparent;
   color: oklch(0.25 0.02 260);
   font-size: 0.8125rem;
   font-family: inherit;
 }
 
-:global(.dark) .font-size-input {
-  background: oklch(0.16 0.02 260);
-  border-color: oklch(0.30 0.02 260);
+:global(.dark) .unit-input {
   color: oklch(0.90 0.02 260);
 }
 
-.font-size-input:focus {
+.unit-input:focus {
   outline: none;
-  border-color: oklch(0.55 0.20 250);
 }
 
-.font-size-unit {
-  font-size: 0.75rem;
-  color: oklch(0.50 0.02 260);
-}
-
-:global(.dark) .font-size-unit {
-  color: oklch(0.60 0.02 260);
-}
-
-/* Font weight select */
-.font-weight-select {
-  width: 100%;
+.unit-label {
   padding: 0.375rem 0.5rem;
-  border: 1px solid oklch(0.85 0.01 260);
-  border-radius: 0.375rem;
-  background: oklch(0.98 0.01 260);
+  font-size: 0.6875rem;
+  color: oklch(0.50 0.02 260);
+  background: oklch(0.94 0.01 260);
+  border-left: 1px solid oklch(0.85 0.01 260);
+  white-space: nowrap;
+}
+
+:global(.dark) .unit-label {
+  color: oklch(0.60 0.02 260);
+  background: oklch(0.22 0.02 260);
+  border-left-color: oklch(0.30 0.02 260);
+}
+
+/* Unit select (for font weight) */
+.unit-select {
+  flex: 1;
+  min-width: 0;
+  padding: 0.375rem 0.5rem;
+  border: none;
+  background: transparent;
   color: oklch(0.25 0.02 260);
   font-size: 0.8125rem;
   font-family: inherit;
   cursor: pointer;
 }
 
-:global(.dark) .font-weight-select {
-  background: oklch(0.16 0.02 260);
-  border-color: oklch(0.30 0.02 260);
+:global(.dark) .unit-select {
   color: oklch(0.90 0.02 260);
 }
 
-.font-weight-select:focus {
+.unit-select:focus {
   outline: none;
-  border-color: oklch(0.55 0.20 250);
 }
 </style>
