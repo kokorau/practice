@@ -461,6 +461,20 @@ export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
   expanded?: boolean
 }
 
+/**
+ * Processor node configuration
+ *
+ * A Processor node applies its modifiers (effects, masks) to sibling nodes
+ * that appear BEFORE it in the layer tree (Figma-style mask application).
+ *
+ * @see docs/design/processor-target-specification.md for detailed rules
+ */
+export interface ProcessorNodeConfig extends LayerNodeConfigBase {
+  type: 'processor'
+  /** Modifiers to apply (effects, masks) */
+  modifiers: ProcessorConfig[]
+}
+
 export type LayerNodeConfig =
   | BaseLayerNodeConfig
   | SurfaceLayerNodeConfig
@@ -468,6 +482,7 @@ export type LayerNodeConfig =
   | Model3DLayerNodeConfig
   | ImageLayerNodeConfig
   | GroupLayerNodeConfig
+  | ProcessorNodeConfig
 
 // ============================================================
 // Legacy Layer Configs (deprecated, for backward compatibility)
@@ -675,4 +690,96 @@ export const getLayerMaskProcessor = (layer: LayerNodeConfig): MaskProcessorConf
  */
 export const hasLayerMaskProcessor = (layer: LayerNodeConfig): boolean => {
   return getLayerMaskProcessor(layer) !== undefined
+}
+
+// ============================================================
+// Processor Node Type Guards & Helpers
+// ============================================================
+
+/**
+ * Check if layer config is a Processor node
+ */
+export const isProcessorNodeConfig = (layer: LayerNodeConfig): layer is ProcessorNodeConfig => {
+  return layer.type === 'processor'
+}
+
+/**
+ * Get the target layer configs that a Processor applies to
+ *
+ * Rules:
+ * - Processor applies to sibling nodes that appear BEFORE it (lower index)
+ * - In a Group: all preceding non-Processor siblings until another Processor
+ * - At Root level: only the immediately preceding node (1 element only)
+ * - If no valid target exists (processor first, or preceded by another processor), returns empty
+ *
+ * @param siblings - Array of sibling layer configs (children of same parent)
+ * @param processorIndex - Index of the Processor in the siblings array
+ * @param isRoot - Whether this is at root level (true) or inside a Group (false)
+ * @returns Array of LayerNodeConfigs that the Processor applies to
+ *
+ * @see docs/design/processor-target-specification.md for detailed rules
+ */
+export const getProcessorTargetsFromConfig = (
+  siblings: LayerNodeConfig[],
+  processorIndex: number,
+  isRoot: boolean
+): LayerNodeConfig[] => {
+  // No targets if processor is first or index is invalid
+  if (processorIndex <= 0 || processorIndex >= siblings.length) return []
+
+  if (isRoot) {
+    // Root level: only the immediately preceding node
+    const prevNode = siblings[processorIndex - 1]
+    // If preceded by another processor, no targets
+    return isProcessorNodeConfig(prevNode) ? [] : [prevNode]
+  }
+
+  // Group context: all preceding non-Processor siblings until another Processor
+  const targets: LayerNodeConfig[] = []
+  for (let i = processorIndex - 1; i >= 0; i--) {
+    const node = siblings[i]
+    if (isProcessorNodeConfig(node)) break // Stop at previous Processor
+    targets.unshift(node)
+  }
+  return targets
+}
+
+/**
+ * Get all Processor-target pairs in a layer config array
+ *
+ * Useful for rendering: returns each Processor with its target layer configs.
+ *
+ * @param siblings - Array of sibling layer configs
+ * @param isRoot - Whether this is at root level
+ * @returns Array of { processor, targets } pairs
+ */
+export const getProcessorTargetPairsFromConfig = (
+  siblings: LayerNodeConfig[],
+  isRoot: boolean
+): Array<{ processor: ProcessorNodeConfig; targets: LayerNodeConfig[] }> => {
+  const pairs: Array<{ processor: ProcessorNodeConfig; targets: LayerNodeConfig[] }> = []
+
+  for (let i = 0; i < siblings.length; i++) {
+    const node = siblings[i]
+    if (isProcessorNodeConfig(node)) {
+      const targets = getProcessorTargetsFromConfig(siblings, i, isRoot)
+      pairs.push({ processor: node, targets })
+    }
+  }
+
+  return pairs
+}
+
+/**
+ * Get mask processor config from a ProcessorNodeConfig
+ */
+export const getProcessorMask = (processor: ProcessorNodeConfig): MaskProcessorConfig | undefined => {
+  return processor.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
+}
+
+/**
+ * Get effect processor configs from a ProcessorNodeConfig
+ */
+export const getProcessorEffects = (processor: ProcessorNodeConfig): EffectFilterConfig[] => {
+  return processor.modifiers.filter((m): m is EffectFilterConfig => m.type === 'effect')
 }

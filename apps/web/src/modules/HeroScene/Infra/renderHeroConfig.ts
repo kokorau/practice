@@ -37,8 +37,16 @@ import type {
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   LayerNodeConfig,
+  ProcessorNodeConfig,
 } from '../Domain/HeroViewConfig'
-import { getLayerFilters, getLayerMaskProcessor } from '../Domain/HeroViewConfig'
+import {
+  getLayerFilters,
+  getLayerMaskProcessor,
+  isProcessorNodeConfig,
+  getProcessorTargetPairsFromConfig,
+  getProcessorMask,
+  getProcessorEffects,
+} from '../Domain/HeroViewConfig'
 import type { LayerEffectConfig } from '../Domain/EffectSchema'
 import { EFFECT_REGISTRY, EFFECT_TYPES } from '../Domain/EffectRegistry'
 
@@ -436,20 +444,49 @@ function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | null {
 
 /**
  * Find surface layer from layers array (may be nested in group)
+ * Excludes ProcessorNodeConfig from search results
  */
 function findSurfaceLayer(layers: LayerNodeConfig[]): SurfaceLayerNodeConfig | null {
   for (const layer of layers) {
+    // Skip processor nodes
+    if (isProcessorNodeConfig(layer)) continue
+
     if (layer.type === 'surface') {
       return layer
     }
     if (layer.type === 'group' && 'children' in layer && layer.children) {
-      const nested = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
+      const nested = layer.children.find((c): c is SurfaceLayerNodeConfig =>
+        c.type === 'surface' && !isProcessorNodeConfig(c)
+      )
       if (nested) {
         return nested
       }
     }
   }
   return null
+}
+
+// ============================================================
+// Processor-based Layer Finding (Position-based)
+// ============================================================
+
+/**
+ * Find all processor-target pairs at root level
+ * This enables position-based processor application for rendering
+ */
+function findProcessorTargetPairs(layers: LayerNodeConfig[]): Array<{
+  processor: ProcessorNodeConfig
+  targets: LayerNodeConfig[]
+}> {
+  return getProcessorTargetPairsFromConfig(layers, true)
+}
+
+/**
+ * Get mask shape from a processor node
+ */
+function getProcessorMaskShape(processor: ProcessorNodeConfig): MaskShapeConfig | null {
+  const maskProcessor = getProcessorMask(processor)
+  return maskProcessor?.enabled ? maskProcessor.shape : null
 }
 
 // ============================================================
@@ -521,7 +558,7 @@ export async function renderHeroConfig(
     }
   }
 
-  // 2. Render surface layer with mask
+  // 2. Render surface layer with mask (legacy: mask in layer.processors)
   const surfaceLayer = findSurfaceLayer(config.layers)
   if (surfaceLayer) {
     // Find mask shape from processors
@@ -542,6 +579,29 @@ export async function renderHeroConfig(
 
     // Apply surface layer effects (supports both filters and processors)
     const effectFilters = getLayerFilters(surfaceLayer)
+    const effectFilter = effectFilters.find((f) => f.enabled)
+    if (effectFilter?.config) {
+      applyEffects(renderer, effectFilter.config, viewport, scale)
+    }
+  }
+
+  // 3. Process Processor nodes (new: position-based processor application)
+  const processorPairs = findProcessorTargetPairs(config.layers)
+  for (const { processor, targets } of processorPairs) {
+    // Skip if processor has no targets
+    if (targets.length === 0) continue
+
+    // Apply mask from processor to targets
+    const maskShape = getProcessorMaskShape(processor)
+    if (maskShape) {
+      const greymapSpec = createGreymapMaskSpecFromShape(maskShape, viewport)
+      if (greymapSpec) {
+        renderMaskWithGreymapPipeline(renderer, greymapSpec, midgroundTextureColor1, viewport)
+      }
+    }
+
+    // Apply effects from processor
+    const effectFilters = getProcessorEffects(processor)
     const effectFilter = effectFilters.find((f) => f.enabled)
     if (effectFilter?.config) {
       applyEffects(renderer, effectFilter.config, viewport, scale)

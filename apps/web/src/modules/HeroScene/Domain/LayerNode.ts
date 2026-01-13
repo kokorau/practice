@@ -785,6 +785,129 @@ const insertBeforeOrAfter = (
 }
 
 // ============================================================
+// Processor Target Functions
+// ============================================================
+
+/**
+ * Get the target nodes that a Processor applies to
+ *
+ * Rules:
+ * - Processor applies to sibling nodes that appear BEFORE it (lower index)
+ * - In a Group: all preceding non-Processor siblings until another Processor
+ * - At Root level: only the immediately preceding node (1 element only)
+ * - If no valid target exists (processor first, or preceded by another processor), returns empty
+ *
+ * @param siblings - Array of sibling nodes (children of same parent)
+ * @param processorIndex - Index of the Processor in the siblings array
+ * @param isRoot - Whether this is at root level (true) or inside a Group (false)
+ * @returns Array of SceneNodes that the Processor applies to
+ *
+ * @example
+ * // Group context: Processor applies to all preceding siblings
+ * // [Surface, Text, Processor, Surface] -> getProcessorTargets(nodes, 2, false) = [Surface, Text]
+ *
+ * @example
+ * // Root context: Processor applies to immediately preceding node only
+ * // [Surface, Surface, Processor] -> getProcessorTargets(nodes, 2, true) = [Surface]
+ */
+export const getProcessorTargets = (
+  siblings: SceneNode[],
+  processorIndex: number,
+  isRoot: boolean
+): SceneNode[] => {
+  // No targets if processor is first or index is invalid
+  if (processorIndex <= 0 || processorIndex >= siblings.length) return []
+
+  if (isRoot) {
+    // Root level: only the immediately preceding node
+    const prevNode = siblings[processorIndex - 1]
+    if (!prevNode) return []
+    // If preceded by another processor, no targets
+    return isProcessor(prevNode) ? [] : [prevNode]
+  }
+
+  // Group context: all preceding non-Processor siblings until another Processor
+  const targets: SceneNode[] = []
+  for (let i = processorIndex - 1; i >= 0; i--) {
+    const node = siblings[i]
+    if (!node) continue
+    if (isProcessor(node)) break // Stop at previous Processor
+    targets.unshift(node)
+  }
+  return targets
+}
+
+/**
+ * Find the Processor that applies to a given node
+ *
+ * Searches forward from the node's position to find the first Processor
+ * that includes this node in its targets.
+ *
+ * @param siblings - Array of sibling nodes
+ * @param nodeIndex - Index of the target node
+ * @param isRoot - Whether this is at root level
+ * @returns The Processor that applies to this node, or undefined if none
+ *
+ * @example
+ * // [Surface, Text, Processor] -> findProcessorForNode(nodes, 0, false) = Processor
+ * // [Surface, Text, Processor] -> findProcessorForNode(nodes, 1, false) = Processor
+ */
+export const findProcessorForNode = (
+  siblings: SceneNode[],
+  nodeIndex: number,
+  isRoot: boolean
+): Processor | undefined => {
+  if (nodeIndex < 0 || nodeIndex >= siblings.length) return undefined
+
+  const targetNode = siblings[nodeIndex]
+  if (!targetNode) return undefined
+
+  // Search forward for a Processor
+  for (let i = nodeIndex + 1; i < siblings.length; i++) {
+    const node = siblings[i]
+    if (!node) continue
+    if (isProcessor(node)) {
+      // Check if the node at nodeIndex is in this Processor's targets
+      const targets = getProcessorTargets(siblings, i, isRoot)
+      if (targets.some(t => t === targetNode)) {
+        return node
+      }
+      // This Processor doesn't include our node, and no subsequent processor will
+      // (since processors stop at the previous processor)
+      return undefined
+    }
+  }
+  return undefined
+}
+
+/**
+ * Get all Processor-target pairs in a sibling array
+ *
+ * Useful for rendering: returns each Processor with its target nodes.
+ *
+ * @param siblings - Array of sibling nodes
+ * @param isRoot - Whether this is at root level
+ * @returns Array of { processor, targets } pairs
+ */
+export const getProcessorTargetPairs = (
+  siblings: SceneNode[],
+  isRoot: boolean
+): Array<{ processor: Processor; targets: SceneNode[] }> => {
+  const pairs: Array<{ processor: Processor; targets: SceneNode[] }> = []
+
+  for (let i = 0; i < siblings.length; i++) {
+    const node = siblings[i]
+    if (!node) continue
+    if (isProcessor(node)) {
+      const targets = getProcessorTargets(siblings, i, isRoot)
+      pairs.push({ processor: node, targets })
+    }
+  }
+
+  return pairs
+}
+
+// ============================================================
 // Modifier Move Functions
 // ============================================================
 
