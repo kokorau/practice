@@ -165,11 +165,9 @@ const emit = defineEmits<{
 // Computed Helpers
 // ============================================================
 
-// Check if selected layer is a background layer based on its ID
+// Check if selected layer is a background layer based on its variant
 const isBackgroundLayer = (): boolean => {
-  const layerId = props.selection.layer?.id
-  if (!layerId) return false
-  return layerId.startsWith('background')
+  return props.selection.layerVariant === 'base'
 }
 
 // Handle surface params update based on which layer is selected
