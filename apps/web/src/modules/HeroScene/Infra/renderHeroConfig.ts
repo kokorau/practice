@@ -429,6 +429,62 @@ function applyEffects(
 }
 
 // ============================================================
+// Unified Effector Application
+// ============================================================
+
+/**
+ * Effector configuration for unified processing
+ */
+export interface EffectorConfig {
+  /** Mask configuration (transparency-modification) */
+  mask?: {
+    enabled: boolean
+    shape: MaskShapeConfig
+  }
+  /** Effect configuration (color-modification) */
+  effects?: LayerEffectConfig
+}
+
+/**
+ * Apply effectors (mask + effects) to current canvas content
+ *
+ * This is the unified effector pipeline that handles both masks and effects:
+ * 1. First apply mask (transparency-modification) - modifies alpha channel
+ * 2. Then apply effects (color-modification) - modifies color channels
+ *
+ * Order matters: masks create transparent regions, then effects are applied
+ * to the visible (non-transparent) areas.
+ *
+ * @param renderer - Texture renderer instance
+ * @param config - Effector configuration (mask and/or effects)
+ * @param viewport - Render viewport
+ * @param maskColor - Color to use for mask (keepColor in greymap pipeline)
+ * @param scale - Scale factor for preview rendering
+ */
+export function applyEffectors(
+  renderer: TextureRendererLike,
+  config: EffectorConfig,
+  viewport: Viewport,
+  maskColor: RGBA,
+  scale: number
+): void {
+  // 1. Apply mask first (transparency-modification)
+  // Masks define visibility through grayscale values
+  if (config.mask?.enabled && config.mask.shape) {
+    const greymapSpec = createGreymapMaskSpecFromShape(config.mask.shape, viewport)
+    if (greymapSpec) {
+      renderMaskWithGreymapPipeline(renderer, greymapSpec, maskColor, viewport)
+    }
+  }
+
+  // 2. Apply effects (color-modification)
+  // Effects modify color/appearance of visible areas
+  if (config.effects) {
+    applyEffects(renderer, config.effects, viewport, scale)
+  }
+}
+
+// ============================================================
 // Layer Finders
 // ============================================================
 
@@ -479,14 +535,6 @@ function findProcessorTargetPairs(layers: LayerNodeConfig[]): Array<{
   targets: LayerNodeConfig[]
 }> {
   return getProcessorTargetPairsFromConfig(layers, true)
-}
-
-/**
- * Get mask shape from a processor node
- */
-function getProcessorMaskShape(processor: ProcessorNodeConfig): MaskShapeConfig | null {
-  const maskProcessor = getProcessorMask(processor)
-  return maskProcessor?.enabled ? maskProcessor.shape : null
 }
 
 // ============================================================
@@ -561,50 +609,49 @@ export async function renderHeroConfig(
   // 2. Render surface layer with mask (legacy: mask in layer.processors)
   const surfaceLayer = findSurfaceLayer(config.layers)
   if (surfaceLayer) {
-    // Find mask shape from processors
+    // Get mask from processors
     const maskProcessor = getLayerMaskProcessor(surfaceLayer)
-    const maskShape = maskProcessor?.enabled ? maskProcessor.shape : null
 
-    // Render the mask if found (using 2-stage greymap pipeline)
-    if (maskShape) {
-      // Create greymap spec (outputs grayscale values)
-      const greymapSpec = createGreymapMaskSpecFromShape(maskShape, viewport)
-      if (greymapSpec) {
-        // Render using 2-stage pipeline:
-        // Stage 1: Greymap to offscreen
-        // Stage 2: Colorize to final RGBA
-        renderMaskWithGreymapPipeline(renderer, greymapSpec, midgroundTextureColor1, viewport)
-      }
-    }
-
-    // Apply surface layer effects (supports both filters and processors)
+    // Get effects from filters (supports both filters and processors)
     const effectFilters = getLayerFilters(surfaceLayer)
     const effectFilter = effectFilters.find((f) => f.enabled)
-    if (effectFilter?.config) {
-      applyEffects(renderer, effectFilter.config, viewport, scale)
-    }
+
+    // Apply effectors using unified pipeline (mask first, then effects)
+    applyEffectors(
+      renderer,
+      {
+        mask: maskProcessor,
+        effects: effectFilter?.config,
+      },
+      viewport,
+      midgroundTextureColor1,
+      scale
+    )
   }
 
-  // 3. Process Processor nodes (new: position-based processor application)
+  // 3. Process Processor nodes (position-based processor application)
   const processorPairs = findProcessorTargetPairs(config.layers)
   for (const { processor, targets } of processorPairs) {
     // Skip if processor has no targets
     if (targets.length === 0) continue
 
-    // Apply mask from processor to targets
-    const maskShape = getProcessorMaskShape(processor)
-    if (maskShape) {
-      const greymapSpec = createGreymapMaskSpecFromShape(maskShape, viewport)
-      if (greymapSpec) {
-        renderMaskWithGreymapPipeline(renderer, greymapSpec, midgroundTextureColor1, viewport)
-      }
-    }
+    // Get mask from processor modifiers
+    const maskProcessor = getProcessorMask(processor)
 
-    // Apply effects from processor
+    // Get effects from processor modifiers
     const effectFilters = getProcessorEffects(processor)
     const effectFilter = effectFilters.find((f) => f.enabled)
-    if (effectFilter?.config) {
-      applyEffects(renderer, effectFilter.config, viewport, scale)
-    }
+
+    // Apply effectors using unified pipeline (mask first, then effects)
+    applyEffectors(
+      renderer,
+      {
+        mask: maskProcessor,
+        effects: effectFilter?.config,
+      },
+      viewport,
+      midgroundTextureColor1,
+      scale
+    )
   }
 }
