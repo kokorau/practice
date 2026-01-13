@@ -1,7 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { toCustomSurfaceParams, toCustomBackgroundSurfaceParams } from './SurfaceMapper'
 import type { SurfaceConfig } from './HeroViewConfig'
 import type { RGBA } from '@practice/texture'
+
+// Mock @practice/texture to provide actual values needed for tests
+vi.mock('@practice/texture', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@practice/texture')>()
+  return {
+    ...actual,
+  }
+})
 
 describe('toCustomSurfaceParams', () => {
   describe('solid surface', () => {
