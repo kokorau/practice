@@ -359,7 +359,8 @@ export {
   // Legacy aliases (deprecated)
   type EffectProcessor,
   type MaskProcessor,
-  type Processor,
+  // Note: Processor from Modifier.ts is deprecated, use Processor from LayerNode.ts
+  type Processor as ModifierProcessor,
   createEffectProcessor,
   createMaskProcessor,
   isEffectProcessor,
@@ -788,6 +789,36 @@ export {
   type VignetteEffectDefinition,
   type EffectShaderSpec,
 } from './EffectRegistry'
+
+// ============================================================
+// Effector Types (Unified Effect + Mask)
+// ============================================================
+
+export {
+  // Types
+  type EffectorType,
+  type EffectorCategory,
+  type EffectorModifier,
+  type MaskShapeType,
+  type UnifiedFilterType,
+  type BaseEffectorDefinition,
+  type EffectEffectorDefinition,
+  type MaskEffectorDefinition,
+  type EffectorDefinition,
+  // Constants
+  EFFECTOR_TYPES,
+  MASK_SHAPE_TYPES,
+  // Type guards
+  isEffectType,
+  isMaskType,
+  isValidEffectorType,
+  isValidMaskShapeType,
+  // Utilities
+  getEffectorCategory,
+  getEffectorDisplayName,
+  getMaskShapeDisplayName,
+  createEffectorModifier,
+} from './EffectorTypes'
 
 // ============================================================
 // Constants

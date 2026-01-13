@@ -87,13 +87,14 @@ export type {
   EffectModifier,
   MaskModifier,
   Modifier,
-  // Legacy Processor aliases
+  // Legacy Processor aliases (from Modifier)
   EffectProcessor,
   MaskProcessor,
-  Processor,
+  ModifierProcessor,
   // Layer & Group types
   Layer,
   Group,
+  Processor,
   SceneNode,
   LayerType,
   LayerVariant,
@@ -166,6 +167,16 @@ export type {
   EffectDefinition,
   VignetteEffectDefinition,
   EffectShaderSpec,
+  // Effector types (unified effect + mask)
+  EffectorType,
+  EffectorCategory,
+  EffectorModifier,
+  MaskShapeType,
+  UnifiedFilterType,
+  BaseEffectorDefinition,
+  EffectEffectorDefinition,
+  MaskEffectorDefinition,
+  EffectorDefinition,
 } from './Domain'
 
 export {
@@ -222,8 +233,10 @@ export {
   createModel3DLayer,
   createSceneImageLayer,
   createGroup,
+  createProcessor,
   isLayer,
   isGroup,
+  isProcessor,
   isBaseLayer,
   isSurfaceLayer,
   isTextLayer,
@@ -276,6 +289,17 @@ export {
   EFFECT_TYPES,
   getEffectDefinition,
   isValidEffectType,
+  // Effector utilities (unified effect + mask)
+  EFFECTOR_TYPES,
+  MASK_SHAPE_TYPES,
+  isEffectType,
+  isMaskType,
+  isValidEffectorType,
+  isValidMaskShapeType,
+  getEffectorCategory,
+  getEffectorDisplayName,
+  getMaskShapeDisplayName,
+  createEffectorModifier,
   // Mappers
   toCustomMaskShapeParams,
   toCustomSurfaceParams,
