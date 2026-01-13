@@ -10,7 +10,15 @@
  */
 
 import type { EffectType } from './EffectRegistry'
-import type { EffectModifier, MaskModifier, ClipMaskConfig } from './Modifier'
+import type { EffectModifier, MaskModifier } from './Modifier'
+import {
+  MaskShapeSchemas,
+  MaskBaseSchema,
+  MaskShapeOptions,
+  createDefaultMaskConfig,
+  createMaskConfigForShape,
+  type MaskConfig,
+} from './MaskSchema'
 
 // ============================================================
 // Effector Categories
@@ -177,8 +185,16 @@ export interface MaskEffectorDefinition extends BaseEffectorDefinition {
   category: 'transparency-modification'
   /** Available mask shapes */
   shapes: MaskShapeType[]
+  /** Base schema (shared fields) */
+  baseSchema: typeof MaskBaseSchema
+  /** Shape-specific schemas */
+  shapeSchemas: typeof MaskShapeSchemas
+  /** Shape options for UI select */
+  shapeOptions: typeof MaskShapeOptions
   /** Create default mask config */
-  createDefaultConfig: () => ClipMaskConfig
+  createDefaultConfig: () => MaskConfig
+  /** Create config for specific shape */
+  createConfigForShape: typeof createMaskConfigForShape
 }
 
 /**
@@ -251,3 +267,113 @@ export function getMaskShapeDisplayName(shape: MaskShapeType): string {
   }
   return displayNames[shape]
 }
+
+// ============================================================
+// Mask Effector Definition
+// ============================================================
+
+/**
+ * Mask effector definition
+ *
+ * Defines the mask as an effector with shape-based configuration.
+ * This is the single source of truth for mask shape schemas and factories.
+ */
+export const MASK_EFFECTOR_DEFINITION: MaskEffectorDefinition = {
+  id: 'mask',
+  displayName: 'Mask',
+  category: 'transparency-modification',
+  shapes: MASK_SHAPE_TYPES,
+  baseSchema: MaskBaseSchema,
+  shapeSchemas: MaskShapeSchemas,
+  shapeOptions: MaskShapeOptions,
+  createDefaultConfig: createDefaultMaskConfig,
+  createConfigForShape: createMaskConfigForShape,
+}
+
+// ============================================================
+// Effector Registry
+// ============================================================
+
+/**
+ * Unified Effector Registry
+ *
+ * Central registry for both effects and masks.
+ * This allows treating masks as a special type of effector
+ * with a consistent interface for UI generation and config management.
+ *
+ * Note: Effect definitions are in EFFECT_REGISTRY (EffectRegistry.ts)
+ * for backward compatibility. This registry adds mask support.
+ */
+export const EFFECTOR_REGISTRY = {
+  mask: MASK_EFFECTOR_DEFINITION,
+} as const
+
+/**
+ * Get effector definition by type
+ */
+export function getEffectorDefinition(type: 'mask'): MaskEffectorDefinition
+export function getEffectorDefinition(type: EffectorType): MaskEffectorDefinition | undefined
+export function getEffectorDefinition(type: EffectorType): MaskEffectorDefinition | undefined {
+  if (type === 'mask') {
+    return EFFECTOR_REGISTRY.mask
+  }
+  return undefined
+}
+
+/**
+ * Check if effector is registered
+ */
+export function isRegisteredEffector(type: string): type is 'mask' {
+  return type in EFFECTOR_REGISTRY
+}
+
+// ============================================================
+// Re-exports from MaskSchema
+// ============================================================
+
+export {
+  // Schemas
+  MaskBaseSchema,
+  MaskShapeSchemas,
+  MaskShapeOptions,
+  // Type exports
+  type MaskShape,
+  type MaskConfig,
+  // Config type exports
+  type CircleMaskConfig,
+  type RectMaskConfig,
+  type BlobMaskConfig,
+  type PerlinMaskConfig,
+  type LinearGradientMaskConfig,
+  type RadialGradientMaskConfig,
+  type BoxGradientMaskConfig,
+  type BoxGradientCurve,
+  // Param type exports
+  type CircleMaskParams,
+  type RectMaskParams,
+  type BlobMaskParams,
+  type PerlinMaskParams,
+  type LinearGradientMaskParams,
+  type RadialGradientMaskParams,
+  type BoxGradientMaskParams,
+  // Factory functions
+  createDefaultMaskConfig,
+  createMaskConfigForShape,
+  // Type guards
+  isCircleMaskConfig,
+  isRectMaskConfig,
+  isBlobMaskConfig,
+  isPerlinMaskConfig,
+  isLinearGradientMaskConfig,
+  isRadialGradientMaskConfig,
+  isBoxGradientMaskConfig,
+  // Migration helpers
+  type LegacyClipMaskShape,
+  type LegacyClipMaskConfig,
+  type LegacyMaskModifier,
+  isSupportedMaskShape,
+  migrateClipMaskConfig,
+  migrateMaskModifier,
+  toLegacyClipMaskConfig,
+  toLegacyMaskModifier,
+} from './MaskSchema'
