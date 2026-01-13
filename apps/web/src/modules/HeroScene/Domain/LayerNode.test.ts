@@ -11,6 +11,9 @@ import {
   isGroup,
   findNode,
   flattenNodes,
+  getProcessorTargets,
+  findProcessorForNode,
+  getProcessorTargetPairs,
   type Group,
   type Layer,
   type Processor,
@@ -723,5 +726,327 @@ describe('moveModifier with Processor', () => {
 
     expect(layer.modifiers.length).toBe(2)
     expect(updatedProcessor.modifiers.length).toBe(1)
+  })
+})
+
+// ============================================================
+// Processor Target Functions Tests
+// ============================================================
+
+describe('getProcessorTargets', () => {
+  describe('root level (isRoot = true)', () => {
+    it('returns the immediately preceding node only', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createTestLayer('l2'),
+        createProcessor('p1'),
+      ]
+
+      const targets = getProcessorTargets(nodes, 2, true)
+      expect(targets.length).toBe(1)
+      expect(targets[0].id).toBe('l2')
+    })
+
+    it('returns empty array when processor is first', () => {
+      const nodes: SceneNode[] = [
+        createProcessor('p1'),
+        createTestLayer('l1'),
+      ]
+
+      const targets = getProcessorTargets(nodes, 0, true)
+      expect(targets).toEqual([])
+    })
+
+    it('returns empty array when preceded by another processor', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createProcessor('p1'),
+        createProcessor('p2'),
+      ]
+
+      const targets = getProcessorTargets(nodes, 2, true)
+      expect(targets).toEqual([])
+    })
+
+    it('returns single group when group precedes processor', () => {
+      const group = createGroup('g1', [createTestLayer('l1')])
+      const nodes: SceneNode[] = [
+        createTestLayer('l0'),
+        group,
+        createProcessor('p1'),
+      ]
+
+      const targets = getProcessorTargets(nodes, 2, true)
+      expect(targets.length).toBe(1)
+      expect(targets[0].id).toBe('g1')
+    })
+  })
+
+  describe('group context (isRoot = false)', () => {
+    it('returns all preceding siblings until processor', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createTestLayer('l2'),
+        createTestLayer('l3'),
+        createProcessor('p1'),
+      ]
+
+      const targets = getProcessorTargets(nodes, 3, false)
+      expect(targets.map(n => n.id)).toEqual(['l1', 'l2', 'l3'])
+    })
+
+    it('stops at previous processor in group', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createProcessor('p1'),
+        createTestLayer('l2'),
+        createTestLayer('l3'),
+        createProcessor('p2'),
+      ]
+
+      // p1 at index 1 gets l1
+      const targets1 = getProcessorTargets(nodes, 1, false)
+      expect(targets1.map(n => n.id)).toEqual(['l1'])
+
+      // p2 at index 4 gets l2, l3 (stops at p1)
+      const targets2 = getProcessorTargets(nodes, 4, false)
+      expect(targets2.map(n => n.id)).toEqual(['l2', 'l3'])
+    })
+
+    it('returns empty array when processor is first in group', () => {
+      const nodes: SceneNode[] = [
+        createProcessor('p1'),
+        createTestLayer('l1'),
+        createTestLayer('l2'),
+      ]
+
+      const targets = getProcessorTargets(nodes, 0, false)
+      expect(targets).toEqual([])
+    })
+
+    it('includes groups in targets', () => {
+      const innerGroup = createGroup('g1', [createTestLayer('inner')])
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        innerGroup,
+        createProcessor('p1'),
+      ]
+
+      const targets = getProcessorTargets(nodes, 2, false)
+      expect(targets.map(n => n.id)).toEqual(['l1', 'g1'])
+    })
+  })
+
+  describe('edge cases', () => {
+    it('returns empty array for invalid index (negative)', () => {
+      const nodes: SceneNode[] = [createTestLayer('l1'), createProcessor('p1')]
+      const targets = getProcessorTargets(nodes, -1, false)
+      expect(targets).toEqual([])
+    })
+
+    it('returns empty array for invalid index (out of bounds)', () => {
+      const nodes: SceneNode[] = [createTestLayer('l1'), createProcessor('p1')]
+      const targets = getProcessorTargets(nodes, 10, false)
+      expect(targets).toEqual([])
+    })
+
+    it('returns empty array for empty nodes array', () => {
+      const targets = getProcessorTargets([], 0, false)
+      expect(targets).toEqual([])
+    })
+  })
+})
+
+describe('findProcessorForNode', () => {
+  describe('root level (isRoot = true)', () => {
+    it('finds processor that applies to immediately preceding node', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createTestLayer('l2'),
+        createProcessor('p1'),
+      ]
+
+      const processor = findProcessorForNode(nodes, 1, true)
+      expect(processor?.id).toBe('p1')
+    })
+
+    it('returns undefined for node not immediately before processor', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createTestLayer('l2'),
+        createProcessor('p1'),
+      ]
+
+      // l1 is not immediately before p1 (l2 is)
+      const processor = findProcessorForNode(nodes, 0, true)
+      expect(processor).toBeUndefined()
+    })
+
+    it('returns undefined when no processor follows the node', () => {
+      const nodes: SceneNode[] = [
+        createProcessor('p1'),
+        createTestLayer('l1'),
+      ]
+
+      const processor = findProcessorForNode(nodes, 1, true)
+      expect(processor).toBeUndefined()
+    })
+  })
+
+  describe('group context (isRoot = false)', () => {
+    it('finds processor that includes node in targets', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createTestLayer('l2'),
+        createProcessor('p1'),
+      ]
+
+      const processor1 = findProcessorForNode(nodes, 0, false)
+      expect(processor1?.id).toBe('p1')
+
+      const processor2 = findProcessorForNode(nodes, 1, false)
+      expect(processor2?.id).toBe('p1')
+    })
+
+    it('returns correct processor when multiple processors exist', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createProcessor('p1'),
+        createTestLayer('l2'),
+        createProcessor('p2'),
+      ]
+
+      // l1 is covered by p1
+      const processor1 = findProcessorForNode(nodes, 0, false)
+      expect(processor1?.id).toBe('p1')
+
+      // l2 is covered by p2
+      const processor2 = findProcessorForNode(nodes, 2, false)
+      expect(processor2?.id).toBe('p2')
+    })
+
+    it('returns undefined for nodes after last processor', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createProcessor('p1'),
+        createTestLayer('l2'),
+      ]
+
+      const processor = findProcessorForNode(nodes, 2, false)
+      expect(processor).toBeUndefined()
+    })
+  })
+
+  describe('edge cases', () => {
+    it('returns undefined for invalid index (negative)', () => {
+      const nodes: SceneNode[] = [createTestLayer('l1'), createProcessor('p1')]
+      const processor = findProcessorForNode(nodes, -1, false)
+      expect(processor).toBeUndefined()
+    })
+
+    it('returns undefined for invalid index (out of bounds)', () => {
+      const nodes: SceneNode[] = [createTestLayer('l1'), createProcessor('p1')]
+      const processor = findProcessorForNode(nodes, 10, false)
+      expect(processor).toBeUndefined()
+    })
+
+    it('returns undefined for processor node itself', () => {
+      const nodes: SceneNode[] = [
+        createTestLayer('l1'),
+        createProcessor('p1'),
+        createProcessor('p2'),
+      ]
+
+      // p1 (index 1) - the next processor (p2) has no targets
+      const processor = findProcessorForNode(nodes, 1, false)
+      expect(processor).toBeUndefined()
+    })
+  })
+})
+
+describe('getProcessorTargetPairs', () => {
+  it('returns empty array when no processors exist', () => {
+    const nodes: SceneNode[] = [
+      createTestLayer('l1'),
+      createTestLayer('l2'),
+    ]
+
+    const pairs = getProcessorTargetPairs(nodes, false)
+    expect(pairs).toEqual([])
+  })
+
+  it('returns pairs for single processor', () => {
+    const nodes: SceneNode[] = [
+      createTestLayer('l1'),
+      createTestLayer('l2'),
+      createProcessor('p1'),
+    ]
+
+    const pairs = getProcessorTargetPairs(nodes, false)
+    expect(pairs.length).toBe(1)
+    expect(pairs[0]?.processor.id).toBe('p1')
+    expect(pairs[0]?.targets.map(n => n.id)).toEqual(['l1', 'l2'])
+  })
+
+  it('returns pairs for multiple processors', () => {
+    const nodes: SceneNode[] = [
+      createTestLayer('l1'),
+      createProcessor('p1'),
+      createTestLayer('l2'),
+      createTestLayer('l3'),
+      createProcessor('p2'),
+    ]
+
+    const pairs = getProcessorTargetPairs(nodes, false)
+    expect(pairs.length).toBe(2)
+
+    expect(pairs[0]?.processor.id).toBe('p1')
+    expect(pairs[0]?.targets.map(n => n.id)).toEqual(['l1'])
+
+    expect(pairs[1]?.processor.id).toBe('p2')
+    expect(pairs[1]?.targets.map(n => n.id)).toEqual(['l2', 'l3'])
+  })
+
+  it('handles processor with no targets', () => {
+    const nodes: SceneNode[] = [
+      createProcessor('p1'),
+      createTestLayer('l1'),
+    ]
+
+    const pairs = getProcessorTargetPairs(nodes, false)
+    expect(pairs.length).toBe(1)
+    expect(pairs[0]?.processor.id).toBe('p1')
+    expect(pairs[0]?.targets).toEqual([])
+  })
+
+  it('respects root level rules', () => {
+    const nodes: SceneNode[] = [
+      createTestLayer('l1'),
+      createTestLayer('l2'),
+      createProcessor('p1'),
+    ]
+
+    const pairs = getProcessorTargetPairs(nodes, true)
+    expect(pairs.length).toBe(1)
+    expect(pairs[0]?.processor.id).toBe('p1')
+    // Root level: only immediately preceding node
+    expect(pairs[0]?.targets.map(n => n.id)).toEqual(['l2'])
+  })
+
+  it('handles consecutive processors at root level', () => {
+    const nodes: SceneNode[] = [
+      createTestLayer('l1'),
+      createProcessor('p1'),
+      createProcessor('p2'),
+    ]
+
+    const pairs = getProcessorTargetPairs(nodes, true)
+    expect(pairs.length).toBe(2)
+
+    expect(pairs[0]?.processor.id).toBe('p1')
+    expect(pairs[0]?.targets.map(n => n.id)).toEqual(['l1'])
+
+    expect(pairs[1]?.processor.id).toBe('p2')
+    expect(pairs[1]?.targets).toEqual([]) // Preceded by another processor
   })
 })

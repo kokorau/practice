@@ -837,4 +837,326 @@ describe('renderHeroConfig', () => {
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
     })
   })
+
+  // ============================================================
+  // Processor Node Tests (Position-based)
+  // ============================================================
+
+  describe('processor node rendering (position-based)', () => {
+    it('should render mask from processor node at root level', async () => {
+      const config = createTestConfig({
+        layers: [
+          {
+            type: 'base',
+            id: 'base',
+            name: 'Background',
+            visible: true,
+            surface: { type: 'solid' },
+            filters: [],
+          },
+          {
+            type: 'surface',
+            id: 'surface-1',
+            name: 'Surface',
+            visible: true,
+            surface: { type: 'solid' },
+            processors: [], // No mask on surface layer
+          },
+          {
+            type: 'processor',
+            id: 'processor-1',
+            name: 'Processor',
+            visible: true,
+            modifiers: [
+              {
+                type: 'mask',
+                enabled: true,
+                shape: {
+                  type: 'circle',
+                  centerX: 0.5,
+                  centerY: 0.5,
+                  radius: 0.3,
+                  cutout: false,
+                },
+                invert: false,
+                feather: 0,
+              },
+            ],
+          },
+        ],
+      })
+
+      await renderHeroConfig(renderer, config, lightPalette)
+
+      // Base layer render + processor mask
+      expect(renderer.renderCalls.length).toBe(1)
+      expect(renderer.renderToOffscreenCalls.length).toBe(1)
+      expect(renderer.applyPostEffectCalls.length).toBe(1)
+    })
+
+    it('should skip processor with no targets (processor first)', async () => {
+      const config = createTestConfig({
+        layers: [
+          {
+            type: 'processor',
+            id: 'processor-1',
+            name: 'Processor',
+            visible: true,
+            modifiers: [
+              {
+                type: 'mask',
+                enabled: true,
+                shape: {
+                  type: 'circle',
+                  centerX: 0.5,
+                  centerY: 0.5,
+                  radius: 0.3,
+                  cutout: false,
+                },
+                invert: false,
+                feather: 0,
+              },
+            ],
+          },
+          {
+            type: 'base',
+            id: 'base',
+            name: 'Background',
+            visible: true,
+            surface: { type: 'solid' },
+            filters: [],
+          },
+        ],
+      })
+
+      await renderHeroConfig(renderer, config, lightPalette)
+
+      // Only base layer render, processor has no targets (is first)
+      expect(renderer.renderCalls.length).toBe(1)
+      expect(renderer.renderToOffscreenCalls.length).toBe(0)
+    })
+
+    it('should skip consecutive processor (no targets)', async () => {
+      const config = createTestConfig({
+        layers: [
+          {
+            type: 'base',
+            id: 'base',
+            name: 'Background',
+            visible: true,
+            surface: { type: 'solid' },
+            filters: [],
+          },
+          {
+            type: 'processor',
+            id: 'processor-1',
+            name: 'Processor 1',
+            visible: true,
+            modifiers: [
+              {
+                type: 'mask',
+                enabled: true,
+                shape: {
+                  type: 'circle',
+                  centerX: 0.5,
+                  centerY: 0.5,
+                  radius: 0.3,
+                  cutout: false,
+                },
+                invert: false,
+                feather: 0,
+              },
+            ],
+          },
+          {
+            type: 'processor',
+            id: 'processor-2',
+            name: 'Processor 2',
+            visible: true,
+            modifiers: [
+              {
+                type: 'mask',
+                enabled: true,
+                shape: {
+                  type: 'rect',
+                  left: 0.1,
+                  right: 0.1,
+                  top: 0.1,
+                  bottom: 0.1,
+                  radiusTopLeft: 0,
+                  radiusTopRight: 0,
+                  radiusBottomLeft: 0,
+                  radiusBottomRight: 0,
+                  rotation: 0,
+                  perspectiveX: 0,
+                  perspectiveY: 0,
+                  cutout: false,
+                },
+                invert: false,
+                feather: 0,
+              },
+            ],
+          },
+        ],
+      })
+
+      await renderHeroConfig(renderer, config, lightPalette)
+
+      // Base layer render + only first processor mask (second has no targets)
+      expect(renderer.renderCalls.length).toBe(1)
+      expect(renderer.renderToOffscreenCalls.length).toBe(1)
+    })
+
+    it('should apply effects from processor node', async () => {
+      const config = createTestConfig({
+        layers: [
+          {
+            type: 'base',
+            id: 'base',
+            name: 'Background',
+            visible: true,
+            surface: { type: 'solid' },
+            filters: [],
+          },
+          {
+            type: 'surface',
+            id: 'surface-1',
+            name: 'Surface',
+            visible: true,
+            surface: { type: 'solid' },
+            processors: [],
+          },
+          {
+            type: 'processor',
+            id: 'processor-1',
+            name: 'Processor',
+            visible: true,
+            modifiers: [
+              {
+                type: 'effect',
+                enabled: true,
+                config: {
+                  blur: { enabled: true, radius: 8 },
+                },
+              },
+            ],
+          },
+        ],
+      })
+
+      await renderHeroConfig(renderer, config, lightPalette)
+
+      // Base layer render + effect application
+      expect(renderer.renderCalls.length).toBe(1)
+      expect(renderer.copyCanvasToTextureCalls).toBeGreaterThanOrEqual(1)
+    })
+
+    it('should apply both mask and effects from processor node', async () => {
+      const config = createTestConfig({
+        layers: [
+          {
+            type: 'base',
+            id: 'base',
+            name: 'Background',
+            visible: true,
+            surface: { type: 'solid' },
+            filters: [],
+          },
+          {
+            type: 'surface',
+            id: 'surface-1',
+            name: 'Surface',
+            visible: true,
+            surface: { type: 'solid' },
+            processors: [],
+          },
+          {
+            type: 'processor',
+            id: 'processor-1',
+            name: 'Processor',
+            visible: true,
+            modifiers: [
+              {
+                type: 'mask',
+                enabled: true,
+                shape: {
+                  type: 'circle',
+                  centerX: 0.5,
+                  centerY: 0.5,
+                  radius: 0.3,
+                  cutout: false,
+                },
+                invert: false,
+                feather: 0,
+              },
+              {
+                type: 'effect',
+                enabled: true,
+                config: {
+                  blur: { enabled: true, radius: 8 },
+                },
+              },
+            ],
+          },
+        ],
+      })
+
+      await renderHeroConfig(renderer, config, lightPalette)
+
+      // Base layer render + mask + effect
+      expect(renderer.renderCalls.length).toBe(1)
+      expect(renderer.renderToOffscreenCalls.length).toBe(1) // mask greymap
+      expect(renderer.copyCanvasToTextureCalls).toBeGreaterThanOrEqual(1) // effect
+    })
+
+    it('should skip disabled mask in processor node', async () => {
+      const config = createTestConfig({
+        layers: [
+          {
+            type: 'base',
+            id: 'base',
+            name: 'Background',
+            visible: true,
+            surface: { type: 'solid' },
+            filters: [],
+          },
+          {
+            type: 'surface',
+            id: 'surface-1',
+            name: 'Surface',
+            visible: true,
+            surface: { type: 'solid' },
+            processors: [],
+          },
+          {
+            type: 'processor',
+            id: 'processor-1',
+            name: 'Processor',
+            visible: true,
+            modifiers: [
+              {
+                type: 'mask',
+                enabled: false, // Disabled
+                shape: {
+                  type: 'circle',
+                  centerX: 0.5,
+                  centerY: 0.5,
+                  radius: 0.3,
+                  cutout: false,
+                },
+                invert: false,
+                feather: 0,
+              },
+            ],
+          },
+        ],
+      })
+
+      await renderHeroConfig(renderer, config, lightPalette)
+
+      // Only base layer render, no mask
+      expect(renderer.renderCalls.length).toBe(1)
+      expect(renderer.renderToOffscreenCalls.length).toBe(0)
+    })
+  })
 })
