@@ -204,6 +204,7 @@ import {
   toCustomBackgroundSurfaceParams,
   // Application Syncer
   syncBackgroundSurfaceParams,
+  syncMaskSurfaceParams,
   // Grouped state types
   type PatternState,
   type BackgroundState,
@@ -3765,11 +3766,25 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Note: 'image' type returns null and is handled separately via customBackgroundImage
   }
 
+  /**
+   * Sync customSurfaceParams from Repository's surface layer
+   * This enables unidirectional data flow: Usecase -> Repository -> View
+   * Now delegates to syncMaskSurfaceParams from Application/ConfigSyncer
+   */
+  const syncMaskSurfaceParamsFromRepository = (config: HeroViewConfig): void => {
+    const result = syncMaskSurfaceParams(config, midgroundTextureColor1.value, midgroundTextureColor2.value)
+    if (result.surfaceParams !== null) {
+      customSurfaceParams.value = result.surfaceParams
+    }
+    // Note: 'image' type returns null and is handled separately via customMaskImage
+  }
+
   // Subscribe to internal heroViewRepository changes for unidirectional flow
   heroViewRepositoryUnsubscribe = heroViewRepository.subscribe((config: HeroViewConfig) => {
     // Skip during fromHeroViewConfig to avoid redundant updates
     if (isLoadingFromConfig) return
     syncBackgroundSurfaceParamsFromRepository(config)
+    syncMaskSurfaceParamsFromRepository(config)
   })
 
   // Subscribe to repository changes (if provided)

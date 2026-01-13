@@ -342,10 +342,11 @@ export {
   createMaskUsecase,
   // ConfigSyncer
   syncBackgroundSurfaceParams,
+  syncMaskSurfaceParams,
 } from './Application'
 
 // Re-export ConfigSyncer types
-export type { SyncBackgroundSurfaceResult } from './Application'
+export type { SyncBackgroundSurfaceResult, SyncMaskSurfaceResult } from './Application'
 
 // HeroView Repository types (from Domain)
 export type {
