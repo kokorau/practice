@@ -2477,7 +2477,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
               // previewRenderer is guaranteed non-null here (checked at renderScene start)
               const renderer = previewRenderer!
               let currentTexture = inputTexture
-              const { filters } = layer
+              // Read filters from effectManager (layerFilterConfigs) for real-time reactivity
+              // This fixes the issue where useFilterEditor updates effectManager but not editorState.canvasLayers
+              const filters = layerFilterConfigs.value.get(layer.id) ?? layer.filters
 
               // Dot Halftone
               if (filters.dotHalftone.enabled) {
