@@ -808,16 +808,59 @@ export {
   // Constants
   EFFECTOR_TYPES,
   MASK_SHAPE_TYPES,
+  EFFECTOR_REGISTRY,
+  MASK_EFFECTOR_DEFINITION,
   // Type guards
   isEffectType,
   isMaskType,
   isValidEffectorType,
   isValidMaskShapeType,
+  isRegisteredEffector,
   // Utilities
   getEffectorCategory,
   getEffectorDisplayName,
   getMaskShapeDisplayName,
   createEffectorModifier,
+  getEffectorDefinition,
+  // Mask Schema re-exports
+  MaskBaseSchema,
+  MaskShapeSchemas,
+  MaskShapeOptions,
+  type MaskShape,
+  type MaskConfig,
+  type CircleMaskConfig,
+  type RectMaskConfig,
+  type BlobMaskConfig,
+  type PerlinMaskConfig,
+  type LinearGradientMaskConfig,
+  type RadialGradientMaskConfig,
+  type BoxGradientMaskConfig,
+  type BoxGradientCurve,
+  type CircleMaskParams,
+  type RectMaskParams,
+  type BlobMaskParams,
+  type PerlinMaskParams,
+  type LinearGradientMaskParams,
+  type RadialGradientMaskParams,
+  type BoxGradientMaskParams,
+  createDefaultMaskConfig,
+  createMaskConfigForShape,
+  isCircleMaskConfig,
+  isRectMaskConfig,
+  isBlobMaskConfig,
+  isPerlinMaskConfig,
+  isLinearGradientMaskConfig,
+  isRadialGradientMaskConfig,
+  isBoxGradientMaskConfig,
+  // Migration helpers
+  type LegacyClipMaskShape,
+  type LegacyClipMaskConfig,
+  type LegacyMaskModifier,
+  isSupportedMaskShape,
+  migrateClipMaskConfig,
+  migrateMaskModifier,
+  toLegacyClipMaskConfig,
+  toLegacyMaskModifier,
 } from './EffectorTypes'
 
 // ============================================================
@@ -882,4 +925,23 @@ export type {
 
 export { toCustomMaskShapeParams } from './MaskShapeMapper'
 export { toCustomSurfaceParams, toCustomBackgroundSurfaceParams } from './SurfaceMapper'
+
+// ============================================================
+// Mask Shader Registry
+// ============================================================
+
+export {
+  MASK_SHADER_REGISTRY,
+  MASK_SHAPES_WITH_SHADER,
+  DEFAULT_MASK_COLORS,
+  createMaskShaderSpec,
+  createCircleMaskShaderSpec,
+  createRectMaskShaderSpec,
+  createPerlinMaskShaderSpec,
+  createLinearGradientMaskShaderSpec,
+  createRadialGradientMaskShaderSpec,
+  createBoxGradientMaskShaderSpec,
+  hasMaskShader,
+  type MaskColors,
+} from './MaskShaderRegistry'
 
