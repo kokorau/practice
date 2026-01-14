@@ -56,8 +56,6 @@ import type {
   FilterType,
   SurfaceParamsUpdate,
   HeroViewRepository,
-  MaskUsecase,
-  BackgroundSurfaceUsecase,
   SurfaceUsecase,
   ForegroundElementUpdate,
   PresetColorConfig,
@@ -517,10 +515,6 @@ export interface SerializationState {
 export interface UsecaseState {
   /** HeroView repository */
   readonly heroViewRepository: HeroViewRepository
-  /** Mask usecase */
-  readonly maskUsecase: MaskUsecase
-  /** Background surface usecase */
-  readonly backgroundSurfaceUsecase: BackgroundSurfaceUsecase
   /** Unified surface usecase (operates on selected layer) */
   readonly surfaceUsecase: SurfaceUsecase
   /** Color usecase */

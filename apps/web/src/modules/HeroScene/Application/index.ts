@@ -15,31 +15,14 @@ export type {
   LayerUpdate,
 } from './ports'
 
-// Re-export Background Surface UseCase
-export type {
-  BackgroundSurfaceUsecase,
-  BackgroundSurfaceUsecaseDeps,
-  ImageUploadPort,
-  SurfaceParamsUpdate,
-} from './BackgroundSurfaceUsecase'
-export { createBackgroundSurfaceUsecase } from './BackgroundSurfaceUsecase'
-
-// Re-export Mask UseCase
-export type {
-  MaskUsecase,
-  MaskUsecaseDeps,
-  MaskShapeParamsUpdate,
-  SurfaceParamsUpdate as MaskSurfaceParamsUpdate,
-} from './MaskUsecase'
-export { createMaskUsecase } from './MaskUsecase'
-
 // Re-export Surface UseCase (unified)
 export type {
   SurfaceUsecase,
   SurfaceUsecaseDeps,
   SelectionPort as SurfaceSelectionPort,
-  SurfaceParamsUpdate as UnifiedSurfaceParamsUpdate,
-  MaskShapeParamsUpdate as UnifiedMaskShapeParamsUpdate,
+  ImageUploadPort,
+  SurfaceParamsUpdate,
+  MaskShapeParamsUpdate,
 } from './SurfaceUsecase'
 export { createSurfaceUsecase } from './SurfaceUsecase'
 

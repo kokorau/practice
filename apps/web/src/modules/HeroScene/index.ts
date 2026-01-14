@@ -314,12 +314,8 @@ export type {
   ForegroundElementUsecase,
   ForegroundElementUsecaseDeps,
   // Usecase types
-  BackgroundSurfaceUsecase,
-  BackgroundSurfaceUsecaseDeps,
   ImageUploadPort,
   SurfaceParamsUpdate,
-  MaskUsecase,
-  MaskUsecaseDeps,
   MaskShapeParamsUpdate,
   LayerUpdate,
   // Unified Surface Usecase types
@@ -334,8 +330,6 @@ export {
   // ForegroundElement UseCase
   createForegroundElementUsecase,
   // Usecases
-  createBackgroundSurfaceUsecase,
-  createMaskUsecase,
   createSurfaceUsecase,
   // ConfigSyncer
   syncBackgroundSurfaceParams,
