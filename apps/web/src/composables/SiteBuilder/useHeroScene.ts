@@ -81,6 +81,7 @@ import {
   type BaseLayerNodeConfig,
   type SurfaceLayerNodeConfig,
   type TextLayerNodeConfigType,
+  type Model3DLayerNodeConfig,
   type MaskProcessorConfig,
   type ForegroundLayerConfig,
   type HeroViewPreset,
@@ -1290,9 +1291,35 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     rotation: number
   }>): string => {
     const id = `text-${Date.now()}`
-    const newLayer: EditorCanvasLayer = {
+
+    // Create TextLayerNodeConfig for heroViewRepository
+    const textLayerConfig: TextLayerNodeConfigType = {
+      type: 'text',
       id,
       name: options?.text?.slice(0, 20) || 'Text Layer',
+      visible: true,
+      text: options?.text ?? 'Text',
+      fontFamily: options?.fontFamily ?? 'sans-serif',
+      fontSize: options?.fontSize ?? 48,
+      fontWeight: options?.fontWeight ?? 400,
+      letterSpacing: options?.letterSpacing ?? 0,
+      lineHeight: options?.lineHeight ?? 1.2,
+      color: options?.color ?? '#000000',
+      position: {
+        x: options?.x ?? 0.5,
+        y: options?.y ?? 0.5,
+        anchor: options?.anchor ?? 'center',
+      },
+      rotation: options?.rotation ?? 0,
+    }
+
+    // Add to heroViewRepository (primary source of truth)
+    layerUsecase.addLayer(textLayerConfig)
+
+    // Also add to editorState.canvasLayers for backward compatibility with render()
+    const newLayer: EditorCanvasLayer = {
+      id,
+      name: textLayerConfig.name,
       visible: true,
       opacity: 1.0,
       zIndex: editorState.value.canvasLayers.length,
@@ -1300,19 +1327,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       filters: createDefaultFilterConfig(),
       config: {
         type: 'text',
-        text: options?.text ?? 'Text',
-        fontFamily: options?.fontFamily ?? 'sans-serif',
-        fontSize: options?.fontSize ?? 48,
-        fontWeight: options?.fontWeight ?? 400,
-        letterSpacing: options?.letterSpacing ?? 0,
-        lineHeight: options?.lineHeight ?? 1.2,
-        color: options?.color ?? '#000000',
+        text: textLayerConfig.text,
+        fontFamily: textLayerConfig.fontFamily,
+        fontSize: textLayerConfig.fontSize,
+        fontWeight: textLayerConfig.fontWeight,
+        letterSpacing: textLayerConfig.letterSpacing,
+        lineHeight: textLayerConfig.lineHeight,
+        color: textLayerConfig.color,
         position: {
-          x: options?.x ?? 0.5,
-          y: options?.y ?? 0.5,
-          anchor: options?.anchor ?? 'center',
+          x: textLayerConfig.position.x,
+          y: textLayerConfig.position.y,
+          anchor: textLayerConfig.position.anchor as 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right',
         },
-        rotation: options?.rotation ?? 0,
+        rotation: textLayerConfig.rotation,
       },
     }
 
@@ -1343,6 +1370,31 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     scale: number
   }>): string => {
     const id = `object-${Date.now()}`
+
+    // Create Model3DLayerNodeConfig for heroViewRepository
+    const model3DLayerConfig: Model3DLayerNodeConfig = {
+      type: 'model3d',
+      id,
+      name: 'Object Layer',
+      visible: true,
+      modelUrl: options?.modelUrl ?? '',
+      position: {
+        x: options?.x ?? 0,
+        y: options?.y ?? 0,
+        z: options?.z ?? 0,
+      },
+      rotation: {
+        x: options?.rotationX ?? 0,
+        y: options?.rotationY ?? 0,
+        z: options?.rotationZ ?? 0,
+      },
+      scale: options?.scale ?? 1,
+    }
+
+    // Add to heroViewRepository (primary source of truth)
+    layerUsecase.addLayer(model3DLayerConfig)
+
+    // Also add to editorState.canvasLayers for backward compatibility with render()
     const newLayer: EditorCanvasLayer = {
       id,
       name: 'Object Layer',
@@ -1353,18 +1405,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       filters: createDefaultFilterConfig(),
       config: {
         type: 'object',
-        modelUrl: options?.modelUrl ?? '',
-        position: {
-          x: options?.x ?? 0,
-          y: options?.y ?? 0,
-          z: options?.z ?? 0,
-        },
-        rotation: {
-          x: options?.rotationX ?? 0,
-          y: options?.rotationY ?? 0,
-          z: options?.rotationZ ?? 0,
-        },
-        scale: options?.scale ?? 1,
+        modelUrl: model3DLayerConfig.modelUrl,
+        position: model3DLayerConfig.position,
+        rotation: model3DLayerConfig.rotation,
+        scale: model3DLayerConfig.scale,
       },
     }
 
@@ -1389,6 +1433,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const newLayers = editorState.value.canvasLayers.filter(l => l.id !== id)
     if (newLayers.length === editorState.value.canvasLayers.length) return false
 
+    // Remove from heroViewRepository (primary source of truth)
+    layerUsecase.removeLayer(id)
+
     // Remove filter config
     layerFilterConfigs.value.delete(id)
 
@@ -1400,6 +1447,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       loadedModelUrls.delete(id)
     }
 
+    // Also remove from editorState.canvasLayers for backward compatibility with render()
     editorState.value = {
       ...editorState.value,
       canvasLayers: newLayers,
