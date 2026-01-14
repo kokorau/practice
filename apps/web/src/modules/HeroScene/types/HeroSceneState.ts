@@ -60,6 +60,7 @@ import type {
   ForegroundElementUpdate,
   PresetColorConfig,
   ExportPresetOptions,
+  HeroEditorUIState,
 } from '../index'
 
 // ============================================================
@@ -570,6 +571,11 @@ export interface EditorStateRef {
    * This is the preferred way to access editor state
    */
   readonly heroViewConfig: ComputedRef<HeroViewConfig>
+  /**
+   * Unified UI state (selection indices, custom params, etc.)
+   * This consolidates all UI-related state in a single reactive object
+   */
+  readonly editorUIState: Ref<HeroEditorUIState>
 }
 
 // ============================================================

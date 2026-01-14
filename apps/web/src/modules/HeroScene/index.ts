@@ -174,6 +174,16 @@ export type {
   EffectEffectorDefinition,
   MaskEffectorDefinition,
   EffectorDefinition,
+  // HeroEditorState types (unified UI state)
+  EditorSectionType,
+  BackgroundUIState,
+  MaskUIState,
+  FilterUIState,
+  ForegroundUIState,
+  PresetUIState,
+  ColorUIState,
+  HeroEditorUIState,
+  HeroEditorState,
 } from './Domain'
 
 export {
@@ -297,6 +307,15 @@ export {
   toCustomBackgroundSurfaceParams,
   // Layer helpers
   getLayerFilters,
+  // HeroEditorState factories
+  createDefaultBackgroundUIState,
+  createDefaultMaskUIState,
+  createDefaultFilterUIState,
+  createDefaultForegroundUIState,
+  createDefaultPresetUIState,
+  createDefaultColorUIState,
+  createDefaultHeroEditorUIState,
+  isValidEditorSection,
 } from './Domain'
 
 // Application

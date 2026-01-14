@@ -139,6 +139,9 @@ import {
   toCustomMaskShapeParams,
   toCustomSurfaceParams,
   toCustomBackgroundSurfaceParams,
+  // HeroEditorUIState
+  type HeroEditorUIState,
+  createDefaultHeroEditorUIState,
   // Application Syncer
   syncBackgroundSurfaceParams,
   syncMaskSurfaceParams,
@@ -411,23 +414,43 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const midgroundTexturePatterns = getMidgroundPresets()
 
   // ============================================================
-  // Editor State (index-based for UI management)
+  // Editor State (unified UI state management)
   // ============================================================
   const editorState = ref<HeroSceneEditorState>(createHeroSceneEditorState(HERO_CANVAS_DIMENSIONS))
 
-  // Selection state (UI bindings)
-  const selectedBackgroundIndex = ref(3)
-  const selectedMaskIndex = ref<number | null>(null)
-  const selectedMidgroundTextureIndex = ref<number>(0) // 0 = Solid
+  // Unified UI state (replaces scattered refs)
+  const editorUIState = ref<HeroEditorUIState>(createDefaultHeroEditorUIState())
+
+  // Computed accessors for backward compatibility (read/write to editorUIState)
+  const selectedBackgroundIndex = computed({
+    get: () => editorUIState.value.background.selectedPresetIndex ?? 3,
+    set: (val: number) => { editorUIState.value.background.selectedPresetIndex = val },
+  })
+  const selectedMaskIndex = computed({
+    get: () => editorUIState.value.mask.selectedShapePresetIndex,
+    set: (val: number | null) => { editorUIState.value.mask.selectedShapePresetIndex = val },
+  })
+  const selectedMidgroundTextureIndex = computed({
+    get: () => editorUIState.value.mask.selectedTexturePresetIndex,
+    set: (val: number) => { editorUIState.value.mask.selectedTexturePresetIndex = val },
+  })
+  // Note: activeSection uses SectionType which differs from EditorSectionType
+  // Keeping as separate ref until type unification
   const activeSection = ref<SectionType | null>(null)
 
-  // Custom background image
-  const customBackgroundImage = ref<string | null>(null)
+  // Custom background image (URL stored in UI state, File/Bitmap are runtime-only)
+  const customBackgroundImage = computed({
+    get: () => editorUIState.value.background.customImageUrl,
+    set: (val: string | null) => { editorUIState.value.background.customImageUrl = val },
+  })
   const customBackgroundFile = ref<File | null>(null)
   let customBackgroundBitmap: ImageBitmap | null = null
 
-  // Custom mask image
-  const customMaskImage = ref<string | null>(null)
+  // Custom mask image (URL stored in UI state, File/Bitmap are runtime-only)
+  const customMaskImage = computed({
+    get: () => editorUIState.value.mask.customImageUrl,
+    set: (val: string | null) => { editorUIState.value.mask.customImageUrl = val },
+  })
   const customMaskFile = ref<File | null>(null)
   let customMaskBitmap: ImageBitmap | null = null
 
@@ -513,8 +536,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // ForegroundElement Usecase
   // ============================================================
-  // Selection state for foreground elements
-  const selectedForegroundElementId = ref<string | null>(null)
+  // Selection state for foreground elements (backed by editorUIState)
+  const selectedForegroundElementId = computed({
+    get: () => editorUIState.value.foreground.selectedElementId,
+    set: (val: string | null) => { editorUIState.value.foreground.selectedElementId = val },
+  })
 
   // ForegroundElement usecase will be initialized after foregroundConfig is available
   // We'll create a lazy initialization pattern
@@ -583,10 +609,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return toCustomBackgroundSurfaceParams(params, colorA, colorB)
   }
 
-  // Current custom params (initialized from selected preset)
-  const customMaskShapeParams = ref<CustomMaskShapeParams | null>(null)
-  const customSurfaceParams = ref<CustomSurfaceParams | null>(null)
-  const customBackgroundSurfaceParams = ref<CustomBackgroundSurfaceParams | null>(null)
+  // Current custom params (backed by editorUIState)
+  const customMaskShapeParams = computed({
+    get: () => editorUIState.value.mask.customShapeParams as CustomMaskShapeParams | null,
+    set: (val: CustomMaskShapeParams | null) => { editorUIState.value.mask.customShapeParams = val },
+  })
+  const customSurfaceParams = computed({
+    get: () => editorUIState.value.mask.customSurfaceParams as CustomSurfaceParams | null,
+    set: (val: CustomSurfaceParams | null) => { editorUIState.value.mask.customSurfaceParams = val },
+  })
+  const customBackgroundSurfaceParams = computed({
+    get: () => editorUIState.value.background.customSurfaceParams as CustomBackgroundSurfaceParams | null,
+    set: (val: CustomBackgroundSurfaceParams | null) => { editorUIState.value.background.customSurfaceParams = val },
+  })
 
   // Flag to skip watcher updates during fromHeroViewConfig execution
   let isLoadingFromConfig = false
@@ -2526,7 +2561,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const presetRepository = createInMemoryHeroViewPresetRepository()
   const presetUseCase = createGetHeroViewPresetsUseCase(presetRepository)
   const presets = ref<HeroViewPreset[]>([])
-  const selectedPresetId = ref<string | null>('corporate-clean')
+  const selectedPresetId = computed({
+    get: () => editorUIState.value.preset.selectedPresetId,
+    set: (val: string | null) => { editorUIState.value.preset.selectedPresetId = val },
+  })
 
   /**
    * Load available presets and optionally apply the initial preset
@@ -2812,6 +2850,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    */
   const editor: EditorStateRef = {
     heroViewConfig: heroViewConfigComputed,
+    editorUIState,
   }
 
   /**
