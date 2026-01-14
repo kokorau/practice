@@ -3,6 +3,10 @@
  *
  * エディタ用の中間状態を管理する型定義
  * patternIndexで管理し、コンパイル時にHeroSceneに変換される
+ *
+ * @deprecated This entire module is deprecated.
+ * Use SceneNode[] from Domain/LayerNode.ts with toRenderSpecs() instead.
+ * See docs/architecture/hero-scene.md for the new architecture.
  */
 
 import type {
@@ -23,6 +27,7 @@ import type {
 
 /**
  * テクスチャレイヤーのエディタ設定（インデックス参照）
+ * @deprecated Use PatternSurface from Domain/LayerNode.ts instead
  */
 export interface EditorTextureLayerConfig {
   type: 'texture'
@@ -33,6 +38,7 @@ export interface EditorTextureLayerConfig {
 /**
  * ClipGroupレイヤーのエディタ設定
  * 子レイヤーを直接保持する
+ * @deprecated Use Processor from Domain/LayerNode.ts with MaskModifier instead
  */
 export interface EditorClipGroupLayerConfig {
   type: 'clipGroup'
@@ -52,6 +58,7 @@ export interface EditorClipGroupLayerConfig {
 
 /**
  * 画像レイヤーのエディタ設定
+ * @deprecated Use ImageSurface from Domain/LayerNode.ts instead
  */
 export interface EditorImageLayerConfig {
   type: 'image'
@@ -61,16 +68,19 @@ export interface EditorImageLayerConfig {
 
 /**
  * テキストレイヤーのエディタ設定（Domainと同一）
+ * @deprecated Use Layer with variant='text' from Domain/LayerNode.ts instead
  */
 export type EditorTextLayerConfig = TextLayerConfig
 
 /**
  * オブジェクトレイヤーのエディタ設定（Domainと同一）
+ * @deprecated Use Layer with variant='model3d' from Domain/LayerNode.ts instead
  */
 export type EditorObjectLayerConfig = ObjectLayerConfig
 
 /**
  * エディタレイヤー設定（Union型）
+ * @deprecated Use Surface union type from Domain/LayerNode.ts instead
  */
 export type EditorCanvasLayerConfig =
   | EditorTextureLayerConfig
@@ -81,6 +91,7 @@ export type EditorCanvasLayerConfig =
 
 /**
  * エディタ用Canvasレイヤー
+ * @deprecated Use SceneNode (Layer | Group | Processor) from Domain/LayerNode.ts instead
  */
 export interface EditorCanvasLayer extends LayerBase {
   /** レイヤーの描画順序 (小さいほど奥) */
@@ -100,6 +111,7 @@ export interface EditorCanvasLayer extends LayerBase {
 /**
  * HeroSceneエディタ状態
  * patternIndexで管理される中間状態
+ * @deprecated Use HeroScene with nodes: SceneNode[] instead
  */
 export interface HeroSceneEditorState {
   /** シーン設定 */
@@ -116,6 +128,7 @@ export interface HeroSceneEditorState {
 
 /**
  * デフォルトのHeroSceneEditorStateを作成
+ * @deprecated Use createHeroScene from Domain/index.ts instead
  */
 export const createHeroSceneEditorState = (
   config?: Partial<HeroSceneConfig>
