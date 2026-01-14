@@ -943,7 +943,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (typeof window !== 'undefined' && '__USE_CONFIG_BASED_RENDERING__' in window) {
       return !!(window as unknown as { __USE_CONFIG_BASED_RENDERING__: boolean }).__USE_CONFIG_BASED_RENDERING__
     }
-    return false
+    // Default: true (new HeroViewConfig-based pipeline)
+    return true
   }
 
   let previewRenderer: TextureRenderer | null = null
