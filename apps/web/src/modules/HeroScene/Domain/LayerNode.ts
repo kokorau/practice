@@ -17,6 +17,7 @@
 import type { Modifier } from './Modifier'
 import { createEffectPlaceholder, createMaskModifier } from './Modifier'
 import type { TexturePatternSpec } from '@practice/texture'
+import type { LayerEffectConfig } from './EffectSchema'
 
 // ============================================================
 // Surface Types (what to render)
@@ -146,6 +147,7 @@ export interface Model3DConfig {
  * Contains:
  * - sources: What to render (surfaces)
  * - modifiers: How to process (effects, masks)
+ * - filters: Effect filters (vignette, chromatic aberration, etc.)
  */
 export interface Layer extends NodeBase {
   type: 'layer'
@@ -155,6 +157,8 @@ export interface Layer extends NodeBase {
   sources: Surface[]
   /** Modifiers to apply (effects, masks) */
   modifiers: Modifier[]
+  /** Effect filters configuration (vignette, chromatic aberration, halftone, blur) */
+  filters?: LayerEffectConfig
   /** Text configuration (when variant is 'text') */
   textConfig?: TextConfig
   /** 3D model configuration (when variant is 'model3d') */
