@@ -3,13 +3,8 @@ import { toCustomSurfaceParams, toCustomBackgroundSurfaceParams } from './Surfac
 import type { SurfaceConfig } from './HeroViewConfig'
 import type { RGBA } from '@practice/texture'
 
-// Mock @practice/texture to provide actual values needed for tests
-vi.mock('@practice/texture', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@practice/texture')>()
-  return {
-    ...actual,
-  }
-})
+// Ensure actual module is used (not mocked by other tests)
+vi.unmock('@practice/texture')
 
 describe('toCustomSurfaceParams', () => {
   describe('solid surface', () => {
