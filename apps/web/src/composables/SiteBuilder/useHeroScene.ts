@@ -1139,11 +1139,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   /**
    * Create default layers (base + mask)
    * Called once during initialization
+   *
+   * Note: The canvasLayers for base/mask are legacy code maintained for
+   * backward compatibility. The actual rendering uses HeroViewConfig.layers
+   * built from helper functions (buildBackgroundSurface, buildMaskShape, etc.)
    */
   const createDefaultLayers = () => {
     const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultFilterConfig()
     const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultFilterConfig()
 
+    // Legacy canvasLayers for backward compatibility
     const layers: EditorCanvasLayer[] = [
       {
         id: LAYER_IDS.BASE,
@@ -1179,11 +1184,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       ...editorState.value,
       canvasLayers: layers,
     }
+
+    // Initialize heroViewRepository immediately after creating layers
+    // This ensures the repository is set up before any usecases access it
+    toHeroViewConfig()
   }
 
   /**
    * Sync layer configs with current selection state
    * Updates existing layers' config without recreating them
+   *
+   * Note: This updates the legacy canvasLayers for base/mask layers.
+   * The actual rendering config is built via toHeroViewConfig() which
+   * uses helper functions (buildBackgroundSurface, buildMaskShape, etc.)
+   * rather than reading from canvasLayers directly for base/mask.
    */
   const syncLayerConfigs = () => {
     const layers = editorState.value.canvasLayers
