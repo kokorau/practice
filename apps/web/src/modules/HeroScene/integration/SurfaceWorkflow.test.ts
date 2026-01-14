@@ -40,7 +40,7 @@ describe('SurfaceWorkflow Integration', () => {
         name: 'Background',
         visible: true,
         surface: { type: 'solid' },
-        processors: [],
+        filters: [],
       },
       {
         type: 'surface',
@@ -48,7 +48,15 @@ describe('SurfaceWorkflow Integration', () => {
         name: 'Mask Layer',
         visible: true,
         surface: { type: 'solid' },
-        processors: [
+        filters: [],
+      },
+      // Masks are now on processor nodes
+      {
+        type: 'processor',
+        id: 'processor-mask',
+        name: 'Mask Processor',
+        visible: true,
+        modifiers: [
           {
             type: 'mask',
             enabled: true,
@@ -149,47 +157,15 @@ describe('SurfaceWorkflow Integration', () => {
     })
   })
 
-  describe('Mask: shape選択 → surface選択 → パラメータ変更', () => {
-    it('should support complete mask workflow', () => {
+  describe('Mask: surface選択 → パラメータ変更', () => {
+    // NOTE: selectMaskShape and updateMaskShapeParams are now deprecated no-ops
+    // Masks are now on ProcessorNodeConfig.modifiers, not on surface layers
+
+    it('should support mask surface workflow', () => {
       const callback = vi.fn()
       repository.subscribe(callback)
 
-      // Step 1: 初期状態を確認
-      const initialLayer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (initialLayer?.type === 'surface') {
-        const maskProcessor = (initialLayer.processors ?? []).find(p => p.type === 'mask')
-        expect(maskProcessor?.type).toBe('mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape.type).toBe('circle')
-        }
-      }
-
-      // Step 2: mask shapeを変更（circle → rect）
-      maskUsecase.selectMaskShape({
-        type: 'rect',
-        left: 0.1,
-        right: 0.9,
-        top: 0.2,
-        bottom: 0.8,
-        radiusTopLeft: 10,
-        radiusTopRight: 10,
-        radiusBottomLeft: 10,
-        radiusBottomRight: 10,
-        rotation: 0,
-        perspectiveX: 0,
-        perspectiveY: 0,
-        cutout: true,
-      })
-
-      const afterShapeChange = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (afterShapeChange?.type === 'surface') {
-        const maskProcessor = (afterShapeChange.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape.type).toBe('rect')
-        }
-      }
-
-      // Step 3: mask surfaceを変更
+      // Step 1: mask surfaceを変更
       maskUsecase.selectMidgroundSurface({ type: 'stripe', width1: 15, width2: 15, angle: 30 })
 
       const afterSurfaceChange = repository.findLayer(SCENE_LAYER_IDS.MASK)
@@ -197,58 +173,8 @@ describe('SurfaceWorkflow Integration', () => {
         expect(afterSurfaceChange.surface).toEqual({ type: 'stripe', width1: 15, width2: 15, angle: 30 })
       }
 
-      // Step 4: mask shapeのパラメータを変更
-      maskUsecase.updateMaskShapeParams({ type: 'rect', left: 0.2, right: 0.8 })
-
-      const afterParamChange = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (afterParamChange?.type === 'surface') {
-        const maskProcessor = (afterParamChange.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask' && maskProcessor.shape.type === 'rect') {
-          expect(maskProcessor.shape.left).toBe(0.2)
-          expect(maskProcessor.shape.right).toBe(0.8)
-        }
-      }
-
-      // 3回の変更（shape + surface + params）
-      expect(callback).toHaveBeenCalledTimes(3)
-    })
-
-    it('should support blob mask shape with parameters', () => {
-      const blobShape = {
-        type: 'blob' as const,
-        centerX: 0.5,
-        centerY: 0.5,
-        baseRadius: 0.3,
-        amplitude: 0.1,
-        octaves: 4,
-        seed: 12345,
-        cutout: true,
-      }
-
-      maskUsecase.selectMaskShape(blobShape)
-
-      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (layer?.type === 'surface') {
-        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape).toEqual(blobShape)
-        }
-      }
-
-      // パラメータを更新
-      maskUsecase.updateMaskShapeParams({ type: 'blob', amplitude: 0.2, seed: 54321 })
-
-      const updatedLayer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (updatedLayer?.type === 'surface') {
-        const maskProcessor = (updatedLayer.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask' && maskProcessor.shape.type === 'blob') {
-          expect(maskProcessor.shape.amplitude).toBe(0.2)
-          expect(maskProcessor.shape.seed).toBe(54321)
-          // 他の値は保持
-          expect(maskProcessor.shape.centerX).toBe(0.5)
-          expect(maskProcessor.shape.baseRadius).toBe(0.3)
-        }
-      }
+      // 1回の変更
+      expect(callback).toHaveBeenCalledTimes(1)
     })
 
     it('should update mask color keys independently', () => {
@@ -353,20 +279,6 @@ describe('SurfaceWorkflow Integration', () => {
       if (layer?.type === 'base') {
         // stripeのまま
         expect(layer.surface).toEqual({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
-      }
-    })
-
-    it('should not update when shape type does not match for mask', () => {
-      // 初期状態はcircle
-      maskUsecase.updateMaskShapeParams({ type: 'rect', left: 0.1 })
-
-      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (layer?.type === 'surface') {
-        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask') {
-          // circleのまま
-          expect(maskProcessor.shape.type).toBe('circle')
-        }
       }
     })
   })

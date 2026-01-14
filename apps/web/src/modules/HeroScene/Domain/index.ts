@@ -356,16 +356,6 @@ export {
   isMaskModifier,
   getEffectPlaceholders,
   getEnabledMasks,
-  // Legacy aliases (deprecated)
-  type EffectProcessor,
-  type MaskProcessor,
-  // Note: Processor from Modifier.ts is deprecated, use Processor from LayerNode.ts
-  type Processor as ModifierProcessor,
-  createEffectProcessor,
-  createMaskProcessor,
-  isEffectProcessor,
-  isMaskProcessor,
-  getEnabledEffects,
 } from './Modifier'
 
 // ============================================================

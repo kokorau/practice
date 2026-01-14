@@ -201,12 +201,6 @@ const getSurfaceLayer = (
   return undefined
 }
 
-/**
- * マスクprocessorを取得するヘルパー
- */
-const getMaskProcessor = (layer: SurfaceLayerNodeConfig) => {
-  return (layer.processors ?? []).find(p => p.type === 'mask')
-}
 
 /**
  * SurfaceUsecaseを作成
@@ -338,46 +332,21 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       const layer = getSurfaceLayer(repository, layerId)
       if (!layer) return false
 
-      const maskProcessor = getMaskProcessor(layer)
-      return maskProcessor !== undefined
+      // @deprecated: Masks are now on ProcessorNodeConfig.modifiers
+      // This function always returns false now
+      return false
     },
 
-    selectMaskShape(shape: MaskShapeConfig): boolean {
-      const layerId = getSelectedLayerId()
-      if (!layerId) return false
-
-      const layer = getSurfaceLayer(repository, layerId)
-      if (!layer) return false
-
-      const maskProcessor = getMaskProcessor(layer)
-      if (!maskProcessor || maskProcessor.type !== 'mask') return false
-
-      const updatedProcessors = (layer.processors ?? []).map(p =>
-        p.type === 'mask' ? { ...p, shape } : p
-      )
-
-      repository.updateLayer(layerId, { processors: updatedProcessors })
-      return true
+    selectMaskShape(_shape: MaskShapeConfig): boolean {
+      // @deprecated: Masks are now on ProcessorNodeConfig.modifiers
+      console.warn('SurfaceUsecase.selectMaskShape is deprecated. Use processor nodes instead.')
+      return false
     },
 
-    updateMaskShapeParams(params: MaskShapeParamsUpdate): boolean {
-      const layerId = getSelectedLayerId()
-      if (!layerId) return false
-
-      const layer = getSurfaceLayer(repository, layerId)
-      if (!layer) return false
-
-      const maskProcessor = getMaskProcessor(layer)
-      if (!maskProcessor || maskProcessor.type !== 'mask') return false
-      if (maskProcessor.shape.type !== params.type) return false
-
-      const newShape = { ...maskProcessor.shape, ...params } as MaskShapeConfig
-      const updatedProcessors = (layer.processors ?? []).map(p =>
-        p.type === 'mask' ? { ...p, shape: newShape } : p
-      )
-
-      repository.updateLayer(layerId, { processors: updatedProcessors })
-      return true
+    updateMaskShapeParams(_params: MaskShapeParamsUpdate): boolean {
+      // @deprecated: Masks are now on ProcessorNodeConfig.modifiers
+      console.warn('SurfaceUsecase.updateMaskShapeParams is deprecated. Use processor nodes instead.')
+      return false
     },
 
     // ----------------------------------------

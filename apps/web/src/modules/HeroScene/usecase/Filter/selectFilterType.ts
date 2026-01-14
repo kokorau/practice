@@ -8,28 +8,27 @@
 import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
 import type {
   LayerNodeConfig,
-  ProcessorConfig,
-  EffectProcessorConfig,
+  EffectFilterConfig,
 } from '../../Domain/HeroViewConfig'
 import type { LayerEffectConfig } from '../../Domain/EffectSchema'
 import { EFFECT_TYPES, type FilterType } from '../../Domain/EffectRegistry'
 
 /**
- * エフェクトプロセッサを取得
+ * エフェクトフィルターを取得
  */
-function findEffectProcessor(layer: LayerNodeConfig): EffectProcessorConfig | undefined {
-  if (!('processors' in layer)) return undefined
-  return (layer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
+function findEffectFilter(layer: LayerNodeConfig): EffectFilterConfig | undefined {
+  if (!('filters' in layer)) return undefined
+  return (layer.filters ?? []).find((p): p is EffectFilterConfig => p.type === 'effect')
 }
 
 /**
- * レイヤーのプロセッサを更新
+ * レイヤーのフィルターを更新
  */
-function updateProcessors(
-  processors: ProcessorConfig[],
-  updater: (processor: EffectProcessorConfig) => EffectProcessorConfig
-): ProcessorConfig[] {
-  return processors.map((p) => (p.type === 'effect' ? updater(p) : p))
+function updateFilters(
+  filters: EffectFilterConfig[],
+  updater: (filter: EffectFilterConfig) => EffectFilterConfig
+): EffectFilterConfig[] {
+  return filters.map((p) => (p.type === 'effect' ? updater(p) : p))
 }
 
 /**
@@ -46,12 +45,12 @@ export function selectFilterType(
 ): void {
   const config = repository.get()
   const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return
+  if (!layer || !('filters' in layer)) return
 
-  const effectProcessor = findEffectProcessor(layer)
-  if (!effectProcessor) return
+  const effectFilter = findEffectFilter(layer)
+  if (!effectFilter) return
 
-  const currentConfig = effectProcessor.config
+  const currentConfig = effectFilter.config
 
   // Registry-based: update all effects' enabled state dynamically
   const newEffectConfig = Object.fromEntries(
@@ -61,12 +60,12 @@ export function selectFilterType(
     ])
   ) as unknown as LayerEffectConfig
 
-  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
+  const updatedFilters = updateFilters(layer.filters ?? [], (p) => ({
     ...p,
     config: newEffectConfig,
   }))
 
-  repository.updateLayer(layerId, { processors: updatedProcessors })
+  repository.updateLayer(layerId, { filters: updatedFilters })
 }
 
 /**
@@ -79,12 +78,12 @@ export function selectFilterType(
 export function getFilterType(repository: HeroViewRepository, layerId: string): FilterType {
   const config = repository.get()
   const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return 'void'
+  if (!layer || !('filters' in layer)) return 'void'
 
-  const effectProcessor = findEffectProcessor(layer)
-  if (!effectProcessor) return 'void'
+  const effectFilter = findEffectFilter(layer)
+  if (!effectFilter) return 'void'
 
-  const effectConfig = effectProcessor.config
+  const effectConfig = effectFilter.config
 
   // Registry-based: check enabled state dynamically
   for (const type of EFFECT_TYPES) {

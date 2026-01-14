@@ -82,11 +82,6 @@ export const createEffectPlaceholder = (): EffectModifier => ({
 })
 
 /**
- * @deprecated Use createEffectPlaceholder instead
- */
-export const createEffectModifier = createEffectPlaceholder
-
-/**
  * Create default shape params for a mask shape
  */
 const createDefaultShapeParams = (shape: ClipMaskShape): ClipMaskShapeParams => {
@@ -152,31 +147,8 @@ export const getEffectPlaceholders = (modifiers: Modifier[]): EffectModifier[] =
   modifiers.filter((m): m is EffectModifier => isEffectModifier(m))
 
 /**
- * @deprecated Use getEffectPlaceholders instead
- */
-export const getEnabledEffects = getEffectPlaceholders
-
-/**
  * Get enabled mask modifiers from modifier list
  */
 export const getEnabledMasks = (modifiers: Array<{ type: string; enabled: boolean }>): MaskModifier[] =>
   modifiers.filter((m): m is MaskModifier => isMaskModifier(m) && m.enabled)
 
-// ============================================================
-// Legacy Aliases (for backward compatibility)
-// ============================================================
-
-/** @deprecated Use EffectModifier instead */
-export type EffectProcessor = EffectModifier
-/** @deprecated Use MaskModifier instead */
-export type MaskProcessor = MaskModifier
-/** @deprecated Use Modifier instead */
-export type Processor = EffectModifier | MaskModifier
-/** @deprecated Use createEffectPlaceholder instead */
-export const createEffectProcessor = createEffectPlaceholder
-/** @deprecated Use createMaskModifier instead */
-export const createMaskProcessor = createMaskModifier
-/** @deprecated Use isEffectModifier instead */
-export const isEffectProcessor = isEffectModifier
-/** @deprecated Use isMaskModifier instead */
-export const isMaskProcessor = isMaskModifier

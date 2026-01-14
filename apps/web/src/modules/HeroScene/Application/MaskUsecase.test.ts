@@ -31,7 +31,7 @@ describe('MaskUsecase', () => {
         name: 'Background',
         visible: true,
         surface: { type: 'solid' },
-        processors: [],
+        filters: [],
       },
       {
         type: 'surface',
@@ -39,7 +39,15 @@ describe('MaskUsecase', () => {
         name: 'Mask Layer',
         visible: true,
         surface: { type: 'solid' },
-        processors: [
+        filters: [],
+      },
+      // Masks are now on processor nodes, not on surface layers
+      {
+        type: 'processor',
+        id: 'processor-mask',
+        name: 'Mask Processor',
+        visible: true,
+        modifiers: [
           {
             type: 'mask',
             enabled: true,
@@ -65,164 +73,36 @@ describe('MaskUsecase', () => {
     })
   })
 
-  describe('selectMaskShape', () => {
-    it('updates mask shape to circle', () => {
+  // NOTE: selectMaskShape and updateMaskShapeParams are now deprecated no-ops
+  // Masks are now on ProcessorNodeConfig.modifiers, not on surface layers
+  describe('selectMaskShape (deprecated)', () => {
+    it('is a no-op since masks are now on processor nodes', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const originalConfig = JSON.stringify(repository.get())
+
       const circleShape = { type: 'circle' as const, centerX: 0.3, centerY: 0.7, radius: 0.4, cutout: false }
       usecase.selectMaskShape(circleShape)
 
-      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      expect(layer).toBeDefined()
-      expect(layer?.type).toBe('surface')
-      if (layer?.type === 'surface') {
-        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
-        expect(maskProcessor?.type).toBe('mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape).toEqual(circleShape)
-        }
-      }
-    })
+      // Config should not change
+      expect(JSON.stringify(repository.get())).toBe(originalConfig)
+      expect(consoleSpy).toHaveBeenCalledWith('MaskUsecase.selectMaskShape is deprecated. Use processor nodes instead.')
 
-    it('updates mask shape to rect', () => {
-      const rectShape = {
-        type: 'rect' as const,
-        left: 0.1,
-        right: 0.9,
-        top: 0.2,
-        bottom: 0.8,
-        radiusTopLeft: 10,
-        radiusTopRight: 10,
-        radiusBottomLeft: 10,
-        radiusBottomRight: 10,
-        rotation: 0,
-        perspectiveX: 0,
-        perspectiveY: 0,
-        cutout: true,
-      }
-      usecase.selectMaskShape(rectShape)
-
-      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (layer?.type === 'surface') {
-        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape).toEqual(rectShape)
-        }
-      }
-    })
-
-    it('updates mask shape to blob', () => {
-      const blobShape = {
-        type: 'blob' as const,
-        centerX: 0.5,
-        centerY: 0.5,
-        baseRadius: 0.3,
-        amplitude: 0.1,
-        octaves: 4,
-        seed: 12345,
-        cutout: true,
-      }
-      usecase.selectMaskShape(blobShape)
-
-      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (layer?.type === 'surface') {
-        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape).toEqual(blobShape)
-        }
-      }
-    })
-
-    it('updates mask shape to perlin', () => {
-      const perlinShape = {
-        type: 'perlin' as const,
-        seed: 54321,
-        threshold: 0.5,
-        scale: 4,
-        octaves: 3,
-        cutout: true,
-      }
-      usecase.selectMaskShape(perlinShape)
-
-      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (layer?.type === 'surface') {
-        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape).toEqual(perlinShape)
-        }
-      }
+      consoleSpy.mockRestore()
     })
   })
 
-  describe('updateMaskShapeParams', () => {
-    it('updates circle shape params', () => {
+  describe('updateMaskShapeParams (deprecated)', () => {
+    it('is a no-op since masks are now on processor nodes', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const originalConfig = JSON.stringify(repository.get())
+
       usecase.updateMaskShapeParams({ type: 'circle', radius: 0.5, centerX: 0.2 })
 
-      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (layer?.type === 'surface') {
-        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape).toEqual({
-            type: 'circle',
-            centerX: 0.2,
-            centerY: 0.5,
-            radius: 0.5,
-            cutout: true,
-          })
-        }
-      }
-    })
+      // Config should not change
+      expect(JSON.stringify(repository.get())).toBe(originalConfig)
+      expect(consoleSpy).toHaveBeenCalledWith('MaskUsecase.updateMaskShapeParams is deprecated. Use processor nodes instead.')
 
-    it('does not update when shape type does not match', () => {
-      usecase.updateMaskShapeParams({ type: 'rect', left: 0.1 })
-
-      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (layer?.type === 'surface') {
-        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape.type).toBe('circle')
-        }
-      }
-    })
-
-    it('updates rect shape params after selecting rect shape', () => {
-      usecase.selectMaskShape({
-        type: 'rect',
-        left: 0.1,
-        right: 0.9,
-        top: 0.1,
-        bottom: 0.9,
-        radiusTopLeft: 0,
-        radiusTopRight: 0,
-        radiusBottomLeft: 0,
-        radiusBottomRight: 0,
-        rotation: 0,
-        perspectiveX: 0,
-        perspectiveY: 0,
-        cutout: true,
-      })
-
-      usecase.updateMaskShapeParams({ type: 'rect', left: 0.2, right: 0.8 })
-
-      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
-      if (layer?.type === 'surface') {
-        const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
-        if (maskProcessor?.type === 'mask') {
-          expect(maskProcessor.shape).toEqual({
-            type: 'rect',
-            left: 0.2,
-            right: 0.8,
-            top: 0.1,
-            bottom: 0.9,
-            radiusTopLeft: 0,
-            radiusTopRight: 0,
-            radiusBottomLeft: 0,
-            radiusBottomRight: 0,
-            rotation: 0,
-            perspectiveX: 0,
-            perspectiveY: 0,
-            cutout: true,
-          })
-        }
-      }
+      consoleSpy.mockRestore()
     })
   })
 
@@ -386,15 +266,6 @@ describe('MaskUsecase', () => {
   })
 
   describe('repository subscription', () => {
-    it('notifies subscribers when mask shape changes', () => {
-      const callback = vi.fn()
-      repository.subscribe(callback)
-
-      usecase.selectMaskShape({ type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.4, cutout: true })
-
-      expect(callback).toHaveBeenCalledTimes(1)
-    })
-
     it('notifies subscribers when surface changes', () => {
       const callback = vi.fn()
       repository.subscribe(callback)

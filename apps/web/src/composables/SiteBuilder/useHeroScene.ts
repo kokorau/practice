@@ -144,7 +144,6 @@ import {
   type LayerNodeConfig,
   type BaseLayerNodeConfig,
   type SurfaceLayerNodeConfig,
-  type EffectProcessorConfig,
   type MaskProcessorConfig,
   type ForegroundLayerConfig,
   type HeroViewPreset,
@@ -3390,12 +3389,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       name: 'Background',
       visible: true,
       surface: buildBackgroundSurface(),
-      processors: [
+      filters: [
         {
           type: 'effect',
           enabled: true,
           config: baseFilters,
-        } as EffectProcessorConfig,
+        },
       ],
     }
     layers.push(baseLayer)
@@ -3409,12 +3408,23 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         name: 'Mask Surface',
         visible: true,
         surface: buildMaskSurface(),
-        processors: [
+        filters: [
           {
             type: 'effect',
             enabled: true,
             config: maskFilters,
-          } as EffectProcessorConfig,
+          },
+        ],
+      }
+      layers.push(surfaceLayer)
+
+      // Mask processor node
+      layers.push({
+        type: 'processor',
+        id: 'processor-mask',
+        name: 'Mask Processor',
+        visible: true,
+        modifiers: [
           {
             type: 'mask',
             enabled: true,
@@ -3423,8 +3433,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             feather: 0,
           } as MaskProcessorConfig,
         ],
-      }
-      layers.push(surfaceLayer)
+      })
     }
 
     const config: HeroViewConfig = {
@@ -3516,30 +3525,37 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
       selectedBackgroundIndex.value = bgPresetIndex ?? 0
 
-      // Background filters (from effect processor, merged with defaults for backward compatibility)
-      const effectProcessor = (baseLayer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
-      if (effectProcessor) {
+      // Background filters (from effect filter, merged with defaults for backward compatibility)
+      const effectFilter = (baseLayer.filters ?? []).find((p) => p.type === 'effect')
+      if (effectFilter) {
         const defaults = createDefaultFilterConfig()
         const merged: LayerFilterConfig = {
-          vignette: { ...defaults.vignette, ...effectProcessor.config.vignette },
-          chromaticAberration: { ...defaults.chromaticAberration, ...effectProcessor.config.chromaticAberration },
-          dotHalftone: { ...defaults.dotHalftone, ...effectProcessor.config.dotHalftone },
-          lineHalftone: { ...defaults.lineHalftone, ...effectProcessor.config.lineHalftone },
-          blur: { ...defaults.blur, ...(effectProcessor.config.blur ?? {}) },
+          vignette: { ...defaults.vignette, ...effectFilter.config.vignette },
+          chromaticAberration: { ...defaults.chromaticAberration, ...effectFilter.config.chromaticAberration },
+          dotHalftone: { ...defaults.dotHalftone, ...effectFilter.config.dotHalftone },
+          lineHalftone: { ...defaults.lineHalftone, ...effectFilter.config.lineHalftone },
+          blur: { ...defaults.blur, ...(effectFilter.config.blur ?? {}) },
         }
         layerFilterConfigs.value.set(LAYER_IDS.BASE, merged)
       }
     }
 
-    // Surface layer with mask
-    if (surfaceLayer) {
-      // Find mask processor
-      const maskProcessor = (surfaceLayer.processors ?? []).find((p): p is MaskProcessorConfig => p.type === 'mask')
-      const maskShape = maskProcessor?.shape
+    // Find processor node with mask
+    let maskShape: HeroMaskShapeConfig | undefined
+    for (const layer of config.layers) {
+      if (layer.type === 'processor') {
+        const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
+        if (maskModifier) {
+          maskShape = maskModifier.shape
+          break
+        }
+      }
+    }
 
-      if (maskShape) {
-        // Mask shape
-        const shape = maskShape
+    // Surface layer with mask
+    if (surfaceLayer && maskShape) {
+      // Mask shape
+      const shape = maskShape
         if (shape.type === 'circle') {
           customMaskShapeParams.value = {
             type: 'circle',
@@ -3644,20 +3660,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
-        // Mask filters (from effect processor, merged with defaults for backward compatibility)
-        const maskEffectProcessor = (surfaceLayer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
-        if (maskEffectProcessor) {
+        // Mask filters (from effect filter, merged with defaults for backward compatibility)
+        const maskEffectFilter = (surfaceLayer.filters ?? []).find((p) => p.type === 'effect')
+        if (maskEffectFilter) {
           const defaults = createDefaultFilterConfig()
           const merged: LayerFilterConfig = {
-            vignette: { ...defaults.vignette, ...maskEffectProcessor.config.vignette },
-            chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectProcessor.config.chromaticAberration },
-            dotHalftone: { ...defaults.dotHalftone, ...maskEffectProcessor.config.dotHalftone },
-            lineHalftone: { ...defaults.lineHalftone, ...maskEffectProcessor.config.lineHalftone },
-            blur: { ...defaults.blur, ...(maskEffectProcessor.config.blur ?? {}) },
+            vignette: { ...defaults.vignette, ...maskEffectFilter.config.vignette },
+            chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectFilter.config.chromaticAberration },
+            dotHalftone: { ...defaults.dotHalftone, ...maskEffectFilter.config.dotHalftone },
+            lineHalftone: { ...defaults.lineHalftone, ...maskEffectFilter.config.lineHalftone },
+            blur: { ...defaults.blur, ...(maskEffectFilter.config.blur ?? {}) },
           }
           layerFilterConfigs.value.set(LAYER_IDS.MASK, merged)
         }
-      }
     } else {
       selectedMaskIndex.value = null
       customMaskShapeParams.value = null

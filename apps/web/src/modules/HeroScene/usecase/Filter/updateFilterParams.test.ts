@@ -10,7 +10,7 @@ import {
   getLineHalftoneParams,
 } from './updateFilterParams'
 import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
-import type { HeroViewConfig, BaseLayerNodeConfig, EffectProcessorConfig } from '../../Domain/HeroViewConfig'
+import type { HeroViewConfig, BaseLayerNodeConfig, EffectFilterConfig } from '../../Domain/HeroViewConfig'
 
 describe('updateFilterParams', () => {
   const createTestConfig = (): HeroViewConfig => ({
@@ -30,7 +30,7 @@ describe('updateFilterParams', () => {
         name: 'Background',
         visible: true,
         surface: { type: 'solid' },
-        processors: [
+        filters: [
           {
             type: 'effect',
             enabled: true,
@@ -56,15 +56,15 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+      const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-      expect(effectProcessor.config.vignette.intensity).toBe(0.8)
+      expect(effectFilter.config.vignette.intensity).toBe(0.8)
       // Check shape-specific params for ellipse
-      const vignetteConfig = effectProcessor.config.vignette
+      const vignetteConfig = effectFilter.config.vignette
       if (vignetteConfig.shape === 'ellipse') {
         expect(vignetteConfig.radius).toBe(0.8) // unchanged
       }
-      expect(effectProcessor.config.vignette.softness).toBe(0.4) // unchanged
+      expect(effectFilter.config.vignette.softness).toBe(0.4) // unchanged
     })
 
     it('should update multiple vignette params', () => {
@@ -74,15 +74,15 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+      const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-      expect(effectProcessor.config.vignette.intensity).toBe(0.9)
+      expect(effectFilter.config.vignette.intensity).toBe(0.9)
       // Check shape-specific params for ellipse
-      const vignetteConfig = effectProcessor.config.vignette
+      const vignetteConfig = effectFilter.config.vignette
       if (vignetteConfig.shape === 'ellipse') {
         expect(vignetteConfig.radius).toBe(1.0)
       }
-      expect(effectProcessor.config.vignette.softness).toBe(0.6)
+      expect(effectFilter.config.vignette.softness).toBe(0.6)
     })
 
     it('should preserve enabled state when updating params', () => {
@@ -92,9 +92,9 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+      const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-      expect(effectProcessor.config.vignette.enabled).toBe(true)
+      expect(effectFilter.config.vignette.enabled).toBe(true)
     })
   })
 
@@ -106,9 +106,9 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+      const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-      expect(effectProcessor.config.chromaticAberration.intensity).toBe(10)
+      expect(effectFilter.config.chromaticAberration.intensity).toBe(10)
     })
   })
 
@@ -120,11 +120,11 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+      const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-      expect(effectProcessor.config.dotHalftone.dotSize).toBe(12)
-      expect(effectProcessor.config.dotHalftone.spacing).toBe(20)
-      expect(effectProcessor.config.dotHalftone.angle).toBe(30)
+      expect(effectFilter.config.dotHalftone.dotSize).toBe(12)
+      expect(effectFilter.config.dotHalftone.spacing).toBe(20)
+      expect(effectFilter.config.dotHalftone.angle).toBe(30)
     })
   })
 
@@ -136,11 +136,11 @@ describe('updateFilterParams', () => {
 
       const result = repository.get()
       const layer = result.layers[0] as BaseLayerNodeConfig
-      const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+      const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-      expect(effectProcessor.config.lineHalftone.lineWidth).toBe(8)
-      expect(effectProcessor.config.lineHalftone.spacing).toBe(24)
-      expect(effectProcessor.config.lineHalftone.angle).toBe(60)
+      expect(effectFilter.config.lineHalftone.lineWidth).toBe(8)
+      expect(effectFilter.config.lineHalftone.spacing).toBe(24)
+      expect(effectFilter.config.lineHalftone.angle).toBe(60)
     })
   })
 
@@ -175,7 +175,7 @@ describe('getFilterParams', () => {
         name: 'Background',
         visible: true,
         surface: { type: 'solid' },
-        processors: [
+        filters: [
           {
             type: 'effect',
             enabled: true,

@@ -83,14 +83,10 @@ export type {
   LineHalftoneFilterConfig,
   LayerFilterConfig,
   LayerFilterSchemaMap,
-  // Modifier types (new)
+  // Modifier types
   EffectModifier,
   MaskModifier,
   Modifier,
-  // Legacy Processor aliases (from Modifier)
-  EffectProcessor,
-  MaskProcessor,
-  ModifierProcessor,
   // Layer & Group types
   Layer,
   Group,
@@ -219,12 +215,6 @@ export {
   isMaskModifier,
   getEffectPlaceholders,
   getEnabledMasks,
-  // Legacy Processor factories (deprecated)
-  createEffectProcessor,
-  createMaskProcessor,
-  isEffectProcessor,
-  isMaskProcessor,
-  getEnabledEffects,
   // Layer & Group factories
   createLayer,
   createBaseLayer,

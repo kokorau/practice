@@ -158,17 +158,25 @@ const isHeroMode = computed(() => props.showPreview && props.baseConfig && props
 const createMaskPreviewConfig = (base: HeroViewConfig, shape: MaskShapeConfig): HeroViewConfig => {
   return {
     ...base,
-    layers: base.layers
-      .filter(layer => layer.type === 'surface')
-      .map(layer => ({
-        ...layer,
-        processors: (layer.processors ?? []).map(p => {
-          if (p.type === 'mask') {
-            return { ...p, shape } as MaskProcessorConfig
-          }
-          return p
-        }),
-      })),
+    layers: base.layers.map(layer => {
+      // Update processor nodes that contain mask modifiers
+      if (layer.type === 'processor') {
+        return {
+          ...layer,
+          modifiers: layer.modifiers.map(m => {
+            if (m.type === 'mask') {
+              return { ...m, shape } as MaskProcessorConfig
+            }
+            return m
+          }),
+        }
+      }
+      // Filter out base layer for preview
+      if (layer.type === 'base') {
+        return null
+      }
+      return layer
+    }).filter((layer): layer is NonNullable<typeof layer> => layer !== null),
   }
 }
 

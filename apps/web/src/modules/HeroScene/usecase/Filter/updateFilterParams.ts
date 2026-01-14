@@ -7,28 +7,27 @@
 import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
 import type {
   LayerNodeConfig,
-  ProcessorConfig,
-  EffectProcessorConfig,
+  EffectFilterConfig,
 } from '../../Domain/HeroViewConfig'
 import type { LayerEffectConfig } from '../../Domain/EffectSchema'
 import { type EffectType } from '../../Domain/EffectRegistry'
 
 /**
- * エフェクトプロセッサを取得
+ * エフェクトフィルターを取得
  */
-function findEffectProcessor(layer: LayerNodeConfig): EffectProcessorConfig | undefined {
-  if (!('processors' in layer)) return undefined
-  return (layer.processors ?? []).find((p): p is EffectProcessorConfig => p.type === 'effect')
+function findEffectFilter(layer: LayerNodeConfig): EffectFilterConfig | undefined {
+  if (!('filters' in layer)) return undefined
+  return (layer.filters ?? []).find((p): p is EffectFilterConfig => p.type === 'effect')
 }
 
 /**
- * レイヤーのプロセッサを更新
+ * レイヤーのフィルターを更新
  */
-function updateProcessors(
-  processors: ProcessorConfig[],
-  updater: (processor: EffectProcessorConfig) => EffectProcessorConfig
-): ProcessorConfig[] {
-  return processors.map((p) => (p.type === 'effect' ? updater(p) : p))
+function updateFilters(
+  filters: EffectFilterConfig[],
+  updater: (filter: EffectFilterConfig) => EffectFilterConfig
+): EffectFilterConfig[] {
+  return filters.map((p) => (p.type === 'effect' ? updater(p) : p))
 }
 
 /**
@@ -47,12 +46,12 @@ export function updateEffectParams<T extends EffectType>(
 ): void {
   const config = repository.get()
   const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return
+  if (!layer || !('filters' in layer)) return
 
-  const effectProcessor = findEffectProcessor(layer)
-  if (!effectProcessor) return
+  const effectFilter = findEffectFilter(layer)
+  if (!effectFilter) return
 
-  const updatedProcessors = updateProcessors(layer.processors ?? [], (p) => ({
+  const updatedFilters = updateFilters(layer.filters ?? [], (p) => ({
     ...p,
     config: {
       ...p.config,
@@ -60,7 +59,7 @@ export function updateEffectParams<T extends EffectType>(
     },
   }))
 
-  repository.updateLayer(layerId, { processors: updatedProcessors })
+  repository.updateLayer(layerId, { filters: updatedFilters })
 }
 
 /**
@@ -78,10 +77,10 @@ export function getEffectParams<T extends EffectType>(
 ): LayerEffectConfig[T] | undefined {
   const config = repository.get()
   const layer = config.layers.find((l) => l.id === layerId)
-  if (!layer || !('processors' in layer)) return undefined
+  if (!layer || !('filters' in layer)) return undefined
 
-  const effectProcessor = findEffectProcessor(layer)
-  return effectProcessor?.config[effectType]
+  const effectFilter = findEffectFilter(layer)
+  return effectFilter?.config[effectType]
 }
 
 // ============================================================
