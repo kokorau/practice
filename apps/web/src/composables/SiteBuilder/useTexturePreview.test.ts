@@ -50,6 +50,8 @@ vi.mock('@practice/texture', () => ({
   createBlobStripeSpec: vi.fn(() => ({})),
   createBlobGridSpec: vi.fn(() => ({})),
   createBlobPolkaDotSpec: vi.fn(() => ({})),
+  // Export DEFAULT_GRADIENT_GRAIN_CURVE_POINTS to prevent mock leakage
+  DEFAULT_GRADIENT_GRAIN_CURVE_POINTS: [0.0, 0.0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1.0, 1.0],
 }))
 
 vi.mock('@practice/color', () => ({

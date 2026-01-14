@@ -708,7 +708,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Update layer filters with deep partial merge
-   * Delegates to effectManager while maintaining editorState sync
+   * Delegates to effectManager (rendering uses effectManager directly)
    */
   const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerFilterConfig>) => {
     // Update each effect type if present in updates
@@ -729,17 +729,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         }
       }
     }
-
-    // Sync with editorState.canvasLayers
-    const updatedFilters = effectManager.effects.value.get(layerId)
-    if (updatedFilters) {
-      editorState.value = {
-        ...editorState.value,
-        canvasLayers: editorState.value.canvasLayers.map(l =>
-          l.id === layerId ? { ...l, filters: updatedFilters } : l
-        ),
-      }
-    }
   }
 
   // ============================================================
@@ -749,23 +738,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Select filter type (exclusive selection)
-   * Delegates to effectManager.setEffectType
+   * Delegates to effectManager.setEffectType (rendering uses effectManager directly)
    */
   const selectFilterType = (layerId: string, type: FilterType) => {
     // Convert FilterType 'void' to null for effectManager
     const effectType: EffectType | null = type === 'void' ? null : type
     effectManager.setEffectType(layerId, effectType)
-
-    // Sync with editorState.canvasLayers
-    const updatedFilters = effectManager.effects.value.get(layerId)
-    if (updatedFilters) {
-      editorState.value = {
-        ...editorState.value,
-        canvasLayers: editorState.value.canvasLayers.map(l =>
-          l.id === layerId ? { ...l, filters: updatedFilters } : l
-        ),
-      }
-    }
   }
 
   /**
@@ -785,43 +763,39 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Update vignette parameters
-   * Delegates to effectManager.updateEffectParams
+   * Delegates to effectManager.updateEffectParams (rendering uses effectManager directly)
    */
   const updateVignetteParams = (layerId: string, params: Partial<{ intensity: number; radius: number; softness: number }>) => {
     effectManager.updateEffectParams(layerId, 'vignette', params)
-    syncEditorStateFilters(layerId)
   }
 
   /**
    * Update chromatic aberration parameters
-   * Delegates to effectManager.updateEffectParams
+   * Delegates to effectManager.updateEffectParams (rendering uses effectManager directly)
    */
   const updateChromaticAberrationParams = (layerId: string, params: Partial<{ intensity: number }>) => {
     effectManager.updateEffectParams(layerId, 'chromaticAberration', params)
-    syncEditorStateFilters(layerId)
   }
 
   /**
    * Update dot halftone parameters
-   * Delegates to effectManager.updateEffectParams
+   * Delegates to effectManager.updateEffectParams (rendering uses effectManager directly)
    */
   const updateDotHalftoneParams = (layerId: string, params: Partial<{ dotSize: number; spacing: number; angle: number }>) => {
     effectManager.updateEffectParams(layerId, 'dotHalftone', params)
-    syncEditorStateFilters(layerId)
   }
 
   /**
    * Update line halftone parameters
-   * Delegates to effectManager.updateEffectParams
+   * Delegates to effectManager.updateEffectParams (rendering uses effectManager directly)
    */
   const updateLineHalftoneParams = (layerId: string, params: Partial<{ lineWidth: number; spacing: number; angle: number }>) => {
     effectManager.updateEffectParams(layerId, 'lineHalftone', params)
-    syncEditorStateFilters(layerId)
   }
 
   /**
    * Update blur parameters
-   * Delegates to effectManager.updateEffectParams
+   * Delegates to effectManager.updateEffectParams (rendering uses effectManager directly)
    */
   const updateBlurParams = (layerId: string, params: Partial<{
     radius: number
@@ -839,22 +813,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     rectHeight: number
   }>) => {
     effectManager.updateEffectParams(layerId, 'blur', params)
-    syncEditorStateFilters(layerId)
-  }
-
-  /**
-   * Sync editorState.canvasLayers with effectManager state
-   */
-  const syncEditorStateFilters = (layerId: string) => {
-    const updatedFilters = effectManager.effects.value.get(layerId)
-    if (updatedFilters) {
-      editorState.value = {
-        ...editorState.value,
-        canvasLayers: editorState.value.canvasLayers.map(l =>
-          l.id === layerId ? { ...l, filters: updatedFilters } : l
-        ),
-      }
-    }
   }
 
   // ============================================================
@@ -1330,40 +1288,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Add to heroViewRepository (primary source of truth)
     layerUsecase.addLayer(textLayerConfig)
 
-    // Also add to editorState.canvasLayers for backward compatibility with render()
-    const newLayer: EditorCanvasLayer = {
-      id,
-      name: textLayerConfig.name,
-      visible: true,
-      opacity: 1.0,
-      zIndex: editorState.value.canvasLayers.length,
-      blendMode: 'normal',
-      filters: createDefaultFilterConfig(),
-      config: {
-        type: 'text',
-        text: textLayerConfig.text,
-        fontFamily: textLayerConfig.fontFamily,
-        fontSize: textLayerConfig.fontSize,
-        fontWeight: textLayerConfig.fontWeight,
-        letterSpacing: textLayerConfig.letterSpacing,
-        lineHeight: textLayerConfig.lineHeight,
-        color: textLayerConfig.color,
-        position: {
-          x: textLayerConfig.position.x,
-          y: textLayerConfig.position.y,
-          anchor: textLayerConfig.position.anchor as 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right',
-        },
-        rotation: textLayerConfig.rotation,
-      },
-    }
-
     // Register filter config for new layer
     layerFilterConfigs.value.set(id, createDefaultFilterConfig())
-
-    editorState.value = {
-      ...editorState.value,
-      canvasLayers: [...editorState.value.canvasLayers, newLayer],
-    }
 
     render()
     return id
@@ -1408,31 +1334,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Add to heroViewRepository (primary source of truth)
     layerUsecase.addLayer(model3DLayerConfig)
 
-    // Also add to editorState.canvasLayers for backward compatibility with render()
-    const newLayer: EditorCanvasLayer = {
-      id,
-      name: 'Object Layer',
-      visible: true,
-      opacity: 1.0,
-      zIndex: editorState.value.canvasLayers.length,
-      blendMode: 'normal',
-      filters: createDefaultFilterConfig(),
-      config: {
-        type: 'object',
-        modelUrl: model3DLayerConfig.modelUrl,
-        position: model3DLayerConfig.position,
-        rotation: model3DLayerConfig.rotation,
-        scale: model3DLayerConfig.scale,
-      },
-    }
-
     // Register filter config for new layer
     layerFilterConfigs.value.set(id, createDefaultFilterConfig())
-
-    editorState.value = {
-      ...editorState.value,
-      canvasLayers: [...editorState.value.canvasLayers, newLayer],
-    }
 
     render()
     return id
@@ -1444,8 +1347,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const removeLayer = (id: string): boolean => {
     if (id === LAYER_IDS.BASE) return false
 
-    const newLayers = editorState.value.canvasLayers.filter(l => l.id !== id)
-    if (newLayers.length === editorState.value.canvasLayers.length) return false
+    // Check if layer exists in repository
+    const existingConfig = heroViewRepository.get()
+    if (!existingConfig) return false
+    const layerExists = existingConfig.layers.some(l => l.id === id)
+    if (!layerExists) return false
 
     // Remove from heroViewRepository (primary source of truth)
     layerUsecase.removeLayer(id)
@@ -1461,12 +1367,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       loadedModelUrls.delete(id)
     }
 
-    // Also remove from editorState.canvasLayers for backward compatibility with render()
-    editorState.value = {
-      ...editorState.value,
-      canvasLayers: newLayers,
-    }
-
     render()
     return true
   }
@@ -1475,70 +1375,66 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Update layer visibility
    */
   const updateLayerVisibility = (id: string, visible: boolean) => {
-    const layer = editorState.value.canvasLayers.find(l => l.id === id)
-    if (!layer) return
-
-    layer.visible = visible
-    editorState.value = { ...editorState.value }
+    layerUsecase.updateLayer(id, { visible })
     render()
   }
 
   /**
    * Toggle layer visibility
+   * Uses heroViewRepository as primary source of truth
    */
   const toggleLayerVisibility = (id: string) => {
-    const layer = editorState.value.canvasLayers.find(l => l.id === id)
+    // Get current visibility from repository
+    const existingConfig = heroViewRepository.get()
+    if (!existingConfig) return
+    const layer = existingConfig.layers.find(l => l.id === id)
     if (!layer) return
 
-    layer.visible = !layer.visible
-    editorState.value = { ...editorState.value }
+    // Toggle via usecase
+    layerUsecase.toggleVisibility(id)
     render()
   }
 
   /**
    * Update text layer config and re-render
-   * Uses TextLayerUsecase when repository is available
+   * Uses heroViewRepository as primary source of truth
    */
   const updateTextLayerConfig = (id: string, updates: Partial<TextLayerConfig>) => {
-    const layer = editorState.value.canvasLayers.find(l => l.id === id)
-    if (!layer || layer.config.type !== 'text') return
+    // Check if layer exists and is a text layer in repository
+    const existingConfig = heroViewRepository.get()
+    if (!existingConfig) return
+    const layer = existingConfig.layers.find(l => l.id === id)
+    if (!layer || layer.type !== 'text') return
 
-    // Update the config properties (editorState)
-    Object.assign(layer.config, updates)
-
-    // Also update repository using TextLayerUsecases if available
-    if (repository) {
-      if (updates.text !== undefined) {
-        updateTextLayerText(id, updates.text, repository)
-      }
-      if (updates.fontFamily !== undefined || updates.fontSize !== undefined ||
-          updates.fontWeight !== undefined || updates.letterSpacing !== undefined ||
-          updates.lineHeight !== undefined) {
-        updateTextLayerFont(id, {
-          fontFamily: updates.fontFamily,
-          fontSize: updates.fontSize,
-          fontWeight: updates.fontWeight,
-          letterSpacing: updates.letterSpacing,
-          lineHeight: updates.lineHeight,
-        }, repository)
-      }
-      if (updates.color !== undefined) {
-        updateTextLayerColor(id, updates.color, repository)
-      }
-      if (updates.position !== undefined) {
-        updateTextLayerPosition(id, {
-          x: updates.position.x,
-          y: updates.position.y,
-          anchor: updates.position.anchor as 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right',
-        }, repository)
-      }
-      if (updates.rotation !== undefined) {
-        updateTextLayerRotation(id, updates.rotation, repository)
-      }
+    // Update via TextLayerUsecases (uses heroViewRepository internally)
+    if (updates.text !== undefined) {
+      updateTextLayerText(id, updates.text, heroViewRepository)
+    }
+    if (updates.fontFamily !== undefined || updates.fontSize !== undefined ||
+        updates.fontWeight !== undefined || updates.letterSpacing !== undefined ||
+        updates.lineHeight !== undefined) {
+      updateTextLayerFont(id, {
+        fontFamily: updates.fontFamily,
+        fontSize: updates.fontSize,
+        fontWeight: updates.fontWeight,
+        letterSpacing: updates.letterSpacing,
+        lineHeight: updates.lineHeight,
+      }, heroViewRepository)
+    }
+    if (updates.color !== undefined) {
+      updateTextLayerColor(id, updates.color, heroViewRepository)
+    }
+    if (updates.position !== undefined) {
+      updateTextLayerPosition(id, {
+        x: updates.position.x,
+        y: updates.position.y,
+        anchor: updates.position.anchor as 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right',
+      }, heroViewRepository)
+    }
+    if (updates.rotation !== undefined) {
+      updateTextLayerRotation(id, updates.rotation, heroViewRepository)
     }
 
-    // Trigger reactivity and re-render
-    editorState.value = { ...editorState.value }
     render()
   }
 
