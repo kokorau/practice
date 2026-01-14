@@ -12,6 +12,7 @@ import type {
   MaskShapeConfig,
   SurfaceLayerNodeConfig,
 } from '../Domain/HeroViewConfig'
+import { SCENE_LAYER_IDS } from '../Domain/LayerNode'
 
 // ============================================================
 // Types
@@ -122,7 +123,7 @@ export interface MaskUsecase {
 // Constants
 // ============================================================
 
-const MASK_LAYER_ID = 'mask'
+const MASK_LAYER_ID = SCENE_LAYER_IDS.MASK
 
 // ============================================================
 // Implementation
