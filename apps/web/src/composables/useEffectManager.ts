@@ -29,6 +29,10 @@ export interface UseEffectManagerReturn {
     type: T,
     params: Partial<Omit<LayerEffectConfig[T], 'enabled'>>
   ) => void
+  /** Set entire effect config for a layer (for loading from repository) */
+  setEffectConfig: (layerId: string, config: LayerEffectConfig) => void
+  /** Delete effect config for a layer */
+  deleteEffectConfig: (layerId: string) => void
 }
 
 // ============================================================
@@ -158,6 +162,25 @@ export function useEffectManager(): UseEffectManagerReturn {
     effectsMap.value = newMap
   }
 
+  /**
+   * Set entire effect config for a layer
+   * Used for loading config from repository
+   */
+  function setEffectConfig(layerId: string, config: LayerEffectConfig): void {
+    const newMap = new Map(effectsMap.value)
+    newMap.set(layerId, config)
+    effectsMap.value = newMap
+  }
+
+  /**
+   * Delete effect config for a layer
+   */
+  function deleteEffectConfig(layerId: string): void {
+    const newMap = new Map(effectsMap.value)
+    newMap.delete(layerId)
+    effectsMap.value = newMap
+  }
+
   // ============================================================
   // Return
   // ============================================================
@@ -169,5 +192,7 @@ export function useEffectManager(): UseEffectManagerReturn {
     selectLayer,
     setEffectType,
     updateEffectParams,
+    setEffectConfig,
+    deleteEffectConfig,
   }
 }

@@ -6,6 +6,7 @@
  */
 
 import { ref, shallowRef, computed, watch, nextTick, onUnmounted, type ComputedRef, type Ref } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import {
   TextureRenderer,
   getDefaultTexturePatterns,
@@ -89,6 +90,8 @@ import {
   type Object3DRendererPort,
   type HeroViewRepository,
   type FilterType,
+  type EffectFilterConfig,
+  type LayerEffectConfig,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
@@ -734,6 +737,54 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Expose selectedEffect as selectedLayerFilters (backward compatible alias)
   const selectedLayerFilters = effectManager.selectedEffect
 
+  // ============================================================
+  // Effect Sync to Repository (auto-sync on effectManager changes)
+  // ============================================================
+
+  /**
+   * Convert LayerEffectConfig to EffectFilterConfig for repository storage
+   */
+  const toEffectFilterConfig = (config: LayerEffectConfig): EffectFilterConfig => ({
+    type: 'effect',
+    enabled: true,
+    config,
+  })
+
+  /**
+   * Sync a single layer's effect config to repository
+   */
+  const syncLayerEffectToRepository = (layerId: string, effectConfig: LayerEffectConfig) => {
+    const layer = heroViewRepository.findLayer(layerId)
+    if (!layer) return
+
+    // Skip processor nodes (they use modifiers, not filters)
+    if (layer.type === 'processor') return
+
+    // Convert and update
+    const filters: EffectFilterConfig[] = [toEffectFilterConfig(effectConfig)]
+    heroViewRepository.updateLayer(layerId, { filters })
+  }
+
+  /**
+   * Debounced sync function to avoid excessive repository updates
+   */
+  const debouncedSyncEffects = useDebounceFn((effects: Map<string, LayerEffectConfig>) => {
+    for (const [layerId, effectConfig] of effects) {
+      syncLayerEffectToRepository(layerId, effectConfig)
+    }
+  }, 100) // 100ms debounce
+
+
+  // Watch effectManager.effects and sync to repository
+  watch(
+    () => effectManager.effects.value,
+    (effects) => {
+      if (isLoadingFromConfig) return // Skip sync when loading from config
+      debouncedSyncEffects(effects)
+    },
+    { deep: true }
+  )
+
   // フィルター設定を更新（部分更新をサポート）
   // DeepPartial型を定義（FilterState型との互換性のため）
   type DeepPartial<T> = {
@@ -1221,7 +1272,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     layerUsecase.addLayer(textLayerConfig)
 
     // Register filter config for new layer
-    layerFilterConfigs.value.set(id, createDefaultFilterConfig())
+    effectManager.setEffectConfig(id, createDefaultFilterConfig())
 
     render()
     return id
@@ -1267,7 +1318,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     layerUsecase.addLayer(model3DLayerConfig)
 
     // Register filter config for new layer
-    layerFilterConfigs.value.set(id, createDefaultFilterConfig())
+    effectManager.setEffectConfig(id, createDefaultFilterConfig())
 
     render()
     return id
@@ -1289,7 +1340,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     layerUsecase.removeLayer(id)
 
     // Remove filter config
-    layerFilterConfigs.value.delete(id)
+    effectManager.deleteEffectConfig(id)
 
     // Cleanup 3D object renderer if exists
     const renderer = object3DRenderers.get(id)
@@ -2286,7 +2337,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
           lineHalftone: { ...defaults.lineHalftone, ...effectFilter.config.lineHalftone },
           blur: { ...defaults.blur, ...(effectFilter.config.blur ?? {}) },
         }
-        layerFilterConfigs.value.set(LAYER_IDS.BASE, merged)
+        effectManager.setEffectConfig(LAYER_IDS.BASE, merged)
       }
     }
 
@@ -2421,7 +2472,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
             lineHalftone: { ...defaults.lineHalftone, ...maskEffectFilter.config.lineHalftone },
             blur: { ...defaults.blur, ...(maskEffectFilter.config.blur ?? {}) },
           }
-          layerFilterConfigs.value.set(LAYER_IDS.MASK, merged)
+          effectManager.setEffectConfig(LAYER_IDS.MASK, merged)
         }
     } else {
       selectedMaskIndex.value = null

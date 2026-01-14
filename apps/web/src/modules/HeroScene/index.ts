@@ -129,6 +129,7 @@ export type {
   // Processor config types (JSON serialization)
   ProcessorConfig,
   EffectProcessorConfig,
+  EffectFilterConfig,
   MaskProcessorConfig,
   // LayerNodeConfig types (JSON serialization)
   LayerNodeConfig,
