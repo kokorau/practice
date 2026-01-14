@@ -50,7 +50,7 @@ type SidebarTab = 'theme' | 'layers'
 
 const props = defineProps<{
   /** Active main tab */
-  activeTab: 'generator' | 'palette'
+  activeTab: 'generator' | 'palette' | 'debug'
   /** Color state (brand, accent, foundation) */
   colorState: ColorStateProps
   /** Layout presets */
