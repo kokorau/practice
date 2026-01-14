@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * @deprecated Use EffectorSettingsPanel instead
+ * This component is kept for backward compatibility
+ */
 import { type WritableComputedRef } from 'vue'
 import {
   VignetteBaseSchema,

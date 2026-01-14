@@ -18,8 +18,7 @@ import type {
 import PanelHeader from './PanelHeader.vue'
 import TextElementPanel from './TextElementPanel.vue'
 import LayerSettingsPanel from './LayerSettingsPanel.vue'
-import EffectSettingsPanel from './EffectSettingsPanel.vue'
-import MaskSettingsPanel from './MaskSettingsPanel.vue'
+import EffectorSettingsPanel from './EffectorSettingsPanel.vue'
 import PlaceholderPanel from './PlaceholderPanel.vue'
 
 // ============================================================
@@ -304,27 +303,20 @@ const panelTitle = (): string => {
         @update:surface-params="handleSurfaceParamsUpdate"
       />
 
-      <!-- Effect Processor Settings -->
-      <EffectSettingsPanel
-        v-else-if="selection.processorType === 'effect'"
-        :selected-filter-type="filter.selectedType"
-        :vignette-config="filter.vignetteConfig"
-        :chromatic-config="filter.chromaticConfig"
-        :dot-halftone-config="filter.dotHalftoneConfig"
-        :line-halftone-config="filter.lineHalftoneConfig"
-        :blur-config="filter.blurConfig"
-      />
-
-      <!-- Mask Processor Settings -->
-      <MaskSettingsPanel
-        v-else-if="selection.processorType === 'mask'"
-        :mask-patterns="mask.shapePatterns"
-        :selected-mask-index="mask.selectedShapeIndex"
-        :mask-shape-schema="mask.shapeSchema"
-        :mask-shape-params="mask.shapeParams"
-        :mask-outer-color="mask.outerColor"
-        :mask-inner-color="mask.innerColor"
-        :create-background-thumbnail-spec="mask.createBackgroundThumbnailSpec"
+      <!-- Effector (Effect/Mask) Settings -->
+      <EffectorSettingsPanel
+        v-else-if="selection.processorType === 'effect' || selection.processorType === 'mask'"
+        :effector-type="selection.processorType"
+        :filter-props="filter"
+        :mask-props="{
+          shapePatterns: mask.shapePatterns,
+          selectedShapeIndex: mask.selectedShapeIndex,
+          shapeSchema: mask.shapeSchema,
+          shapeParams: mask.shapeParams,
+          outerColor: mask.outerColor,
+          innerColor: mask.innerColor,
+          createBackgroundThumbnailSpec: mask.createBackgroundThumbnailSpec,
+        }"
         @update:selected-mask-index="emit('update:mask', 'selectedShapeIndex', $event)"
         @update:mask-shape-params="emit('update:mask', 'shapeParams', $event)"
       />

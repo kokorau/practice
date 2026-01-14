@@ -7,6 +7,9 @@
  * previewMode:
  * - 'mask': 従来のMaskPatternThumbnailを使用
  * - 'hero': HeroPreviewThumbnailで完全なHeroViewプレビューを表示
+ *
+ * @deprecated Use EffectorSectionPanel instead
+ * This component is kept for backward compatibility
  */
 import { computed } from 'vue'
 import type { ObjectSchema } from '@practice/schema'
