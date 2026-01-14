@@ -264,42 +264,6 @@ const debugSections = computed(() => [
     label: 'Editor State',
     data: heroScene.editor.editorState.value,
   },
-  {
-    id: 'pattern',
-    label: 'Pattern State',
-    data: {
-      activeSection: heroScene.pattern.activeSection.value,
-      selectedBackgroundIndex: heroScene.pattern.selectedBackgroundIndex.value,
-      selectedMaskIndex: heroScene.pattern.selectedMaskIndex.value,
-      selectedMidgroundTextureIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
-    },
-  },
-  {
-    id: 'background',
-    label: 'Background State',
-    data: {
-      colorKey1: heroScene.background.backgroundColorKey1.value,
-      colorKey2: heroScene.background.backgroundColorKey2.value,
-      customBackgroundImage: heroScene.background.customBackgroundImage.value ? '(image data)' : null,
-      customBackgroundSurfaceParams: heroScene.background.customBackgroundSurfaceParams.value,
-    },
-  },
-  {
-    id: 'mask',
-    label: 'Mask State',
-    data: {
-      colorKey1: heroScene.mask.maskColorKey1.value,
-      colorKey2: heroScene.mask.maskColorKey2.value,
-      customMaskImage: heroScene.mask.customMaskImage.value ? '(image data)' : null,
-      customMaskShapeParams: heroScene.mask.customMaskShapeParams.value,
-      customSurfaceParams: heroScene.mask.customSurfaceParams.value,
-    },
-  },
-  {
-    id: 'foreground',
-    label: 'Foreground State',
-    data: heroScene.foreground.foregroundConfig.value,
-  },
 ])
 
 // ============================================================
