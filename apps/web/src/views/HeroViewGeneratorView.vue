@@ -48,6 +48,7 @@ import { usePresetActions } from '../composables/usePresetActions'
 import { usePaletteStyles } from '../composables/usePaletteStyles'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
+import DebugPanel from '../components/HeroGenerator/DebugPanel.vue'
 
 // ============================================================
 // UI Dark Mode (independent from palette)
@@ -246,8 +247,60 @@ const currentHeroConfig = computed(() => heroScene.serialization.toHeroViewConfi
 // ============================================================
 // Tab State
 // ============================================================
-type TabId = 'generator' | 'palette'
+type TabId = 'generator' | 'palette' | 'debug'
 const activeTab = ref<TabId>('generator')
+
+// ============================================================
+// Debug Panel Data
+// ============================================================
+const debugSections = computed(() => [
+  {
+    id: 'heroViewConfig',
+    label: 'HeroViewConfig (Export)',
+    data: heroScene.serialization.toHeroViewConfig(),
+  },
+  {
+    id: 'editorState',
+    label: 'Editor State',
+    data: heroScene.editor.editorState.value,
+  },
+  {
+    id: 'pattern',
+    label: 'Pattern State',
+    data: {
+      activeSection: heroScene.pattern.activeSection.value,
+      selectedBackgroundIndex: heroScene.pattern.selectedBackgroundIndex.value,
+      selectedMaskIndex: heroScene.pattern.selectedMaskIndex.value,
+      selectedMidgroundTextureIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
+    },
+  },
+  {
+    id: 'background',
+    label: 'Background State',
+    data: {
+      colorKey1: heroScene.background.backgroundColorKey1.value,
+      colorKey2: heroScene.background.backgroundColorKey2.value,
+      customBackgroundImage: heroScene.background.customBackgroundImage.value ? '(image data)' : null,
+      customBackgroundSurfaceParams: heroScene.background.customBackgroundSurfaceParams.value,
+    },
+  },
+  {
+    id: 'mask',
+    label: 'Mask State',
+    data: {
+      colorKey1: heroScene.mask.maskColorKey1.value,
+      colorKey2: heroScene.mask.maskColorKey2.value,
+      customMaskImage: heroScene.mask.customMaskImage.value ? '(image data)' : null,
+      customMaskShapeParams: heroScene.mask.customMaskShapeParams.value,
+      customSurfaceParams: heroScene.mask.customSurfaceParams.value,
+    },
+  },
+  {
+    id: 'foreground',
+    label: 'Foreground State',
+    data: heroScene.foreground.foregroundConfig.value,
+  },
+])
 
 // ============================================================
 // Layer Selection (from Store)
@@ -668,6 +721,11 @@ const handleMaskUpdate = (key: string, value: unknown) => {
             :class="{ active: activeTab === 'palette' }"
             @click="activeTab = 'palette'"
           >Palette</button>
+          <button
+            class="hero-tab-button"
+            :class="{ active: activeTab === 'debug' }"
+            @click="activeTab = 'debug'"
+          >Debug</button>
         </nav>
       </header>
 
@@ -690,6 +748,13 @@ const handleMaskUpdate = (key: string, value: unknown) => {
           :actions="actions"
         />
       </div>
+
+      <!-- Debug タブ: HeroScene 状態可視化 -->
+      <DebugPanel
+        v-if="activeTab === 'debug'"
+        :sections="debugSections"
+        class="hero-tab-content"
+      />
     </main>
 
     <!-- 右パネル: 選択要素のプロパティ -->
