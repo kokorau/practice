@@ -1,7 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { syncBackgroundSurfaceParams } from './ConfigSyncer'
 import type { HeroViewConfig, SurfaceConfig } from '../Domain/HeroViewConfig'
 import type { RGBA } from '@practice/texture'
+
+// Ensure actual module is used (not mocked by other tests)
+vi.unmock('@practice/texture')
 
 const createTestConfig = (surface: SurfaceConfig): HeroViewConfig => ({
   viewport: { width: 1920, height: 1080 },

@@ -5,6 +5,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ref, nextTick } from 'vue'
 import { useResponsiveScale } from './useResponsiveScale'
 
+// Polyfill URL for happy-dom in CI environment
+if (typeof globalThis.URL !== 'function') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { URL: NodeURL } = require('node:url')
+  globalThis.URL = NodeURL
+}
+
 // ============================================================
 // Mocks
 // ============================================================

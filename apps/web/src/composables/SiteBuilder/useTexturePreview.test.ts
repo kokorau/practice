@@ -4,6 +4,13 @@ import { computed, nextTick } from 'vue'
 import { useTexturePreview, type SectionType } from './useTexturePreview'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
 
+// Polyfill URL for happy-dom in CI environment
+if (typeof globalThis.URL !== 'function') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { URL: NodeURL } = require('node:url')
+  globalThis.URL = NodeURL
+}
+
 // ============================================================
 // Mocks
 // ============================================================

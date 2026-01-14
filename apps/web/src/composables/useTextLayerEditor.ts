@@ -1,16 +1,19 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
-import type { HeroSceneEditorState, TextLayerConfig } from '../modules/HeroScene'
+import type { HeroViewConfig, TextLayerNodeConfigType, LayerNodeConfig, TextLayerConfig } from '../modules/HeroScene'
 
 // ============================================================
 // Types
 // ============================================================
 
+// TextLayerConfig is imported from HeroScene module
+export type { TextLayerConfig }
+
 /**
  * Options for useTextLayerEditor composable
  */
 export interface UseTextLayerEditorOptions {
-  /** Editor state containing canvas layers */
-  editorState: Ref<HeroSceneEditorState>
+  /** HeroViewConfig containing layers */
+  heroViewConfig: Ref<HeroViewConfig> | ComputedRef<HeroViewConfig>
   /** Callback to update text layer config in scene */
   onUpdateConfig: (id: string, updates: Partial<TextLayerConfig>) => void
 }
@@ -59,10 +62,26 @@ export interface UseTextLayerEditorReturn {
  * - Config retrieval for selected layer
  * - Config updates with position field merging
  */
+/**
+ * Helper to find a text layer node by ID in the layer tree
+ */
+const findTextLayerNode = (layers: LayerNodeConfig[], id: string): TextLayerNodeConfigType | null => {
+  for (const layer of layers) {
+    if (layer.id === id && layer.type === 'text') {
+      return layer as TextLayerNodeConfigType
+    }
+    if (layer.type === 'group' && 'children' in layer) {
+      const found = findTextLayerNode(layer.children, id)
+      if (found) return found
+    }
+  }
+  return null
+}
+
 export function useTextLayerEditor(
   options: UseTextLayerEditorOptions
 ): UseTextLayerEditorReturn {
-  const { editorState, onUpdateConfig } = options
+  const { heroViewConfig, onUpdateConfig } = options
 
   // ============================================================
   // State
@@ -79,11 +98,24 @@ export function useTextLayerEditor(
    */
   const selectedTextLayerConfig = computed<TextLayerConfig | null>(() => {
     if (!selectedTextLayerId.value) return null
-    const layer = editorState.value.canvasLayers.find(
-      (l) => l.id === selectedTextLayerId.value && l.config.type === 'text'
-    )
-    if (!layer || layer.config.type !== 'text') return null
-    return layer.config
+    const layer = findTextLayerNode(heroViewConfig.value.layers, selectedTextLayerId.value)
+    if (!layer) return null
+    return {
+      type: 'text',
+      text: layer.text,
+      fontFamily: layer.fontFamily,
+      fontSize: layer.fontSize,
+      fontWeight: layer.fontWeight,
+      letterSpacing: layer.letterSpacing,
+      lineHeight: layer.lineHeight,
+      color: layer.color,
+      position: {
+        x: layer.position.x,
+        y: layer.position.y,
+        anchor: layer.position.anchor as TextLayerConfig['position']['anchor'],
+      },
+      rotation: layer.rotation,
+    }
   })
 
   // ============================================================
