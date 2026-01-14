@@ -3,6 +3,9 @@
  * EffectSectionPanel
  *
  * エフェクト設定パネルのコンテンツ
+ *
+ * @deprecated Use EffectorSectionPanel instead
+ * This component is kept for backward compatibility
  */
 import { computed, type WritableComputedRef } from 'vue'
 import SchemaFields from '../../SchemaFields.vue'

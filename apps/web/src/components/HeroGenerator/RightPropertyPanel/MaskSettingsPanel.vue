@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * @deprecated Use EffectorSettingsPanel instead
+ * This component is kept for backward compatibility
+ */
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import SchemaFields from '../../SchemaFields.vue'
