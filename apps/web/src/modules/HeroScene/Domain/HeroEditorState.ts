@@ -121,6 +121,8 @@ export interface PresetUIState {
 
 /**
  * カラーのUI状態
+ * @deprecated Use HeroColorsConfig from HeroViewConfig.ts instead.
+ * This interface duplicates color keys already in HeroColorsConfig.
  */
 export interface ColorUIState {
   /** 背景色キー1 */
@@ -234,6 +236,7 @@ export const createDefaultPresetUIState = (): PresetUIState => ({
 
 /**
  * デフォルトのColorUIStateを作成
+ * @deprecated Use createDefaultColorsConfig from HeroViewConfig.ts instead
  */
 export const createDefaultColorUIState = (): ColorUIState => ({
   backgroundColorKey1: 'B',
