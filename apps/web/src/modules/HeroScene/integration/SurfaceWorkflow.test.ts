@@ -15,6 +15,7 @@ import {
 import { createMaskUsecase, type MaskUsecase } from '../Application/MaskUsecase'
 import type { HeroViewRepository } from '../Domain/repository/HeroViewRepository'
 import type { HeroViewConfig } from '../Domain/HeroViewConfig'
+import { SCENE_LAYER_IDS } from '../Domain/LayerNode'
 
 describe('SurfaceWorkflow Integration', () => {
   let repository: HeroViewRepository
@@ -35,7 +36,7 @@ describe('SurfaceWorkflow Integration', () => {
     layers: [
       {
         type: 'base',
-        id: 'base',
+        id: SCENE_LAYER_IDS.BASE,
         name: 'Background',
         visible: true,
         surface: { type: 'solid' },
@@ -43,7 +44,7 @@ describe('SurfaceWorkflow Integration', () => {
       },
       {
         type: 'surface',
-        id: 'mask',
+        id: SCENE_LAYER_IDS.MASK,
         name: 'Mask Layer',
         visible: true,
         surface: { type: 'solid' },
@@ -83,7 +84,7 @@ describe('SurfaceWorkflow Integration', () => {
       repository.subscribe(callback)
 
       // Step 1: 初期状態を確認（solid）
-      const baseLayer = repository.findLayer('base')
+      const baseLayer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       expect(baseLayer?.type).toBe('base')
       if (baseLayer?.type === 'base') {
         expect(baseLayer.surface.type).toBe('solid')
@@ -92,7 +93,7 @@ describe('SurfaceWorkflow Integration', () => {
       // Step 2: stripeに変更
       backgroundUsecase.selectSurface({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
 
-      const afterStripe = repository.findLayer('base')
+      const afterStripe = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (afterStripe?.type === 'base') {
         expect(afterStripe.surface).toEqual({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
       }
@@ -100,7 +101,7 @@ describe('SurfaceWorkflow Integration', () => {
       // Step 3: stripeのパラメータを変更
       backgroundUsecase.updateSurfaceParams({ type: 'stripe', width1: 30, angle: 90 })
 
-      const afterUpdate = repository.findLayer('base')
+      const afterUpdate = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (afterUpdate?.type === 'base') {
         expect(afterUpdate.surface).toEqual({ type: 'stripe', width1: 30, width2: 20, angle: 90 })
       }
@@ -122,7 +123,7 @@ describe('SurfaceWorkflow Integration', () => {
       // polkaDot → solid
       backgroundUsecase.selectSurface({ type: 'solid' })
 
-      const finalLayer = repository.findLayer('base')
+      const finalLayer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (finalLayer?.type === 'base') {
         expect(finalLayer.surface).toEqual({ type: 'solid' })
       }
@@ -141,7 +142,7 @@ describe('SurfaceWorkflow Integration', () => {
       expect(config.colors.background.secondary).toBe('F5')
 
       // surfaceは変わらない
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface.type).toBe('stripe')
       }
@@ -154,7 +155,7 @@ describe('SurfaceWorkflow Integration', () => {
       repository.subscribe(callback)
 
       // Step 1: 初期状態を確認
-      const initialLayer = repository.findLayer('mask')
+      const initialLayer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (initialLayer?.type === 'surface') {
         const maskProcessor = (initialLayer.processors ?? []).find(p => p.type === 'mask')
         expect(maskProcessor?.type).toBe('mask')
@@ -180,7 +181,7 @@ describe('SurfaceWorkflow Integration', () => {
         cutout: true,
       })
 
-      const afterShapeChange = repository.findLayer('mask')
+      const afterShapeChange = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (afterShapeChange?.type === 'surface') {
         const maskProcessor = (afterShapeChange.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
@@ -191,7 +192,7 @@ describe('SurfaceWorkflow Integration', () => {
       // Step 3: mask surfaceを変更
       maskUsecase.selectMidgroundSurface({ type: 'stripe', width1: 15, width2: 15, angle: 30 })
 
-      const afterSurfaceChange = repository.findLayer('mask')
+      const afterSurfaceChange = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (afterSurfaceChange?.type === 'surface') {
         expect(afterSurfaceChange.surface).toEqual({ type: 'stripe', width1: 15, width2: 15, angle: 30 })
       }
@@ -199,7 +200,7 @@ describe('SurfaceWorkflow Integration', () => {
       // Step 4: mask shapeのパラメータを変更
       maskUsecase.updateMaskShapeParams({ type: 'rect', left: 0.2, right: 0.8 })
 
-      const afterParamChange = repository.findLayer('mask')
+      const afterParamChange = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (afterParamChange?.type === 'surface') {
         const maskProcessor = (afterParamChange.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask' && maskProcessor.shape.type === 'rect') {
@@ -226,7 +227,7 @@ describe('SurfaceWorkflow Integration', () => {
 
       maskUsecase.selectMaskShape(blobShape)
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
@@ -237,7 +238,7 @@ describe('SurfaceWorkflow Integration', () => {
       // パラメータを更新
       maskUsecase.updateMaskShapeParams({ type: 'blob', amplitude: 0.2, seed: 54321 })
 
-      const updatedLayer = repository.findLayer('mask')
+      const updatedLayer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (updatedLayer?.type === 'surface') {
         const maskProcessor = (updatedLayer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask' && maskProcessor.shape.type === 'blob') {
@@ -271,13 +272,13 @@ describe('SurfaceWorkflow Integration', () => {
       maskUsecase.selectMidgroundSurface({ type: 'grid', lineWidth: 2, cellSize: 30 })
 
       // Background
-      const baseLayer = repository.findLayer('base')
+      const baseLayer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (baseLayer?.type === 'base') {
         expect(baseLayer.surface).toEqual({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
       }
 
       // Mask
-      const maskLayer = repository.findLayer('mask')
+      const maskLayer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (maskLayer?.type === 'surface') {
         expect(maskLayer.surface).toEqual({ type: 'grid', lineWidth: 2, cellSize: 30 })
       }
@@ -317,7 +318,7 @@ describe('SurfaceWorkflow Integration', () => {
 
       backgroundUsecase.selectSurface(gradientGrainSurface)
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual(gradientGrainSurface)
       }
@@ -330,7 +331,7 @@ describe('SurfaceWorkflow Integration', () => {
         seed: 54321,
       })
 
-      const updatedLayer = repository.findLayer('base')
+      const updatedLayer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (updatedLayer?.type === 'base' && updatedLayer.surface.type === 'gradientGrain') {
         expect(updatedLayer.surface.angle).toBe(45)
         expect(updatedLayer.surface.sparsity).toBe(0.8)
@@ -348,7 +349,7 @@ describe('SurfaceWorkflow Integration', () => {
       // 異なるtypeでupdateを試みる
       backgroundUsecase.updateSurfaceParams({ type: 'grid', cellSize: 50 })
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         // stripeのまま
         expect(layer.surface).toEqual({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
@@ -359,7 +360,7 @@ describe('SurfaceWorkflow Integration', () => {
       // 初期状態はcircle
       maskUsecase.updateMaskShapeParams({ type: 'rect', left: 0.1 })
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
@@ -381,7 +382,7 @@ describe('SurfaceWorkflow Integration', () => {
         expect.objectContaining({
           layers: expect.arrayContaining([
             expect.objectContaining({
-              id: 'base',
+              id: SCENE_LAYER_IDS.BASE,
               surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
             }),
           ]),
