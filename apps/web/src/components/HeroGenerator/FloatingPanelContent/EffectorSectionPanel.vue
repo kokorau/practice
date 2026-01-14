@@ -5,9 +5,8 @@
  * Effect/Mask統合設定パネル
  * タブ切り替えでEffect設定とMask Shape設定を切り替え
  */
-import { ref, computed } from 'vue'
-import type { ObjectSchema } from '@practice/schema'
-import type { MaskPattern, TextureRenderSpec, RGBA } from '@practice/texture'
+import { computed } from 'vue'
+import type { MaskPattern } from '@practice/texture'
 import SchemaFields from '../../SchemaFields.vue'
 import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
 import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'

@@ -664,6 +664,10 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
  * Use this helper during migration from processors to filters
  */
 export const getLayerFilters = (layer: LayerNodeConfig): EffectFilterConfig[] => {
+  // ProcessorNodeConfig uses modifiers, not filters/processors
+  if (layer.type === 'processor') {
+    return layer.modifiers.filter((m): m is EffectFilterConfig => m.type === 'effect')
+  }
   // Prefer filters if available
   if (layer.filters && layer.filters.length > 0) {
     return layer.filters
@@ -679,6 +683,10 @@ export const getLayerFilters = (layer: LayerNodeConfig): EffectFilterConfig[] =>
  * Get mask processor from a layer config
  */
 export const getLayerMaskProcessor = (layer: LayerNodeConfig): MaskProcessorConfig | undefined => {
+  // ProcessorNodeConfig uses modifiers, not processors
+  if (layer.type === 'processor') {
+    return layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
+  }
   if (layer.processors) {
     return layer.processors.find((p): p is MaskProcessorConfig => p.type === 'mask')
   }
@@ -730,6 +738,7 @@ export const getProcessorTargetsFromConfig = (
   if (isRoot) {
     // Root level: only the immediately preceding node
     const prevNode = siblings[processorIndex - 1]
+    if (!prevNode) return []
     // If preceded by another processor, no targets
     return isProcessorNodeConfig(prevNode) ? [] : [prevNode]
   }
@@ -738,6 +747,7 @@ export const getProcessorTargetsFromConfig = (
   const targets: LayerNodeConfig[] = []
   for (let i = processorIndex - 1; i >= 0; i--) {
     const node = siblings[i]
+    if (!node) continue
     if (isProcessorNodeConfig(node)) break // Stop at previous Processor
     targets.unshift(node)
   }
@@ -761,7 +771,7 @@ export const getProcessorTargetPairsFromConfig = (
 
   for (let i = 0; i < siblings.length; i++) {
     const node = siblings[i]
-    if (isProcessorNodeConfig(node)) {
+    if (node && isProcessorNodeConfig(node)) {
       const targets = getProcessorTargetsFromConfig(siblings, i, isRoot)
       pairs.push({ processor: node, targets })
     }
