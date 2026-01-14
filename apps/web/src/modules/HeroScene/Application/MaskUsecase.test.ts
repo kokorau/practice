@@ -7,6 +7,7 @@ import {
 import { createHeroViewInMemoryRepository } from '../Infra/HeroViewInMemoryRepository'
 import type { HeroViewRepository } from './ports/HeroViewRepository'
 import type { HeroViewConfig } from '../Domain/HeroViewConfig'
+import { SCENE_LAYER_IDS } from '../Domain/LayerNode'
 
 describe('MaskUsecase', () => {
   let repository: HeroViewRepository
@@ -26,7 +27,7 @@ describe('MaskUsecase', () => {
     layers: [
       {
         type: 'base',
-        id: 'base',
+        id: SCENE_LAYER_IDS.BASE,
         name: 'Background',
         visible: true,
         surface: { type: 'solid' },
@@ -34,7 +35,7 @@ describe('MaskUsecase', () => {
       },
       {
         type: 'surface',
-        id: 'mask',
+        id: SCENE_LAYER_IDS.MASK,
         name: 'Mask Layer',
         visible: true,
         surface: { type: 'solid' },
@@ -69,7 +70,7 @@ describe('MaskUsecase', () => {
       const circleShape = { type: 'circle' as const, centerX: 0.3, centerY: 0.7, radius: 0.4, cutout: false }
       usecase.selectMaskShape(circleShape)
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       expect(layer).toBeDefined()
       expect(layer?.type).toBe('surface')
       if (layer?.type === 'surface') {
@@ -99,7 +100,7 @@ describe('MaskUsecase', () => {
       }
       usecase.selectMaskShape(rectShape)
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
@@ -121,7 +122,7 @@ describe('MaskUsecase', () => {
       }
       usecase.selectMaskShape(blobShape)
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
@@ -141,7 +142,7 @@ describe('MaskUsecase', () => {
       }
       usecase.selectMaskShape(perlinShape)
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
@@ -155,7 +156,7 @@ describe('MaskUsecase', () => {
     it('updates circle shape params', () => {
       usecase.updateMaskShapeParams({ type: 'circle', radius: 0.5, centerX: 0.2 })
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
@@ -173,7 +174,7 @@ describe('MaskUsecase', () => {
     it('does not update when shape type does not match', () => {
       usecase.updateMaskShapeParams({ type: 'rect', left: 0.1 })
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
@@ -201,7 +202,7 @@ describe('MaskUsecase', () => {
 
       usecase.updateMaskShapeParams({ type: 'rect', left: 0.2, right: 0.8 })
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         const maskProcessor = (layer.processors ?? []).find(p => p.type === 'mask')
         if (maskProcessor?.type === 'mask') {
@@ -230,7 +231,7 @@ describe('MaskUsecase', () => {
       const stripeSurface = { type: 'stripe' as const, width1: 20, width2: 20, angle: 45 }
       usecase.selectMidgroundSurface(stripeSurface)
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       expect(layer?.type).toBe('surface')
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual(stripeSurface)
@@ -241,7 +242,7 @@ describe('MaskUsecase', () => {
       const gridSurface = { type: 'grid' as const, lineWidth: 2, cellSize: 30 }
       usecase.selectMidgroundSurface(gridSurface)
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual(gridSurface)
       }
@@ -251,7 +252,7 @@ describe('MaskUsecase', () => {
       const polkaDotSurface = { type: 'polkaDot' as const, dotRadius: 10, spacing: 40, rowOffset: 0.5 }
       usecase.selectMidgroundSurface(polkaDotSurface)
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual(polkaDotSurface)
       }
@@ -290,7 +291,7 @@ describe('MaskUsecase', () => {
       await usecase.uploadMaskImage(file)
 
       expect(mockImageUpload.upload).toHaveBeenCalledWith(file)
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual({ type: 'image', imageId: 'uploaded-mask-image-id' })
       }
@@ -313,7 +314,7 @@ describe('MaskUsecase', () => {
 
       usecase.clearMaskImage()
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual({ type: 'solid' })
       }
@@ -326,7 +327,7 @@ describe('MaskUsecase', () => {
 
       expect(mockImageUpload.fetchRandom).toHaveBeenCalledWith('abstract')
       expect(mockImageUpload.upload).toHaveBeenCalled()
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual({ type: 'image', imageId: 'uploaded-mask-image-id' })
       }
@@ -347,7 +348,7 @@ describe('MaskUsecase', () => {
 
       usecase.updateSurfaceParams({ type: 'stripe', width1: 30, angle: 90 })
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual({ type: 'stripe', width1: 30, width2: 20, angle: 90 })
       }
@@ -357,7 +358,7 @@ describe('MaskUsecase', () => {
       usecase.selectMidgroundSurface({ type: 'grid', lineWidth: 2, cellSize: 30 })
       usecase.updateSurfaceParams({ type: 'grid', cellSize: 50 })
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual({ type: 'grid', lineWidth: 2, cellSize: 50 })
       }
@@ -367,7 +368,7 @@ describe('MaskUsecase', () => {
       usecase.selectMidgroundSurface({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
       usecase.updateSurfaceParams({ type: 'grid', cellSize: 50 })
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
       }
@@ -377,7 +378,7 @@ describe('MaskUsecase', () => {
       usecase.selectMidgroundSurface({ type: 'solid' })
       usecase.updateSurfaceParams({ type: 'stripe', width1: 30 })
 
-      const layer = repository.findLayer('mask')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.MASK)
       if (layer?.type === 'surface') {
         expect(layer.surface).toEqual({ type: 'solid' })
       }

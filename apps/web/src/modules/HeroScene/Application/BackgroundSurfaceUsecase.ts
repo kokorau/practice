@@ -3,6 +3,9 @@
  *
  * 背景サーフェス操作のユースケース
  * パターン選択、カラー設定、画像アップロードなど
+ *
+ * @deprecated Use SurfaceUsecase instead, which operates on the selected layer
+ * @see SurfaceUsecase
  */
 
 import type { HeroViewRepository } from './ports/HeroViewRepository'
