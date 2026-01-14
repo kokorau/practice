@@ -76,15 +76,6 @@ export type {
 } from './ForegroundElementUsecase'
 export { createForegroundElementUsecase } from './ForegroundElementUsecase'
 
-// Re-export Compile functions
-export type {
-  MidgroundTexturePattern,
-  PatternMaps,
-  CompileColors,
-  CompileOptions,
-} from './CompileHeroScene'
-export { compileHeroScene } from './CompileHeroScene'
-
 // Re-export ConfigSyncer
 export type { SyncBackgroundSurfaceResult, SyncMaskSurfaceResult } from './ConfigSyncer'
 export { syncBackgroundSurfaceParams, syncMaskSurfaceParams } from './ConfigSyncer'
