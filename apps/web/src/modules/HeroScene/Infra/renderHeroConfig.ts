@@ -11,6 +11,16 @@ import {
   createGridSpec,
   createPolkaDotSpec,
   createCheckerSpec,
+  // Textile pattern specs
+  createTriangleSpec,
+  createHexagonSpec,
+  createGradientGrainSpec,
+  createAsanohaSpec,
+  createSeigaihaSpec,
+  createWaveSpec,
+  createScalesSpec,
+  createOgeeSpec,
+  createSunburstSpec,
   // Greymap mask shaders (new 2-stage pipeline)
   createCircleGreymapMaskSpec,
   createRectGreymapMaskSpec,
@@ -192,7 +202,7 @@ function createBackgroundSpecFromSurface(
   surface: SurfaceConfig,
   color1: RGBA,
   color2: RGBA,
-  _viewport: Viewport,
+  viewport: Viewport,
   scale: number
 ): TextureRenderSpec | null {
   if (surface.type === 'solid') {
@@ -230,6 +240,104 @@ function createBackgroundSpecFromSurface(
       color2,
       cellSize: scaleValue(surface.cellSize, scale),
       angle: surface.angle,
+    })
+  }
+  // Textile patterns
+  if (surface.type === 'triangle') {
+    return createTriangleSpec({
+      color1,
+      color2,
+      size: scaleValue(surface.size, scale),
+      angle: surface.angle,
+    })
+  }
+  if (surface.type === 'hexagon') {
+    return createHexagonSpec({
+      color1,
+      color2,
+      size: scaleValue(surface.size, scale),
+      angle: surface.angle,
+    })
+  }
+  if (surface.type === 'gradientGrain') {
+    // GradientGrain uses default curve points for config-based rendering
+    const defaultCurvePoints = [0, 0.2, 0.4, 0.5, 0.6, 0.8, 1]
+    return createGradientGrainSpec(
+      {
+        depthMapType: surface.depthMapType,
+        angle: surface.angle,
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        radialStartAngle: surface.radialStartAngle,
+        radialSweepAngle: surface.radialSweepAngle,
+        perlinScale: surface.perlinScale,
+        perlinOctaves: surface.perlinOctaves,
+        perlinContrast: surface.perlinContrast,
+        perlinOffset: surface.perlinOffset,
+        colorA: color1,
+        colorB: color2,
+        seed: surface.seed,
+        sparsity: surface.sparsity,
+        curvePoints: defaultCurvePoints,
+      },
+      viewport
+    )
+  }
+  if (surface.type === 'asanoha') {
+    return createAsanohaSpec({
+      size: scaleValue(surface.size, scale),
+      lineWidth: scaleValue(surface.lineWidth, scale),
+      lineColor: color1,
+      bgColor: color2,
+    })
+  }
+  if (surface.type === 'seigaiha') {
+    return createSeigaihaSpec({
+      radius: scaleValue(surface.radius, scale),
+      rings: surface.rings,
+      lineWidth: scaleValue(surface.lineWidth, scale),
+      lineColor: color1,
+      bgColor: color2,
+    })
+  }
+  if (surface.type === 'wave') {
+    return createWaveSpec({
+      amplitude: scaleValue(surface.amplitude, scale),
+      wavelength: scaleValue(surface.wavelength, scale),
+      thickness: scaleValue(surface.thickness, scale),
+      angle: surface.angle,
+      color1,
+      color2,
+    })
+  }
+  if (surface.type === 'scales') {
+    return createScalesSpec({
+      size: scaleValue(surface.size, scale),
+      overlap: surface.overlap,
+      angle: surface.angle,
+      color1,
+      color2,
+    })
+  }
+  if (surface.type === 'ogee') {
+    return createOgeeSpec({
+      width: scaleValue(surface.width, scale),
+      height: scaleValue(surface.height, scale),
+      lineWidth: scaleValue(surface.lineWidth, scale),
+      lineColor: color1,
+      bgColor: color2,
+    })
+  }
+  if (surface.type === 'sunburst') {
+    return createSunburstSpec({
+      rays: surface.rays,
+      centerX: surface.centerX,
+      centerY: surface.centerY,
+      twist: surface.twist,
+      color1,
+      color2,
+      viewportWidth: viewport.width,
+      viewportHeight: viewport.height,
     })
   }
   // image type is not supported in config-based rendering
