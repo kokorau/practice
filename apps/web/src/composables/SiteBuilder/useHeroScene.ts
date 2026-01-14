@@ -224,6 +224,8 @@ import {
   type VignetteConfig,
   // Effect types
   type EffectType,
+  // Config-based rendering
+  renderHeroConfig,
 } from '../../modules/HeroScene'
 import { useEffectManager } from '../useEffectManager'
 import { useLayerSelection } from '../useLayerSelection'
@@ -2717,6 +2719,29 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
   }
 
+  /**
+   * Render scene using HeroViewConfig-based pipeline
+   *
+   * This is an experimental function for Phase 8 migration.
+   * It uses toHeroViewConfig() + renderHeroConfig() instead of the legacy
+   * canvasLayers-based renderScene().
+   *
+   * @experimental This function is part of the migration from canvasLayers to HeroViewConfig
+   */
+  const renderSceneFromConfig = async () => {
+    if (!previewRenderer) return
+
+    const config = toHeroViewConfig()
+    await renderHeroConfig(previewRenderer, config, primitivePalette.value)
+
+    // Update cached ImageData for contrast analysis (same as renderScene)
+    try {
+      canvasImageData.value = await previewRenderer.readPixels()
+    } catch {
+      // Ignore errors (e.g., if canvas is not ready)
+    }
+  }
+
   // ============================================================
   // Thumbnail Rendering
   // ============================================================
@@ -4023,6 +4048,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     initPreview,
     destroyPreview,
     openSection,
+    renderSceneFromConfig,
   }
 
   // ============================================================

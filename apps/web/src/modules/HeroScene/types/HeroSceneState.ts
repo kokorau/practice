@@ -598,6 +598,16 @@ export interface RendererActions {
   readonly destroyPreview: () => void
   /** Open a UI section */
   readonly openSection: (section: SectionType) => void
+  /**
+   * Render scene using HeroViewConfig-based pipeline
+   *
+   * This is an experimental function for Phase 8 migration.
+   * It uses toHeroViewConfig() + renderHeroConfig() instead of the legacy
+   * canvasLayers-based renderScene().
+   *
+   * @experimental This function is part of the migration from canvasLayers to HeroViewConfig
+   */
+  readonly renderSceneFromConfig?: () => Promise<void>
 }
 
 // ============================================================
