@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { selectFilterType, getFilterType } from './selectFilterType'
 import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
-import type { HeroViewConfig, BaseLayerNodeConfig, EffectProcessorConfig } from '../../Domain/HeroViewConfig'
+import type { HeroViewConfig, BaseLayerNodeConfig, EffectFilterConfig } from '../../Domain/HeroViewConfig'
 
 describe('selectFilterType', () => {
   const createTestConfig = (): HeroViewConfig => ({
@@ -21,7 +21,7 @@ describe('selectFilterType', () => {
         name: 'Background',
         visible: true,
         surface: { type: 'solid' },
-        processors: [
+        filters: [
           {
             type: 'effect',
             enabled: true,
@@ -46,13 +46,13 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+    const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-    expect(effectProcessor.config.vignette.enabled).toBe(true)
-    expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
-    expect(effectProcessor.config.dotHalftone.enabled).toBe(false)
-    expect(effectProcessor.config.lineHalftone.enabled).toBe(false)
-    expect(effectProcessor.config.blur.enabled).toBe(false)
+    expect(effectFilter.config.vignette.enabled).toBe(true)
+    expect(effectFilter.config.chromaticAberration.enabled).toBe(false)
+    expect(effectFilter.config.dotHalftone.enabled).toBe(false)
+    expect(effectFilter.config.lineHalftone.enabled).toBe(false)
+    expect(effectFilter.config.blur.enabled).toBe(false)
   })
 
   it('should select chromaticAberration filter and disable others', () => {
@@ -62,13 +62,13 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+    const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-    expect(effectProcessor.config.vignette.enabled).toBe(false)
-    expect(effectProcessor.config.chromaticAberration.enabled).toBe(true)
-    expect(effectProcessor.config.dotHalftone.enabled).toBe(false)
-    expect(effectProcessor.config.lineHalftone.enabled).toBe(false)
-    expect(effectProcessor.config.blur.enabled).toBe(false)
+    expect(effectFilter.config.vignette.enabled).toBe(false)
+    expect(effectFilter.config.chromaticAberration.enabled).toBe(true)
+    expect(effectFilter.config.dotHalftone.enabled).toBe(false)
+    expect(effectFilter.config.lineHalftone.enabled).toBe(false)
+    expect(effectFilter.config.blur.enabled).toBe(false)
   })
 
   it('should select dotHalftone filter and disable others', () => {
@@ -78,13 +78,13 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+    const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-    expect(effectProcessor.config.vignette.enabled).toBe(false)
-    expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
-    expect(effectProcessor.config.dotHalftone.enabled).toBe(true)
-    expect(effectProcessor.config.lineHalftone.enabled).toBe(false)
-    expect(effectProcessor.config.blur.enabled).toBe(false)
+    expect(effectFilter.config.vignette.enabled).toBe(false)
+    expect(effectFilter.config.chromaticAberration.enabled).toBe(false)
+    expect(effectFilter.config.dotHalftone.enabled).toBe(true)
+    expect(effectFilter.config.lineHalftone.enabled).toBe(false)
+    expect(effectFilter.config.blur.enabled).toBe(false)
   })
 
   it('should select lineHalftone filter and disable others', () => {
@@ -94,13 +94,13 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+    const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-    expect(effectProcessor.config.vignette.enabled).toBe(false)
-    expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
-    expect(effectProcessor.config.dotHalftone.enabled).toBe(false)
-    expect(effectProcessor.config.lineHalftone.enabled).toBe(true)
-    expect(effectProcessor.config.blur.enabled).toBe(false)
+    expect(effectFilter.config.vignette.enabled).toBe(false)
+    expect(effectFilter.config.chromaticAberration.enabled).toBe(false)
+    expect(effectFilter.config.dotHalftone.enabled).toBe(false)
+    expect(effectFilter.config.lineHalftone.enabled).toBe(true)
+    expect(effectFilter.config.blur.enabled).toBe(false)
   })
 
   it('should disable all filters when selecting void', () => {
@@ -114,13 +114,13 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+    const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
-    expect(effectProcessor.config.vignette.enabled).toBe(false)
-    expect(effectProcessor.config.chromaticAberration.enabled).toBe(false)
-    expect(effectProcessor.config.dotHalftone.enabled).toBe(false)
-    expect(effectProcessor.config.lineHalftone.enabled).toBe(false)
-    expect(effectProcessor.config.blur.enabled).toBe(false)
+    expect(effectFilter.config.vignette.enabled).toBe(false)
+    expect(effectFilter.config.chromaticAberration.enabled).toBe(false)
+    expect(effectFilter.config.dotHalftone.enabled).toBe(false)
+    expect(effectFilter.config.lineHalftone.enabled).toBe(false)
+    expect(effectFilter.config.blur.enabled).toBe(false)
   })
 
   it('should preserve other effect parameters when switching filter type', () => {
@@ -134,12 +134,12 @@ describe('selectFilterType', () => {
 
     const result = repository.get()
     const layer = result.layers[0] as BaseLayerNodeConfig
-    const effectProcessor = (layer.processors ?? [])[0] as EffectProcessorConfig
+    const effectFilter = (layer.filters ?? [])[0] as EffectFilterConfig
 
     // Vignette params should be preserved (just disabled)
-    expect(effectProcessor.config.vignette.intensity).toBe(0.5)
+    expect(effectFilter.config.vignette.intensity).toBe(0.5)
     // Check shape-specific params for ellipse
-    const vignetteConfig = effectProcessor.config.vignette
+    const vignetteConfig = effectFilter.config.vignette
     if (vignetteConfig.shape === 'ellipse') {
       expect(vignetteConfig.radius).toBe(0.8)
     }
@@ -174,7 +174,7 @@ describe('getFilterType', () => {
         name: 'Background',
         visible: true,
         surface: { type: 'solid' },
-        processors: [
+        filters: [
           {
             type: 'effect',
             enabled: true,

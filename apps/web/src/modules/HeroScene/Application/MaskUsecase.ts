@@ -151,12 +151,6 @@ const getMaskLayer = (repository: HeroViewRepository): SurfaceLayerNodeConfig | 
   return undefined
 }
 
-/**
- * マスクprocessorを取得するヘルパー
- */
-const getMaskProcessor = (layer: SurfaceLayerNodeConfig) => {
-  return (layer.processors ?? []).find(p => p.type === 'mask')
-}
 
 /**
  * MaskUsecaseを作成
@@ -169,34 +163,16 @@ export const createMaskUsecase = (deps: MaskUsecaseDeps): MaskUsecase => {
     // マスク形状操作
     // ----------------------------------------
 
-    selectMaskShape(shape: MaskShapeConfig): void {
-      const layer = getMaskLayer(repository)
-      if (!layer) return
-
-      const maskProcessor = getMaskProcessor(layer)
-      if (!maskProcessor || maskProcessor.type !== 'mask') return
-
-      const updatedProcessors = (layer.processors ?? []).map(p =>
-        p.type === 'mask' ? { ...p, shape } : p
-      )
-
-      repository.updateLayer(MASK_LAYER_ID, { processors: updatedProcessors })
+    selectMaskShape(_shape: MaskShapeConfig): void {
+      // @deprecated: Masks are now on ProcessorNodeConfig.modifiers
+      // This function is deprecated and does nothing
+      console.warn('MaskUsecase.selectMaskShape is deprecated. Use processor nodes instead.')
     },
 
-    updateMaskShapeParams(params: MaskShapeParamsUpdate): void {
-      const layer = getMaskLayer(repository)
-      if (!layer) return
-
-      const maskProcessor = getMaskProcessor(layer)
-      if (!maskProcessor || maskProcessor.type !== 'mask') return
-      if (maskProcessor.shape.type !== params.type) return
-
-      const newShape = { ...maskProcessor.shape, ...params } as MaskShapeConfig
-      const updatedProcessors = (layer.processors ?? []).map(p =>
-        p.type === 'mask' ? { ...p, shape: newShape } : p
-      )
-
-      repository.updateLayer(MASK_LAYER_ID, { processors: updatedProcessors })
+    updateMaskShapeParams(_params: MaskShapeParamsUpdate): void {
+      // @deprecated: Masks are now on ProcessorNodeConfig.modifiers
+      // This function is deprecated and does nothing
+      console.warn('MaskUsecase.updateMaskShapeParams is deprecated. Use processor nodes instead.')
     },
 
     // ----------------------------------------

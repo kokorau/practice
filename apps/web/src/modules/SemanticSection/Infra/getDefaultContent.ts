@@ -287,7 +287,7 @@ const corporateCleanConfig: HeroViewConfig = {
       name: 'Background',
       visible: true,
       surface: { type: 'grid', lineWidth: 1, cellSize: 48 },
-      processors: [
+      filters: [
         {
           type: 'effect',
           enabled: true,
@@ -307,7 +307,7 @@ const corporateCleanConfig: HeroViewConfig = {
       name: 'Mask Surface',
       visible: true,
       surface: { type: 'solid' },
-      processors: [
+      filters: [
         {
           type: 'effect',
           enabled: true,
@@ -319,6 +319,14 @@ const corporateCleanConfig: HeroViewConfig = {
             blur: { enabled: false, radius: 8 },
           },
         },
+      ],
+    },
+    {
+      type: 'processor',
+      id: 'processor-mask',
+      name: 'Mask Processor',
+      visible: true,
+      modifiers: [
         {
           type: 'mask',
           enabled: true,
