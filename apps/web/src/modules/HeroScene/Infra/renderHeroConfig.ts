@@ -583,6 +583,10 @@ export async function renderHeroConfig(
     maskSurfaceKey,
     isDark
   )
+  // midgroundTextureColor2: mask.secondary or mask surface color
+  const midgroundTextureColor2 = colors.mask.secondary === 'auto'
+    ? getColorFromPalette(palette, maskSurfaceKey)
+    : getColorFromPalette(palette, colors.mask.secondary)
 
   // 1. Render background (base layer)
   const baseLayer = findBaseLayer(config.layers)
@@ -606,9 +610,21 @@ export async function renderHeroConfig(
     }
   }
 
-  // 2. Render surface layer with mask (legacy: mask in layer.processors)
+  // 2. Render surface layer with mask
   const surfaceLayer = findSurfaceLayer(config.layers)
   if (surfaceLayer) {
+    // First render the surface texture pattern
+    const surfaceSpec = createBackgroundSpecFromSurface(
+      surfaceLayer.surface,
+      midgroundTextureColor1,
+      midgroundTextureColor2,
+      viewport,
+      scale
+    )
+    if (surfaceSpec) {
+      renderer.render(surfaceSpec, { clear: false })
+    }
+
     // Get mask from processors
     const maskProcessor = getLayerMaskProcessor(surfaceLayer)
 

@@ -345,8 +345,8 @@ describe('renderHeroConfig', () => {
 
       await renderHeroConfig(renderer, config, lightPalette)
 
-      // Should render background first
-      expect(renderer.renderCalls.length).toBe(1)
+      // Should render background + surface layer
+      expect(renderer.renderCalls.length).toBe(2)
       // Should render mask to offscreen (stage 1)
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
       // Should apply colorize post effect (stage 2)
@@ -715,8 +715,8 @@ describe('renderHeroConfig', () => {
         await renderHeroConfig(renderer, config, lightPalette)
       }
 
-      // All 4 contexts should render successfully
-      expect(renderer.renderCalls.length).toBe(4)
+      // All 4 contexts should render successfully (2 renders per context: base + surface)
+      expect(renderer.renderCalls.length).toBe(8)
     })
   })
 
@@ -767,8 +767,8 @@ describe('renderHeroConfig', () => {
 
       await renderHeroConfig(renderer, config, lightPalette)
 
-      // Should render base layer + nested surface mask
-      expect(renderer.renderCalls.length).toBe(1)
+      // Should render base layer + nested surface layer + mask
+      expect(renderer.renderCalls.length).toBe(2)
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
     })
   })
@@ -888,8 +888,8 @@ describe('renderHeroConfig', () => {
 
       await renderHeroConfig(renderer, config, lightPalette)
 
-      // Base layer render + processor mask
-      expect(renderer.renderCalls.length).toBe(1)
+      // Base layer render + surface layer render + processor mask
+      expect(renderer.renderCalls.length).toBe(2)
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
       expect(renderer.applyPostEffectCalls.length).toBe(1)
     })
@@ -1046,8 +1046,8 @@ describe('renderHeroConfig', () => {
 
       await renderHeroConfig(renderer, config, lightPalette)
 
-      // Base layer render + effect application
-      expect(renderer.renderCalls.length).toBe(1)
+      // Base layer render + surface layer render + effect application
+      expect(renderer.renderCalls.length).toBe(2)
       expect(renderer.copyCanvasToTextureCalls).toBeGreaterThanOrEqual(1)
     })
 
@@ -1103,8 +1103,8 @@ describe('renderHeroConfig', () => {
 
       await renderHeroConfig(renderer, config, lightPalette)
 
-      // Base layer render + mask + effect
-      expect(renderer.renderCalls.length).toBe(1)
+      // Base layer render + surface layer render + mask + effect
+      expect(renderer.renderCalls.length).toBe(2)
       expect(renderer.renderToOffscreenCalls.length).toBe(1) // mask greymap
       expect(renderer.copyCanvasToTextureCalls).toBeGreaterThanOrEqual(1) // effect
     })
@@ -1154,8 +1154,8 @@ describe('renderHeroConfig', () => {
 
       await renderHeroConfig(renderer, config, lightPalette)
 
-      // Only base layer render, no mask
-      expect(renderer.renderCalls.length).toBe(1)
+      // Base layer render + surface layer render, no mask
+      expect(renderer.renderCalls.length).toBe(2)
       expect(renderer.renderToOffscreenCalls.length).toBe(0)
     })
   })
