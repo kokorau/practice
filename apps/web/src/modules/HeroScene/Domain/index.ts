@@ -10,6 +10,7 @@
 
 import type { TexturePatternSpec } from '@practice/texture'
 import { createDefaultEffectConfig, type LayerEffectConfig } from './EffectSchema'
+import type { SceneNode } from './LayerNode'
 
 // Legacy alias for backward compatibility
 const createDefaultFilterConfig = createDefaultEffectConfig
@@ -471,12 +472,26 @@ export interface HeroSceneConfig {
 
 /**
  * HeroScene
- * CanvasLayer[] + HtmlLayer で構成されるHeroセクション
+ * SceneNode tree based hero section with optional canvas layers
+ *
+ * Migration:
+ * - Phase 1 (current): Both `nodes` and `canvasLayers` are supported
+ * - Phase 2 (future): `canvasLayers` will be derived from `nodes` only
+ * - Phase 3 (future): `canvasLayers` will be removed
  */
 export interface HeroScene {
   /** シーン設定 */
   config: HeroSceneConfig
-  /** Canvasレイヤー (zIndexでソート済み、小さいほど奥) */
+  /**
+   * Scene node tree (new, preferred)
+   * Contains Layer, Group, and Processor nodes
+   */
+  nodes?: SceneNode[]
+  /**
+   * Canvasレイヤー (zIndexでソート済み、小さいほど奥)
+   * @deprecated Use `nodes` with `toRenderSpecs()` instead.
+   * Will be removed in a future version.
+   */
   canvasLayers: CanvasLayer[]
   /** HTMLレイヤー (常に最前面) */
   htmlLayer: HtmlLayer
@@ -625,33 +640,42 @@ export const createHtmlLayer = (
 })
 
 /**
- * デフォルトのHeroSceneを作成
+ * Create a default HeroScene
+ *
+ * @param options - Optional configuration and initial nodes
+ * @returns A new HeroScene instance
  */
 export const createHeroScene = (
-  config?: Partial<HeroSceneConfig>
+  options?: {
+    config?: Partial<HeroSceneConfig>
+    nodes?: SceneNode[]
+  }
 ): HeroScene => ({
   config: {
     width: 1280,
     height: 720,
     devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
-    ...config,
+    ...options?.config,
   },
+  nodes: options?.nodes ?? [],
   canvasLayers: [],
   htmlLayer: createHtmlLayer('row-top-between'),
 })
 
 // ============================================================
-// Utility Functions
+// Utility Functions (CanvasLayer - deprecated)
 // ============================================================
 
 /**
  * CanvasLayerをzIndexでソート（小さい順 = 奥から手前）
+ * @deprecated Use SceneNode tree with toRenderSpecs() instead
  */
 export const sortCanvasLayers = (layers: CanvasLayer[]): CanvasLayer[] =>
   [...layers].sort((a, b) => a.zIndex - b.zIndex)
 
 /**
  * レイヤーを追加
+ * @deprecated Use addNode from LayerNode instead
  */
 export const addCanvasLayer = (scene: HeroScene, layer: CanvasLayer): HeroScene => ({
   ...scene,
@@ -660,6 +684,7 @@ export const addCanvasLayer = (scene: HeroScene, layer: CanvasLayer): HeroScene 
 
 /**
  * レイヤーを削除
+ * @deprecated Use removeNode from LayerNode instead
  */
 export const removeCanvasLayer = (scene: HeroScene, layerId: string): HeroScene => ({
   ...scene,
@@ -668,6 +693,7 @@ export const removeCanvasLayer = (scene: HeroScene, layerId: string): HeroScene 
 
 /**
  * レイヤーを更新
+ * @deprecated Use updateNode from LayerNode instead
  */
 export const updateCanvasLayer = (
   scene: HeroScene,
