@@ -59,6 +59,7 @@ import type {
   HeroViewRepository,
   MaskUsecase,
   BackgroundSurfaceUsecase,
+  SurfaceUsecase,
   ForegroundElementUpdate,
   PresetColorConfig,
   ExportPresetOptions,
@@ -521,6 +522,8 @@ export interface UsecaseState {
   readonly maskUsecase: MaskUsecase
   /** Background surface usecase */
   readonly backgroundSurfaceUsecase: BackgroundSurfaceUsecase
+  /** Unified surface usecase (operates on selected layer) */
+  readonly surfaceUsecase: SurfaceUsecase
   /** Color usecase */
   readonly colorUsecase: {
     updateBrandColor: (params: { hue?: number; saturation?: number; value?: number }) => void

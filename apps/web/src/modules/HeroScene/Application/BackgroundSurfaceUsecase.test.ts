@@ -7,6 +7,7 @@ import {
 import { createHeroViewInMemoryRepository } from '../Infra/HeroViewInMemoryRepository'
 import type { HeroViewRepository } from './ports/HeroViewRepository'
 import type { HeroViewConfig } from '../Domain/HeroViewConfig'
+import { SCENE_LAYER_IDS } from '../Domain/LayerNode'
 
 describe('BackgroundSurfaceUsecase', () => {
   let repository: HeroViewRepository
@@ -26,7 +27,7 @@ describe('BackgroundSurfaceUsecase', () => {
     layers: [
       {
         type: 'base',
-        id: 'base',
+        id: SCENE_LAYER_IDS.BASE,
         name: 'Background',
         visible: true,
         surface: { type: 'solid' },
@@ -53,7 +54,7 @@ describe('BackgroundSurfaceUsecase', () => {
       const stripeSurface = { type: 'stripe' as const, width1: 20, width2: 20, angle: 45 }
       usecase.selectSurface(stripeSurface)
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       expect(layer).toBeDefined()
       expect(layer?.type).toBe('base')
       if (layer?.type === 'base') {
@@ -65,7 +66,7 @@ describe('BackgroundSurfaceUsecase', () => {
       const gridSurface = { type: 'grid' as const, lineWidth: 2, cellSize: 30 }
       usecase.selectSurface(gridSurface)
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual(gridSurface)
       }
@@ -75,7 +76,7 @@ describe('BackgroundSurfaceUsecase', () => {
       const polkaDotSurface = { type: 'polkaDot' as const, dotRadius: 10, spacing: 40, rowOffset: 0.5 }
       usecase.selectSurface(polkaDotSurface)
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual(polkaDotSurface)
       }
@@ -114,7 +115,7 @@ describe('BackgroundSurfaceUsecase', () => {
       await usecase.uploadImage(file)
 
       expect(mockImageUpload.upload).toHaveBeenCalledWith(file)
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual({ type: 'image', imageId: 'uploaded-image-id' })
       }
@@ -139,7 +140,7 @@ describe('BackgroundSurfaceUsecase', () => {
       // Then clear it
       usecase.clearImage()
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual({ type: 'solid' })
       }
@@ -152,7 +153,7 @@ describe('BackgroundSurfaceUsecase', () => {
 
       expect(mockImageUpload.fetchRandom).toHaveBeenCalledWith('nature')
       expect(mockImageUpload.upload).toHaveBeenCalled()
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual({ type: 'image', imageId: 'uploaded-image-id' })
       }
@@ -175,7 +176,7 @@ describe('BackgroundSurfaceUsecase', () => {
       // Then update params
       usecase.updateSurfaceParams({ type: 'stripe', width1: 30, angle: 90 })
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual({ type: 'stripe', width1: 30, width2: 20, angle: 90 })
       }
@@ -185,7 +186,7 @@ describe('BackgroundSurfaceUsecase', () => {
       usecase.selectSurface({ type: 'grid', lineWidth: 2, cellSize: 30 })
       usecase.updateSurfaceParams({ type: 'grid', cellSize: 50 })
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual({ type: 'grid', lineWidth: 2, cellSize: 50 })
       }
@@ -195,7 +196,7 @@ describe('BackgroundSurfaceUsecase', () => {
       usecase.selectSurface({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
       usecase.updateSurfaceParams({ type: 'grid', cellSize: 50 })
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual({ type: 'stripe', width1: 20, width2: 20, angle: 45 })
       }
@@ -206,7 +207,7 @@ describe('BackgroundSurfaceUsecase', () => {
       usecase.selectSurface({ type: 'solid' })
       usecase.updateSurfaceParams({ type: 'stripe', width1: 30 })
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual({ type: 'solid' })
       }
@@ -231,7 +232,7 @@ describe('BackgroundSurfaceUsecase', () => {
       usecase.selectSurface(gradientGrainSurface)
       usecase.updateSurfaceParams({ type: 'gradientGrain', angle: 45, sparsity: 0.8 })
 
-      const layer = repository.findLayer('base')
+      const layer = repository.findLayer(SCENE_LAYER_IDS.BASE)
       if (layer?.type === 'base') {
         expect(layer.surface).toEqual({
           ...gradientGrainSurface,
@@ -254,7 +255,7 @@ describe('BackgroundSurfaceUsecase', () => {
         expect.objectContaining({
           layers: expect.arrayContaining([
             expect.objectContaining({
-              id: 'base',
+              id: SCENE_LAYER_IDS.BASE,
               surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
             }),
           ]),

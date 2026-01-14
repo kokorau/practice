@@ -350,6 +350,10 @@ export type {
   MaskUsecaseDeps,
   MaskShapeParamsUpdate,
   LayerUpdate,
+  // Unified Surface Usecase types
+  SurfaceUsecase,
+  SurfaceUsecaseDeps,
+  SurfaceSelectionPort,
 } from './Application'
 
 export {
@@ -364,6 +368,7 @@ export {
   // Usecases
   createBackgroundSurfaceUsecase,
   createMaskUsecase,
+  createSurfaceUsecase,
   // ConfigSyncer
   syncBackgroundSurfaceParams,
   syncMaskSurfaceParams,

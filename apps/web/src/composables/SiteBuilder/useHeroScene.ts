@@ -176,6 +176,7 @@ import {
   createHeroViewInMemoryRepository,
   createMaskUsecase,
   createBackgroundSurfaceUsecase,
+  createSurfaceUsecase,
   createUnsplashImageUploadAdapter,
   // Color UseCases
   updateBrandColor,
@@ -226,6 +227,7 @@ import {
   type EffectType,
 } from '../../modules/HeroScene'
 import { useEffectManager } from '../useEffectManager'
+import { useLayerSelection } from '../useLayerSelection'
 
 // ============================================================
 // Types
@@ -472,6 +474,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const imageUploadAdapter = createUnsplashImageUploadAdapter()
   const backgroundSurfaceUsecase = createBackgroundSurfaceUsecase({
     repository: heroViewRepository,
+    imageUpload: imageUploadAdapter,
+  })
+
+  // Layer selection for unified surface usecase
+  const { layerId: selectedLayerId } = useLayerSelection()
+  const selectionPort = {
+    getSelectedLayerId: () => selectedLayerId.value,
+  }
+  const surfaceUsecase = createSurfaceUsecase({
+    repository: heroViewRepository,
+    selection: selectionPort,
     imageUpload: imageUploadAdapter,
   })
 
@@ -3966,6 +3979,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     heroViewRepository,
     maskUsecase,
     backgroundSurfaceUsecase,
+    surfaceUsecase,
     colorUsecase,
     layerUsecase,
     foregroundElementUsecase,

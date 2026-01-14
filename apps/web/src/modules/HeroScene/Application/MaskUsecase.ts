@@ -3,6 +3,9 @@
  *
  * マスク/ミッドグラウンド操作のユースケース
  * マスク形状選択、パラメータ更新、テクスチャ設定など
+ *
+ * @deprecated Use SurfaceUsecase instead, which operates on the selected layer
+ * @see SurfaceUsecase
  */
 
 import type { HeroViewRepository } from './ports/HeroViewRepository'

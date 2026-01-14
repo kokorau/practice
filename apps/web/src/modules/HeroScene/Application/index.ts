@@ -52,6 +52,16 @@ export type {
 } from './MaskUsecase'
 export { createMaskUsecase } from './MaskUsecase'
 
+// Re-export Surface UseCase (unified)
+export type {
+  SurfaceUsecase,
+  SurfaceUsecaseDeps,
+  SelectionPort as SurfaceSelectionPort,
+  SurfaceParamsUpdate as UnifiedSurfaceParamsUpdate,
+  MaskShapeParamsUpdate as UnifiedMaskShapeParamsUpdate,
+} from './SurfaceUsecase'
+export { createSurfaceUsecase } from './SurfaceUsecase'
+
 // Re-export Preset UseCase
 export type { GetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
 export { createGetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
