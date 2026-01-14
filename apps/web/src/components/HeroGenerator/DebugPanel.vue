@@ -189,8 +189,6 @@ const highlightedSections = computed(() => {
 
 .debug-section-content {
   border-top: 1px solid oklch(0.90 0.01 260);
-  max-height: 400px;
-  overflow: auto;
 }
 
 :global(.dark) .debug-section-content {
