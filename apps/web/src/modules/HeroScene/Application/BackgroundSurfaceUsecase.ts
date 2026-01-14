@@ -7,6 +7,7 @@
 
 import type { HeroViewRepository } from './ports/HeroViewRepository'
 import type { HeroPrimitiveKey, SurfaceConfig, DepthMapType } from '../Domain/HeroViewConfig'
+import { SCENE_LAYER_IDS } from '../Domain/LayerNode'
 
 // ============================================================
 // Types
@@ -100,7 +101,7 @@ export interface BackgroundSurfaceUsecase {
 // Constants
 // ============================================================
 
-const BACKGROUND_LAYER_ID = 'base'
+const BACKGROUND_LAYER_ID = SCENE_LAYER_IDS.BASE
 
 // ============================================================
 // Implementation
