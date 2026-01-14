@@ -29,17 +29,33 @@
         ]
       },
       {
-        "type": "group",
-        "id": "main-group",
-        "name": "Main Group",
+        "type": "surface",
+        "id": "surface-mask",
+        "name": "Surface",
         "visible": true,
-        "expanded": true,
-        "children": [
+        "surface": { "type": "solid" },
+        "filters": [
+          {
+            "type": "effect",
+            "enabled": true,
+            "config": {
+              "vignette": { "enabled": false, "intensity": 0.4, "radius": 0.6, "softness": 0.5 },
+              "chromaticAberration": { "enabled": false, "intensity": 0.01 },
+              "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
+              "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
+            }
+          }
+        ]
+      },
+      {
+        "type": "processor",
+        "id": "processor-mask",
+        "name": "Mask Processor",
+        "visible": true,
+        "modifiers": [
           {
             "type": "mask",
-            "id": "mask-1",
-            "name": "Mask",
-            "visible": true,
+            "enabled": true,
             "shape": {
               "type": "circle",
               "centerX": 0.5,
@@ -48,25 +64,6 @@
             },
             "invert": false,
             "feather": 0
-          },
-          {
-            "type": "surface",
-            "id": "surface-1",
-            "name": "Surface",
-            "visible": true,
-            "surface": { "type": "solid" },
-            "filters": [
-              {
-                "type": "effect",
-                "enabled": true,
-                "config": {
-                  "vignette": { "enabled": false, "intensity": 0.4, "radius": 0.6, "softness": 0.5 },
-                  "chromaticAberration": { "enabled": false, "intensity": 0.01 },
-                  "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
-                  "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
-                }
-              }
-            ]
           }
         ]
       }
