@@ -69,12 +69,8 @@ import type { InkRole } from '../../modules/SemanticColorPalette/Domain'
 import { generateLuminanceMap } from '../../modules/ContrastChecker'
 import {
   type LayerFilterConfig,
-  type LayerBase,
-  type BlendMode,
   type HeroSceneConfig,
   type HtmlLayer,
-  type ClipMaskShape,
-  type ClipMaskShapeParams,
   type HeroViewConfig,
   type HeroColorsConfig,
   type HeroPrimitiveKey,
@@ -90,7 +86,6 @@ import {
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
-  type ObjectLayerConfig,
   type Object3DRendererPort,
   type HeroViewRepository,
   type FilterType,
@@ -169,60 +164,12 @@ import { useEffectManager } from '../useEffectManager'
 import { useLayerSelection } from '../useLayerSelection'
 
 // ============================================================
-// Internal Legacy Types (deprecated, kept for backward compatibility)
-// These types are internal to this composable and will be removed
-// when the migration to HeroViewConfig is complete.
+// Internal Legacy Types (minimal, kept for viewport config)
 // ============================================================
 
-/** @internal Texture layer config (index-based) */
-interface EditorTextureLayerConfig {
-  type: 'texture'
-  patternIndex: number
-}
-
-/** @internal ClipGroup layer config */
-interface EditorClipGroupLayerConfig {
-  type: 'clipGroup'
-  maskShape: ClipMaskShape
-  maskShapeParams: ClipMaskShapeParams
-  maskInvert: boolean
-  maskFeather: number
-  maskTextureIndex: number | null
-  childIds: string[]
-}
-
-/** @internal Image layer config */
-interface EditorImageLayerConfig {
-  type: 'image'
-  source: ImageBitmap | string
-}
-
-/** @internal Text layer config (alias) */
-type EditorTextLayerConfig = TextLayerConfig
-
-/** @internal Object layer config (alias) */
-type EditorObjectLayerConfig = ObjectLayerConfig
-
-/** @internal Canvas layer config union */
-type EditorCanvasLayerConfig =
-  | EditorTextureLayerConfig
-  | EditorClipGroupLayerConfig
-  | EditorImageLayerConfig
-  | EditorTextLayerConfig
-  | EditorObjectLayerConfig
-
-/** @internal Editor canvas layer */
-interface EditorCanvasLayer extends LayerBase {
-  zIndex: number
-  config: EditorCanvasLayerConfig
-  blendMode: BlendMode
-  filters: LayerFilterConfig
-}
-
-/** @internal Editor state (legacy) */
+/** @internal Editor state for viewport and html layer config */
 interface HeroSceneEditorState {
   config: HeroSceneConfig
-  canvasLayers: EditorCanvasLayer[]
   htmlLayer: HtmlLayer
 }
 
@@ -236,7 +183,6 @@ const createHeroSceneEditorState = (
     devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
     ...config,
   },
-  canvasLayers: [],
   htmlLayer: {
     id: 'html-layer',
     name: 'HTML Layer',
@@ -1177,114 +1123,32 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Layer Management (internal)
   // ============================================================
 
+  // Flag to track if layers have been initialized
+  let isLayersInitialized = false
+
   /**
-   * Create default layers (base + mask)
-   * Called once during initialization
-   *
-   * Note: The canvasLayers for base/mask are legacy code maintained for
-   * backward compatibility. The actual rendering uses HeroViewConfig.layers
-   * built from helper functions (buildBackgroundSurface, buildMaskShape, etc.)
+   * Initialize default layers
+   * Called once during initialization to set up heroViewRepository
    */
-  const createDefaultLayers = () => {
-    const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultFilterConfig()
-    const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultFilterConfig()
+  const initializeDefaultLayers = () => {
+    if (isLayersInitialized) return
+    isLayersInitialized = true
 
-    // Legacy canvasLayers for backward compatibility
-    const layers: EditorCanvasLayer[] = [
-      {
-        id: LAYER_IDS.BASE,
-        name: 'Background Texture',
-        visible: true,
-        opacity: 1.0,
-        zIndex: 0,
-        blendMode: 'normal',
-        filters: baseFilters,
-        config: { type: 'texture', patternIndex: selectedBackgroundIndex.value },
-      },
-      {
-        id: LAYER_IDS.MASK,
-        name: 'Clip Group',
-        visible: true,
-        opacity: 1.0,
-        zIndex: 1,
-        blendMode: 'normal',
-        filters: maskFilters,
-        config: {
-          type: 'clipGroup',
-          maskShape: 'circle' as const,
-          maskShapeParams: { type: 'circle' as const, centerX: 0.5, centerY: 0.5, radius: 0.3 },
-          maskInvert: false,
-          maskFeather: 0,
-          maskTextureIndex: selectedMidgroundTextureIndex.value,
-          childIds: [],
-        },
-      },
-    ]
-
-    editorState.value = {
-      ...editorState.value,
-      canvasLayers: layers,
-    }
-
-    // Initialize heroViewRepository immediately after creating layers
+    // Initialize heroViewRepository
     // This ensures the repository is set up before any usecases access it
     toHeroViewConfig()
   }
 
   /**
-   * Sync layer configs with current selection state
-   * Updates existing layers' config without recreating them
+   * Sync layer configs (no-op after canvasLayers removal)
    *
-   * Note: This updates the legacy canvasLayers for base/mask layers.
-   * The actual rendering config is built via toHeroViewConfig() which
-   * uses helper functions (buildBackgroundSurface, buildMaskShape, etc.)
-   * rather than reading from canvasLayers directly for base/mask.
+   * @deprecated This function is no longer needed since canvasLayers has been removed.
+   * The rendering config is built via toHeroViewConfig() which uses helper functions.
+   * Keeping this as a no-op for backward compatibility during migration.
    */
   const syncLayerConfigs = () => {
-    const layers = editorState.value.canvasLayers
-
-    for (const layer of layers) {
-      // Update base layer config
-      if (layer.id === LAYER_IDS.BASE) {
-        if (customBackgroundBitmap) {
-          layer.config = { type: 'image', source: customBackgroundBitmap }
-          layer.name = 'Background Image'
-        } else {
-          layer.config = { type: 'texture', patternIndex: selectedBackgroundIndex.value }
-          layer.name = 'Background Texture'
-        }
-        // Sync filters from layerFilterConfigs
-        const filters = layerFilterConfigs.value.get(LAYER_IDS.BASE)
-        if (filters) {
-          layer.filters = filters
-        }
-      }
-
-      // Update clip group layer configs
-      if (layer.config.type === 'clipGroup') {
-        const existingConfig = layer.config
-        layer.config = {
-          type: 'clipGroup',
-          maskShape: existingConfig.maskShape,
-          maskShapeParams: existingConfig.maskShapeParams,
-          maskInvert: existingConfig.maskInvert,
-          maskFeather: existingConfig.maskFeather,
-          maskTextureIndex: customMaskBitmap ? null : selectedMidgroundTextureIndex.value,
-          childIds: existingConfig.childIds,
-        }
-        // Sync filters from layerFilterConfigs
-        const filters = layerFilterConfigs.value.get(LAYER_IDS.MASK)
-        if (filters) {
-          layer.filters = filters
-        }
-      }
-    }
-
-    // Note: layerFilterConfigs is now a computed from effectManager.effects
-    // Reactivity is automatically triggered when effectManager state changes
-
-    // Trigger reactivity
-    editorState.value = { ...editorState.value }
+    // No-op: canvasLayers has been removed
+    // Rendering uses toHeroViewConfig() which builds from current state
   }
 
   // ============================================================
@@ -1293,39 +1157,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Add a new clip group layer
-   * Multiple clip groups are supported
+   *
+   * @returns Layer ID if successful, null if feature not available
+   *
+   * @remarks
+   * Multiple clip groups are not yet supported.
+   * Currently, only one surface layer with mask is rendered (built from buildMaskSurface/buildMaskShape).
+   * TODO: Support multiple clip groups via heroViewRepository when toHeroViewConfig() is updated.
    */
   const addMaskLayer = (): string | null => {
-    const id = `clipgroup-${Date.now()}`
-    const newLayer: EditorCanvasLayer = {
-      id,
-      name: 'Clip Group',
-      visible: true,
-      opacity: 1.0,
-      zIndex: editorState.value.canvasLayers.length,
-      blendMode: 'normal',
-      filters: createDefaultFilterConfig(),
-      config: {
-        type: 'clipGroup',
-        maskShape: 'circle' as const,
-        maskShapeParams: { type: 'circle' as const, centerX: 0.5, centerY: 0.5, radius: 0.3 },
-        maskInvert: false,
-        maskFeather: 0,
-        maskTextureIndex: selectedMidgroundTextureIndex.value,
-        childIds: [],
-      },
-    }
-
-    // Register filter config for new layer
-    layerFilterConfigs.value.set(id, createDefaultFilterConfig())
-
-    editorState.value = {
-      ...editorState.value,
-      canvasLayers: [...editorState.value.canvasLayers, newLayer],
-    }
-
-    render()
-    return id
+    // Multiple clip groups not yet supported
+    // The current architecture only renders one surface layer from buildMaskSurface/buildMaskShape
+    console.warn('addMaskLayer: Multiple clip groups are not yet supported')
+    return null
   }
 
   /**
@@ -1816,10 +1660,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     try {
       previewRenderer = await TextureRenderer.create(canvas)
 
-      // Create default layers only if none exist
-      if (editorState.value.canvasLayers.length === 0) {
-        createDefaultLayers()
-      }
+      // Initialize layers (idempotent - only runs once)
+      initializeDefaultLayers()
 
       // Ensure custom params are initialized before first render
       // This handles any edge cases where the immediate watch might not have completed
