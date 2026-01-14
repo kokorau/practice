@@ -359,19 +359,16 @@ export interface EffectFilterConfig {
 
 /**
  * Filter config type (effects only)
- * Masks are handled as MaskProcessorConfig in processors
+ * Masks are handled as MaskProcessorConfig in ProcessorNodeConfig.modifiers
  */
 export type FilterConfig = EffectFilterConfig
 
 // ============================================================
-// Processor Config (deprecated - use FilterConfig)
+// Mask Processor Config
 // ============================================================
 
-/** @deprecated Use EffectFilterConfig instead */
-export type EffectProcessorConfig = EffectFilterConfig
-
 /**
- * Mask processor configuration
+ * Mask processor configuration (used in ProcessorNodeConfig.modifiers)
  */
 export interface MaskProcessorConfig {
   type: 'mask'
@@ -381,8 +378,14 @@ export interface MaskProcessorConfig {
   feather: number
 }
 
-/** @deprecated Use FilterConfig instead */
+/**
+ * Processor config for ProcessorNodeConfig.modifiers
+ * Includes both effect filters and mask processors
+ */
 export type ProcessorConfig = EffectFilterConfig | MaskProcessorConfig
+
+/** @deprecated Use EffectFilterConfig instead */
+export type EffectProcessorConfig = EffectFilterConfig
 
 // ============================================================
 // Layer Node Config (JSON シリアライズ用)
@@ -399,8 +402,6 @@ export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   surface: SurfaceConfig
   /** Effect filters */
   filters?: EffectFilterConfig[]
-  /** @deprecated Use filters instead */
-  processors?: ProcessorConfig[]
 }
 
 export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
@@ -408,8 +409,6 @@ export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
   surface: SurfaceConfig
   /** Effect filters */
   filters?: EffectFilterConfig[]
-  /** @deprecated Use filters instead */
-  processors?: ProcessorConfig[]
 }
 
 export interface TextLayerNodeConfig extends LayerNodeConfigBase {
@@ -425,8 +424,6 @@ export interface TextLayerNodeConfig extends LayerNodeConfigBase {
   rotation: number
   /** Effect filters */
   filters?: EffectFilterConfig[]
-  /** @deprecated Use filters instead */
-  processors?: ProcessorConfig[]
 }
 
 export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
@@ -437,8 +434,6 @@ export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
   scale: number
   /** Effect filters */
   filters?: EffectFilterConfig[]
-  /** @deprecated Use filters instead */
-  processors?: ProcessorConfig[]
 }
 
 export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
@@ -446,8 +441,6 @@ export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   imageId: string
   /** Effect filters */
   filters?: EffectFilterConfig[]
-  /** @deprecated Use filters instead */
-  processors?: ProcessorConfig[]
 }
 
 export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
@@ -455,8 +448,6 @@ export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
   children: LayerNodeConfig[]
   /** Effect filters applied to the group */
   filters?: EffectFilterConfig[]
-  /** @deprecated Use filters instead */
-  processors?: ProcessorConfig[]
   /** Whether the group is expanded in UI */
   expanded?: boolean
 }
@@ -553,23 +544,23 @@ export interface ForegroundLayerConfig {
  *       name: 'Background',
  *       visible: true,
  *       surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
- *       processors: [{ type: 'effect', enabled: true, config: { ... } }]
+ *       filters: [{ type: 'effect', enabled: true, config: { ... } }]
  *     },
  *     {
- *       type: 'surface',
- *       id: 'surface-1',
- *       name: 'Surface',
+ *       type: 'processor',
+ *       id: 'processor-1',
+ *       name: 'Mask Processor',
  *       visible: true,
- *       surface: { type: 'solid' },
- *       processors: [
+ *       modifiers: [
  *         { type: 'effect', enabled: true, config: { ... } },
  *         { type: 'mask', enabled: true, shape: { ... }, invert: false, feather: 0 }
  *       ]
  *     }
  *   ],
  *   foreground: {
- *     title: { position: 'middle-center', content: 'Hello World' },
- *     description: { position: 'middle-center', content: 'Welcome' },
+ *     elements: [
+ *       { id: 'title-1', type: 'title', position: 'middle-center', content: 'Hello World', visible: true },
+ *     ],
  *   },
  * }
  * ```
@@ -656,39 +647,26 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
 })
 
 // ============================================================
-// Migration Helpers (processors → filters)
+// Layer Filter Helpers
 // ============================================================
 
 /**
- * Get effect filters from a layer config (supports both filters and processors)
- * Use this helper during migration from processors to filters
+ * Get effect filters from a layer config
  */
 export const getLayerFilters = (layer: LayerNodeConfig): EffectFilterConfig[] => {
-  // ProcessorNodeConfig uses modifiers, not filters/processors
+  // ProcessorNodeConfig uses modifiers
   if (layer.type === 'processor') {
     return layer.modifiers.filter((m): m is EffectFilterConfig => m.type === 'effect')
   }
-  // Prefer filters if available
-  if (layer.filters && layer.filters.length > 0) {
-    return layer.filters
-  }
-  // Fall back to processors (filtering out mask processors)
-  if (layer.processors) {
-    return layer.processors.filter((p): p is EffectFilterConfig => p.type === 'effect')
-  }
-  return []
+  return layer.filters ?? []
 }
 
 /**
- * Get mask processor from a layer config
+ * Get mask processor from a layer config (only applicable to ProcessorNodeConfig)
  */
 export const getLayerMaskProcessor = (layer: LayerNodeConfig): MaskProcessorConfig | undefined => {
-  // ProcessorNodeConfig uses modifiers, not processors
   if (layer.type === 'processor') {
     return layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
-  }
-  if (layer.processors) {
-    return layer.processors.find((p): p is MaskProcessorConfig => p.type === 'mask')
   }
   return undefined
 }
