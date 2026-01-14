@@ -89,7 +89,6 @@ import {
   type Object3DRendererPort,
   type HeroViewRepository,
   type FilterType,
-  type SurfaceParamsUpdate,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
@@ -109,9 +108,8 @@ import {
   updateTextLayerPosition,
   updateTextLayerRotation,
   createHeroViewInMemoryRepository,
-  createMaskUsecase,
-  createBackgroundSurfaceUsecase,
   createSurfaceUsecase,
+  SCENE_LAYER_IDS,
   createUnsplashImageUploadAdapter,
   // Color UseCases
   updateBrandColor,
@@ -434,12 +432,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // HeroViewRepository & Usecases
   // ============================================================
   const heroViewRepository = createHeroViewInMemoryRepository()
-  const maskUsecase = createMaskUsecase({ repository: heroViewRepository })
   const imageUploadAdapter = createUnsplashImageUploadAdapter()
-  const backgroundSurfaceUsecase = createBackgroundSurfaceUsecase({
-    repository: heroViewRepository,
-    imageUpload: imageUploadAdapter,
-  })
 
   // Layer selection for unified surface usecase
   const { layerId: selectedLayerId } = useLayerSelection()
@@ -637,26 +630,33 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const surfacePresets = getSurfacePresets()
 
   /**
+   * Helper to update base layer surface in repository
+   */
+  const setBaseSurface = (surface: HeroSurfaceConfig) => {
+    heroViewRepository.updateLayer(SCENE_LAYER_IDS.BASE, { surface })
+  }
+
+  /**
    * Initialize background surface params from preset
-   * Uses unidirectional flow: Usecase -> Repository -> View (via subscribe)
-   * Note: gradientGrain is not supported by Repository, so it's handled directly in View layer
+   * Uses unidirectional flow: Repository -> View (via subscribe)
+   * Note: gradientGrain and textile patterns are handled directly in View layer
    */
   const initBackgroundSurfaceParamsFromPreset = () => {
     const idx = selectedBackgroundIndex.value
     const preset = surfacePresets[idx]
     if (preset) {
       const params = extractBackgroundSurfaceParams(preset.params, textureColor1.value, textureColor2.value)
-      // Usecaseを通じてRepositoryを更新（View層はsubscribeで自動同期）
+      // Repositoryを更新（View層はsubscribeで自動同期）
       if (params.type === 'solid') {
-        backgroundSurfaceUsecase.selectSurface({ type: 'solid' })
+        setBaseSurface({ type: 'solid' })
       } else if (params.type === 'stripe') {
-        backgroundSurfaceUsecase.selectSurface({ type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle })
+        setBaseSurface({ type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle })
       } else if (params.type === 'grid') {
-        backgroundSurfaceUsecase.selectSurface({ type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize })
+        setBaseSurface({ type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize })
       } else if (params.type === 'polkaDot') {
-        backgroundSurfaceUsecase.selectSurface({ type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
+        setBaseSurface({ type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
       } else if (params.type === 'checker') {
-        backgroundSurfaceUsecase.selectSurface({ type: 'checker', cellSize: params.cellSize, angle: params.angle })
+        setBaseSurface({ type: 'checker', cellSize: params.cellSize, angle: params.angle })
       } else if (params.type === 'gradientGrain') {
         // gradientGrain is not supported by Repository, handle directly in View layer
         customBackgroundSurfaceParams.value = params
@@ -697,14 +697,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   /**
    * Update custom background surface params
-   * Uses unidirectional flow: Usecase -> Repository -> View (via subscribe)
+   * Uses unidirectional flow: Repository -> View (via subscribe)
    */
   const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams | GradientGrainSurfaceParams>) => {
     if (!customBackgroundSurfaceParams.value) return
     const type = customBackgroundSurfaceParams.value.type
 
-    // Usecaseを通じてRepositoryを更新（View層はsubscribeで自動同期）
-    backgroundSurfaceUsecase.updateSurfaceParams({ type, ...updates } as SurfaceParamsUpdate)
+    // Repositoryを直接更新（View層はsubscribeで自動同期）
+    const layer = heroViewRepository.findLayer(SCENE_LAYER_IDS.BASE)
+    if (!layer || layer.type !== 'base') return
+    const currentSurface = layer.surface
+    if (currentSurface.type !== type) return
+    const newSurface = { ...currentSurface, ...updates } as HeroSurfaceConfig
+    heroViewRepository.updateLayer(SCENE_LAYER_IDS.BASE, { surface: newSurface })
   }
 
   // ============================================================
@@ -1714,8 +1719,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customBackgroundImage.value = imageId
     customBackgroundBitmap = await createImageBitmap(file)
 
-    // Usecaseを通じてRepositoryを更新
-    backgroundSurfaceUsecase.selectSurface({ type: 'image', imageId })
+    // Repositoryを更新
+    setBaseSurface({ type: 'image', imageId })
 
     syncLayerConfigs()
     await render()
@@ -1733,8 +1738,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customBackgroundFile.value = null
     customBackgroundImage.value = null
 
-    // Usecaseを通じてRepositoryを更新
-    backgroundSurfaceUsecase.clearImage()
+    // Repositoryを更新
+    setBaseSurface({ type: 'solid' })
 
     syncLayerConfigs()
     render()
@@ -1869,15 +1874,29 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     { deep: true }
   )
 
-  // Background color key watchers - sync with Usecase when changed
+  // Background color key watchers - sync with Repository when changed
   watch(backgroundColorKey1, (newValue) => {
     if (isLoadingFromConfig) return
-    backgroundSurfaceUsecase.updateColorKey('primary', newValue as HeroPrimitiveKey)
+    const config = heroViewRepository.get()
+    heroViewRepository.set({
+      ...config,
+      colors: {
+        ...config.colors,
+        background: { ...config.colors.background, primary: newValue as HeroPrimitiveKey },
+      },
+    })
   })
 
   watch(backgroundColorKey2, (newValue) => {
     if (isLoadingFromConfig) return
-    backgroundSurfaceUsecase.updateColorKey('secondary', newValue as HeroPrimitiveKey | 'auto')
+    const config = heroViewRepository.get()
+    heroViewRepository.set({
+      ...config,
+      colors: {
+        ...config.colors,
+        background: { ...config.colors.background, secondary: newValue as HeroPrimitiveKey | 'auto' },
+      },
+    })
   })
 
   onUnmounted(() => {
@@ -2723,8 +2742,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    */
   const usecase: UsecaseState = {
     heroViewRepository,
-    maskUsecase,
-    backgroundSurfaceUsecase,
     surfaceUsecase,
     colorUsecase,
     layerUsecase,
