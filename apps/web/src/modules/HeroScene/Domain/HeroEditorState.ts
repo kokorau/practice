@@ -27,18 +27,21 @@ import type { LayerFilterConfig } from './EffectSchema'
 /**
  * カスタムマスク形状パラメータ
  * MaskShapeConfigと同等だが、UIカスタマイズ用
+ * @deprecated Use MaskShapeConfig directly from HeroViewConfig.ts
  */
 export type CustomMaskShapeParams = MaskShapeConfig
 
 /**
  * カスタムマスクテクスチャパラメータ
  * SurfaceConfigと同等だが、UIカスタマイズ用
+ * @deprecated Use SurfaceConfig directly from HeroViewConfig.ts
  */
 export type CustomSurfaceParams = SurfaceConfig
 
 /**
  * カスタム背景テクスチャパラメータ
  * SurfaceConfigと同等だが、UIカスタマイズ用
+ * @deprecated Use SurfaceConfig directly from HeroViewConfig.ts
  */
 export type CustomBackgroundSurfaceParams = SurfaceConfig
 
