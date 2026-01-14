@@ -11,27 +11,6 @@ import {
   getDefaultTexturePatterns,
   getDefaultMaskPatterns,
   getSurfacePresets,
-  createCircleStripeSpec,
-  createCircleGridSpec,
-  createCirclePolkaDotSpec,
-  createCircleCheckerSpec,
-  createRectStripeSpec,
-  createRectGridSpec,
-  createRectPolkaDotSpec,
-  createRectCheckerSpec,
-  createBlobStripeSpec,
-  createBlobGridSpec,
-  createBlobPolkaDotSpec,
-  createBlobCheckerSpec,
-  createPerlinStripeSpec,
-  createPerlinGridSpec,
-  createPerlinPolkaDotSpec,
-  createPerlinCheckerSpec,
-  // Masked GradientGrain specs
-  createCircleGradientGrainSpec,
-  createRectGradientGrainSpec,
-  createBlobGradientGrainSpec,
-  type GradientGrainTextureConfig,
   // Simple texture specs (no mask) for thumbnails
   createSolidSpec,
   createStripeSpec,
@@ -49,23 +28,12 @@ import {
   createSunburstSpec,
   // Gradient specs
   createGradientGrainSpec,
-  // Mask specs (for solid fallback with custom cutout)
-  createCircleMaskSpec,
-  createRectMaskSpec,
-  createBlobMaskSpec,
-  createPerlinMaskSpec,
-  // Clip mask specs (for ClipGroup rendering)
-  createCircleClipSpec,
-  createRectClipSpec,
-  createBlobClipSpec,
-  createPerlinClipSpec,
   // Schemas and types
   MaskShapeSchemas,
   SurfaceSchemas,
   DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
   type TexturePattern,
   type MaskPattern,
-  type MaskShapeConfig,
   type RGBA,
   type Viewport,
   type TextureRenderSpec,
@@ -90,40 +58,8 @@ import {
   type TriangleSurfaceParams,
   type HexagonSurfaceParams,
   type DepthMapType,
-  // Text rendering
-  renderTextToBitmap,
-  anchorToNumbers,
 } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
-// Filters (separate subpath for tree-shaking)
-import {
-  // Shape-specific vignette shaders
-  ellipseVignetteShader,
-  createEllipseVignetteUniforms,
-  ELLIPSE_VIGNETTE_BUFFER_SIZE,
-  circleVignetteShader,
-  createCircleVignetteUniforms,
-  CIRCLE_VIGNETTE_BUFFER_SIZE,
-  rectVignetteShader,
-  createRectVignetteUniforms,
-  RECT_VIGNETTE_BUFFER_SIZE,
-  linearVignetteShader,
-  createLinearVignetteUniforms,
-  LINEAR_VIGNETTE_BUFFER_SIZE,
-  // Other effects
-  chromaticAberrationShader,
-  createChromaticAberrationUniforms,
-  CHROMATIC_ABERRATION_BUFFER_SIZE,
-  dotHalftoneShader,
-  createDotHalftoneUniforms,
-  DOT_HALFTONE_BUFFER_SIZE,
-  lineHalftoneShader,
-  createLineHalftoneUniforms,
-  LINE_HALFTONE_BUFFER_SIZE,
-  blurShader,
-  createBlurUniforms,
-  BLUR_BUFFER_SIZE,
-} from '@practice/texture/filters'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette, ContextName, PrimitiveKey, NeutralKey } from '../../modules/SemanticColorPalette/Domain'
@@ -165,7 +101,6 @@ import {
   type ExportPresetOptions,
   findSurfacePresetIndex,
   findMaskPatternIndex,
-  createObject3DRenderer,
   // TextLayer UseCases
   updateTextLayerText,
   updateTextLayerFont,
@@ -219,9 +154,6 @@ import {
   type UsecaseState,
   type EditorStateRef,
   type RendererActions,
-  // Vignette shape support
-  migrateVignetteConfig,
-  type VignetteConfig,
   // Effect types
   type EffectType,
   // Config-based rendering
