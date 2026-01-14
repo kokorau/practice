@@ -300,11 +300,6 @@ export {
 
 // Application
 export type {
-  TextTextureInfo,
-  TextTexturePort,
-  LayerRenderResult,
-  LayerRendererPort,
-  HeroSceneUseCaseDeps,
   // 3D Object Renderer
   Object3DRendererPort,
   Object3DRenderParams,
@@ -334,8 +329,6 @@ export type {
 } from './Application'
 
 export {
-  HeroSceneUseCase,
-  createHeroSceneUseCase,
   // Preset UseCase
   createGetHeroViewPresetsUseCase,
   // ForegroundElement UseCase
@@ -424,13 +417,9 @@ export {
 } from './Infra'
 
 // Infra
-export type { TextTextureRendererConfig, HeroSceneRendererDeps, RenderHeroConfigOptions, TextureRendererLike } from './Infra'
+export type { RenderHeroConfigOptions, TextureRendererLike } from './Infra'
 
 export {
-  TextTextureRenderer,
-  createTextTextureRenderer,
-  HeroSceneRenderer,
-  createHeroSceneRenderer,
   // Preset Repository
   createInMemoryHeroViewPresetRepository,
   // Preset Export
