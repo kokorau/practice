@@ -3,6 +3,11 @@
  *
  * EditorStateをHeroSceneにコンパイルする
  * patternIndexを解決してTexturePatternSpecを生成
+ *
+ * @deprecated This entire module is deprecated.
+ * Use renderHeroConfig() from Infra/renderHeroConfig.ts instead,
+ * which works directly with HeroViewConfig without patternIndex indirection.
+ * See docs/architecture/hero-scene.md for the new architecture.
  */
 
 import type {
@@ -199,6 +204,7 @@ const compileCanvasLayer = (
  * @param editorState エディタ状態
  * @param options コンパイルオプション（パターンマップ、カラー、viewport）
  * @returns コンパイル済みHeroScene
+ * @deprecated Use renderHeroConfig() from Infra/renderHeroConfig.ts instead
  */
 export const compileHeroScene = (
   editorState: HeroSceneEditorState,
