@@ -123,6 +123,7 @@ export interface HeroEditorRepository {
 
   /**
    * カラーUI状態を部分更新
+   * @deprecated Use updateColors instead (updates HeroColorsConfig directly)
    */
   updateColorUI(updates: Partial<ColorUIState>): void
 
