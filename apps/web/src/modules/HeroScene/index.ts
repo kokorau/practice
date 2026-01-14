@@ -317,11 +317,6 @@ export type {
   EditorCanvasLayerConfig,
   EditorCanvasLayer,
   HeroSceneEditorState,
-  // Compile types
-  MidgroundTexturePattern,
-  PatternMaps,
-  CompileColors,
-  CompileOptions,
   // Preset types
   HeroViewPresetRepository,
   GetHeroViewPresetsUseCase,
@@ -350,7 +345,6 @@ export {
   HeroSceneUseCase,
   createHeroSceneUseCase,
   createHeroSceneEditorState,
-  compileHeroScene,
   // Preset UseCase
   createGetHeroViewPresetsUseCase,
   // ForegroundElement UseCase

@@ -572,7 +572,15 @@ export interface UsecaseState {
  * Editor state for debugging/inspection
  */
 export interface EditorStateRef {
-  /** Editor state for debugging/inspection */
+  /**
+   * Current HeroViewConfig (derived from heroViewRepository)
+   * This is the new preferred way to access editor state
+   */
+  readonly heroViewConfig: ComputedRef<HeroViewConfig>
+  /**
+   * Legacy editor state for debugging/inspection
+   * @deprecated Use heroViewConfig instead. This will be removed in a future version.
+   */
   readonly editorState: Ref<HeroSceneEditorState>
 }
 
@@ -590,6 +598,16 @@ export interface RendererActions {
   readonly destroyPreview: () => void
   /** Open a UI section */
   readonly openSection: (section: SectionType) => void
+  /**
+   * Render scene using HeroViewConfig-based pipeline
+   *
+   * This is an experimental function for Phase 8 migration.
+   * It uses toHeroViewConfig() + renderHeroConfig() instead of the legacy
+   * canvasLayers-based renderScene().
+   *
+   * @experimental This function is part of the migration from canvasLayers to HeroViewConfig
+   */
+  readonly renderSceneFromConfig?: () => Promise<void>
 }
 
 // ============================================================
