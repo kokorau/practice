@@ -673,7 +673,6 @@ const handleMaskUpdate = (key: string, value: unknown) => {
     <main class="hero-main">
       <!-- ヘッダー -->
       <header class="hero-header">
-        <h1>Hero View Generator</h1>
         <nav class="hero-tab-nav">
           <button
             class="hero-tab-button"
@@ -830,11 +829,6 @@ const handleMaskUpdate = (key: string, value: unknown) => {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid oklch(0.88 0.01 260);
-}
-
-.dark .hero-header {
-  border-bottom-color: oklch(0.20 0.02 260);
 }
 
 .hero-header h1 {
