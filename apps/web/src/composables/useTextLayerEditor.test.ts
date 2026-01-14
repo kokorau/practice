@@ -1,15 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ref, type Ref } from 'vue'
-import { useTextLayerEditor, type UseTextLayerEditorOptions } from './useTextLayerEditor'
-import type { HeroSceneEditorState, TextLayerConfig } from '../modules/HeroScene'
+import { useTextLayerEditor, type UseTextLayerEditorOptions, type TextLayerConfig } from './useTextLayerEditor'
+import type { HeroViewConfig, TextLayerNodeConfigType } from '../modules/HeroScene'
 
 describe('useTextLayerEditor', () => {
-  let editorState: Ref<HeroSceneEditorState>
+  let heroViewConfig: Ref<HeroViewConfig>
   let onUpdateConfig: (id: string, updates: Partial<TextLayerConfig>) => void
   let options: UseTextLayerEditorOptions
 
-  const createTextLayerConfig = (overrides: Partial<TextLayerConfig> = {}): TextLayerConfig => ({
+  const createTextLayerNodeConfigType = (id: string, overrides: Partial<TextLayerNodeConfigType> = {}): TextLayerNodeConfigType => ({
+    id,
+    name: id,
     type: 'text',
+    visible: true,
+    opacity: 1,
+    blendMode: 'normal',
     text: 'Test Text',
     fontFamily: 'sans-serif',
     fontSize: 48,
@@ -26,34 +31,39 @@ describe('useTextLayerEditor', () => {
     ...overrides,
   })
 
+  const createMinimalHeroViewConfig = (layers: HeroViewConfig['layers']): HeroViewConfig => ({
+    viewport: { width: 1280, height: 720 },
+    colors: {
+      brand: { hue: 200, saturation: 0.5, chroma: 0.1 },
+      accent: { hue: 30, saturation: 0.7, chroma: 0.15 },
+      foundation: 'light',
+    },
+    layers,
+    foreground: { elements: [] },
+  })
+
   beforeEach(() => {
-    editorState = ref({
-      canvasLayers: [
-        {
-          id: 'text-layer-1',
-          visible: true,
-          config: createTextLayerConfig({ text: 'Layer 1' }),
-          filters: {},
-        },
-        {
-          id: 'text-layer-2',
-          visible: true,
-          config: createTextLayerConfig({ text: 'Layer 2', position: { x: 0.2, y: 0.8, anchor: 'bottom-left' } }),
-          filters: {},
-        },
-        {
-          id: 'surface-layer',
-          visible: true,
-          config: { type: 'solid', color: 'BN1' },
-          filters: {},
-        },
-      ],
-    }) as Ref<HeroSceneEditorState>
+    heroViewConfig = ref(createMinimalHeroViewConfig([
+      createTextLayerNodeConfigType('text-layer-1', { text: 'Layer 1' }),
+      createTextLayerNodeConfigType('text-layer-2', {
+        text: 'Layer 2',
+        position: { x: 0.2, y: 0.8, anchor: 'bottom-left' }
+      }),
+      {
+        id: 'surface-layer',
+        name: 'Surface Layer',
+        type: 'surface',
+        visible: true,
+        opacity: 1,
+        blendMode: 'normal',
+        surface: { type: 'solid' },
+      },
+    ]))
 
     onUpdateConfig = vi.fn()
 
     options = {
-      editorState,
+      heroViewConfig,
       onUpdateConfig,
     }
   })
@@ -98,7 +108,6 @@ describe('useTextLayerEditor', () => {
 
       expect(selectedTextLayerConfig.value).toEqual(
         expect.objectContaining({
-          type: 'text',
           text: 'Layer 1',
         })
       )
@@ -282,6 +291,34 @@ describe('useTextLayerEditor', () => {
           anchor: 'bottom-left',
         },
       })
+    })
+  })
+
+  describe('nested groups', () => {
+    it('finds text layers inside groups', () => {
+      heroViewConfig.value = createMinimalHeroViewConfig([
+        {
+          id: 'group-1',
+          name: 'Group 1',
+          type: 'group',
+          visible: true,
+          opacity: 1,
+          blendMode: 'normal',
+          children: [
+            createTextLayerNodeConfigType('nested-text', { text: 'Nested Text' }),
+          ],
+        },
+      ])
+
+      const { selectedTextLayerConfig, selectTextLayer } = useTextLayerEditor(options)
+
+      selectTextLayer('nested-text')
+
+      expect(selectedTextLayerConfig.value).toEqual(
+        expect.objectContaining({
+          text: 'Nested Text',
+        })
+      )
     })
   })
 })

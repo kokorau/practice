@@ -215,7 +215,7 @@ const {
   selectedTextLayerConfig,
   updateTextLayerConfig,
 } = useTextLayerEditor({
-  editorState: heroScene.editor.editorState,
+  heroViewConfig: heroScene.editor.heroViewConfig,
   onUpdateConfig: heroScene.layer.updateTextLayerConfig,
 })
 
