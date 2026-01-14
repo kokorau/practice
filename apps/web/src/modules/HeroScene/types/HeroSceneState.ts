@@ -572,7 +572,15 @@ export interface UsecaseState {
  * Editor state for debugging/inspection
  */
 export interface EditorStateRef {
-  /** Editor state for debugging/inspection */
+  /**
+   * Current HeroViewConfig (derived from heroViewRepository)
+   * This is the new preferred way to access editor state
+   */
+  readonly heroViewConfig: ComputedRef<HeroViewConfig>
+  /**
+   * Legacy editor state for debugging/inspection
+   * @deprecated Use heroViewConfig instead. This will be removed in a future version.
+   */
   readonly editorState: Ref<HeroSceneEditorState>
 }
 

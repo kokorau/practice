@@ -4003,9 +4003,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
+   * Current HeroViewConfig computed from toHeroViewConfig()
+   * This is the new preferred way to access editor state
+   */
+  const heroViewConfigComputed = computed(() => toHeroViewConfig())
+
+  /**
    * Editor state for debugging/inspection
    */
   const editor: EditorStateRef = {
+    heroViewConfig: heroViewConfigComputed,
     editorState,
   }
 
