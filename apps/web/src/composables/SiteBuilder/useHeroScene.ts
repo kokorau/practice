@@ -926,6 +926,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // Renderer State
   // ============================================================
+
+  /**
+   * Feature flag for config-based rendering (Phase 8 migration)
+   *
+   * When enabled, uses renderSceneFromConfig() (HeroViewConfig-based)
+   * instead of the legacy renderScene() (canvasLayers-based)
+   *
+   * @experimental Set to true to test new rendering pipeline
+   */
+  const USE_CONFIG_BASED_RENDERING = false
+
   let previewRenderer: TextureRenderer | null = null
   const thumbnailRenderers: TextureRenderer[] = []
 
@@ -1334,7 +1345,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       canvasLayers: [...editorState.value.canvasLayers, newLayer],
     }
 
-    renderScene()
+    render()
     return id
   }
 
@@ -1390,7 +1401,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       canvasLayers: [...editorState.value.canvasLayers, newLayer],
     }
 
-    renderScene()
+    render()
     return id
   }
 
@@ -1442,7 +1453,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       canvasLayers: [...editorState.value.canvasLayers, newLayer],
     }
 
-    renderScene()
+    render()
     return id
   }
 
@@ -1471,7 +1482,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       canvasLayers: newLayers,
     }
 
-    renderScene()
+    render()
     return true
   }
 
@@ -1484,7 +1495,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     layer.visible = visible
     editorState.value = { ...editorState.value }
-    renderScene()
+    render()
   }
 
   /**
@@ -1496,7 +1507,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     layer.visible = !layer.visible
     editorState.value = { ...editorState.value }
-    renderScene()
+    render()
   }
 
   /**
@@ -1543,7 +1554,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Trigger reactivity and re-render
     editorState.value = { ...editorState.value }
-    renderScene()
+    render()
   }
 
 
@@ -2742,6 +2753,23 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
   }
 
+  /**
+   * Unified render function that selects the appropriate rendering pipeline
+   *
+   * When USE_CONFIG_BASED_RENDERING is true, uses the new HeroViewConfig-based
+   * pipeline (renderSceneFromConfig). Otherwise, uses the legacy canvasLayers-based
+   * pipeline (renderScene).
+   *
+   * @experimental This function is part of the Phase 8 migration
+   */
+  const render = async () => {
+    if (USE_CONFIG_BASED_RENDERING) {
+      await renderSceneFromConfig()
+    } else {
+      await renderScene()
+    }
+  }
+
   // ============================================================
   // Thumbnail Rendering
   // ============================================================
@@ -3026,7 +3054,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         initSurfaceParamsFromPreset()
       }
 
-      await renderScene()
+      await render()
     } catch (e) {
       console.error('WebGPU not available:', e)
     }
@@ -3069,7 +3097,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     backgroundSurfaceUsecase.selectSurface({ type: 'image', imageId })
 
     syncLayerConfigs()
-    await renderScene()
+    await render()
   }
 
   const clearBackgroundImage = () => {
@@ -3088,7 +3116,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     backgroundSurfaceUsecase.clearImage()
 
     syncLayerConfigs()
-    renderScene()
+    render()
   }
 
   const isLoadingRandomBackground = ref(false)
@@ -3122,7 +3150,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customMaskBitmap = await createImageBitmap(file)
 
     syncLayerConfigs()
-    await renderScene()
+    await render()
   }
 
   const clearMaskImage = () => {
@@ -3137,7 +3165,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     customMaskImage.value = null
 
     syncLayerConfigs()
-    renderScene()
+    render()
   }
 
   const isLoadingRandomMask = ref(false)
@@ -3181,14 +3209,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     [selectedBackgroundIndex, selectedMaskIndex, selectedMidgroundTextureIndex],
     () => {
       syncLayerConfigs()
-      renderScene()
+      render()
     }
   )
 
   watch(
     [textureColor1, textureColor2, maskInnerColor, maskOuterColor, midgroundTextureColor1, midgroundTextureColor2],
     () => {
-      renderScene()
+      render()
     }
   )
 
@@ -3197,26 +3225,26 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Filter watchers - watch the Map's changes via deep watch
   watch(
     layerFilterConfigs,
-    () => renderScene(),
+    () => render(),
     { deep: true }
   )
 
   // Custom params watchers - re-render when params change
   watch(
     customMaskShapeParams,
-    () => renderScene(),
+    () => render(),
     { deep: true }
   )
 
   watch(
     customSurfaceParams,
-    () => renderScene(),
+    () => render(),
     { deep: true }
   )
 
   watch(
     customBackgroundSurfaceParams,
-    () => renderScene(),
+    () => render(),
     { deep: true }
   )
 
@@ -3709,7 +3737,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     // Sync layer configs and re-render
     syncLayerConfigs()
-    await renderScene()
+    await render()
 
     // Re-enable watchers
     isLoadingFromConfig = false
