@@ -416,6 +416,10 @@ export {
   SCENE_LAYER_IDS,
   type SceneLayerId,
   getSceneLayerId,
+  // Processor target utilities
+  getProcessorTargets,
+  findProcessorForNode,
+  getProcessorTargetPairs,
 } from './LayerNode'
 
 // ============================================================

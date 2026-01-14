@@ -89,6 +89,28 @@ export { compileHeroScene } from './CompileHeroScene'
 export type { SyncBackgroundSurfaceResult, SyncMaskSurfaceResult } from './ConfigSyncer'
 export { syncBackgroundSurfaceParams, syncMaskSurfaceParams } from './ConfigSyncer'
 
+// Re-export RenderSpec
+export type {
+  RenderSpecBase,
+  TextureRenderSpec,
+  ImageRenderSpec,
+  SolidRenderSpec,
+  TextRenderSpec,
+  Object3DRenderSpec,
+  ClipGroupRenderSpec,
+  RenderSpec,
+  RenderContext,
+} from './RenderSpec'
+export {
+  toRenderSpecs,
+  isTextureSpec,
+  isImageSpec,
+  isSolidSpec,
+  isTextSpec,
+  isObjectSpec,
+  isClipGroupSpec,
+} from './RenderSpec'
+
 // ============================================================
 // Ports (Interfaces for Infrastructure)
 // ============================================================
