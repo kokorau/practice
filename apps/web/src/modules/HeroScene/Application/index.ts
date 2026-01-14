@@ -12,18 +12,6 @@ import type {
   HeroSceneConfig,
 } from '../Domain'
 
-// Re-export Editor State types
-export type {
-  EditorTextureLayerConfig,
-  EditorClipGroupLayerConfig,
-  EditorImageLayerConfig,
-  EditorTextLayerConfig,
-  EditorCanvasLayerConfig,
-  EditorCanvasLayer,
-  HeroSceneEditorState,
-} from './EditorState'
-export { createHeroSceneEditorState } from './EditorState'
-
 // Re-export Ports
 export type {
   HeroViewPresetRepository,

@@ -259,11 +259,6 @@ const debugSections = computed(() => [
     label: 'HeroViewConfig (Export)',
     data: heroScene.serialization.toHeroViewConfig(),
   },
-  {
-    id: 'editorState',
-    label: 'Editor State',
-    data: heroScene.editor.editorState.value,
-  },
 ])
 
 // ============================================================

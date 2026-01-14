@@ -309,14 +309,6 @@ export type {
   Object3DRendererPort,
   Object3DRenderParams,
   LightingConfig,
-  // Editor State types
-  EditorTextureLayerConfig,
-  EditorClipGroupLayerConfig,
-  EditorImageLayerConfig,
-  EditorTextLayerConfig,
-  EditorCanvasLayerConfig,
-  EditorCanvasLayer,
-  HeroSceneEditorState,
   // Preset types
   HeroViewPresetRepository,
   GetHeroViewPresetsUseCase,
@@ -344,7 +336,6 @@ export type {
 export {
   HeroSceneUseCase,
   createHeroSceneUseCase,
-  createHeroSceneEditorState,
   // Preset UseCase
   createGetHeroViewPresetsUseCase,
   // ForegroundElement UseCase
