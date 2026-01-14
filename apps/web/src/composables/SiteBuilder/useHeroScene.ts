@@ -2289,30 +2289,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       })
     }
 
-    // Add text layers from canvasLayers
-    for (const canvasLayer of editorState.value.canvasLayers) {
-      if (canvasLayer.config.type === 'text') {
-        const textConfig = canvasLayer.config
-        const textLayer: TextLayerNodeConfigType = {
-          type: 'text',
-          id: canvasLayer.id,
-          name: canvasLayer.name,
-          visible: canvasLayer.visible,
-          text: textConfig.text,
-          fontFamily: textConfig.fontFamily,
-          fontSize: textConfig.fontSize,
-          fontWeight: textConfig.fontWeight,
-          letterSpacing: textConfig.letterSpacing,
-          lineHeight: textConfig.lineHeight,
-          color: textConfig.color,
-          position: {
-            x: textConfig.position.x,
-            y: textConfig.position.y,
-            anchor: textConfig.position.anchor,
-          },
-          rotation: textConfig.rotation,
+    // Preserve text and model3d layers from heroViewRepository
+    // These are managed via layerUsecase.addLayer() and should not be rebuilt from canvasLayers
+    const existingConfig = heroViewRepository.get()
+    if (existingConfig) {
+      for (const existingLayer of existingConfig.layers) {
+        if (existingLayer.type === 'text' || existingLayer.type === 'model3d') {
+          layers.push(existingLayer)
         }
-        layers.push(textLayer)
       }
     }
 
