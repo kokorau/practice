@@ -933,9 +933,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * When enabled, uses renderSceneFromConfig() (HeroViewConfig-based)
    * instead of the legacy renderScene() (canvasLayers-based)
    *
+   * To test in browser console:
+   *   window.__USE_CONFIG_BASED_RENDERING__ = true
+   *   // Then interact with the editor to trigger re-render
+   *
    * @experimental Set to true to test new rendering pipeline
    */
-  const USE_CONFIG_BASED_RENDERING = false
+  const getUseConfigBasedRendering = (): boolean => {
+    if (typeof window !== 'undefined' && '__USE_CONFIG_BASED_RENDERING__' in window) {
+      return !!(window as unknown as { __USE_CONFIG_BASED_RENDERING__: boolean }).__USE_CONFIG_BASED_RENDERING__
+    }
+    return false
+  }
 
   let previewRenderer: TextureRenderer | null = null
   const thumbnailRenderers: TextureRenderer[] = []
@@ -2763,7 +2772,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * @experimental This function is part of the Phase 8 migration
    */
   const render = async () => {
-    if (USE_CONFIG_BASED_RENDERING) {
+    if (getUseConfigBasedRendering()) {
       await renderSceneFromConfig()
     } else {
       await renderScene()
