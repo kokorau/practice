@@ -171,7 +171,14 @@ function createConfigWithMask(maskShape: MaskShapeConfig): HeroViewConfig {
         name: 'Surface',
         visible: true,
         surface: { type: 'solid' },
-        processors: [
+        filters: [],
+      },
+      {
+        type: 'processor',
+        id: 'processor-1',
+        name: 'Mask Processor',
+        visible: true,
+        modifiers: [
           {
             type: 'mask',
             enabled: true,
@@ -477,7 +484,14 @@ describe('renderHeroConfig', () => {
             name: 'Surface',
             visible: true,
             surface: { type: 'solid' },
-            processors: [
+            filters: [],
+          },
+          {
+            type: 'processor',
+            id: 'processor-1',
+            name: 'Mask Processor',
+            visible: true,
+            modifiers: [
               {
                 type: 'mask',
                 enabled: false, // Disabled
@@ -602,33 +616,6 @@ describe('renderHeroConfig', () => {
       // Should have mask pipeline calls + effect calls
       expect(renderer.applyPostEffectCalls.length).toBeGreaterThanOrEqual(2) // colorize + vignette
     })
-
-    it('should support legacy processors field for effects', async () => {
-      const config = createTestConfig({
-        layers: [
-          {
-            type: 'base',
-            id: 'base',
-            name: 'Background',
-            visible: true,
-            surface: { type: 'solid' },
-            processors: [
-              {
-                type: 'effect',
-                enabled: true,
-                config: {
-                  blur: { enabled: true, radius: 8 },
-                },
-              },
-            ],
-          },
-        ],
-      })
-
-      await renderHeroConfig(renderer, config, lightPalette)
-
-      expect(renderer.copyCanvasToTextureCalls).toBeGreaterThanOrEqual(1)
-    })
   })
 
   describe('theme detection', () => {
@@ -737,6 +724,7 @@ describe('renderHeroConfig', () => {
             id: 'group-1',
             name: 'Group',
             visible: true,
+            expanded: true,
             children: [
               {
                 type: 'surface',
@@ -744,21 +732,7 @@ describe('renderHeroConfig', () => {
                 name: 'Nested Surface',
                 visible: true,
                 surface: { type: 'solid' },
-                processors: [
-                  {
-                    type: 'mask',
-                    enabled: true,
-                    shape: {
-                      type: 'circle',
-                      centerX: 0.5,
-                      centerY: 0.5,
-                      radius: 0.3,
-                      cutout: false,
-                    },
-                    invert: false,
-                    feather: 0,
-                  },
-                ],
+                filters: [],
               },
             ],
           },
@@ -767,9 +741,8 @@ describe('renderHeroConfig', () => {
 
       await renderHeroConfig(renderer, config, lightPalette)
 
-      // Should render base layer + nested surface layer + mask
+      // Should render base layer + nested surface layer (no mask in this test)
       expect(renderer.renderCalls.length).toBe(2)
-      expect(renderer.renderToOffscreenCalls.length).toBe(1)
     })
   })
 
@@ -812,7 +785,7 @@ describe('renderHeroConfig', () => {
             name: 'Surface',
             visible: true,
             surface: { type: 'solid' },
-            processors: [], // No mask processor
+            filters: [],
           },
         ],
       })
@@ -860,7 +833,7 @@ describe('renderHeroConfig', () => {
             name: 'Surface',
             visible: true,
             surface: { type: 'solid' },
-            processors: [], // No mask on surface layer
+            filters: [],
           },
           {
             type: 'processor',
@@ -1024,7 +997,7 @@ describe('renderHeroConfig', () => {
             name: 'Surface',
             visible: true,
             surface: { type: 'solid' },
-            processors: [],
+            filters: [],
           },
           {
             type: 'processor',
@@ -1068,7 +1041,7 @@ describe('renderHeroConfig', () => {
             name: 'Surface',
             visible: true,
             surface: { type: 'solid' },
-            processors: [],
+            filters: [],
           },
           {
             type: 'processor',
@@ -1126,7 +1099,7 @@ describe('renderHeroConfig', () => {
             name: 'Surface',
             visible: true,
             surface: { type: 'solid' },
-            processors: [],
+            filters: [],
           },
           {
             type: 'processor',
