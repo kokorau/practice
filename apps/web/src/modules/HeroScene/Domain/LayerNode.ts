@@ -359,8 +359,8 @@ const getDefaultName = (variant: LayerVariant): string => {
  * Scene layer IDs used by the rendering engine
  */
 export const SCENE_LAYER_IDS = {
-  BASE: 'base-layer',
-  MASK: 'mask-layer',
+  BASE: 'base',
+  MASK: 'mask',
 } as const
 
 export type SceneLayerId = typeof SCENE_LAYER_IDS[keyof typeof SCENE_LAYER_IDS]
