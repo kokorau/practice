@@ -48,7 +48,6 @@ import type { PrimitiveKey } from '../../SemanticColorPalette/Domain'
 import type { InkRole } from '../../SemanticColorPalette/Domain'
 import type {
   LayerFilterConfig,
-  HeroSceneEditorState,
   HeroViewConfig,
   HeroViewPreset,
   LayerNodeConfig,
@@ -574,14 +573,9 @@ export interface UsecaseState {
 export interface EditorStateRef {
   /**
    * Current HeroViewConfig (derived from heroViewRepository)
-   * This is the new preferred way to access editor state
+   * This is the preferred way to access editor state
    */
   readonly heroViewConfig: ComputedRef<HeroViewConfig>
-  /**
-   * Legacy editor state for debugging/inspection
-   * @deprecated Use heroViewConfig instead. This will be removed in a future version.
-   */
-  readonly editorState: Ref<HeroSceneEditorState>
 }
 
 // ============================================================

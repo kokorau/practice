@@ -69,8 +69,12 @@ import type { InkRole } from '../../modules/SemanticColorPalette/Domain'
 import { generateLuminanceMap } from '../../modules/ContrastChecker'
 import {
   type LayerFilterConfig,
-  type HeroSceneEditorState,
-  type EditorCanvasLayer,
+  type LayerBase,
+  type BlendMode,
+  type HeroSceneConfig,
+  type HtmlLayer,
+  type ClipMaskShape,
+  type ClipMaskShapeParams,
   type HeroViewConfig,
   type HeroColorsConfig,
   type HeroPrimitiveKey,
@@ -86,11 +90,11 @@ import {
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
+  type ObjectLayerConfig,
   type Object3DRendererPort,
   type HeroViewRepository,
   type FilterType,
   type SurfaceParamsUpdate,
-  createHeroSceneEditorState,
   createDefaultFilterConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
@@ -163,6 +167,85 @@ import {
 } from '../../modules/HeroScene'
 import { useEffectManager } from '../useEffectManager'
 import { useLayerSelection } from '../useLayerSelection'
+
+// ============================================================
+// Internal Legacy Types (deprecated, kept for backward compatibility)
+// These types are internal to this composable and will be removed
+// when the migration to HeroViewConfig is complete.
+// ============================================================
+
+/** @internal Texture layer config (index-based) */
+interface EditorTextureLayerConfig {
+  type: 'texture'
+  patternIndex: number
+}
+
+/** @internal ClipGroup layer config */
+interface EditorClipGroupLayerConfig {
+  type: 'clipGroup'
+  maskShape: ClipMaskShape
+  maskShapeParams: ClipMaskShapeParams
+  maskInvert: boolean
+  maskFeather: number
+  maskTextureIndex: number | null
+  childIds: string[]
+}
+
+/** @internal Image layer config */
+interface EditorImageLayerConfig {
+  type: 'image'
+  source: ImageBitmap | string
+}
+
+/** @internal Text layer config (alias) */
+type EditorTextLayerConfig = TextLayerConfig
+
+/** @internal Object layer config (alias) */
+type EditorObjectLayerConfig = ObjectLayerConfig
+
+/** @internal Canvas layer config union */
+type EditorCanvasLayerConfig =
+  | EditorTextureLayerConfig
+  | EditorClipGroupLayerConfig
+  | EditorImageLayerConfig
+  | EditorTextLayerConfig
+  | EditorObjectLayerConfig
+
+/** @internal Editor canvas layer */
+interface EditorCanvasLayer extends LayerBase {
+  zIndex: number
+  config: EditorCanvasLayerConfig
+  blendMode: BlendMode
+  filters: LayerFilterConfig
+}
+
+/** @internal Editor state (legacy) */
+interface HeroSceneEditorState {
+  config: HeroSceneConfig
+  canvasLayers: EditorCanvasLayer[]
+  htmlLayer: HtmlLayer
+}
+
+/** @internal Create default editor state */
+const createHeroSceneEditorState = (
+  config?: Partial<HeroSceneConfig>
+): HeroSceneEditorState => ({
+  config: {
+    width: 1280,
+    height: 720,
+    devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
+    ...config,
+  },
+  canvasLayers: [],
+  htmlLayer: {
+    id: 'html-layer',
+    name: 'HTML Layer',
+    visible: true,
+    opacity: 1.0,
+    layoutId: 'row-top-between',
+    items: [],
+  },
+})
 
 // ============================================================
 // Types
@@ -2773,7 +2856,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    */
   const editor: EditorStateRef = {
     heroViewConfig: heroViewConfigComputed,
-    editorState,
   }
 
   /**
