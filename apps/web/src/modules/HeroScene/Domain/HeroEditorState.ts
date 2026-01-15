@@ -103,7 +103,7 @@ export interface FilterUIState {
   /** 選択されているフィルターレイヤーID */
   selectedLayerId: string | null
   /** レイヤーごとのフィルター設定 */
-  layerConfigs: Map<string, LayerFilterConfig>
+  layerConfigs: Record<string, LayerFilterConfig>
 }
 
 /**
@@ -220,7 +220,7 @@ export const createDefaultMaskUIState = (): MaskUIState => ({
  */
 export const createDefaultFilterUIState = (): FilterUIState => ({
   selectedLayerId: null,
-  layerConfigs: new Map(),
+  layerConfigs: {},
 })
 
 /**
