@@ -702,6 +702,10 @@ interface LayerNodeConfigBase {
   visible: boolean
 }
 
+/**
+ * @deprecated Use SurfaceLayerNodeConfig instead. Base layer type will be removed.
+ * Migrate by changing type: 'base' to type: 'surface' and wrapping in a group.
+ */
 export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   type: 'base'
   surface: SurfaceConfig
@@ -938,12 +942,20 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
   colors: createDefaultColorsConfig(),
   layers: [
     {
-      type: 'base',
-      id: 'base',
+      type: 'group',
+      id: 'background-group',
       name: 'Background',
       visible: true,
-      surface: { type: 'solid' },
-      filters: [createDefaultEffectFilterConfig()],
+      children: [
+        {
+          type: 'surface',
+          id: 'background',
+          name: 'Surface',
+          visible: true,
+          surface: { type: 'solid' },
+          filters: [createDefaultEffectFilterConfig()],
+        },
+      ],
     },
   ],
   foreground: createDefaultForegroundConfig(),
