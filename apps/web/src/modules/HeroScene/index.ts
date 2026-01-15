@@ -311,6 +311,9 @@ export type {
   // Preset types
   HeroViewPresetRepository,
   GetHeroViewPresetsUseCase,
+  // PresetManager types
+  MergeMode,
+  PresetManagerOptions,
   // ForegroundElement UseCase types
   ForegroundElementUpdate,
   ForegroundConfigPort,
@@ -330,6 +333,9 @@ export type {
 export {
   // Preset UseCase
   createGetHeroViewPresetsUseCase,
+  // PresetManager
+  PresetManager,
+  createPresetManager,
   // ForegroundElement UseCase
   createForegroundElementUsecase,
   // Usecases
