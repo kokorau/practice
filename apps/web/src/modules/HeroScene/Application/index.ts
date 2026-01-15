@@ -22,7 +22,6 @@ export type {
   SelectionPort as SurfaceSelectionPort,
   ImageUploadPort,
   SurfaceParamsUpdate,
-  MaskShapeParamsUpdate,
 } from './SurfaceUsecase'
 export { createSurfaceUsecase } from './SurfaceUsecase'
 

@@ -9,9 +9,7 @@ import type { HeroViewRepository } from './ports/HeroViewRepository'
 import type {
   HeroPrimitiveKey,
   SurfaceConfig,
-  MaskShapeConfig,
   LayerNodeConfig,
-  SurfaceLayerNodeConfig,
   DepthMapType,
 } from '../Domain/HeroViewConfig'
 
@@ -67,18 +65,6 @@ export type SurfaceParamsUpdate =
       seed?: number
       sparsity?: number
     }
-
-/**
- * マスク形状パラメータの更新型
- */
-export type MaskShapeParamsUpdate =
-  | { type: 'circle'; centerX?: number; centerY?: number; radius?: number; cutout?: boolean }
-  | { type: 'rect'; left?: number; right?: number; top?: number; bottom?: number; radiusTopLeft?: number; radiusTopRight?: number; radiusBottomLeft?: number; radiusBottomRight?: number; rotation?: number; perspectiveX?: number; perspectiveY?: number; cutout?: boolean }
-  | { type: 'blob'; centerX?: number; centerY?: number; baseRadius?: number; amplitude?: number; octaves?: number; seed?: number; cutout?: boolean }
-  | { type: 'perlin'; seed?: number; threshold?: number; scale?: number; octaves?: number; cutout?: boolean }
-  | { type: 'linearGradient'; angle?: number; startOffset?: number; endOffset?: number; cutout?: boolean }
-  | { type: 'radialGradient'; centerX?: number; centerY?: number; innerRadius?: number; outerRadius?: number; aspectRatio?: number; cutout?: boolean }
-  | { type: 'boxGradient'; left?: number; right?: number; top?: number; bottom?: number; cornerRadius?: number; curve?: 'linear' | 'smooth' | 'easeIn' | 'easeOut'; cutout?: boolean }
 
 // ============================================================
 // Interface
@@ -137,29 +123,6 @@ export interface SurfaceUsecase {
   loadRandomImage(query?: string): Promise<void>
 
   // ----------------------------------------
-  // Mask Shape Operations (surface layers only)
-  // ----------------------------------------
-
-  /**
-   * 現在のレイヤーがマスク形状編集可能かどうか
-   */
-  canEditMaskShape(): boolean
-
-  /**
-   * マスク形状を選択（surfaceレイヤーのみ）
-   * @param shape マスク形状設定
-   * @returns 操作が成功したかどうか
-   */
-  selectMaskShape(shape: MaskShapeConfig): boolean
-
-  /**
-   * マスク形状パラメータを更新
-   * @param params 更新するパラメータ
-   * @returns 操作が成功したかどうか
-   */
-  updateMaskShapeParams(params: MaskShapeParamsUpdate): boolean
-
-  // ----------------------------------------
   // Query Methods
   // ----------------------------------------
 
@@ -186,21 +149,6 @@ export interface SurfaceUsecaseDeps {
   selection: SelectionPort
   imageUpload?: ImageUploadPort
 }
-
-/**
- * サーフェスレイヤーを取得するヘルパー
- */
-const getSurfaceLayer = (
-  repository: HeroViewRepository,
-  layerId: string
-): SurfaceLayerNodeConfig | undefined => {
-  const layer = repository.findLayer(layerId)
-  if (layer?.type === 'surface') {
-    return layer
-  }
-  return undefined
-}
-
 
 /**
  * SurfaceUsecaseを作成
@@ -319,34 +267,6 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       repository.updateLayer(layerId, {
         surface: { type: 'image', imageId },
       })
-    },
-
-    // ----------------------------------------
-    // Mask Shape Operations
-    // ----------------------------------------
-
-    canEditMaskShape(): boolean {
-      const layerId = getSelectedLayerId()
-      if (!layerId) return false
-
-      const layer = getSurfaceLayer(repository, layerId)
-      if (!layer) return false
-
-      // @deprecated: Masks are now on ProcessorNodeConfig.modifiers
-      // This function always returns false now
-      return false
-    },
-
-    selectMaskShape(_shape: MaskShapeConfig): boolean {
-      // @deprecated: Masks are now on ProcessorNodeConfig.modifiers
-      console.warn('SurfaceUsecase.selectMaskShape is deprecated. Use processor nodes instead.')
-      return false
-    },
-
-    updateMaskShapeParams(_params: MaskShapeParamsUpdate): boolean {
-      // @deprecated: Masks are now on ProcessorNodeConfig.modifiers
-      console.warn('SurfaceUsecase.updateMaskShapeParams is deprecated. Use processor nodes instead.')
-      return false
     },
 
     // ----------------------------------------
