@@ -102,6 +102,13 @@ export type {
   HeroPerlinMaskShapeConfig,
   MaskShapeConfig,
   HeroMaskShapeConfig,
+  // Normalized config types (Phase 12)
+  SurfaceType,
+  NormalizedSurfaceConfig,
+  AnySurfaceConfig,
+  MaskShapeTypeId,
+  NormalizedMaskConfig,
+  AnyMaskConfig,
   // Processor config types (JSON serialization)
   ProcessorConfig,
   EffectProcessorConfig,
@@ -273,6 +280,25 @@ export {
   hasLegacyEffectConfigs,
   migrateEffectConfigsInModifiers,
   getEffectConfigsFromModifiers,
+  // Surface config normalization (Phase 12)
+  SURFACE_TYPES,
+  isNormalizedSurfaceConfig,
+  isLegacyTypeSurfaceConfig,
+  normalizeSurfaceConfig,
+  denormalizeSurfaceConfig,
+  getSurfaceAsNormalized,
+  getSurfaceAsLegacy,
+  // Mask config normalization (Phase 12)
+  MASK_SHAPE_TYPE_IDS,
+  isNormalizedMaskConfig,
+  isLegacyTypeMaskConfig,
+  normalizeMaskConfig,
+  denormalizeMaskConfig,
+  getMaskAsNormalized,
+  getMaskAsLegacy,
+  // Full config migration (Phase 13)
+  migrateHeroViewConfig,
+  configNeedsMigration,
   // HeroEditorState factories
   createDefaultBackgroundUIState,
   createDefaultMaskUIState,

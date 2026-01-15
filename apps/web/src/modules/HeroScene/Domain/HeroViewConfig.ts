@@ -243,6 +243,111 @@ export type BackgroundSurfaceConfig = SurfaceConfig
 export type MaskSurfaceConfig = SurfaceConfig
 
 // ============================================================
+// Normalized Config Types (Phase 12: id + params pattern)
+// ============================================================
+
+/**
+ * Surface type identifier (all supported surface pattern types)
+ */
+export type SurfaceType = SurfaceConfig['type']
+
+/**
+ * Array of all surface types for iteration
+ */
+export const SURFACE_TYPES: SurfaceType[] = [
+  'solid',
+  'stripe',
+  'grid',
+  'polkaDot',
+  'checker',
+  'image',
+  'gradientGrain',
+  'triangle',
+  'hexagon',
+  'asanoha',
+  'seigaiha',
+  'wave',
+  'scales',
+  'ogee',
+  'sunburst',
+]
+
+/**
+ * Normalized surface configuration (new format)
+ *
+ * Separates the surface type identifier from its parameters.
+ * This enables a uniform structure across all config types.
+ *
+ * @example
+ * ```typescript
+ * const surface: NormalizedSurfaceConfig = {
+ *   id: 'stripe',
+ *   params: { width1: 20, width2: 20, angle: 45 }
+ * }
+ * ```
+ */
+export interface NormalizedSurfaceConfig {
+  /** Surface type identifier */
+  id: SurfaceType
+  /** Surface-specific parameters (validated against schema at runtime) */
+  params: Record<string, unknown>
+}
+
+/**
+ * Type guard for NormalizedSurfaceConfig (new format)
+ */
+export function isNormalizedSurfaceConfig(
+  config: SurfaceConfig | NormalizedSurfaceConfig
+): config is NormalizedSurfaceConfig {
+  return 'id' in config && 'params' in config && !('type' in config)
+}
+
+/**
+ * Type guard for legacy SurfaceConfig (type-spread format)
+ */
+export function isLegacyTypeSurfaceConfig(
+  config: SurfaceConfig | NormalizedSurfaceConfig
+): config is SurfaceConfig {
+  return 'type' in config && !('id' in config)
+}
+
+/**
+ * Convert legacy SurfaceConfig to NormalizedSurfaceConfig
+ */
+export function normalizeSurfaceConfig(config: SurfaceConfig): NormalizedSurfaceConfig {
+  const { type, ...params } = config
+  return { id: type, params }
+}
+
+/**
+ * Convert NormalizedSurfaceConfig to legacy SurfaceConfig
+ */
+export function denormalizeSurfaceConfig(config: NormalizedSurfaceConfig): SurfaceConfig {
+  return { type: config.id, ...config.params } as SurfaceConfig
+}
+
+/**
+ * Union type for both surface config formats
+ */
+export type AnySurfaceConfig = SurfaceConfig | NormalizedSurfaceConfig
+
+/**
+ * Get surface config in normalized format (accepts both formats)
+ */
+export function getSurfaceAsNormalized(config: AnySurfaceConfig): NormalizedSurfaceConfig {
+  if (isNormalizedSurfaceConfig(config)) return config
+  return normalizeSurfaceConfig(config)
+}
+
+/**
+ * Get surface config in legacy format (accepts both formats)
+ */
+export function getSurfaceAsLegacy(config: AnySurfaceConfig): SurfaceConfig {
+  if (isLegacyTypeSurfaceConfig(config)) return config
+  return denormalizeSurfaceConfig(config)
+}
+
+// ============================================================
 // Shader Reference Types (UUID-based system)
 // ============================================================
 
@@ -398,6 +503,103 @@ export type MaskShapeConfig =
   | LinearGradientMaskShapeConfig
   | RadialGradientMaskShapeConfig
   | BoxGradientMaskShapeConfig
+
+// ============================================================
+// Normalized Mask Config Types (Phase 12: id + params pattern)
+// ============================================================
+
+/**
+ * Mask shape type identifier (re-exported from MaskShapeConfig)
+ */
+export type MaskShapeTypeId = MaskShapeConfig['type']
+
+/**
+ * Array of all mask shape types for iteration
+ */
+export const MASK_SHAPE_TYPE_IDS: MaskShapeTypeId[] = [
+  'circle',
+  'rect',
+  'blob',
+  'perlin',
+  'linearGradient',
+  'radialGradient',
+  'boxGradient',
+]
+
+/**
+ * Normalized mask shape configuration (new format)
+ *
+ * Separates the mask shape type identifier from its parameters.
+ * This enables a uniform structure across all config types.
+ *
+ * @example
+ * ```typescript
+ * const mask: NormalizedMaskConfig = {
+ *   id: 'circle',
+ *   params: { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: true }
+ * }
+ * ```
+ */
+export interface NormalizedMaskConfig {
+  /** Mask shape type identifier */
+  id: MaskShapeTypeId
+  /** Mask-specific parameters (validated against schema at runtime) */
+  params: Record<string, unknown>
+}
+
+/**
+ * Type guard for NormalizedMaskConfig (new format)
+ */
+export function isNormalizedMaskConfig(
+  config: MaskShapeConfig | NormalizedMaskConfig
+): config is NormalizedMaskConfig {
+  return 'id' in config && 'params' in config && !('type' in config)
+}
+
+/**
+ * Type guard for legacy MaskShapeConfig (type-spread format)
+ */
+export function isLegacyTypeMaskConfig(
+  config: MaskShapeConfig | NormalizedMaskConfig
+): config is MaskShapeConfig {
+  return 'type' in config && !('id' in config)
+}
+
+/**
+ * Convert legacy MaskShapeConfig to NormalizedMaskConfig
+ */
+export function normalizeMaskConfig(config: MaskShapeConfig): NormalizedMaskConfig {
+  const { type, ...params } = config
+  return { id: type, params }
+}
+
+/**
+ * Convert NormalizedMaskConfig to legacy MaskShapeConfig
+ */
+export function denormalizeMaskConfig(config: NormalizedMaskConfig): MaskShapeConfig {
+  return { type: config.id, ...config.params } as MaskShapeConfig
+}
+
+/**
+ * Union type for both mask config formats
+ */
+export type AnyMaskConfig = MaskShapeConfig | NormalizedMaskConfig
+
+/**
+ * Get mask config in normalized format (accepts both formats)
+ */
+export function getMaskAsNormalized(config: AnyMaskConfig): NormalizedMaskConfig {
+  if (isNormalizedMaskConfig(config)) return config
+  return normalizeMaskConfig(config)
+}
+
+/**
+ * Get mask config in legacy format (accepts both formats)
+ */
+export function getMaskAsLegacy(config: AnyMaskConfig): MaskShapeConfig {
+  if (isLegacyTypeMaskConfig(config)) return config
+  return denormalizeMaskConfig(config)
+}
 
 // ============================================================
 // Filter Config (JSON シリアライズ用) - Effects only
@@ -1069,4 +1271,74 @@ export const getEffectConfigsFromModifiers = (modifiers: ProcessorConfig[]): Sin
   }
 
   return effects
+}
+
+// ============================================================
+// Full Config Migration
+// ============================================================
+
+/**
+ * Migrate a single layer's effect configs from legacy to new format
+ */
+const migrateLayerEffects = (layer: LayerNodeConfig): LayerNodeConfig => {
+  if (layer.type === 'processor') {
+    // Migrate processor modifiers
+    const migratedModifiers = migrateEffectConfigsInModifiers(layer.modifiers)
+    return { ...layer, modifiers: migratedModifiers }
+  }
+
+  if (layer.type === 'group') {
+    // Recursively migrate children
+    const migratedChildren = layer.children.map(migrateLayerEffects)
+    // Also migrate filters if present
+    if (layer.filters && hasLegacyEffectConfigs(layer.filters as ProcessorConfig[])) {
+      const migratedFilters: EffectFilterConfig[] = []
+      for (const filter of layer.filters) {
+        if (isLegacyEffectFilterConfig(filter)) {
+          // For filters array, we keep the legacy format but could migrate if needed
+          migratedFilters.push(filter)
+        } else {
+          migratedFilters.push(filter as EffectFilterConfig)
+        }
+      }
+      return { ...layer, children: migratedChildren, filters: migratedFilters }
+    }
+    return { ...layer, children: migratedChildren }
+  }
+
+  // For other layer types (base, surface, text, etc.), return as-is
+  // They may have filters but we keep them in legacy format for now
+  return layer
+}
+
+/**
+ * Migrate all effect configs in HeroViewConfig from legacy to new format
+ *
+ * This function converts:
+ * - EffectFilterConfig (legacy bundled format) → SingleEffectConfig[] (new format)
+ *
+ * Use this when loading configs from storage or presets.
+ *
+ * @param config - HeroViewConfig to migrate
+ * @returns Migrated HeroViewConfig with all effects in new format
+ */
+export const migrateHeroViewConfig = (config: HeroViewConfig): HeroViewConfig => {
+  const migratedLayers = config.layers.map(migrateLayerEffects)
+  return { ...config, layers: migratedLayers }
+}
+
+/**
+ * Check if HeroViewConfig needs migration (has legacy effect configs)
+ */
+export const configNeedsMigration = (config: HeroViewConfig): boolean => {
+  const checkLayer = (layer: LayerNodeConfig): boolean => {
+    if (layer.type === 'processor') {
+      return hasLegacyEffectConfigs(layer.modifiers)
+    }
+    if (layer.type === 'group') {
+      return layer.children.some(checkLayer)
+    }
+    return false
+  }
+  return config.layers.some(checkLayer)
 }

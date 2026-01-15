@@ -42,12 +42,12 @@ import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../SemanticColorPalette/Domain'
 import type {
   HeroViewConfig,
-  SurfaceConfig,
-  MaskShapeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   LayerNodeConfig,
   ProcessorNodeConfig,
+  AnySurfaceConfig,
+  AnyMaskConfig,
 } from '../Domain/HeroViewConfig'
 import {
   getLayerFilters,
@@ -55,6 +55,9 @@ import {
   isProcessorNodeConfig,
   getProcessorTargetPairsFromConfig,
   getProcessorMask,
+  // Normalization helpers (Phase 13)
+  getSurfaceAsLegacy,
+  getMaskAsLegacy,
 } from '../Domain/HeroViewConfig'
 import type { LayerEffectConfig } from '../Domain/EffectSchema'
 import { EFFECT_REGISTRY, EFFECT_TYPES, type EffectType } from '../Domain/EffectRegistry'
@@ -198,14 +201,18 @@ function scaleValue(value: number, scale: number): number {
 
 /**
  * Create background texture spec from surface config
+ * Accepts both legacy SurfaceConfig and normalized NormalizedSurfaceConfig
  */
 function createBackgroundSpecFromSurface(
-  surface: SurfaceConfig,
+  surfaceInput: AnySurfaceConfig,
   color1: RGBA,
   color2: RGBA,
   viewport: Viewport,
   scale: number
 ): TextureRenderSpec | null {
+  // Convert to legacy format if normalized
+  const surface = getSurfaceAsLegacy(surfaceInput)
+
   if (surface.type === 'solid') {
     return createSolidSpec({ color: color1 })
   }
@@ -352,11 +359,14 @@ function createBackgroundSpecFromSurface(
 /**
  * Create greymap mask spec from mask config
  * Outputs grayscale values (0.0-1.0) instead of RGBA
+ * Accepts both legacy MaskShapeConfig and normalized NormalizedMaskConfig
  */
 function createGreymapMaskSpecFromShape(
-  shape: MaskShapeConfig,
+  shapeInput: AnyMaskConfig,
   viewport: Viewport
 ): GreymapMaskSpec | null {
+  // Convert to legacy format if normalized
+  const shape = getMaskAsLegacy(shapeInput)
   const cutout = shape.cutout ?? false
   // Greymap values: innerValue=0 (transparent/cutout), outerValue=1 (opaque/keep)
   const innerValue = 0.0
@@ -574,7 +584,7 @@ export interface EffectorConfig {
   /** Mask configuration (transparency-modification) */
   mask?: {
     enabled: boolean
-    shape: MaskShapeConfig
+    shape: AnyMaskConfig
   }
   /**
    * Effect configuration (color-modification) - legacy format
