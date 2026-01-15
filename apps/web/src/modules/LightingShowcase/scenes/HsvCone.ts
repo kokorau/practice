@@ -2,6 +2,7 @@ import { $LineSegments, $LineSegment, $Color, $Camera, $MeshGeometry, type Color
 import { $LineScene } from '@practice/lighting/Infra'
 import { $Vector3 } from '@practice/vector'
 import type { LineSceneDefinition } from './RgbCube'
+import { hsvToRgbNormalized } from '../../Filter/Domain/ValueObject/colors'
 
 /**
  * HSV Cone scene
@@ -14,22 +15,11 @@ const HEIGHT = 2
 const SEGMENTS = 32
 
 /**
- * Convert HSV to RGB
+ * Convert HSV (h: 0-1, s: 0-1, v: 0-1) to Color
  */
-function hsvToRgb(h: number, s: number, v: number): Color {
-  const c = v * s
-  const x = c * (1 - Math.abs((h * 6) % 2 - 1))
-  const m = v - c
-
-  let r = 0, g = 0, b = 0
-  if (h < 1/6) { r = c; g = x; b = 0 }
-  else if (h < 2/6) { r = x; g = c; b = 0 }
-  else if (h < 3/6) { r = 0; g = c; b = x }
-  else if (h < 4/6) { r = 0; g = x; b = c }
-  else if (h < 5/6) { r = x; g = 0; b = c }
-  else { r = c; g = 0; b = x }
-
-  return $Color.create(r + m, g + m, b + m)
+function hsvToColor(h: number, s: number, v: number): Color {
+  const { r, g, b } = hsvToRgbNormalized(h, s, v)
+  return $Color.create(r, g, b)
 }
 
 /**
@@ -47,7 +37,7 @@ function positionToHsvColor(pos: { x: number; y: number; z: number }): Color {
   const currentRadius = Math.sqrt(pos.x * pos.x + pos.z * pos.z)
   const s = maxRadius > 0 ? Math.min(1, currentRadius / maxRadius) : 0 // saturation
 
-  return hsvToRgb(h, s, v)
+  return hsvToColor(h, s, v)
 }
 
 /**
