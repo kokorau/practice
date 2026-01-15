@@ -18,7 +18,6 @@ import type {
   FilterUIState,
   ForegroundUIState,
   PresetUIState,
-  ColorUIState,
   EditorSectionType,
 } from '../Domain/HeroEditorState'
 import { createDefaultHeroEditorUIState } from '../Domain/HeroEditorState'
@@ -236,20 +235,6 @@ export const createHeroEditorInMemoryRepository = (
           ...state.ui,
           preset: {
             ...state.ui.preset,
-            ...updates,
-          },
-        },
-      }
-      notifySubscribers()
-    },
-
-    updateColorUI: (updates: Partial<ColorUIState>) => {
-      state = {
-        ...state,
-        ui: {
-          ...state.ui,
-          color: {
-            ...state.ui.color,
             ...updates,
           },
         },

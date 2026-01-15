@@ -897,7 +897,6 @@ export type {
   FilterUIState,
   ForegroundUIState,
   PresetUIState,
-  ColorUIState,
   HeroEditorUIState,
   HeroEditorState,
   CustomMaskShapeParams,
@@ -911,7 +910,6 @@ export {
   createDefaultFilterUIState,
   createDefaultForegroundUIState,
   createDefaultPresetUIState,
-  createDefaultColorUIState,
   createDefaultHeroEditorUIState,
   isValidEditorSection,
 } from './HeroEditorState'

@@ -14,7 +14,6 @@ import type {
   FilterUIState,
   ForegroundUIState,
   PresetUIState,
-  ColorUIState,
   EditorSectionType,
 } from '../HeroEditorState'
 import type {
@@ -120,12 +119,6 @@ export interface HeroEditorRepository {
    * プリセットUI状態を部分更新
    */
   updatePresetUI(updates: Partial<PresetUIState>): void
-
-  /**
-   * カラーUI状態を部分更新
-   * @deprecated Use updateColors instead (updates HeroColorsConfig directly)
-   */
-  updateColorUI(updates: Partial<ColorUIState>): void
 
   // ============================================================
   // Config (Domain) Operations

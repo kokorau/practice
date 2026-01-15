@@ -17,7 +17,7 @@
  * ```
  */
 
-import type { HeroViewConfig, HeroContextName, MaskShapeConfig, SurfaceConfig } from './HeroViewConfig'
+import type { HeroViewConfig, MaskShapeConfig, SurfaceConfig } from './HeroViewConfig'
 import type { LayerEffectConfig } from './EffectSchema'
 
 // ============================================================
@@ -119,24 +119,6 @@ export interface PresetUIState {
 }
 
 /**
- * カラーのUI状態
- * @deprecated Use HeroColorsConfig from HeroViewConfig.ts instead.
- * This interface duplicates color keys already in HeroColorsConfig.
- */
-export interface ColorUIState {
-  /** 背景色キー1 */
-  backgroundColorKey1: string
-  /** 背景色キー2 */
-  backgroundColorKey2: string
-  /** マスク色キー1 */
-  maskColorKey1: string
-  /** マスク色キー2 */
-  maskColorKey2: string
-  /** マスクのセマンティックコンテキスト */
-  maskSemanticContext: HeroContextName
-}
-
-/**
  * HeroEditorのUI状態
  *
  * エディタ固有の一時的な状態（永続化不要）
@@ -154,8 +136,6 @@ export interface HeroEditorUIState {
   foreground: ForegroundUIState
   /** プリセットのUI状態 */
   preset: PresetUIState
-  /** カラーのUI状態 */
-  color: ColorUIState
 }
 
 // ============================================================
@@ -229,18 +209,6 @@ export const createDefaultPresetUIState = (): PresetUIState => ({
 })
 
 /**
- * デフォルトのColorUIStateを作成
- * @deprecated Use createDefaultColorsConfig from HeroViewConfig.ts instead
- */
-export const createDefaultColorUIState = (): ColorUIState => ({
-  backgroundColorKey1: 'B',
-  backgroundColorKey2: 'auto',
-  maskColorKey1: 'auto',
-  maskColorKey2: 'auto',
-  maskSemanticContext: 'canvas',
-})
-
-/**
  * デフォルトのHeroEditorUIStateを作成
  */
 export const createDefaultHeroEditorUIState = (): HeroEditorUIState => ({
@@ -250,7 +218,6 @@ export const createDefaultHeroEditorUIState = (): HeroEditorUIState => ({
   filter: createDefaultFilterUIState(),
   foreground: createDefaultForegroundUIState(),
   preset: createDefaultPresetUIState(),
-  color: createDefaultColorUIState(),
 })
 
 // ============================================================

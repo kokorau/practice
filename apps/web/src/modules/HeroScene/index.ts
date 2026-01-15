@@ -174,7 +174,6 @@ export type {
   FilterUIState,
   ForegroundUIState,
   PresetUIState,
-  ColorUIState,
   HeroEditorUIState,
   HeroEditorState,
 } from './Domain'
@@ -299,7 +298,6 @@ export {
   createDefaultFilterUIState,
   createDefaultForegroundUIState,
   createDefaultPresetUIState,
-  createDefaultColorUIState,
   createDefaultHeroEditorUIState,
   isValidEditorSection,
 } from './Domain'
