@@ -58,6 +58,7 @@ import {
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
   type MaskProcessorConfig,
+  type ProcessorNodeConfig,
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
@@ -79,7 +80,6 @@ import {
   updateTextLayerRotation,
   createHeroViewInMemoryRepository,
   createSurfaceUsecase,
-  SCENE_LAYER_IDS,
   updateBrandColor,
   updateAccentColor,
   updateFoundationColor,
@@ -94,6 +94,7 @@ import {
   type SelectionPort,
   HERO_CANVAS_DIMENSIONS,
   toCustomMaskShapeParams,
+  fromCustomMaskShapeParams,
   toCustomSurfaceParams,
   toCustomBackgroundSurfaceParams,
   fromCustomSurfaceParams,
@@ -123,6 +124,9 @@ import { useHeroColors } from './useHeroColors'
 import { useHeroFilters } from './useHeroFilters'
 import { useHeroThumbnails } from './useHeroThumbnails'
 import { useHeroImages } from './useHeroImages'
+
+// Layer IDs for template layers
+const BASE_LAYER_ID = 'base-layer'
 
 // Re-export types from extracted composables
 export type { SectionType } from './useHeroThumbnails'
@@ -529,8 +533,26 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
       return null
     },
-    set: (_val: CustomMaskShapeParams | null) => {
-      console.warn('customMaskShapeParams setter: update via mask shape usecases instead')
+    set: (val: CustomMaskShapeParams | null) => {
+      if (val === null) return
+      const config = repoConfig.value
+      if (!config) return
+      // Find processor layer with mask modifier and update it
+      for (const layer of config.layers) {
+        if (layer.type === 'processor') {
+          const maskModifierIndex = layer.modifiers.findIndex((m): m is MaskProcessorConfig => m.type === 'mask')
+          if (maskModifierIndex !== -1) {
+            const newModifiers = [...layer.modifiers]
+            const existingMask = newModifiers[maskModifierIndex] as MaskProcessorConfig
+            newModifiers[maskModifierIndex] = {
+              ...existingMask,
+              shape: fromCustomMaskShapeParams(val),
+            }
+            heroViewRepository.updateLayer(layer.id, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
+            return
+          }
+        }
+      }
     },
   })
 
@@ -565,7 +587,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     },
     set: (val: CustomBackgroundSurfaceParams | null) => {
       if (val === null) return
-      heroViewRepository.updateLayer(SCENE_LAYER_IDS.BASE, { surface: fromCustomSurfaceParams(val) })
+      heroViewRepository.updateLayer(BASE_LAYER_ID, { surface: fromCustomSurfaceParams(val) })
     },
   })
 
@@ -593,7 +615,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const surfacePresets = getSurfacePresets()
 
   const setBaseSurface = (surface: HeroSurfaceConfig) => {
-    heroViewRepository.updateLayer(SCENE_LAYER_IDS.BASE, { surface })
+    heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
   }
 
   const initMaskShapeParamsFromPreset = () => {
@@ -661,12 +683,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams | GradientGrainSurfaceParams>) => {
     if (!customBackgroundSurfaceParams.value) return
     const type = customBackgroundSurfaceParams.value.type
-    const layer = heroViewRepository.findLayer(SCENE_LAYER_IDS.BASE)
+    const layer = heroViewRepository.findLayer(BASE_LAYER_ID)
     if (!layer || layer.type !== 'base') return
     const currentSurface = layer.surface
     if (currentSurface.type !== type) return
     const newSurface = { ...currentSurface, ...updates } as HeroSurfaceConfig
-    heroViewRepository.updateLayer(SCENE_LAYER_IDS.BASE, { surface: newSurface })
+    heroViewRepository.updateLayer(BASE_LAYER_ID, { surface: newSurface })
   }
 
   // ============================================================
@@ -1055,85 +1077,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const buildMaskShape = (): HeroMaskShapeConfig | null => {
     const params = customMaskShapeParams.value
     if (!params) return null
-
-    if (params.type === 'circle') {
-      return {
-        type: 'circle',
-        centerX: params.centerX,
-        centerY: params.centerY,
-        radius: params.radius,
-        cutout: params.cutout,
-      }
-    }
-    if (params.type === 'rect') {
-      return {
-        type: 'rect',
-        left: params.left,
-        right: params.right,
-        top: params.top,
-        bottom: params.bottom,
-        radiusTopLeft: params.radiusTopLeft,
-        radiusTopRight: params.radiusTopRight,
-        radiusBottomLeft: params.radiusBottomLeft,
-        radiusBottomRight: params.radiusBottomRight,
-        rotation: params.rotation,
-        perspectiveX: params.perspectiveX,
-        perspectiveY: params.perspectiveY,
-        cutout: params.cutout,
-      }
-    }
-    if (params.type === 'perlin') {
-      return {
-        type: 'perlin',
-        seed: params.seed,
-        threshold: params.threshold,
-        scale: params.scale,
-        octaves: params.octaves,
-        cutout: params.cutout,
-      }
-    }
-    if (params.type === 'linearGradient') {
-      return {
-        type: 'linearGradient',
-        angle: params.angle,
-        startOffset: params.startOffset,
-        endOffset: params.endOffset,
-        cutout: params.cutout,
-      }
-    }
-    if (params.type === 'radialGradient') {
-      return {
-        type: 'radialGradient',
-        centerX: params.centerX,
-        centerY: params.centerY,
-        innerRadius: params.innerRadius,
-        outerRadius: params.outerRadius,
-        aspectRatio: params.aspectRatio,
-        cutout: params.cutout,
-      }
-    }
-    if (params.type === 'boxGradient') {
-      return {
-        type: 'boxGradient',
-        left: params.left,
-        right: params.right,
-        top: params.top,
-        bottom: params.bottom,
-        cornerRadius: params.cornerRadius,
-        curve: params.curve as 'linear' | 'smooth' | 'easeIn' | 'easeOut',
-        cutout: params.cutout,
-      }
-    }
-    return {
-      type: 'blob',
-      centerX: params.centerX,
-      centerY: params.centerY,
-      baseRadius: params.baseRadius,
-      amplitude: params.amplitude,
-      octaves: params.octaves,
-      seed: params.seed,
-      cutout: params.cutout,
-    }
+    return fromCustomMaskShapeParams(params)
   }
 
   const buildColorsConfig = (): HeroColorsConfig => ({

@@ -130,17 +130,20 @@ describe('EffectorTypes', () => {
   })
 
   describe('createEffectorModifier', () => {
-    it('should create effect placeholder for effect types', () => {
+    it('should create effect modifier for effect types', () => {
       const modifier = createEffectorModifier('vignette')
       expect(modifier.type).toBe('effect')
-      expect((modifier as { hasEffect: boolean }).hasEffect).toBe(true)
+      expect((modifier as { enabled: boolean }).enabled).toBe(true)
+      // Effect modifier has config with effect settings
+      expect((modifier as { config: object }).config).toBeDefined()
     })
 
     it('should create mask modifier for mask type', () => {
       const modifier = createEffectorModifier('mask')
       expect(modifier.type).toBe('mask')
       expect((modifier as { enabled: boolean }).enabled).toBe(true)
-      expect((modifier as { config: { shape: string } }).config.shape).toBe('circle')
+      // Mask modifier has shape directly (not config.shape)
+      expect((modifier as { shape: { type: string } }).shape.type).toBe('circle')
     })
   })
 })

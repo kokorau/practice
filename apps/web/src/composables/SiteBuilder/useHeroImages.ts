@@ -17,8 +17,10 @@ import {
   type BaseLayerNodeConfig,
   type SurfaceLayerNodeConfig,
   createUnsplashImageUploadAdapter,
-  SCENE_LAYER_IDS,
 } from '../../modules/HeroScene'
+
+// Layer IDs for template layers
+const BASE_LAYER_ID = 'base-layer'
 
 // ============================================================
 // Types
@@ -155,7 +157,7 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
    * Update base layer surface in repository
    */
   const setBaseSurface = (surface: HeroSurfaceConfig) => {
-    heroViewRepository.updateLayer(SCENE_LAYER_IDS.BASE, { surface })
+    heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
   }
 
   // ============================================================

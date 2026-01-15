@@ -1,6 +1,6 @@
 import { ref, computed, readonly, type InjectionKey, type Ref, type ComputedRef } from 'vue'
-import type { SceneNode, DropPosition } from '../modules/HeroScene'
-import { canMoveSceneNode, findNode, isGroup } from '../modules/HeroScene'
+import type { LayerNodeConfig, LayerDropPosition } from '../modules/HeroScene'
+import { canMoveLayerInTree, findLayerInTree, isGroupLayerConfig } from '../modules/HeroScene'
 
 // ============================================================
 // Types
@@ -10,7 +10,7 @@ import { canMoveSceneNode, findNode, isGroup } from '../modules/HeroScene'
  * Item being dragged
  */
 export interface DragItem {
-  type: 'sceneNode'
+  type: 'layerNode'
   nodeId: string
 }
 
@@ -47,7 +47,7 @@ export interface DragActions {
   /** Update drop target based on pointer position */
   updateDropTarget: (target: DropTarget | null) => void
   /** End drag operation and execute drop if valid */
-  endDrag: () => DropPosition | null
+  endDrag: () => LayerDropPosition | null
   /** Cancel drag operation */
   cancelDrag: () => void
 }
@@ -59,7 +59,7 @@ export interface UseLayerDragAndDropReturn {
   state: DragState
   actions: DragActions
   /** Check if a drop target is valid */
-  canDrop: (nodes: SceneNode[], target: DropTarget) => boolean
+  canDrop: (layers: LayerNodeConfig[], target: DropTarget) => boolean
 }
 
 // ============================================================
@@ -126,7 +126,7 @@ export function useLayerDragAndDrop(): UseLayerDragAndDropReturn {
     dropTarget.value = target
   }
 
-  const endDrag = (): DropPosition | null => {
+  const endDrag = (): LayerDropPosition | null => {
     const item = dragItem.value
     const target = dropTarget.value
 
@@ -140,7 +140,7 @@ export function useLayerDragAndDrop(): UseLayerDragAndDropReturn {
       return {
         type: target.position,
         targetId: target.nodeId,
-      } as DropPosition
+      } as LayerDropPosition
     }
 
     return null
@@ -155,16 +155,16 @@ export function useLayerDragAndDrop(): UseLayerDragAndDropReturn {
   // ============================================================
   // Utilities
   // ============================================================
-  const canDrop = (nodes: SceneNode[], target: DropTarget): boolean => {
+  const canDrop = (layers: LayerNodeConfig[], target: DropTarget): boolean => {
     const item = dragItem.value
     if (!item) return false
 
-    const position: DropPosition = {
+    const position: LayerDropPosition = {
       type: target.position,
       targetId: target.nodeId,
-    } as DropPosition
+    } as LayerDropPosition
 
-    return canMoveSceneNode(nodes, item.nodeId, position)
+    return canMoveLayerInTree(layers, item.nodeId, position)
   }
 
   // ============================================================
@@ -232,16 +232,16 @@ export function calculateDropPosition(
  */
 export function getDropTargetFromElement(
   element: HTMLElement,
-  nodes: SceneNode[]
+  layers: LayerNodeConfig[]
 ): { nodeId: string; isGroup: boolean } | null {
   const nodeId = element.dataset.nodeId
   if (!nodeId) return null
 
-  const node = findNode(nodes, nodeId)
-  if (!node) return null
+  const layer = findLayerInTree(layers, nodeId)
+  if (!layer) return null
 
   return {
     nodeId,
-    isGroup: isGroup(node),
+    isGroup: isGroupLayerConfig(layer),
   }
 }

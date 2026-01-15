@@ -10,7 +10,7 @@
 
 import type { TexturePatternSpec } from '@practice/texture'
 import { createDefaultEffectConfig, type LayerEffectConfig } from './EffectSchema'
-import type { SceneNode } from './LayerNode'
+import type { LayerNodeConfig } from './HeroViewConfig'
 
 
 // ============================================================
@@ -326,95 +326,38 @@ export {
 } from './VignetteSchema'
 
 // ============================================================
-// Modifier Types (new naming)
+// LayerTreeOps (shared utilities)
 // ============================================================
 
 export {
-  // New types
-  type EffectModifier,
-  type MaskModifier,
-  type Modifier,
-  createEffectPlaceholder,
-  createMaskModifier,
-  isEffectModifier,
-  isMaskModifier,
-  getEffectPlaceholders,
-  getEnabledMasks,
-} from './Modifier'
-
-// ============================================================
-// Layer Tree Operations (shared utilities)
-// ============================================================
-
-export {
+  // Drop position types
+  type LayerDropPosition,
+  type ModifierDropPosition,
+  // Type guards
+  isGroupLayerConfig,
+  isProcessorLayerConfig,
+  isSurfaceLayerConfig,
+  isBaseLayerConfig,
+  isTextLayerConfig,
+  isImageLayerConfig,
+  isModel3DLayerConfig,
+  isMaskProcessorConfig,
+  // Tree operations
   findLayerInTree,
   updateLayerInTree,
   removeLayerFromTree,
+  findParentLayerInTree,
+  moveLayerInTree,
+  canMoveLayerInTree,
+  wrapLayerInGroupInTree,
+  flattenLayersInTree,
+  insertLayerInTree,
+  createGroupLayerConfig,
+  // Modifier operations
+  canMoveModifierInTree,
+  moveModifierInTree,
 } from './LayerTreeOps'
 
-// ============================================================
-// Layer & Group Types (new naming)
-// ============================================================
-
-export {
-  // Types
-  type Layer,
-  type Group,
-  type Processor,
-  type SceneNode,
-  type NodeType,
-  type LayerType,
-  type LayerVariant,
-  type NodeBase,
-  type Surface,
-  type PatternSurface,
-  type ImageSurface,
-  type SolidSurface,
-  type TextConfig,
-  type Model3DConfig,
-  type DropPosition,
-  type ModifierDropPosition,
-  // Factory functions
-  createLayer,
-  createBaseLayer,
-  createSurfaceLayer,
-  createTextLayer as createSceneTextLayer,
-  createModel3DLayer,
-  createImageLayer as createSceneImageLayer,
-  createGroup,
-  createProcessor,
-  // Type guards
-  isLayer,
-  isGroup,
-  isProcessor,
-  isBaseLayer,
-  isSurfaceLayer,
-  isTextLayer,
-  isModel3DLayer,
-  isImageLayer,
-  // Tree utilities
-  findNode,
-  updateNode,
-  removeNode,
-  flattenNodes,
-  findParentNode,
-  wrapNodeInGroup,
-  wrapNodeInMaskedGroup,
-  // DnD move utilities (SceneNode)
-  canMoveSceneNode,
-  moveSceneNode,
-  // DnD move utilities (Modifier)
-  canMoveModifier,
-  moveModifier,
-  // Scene layer ID mapping
-  SCENE_LAYER_IDS,
-  type SceneLayerId,
-  getSceneLayerId,
-  // Processor target utilities
-  getProcessorTargets,
-  findProcessorForNode,
-  getProcessorTargetPairs,
-} from './LayerNode'
 
 // ============================================================
 // HTML Layer Types
@@ -465,24 +408,18 @@ export interface HeroSceneConfig {
 
 /**
  * HeroScene
- * SceneNode tree based hero section with optional canvas layers
- *
- * Migration:
- * - Phase 1 (current): Both `nodes` and `canvasLayers` are supported
- * - Phase 2 (future): `canvasLayers` will be derived from `nodes` only
- * - Phase 3 (future): `canvasLayers` will be removed
+ * LayerNodeConfig tree based hero section with optional canvas layers
  */
 export interface HeroScene {
   /** シーン設定 */
   config: HeroSceneConfig
   /**
-   * Scene node tree (new, preferred)
-   * Contains Layer, Group, and Processor nodes
+   * Layer node tree (LayerNodeConfig from HeroViewConfig)
    */
-  nodes?: SceneNode[]
+  layers?: LayerNodeConfig[]
   /**
    * Canvasレイヤー (zIndexでソート済み、小さいほど奥)
-   * @deprecated Use `nodes` with `toRenderSpecs()` instead.
+   * @deprecated Use HeroViewConfig.layers instead
    * Will be removed in a future version.
    */
   canvasLayers: CanvasLayer[]
@@ -641,7 +578,7 @@ export const createHtmlLayer = (
 export const createHeroScene = (
   options?: {
     config?: Partial<HeroSceneConfig>
-    nodes?: SceneNode[]
+    layers?: LayerNodeConfig[]
   }
 ): HeroScene => ({
   config: {
@@ -650,7 +587,7 @@ export const createHeroScene = (
     devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
     ...options?.config,
   },
-  nodes: options?.nodes ?? [],
+  layers: options?.layers ?? [],
   canvasLayers: [],
   htmlLayer: createHtmlLayer('row-top-between'),
 })
@@ -735,7 +672,8 @@ export type {
   Model3DLayerNodeConfig,
   ImageLayerNodeConfig,
   GroupLayerNodeConfig,
-  // Deprecated processor config types
+  ProcessorNodeConfig,
+  // Processor modifier config types
   ProcessorConfig,
   EffectProcessorConfig,
   MaskProcessorConfig,
@@ -934,7 +872,7 @@ export type {
 // Mappers
 // ============================================================
 
-export { toCustomMaskShapeParams } from './MaskShapeMapper'
+export { toCustomMaskShapeParams, fromCustomMaskShapeParams } from './MaskShapeMapper'
 export { toCustomSurfaceParams, toCustomBackgroundSurfaceParams, fromCustomSurfaceParams } from './SurfaceMapper'
 
 // ============================================================

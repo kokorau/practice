@@ -46,25 +46,3 @@ export { createForegroundElementUsecase } from './ForegroundElementUsecase'
 // Re-export ConfigSyncer
 export type { SyncBackgroundSurfaceResult, SyncMaskSurfaceResult } from './ConfigSyncer'
 export { syncBackgroundSurfaceParams, syncMaskSurfaceParams } from './ConfigSyncer'
-
-// Re-export RenderSpec
-export type {
-  RenderSpecBase,
-  TextureRenderSpec,
-  ImageRenderSpec,
-  SolidRenderSpec,
-  TextRenderSpec,
-  Object3DRenderSpec,
-  ClipGroupRenderSpec,
-  RenderSpec,
-  RenderContext,
-} from './RenderSpec'
-export {
-  toRenderSpecs,
-  isTextureSpec,
-  isImageSpec,
-  isSolidSpec,
-  isTextSpec,
-  isObjectSpec,
-  isClipGroupSpec,
-} from './RenderSpec'

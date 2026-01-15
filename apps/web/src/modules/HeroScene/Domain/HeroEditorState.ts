@@ -119,6 +119,17 @@ export interface PresetUIState {
 }
 
 /**
+ * レイヤーツリーのUI状態
+ *
+ * レイヤーパネルでの展開/折りたたみ状態を管理
+ * この状態は永続化せず、セッション中のみ保持
+ */
+export interface LayerTreeUIState {
+  /** 展開されているレイヤーID（グループ）のセット */
+  expandedLayerIds: Set<string>
+}
+
+/**
  * HeroEditorのUI状態
  *
  * エディタ固有の一時的な状態（永続化不要）
@@ -136,6 +147,8 @@ export interface HeroEditorUIState {
   foreground: ForegroundUIState
   /** プリセットのUI状態 */
   preset: PresetUIState
+  /** レイヤーツリーのUI状態 */
+  layerTree: LayerTreeUIState
 }
 
 // ============================================================
@@ -209,6 +222,15 @@ export const createDefaultPresetUIState = (): PresetUIState => ({
 })
 
 /**
+ * デフォルトのLayerTreeUIStateを作成
+ *
+ * デフォルトで主要グループを展開状態にする
+ */
+export const createDefaultLayerTreeUIState = (): LayerTreeUIState => ({
+  expandedLayerIds: new Set(['background-group', 'main-group']),
+})
+
+/**
  * デフォルトのHeroEditorUIStateを作成
  */
 export const createDefaultHeroEditorUIState = (): HeroEditorUIState => ({
@@ -218,6 +240,7 @@ export const createDefaultHeroEditorUIState = (): HeroEditorUIState => ({
   filter: createDefaultFilterUIState(),
   foreground: createDefaultForegroundUIState(),
   preset: createDefaultPresetUIState(),
+  layerTree: createDefaultLayerTreeUIState(),
 })
 
 // ============================================================

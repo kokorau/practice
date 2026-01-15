@@ -15,13 +15,8 @@ import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import type { HeroPrimitiveKey } from '../modules/HeroScene'
 import {
-  createGroup,
-  createSurfaceLayer,
-  createEffectPlaceholder,
-  createMaskModifier,
-  SCENE_LAYER_IDS,
-  getSceneLayerId,
-  isLayer,
+  isBaseLayerConfig,
+  isSurfaceLayerConfig,
 } from '../modules/HeroScene'
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
@@ -302,6 +297,13 @@ const {
 // ============================================================
 // Layer Operations (Composable)
 // ============================================================
+
+// Computed ref for expandedLayerIds from editorUIState
+const expandedLayerIds = computed({
+  get: () => heroScene.editor.editorUIState.value.layerTree.expandedLayerIds,
+  set: (val: Set<string>) => { heroScene.editor.editorUIState.value.layerTree.expandedLayerIds = val },
+})
+
 const {
   layers,
   selectedLayer,
@@ -317,37 +319,8 @@ const {
   handleMoveNode,
   handleMoveModifier,
 } = useLayerOperations({
-  initialLayers: [
-    createGroup(
-      'background-group',
-      [
-        createSurfaceLayer(
-          SCENE_LAYER_IDS.BASE,
-          { type: 'solid', color: 'BN1' },
-          {
-            name: 'Surface',
-            modifiers: [createEffectPlaceholder()],
-          },
-        ),
-      ],
-      { name: 'Background', expanded: true },
-    ),
-    createGroup(
-      'main-group',
-      [
-        createSurfaceLayer(
-          SCENE_LAYER_IDS.MASK,
-          { type: 'solid', color: 'B' },
-          {
-            name: 'Surface',
-            modifiers: [createEffectPlaceholder(), createMaskModifier()],
-          },
-        ),
-      ],
-      { name: 'Main Group', expanded: true },
-    ),
-  ],
-  selectedLayerId,
+  repository: heroScene.usecase.heroViewRepository,
+  expandedLayerIds,
   sceneCallbacks: {
     addMaskLayer: heroScene.layer.addMaskLayer,
     addTextLayer: heroScene.layer.addTextLayer,
@@ -355,6 +328,7 @@ const {
     removeLayer: heroScene.layer.removeLayer,
     toggleLayerVisibility: heroScene.layer.toggleLayerVisibility,
   },
+  selectedLayerId,
   onSelectLayer: (id) => {
     selectCanvasLayer(id)
     selectedForegroundElementId.value = null
@@ -364,9 +338,9 @@ const {
     selectedForegroundElementId.value = null
     if (type === 'effect') {
       const layer = selectedLayer.value
-      if (layer && isLayer(layer)) {
-        // Get scene layer ID from layer variant
-        heroScene.filter.selectedFilterLayerId.value = getSceneLayerId(layer)
+      // Get scene layer ID from layer type
+      if (layer && (isBaseLayerConfig(layer) || isSurfaceLayerConfig(layer))) {
+        heroScene.filter.selectedFilterLayerId.value = layer.id
       }
     }
   },
@@ -541,6 +515,7 @@ const handleMaskUpdate = (key: string, value: unknown) => {
         items: layers,
         foregroundElements: heroScene.foreground.foregroundConfig.value.elements,
         selectedForegroundElementId,
+        expandedLayerIds: expandedLayerIds,
       }"
       @update:color-state="handleColorStateUpdate"
       @apply-color-preset="handleApplyColorPreset"

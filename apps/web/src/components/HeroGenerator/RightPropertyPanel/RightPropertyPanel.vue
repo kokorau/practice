@@ -3,7 +3,7 @@ import type { WritableComputedRef } from 'vue'
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '../../../modules/SemanticColorPalette/Domain'
-import type { SceneNode, GridPosition, FilterType } from '../../../modules/HeroScene'
+import type { LayerNodeConfig, GridPosition, FilterType } from '../../../modules/HeroScene'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import type { BackgroundSpecCreator } from '../MaskPatternThumbnail.vue'
@@ -46,12 +46,12 @@ interface FontPreset {
 }
 
 type ProcessorType = 'effect' | 'mask' | 'processor' | null
-type LayerVariant = 'base' | 'surface' | 'text' | 'model3d' | 'image' | null
+type LayerVariant = 'base' | 'surface' | 'text' | 'model3d' | 'image' | 'processor' | null
 
 /** Selection state */
 interface SelectionProps {
   foregroundElement: ForegroundElementConfig | null
-  layer: SceneNode | null | undefined
+  layer: LayerNodeConfig | null | undefined
   layerVariant: LayerVariant
   processorType: ProcessorType
 }

@@ -1,13 +1,11 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { ContextTargetType } from '../components/HeroGenerator/DraggableLayerNode.vue'
 import type { ContextMenuItem } from '../components/HeroGenerator/ContextMenu.vue'
-import type { SceneNode, Modifier } from '../modules/HeroScene'
+import type { LayerNodeConfig, ProcessorConfig, ProcessorNodeConfig } from '../modules/HeroScene'
 import {
-  findNode,
-  updateNode,
-  isLayer,
-  isEffectModifier,
-  isMaskModifier,
+  findLayerInTree,
+  updateLayerInTree,
+  isProcessorLayerConfig,
 } from '../modules/HeroScene'
 
 // ============================================================
@@ -42,11 +40,18 @@ export interface UseContextMenuReturn {
 }
 
 // ============================================================
+// Helper Functions
+// ============================================================
+
+const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
+const isMaskModifier = (mod: ProcessorConfig): boolean => mod.type === 'mask'
+
+// ============================================================
 // Composable
 // ============================================================
 
 export function useContextMenu(
-  layers: Ref<SceneNode[]>,
+  layers: Ref<LayerNodeConfig[]>,
   callbacks: ContextMenuCallbacks,
 ): UseContextMenuReturn {
   // ============================================================
@@ -63,7 +68,7 @@ export function useContextMenu(
 
   const contextMenuTargetVisible = computed(() => {
     if (!contextMenuLayerId.value) return true
-    const layer = findNode(layers.value, contextMenuLayerId.value)
+    const layer = findLayerInTree(layers.value, contextMenuLayerId.value)
     return layer?.visible ?? true
   })
 
@@ -127,17 +132,19 @@ export function useContextMenu(
   }
 
   const handleRemoveModifier = (layerId: string, modifierType: 'effect' | 'mask') => {
-    const layer = findNode(layers.value, layerId)
-    if (!layer || !isLayer(layer)) return
+    const layer = findLayerInTree(layers.value, layerId)
+    if (!layer || !isProcessorLayerConfig(layer)) return
+
+    const processor = layer as ProcessorNodeConfig
 
     // Filter out the modifier of the specified type
-    const newModifiers = layer.modifiers.filter((mod: Modifier) => {
+    const newModifiers = processor.modifiers.filter((mod: ProcessorConfig) => {
       if (modifierType === 'effect') return !isEffectModifier(mod)
       if (modifierType === 'mask') return !isMaskModifier(mod)
       return true
     })
 
-    layers.value = updateNode(layers.value, layerId, {
+    layers.value = updateLayerInTree(layers.value, layerId, {
       modifiers: newModifiers,
     })
   }
