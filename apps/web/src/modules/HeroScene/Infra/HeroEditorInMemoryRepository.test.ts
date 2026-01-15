@@ -30,8 +30,6 @@ describe('HeroEditorInMemoryRepository', () => {
           activeSection: 'background',
           background: {
             selectedPresetIndex: 5,
-            customSurfaceParams: null,
-            customImageUrl: null,
           },
         },
       })
@@ -111,13 +109,6 @@ describe('HeroEditorInMemoryRepository', () => {
       repo.updatePresetUI({ selectedPresetId: 'modern-dark' })
 
       expect(repo.get().ui.preset.selectedPresetId).toBe('modern-dark')
-    })
-
-    it('should update color UI state', () => {
-      const repo = createHeroEditorInMemoryRepository()
-      repo.updateColorUI({ backgroundColorKey1: 'A' })
-
-      expect(repo.get().ui.color.backgroundColorKey1).toBe('A')
     })
   })
 
