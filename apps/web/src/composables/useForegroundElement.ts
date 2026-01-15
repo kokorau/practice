@@ -139,61 +139,31 @@ export function useForegroundElement(
   // Selected Element Computed Properties
   // ============================================================
 
-  const selectedElementPosition = computed<GridPosition>({
-    get: () => selectedForegroundElement.value?.position ?? 'middle-center',
-    set: (pos) => {
-      foregroundUsecase.updateSelectedElement({ position: pos })
-    },
-  })
+  // Factory for creating writable computed properties that update via usecase
+  const createElementProp = <T>(getter: () => T, key: string) =>
+    computed<T>({
+      get: getter,
+      set: (value) => foregroundUsecase.updateSelectedElement({ [key]: value }),
+    })
 
-  const selectedElementFont = computed<string | undefined>({
-    get: () => selectedForegroundElement.value?.fontId,
-    set: (fontId) => {
-      foregroundUsecase.updateSelectedElement({ fontId })
-    },
-  })
+  const el = selectedForegroundElement
 
-  const selectedElementFontSize = computed<number>({
-    get: () => selectedForegroundElement.value?.fontSize ?? (selectedForegroundElement.value?.type === 'title' ? 3 : 1),
-    set: (fontSize) => {
-      foregroundUsecase.updateSelectedElement({ fontSize })
-    },
-  })
-
-  const selectedElementFontWeight = computed<number>({
-    get: () => selectedForegroundElement.value?.fontWeight ?? 400,
-    set: (fontWeight) => {
-      foregroundUsecase.updateSelectedElement({ fontWeight })
-    },
-  })
-
-  const selectedElementLetterSpacing = computed<number>({
-    get: () => selectedForegroundElement.value?.letterSpacing ?? 0,
-    set: (letterSpacing) => {
-      foregroundUsecase.updateSelectedElement({ letterSpacing })
-    },
-  })
-
-  const selectedElementLineHeight = computed<number>({
-    get: () => selectedForegroundElement.value?.lineHeight ?? (selectedForegroundElement.value?.type === 'title' ? 1.2 : 1.5),
-    set: (lineHeight) => {
-      foregroundUsecase.updateSelectedElement({ lineHeight })
-    },
-  })
-
-  const selectedElementContent = computed<string>({
-    get: () => selectedForegroundElement.value?.content ?? '',
-    set: (content) => {
-      foregroundUsecase.updateSelectedElement({ content })
-    },
-  })
-
-  const selectedElementColorKey = computed<HeroPrimitiveKey | 'auto'>({
-    get: () => (selectedForegroundElement.value?.colorKey ?? 'auto') as HeroPrimitiveKey | 'auto',
-    set: (colorKey) => {
-      foregroundUsecase.updateSelectedElement({ colorKey })
-    },
-  })
+  const selectedElementPosition = createElementProp<GridPosition>(
+    () => el.value?.position ?? 'middle-center', 'position')
+  const selectedElementFont = createElementProp<string | undefined>(
+    () => el.value?.fontId, 'fontId')
+  const selectedElementFontSize = createElementProp<number>(
+    () => el.value?.fontSize ?? (el.value?.type === 'title' ? 3 : 1), 'fontSize')
+  const selectedElementFontWeight = createElementProp<number>(
+    () => el.value?.fontWeight ?? 400, 'fontWeight')
+  const selectedElementLetterSpacing = createElementProp<number>(
+    () => el.value?.letterSpacing ?? 0, 'letterSpacing')
+  const selectedElementLineHeight = createElementProp<number>(
+    () => el.value?.lineHeight ?? (el.value?.type === 'title' ? 1.2 : 1.5), 'lineHeight')
+  const selectedElementContent = createElementProp<string>(
+    () => el.value?.content ?? '', 'content')
+  const selectedElementColorKey = createElementProp<HeroPrimitiveKey | 'auto'>(
+    () => (el.value?.colorKey ?? 'auto') as HeroPrimitiveKey | 'auto', 'colorKey')
 
   // ============================================================
   // Font Panel State
