@@ -154,33 +154,3 @@ export const createDefaultEffectConfig = (): LayerEffectConfig => ({
   blur: createDefaultBlurConfig(),
 })
 
-// ============================================================
-// Legacy Aliases (for backward compatibility during migration)
-// ============================================================
-
-/** @deprecated Use VignetteEffectSchema instead */
-export const VignetteFilterSchema = VignetteEffectSchema
-/** @deprecated Use ChromaticAberrationEffectSchema instead */
-export const ChromaticAberrationFilterSchema = ChromaticAberrationEffectSchema
-/** @deprecated Use DotHalftoneEffectSchema instead */
-export const DotHalftoneFilterSchema = DotHalftoneEffectSchema
-/** @deprecated Use LineHalftoneEffectSchema instead */
-export const LineHalftoneFilterSchema = LineHalftoneEffectSchema
-/** @deprecated Use LayerEffectSchemas instead */
-export const LayerFilterSchemas = LayerEffectSchemas
-
-/** @deprecated Use VignetteEffectConfig instead */
-export type VignetteFilterConfig = VignetteEffectConfig
-/** @deprecated Use ChromaticAberrationEffectConfig instead */
-export type ChromaticAberrationFilterConfig = ChromaticAberrationEffectConfig
-/** @deprecated Use DotHalftoneEffectConfig instead */
-export type DotHalftoneFilterConfig = DotHalftoneEffectConfig
-/** @deprecated Use LineHalftoneEffectConfig instead */
-export type LineHalftoneFilterConfig = LineHalftoneEffectConfig
-/** @deprecated Use LayerEffectConfig instead */
-export type LayerFilterConfig = LayerEffectConfig
-/** @deprecated Use LayerEffectSchemaMap instead */
-export type LayerFilterSchemaMap = LayerEffectSchemaMap
-
-/** @deprecated Use createDefaultEffectConfig instead */
-export const createDefaultFilterConfig = createDefaultEffectConfig

@@ -18,7 +18,7 @@
  */
 
 import type { HeroViewConfig, HeroContextName, MaskShapeConfig, SurfaceConfig } from './HeroViewConfig'
-import type { LayerFilterConfig } from './EffectSchema'
+import type { LayerEffectConfig } from './EffectSchema'
 
 // ============================================================
 // Custom Params Types (JSON-serializable surface/mask params for UI)
@@ -103,7 +103,7 @@ export interface FilterUIState {
   /** 選択されているフィルターレイヤーID */
   selectedLayerId: string | null
   /** レイヤーごとのフィルター設定 */
-  layerConfigs: Record<string, LayerFilterConfig>
+  layerConfigs: Record<string, LayerEffectConfig>
 }
 
 /**

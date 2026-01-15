@@ -69,7 +69,7 @@ import { selectInkForSurface } from '../../modules/SemanticColorPalette/Infra'
 import type { InkRole } from '../../modules/SemanticColorPalette/Domain'
 import { generateLuminanceMap } from '../../modules/ContrastChecker'
 import {
-  type LayerFilterConfig,
+  type LayerEffectConfig,
   type HeroSceneConfig,
   type HtmlLayer,
   type HeroViewConfig,
@@ -91,8 +91,7 @@ import {
   type HeroViewRepository,
   type FilterType,
   type EffectFilterConfig,
-  type LayerEffectConfig,
-  createDefaultFilterConfig,
+  createDefaultEffectConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
   createGetHeroViewPresetsUseCase,
@@ -830,7 +829,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Update layer filters with deep partial merge
    * Delegates to effectManager (rendering uses effectManager directly)
    */
-  const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerFilterConfig>) => {
+  const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerEffectConfig>) => {
     // Update each effect type if present in updates
     const effectTypes: EffectType[] = ['vignette', 'chromaticAberration', 'dotHalftone', 'lineHalftone', 'blur']
     for (const effectType of effectTypes) {
@@ -1307,7 +1306,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     layerUsecase.addLayer(textLayerConfig)
 
     // Register filter config for new layer
-    effectManager.setEffectConfig(id, createDefaultFilterConfig())
+    effectManager.setEffectConfig(id, createDefaultEffectConfig())
 
     render()
     return id
@@ -1353,7 +1352,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     layerUsecase.addLayer(model3DLayerConfig)
 
     // Register filter config for new layer
-    effectManager.setEffectConfig(id, createDefaultFilterConfig())
+    effectManager.setEffectConfig(id, createDefaultEffectConfig())
 
     render()
     return id
@@ -2201,8 +2200,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Returns a self-contained, JSON-serializable config with LayerNodeConfig[] structure
    */
   const toHeroViewConfig = (): HeroViewConfig => {
-    const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultFilterConfig()
-    const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultFilterConfig()
+    const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultEffectConfig()
+    const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultEffectConfig()
 
     // Build layers array
     const layers: LayerNodeConfig[] = []
@@ -2364,8 +2363,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       // Background filters (from effect filter, merged with defaults for backward compatibility)
       const effectFilter = (baseLayer.filters ?? []).find((p) => p.type === 'effect')
       if (effectFilter) {
-        const defaults = createDefaultFilterConfig()
-        const merged: LayerFilterConfig = {
+        const defaults = createDefaultEffectConfig()
+        const merged: LayerEffectConfig = {
           vignette: { ...defaults.vignette, ...effectFilter.config.vignette },
           chromaticAberration: { ...defaults.chromaticAberration, ...effectFilter.config.chromaticAberration },
           dotHalftone: { ...defaults.dotHalftone, ...effectFilter.config.dotHalftone },
@@ -2499,8 +2498,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         // Mask filters (from effect filter, merged with defaults for backward compatibility)
         const maskEffectFilter = (surfaceLayer.filters ?? []).find((p) => p.type === 'effect')
         if (maskEffectFilter) {
-          const defaults = createDefaultFilterConfig()
-          const merged: LayerFilterConfig = {
+          const defaults = createDefaultEffectConfig()
+          const merged: LayerEffectConfig = {
             vignette: { ...defaults.vignette, ...maskEffectFilter.config.vignette },
             chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectFilter.config.chromaticAberration },
             dotHalftone: { ...defaults.dotHalftone, ...maskEffectFilter.config.dotHalftone },

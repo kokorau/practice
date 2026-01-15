@@ -76,13 +76,6 @@ export type {
   CircleVignetteParams,
   RectVignetteParams,
   LinearVignetteParams,
-  // Effect types (legacy aliases)
-  VignetteFilterConfig,
-  ChromaticAberrationFilterConfig,
-  DotHalftoneFilterConfig,
-  LineHalftoneFilterConfig,
-  LayerFilterConfig,
-  LayerFilterSchemaMap,
   // Modifier types
   EffectModifier,
   MaskModifier,
@@ -207,19 +200,12 @@ export {
   createDefaultVignetteShapeConfig,
   createVignetteConfigForShape,
   migrateVignetteConfig,
-  // Effect Schemas (legacy aliases)
-  VignetteFilterSchema,
-  ChromaticAberrationFilterSchema,
-  DotHalftoneFilterSchema,
-  LineHalftoneFilterSchema,
-  LayerFilterSchemas,
   createDefaultVignetteConfig,
   createDefaultChromaticAberrationConfig,
   createDefaultDotHalftoneConfig,
   createDefaultLineHalftoneConfig,
-  createDefaultFilterConfig,
   createDefaultShapeVignetteConfig,
-  // Modifier factories (new)
+  // Modifier factories
   createEffectPlaceholder,
   createMaskModifier,
   isEffectModifier,

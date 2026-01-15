@@ -4,9 +4,9 @@ import type {
   EffectType,
   LayerEffectConfig,
   VignetteConfig,
-  ChromaticAberrationFilterConfig,
-  DotHalftoneFilterConfig,
-  LineHalftoneFilterConfig,
+  ChromaticAberrationEffectConfig,
+  DotHalftoneEffectConfig,
+  LineHalftoneEffectConfig,
   BlurEffectConfig,
 } from '../modules/HeroScene'
 import type { UseEffectManagerReturn } from './useEffectManager'
@@ -28,9 +28,9 @@ export interface UseFilterEditorOptions {
  * Filter config types for SchemaFields binding (excludes 'enabled' field)
  */
 export type VignetteConfigParams = Partial<Omit<VignetteConfig, 'enabled'>>
-export type ChromaticConfigParams = Partial<Omit<ChromaticAberrationFilterConfig, 'enabled'>>
-export type DotHalftoneConfigParams = Partial<Omit<DotHalftoneFilterConfig, 'enabled'>>
-export type LineHalftoneConfigParams = Partial<Omit<LineHalftoneFilterConfig, 'enabled'>>
+export type ChromaticConfigParams = Partial<Omit<ChromaticAberrationEffectConfig, 'enabled'>>
+export type DotHalftoneConfigParams = Partial<Omit<DotHalftoneEffectConfig, 'enabled'>>
+export type LineHalftoneConfigParams = Partial<Omit<LineHalftoneEffectConfig, 'enabled'>>
 export type BlurConfigParams = Partial<Omit<BlurEffectConfig, 'enabled'>>
 
 /**

@@ -46,7 +46,6 @@ import type { Oklch } from '@practice/color'
 import type { PrimitiveKey } from '../../SemanticColorPalette/Domain'
 import type { InkRole } from '../../SemanticColorPalette/Domain'
 import type {
-  LayerFilterConfig,
   LayerEffectConfig,
   EffectType,
   HeroViewConfig,
@@ -359,11 +358,11 @@ export interface FilterState {
   /** Currently selected layer for filter editing */
   readonly selectedFilterLayerId: Ref<string | null>
   /** Filter config for selected layer */
-  readonly selectedLayerFilters: ComputedRef<LayerFilterConfig | null>
+  readonly selectedLayerFilters: ComputedRef<LayerEffectConfig | null>
   /** All layer filter configs */
-  readonly layerFilterConfigs: Ref<Map<string, LayerFilterConfig>>
+  readonly layerFilterConfigs: Ref<Map<string, LayerEffectConfig>>
   /** Update filters for a layer */
-  readonly updateLayerFilters: (layerId: string, updates: DeepPartial<LayerFilterConfig>) => void
+  readonly updateLayerFilters: (layerId: string, updates: DeepPartial<LayerEffectConfig>) => void
 
   /** Select filter type (exclusive selection) */
   readonly selectFilterType: (layerId: string, type: FilterType) => void
