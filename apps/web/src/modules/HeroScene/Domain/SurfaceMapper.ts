@@ -85,6 +85,73 @@ export function toCustomSurfaceParams(
 }
 
 /**
+ * CustomSurfaceParams を SurfaceConfig に変換する (逆変換)
+ *
+ * @param params - CustomSurfaceParams (UI state)
+ * @returns SurfaceConfig (JSON serializable)
+ */
+export function fromCustomSurfaceParams(params: CustomSurfaceParams): SurfaceConfig {
+  if (params.type === 'solid') {
+    return { type: 'solid' }
+  }
+  if (params.type === 'stripe') {
+    return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
+  }
+  if (params.type === 'grid') {
+    return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
+  }
+  if (params.type === 'polkaDot') {
+    return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
+  }
+  if (params.type === 'checker') {
+    return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
+  }
+  if (params.type === 'triangle') {
+    return { type: 'triangle', size: params.size, angle: params.angle }
+  }
+  if (params.type === 'hexagon') {
+    return { type: 'hexagon', size: params.size, angle: params.angle }
+  }
+  if (params.type === 'gradientGrain') {
+    return {
+      type: 'gradientGrain',
+      depthMapType: params.depthMapType,
+      angle: params.angle,
+      centerX: params.centerX,
+      centerY: params.centerY,
+      radialStartAngle: params.radialStartAngle,
+      radialSweepAngle: params.radialSweepAngle,
+      perlinScale: params.perlinScale,
+      perlinOctaves: params.perlinOctaves,
+      perlinContrast: params.perlinContrast,
+      perlinOffset: params.perlinOffset,
+      seed: params.seed,
+      sparsity: params.sparsity,
+    }
+  }
+  if (params.type === 'asanoha') {
+    return { type: 'asanoha', size: params.size, lineWidth: params.lineWidth }
+  }
+  if (params.type === 'seigaiha') {
+    return { type: 'seigaiha', radius: params.radius, rings: params.rings, lineWidth: params.lineWidth }
+  }
+  if (params.type === 'wave') {
+    return { type: 'wave', amplitude: params.amplitude, wavelength: params.wavelength, thickness: params.thickness, angle: params.angle }
+  }
+  if (params.type === 'scales') {
+    return { type: 'scales', size: params.size, overlap: params.overlap, angle: params.angle }
+  }
+  if (params.type === 'ogee') {
+    return { type: 'ogee', width: params.width, height: params.height, lineWidth: params.lineWidth }
+  }
+  if (params.type === 'sunburst') {
+    return { type: 'sunburst', rays: params.rays, centerX: params.centerX, centerY: params.centerY, twist: params.twist }
+  }
+  // fallback to solid
+  return { type: 'solid' }
+}
+
+/**
  * SurfaceConfig を CustomBackgroundSurfaceParams に変換する
  *
  * @param config - SurfaceConfig (JSON serializable)

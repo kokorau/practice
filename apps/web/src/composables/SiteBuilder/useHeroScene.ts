@@ -138,6 +138,7 @@ import {
   toCustomMaskShapeParams,
   toCustomSurfaceParams,
   toCustomBackgroundSurfaceParams,
+  fromCustomSurfaceParams,
   // HeroEditorUIState
   type HeroEditorUIState,
   createDefaultHeroEditorUIState,
@@ -437,27 +438,61 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Keeping as separate ref until type unification
   const activeSection = ref<SectionType | null>(null)
 
-  // Custom background image (URL stored in UI state, File/Bitmap are runtime-only)
-  const customBackgroundImage = computed({
-    get: () => editorUIState.value.background.customImageUrl,
-    set: (val: string | null) => { editorUIState.value.background.customImageUrl = val },
-  })
-  const customBackgroundFile = ref<File | null>(null)
-  let customBackgroundBitmap: ImageBitmap | null = null
-
-  // Custom mask image (URL stored in UI state, File/Bitmap are runtime-only)
-  const customMaskImage = computed({
-    get: () => editorUIState.value.mask.customImageUrl,
-    set: (val: string | null) => { editorUIState.value.mask.customImageUrl = val },
-  })
-  const customMaskFile = ref<File | null>(null)
-  let customMaskBitmap: ImageBitmap | null = null
-
   // ============================================================
   // HeroViewRepository & Usecases
   // ============================================================
   const heroViewRepository = createHeroViewInMemoryRepository()
   const imageUploadAdapter = createUnsplashImageUploadAdapter()
+
+  // Reactive config derived from Repository (single source of truth)
+  // Updated via subscription when Repository changes
+  const repoConfig = shallowRef<HeroViewConfig>(heroViewRepository.get())
+
+  // Custom background image (URL derived from Repository, File/Bitmap are runtime-only)
+  const customBackgroundImage = computed({
+    get: (): string | null => {
+      const config = repoConfig.value
+      if (!config) return null
+      const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
+      if (baseLayer?.surface.type === 'image') {
+        return baseLayer.surface.imageId
+      }
+      return null
+    },
+    set: (val: string | null) => {
+      // Setting image URL is handled by setBackgroundImage which updates the Repository
+      console.warn('customBackgroundImage setter: use setBackgroundImage instead')
+    },
+  })
+  const customBackgroundFile = ref<File | null>(null)
+  let customBackgroundBitmap: ImageBitmap | null = null
+
+  // Custom mask image (URL derived from Repository, File/Bitmap are runtime-only)
+  const customMaskImage = computed({
+    get: (): string | null => {
+      const config = repoConfig.value
+      if (!config) return null
+      // Find surface layer (may be nested)
+      for (const layer of config.layers) {
+        if (layer.type === 'surface' && layer.surface.type === 'image') {
+          return layer.surface.imageId
+        }
+        if (layer.type === 'group' && layer.children) {
+          const surfaceLayer = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
+          if (surfaceLayer?.surface.type === 'image') {
+            return surfaceLayer.surface.imageId
+          }
+        }
+      }
+      return null
+    },
+    set: (val: string | null) => {
+      // Setting image URL is handled by setMaskImage which updates the Repository
+      console.warn('customMaskImage setter: use setMaskImage instead')
+    },
+  })
+  const customMaskFile = ref<File | null>(null)
+  let customMaskBitmap: ImageBitmap | null = null
 
   // Layer selection for unified surface usecase
   const { layerId: selectedLayerId } = useLayerSelection()
@@ -608,18 +643,65 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return toCustomBackgroundSurfaceParams(params, colorA, colorB)
   }
 
-  // Current custom params (backed by editorUIState)
+  // Current custom params (derived from Repository via repoConfig)
   const customMaskShapeParams = computed({
-    get: () => editorUIState.value.mask.customShapeParams as CustomMaskShapeParams | null,
-    set: (val: CustomMaskShapeParams | null) => { editorUIState.value.mask.customShapeParams = val },
+    get: (): CustomMaskShapeParams | null => {
+      const config = repoConfig.value
+      if (!config) return null
+      // Find processor with mask modifier
+      for (const layer of config.layers) {
+        if (layer.type === 'processor') {
+          const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
+          if (maskModifier) {
+            return toCustomMaskShapeParams(maskModifier.shape)
+          }
+        }
+      }
+      return null
+    },
+    set: (val: CustomMaskShapeParams | null) => {
+      // When setting mask shape params, find the processor and update the mask modifier
+      // This is handled by the existing updateMaskShape logic - no direct setter needed
+      // The watcher on customMaskShapeParams triggers render() which updates the Repository
+      console.warn('customMaskShapeParams setter: update via mask shape usecases instead')
+    },
   })
   const customSurfaceParams = computed({
-    get: () => editorUIState.value.mask.customSurfaceParams as CustomSurfaceParams | null,
-    set: (val: CustomSurfaceParams | null) => { editorUIState.value.mask.customSurfaceParams = val },
+    get: (): CustomSurfaceParams | null => {
+      const result = syncMaskSurfaceParams(repoConfig.value, midgroundTextureColor1.value, midgroundTextureColor2.value)
+      return result.surfaceParams
+    },
+    set: (val: CustomSurfaceParams | null) => {
+      if (val === null) return // null means no surface, ignore
+
+      // Find the surface layer in the Repository and update it
+      const config = repoConfig.value
+      for (const layer of config.layers) {
+        if (layer.type === 'surface') {
+          heroViewRepository.updateLayer(layer.id, { surface: fromCustomSurfaceParams(val) })
+          return
+        }
+        if (layer.type === 'group' && layer.children) {
+          const surfaceLayer = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
+          if (surfaceLayer) {
+            heroViewRepository.updateLayer(surfaceLayer.id, { surface: fromCustomSurfaceParams(val) })
+            return
+          }
+        }
+      }
+    },
   })
   const customBackgroundSurfaceParams = computed({
-    get: () => editorUIState.value.background.customSurfaceParams as CustomBackgroundSurfaceParams | null,
-    set: (val: CustomBackgroundSurfaceParams | null) => { editorUIState.value.background.customSurfaceParams = val },
+    get: (): CustomBackgroundSurfaceParams | null => {
+      const result = syncBackgroundSurfaceParams(repoConfig.value, textureColor1.value, textureColor2.value)
+      return result.surfaceParams
+    },
+    set: (val: CustomBackgroundSurfaceParams | null) => {
+      if (val === null) return // null means no surface, ignore
+
+      // Update the base layer's surface in the Repository
+      heroViewRepository.updateLayer(SCENE_LAYER_IDS.BASE, { surface: fromCustomSurfaceParams(val) })
+    },
   })
 
   // Flag to skip watcher updates during fromHeroViewConfig execution
@@ -2348,8 +2430,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (baseLayer) {
       const bgSurface = baseLayer.surface
 
-      // Sync customBackgroundSurfaceParams from config (reuse shared function)
-      syncBackgroundSurfaceParamsFromRepository(config)
+      // Note: customBackgroundSurfaceParams is now derived from repoConfig
+      // No manual sync needed - it updates automatically via computed
 
       // Handle image type separately (requires async restore)
       if (bgSurface.type === 'image') {
@@ -2388,130 +2470,42 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
 
     // Surface layer with mask
-    if (surfaceLayer && maskShape) {
-      // Mask shape
-      const shape = maskShape
-        if (shape.type === 'circle') {
-          customMaskShapeParams.value = {
-            type: 'circle',
-            centerX: shape.centerX,
-            centerY: shape.centerY,
-            radius: shape.radius,
-            cutout: shape.cutout,
-          }
-        } else if (shape.type === 'rect') {
-          customMaskShapeParams.value = {
-            type: 'rect',
-            left: shape.left,
-            right: shape.right,
-            top: shape.top,
-            bottom: shape.bottom,
-            radiusTopLeft: shape.radiusTopLeft,
-            radiusTopRight: shape.radiusTopRight,
-            radiusBottomLeft: shape.radiusBottomLeft,
-            radiusBottomRight: shape.radiusBottomRight,
-            rotation: shape.rotation,
-            perspectiveX: shape.perspectiveX,
-            perspectiveY: shape.perspectiveY,
-            cutout: shape.cutout,
-          }
-        } else if (shape.type === 'perlin') {
-          customMaskShapeParams.value = {
-            type: 'perlin',
-            seed: shape.seed,
-            threshold: shape.threshold,
-            scale: shape.scale,
-            octaves: shape.octaves,
-            cutout: shape.cutout,
-          }
-        } else if (shape.type === 'linearGradient') {
-          customMaskShapeParams.value = {
-            type: 'linearGradient',
-            angle: shape.angle,
-            startOffset: shape.startOffset,
-            endOffset: shape.endOffset,
-            cutout: shape.cutout,
-          }
-        } else if (shape.type === 'radialGradient') {
-          customMaskShapeParams.value = {
-            type: 'radialGradient',
-            centerX: shape.centerX,
-            centerY: shape.centerY,
-            innerRadius: shape.innerRadius,
-            outerRadius: shape.outerRadius,
-            aspectRatio: shape.aspectRatio,
-            cutout: shape.cutout,
-          } as CustomMaskShapeParams
-        } else if (shape.type === 'boxGradient') {
-          customMaskShapeParams.value = {
-            type: 'boxGradient',
-            left: shape.left,
-            right: shape.right,
-            top: shape.top,
-            bottom: shape.bottom,
-            cornerRadius: shape.cornerRadius,
-            curve: shape.curve,
-            cutout: shape.cutout,
-          } as CustomMaskShapeParams
-        } else {
-          customMaskShapeParams.value = {
-            type: 'blob',
-            centerX: shape.centerX,
-            centerY: shape.centerY,
-            baseRadius: shape.baseRadius,
-            amplitude: shape.amplitude,
-            octaves: shape.octaves,
-            seed: shape.seed,
-            cutout: shape.cutout,
-          }
-        }
+    // Note: customMaskShapeParams is now derived from repoConfig, so no manual sync needed
+    if (maskShape) {
+      // Reverse-lookup mask shape index (null = custom params, keep as-is)
+      selectedMaskIndex.value = findMaskPatternIndex(maskShape, maskPatterns)
+    } else {
+      // No mask in config
+      selectedMaskIndex.value = null
+    }
 
-        // Reverse-lookup mask shape index (null = custom params, keep as-is)
-        selectedMaskIndex.value = findMaskPatternIndex(shape, maskPatterns)
-      } else {
-        selectedMaskIndex.value = null
-        customMaskShapeParams.value = null
+    // Mask surface (only if surfaceLayer exists)
+    // Note: customSurfaceParams is now derived from repoConfig, so no manual sync needed
+    if (surfaceLayer) {
+      const maskSurface = surfaceLayer.surface
+
+      // Handle image type separately (requires async restore)
+      if (maskSurface.type === 'image') {
+        await restoreMaskImage(maskSurface.imageId)
       }
 
-      // Mask surface (only if surfaceLayer exists)
-      if (surfaceLayer) {
-        const maskSurface = surfaceLayer.surface
-        if (maskSurface.type === 'solid') {
-          customSurfaceParams.value = { type: 'solid' }
-        } else if (maskSurface.type === 'stripe') {
-          customSurfaceParams.value = { type: 'stripe', width1: maskSurface.width1, width2: maskSurface.width2, angle: maskSurface.angle }
-        } else if (maskSurface.type === 'grid') {
-          customSurfaceParams.value = { type: 'grid', lineWidth: maskSurface.lineWidth, cellSize: maskSurface.cellSize }
-        } else if (maskSurface.type === 'polkaDot') {
-          customSurfaceParams.value = { type: 'polkaDot', dotRadius: maskSurface.dotRadius, spacing: maskSurface.spacing, rowOffset: maskSurface.rowOffset }
-        } else if (maskSurface.type === 'checker') {
-          customSurfaceParams.value = { type: 'checker', cellSize: maskSurface.cellSize, angle: maskSurface.angle }
-        } else if (maskSurface.type === 'image') {
-          // Restore mask image from imageId (URL)
-          await restoreMaskImage(maskSurface.imageId)
-        }
+      // Reverse-lookup mask surface preset index
+      const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
+      selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
-        // Reverse-lookup mask surface preset index
-        const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
-        selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
-
-        // Mask filters (from effect filter, merged with defaults for backward compatibility)
-        const maskEffectFilter = (surfaceLayer.filters ?? []).find((p) => p.type === 'effect')
-        if (maskEffectFilter) {
-          const defaults = createDefaultEffectConfig()
-          const merged: LayerEffectConfig = {
-            vignette: { ...defaults.vignette, ...maskEffectFilter.config.vignette },
-            chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectFilter.config.chromaticAberration },
-            dotHalftone: { ...defaults.dotHalftone, ...maskEffectFilter.config.dotHalftone },
-            lineHalftone: { ...defaults.lineHalftone, ...maskEffectFilter.config.lineHalftone },
-            blur: { ...defaults.blur, ...(maskEffectFilter.config.blur ?? {}) },
-          }
-          effectManager.setEffectConfig(LAYER_IDS.MASK, merged)
+      // Mask filters (from effect filter, merged with defaults for backward compatibility)
+      const maskEffectFilter = (surfaceLayer.filters ?? []).find((p) => p.type === 'effect')
+      if (maskEffectFilter) {
+        const defaults = createDefaultEffectConfig()
+        const merged: LayerEffectConfig = {
+          vignette: { ...defaults.vignette, ...maskEffectFilter.config.vignette },
+          chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectFilter.config.chromaticAberration },
+          dotHalftone: { ...defaults.dotHalftone, ...maskEffectFilter.config.dotHalftone },
+          lineHalftone: { ...defaults.lineHalftone, ...maskEffectFilter.config.lineHalftone },
+          blur: { ...defaults.blur, ...(maskEffectFilter.config.blur ?? {}) },
         }
-    } else {
-      selectedMaskIndex.value = null
-      customMaskShapeParams.value = null
-      customSurfaceParams.value = null
+        effectManager.setEffectConfig(LAYER_IDS.MASK, merged)
+      }
     }
 
     // Foreground
@@ -2621,38 +2615,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   let repositoryUnsubscribe: (() => void) | null = null
   let heroViewRepositoryUnsubscribe: (() => void) | null = null
 
-  /**
-   * Sync customBackgroundSurfaceParams from Repository's base layer surface
-   * This enables unidirectional data flow: Usecase -> Repository -> View
-   * Now delegates to syncBackgroundSurfaceParams from Application/ConfigSyncer
-   */
-  const syncBackgroundSurfaceParamsFromRepository = (config: HeroViewConfig): void => {
-    const result = syncBackgroundSurfaceParams(config, textureColor1.value, textureColor2.value)
-    if (result.surfaceParams !== null) {
-      customBackgroundSurfaceParams.value = result.surfaceParams
-    }
-    // Note: 'image' type returns null and is handled separately via customBackgroundImage
-  }
-
-  /**
-   * Sync customSurfaceParams from Repository's surface layer
-   * This enables unidirectional data flow: Usecase -> Repository -> View
-   * Now delegates to syncMaskSurfaceParams from Application/ConfigSyncer
-   */
-  const syncMaskSurfaceParamsFromRepository = (config: HeroViewConfig): void => {
-    const result = syncMaskSurfaceParams(config, midgroundTextureColor1.value, midgroundTextureColor2.value)
-    if (result.surfaceParams !== null) {
-      customSurfaceParams.value = result.surfaceParams
-    }
-    // Note: 'image' type returns null and is handled separately via customMaskImage
-  }
-
-  // Subscribe to internal heroViewRepository changes for unidirectional flow
+  // Subscribe to internal heroViewRepository changes for reactive updates
+  // This updates repoConfig which drives derived computeds for surface/mask params
+  // Note: Always update repoConfig to keep it in sync (no skip during loading)
   heroViewRepositoryUnsubscribe = heroViewRepository.subscribe((config: HeroViewConfig) => {
-    // Skip during fromHeroViewConfig to avoid redundant updates
-    if (isLoadingFromConfig) return
-    syncBackgroundSurfaceParamsFromRepository(config)
-    syncMaskSurfaceParamsFromRepository(config)
+    repoConfig.value = config
   })
 
   // Subscribe to repository changes (if provided)

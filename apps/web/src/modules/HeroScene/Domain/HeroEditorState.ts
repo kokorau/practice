@@ -70,30 +70,26 @@ export type EditorSectionType =
 
 /**
  * 背景レイヤーのUI状態
+ *
+ * Note: customSurfaceParams と customImageUrl は HeroViewRepository から派生
+ * @see useHeroScene.ts の derivedBackgroundSurfaceParams, derivedBackgroundImageUrl
  */
 export interface BackgroundUIState {
   /** 選択されているプリセットインデックス (null = カスタム) */
   selectedPresetIndex: number | null
-  /** カスタムサーフェスパラメータ */
-  customSurfaceParams: CustomBackgroundSurfaceParams | null
-  /** カスタム画像URL */
-  customImageUrl: string | null
 }
 
 /**
  * マスクレイヤーのUI状態
+ *
+ * Note: customShapeParams, customSurfaceParams, customImageUrl は HeroViewRepository から派生
+ * @see useHeroScene.ts の derivedMaskShapeParams, derivedMaskSurfaceParams, derivedMaskImageUrl
  */
 export interface MaskUIState {
   /** 選択されているマスク形状プリセットインデックス (null = カスタム) */
   selectedShapePresetIndex: number | null
   /** 選択されているマスクテクスチャプリセットインデックス */
   selectedTexturePresetIndex: number
-  /** カスタムマスク形状パラメータ */
-  customShapeParams: CustomMaskShapeParams | null
-  /** カスタムマスクテクスチャパラメータ */
-  customSurfaceParams: CustomSurfaceParams | null
-  /** カスタム画像URL */
-  customImageUrl: string | null
 }
 
 /**
@@ -200,8 +196,6 @@ export interface HeroEditorState {
  */
 export const createDefaultBackgroundUIState = (): BackgroundUIState => ({
   selectedPresetIndex: 3, // Default: stripe
-  customSurfaceParams: null,
-  customImageUrl: null,
 })
 
 /**
@@ -210,9 +204,6 @@ export const createDefaultBackgroundUIState = (): BackgroundUIState => ({
 export const createDefaultMaskUIState = (): MaskUIState => ({
   selectedShapePresetIndex: null,
   selectedTexturePresetIndex: 0, // Default: solid
-  customShapeParams: null,
-  customSurfaceParams: null,
-  customImageUrl: null,
 })
 
 /**
