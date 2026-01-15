@@ -8,6 +8,7 @@
  */
 
 import type { LayerEffectConfig } from './EffectSchema'
+import type { EffectType } from './EffectRegistry'
 
 // ============================================================
 // Color Config Types (for serialization)
@@ -403,12 +404,51 @@ export type MaskShapeConfig =
 // ============================================================
 
 /**
+ * Single effect configuration (new normalized structure)
+ *
+ * Each effect is stored as a separate entry in the modifiers array.
+ * Multiple effects can be applied by having multiple SingleEffectConfig entries.
+ *
+ * @example
+ * ```typescript
+ * const effect: SingleEffectConfig = {
+ *   type: 'effect',
+ *   id: 'blur',
+ *   params: { radius: 8 }
+ * }
+ * ```
+ */
+export interface SingleEffectConfig {
+  type: 'effect'
+  /** Effect type identifier */
+  id: EffectType
+  /** Effect-specific parameters (validated against schema at runtime) */
+  params: Record<string, unknown>
+}
+
+/**
  * Effect filter configuration for JSON serialization
+ * @deprecated Use SingleEffectConfig instead - this legacy format will be removed
  */
 export interface EffectFilterConfig {
   type: 'effect'
   enabled: boolean
   config: LayerEffectConfig
+}
+
+/**
+ * Type guard for SingleEffectConfig (new format)
+ */
+export function isSingleEffectConfig(config: ProcessorConfig): config is SingleEffectConfig {
+  return config.type === 'effect' && 'id' in config && 'params' in config
+}
+
+/**
+ * Type guard for EffectFilterConfig (legacy format)
+ * @deprecated Will be removed when legacy format is phased out
+ */
+export function isLegacyEffectFilterConfig(config: ProcessorConfig): config is EffectFilterConfig {
+  return config.type === 'effect' && 'config' in config && !('id' in config)
 }
 
 /**
@@ -435,10 +475,19 @@ export interface MaskProcessorConfig {
 /**
  * Processor config for ProcessorNodeConfig.modifiers
  * Includes both effect filters and mask processors
+ *
+ * Effect configs can be in two formats:
+ * - SingleEffectConfig (new): { type: 'effect', id: 'blur', params: {...} }
+ * - EffectFilterConfig (legacy): { type: 'effect', enabled: true, config: {...} }
  */
-export type ProcessorConfig = EffectFilterConfig | MaskProcessorConfig
+export type ProcessorConfig = SingleEffectConfig | EffectFilterConfig | MaskProcessorConfig
 
-/** @deprecated Use EffectFilterConfig instead */
+/**
+ * Effect config type (union of new and legacy formats)
+ */
+export type AnyEffectConfig = SingleEffectConfig | EffectFilterConfig
+
+/** @deprecated Use SingleEffectConfig instead */
 export type EffectProcessorConfig = EffectFilterConfig
 
 // ============================================================
@@ -892,4 +941,132 @@ export const migrateExpandedFromConfig = (layers: LayerNodeConfig[]): LayerNodeC
   }
 
   return migrate(layers)
+}
+
+// ============================================================
+// Migration: Effect Config (Legacy → SingleEffectConfig)
+// ============================================================
+
+// Import EFFECT_TYPES for migration - moved to avoid circular dependency
+// Note: This import is safe because EffectRegistry only imports types from this file
+import { EFFECT_TYPES } from './EffectRegistry'
+
+/**
+ * Convert legacy EffectFilterConfig to SingleEffectConfig array
+ *
+ * Extracts enabled effects from the legacy bundled config format.
+ * Each enabled effect becomes a separate SingleEffectConfig entry.
+ *
+ * @param legacy - Legacy EffectFilterConfig with all effects bundled
+ * @returns Array of SingleEffectConfig for enabled effects only
+ */
+export const migrateLegacyEffectConfig = (legacy: EffectFilterConfig): SingleEffectConfig[] => {
+  if (!legacy.enabled) return []
+
+  const effects: SingleEffectConfig[] = []
+
+  for (const effectType of EFFECT_TYPES) {
+    const effectConfig = legacy.config[effectType]
+    if (!effectConfig || !effectConfig.enabled) continue
+
+    // Extract params without the 'enabled' property
+    const { enabled: _enabled, ...params } = effectConfig
+    effects.push({
+      type: 'effect',
+      id: effectType,
+      params,
+    })
+  }
+
+  return effects
+}
+
+/**
+ * Convert SingleEffectConfig array back to legacy EffectFilterConfig
+ *
+ * This is useful for backward compatibility when exporting to legacy systems.
+ *
+ * @param effects - Array of SingleEffectConfig
+ * @param defaultConfig - Default LayerEffectConfig to use as base
+ * @returns Legacy EffectFilterConfig format
+ */
+export const toLegacyEffectConfig = (
+  effects: SingleEffectConfig[],
+  defaultConfig: LayerEffectConfig
+): EffectFilterConfig => {
+  // Create a mutable copy with explicit typing to allow indexed assignment
+  const config: Record<string, unknown> = {}
+
+  // Copy default config and reset all effects to disabled
+  for (const effectType of EFFECT_TYPES) {
+    const defaultEffect = defaultConfig[effectType]
+    config[effectType] = { ...defaultEffect, enabled: false }
+  }
+
+  // Enable and apply params for each effect in the array
+  for (const effect of effects) {
+    const effectType = effect.id
+    if (effectType in config) {
+      const existing = config[effectType] as Record<string, unknown>
+      config[effectType] = {
+        ...existing,
+        ...effect.params,
+        enabled: true,
+      }
+    }
+  }
+
+  return {
+    type: 'effect',
+    enabled: effects.length > 0,
+    config: config as unknown as LayerEffectConfig,
+  }
+}
+
+/**
+ * Check if any effect config in the array is legacy format
+ */
+export const hasLegacyEffectConfigs = (configs: ProcessorConfig[]): boolean => {
+  return configs.some((c) => c.type === 'effect' && 'config' in c && !('id' in c))
+}
+
+/**
+ * Migrate all effect configs in a ProcessorConfig array from legacy to new format
+ *
+ * @param modifiers - Array of ProcessorConfig (may contain legacy EffectFilterConfig)
+ * @returns Array with all effect configs migrated to SingleEffectConfig format
+ */
+export const migrateEffectConfigsInModifiers = (modifiers: ProcessorConfig[]): ProcessorConfig[] => {
+  const result: ProcessorConfig[] = []
+
+  for (const modifier of modifiers) {
+    if (isLegacyEffectFilterConfig(modifier)) {
+      // Migrate legacy format to new format
+      const newEffects = migrateLegacyEffectConfig(modifier)
+      result.push(...newEffects)
+    } else {
+      // Keep non-effect modifiers and already-migrated effects as-is
+      result.push(modifier)
+    }
+  }
+
+  return result
+}
+
+/**
+ * Get all effect configs from modifiers (both new and legacy formats)
+ * Returns normalized SingleEffectConfig array
+ */
+export const getEffectConfigsFromModifiers = (modifiers: ProcessorConfig[]): SingleEffectConfig[] => {
+  const effects: SingleEffectConfig[] = []
+
+  for (const modifier of modifiers) {
+    if (isSingleEffectConfig(modifier)) {
+      effects.push(modifier)
+    } else if (isLegacyEffectFilterConfig(modifier)) {
+      effects.push(...migrateLegacyEffectConfig(modifier))
+    }
+  }
+
+  return effects
 }

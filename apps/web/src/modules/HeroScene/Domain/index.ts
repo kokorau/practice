@@ -664,6 +664,8 @@ export type {
   // Filter config types (for JSON serialization)
   FilterConfig,
   EffectFilterConfig,
+  SingleEffectConfig,
+  AnyEffectConfig,
   // LayerNodeConfig types (for JSON serialization)
   LayerNodeConfig,
   BaseLayerNodeConfig,
@@ -700,6 +702,15 @@ export {
   getLayerFilters,
   getLayerMaskProcessor,
   hasLayerMaskProcessor,
+  // Effect config type guards
+  isSingleEffectConfig,
+  isLegacyEffectFilterConfig,
+  // Effect config migration
+  migrateLegacyEffectConfig,
+  toLegacyEffectConfig,
+  hasLegacyEffectConfigs,
+  migrateEffectConfigsInModifiers,
+  getEffectConfigsFromModifiers,
 } from './HeroViewConfig'
 
 // ============================================================

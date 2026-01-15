@@ -11,13 +11,26 @@
 
 import { computed } from 'vue'
 import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig } from '../../modules/HeroScene'
-import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig } from '../../modules/HeroScene'
+import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig, isLegacyEffectFilterConfig } from '../../modules/HeroScene'
 
 // Layer variant type for UI display
 type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' | 'processor'
 
 // Helper for effect modifier check
 const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
+
+// Helper to check if an effect modifier is enabled
+const isEffectEnabled = (mod: ProcessorConfig): boolean => {
+  if (isSingleEffectConfig(mod)) {
+    // New format: existence means enabled
+    return true
+  }
+  if (isLegacyEffectFilterConfig(mod)) {
+    // Legacy format: check enabled flag
+    return mod.enabled
+  }
+  return false
+}
 
 // ============================================================
 // Props & Emits
@@ -84,7 +97,7 @@ const modifiers = computed(() => {
       type: 'effect',
       label: 'Effect',
       value: '', // Details shown in property panel
-      enabled: effectMod.enabled,
+      enabled: isEffectEnabled(effectMod),
     })
   }
 

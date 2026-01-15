@@ -11,7 +11,7 @@
 
 import { computed, ref, inject } from 'vue'
 import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig, MaskProcessorConfig, ModifierDropPosition, LayerDropPosition } from '../../modules/HeroScene'
-import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig } from '../../modules/HeroScene'
+import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig, isLegacyEffectFilterConfig } from '../../modules/HeroScene'
 import { LAYER_DRAG_KEY, type DropTarget } from '../../composables/useLayerDragAndDrop'
 import { MODIFIER_DRAG_KEY, type ModifierDropTarget } from '../../composables/useModifierDragAndDrop'
 import DropIndicator from './DropIndicator.vue'
@@ -22,6 +22,19 @@ type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' 
 // Helper functions for modifier type checking
 const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
 const isMaskModifier = (mod: ProcessorConfig): boolean => mod.type === 'mask'
+
+// Helper to check if an effect modifier is enabled
+const isEffectEnabled = (mod: ProcessorConfig): boolean => {
+  if (isSingleEffectConfig(mod)) {
+    // New format: existence means enabled
+    return true
+  }
+  if (isLegacyEffectFilterConfig(mod)) {
+    // Legacy format: check enabled flag
+    return mod.enabled
+  }
+  return false
+}
 
 // ============================================================
 // Props & Emits
@@ -118,7 +131,7 @@ const modifiers = computed(() => {
         label: 'Effect',
         value: '', // Details shown in property panel
         icon: 'auto_fix_high',
-        enabled: mod.enabled,
+        enabled: isEffectEnabled(mod),
         index,
       })
     } else if (isMaskModifier(mod)) {
