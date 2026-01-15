@@ -6,7 +6,7 @@ import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
 import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
-import type { HeroViewPreset, SceneNode, ForegroundElementConfig, ForegroundElementType, DropPosition, ModifierDropPosition } from '../../modules/HeroScene'
+import type { HeroViewPreset, LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '../../modules/HeroScene'
 import type { ContextTargetType } from './DraggableLayerNode.vue'
 
 // ============================================================
@@ -36,9 +36,10 @@ interface LayoutPresetsProps {
 
 /** Layers and foreground elements state */
 interface LayersProps {
-  items: SceneNode[]
+  items: LayerNodeConfig[]
   foregroundElements: ForegroundElementConfig[]
   selectedForegroundElementId: string | null
+  expandedLayerIds: Set<string>
 }
 
 // Sidebar tab
@@ -78,7 +79,7 @@ const emit = defineEmits<{
   'group-selection': [layerId: string]
   'use-as-mask': [layerId: string]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
-  'move-node': [nodeId: string, position: DropPosition]
+  'move-node': [nodeId: string, position: LayerDropPosition]
   'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
   // Foreground events
   'select-foreground-element': [elementId: string]
@@ -275,6 +276,7 @@ const selectedPresetName = computed(() => {
           :layers="layers.items"
           :foreground-elements="layers.foregroundElements"
           :selected-foreground-element-id="layers.selectedForegroundElementId"
+          :expanded-layer-ids="layers.expandedLayerIds"
           @select-layer="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
@@ -282,7 +284,7 @@ const selectedPresetName = computed(() => {
           @add-layer="(type: LayerType) => emit('add-layer', type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @layer-contextmenu="(id: string, e: MouseEvent, type: ContextTargetType) => emit('layer-contextmenu', id, e, type)"
-          @move-node="(id: string, pos: DropPosition) => emit('move-node', id, pos)"
+          @move-node="(id: string, pos: LayerDropPosition) => emit('move-node', id, pos)"
           @move-modifier="(srcId: string, idx: number, pos: ModifierDropPosition) => emit('move-modifier', srcId, idx, pos)"
           @select-foreground-element="(id: string) => emit('select-foreground-element', id)"
           @foreground-contextmenu="(id: string, e: MouseEvent) => emit('foreground-contextmenu', id, e)"

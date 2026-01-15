@@ -102,3 +102,91 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
     cutout: maskConfig.cutout ?? true,
   }
 }
+
+/**
+ * CustomMaskShapeParams を MaskShapeConfig に変換する (逆変換)
+ *
+ * @param params - CustomMaskShapeParams (UI state)
+ * @returns MaskShapeConfig (JSON serializable)
+ */
+export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMaskShapeConfig {
+  if (params.type === 'circle') {
+    return {
+      type: 'circle',
+      centerX: params.centerX,
+      centerY: params.centerY,
+      radius: params.radius,
+      cutout: params.cutout,
+    }
+  }
+  if (params.type === 'rect') {
+    return {
+      type: 'rect',
+      left: params.left,
+      right: params.right,
+      top: params.top,
+      bottom: params.bottom,
+      radiusTopLeft: params.radiusTopLeft,
+      radiusTopRight: params.radiusTopRight,
+      radiusBottomLeft: params.radiusBottomLeft,
+      radiusBottomRight: params.radiusBottomRight,
+      rotation: params.rotation,
+      perspectiveX: params.perspectiveX,
+      perspectiveY: params.perspectiveY,
+      cutout: params.cutout,
+    }
+  }
+  if (params.type === 'perlin') {
+    return {
+      type: 'perlin',
+      seed: params.seed,
+      threshold: params.threshold,
+      scale: params.scale,
+      octaves: params.octaves,
+      cutout: params.cutout,
+    }
+  }
+  if (params.type === 'linearGradient') {
+    return {
+      type: 'linearGradient',
+      angle: params.angle,
+      startOffset: params.startOffset,
+      endOffset: params.endOffset,
+      cutout: params.cutout,
+    }
+  }
+  if (params.type === 'radialGradient') {
+    return {
+      type: 'radialGradient',
+      centerX: params.centerX,
+      centerY: params.centerY,
+      innerRadius: params.innerRadius,
+      outerRadius: params.outerRadius,
+      aspectRatio: params.aspectRatio,
+      cutout: params.cutout,
+    }
+  }
+  if (params.type === 'boxGradient') {
+    return {
+      type: 'boxGradient',
+      left: params.left,
+      right: params.right,
+      top: params.top,
+      bottom: params.bottom,
+      cornerRadius: params.cornerRadius,
+      curve: params.curve as 'linear' | 'smooth' | 'easeIn' | 'easeOut',
+      cutout: params.cutout,
+    }
+  }
+  // blob (default)
+  return {
+    type: 'blob',
+    centerX: params.centerX,
+    centerY: params.centerY,
+    baseRadius: params.baseRadius,
+    amplitude: params.amplitude,
+    octaves: params.octaves,
+    seed: params.seed,
+    cutout: params.cutout,
+  }
+}

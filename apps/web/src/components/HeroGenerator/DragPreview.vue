@@ -1,24 +1,33 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { SceneNode, LayerVariant } from '../../modules/HeroScene'
-import { isLayer, findNode } from '../../modules/HeroScene'
+import type { LayerNodeConfig } from '../../modules/HeroScene'
+import { findLayerInTree, isBaseLayerConfig, isSurfaceLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isGroupLayerConfig, isProcessorLayerConfig } from '../../modules/HeroScene'
+
+// Layer variant type for UI display
+type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' | 'processor'
 
 const props = defineProps<{
-  /** All nodes in the tree */
-  nodes: SceneNode[]
-  /** ID of the node being dragged */
+  /** All layers in the tree */
+  layers: LayerNodeConfig[]
+  /** ID of the layer being dragged */
   nodeId: string
   /** Current pointer position */
   position: { x: number; y: number }
 }>()
 
-const node = computed(() => findNode(props.nodes, props.nodeId))
+const node = computed(() => findLayerInTree(props.layers, props.nodeId))
 
 const nodeVariant = computed((): LayerVariant | 'group' => {
   const n = node.value
   if (!n) return 'group'
-  if (isLayer(n)) return n.variant
-  return 'group'
+  if (isBaseLayerConfig(n)) return 'base'
+  if (isSurfaceLayerConfig(n)) return 'surface'
+  if (isTextLayerConfig(n)) return 'text'
+  if (isModel3DLayerConfig(n)) return 'model3d'
+  if (isImageLayerConfig(n)) return 'image'
+  if (isProcessorLayerConfig(n)) return 'processor'
+  if (isGroupLayerConfig(n)) return 'group'
+  return 'surface' // fallback
 })
 
 const getLayerIcon = (variant: LayerVariant | 'group'): string => {
@@ -29,6 +38,7 @@ const getLayerIcon = (variant: LayerVariant | 'group'): string => {
     case 'model3d': return 'view_in_ar'
     case 'image': return 'image'
     case 'text': return 'text_fields'
+    case 'processor': return 'auto_fix_high'
     default: return 'layers'
   }
 }

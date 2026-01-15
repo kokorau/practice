@@ -15,7 +15,6 @@ import type { HeroViewPreset } from '../Domain/HeroViewPreset'
 import type { LayerNodeConfig } from '../Domain/HeroViewConfig'
 import type { PresetExportPort } from '../usecase/Preset/PresetExportPort'
 import type { ExportPresetOptions } from '../usecase/Preset/exportPreset'
-import { SCENE_LAYER_IDS } from '../Domain/LayerNode'
 import { createPreset } from '../usecase/Preset/exportPreset'
 
 // ============================================================
@@ -48,8 +47,8 @@ export interface PresetManagerOptions {
  * Custom layers are those NOT in this list
  */
 const TEMPLATE_LAYER_IDS: Set<string> = new Set([
-  SCENE_LAYER_IDS.BASE,
-  SCENE_LAYER_IDS.MASK,
+  'base-layer',
+  'mask-layer',
 ])
 
 /**

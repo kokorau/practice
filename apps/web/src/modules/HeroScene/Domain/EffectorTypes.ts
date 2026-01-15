@@ -10,7 +10,7 @@
  */
 
 import type { EffectType } from './EffectRegistry'
-import type { EffectModifier, MaskModifier } from './Modifier'
+import type { ProcessorConfig, EffectFilterConfig, MaskProcessorConfig } from './HeroViewConfig'
 import {
   MaskShapeSchemas,
   MaskBaseSchema,
@@ -98,12 +98,12 @@ export const EFFECTOR_TYPES: EffectorType[] = [
 // ============================================================
 
 /**
- * Effector modifier - union of effect and mask modifiers
+ * Effector modifier - union of effect and mask configs
  *
  * This is the unified modifier type that can represent
  * any visual transformation applied to a layer.
  */
-export type EffectorModifier = EffectModifier | MaskModifier
+export type EffectorModifier = ProcessorConfig
 
 // ============================================================
 // Type Guards
@@ -210,26 +210,30 @@ export type EffectorDefinition = EffectEffectorDefinition | MaskEffectorDefiniti
  * Create an effector modifier from type
  *
  * @param type - Effector type
- * @returns Appropriate modifier (EffectModifier or MaskModifier)
+ * @returns Appropriate modifier (EffectFilterConfig or MaskProcessorConfig)
  */
 export function createEffectorModifier(type: EffectorType): EffectorModifier {
   if (type === 'mask') {
     return {
       type: 'mask',
       enabled: true,
-      config: {
-        shape: 'circle',
-        shapeParams: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3 },
-        invert: false,
-        feather: 0,
-      },
-    }
+      shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false },
+      invert: false,
+      feather: 0,
+    } as MaskProcessorConfig
   }
-  // For effects, return placeholder (actual config is in effectManager)
+  // For effects, return a default EffectFilterConfig
   return {
     type: 'effect',
-    hasEffect: true,
-  }
+    enabled: true,
+    config: {
+      vignette: { enabled: false, shape: 'ellipse', intensity: 0.5, softness: 0.4, radius: 0.8, aspectRatio: 1, centerX: 0.5, centerY: 0.5, color: [0, 0, 0, 1] },
+      chromaticAberration: { enabled: false, intensity: 3 },
+      dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
+      lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+      blur: { enabled: false, radius: 8 },
+    },
+  } as EffectFilterConfig
 }
 
 // ============================================================

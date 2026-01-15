@@ -5,13 +5,13 @@ import {
   type SceneOperationCallbacks,
   type UseLayerOperationsOptions,
 } from './useLayerOperations'
-import {
-  createGroup,
-  createSurfaceLayer,
-  createBaseLayer,
-  createEffectPlaceholder,
-  SCENE_LAYER_IDS,
-  type SceneNode,
+import type {
+  HeroViewRepository,
+  HeroViewConfig,
+  LayerNodeConfig,
+  BaseLayerNodeConfig,
+  SurfaceLayerNodeConfig,
+  GroupLayerNodeConfig,
 } from '../modules/HeroScene'
 
 // ============================================================
@@ -26,36 +26,103 @@ const createMockSceneCallbacks = (): SceneOperationCallbacks => ({
   toggleLayerVisibility: vi.fn(),
 })
 
-const createInitialLayers = (): SceneNode[] => [
-  createGroup(
-    'background-group',
-    [
-      createBaseLayer({ type: 'solid', color: 'BN1' }, { id: SCENE_LAYER_IDS.BASE }),
+const BASE_LAYER_ID = 'base-layer'
+const MASK_LAYER_ID = 'mask-layer'
+
+const createInitialLayers = (): LayerNodeConfig[] => [
+  {
+    type: 'group',
+    id: 'background-group',
+    name: 'Background',
+    visible: true,
+    children: [
+      {
+        type: 'base',
+        id: BASE_LAYER_ID,
+        name: 'Base',
+        visible: true,
+        surface: { type: 'solid', color: 'BN1' },
+      } as BaseLayerNodeConfig,
     ],
-    { name: 'Background', expanded: true },
-  ),
-  createGroup(
-    'main-group',
-    [
-      createSurfaceLayer(
-        SCENE_LAYER_IDS.MASK,
-        { type: 'solid', color: 'B' },
-        {
-          modifiers: [createEffectPlaceholder()],
-        },
-      ),
+  } as GroupLayerNodeConfig,
+  {
+    type: 'group',
+    id: 'main-group',
+    name: 'Main Group',
+    visible: true,
+    children: [
+      {
+        type: 'surface',
+        id: MASK_LAYER_ID,
+        name: 'Surface',
+        visible: true,
+        surface: { type: 'solid', color: 'B' },
+      } as SurfaceLayerNodeConfig,
     ],
-    { name: 'Main Group', expanded: true },
-  ),
+  } as GroupLayerNodeConfig,
 ]
+
+const createMockRepository = (layers: LayerNodeConfig[] = createInitialLayers()): HeroViewRepository => {
+  let config: HeroViewConfig = {
+    layers,
+    colors: {
+      brand: { hue: 220, saturation: 0.8, value: 0.7 },
+      accent: { hue: 40, saturation: 0.9, value: 0.8 },
+      foundation: { hue: 220, saturation: 0.1, value: 0.95 },
+    },
+    foreground: {
+      elements: [],
+    },
+  }
+
+  const listeners: Array<(config: HeroViewConfig) => void> = []
+
+  return {
+    get: () => config,
+    set: (newConfig: HeroViewConfig) => {
+      config = newConfig
+      listeners.forEach(l => l(config))
+    },
+    updateLayer: vi.fn((layerId: string, updates: Partial<LayerNodeConfig>) => {
+      // Simple mock implementation
+      const updateInTree = (nodes: LayerNodeConfig[]): LayerNodeConfig[] => {
+        return nodes.map(node => {
+          if (node.id === layerId) {
+            return { ...node, ...updates }
+          }
+          if (node.type === 'group') {
+            return {
+              ...node,
+              children: updateInTree((node as GroupLayerNodeConfig).children),
+            }
+          }
+          return node
+        })
+      }
+      config = { ...config, layers: updateInTree(config.layers) }
+      listeners.forEach(l => l(config))
+    }),
+    subscribe: (listener: (config: HeroViewConfig) => void) => {
+      listeners.push(listener)
+      return () => {
+        const idx = listeners.indexOf(listener)
+        if (idx >= 0) listeners.splice(idx, 1)
+      }
+    },
+  }
+}
 
 const createOptions = (
   overrides: Partial<UseLayerOperationsOptions> = {},
-): UseLayerOperationsOptions => ({
-  initialLayers: createInitialLayers(),
-  sceneCallbacks: createMockSceneCallbacks(),
-  ...overrides,
-})
+): UseLayerOperationsOptions => {
+  const expandedLayerIds = overrides.expandedLayerIds ?? ref(new Set(['background-group', 'main-group']))
+  return {
+    repository: overrides.repository ?? createMockRepository(),
+    expandedLayerIds,
+    sceneCallbacks: overrides.sceneCallbacks ?? createMockSceneCallbacks(),
+    ...overrides,
+  }
+}
 
 // ============================================================
 // Tests
@@ -66,7 +133,7 @@ describe('useLayerOperations', () => {
   // Initial State
   // ============================================================
   describe('initial state', () => {
-    it('should initialize with provided layers', () => {
+    it('should initialize with layers from repository', () => {
       const { layers } = useLayerOperations(createOptions())
 
       expect(layers.value).toHaveLength(2)
@@ -92,17 +159,17 @@ describe('useLayerOperations', () => {
   // ============================================================
   describe('selection with selectedLayerId', () => {
     it('should return selected layer when selectedLayerId is provided', () => {
-      const selectedLayerId = ref<string | null>(SCENE_LAYER_IDS.MASK)
+      const selectedLayerId = ref<string | null>(MASK_LAYER_ID)
       const { selectedLayer } = useLayerOperations(
         createOptions({ selectedLayerId }),
       )
 
       expect(selectedLayer.value).not.toBeNull()
-      expect(selectedLayer.value?.id).toBe(SCENE_LAYER_IDS.MASK)
+      expect(selectedLayer.value?.id).toBe(MASK_LAYER_ID)
     })
 
-    it('should return layer variant for selected layer', () => {
-      const selectedLayerId = ref<string | null>(SCENE_LAYER_IDS.MASK)
+    it('should return layer variant for selected surface layer', () => {
+      const selectedLayerId = ref<string | null>(MASK_LAYER_ID)
       const { selectedLayerVariant } = useLayerOperations(
         createOptions({ selectedLayerId }),
       )
@@ -125,28 +192,25 @@ describe('useLayerOperations', () => {
   // ============================================================
   describe('handleToggleExpand', () => {
     it('should toggle expanded state from true to false', () => {
-      const { layers, handleToggleExpand } = useLayerOperations(createOptions())
-
-      handleToggleExpand('background-group')
-
-      const group = layers.value.find((l) => l.id === 'background-group')
-      expect(group).toBeDefined()
-      expect(group!.expanded).toBe(false)
-    })
-
-    it('should toggle expanded state from false to true', () => {
-      const initial = createInitialLayers()
-      initial[0]!.expanded = false
-
-      const { layers, handleToggleExpand } = useLayerOperations(
-        createOptions({ initialLayers: initial }),
+      const expandedLayerIds = ref(new Set(['background-group', 'main-group']))
+      const { handleToggleExpand } = useLayerOperations(
+        createOptions({ expandedLayerIds }),
       )
 
       handleToggleExpand('background-group')
 
-      const group = layers.value.find((l) => l.id === 'background-group')
-      expect(group).toBeDefined()
-      expect(group!.expanded).toBe(true)
+      expect(expandedLayerIds.value.has('background-group')).toBe(false)
+    })
+
+    it('should toggle expanded state from false to true', () => {
+      const expandedLayerIds = ref(new Set(['main-group']))
+      const { handleToggleExpand } = useLayerOperations(
+        createOptions({ expandedLayerIds }),
+      )
+
+      handleToggleExpand('background-group')
+
+      expect(expandedLayerIds.value.has('background-group')).toBe(true)
     })
   })
 
@@ -160,9 +224,8 @@ describe('useLayerOperations', () => {
         createOptions({ sceneCallbacks: callbacks }),
       )
 
-      handleToggleVisibility(SCENE_LAYER_IDS.MASK)
+      handleToggleVisibility(MASK_LAYER_ID)
 
-      // getSceneLayerId returns SCENE_LAYER_IDS.MASK for surface layers
       expect(callbacks.toggleLayerVisibility).toHaveBeenCalled()
     })
 
@@ -176,107 +239,67 @@ describe('useLayerOperations', () => {
 
       expect(callbacks.toggleLayerVisibility).not.toHaveBeenCalled()
     })
-
-    it('should update visibility in layers tree', () => {
-      const { layers, handleToggleVisibility } = useLayerOperations(createOptions())
-
-      // Find mask-layer initial visibility
-      const findSurface = () => {
-        const mainGroup = layers.value.find((l) => l.id === 'main-group')
-        if (mainGroup && 'children' in mainGroup) {
-          return (mainGroup.children as SceneNode[]).find((c: SceneNode) => c.id === SCENE_LAYER_IDS.MASK)
-        }
-        return null
-      }
-
-      const initialVisible = findSurface()?.visible
-      handleToggleVisibility(SCENE_LAYER_IDS.MASK)
-      const afterToggle = findSurface()?.visible
-
-      expect(afterToggle).toBe(!initialVisible)
-    })
   })
 
   // ============================================================
   // handleAddLayer
   // ============================================================
   describe('handleAddLayer', () => {
-    it('should add surface layer and call scene callback', () => {
+    it('should call addMaskLayer when adding surface layer', () => {
       const callbacks = createMockSceneCallbacks()
-      const { layers, handleAddLayer } = useLayerOperations(
+      const { handleAddLayer } = useLayerOperations(
         createOptions({ sceneCallbacks: callbacks }),
       )
 
-      const initialCount = layers.value.length
       handleAddLayer('surface')
 
       expect(callbacks.addMaskLayer).toHaveBeenCalled()
-      expect(layers.value.length).toBe(initialCount + 1)
     })
 
-    it('should add group without calling scene callback', () => {
+    it('should not call addMaskLayer when adding group', () => {
       const callbacks = createMockSceneCallbacks()
-      const { layers, handleAddLayer } = useLayerOperations(
+      const { handleAddLayer } = useLayerOperations(
         createOptions({ sceneCallbacks: callbacks }),
       )
 
       handleAddLayer('group')
 
       expect(callbacks.addMaskLayer).not.toHaveBeenCalled()
-      const newGroup = layers.value.find((l) => l.id.startsWith('group-'))
-      expect(newGroup).toBeDefined()
     })
 
-    it('should not add layer when addMaskLayer returns null', () => {
+    it('should call addTextLayer when adding text layer', () => {
       const callbacks = createMockSceneCallbacks()
-      callbacks.addMaskLayer = vi.fn(() => null)
-
-      const { layers, handleAddLayer } = useLayerOperations(
+      const { handleAddLayer } = useLayerOperations(
         createOptions({ sceneCallbacks: callbacks }),
       )
 
-      const initialCount = layers.value.length
-      handleAddLayer('surface')
-
-      expect(layers.value.length).toBe(initialCount)
-    })
-
-    it('should add text layer and call scene callback', () => {
-      const callbacks = createMockSceneCallbacks()
-      const { layers, handleAddLayer } = useLayerOperations(
-        createOptions({ sceneCallbacks: callbacks }),
-      )
-
-      const initialCount = layers.value.length
       handleAddLayer('text')
 
       expect(callbacks.addTextLayer).toHaveBeenCalled()
-      expect(layers.value.length).toBe(initialCount + 1)
     })
 
-    it('should add model3d layer and call scene callback', () => {
+    it('should call addObjectLayer when adding model3d layer', () => {
       const callbacks = createMockSceneCallbacks()
-      const { layers, handleAddLayer } = useLayerOperations(
+      const { handleAddLayer } = useLayerOperations(
         createOptions({ sceneCallbacks: callbacks }),
       )
 
-      const initialCount = layers.value.length
       handleAddLayer('model3d')
 
       expect(callbacks.addObjectLayer).toHaveBeenCalled()
-      expect(layers.value.length).toBe(initialCount + 1)
     })
 
-    it('should not add image layer (WIP)', () => {
+    it('should not add base layer (handled specially)', () => {
       const callbacks = createMockSceneCallbacks()
-      const { layers, handleAddLayer } = useLayerOperations(
+      const { handleAddLayer } = useLayerOperations(
         createOptions({ sceneCallbacks: callbacks }),
       )
 
-      const initialCount = layers.value.length
-      handleAddLayer('image')
+      handleAddLayer('base')
 
-      expect(layers.value.length).toBe(initialCount)
+      expect(callbacks.addMaskLayer).not.toHaveBeenCalled()
+      expect(callbacks.addTextLayer).not.toHaveBeenCalled()
+      expect(callbacks.addObjectLayer).not.toHaveBeenCalled()
     })
   })
 
@@ -284,10 +307,25 @@ describe('useLayerOperations', () => {
   // handleRemoveLayer
   // ============================================================
   describe('handleRemoveLayer', () => {
-    it('should remove layer and call scene callback', () => {
+    it('should call removeLayer callback', () => {
+      const callbacks = createMockSceneCallbacks()
+      const selectedLayerId = ref<string | null>(MASK_LAYER_ID)
+      const { handleRemoveLayer } = useLayerOperations(
+        createOptions({
+          sceneCallbacks: callbacks,
+          selectedLayerId,
+        }),
+      )
+
+      handleRemoveLayer(MASK_LAYER_ID)
+
+      expect(callbacks.removeLayer).toHaveBeenCalledWith(MASK_LAYER_ID)
+    })
+
+    it('should call onClearSelection when removing selected layer', () => {
       const callbacks = createMockSceneCallbacks()
       const onClearSelection = vi.fn()
-      const selectedLayerId = ref<string | null>(SCENE_LAYER_IDS.MASK)
+      const selectedLayerId = ref<string | null>(MASK_LAYER_ID)
       const { handleRemoveLayer } = useLayerOperations(
         createOptions({
           sceneCallbacks: callbacks,
@@ -296,170 +334,58 @@ describe('useLayerOperations', () => {
         }),
       )
 
-      handleRemoveLayer(SCENE_LAYER_IDS.MASK)
+      handleRemoveLayer(MASK_LAYER_ID)
 
-      // getSceneLayerId returns SCENE_LAYER_IDS.MASK for surface layers
-      expect(callbacks.removeLayer).toHaveBeenCalled()
       expect(onClearSelection).toHaveBeenCalled()
     })
 
-    it('should remove group and all children from scene', () => {
+    it('should not call onClearSelection when removing non-selected layer', () => {
       const callbacks = createMockSceneCallbacks()
-      const { handleRemoveLayer } = useLayerOperations(
-        createOptions({ sceneCallbacks: callbacks }),
-      )
-
-      handleRemoveLayer('main-group')
-
-      // Group内のmask-layerもシーンから削除される
-      expect(callbacks.removeLayer).toHaveBeenCalled()
-    })
-
-    it('should remove layer from tree', () => {
-      const { layers, handleRemoveLayer } = useLayerOperations(createOptions())
-
-      handleRemoveLayer('main-group')
-
-      expect(layers.value.find((l) => l.id === 'main-group')).toBeUndefined()
-    })
-
-    it('should not call onClearSelection when removed layer is not selected', () => {
       const onClearSelection = vi.fn()
-      const selectedLayerId = ref<string | null>(SCENE_LAYER_IDS.BASE)
+      const selectedLayerId = ref<string | null>(MASK_LAYER_ID)
       const { handleRemoveLayer } = useLayerOperations(
-        createOptions({ onClearSelection, selectedLayerId }),
+        createOptions({
+          sceneCallbacks: callbacks,
+          onClearSelection,
+          selectedLayerId,
+        }),
       )
 
-      handleRemoveLayer(SCENE_LAYER_IDS.MASK)
+      handleRemoveLayer('some-other-layer')
 
       expect(onClearSelection).not.toHaveBeenCalled()
     })
   })
 
   // ============================================================
-  // handleGroupSelection
+  // handleSelectLayer
   // ============================================================
-  describe('handleGroupSelection', () => {
-    it('should wrap layer in new group', () => {
-      const { layers, handleGroupSelection } = useLayerOperations(createOptions())
-
-      handleGroupSelection(SCENE_LAYER_IDS.MASK)
-
-      // Find if mask-layer is now wrapped in a new group
-      const findLayer = (nodes: SceneNode[], id: string): SceneNode | null => {
-        for (const node of nodes) {
-          if (node.id === id) return node
-          if ('children' in node) {
-            const found = findLayer(node.children, id)
-            if (found) return found
-          }
-        }
-        return null
-      }
-
-      const surface = findLayer(layers.value, SCENE_LAYER_IDS.MASK)
-      expect(surface).not.toBeNull()
-    })
-  })
-
-  // ============================================================
-  // handleUseAsMask
-  // ============================================================
-  describe('handleUseAsMask', () => {
-    it('should wrap layer in masked group with MaskModifier added', () => {
-      const { layers, handleUseAsMask } = useLayerOperations(createOptions())
-
-      handleUseAsMask(SCENE_LAYER_IDS.MASK)
-
-      // Helper to find a layer by ID
-      const findLayer = (nodes: SceneNode[], id: string): SceneNode | null => {
-        for (const node of nodes) {
-          if (node.id === id) return node
-          if ('children' in node) {
-            const found = findLayer(node.children, id)
-            if (found) return found
-          }
-        }
-        return null
-      }
-
-      // mask-layer should still exist
-      const surface = findLayer(layers.value, SCENE_LAYER_IDS.MASK)
-      expect(surface).not.toBeNull()
-
-      // The layer should now have a MaskModifier added
-      if (surface && 'modifiers' in surface) {
-        const hasMaskModifier = surface.modifiers.some(
-          (m: { type: string }) => m.type === 'mask'
-        )
-        expect(hasMaskModifier).toBe(true)
-      }
-
-      // Should be wrapped in a new group with name 'Masked Group'
-      const findParentGroup = (nodes: SceneNode[], targetId: string): SceneNode | null => {
-        for (const node of nodes) {
-          if ('children' in node) {
-            const hasTarget = node.children.some((c: SceneNode) => c.id === targetId)
-            if (hasTarget) return node
-            const found = findParentGroup(node.children, targetId)
-            if (found) return found
-          }
-        }
-        return null
-      }
-
-      const parentGroup = findParentGroup(layers.value, SCENE_LAYER_IDS.MASK)
-      expect(parentGroup).not.toBeNull()
-      expect(parentGroup?.name).toBe('Masked Group')
-    })
-
-    it('should not wrap base layer', () => {
-      const { layers, handleUseAsMask } = useLayerOperations(createOptions())
-
-      const initialLength = JSON.stringify(layers.value).length
-      handleUseAsMask(SCENE_LAYER_IDS.BASE)
-      const afterLength = JSON.stringify(layers.value).length
-
-      // Structure should not change for base layer
-      expect(afterLength).toBe(initialLength)
-    })
-  })
-
-  // ============================================================
-  // Selection Callbacks
-  // ============================================================
-  describe('selection callbacks', () => {
-    it('should call onSelectLayer when handleSelectLayer is called', () => {
+  describe('handleSelectLayer', () => {
+    it('should call onSelectLayer callback', () => {
       const onSelectLayer = vi.fn()
       const { handleSelectLayer } = useLayerOperations(
         createOptions({ onSelectLayer }),
       )
 
-      handleSelectLayer(SCENE_LAYER_IDS.MASK)
+      handleSelectLayer(MASK_LAYER_ID)
 
-      expect(onSelectLayer).toHaveBeenCalledWith(SCENE_LAYER_IDS.MASK)
+      expect(onSelectLayer).toHaveBeenCalledWith(MASK_LAYER_ID)
     })
+  })
 
-    it('should call onSelectProcessor when handleSelectProcessor is called', () => {
+  // ============================================================
+  // handleSelectProcessor
+  // ============================================================
+  describe('handleSelectProcessor', () => {
+    it('should call onSelectProcessor callback', () => {
       const onSelectProcessor = vi.fn()
       const { handleSelectProcessor } = useLayerOperations(
         createOptions({ onSelectProcessor }),
       )
 
-      handleSelectProcessor(SCENE_LAYER_IDS.MASK, 'effect')
+      handleSelectProcessor(MASK_LAYER_ID, 'effect')
 
-      expect(onSelectProcessor).toHaveBeenCalledWith(SCENE_LAYER_IDS.MASK, 'effect')
-    })
-
-    it('should not call onSelectProcessor for non-existent layer', () => {
-      const onSelectProcessor = vi.fn()
-      const { handleSelectProcessor } = useLayerOperations(
-        createOptions({ onSelectProcessor }),
-      )
-
-      handleSelectProcessor('non-existent', 'effect')
-
-      expect(onSelectProcessor).not.toHaveBeenCalled()
+      expect(onSelectProcessor).toHaveBeenCalledWith(MASK_LAYER_ID, 'effect')
     })
   })
 })

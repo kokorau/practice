@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, provide } from 'vue'
-import type { SceneNode, ForegroundElementConfig, ForegroundElementType, DropPosition, ModifierDropPosition } from '../../modules/HeroScene'
+import type { LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '../../modules/HeroScene'
 import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
 import DragPreview from './DragPreview.vue'
 import ModifierDragPreview from './ModifierDragPreview.vue'
@@ -29,9 +29,10 @@ export type SubItemType = 'surface' | 'shape' | 'effect' | 'source' | 'filter'
 export type HtmlElementType = ForegroundElementType
 
 const props = defineProps<{
-  layers: SceneNode[]
+  layers: LayerNodeConfig[]
   foregroundElements: ForegroundElementConfig[]
   selectedForegroundElementId: string | null
+  expandedLayerIds: Set<string>
 }>()
 
 // Layer selection from store
@@ -45,7 +46,7 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
-  'move-node': [nodeId: string, position: DropPosition]
+  'move-node': [nodeId: string, position: LayerDropPosition]
   'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
   'select-foreground-element': [elementId: string]
   'add-foreground-element': [type: ForegroundElementType]
@@ -54,13 +55,13 @@ const emit = defineEmits<{
 }>()
 
 // ============================================================
-// Drag & Drop (SceneNode)
+// Drag & Drop (Layer)
 // ============================================================
 
 const dragAndDrop = useLayerDragAndDrop()
 provide(LAYER_DRAG_KEY, dragAndDrop)
 
-const handleMoveNode = (nodeId: string, position: DropPosition) => {
+const handleMoveNode = (nodeId: string, position: LayerDropPosition) => {
   emit('move-node', nodeId, position)
 }
 
@@ -75,7 +76,7 @@ const handleMoveModifier = (sourceNodeId: string, modifierIndex: number, positio
   emit('move-modifier', sourceNodeId, modifierIndex, position)
 }
 
-// Global pointer move handler for DnD (handles both SceneNode and Modifier)
+// Global pointer move handler for DnD (handles both Layer and Modifier)
 const handleLayerListPointerMove = (e: PointerEvent) => {
   // Handle Modifier drag
   if (modifierDragAndDrop.state.dragItem.value) {
@@ -118,10 +119,10 @@ const handleLayerListPointerMove = (e: PointerEvent) => {
         }
       }
     }
-    return // Don't process SceneNode drag when modifier drag is active
+    return // Don't process Layer drag when modifier drag is active
   }
 
-  // Handle SceneNode drag
+  // Handle Layer drag
   if (!dragAndDrop.state.dragItem.value) return
 
   dragAndDrop.actions.updatePointer(e)
@@ -166,7 +167,7 @@ const handleLayerListPointerMove = (e: PointerEvent) => {
   }
 }
 
-// Global pointer up handler for DnD (handles both SceneNode and Modifier)
+// Global pointer up handler for DnD (handles both Layer and Modifier)
 const handleLayerListPointerUp = () => {
   // Handle Modifier drop
   if (modifierDragAndDrop.state.dragItem.value) {
@@ -179,7 +180,7 @@ const handleLayerListPointerUp = () => {
     return
   }
 
-  // Handle SceneNode drop
+  // Handle Layer drop
   if (!dragAndDrop.state.dragItem.value) return
 
   const draggedNodeId = dragAndDrop.state.dragItem.value.nodeId
@@ -309,7 +310,8 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           :depth="0"
           :selected-id="selectedLayerId"
           :selected-processor-type="selectedProcessorType ?? null"
-          :nodes="layers"
+          :layers="layers"
+          :expanded-layer-ids="expandedLayerIds"
           @select="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
@@ -321,10 +323,10 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
         />
       </div>
 
-      <!-- Drag Preview (SceneNode) -->
+      <!-- Drag Preview (Layer) -->
       <DragPreview
         v-if="dragAndDrop.state.isDragging.value && dragAndDrop.state.dragItem.value"
-        :nodes="layers"
+        :layers="layers"
         :node-id="dragAndDrop.state.dragItem.value.nodeId"
         :position="dragAndDrop.state.pointerPosition.value"
       />

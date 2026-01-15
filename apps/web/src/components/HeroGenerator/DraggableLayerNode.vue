@@ -10,23 +10,32 @@
  */
 
 import { computed, ref, inject } from 'vue'
-import type { SceneNode, Group, LayerVariant, ModifierDropPosition } from '../../modules/HeroScene'
-import { isGroup, isLayer, isEffectModifier, isMaskModifier } from '../../modules/HeroScene'
+import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig, MaskProcessorConfig, ModifierDropPosition, LayerDropPosition } from '../../modules/HeroScene'
+import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig } from '../../modules/HeroScene'
 import { LAYER_DRAG_KEY, type DropTarget } from '../../composables/useLayerDragAndDrop'
 import { MODIFIER_DRAG_KEY, type ModifierDropTarget } from '../../composables/useModifierDragAndDrop'
 import DropIndicator from './DropIndicator.vue'
+
+// Layer variant type for UI display
+type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' | 'processor'
+
+// Helper functions for modifier type checking
+const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
+const isMaskModifier = (mod: ProcessorConfig): boolean => mod.type === 'mask'
 
 // ============================================================
 // Props & Emits
 // ============================================================
 
 const props = defineProps<{
-  node: SceneNode
+  node: LayerNodeConfig
   depth: number
   selectedId: string | null
   selectedProcessorType: 'effect' | 'mask' | 'processor' | null
-  /** All nodes in the tree (for DnD validation) */
-  nodes: SceneNode[]
+  /** All layers in the tree (for DnD validation) */
+  layers: LayerNodeConfig[]
+  /** Expanded layer IDs (UI state) */
+  expandedLayerIds: Set<string>
 }>()
 
 /** Context menu target type */
@@ -41,7 +50,7 @@ const emit = defineEmits<{
   // Context menu event (with target type)
   contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType]
   // DnD move events
-  'move-node': [nodeId: string, position: import('../../modules/HeroScene').DropPosition]
+  'move-node': [nodeId: string, position: LayerDropPosition]
   'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
 }>()
 
@@ -50,9 +59,9 @@ const emit = defineEmits<{
 // ============================================================
 
 const isSelected = computed(() => props.selectedId === props.node.id)
-const isGroupNode = computed(() => isGroup(props.node))
-const hasChildren = computed(() => isGroupNode.value && (props.node as Group).children.length > 0)
-const isExpanded = computed(() => props.node.expanded)
+const isGroupNode = computed(() => isGroupLayerConfig(props.node))
+const hasChildren = computed(() => isGroupNode.value && (props.node as GroupLayerNodeConfig).children.length > 0)
+const isExpanded = computed(() => props.expandedLayerIds.has(props.node.id))
 
 // Check if this node has expandable content (only children, modifiers are always visible)
 const hasExpandableContent = computed(() => hasChildren.value)
@@ -72,19 +81,24 @@ const indentStyle = computed(() => ({
 }))
 
 // Children for group nodes
-const children = computed(() => {
-  if (isGroup(props.node)) {
-    return props.node.children
+const children = computed((): LayerNodeConfig[] => {
+  if (isGroupLayerConfig(props.node)) {
+    return (props.node as GroupLayerNodeConfig).children
   }
   return []
 })
 
-// Get node variant for Layer nodes
-const nodeVariant = computed((): LayerVariant | 'group' => {
-  if (isLayer(props.node)) {
-    return props.node.variant
-  }
-  return 'group'
+// Get node variant for display
+const nodeVariant = computed((): LayerVariant => {
+  const node = props.node
+  if (isBaseLayerConfig(node)) return 'base'
+  if (isSurfaceLayerConfig(node)) return 'surface'
+  if (isTextLayerConfig(node)) return 'text'
+  if (isModel3DLayerConfig(node)) return 'model3d'
+  if (isImageLayerConfig(node)) return 'image'
+  if (isProcessorLayerConfig(node)) return 'processor'
+  if (isGroupLayerConfig(node)) return 'group'
+  return 'surface' // fallback
 })
 
 // Modifier info with index for DnD
@@ -93,24 +107,28 @@ const nodeVariant = computed((): LayerVariant | 'group' => {
 const modifiers = computed(() => {
   const result: { type: 'effect' | 'mask'; label: string; value: string; icon: string; enabled: boolean; index: number }[] = []
 
-  const nodeModifiers = props.node.modifiers
-  nodeModifiers.forEach((mod, index) => {
+  // Only ProcessorNodeConfig has modifiers
+  if (!isProcessorLayerConfig(props.node)) return result
+
+  const processor = props.node as ProcessorNodeConfig
+  processor.modifiers.forEach((mod: ProcessorConfig, index: number) => {
     if (isEffectModifier(mod)) {
       result.push({
         type: 'effect',
         label: 'Effect',
         value: '', // Details shown in property panel
         icon: 'auto_fix_high',
-        enabled: true,
+        enabled: mod.enabled,
         index,
       })
     } else if (isMaskModifier(mod)) {
+      const maskMod = mod as MaskProcessorConfig
       result.push({
         type: 'mask',
         label: 'Mask',
-        value: mod.config.shape,
+        value: maskMod.shape.type,
         icon: 'content_cut',
-        enabled: mod.enabled,
+        enabled: maskMod.enabled,
         index,
       })
     }
@@ -123,11 +141,12 @@ const modifiers = computed(() => {
 // Icon & Label Helpers
 // ============================================================
 
-const getLayerIcon = (variant: LayerVariant | 'group'): string => {
+const getLayerIcon = (variant: LayerVariant): string => {
   switch (variant) {
     case 'base': return 'gradient'
     case 'surface': return 'texture'
     case 'group': return 'folder_open'
+    case 'processor': return 'tune'
     case 'model3d': return 'view_in_ar'
     case 'image': return 'image'
     case 'text': return 'text_fields'
@@ -203,7 +222,7 @@ const handlePointerDown = (e: PointerEvent) => {
   if ((e.target as HTMLElement).closest('button')) return
 
   dragContext.actions.startDrag(
-    { type: 'sceneNode', nodeId: props.node.id },
+    { type: 'layerNode', nodeId: props.node.id },
     e
   )
   // Note: Don't use setPointerCapture here - we need events to reach other nodes
@@ -386,14 +405,15 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         :depth="depth + 1"
         :selected-id="selectedId"
         :selected-processor-type="selectedProcessorType"
-        :nodes="nodes"
+        :layers="layers"
+        :expanded-layer-ids="expandedLayerIds"
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
         @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
         @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType) => emit('contextmenu', id, e, targetType)"
-        @move-node="(id: string, position: import('../../modules/HeroScene').DropPosition) => emit('move-node', id, position)"
+        @move-node="(id: string, position: LayerDropPosition) => emit('move-node', id, position)"
         @move-modifier="(sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => emit('move-modifier', sourceNodeId, modifierIndex, position)"
       />
     </template>

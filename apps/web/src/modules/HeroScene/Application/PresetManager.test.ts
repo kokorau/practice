@@ -12,7 +12,9 @@ import type { HeroViewRepository } from '../Domain/repository/HeroViewRepository
 import type { HeroViewPreset } from '../Domain/HeroViewPreset'
 import type { HeroViewConfig, LayerNodeConfig } from '../Domain/HeroViewConfig'
 import type { PresetExportPort } from '../usecase/Preset/PresetExportPort'
-import { SCENE_LAYER_IDS } from '../Domain/LayerNode'
+
+// Layer IDs for template layers
+const BASE_LAYER_ID = 'base-layer'
 
 // ============================================================
 // Test Fixtures
@@ -22,7 +24,7 @@ const createMockPreset = (id: string, name: string): HeroViewPreset => ({
   id,
   name,
   config: createMockHeroViewConfig([
-    { type: 'base', id: SCENE_LAYER_IDS.BASE, name: 'Background', visible: true, surface: { type: 'solid' } },
+    { type: 'base', id: BASE_LAYER_ID, name: 'Background', visible: true, surface: { type: 'solid' } },
   ]),
   colorPreset: {
     brand: { hue: 200, saturation: 60, value: 70 },
@@ -201,7 +203,7 @@ describe('PresetManager', () => {
         surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
       }
       const currentConfig = createMockHeroViewConfig([
-        { type: 'base', id: SCENE_LAYER_IDS.BASE, name: 'Background', visible: true, surface: { type: 'solid' } },
+        { type: 'base', id: BASE_LAYER_ID, name: 'Background', visible: true, surface: { type: 'solid' } },
         customLayer,
       ])
       ;(mockHeroViewRepository.get as any).mockReturnValue(currentConfig)
@@ -212,7 +214,7 @@ describe('PresetManager', () => {
       const setCall = (mockHeroViewRepository.set as any).mock.calls[0][0] as HeroViewConfig
 
       // Should have preset's base layer
-      expect(setCall.layers.some((l: LayerNodeConfig) => l.id === SCENE_LAYER_IDS.BASE)).toBe(true)
+      expect(setCall.layers.some((l: LayerNodeConfig) => l.id === BASE_LAYER_ID)).toBe(true)
       // Should preserve custom layer
       expect(setCall.layers.some((l: LayerNodeConfig) => l.id === 'custom-layer-1')).toBe(true)
     })
@@ -220,14 +222,14 @@ describe('PresetManager', () => {
     it('should replace template layers from preset', async () => {
       // Set up current config
       const currentConfig = createMockHeroViewConfig([
-        { type: 'base', id: SCENE_LAYER_IDS.BASE, name: 'Old Background', visible: true, surface: { type: 'stripe', width1: 10, width2: 10, angle: 0 } },
+        { type: 'base', id: BASE_LAYER_ID, name: 'Old Background', visible: true, surface: { type: 'stripe', width1: 10, width2: 10, angle: 0 } },
       ])
       ;(mockHeroViewRepository.get as any).mockReturnValue(currentConfig)
 
       await presetManager.applyPreset('preset-1', 'merge')
 
       const setCall = (mockHeroViewRepository.set as any).mock.calls[0][0] as HeroViewConfig
-      const baseLayer = setCall.layers.find((l: LayerNodeConfig) => l.id === SCENE_LAYER_IDS.BASE)
+      const baseLayer = setCall.layers.find((l: LayerNodeConfig) => l.id === BASE_LAYER_ID)
 
       // Base layer should come from preset (solid, not stripe)
       expect(baseLayer?.surface?.type).toBe('solid')

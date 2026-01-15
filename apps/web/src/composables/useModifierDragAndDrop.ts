@@ -1,6 +1,6 @@
 import { ref, computed, readonly, type InjectionKey, type Ref, type ComputedRef } from 'vue'
-import type { SceneNode, ModifierDropPosition } from '../modules/HeroScene'
-import { canMoveModifier, findNode } from '../modules/HeroScene'
+import type { LayerNodeConfig, ModifierDropPosition, ProcessorNodeConfig } from '../modules/HeroScene'
+import { canMoveModifierInTree, findLayerInTree, isProcessorLayerConfig } from '../modules/HeroScene'
 
 // ============================================================
 // Types
@@ -68,7 +68,7 @@ export interface UseModifierDragAndDropReturn {
   state: ModifierDragState
   actions: ModifierDragActions
   /** Check if a drop target is valid */
-  canDrop: (nodes: SceneNode[], target: ModifierDropTarget) => boolean
+  canDrop: (layers: LayerNodeConfig[], target: ModifierDropTarget) => boolean
   /** Get the source node ID and modifier index */
   getSource: () => { nodeId: string; modifierIndex: number } | null
 }
@@ -167,7 +167,7 @@ export function useModifierDragAndDrop(): UseModifierDragAndDropReturn {
   // ============================================================
   // Utilities
   // ============================================================
-  const canDrop = (nodes: SceneNode[], target: ModifierDropTarget): boolean => {
+  const canDrop = (layers: LayerNodeConfig[], target: ModifierDropTarget): boolean => {
     const item = dragItem.value
     if (!item) return false
 
@@ -177,7 +177,7 @@ export function useModifierDragAndDrop(): UseModifierDragAndDropReturn {
       targetIndex: target.modifierIndex,
     } as ModifierDropPosition
 
-    return canMoveModifier(nodes, item.nodeId, item.modifierIndex, position)
+    return canMoveModifierInTree(layers, item.nodeId, item.modifierIndex, position)
   }
 
   const getSource = (): { nodeId: string; modifierIndex: number } | null => {
@@ -236,7 +236,7 @@ export function calculateModifierDropPosition(
  */
 export function getModifierDropTargetFromElement(
   element: HTMLElement,
-  nodes: SceneNode[]
+  layers: LayerNodeConfig[]
 ): { nodeId: string; modifierIndex: number } | null {
   const nodeId = element.dataset.modifierNodeId
   const indexStr = element.dataset.modifierIndex
@@ -246,11 +246,15 @@ export function getModifierDropTargetFromElement(
   const modifierIndex = parseInt(indexStr, 10)
   if (isNaN(modifierIndex)) return null
 
-  const node = findNode(nodes, nodeId)
-  if (!node) return null
+  const layer = findLayerInTree(layers, nodeId)
+  if (!layer) return null
+
+  // Validate that the layer is a processor with modifiers
+  if (!isProcessorLayerConfig(layer)) return null
+  const processor = layer as ProcessorNodeConfig
 
   // Validate that the modifier index is valid
-  if (modifierIndex < 0 || modifierIndex >= node.modifiers.length) return null
+  if (modifierIndex < 0 || modifierIndex >= processor.modifiers.length) return null
 
   return {
     nodeId,

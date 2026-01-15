@@ -10,17 +10,24 @@
  */
 
 import { computed } from 'vue'
-import type { SceneNode, Group, LayerVariant } from '../../modules/HeroScene'
-import { isGroup, isLayer, isEffectModifier } from '../../modules/HeroScene'
+import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig } from '../../modules/HeroScene'
+import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig } from '../../modules/HeroScene'
+
+// Layer variant type for UI display
+type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' | 'processor'
+
+// Helper for effect modifier check
+const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
 
 // ============================================================
 // Props & Emits
 // ============================================================
 
 const props = defineProps<{
-  node: SceneNode
+  node: LayerNodeConfig
   depth: number
   selectedId: string | null
+  expandedLayerIds: Set<string>
 }>()
 
 const emit = defineEmits<{
@@ -36,22 +43,27 @@ const emit = defineEmits<{
 // ============================================================
 
 const isSelected = computed(() => props.selectedId === props.node.id)
-const isGroupNode = computed(() => isGroup(props.node))
-const hasChildren = computed(() => isGroupNode.value && (props.node as Group).children.length > 0)
-const isExpanded = computed(() => props.node.expanded)
+const isGroupNode = computed(() => isGroupLayerConfig(props.node))
+const hasChildren = computed(() => isGroupNode.value && (props.node as GroupLayerNodeConfig).children.length > 0)
+const isExpanded = computed(() => props.expandedLayerIds.has(props.node.id))
 
-// Get node variant for Layer nodes
-const nodeVariant = computed((): LayerVariant | 'group' => {
-  if (isLayer(props.node)) {
-    return props.node.variant
-  }
-  return 'group'
+// Get node variant for display
+const nodeVariant = computed((): LayerVariant => {
+  const node = props.node
+  if (isBaseLayerConfig(node)) return 'base'
+  if (isSurfaceLayerConfig(node)) return 'surface'
+  if (isTextLayerConfig(node)) return 'text'
+  if (isModel3DLayerConfig(node)) return 'model3d'
+  if (isImageLayerConfig(node)) return 'image'
+  if (isProcessorLayerConfig(node)) return 'processor'
+  if (isGroupLayerConfig(node)) return 'group'
+  return 'surface' // fallback
 })
 
 // Get children for group nodes
-const children = computed(() => {
-  if (isGroup(props.node)) {
-    return props.node.children
+const children = computed((): LayerNodeConfig[] => {
+  if (isGroupLayerConfig(props.node)) {
+    return (props.node as GroupLayerNodeConfig).children
   }
   return []
 })
@@ -62,16 +74,17 @@ const children = computed(() => {
 const modifiers = computed(() => {
   const result: { type: 'effect' | 'mask'; label: string; value: string; enabled: boolean }[] = []
 
-  // Groups may have modifiers too
-  const nodeModifiers = props.node.modifiers
-  // Effect placeholder - details are in useEffectManager
-  const effectMod = nodeModifiers.find(isEffectModifier)
+  // Only ProcessorNodeConfig has modifiers
+  if (!isProcessorLayerConfig(props.node)) return result
+
+  const processor = props.node as ProcessorNodeConfig
+  const effectMod = processor.modifiers.find(isEffectModifier)
   if (effectMod) {
     result.push({
       type: 'effect',
       label: 'Effect',
       value: '', // Details shown in property panel
-      enabled: true,
+      enabled: effectMod.enabled,
     })
   }
 
@@ -90,6 +103,7 @@ const getLayerIcon = (variant: LayerVariant | 'group'): string => {
     case 'model3d': return 'view_in_ar'
     case 'image': return 'image'
     case 'text': return 'text_fields'
+    case 'processor': return 'auto_fix_high'
     default: return 'layers'
   }
 }
@@ -102,6 +116,7 @@ const getLayerTypeLabel = (variant: LayerVariant | 'group'): string => {
     case 'model3d': return '3D Model'
     case 'image': return 'Image'
     case 'text': return 'Text'
+    case 'processor': return 'Processor'
     default: return 'Layer'
   }
 }
@@ -202,6 +217,7 @@ const handleSelectProcessor = (type: 'effect' | 'mask') => {
         :node="child"
         :depth="depth + 1"
         :selected-id="selectedId"
+        :expanded-layer-ids="expandedLayerIds"
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
