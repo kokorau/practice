@@ -262,7 +262,7 @@ export interface CanvasLayer extends LayerBase {
   /** ブレンドモード */
   blendMode: BlendMode
   /** フィルター設定 */
-  filters: LayerFilterConfig
+  filters: LayerEffectConfig
 }
 
 /**

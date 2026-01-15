@@ -69,7 +69,7 @@ import { selectInkForSurface } from '../../modules/SemanticColorPalette/Infra'
 import type { InkRole } from '../../modules/SemanticColorPalette/Domain'
 import { generateLuminanceMap } from '../../modules/ContrastChecker'
 import {
-  type LayerFilterConfig,
+  type LayerEffectConfig,
   type HeroSceneConfig,
   type HtmlLayer,
   type HeroViewConfig,
@@ -830,7 +830,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Update layer filters with deep partial merge
    * Delegates to effectManager (rendering uses effectManager directly)
    */
-  const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerFilterConfig>) => {
+  const updateLayerFilters = (layerId: string, updates: DeepPartial<LayerEffectConfig>) => {
     // Update each effect type if present in updates
     const effectTypes: EffectType[] = ['vignette', 'chromaticAberration', 'dotHalftone', 'lineHalftone', 'blur']
     for (const effectType of effectTypes) {
@@ -2365,7 +2365,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       const effectFilter = (baseLayer.filters ?? []).find((p) => p.type === 'effect')
       if (effectFilter) {
         const defaults = createDefaultEffectConfig()
-        const merged: LayerFilterConfig = {
+        const merged: LayerEffectConfig = {
           vignette: { ...defaults.vignette, ...effectFilter.config.vignette },
           chromaticAberration: { ...defaults.chromaticAberration, ...effectFilter.config.chromaticAberration },
           dotHalftone: { ...defaults.dotHalftone, ...effectFilter.config.dotHalftone },
@@ -2500,7 +2500,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         const maskEffectFilter = (surfaceLayer.filters ?? []).find((p) => p.type === 'effect')
         if (maskEffectFilter) {
           const defaults = createDefaultEffectConfig()
-          const merged: LayerFilterConfig = {
+          const merged: LayerEffectConfig = {
             vignette: { ...defaults.vignette, ...maskEffectFilter.config.vignette },
             chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectFilter.config.chromaticAberration },
             dotHalftone: { ...defaults.dotHalftone, ...maskEffectFilter.config.dotHalftone },
