@@ -25,74 +25,16 @@ import { createDefaultHeroEditorUIState } from '../Domain/HeroEditorState'
 import type {
   HeroViewConfig,
   LayerNodeConfig,
-  GroupLayerNodeConfig,
   HeroColorsConfig,
   ViewportConfig,
   ForegroundLayerConfig,
 } from '../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
-
-// ============================================================
-// Helper Functions
-// ============================================================
-
-/**
- * レイヤーツリーから特定のIDを検索
- */
-const findLayerInTree = (layers: LayerNodeConfig[], id: string): LayerNodeConfig | undefined => {
-  for (const layer of layers) {
-    if (layer.id === id) return layer
-    if (layer.type === 'group') {
-      const found = findLayerInTree((layer as GroupLayerNodeConfig).children, id)
-      if (found) return found
-    }
-  }
-  return undefined
-}
-
-/**
- * レイヤーツリーを更新（イミュータブル）
- */
-const updateLayerInTree = (
-  layers: LayerNodeConfig[],
-  id: string,
-  updates: Partial<LayerNodeConfig>
-): LayerNodeConfig[] => {
-  return layers.map(layer => {
-    if (layer.id === id) {
-      return { ...layer, ...updates } as LayerNodeConfig
-    }
-    if (layer.type === 'group') {
-      const group = layer as GroupLayerNodeConfig
-      return {
-        ...group,
-        children: updateLayerInTree(group.children, id, updates),
-      }
-    }
-    return layer
-  })
-}
-
-/**
- * レイヤーツリーからレイヤーを削除（イミュータブル）
- */
-const removeLayerFromTree = (
-  layers: LayerNodeConfig[],
-  id: string
-): LayerNodeConfig[] => {
-  return layers
-    .filter(layer => layer.id !== id)
-    .map(layer => {
-      if (layer.type === 'group') {
-        const group = layer as GroupLayerNodeConfig
-        return {
-          ...group,
-          children: removeLayerFromTree(group.children, id),
-        }
-      }
-      return layer
-    })
-}
+import {
+  findLayerInTree,
+  updateLayerInTree,
+  removeLayerFromTree,
+} from '../Domain/LayerTreeOps'
 
 // ============================================================
 // Factory Function
