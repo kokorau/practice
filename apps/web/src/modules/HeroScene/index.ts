@@ -106,6 +106,8 @@ export type {
   ProcessorConfig,
   EffectProcessorConfig,
   EffectFilterConfig,
+  SingleEffectConfig,
+  AnyEffectConfig,
   MaskProcessorConfig,
   // LayerNodeConfig types (JSON serialization)
   LayerNodeConfig,
@@ -262,6 +264,15 @@ export {
   fromCustomSurfaceParams,
   // Layer helpers
   getLayerFilters,
+  // Effect config type guards
+  isSingleEffectConfig,
+  isLegacyEffectFilterConfig,
+  // Effect config migration
+  migrateLegacyEffectConfig,
+  toLegacyEffectConfig,
+  hasLegacyEffectConfigs,
+  migrateEffectConfigsInModifiers,
+  getEffectConfigsFromModifiers,
   // HeroEditorState factories
   createDefaultBackgroundUIState,
   createDefaultMaskUIState,

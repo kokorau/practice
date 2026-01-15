@@ -55,10 +55,11 @@ import {
   isProcessorNodeConfig,
   getProcessorTargetPairsFromConfig,
   getProcessorMask,
-  getProcessorEffects,
 } from '../Domain/HeroViewConfig'
 import type { LayerEffectConfig } from '../Domain/EffectSchema'
-import { EFFECT_REGISTRY, EFFECT_TYPES } from '../Domain/EffectRegistry'
+import { EFFECT_REGISTRY, EFFECT_TYPES, type EffectType } from '../Domain/EffectRegistry'
+import type { SingleEffectConfig } from '../Domain/HeroViewConfig'
+import { getEffectConfigsFromModifiers } from '../Domain/HeroViewConfig'
 
 // ============================================================
 // Types
@@ -513,8 +514,9 @@ function renderMaskWithGreymapPipeline(
 // ============================================================
 
 /**
- * Apply effect filters to current canvas content
+ * Apply effect filters to current canvas content (legacy format)
  * Uses EFFECT_REGISTRY for dynamic effect application
+ * @deprecated Use applySingleEffects for new format
  */
 function applyEffects(
   renderer: TextureRendererLike,
@@ -536,6 +538,31 @@ function applyEffects(
   }
 }
 
+/**
+ * Apply effects from SingleEffectConfig array (new format)
+ *
+ * Each effect in the array is applied in order.
+ * Uses EFFECT_REGISTRY for shader spec creation.
+ */
+function applySingleEffects(
+  renderer: TextureRendererLike,
+  effects: SingleEffectConfig[],
+  viewport: Viewport,
+  scale: number
+): void {
+  for (const effect of effects) {
+    const effectType = effect.id as EffectType
+    if (!(effectType in EFFECT_REGISTRY)) continue
+
+    const definition = EFFECT_REGISTRY[effectType]
+    const spec = definition.createShaderSpec(effect.params as never, viewport, scale)
+    if (!spec) continue
+
+    const inputTexture = renderer.copyCanvasToTexture()
+    renderer.applyPostEffect(spec, inputTexture, { clear: true })
+  }
+}
+
 // ============================================================
 // Unified Effector Application
 // ============================================================
@@ -549,8 +576,16 @@ export interface EffectorConfig {
     enabled: boolean
     shape: MaskShapeConfig
   }
-  /** Effect configuration (color-modification) */
+  /**
+   * Effect configuration (color-modification) - legacy format
+   * @deprecated Use effectList instead
+   */
   effects?: LayerEffectConfig
+  /**
+   * Effect configuration (color-modification) - new format
+   * Array of SingleEffectConfig for normalized effect handling
+   */
+  effectList?: SingleEffectConfig[]
 }
 
 /**
@@ -562,6 +597,10 @@ export interface EffectorConfig {
  *
  * Order matters: masks create transparent regions, then effects are applied
  * to the visible (non-transparent) areas.
+ *
+ * Supports both legacy format (effects: LayerEffectConfig) and
+ * new format (effectList: SingleEffectConfig[]). If both are provided,
+ * effectList takes precedence.
  *
  * @param renderer - Texture renderer instance
  * @param config - Effector configuration (mask and/or effects)
@@ -587,7 +626,10 @@ export function applyEffectors(
 
   // 2. Apply effects (color-modification)
   // Effects modify color/appearance of visible areas
-  if (config.effects) {
+  // New format (effectList) takes precedence over legacy format (effects)
+  if (config.effectList && config.effectList.length > 0) {
+    applySingleEffects(renderer, config.effectList, viewport, scale)
+  } else if (config.effects) {
     applyEffects(renderer, config.effects, viewport, scale)
   }
 }
@@ -762,16 +804,16 @@ export async function renderHeroConfig(
     // Get mask from processor modifiers
     const maskProcessor = getProcessorMask(processor)
 
-    // Get effects from processor modifiers
-    const effectFilters = getProcessorEffects(processor)
-    const effectFilter = effectFilters.find((f) => f.enabled)
+    // Get effects from processor modifiers (supports both legacy and new formats)
+    // Use getEffectConfigsFromModifiers to normalize to SingleEffectConfig[]
+    const effectList = getEffectConfigsFromModifiers(processor.modifiers)
 
     // Apply effectors using unified pipeline (mask first, then effects)
     applyEffectors(
       renderer,
       {
         mask: maskProcessor,
-        effects: effectFilter?.config,
+        effectList,
       },
       viewport,
       midgroundTextureColor1,
