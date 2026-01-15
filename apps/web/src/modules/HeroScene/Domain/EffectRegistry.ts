@@ -57,7 +57,6 @@ import {
   VignetteBaseSchema,
   VignetteShapeSchemas,
   createDefaultVignetteConfig,
-  migrateVignetteConfig,
   type VignetteConfig,
   type VignetteShape,
 } from './VignetteSchema'
@@ -116,25 +115,24 @@ export interface VignetteEffectDefinition extends EffectDefinition<VignetteConfi
 // ============================================================
 
 function createVignetteShaderSpec(
-  config: VignetteConfig | { enabled: boolean; intensity: number; radius: number; softness: number },
+  config: VignetteConfig,
   viewport: Viewport,
   _scale: number
 ): EffectShaderSpec {
-  const vignetteConfig = migrateVignetteConfig(config as VignetteConfig)
-  const color = vignetteConfig.color ?? [0, 0, 0, 1]
+  const color = config.color ?? [0, 0, 0, 1]
 
-  switch (vignetteConfig.shape) {
+  switch (config.shape) {
     case 'circle':
       return {
         shader: circleVignetteShader,
         uniforms: createCircleVignetteUniforms(
           {
             color,
-            intensity: vignetteConfig.intensity,
-            radius: vignetteConfig.radius,
-            softness: vignetteConfig.softness,
-            centerX: vignetteConfig.centerX,
-            centerY: vignetteConfig.centerY,
+            intensity: config.intensity,
+            radius: config.radius,
+            softness: config.softness,
+            centerX: config.centerX,
+            centerY: config.centerY,
           },
           viewport
         ),
@@ -147,13 +145,13 @@ function createVignetteShaderSpec(
         uniforms: createRectVignetteUniforms(
           {
             color,
-            intensity: vignetteConfig.intensity,
-            softness: vignetteConfig.softness,
-            centerX: vignetteConfig.centerX,
-            centerY: vignetteConfig.centerY,
-            width: vignetteConfig.width,
-            height: vignetteConfig.height,
-            cornerRadius: vignetteConfig.cornerRadius,
+            intensity: config.intensity,
+            softness: config.softness,
+            centerX: config.centerX,
+            centerY: config.centerY,
+            width: config.width,
+            height: config.height,
+            cornerRadius: config.cornerRadius,
           },
           viewport
         ),
@@ -166,10 +164,10 @@ function createVignetteShaderSpec(
         uniforms: createLinearVignetteUniforms(
           {
             color,
-            intensity: vignetteConfig.intensity,
-            angle: vignetteConfig.angle,
-            startOffset: vignetteConfig.startOffset,
-            endOffset: vignetteConfig.endOffset,
+            intensity: config.intensity,
+            angle: config.angle,
+            startOffset: config.startOffset,
+            endOffset: config.endOffset,
           },
           viewport
         ),
@@ -183,12 +181,12 @@ function createVignetteShaderSpec(
         uniforms: createEllipseVignetteUniforms(
           {
             color,
-            intensity: vignetteConfig.intensity,
-            radius: vignetteConfig.radius,
-            softness: vignetteConfig.softness,
-            centerX: vignetteConfig.centerX,
-            centerY: vignetteConfig.centerY,
-            aspectRatio: vignetteConfig.aspectRatio ?? viewport.width / viewport.height,
+            intensity: config.intensity,
+            radius: config.radius,
+            softness: config.softness,
+            centerX: config.centerX,
+            centerY: config.centerY,
+            aspectRatio: config.aspectRatio ?? viewport.width / viewport.height,
           },
           viewport
         ),

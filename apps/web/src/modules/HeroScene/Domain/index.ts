@@ -300,7 +300,6 @@ export {
   LinearVignetteSchema,
   VignetteShapeOptions,
   createDefaultVignetteShapeConfig,
-  migrateVignetteConfig,
   type VignetteShape,
   type VignetteConfig,
   type EllipseVignetteConfig,

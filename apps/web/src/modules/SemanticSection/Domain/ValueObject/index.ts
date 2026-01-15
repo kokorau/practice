@@ -57,13 +57,12 @@ export { DEFAULT_TOKENS } from './RenderTheme'
 
 // Template
 export type {
-  LegacySectionTemplate,
   StringSectionTemplate,
   SectionTemplate,
   TemplateVars,
   TemplateRegistry,
 } from './SectionTemplate'
-export { isStringTemplate, isLegacyTemplate } from './SectionTemplate'
+export { isStringTemplate } from './SectionTemplate'
 
 // Site
 export type { SiteMeta, Site } from './Site'

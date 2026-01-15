@@ -99,21 +99,6 @@ describe('useVignetteEditor', () => {
       expect((migratedConfig.value as { radius: number }).radius).toBe(0.7)
     })
 
-    it('migrates legacy config without shape to ellipse', () => {
-      const vignetteConfig = createMockVignetteConfig({
-        enabled: true,
-        intensity: 0.6,
-        radius: 0.9,
-        softness: 0.5,
-      } as VignetteConfigParams)
-      // Remove shape to simulate legacy config
-      delete (vignetteConfig.value as Record<string, unknown>).shape
-
-      const { migratedConfig } = useVignetteEditor({ vignetteConfig })
-
-      expect(migratedConfig.value.shape).toBe('ellipse')
-      expect(migratedConfig.value.intensity).toBe(0.6)
-    })
   })
 
   describe('shapeSchema', () => {
