@@ -408,16 +408,6 @@ export const wrapLayerInGroupInTree = (
 // ============================================================
 
 /**
- * Get modifiers from a layer (if it's a ProcessorNodeConfig)
- */
-const getLayerModifiers = (layer: LayerNodeConfig): ProcessorConfig[] => {
-  if (isProcessorLayerConfig(layer)) {
-    return layer.modifiers
-  }
-  return []
-}
-
-/**
  * Check if a modifier can be moved to the specified position
  *
  * Rules:
