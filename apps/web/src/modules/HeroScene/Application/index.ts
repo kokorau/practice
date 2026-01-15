@@ -29,6 +29,10 @@ export { createSurfaceUsecase } from './SurfaceUsecase'
 export type { GetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
 export { createGetHeroViewPresetsUseCase } from './GetHeroViewPresetsUseCase'
 
+// Re-export PresetManager
+export type { MergeMode, PresetManagerOptions } from './PresetManager'
+export { PresetManager, createPresetManager } from './PresetManager'
+
 // Re-export ForegroundElement UseCase
 export type {
   ForegroundElementUpdate,

@@ -65,12 +65,11 @@ import {
   createDefaultEffectConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
-  createGetHeroViewPresetsUseCase,
   createInMemoryHeroViewPresetRepository,
-  applyPresetUsecase,
-  exportPresetUsecase,
   createBrowserPresetExporter,
   type ExportPresetOptions,
+  createPresetManager,
+  type MergeMode,
   findSurfacePresetIndex,
   findMaskPatternIndex,
   updateTextLayerText,
@@ -90,9 +89,6 @@ import {
   toggleExpand as toggleExpandUsecase,
   toggleVisibility as toggleVisibilityUsecase,
   updateLayer as updateLayerUsecase,
-  exportPreset as exportPresetFn,
-  createPreset as createPresetFn,
-  type PresetExportPort,
   createForegroundElementUsecase,
   type ForegroundConfigPort,
   type SelectionPort,
@@ -441,28 +437,22 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
-  // Preset Usecase wrappers
+  // Preset Manager & Usecase wrappers
   // ============================================================
-  const presetExportPort: PresetExportPort = {
-    downloadAsJson: (preset: HeroViewPreset) => {
-      const blob = new Blob([JSON.stringify(preset, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${preset.name || 'preset'}.json`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    },
-  }
+  const presetRepository = createInMemoryHeroViewPresetRepository()
+  const presetExportAdapter = createBrowserPresetExporter()
+  const presetManager = createPresetManager({
+    presetRepository,
+    heroViewRepository,
+    presetExportPort: presetExportAdapter,
+  })
 
   const presetUsecase = {
     exportPreset: (options?: { id?: string; name?: string }) => {
-      return exportPresetFn(heroViewRepository, presetExportPort, options)
+      return presetManager.exportAsPreset(options)
     },
     createPreset: (options?: { id?: string; name?: string }) => {
-      return createPresetFn(heroViewRepository, options)
+      return presetManager.createPreset(options)
     },
   }
 
@@ -1349,11 +1339,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
-  // Preset Management
+  // Preset Management (uses presetManager created earlier)
   // ============================================================
 
-  const presetRepository = createInMemoryHeroViewPresetRepository()
-  const presetUseCase = createGetHeroViewPresetsUseCase(presetRepository)
   const presets = ref<HeroViewPreset[]>([])
   const selectedPresetId = computed({
     get: () => editorUIState.value.preset.selectedPresetId,
@@ -1361,11 +1349,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   const loadPresets = async (applyInitial = true) => {
-    presets.value = await presetUseCase.execute()
+    presets.value = await presetManager.getPresets()
     if (applyInitial && selectedPresetId.value) {
-      const preset = await presetUseCase.findById(selectedPresetId.value)
+      const preset = await presetManager.applyPreset(selectedPresetId.value)
       if (preset) {
-        applyPresetUsecase(preset, heroViewRepository)
         await fromHeroViewConfig(preset.config)
         return preset.colorPreset ?? null
       }
@@ -1373,21 +1360,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return null
   }
 
-  const applyPreset = async (presetId: string) => {
-    const preset = await presetUseCase.findById(presetId)
+  const applyPreset = async (presetId: string, mergeMode: MergeMode = 'replace') => {
+    const preset = await presetManager.applyPreset(presetId, mergeMode)
     if (preset) {
       selectedPresetId.value = presetId
-      applyPresetUsecase(preset, heroViewRepository)
       await fromHeroViewConfig(preset.config)
       return preset.colorPreset ?? null
     }
     return null
   }
 
-  const presetExportAdapter = createBrowserPresetExporter()
-
   const exportPreset = (exportOptions: ExportPresetOptions = {}) => {
-    return exportPresetUsecase(heroViewRepository, presetExportAdapter, exportOptions)
+    return presetManager.exportAsPreset(exportOptions)
   }
 
   // ============================================================
