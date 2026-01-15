@@ -343,6 +343,16 @@ export {
 } from './Modifier'
 
 // ============================================================
+// Layer Tree Operations (shared utilities)
+// ============================================================
+
+export {
+  findLayerInTree,
+  updateLayerInTree,
+  removeLayerFromTree,
+} from './LayerTreeOps'
+
+// ============================================================
 // Layer & Group Types (new naming)
 // ============================================================
 
