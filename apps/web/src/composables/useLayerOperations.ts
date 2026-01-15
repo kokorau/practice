@@ -153,16 +153,12 @@ export function useLayerOperations(
   })
 
   // ============================================================
-  // Handlers - Selection
+  // Handlers - Selection (delegate to callbacks)
   // ============================================================
-  const handleSelectLayer = (id: string) => {
-    onSelectLayer?.(id)
-  }
+  const handleSelectLayer = (id: string) => onSelectLayer?.(id)
 
   const handleSelectProcessor = (layerId: string, type: ProcessorType) => {
-    const layer = findNode(layers.value, layerId)
-    if (!layer) return
-    onSelectProcessor?.(layerId, type)
+    if (findNode(layers.value, layerId)) onSelectProcessor?.(layerId, type)
   }
 
   // ============================================================
@@ -177,14 +173,8 @@ export function useLayerOperations(
   const handleToggleVisibility = (layerId: string) => {
     const layer = findNode(layers.value, layerId)
     if (!layer) return
-
-    layers.value = updateNode(layers.value, layerId, {
-      visible: !layer.visible,
-    })
-
-    if (isLayer(layer)) {
-      sceneCallbacks.toggleLayerVisibility(getSceneLayerId(layer))
-    }
+    layers.value = updateNode(layers.value, layerId, { visible: !layer.visible })
+    if (isLayer(layer)) sceneCallbacks.toggleLayerVisibility(getSceneLayerId(layer))
   }
 
   // ============================================================
@@ -317,12 +307,10 @@ export function useLayerOperations(
   // Handlers - Grouping
   // ============================================================
   const handleGroupSelection = (layerId: string) => {
-    // Wrap the selected layer in a new group
     layers.value = wrapNodeInGroup(layers.value, layerId)
   }
 
   const handleUseAsMask = (layerId: string) => {
-    // Wrap the selected layer in a new group with MaskModifier applied
     layers.value = wrapNodeInMaskedGroup(layers.value, layerId)
   }
 
@@ -333,11 +321,7 @@ export function useLayerOperations(
     layers.value = moveSceneNode(layers.value, nodeId, position)
   }
 
-  const handleMoveModifier = (
-    sourceNodeId: string,
-    modifierIndex: number,
-    position: ModifierDropPosition,
-  ) => {
+  const handleMoveModifier = (sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => {
     layers.value = moveModifier(layers.value, sourceNodeId, modifierIndex, position)
   }
 
