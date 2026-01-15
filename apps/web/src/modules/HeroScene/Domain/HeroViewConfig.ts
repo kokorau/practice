@@ -502,8 +502,6 @@ export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
   children: LayerNodeConfig[]
   /** Effect filters applied to the group */
   filters?: EffectFilterConfig[]
-  /** Whether the group is expanded in UI */
-  expanded?: boolean
 }
 
 /**
@@ -824,4 +822,74 @@ export const getProcessorMask = (processor: ProcessorNodeConfig): MaskProcessorC
  */
 export const getProcessorEffects = (processor: ProcessorNodeConfig): EffectFilterConfig[] => {
   return processor.modifiers.filter((m): m is EffectFilterConfig => m.type === 'effect')
+}
+
+// ============================================================
+// Migration: Extract expanded state from legacy configs
+// ============================================================
+
+/**
+ * Legacy GroupLayerNodeConfig with expanded property
+ * Used for migration from old configs that stored expanded state in the config
+ */
+interface LegacyGroupLayerNodeConfig extends LayerNodeConfigBase {
+  type: 'group'
+  children: LayerNodeConfig[]
+  filters?: EffectFilterConfig[]
+  expanded?: boolean
+}
+
+/**
+ * Extract expanded layer IDs from a legacy config
+ *
+ * This is used when loading old configs that stored `expanded` in GroupLayerNodeConfig.
+ * The extracted IDs should be stored in HeroEditorUIState.layerTree.expandedLayerIds
+ *
+ * @param layers - Layer tree (may contain legacy groups with expanded property)
+ * @returns Set of layer IDs that were expanded
+ */
+export const extractExpandedLayerIds = (layers: LayerNodeConfig[]): Set<string> => {
+  const expandedIds = new Set<string>()
+
+  const traverse = (nodes: LayerNodeConfig[]) => {
+    for (const node of nodes) {
+      if (node.type === 'group') {
+        const legacyNode = node as unknown as LegacyGroupLayerNodeConfig
+        if (legacyNode.expanded) {
+          expandedIds.add(node.id)
+        }
+        traverse(node.children)
+      }
+    }
+  }
+
+  traverse(layers)
+  return expandedIds
+}
+
+/**
+ * Remove expanded property from all group layers
+ *
+ * This migrates a legacy config to the new format by stripping the expanded property
+ *
+ * @param layers - Layer tree (may contain legacy groups with expanded property)
+ * @returns New layer tree without expanded properties
+ */
+export const migrateExpandedFromConfig = (layers: LayerNodeConfig[]): LayerNodeConfig[] => {
+  const migrate = (nodes: LayerNodeConfig[]): LayerNodeConfig[] => {
+    return nodes.map((node) => {
+      if (node.type === 'group') {
+        const { ...rest } = node as unknown as LegacyGroupLayerNodeConfig
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { expanded: _expanded, ...cleanNode } = rest as LegacyGroupLayerNodeConfig
+        return {
+          ...cleanNode,
+          children: migrate(node.children),
+        } as GroupLayerNodeConfig
+      }
+      return node
+    })
+  }
+
+  return migrate(layers)
 }
