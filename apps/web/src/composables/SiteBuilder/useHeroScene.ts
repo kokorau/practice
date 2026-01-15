@@ -91,7 +91,6 @@ import {
   type HeroViewRepository,
   type FilterType,
   type EffectFilterConfig,
-  type LayerEffectConfig,
   createDefaultEffectConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
