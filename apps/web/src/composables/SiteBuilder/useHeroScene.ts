@@ -92,7 +92,7 @@ import {
   type FilterType,
   type EffectFilterConfig,
   type LayerEffectConfig,
-  createDefaultFilterConfig,
+  createDefaultEffectConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
   createGetHeroViewPresetsUseCase,
@@ -1307,7 +1307,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     layerUsecase.addLayer(textLayerConfig)
 
     // Register filter config for new layer
-    effectManager.setEffectConfig(id, createDefaultFilterConfig())
+    effectManager.setEffectConfig(id, createDefaultEffectConfig())
 
     render()
     return id
@@ -1353,7 +1353,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     layerUsecase.addLayer(model3DLayerConfig)
 
     // Register filter config for new layer
-    effectManager.setEffectConfig(id, createDefaultFilterConfig())
+    effectManager.setEffectConfig(id, createDefaultEffectConfig())
 
     render()
     return id
@@ -2201,8 +2201,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
    * Returns a self-contained, JSON-serializable config with LayerNodeConfig[] structure
    */
   const toHeroViewConfig = (): HeroViewConfig => {
-    const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultFilterConfig()
-    const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultFilterConfig()
+    const baseFilters = layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultEffectConfig()
+    const maskFilters = layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultEffectConfig()
 
     // Build layers array
     const layers: LayerNodeConfig[] = []
@@ -2364,7 +2364,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       // Background filters (from effect filter, merged with defaults for backward compatibility)
       const effectFilter = (baseLayer.filters ?? []).find((p) => p.type === 'effect')
       if (effectFilter) {
-        const defaults = createDefaultFilterConfig()
+        const defaults = createDefaultEffectConfig()
         const merged: LayerFilterConfig = {
           vignette: { ...defaults.vignette, ...effectFilter.config.vignette },
           chromaticAberration: { ...defaults.chromaticAberration, ...effectFilter.config.chromaticAberration },
@@ -2499,7 +2499,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         // Mask filters (from effect filter, merged with defaults for backward compatibility)
         const maskEffectFilter = (surfaceLayer.filters ?? []).find((p) => p.type === 'effect')
         if (maskEffectFilter) {
-          const defaults = createDefaultFilterConfig()
+          const defaults = createDefaultEffectConfig()
           const merged: LayerFilterConfig = {
             vignette: { ...defaults.vignette, ...maskEffectFilter.config.vignette },
             chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectFilter.config.chromaticAberration },

@@ -12,9 +12,6 @@ import type { TexturePatternSpec } from '@practice/texture'
 import { createDefaultEffectConfig, type LayerEffectConfig } from './EffectSchema'
 import type { SceneNode } from './LayerNode'
 
-// Legacy alias for backward compatibility
-const createDefaultFilterConfig = createDefaultEffectConfig
-type LayerFilterConfig = LayerEffectConfig
 
 // ============================================================
 // Base Layer Types
@@ -310,23 +307,10 @@ export {
   type CircleVignetteConfig,
   type RectVignetteConfig,
   type LinearVignetteConfig,
-  // Legacy aliases (deprecated)
-  VignetteFilterSchema,
-  ChromaticAberrationFilterSchema,
-  DotHalftoneFilterSchema,
-  LineHalftoneFilterSchema,
-  LayerFilterSchemas,
-  type VignetteFilterConfig,
-  type ChromaticAberrationFilterConfig,
-  type DotHalftoneFilterConfig,
-  type LineHalftoneFilterConfig,
-  type LayerFilterConfig,
-  type LayerFilterSchemaMap,
   createDefaultVignetteConfig,
   createDefaultChromaticAberrationConfig,
   createDefaultDotHalftoneConfig,
   createDefaultLineHalftoneConfig,
-  createDefaultFilterConfig,
 } from './EffectSchema'
 
 // ============================================================
@@ -516,7 +500,7 @@ export const createCanvasLayer = (
   opacity: 1.0,
   zIndex: 0,
   blendMode: 'normal',
-  filters: createDefaultFilterConfig(),
+  filters: createDefaultEffectConfig(),
   ...options,
   config,
 })
