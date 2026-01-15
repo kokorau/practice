@@ -242,6 +242,60 @@ export type BackgroundSurfaceConfig = SurfaceConfig
 export type MaskSurfaceConfig = SurfaceConfig
 
 // ============================================================
+// Shader Reference Types (UUID-based system)
+// ============================================================
+
+/**
+ * UUID-based shader reference
+ *
+ * This allows referencing shaders by their stable UUID instead of type discriminator.
+ * Enables community-created shaders and better versioning.
+ *
+ * @see ShaderDefinition in ShaderDefinition.ts for the full shader definition
+ * @see ShaderRegistry in Infra/ShaderRegistry.ts for the registry
+ */
+export interface ShaderRefConfig {
+  /** UUID of the shader in the registry */
+  shaderId: string
+  /** Parameter overrides (merged with shader defaults) */
+  params?: Record<string, unknown>
+}
+
+/**
+ * Surface configuration that supports both legacy and UUID-based formats
+ *
+ * Use this type when accepting surface configs that may be in either format.
+ * Legacy format uses `type` discriminator, modern format uses `shaderId`.
+ *
+ * @example
+ * ```typescript
+ * // Legacy format (backward compatible)
+ * const legacy: SurfaceRefConfig = { type: 'stripe', width1: 20, width2: 20, angle: 45 }
+ *
+ * // Modern UUID format
+ * const modern: SurfaceRefConfig = {
+ *   shaderId: '00000000-0000-0000-0000-000000000002',
+ *   params: { width1: 30 }
+ * }
+ * ```
+ */
+export type SurfaceRefConfig = SurfaceConfig | ShaderRefConfig
+
+/**
+ * Type guard to check if a surface config uses the new UUID-based format
+ */
+export function isShaderRefConfig(config: SurfaceRefConfig): config is ShaderRefConfig {
+  return 'shaderId' in config && typeof (config as ShaderRefConfig).shaderId === 'string'
+}
+
+/**
+ * Type guard to check if a surface config uses the legacy type-based format
+ */
+export function isLegacySurfaceConfig(config: SurfaceRefConfig): config is SurfaceConfig {
+  return 'type' in config && !('shaderId' in config)
+}
+
+// ============================================================
 // Mask Shape Config
 // ============================================================
 
