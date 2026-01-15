@@ -291,6 +291,7 @@ export {
   toCustomMaskShapeParams,
   toCustomSurfaceParams,
   toCustomBackgroundSurfaceParams,
+  fromCustomSurfaceParams,
   // Layer helpers
   getLayerFilters,
   // HeroEditorState factories

@@ -459,7 +459,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
       return null
     },
-    set: (val: string | null) => {
+    set: (_val: string | null) => {
       // Setting image URL is handled by setBackgroundImage which updates the Repository
       console.warn('customBackgroundImage setter: use setBackgroundImage instead')
     },
@@ -486,7 +486,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
       return null
     },
-    set: (val: string | null) => {
+    set: (_val: string | null) => {
       // Setting image URL is handled by setMaskImage which updates the Repository
       console.warn('customMaskImage setter: use setMaskImage instead')
     },
@@ -659,7 +659,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
       return null
     },
-    set: (val: CustomMaskShapeParams | null) => {
+    set: (_val: CustomMaskShapeParams | null) => {
       // When setting mask shape params, find the processor and update the mask modifier
       // This is handled by the existing updateMaskShape logic - no direct setter needed
       // The watcher on customMaskShapeParams triggers render() which updates the Repository
