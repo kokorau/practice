@@ -928,7 +928,7 @@ export type {
 // ============================================================
 
 export { toCustomMaskShapeParams } from './MaskShapeMapper'
-export { toCustomSurfaceParams, toCustomBackgroundSurfaceParams } from './SurfaceMapper'
+export { toCustomSurfaceParams, toCustomBackgroundSurfaceParams, fromCustomSurfaceParams } from './SurfaceMapper'
 
 // ============================================================
 // Mask Shader Registry
