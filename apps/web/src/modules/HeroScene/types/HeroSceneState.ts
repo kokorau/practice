@@ -20,7 +20,6 @@
 
 import type { Ref, ComputedRef, ShallowRef } from 'vue'
 import type { ObjectSchema } from '@practice/schema'
-import type { UseEffectManagerReturn } from '../../../composables/useEffectManager'
 import type {
   TexturePattern,
   MaskPattern,
@@ -48,6 +47,8 @@ import type { PrimitiveKey } from '../../SemanticColorPalette/Domain'
 import type { InkRole } from '../../SemanticColorPalette/Domain'
 import type {
   LayerFilterConfig,
+  LayerEffectConfig,
+  EffectType,
   HeroViewConfig,
   HeroViewPreset,
   LayerNodeConfig,
@@ -62,6 +63,39 @@ import type {
   ExportPresetOptions,
   HeroEditorUIState,
 } from '../index'
+
+// ============================================================
+// Effect Manager Interface (to avoid importing from composables)
+// ============================================================
+
+/**
+ * Interface for effect manager (matches useEffectManager return type)
+ *
+ * This interface is defined here to maintain Clean Architecture boundaries.
+ * The actual implementation is in composables/useEffectManager.ts
+ */
+export interface EffectManagerInterface {
+  /** All layer effect configs (reactive Map) */
+  readonly effects: ComputedRef<Map<string, LayerEffectConfig>>
+  /** Currently selected layer ID */
+  readonly selectedLayerId: Ref<string | null>
+  /** Effect config for the currently selected layer */
+  readonly selectedEffect: ComputedRef<LayerEffectConfig | null>
+  /** Select a layer by ID */
+  readonly selectLayer: (id: string) => void
+  /** Set effect type for a layer (null to disable all effects) */
+  readonly setEffectType: (layerId: string, type: EffectType | null) => void
+  /** Update effect params for a layer */
+  readonly updateEffectParams: <T extends EffectType>(
+    layerId: string,
+    type: T,
+    params: Partial<Omit<LayerEffectConfig[T], 'enabled'>>
+  ) => void
+  /** Set entire effect config for a layer (for loading from repository) */
+  readonly setEffectConfig: (layerId: string, config: LayerEffectConfig) => void
+  /** Delete effect config for a layer */
+  readonly deleteEffectConfig: (layerId: string) => void
+}
 
 // ============================================================
 // Custom Params Types (re-exported from useHeroScene)
@@ -321,7 +355,7 @@ export interface MaskState {
  */
 export interface FilterState {
   /** Effect manager composable instance */
-  readonly effectManager: UseEffectManagerReturn
+  readonly effectManager: EffectManagerInterface
   /** Currently selected layer for filter editing */
   readonly selectedFilterLayerId: Ref<string | null>
   /** Filter config for selected layer */
