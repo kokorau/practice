@@ -948,3 +948,60 @@ export {
   type MaskColors,
 } from './MaskShaderRegistry'
 
+// ============================================================
+// Shader Definition Types (UUID-based system)
+// ============================================================
+
+export {
+  // Types
+  type ShaderDefinition,
+  type ShaderCategory,
+  type ShaderAuthor,
+  type ShaderParamSchema,
+  type ParamDefinition,
+  type NumberParamDefinition,
+  type BooleanParamDefinition,
+  type SelectParamDefinition,
+  type StringParamDefinition,
+  type ColorParamDefinition,
+  // Constants
+  OFFICIAL_AUTHOR,
+  // Factory
+  createShaderDefinition,
+  // Type guards
+  isShaderDefinition,
+  isShaderCategory,
+} from './ShaderDefinition'
+
+// ============================================================
+// Shader Reference Types (for presets/configs)
+// ============================================================
+
+export {
+  // Types
+  type ShaderRef,
+  type LegacySurfaceType,
+  type LegacyShaderRef,
+  type SurfaceRef,
+  // Type guards
+  isShaderRef,
+  isLegacyShaderRef,
+  isSurfaceRef,
+  // Utilities
+  getShaderIdentifier,
+  getShaderParams,
+  toShaderRef,
+  normalizeSurfaceRef,
+} from './ShaderRef'
+
+// ============================================================
+// HeroViewConfig Shader Reference Types
+// ============================================================
+
+export {
+  type ShaderRefConfig,
+  type SurfaceRefConfig,
+  isShaderRefConfig,
+  isLegacySurfaceConfig,
+} from './HeroViewConfig'
+
