@@ -654,6 +654,10 @@ export type {
   ImageSurfaceConfig,
   // New SurfaceConfig type (replaces BackgroundSurfaceConfig/MaskSurfaceConfig)
   SurfaceConfig as HeroSurfaceConfig,
+  // Normalized Surface config (Phase 12)
+  SurfaceType,
+  NormalizedSurfaceConfig,
+  AnySurfaceConfig,
   // Mask shape types
   CircleMaskShapeConfig as HeroCircleMaskShapeConfig,
   RectMaskShapeConfig as HeroRectMaskShapeConfig,
@@ -661,6 +665,10 @@ export type {
   PerlinMaskShapeConfig as HeroPerlinMaskShapeConfig,
   MaskShapeConfig,
   MaskShapeConfig as HeroMaskShapeConfig,
+  // Normalized Mask config (Phase 12)
+  MaskShapeTypeId,
+  NormalizedMaskConfig,
+  AnyMaskConfig,
   // Filter config types (for JSON serialization)
   FilterConfig,
   EffectFilterConfig,
@@ -711,6 +719,22 @@ export {
   hasLegacyEffectConfigs,
   migrateEffectConfigsInModifiers,
   getEffectConfigsFromModifiers,
+  // Surface config normalization (Phase 12)
+  SURFACE_TYPES,
+  isNormalizedSurfaceConfig,
+  isLegacyTypeSurfaceConfig,
+  normalizeSurfaceConfig,
+  denormalizeSurfaceConfig,
+  getSurfaceAsNormalized,
+  getSurfaceAsLegacy,
+  // Mask config normalization (Phase 12)
+  MASK_SHAPE_TYPE_IDS,
+  isNormalizedMaskConfig,
+  isLegacyTypeMaskConfig,
+  normalizeMaskConfig,
+  denormalizeMaskConfig,
+  getMaskAsNormalized,
+  getMaskAsLegacy,
 } from './HeroViewConfig'
 
 // ============================================================
