@@ -1,4 +1,4 @@
-import { computed, type Ref, type ComputedRef } from 'vue'
+import { computed, type Ref, type ComputedRef, type ShallowRef } from 'vue'
 import type {
   LayerNodeConfig,
   GroupLayerNodeConfig,
@@ -8,6 +8,7 @@ import type {
   LayerDropPosition,
   ModifierDropPosition,
   HeroViewRepository,
+  HeroViewConfig,
 } from '../modules/HeroScene'
 import {
   findLayerInTree,
@@ -73,6 +74,8 @@ export type LayerVariant = 'surface' | 'text' | 'model3d' | 'image' | 'base' | '
 export interface UseLayerOperationsOptions {
   /** HeroView repository for reading/writing layers */
   repository: HeroViewRepository
+  /** Reactive HeroViewConfig for tracking layer changes (required for reactivity) */
+  heroViewConfig: ComputedRef<HeroViewConfig> | ShallowRef<HeroViewConfig>
   /** Expanded layer IDs ref */
   expandedLayerIds: Ref<Set<string>>
   /** Scene operation callbacks from useHeroScene */
@@ -169,6 +172,7 @@ export function useLayerOperations(
 ): UseLayerOperationsReturn {
   const {
     repository,
+    heroViewConfig,
     expandedLayerIds,
     sceneCallbacks,
     selectedLayerId,
@@ -178,11 +182,11 @@ export function useLayerOperations(
   } = options
 
   // ============================================================
-  // State (computed from repository)
+  // State (computed from reactive heroViewConfig)
   // ============================================================
   const layers = computed(() => {
-    const config = repository.get()
-    return config?.layers ?? []
+    // Use reactive heroViewConfig to ensure computed updates when config changes
+    return heroViewConfig.value?.layers ?? []
   })
 
   // ============================================================
