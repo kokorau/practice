@@ -47,9 +47,7 @@ import {
   type HeroSceneConfig,
   type HtmlLayer,
   type HeroViewConfig,
-  type HeroColorsConfig,
   type HeroPrimitiveKey,
-  type HeroContextName,
   type HeroSurfaceConfig,
   type MaskShapeConfig as HeroMaskShapeConfig,
   type LayerNodeConfig,
@@ -695,13 +693,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // Layer Management
   // ============================================================
-  let isLayersInitialized = false
-
-  const initializeDefaultLayers = () => {
-    if (isLayersInitialized) return
-    isLayersInitialized = true
-    initializeConfig()
-  }
 
   const syncLayerConfigs = () => {
     // No-op: canvasLayers has been removed
@@ -877,16 +868,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     try {
       const { TextureRenderer } = await import('@practice/texture')
       previewRenderer = await TextureRenderer.create(canvas)
-      initializeDefaultLayers()
-      if (customBackgroundSurfaceParams.value === null) {
-        initBackgroundSurfaceParamsFromPreset()
-      }
-      if (customMaskShapeParams.value === null && selectedMaskIndex.value !== null) {
-        initMaskShapeParamsFromPreset()
-      }
-      if (customSurfaceParams.value === null) {
-        initSurfaceParamsFromPreset()
-      }
+      // Repository already has default config from createDefaultHeroViewConfig()
+      // No need for additional initialization - just render
       await render()
     } catch (e) {
       console.error('WebGPU not available:', e)
@@ -999,180 +982,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // HeroViewConfig Serialization
   // ============================================================
-
-  const buildBackgroundSurface = (): HeroSurfaceConfig => {
-    if (heroImages.customBackgroundImage.value) {
-      return { type: 'image', imageId: heroImages.customBackgroundImage.value }
-    }
-    const params = customBackgroundSurfaceParams.value
-    if (params) {
-      if (params.type === 'solid') return { type: 'solid' }
-      if (params.type === 'stripe') return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
-      if (params.type === 'grid') return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
-      if (params.type === 'polkaDot') return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
-      if (params.type === 'checker') return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
-      if (params.type === 'triangle') return { type: 'triangle', size: params.size, angle: params.angle }
-      if (params.type === 'hexagon') return { type: 'hexagon', size: params.size, angle: params.angle }
-      if (params.type === 'gradientGrain') return {
-        type: 'gradientGrain',
-        depthMapType: params.depthMapType,
-        angle: params.angle,
-        centerX: params.centerX,
-        centerY: params.centerY,
-        radialStartAngle: params.radialStartAngle,
-        radialSweepAngle: params.radialSweepAngle,
-        perlinScale: params.perlinScale,
-        perlinOctaves: params.perlinOctaves,
-        perlinContrast: params.perlinContrast,
-        perlinOffset: params.perlinOffset,
-        seed: params.seed,
-        sparsity: params.sparsity,
-      }
-      if (params.type === 'asanoha') return { type: 'asanoha', size: params.size, lineWidth: params.lineWidth }
-      if (params.type === 'seigaiha') return { type: 'seigaiha', radius: params.radius, rings: params.rings, lineWidth: params.lineWidth }
-      if (params.type === 'wave') return { type: 'wave', amplitude: params.amplitude, wavelength: params.wavelength, thickness: params.thickness, angle: params.angle }
-      if (params.type === 'scales') return { type: 'scales', size: params.size, overlap: params.overlap, angle: params.angle }
-      if (params.type === 'ogee') return { type: 'ogee', width: params.width, height: params.height, lineWidth: params.lineWidth }
-      if (params.type === 'sunburst') return { type: 'sunburst', rays: params.rays, centerX: params.centerX, centerY: params.centerY, twist: params.twist }
-    }
-    return { type: 'solid' }
-  }
-
-  const buildMaskSurface = (): HeroSurfaceConfig => {
-    if (heroImages.customMaskImage.value) {
-      return { type: 'image', imageId: heroImages.customMaskImage.value }
-    }
-    const params = customSurfaceParams.value
-    if (params) {
-      if (params.type === 'solid') return { type: 'solid' }
-      if (params.type === 'stripe') return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
-      if (params.type === 'grid') return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
-      if (params.type === 'polkaDot') return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
-      if (params.type === 'checker') return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
-      if (params.type === 'triangle') return { type: 'triangle', size: params.size, angle: params.angle }
-      if (params.type === 'hexagon') return { type: 'hexagon', size: params.size, angle: params.angle }
-      if (params.type === 'gradientGrain') return {
-        type: 'gradientGrain',
-        depthMapType: params.depthMapType,
-        angle: params.angle,
-        centerX: params.centerX,
-        centerY: params.centerY,
-        radialStartAngle: params.radialStartAngle,
-        radialSweepAngle: params.radialSweepAngle,
-        perlinScale: params.perlinScale,
-        perlinOctaves: params.perlinOctaves,
-        perlinContrast: params.perlinContrast,
-        perlinOffset: params.perlinOffset,
-        seed: params.seed,
-        sparsity: params.sparsity,
-      }
-      if (params.type === 'asanoha') return { type: 'asanoha', size: params.size, lineWidth: params.lineWidth }
-      if (params.type === 'seigaiha') return { type: 'seigaiha', radius: params.radius, rings: params.rings, lineWidth: params.lineWidth }
-      if (params.type === 'wave') return { type: 'wave', amplitude: params.amplitude, wavelength: params.wavelength, thickness: params.thickness, angle: params.angle }
-      if (params.type === 'scales') return { type: 'scales', size: params.size, overlap: params.overlap, angle: params.angle }
-      if (params.type === 'ogee') return { type: 'ogee', width: params.width, height: params.height, lineWidth: params.lineWidth }
-      if (params.type === 'sunburst') return { type: 'sunburst', rays: params.rays, centerX: params.centerX, centerY: params.centerY, twist: params.twist }
-    }
-    return { type: 'solid' }
-  }
-
-  const buildMaskShape = (): HeroMaskShapeConfig | null => {
-    const params = customMaskShapeParams.value
-    if (!params) return null
-    return fromCustomMaskShapeParams(params)
-  }
-
-  const buildColorsConfig = (): HeroColorsConfig => ({
-    background: {
-      primary: heroColors.backgroundColorKey1.value as HeroPrimitiveKey,
-      secondary: heroColors.backgroundColorKey2.value as HeroPrimitiveKey | 'auto',
-    },
-    mask: {
-      primary: heroColors.maskColorKey1.value as HeroPrimitiveKey | 'auto',
-      secondary: heroColors.maskColorKey2.value as HeroPrimitiveKey | 'auto',
-    },
-    semanticContext: heroColors.maskSemanticContext.value as HeroContextName,
-    brand: { hue: 198, saturation: 70, value: 65 },
-    accent: { hue: 30, saturation: 80, value: 60 },
-    foundation: { hue: 0, saturation: 0, value: 97 },
-  })
-
-  /**
-   * Initialize config in repository (only called once during setup)
-   * This builds the initial layer structure based on current UI state
-   */
-  const initializeConfig = (): void => {
-    const baseFilters = heroFilters.layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultEffectConfig()
-    const maskFilters = heroFilters.layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultEffectConfig()
-
-    const layers: LayerNodeConfig[] = []
-
-    const baseLayer: BaseLayerNodeConfig = {
-      type: 'base',
-      id: 'base',
-      name: 'Background',
-      visible: true,
-      surface: buildBackgroundSurface(),
-      filters: [{
-        type: 'effect',
-        enabled: true,
-        config: baseFilters,
-      }],
-    }
-    layers.push(baseLayer)
-
-    const maskShape = buildMaskShape()
-    if (maskShape && selectedMaskIndex.value !== null) {
-      const surfaceLayer: SurfaceLayerNodeConfig = {
-        type: 'surface',
-        id: 'surface-1',
-        name: 'Mask Surface',
-        visible: true,
-        surface: buildMaskSurface(),
-        filters: [{
-          type: 'effect',
-          enabled: true,
-          config: maskFilters,
-        }],
-      }
-      layers.push(surfaceLayer)
-
-      layers.push({
-        type: 'processor',
-        id: 'processor-mask',
-        name: 'Mask Processor',
-        visible: true,
-        modifiers: [{
-          type: 'mask',
-          enabled: true,
-          shape: maskShape,
-          invert: false,
-          feather: 0,
-        } as MaskProcessorConfig],
-      })
-    }
-
-    const existingConfig = heroViewRepository.get()
-    if (existingConfig) {
-      for (const existingLayer of existingConfig.layers) {
-        if (existingLayer.type === 'text' || existingLayer.type === 'model3d') {
-          layers.push(existingLayer)
-        }
-      }
-    }
-
-    const config: HeroViewConfig = {
-      viewport: {
-        width: editorState.value.config.width,
-        height: editorState.value.config.height,
-      },
-      colors: buildColorsConfig(),
-      layers,
-      foreground: foregroundConfig.value,
-    }
-
-    heroViewRepository.set(config)
-  }
 
   /**
    * Get current HeroViewConfig from repository
