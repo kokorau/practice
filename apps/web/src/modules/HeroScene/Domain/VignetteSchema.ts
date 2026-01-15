@@ -200,38 +200,3 @@ export function createVignetteConfigForShape(
   }
 }
 
-// ============================================================
-// Migration Helper
-// ============================================================
-
-interface LegacyVignetteConfig {
-  enabled: boolean
-  intensity: number
-  radius: number
-  softness: number
-}
-
-/**
- * Migrate legacy vignette config to new format
- */
-export function migrateVignetteConfig(
-  legacy: LegacyVignetteConfig | VignetteConfig
-): VignetteConfig {
-  // If already has shape, return as-is
-  if ('shape' in legacy) {
-    return legacy
-  }
-
-  // Migrate to ellipse (preserves existing behavior)
-  return {
-    enabled: legacy.enabled,
-    shape: 'ellipse',
-    intensity: legacy.intensity,
-    softness: legacy.softness,
-    color: [0, 0, 0, 1],
-    radius: legacy.radius,
-    centerX: 0.5,
-    centerY: 0.5,
-    aspectRatio: 1,
-  }
-}

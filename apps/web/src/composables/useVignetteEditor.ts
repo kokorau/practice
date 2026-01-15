@@ -1,7 +1,6 @@
 import { computed, type WritableComputedRef, type ComputedRef } from 'vue'
 import {
   VignetteShapeSchemas,
-  migrateVignetteConfig,
   createVignetteConfigForShape,
   type VignetteShape,
   type VignetteConfig,
@@ -107,10 +106,10 @@ export function useVignetteEditor(
   // ============================================================
 
   /**
-   * Migrate legacy config to new format with shape support
+   * Vignette config with shape support (all configs now use new format)
    */
-  const migratedConfig = computed<VignetteConfig>(() =>
-    migrateVignetteConfig(vignetteConfig.value as unknown as VignetteConfig)
+  const migratedConfig = computed<VignetteConfig>(
+    () => vignetteConfig.value as unknown as VignetteConfig
   )
 
   /**

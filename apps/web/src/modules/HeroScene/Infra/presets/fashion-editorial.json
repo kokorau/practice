@@ -2,10 +2,19 @@
   "id": "fashion-editorial",
   "name": "Fashion Editorial",
   "config": {
-    "viewport": { "width": 1280, "height": 720 },
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
     "colors": {
-      "background": { "primary": "BN0", "secondary": "BN1" },
-      "mask": { "primary": "BN9", "secondary": "BN8" },
+      "background": {
+        "primary": "BN0",
+        "secondary": "BN1"
+      },
+      "mask": {
+        "primary": "BN9",
+        "secondary": "BN8"
+      },
       "semanticContext": "canvas"
     },
     "layers": [
@@ -14,16 +23,46 @@
         "id": "base",
         "name": "Background",
         "visible": true,
-        "surface": { "type": "solid" },
+        "surface": {
+          "type": "solid"
+        },
         "filters": [
           {
             "type": "effect",
             "enabled": true,
             "config": {
-              "vignette": { "enabled": false, "intensity": 0.5, "radius": 0.5, "softness": 0.5 },
-              "chromaticAberration": { "enabled": false, "intensity": 0.01 },
-              "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
-              "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
+              "vignette": {
+                "enabled": false,
+                "intensity": 0.5,
+                "radius": 0.5,
+                "softness": 0.5,
+                "shape": "ellipse",
+                "color": [
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                "centerX": 0.5,
+                "centerY": 0.5,
+                "aspectRatio": 1
+              },
+              "chromaticAberration": {
+                "enabled": false,
+                "intensity": 0.01
+              },
+              "dotHalftone": {
+                "enabled": false,
+                "dotSize": 8,
+                "spacing": 16,
+                "angle": 45
+              },
+              "lineHalftone": {
+                "enabled": false,
+                "lineWidth": 4,
+                "spacing": 12,
+                "angle": 45
+              }
             }
           }
         ]
@@ -33,16 +72,49 @@
         "id": "surface-mask",
         "name": "Surface",
         "visible": true,
-        "surface": { "type": "stripe", "width1": 2, "width2": 8, "angle": 0 },
+        "surface": {
+          "type": "stripe",
+          "width1": 2,
+          "width2": 8,
+          "angle": 0
+        },
         "filters": [
           {
             "type": "effect",
             "enabled": true,
             "config": {
-              "vignette": { "enabled": false, "intensity": 0.5, "radius": 0.5, "softness": 0.5 },
-              "chromaticAberration": { "enabled": false, "intensity": 0.01 },
-              "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
-              "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 }
+              "vignette": {
+                "enabled": false,
+                "intensity": 0.5,
+                "radius": 0.5,
+                "softness": 0.5,
+                "shape": "ellipse",
+                "color": [
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                "centerX": 0.5,
+                "centerY": 0.5,
+                "aspectRatio": 1
+              },
+              "chromaticAberration": {
+                "enabled": false,
+                "intensity": 0.01
+              },
+              "dotHalftone": {
+                "enabled": false,
+                "dotSize": 8,
+                "spacing": 16,
+                "angle": 45
+              },
+              "lineHalftone": {
+                "enabled": false,
+                "lineWidth": 4,
+                "spacing": 12,
+                "angle": 45
+              }
             }
           }
         ]
@@ -76,14 +148,42 @@
     ],
     "foreground": {
       "elements": [
-        { "id": "title-1", "type": "title", "visible": true, "position": "top-center", "content": "SPRING 2025", "fontSize": 2, "fontId": "josefin-sans" },
-        { "id": "description-1", "type": "description", "visible": true, "position": "bottom-center", "content": "The New Collection", "fontSize": 4, "fontId": "playfair-display" }
+        {
+          "id": "title-1",
+          "type": "title",
+          "visible": true,
+          "position": "top-center",
+          "content": "SPRING 2025",
+          "fontSize": 2,
+          "fontId": "josefin-sans"
+        },
+        {
+          "id": "description-1",
+          "type": "description",
+          "visible": true,
+          "position": "bottom-center",
+          "content": "The New Collection",
+          "fontSize": 4,
+          "fontId": "playfair-display"
+        }
       ]
     }
   },
   "colorPreset": {
-    "brand": { "hue": 350, "saturation": 30, "value": 85 },
-    "accent": { "hue": 40, "saturation": 20, "value": 95 },
-    "foundation": { "hue": 0, "saturation": 0, "value": 99 }
+    "brand": {
+      "hue": 350,
+      "saturation": 30,
+      "value": 85
+    },
+    "accent": {
+      "hue": 40,
+      "saturation": 20,
+      "value": 95
+    },
+    "foundation": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 99
+    }
   }
 }

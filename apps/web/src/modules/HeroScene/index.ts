@@ -199,7 +199,6 @@ export {
   VignetteShapeOptions,
   createDefaultVignetteShapeConfig,
   createVignetteConfigForShape,
-  migrateVignetteConfig,
   createDefaultVignetteConfig,
   createDefaultChromaticAberrationConfig,
   createDefaultDotHalftoneConfig,

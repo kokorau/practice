@@ -1,27 +1,10 @@
 /**
  * SectionTemplate - Template interface for rendering sections
  *
- * Supports two formats:
- * 1. Legacy: TypeScript render function (for backward compatibility)
- * 2. String: Template string with ${variable} placeholders (DB-storable)
+ * Uses string template format with ${variable} placeholders (DB-storable)
  */
 
 import type { SectionKind } from './Section'
-import type { SectionContent } from './SectionContent'
-import type { RenderTheme } from './RenderTheme'
-
-// ============================================================================
-// Legacy Template Interface (backward compatibility)
-// ============================================================================
-
-/**
- * A template that renders a section to HTML using a function
- * @deprecated Use StringSectionTemplate for new templates
- */
-export interface LegacySectionTemplate<T extends SectionContent = SectionContent> {
-  readonly kind: SectionKind
-  readonly render: (content: T, theme: RenderTheme) => string
-}
 
 // ============================================================================
 // String Template Interface (DB-storable)
@@ -42,30 +25,16 @@ export interface StringSectionTemplate {
   readonly template: string
 }
 
-// ============================================================================
-// Union Type
-// ============================================================================
-
 /**
- * Either legacy function-based or new string-based template
+ * Section template type alias (now only StringSectionTemplate)
  */
-export type SectionTemplate<T extends SectionContent = SectionContent> =
-  | LegacySectionTemplate<T>
-  | StringSectionTemplate
+export type SectionTemplate = StringSectionTemplate
 
 /**
  * Type guard to check if template is string-based
  */
 export const isStringTemplate = (t: SectionTemplate): t is StringSectionTemplate =>
   'template' in t && typeof t.template === 'string'
-
-/**
- * Type guard to check if template is legacy function-based
- */
-export const isLegacyTemplate = <T extends SectionContent>(
-  t: SectionTemplate<T>
-): t is LegacySectionTemplate<T> =>
-  'render' in t && typeof t.render === 'function'
 
 // ============================================================================
 // Template Registry Type
@@ -74,6 +43,4 @@ export const isLegacyTemplate = <T extends SectionContent>(
 /**
  * Registry of all section templates
  */
-export type TemplateRegistry = Readonly<
-  Record<SectionKind, SectionTemplate<SectionContent>>
->
+export type TemplateRegistry = Readonly<Record<SectionKind, StringSectionTemplate>>
