@@ -342,7 +342,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // HeroViewRepository & Usecases
   // ============================================================
-  const heroViewRepository = createHeroViewInMemoryRepository()
+  const heroViewRepository = repository ?? createHeroViewInMemoryRepository()
 
   // Reactive config derived from Repository
   const repoConfig = shallowRef<HeroViewConfig>(heroViewRepository.get())
