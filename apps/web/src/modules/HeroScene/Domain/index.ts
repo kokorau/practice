@@ -735,6 +735,9 @@ export {
   denormalizeMaskConfig,
   getMaskAsNormalized,
   getMaskAsLegacy,
+  // Full config migration (Phase 13)
+  migrateHeroViewConfig,
+  configNeedsMigration,
 } from './HeroViewConfig'
 
 // ============================================================

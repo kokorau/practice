@@ -1272,3 +1272,73 @@ export const getEffectConfigsFromModifiers = (modifiers: ProcessorConfig[]): Sin
 
   return effects
 }
+
+// ============================================================
+// Full Config Migration
+// ============================================================
+
+/**
+ * Migrate a single layer's effect configs from legacy to new format
+ */
+const migrateLayerEffects = (layer: LayerNodeConfig): LayerNodeConfig => {
+  if (layer.type === 'processor') {
+    // Migrate processor modifiers
+    const migratedModifiers = migrateEffectConfigsInModifiers(layer.modifiers)
+    return { ...layer, modifiers: migratedModifiers }
+  }
+
+  if (layer.type === 'group') {
+    // Recursively migrate children
+    const migratedChildren = layer.children.map(migrateLayerEffects)
+    // Also migrate filters if present
+    if (layer.filters && hasLegacyEffectConfigs(layer.filters as ProcessorConfig[])) {
+      const migratedFilters: EffectFilterConfig[] = []
+      for (const filter of layer.filters) {
+        if (isLegacyEffectFilterConfig(filter)) {
+          // For filters array, we keep the legacy format but could migrate if needed
+          migratedFilters.push(filter)
+        } else {
+          migratedFilters.push(filter as EffectFilterConfig)
+        }
+      }
+      return { ...layer, children: migratedChildren, filters: migratedFilters }
+    }
+    return { ...layer, children: migratedChildren }
+  }
+
+  // For other layer types (base, surface, text, etc.), return as-is
+  // They may have filters but we keep them in legacy format for now
+  return layer
+}
+
+/**
+ * Migrate all effect configs in HeroViewConfig from legacy to new format
+ *
+ * This function converts:
+ * - EffectFilterConfig (legacy bundled format) → SingleEffectConfig[] (new format)
+ *
+ * Use this when loading configs from storage or presets.
+ *
+ * @param config - HeroViewConfig to migrate
+ * @returns Migrated HeroViewConfig with all effects in new format
+ */
+export const migrateHeroViewConfig = (config: HeroViewConfig): HeroViewConfig => {
+  const migratedLayers = config.layers.map(migrateLayerEffects)
+  return { ...config, layers: migratedLayers }
+}
+
+/**
+ * Check if HeroViewConfig needs migration (has legacy effect configs)
+ */
+export const configNeedsMigration = (config: HeroViewConfig): boolean => {
+  const checkLayer = (layer: LayerNodeConfig): boolean => {
+    if (layer.type === 'processor') {
+      return hasLegacyEffectConfigs(layer.modifiers)
+    }
+    if (layer.type === 'group') {
+      return layer.children.some(checkLayer)
+    }
+    return false
+  }
+  return config.layers.some(checkLayer)
+}

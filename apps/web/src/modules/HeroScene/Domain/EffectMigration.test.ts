@@ -8,10 +8,14 @@ import {
   isSingleEffectConfig,
   isLegacyEffectFilterConfig,
   createDefaultEffectFilterConfig,
+  migrateHeroViewConfig,
+  configNeedsMigration,
   type SingleEffectConfig,
   type EffectFilterConfig,
   type MaskProcessorConfig,
   type ProcessorConfig,
+  type HeroViewConfig,
+  type ProcessorNodeConfig,
 } from './index'
 
 describe('Effect Config Migration', () => {
@@ -325,6 +329,273 @@ describe('Effect Config Migration', () => {
       // Check blur params are preserved
       expect(backToLegacy.config.blur.enabled).toBe(true)
       expect(backToLegacy.config.blur.radius).toBe(15)
+    })
+  })
+
+  describe('configNeedsMigration', () => {
+    it('should return false for config without legacy effects', () => {
+      const config: HeroViewConfig = {
+        viewport: { width: 1280, height: 720 },
+        colors: {
+          background: { primary: 'B', secondary: 'auto' },
+          mask: { primary: 'auto', secondary: 'auto' },
+          semanticContext: 'canvas',
+          brand: { hue: 198, saturation: 70, value: 65 },
+          accent: { hue: 30, saturation: 80, value: 60 },
+          foundation: { hue: 0, saturation: 0, value: 97 },
+        },
+        layers: [
+          {
+            type: 'base',
+            id: 'base',
+            name: 'Background',
+            visible: true,
+            surface: { type: 'solid' },
+          },
+        ],
+        foreground: { elements: [] },
+      }
+
+      expect(configNeedsMigration(config)).toBe(false)
+    })
+
+    it('should return true for config with legacy effects in processor', () => {
+      const legacyEffect = createDefaultEffectFilterConfig()
+      legacyEffect.enabled = true
+      legacyEffect.config.blur = { enabled: true, radius: 8 }
+
+      const processor: ProcessorNodeConfig = {
+        type: 'processor',
+        id: 'processor-1',
+        name: 'Effect Processor',
+        visible: true,
+        modifiers: [legacyEffect],
+      }
+
+      const config: HeroViewConfig = {
+        viewport: { width: 1280, height: 720 },
+        colors: {
+          background: { primary: 'B', secondary: 'auto' },
+          mask: { primary: 'auto', secondary: 'auto' },
+          semanticContext: 'canvas',
+          brand: { hue: 198, saturation: 70, value: 65 },
+          accent: { hue: 30, saturation: 80, value: 60 },
+          foundation: { hue: 0, saturation: 0, value: 97 },
+        },
+        layers: [processor],
+        foreground: { elements: [] },
+      }
+
+      expect(configNeedsMigration(config)).toBe(true)
+    })
+
+    it('should return false for config with only new format effects', () => {
+      const newEffect: SingleEffectConfig = { type: 'effect', id: 'blur', params: { radius: 8 } }
+
+      const processor: ProcessorNodeConfig = {
+        type: 'processor',
+        id: 'processor-1',
+        name: 'Effect Processor',
+        visible: true,
+        modifiers: [newEffect],
+      }
+
+      const config: HeroViewConfig = {
+        viewport: { width: 1280, height: 720 },
+        colors: {
+          background: { primary: 'B', secondary: 'auto' },
+          mask: { primary: 'auto', secondary: 'auto' },
+          semanticContext: 'canvas',
+          brand: { hue: 198, saturation: 70, value: 65 },
+          accent: { hue: 30, saturation: 80, value: 60 },
+          foundation: { hue: 0, saturation: 0, value: 97 },
+        },
+        layers: [processor],
+        foreground: { elements: [] },
+      }
+
+      expect(configNeedsMigration(config)).toBe(false)
+    })
+  })
+
+  describe('migrateHeroViewConfig', () => {
+    it('should migrate legacy effects in processor nodes', () => {
+      const legacyEffect = createDefaultEffectFilterConfig()
+      legacyEffect.enabled = true
+      legacyEffect.config.blur = { enabled: true, radius: 12 }
+      legacyEffect.config.vignette = {
+        enabled: true,
+        shape: 'ellipse',
+        intensity: 0.5,
+        softness: 0.4,
+        color: [0, 0, 0, 1],
+        radius: 0.8,
+        centerX: 0.5,
+        centerY: 0.5,
+        aspectRatio: 1,
+      }
+
+      const processor: ProcessorNodeConfig = {
+        type: 'processor',
+        id: 'processor-1',
+        name: 'Effect Processor',
+        visible: true,
+        modifiers: [legacyEffect],
+      }
+
+      const config: HeroViewConfig = {
+        viewport: { width: 1280, height: 720 },
+        colors: {
+          background: { primary: 'B', secondary: 'auto' },
+          mask: { primary: 'auto', secondary: 'auto' },
+          semanticContext: 'canvas',
+          brand: { hue: 198, saturation: 70, value: 65 },
+          accent: { hue: 30, saturation: 80, value: 60 },
+          foundation: { hue: 0, saturation: 0, value: 97 },
+        },
+        layers: [processor],
+        foreground: { elements: [] },
+      }
+
+      const migrated = migrateHeroViewConfig(config)
+
+      // Should have converted to new format
+      expect(configNeedsMigration(migrated)).toBe(false)
+
+      // Check the processor has SingleEffectConfig entries
+      const migratedProcessor = migrated.layers[0] as ProcessorNodeConfig
+      expect(migratedProcessor.modifiers).toHaveLength(2) // blur + vignette
+
+      const blurEffect = migratedProcessor.modifiers.find(
+        (m) => isSingleEffectConfig(m) && m.id === 'blur'
+      ) as SingleEffectConfig
+      expect(blurEffect).toBeDefined()
+      expect(blurEffect.params).toEqual({ radius: 12 })
+
+      const vignetteEffect = migratedProcessor.modifiers.find(
+        (m) => isSingleEffectConfig(m) && m.id === 'vignette'
+      ) as SingleEffectConfig
+      expect(vignetteEffect).toBeDefined()
+      expect(vignetteEffect.params.intensity).toBe(0.5)
+    })
+
+    it('should preserve non-effect modifiers', () => {
+      const legacyEffect = createDefaultEffectFilterConfig()
+      legacyEffect.enabled = true
+      legacyEffect.config.blur = { enabled: true, radius: 8 }
+
+      const mask: MaskProcessorConfig = {
+        type: 'mask',
+        enabled: true,
+        shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: true },
+        invert: false,
+        feather: 0,
+      }
+
+      const processor: ProcessorNodeConfig = {
+        type: 'processor',
+        id: 'processor-1',
+        name: 'Effect Processor',
+        visible: true,
+        modifiers: [legacyEffect, mask],
+      }
+
+      const config: HeroViewConfig = {
+        viewport: { width: 1280, height: 720 },
+        colors: {
+          background: { primary: 'B', secondary: 'auto' },
+          mask: { primary: 'auto', secondary: 'auto' },
+          semanticContext: 'canvas',
+          brand: { hue: 198, saturation: 70, value: 65 },
+          accent: { hue: 30, saturation: 80, value: 60 },
+          foundation: { hue: 0, saturation: 0, value: 97 },
+        },
+        layers: [processor],
+        foreground: { elements: [] },
+      }
+
+      const migrated = migrateHeroViewConfig(config)
+
+      const migratedProcessor = migrated.layers[0] as ProcessorNodeConfig
+      expect(migratedProcessor.modifiers).toHaveLength(2) // blur + mask
+
+      // Mask should be preserved
+      const maskMod = migratedProcessor.modifiers.find((m) => m.type === 'mask') as MaskProcessorConfig
+      expect(maskMod).toBeDefined()
+      expect(maskMod.shape.type).toBe('circle')
+    })
+
+    it('should handle nested groups recursively', () => {
+      const legacyEffect = createDefaultEffectFilterConfig()
+      legacyEffect.enabled = true
+      legacyEffect.config.chromaticAberration = { enabled: true, intensity: 5 }
+
+      const processor: ProcessorNodeConfig = {
+        type: 'processor',
+        id: 'processor-1',
+        name: 'Effect Processor',
+        visible: true,
+        modifiers: [legacyEffect],
+      }
+
+      const config: HeroViewConfig = {
+        viewport: { width: 1280, height: 720 },
+        colors: {
+          background: { primary: 'B', secondary: 'auto' },
+          mask: { primary: 'auto', secondary: 'auto' },
+          semanticContext: 'canvas',
+          brand: { hue: 198, saturation: 70, value: 65 },
+          accent: { hue: 30, saturation: 80, value: 60 },
+          foundation: { hue: 0, saturation: 0, value: 97 },
+        },
+        layers: [
+          {
+            type: 'group',
+            id: 'group-1',
+            name: 'Group',
+            visible: true,
+            children: [processor],
+          },
+        ],
+        foreground: { elements: [] },
+      }
+
+      const migrated = migrateHeroViewConfig(config)
+
+      // Should have migrated effects in nested processor
+      expect(configNeedsMigration(migrated)).toBe(false)
+    })
+
+    it('should not modify config without legacy effects', () => {
+      const newEffect: SingleEffectConfig = { type: 'effect', id: 'blur', params: { radius: 8 } }
+
+      const processor: ProcessorNodeConfig = {
+        type: 'processor',
+        id: 'processor-1',
+        name: 'Effect Processor',
+        visible: true,
+        modifiers: [newEffect],
+      }
+
+      const config: HeroViewConfig = {
+        viewport: { width: 1280, height: 720 },
+        colors: {
+          background: { primary: 'B', secondary: 'auto' },
+          mask: { primary: 'auto', secondary: 'auto' },
+          semanticContext: 'canvas',
+          brand: { hue: 198, saturation: 70, value: 65 },
+          accent: { hue: 30, saturation: 80, value: 60 },
+          foundation: { hue: 0, saturation: 0, value: 97 },
+        },
+        layers: [processor],
+        foreground: { elements: [] },
+      }
+
+      const migrated = migrateHeroViewConfig(config)
+
+      const migratedProcessor = migrated.layers[0] as ProcessorNodeConfig
+      expect(migratedProcessor.modifiers).toHaveLength(1)
+      expect(migratedProcessor.modifiers[0]).toEqual(newEffect)
     })
   })
 })
