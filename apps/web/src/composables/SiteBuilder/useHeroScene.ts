@@ -116,6 +116,7 @@ import {
   type EditorStateRef,
   type RendererActions,
   renderHeroConfig,
+  migrateHeroViewConfig,
 } from '../../modules/HeroScene'
 import { useLayerSelection } from '../useLayerSelection'
 
@@ -699,7 +700,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const initializeDefaultLayers = () => {
     if (isLayersInitialized) return
     isLayersInitialized = true
-    toHeroViewConfig()
+    initializeConfig()
   }
 
   const syncLayerConfigs = () => {
@@ -854,7 +855,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   const renderSceneFromConfig = async () => {
     if (!previewRenderer) return
-    const config = toHeroViewConfig()
+    // Use repository directly as single source of truth
+    const config = heroViewRepository.get()
     await renderHeroConfig(previewRenderer, config, primitivePalette.value)
     try {
       canvasImageData.value = await previewRenderer.readPixels()
@@ -1095,7 +1097,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foundation: { hue: 0, saturation: 0, value: 97 },
   })
 
-  const toHeroViewConfig = (): HeroViewConfig => {
+  /**
+   * Initialize config in repository (only called once during setup)
+   * This builds the initial layer structure based on current UI state
+   */
+  const initializeConfig = (): void => {
     const baseFilters = heroFilters.layerFilterConfigs.value.get(LAYER_IDS.BASE) ?? createDefaultEffectConfig()
     const maskFilters = heroFilters.layerFilterConfigs.value.get(LAYER_IDS.MASK) ?? createDefaultEffectConfig()
 
@@ -1166,7 +1172,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
 
     heroViewRepository.set(config)
-    return config
+  }
+
+  /**
+   * Get current HeroViewConfig from repository
+   * @deprecated Use heroViewRepository.get() directly for new code
+   */
+  const toHeroViewConfig = (): HeroViewConfig => {
+    return heroViewRepository.get()
   }
 
   const saveToRepository = () => {
@@ -1178,28 +1191,30 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const fromHeroViewConfig = async (config: HeroViewConfig) => {
     isLoadingFromConfig = true
 
-    heroViewRepository.set(config)
+    // Migrate legacy configs before applying
+    const migratedConfig = migrateHeroViewConfig(config)
+    heroViewRepository.set(migratedConfig)
 
     editorState.value = {
       ...editorState.value,
       config: {
         ...editorState.value.config,
-        width: config.viewport.width,
-        height: config.viewport.height,
+        width: migratedConfig.viewport.width,
+        height: migratedConfig.viewport.height,
       },
     }
 
-    const colors = config.colors ?? createDefaultColorsConfig()
+    const colors = migratedConfig.colors ?? createDefaultColorsConfig()
     heroColors.backgroundColorKey1.value = colors.background.primary as PrimitiveKey
     heroColors.backgroundColorKey2.value = colors.background.secondary as PrimitiveKey | 'auto'
     heroColors.maskColorKey1.value = colors.mask.primary as PrimitiveKey | 'auto'
     heroColors.maskColorKey2.value = colors.mask.secondary as PrimitiveKey | 'auto'
     heroColors.maskSemanticContext.value = colors.semanticContext as ContextName
 
-    const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
+    const baseLayer = migratedConfig.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
 
     let surfaceLayer: SurfaceLayerNodeConfig | undefined
-    for (const layer of config.layers) {
+    for (const layer of migratedConfig.layers) {
       if (layer.type === 'surface') {
         surfaceLayer = layer
         break
@@ -1236,7 +1251,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
 
     let maskShape: HeroMaskShapeConfig | undefined
-    for (const layer of config.layers) {
+    for (const layer of migratedConfig.layers) {
       if (layer.type === 'processor') {
         const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
         if (maskModifier) {
@@ -1274,7 +1289,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
     }
 
-    foregroundConfig.value = config.foreground
+    foregroundConfig.value = migratedConfig.foreground
 
     syncLayerConfigs()
     await render()
@@ -1469,7 +1484,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     selectedForegroundElementId,
   }
 
-  const heroViewConfigComputed = computed(() => toHeroViewConfig())
+  // Use repository state directly as computed (reactive via repoConfig)
+  const heroViewConfigComputed = computed(() => repoConfig.value)
 
   const editor: EditorStateRef = {
     heroViewConfig: heroViewConfigComputed,
