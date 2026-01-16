@@ -194,8 +194,8 @@ describe('HeroViewInMemoryRepository', () => {
       repository.addLayer(newLayer)
 
       const layers = repository.get().layers
-      expect(layers.length).toBe(2)
-      expect(layers[1]!.id).toBe('surface-1')
+      expect(layers.length).toBe(3) // background-group + clip-group + new layer
+      expect(layers[2]!.id).toBe('surface-1')
     })
 
     it('should add layer at specified index', () => {
@@ -211,9 +211,10 @@ describe('HeroViewInMemoryRepository', () => {
       repository.addLayer(newLayer, 0)
 
       const layers = repository.get().layers
-      expect(layers.length).toBe(2)
+      expect(layers.length).toBe(3) // new layer + background-group + clip-group
       expect(layers[0]!.id).toBe('surface-1')
       expect(layers[1]!.id).toBe('background-group')
+      expect(layers[2]!.id).toBe('clip-group')
     })
   })
 
@@ -233,7 +234,7 @@ describe('HeroViewInMemoryRepository', () => {
       repository.removeLayer('surface-1')
 
       const layers = repository.get().layers
-      expect(layers.length).toBe(1)
+      expect(layers.length).toBe(2) // background-group and clip-group remain
       expect(layers.find((l) => l.id === 'surface-1')).toBeUndefined()
     })
   })
