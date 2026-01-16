@@ -300,6 +300,9 @@ export {
   // Full config migration (Phase 13)
   migrateHeroViewConfig,
   configNeedsMigration,
+  // Default colors for surface layers (palette keys for layer config)
+  DEFAULT_LAYER_BACKGROUND_COLORS,
+  DEFAULT_LAYER_MASK_COLORS,
   // HeroEditorState factories
   createDefaultBackgroundUIState,
   createDefaultMaskUIState,

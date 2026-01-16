@@ -215,14 +215,6 @@ export const createHeroEditorInMemoryRepository = (
           colors: {
             ...state.config.colors,
             ...colors,
-            background: {
-              ...state.config.colors.background,
-              ...(colors.background ?? {}),
-            },
-            mask: {
-              ...state.config.colors.mask,
-              ...(colors.mask ?? {}),
-            },
           },
         },
       }

@@ -273,8 +273,6 @@ export const getAllDefaultContents = (): SectionContentMap => defaultContents
 const corporateCleanConfig: HeroViewConfig = {
   viewport: { width: 1280, height: 720 },
   colors: {
-    background: { primary: 'BN1', secondary: 'BN2' },
-    mask: { primary: 'B', secondary: 'Bt' },
     semanticContext: 'canvas',
     brand: { hue: 198, saturation: 70, value: 65 },
     accent: { hue: 30, saturation: 80, value: 60 },
@@ -287,6 +285,7 @@ const corporateCleanConfig: HeroViewConfig = {
       name: 'Background',
       visible: true,
       surface: { type: 'grid', lineWidth: 1, cellSize: 48 },
+      colors: { primary: 'BN1', secondary: 'BN2' },
       filters: [
         {
           type: 'effect',
@@ -307,6 +306,7 @@ const corporateCleanConfig: HeroViewConfig = {
       name: 'Mask Surface',
       visible: true,
       surface: { type: 'solid' },
+      colors: { primary: 'B', secondary: 'Bt' },
       filters: [
         {
           type: 'effect',

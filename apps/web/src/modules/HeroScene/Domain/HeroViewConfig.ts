@@ -53,35 +53,13 @@ export interface SurfaceColorsConfig {
 
 /**
  * Color configuration for HeroView
- * Contains all color-related state needed for rendering
+ * Contains global color state (palette colors, semantic context)
  *
- * @deprecated The `background` and `mask` fields are deprecated.
- * Use `colors` field on each SurfaceLayerNodeConfig instead.
+ * Note: Per-surface colors (primary/secondary) are now stored on each
+ * SurfaceLayerNodeConfig.colors field, not here.
  */
 export interface HeroColorsConfig {
-  /**
-   * Background layer colors
-   * @deprecated Use colors field on background surface layer instead.
-   * Will be removed in a future version. During migration, this field remains required.
-   */
-  background: {
-    /** Primary color (e.g., brand color for patterns) */
-    primary: HeroPrimitiveKey
-    /** Secondary color ('auto' = derived from canvas surface) */
-    secondary: HeroPrimitiveKey | 'auto'
-  }
-  /**
-   * Mask layer colors
-   * @deprecated Use colors field on surface-mask layer instead.
-   * Will be removed in a future version. During migration, this field remains required.
-   */
-  mask: {
-    /** Primary color ('auto' = surface with shifted lightness) */
-    primary: HeroPrimitiveKey | 'auto'
-    /** Secondary color ('auto' = derived from semantic context surface) */
-    secondary: HeroPrimitiveKey | 'auto'
-  }
-  /** Semantic context for color resolution (kept at top level) */
+  /** Semantic context for color resolution */
   semanticContext: HeroContextName
   /** Brand color (HSV) */
   brand: HsvColor
@@ -89,6 +67,24 @@ export interface HeroColorsConfig {
   accent: HsvColor
   /** Foundation color (HSV) */
   foundation: HsvColor
+}
+
+/**
+ * Legacy HeroColorsConfig with background/mask fields
+ * Used only for migration from old config format
+ * @internal
+ */
+export interface LegacyHeroColorsConfig extends HeroColorsConfig {
+  /** @deprecated Use colors field on background surface layer instead */
+  background?: {
+    primary: HeroPrimitiveKey
+    secondary: HeroPrimitiveKey | 'auto'
+  }
+  /** @deprecated Use colors field on surface-mask layer instead */
+  mask?: {
+    primary: HeroPrimitiveKey | 'auto'
+    secondary: HeroPrimitiveKey | 'auto'
+  }
 }
 
 // ============================================================
@@ -924,19 +920,23 @@ export const createDefaultForegroundConfig = (): ForegroundLayerConfig => ({
 })
 
 export const createDefaultColorsConfig = (): HeroColorsConfig => ({
-  background: {
-    primary: 'B',
-    secondary: 'auto',
-  },
-  mask: {
-    primary: 'auto',
-    secondary: 'auto',
-  },
   semanticContext: 'canvas',
   brand: { hue: 198, saturation: 70, value: 65 },
   accent: { hue: 30, saturation: 80, value: 60 },
   foundation: { hue: 0, saturation: 0, value: 97 },
 })
+
+/** Default colors for background surface layer (palette keys) */
+export const DEFAULT_LAYER_BACKGROUND_COLORS: SurfaceColorsConfig = {
+  primary: 'B',
+  secondary: 'auto',
+}
+
+/** Default colors for mask surface layer (palette keys) */
+export const DEFAULT_LAYER_MASK_COLORS: SurfaceColorsConfig = {
+  primary: 'auto',
+  secondary: 'auto',
+}
 
 export const createDefaultEffectFilterConfig = (): EffectFilterConfig => ({
   type: 'effect',
@@ -1398,7 +1398,8 @@ export const migrateHeroViewConfig = (config: HeroViewConfig): HeroViewConfig =>
   let migratedLayers = config.layers.map(migrateLayerEffects)
 
   // Then migrate colors from top-level to per-surface
-  migratedLayers = migrateColorsToSurfaceLayers(migratedLayers, config.colors)
+  // Cast to LegacyHeroColorsConfig to handle old configs that may have background/mask fields
+  migratedLayers = migrateColorsToSurfaceLayers(migratedLayers, config.colors as LegacyHeroColorsConfig)
 
   return { ...config, layers: migratedLayers }
 }
@@ -1414,28 +1415,27 @@ export const migrateHeroViewConfig = (config: HeroViewConfig): HeroViewConfig =>
  * ```
  * { layers: [{ id: 'background', colors: {...} }, { id: 'surface-mask', colors: {...} }] }
  * ```
+ *
+ * Always ensures surface layers have colors (uses defaults if no source available)
  */
 function migrateColorsToSurfaceLayers(
   layers: LayerNodeConfig[],
-  colors?: HeroColorsConfig
+  colors?: LegacyHeroColorsConfig
 ): LayerNodeConfig[] {
-  // If no colors to migrate, return as-is
-  if (!colors?.background && !colors?.mask) {
-    return layers
-  }
-
   return layers.map((layer): LayerNodeConfig => {
     // Handle background-group
     if (layer.type === 'group' && layer.id === 'background-group') {
       return {
         ...layer,
         children: layer.children.map((child): LayerNodeConfig => {
-          if (child.type === 'surface' && child.id === 'background' && !child.colors && colors?.background) {
+          if (child.type === 'surface' && child.id === 'background' && !child.colors) {
+            // Use legacy colors if available, otherwise use defaults
+            const bgColors = colors?.background ?? DEFAULT_LAYER_BACKGROUND_COLORS
             return {
               ...child,
               colors: {
-                primary: colors.background.primary,
-                secondary: colors.background.secondary,
+                primary: bgColors.primary,
+                secondary: bgColors.secondary,
               },
             }
           }
@@ -1449,12 +1449,14 @@ function migrateColorsToSurfaceLayers(
       return {
         ...layer,
         children: layer.children.map((child): LayerNodeConfig => {
-          if (child.type === 'surface' && child.id === 'surface-mask' && !child.colors && colors?.mask) {
+          if (child.type === 'surface' && child.id === 'surface-mask' && !child.colors) {
+            // Use legacy colors if available, otherwise use defaults
+            const maskColors = colors?.mask ?? DEFAULT_LAYER_MASK_COLORS
             return {
               ...child,
               colors: {
-                primary: colors.mask.primary,
-                secondary: colors.mask.secondary,
+                primary: maskColors.primary,
+                secondary: maskColors.secondary,
               },
             }
           }
@@ -1464,12 +1466,13 @@ function migrateColorsToSurfaceLayers(
     }
 
     // Handle legacy base layer
-    if (layer.type === 'base' && !layer.colors && colors?.background) {
+    if (layer.type === 'base' && !layer.colors) {
+      const bgColors = colors?.background ?? DEFAULT_LAYER_BACKGROUND_COLORS
       return {
         ...layer,
         colors: {
-          primary: colors.background.primary,
-          secondary: colors.background.secondary,
+          primary: bgColors.primary,
+          secondary: bgColors.secondary,
         },
       }
     }

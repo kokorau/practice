@@ -66,6 +66,8 @@ import {
   createDefaultEffectConfig,
   createDefaultForegroundConfig,
   createDefaultColorsConfig,
+  DEFAULT_LAYER_BACKGROUND_COLORS,
+  DEFAULT_LAYER_MASK_COLORS,
   createInMemoryHeroViewPresetRepository,
   createBrowserPresetExporter,
   type ExportPresetOptions,
@@ -982,60 +984,33 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     })
   }
 
+  // Color watchers: write to surface layer colors only (deprecated config.colors is kept for reading only)
   watch(heroColors.backgroundColorKey1, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { primary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({
-      ...config,
-      layers: updatedLayers,
-      colors: {
-        ...config.colors,
-        background: { ...config.colors.background, primary: newValue as HeroPrimitiveKey },
-      },
-    })
+    heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.backgroundColorKey2, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { secondary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({
-      ...config,
-      layers: updatedLayers,
-      colors: {
-        ...config.colors,
-        background: { ...config.colors.background, secondary: newValue as HeroPrimitiveKey | 'auto' },
-      },
-    })
+    heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.maskColorKey1, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({
-      ...config,
-      layers: updatedLayers,
-      colors: {
-        ...config.colors,
-        mask: { ...config.colors.mask, primary: newValue as HeroPrimitiveKey | 'auto' },
-      },
-    })
+    heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.maskColorKey2, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({
-      ...config,
-      layers: updatedLayers,
-      colors: {
-        ...config.colors,
-        mask: { ...config.colors.mask, secondary: newValue as HeroPrimitiveKey | 'auto' },
-      },
-    })
+    heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.maskSemanticContext, (newValue) => {
@@ -1136,14 +1111,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
     }
 
-    // Read colors from surface layers (with fallback to config.colors for backward compatibility)
+    // Read colors from surface layers (migration ensures colors always exist)
     const configColors = migratedConfig.colors ?? createDefaultColorsConfig()
-    // Background colors: prefer layer.colors, fallback to config.colors
-    const bgColors = backgroundSurfaceLayer?.colors ?? configColors.background
-    heroColors.backgroundColorKey1.value = (bgColors.primary === 'auto' ? configColors.background.primary : bgColors.primary) as PrimitiveKey
+    // Background colors from layer (use defaults if missing - migration should prevent this)
+    const bgColors = backgroundSurfaceLayer?.colors ?? DEFAULT_LAYER_BACKGROUND_COLORS
+    heroColors.backgroundColorKey1.value = (bgColors.primary === 'auto' ? DEFAULT_LAYER_BACKGROUND_COLORS.primary : bgColors.primary) as PrimitiveKey
     heroColors.backgroundColorKey2.value = bgColors.secondary as PrimitiveKey | 'auto'
-    // Mask colors: prefer layer.colors, fallback to config.colors
-    const maskColors = maskSurfaceLayer?.colors ?? configColors.mask
+    // Mask colors from layer (use defaults if missing - migration should prevent this)
+    const maskColors = maskSurfaceLayer?.colors ?? DEFAULT_LAYER_MASK_COLORS
     heroColors.maskColorKey1.value = maskColors.primary as PrimitiveKey | 'auto'
     heroColors.maskColorKey2.value = maskColors.secondary as PrimitiveKey | 'auto'
     // Semantic context from config.colors (kept at top level)
