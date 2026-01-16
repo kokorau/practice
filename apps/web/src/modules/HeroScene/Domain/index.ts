@@ -645,6 +645,7 @@ export type {
   HeroPrimitiveKey,
   HeroContextName,
   HeroColorsConfig,
+  SurfaceColorsConfig,
   ViewportConfig,
   StripeSurfaceConfig,
   GridSurfaceConfig,
