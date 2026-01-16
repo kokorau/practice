@@ -829,7 +829,7 @@ export async function renderHeroConfig(
     }
 
     // Get mask from processor-mask (sibling processor node in clip-group)
-    const maskProcessor = processor ? getProcessorMask(processor) : null
+    const maskProcessor = processor ? getProcessorMask(processor) : undefined
 
     // Get effects from surface layer filters
     const effectFilters = getLayerFilters(surfaceLayer)
