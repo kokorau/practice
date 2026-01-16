@@ -111,7 +111,7 @@ describe('HeroViewInMemoryRepository', () => {
       expect(subscriber).toHaveBeenCalledTimes(1)
       expect(repository.get().colors.semanticContext).toBe('sectionTint')
       // Other color properties should remain unchanged
-      expect(repository.get().colors.background.primary).toBe('B')
+      expect(repository.get().colors.brand.hue).toBe(198) // default brand hue
     })
   })
 

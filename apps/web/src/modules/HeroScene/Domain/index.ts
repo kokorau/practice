@@ -707,6 +707,9 @@ export {
   createDefaultEffectFilterConfig,
   createDefaultEffectProcessorConfig,
   createDefaultHeroViewConfig,
+  // Default colors for surface layers (palette keys)
+  DEFAULT_LAYER_BACKGROUND_COLORS,
+  DEFAULT_LAYER_MASK_COLORS,
   // Migration helpers
   getLayerFilters,
   getLayerMaskProcessor,
