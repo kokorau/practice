@@ -44,6 +44,7 @@ import type {
   HeroViewConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
+  GroupLayerNodeConfig,
   LayerNodeConfig,
   ProcessorNodeConfig,
   AnySurfaceConfig,
@@ -649,9 +650,21 @@ export function applyEffectors(
 // ============================================================
 
 /**
- * Find base layer from layers array
+ * Find base/background layer from layers array
+ * Supports both new group-based structure and legacy flat structure
  */
-function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | null {
+function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | SurfaceLayerNodeConfig | null {
+  // New structure: look inside background-group
+  for (const layer of layers) {
+    if (layer.type === 'group' && layer.id === 'background-group') {
+      const surfaceLayer = (layer as GroupLayerNodeConfig).children.find(
+        (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'background'
+      )
+      if (surfaceLayer) return surfaceLayer
+    }
+  }
+
+  // Fallback: legacy base layer
   for (const layer of layers) {
     if (layer.type === 'base') return layer
   }

@@ -16,11 +16,12 @@ import {
   type HeroSurfaceConfig,
   type BaseLayerNodeConfig,
   type SurfaceLayerNodeConfig,
+  type GroupLayerNodeConfig,
   createUnsplashImageUploadAdapter,
 } from '../../modules/HeroScene'
 
 // Layer IDs for template layers
-const BASE_LAYER_ID = 'base-layer'
+const BASE_LAYER_ID = 'background'
 
 // ============================================================
 // Types
@@ -104,6 +105,21 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
     get: (): string | null => {
       const config = repoConfig.value
       if (!config) return null
+
+      // New structure: look inside background-group
+      const backgroundGroup = config.layers.find(
+        (l): l is GroupLayerNodeConfig => l.type === 'group' && l.id === 'background-group'
+      )
+      if (backgroundGroup) {
+        const surfaceLayer = backgroundGroup.children.find(
+          (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'background'
+        )
+        if (surfaceLayer?.surface.type === 'image') {
+          return surfaceLayer.surface.imageId
+        }
+      }
+
+      // Fallback: legacy base layer
       const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
       if (baseLayer?.surface.type === 'image') {
         return baseLayer.surface.imageId
