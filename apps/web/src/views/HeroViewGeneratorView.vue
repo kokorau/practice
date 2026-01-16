@@ -237,7 +237,7 @@ onMounted(async () => {
 // ============================================================
 // Hero Preview Config (for panel previews)
 // ============================================================
-const currentHeroConfig = computed(() => heroScene.serialization.toHeroViewConfig())
+const currentHeroConfig = computed(() => heroScene.editor.heroViewConfig.value)
 
 // ============================================================
 // Tab State
@@ -252,7 +252,7 @@ const debugSections = computed(() => [
   {
     id: 'heroViewConfig',
     label: 'HeroViewConfig (Export)',
-    data: heroScene.serialization.toHeroViewConfig(),
+    data: heroScene.editor.heroViewConfig.value,
   },
 ])
 
