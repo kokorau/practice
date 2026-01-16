@@ -347,7 +347,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const repoConfig = shallowRef<HeroViewConfig>(heroViewRepository.get())
 
   // Layer selection for unified surface usecase
-  const { layerId: selectedLayerId } = useLayerSelection()
+  const { layerId: selectedLayerId, selectCanvasLayer } = useLayerSelection()
   const selectionPort = {
     getSelectedLayerId: () => selectedLayerId.value,
   }
@@ -562,20 +562,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     },
     set: (val: CustomSurfaceParams | null) => {
       if (val === null) return
-      const config = repoConfig.value
-      for (const layer of config.layers) {
-        if (layer.type === 'surface') {
-          heroViewRepository.updateLayer(layer.id, { surface: fromCustomSurfaceParams(val) })
-          return
-        }
-        if (layer.type === 'group' && layer.children) {
-          const surfaceLayer = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
-          if (surfaceLayer) {
-            heroViewRepository.updateLayer(surfaceLayer.id, { surface: fromCustomSurfaceParams(val) })
-            return
-          }
-        }
-      }
+      // Use selected layer ID if available, otherwise fallback to 'surface-mask'
+      const targetLayerId = selectedLayerId.value ?? 'surface-mask'
+      heroViewRepository.updateLayer(targetLayerId, { surface: fromCustomSurfaceParams(val) })
     },
   })
 
@@ -973,6 +962,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         background: { ...config.colors.background, secondary: newValue as HeroPrimitiveKey | 'auto' },
       },
     })
+  })
+
+  // Sync activeSection to layer selection for proper surface targeting
+  watch(heroThumbnails.activeSection, (section) => {
+    if (!section) return
+    // Map section to layer ID
+    const sectionToLayerId: Record<string, string> = {
+      'background': 'background',
+      'clip-group-surface': 'surface-mask',
+    }
+    const layerId = sectionToLayerId[section]
+    if (layerId) {
+      selectCanvasLayer(layerId)
+    }
   })
 
   onUnmounted(() => {
