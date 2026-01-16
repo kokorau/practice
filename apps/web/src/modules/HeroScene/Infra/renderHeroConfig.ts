@@ -695,6 +695,34 @@ function findSurfaceLayer(layers: LayerNodeConfig[]): SurfaceLayerNodeConfig | n
   return null
 }
 
+/**
+ * Find clip-group and extract its surface and processor layers
+ * Returns null if clip-group structure is not found
+ */
+function findClipGroupContents(layers: LayerNodeConfig[]): {
+  surface: SurfaceLayerNodeConfig
+  processor: ProcessorNodeConfig | null
+} | null {
+  // Look for clip-group by ID
+  const clipGroup = layers.find(
+    (layer): layer is GroupLayerNodeConfig => layer.type === 'group' && layer.id === 'clip-group'
+  )
+  if (!clipGroup) return null
+
+  // Find surface-mask inside clip-group
+  const surface = clipGroup.children.find(
+    (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'surface-mask'
+  )
+  if (!surface) return null
+
+  // Find processor-mask inside clip-group (optional)
+  const processor = clipGroup.children.find(
+    (c): c is ProcessorNodeConfig => c.type === 'processor' && c.id === 'processor-mask'
+  ) ?? null
+
+  return { surface, processor }
+}
+
 // ============================================================
 // Processor-based Layer Finding (Position-based)
 // ============================================================
@@ -783,9 +811,11 @@ export async function renderHeroConfig(
     }
   }
 
-  // 2. Render surface layer with mask
-  const surfaceLayer = findSurfaceLayer(config.layers)
-  if (surfaceLayer) {
+  // 2. Render clip-group (surface-mask with processor-mask)
+  const clipGroupContents = findClipGroupContents(config.layers)
+  if (clipGroupContents) {
+    const { surface: surfaceLayer, processor } = clipGroupContents
+
     // First render the surface texture pattern
     const surfaceSpec = createBackgroundSpecFromSurface(
       surfaceLayer.surface,
@@ -798,12 +828,15 @@ export async function renderHeroConfig(
       renderer.render(surfaceSpec, { clear: false })
     }
 
-    // Get mask from processors
-    const maskProcessor = getLayerMaskProcessor(surfaceLayer)
+    // Get mask from processor-mask (sibling processor node in clip-group)
+    const maskProcessor = processor ? getProcessorMask(processor) : null
 
-    // Get effects from filters (supports both filters and processors)
+    // Get effects from surface layer filters
     const effectFilters = getLayerFilters(surfaceLayer)
     const effectFilter = effectFilters.find((f) => f.enabled)
+
+    // Get effects from processor modifiers (if processor exists)
+    const processorEffects = processor ? getEffectConfigsFromModifiers(processor.modifiers) : []
 
     // Apply effectors using unified pipeline (mask first, then effects)
     applyEffectors(
@@ -811,11 +844,47 @@ export async function renderHeroConfig(
       {
         mask: maskProcessor,
         effects: effectFilter?.config,
+        effectList: processorEffects.length > 0 ? processorEffects : undefined,
       },
       viewport,
       midgroundTextureColor1,
       scale
     )
+  } else {
+    // Fallback: legacy structure without clip-group
+    const surfaceLayer = findSurfaceLayer(config.layers)
+    if (surfaceLayer) {
+      // First render the surface texture pattern
+      const surfaceSpec = createBackgroundSpecFromSurface(
+        surfaceLayer.surface,
+        midgroundTextureColor1,
+        midgroundTextureColor2,
+        viewport,
+        scale
+      )
+      if (surfaceSpec) {
+        renderer.render(surfaceSpec, { clear: false })
+      }
+
+      // Get mask from processors (legacy)
+      const maskProcessor = getLayerMaskProcessor(surfaceLayer)
+
+      // Get effects from filters
+      const effectFilters = getLayerFilters(surfaceLayer)
+      const effectFilter = effectFilters.find((f) => f.enabled)
+
+      // Apply effectors using unified pipeline
+      applyEffectors(
+        renderer,
+        {
+          mask: maskProcessor,
+          effects: effectFilter?.config,
+        },
+        viewport,
+        midgroundTextureColor1,
+        scale
+      )
+    }
   }
 
   // 3. Process Processor nodes (position-based processor application)
