@@ -982,60 +982,33 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     })
   }
 
+  // Color watchers: write to surface layer colors only (deprecated config.colors is kept for reading only)
   watch(heroColors.backgroundColorKey1, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { primary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({
-      ...config,
-      layers: updatedLayers,
-      colors: {
-        ...config.colors,
-        background: { ...config.colors.background, primary: newValue as HeroPrimitiveKey },
-      },
-    })
+    heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.backgroundColorKey2, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { secondary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({
-      ...config,
-      layers: updatedLayers,
-      colors: {
-        ...config.colors,
-        background: { ...config.colors.background, secondary: newValue as HeroPrimitiveKey | 'auto' },
-      },
-    })
+    heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.maskColorKey1, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({
-      ...config,
-      layers: updatedLayers,
-      colors: {
-        ...config.colors,
-        mask: { ...config.colors.mask, primary: newValue as HeroPrimitiveKey | 'auto' },
-      },
-    })
+    heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.maskColorKey2, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({
-      ...config,
-      layers: updatedLayers,
-      colors: {
-        ...config.colors,
-        mask: { ...config.colors.mask, secondary: newValue as HeroPrimitiveKey | 'auto' },
-      },
-    })
+    heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.maskSemanticContext, (newValue) => {
