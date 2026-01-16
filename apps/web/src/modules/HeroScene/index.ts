@@ -120,6 +120,7 @@ export type {
   LayerNodeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
+  SurfaceColorsConfig,
   TextLayerNodeConfig,
   TextLayerNodeConfig as TextLayerNodeConfigType,
   Model3DLayerNodeConfig,
