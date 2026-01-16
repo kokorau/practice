@@ -41,25 +41,47 @@ export interface HsvColor {
 }
 
 /**
+ * Per-surface color configuration
+ * Each surface layer can have its own color settings
+ */
+export interface SurfaceColorsConfig {
+  /** Primary color key from palette */
+  primary: HeroPrimitiveKey | 'auto'
+  /** Secondary color key from palette */
+  secondary: HeroPrimitiveKey | 'auto'
+}
+
+/**
  * Color configuration for HeroView
  * Contains all color-related state needed for rendering
+ *
+ * @deprecated The `background` and `mask` fields are deprecated.
+ * Use `colors` field on each SurfaceLayerNodeConfig instead.
  */
 export interface HeroColorsConfig {
-  /** Background layer colors */
+  /**
+   * Background layer colors
+   * @deprecated Use colors field on background surface layer instead.
+   * Will be removed in a future version. During migration, this field remains required.
+   */
   background: {
     /** Primary color (e.g., brand color for patterns) */
     primary: HeroPrimitiveKey
     /** Secondary color ('auto' = derived from canvas surface) */
     secondary: HeroPrimitiveKey | 'auto'
   }
-  /** Mask layer colors */
+  /**
+   * Mask layer colors
+   * @deprecated Use colors field on surface-mask layer instead.
+   * Will be removed in a future version. During migration, this field remains required.
+   */
   mask: {
     /** Primary color ('auto' = surface with shifted lightness) */
     primary: HeroPrimitiveKey | 'auto'
     /** Secondary color ('auto' = derived from semantic context surface) */
     secondary: HeroPrimitiveKey | 'auto'
   }
-  /** Semantic context for mask layer color resolution */
+  /** Semantic context for color resolution (kept at top level) */
   semanticContext: HeroContextName
   /** Brand color (HSV) */
   brand: HsvColor
@@ -709,6 +731,8 @@ interface LayerNodeConfigBase {
 export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   type: 'base'
   surface: SurfaceConfig
+  /** Per-surface color configuration */
+  colors?: SurfaceColorsConfig
   /** Effect filters */
   filters?: EffectFilterConfig[]
 }
@@ -716,6 +740,8 @@ export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
 export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
   type: 'surface'
   surface: SurfaceConfig
+  /** Per-surface color configuration */
+  colors?: SurfaceColorsConfig
   /** Effect filters */
   filters?: EffectFilterConfig[]
 }
@@ -1366,8 +1392,88 @@ const migrateLayerEffects = (layer: LayerNodeConfig): LayerNodeConfig => {
  * @returns Migrated HeroViewConfig with all effects in new format
  */
 export const migrateHeroViewConfig = (config: HeroViewConfig): HeroViewConfig => {
-  const migratedLayers = config.layers.map(migrateLayerEffects)
+  // First migrate effects
+  let migratedLayers = config.layers.map(migrateLayerEffects)
+
+  // Then migrate colors from top-level to per-surface
+  migratedLayers = migrateColorsToSurfaceLayers(migratedLayers, config.colors)
+
   return { ...config, layers: migratedLayers }
+}
+
+/**
+ * Migrate colors from top-level config.colors to per-surface colors field
+ *
+ * This converts the legacy structure:
+ * ```
+ * { colors: { background: {...}, mask: {...} }, layers: [...] }
+ * ```
+ * To the new structure:
+ * ```
+ * { layers: [{ id: 'background', colors: {...} }, { id: 'surface-mask', colors: {...} }] }
+ * ```
+ */
+function migrateColorsToSurfaceLayers(
+  layers: LayerNodeConfig[],
+  colors?: HeroColorsConfig
+): LayerNodeConfig[] {
+  // If no colors to migrate, return as-is
+  if (!colors?.background && !colors?.mask) {
+    return layers
+  }
+
+  return layers.map((layer): LayerNodeConfig => {
+    // Handle background-group
+    if (layer.type === 'group' && layer.id === 'background-group') {
+      return {
+        ...layer,
+        children: layer.children.map((child): LayerNodeConfig => {
+          if (child.type === 'surface' && child.id === 'background' && !child.colors && colors?.background) {
+            return {
+              ...child,
+              colors: {
+                primary: colors.background.primary,
+                secondary: colors.background.secondary,
+              },
+            }
+          }
+          return child
+        }),
+      }
+    }
+
+    // Handle clip-group
+    if (layer.type === 'group' && layer.id === 'clip-group') {
+      return {
+        ...layer,
+        children: layer.children.map((child): LayerNodeConfig => {
+          if (child.type === 'surface' && child.id === 'surface-mask' && !child.colors && colors?.mask) {
+            return {
+              ...child,
+              colors: {
+                primary: colors.mask.primary,
+                secondary: colors.mask.secondary,
+              },
+            }
+          }
+          return child
+        }),
+      }
+    }
+
+    // Handle legacy base layer
+    if (layer.type === 'base' && !layer.colors && colors?.background) {
+      return {
+        ...layer,
+        colors: {
+          primary: colors.background.primary,
+          secondary: colors.background.secondary,
+        },
+      }
+    }
+
+    return layer
+  })
 }
 
 /**
