@@ -839,6 +839,7 @@ export async function renderHeroConfig(
     const processorEffects = processor ? getEffectConfigsFromModifiers(processor.modifiers) : []
 
     // Apply effectors using unified pipeline (mask first, then effects)
+    // Use bgColor1 as maskColor so outside mask shows background, not surface
     applyEffectors(
       renderer,
       {
@@ -847,7 +848,7 @@ export async function renderHeroConfig(
         effectList: processorEffects.length > 0 ? processorEffects : undefined,
       },
       viewport,
-      midgroundTextureColor1,
+      bgColor1,
       scale
     )
   } else {
@@ -874,6 +875,7 @@ export async function renderHeroConfig(
       const effectFilter = effectFilters.find((f) => f.enabled)
 
       // Apply effectors using unified pipeline
+      // Use bgColor1 as maskColor so outside mask shows background
       applyEffectors(
         renderer,
         {
@@ -881,7 +883,7 @@ export async function renderHeroConfig(
           effects: effectFilter?.config,
         },
         viewport,
-        midgroundTextureColor1,
+        bgColor1,
         scale
       )
     }

@@ -974,6 +974,42 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     })
   })
 
+  watch(heroColors.maskColorKey1, (newValue) => {
+    if (isLoadingFromConfig) return
+    const config = heroViewRepository.get()
+    heroViewRepository.set({
+      ...config,
+      colors: {
+        ...config.colors,
+        mask: { ...config.colors.mask, primary: newValue as HeroPrimitiveKey | 'auto' },
+      },
+    })
+  })
+
+  watch(heroColors.maskColorKey2, (newValue) => {
+    if (isLoadingFromConfig) return
+    const config = heroViewRepository.get()
+    heroViewRepository.set({
+      ...config,
+      colors: {
+        ...config.colors,
+        mask: { ...config.colors.mask, secondary: newValue as HeroPrimitiveKey | 'auto' },
+      },
+    })
+  })
+
+  watch(heroColors.maskSemanticContext, (newValue) => {
+    if (isLoadingFromConfig) return
+    const config = heroViewRepository.get()
+    heroViewRepository.set({
+      ...config,
+      colors: {
+        ...config.colors,
+        semanticContext: newValue,
+      },
+    })
+  })
+
   // Sync activeSection to layer selection for proper surface targeting
   watch(heroThumbnails.activeSection, (section) => {
     if (!section) return
