@@ -6,7 +6,7 @@
  */
 
 import type { RGBA } from '@practice/texture'
-import type { HeroViewConfig, BaseLayerNodeConfig, SurfaceLayerNodeConfig } from '../Domain/HeroViewConfig'
+import type { HeroViewConfig, BaseLayerNodeConfig, SurfaceLayerNodeConfig, GroupLayerNodeConfig } from '../Domain/HeroViewConfig'
 import type { CustomBackgroundSurfaceParams, CustomSurfaceParams } from '../types/HeroSceneState'
 import { toCustomBackgroundSurfaceParams, toCustomSurfaceParams } from '../Domain/SurfaceMapper'
 
@@ -34,16 +34,35 @@ export function syncBackgroundSurfaceParams(
   colorA: RGBA,
   colorB: RGBA,
 ): SyncBackgroundSurfaceResult {
-  // Find base layer
-  const baseLayer = config.layers.find(
-    (layer): layer is BaseLayerNodeConfig => layer.type === 'base'
-  )
+  // Find background surface layer (new structure: inside background-group)
+  let bgSurface: SurfaceLayerNodeConfig['surface'] | undefined
 
-  if (!baseLayer) {
-    return { surfaceParams: null }
+  // New structure: look for background-group and find surface layer inside
+  const backgroundGroup = config.layers.find(
+    (layer): layer is GroupLayerNodeConfig => layer.type === 'group' && layer.id === 'background-group'
+  )
+  if (backgroundGroup) {
+    const surfaceLayer = backgroundGroup.children.find(
+      (child): child is SurfaceLayerNodeConfig => child.type === 'surface' && child.id === 'background'
+    )
+    if (surfaceLayer) {
+      bgSurface = surfaceLayer.surface
+    }
   }
 
-  const bgSurface = baseLayer.surface
+  // Fallback: legacy base layer structure
+  if (!bgSurface) {
+    const baseLayer = config.layers.find(
+      (layer): layer is BaseLayerNodeConfig => layer.type === 'base'
+    )
+    if (baseLayer) {
+      bgSurface = baseLayer.surface
+    }
+  }
+
+  if (!bgSurface) {
+    return { surfaceParams: null }
+  }
 
   // Image type is handled separately via customBackgroundImage
   if (bgSurface.type === 'image') {
@@ -80,16 +99,35 @@ export function syncMaskSurfaceParams(
   colorA: RGBA,
   colorB: RGBA,
 ): SyncMaskSurfaceResult {
-  // Find surface layer (mask surface)
-  const surfaceLayer = config.layers.find(
-    (layer): layer is SurfaceLayerNodeConfig => layer.type === 'surface'
-  )
+  // Find mask surface layer (new structure: inside clip-group)
+  let maskSurface: SurfaceLayerNodeConfig['surface'] | undefined
 
-  if (!surfaceLayer) {
-    return { surfaceParams: null }
+  // New structure: look for clip-group and find surface-mask layer inside
+  const clipGroup = config.layers.find(
+    (layer): layer is GroupLayerNodeConfig => layer.type === 'group' && layer.id === 'clip-group'
+  )
+  if (clipGroup) {
+    const surfaceLayer = clipGroup.children.find(
+      (child): child is SurfaceLayerNodeConfig => child.type === 'surface' && child.id === 'surface-mask'
+    )
+    if (surfaceLayer) {
+      maskSurface = surfaceLayer.surface
+    }
   }
 
-  const maskSurface = surfaceLayer.surface
+  // Fallback: legacy top-level surface layer
+  if (!maskSurface) {
+    const surfaceLayer = config.layers.find(
+      (layer): layer is SurfaceLayerNodeConfig => layer.type === 'surface'
+    )
+    if (surfaceLayer) {
+      maskSurface = surfaceLayer.surface
+    }
+  }
+
+  if (!maskSurface) {
+    return { surfaceParams: null }
+  }
 
   // Image type is handled separately via customMaskImage
   if (maskSurface.type === 'image') {

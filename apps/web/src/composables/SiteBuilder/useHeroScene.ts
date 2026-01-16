@@ -53,6 +53,7 @@ import {
   type LayerNodeConfig,
   type BaseLayerNodeConfig,
   type SurfaceLayerNodeConfig,
+  type GroupLayerNodeConfig,
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
   type MaskProcessorConfig,
@@ -517,41 +518,50 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return toCustomBackgroundSurfaceParams(params, colorA, colorB)
   }
 
+  // Helper to find processor with mask modifier in layers (including groups)
+  const findProcessorWithMask = (layers: LayerNodeConfig[]): ProcessorNodeConfig | null => {
+    for (const layer of layers) {
+      if (layer.type === 'processor') {
+        const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
+        if (maskModifier) {
+          return layer
+        }
+      }
+      if (layer.type === 'group') {
+        const found = findProcessorWithMask((layer as GroupLayerNodeConfig).children)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
   // Current custom params (derived from Repository via repoConfig)
   const customMaskShapeParams = computed({
     get: (): CustomMaskShapeParams | null => {
       const config = repoConfig.value
       if (!config) return null
-      for (const layer of config.layers) {
-        if (layer.type === 'processor') {
-          const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
-          if (maskModifier) {
-            return toCustomMaskShapeParams(maskModifier.shape)
-          }
-        }
-      }
-      return null
+      const processor = findProcessorWithMask(config.layers)
+      if (!processor) return null
+      const maskModifier = processor.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
+      if (!maskModifier) return null
+      return toCustomMaskShapeParams(maskModifier.shape)
     },
     set: (val: CustomMaskShapeParams | null) => {
       if (val === null) return
       const config = repoConfig.value
       if (!config) return
       // Find processor layer with mask modifier and update it
-      for (const layer of config.layers) {
-        if (layer.type === 'processor') {
-          const maskModifierIndex = layer.modifiers.findIndex((m): m is MaskProcessorConfig => m.type === 'mask')
-          if (maskModifierIndex !== -1) {
-            const newModifiers = [...layer.modifiers]
-            const existingMask = newModifiers[maskModifierIndex] as MaskProcessorConfig
-            newModifiers[maskModifierIndex] = {
-              ...existingMask,
-              shape: fromCustomMaskShapeParams(val),
-            }
-            heroViewRepository.updateLayer(layer.id, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
-            return
-          }
-        }
+      const processor = findProcessorWithMask(config.layers)
+      if (!processor) return
+      const maskModifierIndex = processor.modifiers.findIndex((m): m is MaskProcessorConfig => m.type === 'mask')
+      if (maskModifierIndex === -1) return
+      const newModifiers = [...processor.modifiers]
+      const existingMask = newModifiers[maskModifierIndex] as MaskProcessorConfig
+      newModifiers[maskModifierIndex] = {
+        ...existingMask,
+        shape: fromCustomMaskShapeParams(val),
       }
+      heroViewRepository.updateLayer(processor.id, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
     },
   })
 
