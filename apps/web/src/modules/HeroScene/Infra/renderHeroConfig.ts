@@ -733,42 +733,56 @@ function findClipGroupContents(layers: LayerNodeConfig[]): {
 
 /**
  * Get background colors from surface layer
- * Migration should ensure colors always exist on surface layers
+ * Merges with defaults to handle partial/incomplete color objects
  */
 function getBackgroundColors(
   layer: BaseLayerNodeConfig | SurfaceLayerNodeConfig | null
 ): { primary: HeroPrimitiveKey; secondary: HeroPrimitiveKey | 'auto' } {
   // DEFAULT_LAYER_BACKGROUND_COLORS.primary is 'B' (HeroPrimitiveKey), cast needed due to SurfaceColorsConfig type
   const defaultPrimary = DEFAULT_LAYER_BACKGROUND_COLORS.primary as HeroPrimitiveKey
+  const defaultSecondary = DEFAULT_LAYER_BACKGROUND_COLORS.secondary
+
   if (layer?.colors) {
-    // Use per-surface colors (auto is resolved to default for background primary)
+    // Use per-surface colors, falling back to defaults for missing values
+    const primary = layer.colors.primary
+    const secondary = layer.colors.secondary
+
     return {
-      primary: layer.colors.primary === 'auto' ? defaultPrimary : layer.colors.primary,
-      secondary: layer.colors.secondary,
+      // Resolve 'auto' or undefined to default for background primary
+      primary: (primary == null || primary === 'auto') ? defaultPrimary : primary,
+      // Use secondary if defined, otherwise default
+      secondary: secondary ?? defaultSecondary,
     }
   }
-  // Fallback to defaults (migration should prevent this)
+  // Fallback to defaults
   return {
     primary: defaultPrimary,
-    secondary: DEFAULT_LAYER_BACKGROUND_COLORS.secondary,
+    secondary: defaultSecondary,
   }
 }
 
 /**
  * Get mask colors from surface layer
- * Migration should ensure colors always exist on surface layers
+ * Merges with defaults to handle partial/incomplete color objects
  */
 function getMaskColors(
   layer: SurfaceLayerNodeConfig | null
 ): { primary: HeroPrimitiveKey | 'auto'; secondary: HeroPrimitiveKey | 'auto' } {
+  const defaultPrimary = DEFAULT_LAYER_MASK_COLORS.primary
+  const defaultSecondary = DEFAULT_LAYER_MASK_COLORS.secondary
+
   if (layer?.colors) {
+    // Use per-surface colors, falling back to defaults for missing values
     return {
-      primary: layer.colors.primary,
-      secondary: layer.colors.secondary,
+      primary: layer.colors.primary ?? defaultPrimary,
+      secondary: layer.colors.secondary ?? defaultSecondary,
     }
   }
-  // Fallback to defaults (migration should prevent this)
-  return DEFAULT_LAYER_MASK_COLORS
+  // Fallback to defaults
+  return {
+    primary: defaultPrimary,
+    secondary: defaultSecondary,
+  }
 }
 
 // ============================================================
