@@ -53,6 +53,7 @@ import {
   type LayerNodeConfig,
   type BaseLayerNodeConfig,
   type SurfaceLayerNodeConfig,
+  type SurfaceColorsConfig,
   type GroupLayerNodeConfig,
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
@@ -950,11 +951,44 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     { deep: true }
   )
 
+  // Helper to update colors on surface layer within layer tree
+  const updateSurfaceLayerColors = (
+    layers: LayerNodeConfig[],
+    layerId: string,
+    colorUpdate: Partial<SurfaceColorsConfig>
+  ): LayerNodeConfig[] => {
+    return layers.map((layer): LayerNodeConfig => {
+      if (layer.type === 'group') {
+        return {
+          ...layer,
+          children: layer.children.map((child): LayerNodeConfig => {
+            if ((child.type === 'surface' || child.type === 'base') && child.id === layerId) {
+              return {
+                ...child,
+                colors: { ...(child.colors ?? { primary: 'B', secondary: 'auto' }), ...colorUpdate },
+              }
+            }
+            return child
+          }),
+        }
+      }
+      if ((layer.type === 'surface' || layer.type === 'base') && layer.id === layerId) {
+        return {
+          ...layer,
+          colors: { ...(layer.colors ?? { primary: 'B', secondary: 'auto' }), ...colorUpdate },
+        }
+      }
+      return layer
+    })
+  }
+
   watch(heroColors.backgroundColorKey1, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
+    const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { primary: newValue as HeroPrimitiveKey | 'auto' })
     heroViewRepository.set({
       ...config,
+      layers: updatedLayers,
       colors: {
         ...config.colors,
         background: { ...config.colors.background, primary: newValue as HeroPrimitiveKey },
@@ -965,8 +999,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   watch(heroColors.backgroundColorKey2, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
+    const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { secondary: newValue as HeroPrimitiveKey | 'auto' })
     heroViewRepository.set({
       ...config,
+      layers: updatedLayers,
       colors: {
         ...config.colors,
         background: { ...config.colors.background, secondary: newValue as HeroPrimitiveKey | 'auto' },
@@ -977,8 +1013,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   watch(heroColors.maskColorKey1, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
+    const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: newValue as HeroPrimitiveKey | 'auto' })
     heroViewRepository.set({
       ...config,
+      layers: updatedLayers,
       colors: {
         ...config.colors,
         mask: { ...config.colors.mask, primary: newValue as HeroPrimitiveKey | 'auto' },
@@ -989,8 +1027,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   watch(heroColors.maskColorKey2, (newValue) => {
     if (isLoadingFromConfig) return
     const config = heroViewRepository.get()
+    const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: newValue as HeroPrimitiveKey | 'auto' })
     heroViewRepository.set({
       ...config,
+      layers: updatedLayers,
       colors: {
         ...config.colors,
         mask: { ...config.colors.mask, secondary: newValue as HeroPrimitiveKey | 'auto' },
@@ -1062,13 +1102,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       },
     }
 
-    const colors = migratedConfig.colors ?? createDefaultColorsConfig()
-    heroColors.backgroundColorKey1.value = colors.background.primary as PrimitiveKey
-    heroColors.backgroundColorKey2.value = colors.background.secondary as PrimitiveKey | 'auto'
-    heroColors.maskColorKey1.value = colors.mask.primary as PrimitiveKey | 'auto'
-    heroColors.maskColorKey2.value = colors.mask.secondary as PrimitiveKey | 'auto'
-    heroColors.maskSemanticContext.value = colors.semanticContext as ContextName
-
     // Find background surface layer (inside background-group or legacy base layer)
     let backgroundSurfaceLayer: SurfaceLayerNodeConfig | BaseLayerNodeConfig | undefined
     const backgroundGroup = migratedConfig.layers.find(l => l.id === 'background-group' && l.type === 'group')
@@ -1102,6 +1135,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
         }
       }
     }
+
+    // Read colors from surface layers (with fallback to config.colors for backward compatibility)
+    const configColors = migratedConfig.colors ?? createDefaultColorsConfig()
+    // Background colors: prefer layer.colors, fallback to config.colors
+    const bgColors = backgroundSurfaceLayer?.colors ?? configColors.background
+    heroColors.backgroundColorKey1.value = (bgColors.primary === 'auto' ? configColors.background.primary : bgColors.primary) as PrimitiveKey
+    heroColors.backgroundColorKey2.value = bgColors.secondary as PrimitiveKey | 'auto'
+    // Mask colors: prefer layer.colors, fallback to config.colors
+    const maskColors = maskSurfaceLayer?.colors ?? configColors.mask
+    heroColors.maskColorKey1.value = maskColors.primary as PrimitiveKey | 'auto'
+    heroColors.maskColorKey2.value = maskColors.secondary as PrimitiveKey | 'auto'
+    // Semantic context from config.colors (kept at top level)
+    heroColors.maskSemanticContext.value = configColors.semanticContext as ContextName
 
     if (backgroundSurfaceLayer) {
       const bgSurface = backgroundSurfaceLayer.surface
