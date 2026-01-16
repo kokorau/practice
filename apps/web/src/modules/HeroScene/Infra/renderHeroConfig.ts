@@ -42,6 +42,8 @@ import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../SemanticColorPalette/Domain'
 import type {
   HeroViewConfig,
+  HeroColorsConfig,
+  HeroPrimitiveKey,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   GroupLayerNodeConfig,
@@ -724,6 +726,45 @@ function findClipGroupContents(layers: LayerNodeConfig[]): {
 }
 
 // ============================================================
+// Surface Color Resolution (Per-surface with fallback)
+// ============================================================
+
+/**
+ * Get background colors from surface layer or fallback to config.colors
+ */
+function getBackgroundColors(
+  layer: BaseLayerNodeConfig | SurfaceLayerNodeConfig | null,
+  configColors: HeroColorsConfig
+): { primary: HeroPrimitiveKey; secondary: HeroPrimitiveKey | 'auto' } {
+  if (layer?.colors) {
+    // Use per-surface colors (auto is not allowed for background primary)
+    return {
+      primary: layer.colors.primary === 'auto' ? configColors.background.primary : layer.colors.primary,
+      secondary: layer.colors.secondary,
+    }
+  }
+  // Fallback to config.colors
+  return configColors.background
+}
+
+/**
+ * Get mask colors from surface layer or fallback to config.colors
+ */
+function getMaskColors(
+  layer: SurfaceLayerNodeConfig | null,
+  configColors: HeroColorsConfig
+): { primary: HeroPrimitiveKey | 'auto'; secondary: HeroPrimitiveKey | 'auto' } {
+  if (layer?.colors) {
+    return {
+      primary: layer.colors.primary,
+      secondary: layer.colors.secondary,
+    }
+  }
+  // Fallback to config.colors
+  return configColors.mask
+}
+
+// ============================================================
 // Processor-based Layer Finding (Position-based)
 // ============================================================
 
@@ -758,39 +799,42 @@ export async function renderHeroConfig(
 ): Promise<void> {
   const scale = options?.scale ?? 1
   const viewport = renderer.getViewport()
-  const colors = config.colors
+  const configColors = config.colors
 
   // Determine theme mode from palette
   const isDark = isDarkTheme(palette)
 
   // Get mask surface key based on semantic context
-  const semanticContext = colors.semanticContext ?? 'canvas'
+  const semanticContext = configColors.semanticContext ?? 'canvas'
   const maskSurfaceKey = getMaskSurfaceKey(semanticContext, isDark)
 
-  // Resolve background colors from palette
-  const bgColor1 = getColorFromPalette(palette, colors.background.primary)
-  const canvasSurfaceKey = isDark ? 'F8' : 'F1'
-  const bgColor2 = colors.background.secondary === 'auto'
-    ? getColorFromPalette(palette, canvasSurfaceKey)
-    : getColorFromPalette(palette, colors.background.secondary)
+  // Find layers first (needed to resolve per-surface colors)
+  const baseLayer = findBaseLayer(config.layers)
+  const clipGroupContents = findClipGroupContents(config.layers)
 
-  // Resolve mask colors (matching useHeroScene logic)
-  // Note: maskInnerColor is no longer used in greymap pipeline (kept for reference)
-  // const maskInnerColor = getColorFromPalette(palette, maskSurfaceKey, 0)
+  // Resolve background colors (per-surface with fallback to config.colors)
+  const bgColors = getBackgroundColors(baseLayer, configColors)
+  const bgColor1 = getColorFromPalette(palette, bgColors.primary)
+  const canvasSurfaceKey = isDark ? 'F8' : 'F1'
+  const bgColor2 = bgColors.secondary === 'auto'
+    ? getColorFromPalette(palette, canvasSurfaceKey)
+    : getColorFromPalette(palette, bgColors.secondary)
+
+  // Resolve mask colors (per-surface with fallback to config.colors)
+  const maskColors = getMaskColors(clipGroupContents?.surface ?? null, configColors)
   // midgroundTextureColor1: mask.primary or auto-shifted from surface
   const midgroundTextureColor1 = getMidgroundTextureColor(
     palette,
-    colors.mask.primary,
+    maskColors.primary,
     maskSurfaceKey,
     isDark
   )
   // midgroundTextureColor2: mask.secondary or mask surface color
-  const midgroundTextureColor2 = colors.mask.secondary === 'auto'
+  const midgroundTextureColor2 = maskColors.secondary === 'auto'
     ? getColorFromPalette(palette, maskSurfaceKey)
-    : getColorFromPalette(palette, colors.mask.secondary)
+    : getColorFromPalette(palette, maskColors.secondary)
 
   // 1. Render background (base layer)
-  const baseLayer = findBaseLayer(config.layers)
   if (baseLayer) {
     const bgSpec = createBackgroundSpecFromSurface(
       baseLayer.surface,
@@ -812,7 +856,6 @@ export async function renderHeroConfig(
   }
 
   // 2. Render clip-group (surface-mask with processor-mask)
-  const clipGroupContents = findClipGroupContents(config.layers)
   if (clipGroupContents) {
     const { surface: surfaceLayer, processor } = clipGroupContents
 
