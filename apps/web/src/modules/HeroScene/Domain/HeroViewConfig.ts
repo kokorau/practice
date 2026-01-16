@@ -987,6 +987,7 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           name: 'Surface',
           visible: true,
           surface: { type: 'solid' },
+          colors: { primary: 'B', secondary: 'auto' },
           filters: [createDefaultEffectFilterConfig()],
         },
       ],
@@ -1003,6 +1004,7 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           name: 'Surface',
           visible: true,
           surface: { type: 'solid' },
+          colors: { primary: 'auto', secondary: 'auto' },
           filters: [createDefaultEffectFilterConfig()],
         },
         {
