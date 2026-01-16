@@ -159,17 +159,18 @@ describe('HeroEditorInMemoryRepository', () => {
   describe('Layer Operations', () => {
     it('should find layer by id', () => {
       const repo = createHeroEditorInMemoryRepository()
-      const layer = repo.findLayer('base')
+      // Find nested layer inside background-group
+      const layer = repo.findLayer('background')
 
       expect(layer).toBeDefined()
-      expect(layer?.id).toBe('base')
+      expect(layer?.id).toBe('background')
     })
 
     it('should update layer', () => {
       const repo = createHeroEditorInMemoryRepository()
-      repo.updateLayer('base', { visible: false })
+      repo.updateLayer('background', { visible: false })
 
-      const layer = repo.findLayer('base')
+      const layer = repo.findLayer('background')
       expect(layer?.visible).toBe(false)
     })
 
@@ -237,12 +238,12 @@ describe('HeroEditorInMemoryRepository', () => {
         surface: { type: 'solid' },
       })
 
-      repo.reorderLayers(['surface-2', 'surface-1', 'base'])
+      repo.reorderLayers(['surface-2', 'surface-1', 'background-group'])
 
       const layers = repo.get().config.layers
       expect(layers[0]!.id).toBe('surface-2')
       expect(layers[1]!.id).toBe('surface-1')
-      expect(layers[2]!.id).toBe('base')
+      expect(layers[2]!.id).toBe('background-group')
     })
   })
 
@@ -312,18 +313,23 @@ describe('HeroEditorInMemoryRepository', () => {
       // Update both UI and config
       repo.setActiveSection('background')
       repo.updateBackgroundUI({ selectedPresetIndex: 3 })
-      repo.updateLayer('base', { surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 } })
+      repo.updateLayer('background', { surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 } })
 
       // Verify single state object contains all
       const state = repo.get()
 
       expect(state.ui.activeSection).toBe('background')
       expect(state.ui.background.selectedPresetIndex).toBe(3)
-      const baseLayer = state.config.layers[0]
-      expect(baseLayer).toBeDefined()
-      expect(baseLayer!.type).toBe('base')
-      if (baseLayer && baseLayer.type === 'base') {
-        expect(baseLayer.surface.type).toBe('stripe')
+      // New structure: layers[0] is 'background-group', children[0] is 'background'
+      const backgroundGroup = state.config.layers[0]
+      expect(backgroundGroup).toBeDefined()
+      expect(backgroundGroup!.type).toBe('group')
+      if (backgroundGroup && backgroundGroup.type === 'group') {
+        const bgLayer = backgroundGroup.children[0]
+        expect(bgLayer?.type).toBe('surface')
+        if (bgLayer?.type === 'surface') {
+          expect(bgLayer.surface.type).toBe('stripe')
+        }
       }
     })
   })

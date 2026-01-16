@@ -125,7 +125,7 @@ import { useHeroThumbnails } from './useHeroThumbnails'
 import { useHeroImages } from './useHeroImages'
 
 // Layer IDs for template layers
-const BASE_LAYER_ID = 'base-layer'
+const BASE_LAYER_ID = 'background'
 
 // Re-export types from extracted composables
 export type { SectionType } from './useHeroThumbnails'
@@ -307,8 +307,8 @@ export interface UseHeroSceneOptions {
 // ============================================================
 
 const LAYER_IDS = {
-  BASE: 'base-layer',
-  MASK: 'mask-layer',
+  BASE: 'background',
+  MASK: 'surface-mask',
 } as const
 
 // ============================================================
@@ -683,7 +683,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (!customBackgroundSurfaceParams.value) return
     const type = customBackgroundSurfaceParams.value.type
     const layer = heroViewRepository.findLayer(BASE_LAYER_ID)
-    if (!layer || layer.type !== 'base') return
+    if (!layer || layer.type !== 'surface') return
     const currentSurface = layer.surface
     if (currentSurface.type !== type) return
     const newSurface = { ...currentSurface, ...updates } as HeroSurfaceConfig
@@ -1020,32 +1020,49 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     heroColors.maskColorKey2.value = colors.mask.secondary as PrimitiveKey | 'auto'
     heroColors.maskSemanticContext.value = colors.semanticContext as ContextName
 
-    const baseLayer = migratedConfig.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
+    // Find background surface layer (inside background-group or legacy base layer)
+    let backgroundSurfaceLayer: SurfaceLayerNodeConfig | BaseLayerNodeConfig | undefined
+    const backgroundGroup = migratedConfig.layers.find(l => l.id === 'background-group' && l.type === 'group')
+    if (backgroundGroup && backgroundGroup.type === 'group') {
+      backgroundSurfaceLayer = backgroundGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'background' && c.type === 'surface')
+    }
+    // Fallback: check for legacy base layer
+    if (!backgroundSurfaceLayer) {
+      backgroundSurfaceLayer = migratedConfig.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
+    }
 
-    let surfaceLayer: SurfaceLayerNodeConfig | undefined
-    for (const layer of migratedConfig.layers) {
-      if (layer.type === 'surface') {
-        surfaceLayer = layer
-        break
-      }
-      if (layer.type === 'group' && layer.children) {
-        const nested = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
-        if (nested) {
-          surfaceLayer = nested
+    // Find mask surface layer (inside clip-group)
+    let maskSurfaceLayer: SurfaceLayerNodeConfig | undefined
+    const clipGroup = migratedConfig.layers.find(l => l.id === 'clip-group' && l.type === 'group')
+    if (clipGroup && clipGroup.type === 'group') {
+      maskSurfaceLayer = clipGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'surface-mask' && c.type === 'surface')
+    }
+    // Fallback: find first surface layer not in background-group
+    if (!maskSurfaceLayer) {
+      for (const layer of migratedConfig.layers) {
+        if (layer.type === 'surface' && layer.id !== 'background') {
+          maskSurfaceLayer = layer
           break
+        }
+        if (layer.type === 'group' && layer.id !== 'background-group' && layer.children) {
+          const nested = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
+          if (nested) {
+            maskSurfaceLayer = nested
+            break
+          }
         }
       }
     }
 
-    if (baseLayer) {
-      const bgSurface = baseLayer.surface
+    if (backgroundSurfaceLayer) {
+      const bgSurface = backgroundSurfaceLayer.surface
       if (bgSurface.type === 'image') {
         await heroImages.restoreBackgroundImage(bgSurface.imageId)
       }
       const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
       selectedBackgroundIndex.value = bgPresetIndex ?? 0
 
-      const effectFilter = (baseLayer.filters ?? []).find((p) => p.type === 'effect')
+      const effectFilter = (backgroundSurfaceLayer.filters ?? []).find((p) => p.type === 'effect')
       if (effectFilter) {
         const defaults = createDefaultEffectConfig()
         const merged: LayerEffectConfig = {
@@ -1059,13 +1076,28 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       }
     }
 
+    // Find mask shape from processor layer (inside clip-group or top-level)
     let maskShape: HeroMaskShapeConfig | undefined
-    for (const layer of migratedConfig.layers) {
-      if (layer.type === 'processor') {
-        const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
-        if (maskModifier) {
-          maskShape = maskModifier.shape
-          break
+    if (clipGroup && clipGroup.type === 'group') {
+      for (const child of clipGroup.children) {
+        if (child.type === 'processor') {
+          const maskModifier = child.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
+          if (maskModifier) {
+            maskShape = maskModifier.shape
+            break
+          }
+        }
+      }
+    }
+    // Fallback: check top-level processors
+    if (!maskShape) {
+      for (const layer of migratedConfig.layers) {
+        if (layer.type === 'processor') {
+          const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
+          if (maskModifier) {
+            maskShape = maskModifier.shape
+            break
+          }
         }
       }
     }
@@ -1076,15 +1108,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       selectedMaskIndex.value = null
     }
 
-    if (surfaceLayer) {
-      const maskSurface = surfaceLayer.surface
+    if (maskSurfaceLayer) {
+      const maskSurface = maskSurfaceLayer.surface
       if (maskSurface.type === 'image') {
         await heroImages.restoreMaskImage(maskSurface.imageId)
       }
       const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
       selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
-      const maskEffectFilter = (surfaceLayer.filters ?? []).find((p) => p.type === 'effect')
+      const maskEffectFilter = (maskSurfaceLayer.filters ?? []).find((p) => p.type === 'effect')
       if (maskEffectFilter) {
         const defaults = createDefaultEffectConfig()
         const merged: LayerEffectConfig = {

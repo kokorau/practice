@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import {
   useLayerOperations,
   type SceneOperationCallbacks,
@@ -115,9 +115,12 @@ const createMockRepository = (layers: LayerNodeConfig[] = createInitialLayers())
 const createOptions = (
   overrides: Partial<UseLayerOperationsOptions> = {},
 ): UseLayerOperationsOptions => {
+  const repository = overrides.repository ?? createMockRepository()
+  const heroViewConfig = overrides.heroViewConfig ?? shallowRef(repository.get())
   const expandedLayerIds = overrides.expandedLayerIds ?? ref(new Set(['background-group', 'main-group']))
   return {
-    repository: overrides.repository ?? createMockRepository(),
+    repository,
+    heroViewConfig,
     expandedLayerIds,
     sceneCallbacks: overrides.sceneCallbacks ?? createMockSceneCallbacks(),
     ...overrides,

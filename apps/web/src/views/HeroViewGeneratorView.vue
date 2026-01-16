@@ -320,6 +320,7 @@ const {
   handleMoveModifier,
 } = useLayerOperations({
   repository: heroScene.usecase.heroViewRepository,
+  heroViewConfig: heroScene.editor.heroViewConfig,
   expandedLayerIds,
   sceneCallbacks: {
     addMaskLayer: heroScene.layer.addMaskLayer,

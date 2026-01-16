@@ -73,6 +73,7 @@ const emit = defineEmits<{
 
 const isSelected = computed(() => props.selectedId === props.node.id)
 const isGroupNode = computed(() => isGroupLayerConfig(props.node))
+const isProcessorNode = computed(() => isProcessorLayerConfig(props.node))
 const hasChildren = computed(() => isGroupNode.value && (props.node as GroupLayerNodeConfig).children.length > 0)
 const isExpanded = computed(() => props.expandedLayerIds.has(props.node.id))
 
@@ -287,8 +288,9 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
 
 <template>
   <div class="draggable-layer-node">
-    <!-- Node Header -->
+    <!-- Node Header (not shown for processor nodes - they show directly as processor-group-node) -->
     <div
+      v-if="!isProcessorNode"
       ref="nodeRef"
       class="node-header"
       :class="{ selected: isSelected, dragging: isBeingDragged }"

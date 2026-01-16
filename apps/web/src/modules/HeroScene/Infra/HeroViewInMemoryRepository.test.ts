@@ -148,11 +148,17 @@ describe('HeroViewInMemoryRepository', () => {
       const subscriber = vi.fn()
       repository.subscribe(subscriber)
 
-      repository.updateLayer('base', { name: 'Updated Background' })
+      // Update the nested 'background' layer inside 'background-group'
+      repository.updateLayer('background', { name: 'Updated Background' })
 
       expect(subscriber).toHaveBeenCalledTimes(1)
-      const layer = repository.get().layers.find((l) => l.id === 'base')
-      expect(layer?.name).toBe('Updated Background')
+      // Find in nested structure
+      const group = repository.get().layers[0]
+      expect(group?.type).toBe('group')
+      if (group?.type === 'group') {
+        const layer = group.children.find((l) => l.id === 'background')
+        expect(layer?.name).toBe('Updated Background')
+      }
     })
 
     it('should not modify other layers', () => {
@@ -163,11 +169,10 @@ describe('HeroViewInMemoryRepository', () => {
         name: 'Surface 1',
         visible: true,
         surface: { type: 'solid' },
-        processors: [],
       })
       const repository = createHeroViewInMemoryRepository(config)
 
-      repository.updateLayer('base', { name: 'Updated' })
+      repository.updateLayer('background', { name: 'Updated' })
 
       const surfaceLayer = repository.get().layers.find((l) => l.id === 'surface-1')
       expect(surfaceLayer?.name).toBe('Surface 1')
@@ -201,7 +206,6 @@ describe('HeroViewInMemoryRepository', () => {
         name: 'New Surface',
         visible: true,
         surface: { type: 'solid' as const },
-        processors: [],
       }
 
       repository.addLayer(newLayer, 0)
@@ -209,7 +213,7 @@ describe('HeroViewInMemoryRepository', () => {
       const layers = repository.get().layers
       expect(layers.length).toBe(2)
       expect(layers[0]!.id).toBe('surface-1')
-      expect(layers[1]!.id).toBe('base')
+      expect(layers[1]!.id).toBe('background-group')
     })
   })
 
