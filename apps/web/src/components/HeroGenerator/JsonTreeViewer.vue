@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<{
   initialExpanded: true,
 })
 
-const isExpanded = ref(props.depth < 2 ? props.initialExpanded : false)
+const isExpanded = ref(props.initialExpanded)
 
 const dataType = computed(() => {
   if (props.data === null) return 'null'
