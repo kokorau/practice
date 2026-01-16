@@ -937,6 +937,14 @@ export const createDefaultEffectFilterConfig = (): EffectFilterConfig => ({
 /** @deprecated Use createDefaultEffectFilterConfig instead */
 export const createDefaultEffectProcessorConfig = createDefaultEffectFilterConfig
 
+export const createDefaultMaskProcessorConfig = (): MaskProcessorConfig => ({
+  type: 'mask',
+  enabled: true,
+  shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false },
+  invert: false,
+  feather: 0,
+})
+
 export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
   viewport: { width: 1280, height: 720 },
   colors: createDefaultColorsConfig(),
@@ -954,6 +962,29 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           visible: true,
           surface: { type: 'solid' },
           filters: [createDefaultEffectFilterConfig()],
+        },
+      ],
+    },
+    {
+      type: 'group',
+      id: 'clip-group',
+      name: 'Clip Group',
+      visible: true,
+      children: [
+        {
+          type: 'surface',
+          id: 'surface-mask',
+          name: 'Surface',
+          visible: true,
+          surface: { type: 'solid' },
+          filters: [createDefaultEffectFilterConfig()],
+        },
+        {
+          type: 'processor',
+          id: 'processor-mask',
+          name: 'Mask',
+          visible: true,
+          modifiers: [createDefaultMaskProcessorConfig()],
         },
       ],
     },
