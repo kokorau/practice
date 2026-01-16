@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import Prism from 'prismjs'
-import 'prismjs/themes/prism-tomorrow.css'
-import 'prismjs/components/prism-json'
+import JsonTreeViewer from './JsonTreeViewer.vue'
 
 interface DebugSection {
   id: string
@@ -25,14 +23,11 @@ const toggleSection = (id: string) => {
   expandedSections.value = new Set(expandedSections.value)
 }
 
-const highlightedSections = computed(() => {
+const sectionsMeta = computed(() => {
   return props.sections.map(section => {
     const jsonStr = JSON.stringify(section.data, null, 2)
-    const grammar = Prism.languages.json
-    const highlighted = grammar ? Prism.highlight(jsonStr, grammar, 'json') : jsonStr
     return {
       ...section,
-      highlighted,
       lineCount: jsonStr.split('\n').length,
     }
   })
@@ -48,7 +43,7 @@ const highlightedSections = computed(() => {
 
     <div class="debug-sections">
       <div
-        v-for="section in highlightedSections"
+        v-for="section in sectionsMeta"
         :key="section.id"
         class="debug-section"
       >
@@ -65,7 +60,9 @@ const highlightedSections = computed(() => {
           v-if="expandedSections.has(section.id)"
           class="debug-section-content"
         >
-          <pre class="debug-code"><code v-html="section.highlighted" /></pre>
+          <div class="debug-tree-wrapper">
+            <JsonTreeViewer :data="section.data" />
+          </div>
         </div>
       </div>
     </div>
@@ -195,44 +192,13 @@ const highlightedSections = computed(() => {
   border-top-color: oklch(0.22 0.02 260);
 }
 
-.debug-code {
-  margin: 0;
-  padding: 1rem;
-  font-size: 0.75rem;
-  line-height: 1.5;
+.debug-tree-wrapper {
+  padding: 0.75rem 1rem;
   background: oklch(0.18 0.02 260);
-  color: oklch(0.85 0.01 260);
   overflow-x: auto;
 }
 
-:global(.dark) .debug-code {
+:global(.dark) .debug-tree-wrapper {
   background: oklch(0.08 0.02 260);
-}
-</style>
-
-<style>
-/* Prism.js token overrides */
-.debug-code .token.property {
-  color: oklch(0.75 0.15 200);
-}
-
-.debug-code .token.string {
-  color: oklch(0.75 0.12 140);
-}
-
-.debug-code .token.number {
-  color: oklch(0.75 0.15 50);
-}
-
-.debug-code .token.boolean {
-  color: oklch(0.75 0.15 320);
-}
-
-.debug-code .token.null {
-  color: oklch(0.60 0.10 260);
-}
-
-.debug-code .token.punctuation {
-  color: oklch(0.60 0.02 260);
 }
 </style>
