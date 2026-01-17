@@ -67,30 +67,6 @@ export interface HeroColorsConfig {
   semanticContext: HeroContextName
 }
 
-/**
- * Legacy HeroColorsConfig with deprecated fields
- * Used only for migration from old config format
- * @internal
- */
-export interface LegacyHeroColorsConfig extends HeroColorsConfig {
-  /** @deprecated Use colors field on background surface layer instead */
-  background?: {
-    primary: HeroPrimitiveKey
-    secondary: HeroPrimitiveKey | 'auto'
-  }
-  /** @deprecated Use colors field on surface-mask layer instead */
-  mask?: {
-    primary: HeroPrimitiveKey | 'auto'
-    secondary: HeroPrimitiveKey | 'auto'
-  }
-  /** @deprecated Use colorPreset in preset file instead */
-  brand?: HsvColor
-  /** @deprecated Use colorPreset in preset file instead */
-  accent?: HsvColor
-  /** @deprecated Use colorPreset in preset file instead */
-  foundation?: HsvColor
-}
-
 // ============================================================
 // Viewport
 // ============================================================
@@ -669,28 +645,10 @@ export interface SingleEffectConfig {
 }
 
 /**
- * Effect filter configuration for JSON serialization
- * @deprecated Use SingleEffectConfig instead - this legacy format will be removed
- */
-export interface EffectFilterConfig {
-  type: 'effect'
-  enabled: boolean
-  config: LayerEffectConfig
-}
-
-/**
- * Type guard for SingleEffectConfig (new format)
+ * Type guard for SingleEffectConfig
  */
 export function isSingleEffectConfig(config: ProcessorConfig): config is SingleEffectConfig {
   return config.type === 'effect' && 'id' in config && 'params' in config
-}
-
-/**
- * Type guard for EffectFilterConfig (legacy format)
- * @deprecated Will be removed when legacy format is phased out
- */
-export function isLegacyEffectFilterConfig(config: ProcessorConfig): config is EffectFilterConfig {
-  return config.type === 'effect' && 'config' in config && !('id' in config)
 }
 
 // ============================================================
@@ -711,18 +669,8 @@ export interface MaskProcessorConfig {
 /**
  * Processor config for ProcessorNodeConfig.modifiers
  * Includes both effect filters and mask processors
- *
- * Effect configs can be in two formats:
- * - SingleEffectConfig (new): { type: 'effect', id: 'blur', params: {...} }
- * - EffectFilterConfig (legacy): { type: 'effect', enabled: true, config: {...} }
  */
-export type ProcessorConfig = SingleEffectConfig | EffectFilterConfig | MaskProcessorConfig
-
-/**
- * Effect config type (union of new and legacy formats)
- * @deprecated Prefer SingleEffectConfig. EffectFilterConfig is kept only for loading legacy data.
- */
-export type AnyEffectConfig = SingleEffectConfig | EffectFilterConfig
+export type ProcessorConfig = SingleEffectConfig | MaskProcessorConfig
 
 // ============================================================
 // Effect Normalization Utilities
@@ -841,21 +789,7 @@ export function extractEnabledEffects(config: LayerEffectConfig): SingleEffectCo
 }
 
 /**
- * Convert legacy EffectFilterConfig to SingleEffectConfig[]
- * Extracts enabled effects from the bundled config
- *
- * @deprecated Use SingleEffectConfig[] directly
- */
-export function normalizeEffectFilterConfig(config: EffectFilterConfig): SingleEffectConfig[] {
-  if (!config.enabled) return []
-  return extractEnabledEffects(config.config)
-}
-
-/**
- * Convert SingleEffectConfig[] to legacy LayerEffectConfig
- * Used for backward compatibility with legacy code
- *
- * @deprecated Use SingleEffectConfig[] directly
+ * Convert SingleEffectConfig[] to LayerEffectConfig for UI display
  */
 export function denormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): LayerEffectConfig {
   const config = createDefaultEffectConfig()
@@ -873,20 +807,6 @@ export function denormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): L
   }
 
   return config
-}
-
-/**
- * Get effects from AnyEffectConfig as SingleEffectConfig[]
- * Accepts both new and legacy formats
- */
-export function getEffectsAsNormalized(config: AnyEffectConfig): SingleEffectConfig[] {
-  if (isSingleEffectConfig(config as ProcessorConfig)) {
-    return [config as SingleEffectConfig]
-  }
-  if (isLegacyEffectFilterConfig(config as ProcessorConfig)) {
-    return normalizeEffectFilterConfig(config as EffectFilterConfig)
-  }
-  return []
 }
 
 // ============================================================
@@ -909,7 +829,7 @@ export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   /** Per-surface color configuration */
   colors?: SurfaceColorsConfig
   /** Effect filters */
-  filters?: AnyEffectConfig[]
+  filters?: SingleEffectConfig[]
 }
 
 export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
@@ -918,7 +838,7 @@ export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
   /** Per-surface color configuration */
   colors?: SurfaceColorsConfig
   /** Effect filters */
-  filters?: AnyEffectConfig[]
+  filters?: SingleEffectConfig[]
 }
 
 export interface TextLayerNodeConfig extends LayerNodeConfigBase {
@@ -933,7 +853,7 @@ export interface TextLayerNodeConfig extends LayerNodeConfigBase {
   position: { x: number; y: number; anchor: string }
   rotation: number
   /** Effect filters */
-  filters?: AnyEffectConfig[]
+  filters?: SingleEffectConfig[]
 }
 
 export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
@@ -943,7 +863,7 @@ export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
   rotation: { x: number; y: number; z: number }
   scale: number
   /** Effect filters */
-  filters?: AnyEffectConfig[]
+  filters?: SingleEffectConfig[]
 }
 
 /**
@@ -974,14 +894,14 @@ export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   /** Position configuration (only used when mode is 'positioned') */
   position?: ImagePositionConfig
   /** Effect filters */
-  filters?: AnyEffectConfig[]
+  filters?: SingleEffectConfig[]
 }
 
 export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
   /** Effect filters applied to the group */
-  filters?: AnyEffectConfig[]
+  filters?: SingleEffectConfig[]
 }
 
 /**
@@ -1201,12 +1121,12 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
 
 /**
  * Get effect filters from a layer config
- * Returns AnyEffectConfig[] (supports both legacy and new formats)
+ * Returns SingleEffectConfig[] (supports both legacy and new formats)
  */
-export const getLayerFilters = (layer: LayerNodeConfig): AnyEffectConfig[] => {
+export const getLayerFilters = (layer: LayerNodeConfig): SingleEffectConfig[] => {
   // ProcessorNodeConfig uses modifiers
   if (layer.type === 'processor') {
-    return layer.modifiers.filter((m): m is AnyEffectConfig => m.type === 'effect')
+    return layer.modifiers.filter((m): m is SingleEffectConfig => m.type === 'effect')
   }
   return layer.filters ?? []
 }
@@ -1317,10 +1237,10 @@ export const getProcessorMask = (processor: ProcessorNodeConfig): MaskProcessorC
 
 /**
  * Get effect processor configs from a ProcessorNodeConfig
- * Returns AnyEffectConfig[] (supports both legacy and new formats)
+ * Returns SingleEffectConfig[] (supports both legacy and new formats)
  */
-export const getProcessorEffects = (processor: ProcessorNodeConfig): AnyEffectConfig[] => {
-  return processor.modifiers.filter((m): m is AnyEffectConfig => m.type === 'effect')
+export const getProcessorEffects = (processor: ProcessorNodeConfig): SingleEffectConfig[] => {
+  return processor.modifiers.filter((m): m is SingleEffectConfig => m.type === 'effect')
 }
 
 // ============================================================
@@ -1334,7 +1254,7 @@ export const getProcessorEffects = (processor: ProcessorNodeConfig): AnyEffectCo
 interface LegacyGroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
-  filters?: AnyEffectConfig[]
+  filters?: SingleEffectConfig[]
   expanded?: boolean
 }
 
@@ -1391,254 +1311,4 @@ export const migrateExpandedFromConfig = (layers: LayerNodeConfig[]): LayerNodeC
   }
 
   return migrate(layers)
-}
-
-// ============================================================
-// Migration: Effect Config (Legacy → SingleEffectConfig)
-// ============================================================
-
-/**
- * Convert legacy EffectFilterConfig to SingleEffectConfig array
- *
- * Extracts enabled effects from the legacy bundled config format.
- * Each enabled effect becomes a separate SingleEffectConfig entry.
- *
- * @param legacy - Legacy EffectFilterConfig with all effects bundled
- * @returns Array of SingleEffectConfig for enabled effects only
- */
-export const migrateLegacyEffectConfig = (legacy: EffectFilterConfig): SingleEffectConfig[] => {
-  if (!legacy.enabled) return []
-
-  const effects: SingleEffectConfig[] = []
-
-  for (const effectType of EFFECT_TYPES) {
-    const effectConfig = legacy.config[effectType]
-    if (!effectConfig || !effectConfig.enabled) continue
-
-    // Extract params without the 'enabled' property
-    const { enabled: _enabled, ...params } = effectConfig
-    effects.push({
-      type: 'effect',
-      id: effectType,
-      params,
-    })
-  }
-
-  return effects
-}
-
-/**
- * Check if any effect config in the array is legacy format
- */
-export const hasLegacyEffectConfigs = (configs: ProcessorConfig[]): boolean => {
-  return configs.some((c) => c.type === 'effect' && 'config' in c && !('id' in c))
-}
-
-/**
- * Migrate all effect configs in a ProcessorConfig array from legacy to new format
- *
- * @param modifiers - Array of ProcessorConfig (may contain legacy EffectFilterConfig)
- * @returns Array with all effect configs migrated to SingleEffectConfig format
- */
-export const migrateEffectConfigsInModifiers = (modifiers: ProcessorConfig[]): ProcessorConfig[] => {
-  const result: ProcessorConfig[] = []
-
-  for (const modifier of modifiers) {
-    if (isLegacyEffectFilterConfig(modifier)) {
-      // Migrate legacy format to new format
-      const newEffects = migrateLegacyEffectConfig(modifier)
-      result.push(...newEffects)
-    } else {
-      // Keep non-effect modifiers and already-migrated effects as-is
-      result.push(modifier)
-    }
-  }
-
-  return result
-}
-
-/**
- * Get all effect configs from modifiers (both new and legacy formats)
- * Returns normalized SingleEffectConfig array
- */
-export const getEffectConfigsFromModifiers = (modifiers: ProcessorConfig[]): SingleEffectConfig[] => {
-  const effects: SingleEffectConfig[] = []
-
-  for (const modifier of modifiers) {
-    if (isSingleEffectConfig(modifier)) {
-      effects.push(modifier)
-    } else if (isLegacyEffectFilterConfig(modifier)) {
-      effects.push(...migrateLegacyEffectConfig(modifier))
-    }
-  }
-
-  return effects
-}
-
-// ============================================================
-// Full Config Migration
-// ============================================================
-
-/**
- * Migrate a single layer's effect configs from legacy to new format
- */
-const migrateLayerEffects = (layer: LayerNodeConfig): LayerNodeConfig => {
-  if (layer.type === 'processor') {
-    // Migrate processor modifiers
-    const migratedModifiers = migrateEffectConfigsInModifiers(layer.modifiers)
-    return { ...layer, modifiers: migratedModifiers }
-  }
-
-  if (layer.type === 'group') {
-    // Recursively migrate children
-    const migratedChildren = layer.children.map(migrateLayerEffects)
-    // Also migrate filters if present
-    if (layer.filters && hasLegacyEffectConfigs(layer.filters as ProcessorConfig[])) {
-      const migratedFilters: AnyEffectConfig[] = []
-      for (const filter of layer.filters) {
-        if (isLegacyEffectFilterConfig(filter)) {
-          // For filters array, we keep the legacy format but could migrate if needed
-          migratedFilters.push(filter)
-        } else {
-          migratedFilters.push(filter as AnyEffectConfig)
-        }
-      }
-      return { ...layer, children: migratedChildren, filters: migratedFilters }
-    }
-    return { ...layer, children: migratedChildren }
-  }
-
-  // For other layer types (base, surface, text, etc.), return as-is
-  // They may have filters but we keep them in legacy format for now
-  return layer
-}
-
-/**
- * Migrate all effect configs in HeroViewConfig from legacy to new format
- *
- * This function converts:
- * - EffectFilterConfig (legacy bundled format) → SingleEffectConfig[] (new format)
- *
- * Use this when loading configs from storage or presets.
- *
- * @param config - HeroViewConfig to migrate
- * @returns Migrated HeroViewConfig with all effects in new format
- */
-export const migrateHeroViewConfig = (config: HeroViewConfig): HeroViewConfig => {
-  // First migrate effects
-  let migratedLayers = config.layers.map(migrateLayerEffects)
-
-  // Then migrate colors from top-level to per-surface
-  // Cast to LegacyHeroColorsConfig to handle old configs that may have background/mask fields
-  const legacyColors = config.colors as LegacyHeroColorsConfig
-  migratedLayers = migrateColorsToSurfaceLayers(migratedLayers, legacyColors)
-
-  return { ...config, layers: migratedLayers }
-}
-
-/**
- * Migrate colors from top-level config.colors to per-surface colors field
- *
- * This converts the legacy structure:
- * ```
- * { colors: { background: {...}, mask: {...} }, layers: [...] }
- * ```
- * To the new structure:
- * ```
- * { layers: [{ id: 'background', colors: {...} }, { id: 'surface-mask', colors: {...} }] }
- * ```
- *
- * Always ensures surface layers have colors (uses defaults if no source available)
- */
-/**
- * Check if colors are incomplete (missing primary or secondary)
- */
-function isColorsIncomplete(layerColors: SurfaceColorsConfig | undefined): boolean {
-  if (!layerColors) return true
-  return layerColors.primary == null || layerColors.secondary == null
-}
-
-/**
- * Migrate colors from legacy config to per-surface colors
- * Also repairs partial/incomplete color objects
- */
-function migrateColorsToSurfaceLayers(
-  layers: LayerNodeConfig[],
-  colors?: LegacyHeroColorsConfig
-): LayerNodeConfig[] {
-  return layers.map((layer): LayerNodeConfig => {
-    // Handle background-group
-    if (layer.type === 'group' && layer.id === 'background-group') {
-      return {
-        ...layer,
-        children: layer.children.map((child): LayerNodeConfig => {
-          if (child.type === 'surface' && child.id === 'background' && isColorsIncomplete(child.colors)) {
-            // Use legacy colors if available, otherwise use defaults
-            // Merge with existing colors to preserve any valid values
-            const bgColors = colors?.background ?? DEFAULT_LAYER_BACKGROUND_COLORS
-            return {
-              ...child,
-              colors: {
-                primary: child.colors?.primary ?? bgColors.primary,
-                secondary: child.colors?.secondary ?? bgColors.secondary,
-              },
-            }
-          }
-          return child
-        }),
-      }
-    }
-
-    // Handle clip-group
-    if (layer.type === 'group' && layer.id === 'clip-group') {
-      return {
-        ...layer,
-        children: layer.children.map((child): LayerNodeConfig => {
-          if (child.type === 'surface' && child.id === 'surface-mask' && isColorsIncomplete(child.colors)) {
-            // Use legacy colors if available, otherwise use defaults
-            // Merge with existing colors to preserve any valid values
-            const maskColors = colors?.mask ?? DEFAULT_LAYER_MASK_COLORS
-            return {
-              ...child,
-              colors: {
-                primary: child.colors?.primary ?? maskColors.primary,
-                secondary: child.colors?.secondary ?? maskColors.secondary,
-              },
-            }
-          }
-          return child
-        }),
-      }
-    }
-
-    // Handle legacy base layer
-    if (layer.type === 'base' && isColorsIncomplete(layer.colors)) {
-      const bgColors = colors?.background ?? DEFAULT_LAYER_BACKGROUND_COLORS
-      return {
-        ...layer,
-        colors: {
-          primary: layer.colors?.primary ?? bgColors.primary,
-          secondary: layer.colors?.secondary ?? bgColors.secondary,
-        },
-      }
-    }
-
-    return layer
-  })
-}
-
-/**
- * Check if HeroViewConfig needs migration (has legacy effect configs)
- */
-export const configNeedsMigration = (config: HeroViewConfig): boolean => {
-  const checkLayer = (layer: LayerNodeConfig): boolean => {
-    if (layer.type === 'processor') {
-      return hasLegacyEffectConfigs(layer.modifiers)
-    }
-    if (layer.type === 'group') {
-      return layer.children.some(checkLayer)
-    }
-    return false
-  }
-  return config.layers.some(checkLayer)
 }

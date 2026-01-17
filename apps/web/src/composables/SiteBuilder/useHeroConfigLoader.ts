@@ -20,15 +20,12 @@ import {
   type MaskShapeConfig as HeroMaskShapeConfig,
   type ForegroundLayerConfig,
   type HeroViewRepository,
-  migrateHeroViewConfig,
   createDefaultColorsConfig,
   DEFAULT_LAYER_BACKGROUND_COLORS,
   DEFAULT_LAYER_MASK_COLORS,
   findSurfacePresetIndex,
   findMaskPatternIndex,
   isSingleEffectConfig,
-  isLegacyEffectFilterConfig,
-  getEffectsAsNormalized,
 } from '../../modules/HeroScene'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroFiltersReturn } from './useHeroFilters'
@@ -90,39 +87,37 @@ export const useHeroConfigLoader = (
     isLoadingFromConfig.value = true
 
     try {
-      // Migrate legacy configs before applying
-      const migratedConfig = migrateHeroViewConfig(config)
-      heroViewRepository.set(migratedConfig)
+      heroViewRepository.set(config)
 
       editorState.value = {
         ...editorState.value,
         config: {
           ...editorState.value.config,
-          width: migratedConfig.viewport.width,
-          height: migratedConfig.viewport.height,
+          width: config.viewport.width,
+          height: config.viewport.height,
         },
       }
 
       // Find background surface layer (inside background-group or legacy base layer)
       let backgroundSurfaceLayer: SurfaceLayerNodeConfig | BaseLayerNodeConfig | undefined
-      const backgroundGroup = migratedConfig.layers.find(l => l.id === 'background-group' && l.type === 'group')
+      const backgroundGroup = config.layers.find(l => l.id === 'background-group' && l.type === 'group')
       if (backgroundGroup && backgroundGroup.type === 'group') {
         backgroundSurfaceLayer = backgroundGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'background' && c.type === 'surface')
       }
       // Fallback: check for legacy base layer
       if (!backgroundSurfaceLayer) {
-        backgroundSurfaceLayer = migratedConfig.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
+        backgroundSurfaceLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
       }
 
       // Find mask surface layer (inside clip-group)
       let maskSurfaceLayer: SurfaceLayerNodeConfig | undefined
-      const clipGroup = migratedConfig.layers.find(l => l.id === 'clip-group' && l.type === 'group')
+      const clipGroup = config.layers.find(l => l.id === 'clip-group' && l.type === 'group')
       if (clipGroup && clipGroup.type === 'group') {
         maskSurfaceLayer = clipGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'surface-mask' && c.type === 'surface')
       }
       // Fallback: find first surface layer not in background-group
       if (!maskSurfaceLayer) {
-        for (const layer of migratedConfig.layers) {
+        for (const layer of config.layers) {
           if (layer.type === 'surface' && layer.id !== 'background') {
             maskSurfaceLayer = layer
             break
@@ -138,7 +133,7 @@ export const useHeroConfigLoader = (
       }
 
       // Read colors from surface layers (migration ensures colors always exist)
-      const configColors = migratedConfig.colors ?? createDefaultColorsConfig()
+      const configColors = config.colors ?? createDefaultColorsConfig()
       // Background colors from layer (use defaults if missing - migration should prevent this)
       const bgColors = backgroundSurfaceLayer?.colors ?? DEFAULT_LAYER_BACKGROUND_COLORS
       heroColors.backgroundColorKey1.value = (bgColors.primary === 'auto' ? DEFAULT_LAYER_BACKGROUND_COLORS.primary : bgColors.primary) as PrimitiveKey
@@ -158,23 +153,12 @@ export const useHeroConfigLoader = (
         const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
         selectedBackgroundIndex.value = bgPresetIndex ?? 0
 
-        // Load effect filters (supports both legacy and new formats)
-        const effectFilters = (backgroundSurfaceLayer.filters ?? []).filter((p) => p.type === 'effect')
+        // Load effect filters
+        const effectFilters = (backgroundSurfaceLayer.filters ?? []).filter(
+          (p): p is SingleEffectConfig => isSingleEffectConfig(p)
+        )
         if (effectFilters.length > 0) {
-          // Collect all effects as SingleEffectConfig[]
-          const pipeline: SingleEffectConfig[] = []
-          for (const filter of effectFilters) {
-            if (isSingleEffectConfig(filter)) {
-              // New format: SingleEffectConfig
-              pipeline.push(filter)
-            } else if (isLegacyEffectFilterConfig(filter)) {
-              // Legacy format: EffectFilterConfig - convert to SingleEffectConfig[]
-              pipeline.push(...getEffectsAsNormalized(filter))
-            }
-          }
-          if (pipeline.length > 0) {
-            heroFilters.effectManager.setEffectPipeline(LAYER_IDS.BASE, pipeline)
-          }
+          heroFilters.effectManager.setEffectPipeline(LAYER_IDS.BASE, effectFilters)
         }
       }
 
@@ -193,7 +177,7 @@ export const useHeroConfigLoader = (
       }
       // Fallback: check top-level processors
       if (!maskShape) {
-        for (const layer of migratedConfig.layers) {
+        for (const layer of config.layers) {
           if (layer.type === 'processor') {
             const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
             if (maskModifier) {
@@ -218,27 +202,16 @@ export const useHeroConfigLoader = (
         const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, heroThumbnails.midgroundTexturePatterns)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
-        // Load mask effect filters (supports both legacy and new formats)
-        const maskEffectFilters = (maskSurfaceLayer.filters ?? []).filter((p) => p.type === 'effect')
+        // Load mask effect filters
+        const maskEffectFilters = (maskSurfaceLayer.filters ?? []).filter(
+          (p): p is SingleEffectConfig => isSingleEffectConfig(p)
+        )
         if (maskEffectFilters.length > 0) {
-          // Collect all effects as SingleEffectConfig[]
-          const pipeline: SingleEffectConfig[] = []
-          for (const filter of maskEffectFilters) {
-            if (isSingleEffectConfig(filter)) {
-              // New format: SingleEffectConfig
-              pipeline.push(filter)
-            } else if (isLegacyEffectFilterConfig(filter)) {
-              // Legacy format: EffectFilterConfig - convert to SingleEffectConfig[]
-              pipeline.push(...getEffectsAsNormalized(filter))
-            }
-          }
-          if (pipeline.length > 0) {
-            heroFilters.effectManager.setEffectPipeline(LAYER_IDS.MASK, pipeline)
-          }
+          heroFilters.effectManager.setEffectPipeline(LAYER_IDS.MASK, maskEffectFilters)
         }
       }
 
-      foregroundConfig.value = migratedConfig.foreground
+      foregroundConfig.value = config.foreground
 
       await render()
     } finally {

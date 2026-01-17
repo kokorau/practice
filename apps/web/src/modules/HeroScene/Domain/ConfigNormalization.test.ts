@@ -26,16 +26,13 @@ import {
   isBlurEffect,
   createSingleEffectConfig,
   extractEnabledEffects,
-  normalizeEffectFilterConfig,
   denormalizeToLayerEffectConfig,
-  getEffectsAsNormalized,
   // Types
   type SurfaceConfig,
   type NormalizedSurfaceConfig,
   type MaskShapeConfig,
   type NormalizedMaskConfig,
   type SingleEffectConfig,
-  type EffectFilterConfig,
   type LayerEffectConfig,
 } from './index'
 
@@ -632,46 +629,6 @@ describe('Effect Config Normalization', () => {
     })
   })
 
-  describe('normalizeEffectFilterConfig', () => {
-    it('should extract enabled effects from EffectFilterConfig', () => {
-      const legacyFilterConfig: EffectFilterConfig = {
-        type: 'effect',
-        enabled: true,
-        config: {
-          vignette: { enabled: false, shape: 'ellipse', intensity: 0.5, softness: 0.4, radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1, color: [0, 0, 0, 1] },
-          blur: { enabled: true, radius: 12 },
-          chromaticAberration: { enabled: false, intensity: 3 },
-          dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-          lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
-        } as LayerEffectConfig,
-      }
-
-      const effects = normalizeEffectFilterConfig(legacyFilterConfig)
-
-      expect(effects).toHaveLength(1)
-      expect(effects[0]!.id).toBe('blur')
-      expect(effects[0]!.params.radius).toBe(12)
-    })
-
-    it('should return empty array when filter is disabled', () => {
-      const legacyFilterConfig: EffectFilterConfig = {
-        type: 'effect',
-        enabled: false,
-        config: {
-          vignette: { enabled: false, shape: 'ellipse', intensity: 0.5, softness: 0.4, radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1, color: [0, 0, 0, 1] },
-          blur: { enabled: true, radius: 12 },
-          chromaticAberration: { enabled: false, intensity: 3 },
-          dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-          lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
-        } as LayerEffectConfig,
-      }
-
-      const effects = normalizeEffectFilterConfig(legacyFilterConfig)
-
-      expect(effects).toHaveLength(0)
-    })
-  })
-
   describe('denormalizeToLayerEffectConfig', () => {
     it('should convert SingleEffectConfig[] to LayerEffectConfig', () => {
       const effects: SingleEffectConfig[] = [
@@ -697,41 +654,6 @@ describe('Effect Config Normalization', () => {
       expect(legacyConfig.blur.enabled).toBe(false)
       expect(legacyConfig.vignette.enabled).toBe(false)
       expect(legacyConfig.chromaticAberration.enabled).toBe(false)
-    })
-  })
-
-  describe('getEffectsAsNormalized', () => {
-    it('should pass through SingleEffectConfig', () => {
-      const effect: SingleEffectConfig = {
-        type: 'effect',
-        id: 'blur',
-        params: { radius: 8 },
-      }
-
-      const effects = getEffectsAsNormalized(effect)
-
-      expect(effects).toHaveLength(1)
-      expect(effects[0]).toEqual(effect)
-    })
-
-    it('should convert legacy EffectFilterConfig', () => {
-      const legacyConfig: EffectFilterConfig = {
-        type: 'effect',
-        enabled: true,
-        config: {
-          vignette: { enabled: false, shape: 'ellipse', intensity: 0.5, softness: 0.4, radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1, color: [0, 0, 0, 1] },
-          blur: { enabled: true, radius: 10 },
-          chromaticAberration: { enabled: false, intensity: 3 },
-          dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-          lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
-        } as LayerEffectConfig,
-      }
-
-      const effects = getEffectsAsNormalized(legacyConfig)
-
-      expect(effects).toHaveLength(1)
-      expect(effects[0]!.id).toBe('blur')
-      expect(effects[0]!.params.radius).toBe(10)
     })
   })
 

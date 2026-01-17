@@ -286,14 +286,8 @@ const corporateCleanConfig: HeroViewConfig = {
       filters: [
         {
           type: 'effect',
-          enabled: true,
-          config: {
-            vignette: { enabled: true, shape: 'ellipse', intensity: 0.3, softness: 0.6, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
-            chromaticAberration: { enabled: false, intensity: 0.01 },
-            dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-            lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
-            blur: { enabled: false, radius: 8 },
-          },
+          id: 'vignette',
+          params: { shape: 'ellipse', intensity: 0.3, softness: 0.6, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
         },
       ],
     },
@@ -304,19 +298,7 @@ const corporateCleanConfig: HeroViewConfig = {
       visible: true,
       surface: { type: 'solid' },
       colors: { primary: 'B', secondary: 'Bt' },
-      filters: [
-        {
-          type: 'effect',
-          enabled: true,
-          config: {
-            vignette: { enabled: false, shape: 'ellipse', intensity: 0.5, softness: 0.4, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
-            chromaticAberration: { enabled: false, intensity: 0.01 },
-            dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-            lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
-            blur: { enabled: false, radius: 8 },
-          },
-        },
-      ],
+      filters: [],
     },
     {
       type: 'processor',
