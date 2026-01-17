@@ -125,11 +125,11 @@ export interface RenderHeroConfigOptions {
   scale?: number
 
   /**
-   * Use the new node-based compositor pipeline (default: false)
+   * Use the new node-based compositor pipeline (default: true)
    * When enabled, uses buildPipeline + executePipeline instead of
    * the legacy procedural rendering.
    *
-   * @experimental This is a new feature that may have different behavior.
+   * Set to false to use legacy rendering for debugging purposes.
    */
   useNodePipeline?: boolean
 }
@@ -958,9 +958,10 @@ export async function renderHeroConfig(
   options?: RenderHeroConfigOptions
 ): Promise<void> {
   const scale = options?.scale ?? 1
+  const useNodePipeline = options?.useNodePipeline ?? true
 
-  // Use new node-based pipeline if enabled
-  if (options?.useNodePipeline) {
+  // Use new node-based pipeline (default)
+  if (useNodePipeline) {
     const { outputNode } = buildPipeline(config, palette)
     executePipeline(outputNode, renderer, palette, { scale })
     return

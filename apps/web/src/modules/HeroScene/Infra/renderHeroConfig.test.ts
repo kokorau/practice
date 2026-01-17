@@ -6,7 +6,26 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { TextureRendererLike, RenderHeroConfigOptions } from './renderHeroConfig'
-import { renderHeroConfig } from './renderHeroConfig'
+import { renderHeroConfig as originalRenderHeroConfig } from './renderHeroConfig'
+
+/**
+ * Wrapper for legacy rendering tests.
+ * Uses useNodePipeline: false to test the legacy procedural rendering path.
+ */
+async function renderHeroConfigLegacy(
+  renderer: TextureRendererLike,
+  config: Parameters<typeof originalRenderHeroConfig>[1],
+  palette: Parameters<typeof originalRenderHeroConfig>[2],
+  options?: Omit<RenderHeroConfigOptions, 'useNodePipeline'>
+): Promise<void> {
+  return originalRenderHeroConfig(renderer, config, palette, {
+    ...options,
+    useNodePipeline: false,
+  })
+}
+
+// Re-export for node pipeline tests
+const renderHeroConfig = originalRenderHeroConfig
 import type { HeroViewConfig, SurfaceConfig, MaskShapeConfig } from '../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig, createDefaultColorsConfig, createDefaultForegroundConfig, createDefaultEffectFilterConfig } from '../Domain/HeroViewConfig'
 import type { PrimitivePalette } from '../../SemanticColorPalette/Domain'
@@ -228,7 +247,7 @@ describe('renderHeroConfig', () => {
     it('should call render with clear:true for base layer', async () => {
       const config = createConfigWithBaseLayer({ type: 'solid' })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBeGreaterThanOrEqual(1)
       expect(renderer.renderCalls[0]?.options?.clear).toBe(true)
@@ -237,7 +256,7 @@ describe('renderHeroConfig', () => {
     it('should get viewport from renderer', async () => {
       const config = createConfigWithBaseLayer({ type: 'solid' })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.getViewport).toHaveBeenCalled()
     })
@@ -245,7 +264,7 @@ describe('renderHeroConfig', () => {
     it('should not render anything if layers array is empty', async () => {
       const config = createTestConfig({ layers: [] })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBe(0)
     })
@@ -255,7 +274,7 @@ describe('renderHeroConfig', () => {
     it('should render solid background', async () => {
       const config = createConfigWithBaseLayer({ type: 'solid' })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBe(1)
       // Solid spec should have shader containing 'solid' identifier
@@ -270,7 +289,7 @@ describe('renderHeroConfig', () => {
         angle: 45,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBe(1)
       expect(renderer.renderCalls[0]?.spec.shader).toBeDefined()
@@ -283,7 +302,7 @@ describe('renderHeroConfig', () => {
         cellSize: 40,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBe(1)
     })
@@ -296,7 +315,7 @@ describe('renderHeroConfig', () => {
         rowOffset: 0.5,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBe(1)
     })
@@ -308,7 +327,7 @@ describe('renderHeroConfig', () => {
         angle: 0,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBe(1)
     })
@@ -319,7 +338,7 @@ describe('renderHeroConfig', () => {
         imageId: 'test-image',
       } as SurfaceConfig)
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Should still render (fallback to solid)
       expect(renderer.renderCalls.length).toBe(1)
@@ -335,7 +354,7 @@ describe('renderHeroConfig', () => {
         angle: 45,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette, { scale: 0.3 })
+      await renderHeroConfigLegacy(renderer, config, lightPalette, { scale: 0.3 })
 
       expect(renderer.renderCalls.length).toBe(1)
       // The render should have been called - scale affects internal values
@@ -349,8 +368,8 @@ describe('renderHeroConfig', () => {
         angle: 45,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
-      await renderHeroConfig(renderer, config, lightPalette, { scale: 1 })
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette, { scale: 1 })
 
       // Both should produce equivalent results
       expect(renderer.renderCalls.length).toBe(2)
@@ -367,7 +386,7 @@ describe('renderHeroConfig', () => {
         cutout: false,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Should render background + surface layer
       expect(renderer.renderCalls.length).toBe(2)
@@ -394,7 +413,7 @@ describe('renderHeroConfig', () => {
         cutout: false,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
       expect(renderer.applyPostEffectCalls.length).toBe(1)
@@ -412,7 +431,7 @@ describe('renderHeroConfig', () => {
         cutout: false,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
       expect(renderer.applyPostEffectCalls.length).toBe(1)
@@ -428,7 +447,7 @@ describe('renderHeroConfig', () => {
         cutout: false,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
       expect(renderer.applyPostEffectCalls.length).toBe(1)
@@ -443,7 +462,7 @@ describe('renderHeroConfig', () => {
         cutout: false,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
       expect(renderer.applyPostEffectCalls.length).toBe(1)
@@ -460,7 +479,7 @@ describe('renderHeroConfig', () => {
         cutout: false,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
       expect(renderer.applyPostEffectCalls.length).toBe(1)
@@ -478,7 +497,7 @@ describe('renderHeroConfig', () => {
         cutout: false,
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
       expect(renderer.applyPostEffectCalls.length).toBe(1)
@@ -527,7 +546,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // No mask rendering should occur
       expect(renderer.renderToOffscreenCalls.length).toBe(0)
@@ -558,7 +577,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Background render + blur effect
       expect(renderer.renderCalls.length).toBe(1)
@@ -588,7 +607,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Only background render, no effect applied
       expect(renderer.renderCalls.length).toBe(1)
@@ -628,7 +647,7 @@ describe('renderHeroConfig', () => {
         ]
       }
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Should have mask pipeline calls + effect calls
       expect(renderer.applyPostEffectCalls.length).toBeGreaterThanOrEqual(2) // colorize + vignette
@@ -639,7 +658,7 @@ describe('renderHeroConfig', () => {
     it('should detect light theme from palette', async () => {
       const config = createTestConfig()
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Light theme uses F1 for canvas surface
       expect(renderer.renderCalls.length).toBeGreaterThanOrEqual(1)
@@ -648,7 +667,7 @@ describe('renderHeroConfig', () => {
     it('should detect dark theme from palette', async () => {
       const config = createTestConfig()
 
-      await renderHeroConfig(renderer, config, darkPalette)
+      await renderHeroConfigLegacy(renderer, config, darkPalette)
 
       // Dark theme uses F8 for canvas surface
       expect(renderer.renderCalls.length).toBeGreaterThanOrEqual(1)
@@ -667,7 +686,7 @@ describe('renderHeroConfig', () => {
         },
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBeGreaterThanOrEqual(1)
     })
@@ -683,7 +702,7 @@ describe('renderHeroConfig', () => {
         },
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBeGreaterThanOrEqual(1)
     })
@@ -703,7 +722,7 @@ describe('renderHeroConfig', () => {
         surfaceLayer.colors = { primary: 'auto', secondary: 'auto' }
       }
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
     })
@@ -720,7 +739,7 @@ describe('renderHeroConfig', () => {
       // Test different semantic contexts
       for (const context of ['canvas', 'sectionNeutral', 'sectionTint', 'sectionContrast'] as const) {
         config.colors.semanticContext = context
-        await renderHeroConfig(renderer, config, lightPalette)
+        await renderHeroConfigLegacy(renderer, config, lightPalette)
       }
 
       // All 4 contexts should render successfully (2 renders per context: base + surface)
@@ -760,7 +779,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Should render base layer + nested surface layer (no mask in this test)
       expect(renderer.renderCalls.length).toBe(2)
@@ -783,7 +802,7 @@ describe('renderHeroConfig', () => {
     it('should handle config with only base layer (no surface)', async () => {
       const config = createConfigWithBaseLayer({ type: 'solid' })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderCalls.length).toBe(1)
       expect(renderer.renderToOffscreenCalls.length).toBe(0)
@@ -811,7 +830,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // No mask should be rendered
       expect(renderer.renderToOffscreenCalls.length).toBe(0)
@@ -826,7 +845,7 @@ describe('renderHeroConfig', () => {
         cutout: true, // Cutout mode
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       expect(renderer.renderToOffscreenCalls.length).toBe(1)
     })
@@ -880,7 +899,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Base layer render + surface layer render + processor mask
       expect(renderer.renderCalls.length).toBe(2)
@@ -923,7 +942,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Only base layer render, processor has no targets (is first)
       expect(renderer.renderCalls.length).toBe(1)
@@ -994,7 +1013,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Base layer render + only first processor mask (second has no targets)
       expect(renderer.renderCalls.length).toBe(1)
@@ -1038,7 +1057,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Base layer render + surface layer render + effect application
       expect(renderer.renderCalls.length).toBe(2)
@@ -1095,7 +1114,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Base layer render + surface layer render + mask + effect
       expect(renderer.renderCalls.length).toBe(2)
@@ -1146,7 +1165,7 @@ describe('renderHeroConfig', () => {
         ],
       })
 
-      await renderHeroConfig(renderer, config, lightPalette)
+      await renderHeroConfigLegacy(renderer, config, lightPalette)
 
       // Base layer render + surface layer render, no mask
       expect(renderer.renderCalls.length).toBe(2)
@@ -1191,13 +1210,13 @@ describe('renderHeroConfig', () => {
       expect(renderer.renderCalls.length).toBeGreaterThanOrEqual(1)
     })
 
-    it('should use legacy rendering when useNodePipeline is not specified', async () => {
-      const config = createConfigWithBaseLayer({ type: 'solid' })
+    it('should use node pipeline when useNodePipeline is not specified (default)', async () => {
+      const config = createDefaultHeroViewConfig()
 
       await renderHeroConfig(renderer, config, lightPalette)
 
-      // Legacy pipeline uses render() directly
-      expect(renderer.renderCalls.length).toBeGreaterThanOrEqual(1)
+      // Node pipeline uses compositeToCanvas for final output
+      expect(renderer.compositeToCanvas).toHaveBeenCalled()
     })
   })
 })
