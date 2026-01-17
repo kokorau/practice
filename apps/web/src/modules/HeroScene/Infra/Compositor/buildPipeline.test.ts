@@ -83,6 +83,7 @@ function createMockRenderer(): CompositorRenderer {
     getDevice: vi.fn(() => ({
       createTexture: vi.fn(() => mockGpuTexture),
     }) as unknown as GPUDevice),
+    getFormat: vi.fn(() => 'rgba8unorm' as GPUTextureFormat),
     renderToOffscreen: vi.fn(() => mockGpuTexture),
     renderToTexture: vi.fn(),
     applyPostEffectToOffscreen: vi.fn(() => mockGpuTexture),

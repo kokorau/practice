@@ -88,6 +88,9 @@ export interface CompositorRenderer {
   /** Get the WebGPU device (used by TextureOwner nodes for texture creation) */
   getDevice(): GPUDevice
 
+  /** Get the texture format used by this renderer */
+  getFormat(): GPUTextureFormat
+
   /** Render a spec to an offscreen texture (legacy - uses texture pool index) */
   renderToOffscreen(
     spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },

@@ -162,6 +162,13 @@ export class TextureRenderer {
   }
 
   /**
+   * Get the texture format used by this renderer
+   */
+  getFormat(): GPUTextureFormat {
+    return this.format
+  }
+
+  /**
    * Render using a TextureRenderSpec
    */
   render(spec: TextureRenderSpec, options?: { clear?: boolean }): void {

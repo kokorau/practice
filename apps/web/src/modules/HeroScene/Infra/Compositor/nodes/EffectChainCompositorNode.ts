@@ -117,10 +117,10 @@ export class EffectChainCompositorNode extends BaseTextureOwner implements Compo
    * Uses TextureOwner caching: skips processing if not dirty and texture exists.
    */
   composite(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, scale, device, texturePool } = ctx
+    const { renderer, viewport, scale, device, format, texturePool } = ctx
 
-    // Ensure texture exists (handles viewport resize)
-    this.ensureTexture(device, viewport)
+    // Ensure texture exists (handles viewport resize and format)
+    this.ensureTexture(device, viewport, format)
 
     // Skip if not dirty (cache hit)
     if (!this.isDirty) {
