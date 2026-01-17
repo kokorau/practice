@@ -79,4 +79,3 @@ export type {
   ColorKeyPair,
   CompositorRenderer,
 } from '../../Domain/Compositor'
-

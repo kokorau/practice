@@ -302,4 +302,3 @@ describe('Pipeline Integration', () => {
     expect(outputNode).toBeDefined()
   })
 })
-// CI trigger
