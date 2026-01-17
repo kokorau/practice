@@ -63,6 +63,7 @@ export class CanvasOutputNode implements OutputNode {
   constructor(config: CanvasOutputNodeConfig) {
     this.id = config.id
     this.input = config.input
+    // options reserved for future use (e.g., clear canvas before output)
   }
 
   /**
