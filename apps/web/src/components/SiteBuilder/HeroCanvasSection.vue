@@ -25,11 +25,12 @@ const isDarkRef = computed(() => props.isDark ?? false)
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
 
 // Provide layer selection for useHeroScene (this component is standalone, so it needs its own provider)
-provideLayerSelection()
+const layerSelection = provideLayerSelection()
 
 const heroScene = useHeroScene({
   primitivePalette: primitivePaletteRef,
   isDark: isDarkRef,
+  layerSelection,
 })
 
 onMounted(async () => {
