@@ -718,6 +718,20 @@ export {
   // Effect config type guards
   isSingleEffectConfig,
   isLegacyEffectFilterConfig,
+  // Effect normalization utilities (Surface/Mask pattern)
+  isEffectOfType,
+  isVignetteEffect,
+  isChromaticAberrationEffect,
+  isDotHalftoneEffect,
+  isLineHalftoneEffect,
+  isBlurEffect,
+  createSingleEffectConfig,
+  extractEnabledEffects,
+  normalizeEffectFilterConfig,
+  denormalizeToLayerEffectConfig,
+  denormalizeToEffectFilterConfig,
+  getEffectsAsNormalized,
+  getEffectsAsLegacy,
   // Effect config migration
   migrateLegacyEffectConfig,
   toLegacyEffectConfig,
