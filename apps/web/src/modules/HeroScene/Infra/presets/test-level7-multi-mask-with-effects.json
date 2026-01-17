@@ -1,0 +1,158 @@
+{
+  "id": "test-level7-multi-mask-with-effects",
+  "name": "Test Level 7: Multiple Masked Layers with Effects",
+  "config": {
+    "viewport": { "width": 1280, "height": 720 },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "grid",
+              "lineWidth": 2,
+              "cellSize": 40
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            }
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-1",
+        "name": "Clip Group 1 (Left - Blur)",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-mask-1",
+            "name": "Stripe Surface",
+            "visible": true,
+            "surface": {
+              "type": "stripe",
+              "width1": 10,
+              "width2": 10,
+              "angle": 45
+            },
+            "colors": {
+              "primary": "Bt",
+              "secondary": "Bs"
+            }
+          },
+          {
+            "type": "processor",
+            "id": "processor-mask-1",
+            "name": "Left Rect with Blur",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "mask",
+                "enabled": true,
+                "shape": {
+                  "type": "rect",
+                  "left": 0.05,
+                  "right": 0.45,
+                  "top": 0.1,
+                  "bottom": 0.9,
+                  "radiusTopLeft": 0.02,
+                  "radiusTopRight": 0.02,
+                  "radiusBottomLeft": 0.02,
+                  "radiusBottomRight": 0.02,
+                  "rotation": 0,
+                  "perspectiveX": 0,
+                  "perspectiveY": 0,
+                  "cutout": false
+                },
+                "invert": false,
+                "feather": 0
+              },
+              {
+                "type": "effect",
+                "id": "blur",
+                "params": {
+                  "enabled": true,
+                  "radius": 10
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-2",
+        "name": "Clip Group 2 (Right - Chromatic Aberration)",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-mask-2",
+            "name": "PolkaDot Surface",
+            "visible": true,
+            "surface": {
+              "type": "polkaDot",
+              "dotRadius": 8,
+              "spacing": 30,
+              "rowOffset": 0.5
+            },
+            "colors": {
+              "primary": "A",
+              "secondary": "At"
+            }
+          },
+          {
+            "type": "processor",
+            "id": "processor-mask-2",
+            "name": "Right Circle with Chromatic Aberration",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "mask",
+                "enabled": true,
+                "shape": {
+                  "type": "circle",
+                  "centerX": 0.75,
+                  "centerY": 0.5,
+                  "radius": 0.35,
+                  "cutout": false
+                },
+                "invert": false,
+                "feather": 0
+              },
+              {
+                "type": "effect",
+                "id": "chromaticAberration",
+                "params": {
+                  "enabled": true,
+                  "intensity": 15,
+                  "angle": 45
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": { "hue": 220, "saturation": 70, "value": 60 },
+    "accent": { "hue": 30, "saturation": 80, "value": 60 },
+    "foundation": { "hue": 0, "saturation": 0, "value": 97 }
+  }
+}
