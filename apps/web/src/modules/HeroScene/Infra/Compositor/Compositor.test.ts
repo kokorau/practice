@@ -57,6 +57,7 @@ function createMockContext(): NodeContext {
       applyPostEffectToOffscreen: vi.fn(() => mockGpuTexture),
       applyPostEffectToTexture: vi.fn(),
       applyDualTextureEffectToOffscreen: vi.fn(() => mockGpuTexture),
+      applyDualTextureEffectToTexture: vi.fn(),
       compositeToCanvas: vi.fn(),
     },
     viewport: { width: 1280, height: 720 },
@@ -394,8 +395,9 @@ describe('MaskCompositorNode', () => {
     const result = node.composite(ctx)
 
     expect(result).toBeDefined()
-    expect(result.id).toBe('masked-output')
-    expect(ctx.renderer.applyDualTextureEffectToOffscreen).toHaveBeenCalled()
+    // TextureOwner pattern: node owns its output texture
+    expect(result.id).toBe('masked-owned')
+    expect(ctx.renderer.applyDualTextureEffectToTexture).toHaveBeenCalled()
   })
 })
 
@@ -441,7 +443,7 @@ describe('EffectChainCompositorNode', () => {
     expect(ctx.renderer.applyPostEffectToOffscreen).not.toHaveBeenCalled()
   })
 
-  it('applies effects in sequence', () => {
+  it('applies effects in sequence to owned texture', () => {
     const ctx = createMockContext()
     const inputNode = createMockRenderNode('input')
 
@@ -452,7 +454,9 @@ describe('EffectChainCompositorNode', () => {
     const result = node.composite(ctx)
 
     expect(result).toBeDefined()
-    expect(ctx.renderer.applyPostEffectToOffscreen).toHaveBeenCalledTimes(2)
+    // TextureOwner pattern: first effect to pool, last effect to owned texture
+    expect(ctx.renderer.applyPostEffectToOffscreen).toHaveBeenCalledTimes(1)
+    expect(ctx.renderer.applyPostEffectToTexture).toHaveBeenCalledTimes(1)
   })
 
   it('skips invalid effect types', () => {
@@ -511,7 +515,7 @@ describe('OverlayCompositorNode', () => {
     expect(() => node.composite(ctx)).toThrow('No layers to composite')
   })
 
-  it('returns single layer directly', () => {
+  it('returns single layer copied to owned texture', () => {
     const ctx = createMockContext()
     const layer1 = createMockRenderNode('layer1')
 
@@ -519,10 +523,11 @@ describe('OverlayCompositorNode', () => {
     const result = node.composite(ctx)
 
     expect(result).toBeDefined()
-    expect(result.id).toBe('layer1-tex')
+    // TextureOwner pattern: copies single layer to owned texture
+    expect(result.id).toBe('single-owned')
   })
 
-  it('composites multiple layers', () => {
+  it('composites multiple layers to owned texture', () => {
     const ctx = createMockContext()
     const layer1 = createMockRenderNode('layer1')
     const layer2 = createMockRenderNode('layer2')
@@ -532,7 +537,8 @@ describe('OverlayCompositorNode', () => {
     const result = node.composite(ctx)
 
     expect(result).toBeDefined()
-    expect(result.id).toBe('scene-output')
+    // TextureOwner pattern: node owns its output texture
+    expect(result.id).toBe('scene-owned')
   })
 
   it('uses alpha blending shader for multi-layer composition', () => {

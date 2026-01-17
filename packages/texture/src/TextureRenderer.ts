@@ -646,6 +646,53 @@ export class TextureRenderer {
   }
 
   /**
+   * Apply dual-texture effect to owned texture (TextureOwner pattern)
+   * Similar to applyDualTextureEffectToOffscreen but renders to a caller-provided texture
+   */
+  applyDualTextureEffectToTexture(
+    spec: DualTextureSpec,
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void {
+    const cached = this.getOrCreateDualTexturePipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Create bind group for these specific textures
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: primaryTexture.createView() },
+        { binding: 3, resource: secondaryTexture.createView() },
+      ],
+    })
+
+    // Render to the provided output texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: outputTexture.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cached.pipeline)
+    renderPass.setBindGroup(0, bindGroup)
+    renderPass.draw(3)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+  }
+
+  /**
    * Composite an offscreen texture to canvas with alpha blending
    * Used for final layer compositing after mask + effects
    */

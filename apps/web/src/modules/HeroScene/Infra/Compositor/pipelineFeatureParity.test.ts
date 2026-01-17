@@ -135,6 +135,9 @@ function createMockRenderer(): TextureRendererLike & CompositorRenderer & { metr
       metrics.applyDualTextureCount++
       return mockGpuTexture
     }),
+    applyDualTextureEffectToTexture: vi.fn(() => {
+      metrics.applyDualTextureCount++
+    }),
     applyPostEffectToOffscreen: vi.fn(() => {
       metrics.applyPostEffectCount++
       return mockGpuTexture
@@ -686,8 +689,9 @@ describe('Pipeline Feature Parity', () => {
       const rootEffectsNode = nodes.find(n => n.id === 'root-processor-effects')
       expect(rootEffectsNode).toBeDefined()
 
-      // Should apply 2 effects
-      expect(renderer.metrics.applyPostEffectCount).toBe(2)
+      // Should apply effects (2 root processor effects + 2 copy operations from TextureOwner overlay)
+      // The TextureOwner pattern uses passthrough copy for layer composition
+      expect(renderer.metrics.applyPostEffectCount).toBe(4)
       expect(renderer.metrics.compositeToCanvasCount).toBe(1)
     })
   })

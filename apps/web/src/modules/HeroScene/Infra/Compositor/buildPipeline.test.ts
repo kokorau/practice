@@ -88,6 +88,7 @@ function createMockRenderer(): CompositorRenderer {
     applyPostEffectToOffscreen: vi.fn(() => mockGpuTexture),
     applyPostEffectToTexture: vi.fn(),
     applyDualTextureEffectToOffscreen: vi.fn(() => mockGpuTexture),
+    applyDualTextureEffectToTexture: vi.fn(),
     compositeToCanvas: vi.fn(),
   }
 }
@@ -570,10 +571,13 @@ describe('Root-Level Processor Support', () => {
     const { outputNode } = buildPipeline(config, palette)
     executePipeline(outputNode, renderer, palette)
 
-    // Should call applyPostEffectToOffscreen for vignette
-    expect(renderer.applyPostEffectToOffscreen).toHaveBeenCalled()
-    // Should call applyDualTextureEffectToOffscreen for mask
-    expect(renderer.applyDualTextureEffectToOffscreen).toHaveBeenCalled()
+    // TextureOwner pattern: single effect goes directly to owned texture
+    expect(renderer.applyPostEffectToTexture).toHaveBeenCalled()
+    // Should call applyDualTextureEffectToOffscreen or applyDualTextureEffectToTexture for mask
+    const dualTextureCalled =
+      renderer.applyDualTextureEffectToOffscreen.mock.calls.length > 0 ||
+      renderer.applyDualTextureEffectToTexture.mock.calls.length > 0
+    expect(dualTextureCalled).toBe(true)
     // Should output to canvas
     expect(renderer.compositeToCanvas).toHaveBeenCalled()
   })
