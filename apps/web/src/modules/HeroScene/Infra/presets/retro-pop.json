@@ -26,6 +26,10 @@
               "cellSize": 48,
               "angle": 0
             },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            },
             "filters": [
               {
                 "type": "effect",
@@ -89,6 +93,10 @@
               "dotRadius": 12,
               "spacing": 36,
               "rowOffset": 0.5
+            },
+            "colors": {
+              "primary": "Bt",
+              "secondary": "Bs"
             },
             "filters": [
               {

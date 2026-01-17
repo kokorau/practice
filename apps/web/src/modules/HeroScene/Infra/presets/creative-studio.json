@@ -27,6 +27,10 @@
               "width2": 16,
               "angle": -15
             },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            },
             "filters": [
               {
                 "type": "effect",
@@ -90,6 +94,10 @@
               "dotRadius": 4,
               "spacing": 16,
               "rowOffset": 0.5
+            },
+            "colors": {
+              "primary": "Bt",
+              "secondary": "Bs"
             },
             "filters": [
               {

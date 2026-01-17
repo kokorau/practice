@@ -26,6 +26,10 @@
               "lineWidth": 1,
               "cellSize": 48
             },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            },
             "filters": [
               {
                 "type": "effect",
@@ -88,6 +92,10 @@
               "type": "grid",
               "lineWidth": 2,
               "cellSize": 30
+            },
+            "colors": {
+              "primary": "Bt",
+              "secondary": "Bs"
             },
             "filters": [
               {
