@@ -13,7 +13,6 @@ import {
   type HeroViewConfig,
   type HeroSceneConfig,
   type HtmlLayer,
-  type LayerEffectConfig,
   type SingleEffectConfig,
   type SurfaceLayerNodeConfig,
   type BaseLayerNodeConfig,
@@ -22,7 +21,6 @@ import {
   type ForegroundLayerConfig,
   type HeroViewRepository,
   migrateHeroViewConfig,
-  createDefaultEffectConfig,
   createDefaultColorsConfig,
   DEFAULT_LAYER_BACKGROUND_COLORS,
   DEFAULT_LAYER_MASK_COLORS,
@@ -31,7 +29,6 @@ import {
   isSingleEffectConfig,
   isLegacyEffectFilterConfig,
   getEffectsAsNormalized,
-  denormalizeToLayerEffectConfig,
 } from '../../modules/HeroScene'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroFiltersReturn } from './useHeroFilters'

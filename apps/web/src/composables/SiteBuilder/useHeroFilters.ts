@@ -127,8 +127,11 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
     if (layer.type === 'processor') return
 
     // Store SingleEffectConfig[] directly as filters
-    // The repository accepts both legacy and new formats
-    heroViewRepository.updateLayer(layerId, { filters: pipeline as unknown[] })
+    // Type assertion needed as filters type still expects EffectFilterConfig[]
+    // Both formats share type: 'effect' and are handled correctly at runtime
+    heroViewRepository.updateLayer(layerId, {
+      filters: pipeline as Parameters<typeof heroViewRepository.updateLayer>[1]['filters'],
+    })
   }
 
   /**
