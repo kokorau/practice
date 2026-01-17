@@ -37,8 +37,6 @@ export interface UseHeroImagesOptions {
   heroViewRepository: HeroViewRepository
   /** Render callback */
   render: () => Promise<void>
-  /** Sync layer configs callback */
-  syncLayerConfigs: () => void
 }
 
 /**
@@ -88,7 +86,7 @@ export interface UseHeroImagesReturn {
  * Composable for image handling in HeroScene
  */
 export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesReturn {
-  const { repoConfig, heroViewRepository, render, syncLayerConfigs } = options
+  const { repoConfig, heroViewRepository, render } = options
 
   // ============================================================
   // Image Upload Adapter
@@ -198,7 +196,6 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
     // Update Repository
     setBaseSurface({ type: 'image', imageId })
 
-    syncLayerConfigs()
     await render()
   }
 
@@ -215,7 +212,6 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
     // Update Repository
     setBaseSurface({ type: 'solid' })
 
-    syncLayerConfigs()
     render()
   }
 
@@ -245,7 +241,6 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
     customMaskFile.value = file
     customMaskBitmap = await createImageBitmap(file)
 
-    syncLayerConfigs()
     await render()
   }
 
@@ -259,7 +254,6 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
     }
     customMaskFile.value = null
 
-    syncLayerConfigs()
     render()
   }
 
