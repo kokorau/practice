@@ -31,6 +31,9 @@ import {
   createBoxGradientGreymapMaskSpec,
   // Colorize shader
   createColorizeSpec,
+  // Two-texture shader for surface + mask
+  createSurfaceMaskSpec,
+  type DualTextureSpec,
   type TextureRenderSpec,
   type Viewport,
   type RGBA,
@@ -88,6 +91,13 @@ export interface TextureRendererLike {
   ): void
   /** Render to offscreen texture for 2-stage pipeline */
   renderToOffscreen(spec: TextureRenderSpec, textureIndex?: 0 | 1): GPUTexture
+  /** Apply two-texture effect (surface + mask) */
+  applyDualTextureEffect(
+    spec: DualTextureSpec,
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    options?: { clear?: boolean }
+  ): void
 }
 
 export interface RenderHeroConfigOptions {
@@ -187,8 +197,10 @@ function getMidgroundTextureColor(
     return getColorFromPalette(palette, maskPrimaryKey)
   }
   // Auto: shift lightness from mask surface
+  // Use a larger delta (0.12) to create visible contrast for patterns
+  // (Previous value of 0.05 was too subtle and made patterns look solid)
   const surface = getOklchFromPalette(palette, maskSurfaceKey)
-  const deltaL = isDark ? 0.05 : -0.05
+  const deltaL = isDark ? 0.12 : -0.12
   const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
   return oklchToRgba(shifted)
 }
@@ -373,9 +385,14 @@ function createGreymapMaskSpecFromShape(
   // Convert to legacy format if normalized
   const shape = getMaskAsLegacy(shapeInput)
   const cutout = shape.cutout ?? false
-  // Greymap values: innerValue=0 (transparent/cutout), outerValue=1 (opaque/keep)
-  const innerValue = 0.0
-  const outerValue = 1.0
+  // Greymap values for colorize shader:
+  // - innerValue = 0.0 → cutoutColor (transparent) → preserves canvas content inside mask
+  // - outerValue = 1.0 → keepColor (solid maskColor) → replaces outside mask
+  // This keeps the surface texture visible inside the mask shape,
+  // and shows solid maskColor outside (covering the background).
+  // Note: cutout flag would invert this behavior to create holes.
+  const innerValue = cutout ? 1.0 : 0.0
+  const outerValue = cutout ? 0.0 : 1.0
 
   if (shape.type === 'circle') {
     return createCircleGreymapMaskSpec(
@@ -489,9 +506,21 @@ function createGreymapMaskSpecFromShape(
 }
 
 /**
- * Render mask using 2-stage greymap pipeline
- * Stage 1: Render greymap to offscreen texture
- * Stage 2: Apply colorize shader to convert to final RGBA
+ * Render mask using 2-stage greymap pipeline with proper alpha masking
+ * Stage 1: Copy current canvas content (surface) to texture
+ * Stage 2: Render greymap to offscreen texture
+ * Stage 3: Apply colorize shader to create alpha mask overlay
+ *
+ * The greymap values (cutout=false): inner=0.0, outer=1.0
+ * This means:
+ * - Inside mask (greymap=0): cutoutColor (transparent) -> preserves canvas (surface)
+ * - Outside mask (greymap=1): keepColor with alpha=1 -> replaces with solid color
+ *
+ * Note: This architecture has a limitation - the area outside the mask is replaced
+ * with a solid color instead of showing the background pattern. To fix this properly
+ * would require rendering surface to offscreen and compositing with proper alpha.
+ *
+ * @deprecated Use renderLayerWithMask for proper alpha compositing
  */
 function renderMaskWithGreymapPipeline(
   renderer: TextureRendererLike,
@@ -509,19 +538,60 @@ function renderMaskWithGreymapPipeline(
     0
   )
 
-  // Stage 2: Apply colorize shader to convert greymap to final RGBA
-  // keepColor = maskColor (where greymap is white/1.0)
-  // cutoutColor = transparent (where greymap is black/0.0)
+  console.log('[renderMaskWithGreymapPipeline] maskColor:', JSON.stringify(maskColor))
+
+  // Stage 2: Apply colorize shader to create mask overlay
+  // - Where greymap = 0 (inside mask): transparent -> preserves underlying surface
+  // - Where greymap = 1 (outside mask): maskColor -> replaces with solid color
   const colorizeSpec = createColorizeSpec(
     {
       keepColor: maskColor,
-      cutoutColor: [0, 0, 0, 0], // Transparent for cutout areas
+      cutoutColor: [0, 0, 0, 0], // Transparent for inside (preserves surface)
       alphaMode: 0, // Luminance becomes alpha
     },
     viewport
   )
 
   renderer.applyPostEffect(colorizeSpec, greymapTexture, { clear: false })
+}
+
+/**
+ * Render a layer with mask using two-texture pipeline
+ *
+ * This is the proper way to render a masked layer:
+ * 1. Render surface pattern to offscreen[0]
+ * 2. Render greymap mask to offscreen[1]
+ * 3. Combine surface + mask with alpha using two-texture shader
+ * 4. Composite result onto canvas with alpha blending
+ *
+ * This approach properly shows the background through transparent mask areas.
+ */
+function renderLayerWithMask(
+  renderer: TextureRendererLike,
+  surfaceSpec: TextureRenderSpec,
+  greymapSpec: GreymapMaskSpec,
+  viewport: Viewport
+): void {
+  console.log('[renderLayerWithMask] Rendering surface to offscreen[0]')
+  // Stage 1: Render surface to offscreen[0]
+  const surfaceTexture = renderer.renderToOffscreen(surfaceSpec, 0)
+
+  console.log('[renderLayerWithMask] Rendering greymap to offscreen[1]')
+  // Stage 2: Render greymap mask to offscreen[1]
+  const greymapTexture = renderer.renderToOffscreen(
+    {
+      shader: greymapSpec.shader,
+      uniforms: greymapSpec.uniforms,
+      bufferSize: greymapSpec.bufferSize,
+    },
+    1
+  )
+
+  console.log('[renderLayerWithMask] Combining with two-texture shader')
+  // Stage 3: Combine surface + greymap using two-texture shader
+  // The shader uses greymap luminance as alpha, compositing onto canvas
+  const surfaceMaskSpec = createSurfaceMaskSpec(viewport)
+  renderer.applyDualTextureEffect(surfaceMaskSpec, surfaceTexture, greymapTexture, { clear: false })
 }
 
 // ============================================================
@@ -632,11 +702,15 @@ export function applyEffectors(
 ): void {
   // 1. Apply mask first (transparency-modification)
   // Masks define visibility through grayscale values
+  console.log('[applyEffectors] config.mask:', JSON.stringify(config.mask))
   if (config.mask?.enabled && config.mask.shape) {
     const greymapSpec = createGreymapMaskSpecFromShape(config.mask.shape, viewport)
+    console.log('[applyEffectors] greymapSpec:', greymapSpec ? 'created' : 'null')
     if (greymapSpec) {
       renderMaskWithGreymapPipeline(renderer, greymapSpec, maskColor, viewport)
     }
+  } else {
+    console.log('[applyEffectors] Mask NOT applied - enabled:', config.mask?.enabled, 'shape:', !!config.mask?.shape)
   }
 
   // 2. Apply effects (color-modification)
@@ -833,6 +907,14 @@ export async function renderHeroConfig(
   const baseLayer = findBaseLayer(config.layers)
   const clipGroupContents = findClipGroupContents(config.layers)
 
+  // Debug logging
+  console.log('[renderHeroConfig] baseLayer:', baseLayer?.id, 'colors:', JSON.stringify(baseLayer?.colors))
+  console.log('[renderHeroConfig] clipGroupContents:', JSON.stringify(clipGroupContents ? {
+    surface: clipGroupContents.surface.id,
+    surfaceColors: clipGroupContents.surface.colors,
+    processor: clipGroupContents.processor?.id,
+  } : null))
+
   // Resolve background colors from surface layer
   const bgColors = getBackgroundColors(baseLayer)
   const bgColor1 = getColorFromPalette(palette, bgColors.primary)
@@ -856,6 +938,10 @@ export async function renderHeroConfig(
     : getColorFromPalette(palette, maskColors.secondary)
 
   // 1. Render background (base layer)
+  console.log('[renderHeroConfig] Rendering background')
+  console.log('[renderHeroConfig] baseLayer.surface:', JSON.stringify(baseLayer?.surface))
+  console.log('[renderHeroConfig] bgColor1:', JSON.stringify(bgColor1))
+  console.log('[renderHeroConfig] bgColor2:', JSON.stringify(bgColor2))
   if (baseLayer) {
     const bgSpec = createBackgroundSpecFromSurface(
       baseLayer.surface,
@@ -864,8 +950,13 @@ export async function renderHeroConfig(
       viewport,
       scale
     )
+    console.log('[renderHeroConfig] bgSpec:', bgSpec ? JSON.stringify({ shader: !!bgSpec.shader, uniforms: !!bgSpec.uniforms, bufferSize: bgSpec.bufferSize }) : 'null')
     if (bgSpec) {
+      console.log('[renderHeroConfig] Calling renderer.render for background with clear: true')
       renderer.render(bgSpec, { clear: true })
+      console.log('[renderHeroConfig] Background render call completed')
+    } else {
+      console.log('[renderHeroConfig] Background NOT rendered - bgSpec is null')
     }
 
     // Apply base layer effects (supports both filters and processors)
@@ -874,13 +965,20 @@ export async function renderHeroConfig(
     if (effectFilter?.config) {
       applyEffects(renderer, effectFilter.config, viewport, scale)
     }
+  } else {
+    console.log('[renderHeroConfig] Background NOT rendered - baseLayer is null')
   }
 
   // 2. Render clip-group (surface-mask with processor-mask)
   if (clipGroupContents) {
     const { surface: surfaceLayer, processor } = clipGroupContents
 
-    // First render the surface texture pattern
+    console.log('[renderHeroConfig] Rendering clip-group surface')
+    console.log('[renderHeroConfig] surfaceLayer.surface:', JSON.stringify(surfaceLayer.surface))
+    console.log('[renderHeroConfig] midgroundTextureColor1:', JSON.stringify(midgroundTextureColor1))
+    console.log('[renderHeroConfig] midgroundTextureColor2:', JSON.stringify(midgroundTextureColor2))
+
+    // Create the surface texture spec
     const surfaceSpec = createBackgroundSpecFromSurface(
       surfaceLayer.surface,
       midgroundTextureColor1,
@@ -888,12 +986,11 @@ export async function renderHeroConfig(
       viewport,
       scale
     )
-    if (surfaceSpec) {
-      renderer.render(surfaceSpec, { clear: false })
-    }
+    console.log('[renderHeroConfig] surfaceSpec:', surfaceSpec ? 'created' : 'null')
 
     // Get mask from processor-mask (sibling processor node in clip-group)
     const maskProcessor = processor ? getProcessorMask(processor) : undefined
+    console.log('[renderHeroConfig] maskProcessor:', maskProcessor ? maskProcessor.shape?.type : 'undefined')
 
     // Get effects from surface layer filters
     const effectFilters = getLayerFilters(surfaceLayer)
@@ -902,19 +999,31 @@ export async function renderHeroConfig(
     // Get effects from processor modifiers (if processor exists)
     const processorEffects = processor ? getEffectConfigsFromModifiers(processor.modifiers) : []
 
-    // Apply effectors using unified pipeline (mask first, then effects)
-    // Use bgColor1 as maskColor so outside mask shows background, not surface
-    applyEffectors(
-      renderer,
-      {
-        mask: maskProcessor,
-        effects: effectFilter?.config,
-        effectList: processorEffects.length > 0 ? processorEffects : undefined,
-      },
-      viewport,
-      bgColor1,
-      scale
-    )
+    if (surfaceSpec && maskProcessor?.enabled && maskProcessor.shape) {
+      // Use new two-texture pipeline for proper alpha compositing
+      // This renders surface to offscreen, creates greymap mask, and combines them
+      const greymapSpec = createGreymapMaskSpecFromShape(maskProcessor.shape, viewport)
+      if (greymapSpec) {
+        console.log('[renderHeroConfig] Using two-texture pipeline for masked layer')
+        renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport)
+      } else {
+        // Fallback: render surface without mask
+        console.log('[renderHeroConfig] Fallback: rendering surface without mask (greymapSpec null)')
+        renderer.render(surfaceSpec, { clear: false })
+      }
+    } else if (surfaceSpec) {
+      // No mask: render surface directly to canvas
+      console.log('[renderHeroConfig] Rendering surface to canvas (no mask)')
+      renderer.render(surfaceSpec, { clear: false })
+    }
+
+    // Apply effects (color-modification) after mask compositing
+    // Note: Effects are applied after the layer is composited onto canvas
+    if (processorEffects.length > 0) {
+      applySingleEffects(renderer, processorEffects, viewport, scale)
+    } else if (effectFilter?.config) {
+      applyEffects(renderer, effectFilter.config, viewport, scale)
+    }
   } else {
     // Fallback: legacy structure without clip-group
     const surfaceLayer = findSurfaceLayer(config.layers)
@@ -927,9 +1036,6 @@ export async function renderHeroConfig(
         viewport,
         scale
       )
-      if (surfaceSpec) {
-        renderer.render(surfaceSpec, { clear: false })
-      }
 
       // Get mask from processors (legacy)
       const maskProcessor = getLayerMaskProcessor(surfaceLayer)
@@ -938,18 +1044,23 @@ export async function renderHeroConfig(
       const effectFilters = getLayerFilters(surfaceLayer)
       const effectFilter = effectFilters.find((f) => f.enabled)
 
-      // Apply effectors using unified pipeline
-      // Use bgColor1 as maskColor so outside mask shows background
-      applyEffectors(
-        renderer,
-        {
-          mask: maskProcessor,
-          effects: effectFilter?.config,
-        },
-        viewport,
-        bgColor1,
-        scale
-      )
+      if (surfaceSpec && maskProcessor?.enabled && maskProcessor.shape) {
+        // Use new two-texture pipeline for proper alpha compositing
+        const greymapSpec = createGreymapMaskSpecFromShape(maskProcessor.shape, viewport)
+        if (greymapSpec) {
+          console.log('[renderHeroConfig] Legacy: Using two-texture pipeline for masked layer')
+          renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport)
+        } else {
+          renderer.render(surfaceSpec, { clear: false })
+        }
+      } else if (surfaceSpec) {
+        renderer.render(surfaceSpec, { clear: false })
+      }
+
+      // Apply effects after compositing
+      if (effectFilter?.config) {
+        applyEffects(renderer, effectFilter.config, viewport, scale)
+      }
     }
   }
 

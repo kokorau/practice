@@ -1,7 +1,10 @@
 // WebGPU 2D Shaders
 // テクスチャ生成用のシェーダーをエクスポート
 
-export { TextureRenderer, type PostEffectSpec } from './TextureRenderer'
+export { TextureRenderer, type PostEffectSpec, type DualTextureSpec } from './TextureRenderer'
+
+// Surface Mask shader (two-texture)
+export { createSurfaceMaskSpec, surfaceMaskShader } from './shaders/surfaceMask'
 
 // Shader types and createSpec functions
 export type {

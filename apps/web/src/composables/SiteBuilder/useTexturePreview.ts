@@ -120,11 +120,12 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value], 0))
   const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[canvasSurfaceKey.value]))
 
-  // Midground texture colors: canvas.surface with ΔL=5 shifted inward
-  // dark mode: +5 (brighter), light mode: -5 (darker)
+  // Midground texture colors: canvas.surface with ΔL=12 shifted inward
+  // dark mode: +12 (brighter), light mode: -12 (darker)
+  // Use larger delta (0.12) to create visible contrast for patterns
   const midgroundTextureColor1 = computed((): RGBA => {
     const surface = primitivePalette.value[canvasSurfaceKey.value]
-    const deltaL = isDark.value ? 0.05 : -0.05
+    const deltaL = isDark.value ? 0.12 : -0.12
     const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
     return paletteToRgba(shifted)
   })

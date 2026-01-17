@@ -16,6 +16,10 @@ import fashionEditorial from './presets/fashion-editorial.json'
 import retroPop from './presets/retro-pop.json'
 import minimalZen from './presets/minimal-zen.json'
 import boldStatement from './presets/bold-statement.json'
+// Test presets for step-by-step verification
+import testLevel1BgOnly from './presets/test-level1-bg-only.json'
+import testLevel2BgSurface from './presets/test-level2-bg-surface.json'
+import testLevel3WithMask from './presets/test-level3-with-mask.json'
 
 // ============================================================
 // Preset Data
@@ -24,6 +28,11 @@ import boldStatement from './presets/bold-statement.json'
 // Note: JSON presets may use legacy format (colors.background/mask).
 // These are migrated when applied via migrateHeroViewConfig().
 const PRESETS: HeroViewPreset[] = [
+  // Test presets (first for easy access during debugging)
+  testLevel1BgOnly as unknown as HeroViewPreset,
+  testLevel2BgSurface as unknown as HeroViewPreset,
+  testLevel3WithMask as unknown as HeroViewPreset,
+  // Production presets
   corporateClean as unknown as HeroViewPreset,
   creativeStudio as unknown as HeroViewPreset,
   techStartup as unknown as HeroViewPreset,

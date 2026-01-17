@@ -33,6 +33,21 @@ interface ClipMaskPipelineCache {
   sampler: GPUSampler
 }
 
+interface DualTexturePipelineCache {
+  pipeline: GPURenderPipeline
+  uniformBuffer: GPUBuffer
+  sampler: GPUSampler
+}
+
+/**
+ * 2テクスチャエフェクト用のスペック
+ */
+export interface DualTextureSpec {
+  shader: string
+  uniforms: ArrayBuffer
+  bufferSize: number
+}
+
 /**
  * ポストエフェクト用のスペック
  */
@@ -55,6 +70,7 @@ export class TextureRenderer {
   private positionedImagePipelineCache: PositionedImagePipelineCache | null = null
   private postEffectCache: Map<string, PostEffectPipelineCache> = new Map()
   private clipMaskCache: Map<string, ClipMaskPipelineCache> = new Map()
+  private dualTextureCache: Map<string, DualTexturePipelineCache> = new Map()
 
   // オフスクリーンレンダリング用のテクスチャ（ダブルバッファ）
   private offscreenTextures: [GPUTexture | null, GPUTexture | null] = [null, null]
@@ -470,6 +486,76 @@ export class TextureRenderer {
   }
 
   /**
+   * Apply dual-texture effect shader with two input textures
+   * Used for combining surface texture with mask texture
+   */
+  applyDualTextureEffect(
+    spec: DualTextureSpec,
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    options?: { clear?: boolean }
+  ): void {
+    const cached = this.getOrCreateDualTexturePipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Create bind group for these specific textures
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: primaryTexture.createView() },
+        { binding: 3, resource: secondaryTexture.createView() },
+      ],
+    })
+
+    this.executeRender(cached.pipeline, bindGroup, options)
+  }
+
+  private getOrCreateDualTexturePipeline(spec: DualTextureSpec): DualTexturePipelineCache {
+    const existing = this.dualTextureCache.get(spec.shader)
+    if (existing) {
+      return existing
+    }
+
+    const shaderModule = this.device.createShaderModule({
+      code: spec.shader,
+    })
+
+    const pipeline = this.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: shaderModule,
+        entryPoint: 'vertexMain',
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [{ format: this.format, blend: maskBlendState }],
+      },
+      primitive: {
+        topology: 'triangle-list',
+      },
+    })
+
+    const uniformBuffer = this.device.createBuffer({
+      size: spec.bufferSize,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    const sampler = this.device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+    })
+
+    const cached: DualTexturePipelineCache = { pipeline, uniformBuffer, sampler }
+    this.dualTextureCache.set(spec.shader, cached)
+    return cached
+  }
+
+  /**
    * Apply post-effect shader to offscreen texture (for ClipGroup Effect)
    * Renders to offscreen buffer instead of main canvas
    * Returns the output texture for further processing (e.g., clip mask)
@@ -847,6 +933,11 @@ export class TextureRenderer {
       cached.uniformBuffer.destroy()
     }
     this.clipMaskCache.clear()
+
+    for (const cached of this.dualTextureCache.values()) {
+      cached.uniformBuffer.destroy()
+    }
+    this.dualTextureCache.clear()
 
     for (const tex of this.offscreenTextures) {
       tex?.destroy()
