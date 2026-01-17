@@ -66,6 +66,11 @@ function createMockRenderer(): TextureRendererLike & {
     ) {
       this.applyDualTextureEffectCalls.push({ spec, primaryTexture, secondaryTexture, options })
     }),
+
+    // Methods required by node pipeline
+    applyDualTextureEffectToOffscreen: vi.fn(() => mockTexture),
+    applyPostEffectToOffscreen: vi.fn(() => mockTexture),
+    compositeToCanvas: vi.fn(),
   }
 }
 
@@ -1146,6 +1151,53 @@ describe('renderHeroConfig', () => {
       // Base layer render + surface layer render, no mask
       expect(renderer.renderCalls.length).toBe(2)
       expect(renderer.renderToOffscreenCalls.length).toBe(0)
+    })
+  })
+
+  describe('useNodePipeline option', () => {
+    it('should use node-based pipeline when enabled', async () => {
+      const config = createDefaultHeroViewConfig()
+
+      await renderHeroConfig(renderer, config, lightPalette, { useNodePipeline: true })
+
+      // Node pipeline uses compositeToCanvas for final output
+      expect(renderer.compositeToCanvas).toHaveBeenCalled()
+    })
+
+    it('should use renderToOffscreen for surface rendering in node pipeline', async () => {
+      const config = createDefaultHeroViewConfig()
+
+      await renderHeroConfig(renderer, config, lightPalette, { useNodePipeline: true })
+
+      // Node pipeline renders surfaces to offscreen textures
+      expect(renderer.renderToOffscreen).toHaveBeenCalled()
+    })
+
+    it('should use applyDualTextureEffectToOffscreen for mask composition in node pipeline', async () => {
+      const config = createDefaultHeroViewConfig()
+
+      await renderHeroConfig(renderer, config, lightPalette, { useNodePipeline: true })
+
+      // Node pipeline uses two-texture effect for mask composition
+      expect(renderer.applyDualTextureEffectToOffscreen).toHaveBeenCalled()
+    })
+
+    it('should use legacy rendering when useNodePipeline is false', async () => {
+      const config = createConfigWithBaseLayer({ type: 'solid' })
+
+      await renderHeroConfig(renderer, config, lightPalette, { useNodePipeline: false })
+
+      // Legacy pipeline uses render() directly
+      expect(renderer.renderCalls.length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('should use legacy rendering when useNodePipeline is not specified', async () => {
+      const config = createConfigWithBaseLayer({ type: 'solid' })
+
+      await renderHeroConfig(renderer, config, lightPalette)
+
+      // Legacy pipeline uses render() directly
+      expect(renderer.renderCalls.length).toBeGreaterThanOrEqual(1)
     })
   })
 })
