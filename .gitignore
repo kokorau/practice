@@ -29,3 +29,7 @@ dist-ssr
 .env.*.local
 .env.development
 .env.production
+
+# Test artifacts
+__screenshots__
+.playwright-mcp/

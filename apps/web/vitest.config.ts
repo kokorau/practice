@@ -12,5 +12,7 @@ export default defineConfig({
     ],
     isolate: false,
     pool: 'threads',
+    // Browser tests (*.browser.test.ts) are excluded from default run
+    exclude: ['**/node_modules/**', '**/*.browser.test.ts'],
   },
 })
