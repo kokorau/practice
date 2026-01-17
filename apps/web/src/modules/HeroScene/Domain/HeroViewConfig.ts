@@ -1400,20 +1400,7 @@ export const migrateHeroViewConfig = (config: HeroViewConfig): HeroViewConfig =>
   // Then migrate colors from top-level to per-surface
   // Cast to LegacyHeroColorsConfig to handle old configs that may have background/mask fields
   const legacyColors = config.colors as LegacyHeroColorsConfig
-  console.log('[migrateHeroViewConfig] legacy colors:', JSON.stringify({ background: legacyColors.background, mask: legacyColors.mask }))
   migratedLayers = migrateColorsToSurfaceLayers(migratedLayers, legacyColors)
-
-  // Debug: check if colors were migrated
-  const bgGroup = migratedLayers.find(l => l.id === 'background-group')
-  const clipGroup = migratedLayers.find(l => l.id === 'clip-group')
-  if (bgGroup && bgGroup.type === 'group') {
-    const bgSurface = bgGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'background' && c.type === 'surface')
-    console.log('[migrateHeroViewConfig] background colors after migration:', JSON.stringify(bgSurface?.colors))
-  }
-  if (clipGroup && clipGroup.type === 'group') {
-    const maskSurface = clipGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'surface-mask' && c.type === 'surface')
-    console.log('[migrateHeroViewConfig] surface-mask colors after migration:', JSON.stringify(maskSurface?.colors))
-  }
 
   return { ...config, layers: migratedLayers }
 }
