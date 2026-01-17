@@ -38,6 +38,10 @@ export type {
   ColorKeyPair,
 } from './types'
 
+// TextureOwner (Node-Owned Texture Architecture)
+export type { TextureOwner } from './TextureOwner'
+export { isTextureOwner } from './TextureOwner'
+
 // RenderNode
 export type {
   RenderNode,

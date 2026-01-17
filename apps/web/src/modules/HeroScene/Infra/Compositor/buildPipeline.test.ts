@@ -80,6 +80,9 @@ function createMockPalette() {
 function createMockRenderer(): CompositorRenderer {
   return {
     getViewport: vi.fn(() => ({ width: 1280, height: 720 })),
+    getDevice: vi.fn(() => ({
+      createTexture: vi.fn(() => mockGpuTexture),
+    }) as unknown as GPUDevice),
     renderToOffscreen: vi.fn(() => mockGpuTexture),
     applyPostEffectToOffscreen: vi.fn(() => mockGpuTexture),
     applyDualTextureEffectToOffscreen: vi.fn(() => mockGpuTexture),

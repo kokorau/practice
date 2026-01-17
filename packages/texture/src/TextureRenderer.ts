@@ -155,6 +155,13 @@ export class TextureRenderer {
   }
 
   /**
+   * Get the WebGPU device (used by TextureOwner nodes for texture creation)
+   */
+  getDevice(): GPUDevice {
+    return this.device
+  }
+
+  /**
    * Render using a TextureRenderSpec
    */
   render(spec: TextureRenderSpec, options?: { clear?: boolean }): void {

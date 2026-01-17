@@ -26,6 +26,10 @@ function createMockRenderer(): TextureRendererLike & {
 
     getViewport: vi.fn(() => ({ width: 1280, height: 720 })),
 
+    getDevice: vi.fn(() => ({
+      createTexture: vi.fn(() => mockTexture),
+    }) as unknown as GPUDevice),
+
     render: vi.fn(function (this: ReturnType<typeof createMockRenderer>, spec: TextureRenderSpec, options?: { clear?: boolean }) {
       this.renderCalls.push({ spec, options })
     }),
