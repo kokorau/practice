@@ -8,7 +8,8 @@
  */
 
 import type { LayerEffectConfig } from './EffectSchema'
-import type { EffectType } from './EffectRegistry'
+import { createDefaultEffectConfig } from './EffectSchema'
+import { type EffectType, EFFECT_TYPES, EFFECT_REGISTRY, isValidEffectType } from './EffectRegistry'
 
 // ============================================================
 // Color Config Types (for serialization)
@@ -729,6 +730,194 @@ export type AnyEffectConfig = SingleEffectConfig | EffectFilterConfig
 export type EffectProcessorConfig = EffectFilterConfig
 
 // ============================================================
+// Effect Normalization Utilities
+// ============================================================
+
+/**
+ * Type guard for checking if a SingleEffectConfig is a specific effect type
+ */
+export function isEffectOfType<T extends EffectType>(
+  config: SingleEffectConfig,
+  effectType: T
+): config is SingleEffectConfig & { id: T } {
+  return config.id === effectType
+}
+
+/**
+ * Type guard for vignette effect
+ */
+export function isVignetteEffect(config: SingleEffectConfig): config is SingleEffectConfig & { id: 'vignette' } {
+  return config.id === 'vignette'
+}
+
+/**
+ * Type guard for chromatic aberration effect
+ */
+export function isChromaticAberrationEffect(config: SingleEffectConfig): config is SingleEffectConfig & { id: 'chromaticAberration' } {
+  return config.id === 'chromaticAberration'
+}
+
+/**
+ * Type guard for dot halftone effect
+ */
+export function isDotHalftoneEffect(config: SingleEffectConfig): config is SingleEffectConfig & { id: 'dotHalftone' } {
+  return config.id === 'dotHalftone'
+}
+
+/**
+ * Type guard for line halftone effect
+ */
+export function isLineHalftoneEffect(config: SingleEffectConfig): config is SingleEffectConfig & { id: 'lineHalftone' } {
+  return config.id === 'lineHalftone'
+}
+
+/**
+ * Type guard for blur effect
+ */
+export function isBlurEffect(config: SingleEffectConfig): config is SingleEffectConfig & { id: 'blur' } {
+  return config.id === 'blur'
+}
+
+/**
+ * Create a SingleEffectConfig with default parameters for a given effect type
+ *
+ * @example
+ * ```typescript
+ * const blurEffect = createSingleEffectConfig('blur')
+ * // { type: 'effect', id: 'blur', params: { enabled: false, radius: 8 } }
+ *
+ * const customBlur = createSingleEffectConfig('blur', { radius: 16 })
+ * // { type: 'effect', id: 'blur', params: { enabled: false, radius: 16 } }
+ * ```
+ */
+export function createSingleEffectConfig(
+  effectType: EffectType,
+  params?: Record<string, unknown>
+): SingleEffectConfig {
+  const definition = EFFECT_REGISTRY[effectType]
+  const defaultConfig = definition.createDefaultConfig()
+
+  // Remove 'enabled' from params as SingleEffectConfig doesn't use it
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { enabled: _enabled, ...defaultParams } = defaultConfig as Record<string, unknown>
+
+  return {
+    type: 'effect',
+    id: effectType,
+    params: params ? { ...defaultParams, ...params } : defaultParams,
+  }
+}
+
+/**
+ * Extract enabled effects from legacy LayerEffectConfig and convert to SingleEffectConfig[]
+ *
+ * @example
+ * ```typescript
+ * const legacyConfig: LayerEffectConfig = {
+ *   vignette: { enabled: true, intensity: 0.5, ... },
+ *   blur: { enabled: true, radius: 8 },
+ *   chromaticAberration: { enabled: false, ... },
+ *   ...
+ * }
+ * const effects = extractEnabledEffects(legacyConfig)
+ * // [
+ * //   { type: 'effect', id: 'vignette', params: { intensity: 0.5, ... } },
+ * //   { type: 'effect', id: 'blur', params: { radius: 8 } }
+ * // ]
+ * ```
+ */
+export function extractEnabledEffects(config: LayerEffectConfig): SingleEffectConfig[] {
+  const effects: SingleEffectConfig[] = []
+
+  for (const effectType of EFFECT_TYPES) {
+    const effectConfig = config[effectType]
+    if (effectConfig && 'enabled' in effectConfig && effectConfig.enabled) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { enabled: _enabled, ...params } = effectConfig as Record<string, unknown>
+      effects.push({
+        type: 'effect',
+        id: effectType,
+        params,
+      })
+    }
+  }
+
+  return effects
+}
+
+/**
+ * Convert legacy EffectFilterConfig to SingleEffectConfig[]
+ * Extracts enabled effects from the bundled config
+ *
+ * @deprecated Use SingleEffectConfig[] directly
+ */
+export function normalizeEffectFilterConfig(config: EffectFilterConfig): SingleEffectConfig[] {
+  if (!config.enabled) return []
+  return extractEnabledEffects(config.config)
+}
+
+/**
+ * Convert SingleEffectConfig[] to legacy LayerEffectConfig
+ * Used for backward compatibility with legacy code
+ *
+ * @deprecated Use SingleEffectConfig[] directly
+ */
+export function denormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): LayerEffectConfig {
+  const config = createDefaultEffectConfig()
+
+  for (const effect of effects) {
+    if (isValidEffectType(effect.id)) {
+      const effectKey = effect.id as keyof LayerEffectConfig
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(config[effectKey] as any) = {
+        ...config[effectKey],
+        ...effect.params,
+        enabled: true,
+      }
+    }
+  }
+
+  return config
+}
+
+/**
+ * Convert SingleEffectConfig[] to legacy EffectFilterConfig
+ *
+ * @deprecated Use SingleEffectConfig[] directly
+ */
+export function denormalizeToEffectFilterConfig(effects: SingleEffectConfig[]): EffectFilterConfig {
+  return {
+    type: 'effect',
+    enabled: effects.length > 0,
+    config: denormalizeToLayerEffectConfig(effects),
+  }
+}
+
+/**
+ * Get effects from AnyEffectConfig as SingleEffectConfig[]
+ * Accepts both new and legacy formats
+ */
+export function getEffectsAsNormalized(config: AnyEffectConfig): SingleEffectConfig[] {
+  if (isSingleEffectConfig(config as ProcessorConfig)) {
+    return [config as SingleEffectConfig]
+  }
+  if (isLegacyEffectFilterConfig(config as ProcessorConfig)) {
+    return normalizeEffectFilterConfig(config as EffectFilterConfig)
+  }
+  return []
+}
+
+/**
+ * Get first effect from AnyEffectConfig as EffectFilterConfig (legacy format)
+ * Returns a disabled config if no effects are present
+ *
+ * @deprecated Use SingleEffectConfig[] directly
+ */
+export function getEffectsAsLegacy(effects: SingleEffectConfig[]): EffectFilterConfig {
+  return denormalizeToEffectFilterConfig(effects)
+}
+
+// ============================================================
 // Layer Node Config (JSON シリアライズ用)
 // ============================================================
 
@@ -1261,10 +1450,6 @@ export const migrateExpandedFromConfig = (layers: LayerNodeConfig[]): LayerNodeC
 // ============================================================
 // Migration: Effect Config (Legacy → SingleEffectConfig)
 // ============================================================
-
-// Import EFFECT_TYPES for migration - moved to avoid circular dependency
-// Note: This import is safe because EffectRegistry only imports types from this file
-import { EFFECT_TYPES } from './EffectRegistry'
 
 /**
  * Convert legacy EffectFilterConfig to SingleEffectConfig array
