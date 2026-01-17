@@ -120,7 +120,11 @@ const actions = computed(() => [
 // ============================================================
 // Hero Scene (WebGPU rendering with layer system)
 // ============================================================
-const heroScene = useHeroScene({ primitivePalette, isDark: uiDarkMode })
+const heroScene = useHeroScene({
+  primitivePalette,
+  isDark: uiDarkMode,
+  layerSelection: { layerId: selectedLayerId, selectCanvasLayer },
+})
 
 // ============================================================
 // Filter Editor (Composable)

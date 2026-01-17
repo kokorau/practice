@@ -306,6 +306,11 @@ export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
   isDark: Ref<boolean> | ComputedRef<boolean>
   repository?: HeroViewRepository
+  /** Optional layer selection - if not provided, will be injected via useLayerSelection() */
+  layerSelection?: {
+    layerId: Readonly<Ref<string | null>>
+    selectCanvasLayer: (id: string) => void
+  }
 }
 
 // ============================================================
@@ -322,7 +327,7 @@ const LAYER_IDS = {
 // ============================================================
 
 export const useHeroScene = (options: UseHeroSceneOptions) => {
-  const { primitivePalette, isDark, repository } = options
+  const { primitivePalette, isDark, repository, layerSelection: providedLayerSelection } = options
 
   // ============================================================
   // Editor State (unified UI state management)
@@ -353,7 +358,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const repoConfig = shallowRef<HeroViewConfig>(heroViewRepository.get())
 
   // Layer selection for unified surface usecase
-  const { layerId: selectedLayerId, selectCanvasLayer } = useLayerSelection()
+  // Use provided layerSelection if available, otherwise inject via useLayerSelection()
+  const { layerId: selectedLayerId, selectCanvasLayer } = providedLayerSelection ?? useLayerSelection()
   const selectionPort = {
     getSelectedLayerId: () => selectedLayerId.value,
   }
