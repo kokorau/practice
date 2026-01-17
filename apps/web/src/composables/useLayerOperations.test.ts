@@ -22,6 +22,7 @@ const createMockSceneCallbacks = (): SceneOperationCallbacks => ({
   addMaskLayer: vi.fn(() => `clipgroup-${Date.now()}`),
   addTextLayer: vi.fn(() => `text-${Date.now()}`),
   addObjectLayer: vi.fn(() => `object-${Date.now()}`),
+  addGroupLayer: vi.fn(() => `group-${Date.now()}`),
   removeLayer: vi.fn(() => true),
   toggleLayerVisibility: vi.fn(),
 })
@@ -259,7 +260,7 @@ describe('useLayerOperations', () => {
       expect(callbacks.addMaskLayer).toHaveBeenCalled()
     })
 
-    it('should not call addMaskLayer when adding group', () => {
+    it('should call addGroupLayer when adding group layer', () => {
       const callbacks = createMockSceneCallbacks()
       const { handleAddLayer } = useLayerOperations(
         createOptions({ sceneCallbacks: callbacks }),
@@ -267,7 +268,38 @@ describe('useLayerOperations', () => {
 
       handleAddLayer('group')
 
+      expect(callbacks.addGroupLayer).toHaveBeenCalled()
       expect(callbacks.addMaskLayer).not.toHaveBeenCalled()
+    })
+
+    it('should expand group after adding', () => {
+      const callbacks = createMockSceneCallbacks()
+      const expandedLayerIds = ref(new Set<string>())
+      vi.mocked(callbacks.addGroupLayer).mockReturnValue('new-group-123')
+      const { handleAddLayer } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, expandedLayerIds }),
+      )
+
+      handleAddLayer('group')
+
+      expect(expandedLayerIds.value.has('new-group-123')).toBe(true)
+    })
+
+    it('should only call sceneCallbacks (no direct repository.set)', () => {
+      const callbacks = createMockSceneCallbacks()
+      const repository = createMockRepository()
+      const repositorySpy = vi.spyOn(repository, 'set')
+      const { handleAddLayer } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, repository }),
+      )
+
+      handleAddLayer('surface')
+      handleAddLayer('group')
+      handleAddLayer('text')
+      handleAddLayer('model3d')
+
+      // handleAddLayer should delegate to sceneCallbacks, not call repository.set directly
+      expect(repositorySpy).not.toHaveBeenCalled()
     })
 
     it('should call addTextLayer when adding text layer', () => {

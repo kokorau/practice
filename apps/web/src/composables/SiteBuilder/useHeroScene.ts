@@ -43,6 +43,7 @@ import {
   type HtmlLayer,
   type HeroViewConfig,
   type LayerNodeConfig,
+  type GroupLayerNodeConfig,
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
   type ImageLayerNodeConfig,
@@ -639,6 +640,20 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return id
   }
 
+  const addGroupLayer = (): string => {
+    const id = `group-${Date.now()}`
+    const groupLayerConfig: GroupLayerNodeConfig = {
+      type: 'group',
+      id,
+      name: 'Group',
+      visible: true,
+      children: [],
+    }
+    layerUsecase.addLayer(groupLayerConfig)
+    render()
+    return id
+  }
+
   const removeLayer = (id: string): boolean => {
     if (id === LAYER_IDS.BASE) return false
     const existingConfig = heroViewRepository.get()
@@ -953,6 +968,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     addTextLayer,
     addObjectLayer,
     addImageLayer,
+    addGroupLayer,
     removeLayer,
     updateLayerVisibility,
     toggleLayerVisibility,
