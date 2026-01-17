@@ -113,4 +113,11 @@ export interface HeroViewRepository {
    * @returns 作成されたグループのID
    */
   wrapLayerInGroup(layerId: string, groupId?: string): string | null
+
+  /**
+   * レイヤーをマスク付きグループで包む
+   * @param layerId 包むレイヤーのID
+   * @returns 作成されたグループのID、失敗時はnull
+   */
+  wrapLayerWithMask(layerId: string): string | null
 }

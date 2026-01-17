@@ -1,8 +1,6 @@
 import { computed, type Ref, type ComputedRef, type ShallowRef } from 'vue'
 import type {
   LayerNodeConfig,
-  GroupLayerNodeConfig,
-  ProcessorNodeConfig,
   LayerDropPosition,
   ModifierDropPosition,
   HeroViewRepository,
@@ -11,7 +9,6 @@ import type {
 import {
   findLayerInTree,
   moveLayerInTree,
-  isGroupLayerConfig,
 } from '../modules/HeroScene'
 import type { ProcessorType } from './useLayerSelection'
 
@@ -55,6 +52,8 @@ export interface SceneOperationCallbacks {
   toggleLayerVisibility: (layerId: string) => void
   /** Wrap layer in a new group. Returns group ID or null if failed */
   groupLayer: (layerId: string) => string | null
+  /** Wrap layer with mask in a new group. Returns group ID or null if failed */
+  useAsMask: (layerId: string) => string | null
 }
 
 /**
@@ -292,49 +291,11 @@ export function useLayerOperations(
   }
 
   const handleUseAsMask = (layerId: string) => {
-    const config = repository.get()
-    if (!config) return
+    // Delegate to sceneCallbacks - usecase handles repository update
+    const groupId = sceneCallbacks.useAsMask(layerId)
+    if (!groupId) return
 
-    const layer = findLayerInTree(config.layers, layerId)
-    if (!layer || isGroupLayerConfig(layer)) return
-
-    // Create a processor node with the layer as target
-    const processorId = `processor-${Date.now()}`
-    const processor: ProcessorNodeConfig = {
-      type: 'processor',
-      id: processorId,
-      name: 'Mask',
-      visible: true,
-      modifiers: [{
-        type: 'mask',
-        enabled: true,
-        shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false },
-        invert: false,
-        feather: 0,
-      }],
-    }
-
-    // Create a group with the layer and processor
-    const groupId = `group-${Date.now()}`
-    const newGroup: GroupLayerNodeConfig = {
-      type: 'group',
-      id: groupId,
-      name: 'Masked Group',
-      visible: true,
-      children: [layer, processor],
-    }
-
-    // Replace the layer with the group
-    const newLayers = config.layers.map((l) => {
-      if (l.id === layerId) {
-        return newGroup
-      }
-      return l
-    })
-
-    repository.set({ ...config, layers: newLayers })
-
-    // Expand the new group
+    // Expand the new group (UI state only)
     expandedLayerIds.value = new Set([...expandedLayerIds.value, groupId])
   }
 
