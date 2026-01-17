@@ -10,6 +10,8 @@ import type { LayerUpdate } from '../Application/ports/HeroViewRepository'
 import type {
   HeroViewConfig,
   LayerNodeConfig,
+  GroupLayerNodeConfig,
+  ProcessorNodeConfig,
   HeroColorsConfig,
   ViewportConfig,
   ForegroundLayerConfig,
@@ -19,6 +21,10 @@ import {
   findLayerInTree,
   updateLayerInTree,
   removeLayerFromTree,
+  wrapLayerInGroupInTree,
+  isGroupLayerConfig,
+  moveLayerInTree,
+  type LayerDropPosition,
 } from '../Domain/LayerTreeOps'
 
 // Re-export LayerUpdate type for backward compatibility
@@ -158,6 +164,82 @@ export const createHeroViewInMemoryRepository = (
       config = {
         ...config,
         layers: reorderedLayers,
+      }
+      notifySubscribers()
+    },
+
+    wrapLayerInGroup: (layerId: string, groupId?: string): string | null => {
+      const layer = findLayerInTree(config.layers, layerId)
+      if (!layer) return null
+
+      const newGroupId = groupId ?? `group-${Date.now()}`
+      config = {
+        ...config,
+        layers: wrapLayerInGroupInTree(config.layers, layerId, newGroupId),
+      }
+      notifySubscribers()
+      return newGroupId
+    },
+
+    wrapLayerWithMask: (layerId: string): string | null => {
+      const layer = findLayerInTree(config.layers, layerId)
+      if (!layer || isGroupLayerConfig(layer)) return null
+
+      const groupId = `group-${Date.now()}`
+      const processorId = `processor-${Date.now()}`
+
+      // Create processor node with default mask
+      const processor: ProcessorNodeConfig = {
+        type: 'processor',
+        id: processorId,
+        name: 'Mask',
+        visible: true,
+        modifiers: [{
+          type: 'mask',
+          enabled: true,
+          shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false },
+          invert: false,
+          feather: 0,
+        }],
+      }
+
+      // Create group containing layer and processor
+      const newGroup: GroupLayerNodeConfig = {
+        type: 'group',
+        id: groupId,
+        name: 'Masked Group',
+        visible: true,
+        children: [layer, processor],
+      }
+
+      // Replace layer with group in tree
+      const replaceWithGroup = (layerList: LayerNodeConfig[]): LayerNodeConfig[] => {
+        return layerList.map(l => {
+          if (l.id === layerId) {
+            return newGroup
+          }
+          if (isGroupLayerConfig(l)) {
+            return {
+              ...l,
+              children: replaceWithGroup(l.children),
+            }
+          }
+          return l
+        })
+      }
+
+      config = {
+        ...config,
+        layers: replaceWithGroup(config.layers),
+      }
+      notifySubscribers()
+      return groupId
+    },
+
+    moveLayer: (layerId: string, position: LayerDropPosition) => {
+      config = {
+        ...config,
+        layers: moveLayerInTree(config.layers, layerId, position),
       }
       notifySubscribers()
     },

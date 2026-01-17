@@ -25,6 +25,9 @@ const createMockSceneCallbacks = (): SceneOperationCallbacks => ({
   addGroupLayer: vi.fn(() => `group-${Date.now()}`),
   removeLayer: vi.fn(() => true),
   toggleLayerVisibility: vi.fn(),
+  groupLayer: vi.fn(() => `group-${Date.now()}`),
+  useAsMask: vi.fn(() => `group-${Date.now()}`),
+  moveLayer: vi.fn(),
 })
 
 const BASE_LAYER_ID = 'base-layer'
@@ -408,6 +411,50 @@ describe('useLayerOperations', () => {
   })
 
   // ============================================================
+  // handleGroupSelection
+  // ============================================================
+  describe('handleGroupSelection', () => {
+    it('should call groupLayer callback', () => {
+      const callbacks = createMockSceneCallbacks()
+      const { handleGroupSelection } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks }),
+      )
+
+      handleGroupSelection(MASK_LAYER_ID)
+
+      expect(callbacks.groupLayer).toHaveBeenCalledWith(MASK_LAYER_ID)
+    })
+
+    it('should expand group after grouping', () => {
+      const callbacks = createMockSceneCallbacks()
+      const expandedLayerIds = ref(new Set<string>())
+      vi.mocked(callbacks.groupLayer).mockReturnValue('new-group-123')
+      const { handleGroupSelection } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, expandedLayerIds }),
+      )
+
+      handleGroupSelection(MASK_LAYER_ID)
+
+      expect(expandedLayerIds.value.has('new-group-123')).toBe(true)
+    })
+
+    it('should only call sceneCallbacks.groupLayer (no direct repository.set)', () => {
+      const callbacks = createMockSceneCallbacks()
+      const repository = createMockRepository()
+      const repositorySpy = vi.spyOn(repository, 'set')
+      const { handleGroupSelection } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, repository }),
+      )
+
+      handleGroupSelection(MASK_LAYER_ID)
+
+      // handleGroupSelection should delegate to sceneCallbacks, not call repository.set directly
+      expect(callbacks.groupLayer).toHaveBeenCalled()
+      expect(repositorySpy).not.toHaveBeenCalled()
+    })
+  })
+
+  // ============================================================
   // handleSelectLayer
   // ============================================================
   describe('handleSelectLayer', () => {
@@ -436,6 +483,120 @@ describe('useLayerOperations', () => {
       handleSelectProcessor(MASK_LAYER_ID, 'effect')
 
       expect(onSelectProcessor).toHaveBeenCalledWith(MASK_LAYER_ID, 'effect')
+    })
+  })
+
+  // ============================================================
+  // handleUseAsMask
+  // ============================================================
+  describe('handleUseAsMask', () => {
+    it('should call useAsMask callback', () => {
+      const callbacks = createMockSceneCallbacks()
+      const { handleUseAsMask } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks }),
+      )
+
+      handleUseAsMask(MASK_LAYER_ID)
+
+      expect(callbacks.useAsMask).toHaveBeenCalledWith(MASK_LAYER_ID)
+    })
+
+    it('should expand the new group when useAsMask succeeds', () => {
+      const callbacks = createMockSceneCallbacks()
+      const expandedLayerIds = ref(new Set<string>())
+      vi.mocked(callbacks.useAsMask).mockReturnValue('new-mask-group-123')
+      const { handleUseAsMask } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, expandedLayerIds }),
+      )
+
+      handleUseAsMask(MASK_LAYER_ID)
+
+      expect(expandedLayerIds.value.has('new-mask-group-123')).toBe(true)
+    })
+
+    it('should not expand when useAsMask returns null', () => {
+      const callbacks = createMockSceneCallbacks()
+      const expandedLayerIds = ref(new Set<string>())
+      vi.mocked(callbacks.useAsMask).mockReturnValue(null)
+      const { handleUseAsMask } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, expandedLayerIds }),
+      )
+
+      handleUseAsMask(MASK_LAYER_ID)
+
+      expect(expandedLayerIds.value.size).toBe(0)
+    })
+
+    it('should only call sceneCallbacks.useAsMask (no direct repository.set)', () => {
+      const callbacks = createMockSceneCallbacks()
+      const repository = createMockRepository()
+      const repositorySpy = vi.spyOn(repository, 'set')
+      const { handleUseAsMask } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, repository }),
+      )
+
+      handleUseAsMask(MASK_LAYER_ID)
+
+      // handleUseAsMask should delegate to sceneCallbacks, not call repository.set directly
+      expect(callbacks.useAsMask).toHaveBeenCalledWith(MASK_LAYER_ID)
+      expect(repositorySpy).not.toHaveBeenCalled()
+    })
+  })
+
+  // ============================================================
+  // handleMoveNode
+  // ============================================================
+  describe('handleMoveNode', () => {
+    it('should call moveLayer callback with correct arguments', () => {
+      const callbacks = createMockSceneCallbacks()
+      const { handleMoveNode } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks }),
+      )
+
+      const position = { type: 'after' as const, targetId: 'background-group' }
+      handleMoveNode(MASK_LAYER_ID, position)
+
+      expect(callbacks.moveLayer).toHaveBeenCalledWith(MASK_LAYER_ID, position)
+    })
+
+    it('should call moveLayer with "before" position', () => {
+      const callbacks = createMockSceneCallbacks()
+      const { handleMoveNode } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks }),
+      )
+
+      const position = { type: 'before' as const, targetId: 'main-group' }
+      handleMoveNode(MASK_LAYER_ID, position)
+
+      expect(callbacks.moveLayer).toHaveBeenCalledWith(MASK_LAYER_ID, position)
+    })
+
+    it('should call moveLayer with "into" position', () => {
+      const callbacks = createMockSceneCallbacks()
+      const { handleMoveNode } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks }),
+      )
+
+      const position = { type: 'into' as const, targetId: 'main-group' }
+      handleMoveNode(MASK_LAYER_ID, position)
+
+      expect(callbacks.moveLayer).toHaveBeenCalledWith(MASK_LAYER_ID, position)
+    })
+
+    it('should only call sceneCallbacks.moveLayer (no direct repository.set)', () => {
+      const callbacks = createMockSceneCallbacks()
+      const repository = createMockRepository()
+      const repositorySpy = vi.spyOn(repository, 'set')
+      const { handleMoveNode } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, repository }),
+      )
+
+      const position = { type: 'after' as const, targetId: 'background-group' }
+      handleMoveNode(MASK_LAYER_ID, position)
+
+      // handleMoveNode should delegate to sceneCallbacks, not call repository.set directly
+      expect(callbacks.moveLayer).toHaveBeenCalledWith(MASK_LAYER_ID, position)
+      expect(repositorySpy).not.toHaveBeenCalled()
     })
   })
 })

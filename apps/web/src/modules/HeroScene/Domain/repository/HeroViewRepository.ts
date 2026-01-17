@@ -13,6 +13,7 @@ import type {
   ForegroundLayerConfig,
   LayerNodeConfig,
 } from '../HeroViewConfig'
+import type { LayerDropPosition } from '../LayerTreeOps'
 
 /**
  * Subscribe callback type
@@ -105,4 +106,26 @@ export interface HeroViewRepository {
    * @param layerIds 新しい順序のレイヤーID配列
    */
   reorderLayers(layerIds: string[]): void
+
+  /**
+   * レイヤーをグループで包む
+   * @param layerId 包むレイヤーのID
+   * @param groupId 新しいグループのID（省略時は自動生成）
+   * @returns 作成されたグループのID
+   */
+  wrapLayerInGroup(layerId: string, groupId?: string): string | null
+
+  /**
+   * レイヤーをマスク付きグループで包む
+   * @param layerId 包むレイヤーのID
+   * @returns 作成されたグループのID、失敗時はnull
+   */
+  wrapLayerWithMask(layerId: string): string | null
+
+  /**
+   * レイヤーを移動（ドラッグ&ドロップ用）
+   * @param layerId 移動するレイヤーのID
+   * @param position 移動先の位置
+   */
+  moveLayer(layerId: string, position: LayerDropPosition): void
 }

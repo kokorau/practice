@@ -51,6 +51,7 @@ import {
   type ForegroundLayerConfig,
   type TextLayerConfig,
   type HeroViewRepository,
+  type LayerDropPosition,
   createDefaultEffectConfig,
   createDefaultForegroundConfig,
   updateTextLayerText,
@@ -65,6 +66,9 @@ import {
   toggleExpand as toggleExpandUsecase,
   toggleVisibility as toggleVisibilityUsecase,
   updateLayer as updateLayerUsecase,
+  wrapLayerInGroup as wrapLayerInGroupUsecase,
+  wrapLayerWithMask as wrapLayerWithMaskUsecase,
+  moveLayer as moveLayerUsecase,
   createForegroundElementUsecase,
   type ForegroundConfigPort,
   type SelectionPort,
@@ -461,6 +465,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     toggleExpand: (layerId: string) => toggleExpandUsecase(layerId, heroViewRepository),
     toggleVisibility: (layerId: string) => toggleVisibilityUsecase(layerId, heroViewRepository),
     updateLayer: (layerId: string, updates: Partial<LayerNodeConfig>) => updateLayerUsecase(layerId, updates, heroViewRepository),
+    wrapLayerInGroup: (layerId: string) => wrapLayerInGroupUsecase(layerId, heroViewRepository),
+    wrapLayerWithMask: (layerId: string) => wrapLayerWithMaskUsecase(layerId, heroViewRepository),
+    moveLayer: (layerId: string, position: LayerDropPosition) => moveLayerUsecase(layerId, position, heroViewRepository),
   }
 
   // ============================================================
@@ -675,6 +682,22 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     render()
   }
 
+  const groupLayer = (id: string): string | null => {
+    // Use usecase to wrap layer in group
+    const groupId = layerUsecase.wrapLayerInGroup(id)
+    if (!groupId) return null
+    render()
+    return groupId
+  }
+
+  const useAsMask = (id: string): string | null => {
+    // Use usecase to wrap layer with mask
+    const groupId = layerUsecase.wrapLayerWithMask(id)
+    if (!groupId) return null
+    render()
+    return groupId
+  }
+
   const updateTextLayerConfig = (id: string, updates: Partial<TextLayerConfig>) => {
     const existingConfig = heroViewRepository.get()
     if (!existingConfig) return
@@ -708,6 +731,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (updates.rotation !== undefined) {
       updateTextLayerRotation(id, updates.rotation, heroViewRepository)
     }
+    render()
+  }
+
+  const moveLayer = (id: string, position: LayerDropPosition) => {
+    layerUsecase.moveLayer(id, position)
     render()
   }
 
@@ -965,7 +993,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     removeLayer,
     updateLayerVisibility,
     toggleLayerVisibility,
+    groupLayer,
+    useAsMask,
     updateTextLayerConfig,
+    moveLayer,
   }
 
   const inkColor: InkColorHelpers = {
