@@ -46,16 +46,10 @@ import {
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
   type ForegroundLayerConfig,
-  type HeroViewPreset,
   type TextLayerConfig,
   type HeroViewRepository,
   createDefaultEffectConfig,
   createDefaultForegroundConfig,
-  createInMemoryHeroViewPresetRepository,
-  createBrowserPresetExporter,
-  type ExportPresetOptions,
-  createPresetManager,
-  type MergeMode,
   updateTextLayerText,
   updateTextLayerFont,
   updateTextLayerColor,
@@ -104,6 +98,7 @@ import { useHeroSurfaceParams } from './useHeroSurfaceParams'
 import { useHeroPatternPresets } from './useHeroPatternPresets'
 import { useHeroColorSync } from './useHeroColorSync'
 import { useHeroConfigLoader, LAYER_IDS } from './useHeroConfigLoader'
+import { useHeroPresets } from './useHeroPresets'
 
 // Re-export types from extracted composables
 export type { SectionType } from './useHeroThumbnails'
@@ -487,26 +482,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
-  // Preset Manager & Usecase wrappers
-  // ============================================================
-  const presetRepository = createInMemoryHeroViewPresetRepository()
-  const presetExportAdapter = createBrowserPresetExporter()
-  const presetManager = createPresetManager({
-    presetRepository,
-    heroViewRepository,
-    presetExportPort: presetExportAdapter,
-  })
-
-  const presetUsecase = {
-    exportPreset: (options?: { id?: string; name?: string }) => {
-      return presetManager.exportAsPreset(options)
-    },
-    createPreset: (options?: { id?: string; name?: string }) => {
-      return presetManager.createPreset(options)
-    },
-  }
-
-  // ============================================================
   // ForegroundElement Usecase
   // ============================================================
   const selectedForegroundElementId = computed({
@@ -726,6 +701,25 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   // ============================================================
+  // Initialize Presets Composable
+  // ============================================================
+  const heroPresets = useHeroPresets({
+    heroViewRepository,
+    editorUIState,
+    fromHeroViewConfig,
+  })
+
+  // Destructure for backward compatibility
+  const {
+    presets,
+    selectedPresetId,
+    loadPresets,
+    applyPreset,
+    exportPreset,
+    presetUsecase,
+  } = heroPresets
+
+  // ============================================================
   // Watchers
   // ============================================================
   watch(selectedBackgroundIndex, () => {
@@ -803,42 +797,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (repository) {
       repository.set(toHeroViewConfig())
     }
-  }
-
-  // ============================================================
-  // Preset Management (uses presetManager created earlier)
-  // ============================================================
-
-  const presets = ref<HeroViewPreset[]>([])
-  const selectedPresetId = computed({
-    get: () => editorUIState.value.preset.selectedPresetId,
-    set: (val: string | null) => { editorUIState.value.preset.selectedPresetId = val },
-  })
-
-  const loadPresets = async (applyInitial = true) => {
-    presets.value = await presetManager.getPresets()
-    if (applyInitial && selectedPresetId.value) {
-      const preset = await presetManager.applyPreset(selectedPresetId.value)
-      if (preset) {
-        await fromHeroViewConfig(preset.config)
-        return preset.colorPreset ?? null
-      }
-    }
-    return null
-  }
-
-  const applyPreset = async (presetId: string, mergeMode: MergeMode = 'replace') => {
-    const preset = await presetManager.applyPreset(presetId, mergeMode)
-    if (preset) {
-      selectedPresetId.value = presetId
-      await fromHeroViewConfig(preset.config)
-      return preset.colorPreset ?? null
-    }
-    return null
-  }
-
-  const exportPreset = (exportOptions: ExportPresetOptions = {}) => {
-    return presetManager.exportAsPreset(exportOptions)
   }
 
   // ============================================================
