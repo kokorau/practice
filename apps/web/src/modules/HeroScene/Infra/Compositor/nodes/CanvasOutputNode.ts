@@ -60,12 +60,9 @@ export class CanvasOutputNode implements OutputNode {
   readonly id: string
   readonly input: RenderNode | CompositorNode
 
-  private readonly options: CanvasOutputOptions
-
   constructor(config: CanvasOutputNodeConfig) {
     this.id = config.id
     this.input = config.input
-    this.options = config.options ?? {}
   }
 
   /**
