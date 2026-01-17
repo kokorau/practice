@@ -37,35 +37,19 @@ import {
   type HexagonSurfaceParams,
   type DepthMapType,
 } from '@practice/texture'
-import type { PrimitivePalette, ContextName, PrimitiveKey } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
 import {
-  type LayerEffectConfig,
   type HeroSceneConfig,
   type HtmlLayer,
   type HeroViewConfig,
-  type MaskShapeConfig as HeroMaskShapeConfig,
   type LayerNodeConfig,
-  type BaseLayerNodeConfig,
-  type SurfaceLayerNodeConfig,
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
-  type MaskProcessorConfig,
   type ForegroundLayerConfig,
-  type HeroViewPreset,
   type TextLayerConfig,
   type HeroViewRepository,
   createDefaultEffectConfig,
   createDefaultForegroundConfig,
-  createDefaultColorsConfig,
-  DEFAULT_LAYER_BACKGROUND_COLORS,
-  DEFAULT_LAYER_MASK_COLORS,
-  createInMemoryHeroViewPresetRepository,
-  createBrowserPresetExporter,
-  type ExportPresetOptions,
-  createPresetManager,
-  type MergeMode,
-  findSurfacePresetIndex,
-  findMaskPatternIndex,
   updateTextLayerText,
   updateTextLayerFont,
   updateTextLayerColor,
@@ -101,7 +85,6 @@ import {
   type UsecaseState,
   type EditorStateRef,
   type RendererActions,
-  migrateHeroViewConfig,
 } from '../../modules/HeroScene'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
 
@@ -114,6 +97,8 @@ import { useHeroSceneRenderer } from './useHeroSceneRenderer'
 import { useHeroSurfaceParams } from './useHeroSurfaceParams'
 import { useHeroPatternPresets } from './useHeroPatternPresets'
 import { useHeroColorSync } from './useHeroColorSync'
+import { useHeroConfigLoader, LAYER_IDS } from './useHeroConfigLoader'
+import { useHeroPresets } from './useHeroPresets'
 
 // Re-export types from extracted composables
 export type { SectionType } from './useHeroThumbnails'
@@ -291,15 +276,6 @@ export interface UseHeroSceneOptions {
   repository?: HeroViewRepository
   layerSelection?: LayerSelectionReturn
 }
-
-// ============================================================
-// Constants
-// ============================================================
-
-const LAYER_IDS = {
-  BASE: 'background',
-  MASK: 'surface-mask',
-} as const
 
 // ============================================================
 // Composable
@@ -507,26 +483,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
-  // Preset Manager & Usecase wrappers
-  // ============================================================
-  const presetRepository = createInMemoryHeroViewPresetRepository()
-  const presetExportAdapter = createBrowserPresetExporter()
-  const presetManager = createPresetManager({
-    presetRepository,
-    heroViewRepository,
-    presetExportPort: presetExportAdapter,
-  })
-
-  const presetUsecase = {
-    exportPreset: (options?: { id?: string; name?: string }) => {
-      return presetManager.exportAsPreset(options)
-    },
-    createPreset: (options?: { id?: string; name?: string }) => {
-      return presetManager.createPreset(options)
-    },
-  }
-
-  // ============================================================
   // ForegroundElement Usecase
   // ============================================================
   const selectedForegroundElementId = computed({
@@ -727,6 +683,44 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   // ============================================================
+  // Initialize Config Loader Composable
+  // ============================================================
+  const { fromHeroViewConfig } = useHeroConfigLoader({
+    heroViewRepository,
+    editorState,
+    heroColors,
+    heroFilters,
+    heroImages,
+    heroThumbnails,
+    selectedBackgroundIndex,
+    selectedMaskIndex,
+    selectedMidgroundTextureIndex,
+    foregroundConfig,
+    surfacePresets,
+    render,
+    isLoadingFromConfig,
+  })
+
+  // ============================================================
+  // Initialize Presets Composable
+  // ============================================================
+  const heroPresets = useHeroPresets({
+    heroViewRepository,
+    editorUIState,
+    fromHeroViewConfig,
+  })
+
+  // Destructure for backward compatibility
+  const {
+    presets,
+    selectedPresetId,
+    loadPresets,
+    applyPreset,
+    exportPreset,
+    presetUsecase,
+  } = heroPresets
+
+  // ============================================================
   // Watchers
   // ============================================================
   watch(selectedBackgroundIndex, () => {
@@ -804,190 +798,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (repository) {
       repository.set(toHeroViewConfig())
     }
-  }
-
-  const fromHeroViewConfig = async (config: HeroViewConfig) => {
-    isLoadingFromConfig.value = true
-
-    try {
-    // Migrate legacy configs before applying
-    const migratedConfig = migrateHeroViewConfig(config)
-    heroViewRepository.set(migratedConfig)
-
-    editorState.value = {
-      ...editorState.value,
-      config: {
-        ...editorState.value.config,
-        width: migratedConfig.viewport.width,
-        height: migratedConfig.viewport.height,
-      },
-    }
-
-    // Find background surface layer (inside background-group or legacy base layer)
-    let backgroundSurfaceLayer: SurfaceLayerNodeConfig | BaseLayerNodeConfig | undefined
-    const backgroundGroup = migratedConfig.layers.find(l => l.id === 'background-group' && l.type === 'group')
-    if (backgroundGroup && backgroundGroup.type === 'group') {
-      backgroundSurfaceLayer = backgroundGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'background' && c.type === 'surface')
-    }
-    // Fallback: check for legacy base layer
-    if (!backgroundSurfaceLayer) {
-      backgroundSurfaceLayer = migratedConfig.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
-    }
-
-    // Find mask surface layer (inside clip-group)
-    let maskSurfaceLayer: SurfaceLayerNodeConfig | undefined
-    const clipGroup = migratedConfig.layers.find(l => l.id === 'clip-group' && l.type === 'group')
-    if (clipGroup && clipGroup.type === 'group') {
-      maskSurfaceLayer = clipGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'surface-mask' && c.type === 'surface')
-    }
-    // Fallback: find first surface layer not in background-group
-    if (!maskSurfaceLayer) {
-      for (const layer of migratedConfig.layers) {
-        if (layer.type === 'surface' && layer.id !== 'background') {
-          maskSurfaceLayer = layer
-          break
-        }
-        if (layer.type === 'group' && layer.id !== 'background-group' && layer.children) {
-          const nested = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
-          if (nested) {
-            maskSurfaceLayer = nested
-            break
-          }
-        }
-      }
-    }
-
-    // Read colors from surface layers (migration ensures colors always exist)
-    const configColors = migratedConfig.colors ?? createDefaultColorsConfig()
-    // Background colors from layer (use defaults if missing - migration should prevent this)
-    const bgColors = backgroundSurfaceLayer?.colors ?? DEFAULT_LAYER_BACKGROUND_COLORS
-    heroColors.backgroundColorKey1.value = (bgColors.primary === 'auto' ? DEFAULT_LAYER_BACKGROUND_COLORS.primary : bgColors.primary) as PrimitiveKey
-    heroColors.backgroundColorKey2.value = bgColors.secondary as PrimitiveKey | 'auto'
-    // Mask colors from layer (use defaults if missing - migration should prevent this)
-    const maskColors = maskSurfaceLayer?.colors ?? DEFAULT_LAYER_MASK_COLORS
-    heroColors.maskColorKey1.value = maskColors.primary as PrimitiveKey | 'auto'
-    heroColors.maskColorKey2.value = maskColors.secondary as PrimitiveKey | 'auto'
-    // Semantic context from config.colors (kept at top level)
-    heroColors.maskSemanticContext.value = configColors.semanticContext as ContextName
-
-    if (backgroundSurfaceLayer) {
-      const bgSurface = backgroundSurfaceLayer.surface
-      if (bgSurface.type === 'image') {
-        await heroImages.restoreBackgroundImage(bgSurface.imageId)
-      }
-      const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
-      selectedBackgroundIndex.value = bgPresetIndex ?? 0
-
-      const effectFilter = (backgroundSurfaceLayer.filters ?? []).find((p) => p.type === 'effect')
-      if (effectFilter) {
-        const defaults = createDefaultEffectConfig()
-        const merged: LayerEffectConfig = {
-          vignette: { ...defaults.vignette, ...effectFilter.config.vignette },
-          chromaticAberration: { ...defaults.chromaticAberration, ...effectFilter.config.chromaticAberration },
-          dotHalftone: { ...defaults.dotHalftone, ...effectFilter.config.dotHalftone },
-          lineHalftone: { ...defaults.lineHalftone, ...effectFilter.config.lineHalftone },
-          blur: { ...defaults.blur, ...(effectFilter.config.blur ?? {}) },
-        }
-        heroFilters.effectManager.setEffectConfig(LAYER_IDS.BASE, merged)
-      }
-    }
-
-    // Find mask shape from processor layer (inside clip-group or top-level)
-    let maskShape: HeroMaskShapeConfig | undefined
-    if (clipGroup && clipGroup.type === 'group') {
-      for (const child of clipGroup.children) {
-        if (child.type === 'processor') {
-          const maskModifier = child.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
-          if (maskModifier) {
-            maskShape = maskModifier.shape
-            break
-          }
-        }
-      }
-    }
-    // Fallback: check top-level processors
-    if (!maskShape) {
-      for (const layer of migratedConfig.layers) {
-        if (layer.type === 'processor') {
-          const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
-          if (maskModifier) {
-            maskShape = maskModifier.shape
-            break
-          }
-        }
-      }
-    }
-
-    if (maskShape) {
-      selectedMaskIndex.value = findMaskPatternIndex(maskShape, heroThumbnails.maskPatterns)
-    } else {
-      selectedMaskIndex.value = null
-    }
-
-    if (maskSurfaceLayer) {
-      const maskSurface = maskSurfaceLayer.surface
-      if (maskSurface.type === 'image') {
-        await heroImages.restoreMaskImage(maskSurface.imageId)
-      }
-      const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, heroThumbnails.midgroundTexturePatterns)
-      selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
-
-      const maskEffectFilter = (maskSurfaceLayer.filters ?? []).find((p) => p.type === 'effect')
-      if (maskEffectFilter) {
-        const defaults = createDefaultEffectConfig()
-        const merged: LayerEffectConfig = {
-          vignette: { ...defaults.vignette, ...maskEffectFilter.config.vignette },
-          chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectFilter.config.chromaticAberration },
-          dotHalftone: { ...defaults.dotHalftone, ...maskEffectFilter.config.dotHalftone },
-          lineHalftone: { ...defaults.lineHalftone, ...maskEffectFilter.config.lineHalftone },
-          blur: { ...defaults.blur, ...(maskEffectFilter.config.blur ?? {}) },
-        }
-        heroFilters.effectManager.setEffectConfig(LAYER_IDS.MASK, merged)
-      }
-    }
-
-    foregroundConfig.value = migratedConfig.foreground
-
-    await render()
-    } finally {
-      isLoadingFromConfig.value = false
-    }
-  }
-
-  // ============================================================
-  // Preset Management (uses presetManager created earlier)
-  // ============================================================
-
-  const presets = ref<HeroViewPreset[]>([])
-  const selectedPresetId = computed({
-    get: () => editorUIState.value.preset.selectedPresetId,
-    set: (val: string | null) => { editorUIState.value.preset.selectedPresetId = val },
-  })
-
-  const loadPresets = async (applyInitial = true) => {
-    presets.value = await presetManager.getPresets()
-    if (applyInitial && selectedPresetId.value) {
-      const preset = await presetManager.applyPreset(selectedPresetId.value)
-      if (preset) {
-        await fromHeroViewConfig(preset.config)
-        return preset.colorPreset ?? null
-      }
-    }
-    return null
-  }
-
-  const applyPreset = async (presetId: string, mergeMode: MergeMode = 'replace') => {
-    const preset = await presetManager.applyPreset(presetId, mergeMode)
-    if (preset) {
-      selectedPresetId.value = presetId
-      await fromHeroViewConfig(preset.config)
-      return preset.colorPreset ?? null
-    }
-    return null
-  }
-
-  const exportPreset = (exportOptions: ExportPresetOptions = {}) => {
-    return presetManager.exportAsPreset(exportOptions)
   }
 
   // ============================================================
