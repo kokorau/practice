@@ -1,4 +1,4 @@
-import { fullscreenVertex, aaUtils } from './common'
+import { fullscreenVertex, aaUtils, oklabUtils } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 /**
@@ -36,6 +36,8 @@ struct ScalesParams {
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -96,10 +98,10 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   // 行の偶奇でベース色を変える
   let rowParity = f32(i32(closestRow) % 2);
-  let baseColor = mix(params.color1, params.color2, rowParity);
-  let lineColor = mix(params.color2, params.color1, rowParity);
+  let baseColor = select(params.color1, params.color2, rowParity > 0.5);
+  let lineColor = select(params.color2, params.color1, rowParity > 0.5);
 
-  return mix(baseColor, lineColor, blend);
+  return mixOklabVec4(baseColor, lineColor, blend);
 }
 `
 

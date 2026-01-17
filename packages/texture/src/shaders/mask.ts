@@ -333,6 +333,8 @@ export interface PerlinMaskParams {
 export const perlinMaskShader = /* wgsl */ `
 ${fullscreenVertex}
 
+${oklabUtils}
+
 fn perlinHash21(p: vec2f) -> f32 {
   var p3 = fract(vec3f(p.x, p.y, p.x) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
@@ -387,9 +389,9 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let noise = perlinFbm(noisePos, octaves);
 
   // Binarize: noise > threshold -> inner, else -> outer
-  let mask = select(0.0, 1.0, noise > params.threshold);
+  let isInner = noise > params.threshold;
 
-  return mix(params.outerColor, params.innerColor, mask);
+  return select(params.outerColor, params.innerColor, isInner);
 }
 `
 
@@ -823,6 +825,8 @@ ${fullscreenVertex}
 
 ${aaUtils}
 
+${oklabUtils}
+
 // 1D hash function
 fn hash11(p: f32) -> f32 {
   var p3 = fract(p * 0.1031);
@@ -901,7 +905,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
   let inside = smoothstep(boundary - pixelSize, boundary + pixelSize, compareCoord);
 
-  return mix(params.innerColor, params.outerColor, inside);
+  return mixOklabVec4(params.innerColor, params.outerColor, inside);
 }
 `
 

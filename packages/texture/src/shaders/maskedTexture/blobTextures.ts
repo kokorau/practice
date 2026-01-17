@@ -4,7 +4,7 @@
  * Blob形状マスクと各種テクスチャパターンの組み合わせ。
  */
 
-import { fullscreenVertex, aaUtils, maskBlendState } from '../common'
+import { fullscreenVertex, aaUtils, maskBlendState, oklabUtils } from '../common'
 import { stripePatternFn, gridPatternFn, polkaDotPatternFn, checkerPatternFn } from './patterns'
 import { waveUtils, blobMaskFn } from './masks'
 import type { TextureRenderSpec, Viewport } from '../../Domain'
@@ -30,6 +30,8 @@ export const blobStripeShader = /* wgsl */ `
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 ${stripePatternFn}
 
@@ -82,6 +84,8 @@ ${fullscreenVertex}
 
 ${aaUtils}
 
+${oklabUtils}
+
 ${gridPatternFn}
 
 ${waveUtils}
@@ -130,6 +134,8 @@ export const blobPolkaDotShader = /* wgsl */ `
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 ${polkaDotPatternFn}
 

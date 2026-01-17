@@ -4,7 +4,7 @@
  * パーリンノイズ2値化マスクと各種テクスチャパターンの組み合わせ。
  */
 
-import { fullscreenVertex, aaUtils, maskBlendState } from '../common'
+import { fullscreenVertex, aaUtils, maskBlendState, oklabUtils } from '../common'
 import { stripePatternFn, gridPatternFn, polkaDotPatternFn, checkerPatternFn } from './patterns'
 import { perlinMaskUtils, perlinMaskFn } from './masks'
 import type { TextureRenderSpec, Viewport } from '../../Domain'
@@ -30,6 +30,8 @@ export const perlinStripeShader = /* wgsl */ `
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 ${stripePatternFn}
 
@@ -79,6 +81,8 @@ ${fullscreenVertex}
 
 ${aaUtils}
 
+${oklabUtils}
+
 ${gridPatternFn}
 
 ${perlinMaskUtils}
@@ -126,6 +130,8 @@ export const perlinPolkaDotShader = /* wgsl */ `
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 ${polkaDotPatternFn}
 

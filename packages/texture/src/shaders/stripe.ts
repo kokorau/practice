@@ -1,4 +1,4 @@
-import { fullscreenVertex, aaUtils, moduloUtils } from './common'
+import { fullscreenVertex, aaUtils, moduloUtils, oklabUtils } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 /**
@@ -38,6 +38,8 @@ ${aaUtils}
 
 ${moduloUtils}
 
+${oklabUtils}
+
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let cosA = cos(params.angle);
@@ -53,7 +55,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   // edge1: color1 -> color2, edge2: color2 -> color1 (wrap)
   let blend = edge1 - edge2;
-  return mix(params.color1, params.color2, blend);
+  return mixOklabVec4(params.color1, params.color2, blend);
 }
 `
 

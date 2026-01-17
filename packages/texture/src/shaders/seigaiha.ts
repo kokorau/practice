@@ -1,4 +1,4 @@
-import { fullscreenVertex, aaUtils } from './common'
+import { fullscreenVertex, aaUtils, oklabUtils } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 /**
@@ -36,6 +36,8 @@ struct SeigaihaParams {
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 // 単一の半円グループの距離を計算
 fn semicircleDistance(p: vec2f, center: vec2f, radius: f32, rings: i32, lineWidth: f32) -> f32 {
@@ -102,7 +104,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let halfWidth = lineWidth * 0.5;
   let blend = 1.0 - aaStep(halfWidth, minDist);
 
-  return mix(params.bgColor, params.lineColor, blend);
+  return mixOklabVec4(params.bgColor, params.lineColor, blend);
 }
 `
 

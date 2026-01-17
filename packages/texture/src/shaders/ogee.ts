@@ -1,4 +1,4 @@
-import { fullscreenVertex, aaUtils } from './common'
+import { fullscreenVertex, aaUtils, oklabUtils } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 /**
@@ -36,6 +36,8 @@ struct OgeeParams {
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 const PI: f32 = 3.14159265359;
 
@@ -118,7 +120,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let halfWidth = params.lineWidth * 0.5;
   let blend = 1.0 - aaStep(halfWidth, minDist);
 
-  return mix(params.bgColor, params.lineColor, blend);
+  return mixOklabVec4(params.bgColor, params.lineColor, blend);
 }
 `
 

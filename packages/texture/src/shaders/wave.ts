@@ -1,4 +1,4 @@
-import { fullscreenVertex, aaUtils, moduloUtils } from './common'
+import { fullscreenVertex, aaUtils, moduloUtils, oklabUtils } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 /**
@@ -41,6 +41,8 @@ ${aaUtils}
 
 ${moduloUtils}
 
+${oklabUtils}
+
 const PI: f32 = 3.14159265359;
 const TWO_PI: f32 = 6.28318530718;
 
@@ -69,7 +71,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let edge2 = aaStep(period, normalizedT);
   let blend = edge1 - edge2;
 
-  return mix(params.color1, params.color2, blend);
+  return mixOklabVec4(params.color1, params.color2, blend);
 }
 `
 

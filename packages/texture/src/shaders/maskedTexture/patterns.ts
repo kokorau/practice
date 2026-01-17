@@ -20,7 +20,7 @@ fn stripePattern(pos: vec2f, color1: vec4f, color2: vec4f, width1: f32, width2: 
   let edge2 = aaStep(period, normalizedT);
   let blend = edge1 - edge2;
 
-  return mix(color1, color2, blend);
+  return mixOklabVec4(color1, color2, blend);
 }
 `
 
@@ -38,7 +38,7 @@ fn gridPattern(pos: vec2f, lineColor: vec4f, bgColor: vec4f, lineWidth: f32, cel
   let lineY = 1.0 - aaStep(halfLine, distY);
 
   let onLine = max(lineX, lineY);
-  return mix(bgColor, lineColor, onLine);
+  return mixOklabVec4(bgColor, lineColor, onLine);
 }
 `
 
@@ -57,7 +57,7 @@ fn polkaDotPattern(pos: vec2f, dotColor: vec4f, bgColor: vec4f, dotRadius: f32, 
   let dist = sqrt(dx * dx + dy * dy);
 
   let dotMask = 1.0 - aaStep(dotRadius, dist);
-  return mix(bgColor, dotColor, dotMask);
+  return mixOklabVec4(bgColor, dotColor, dotMask);
 }
 `
 

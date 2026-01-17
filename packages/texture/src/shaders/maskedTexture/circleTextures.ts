@@ -4,7 +4,7 @@
  * 円形マスクと各種テクスチャパターンの組み合わせ。
  */
 
-import { fullscreenVertex, aaUtils, maskBlendState } from '../common'
+import { fullscreenVertex, aaUtils, maskBlendState, oklabUtils } from '../common'
 import { stripePatternFn, gridPatternFn, polkaDotPatternFn, checkerPatternFn } from './patterns'
 import { circleMaskFn } from './masks'
 import type { TextureRenderSpec, Viewport } from '../../Domain'
@@ -30,6 +30,8 @@ export const circleStripeShader = /* wgsl */ `
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 ${stripePatternFn}
 
@@ -81,6 +83,8 @@ ${fullscreenVertex}
 
 ${aaUtils}
 
+${oklabUtils}
+
 ${gridPatternFn}
 
 ${circleMaskFn}
@@ -125,6 +129,8 @@ export const circlePolkaDotShader = /* wgsl */ `
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 ${polkaDotPatternFn}
 

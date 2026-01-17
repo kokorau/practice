@@ -4,7 +4,7 @@
  * 長方形マスクと各種テクスチャパターンの組み合わせ。
  */
 
-import { fullscreenVertex, aaUtils, maskBlendState } from '../common'
+import { fullscreenVertex, aaUtils, maskBlendState, oklabUtils } from '../common'
 import { stripePatternFn, gridPatternFn, polkaDotPatternFn, checkerPatternFn } from './patterns'
 import { rectMaskFn } from './masks'
 import type { TextureRenderSpec, Viewport } from '../../Domain'
@@ -30,6 +30,8 @@ export const rectStripeShader = /* wgsl */ `
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 ${stripePatternFn}
 
@@ -87,6 +89,8 @@ ${fullscreenVertex}
 
 ${aaUtils}
 
+${oklabUtils}
+
 ${gridPatternFn}
 
 ${rectMaskFn}
@@ -142,6 +146,8 @@ export const rectPolkaDotShader = /* wgsl */ `
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 ${polkaDotPatternFn}
 
