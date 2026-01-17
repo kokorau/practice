@@ -124,6 +124,12 @@ export interface RenderHeroConfigOptions {
    * For thumbnail preview, use ~0.3 to scale texture parameters
    */
   scale?: number
+
+  /**
+   * Image registry for ImageLayer rendering.
+   * Maps imageId (layerId) to ImageBitmap.
+   */
+  imageRegistry?: Map<string, ImageBitmap>
 }
 
 // ============================================================
@@ -479,5 +485,8 @@ export async function renderHeroConfig(
 ): Promise<void> {
   const scale = options?.scale ?? 1
   const { outputNode } = buildPipeline(config, palette)
-  executePipeline(outputNode, renderer, palette, { scale })
+  executePipeline(outputNode, renderer, palette, {
+    scale,
+    imageRegistry: options?.imageRegistry,
+  })
 }

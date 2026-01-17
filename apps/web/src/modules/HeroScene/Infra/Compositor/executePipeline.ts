@@ -26,6 +26,12 @@ export interface ExecutePipelineOptions {
    * For thumbnail preview, use ~0.3 to scale texture parameters
    */
   scale?: number
+
+  /**
+   * Image registry for ImageLayer rendering.
+   * Maps imageId to ImageBitmap.
+   */
+  imageRegistry?: Map<string, ImageBitmap>
 }
 
 // ============================================================
@@ -67,6 +73,7 @@ export function executePipeline(
     texturePool,
     device,
     format,
+    imageRegistry: options?.imageRegistry,
   }
 
   // Execute the pipeline by calling output on the root node

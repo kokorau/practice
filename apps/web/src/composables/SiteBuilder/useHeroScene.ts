@@ -114,6 +114,7 @@ import {
   type ForegroundState,
   type PresetState,
   type LayerOperations,
+  type ImagesState,
   type InkColorHelpers,
   type CanvasState,
   type SerializationState,
@@ -872,7 +873,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (!previewRenderer) return
     // Use repository directly as single source of truth
     const config = heroViewRepository.get()
-    await renderHeroConfig(previewRenderer, config, primitivePalette.value)
+    await renderHeroConfig(previewRenderer, config, primitivePalette.value, {
+      imageRegistry: heroImages.imageRegistry.value,
+    })
     try {
       canvasImageData.value = await previewRenderer.readPixels()
     } catch {
@@ -1433,6 +1436,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     renderSceneFromConfig,
   }
 
+  const images: ImagesState = {
+    imageRegistry: heroImages.imageRegistry,
+    setLayerImage: heroImages.setLayerImage,
+    clearLayerImage: heroImages.clearLayerImage,
+    loadRandomImage: heroImages.loadRandomImage,
+    getImageUrl: heroImages.getImageUrl,
+    isLayerLoading: heroImages.isLayerLoading,
+  }
+
   // ============================================================
   // Public API
   // ============================================================
@@ -1445,6 +1457,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foreground,
     preset,
     layer,
+    images,
     inkColor,
     canvas,
     serialization,

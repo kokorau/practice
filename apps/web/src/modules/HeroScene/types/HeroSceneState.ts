@@ -514,6 +514,34 @@ export interface LayerOperations {
 }
 
 // ============================================================
+// ImagesState - Image Layer Management
+// ============================================================
+
+/**
+ * Image layer state and actions
+ * For generic ImageLayer image management (layer-agnostic)
+ */
+export interface ImagesState {
+  /** Image registry mapping layerId to ImageBitmap */
+  readonly imageRegistry: Ref<Map<string, ImageBitmap>>
+
+  /** Set image for any image layer */
+  readonly setLayerImage: (layerId: string, file: File) => Promise<void>
+
+  /** Clear image for a layer */
+  readonly clearLayerImage: (layerId: string) => void
+
+  /** Load random image for a layer */
+  readonly loadRandomImage: (layerId: string, query?: string) => Promise<void>
+
+  /** Get image URL for a layer */
+  readonly getImageUrl: (layerId: string) => string | null
+
+  /** Loading state per layer */
+  readonly isLayerLoading: Ref<Map<string, boolean>>
+}
+
+// ============================================================
 // InkColorHelpers - Ink Color Selection
 // ============================================================
 

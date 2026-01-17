@@ -19,6 +19,7 @@ export type {
   ForegroundState,
   PresetState,
   LayerOperations,
+  ImagesState,
   InkColorHelpers,
   CanvasState,
   SerializationState,

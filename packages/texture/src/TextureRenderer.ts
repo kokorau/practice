@@ -375,6 +375,165 @@ export class TextureRenderer {
     return this.imagePipelineCache
   }
 
+  /**
+   * Render an image to a provided texture with cover fit (TextureOwner pattern)
+   * Similar to renderImage but outputs to a caller-provided texture instead of canvas
+   */
+  renderImageToTexture(
+    source: ImageBitmap | HTMLImageElement,
+    outputTexture: GPUTexture
+  ): void {
+    const cache = this.getOrCreateImagePipeline()
+    const viewport = { width: outputTexture.width, height: outputTexture.height }
+
+    // Create texture from image source
+    const sourceTexture = this.device.createTexture({
+      size: [source.width, source.height],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    })
+
+    // Copy image to texture
+    this.device.queue.copyExternalImageToTexture(
+      { source },
+      { texture: sourceTexture },
+      [source.width, source.height]
+    )
+
+    // Write uniform data
+    const uniformData = new Float32Array([
+      viewport.width,
+      viewport.height,
+      source.width,
+      source.height,
+    ])
+    this.device.queue.writeBuffer(cache.uniformBuffer, 0, uniformData)
+
+    // Create bind group for this image
+    const bindGroup = this.device.createBindGroup({
+      layout: cache.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: cache.sampler },
+        { binding: 1, resource: sourceTexture.createView() },
+        { binding: 2, resource: { buffer: cache.uniformBuffer } },
+      ],
+    })
+
+    // Render to provided texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: outputTexture.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cache.pipeline)
+    renderPass.setBindGroup(0, bindGroup)
+    renderPass.draw(6)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+
+    // Clean up source texture
+    sourceTexture.destroy()
+  }
+
+  /**
+   * Render an image at a specific position to a provided texture (TextureOwner pattern)
+   * Similar to renderPositionedImage but outputs to a caller-provided texture
+   */
+  renderPositionedImageToTexture(
+    source: ImageBitmap,
+    params: {
+      x: number
+      y: number
+      width: number
+      height: number
+      rotation?: number
+      opacity?: number
+    },
+    outputTexture: GPUTexture
+  ): void {
+    const cache = this.getOrCreatePositionedImagePipeline()
+    const viewport = { width: outputTexture.width, height: outputTexture.height }
+
+    // Create texture from image source
+    const sourceTexture = this.device.createTexture({
+      size: [source.width, source.height],
+      format: 'rgba8unorm',
+      usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    })
+
+    // Copy image to texture
+    this.device.queue.copyExternalImageToTexture(
+      { source },
+      { texture: sourceTexture },
+      [source.width, source.height]
+    )
+
+    // Write uniform data
+    // Using width/height as anchor since positioned mode centers on the position
+    const uniformData = new Float32Array([
+      viewport.width,
+      viewport.height,
+      source.width,
+      source.height,
+      params.x,
+      params.y,
+      params.width / 2, // anchorX - center of positioned area
+      params.height / 2, // anchorY - center of positioned area
+      params.rotation ?? 0,
+      params.opacity ?? 1,
+      0, // padding
+      0, // padding
+    ])
+    this.device.queue.writeBuffer(cache.uniformBuffer, 0, uniformData)
+
+    // Create bind group for this image
+    const bindGroup = this.device.createBindGroup({
+      layout: cache.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: cache.sampler },
+        { binding: 1, resource: sourceTexture.createView() },
+        { binding: 2, resource: { buffer: cache.uniformBuffer } },
+      ],
+    })
+
+    // Render to provided texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: outputTexture.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cache.pipeline)
+    renderPass.setBindGroup(0, bindGroup)
+    renderPass.draw(6)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+
+    // Clean up source texture
+    sourceTexture.destroy()
+  }
+
   private getOrCreatePipeline(spec: TextureRenderSpec): PipelineCache {
     // Use shader code as cache key
     const existing = this.cache.get(spec.shader)
