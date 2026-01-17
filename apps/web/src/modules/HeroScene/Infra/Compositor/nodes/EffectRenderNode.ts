@@ -73,7 +73,7 @@ export class EffectRenderNode implements RenderNode {
     this.effectParams = config.effectParams
 
     if (!isValidEffectType(config.effectType)) {
-      throw new Error(`Invalid effect type: ${config.effectType}`)
+      throw new Error(`[EffectRenderNode] Invalid effect type "${config.effectType}" (id: ${config.id})`)
     }
   }
 
@@ -91,7 +91,7 @@ export class EffectRenderNode implements RenderNode {
     // Get the effect definition from registry
     const effectDef = EFFECT_REGISTRY[this.effectType]
     if (!effectDef) {
-      throw new Error(`Effect not found in registry: ${this.effectType}`)
+      throw new Error(`[EffectRenderNode] Effect not found in registry "${this.effectType}" (id: ${this.id})`)
     }
 
     // Create the shader spec

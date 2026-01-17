@@ -88,7 +88,7 @@ export class SurfaceRenderNode implements RenderNode {
     )
 
     if (!spec) {
-      throw new Error(`Failed to create surface spec for node: ${this.id}`)
+      throw new Error(`[SurfaceRenderNode] Failed to create surface spec (id: ${this.id})`)
     }
 
     // Acquire a texture from the pool

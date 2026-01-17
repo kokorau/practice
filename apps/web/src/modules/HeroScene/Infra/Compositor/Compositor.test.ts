@@ -458,7 +458,7 @@ describe('EffectChainCompositorNode', () => {
     node.composite(ctx)
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      '[EffectChainCompositorNode] Unknown effect type: invalidEffect'
+      '[EffectChainCompositorNode] Unknown effect type "invalidEffect", skipping (id: effects)'
     )
 
     consoleSpy.mockRestore()

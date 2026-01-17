@@ -13,7 +13,6 @@ import type {
   TextureHandle,
 } from '../../../Domain/Compositor'
 import { getTextureFromNode } from '../../../Domain/Compositor'
-import type { BlendMode } from '../../../Domain/Compositor/CompositorNode'
 
 // ============================================================
 // OverlayCompositorNode Implementation
@@ -28,9 +27,6 @@ export interface OverlayCompositorNodeConfig {
 
   /** Layers to overlay, in order (first = bottom) */
   layers: ReadonlyArray<RenderNode | CompositorNode>
-
-  /** Blend mode for composition (default: 'normal') */
-  blendMode?: BlendMode
 }
 
 /**
@@ -40,8 +36,7 @@ export interface OverlayCompositorNodeConfig {
  * The first layer in the array is the bottom layer, and each
  * subsequent layer is composited on top.
  *
- * Note: Currently only 'normal' blend mode is supported.
- * Other blend modes may be added in the future.
+ * Uses standard Porter-Duff alpha compositing.
  *
  * @example
  * ```typescript
@@ -63,14 +58,10 @@ export class OverlayCompositorNode implements CompositorNode {
   readonly inputs: ReadonlyArray<RenderNode | CompositorNode>
 
   private readonly layers: ReadonlyArray<RenderNode | CompositorNode>
-  // blendMode reserved for future overlay shader implementation
-  // private readonly blendMode: BlendMode
 
   constructor(config: OverlayCompositorNodeConfig) {
     this.id = config.id
     this.layers = config.layers
-    // blendMode will be used when proper overlay blending is implemented
-    // this.blendMode = config.blendMode ?? 'normal'
     this.inputs = config.layers
   }
 
@@ -81,7 +72,7 @@ export class OverlayCompositorNode implements CompositorNode {
     const { renderer, viewport, texturePool } = ctx
 
     if (this.layers.length === 0) {
-      throw new Error(`[OverlayCompositorNode] No layers to composite: ${this.id}`)
+      throw new Error(`[OverlayCompositorNode] No layers to composite (id: ${this.id})`)
     }
 
     // Start with the first layer
@@ -137,8 +128,7 @@ export class OverlayCompositorNode implements CompositorNode {
  */
 export function createOverlayCompositorNode(
   id: string,
-  layers: ReadonlyArray<RenderNode | CompositorNode>,
-  blendMode?: BlendMode
+  layers: ReadonlyArray<RenderNode | CompositorNode>
 ): OverlayCompositorNode {
-  return new OverlayCompositorNode({ id, layers, blendMode })
+  return new OverlayCompositorNode({ id, layers })
 }

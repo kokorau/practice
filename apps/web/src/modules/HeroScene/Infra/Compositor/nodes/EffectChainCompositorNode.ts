@@ -105,9 +105,9 @@ export class EffectChainCompositorNode implements CompositorNode {
 
     // Apply effects in sequence using ping-pong
     for (const effect of this.effects) {
-      // Skip invalid effect types
+      // Skip invalid effect types (recoverable: just skip this effect)
       if (!isValidEffectType(effect.id)) {
-        console.warn(`[EffectChainCompositorNode] Unknown effect type: ${effect.id}`)
+        console.warn(`[EffectChainCompositorNode] Unknown effect type "${effect.id}", skipping (id: ${this.id})`)
         continue
       }
 
@@ -122,7 +122,8 @@ export class EffectChainCompositorNode implements CompositorNode {
       )
 
       if (!spec) {
-        // Effect returned null (possibly disabled or invalid params)
+        // Effect returned null (recoverable: disabled or invalid params, skip)
+        console.warn(`[EffectChainCompositorNode] Effect "${effect.id}" returned null spec, skipping (id: ${this.id})`)
         continue
       }
 
