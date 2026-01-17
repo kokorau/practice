@@ -251,7 +251,6 @@ export {
   colorizeShader,
   createColorizeSpec,
   createMaskColorizeParams,
-  createDualColorParams,
 } from './colorize'
 // Image greymap shader
 export {
