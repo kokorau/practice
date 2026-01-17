@@ -13,7 +13,7 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { HeroPrimitiveKey, ImageLayerNodeConfig } from '../modules/HeroScene'
+import type { ImageLayerNodeConfig } from '../modules/HeroScene'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,

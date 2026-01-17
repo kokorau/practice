@@ -485,16 +485,19 @@ export class TextureRenderer {
     )
 
     // Write uniform data
-    // Using width/height as anchor since positioned mode centers on the position
+    // The shader expects:
+    // - imageWidth/Height: displayed size in pixels
+    // - posX/posY: position in normalized 0-1 coordinates
+    // - anchorX/anchorY: anchor point as 0-1 (0.5 = center)
     const uniformData = new Float32Array([
       viewport.width,
       viewport.height,
-      source.width,
-      source.height,
-      params.x,
-      params.y,
-      params.width / 2, // anchorX - center of positioned area
-      params.height / 2, // anchorY - center of positioned area
+      params.width,                    // imageWidth - displayed size in pixels
+      params.height,                   // imageHeight - displayed size in pixels
+      params.x / viewport.width,       // posX - convert to normalized
+      params.y / viewport.height,      // posY - convert to normalized
+      0.5,                             // anchorX - center (0-1)
+      0.5,                             // anchorY - center (0-1)
       params.rotation ?? 0,
       params.opacity ?? 1,
       0, // padding
