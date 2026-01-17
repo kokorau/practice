@@ -33,7 +33,7 @@ import {
   createSurfacePatterns,
 } from '../composables/SiteBuilder'
 import { useContrastChecker } from '../composables/useContrastChecker'
-import { useLayerSelection } from '../composables/useLayerSelection'
+import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useTextLayerEditor } from '../composables/useTextLayerEditor'
 import { useFilterEditor } from '../composables/useFilterEditor'
@@ -49,6 +49,18 @@ import DebugPanel from '../components/HeroGenerator/DebugPanel.vue'
 // UI Dark Mode (independent from palette)
 // ============================================================
 const uiDarkMode = ref(false)
+
+// ============================================================
+// Layer Selection (provide for child components)
+// Must be called before useHeroScene which depends on it
+// ============================================================
+const {
+  layerId: selectedLayerId,
+  processorType: selectedProcessorType,
+  selectCanvasLayer,
+  selectProcessor,
+  clearSelection,
+} = provideLayerSelection()
 
 // ============================================================
 // Brand, Accent & Foundation Color State
@@ -255,17 +267,6 @@ const debugSections = computed(() => [
     data: heroScene.editor.heroViewConfig.value,
   },
 ])
-
-// ============================================================
-// Layer Selection (from Store)
-// ============================================================
-const {
-  layerId: selectedLayerId,
-  processorType: selectedProcessorType,
-  selectCanvasLayer,
-  selectProcessor,
-  clearSelection,
-} = useLayerSelection()
 
 // ============================================================
 // Foreground Element (Composable)
