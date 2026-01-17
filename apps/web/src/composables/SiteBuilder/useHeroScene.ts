@@ -696,10 +696,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Layer Management
   // ============================================================
 
-  const syncLayerConfigs = () => {
-    // No-op: canvasLayers has been removed
-  }
-
   const addMaskLayer = (): string | null => {
     console.warn('addMaskLayer: Multiple clip groups are not yet supported')
     return null
@@ -891,7 +887,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     repoConfig,
     heroViewRepository,
     render,
-    syncLayerConfigs,
   })
 
   // ============================================================
@@ -915,7 +910,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   watch(
     [selectedBackgroundIndex, selectedMaskIndex, selectedMidgroundTextureIndex],
     () => {
-      syncLayerConfigs()
       render()
     }
   )
@@ -1202,7 +1196,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     foregroundConfig.value = migratedConfig.foreground
 
-    syncLayerConfigs()
     await render()
 
     isLoadingFromConfig = false
