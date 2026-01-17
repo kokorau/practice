@@ -19,6 +19,7 @@ import {
   findLayerInTree,
   updateLayerInTree,
   removeLayerFromTree,
+  wrapLayerInGroupInTree,
 } from '../Domain/LayerTreeOps'
 
 // Re-export LayerUpdate type for backward compatibility
@@ -160,6 +161,19 @@ export const createHeroViewInMemoryRepository = (
         layers: reorderedLayers,
       }
       notifySubscribers()
+    },
+
+    wrapLayerInGroup: (layerId: string, groupId?: string): string | null => {
+      const layer = findLayerInTree(config.layers, layerId)
+      if (!layer) return null
+
+      const newGroupId = groupId ?? `group-${Date.now()}`
+      config = {
+        ...config,
+        layers: wrapLayerInGroupInTree(config.layers, layerId, newGroupId),
+      }
+      notifySubscribers()
+      return newGroupId
     },
   }
 }

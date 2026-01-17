@@ -54,6 +54,8 @@ export interface SceneOperationCallbacks {
   removeLayer: (layerId: string) => boolean
   /** Toggle layer visibility in scene */
   toggleLayerVisibility: (layerId: string) => void
+  /** Wrap layer in a new group. Returns group ID or null if failed */
+  groupLayer: (layerId: string) => string | null
 }
 
 /**
@@ -364,33 +366,11 @@ export function useLayerOperations(
   // Handlers - Grouping
   // ============================================================
   const handleGroupSelection = (layerId: string) => {
-    const config = repository.get()
-    if (!config) return
+    // Delegate to sceneCallbacks - usecase handles repository update
+    const groupId = sceneCallbacks.groupLayer(layerId)
+    if (!groupId) return
 
-    const layer = findLayerInTree(config.layers, layerId)
-    if (!layer) return
-
-    // Create a new group containing the selected layer
-    const groupId = `group-${Date.now()}`
-    const newGroup: GroupLayerNodeConfig = {
-      type: 'group',
-      id: groupId,
-      name: 'Group',
-      visible: true,
-      children: [layer],
-    }
-
-    // Replace the layer with the group
-    const newLayers = config.layers.map((l) => {
-      if (l.id === layerId) {
-        return newGroup
-      }
-      return l
-    })
-
-    repository.set({ ...config, layers: newLayers })
-
-    // Expand the new group
+    // Expand the new group (UI state only)
     expandedLayerIds.value = new Set([...expandedLayerIds.value, groupId])
   }
 

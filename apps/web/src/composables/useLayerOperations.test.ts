@@ -24,6 +24,7 @@ const createMockSceneCallbacks = (): SceneOperationCallbacks => ({
   addObjectLayer: vi.fn(() => `object-${Date.now()}`),
   removeLayer: vi.fn(() => true),
   toggleLayerVisibility: vi.fn(),
+  groupLayer: vi.fn(() => `group-${Date.now()}`),
 })
 
 const BASE_LAYER_ID = 'base-layer'
@@ -357,6 +358,50 @@ describe('useLayerOperations', () => {
       handleRemoveLayer('some-other-layer')
 
       expect(onClearSelection).not.toHaveBeenCalled()
+    })
+  })
+
+  // ============================================================
+  // handleGroupSelection
+  // ============================================================
+  describe('handleGroupSelection', () => {
+    it('should call groupLayer callback', () => {
+      const callbacks = createMockSceneCallbacks()
+      const { handleGroupSelection } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks }),
+      )
+
+      handleGroupSelection(MASK_LAYER_ID)
+
+      expect(callbacks.groupLayer).toHaveBeenCalledWith(MASK_LAYER_ID)
+    })
+
+    it('should expand group after grouping', () => {
+      const callbacks = createMockSceneCallbacks()
+      const expandedLayerIds = ref(new Set<string>())
+      vi.mocked(callbacks.groupLayer).mockReturnValue('new-group-123')
+      const { handleGroupSelection } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, expandedLayerIds }),
+      )
+
+      handleGroupSelection(MASK_LAYER_ID)
+
+      expect(expandedLayerIds.value.has('new-group-123')).toBe(true)
+    })
+
+    it('should only call sceneCallbacks.groupLayer (no direct repository.set)', () => {
+      const callbacks = createMockSceneCallbacks()
+      const repository = createMockRepository()
+      const repositorySpy = vi.spyOn(repository, 'set')
+      const { handleGroupSelection } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, repository }),
+      )
+
+      handleGroupSelection(MASK_LAYER_ID)
+
+      // handleGroupSelection should delegate to sceneCallbacks, not call repository.set directly
+      expect(callbacks.groupLayer).toHaveBeenCalled()
+      expect(repositorySpy).not.toHaveBeenCalled()
     })
   })
 

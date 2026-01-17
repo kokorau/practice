@@ -344,6 +344,7 @@ const {
     addObjectLayer: heroScene.layer.addObjectLayer,
     removeLayer: heroScene.layer.removeLayer,
     toggleLayerVisibility: heroScene.layer.toggleLayerVisibility,
+    groupLayer: heroScene.layer.groupLayer,
   },
   selectedLayerId,
   onSelectLayer: (id) => {

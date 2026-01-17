@@ -386,6 +386,7 @@ export {
   addLayer,
   removeLayer,
   updateLayer,
+  wrapLayerInGroup,
   // Preset UseCases
   applyPreset,
   applyPreset as applyPresetUsecase,
