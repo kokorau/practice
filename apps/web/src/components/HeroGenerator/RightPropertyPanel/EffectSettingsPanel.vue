@@ -10,6 +10,7 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  PixelationEffectSchema,
   type FilterType,
 } from '../../../modules/HeroScene'
 import type {
@@ -18,6 +19,7 @@ import type {
   DotHalftoneConfigParams,
   LineHalftoneConfigParams,
   BlurConfigParams,
+  PixelationConfigParams,
 } from '../../../composables/useFilterEditor'
 import { useVignetteEditor } from '../../../composables/useVignetteEditor'
 import SchemaFields from '../../SchemaFields.vue'
@@ -29,6 +31,7 @@ const props = defineProps<{
   dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
   lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
   blurConfig: WritableComputedRef<BlurConfigParams>
+  pixelationConfig: WritableComputedRef<PixelationConfigParams>
 }>()
 
 // Use vignette editor composable for common vignette logic
@@ -106,6 +109,14 @@ const handleFilterTypeChange = (type: FilterType) => {
         @update:model-value="(v) => blurConfig.value = v as BlurConfigParams"
       />
     </div>
+    <div v-else-if="selectedFilterType.value === 'pixelation'" class="filter-params">
+      <SchemaFields
+        :schema="PixelationEffectSchema"
+        :model-value="pixelationConfig.value as Record<string, unknown>"
+        :exclude="['enabled']"
+        @update:model-value="(v) => pixelationConfig.value = v as PixelationConfigParams"
+      />
+    </div>
 
     <!-- Filter type selection -->
     <div class="filter-options">
@@ -162,6 +173,15 @@ const handleFilterTypeChange = (type: FilterType) => {
           @change="handleFilterTypeChange('blur')"
         />
         <span class="filter-name">Blur</span>
+      </label>
+      <label class="filter-option" :class="{ active: selectedFilterType.value === 'pixelation' }">
+        <input
+          type="radio"
+          name="filter-type"
+          :checked="selectedFilterType.value === 'pixelation'"
+          @change="handleFilterTypeChange('pixelation')"
+        />
+        <span class="filter-name">Pixelation</span>
       </label>
     </div>
   </div>

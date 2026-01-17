@@ -250,6 +250,7 @@ export function getEffectorDisplayName(type: EffectorType): string {
     dotHalftone: 'Dot Halftone',
     lineHalftone: 'Line Halftone',
     blur: 'Blur',
+    pixelation: 'Pixelation',
     mask: 'Mask',
   }
   return displayNames[type]

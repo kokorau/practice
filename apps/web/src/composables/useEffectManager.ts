@@ -128,6 +128,7 @@ export function useEffectManager(): UseEffectManagerReturn {
       dotHalftone: { ...current.dotHalftone, enabled: type === 'dotHalftone' },
       lineHalftone: { ...current.lineHalftone, enabled: type === 'lineHalftone' },
       blur: { ...current.blur, enabled: type === 'blur' },
+      pixelation: { ...current.pixelation, enabled: type === 'pixelation' },
     }
 
     // Update map (trigger reactivity)

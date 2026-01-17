@@ -69,3 +69,10 @@ export {
   BLUR_BUFFER_SIZE,
   type BlurParams,
 } from '../shaders/blur'
+
+export {
+  pixelationShader,
+  createPixelationUniforms,
+  PIXELATION_BUFFER_SIZE,
+  type PixelationParams,
+} from '../shaders/pixelation'

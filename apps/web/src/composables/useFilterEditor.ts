@@ -8,6 +8,7 @@ import type {
   DotHalftoneEffectConfig,
   LineHalftoneEffectConfig,
   BlurEffectConfig,
+  PixelationEffectConfig,
 } from '../modules/HeroScene'
 import type { UseEffectManagerReturn } from './useEffectManager'
 
@@ -32,6 +33,7 @@ export type ChromaticConfigParams = Partial<Omit<ChromaticAberrationEffectConfig
 export type DotHalftoneConfigParams = Partial<Omit<DotHalftoneEffectConfig, 'enabled'>>
 export type LineHalftoneConfigParams = Partial<Omit<LineHalftoneEffectConfig, 'enabled'>>
 export type BlurConfigParams = Partial<Omit<BlurEffectConfig, 'enabled'>>
+export type PixelationConfigParams = Partial<Omit<PixelationEffectConfig, 'enabled'>>
 
 /**
  * Dynamic effect configs map type
@@ -65,6 +67,7 @@ function getFilterTypeFromConfig(config: LayerEffectConfig | null): FilterType {
   if (config.dotHalftone?.enabled) return 'dotHalftone'
   if (config.lineHalftone?.enabled) return 'lineHalftone'
   if (config.blur?.enabled) return 'blur'
+  if (config.pixelation?.enabled) return 'pixelation'
   return 'void'
 }
 
@@ -143,6 +146,7 @@ export function useFilterEditor(
   const dotHalftoneConfig = createEffectConfig('dotHalftone')
   const lineHalftoneConfig = createEffectConfig('lineHalftone')
   const blurConfig = createEffectConfig('blur')
+  const pixelationConfig = createEffectConfig('pixelation')
 
   const effectConfigs: EffectConfigsMap = {
     vignette: vignetteConfig,
@@ -150,6 +154,7 @@ export function useFilterEditor(
     dotHalftone: dotHalftoneConfig,
     lineHalftone: lineHalftoneConfig,
     blur: blurConfig,
+    pixelation: pixelationConfig,
   }
 
   // ============================================================

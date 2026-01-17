@@ -16,6 +16,7 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  PixelationEffectSchema,
   createDefaultEffectConfig,
   getLayerFilters,
   type FilterType,
@@ -28,6 +29,7 @@ import type {
   DotHalftoneConfigParams,
   LineHalftoneConfigParams,
   BlurConfigParams,
+  PixelationConfigParams,
 } from '../../../composables/useFilterEditor'
 import { useVignetteEditor } from '../../../composables/useVignetteEditor'
 
@@ -39,6 +41,7 @@ interface FilterProps {
   dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
   lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
   blurConfig: WritableComputedRef<BlurConfigParams>
+  pixelationConfig: WritableComputedRef<PixelationConfigParams>
 }
 
 const props = defineProps<{
@@ -77,6 +80,7 @@ const createEffectPreviewConfig = (
     dotHalftone: { ...defaultEffects.dotHalftone, enabled: effectType === 'dotHalftone' },
     lineHalftone: { ...defaultEffects.lineHalftone, enabled: effectType === 'lineHalftone' },
     blur: { ...defaultEffects.blur, enabled: effectType === 'blur' },
+    pixelation: { ...defaultEffects.pixelation, enabled: effectType === 'pixelation' },
   }
 
   // Apply current config values if provided
@@ -91,6 +95,8 @@ const createEffectPreviewConfig = (
       effects.lineHalftone = { ...effectConfig.lineHalftone, enabled: true }
     } else if (effectType === 'blur') {
       effects.blur = { ...effectConfig.blur, enabled: true }
+    } else if (effectType === 'pixelation') {
+      effects.pixelation = { ...effectConfig.pixelation, enabled: true }
     }
   }
 
@@ -120,6 +126,7 @@ const currentEffectConfig = computed((): LayerEffectConfig => ({
   dotHalftone: props.filter.dotHalftoneConfig.value as LayerEffectConfig['dotHalftone'],
   lineHalftone: props.filter.lineHalftoneConfig.value as LayerEffectConfig['lineHalftone'],
   blur: props.filter.blurConfig.value as LayerEffectConfig['blur'],
+  pixelation: props.filter.pixelationConfig.value as LayerEffectConfig['pixelation'],
 }))
 
 // Preview configs for each effect type
@@ -133,6 +140,7 @@ const previewConfigs = computed(() => {
     dotHalftone: createEffectPreviewConfig(props.baseConfig, 'dotHalftone', currentEffectConfig.value),
     lineHalftone: createEffectPreviewConfig(props.baseConfig, 'lineHalftone', currentEffectConfig.value),
     blur: createEffectPreviewConfig(props.baseConfig, 'blur', currentEffectConfig.value),
+    pixelation: createEffectPreviewConfig(props.baseConfig, 'pixelation', currentEffectConfig.value),
   }
 })
 </script>
@@ -195,6 +203,14 @@ const previewConfigs = computed(() => {
         :model-value="filter.blurConfig.value as Record<string, unknown>"
         :exclude="['enabled']"
         @update:model-value="(v) => filter.blurConfig.value = v as BlurConfigParams"
+      />
+    </div>
+    <div v-else-if="filter.selectedType.value === 'pixelation'" class="filter-params">
+      <SchemaFields
+        :schema="PixelationEffectSchema"
+        :model-value="filter.pixelationConfig.value as Record<string, unknown>"
+        :exclude="['enabled']"
+        @update:model-value="(v) => filter.pixelationConfig.value = v as PixelationConfigParams"
       />
     </div>
 
@@ -271,6 +287,18 @@ const previewConfigs = computed(() => {
           :palette="palette"
         />
         <span class="filter-name">Blur</span>
+      </button>
+      <button
+        class="filter-option"
+        :class="{ active: filter.selectedType.value === 'pixelation' }"
+        @click="filter.selectedType.value = 'pixelation'"
+      >
+        <HeroPreviewThumbnail
+          v-if="showPreview && previewConfigs && palette"
+          :config="previewConfigs.pixelation"
+          :palette="palette"
+        />
+        <span class="filter-name">Pixelation</span>
       </button>
     </div>
   </div>

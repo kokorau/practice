@@ -94,6 +94,17 @@ export const BlurEffectSchema = defineSchema({
 export type BlurEffectConfig = Infer<typeof BlurEffectSchema>
 
 // ============================================================
+// Pixelation Effect Schema
+// ============================================================
+
+export const PixelationEffectSchema = defineSchema({
+  enabled: boolean({ label: 'Enabled', default: false }),
+  blockSize: number({ label: 'Block Size', min: 2, max: 64, default: 8 }),
+})
+
+export type PixelationEffectConfig = Infer<typeof PixelationEffectSchema>
+
+// ============================================================
 // Layer Effect Schema (composite)
 // ============================================================
 
@@ -107,6 +118,7 @@ export const LayerEffectSchemas = {
   dotHalftone: DotHalftoneEffectSchema,
   lineHalftone: LineHalftoneEffectSchema,
   blur: BlurEffectSchema,
+  pixelation: PixelationEffectSchema,
 } as const
 
 export type LayerEffectSchemaMap = typeof LayerEffectSchemas
@@ -118,6 +130,7 @@ export interface LayerEffectConfig {
   dotHalftone: DotHalftoneEffectConfig
   lineHalftone: LineHalftoneEffectConfig
   blur: BlurEffectConfig
+  pixelation: PixelationEffectConfig
 }
 
 // ============================================================
@@ -144,6 +157,10 @@ export const createDefaultLineHalftoneConfig = (): LineHalftoneEffectConfig =>
 export const createDefaultBlurConfig = (): BlurEffectConfig =>
   getDefaults(BlurEffectSchema)
 
+/** Create default pixelation effect config */
+export const createDefaultPixelationConfig = (): PixelationEffectConfig =>
+  getDefaults(PixelationEffectSchema)
+
 /** Create default layer effect config */
 export const createDefaultEffectConfig = (): LayerEffectConfig => ({
   vignette: createDefaultVignetteShapeConfigInternal(),
@@ -151,5 +168,6 @@ export const createDefaultEffectConfig = (): LayerEffectConfig => ({
   dotHalftone: createDefaultDotHalftoneConfig(),
   lineHalftone: createDefaultLineHalftoneConfig(),
   blur: createDefaultBlurConfig(),
+  pixelation: createDefaultPixelationConfig(),
 })
 

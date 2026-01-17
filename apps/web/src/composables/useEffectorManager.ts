@@ -8,6 +8,7 @@ import type {
   DotHalftoneConfigParams,
   LineHalftoneConfigParams,
   BlurConfigParams,
+  PixelationConfigParams,
 } from './useFilterEditor'
 import type { MaskPatternItem } from '../components/HeroGenerator/RightPropertyPanel/MaskSettingsPanel.vue'
 import type { BackgroundSpecCreator } from '../components/HeroGenerator/MaskPatternThumbnail.vue'
@@ -31,6 +32,7 @@ export interface FilterProps {
   dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
   lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
   blurConfig: WritableComputedRef<BlurConfigParams>
+  pixelationConfig: WritableComputedRef<PixelationConfigParams>
 }
 
 /**

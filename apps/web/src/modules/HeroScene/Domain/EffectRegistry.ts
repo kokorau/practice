@@ -36,6 +36,9 @@ import {
   blurShader,
   createBlurUniforms,
   BLUR_BUFFER_SIZE,
+  pixelationShader,
+  createPixelationUniforms,
+  PIXELATION_BUFFER_SIZE,
 } from '@practice/texture/filters'
 
 import {
@@ -43,14 +46,17 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  PixelationEffectSchema,
   createDefaultChromaticAberrationConfig,
   createDefaultDotHalftoneConfig,
   createDefaultLineHalftoneConfig,
   createDefaultBlurConfig,
+  createDefaultPixelationConfig,
   type ChromaticAberrationEffectConfig,
   type DotHalftoneEffectConfig,
   type LineHalftoneEffectConfig,
   type BlurEffectConfig,
+  type PixelationEffectConfig,
 } from './EffectSchema'
 
 import {
@@ -260,6 +266,21 @@ function createBlurShaderSpec(
   }
 }
 
+function createPixelationShaderSpec(
+  config: PixelationEffectConfig,
+  viewport: Viewport,
+  scale: number
+): EffectShaderSpec {
+  return {
+    shader: pixelationShader,
+    uniforms: createPixelationUniforms(
+      { blockSize: scaleValue(config.blockSize, scale) },
+      viewport
+    ),
+    bufferSize: PIXELATION_BUFFER_SIZE,
+  }
+}
+
 // ============================================================
 // Effect Registry
 // ============================================================
@@ -318,6 +339,14 @@ export const EFFECT_REGISTRY = {
     createDefaultConfig: createDefaultBlurConfig,
     createShaderSpec: createBlurShaderSpec,
   } satisfies EffectDefinition<BlurEffectConfig>,
+
+  pixelation: {
+    id: 'pixelation',
+    displayName: 'Pixelation',
+    schema: PixelationEffectSchema,
+    createDefaultConfig: createDefaultPixelationConfig,
+    createShaderSpec: createPixelationShaderSpec,
+  } satisfies EffectDefinition<PixelationEffectConfig>,
 } as const
 
 // ============================================================

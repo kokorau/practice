@@ -63,6 +63,7 @@ export type {
   DotHalftoneEffectConfig,
   LineHalftoneEffectConfig,
   BlurEffectConfig,
+  PixelationEffectConfig,
   LayerEffectConfig,
   LayerEffectSchemaMap,
   // Vignette shape types (new)
@@ -181,9 +182,11 @@ export {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  PixelationEffectSchema,
   LayerEffectSchemas,
   createDefaultEffectConfig,
   createDefaultBlurConfig,
+  createDefaultPixelationConfig,
   // Vignette shape schemas and types
   VignetteBaseSchema,
   VignetteShapeSchemas,

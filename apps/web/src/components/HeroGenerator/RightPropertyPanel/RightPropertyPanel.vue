@@ -14,6 +14,7 @@ import type {
   DotHalftoneConfigParams,
   LineHalftoneConfigParams,
   BlurConfigParams,
+  PixelationConfigParams,
 } from '../../../composables/useFilterEditor'
 import PanelHeader from './PanelHeader.vue'
 import TextElementPanel from './TextElementPanel.vue'
@@ -118,6 +119,7 @@ interface FilterProps {
   dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
   lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
   blurConfig: WritableComputedRef<BlurConfigParams>
+  pixelationConfig: WritableComputedRef<PixelationConfigParams>
 }
 
 // ============================================================

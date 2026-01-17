@@ -86,6 +86,11 @@ export interface BlurEffect {
   radius: number
 }
 
+export interface PixelationEffect {
+  type: 'pixelation'
+  blockSize: number
+}
+
 // ============================================================
 // Discriminated Union
 // ============================================================
@@ -100,6 +105,7 @@ export type Effect =
   | DotHalftoneEffect
   | LineHalftoneEffect
   | BlurEffect
+  | PixelationEffect
 
 /**
  * Effect type identifier
@@ -264,6 +270,7 @@ export function effectsToLegacy(pipeline: EffectPipeline): LayerEffectConfig {
     dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
     lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
     blur: { enabled: false, radius: 8 },
+    pixelation: { enabled: false, blockSize: 8 },
   }
 
   // Enable and update params for effects in pipeline
@@ -295,6 +302,9 @@ export function effectsToLegacy(pipeline: EffectPipeline): LayerEffectConfig {
         break
       case 'blur':
         config.blur = { enabled: true, radius: effect.radius }
+        break
+      case 'pixelation':
+        config.pixelation = { enabled: true, blockSize: effect.blockSize }
         break
     }
   }

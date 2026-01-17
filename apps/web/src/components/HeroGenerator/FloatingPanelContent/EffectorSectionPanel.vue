@@ -93,6 +93,7 @@ const createEffectPreviewConfig = (
     dotHalftone: { ...defaultEffects.dotHalftone, enabled: effectType === 'dotHalftone' },
     lineHalftone: { ...defaultEffects.lineHalftone, enabled: effectType === 'lineHalftone' },
     blur: { ...defaultEffects.blur, enabled: effectType === 'blur' },
+    pixelation: { ...defaultEffects.pixelation, enabled: effectType === 'pixelation' },
   }
 
   if (effectConfig) {
@@ -106,6 +107,8 @@ const createEffectPreviewConfig = (
       effects.lineHalftone = { ...effectConfig.lineHalftone, enabled: true }
     } else if (effectType === 'blur') {
       effects.blur = { ...effectConfig.blur, enabled: true }
+    } else if (effectType === 'pixelation') {
+      effects.pixelation = { ...effectConfig.pixelation, enabled: true }
     }
   }
 
@@ -134,6 +137,7 @@ const currentEffectConfig = computed((): LayerEffectConfig => ({
   dotHalftone: props.filterProps.dotHalftoneConfig.value as LayerEffectConfig['dotHalftone'],
   lineHalftone: props.filterProps.lineHalftoneConfig.value as LayerEffectConfig['lineHalftone'],
   blur: props.filterProps.blurConfig.value as LayerEffectConfig['blur'],
+  pixelation: props.filterProps.pixelationConfig.value as LayerEffectConfig['pixelation'],
 }))
 
 const effectPreviewConfigs = computed(() => {

@@ -165,6 +165,7 @@ export const useHeroConfigLoader = (
             dotHalftone: { ...defaults.dotHalftone, ...effectFilter.config.dotHalftone },
             lineHalftone: { ...defaults.lineHalftone, ...effectFilter.config.lineHalftone },
             blur: { ...defaults.blur, ...(effectFilter.config.blur ?? {}) },
+            pixelation: { ...defaults.pixelation, ...(effectFilter.config.pixelation ?? {}) },
           }
           heroFilters.effectManager.setEffectConfig(LAYER_IDS.BASE, merged)
         }
@@ -219,6 +220,7 @@ export const useHeroConfigLoader = (
             dotHalftone: { ...defaults.dotHalftone, ...maskEffectFilter.config.dotHalftone },
             lineHalftone: { ...defaults.lineHalftone, ...maskEffectFilter.config.lineHalftone },
             blur: { ...defaults.blur, ...(maskEffectFilter.config.blur ?? {}) },
+            pixelation: { ...defaults.pixelation, ...(maskEffectFilter.config.pixelation ?? {}) },
           }
           heroFilters.effectManager.setEffectConfig(LAYER_IDS.MASK, merged)
         }

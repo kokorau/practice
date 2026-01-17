@@ -150,6 +150,7 @@ const filterProps = {
   dotHalftoneConfig: effectConfigs.dotHalftone,
   lineHalftoneConfig: effectConfigs.lineHalftone,
   blurConfig: effectConfigs.blur,
+  pixelationConfig: effectConfigs.pixelation,
 }
 
 // ============================================================
