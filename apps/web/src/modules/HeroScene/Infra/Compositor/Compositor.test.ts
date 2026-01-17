@@ -40,12 +40,27 @@ import type { NodeContext, TextureHandle, RenderNode, CompositorNode } from '../
 // Mock Helpers
 // ============================================================
 
-const mockGpuTexture = {} as GPUTexture
+const mockGpuTexture = {
+  destroy: vi.fn(),
+  width: 1280,
+  height: 720,
+} as unknown as GPUTexture
+
+function createMockGpuTexture(width = 1280, height = 720): GPUTexture {
+  return {
+    destroy: vi.fn(),
+    width,
+    height,
+  } as unknown as GPUTexture
+}
 
 function createMockContext(): NodeContext {
   const texturePool = new MultiBufferTexturePool(1280, 720)
   const mockDevice = {
-    createTexture: vi.fn(() => mockGpuTexture),
+    createTexture: vi.fn((descriptor: GPUTextureDescriptor) => {
+      const [w, h] = descriptor.size as [number, number]
+      return createMockGpuTexture(w, h)
+    }),
   } as unknown as GPUDevice
 
   return {
@@ -564,6 +579,252 @@ describe('OverlayCompositorNode', () => {
 
     // Should call applyDualTextureEffectToOffscreen twice (for layer2 and layer3)
     expect(ctx.renderer.applyDualTextureEffectToOffscreen).toHaveBeenCalledTimes(2)
+  })
+})
+
+// ============================================================
+// Texture Caching Tests (#466)
+// ============================================================
+
+describe('Texture Caching', () => {
+  describe('RenderNode caching', () => {
+    it('skips render when not dirty', () => {
+      const ctx = createMockContext()
+      const node = createSurfaceRenderNode(
+        'cached-surface',
+        { type: 'solid' },
+        { primary: 'F1', secondary: 'F3' }
+      )
+
+      // First render - should render
+      node.render(ctx)
+      expect(ctx.renderer.renderToTexture).toHaveBeenCalledTimes(1)
+
+      // Second render - should skip (not dirty)
+      node.render(ctx)
+      expect(ctx.renderer.renderToTexture).toHaveBeenCalledTimes(1)
+    })
+
+    it('re-renders after invalidation', () => {
+      const ctx = createMockContext()
+      const node = createSurfaceRenderNode(
+        'invalidated-surface',
+        { type: 'solid' },
+        { primary: 'F1', secondary: 'F3' }
+      )
+
+      // First render
+      node.render(ctx)
+      expect(ctx.renderer.renderToTexture).toHaveBeenCalledTimes(1)
+
+      // Invalidate
+      node.invalidate()
+
+      // Should re-render
+      node.render(ctx)
+      expect(ctx.renderer.renderToTexture).toHaveBeenCalledTimes(2)
+    })
+
+    it('re-renders after viewport resize', () => {
+      const ctx1 = createMockContext()
+      const node = createSurfaceRenderNode(
+        'resized-surface',
+        { type: 'solid' },
+        { primary: 'F1', secondary: 'F3' }
+      )
+
+      // First render
+      node.render(ctx1)
+      expect(ctx1.renderer.renderToTexture).toHaveBeenCalledTimes(1)
+
+      // Create context with different viewport
+      const ctx2 = createMockContext()
+      ctx2.viewport = { width: 1920, height: 1080 }
+
+      // Should re-render due to viewport change
+      node.render(ctx2)
+      expect(ctx2.renderer.renderToTexture).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('CompositorNode dirty propagation', () => {
+    it('propagates dirty from surface node in MaskCompositorNode', () => {
+      const ctx = createMockContext()
+      const surfaceNode = createSurfaceRenderNode(
+        'surface',
+        { type: 'solid' },
+        { primary: 'F1', secondary: 'F3' }
+      )
+      const maskNode = createMaskRenderNode(
+        'mask',
+        { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3 }
+      )
+
+      const node = createMaskCompositorNode('masked', surfaceNode, maskNode)
+
+      // First composite - all nodes render
+      node.composite(ctx)
+      expect(ctx.renderer.applyDualTextureEffectToTexture).toHaveBeenCalledTimes(1)
+
+      // Clear mocks for tracking
+      vi.clearAllMocks()
+
+      // Second composite - should skip (all clean)
+      node.composite(ctx)
+      expect(ctx.renderer.applyDualTextureEffectToTexture).not.toHaveBeenCalled()
+
+      // Invalidate surface node
+      surfaceNode.invalidate()
+
+      // Should re-composite because input is dirty
+      node.composite(ctx)
+      expect(ctx.renderer.applyDualTextureEffectToTexture).toHaveBeenCalledTimes(1)
+    })
+
+    it('propagates dirty from input node in EffectChainCompositorNode', () => {
+      const ctx = createMockContext()
+      const inputNode = createSurfaceRenderNode(
+        'input',
+        { type: 'solid' },
+        { primary: 'F1', secondary: 'F3' }
+      )
+
+      const node = createEffectChainCompositorNode('effects', inputNode, [
+        { id: 'blur', params: { strength: 5 } },
+      ])
+
+      // First composite
+      node.composite(ctx)
+
+      // Clear mocks
+      vi.clearAllMocks()
+
+      // Second composite - should skip
+      node.composite(ctx)
+      expect(ctx.renderer.applyPostEffectToTexture).not.toHaveBeenCalled()
+
+      // Invalidate input
+      inputNode.invalidate()
+
+      // Should re-composite
+      node.composite(ctx)
+      expect(ctx.renderer.applyPostEffectToTexture).toHaveBeenCalledTimes(1)
+    })
+
+    it('propagates dirty through multiple levels', () => {
+      const ctx = createMockContext()
+
+      // Create a chain: surface -> effectChain -> overlay
+      const surfaceNode = createSurfaceRenderNode(
+        'surface',
+        { type: 'solid' },
+        { primary: 'F1', secondary: 'F3' }
+      )
+      const bgNode = createSurfaceRenderNode(
+        'bg',
+        { type: 'solid' },
+        { primary: 'BN0', secondary: 'BN1' }
+      )
+
+      const effectNode = createEffectChainCompositorNode('effect', surfaceNode, [
+        { id: 'blur', params: { strength: 3 } },
+      ])
+
+      const overlayNode = createOverlayCompositorNode('overlay', [bgNode, effectNode])
+
+      // First render all
+      overlayNode.composite(ctx)
+
+      // Clear mocks
+      vi.clearAllMocks()
+
+      // Second composite - should skip
+      overlayNode.composite(ctx)
+      expect(ctx.renderer.renderToTexture).not.toHaveBeenCalled()
+
+      // Invalidate the deepest node (surfaceNode)
+      surfaceNode.invalidate()
+
+      // Should propagate through the chain
+      overlayNode.composite(ctx)
+      // Surface should re-render
+      expect(ctx.renderer.renderToTexture).toHaveBeenCalled()
+    })
+  })
+
+  describe('MaskRenderNode caching', () => {
+    it('skips render when not dirty', () => {
+      const ctx = createMockContext()
+      const node = createMaskRenderNode(
+        'cached-mask',
+        { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3 }
+      )
+
+      node.render(ctx)
+      expect(ctx.renderer.renderToTexture).toHaveBeenCalledTimes(1)
+
+      node.render(ctx)
+      expect(ctx.renderer.renderToTexture).toHaveBeenCalledTimes(1)
+    })
+
+    it('re-renders after invalidation', () => {
+      const ctx = createMockContext()
+      const node = createMaskRenderNode(
+        'invalidated-mask',
+        { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3 }
+      )
+
+      node.render(ctx)
+      node.invalidate()
+      node.render(ctx)
+
+      expect(ctx.renderer.renderToTexture).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('EffectRenderNode caching', () => {
+    it('skips render when not dirty and input is clean', () => {
+      const ctx = createMockContext()
+      const inputNode = createSurfaceRenderNode(
+        'input',
+        { type: 'solid' },
+        { primary: 'F1', secondary: 'F3' }
+      )
+      const effectNode = createEffectRenderNode(
+        'effect',
+        inputNode,
+        'blur',
+        { strength: 5 }
+      )
+
+      effectNode.render(ctx)
+      vi.clearAllMocks()
+
+      effectNode.render(ctx)
+      expect(ctx.renderer.applyPostEffectToTexture).not.toHaveBeenCalled()
+    })
+
+    it('re-renders when input is invalidated', () => {
+      const ctx = createMockContext()
+      const inputNode = createSurfaceRenderNode(
+        'input',
+        { type: 'solid' },
+        { primary: 'F1', secondary: 'F3' }
+      )
+      const effectNode = createEffectRenderNode(
+        'effect',
+        inputNode,
+        'blur',
+        { strength: 5 }
+      )
+
+      effectNode.render(ctx)
+      vi.clearAllMocks()
+
+      inputNode.invalidate()
+      effectNode.render(ctx)
+      expect(ctx.renderer.applyPostEffectToTexture).toHaveBeenCalledTimes(1)
+    })
   })
 })
 
