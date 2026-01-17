@@ -503,6 +503,8 @@ export interface LayerOperations {
   readonly toggleLayerVisibility: (layerId: string) => void
   /** Wrap layer in a new group (returns group ID or null if failed) */
   readonly groupLayer: (layerId: string) => string | null
+  /** Wrap layer with mask in a new group (returns group ID or null if failed) */
+  readonly useAsMask: (layerId: string) => string | null
   /** Update text layer configuration */
   readonly updateTextLayerConfig: (layerId: string, config: Partial<{
     text: string
