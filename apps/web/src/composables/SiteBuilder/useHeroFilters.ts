@@ -36,7 +36,7 @@ export interface UseHeroFiltersOptions {
   /** Repository for syncing effect configs */
   heroViewRepository: HeroViewRepository
   /** Flag to skip sync during config loading */
-  isLoadingFromConfig: () => boolean
+  isLoadingFromConfig: Ref<boolean>
 }
 
 /**
@@ -152,7 +152,7 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
   watch(
     () => effectManager.effects.value,
     (effects) => {
-      if (isLoadingFromConfig()) return
+      if (isLoadingFromConfig.value) return
       debouncedSyncEffects(effects)
     },
     { deep: true }
