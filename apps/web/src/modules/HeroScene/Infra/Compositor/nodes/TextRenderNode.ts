@@ -79,32 +79,44 @@ export class TextRenderNode extends BaseTextureOwner implements RenderNode, Text
   private canvas: OffscreenCanvas | null = null
   private ctx: OffscreenCanvasRenderingContext2D | null = null
 
+  /** Device pixel ratio for HiDPI support */
+  private readonly dpr: number
+
   constructor(config: TextRenderNodeConfig) {
     super()
     this.id = config.id
     this.textConfig = config.textConfig
+    // Use devicePixelRatio for HiDPI displays (Retina, 4K, etc.)
+    // Fallback to 1 for non-browser environments (tests, SSR)
+    this.dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1
   }
 
   /**
    * Render the text to the owned texture.
    *
    * Uses TextureOwner caching: skips rendering if not dirty and texture exists.
+   * For HiDPI support, renders text at physical resolution (viewport × dpr).
    */
   render(ctx: NodeContext): TextureHandle {
-    const { viewport, device } = ctx
+    const { viewport, device, format } = ctx
 
-    // Ensure texture exists (handles viewport resize)
-    const texture = this.ensureTexture(device, viewport)
+    // Calculate physical pixel dimensions for HiDPI support
+    const physicalWidth = Math.ceil(viewport.width * this.dpr)
+    const physicalHeight = Math.ceil(viewport.height * this.dpr)
+    const physicalViewport = { width: physicalWidth, height: physicalHeight }
+
+    // Ensure texture exists at physical resolution (handles viewport resize)
+    const texture = this.ensureTexture(device, physicalViewport, format)
 
     // Skip if not dirty (cache hit)
     if (!this.isDirty) {
       return this.createTextureHandle(viewport)
     }
 
-    // Ensure canvas exists and is correctly sized
-    this.ensureCanvas(viewport.width, viewport.height)
+    // Ensure canvas exists at physical resolution
+    this.ensureCanvas(physicalWidth, physicalHeight)
 
-    // Render text to canvas
+    // Render text to canvas (using logical viewport for positioning)
     this.renderTextToCanvas(viewport.width, viewport.height)
 
     // Copy canvas to GPU texture
@@ -128,6 +140,8 @@ export class TextRenderNode extends BaseTextureOwner implements RenderNode, Text
 
   /**
    * Render text to the offscreen canvas.
+   * @param width - Logical width (viewport width)
+   * @param height - Logical height (viewport height)
    */
   private renderTextToCanvas(width: number, height: number): void {
     if (!this.ctx || !this.canvas) return
@@ -135,8 +149,16 @@ export class TextRenderNode extends BaseTextureOwner implements RenderNode, Text
     const config = this.textConfig
     const ctx2d = this.ctx
 
-    // Clear canvas with transparent background
-    ctx2d.clearRect(0, 0, width, height)
+    // Clear canvas at physical resolution
+    ctx2d.clearRect(0, 0, this.canvas.width, this.canvas.height)
+
+    // Apply HiDPI scaling - draw at logical coordinates, output at physical resolution
+    ctx2d.save()
+    ctx2d.scale(this.dpr, this.dpr)
+
+    // Enable font smoothing for better quality
+    ctx2d.imageSmoothingEnabled = true
+    ctx2d.imageSmoothingQuality = 'high'
 
     // Set up font
     const fontWeight = config.fontWeight || 400
@@ -175,6 +197,9 @@ export class TextRenderNode extends BaseTextureOwner implements RenderNode, Text
     } else {
       this.renderMultilineText(ctx2d, config.text, baseX, baseY, config.lineHeight || 1.2, fontSize)
     }
+
+    // Restore context state (undo HiDPI scaling)
+    ctx2d.restore()
   }
 
   /**
