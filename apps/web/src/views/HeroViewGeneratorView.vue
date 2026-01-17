@@ -479,6 +479,54 @@ const handleImageUpdate = (key: string, value: unknown) => {
   }
 }
 
+// ============================================================
+// Image Layer Handling
+// ============================================================
+
+// Computed property for image layer props (when an image layer is selected)
+const imageLayerProps = computed(() => {
+  const layer = selectedLayer.value
+  if (!layer || !isImageLayerConfig(layer)) return null
+
+  const layerId = layer.id
+  const isLoading = heroScene.images.isLayerLoading.value.get(layerId) ?? false
+  const imageUrl = heroScene.images.getImageUrl(layerId)
+
+  return {
+    layerId,
+    imageId: layer.imageId,
+    mode: layer.mode ?? 'cover',
+    position: layer.position,
+    imageUrl,
+    isLoading,
+  }
+})
+
+const handleImageUpdate = (key: string, value: unknown) => {
+  const layer = selectedLayer.value
+  if (!layer || !isImageLayerConfig(layer)) return
+
+  const layerId = layer.id
+
+  switch (key) {
+    case 'uploadImage':
+      heroScene.images.setLayerImage(layerId, value as File)
+      break
+    case 'clearImage':
+      heroScene.images.clearLayerImage(layerId)
+      break
+    case 'loadRandom':
+      heroScene.images.loadRandomImage(layerId, value as string | undefined)
+      break
+    case 'mode':
+      heroScene.usecase.layerUsecase.updateLayer(layerId, { mode: value } as Partial<ImageLayerNodeConfig>)
+      break
+    case 'position':
+      heroScene.usecase.layerUsecase.updateLayer(layerId, { position: value } as Partial<ImageLayerNodeConfig>)
+      break
+  }
+}
+
 </script>
 
 <template>
