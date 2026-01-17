@@ -78,8 +78,6 @@ import {
   getOklchFromPalette,
   isDarkTheme,
   getMaskSurfaceKey,
-  CONTEXT_SURFACE_KEYS,
-  type SemanticContextName,
 } from '../Domain/ColorHelpers'
 
 // ============================================================
