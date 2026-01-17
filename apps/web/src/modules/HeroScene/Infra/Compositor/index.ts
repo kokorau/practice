@@ -55,6 +55,19 @@ export {
   type CanvasOutputNodeConfig,
 } from './nodes'
 
+// Pipeline Builder
+export {
+  buildPipeline,
+  type PipelineResult,
+} from './buildPipeline'
+
+// Pipeline Execution
+export {
+  executePipeline,
+  renderWithPipeline,
+  type ExecutePipelineOptions,
+} from './executePipeline'
+
 // Re-export Domain types for convenience
 export type {
   TextureHandle,
@@ -64,4 +77,5 @@ export type {
   CompositorNode,
   OutputNode,
   ColorKeyPair,
+  CompositorRenderer,
 } from '../../Domain/Compositor'
