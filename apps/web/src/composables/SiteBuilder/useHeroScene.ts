@@ -90,6 +90,7 @@ import {
   type EditorStateRef,
   type RendererActions,
   findLayerInTree,
+  isGroupLayerConfig,
 } from '../../modules/HeroScene'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
 
@@ -658,10 +659,30 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     if (id === LAYER_IDS.BASE) return false
     const existingConfig = heroViewRepository.get()
     if (!existingConfig) return false
-    const layerExists = existingConfig.layers.some(l => l.id === id)
-    if (!layerExists) return false
+
+    // Find layer in tree (supports nested layers)
+    const layer = findLayerInTree(existingConfig.layers, id)
+    if (!layer) return false
+
+    // Collect all descendant IDs to clean up effects
+    const collectDescendantIds = (node: LayerNodeConfig): string[] => {
+      const ids: string[] = [node.id]
+      if (isGroupLayerConfig(node)) {
+        for (const child of node.children) {
+          ids.push(...collectDescendantIds(child))
+        }
+      }
+      return ids
+    }
+
+    // Delete effect configs for all descendants
+    const idsToCleanup = collectDescendantIds(layer)
+    for (const descendantId of idsToCleanup) {
+      heroFilters.effectManager.deleteEffectConfig(descendantId)
+    }
+
+    // Remove layer from tree via usecase
     layerUsecase.removeLayer(id)
-    heroFilters.effectManager.deleteEffectConfig(id)
     render()
     return true
   }
