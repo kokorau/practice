@@ -168,14 +168,14 @@ describe('PresetManager', () => {
       expect(mockHeroViewRepository.set).toHaveBeenCalledWith(mockPresets[0].config)
     })
 
-    it('should apply color preset when available', async () => {
-      await presetManager.applyPreset('preset-1', 'replace')
+    it('should return preset with colorPreset for caller to apply', async () => {
+      const preset = await presetManager.applyPreset('preset-1', 'replace')
 
-      expect(mockHeroViewRepository.updateColors).toHaveBeenCalledWith({
-        brand: mockPresets[0].colorPreset?.brand,
-        accent: mockPresets[0].colorPreset?.accent,
-        foundation: mockPresets[0].colorPreset?.foundation,
-      })
+      // colorPreset is no longer written to config.colors
+      // It's returned to the caller for UI state updates
+      expect(preset?.colorPreset).toEqual(mockPresets[0].colorPreset)
+      // updateColors should NOT be called for brand/accent/foundation
+      expect(mockHeroViewRepository.updateColors).not.toHaveBeenCalled()
     })
 
     it('should return null for non-existent preset', async () => {

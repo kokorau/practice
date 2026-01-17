@@ -2,7 +2,10 @@
   "id": "test-level8-with-text",
   "name": "Test Level 8: With Text Layer",
   "config": {
-    "viewport": { "width": 1280, "height": 720 },
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
     "colors": {
       "semanticContext": "canvas"
     },
@@ -40,7 +43,11 @@
         "letterSpacing": 0,
         "lineHeight": 1.2,
         "color": "#ffffff",
-        "position": { "x": 0.5, "y": 0.4, "anchor": "center" },
+        "position": {
+          "x": 0.5,
+          "y": 0.4,
+          "anchor": "center"
+        },
         "rotation": 0
       },
       {
@@ -55,7 +62,11 @@
         "letterSpacing": 0.05,
         "lineHeight": 1.4,
         "color": "#cccccc",
-        "position": { "x": 0.5, "y": 0.55, "anchor": "center" },
+        "position": {
+          "x": 0.5,
+          "y": 0.55,
+          "anchor": "center"
+        },
         "rotation": 0
       }
     ],
@@ -64,8 +75,20 @@
     }
   },
   "colorPreset": {
-    "brand": { "hue": 220, "saturation": 70, "value": 50 },
-    "accent": { "hue": 30, "saturation": 80, "value": 60 },
-    "foundation": { "hue": 0, "saturation": 0, "value": 15 }
+    "brand": {
+      "hue": 220,
+      "saturation": 70,
+      "value": 50
+    },
+    "accent": {
+      "hue": 30,
+      "saturation": 80,
+      "value": 60
+    },
+    "foundation": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 15
+    }
   }
 }

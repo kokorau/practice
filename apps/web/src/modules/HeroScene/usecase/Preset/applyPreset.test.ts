@@ -8,12 +8,7 @@ describe('applyPreset', () => {
   const createTestConfig = (): HeroViewConfig => ({
     viewport: { width: 1280, height: 720 },
     colors: {
-      background: { primary: 'B', secondary: 'auto' },
-      mask: { primary: 'auto', secondary: 'auto' },
       semanticContext: 'canvas',
-      brand: { hue: 198, saturation: 70, value: 65 },
-      accent: { hue: 30, saturation: 80, value: 60 },
-      foundation: { hue: 0, saturation: 0, value: 97 },
     },
     layers: [],
     foreground: { elements: [] },
@@ -22,12 +17,7 @@ describe('applyPreset', () => {
   const createPresetConfig = (): HeroViewConfig => ({
     viewport: { width: 1920, height: 1080 },
     colors: {
-      background: { primary: 'F5', secondary: 'auto' },
-      mask: { primary: 'auto', secondary: 'auto' },
       semanticContext: 'canvas',
-      brand: { hue: 100, saturation: 50, value: 50 },
-      accent: { hue: 200, saturation: 60, value: 70 },
-      foundation: { hue: 10, saturation: 5, value: 95 },
     },
     layers: [
       {
@@ -55,12 +45,11 @@ describe('applyPreset', () => {
     const result = repository.get()
     expect(result.viewport.width).toBe(1920)
     expect(result.viewport.height).toBe(1080)
-    expect(result.colors.background.primary).toBe('F5')
     expect(result.layers).toHaveLength(1)
     expect(result.layers[0]?.id).toBe('preset-group')
   })
 
-  it('should apply color preset when available', () => {
+  it('should not write colorPreset to config.colors', () => {
     const repository = createHeroViewInMemoryRepository(createTestConfig())
     const preset: HeroViewPreset = {
       id: 'test-preset',
@@ -76,25 +65,25 @@ describe('applyPreset', () => {
     applyPreset(preset, repository)
 
     const result = repository.get()
-    // Color preset should override config colors
-    expect(result.colors.brand).toEqual({ hue: 250, saturation: 80, value: 70 })
-    expect(result.colors.accent).toEqual({ hue: 350, saturation: 90, value: 80 })
-    expect(result.colors.foundation).toEqual({ hue: 20, saturation: 10, value: 98 })
+    // colorPreset should NOT be written to config.colors
+    // It's returned to the caller for UI state updates
+    expect(result.colors).toEqual({ semanticContext: 'canvas' })
   })
 
-  it('should not override colors when colorPreset is not provided', () => {
+  it('should preserve semanticContext from preset config', () => {
     const repository = createHeroViewInMemoryRepository(createTestConfig())
+    const presetConfig = createPresetConfig()
+    presetConfig.colors.semanticContext = 'sectionTint'
+
     const preset: HeroViewPreset = {
       id: 'test-preset',
       name: 'Test Preset',
-      config: createPresetConfig(),
-      // No colorPreset
+      config: presetConfig,
     }
 
     applyPreset(preset, repository)
 
     const result = repository.get()
-    // Should use colors from config, not original
-    expect(result.colors.brand).toEqual({ hue: 100, saturation: 50, value: 50 })
+    expect(result.colors.semanticContext).toBe('sectionTint')
   })
 })

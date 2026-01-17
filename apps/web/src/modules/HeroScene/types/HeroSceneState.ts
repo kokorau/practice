@@ -599,20 +599,6 @@ export interface UsecaseState {
   readonly heroViewRepository: HeroViewRepository
   /** Unified surface usecase (operates on selected layer) */
   readonly surfaceUsecase: SurfaceUsecase
-  /** Color usecase */
-  readonly colorUsecase: {
-    updateBrandColor: (params: { hue?: number; saturation?: number; value?: number }) => void
-    updateAccentColor: (params: { hue?: number; saturation?: number; value?: number }) => void
-    updateFoundationColor: (params: { hue?: number; saturation?: number; value?: number }) => void
-    applyColorPreset: (preset: {
-      id: string
-      name: string
-      description: string
-      brand: { hue: number; saturation: number; value: number }
-      accent: { hue: number; saturation: number; value: number }
-      foundation: { hue: number; saturation: number; value: number }
-    }) => void
-  }
   /** Layer usecase */
   readonly layerUsecase: {
     addLayer: (layer: LayerNodeConfig, index?: number) => void

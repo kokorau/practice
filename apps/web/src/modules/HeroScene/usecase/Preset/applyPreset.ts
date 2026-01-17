@@ -1,8 +1,11 @@
 /**
  * ApplyPreset UseCase
  *
- * プリセットを適用する（レイアウト設定とカラー設定の両方）
+ * プリセットを適用する（レイアウト設定のみ）
  * ロード時にレガシー形式を新形式にマイグレーションする
+ *
+ * Note: colorPreset (brand/accent/foundation HSV values) is returned to the caller
+ * for UI state updates via useSiteColors. It's no longer stored in config.colors.
  */
 
 import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
@@ -15,6 +18,9 @@ import { migrateHeroViewConfig } from '../../Domain/HeroViewConfig'
  * プリセット内のレガシーEffectFilterConfigは自動的に
  * SingleEffectConfigにマイグレーションされる
  *
+ * Note: colorPreset is available on the preset object for the caller to apply
+ * to UI state (useSiteColors). This function only applies the layout config.
+ *
  * @param preset - 適用するプリセット
  * @param repository - HeroViewRepository
  */
@@ -25,13 +31,4 @@ export function applyPreset(
   // Configをマイグレーションして適用
   const migratedConfig = migrateHeroViewConfig(preset.config)
   repository.set(migratedConfig)
-
-  // カラープリセットがあれば適用
-  if (preset.colorPreset) {
-    repository.updateColors({
-      brand: preset.colorPreset.brand,
-      accent: preset.colorPreset.accent,
-      foundation: preset.colorPreset.foundation,
-    })
-  }
 }

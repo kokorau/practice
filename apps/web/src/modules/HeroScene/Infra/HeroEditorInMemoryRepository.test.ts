@@ -132,9 +132,9 @@ describe('HeroEditorInMemoryRepository', () => {
 
     it('should update colors', () => {
       const repo = createHeroEditorInMemoryRepository()
-      repo.updateColors({ brand: { hue: 200, saturation: 80, value: 70 } })
+      repo.updateColors({ semanticContext: 'sectionTint' })
 
-      expect(repo.get().config.colors.brand.hue).toBe(200)
+      expect(repo.get().config.colors.semanticContext).toBe('sectionTint')
     })
 
     it('should update viewport', () => {

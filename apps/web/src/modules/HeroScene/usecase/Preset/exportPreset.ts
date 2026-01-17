@@ -5,7 +5,7 @@
  */
 
 import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
-import type { HeroViewPreset } from '../../Domain/HeroViewPreset'
+import type { HeroViewPreset, PresetColorConfig } from '../../Domain/HeroViewPreset'
 import type { PresetExportPort } from './PresetExportPort'
 
 /**
@@ -16,10 +16,18 @@ export interface ExportPresetOptions {
   id?: string
   /** プリセット名（省略時は 'Custom Preset'） */
   name?: string
+  /**
+   * カラープリセット（Brand/Accent/Foundation HSV values）
+   * UI manages these via useSiteColors, so caller should provide them.
+   */
+  colorPreset?: PresetColorConfig
 }
 
 /**
  * 現在のHeroView設定からプリセットデータを生成する
+ *
+ * Note: colorPreset should be provided by the caller since brand/accent/foundation
+ * HSV values are managed by the UI (useSiteColors), not stored in config.colors.
  *
  * @param repository - HeroViewRepository
  * @param options - エクスポートオプション
@@ -35,11 +43,7 @@ export function createPreset(
     id: options.id ?? `custom-${Date.now()}`,
     name: options.name ?? 'Custom Preset',
     config,
-    colorPreset: {
-      brand: config.colors.brand,
-      accent: config.colors.accent,
-      foundation: config.colors.foundation,
-    },
+    colorPreset: options.colorPreset,
   }
 }
 

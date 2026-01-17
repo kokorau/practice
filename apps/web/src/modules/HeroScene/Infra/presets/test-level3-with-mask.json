@@ -2,7 +2,10 @@
   "id": "test-level3-with-mask",
   "name": "Test Level 3: Background + Surface + Mask",
   "config": {
-    "viewport": { "width": 1280, "height": 720 },
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
     "colors": {
       "semanticContext": "canvas"
     },
@@ -89,8 +92,20 @@
     }
   },
   "colorPreset": {
-    "brand": { "hue": 220, "saturation": 70, "value": 60 },
-    "accent": { "hue": 30, "saturation": 80, "value": 60 },
-    "foundation": { "hue": 0, "saturation": 0, "value": 97 }
+    "brand": {
+      "hue": 220,
+      "saturation": 70,
+      "value": 60
+    },
+    "accent": {
+      "hue": 30,
+      "saturation": 80,
+      "value": 60
+    },
+    "foundation": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 97
+    }
   }
 }

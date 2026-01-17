@@ -60,10 +60,6 @@ import {
   updateTextLayerRotation,
   createHeroViewInMemoryRepository,
   createSurfaceUsecase,
-  updateBrandColor,
-  updateAccentColor,
-  updateFoundationColor,
-  applyColorPreset,
   addLayer as addLayerUsecase,
   removeLayer as removeLayerUsecase,
   toggleExpand as toggleExpandUsecase,
@@ -456,30 +452,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   // ============================================================
-  // Color Usecase wrappers
-  // ============================================================
-  const colorUsecase = {
-    updateBrandColor: (params: { hue?: number; saturation?: number; value?: number }) => {
-      updateBrandColor(params, heroViewRepository)
-    },
-    updateAccentColor: (params: { hue?: number; saturation?: number; value?: number }) => {
-      updateAccentColor(params, heroViewRepository)
-    },
-    updateFoundationColor: (params: { hue?: number; saturation?: number; value?: number }) => {
-      updateFoundationColor(params, heroViewRepository)
-    },
-    applyColorPreset: (preset: {
-      id: string
-      name: string
-      description: string
-      brand: { hue: number; saturation: number; value: number }
-      accent: { hue: number; saturation: number; value: number }
-      foundation: { hue: number; saturation: number; value: number }
-    }) => {
-      applyColorPreset(preset, heroViewRepository)
-    },
-  }
-
   // ============================================================
   // Layer Usecase wrappers
   // ============================================================
@@ -1015,7 +987,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const usecase: UsecaseState = {
     heroViewRepository,
     surfaceUsecase,
-    colorUsecase,
     layerUsecase,
     foregroundElementUsecase,
     presetUsecase,

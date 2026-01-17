@@ -2,7 +2,10 @@
   "id": "test-image-layer-positioned",
   "name": "Test: Image Layer (Positioned)",
   "config": {
-    "viewport": { "width": 1280, "height": 720 },
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
     "colors": {
       "semanticContext": "canvas"
     },
@@ -52,8 +55,20 @@
     }
   },
   "colorPreset": {
-    "brand": { "hue": 260, "saturation": 60, "value": 50 },
-    "accent": { "hue": 45, "saturation": 75, "value": 65 },
-    "foundation": { "hue": 260, "saturation": 3, "value": 97 }
+    "brand": {
+      "hue": 260,
+      "saturation": 60,
+      "value": 50
+    },
+    "accent": {
+      "hue": 45,
+      "saturation": 75,
+      "value": 65
+    },
+    "foundation": {
+      "hue": 260,
+      "saturation": 3,
+      "value": 97
+    }
   }
 }

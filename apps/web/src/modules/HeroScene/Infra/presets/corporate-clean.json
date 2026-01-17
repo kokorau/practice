@@ -7,14 +7,6 @@
       "height": 720
     },
     "colors": {
-      "background": {
-        "primary": "BN4",
-        "secondary": "BN2"
-      },
-      "mask": {
-        "primary": "BN2",
-        "secondary": "BN1"
-      },
       "semanticContext": "canvas"
     },
     "layers": [
@@ -45,15 +37,36 @@
                     "radius": 0.5,
                     "softness": 0.5,
                     "shape": "ellipse",
-                    "color": [0, 0, 0, 1],
+                    "color": [
+                      0,
+                      0,
+                      0,
+                      1
+                    ],
                     "centerX": 0.5,
                     "centerY": 0.5,
                     "aspectRatio": 1
                   },
-                  "chromaticAberration": { "enabled": false, "intensity": 0.01 },
-                  "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
-                  "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 },
-                  "blur": { "enabled": false, "radius": 8 }
+                  "chromaticAberration": {
+                    "enabled": false,
+                    "intensity": 0.01
+                  },
+                  "dotHalftone": {
+                    "enabled": false,
+                    "dotSize": 8,
+                    "spacing": 16,
+                    "angle": 45
+                  },
+                  "lineHalftone": {
+                    "enabled": false,
+                    "lineWidth": 4,
+                    "spacing": 12,
+                    "angle": 45
+                  },
+                  "blur": {
+                    "enabled": false,
+                    "radius": 8
+                  }
                 }
               }
             ]
@@ -87,15 +100,36 @@
                     "radius": 0.5,
                     "softness": 0.5,
                     "shape": "ellipse",
-                    "color": [0, 0, 0, 1],
+                    "color": [
+                      0,
+                      0,
+                      0,
+                      1
+                    ],
                     "centerX": 0.5,
                     "centerY": 0.5,
                     "aspectRatio": 1
                   },
-                  "chromaticAberration": { "enabled": false, "intensity": 0.01 },
-                  "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
-                  "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 },
-                  "blur": { "enabled": false, "radius": 8 }
+                  "chromaticAberration": {
+                    "enabled": false,
+                    "intensity": 0.01
+                  },
+                  "dotHalftone": {
+                    "enabled": false,
+                    "dotSize": 8,
+                    "spacing": 16,
+                    "angle": 45
+                  },
+                  "lineHalftone": {
+                    "enabled": false,
+                    "lineWidth": 4,
+                    "spacing": 12,
+                    "angle": 45
+                  },
+                  "blur": {
+                    "enabled": false,
+                    "radius": 8
+                  }
                 }
               }
             ]
@@ -156,8 +190,20 @@
     }
   },
   "colorPreset": {
-    "brand": { "hue": 220, "saturation": 75, "value": 60 },
-    "accent": { "hue": 180, "saturation": 50, "value": 70 },
-    "foundation": { "hue": 260, "saturation": 2, "value": 97 }
+    "brand": {
+      "hue": 220,
+      "saturation": 75,
+      "value": 60
+    },
+    "accent": {
+      "hue": 180,
+      "saturation": 50,
+      "value": 70
+    },
+    "foundation": {
+      "hue": 260,
+      "saturation": 2,
+      "value": 97
+    }
   }
 }
