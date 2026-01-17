@@ -150,7 +150,7 @@ function oklchToRgba(oklch: Oklch, alpha = 1): RGBA {
 /**
  * Get color from palette by key
  */
-function getColorFromPalette(palette: PrimitivePalette, key: string, alpha = 1): RGBA {
+export function getColorFromPalette(palette: PrimitivePalette, key: string, alpha = 1): RGBA {
   const oklch = (palette as Record<string, Oklch>)[key]
   if (oklch) {
     return oklchToRgba(oklch, alpha)
@@ -220,7 +220,7 @@ function scaleValue(value: number, scale: number): number {
  * Create background texture spec from surface config
  * Accepts both legacy SurfaceConfig and normalized NormalizedSurfaceConfig
  */
-function createBackgroundSpecFromSurface(
+export function createBackgroundSpecFromSurface(
   surfaceInput: AnySurfaceConfig,
   color1: RGBA,
   color2: RGBA,
@@ -378,7 +378,7 @@ function createBackgroundSpecFromSurface(
  * Outputs grayscale values (0.0-1.0) instead of RGBA
  * Accepts both legacy MaskShapeConfig and normalized NormalizedMaskConfig
  */
-function createGreymapMaskSpecFromShape(
+export function createGreymapMaskSpecFromShape(
   shapeInput: AnyMaskConfig,
   viewport: Viewport
 ): GreymapMaskSpec | null {
