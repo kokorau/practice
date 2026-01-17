@@ -71,6 +71,8 @@ import type { LayerEffectConfig } from '../Domain/EffectSchema'
 import { EFFECT_REGISTRY, EFFECT_TYPES, type EffectType } from '../Domain/EffectRegistry'
 import type { SingleEffectConfig } from '../Domain/HeroViewConfig'
 import { getEffectConfigsFromModifiers } from '../Domain/HeroViewConfig'
+// Pipeline imports for node-based rendering
+import { buildPipeline, executePipeline } from './Compositor'
 
 // ============================================================
 // Types
@@ -121,6 +123,15 @@ export interface RenderHeroConfigOptions {
    * For thumbnail preview, use ~0.3 to scale texture parameters
    */
   scale?: number
+
+  /**
+   * Use the new node-based compositor pipeline (default: false)
+   * When enabled, uses buildPipeline + executePipeline instead of
+   * the legacy procedural rendering.
+   *
+   * @experimental This is a new feature that may have different behavior.
+   */
+  useNodePipeline?: boolean
 }
 
 // ============================================================
@@ -963,6 +974,15 @@ export async function renderHeroConfig(
   options?: RenderHeroConfigOptions
 ): Promise<void> {
   const scale = options?.scale ?? 1
+
+  // Use new node-based pipeline if enabled
+  if (options?.useNodePipeline) {
+    const { outputNode } = buildPipeline(config, palette)
+    executePipeline(outputNode, renderer, palette, { scale })
+    return
+  }
+
+  // Legacy procedural rendering below
   const viewport = renderer.getViewport()
   const configColors = config.colors
 
