@@ -88,18 +88,31 @@ export interface CompositorRenderer {
   /** Get the WebGPU device (used by TextureOwner nodes for texture creation) */
   getDevice(): GPUDevice
 
-  /** Render a spec to an offscreen texture */
+  /** Render a spec to an offscreen texture (legacy - uses texture pool index) */
   renderToOffscreen(
     spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
     textureIndex: number
   ): GPUTexture
 
-  /** Apply a post-effect shader to a texture, output to offscreen */
+  /** Render a spec directly to a provided texture (TextureOwner pattern) */
+  renderToTexture(
+    spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
+    outputTexture: GPUTexture
+  ): void
+
+  /** Apply a post-effect shader to a texture, output to offscreen (legacy - uses texture pool index) */
   applyPostEffectToOffscreen(
     effect: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
     inputTexture: GPUTexture,
     outputTextureIndex: number
   ): GPUTexture
+
+  /** Apply a post-effect shader to a texture, output to owned texture (TextureOwner pattern) */
+  applyPostEffectToTexture(
+    effect: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
+    inputTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void
 
   /** Apply a dual-texture effect (e.g., masking) to offscreen */
   applyDualTextureEffectToOffscreen(

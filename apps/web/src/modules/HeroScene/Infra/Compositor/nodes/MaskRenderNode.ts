@@ -2,7 +2,7 @@
  * MaskRenderNode
  *
  * Renders a greymap mask shape to a texture.
- * Wraps the existing createGreymapMaskSpecFromShape function.
+ * Implements TextureOwner pattern for per-node texture ownership and caching.
  */
 
 import type {
@@ -10,8 +10,10 @@ import type {
   NodeContext,
   TextureHandle,
 } from '../../../Domain/Compositor'
+import type { TextureOwner } from '../../../Domain/Compositor/TextureOwner'
 import type { AnyMaskConfig } from '../../../Domain/HeroViewConfig'
 import { createGreymapMaskSpecFromShape } from '../../renderHeroConfig'
+import { BaseTextureOwner } from '../BaseTextureOwner'
 
 // ============================================================
 // MaskRenderNode Implementation
@@ -31,6 +33,11 @@ export interface MaskRenderNodeConfig {
 /**
  * RenderNode that renders a greymap mask to texture.
  *
+ * Implements TextureOwner pattern for:
+ * - Per-node texture ownership (no shared pool limits)
+ * - Dirty-flag based caching (skip re-rendering unchanged nodes)
+ * - Automatic viewport resize handling
+ *
  * Supports all 7 mask shape types:
  * - circle, rect, blob, perlin
  * - linearGradient, radialGradient, boxGradient
@@ -49,25 +56,37 @@ export interface MaskRenderNodeConfig {
  *   shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3 }
  * })
  *
- * const texture = node.render(context)
+ * node.render(context) // Renders to owned texture
+ * const texture = node.outputTexture // Get the texture
  * ```
  */
-export class MaskRenderNode implements RenderNode {
+export class MaskRenderNode extends BaseTextureOwner implements RenderNode, TextureOwner {
   readonly type = 'render' as const
   readonly id: string
 
   private readonly shape: AnyMaskConfig
 
   constructor(config: MaskRenderNodeConfig) {
+    super()
     this.id = config.id
     this.shape = config.shape
   }
 
   /**
-   * Render the mask shape to a greymap texture.
+   * Render the mask shape to the owned greymap texture.
+   *
+   * Uses TextureOwner caching: skips rendering if not dirty and texture exists.
    */
   render(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, texturePool } = ctx
+    const { renderer, viewport, device } = ctx
+
+    // Ensure texture exists (handles viewport resize)
+    const texture = this.ensureTexture(device, viewport)
+
+    // Skip if not dirty (cache hit)
+    if (!this.isDirty) {
+      return this.createTextureHandle(viewport)
+    }
 
     // Create the greymap mask spec
     const spec = createGreymapMaskSpecFromShape(this.shape, viewport)
@@ -76,16 +95,25 @@ export class MaskRenderNode implements RenderNode {
       throw new Error(`[MaskRenderNode] Failed to create mask spec (id: ${this.id})`)
     }
 
-    // Acquire a texture from the pool
-    const handle = texturePool.acquire()
+    // Render directly to our owned texture
+    renderer.renderToTexture(spec, texture)
 
-    // Render to offscreen texture
-    const gpuTexture = renderer.renderToOffscreen(spec, handle._textureIndex)
+    // Mark as clean (cache valid)
+    this._isDirty = false
 
-    // Return a new handle with the actual GPU texture
+    return this.createTextureHandle(viewport)
+  }
+
+  /**
+   * Create a TextureHandle for compatibility with legacy code.
+   */
+  private createTextureHandle(viewport: { width: number; height: number }): TextureHandle {
     return {
-      ...handle,
-      _gpuTexture: gpuTexture,
+      id: `${this.id}-owned`,
+      width: viewport.width,
+      height: viewport.height,
+      _gpuTexture: this.outputTexture!,
+      _textureIndex: -1, // Not used in TextureOwner pattern
     }
   }
 }

@@ -71,6 +71,8 @@ export interface TextureRendererLike {
   ): void
   /** Render to offscreen texture for multi-buffer pipeline */
   renderToOffscreen(spec: TextureRenderSpec, textureIndex?: number): GPUTexture
+  /** Render directly to a provided texture (TextureOwner pattern) */
+  renderToTexture(spec: TextureRenderSpec, outputTexture: GPUTexture): void
   /** Apply two-texture effect (surface + mask) */
   applyDualTextureEffect(
     spec: unknown,
@@ -91,6 +93,12 @@ export interface TextureRendererLike {
     inputTexture: GPUTexture,
     outputTextureIndex: number
   ): GPUTexture
+  /** Apply post-effect to owned texture (TextureOwner pattern) */
+  applyPostEffectToTexture(
+    effect: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
+    inputTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void
   /** Composite offscreen texture to canvas with alpha blending */
   compositeToCanvas(inputTexture: GPUTexture, options?: { clear?: boolean }): void
 }

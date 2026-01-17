@@ -127,6 +127,9 @@ function createMockRenderer(): TextureRendererLike & CompositorRenderer & { metr
       metrics.renderToOffscreenCount++
       return mockGpuTexture
     }),
+    renderToTexture: vi.fn(() => {
+      metrics.renderToOffscreenCount++ // Count as renderToOffscreen for test compatibility
+    }),
     applyDualTextureEffect: vi.fn(),
     applyDualTextureEffectToOffscreen: vi.fn(() => {
       metrics.applyDualTextureCount++
@@ -135,6 +138,9 @@ function createMockRenderer(): TextureRendererLike & CompositorRenderer & { metr
     applyPostEffectToOffscreen: vi.fn(() => {
       metrics.applyPostEffectCount++
       return mockGpuTexture
+    }),
+    applyPostEffectToTexture: vi.fn(() => {
+      metrics.applyPostEffectCount++
     }),
     compositeToCanvas: vi.fn(() => {
       metrics.compositeToCanvasCount++

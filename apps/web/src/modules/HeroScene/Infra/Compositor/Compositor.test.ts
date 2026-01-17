@@ -44,12 +44,18 @@ const mockGpuTexture = {} as GPUTexture
 
 function createMockContext(): NodeContext {
   const texturePool = new MultiBufferTexturePool(1280, 720)
+  const mockDevice = {
+    createTexture: vi.fn(() => mockGpuTexture),
+  } as unknown as GPUDevice
 
   return {
     renderer: {
       getViewport: vi.fn(() => ({ width: 1280, height: 720 })),
+      getDevice: vi.fn(() => mockDevice),
       renderToOffscreen: vi.fn(() => mockGpuTexture),
+      renderToTexture: vi.fn(),
       applyPostEffectToOffscreen: vi.fn(() => mockGpuTexture),
+      applyPostEffectToTexture: vi.fn(),
       applyDualTextureEffectToOffscreen: vi.fn(() => mockGpuTexture),
       compositeToCanvas: vi.fn(),
     },
@@ -57,6 +63,8 @@ function createMockContext(): NodeContext {
     palette: createMockPalette(),
     scale: 1,
     texturePool,
+    device: mockDevice,
+    format: 'rgba8unorm',
   }
 }
 
@@ -205,7 +213,7 @@ describe('SurfaceRenderNode', () => {
 
     expect(result).toBeDefined()
     expect(result.id).toBeDefined()
-    expect(ctx.renderer.renderToOffscreen).toHaveBeenCalled()
+    expect(ctx.renderer.renderToTexture).toHaveBeenCalled()
   })
 
   it('renders stripe surface', () => {
@@ -219,7 +227,7 @@ describe('SurfaceRenderNode', () => {
     const result = node.render(ctx)
 
     expect(result).toBeDefined()
-    expect(ctx.renderer.renderToOffscreen).toHaveBeenCalled()
+    expect(ctx.renderer.renderToTexture).toHaveBeenCalled()
   })
 })
 
@@ -249,7 +257,7 @@ describe('MaskRenderNode', () => {
 
     expect(result).toBeDefined()
     expect(result.id).toBeDefined()
-    expect(ctx.renderer.renderToOffscreen).toHaveBeenCalled()
+    expect(ctx.renderer.renderToTexture).toHaveBeenCalled()
   })
 
   it('renders rect mask', () => {
@@ -262,7 +270,7 @@ describe('MaskRenderNode', () => {
     const result = node.render(ctx)
 
     expect(result).toBeDefined()
-    expect(ctx.renderer.renderToOffscreen).toHaveBeenCalled()
+    expect(ctx.renderer.renderToTexture).toHaveBeenCalled()
   })
 })
 
@@ -342,7 +350,8 @@ describe('EffectRenderNode', () => {
     const result = node.render(ctx)
 
     expect(result).toBeDefined()
-    expect(ctx.renderer.applyPostEffectToOffscreen).toHaveBeenCalled()
+    // EffectRenderNode now uses TextureOwner pattern with applyPostEffectToTexture
+    expect(ctx.renderer.applyPostEffectToTexture).toHaveBeenCalled()
   })
 })
 

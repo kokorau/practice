@@ -766,6 +766,51 @@ export class TextureRenderer {
     return target
   }
 
+  /**
+   * Apply post-effect shader to input texture, output to owned texture (TextureOwner pattern)
+   * Similar to applyPostEffectToOffscreen but renders to a caller-provided texture
+   */
+  applyPostEffectToTexture(
+    spec: PostEffectSpec,
+    inputTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void {
+    const cached = this.getOrCreatePostEffectPipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Create bind group for this specific texture
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: inputTexture.createView() },
+      ],
+    })
+
+    // Render to the provided output texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: outputTexture.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cached.pipeline)
+    renderPass.setBindGroup(0, bindGroup)
+    renderPass.draw(3)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+  }
+
   private getOrCreatePostEffectPipeline(spec: PostEffectSpec): PostEffectPipelineCache {
     const existing = this.postEffectCache.get(spec.shader)
     if (existing) {
@@ -877,6 +922,40 @@ export class TextureRenderer {
     this.device.queue.submit([commandEncoder.finish()])
 
     return target
+  }
+
+  /**
+   * Render a spec directly to a provided texture (TextureOwner pattern).
+   * Unlike renderToOffscreen, this doesn't use the internal texture pool.
+   */
+  renderToTexture(
+    spec: TextureRenderSpec,
+    outputTexture: GPUTexture
+  ): void {
+    const cached = this.getOrCreatePipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.buffer, 0, spec.uniforms)
+
+    // Render to the provided texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: outputTexture.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cached.pipeline)
+    renderPass.setBindGroup(0, cached.bindGroup)
+    renderPass.draw(3)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
   }
 
   /**
