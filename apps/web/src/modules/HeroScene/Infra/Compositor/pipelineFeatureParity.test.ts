@@ -117,6 +117,9 @@ function createMockRenderer(): TextureRendererLike & CompositorRenderer & { metr
   return {
     metrics,
     getViewport: vi.fn(() => ({ width: 1280, height: 720 })),
+    getDevice: vi.fn(() => ({
+      createTexture: vi.fn(() => mockGpuTexture),
+    }) as unknown as GPUDevice),
     render: vi.fn(),
     copyCanvasToTexture: vi.fn(() => mockGpuTexture),
     applyPostEffect: vi.fn(),
