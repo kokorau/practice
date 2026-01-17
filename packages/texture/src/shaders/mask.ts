@@ -784,3 +784,150 @@ export function createBoxGradientMaskSpec(
     blend: maskBlendState,
   }
 }
+
+/** Wavy line mask parameters */
+export interface WavyLineMaskParams {
+  /** Line position (0.0-1.0, where the dividing line is) */
+  position: number
+  /** Direction: 0=vertical line (left/right split), 1=horizontal line (top/bottom split) */
+  direction: 'vertical' | 'horizontal'
+  /** Wave amplitude (0.0-0.5) */
+  amplitude: number
+  /** Wave frequency (1-20) */
+  frequency: number
+  /** fBm octaves for smoother/rougher waves (1-5) */
+  octaves: number
+  /** Random seed for variation */
+  seed: number
+  /** Inner color (the "inside" side) */
+  innerColor: [number, number, number, number]
+  /** Outer color (the "outside" side) */
+  outerColor: [number, number, number, number]
+  /** If true (default), inside is on the left/top. If false, reversed. */
+  cutout?: boolean
+}
+
+/** Wavy line mask shader - uses 1D Perlin noise for organic dividing line */
+export const wavyLineMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+${aaUtils}
+
+// 1D hash function
+fn hash11(p: f32) -> f32 {
+  var p3 = fract(p * 0.1031);
+  p3 += p3 * (p3 + 33.33);
+  return fract(p3 * p3);
+}
+
+// 1D value noise
+fn valueNoise1D(x: f32) -> f32 {
+  let i = floor(x);
+  let f = fract(x);
+  let u = f * f * (3.0 - 2.0 * f); // smoothstep
+
+  let a = hash11(i);
+  let b = hash11(i + 1.0);
+
+  return mix(a, b, u);
+}
+
+// 1D fBm (fractional Brownian motion)
+fn fbm1D(x: f32, octaves: i32, seed: f32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = x + seed * 100.0;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * (valueNoise1D(pos) * 2.0 - 1.0);
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+struct WavyLineMaskParams {
+  innerColor: vec4f,
+  outerColor: vec4f,
+  position: f32,
+  direction: f32,
+  amplitude: f32,
+  frequency: f32,
+  octaves: f32,
+  seed: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: WavyLineMaskParams;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  let octaves = clamp(i32(params.octaves), 1, 5);
+
+  // Calculate wavy offset based on direction
+  var sampleCoord: f32;
+  var compareCoord: f32;
+
+  if (params.direction < 0.5) {
+    // Vertical line (left/right split): sample noise along Y, compare X
+    sampleCoord = uv.y * params.frequency;
+    compareCoord = uv.x;
+  } else {
+    // Horizontal line (top/bottom split): sample noise along X, compare Y
+    sampleCoord = uv.x * params.frequency;
+    compareCoord = uv.y;
+  }
+
+  // Get wavy offset from 1D noise
+  let wavyOffset = fbm1D(sampleCoord, octaves, params.seed) * params.amplitude;
+
+  // Calculate the wavy boundary position
+  let boundary = params.position + wavyOffset;
+
+  // Anti-aliased edge
+  let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
+  let inside = smoothstep(boundary - pixelSize, boundary + pixelSize, compareCoord);
+
+  return mix(params.innerColor, params.outerColor, inside);
+}
+`
+
+/** Convert direction string to number for shader */
+function directionToNumber(direction: 'vertical' | 'horizontal'): number {
+  return direction === 'vertical' ? 0 : 1
+}
+
+/**
+ * Create render spec for wavy line mask
+ */
+export function createWavyLineMaskSpec(
+  params: WavyLineMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const cutout = params.cutout ?? true
+  // When cutout=false, swap inner/outer colors
+  const innerColor = cutout ? params.innerColor : params.outerColor
+  const outerColor = cutout ? params.outerColor : params.innerColor
+
+  const data = new Float32Array([
+    ...innerColor,
+    ...outerColor,
+    params.position,
+    directionToNumber(params.direction),
+    params.amplitude,
+    params.frequency,
+    params.octaves,
+    params.seed,
+    viewport.width,
+    viewport.height,
+  ])
+  return {
+    shader: wavyLineMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 64, // 16 floats = 64 bytes
+    blend: maskBlendState,
+  }
+}

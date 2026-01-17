@@ -19,6 +19,7 @@ export const MaskShapeOptions = [
   { value: 'linearGradient' as const, label: 'Linear Gradient' },
   { value: 'radialGradient' as const, label: 'Radial Gradient' },
   { value: 'boxGradient' as const, label: 'Box Gradient' },
+  { value: 'wavyLine' as const, label: 'Wavy Line' },
 ] as const
 
 export type MaskShape =
@@ -29,6 +30,7 @@ export type MaskShape =
   | 'linearGradient'
   | 'radialGradient'
   | 'boxGradient'
+  | 'wavyLine'
 
 // ============================================================
 // Base Schema (shared fields)
@@ -136,6 +138,25 @@ export const BoxGradientMaskSchema = defineSchema({
 
 export type BoxGradientMaskParams = Infer<typeof BoxGradientMaskSchema>
 
+export const WavyLineDirectionOptions = [
+  { value: 'vertical' as const, label: 'Vertical' },
+  { value: 'horizontal' as const, label: 'Horizontal' },
+] as const
+
+export type WavyLineDirection = 'vertical' | 'horizontal'
+
+export const WavyLineMaskSchema = defineSchema({
+  position: number({ label: 'Position', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  direction: select({ label: 'Direction', options: WavyLineDirectionOptions, default: 'vertical' }),
+  amplitude: number({ label: 'Amplitude', min: 0, max: 0.3, step: 0.01, default: 0.08 }),
+  frequency: number({ label: 'Frequency', min: 1, max: 20, step: 0.5, default: 3 }),
+  octaves: number({ label: 'Octaves', min: 1, max: 5, step: 1, default: 2 }),
+  seed: number({ label: 'Seed', min: 0, max: 1000, step: 1, default: 42 }),
+  cutout: boolean({ label: 'Cutout', default: false }),
+})
+
+export type WavyLineMaskParams = Infer<typeof WavyLineMaskSchema>
+
 // ============================================================
 // Schema Map
 // ============================================================
@@ -148,6 +169,7 @@ export const MaskShapeSchemas = {
   linearGradient: LinearGradientMaskSchema,
   radialGradient: RadialGradientMaskSchema,
   boxGradient: BoxGradientMaskSchema,
+  wavyLine: WavyLineMaskSchema,
 } as const
 
 // ============================================================
@@ -233,6 +255,17 @@ export interface BoxGradientMaskConfig extends MaskConfigBase {
   cutout: boolean
 }
 
+export interface WavyLineMaskConfig extends MaskConfigBase {
+  shape: 'wavyLine'
+  position: number
+  direction: WavyLineDirection
+  amplitude: number
+  frequency: number
+  octaves: number
+  seed: number
+  cutout: boolean
+}
+
 export type MaskConfig =
   | CircleMaskConfig
   | RectMaskConfig
@@ -241,6 +274,7 @@ export type MaskConfig =
   | LinearGradientMaskConfig
   | RadialGradientMaskConfig
   | BoxGradientMaskConfig
+  | WavyLineMaskConfig
 
 // ============================================================
 // Default Factory
@@ -352,6 +386,18 @@ export function createMaskConfigForShape(
         curve: 'linear',
         cutout: false,
       }
+    case 'wavyLine':
+      return {
+        ...base,
+        shape: 'wavyLine',
+        position: 0.5,
+        direction: 'vertical',
+        amplitude: 0.08,
+        frequency: 3,
+        octaves: 2,
+        seed: 42,
+        cutout: false,
+      }
   }
 }
 
@@ -385,6 +431,10 @@ export function isRadialGradientMaskConfig(config: MaskConfig): config is Radial
 
 export function isBoxGradientMaskConfig(config: MaskConfig): config is BoxGradientMaskConfig {
   return config.shape === 'boxGradient'
+}
+
+export function isWavyLineMaskConfig(config: MaskConfig): config is WavyLineMaskConfig {
+  return config.shape === 'wavyLine'
 }
 
 // ============================================================
@@ -426,7 +476,7 @@ export interface LegacyMaskModifier {
  * Check if a shape is supported by the new MaskConfig
  */
 export function isSupportedMaskShape(shape: string): shape is MaskShape {
-  return ['circle', 'rect', 'blob', 'perlin', 'linearGradient', 'radialGradient', 'boxGradient'].includes(shape)
+  return ['circle', 'rect', 'blob', 'perlin', 'linearGradient', 'radialGradient', 'boxGradient', 'wavyLine'].includes(shape)
 }
 
 /**

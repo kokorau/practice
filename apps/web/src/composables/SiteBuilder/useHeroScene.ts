@@ -31,6 +31,7 @@ import {
   type LinearGradientMaskShapeParams,
   type RadialGradientMaskShapeParams,
   type BoxGradientMaskShapeParams,
+  type WavyLineMaskShapeParams,
   type StripeSurfaceParams,
   type GridSurfaceParams,
   type PolkaDotSurfaceParams,
@@ -200,6 +201,7 @@ export type CustomMaskShapeParams =
   | ({ type: 'linearGradient' } & LinearGradientMaskShapeParams)
   | ({ type: 'radialGradient' } & RadialGradientMaskShapeParams)
   | ({ type: 'boxGradient' } & BoxGradientMaskShapeParams)
+  | ({ type: 'wavyLine' } & WavyLineMaskShapeParams)
 
 /**
  * Textile pattern surface params

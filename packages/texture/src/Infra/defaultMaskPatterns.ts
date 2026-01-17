@@ -8,6 +8,7 @@ import {
   createLinearGradientMaskSpec,
   createRadialGradientMaskSpec,
   createBoxGradientMaskSpec,
+  createWavyLineMaskSpec,
 } from '../shaders'
 
 /**
@@ -546,6 +547,81 @@ const defaultMaskPatterns: MaskPattern[] = [
     createSpec: (c1, c2, viewport) =>
       createBoxGradientMaskSpec(
         { left: 0.1, right: 0.2, top: 0.15, bottom: 0.25, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  // ============================================================
+  // Wavy Line patterns (organic dividing lines)
+  // ============================================================
+  {
+    label: 'Wavy Half Left',
+    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'vertical', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createWavyLineMaskSpec(
+        { position: 0.5, direction: 'vertical', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Wavy Half Right',
+    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'vertical', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, cutout: true },
+    createSpec: (c1, c2, viewport) =>
+      createWavyLineMaskSpec(
+        { position: 0.5, direction: 'vertical', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, innerColor: c1, outerColor: c2, cutout: true },
+        viewport!
+      ),
+  },
+  {
+    label: 'Wavy Half Top',
+    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'horizontal', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createWavyLineMaskSpec(
+        { position: 0.5, direction: 'horizontal', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Wavy Half Bottom',
+    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'horizontal', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, cutout: true },
+    createSpec: (c1, c2, viewport) =>
+      createWavyLineMaskSpec(
+        { position: 0.5, direction: 'horizontal', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, innerColor: c1, outerColor: c2, cutout: true },
+        viewport!
+      ),
+  },
+  {
+    label: 'Wavy Third Left',
+    maskConfig: { type: 'wavyLine', position: 0.33, direction: 'vertical', amplitude: 0.06, frequency: 4, octaves: 2, seed: 123, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createWavyLineMaskSpec(
+        { position: 0.33, direction: 'vertical', amplitude: 0.06, frequency: 4, octaves: 2, seed: 123, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Wavy Third Right',
+    maskConfig: { type: 'wavyLine', position: 0.67, direction: 'vertical', amplitude: 0.06, frequency: 4, octaves: 2, seed: 123, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createWavyLineMaskSpec(
+        { position: 0.67, direction: 'vertical', amplitude: 0.06, frequency: 4, octaves: 2, seed: 123, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Wavy Gentle',
+    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'vertical', amplitude: 0.04, frequency: 2, octaves: 1, seed: 77, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createWavyLineMaskSpec(
+        { position: 0.5, direction: 'vertical', amplitude: 0.04, frequency: 2, octaves: 1, seed: 77, innerColor: c1, outerColor: c2, cutout: false },
+        viewport!
+      ),
+  },
+  {
+    label: 'Wavy Wild',
+    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'vertical', amplitude: 0.15, frequency: 5, octaves: 3, seed: 999, cutout: false },
+    createSpec: (c1, c2, viewport) =>
+      createWavyLineMaskSpec(
+        { position: 0.5, direction: 'vertical', amplitude: 0.15, frequency: 5, octaves: 3, seed: 999, innerColor: c1, outerColor: c2, cutout: false },
         viewport!
       ),
   },

@@ -33,6 +33,7 @@ import type {
   LinearGradientMaskShapeParams,
   RadialGradientMaskShapeParams,
   BoxGradientMaskShapeParams,
+  WavyLineMaskShapeParams,
   StripeSurfaceParams,
   GridSurfaceParams,
   PolkaDotSurfaceParams,
@@ -111,6 +112,7 @@ export type CustomMaskShapeParams =
   | ({ type: 'linearGradient' } & LinearGradientMaskShapeParams)
   | ({ type: 'radialGradient' } & RadialGradientMaskShapeParams)
   | ({ type: 'boxGradient' } & BoxGradientMaskShapeParams)
+  | ({ type: 'wavyLine' } & WavyLineMaskShapeParams)
 
 /**
  * Gradient grain surface params
@@ -340,7 +342,7 @@ export interface MaskState {
   /** Current surface schema for UI */
   readonly currentSurfaceSchema: ComputedRef<ObjectSchema | null>
   /** Update mask shape params */
-  readonly updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams | PerlinMaskShapeParams | LinearGradientMaskShapeParams | RadialGradientMaskShapeParams | BoxGradientMaskShapeParams>) => void
+  readonly updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams | PerlinMaskShapeParams | LinearGradientMaskShapeParams | RadialGradientMaskShapeParams | BoxGradientMaskShapeParams | WavyLineMaskShapeParams>) => void
   /** Update surface params */
   readonly updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => void
 }

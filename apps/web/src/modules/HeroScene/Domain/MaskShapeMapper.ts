@@ -90,6 +90,18 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
       cutout: maskConfig.cutout ?? false,
     }
   }
+  if (maskConfig.type === 'wavyLine') {
+    return {
+      type: 'wavyLine',
+      position: maskConfig.position,
+      direction: maskConfig.direction,
+      amplitude: maskConfig.amplitude,
+      frequency: maskConfig.frequency,
+      octaves: maskConfig.octaves,
+      seed: maskConfig.seed,
+      cutout: maskConfig.cutout ?? false,
+    }
+  }
   // blob (default)
   return {
     type: 'blob',

@@ -25,6 +25,7 @@ export type {
   LinearGradientMaskParams,
   RadialGradientMaskParams,
   BoxGradientMaskParams,
+  WavyLineMaskParams,
   // Masked texture types
   MaskType,
   TextureType,
@@ -86,6 +87,7 @@ export {
   createLinearGradientMaskSpec,
   createRadialGradientMaskSpec,
   createBoxGradientMaskSpec,
+  createWavyLineMaskSpec,
   // Greymap mask specs (2-stage pipeline)
   createCircleGreymapMaskSpec,
   createRectGreymapMaskSpec,
@@ -157,6 +159,7 @@ export type {
   LinearGradientMaskShapeConfig,
   RadialGradientMaskShapeConfig,
   BoxGradientMaskShapeConfig,
+  WavyLineMaskShapeConfig,
   MaskShapeConfig,
   MaskPattern,
   // Greymap types (2-stage mask pipeline)
@@ -214,6 +217,7 @@ export type {
   LinearGradientMaskShapeParams,
   RadialGradientMaskShapeParams,
   BoxGradientMaskShapeParams,
+  WavyLineMaskShapeParams,
   SolidSurfaceParams,
   StripeSurfaceParams,
   GridSurfaceParams,

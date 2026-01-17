@@ -11,6 +11,7 @@ export type {
   LinearGradientMaskShapeConfig,
   RadialGradientMaskShapeConfig,
   BoxGradientMaskShapeConfig,
+  WavyLineMaskShapeConfig,
   MaskShapeConfig,
   MaskPattern,
 } from './TexturePattern'
@@ -83,6 +84,7 @@ export {
   LinearGradientMaskShapeSchema,
   RadialGradientMaskShapeSchema,
   BoxGradientMaskShapeSchema,
+  WavyLineMaskShapeSchema,
   MaskShapeSchemas,
   // Surface Schemas
   SolidSurfaceSchema,
@@ -110,6 +112,7 @@ export {
   createDefaultLinearGradientMaskParams,
   createDefaultRadialGradientMaskParams,
   createDefaultBoxGradientMaskParams,
+  createDefaultWavyLineMaskParams,
   createDefaultSolidParams,
   createDefaultStripeParams,
   createDefaultGridParams,
@@ -127,6 +130,7 @@ export type {
   LinearGradientMaskShapeParams,
   RadialGradientMaskShapeParams,
   BoxGradientMaskShapeParams,
+  WavyLineMaskShapeParams,
   SolidSurfaceParams,
   StripeSurfaceParams,
   GridSurfaceParams,
