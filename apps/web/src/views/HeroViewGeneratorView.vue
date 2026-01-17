@@ -52,15 +52,15 @@ const uiDarkMode = ref(false)
 
 // ============================================================
 // Layer Selection (provide for child components)
-// Must be called before useHeroScene which depends on it
 // ============================================================
+const layerSelection = provideLayerSelection()
 const {
   layerId: selectedLayerId,
   processorType: selectedProcessorType,
   selectCanvasLayer,
   selectProcessor,
   clearSelection,
-} = provideLayerSelection()
+} = layerSelection
 
 // ============================================================
 // Brand, Accent & Foundation Color State
@@ -129,7 +129,7 @@ const actions = computed(() => [
 // ============================================================
 // Hero Scene (WebGPU rendering with layer system)
 // ============================================================
-const heroScene = useHeroScene({ primitivePalette, isDark: uiDarkMode })
+const heroScene = useHeroScene({ primitivePalette, isDark: uiDarkMode, layerSelection })
 
 // ============================================================
 // Filter Editor (Composable)

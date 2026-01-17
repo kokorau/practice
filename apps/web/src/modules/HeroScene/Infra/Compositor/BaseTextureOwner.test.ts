@@ -170,11 +170,12 @@ describe('BaseTextureOwner', () => {
   })
 
   describe('custom format', () => {
-    it('accepts custom texture format', () => {
-      const customOwner = new TestTextureOwner('rgba16float')
+    it('accepts custom texture format via ensureTexture', () => {
+      const customOwner = new TestTextureOwner()
       const viewport: Viewport = { width: 100, height: 100 }
 
-      customOwner.ensureTexture(mockDevice, viewport)
+      // Pass format as third argument to ensureTexture
+      customOwner.ensureTexture(mockDevice, viewport, 'rgba16float')
 
       expect(mockDevice.createTexture).toHaveBeenCalledWith(
         expect.objectContaining({
