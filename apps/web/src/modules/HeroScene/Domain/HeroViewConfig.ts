@@ -940,7 +940,7 @@ export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   /** Per-surface color configuration */
   colors?: SurfaceColorsConfig
   /** Effect filters */
-  filters?: EffectFilterConfig[]
+  filters?: AnyEffectConfig[]
 }
 
 export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
@@ -949,7 +949,7 @@ export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
   /** Per-surface color configuration */
   colors?: SurfaceColorsConfig
   /** Effect filters */
-  filters?: EffectFilterConfig[]
+  filters?: AnyEffectConfig[]
 }
 
 export interface TextLayerNodeConfig extends LayerNodeConfigBase {
@@ -964,7 +964,7 @@ export interface TextLayerNodeConfig extends LayerNodeConfigBase {
   position: { x: number; y: number; anchor: string }
   rotation: number
   /** Effect filters */
-  filters?: EffectFilterConfig[]
+  filters?: AnyEffectConfig[]
 }
 
 export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
@@ -974,7 +974,7 @@ export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
   rotation: { x: number; y: number; z: number }
   scale: number
   /** Effect filters */
-  filters?: EffectFilterConfig[]
+  filters?: AnyEffectConfig[]
 }
 
 /**
@@ -1005,14 +1005,14 @@ export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   /** Position configuration (only used when mode is 'positioned') */
   position?: ImagePositionConfig
   /** Effect filters */
-  filters?: EffectFilterConfig[]
+  filters?: AnyEffectConfig[]
 }
 
 export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
   /** Effect filters applied to the group */
-  filters?: EffectFilterConfig[]
+  filters?: AnyEffectConfig[]
 }
 
 /**
@@ -1257,11 +1257,12 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
 
 /**
  * Get effect filters from a layer config
+ * Returns AnyEffectConfig[] (supports both legacy and new formats)
  */
-export const getLayerFilters = (layer: LayerNodeConfig): EffectFilterConfig[] => {
+export const getLayerFilters = (layer: LayerNodeConfig): AnyEffectConfig[] => {
   // ProcessorNodeConfig uses modifiers
   if (layer.type === 'processor') {
-    return layer.modifiers.filter((m): m is EffectFilterConfig => m.type === 'effect')
+    return layer.modifiers.filter((m): m is AnyEffectConfig => m.type === 'effect')
   }
   return layer.filters ?? []
 }
@@ -1372,9 +1373,10 @@ export const getProcessorMask = (processor: ProcessorNodeConfig): MaskProcessorC
 
 /**
  * Get effect processor configs from a ProcessorNodeConfig
+ * Returns AnyEffectConfig[] (supports both legacy and new formats)
  */
-export const getProcessorEffects = (processor: ProcessorNodeConfig): EffectFilterConfig[] => {
-  return processor.modifiers.filter((m): m is EffectFilterConfig => m.type === 'effect')
+export const getProcessorEffects = (processor: ProcessorNodeConfig): AnyEffectConfig[] => {
+  return processor.modifiers.filter((m): m is AnyEffectConfig => m.type === 'effect')
 }
 
 // ============================================================
@@ -1388,7 +1390,7 @@ export const getProcessorEffects = (processor: ProcessorNodeConfig): EffectFilte
 interface LegacyGroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
-  filters?: EffectFilterConfig[]
+  filters?: AnyEffectConfig[]
   expanded?: boolean
 }
 
@@ -1590,13 +1592,13 @@ const migrateLayerEffects = (layer: LayerNodeConfig): LayerNodeConfig => {
     const migratedChildren = layer.children.map(migrateLayerEffects)
     // Also migrate filters if present
     if (layer.filters && hasLegacyEffectConfigs(layer.filters as ProcessorConfig[])) {
-      const migratedFilters: EffectFilterConfig[] = []
+      const migratedFilters: AnyEffectConfig[] = []
       for (const filter of layer.filters) {
         if (isLegacyEffectFilterConfig(filter)) {
           // For filters array, we keep the legacy format but could migrate if needed
           migratedFilters.push(filter)
         } else {
-          migratedFilters.push(filter as EffectFilterConfig)
+          migratedFilters.push(filter as AnyEffectConfig)
         }
       }
       return { ...layer, children: migratedChildren, filters: migratedFilters }

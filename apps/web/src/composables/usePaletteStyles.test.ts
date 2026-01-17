@@ -1,6 +1,14 @@
 /**
  * @vitest-environment happy-dom
  */
+// Polyfill URL for happy-dom in CI environment
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+if (typeof globalThis.URL !== 'function' || !(globalThis.URL.prototype instanceof Object)) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { URL: NodeURL } = require('node:url')
+  globalThis.URL = NodeURL
+}
+
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ref, nextTick } from 'vue'
 import { usePaletteStyles } from './usePaletteStyles'

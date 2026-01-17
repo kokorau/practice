@@ -9,26 +9,30 @@ import type { HeroViewRepository } from '../../Domain/repository/HeroViewReposit
 import type {
   LayerNodeConfig,
   EffectFilterConfig,
+  AnyEffectConfig,
 } from '../../Domain/HeroViewConfig'
+import { isLegacyEffectFilterConfig } from '../../Domain/HeroViewConfig'
 import type { LayerEffectConfig } from '../../Domain/EffectSchema'
 import { EFFECT_TYPES, type FilterType } from '../../Domain/EffectRegistry'
 
 /**
- * エフェクトフィルターを取得
+ * エフェクトフィルターを取得（レガシー形式のみ対応）
+ * @deprecated Use SingleEffectConfig[] based approach instead
  */
 function findEffectFilter(layer: LayerNodeConfig): EffectFilterConfig | undefined {
   if (!('filters' in layer)) return undefined
-  return (layer.filters ?? []).find((p): p is EffectFilterConfig => p.type === 'effect')
+  return (layer.filters ?? []).find((p): p is EffectFilterConfig => isLegacyEffectFilterConfig(p))
 }
 
 /**
- * レイヤーのフィルターを更新
+ * レイヤーのフィルターを更新（レガシー形式のみ対応）
+ * @deprecated Use SingleEffectConfig[] based approach instead
  */
 function updateFilters(
-  filters: EffectFilterConfig[],
+  filters: AnyEffectConfig[],
   updater: (filter: EffectFilterConfig) => EffectFilterConfig
-): EffectFilterConfig[] {
-  return filters.map((p) => (p.type === 'effect' ? updater(p) : p))
+): AnyEffectConfig[] {
+  return filters.map((p) => (isLegacyEffectFilterConfig(p) ? updater(p) : p))
 }
 
 /**
