@@ -1,4 +1,4 @@
-import { fullscreenVertex, depthMapUtils, depthMapTypeToNumber, type DepthMapType } from './common'
+import { fullscreenVertex, depthMapUtils, depthMapTypeToNumber, oklabUtils, type DepthMapType } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 // ============================================================
@@ -80,7 +80,9 @@ ${fullscreenVertex}
 
 ${depthMapUtils}
 
-// Sample gradient (2 stop version)
+${oklabUtils}
+
+// Sample gradient (2 stop version, interpolated in OKLAB space for perceptually correct midtones)
 fn sampleGradient(t: f32) -> vec4f {
   let color0 = params.stops[0].color;
   let color1 = params.stops[1].color;
@@ -93,7 +95,7 @@ fn sampleGradient(t: f32) -> vec4f {
     return color0;
   }
   let localT = (clamped - pos0) / range;
-  return mix(color0, color1, localT);
+  return mixOklabVec4(color0, color1, localT);
 }
 
 @fragment

@@ -5,7 +5,7 @@
  * Integrates mask SDF with gradient grain effect in a single pass.
  */
 
-import { fullscreenVertex, aaUtils, maskBlendState, hash21, depthMapUtils, depthMapTypeToNumber, type DepthMapType } from '../common'
+import { fullscreenVertex, aaUtils, maskBlendState, hash21, depthMapUtils, depthMapTypeToNumber, oklabUtils, type DepthMapType } from '../common'
 import { circleMaskFn, rectMaskFn, blobMaskFn } from './masks'
 import type { TextureRenderSpec, Viewport } from '../../Domain'
 import type { CircleMaskConfig, RectMaskConfig, BlobMaskConfig } from './types'
@@ -65,6 +65,8 @@ const gradientGrainUtils = /* wgsl */ `
 ${hash21}
 
 ${depthMapUtils}
+
+${oklabUtils}
 
 // Catmull-Rom spline interpolation
 fn catmullRom(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32 {
@@ -151,8 +153,8 @@ fn gradientGrainColor(
     perlinOffset
   );
 
-  // Base gradient color
-  let baseColor = mix(colorA, colorB, t);
+  // Base gradient color (interpolated in OKLAB space for perceptually correct midtones)
+  let baseColor = mixOklabVec4(colorA, colorB, t);
 
   // Two independent noises (different seeds)
   let noiseA = hash21(pos + seed);

@@ -133,6 +133,98 @@ ${valueNoise}
 `
 
 // ============================================================
+// OKLAB Color Space Utilities (for perceptually correct interpolation)
+// ============================================================
+
+/**
+ * OKLAB color space interpolation utilities
+ * sRGB → Linear RGB → OKLAB → mix → OKLAB → Linear RGB → sRGB
+ * This produces perceptually correct gradients without muddy midtones.
+ *
+ * Reference: Björn Ottosson, "A perceptual color space for image processing"
+ * https://bottosson.github.io/posts/oklab/
+ */
+export const oklabUtils = /* wgsl */ `
+// sRGB to Linear RGB (remove gamma)
+fn srgbToLinear(c: f32) -> f32 {
+  if (c <= 0.04045) {
+    return c / 12.92;
+  }
+  return pow((c + 0.055) / 1.055, 2.4);
+}
+
+fn srgbToLinearVec3(c: vec3f) -> vec3f {
+  return vec3f(srgbToLinear(c.r), srgbToLinear(c.g), srgbToLinear(c.b));
+}
+
+// Linear RGB to sRGB (apply gamma)
+fn linearToSrgb(c: f32) -> f32 {
+  if (c <= 0.0031308) {
+    return c * 12.92;
+  }
+  return 1.055 * pow(c, 1.0 / 2.4) - 0.055;
+}
+
+fn linearToSrgbVec3(c: vec3f) -> vec3f {
+  return vec3f(linearToSrgb(c.r), linearToSrgb(c.g), linearToSrgb(c.b));
+}
+
+// Linear RGB to OKLAB
+fn linearRgbToOklab(c: vec3f) -> vec3f {
+  let l = 0.4122214708 * c.r + 0.5363325363 * c.g + 0.0514459929 * c.b;
+  let m = 0.2119034982 * c.r + 0.6806995451 * c.g + 0.1073969566 * c.b;
+  let s = 0.0883024619 * c.r + 0.2817188376 * c.g + 0.6299787005 * c.b;
+
+  let l_ = pow(l, 1.0 / 3.0);
+  let m_ = pow(m, 1.0 / 3.0);
+  let s_ = pow(s, 1.0 / 3.0);
+
+  return vec3f(
+    0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_,
+    1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_,
+    0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_
+  );
+}
+
+// OKLAB to Linear RGB
+fn oklabToLinearRgb(c: vec3f) -> vec3f {
+  let l_ = c.x + 0.3963377774 * c.y + 0.2158037573 * c.z;
+  let m_ = c.x - 0.1055613458 * c.y - 0.0638541728 * c.z;
+  let s_ = c.x - 0.0894841775 * c.y - 1.2914855480 * c.z;
+
+  let l = l_ * l_ * l_;
+  let m = m_ * m_ * m_;
+  let s = s_ * s_ * s_;
+
+  return vec3f(
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
+  );
+}
+
+// Mix two sRGB colors in OKLAB space (perceptually correct interpolation)
+fn mixOklab(colorA: vec3f, colorB: vec3f, t: f32) -> vec3f {
+  // Convert sRGB to OKLAB
+  let labA = linearRgbToOklab(srgbToLinearVec3(colorA));
+  let labB = linearRgbToOklab(srgbToLinearVec3(colorB));
+
+  // Mix in OKLAB space
+  let labMixed = mix(labA, labB, t);
+
+  // Convert back to sRGB
+  return linearToSrgbVec3(oklabToLinearRgb(labMixed));
+}
+
+// Mix two sRGB vec4f colors in OKLAB space (preserving alpha)
+fn mixOklabVec4(colorA: vec4f, colorB: vec4f, t: f32) -> vec4f {
+  let rgb = mixOklab(colorA.rgb, colorB.rgb, t);
+  let alpha = mix(colorA.a, colorB.a, t);
+  return vec4f(rgb, alpha);
+}
+`
+
+// ============================================================
 // Depth Map Utilities
 // ============================================================
 
