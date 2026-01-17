@@ -18,6 +18,7 @@ export {
   addLayer,
   removeLayer,
   updateLayer,
+  wrapLayerInGroup,
 } from './Layer'
 export {
   applyPreset,

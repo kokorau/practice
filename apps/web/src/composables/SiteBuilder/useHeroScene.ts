@@ -69,6 +69,7 @@ import {
   toggleExpand as toggleExpandUsecase,
   toggleVisibility as toggleVisibilityUsecase,
   updateLayer as updateLayerUsecase,
+  wrapLayerInGroup as wrapLayerInGroupUsecase,
   createForegroundElementUsecase,
   type ForegroundConfigPort,
   type SelectionPort,
@@ -489,6 +490,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     toggleExpand: (layerId: string) => toggleExpandUsecase(layerId, heroViewRepository),
     toggleVisibility: (layerId: string) => toggleVisibilityUsecase(layerId, heroViewRepository),
     updateLayer: (layerId: string, updates: Partial<LayerNodeConfig>) => updateLayerUsecase(layerId, updates, heroViewRepository),
+    wrapLayerInGroup: (layerId: string) => wrapLayerInGroupUsecase(layerId, heroViewRepository),
   }
 
   // ============================================================
@@ -701,6 +703,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     // Use usecase to update config (single source of truth)
     layerUsecase.toggleVisibility(id)
     render()
+  }
+
+  const groupLayer = (id: string): string | null => {
+    // Use usecase to wrap layer in group
+    const groupId = layerUsecase.wrapLayerInGroup(id)
+    if (!groupId) return null
+    render()
+    return groupId
   }
 
   const updateTextLayerConfig = (id: string, updates: Partial<TextLayerConfig>) => {
@@ -993,6 +1003,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     removeLayer,
     updateLayerVisibility,
     toggleLayerVisibility,
+    groupLayer,
     updateTextLayerConfig,
   }
 

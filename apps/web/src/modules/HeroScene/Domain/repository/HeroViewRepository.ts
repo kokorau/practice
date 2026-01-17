@@ -105,4 +105,12 @@ export interface HeroViewRepository {
    * @param layerIds 新しい順序のレイヤーID配列
    */
   reorderLayers(layerIds: string[]): void
+
+  /**
+   * レイヤーをグループで包む
+   * @param layerId 包むレイヤーのID
+   * @param groupId 新しいグループのID（省略時は自動生成）
+   * @returns 作成されたグループのID
+   */
+  wrapLayerInGroup(layerId: string, groupId?: string): string | null
 }

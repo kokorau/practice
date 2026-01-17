@@ -501,6 +501,8 @@ export interface LayerOperations {
   readonly updateLayerVisibility: (layerId: string, visible: boolean) => void
   /** Toggle layer visibility */
   readonly toggleLayerVisibility: (layerId: string) => void
+  /** Wrap layer in a new group (returns group ID or null if failed) */
+  readonly groupLayer: (layerId: string) => string | null
   /** Update text layer configuration */
   readonly updateTextLayerConfig: (layerId: string, config: Partial<{
     text: string
