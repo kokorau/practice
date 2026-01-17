@@ -78,17 +78,14 @@ export function createCircleGreymapMaskSpec(
   viewport: Viewport
 ): GreymapMaskSpec {
   const aspectRatio = viewport.width / viewport.height
-  const cutout = params.cutout ?? true
-  // When cutout=false (solid), swap inner/outer values
-  const innerValue = cutout ? params.innerValue : params.outerValue
-  const outerValue = cutout ? params.outerValue : params.innerValue
+  // Use innerValue/outerValue directly - cutout logic is handled by the caller
 
   const data = new Float32Array([
     params.centerX,
     params.centerY,
     params.radius,
-    innerValue,
-    outerValue,
+    params.innerValue,
+    params.outerValue,
     aspectRatio,
     viewport.width,
     viewport.height,
@@ -219,9 +216,7 @@ export function createRectGreymapMaskSpec(
   viewport: Viewport
 ): GreymapMaskSpec {
   const aspectRatio = viewport.width / viewport.height
-  const cutout = params.cutout ?? true
-  const innerValue = cutout ? params.innerValue : params.outerValue
-  const outerValue = cutout ? params.outerValue : params.innerValue
+  // Use innerValue/outerValue directly - cutout logic is handled by the caller
 
   // Determine if individual radii or uniform
   const isIndividual = 'radiusTopLeft' in params
@@ -246,8 +241,8 @@ export function createRectGreymapMaskSpec(
     rotation,
     perspectiveX,
     perspectiveY,
-    innerValue,
-    outerValue,
+    params.innerValue,
+    params.outerValue,
     aspectRatio,
     viewport.width,
     viewport.height,
@@ -362,9 +357,7 @@ export function createBlobGreymapMaskSpec(
   viewport: Viewport
 ): GreymapMaskSpec {
   const aspectRatio = viewport.width / viewport.height
-  const cutout = params.cutout ?? true
-  const innerValue = cutout ? params.innerValue : params.outerValue
-  const outerValue = cutout ? params.outerValue : params.innerValue
+  // Use innerValue/outerValue directly - cutout logic is handled by the caller
 
   const data = new Float32Array([
     params.centerX,
@@ -373,8 +366,8 @@ export function createBlobGreymapMaskSpec(
     params.amplitude,
     params.octaves,
     params.seed,
-    innerValue,
-    outerValue,
+    params.innerValue,
+    params.outerValue,
     aspectRatio,
     viewport.width,
     viewport.height,
@@ -463,17 +456,15 @@ export function createPerlinGreymapMaskSpec(
   params: PerlinGreymapMaskParams,
   viewport: Viewport
 ): GreymapMaskSpec {
-  const cutout = params.cutout ?? true
-  const innerValue = cutout ? params.innerValue : params.outerValue
-  const outerValue = cutout ? params.outerValue : params.innerValue
+  // Use innerValue/outerValue directly - cutout logic is handled by the caller
 
   const data = new Float32Array([
     params.seed,
     params.threshold,
     params.scale,
     params.octaves,
-    innerValue,
-    outerValue,
+    params.innerValue,
+    params.outerValue,
     viewport.width,
     viewport.height,
   ])
@@ -533,16 +524,14 @@ export function createLinearGradientGreymapMaskSpec(
   params: LinearGradientGreymapMaskParams,
   viewport: Viewport
 ): GreymapMaskSpec {
-  const cutout = params.cutout ?? true
-  const innerValue = cutout ? params.innerValue : params.outerValue
-  const outerValue = cutout ? params.outerValue : params.innerValue
+  // Use innerValue/outerValue directly - cutout logic is handled by the caller
 
   const data = new Float32Array([
     params.angle,
     params.startOffset,
     params.endOffset,
-    innerValue,
-    outerValue,
+    params.innerValue,
+    params.outerValue,
     viewport.width,
     viewport.height,
     0, // padding
@@ -621,9 +610,7 @@ export function createRadialGradientGreymapMaskSpec(
   params: RadialGradientGreymapMaskParams,
   viewport: Viewport
 ): GreymapMaskSpec {
-  const cutout = params.cutout ?? true
-  const innerValue = cutout ? params.innerValue : params.outerValue
-  const outerValue = cutout ? params.outerValue : params.innerValue
+  // Use innerValue/outerValue directly - cutout logic is handled by the caller
   const viewportAspectRatio = viewport.width / viewport.height
 
   const data = new Float32Array([
@@ -632,8 +619,8 @@ export function createRadialGradientGreymapMaskSpec(
     params.innerRadius,
     params.outerRadius,
     params.aspectRatio,
-    innerValue,
-    outerValue,
+    params.innerValue,
+    params.outerValue,
     viewport.width,
     viewport.height,
     viewportAspectRatio,
@@ -767,9 +754,7 @@ export function createBoxGradientGreymapMaskSpec(
   params: BoxGradientGreymapMaskParams,
   viewport: Viewport
 ): GreymapMaskSpec {
-  const cutout = params.cutout ?? true
-  const innerValue = cutout ? params.innerValue : params.outerValue
-  const outerValue = cutout ? params.outerValue : params.innerValue
+  // Use innerValue/outerValue directly - cutout logic is handled by the caller
 
   const data = new Float32Array([
     params.left,
@@ -778,8 +763,8 @@ export function createBoxGradientGreymapMaskSpec(
     params.bottom,
     params.cornerRadius,
     curveTypeToNumber(params.curve),
-    innerValue,
-    outerValue,
+    params.innerValue,
+    params.outerValue,
     viewport.width,
     viewport.height,
     0, // padding
