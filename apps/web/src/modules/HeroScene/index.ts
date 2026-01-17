@@ -126,6 +126,7 @@ export type {
   Model3DLayerNodeConfig,
   ImageLayerNodeConfig,
   ImageLayerNodeConfig as ImageLayerNodeConfigType,
+  ImagePositionConfig,
   GroupLayerNodeConfig,
   ProcessorNodeConfig,
   // Foreground

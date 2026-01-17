@@ -58,6 +58,8 @@ import {
   type GroupLayerNodeConfig,
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
+  type ImageLayerNodeConfig,
+  type ImagePositionConfig,
   type MaskProcessorConfig,
   type ProcessorNodeConfig,
   type ForegroundLayerConfig,
@@ -778,6 +780,27 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return id
   }
 
+  const addImageLayer = (options?: Partial<{
+    imageId: string
+    mode: 'cover' | 'positioned'
+    position: ImagePositionConfig
+  }>): string => {
+    const id = `image-${Date.now()}`
+    const imageLayerConfig: ImageLayerNodeConfig = {
+      type: 'image',
+      id,
+      name: 'Image Layer',
+      visible: true,
+      imageId: options?.imageId ?? '',
+      mode: options?.mode ?? 'cover',
+      position: options?.position,
+    }
+    layerUsecase.addLayer(imageLayerConfig)
+    heroFilters.effectManager.setEffectConfig(id, createDefaultEffectConfig())
+    render()
+    return id
+  }
+
   const removeLayer = (id: string): boolean => {
     if (id === LAYER_IDS.BASE) return false
     const existingConfig = heroViewRepository.get()
@@ -1362,6 +1385,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     addMaskLayer,
     addTextLayer,
     addObjectLayer,
+    addImageLayer,
     removeLayer,
     updateLayerVisibility,
     toggleLayerVisibility,

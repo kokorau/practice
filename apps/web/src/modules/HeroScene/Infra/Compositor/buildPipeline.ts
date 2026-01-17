@@ -13,6 +13,7 @@ import type {
   SurfaceLayerNodeConfig,
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
+  ImageLayerNodeConfig,
   HeroPrimitiveKey,
 } from '../../Domain/HeroViewConfig'
 import {
@@ -37,6 +38,7 @@ import {
   createCanvasOutputNode,
   type EffectConfig,
 } from './index'
+import { createImageRenderNode } from './nodes/ImageRenderNode'
 import {
   isDarkTheme,
   getMaskSurfaceKey,
@@ -120,6 +122,24 @@ function findAllClipGroups(layers: LayerNodeConfig[]): Array<{
     ) ?? null
 
     results.push({ group, surface, processor })
+  }
+
+  return results
+}
+
+/**
+ * Find all image layers (recursively searches groups)
+ */
+function findAllImageLayers(layers: LayerNodeConfig[]): ImageLayerNodeConfig[] {
+  const results: ImageLayerNodeConfig[] = []
+
+  for (const layer of layers) {
+    if (layer.type === 'image') {
+      results.push(layer)
+    } else if (layer.type === 'group') {
+      // Recursively search in groups
+      results.push(...findAllImageLayers(layer.children))
+    }
   }
 
   return results
@@ -432,7 +452,22 @@ export function buildPipeline(
     layerNodes.push(layerNode)
   }
 
-  // 3. Build overlay compositor (combines all layers)
+  // 3. Build image layer nodes
+  const imageLayers = findAllImageLayers(config.layers)
+  for (const imageLayer of imageLayers) {
+    if (!imageLayer.visible) continue
+
+    const imageNode = createImageRenderNode(
+      imageLayer.id,
+      imageLayer.imageId,
+      imageLayer.mode,
+      imageLayer.position
+    )
+    nodes.push(imageNode)
+    layerNodes.push(imageNode)
+  }
+
+  // 4. Build overlay compositor (combines all layers)
   let finalNode: TextureProducingNode
 
   if (layerNodes.length === 0) {

@@ -466,6 +466,20 @@ export interface AddObjectLayerOptions {
   scale?: number
 }
 
+/** Add image layer options */
+export interface AddImageLayerOptions {
+  imageId?: string
+  mode?: 'cover' | 'positioned'
+  position?: {
+    x: number
+    y: number
+    width: number
+    height: number
+    rotation?: number
+    opacity?: number
+  }
+}
+
 /**
  * Layer operation actions
  */
@@ -476,6 +490,8 @@ export interface LayerOperations {
   readonly addTextLayer: (config?: Partial<{ text: string; fontFamily: string; fontSize: number }>) => string
   /** Add a 3D object layer (returns layer ID) */
   readonly addObjectLayer: (options?: Partial<AddObjectLayerOptions>) => string
+  /** Add an image layer (returns layer ID) */
+  readonly addImageLayer: (options?: Partial<AddImageLayerOptions>) => string
   /** Remove a layer by ID (returns true if removed) */
   readonly removeLayer: (layerId: string) => boolean
 

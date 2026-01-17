@@ -62,6 +62,7 @@ import { getOklchFromPalette } from '../Domain/ColorHelpers'
 export interface TextureRendererLike {
   getViewport(): Viewport
   getDevice(): GPUDevice
+  getFormat(): GPUTextureFormat
   render(spec: TextureRenderSpec, options?: { clear?: boolean }): void
   copyCanvasToTexture(): GPUTexture
   applyPostEffect(
