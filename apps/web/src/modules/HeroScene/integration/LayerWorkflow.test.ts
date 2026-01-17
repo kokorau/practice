@@ -252,6 +252,59 @@ describe('LayerWorkflow Integration', () => {
     })
   })
 
+  describe('visibility toggle for nested layers', () => {
+    it('should toggle visibility of surface layer inside group', () => {
+      // グループ内にsurfaceレイヤーを配置
+      const childSurface = createSurfaceLayer('nested-surface', 'Nested Surface')
+      const group = createGroupLayer('group-1', [childSurface])
+      addLayer(group, repository)
+
+      // 初期状態はvisible: true
+      const initialLayer = repository.findLayer('nested-surface')
+      expect(initialLayer?.visible).toBe(true)
+
+      // visibilityを切り替え
+      const result = toggleVisibility('nested-surface', repository)
+      expect(result).toBe(false)
+
+      // 更新が反映されているか確認
+      const updatedLayer = repository.findLayer('nested-surface')
+      expect(updatedLayer?.visible).toBe(false)
+    })
+
+    it('should toggle visibility of deeply nested layer', () => {
+      // 深くネストされたレイヤー構造
+      const deepSurface = createSurfaceLayer('deep-surface', 'Deep Surface')
+      const innerGroup = createGroupLayer('inner-group', [deepSurface])
+      const outerGroup = createGroupLayer('outer-group', [innerGroup])
+      addLayer(outerGroup, repository)
+
+      // 初期状態確認
+      expect(repository.findLayer('deep-surface')?.visible).toBe(true)
+
+      // visibilityを切り替え
+      toggleVisibility('deep-surface', repository)
+      expect(repository.findLayer('deep-surface')?.visible).toBe(false)
+
+      // 再度切り替え
+      toggleVisibility('deep-surface', repository)
+      expect(repository.findLayer('deep-surface')?.visible).toBe(true)
+    })
+
+    it('should toggle group visibility itself', () => {
+      const childSurface = createSurfaceLayer('child-surface', 'Child')
+      const group = createGroupLayer('group-1', [childSurface])
+      addLayer(group, repository)
+
+      // グループ自体のvisibilityを切り替え
+      toggleVisibility('group-1', repository)
+      expect(repository.findLayer('group-1')?.visible).toBe(false)
+
+      // 子レイヤーのvisibilityは変わらない（グループが非表示でも子は個別にvisible状態を持つ）
+      expect(repository.findLayer('child-surface')?.visible).toBe(true)
+    })
+  })
+
   describe('reorderLayersの詳細検証', () => {
     it('should handle partial reorder (only specified layers)', () => {
       addLayer(createSurfaceLayer('surface-1'), repository)
