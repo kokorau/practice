@@ -111,11 +111,11 @@ export type {
   AnyMaskConfig,
   // Processor config types (JSON serialization)
   ProcessorConfig,
-  EffectProcessorConfig,
-  EffectFilterConfig,
   SingleEffectConfig,
   AnyEffectConfig,
   MaskProcessorConfig,
+  // Legacy effect config (for migration only)
+  EffectFilterConfig,
   // LayerNodeConfig types (JSON serialization)
   LayerNodeConfig,
   BaseLayerNodeConfig,
@@ -239,7 +239,6 @@ export {
   // HeroViewConfig factories
   createDefaultColorsConfig,
   createDefaultForegroundConfig,
-  createDefaultEffectProcessorConfig,
   createDefaultHeroViewConfig,
   // ReverseLookup utilities
   approxEqual,
@@ -278,7 +277,6 @@ export {
   isLegacyEffectFilterConfig,
   // Effect config migration
   migrateLegacyEffectConfig,
-  toLegacyEffectConfig,
   hasLegacyEffectConfigs,
   migrateEffectConfigsInModifiers,
   getEffectConfigsFromModifiers,
@@ -293,9 +291,7 @@ export {
   extractEnabledEffects,
   normalizeEffectFilterConfig,
   denormalizeToLayerEffectConfig,
-  denormalizeToEffectFilterConfig,
   getEffectsAsNormalized,
-  getEffectsAsLegacy,
   // Surface config normalization (Phase 12)
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,

@@ -28,9 +28,7 @@ import {
   extractEnabledEffects,
   normalizeEffectFilterConfig,
   denormalizeToLayerEffectConfig,
-  denormalizeToEffectFilterConfig,
   getEffectsAsNormalized,
-  getEffectsAsLegacy,
   // Types
   type SurfaceConfig,
   type NormalizedSurfaceConfig,
@@ -702,30 +700,6 @@ describe('Effect Config Normalization', () => {
     })
   })
 
-  describe('denormalizeToEffectFilterConfig', () => {
-    it('should convert SingleEffectConfig[] to EffectFilterConfig', () => {
-      const effects: SingleEffectConfig[] = [
-        { type: 'effect', id: 'blur', params: { radius: 16 } },
-      ]
-
-      const legacyFilterConfig = denormalizeToEffectFilterConfig(effects)
-
-      expect(legacyFilterConfig.type).toBe('effect')
-      expect(legacyFilterConfig.enabled).toBe(true)
-      expect(legacyFilterConfig.config.blur.enabled).toBe(true)
-      expect(legacyFilterConfig.config.blur.radius).toBe(16)
-    })
-
-    it('should return disabled filter for empty array', () => {
-      const effects: SingleEffectConfig[] = []
-
-      const legacyFilterConfig = denormalizeToEffectFilterConfig(effects)
-
-      expect(legacyFilterConfig.type).toBe('effect')
-      expect(legacyFilterConfig.enabled).toBe(false)
-    })
-  })
-
   describe('getEffectsAsNormalized', () => {
     it('should pass through SingleEffectConfig', () => {
       const effect: SingleEffectConfig = {
@@ -758,20 +732,6 @@ describe('Effect Config Normalization', () => {
       expect(effects).toHaveLength(1)
       expect(effects[0]!.id).toBe('blur')
       expect(effects[0]!.params.radius).toBe(10)
-    })
-  })
-
-  describe('getEffectsAsLegacy', () => {
-    it('should convert SingleEffectConfig[] to EffectFilterConfig', () => {
-      const effects: SingleEffectConfig[] = [
-        { type: 'effect', id: 'blur', params: { radius: 8 } },
-      ]
-
-      const legacyConfig = getEffectsAsLegacy(effects)
-
-      expect(legacyConfig.type).toBe('effect')
-      expect(legacyConfig.enabled).toBe(true)
-      expect(legacyConfig.config.blur.enabled).toBe(true)
     })
   })
 
