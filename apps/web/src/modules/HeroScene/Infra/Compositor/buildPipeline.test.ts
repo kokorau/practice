@@ -11,6 +11,22 @@ import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
 import type { CompositorRenderer } from '../../Domain/Compositor'
 
+// Mock @practice/texture and @practice/color to prevent interference from other test files
+// Use importOriginal to get the real module implementation
+vi.mock('@practice/texture', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@practice/texture')>()
+  return {
+    ...actual,
+  }
+})
+
+vi.mock('@practice/color', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@practice/color')>()
+  return {
+    ...actual,
+  }
+})
+
 // ============================================================
 // Mock Helpers
 // ============================================================
