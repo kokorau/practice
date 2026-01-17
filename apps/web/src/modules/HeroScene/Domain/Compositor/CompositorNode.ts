@@ -15,7 +15,7 @@
  */
 
 import type { BaseNode, NodeContext, TextureHandle } from './types'
-import type { RenderNode } from './RenderNode'
+import type { RenderNode, CompositorNodeLike } from './RenderNode'
 import { isTextureOwner } from './TextureOwner'
 
 // ============================================================
@@ -135,7 +135,7 @@ export function isCompositorNode(node: BaseNode): node is CompositorNode {
 /**
  * Union type for nodes that can be inputs to a CompositorNode.
  */
-export type CompositorInput = RenderNode | CompositorNode
+export type CompositorInput = RenderNode | CompositorNode | CompositorNodeLike
 
 /**
  * Helper to get texture from either a RenderNode or CompositorNode.

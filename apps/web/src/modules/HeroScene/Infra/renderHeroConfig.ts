@@ -93,6 +93,12 @@ export interface TextureRendererLike {
     inputTexture: GPUTexture,
     outputTextureIndex: number
   ): GPUTexture
+  /** Apply post-effect to owned texture (TextureOwner pattern) */
+  applyPostEffectToTexture(
+    effect: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
+    inputTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void
   /** Composite offscreen texture to canvas with alpha blending */
   compositeToCanvas(inputTexture: GPUTexture, options?: { clear?: boolean }): void
 }
