@@ -455,7 +455,9 @@ export function buildPipeline(
   // 3. Build image layer nodes
   const imageLayers = findAllImageLayers(config.layers)
   for (const imageLayer of imageLayers) {
+    // Skip invisible layers or layers without an image
     if (!imageLayer.visible) continue
+    if (!imageLayer.imageId) continue // Skip if no image assigned
 
     const imageNode = createImageRenderNode(
       imageLayer.id,
