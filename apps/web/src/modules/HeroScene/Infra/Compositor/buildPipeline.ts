@@ -22,7 +22,10 @@ import {
   DEFAULT_LAYER_MASK_COLORS,
   getEffectConfigsFromModifiers,
   getProcessorTargetPairsFromConfig,
+  isLegacyEffectFilterConfig,
+  type EffectFilterConfig,
 } from '../../Domain/HeroViewConfig'
+import { migrateLegacyEffectConfig } from '../../Domain/HeroViewConfig'
 import type {
   RenderNode,
   CompositorNode,
@@ -208,6 +211,51 @@ function resolveAutoColor(
 }
 
 // ============================================================
+// Effect Extraction from Filters
+// ============================================================
+
+/**
+ * Get effect configs from surface layer filters
+ * Handles both new SingleEffectConfig and legacy EffectFilterConfig formats
+ */
+function getEffectConfigsFromFilters(
+  filters: EffectFilterConfig[] | undefined
+): EffectConfig[] {
+  if (!filters || filters.length === 0) return []
+
+  const effects: EffectConfig[] = []
+
+  for (const filter of filters) {
+    if (!filter.enabled) continue
+
+    if (isLegacyEffectFilterConfig(filter)) {
+      // Migrate legacy format to SingleEffectConfig
+      const migrated = migrateLegacyEffectConfig(filter)
+      for (const single of migrated) {
+        effects.push({ id: single.id, params: single.params })
+      }
+    }
+  }
+
+  return effects
+}
+
+/**
+ * Build effect chain node from filters
+ */
+function buildEffectChainFromFilters(
+  id: string,
+  inputNode: RenderNode | CompositorNode,
+  filters: EffectFilterConfig[] | undefined
+): CompositorNode | null {
+  const effects = getEffectConfigsFromFilters(filters)
+
+  if (effects.length === 0) return null
+
+  return createEffectChainCompositorNode(id, inputNode, effects)
+}
+
+// ============================================================
 // Node Building Functions
 // ============================================================
 
@@ -280,7 +328,7 @@ function buildEffectChainNode(
  */
 function buildMaskedLayerNode(
   id: string,
-  surfaceNode: RenderNode,
+  surfaceNode: RenderNode | CompositorNode,
   maskNode: RenderNode,
   processor: ProcessorNodeConfig | null
 ): CompositorNode {
@@ -404,7 +452,16 @@ export function buildPipeline(
   if (baseLayer) {
     const bgSurfaceNode = buildSurfaceNode('bg-surface', baseLayer, ctx)
     nodes.push(bgSurfaceNode)
-    layerNodes.push(bgSurfaceNode)
+
+    // Apply effects from filters if present
+    let bgLayerNode: TextureProducingNode = bgSurfaceNode
+    const bgEffectsNode = buildEffectChainFromFilters('bg-effects', bgSurfaceNode, baseLayer.filters)
+    if (bgEffectsNode) {
+      nodes.push(bgEffectsNode)
+      bgLayerNode = bgEffectsNode
+    }
+
+    layerNodes.push(bgLayerNode)
   }
 
   // 2. Build clip-group layer nodes
@@ -417,8 +474,20 @@ export function buildPipeline(
     const surfaceNode = buildSurfaceNode(`${groupId}-surface`, surface, ctx)
     nodes.push(surfaceNode)
 
+    // First, apply surface layer filters if present
+    let currentNode: TextureProducingNode = surfaceNode
+    const surfaceEffectsNode = buildEffectChainFromFilters(
+      `${groupId}-surface-effects`,
+      surfaceNode,
+      surface.filters
+    )
+    if (surfaceEffectsNode) {
+      nodes.push(surfaceEffectsNode)
+      currentNode = surfaceEffectsNode
+    }
+
     // Build mask node if processor has mask
-    let layerNode: TextureProducingNode = surfaceNode
+    let layerNode: TextureProducingNode = currentNode
 
     if (processor) {
       const maskNode = buildMaskNode(`${groupId}-mask`, processor)
@@ -426,20 +495,20 @@ export function buildPipeline(
       if (maskNode) {
         nodes.push(maskNode)
 
-        // Build masked layer with effects
+        // Build masked layer with processor effects
         const maskedLayerNode = buildMaskedLayerNode(
           groupId,
-          surfaceNode,
+          currentNode as RenderNode | CompositorNode,
           maskNode,
           processor
         )
         nodes.push(maskedLayerNode)
         layerNode = maskedLayerNode
       } else {
-        // No mask, but may have effects
+        // No mask, but may have processor effects
         const effectsNode = buildEffectChainNode(
           `${groupId}-effects`,
-          surfaceNode,
+          currentNode as RenderNode | CompositorNode,
           processor
         )
         if (effectsNode) {
