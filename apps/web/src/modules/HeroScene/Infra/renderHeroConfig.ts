@@ -106,6 +106,13 @@ export interface TextureRendererLike {
     inputTexture: GPUTexture,
     outputTexture: GPUTexture
   ): void
+  /** Apply two-texture effect to owned texture (TextureOwner pattern) */
+  applyDualTextureEffectToTexture(
+    spec: unknown,
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void
   /** Composite offscreen texture to canvas with alpha blending */
   compositeToCanvas(inputTexture: GPUTexture, options?: { clear?: boolean }): void
 }
