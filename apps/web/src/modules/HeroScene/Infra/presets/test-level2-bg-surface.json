@@ -1,0 +1,67 @@
+{
+  "id": "test-level2-bg-surface",
+  "name": "Test Level 2: Background + Surface (No Mask)",
+  "config": {
+    "viewport": { "width": 1280, "height": 720 },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "grid",
+              "lineWidth": 2,
+              "cellSize": 40
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            }
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group",
+        "name": "Clip Group",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-mask",
+            "name": "Foreground Surface",
+            "visible": true,
+            "surface": {
+              "type": "stripe",
+              "width1": 10,
+              "width2": 10,
+              "angle": 45
+            },
+            "colors": {
+              "primary": "Bt",
+              "secondary": "Bs"
+            }
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": { "hue": 220, "saturation": 70, "value": 60 },
+    "accent": { "hue": 30, "saturation": 80, "value": 60 },
+    "foundation": { "hue": 0, "saturation": 0, "value": 97 }
+  }
+}

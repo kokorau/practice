@@ -207,8 +207,9 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
     if (maskColorKey1.value !== 'auto') {
       return paletteToRgba(primitivePalette.value[maskColorKey1.value])
     }
+    // Use larger delta (0.12) to create visible contrast for patterns
     const surface = primitivePalette.value[maskSurfaceKey.value]
-    const deltaL = isDark.value ? 0.05 : -0.05
+    const deltaL = isDark.value ? 0.12 : -0.12
     const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
     return paletteToRgba(shifted)
   })
@@ -245,8 +246,9 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
     if (maskColorKey1.value !== 'auto') {
       return primitivePalette.value[maskColorKey1.value]
     }
+    // Use larger delta (0.12) to create visible contrast for patterns
     const surface = primitivePalette.value[maskSurfaceKey.value]
-    const deltaL = isDark.value ? 0.05 : -0.05
+    const deltaL = isDark.value ? 0.12 : -0.12
     return { L: surface.L + deltaL, C: surface.C, H: surface.H }
   })
 
