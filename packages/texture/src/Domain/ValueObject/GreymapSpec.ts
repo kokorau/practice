@@ -257,12 +257,8 @@ export type RGBA = [number, number, number, number]
 
 /** Colorize shader parameters */
 export interface ColorizeParams {
-  /** Color to apply where greymap is white (1.0) */
+  /** Color to apply where greymap is opaque (luminance → alpha) */
   keepColor: RGBA
-  /** Color to apply where greymap is black (0.0) */
-  cutoutColor: RGBA
-  /** Alpha mode: 0=luminance becomes alpha, 1=preserve original alpha */
-  alphaMode: 0 | 1
 }
 
 // ============================================================

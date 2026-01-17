@@ -412,8 +412,8 @@ export function createGreymapMaskSpecFromShape(
   const shape = getMaskAsLegacy(shapeInput)
   const cutout = shape.cutout ?? false
   // Greymap values for colorize shader:
-  // - innerValue = 0.0 → cutoutColor (transparent) → preserves canvas content inside mask
-  // - outerValue = 1.0 → keepColor (solid maskColor) → replaces outside mask
+  // - innerValue = 0.0 → transparent → preserves canvas content inside mask
+  // - outerValue = 1.0 → opaque keepColor → replaces outside mask
   // This keeps the surface texture visible inside the mask shape,
   // and shows solid maskColor outside (covering the background).
   // Note: cutout flag would invert this behavior to create holes.
@@ -539,7 +539,7 @@ export function createGreymapMaskSpecFromShape(
  *
  * The greymap values (cutout=false): inner=0.0, outer=1.0
  * This means:
- * - Inside mask (greymap=0): cutoutColor (transparent) -> preserves canvas (surface)
+ * - Inside mask (greymap=0): transparent -> preserves canvas (surface)
  * - Outside mask (greymap=1): keepColor with alpha=1 -> replaces with solid color
  *
  * Note: This architecture has a limitation - the area outside the mask is replaced
@@ -570,11 +570,7 @@ function renderMaskWithGreymapPipeline(
   // - Where greymap = 0 (inside mask): transparent -> preserves underlying surface
   // - Where greymap = 1 (outside mask): maskColor -> replaces with solid color
   const colorizeSpec = createColorizeSpec(
-    {
-      keepColor: maskColor,
-      cutoutColor: [0, 0, 0, 0], // Transparent for inside (preserves surface)
-      alphaMode: 0, // Luminance becomes alpha
-    },
+    { keepColor: maskColor },
     viewport
   )
 
