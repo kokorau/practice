@@ -127,10 +127,8 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
     if (layer.type === 'processor') return
 
     // Store SingleEffectConfig[] directly as filters
-    // Type assertion needed as filters type still expects EffectFilterConfig[]
-    // Both formats share type: 'effect' and are handled correctly at runtime
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    heroViewRepository.updateLayer(layerId, { filters: pipeline } as any)
+    // filters type now accepts AnyEffectConfig[] (both legacy and new formats)
+    heroViewRepository.updateLayer(layerId, { filters: pipeline })
   }
 
   /**
