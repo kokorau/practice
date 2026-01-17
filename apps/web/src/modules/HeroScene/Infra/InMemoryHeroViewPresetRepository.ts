@@ -22,6 +22,8 @@ import testLevel2BgSurface from './presets/test-level2-bg-surface.json'
 import testLevel3WithMask from './presets/test-level3-with-mask.json'
 import testLevel4MultiMask from './presets/test-level4-multi-mask.json'
 import testLevel5OverlappingMasks from './presets/test-level5-overlapping-masks.json'
+import testLevel6SingleLayerEffect from './presets/test-level6-single-layer-effect.json'
+import testLevel7MultiLayerEffects from './presets/test-level7-multi-layer-effects.json'
 
 // ============================================================
 // Preset Data
@@ -36,6 +38,8 @@ const PRESETS: HeroViewPreset[] = [
   testLevel3WithMask as unknown as HeroViewPreset,
   testLevel4MultiMask as unknown as HeroViewPreset,
   testLevel5OverlappingMasks as unknown as HeroViewPreset,
+  testLevel6SingleLayerEffect as unknown as HeroViewPreset,
+  testLevel7MultiLayerEffects as unknown as HeroViewPreset,
   // Production presets
   corporateClean as unknown as HeroViewPreset,
   creativeStudio as unknown as HeroViewPreset,
