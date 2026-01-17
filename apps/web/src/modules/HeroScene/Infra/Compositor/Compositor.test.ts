@@ -18,7 +18,23 @@ import {
   EffectRenderNode,
   createEffectRenderNode,
 } from './nodes/EffectRenderNode'
-import type { NodeContext, TextureHandle, RenderNode } from '../../Domain/Compositor'
+import {
+  MaskCompositorNode,
+  createMaskCompositorNode,
+} from './nodes/MaskCompositorNode'
+import {
+  EffectChainCompositorNode,
+  createEffectChainCompositorNode,
+} from './nodes/EffectChainCompositorNode'
+import {
+  OverlayCompositorNode,
+  createOverlayCompositorNode,
+} from './nodes/OverlayCompositorNode'
+import {
+  CanvasOutputNode,
+  createCanvasOutputNode,
+} from './nodes/CanvasOutputNode'
+import type { NodeContext, TextureHandle, RenderNode, CompositorNode } from '../../Domain/Compositor'
 
 // ============================================================
 // Mock Helpers
@@ -317,5 +333,259 @@ describe('EffectRenderNode', () => {
 
     expect(result).toBeDefined()
     expect(ctx.renderer.applyPostEffectToOffscreen).toHaveBeenCalled()
+  })
+})
+
+// ============================================================
+// MaskCompositorNode Tests
+// ============================================================
+
+describe('MaskCompositorNode', () => {
+  function createMockRenderNode(id: string, textureIndex: 0 | 1 = 0): RenderNode {
+    return {
+      id,
+      type: 'render',
+      render: () => ({
+        id: `${id}-tex`,
+        width: 1280,
+        height: 720,
+        _gpuTexture: mockGpuTexture,
+        _textureIndex: textureIndex,
+      }),
+    }
+  }
+
+  it('creates a node with correct properties', () => {
+    const surfaceNode = createMockRenderNode('surface')
+    const maskNode = createMockRenderNode('mask')
+
+    const node = createMaskCompositorNode('masked', surfaceNode, maskNode)
+
+    expect(node.id).toBe('masked')
+    expect(node.type).toBe('compositor')
+    expect(node.inputs).toHaveLength(2)
+  })
+
+  it('combines surface and mask textures', () => {
+    const ctx = createMockContext()
+    const surfaceNode = createMockRenderNode('surface', 0)
+    const maskNode = createMockRenderNode('mask', 1)
+
+    const node = createMaskCompositorNode('masked', surfaceNode, maskNode)
+    const result = node.composite(ctx)
+
+    expect(result).toBeDefined()
+    expect(result.id).toBe('masked-output')
+    expect(ctx.renderer.applyDualTextureEffectToOffscreen).toHaveBeenCalled()
+  })
+})
+
+// ============================================================
+// EffectChainCompositorNode Tests
+// ============================================================
+
+describe('EffectChainCompositorNode', () => {
+  function createMockRenderNode(id: string): RenderNode {
+    return {
+      id,
+      type: 'render',
+      render: () => ({
+        id: `${id}-tex`,
+        width: 1280,
+        height: 720,
+        _gpuTexture: mockGpuTexture,
+        _textureIndex: 0,
+      }),
+    }
+  }
+
+  it('creates a node with correct properties', () => {
+    const inputNode = createMockRenderNode('input')
+
+    const node = createEffectChainCompositorNode('effects', inputNode, [
+      { id: 'blur', params: { strength: 5 } },
+    ])
+
+    expect(node.id).toBe('effects')
+    expect(node.type).toBe('compositor')
+    expect(node.inputs).toHaveLength(1)
+  })
+
+  it('returns input unchanged if no effects', () => {
+    const ctx = createMockContext()
+    const inputNode = createMockRenderNode('input')
+
+    const node = createEffectChainCompositorNode('no-effects', inputNode, [])
+    const result = node.composite(ctx)
+
+    expect(result).toBeDefined()
+    expect(ctx.renderer.applyPostEffectToOffscreen).not.toHaveBeenCalled()
+  })
+
+  it('applies effects in sequence', () => {
+    const ctx = createMockContext()
+    const inputNode = createMockRenderNode('input')
+
+    const node = createEffectChainCompositorNode('effects', inputNode, [
+      { id: 'blur', params: { strength: 5 } },
+      { id: 'vignette', params: { shape: 'ellipse', intensity: 0.5 } },
+    ])
+    const result = node.composite(ctx)
+
+    expect(result).toBeDefined()
+    expect(ctx.renderer.applyPostEffectToOffscreen).toHaveBeenCalledTimes(2)
+  })
+
+  it('skips invalid effect types', () => {
+    const ctx = createMockContext()
+    const inputNode = createMockRenderNode('input')
+
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const node = createEffectChainCompositorNode('effects', inputNode, [
+      { id: 'invalidEffect', params: {} },
+    ])
+    node.composite(ctx)
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[EffectChainCompositorNode] Unknown effect type: invalidEffect'
+    )
+
+    consoleSpy.mockRestore()
+  })
+})
+
+// ============================================================
+// OverlayCompositorNode Tests
+// ============================================================
+
+describe('OverlayCompositorNode', () => {
+  function createMockRenderNode(id: string): RenderNode {
+    return {
+      id,
+      type: 'render',
+      render: () => ({
+        id: `${id}-tex`,
+        width: 1280,
+        height: 720,
+        _gpuTexture: mockGpuTexture,
+        _textureIndex: 0,
+      }),
+    }
+  }
+
+  it('creates a node with correct properties', () => {
+    const layer1 = createMockRenderNode('layer1')
+    const layer2 = createMockRenderNode('layer2')
+
+    const node = createOverlayCompositorNode('overlay', [layer1, layer2])
+
+    expect(node.id).toBe('overlay')
+    expect(node.type).toBe('compositor')
+    expect(node.inputs).toHaveLength(2)
+  })
+
+  it('throws error if no layers', () => {
+    const ctx = createMockContext()
+    const node = createOverlayCompositorNode('empty', [])
+
+    expect(() => node.composite(ctx)).toThrow('No layers to composite')
+  })
+
+  it('returns single layer directly', () => {
+    const ctx = createMockContext()
+    const layer1 = createMockRenderNode('layer1')
+
+    const node = createOverlayCompositorNode('single', [layer1])
+    const result = node.composite(ctx)
+
+    expect(result).toBeDefined()
+    expect(result.id).toBe('layer1-tex')
+  })
+
+  it('composites multiple layers', () => {
+    const ctx = createMockContext()
+    const layer1 = createMockRenderNode('layer1')
+    const layer2 = createMockRenderNode('layer2')
+    const layer3 = createMockRenderNode('layer3')
+
+    const node = createOverlayCompositorNode('scene', [layer1, layer2, layer3])
+    const result = node.composite(ctx)
+
+    expect(result).toBeDefined()
+    expect(result.id).toBe('scene-output')
+  })
+})
+
+// ============================================================
+// CanvasOutputNode Tests
+// ============================================================
+
+describe('CanvasOutputNode', () => {
+  function createMockRenderNode(id: string): RenderNode {
+    return {
+      id,
+      type: 'render',
+      render: () => ({
+        id: `${id}-tex`,
+        width: 1280,
+        height: 720,
+        _gpuTexture: mockGpuTexture,
+        _textureIndex: 0,
+      }),
+    }
+  }
+
+  it('creates a node with correct properties', () => {
+    const inputNode = createMockRenderNode('input')
+
+    const node = createCanvasOutputNode('output', inputNode)
+
+    expect(node.id).toBe('output')
+    expect(node.type).toBe('output')
+    expect(node.input).toBe(inputNode)
+  })
+
+  it('outputs texture to canvas', () => {
+    const ctx = createMockContext()
+    const inputNode = createMockRenderNode('input')
+
+    const node = createCanvasOutputNode('output', inputNode)
+    node.output(ctx)
+
+    expect(ctx.renderer.compositeToCanvas).toHaveBeenCalled()
+  })
+
+  it('releases texture after output', () => {
+    const ctx = createMockContext()
+    const releaseSpy = vi.spyOn(ctx.texturePool, 'release')
+    const inputNode = createMockRenderNode('input')
+
+    const node = createCanvasOutputNode('output', inputNode)
+    node.output(ctx)
+
+    expect(releaseSpy).toHaveBeenCalled()
+  })
+
+  it('works with CompositorNode input', () => {
+    const ctx = createMockContext()
+    const inputNode = createMockRenderNode('input')
+    const compositorNode: CompositorNode = {
+      id: 'compositor',
+      type: 'compositor',
+      inputs: [inputNode],
+      composite: () => ({
+        id: 'compositor-tex',
+        width: 1280,
+        height: 720,
+        _gpuTexture: mockGpuTexture,
+        _textureIndex: 0,
+      }),
+    }
+
+    const node = createCanvasOutputNode('output', compositorNode)
+    node.output(ctx)
+
+    expect(ctx.renderer.compositeToCanvas).toHaveBeenCalled()
   })
 })

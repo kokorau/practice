@@ -31,6 +31,31 @@ export {
   type ImagePosition,
 } from './nodes'
 
+// CompositorNode implementations
+export {
+  // Mask Compositor
+  MaskCompositorNode,
+  createMaskCompositorNode,
+  type MaskCompositorNodeConfig,
+  // Effect Chain Compositor
+  EffectChainCompositorNode,
+  createEffectChainCompositorNode,
+  type EffectChainCompositorNodeConfig,
+  type EffectConfig,
+  // Overlay Compositor
+  OverlayCompositorNode,
+  createOverlayCompositorNode,
+  type OverlayCompositorNodeConfig,
+} from './nodes'
+
+// OutputNode implementations
+export {
+  CanvasOutputNode,
+  createCanvasOutputNode,
+  type CanvasOutputNodeConfig,
+} from './nodes'
+
+
 // Re-export Domain types for convenience
 export type {
   TextureHandle,
