@@ -5,6 +5,7 @@
  */
 
 import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
+import { findLayerInTree } from '../../Domain/LayerTreeOps'
 
 /**
  * レイヤーの表示/非表示状態を切り替える
@@ -18,7 +19,7 @@ export function toggleVisibility(
   repository: HeroViewRepository
 ): boolean | null {
   const config = repository.get()
-  const layer = config.layers.find((l) => l.id === layerId)
+  const layer = findLayerInTree(config.layers, layerId)
 
   if (!layer) {
     return null

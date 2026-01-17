@@ -12,7 +12,6 @@ import type {
 } from '../modules/HeroScene'
 import {
   findLayerInTree,
-  updateLayerInTree,
   removeLayerFromTree,
   moveLayerInTree,
   isGroupLayerConfig,
@@ -229,16 +228,9 @@ export function useLayerOperations(
     const layer = findLayerInTree(layers.value, layerId)
     if (!layer) return
 
-    const config = repository.get()
-    if (!config) return
-
-    const newLayers = updateLayerInTree(config.layers, layerId, { visible: !layer.visible })
-    repository.set({ ...config, layers: newLayers })
-
-    // Also toggle in scene for non-group layers
-    if (!isGroupLayerConfig(layer)) {
-      sceneCallbacks.toggleLayerVisibility(layerId)
-    }
+    // Delegate to usecase via sceneCallbacks
+    // Config update and render are handled by the usecase
+    sceneCallbacks.toggleLayerVisibility(layerId)
   }
 
   // ============================================================

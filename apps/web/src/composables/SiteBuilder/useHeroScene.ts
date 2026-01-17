@@ -88,6 +88,7 @@ import {
   type UsecaseState,
   type EditorStateRef,
   type RendererActions,
+  findLayerInTree,
 } from '../../modules/HeroScene'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
 
@@ -658,8 +659,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const toggleLayerVisibility = (id: string) => {
     const existingConfig = heroViewRepository.get()
     if (!existingConfig) return
-    const layer = existingConfig.layers.find(l => l.id === id)
+    const layer = findLayerInTree(existingConfig.layers, id)
     if (!layer) return
+
+    // Use usecase to update config (single source of truth)
     layerUsecase.toggleVisibility(id)
     render()
   }
@@ -667,7 +670,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const updateTextLayerConfig = (id: string, updates: Partial<TextLayerConfig>) => {
     const existingConfig = heroViewRepository.get()
     if (!existingConfig) return
-    const layer = existingConfig.layers.find(l => l.id === id)
+    const layer = findLayerInTree(existingConfig.layers, id)
     if (!layer || layer.type !== 'text') return
 
     if (updates.text !== undefined) {
