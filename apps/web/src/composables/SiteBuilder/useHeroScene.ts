@@ -103,7 +103,7 @@ import {
   type RendererActions,
   migrateHeroViewConfig,
 } from '../../modules/HeroScene'
-import { useLayerSelection } from '../useLayerSelection'
+import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
 
 // Import extracted composables
 import { useHeroColors } from './useHeroColors'
@@ -289,6 +289,7 @@ export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
   isDark: Ref<boolean> | ComputedRef<boolean>
   repository?: HeroViewRepository
+  layerSelection?: LayerSelectionReturn
 }
 
 // ============================================================
@@ -305,7 +306,7 @@ const LAYER_IDS = {
 // ============================================================
 
 export const useHeroScene = (options: UseHeroSceneOptions) => {
-  const { primitivePalette, isDark, repository } = options
+  const { primitivePalette, isDark, repository, layerSelection = createLayerSelection() } = options
 
   // ============================================================
   // Editor State (unified UI state management)
@@ -336,7 +337,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const repoConfig = shallowRef<HeroViewConfig>(heroViewRepository.get())
 
   // Layer selection for unified surface usecase
-  const { layerId: selectedLayerId, selectCanvasLayer } = useLayerSelection()
+  const { layerId: selectedLayerId, selectCanvasLayer } = layerSelection
   const selectionPort = {
     getSelectedLayerId: () => selectedLayerId.value,
   }

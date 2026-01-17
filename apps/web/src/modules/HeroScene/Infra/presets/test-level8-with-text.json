@@ -1,0 +1,71 @@
+{
+  "id": "test-level8-with-text",
+  "name": "Test Level 8: With Text Layer",
+  "config": {
+    "viewport": { "width": 1280, "height": 720 },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "solid"
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            }
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "id": "text-title",
+        "name": "Title Text",
+        "visible": true,
+        "text": "Hello World",
+        "fontFamily": "sans-serif",
+        "fontSize": 72,
+        "fontWeight": 700,
+        "letterSpacing": 0,
+        "lineHeight": 1.2,
+        "color": "#ffffff",
+        "position": { "x": 0.5, "y": 0.4, "anchor": "center" },
+        "rotation": 0
+      },
+      {
+        "type": "text",
+        "id": "text-subtitle",
+        "name": "Subtitle Text",
+        "visible": true,
+        "text": "Testing Text Layer Rendering",
+        "fontFamily": "sans-serif",
+        "fontSize": 24,
+        "fontWeight": 400,
+        "letterSpacing": 0.05,
+        "lineHeight": 1.4,
+        "color": "#cccccc",
+        "position": { "x": 0.5, "y": 0.55, "anchor": "center" },
+        "rotation": 0
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": { "hue": 220, "saturation": 70, "value": 50 },
+    "accent": { "hue": 30, "saturation": 80, "value": 60 },
+    "foundation": { "hue": 0, "saturation": 0, "value": 15 }
+  }
+}
