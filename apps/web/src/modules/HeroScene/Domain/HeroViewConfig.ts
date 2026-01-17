@@ -1418,6 +1418,18 @@ export const migrateHeroViewConfig = (config: HeroViewConfig): HeroViewConfig =>
  *
  * Always ensures surface layers have colors (uses defaults if no source available)
  */
+/**
+ * Check if colors are incomplete (missing primary or secondary)
+ */
+function isColorsIncomplete(layerColors: SurfaceColorsConfig | undefined): boolean {
+  if (!layerColors) return true
+  return layerColors.primary == null || layerColors.secondary == null
+}
+
+/**
+ * Migrate colors from legacy config to per-surface colors
+ * Also repairs partial/incomplete color objects
+ */
 function migrateColorsToSurfaceLayers(
   layers: LayerNodeConfig[],
   colors?: LegacyHeroColorsConfig
@@ -1428,14 +1440,15 @@ function migrateColorsToSurfaceLayers(
       return {
         ...layer,
         children: layer.children.map((child): LayerNodeConfig => {
-          if (child.type === 'surface' && child.id === 'background' && !child.colors) {
+          if (child.type === 'surface' && child.id === 'background' && isColorsIncomplete(child.colors)) {
             // Use legacy colors if available, otherwise use defaults
+            // Merge with existing colors to preserve any valid values
             const bgColors = colors?.background ?? DEFAULT_LAYER_BACKGROUND_COLORS
             return {
               ...child,
               colors: {
-                primary: bgColors.primary,
-                secondary: bgColors.secondary,
+                primary: child.colors?.primary ?? bgColors.primary,
+                secondary: child.colors?.secondary ?? bgColors.secondary,
               },
             }
           }
@@ -1449,14 +1462,15 @@ function migrateColorsToSurfaceLayers(
       return {
         ...layer,
         children: layer.children.map((child): LayerNodeConfig => {
-          if (child.type === 'surface' && child.id === 'surface-mask' && !child.colors) {
+          if (child.type === 'surface' && child.id === 'surface-mask' && isColorsIncomplete(child.colors)) {
             // Use legacy colors if available, otherwise use defaults
+            // Merge with existing colors to preserve any valid values
             const maskColors = colors?.mask ?? DEFAULT_LAYER_MASK_COLORS
             return {
               ...child,
               colors: {
-                primary: maskColors.primary,
-                secondary: maskColors.secondary,
+                primary: child.colors?.primary ?? maskColors.primary,
+                secondary: child.colors?.secondary ?? maskColors.secondary,
               },
             }
           }
@@ -1466,13 +1480,13 @@ function migrateColorsToSurfaceLayers(
     }
 
     // Handle legacy base layer
-    if (layer.type === 'base' && !layer.colors) {
+    if (layer.type === 'base' && isColorsIncomplete(layer.colors)) {
       const bgColors = colors?.background ?? DEFAULT_LAYER_BACKGROUND_COLORS
       return {
         ...layer,
         colors: {
-          primary: bgColors.primary,
-          secondary: bgColors.secondary,
+          primary: layer.colors?.primary ?? bgColors.primary,
+          secondary: layer.colors?.secondary ?? bgColors.secondary,
         },
       }
     }
