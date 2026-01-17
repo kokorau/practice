@@ -6,6 +6,7 @@ export { useHeroSceneRenderer, type UseHeroSceneRendererOptions, type UseHeroSce
 export { useHeroSurfaceParams, type UseHeroSurfaceParamsOptions, type UseHeroSurfaceParamsReturn } from './useHeroSurfaceParams'
 export { useHeroPatternPresets, type UseHeroPatternPresetsOptions, type UseHeroPatternPresetsReturn } from './useHeroPatternPresets'
 export { useHeroColorSync, type UseHeroColorSyncOptions } from './useHeroColorSync'
+export { useHeroConfigLoader, type UseHeroConfigLoaderOptions, type UseHeroConfigLoaderReturn, LAYER_IDS } from './useHeroConfigLoader'
 export { createSurfacePatterns, type CreateSurfacePatternsOptions, type SurfacePatternItem } from './createSurfacePatterns'
 export {
   compileForegroundLayout,
