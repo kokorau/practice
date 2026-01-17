@@ -14,6 +14,7 @@ import {
   type HeroSceneConfig,
   type HtmlLayer,
   type LayerEffectConfig,
+  type SingleEffectConfig,
   type SurfaceLayerNodeConfig,
   type BaseLayerNodeConfig,
   type MaskProcessorConfig,
@@ -27,6 +28,10 @@ import {
   DEFAULT_LAYER_MASK_COLORS,
   findSurfacePresetIndex,
   findMaskPatternIndex,
+  isSingleEffectConfig,
+  isLegacyEffectFilterConfig,
+  getEffectsAsNormalized,
+  denormalizeToLayerEffectConfig,
 } from '../../modules/HeroScene'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroFiltersReturn } from './useHeroFilters'
@@ -156,17 +161,23 @@ export const useHeroConfigLoader = (
         const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
         selectedBackgroundIndex.value = bgPresetIndex ?? 0
 
-        const effectFilter = (backgroundSurfaceLayer.filters ?? []).find((p) => p.type === 'effect')
-        if (effectFilter) {
-          const defaults = createDefaultEffectConfig()
-          const merged: LayerEffectConfig = {
-            vignette: { ...defaults.vignette, ...effectFilter.config.vignette },
-            chromaticAberration: { ...defaults.chromaticAberration, ...effectFilter.config.chromaticAberration },
-            dotHalftone: { ...defaults.dotHalftone, ...effectFilter.config.dotHalftone },
-            lineHalftone: { ...defaults.lineHalftone, ...effectFilter.config.lineHalftone },
-            blur: { ...defaults.blur, ...(effectFilter.config.blur ?? {}) },
+        // Load effect filters (supports both legacy and new formats)
+        const effectFilters = (backgroundSurfaceLayer.filters ?? []).filter((p) => p.type === 'effect')
+        if (effectFilters.length > 0) {
+          // Collect all effects as SingleEffectConfig[]
+          const pipeline: SingleEffectConfig[] = []
+          for (const filter of effectFilters) {
+            if (isSingleEffectConfig(filter)) {
+              // New format: SingleEffectConfig
+              pipeline.push(filter)
+            } else if (isLegacyEffectFilterConfig(filter)) {
+              // Legacy format: EffectFilterConfig - convert to SingleEffectConfig[]
+              pipeline.push(...getEffectsAsNormalized(filter))
+            }
           }
-          heroFilters.effectManager.setEffectConfig(LAYER_IDS.BASE, merged)
+          if (pipeline.length > 0) {
+            heroFilters.effectManager.setEffectPipeline(LAYER_IDS.BASE, pipeline)
+          }
         }
       }
 
@@ -210,17 +221,23 @@ export const useHeroConfigLoader = (
         const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, heroThumbnails.midgroundTexturePatterns)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
-        const maskEffectFilter = (maskSurfaceLayer.filters ?? []).find((p) => p.type === 'effect')
-        if (maskEffectFilter) {
-          const defaults = createDefaultEffectConfig()
-          const merged: LayerEffectConfig = {
-            vignette: { ...defaults.vignette, ...maskEffectFilter.config.vignette },
-            chromaticAberration: { ...defaults.chromaticAberration, ...maskEffectFilter.config.chromaticAberration },
-            dotHalftone: { ...defaults.dotHalftone, ...maskEffectFilter.config.dotHalftone },
-            lineHalftone: { ...defaults.lineHalftone, ...maskEffectFilter.config.lineHalftone },
-            blur: { ...defaults.blur, ...(maskEffectFilter.config.blur ?? {}) },
+        // Load mask effect filters (supports both legacy and new formats)
+        const maskEffectFilters = (maskSurfaceLayer.filters ?? []).filter((p) => p.type === 'effect')
+        if (maskEffectFilters.length > 0) {
+          // Collect all effects as SingleEffectConfig[]
+          const pipeline: SingleEffectConfig[] = []
+          for (const filter of maskEffectFilters) {
+            if (isSingleEffectConfig(filter)) {
+              // New format: SingleEffectConfig
+              pipeline.push(filter)
+            } else if (isLegacyEffectFilterConfig(filter)) {
+              // Legacy format: EffectFilterConfig - convert to SingleEffectConfig[]
+              pipeline.push(...getEffectsAsNormalized(filter))
+            }
           }
-          heroFilters.effectManager.setEffectConfig(LAYER_IDS.MASK, merged)
+          if (pipeline.length > 0) {
+            heroFilters.effectManager.setEffectPipeline(LAYER_IDS.MASK, pipeline)
+          }
         }
       }
 

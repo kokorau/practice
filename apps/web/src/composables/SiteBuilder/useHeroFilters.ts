@@ -9,7 +9,7 @@ import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import {
   type LayerEffectConfig,
-  type EffectFilterConfig,
+  type SingleEffectConfig,
   type EffectType,
   type FilterType,
   type HeroViewRepository,
@@ -116,44 +116,36 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
   // ============================================================
 
   /**
-   * Convert LayerEffectConfig to EffectFilterConfig for repository storage
+   * Sync a single layer's effect pipeline to repository
+   * Stores SingleEffectConfig[] directly (new format)
    */
-  const toEffectFilterConfig = (config: LayerEffectConfig): EffectFilterConfig => ({
-    type: 'effect',
-    enabled: true,
-    config,
-  })
-
-  /**
-   * Sync a single layer's effect config to repository
-   */
-  const syncLayerEffectToRepository = (layerId: string, effectConfig: LayerEffectConfig) => {
+  const syncLayerEffectToRepository = (layerId: string, pipeline: SingleEffectConfig[]) => {
     const layer = heroViewRepository.findLayer(layerId)
     if (!layer) return
 
     // Skip processor nodes (they use modifiers, not filters)
     if (layer.type === 'processor') return
 
-    // Convert and update
-    const filters: EffectFilterConfig[] = [toEffectFilterConfig(effectConfig)]
-    heroViewRepository.updateLayer(layerId, { filters })
+    // Store SingleEffectConfig[] directly as filters
+    // The repository accepts both legacy and new formats
+    heroViewRepository.updateLayer(layerId, { filters: pipeline as unknown[] })
   }
 
   /**
    * Debounced sync function to avoid excessive repository updates
    */
-  const debouncedSyncEffects = useDebounceFn((effects: Map<string, LayerEffectConfig>) => {
-    for (const [layerId, effectConfig] of effects) {
-      syncLayerEffectToRepository(layerId, effectConfig)
+  const debouncedSyncEffects = useDebounceFn((pipelines: Map<string, SingleEffectConfig[]>) => {
+    for (const [layerId, pipeline] of pipelines) {
+      syncLayerEffectToRepository(layerId, pipeline)
     }
   }, 100)
 
-  // Watch effectManager.effects and sync to repository
+  // Watch effectManager.effectPipelines and sync to repository
   watch(
-    () => effectManager.effects.value,
-    (effects) => {
+    () => effectManager.effectPipelines.value,
+    (pipelines) => {
       if (isLoadingFromConfig.value) return
-      debouncedSyncEffects(effects)
+      debouncedSyncEffects(pipelines)
     },
     { deep: true }
   )
@@ -193,16 +185,13 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
 
   /**
    * Get current filter type for a layer
+   * Returns the first effect type in the pipeline, or 'void' if empty
    */
   const getFilterType = (layerId: string): FilterType => {
-    const filters = effectManager.effects.value.get(layerId)
-    if (!filters) return 'void'
-    if (filters.vignette?.enabled) return 'vignette'
-    if (filters.chromaticAberration?.enabled) return 'chromaticAberration'
-    if (filters.dotHalftone?.enabled) return 'dotHalftone'
-    if (filters.lineHalftone?.enabled) return 'lineHalftone'
-    if (filters.blur?.enabled) return 'blur'
-    return 'void'
+    const pipeline = effectManager.effectPipelines.value.get(layerId)
+    if (!pipeline || pipeline.length === 0) return 'void'
+    // Return the first effect type (for exclusive selection mode)
+    return pipeline[0]!.id as FilterType
   }
 
   /**
