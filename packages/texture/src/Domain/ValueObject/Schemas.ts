@@ -140,6 +140,38 @@ export interface BoxGradientMaskShapeParams {
   cutout: boolean
 }
 
+/**
+ * Wavy Line direction options for select field
+ */
+const wavyLineDirectionOptions = [
+  { value: 'vertical' as const, label: 'Vertical' },
+  { value: 'horizontal' as const, label: 'Horizontal' },
+] as const
+
+/**
+ * Wavy Line Mask Shape Schema
+ * Organic dividing line using 1D Perlin noise
+ */
+export const WavyLineMaskShapeSchema = defineSchema({
+  position: number({ label: 'Position', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  direction: select({ label: 'Direction', options: wavyLineDirectionOptions, default: 'vertical' }),
+  amplitude: number({ label: 'Amplitude', min: 0, max: 0.3, step: 0.01, default: 0.08 }),
+  frequency: number({ label: 'Frequency', min: 1, max: 20, step: 0.5, default: 3 }),
+  octaves: number({ label: 'Octaves', min: 1, max: 5, step: 1, default: 2 }),
+  seed: number({ label: 'Seed', min: 0, max: 1000, step: 1, default: 42 }),
+  cutout: boolean({ label: 'Cutout', default: false }),
+})
+
+export interface WavyLineMaskShapeParams {
+  position: number
+  direction: 'vertical' | 'horizontal'
+  amplitude: number
+  frequency: number
+  octaves: number
+  seed: number
+  cutout: boolean
+}
+
 // ============================================================
 // Surface Schemas (Texture Patterns)
 // ============================================================
@@ -350,6 +382,9 @@ export const createDefaultRadialGradientMaskParams = (): RadialGradientMaskShape
 export const createDefaultBoxGradientMaskParams = (): BoxGradientMaskShapeParams =>
   getDefaults(BoxGradientMaskShapeSchema) as BoxGradientMaskShapeParams
 
+export const createDefaultWavyLineMaskParams = (): WavyLineMaskShapeParams =>
+  getDefaults(WavyLineMaskShapeSchema) as WavyLineMaskShapeParams
+
 export const createDefaultSolidParams = (): SolidSurfaceParams =>
   getDefaults(SolidSurfaceSchema)
 
@@ -404,6 +439,7 @@ export const MaskShapeSchemas = {
   linearGradient: LinearGradientMaskShapeSchema,
   radialGradient: RadialGradientMaskShapeSchema,
   boxGradient: BoxGradientMaskShapeSchema,
+  wavyLine: WavyLineMaskShapeSchema,
 } as const
 
 export const SurfaceSchemas = {

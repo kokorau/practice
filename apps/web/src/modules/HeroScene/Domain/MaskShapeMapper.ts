@@ -90,6 +90,18 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
       cutout: maskConfig.cutout ?? false,
     }
   }
+  if (maskConfig.type === 'wavyLine') {
+    return {
+      type: 'wavyLine',
+      position: maskConfig.position,
+      direction: maskConfig.direction,
+      amplitude: maskConfig.amplitude,
+      frequency: maskConfig.frequency,
+      octaves: maskConfig.octaves,
+      seed: maskConfig.seed,
+      cutout: maskConfig.cutout ?? false,
+    }
+  }
   // blob (default)
   return {
     type: 'blob',
@@ -175,6 +187,18 @@ export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMa
       bottom: params.bottom,
       cornerRadius: params.cornerRadius,
       curve: params.curve as 'linear' | 'smooth' | 'easeIn' | 'easeOut',
+      cutout: params.cutout,
+    }
+  }
+  if (params.type === 'wavyLine') {
+    return {
+      type: 'wavyLine',
+      position: params.position,
+      direction: params.direction,
+      amplitude: params.amplitude,
+      frequency: params.frequency,
+      octaves: params.octaves,
+      seed: params.seed,
       cutout: params.cutout,
     }
   }

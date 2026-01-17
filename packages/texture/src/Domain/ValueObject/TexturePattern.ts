@@ -37,7 +37,7 @@ export interface TexturePattern {
 /**
  * Mask type enumeration
  */
-export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient' | 'radialGradient' | 'boxGradient'
+export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient' | 'radialGradient' | 'boxGradient' | 'wavyLine'
 
 /**
  * Circle mask configuration
@@ -161,7 +161,29 @@ export interface BoxGradientMaskShapeConfig {
   cutout?: boolean
 }
 
-export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig | BoxGradientMaskShapeConfig
+/**
+ * Wavy line mask configuration
+ * Organic dividing line using 1D Perlin noise (wavy version of Half Left/Right/Top/Bottom)
+ */
+export interface WavyLineMaskShapeConfig {
+  type: 'wavyLine'
+  /** Line position (0.0-1.0, where the dividing line is) */
+  position: number
+  /** Direction: 'vertical' = left/right split, 'horizontal' = top/bottom split */
+  direction: 'vertical' | 'horizontal'
+  /** Wave amplitude (0.0-0.3) */
+  amplitude: number
+  /** Wave frequency (1-20) */
+  frequency: number
+  /** fBm octaves for smoother/rougher waves (1-5) */
+  octaves: number
+  /** Random seed for variation */
+  seed: number
+  /** If true (default), inside is on the left/top. If false, reversed. */
+  cutout?: boolean
+}
+
+export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig | BoxGradientMaskShapeConfig | WavyLineMaskShapeConfig
 
 /**
  * Mask pattern definition with shape configuration

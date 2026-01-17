@@ -513,6 +513,23 @@ export interface BoxGradientMaskShapeConfig {
   cutout: boolean
 }
 
+export interface WavyLineMaskShapeConfig {
+  type: 'wavyLine'
+  /** 境界線の位置 (0-1, 正規化座標) */
+  position: number
+  /** 分割方向: 'vertical' = 左右分割, 'horizontal' = 上下分割 */
+  direction: 'vertical' | 'horizontal'
+  /** 波の振幅 (0-0.3) */
+  amplitude: number
+  /** 波の周波数 (1-20) */
+  frequency: number
+  /** fBmオクターブ数 (1-5) */
+  octaves: number
+  /** ランダムシード */
+  seed: number
+  cutout: boolean
+}
+
 export type MaskShapeConfig =
   | CircleMaskShapeConfig
   | RectMaskShapeConfig
@@ -521,6 +538,7 @@ export type MaskShapeConfig =
   | LinearGradientMaskShapeConfig
   | RadialGradientMaskShapeConfig
   | BoxGradientMaskShapeConfig
+  | WavyLineMaskShapeConfig
 
 // ============================================================
 // Normalized Mask Config Types (Phase 12: id + params pattern)

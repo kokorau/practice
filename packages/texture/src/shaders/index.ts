@@ -33,18 +33,21 @@ export {
   linearGradientMaskShader,
   radialGradientMaskShader,
   boxGradientMaskShader,
+  wavyLineMaskShader,
   createCircleMaskSpec,
   createRectMaskSpec,
   createPerlinMaskSpec,
   createLinearGradientMaskSpec,
   createRadialGradientMaskSpec,
   createBoxGradientMaskSpec,
+  createWavyLineMaskSpec,
   type CircleMaskParams,
   type RectMaskParams,
   type PerlinMaskParams,
   type LinearGradientMaskParams,
   type RadialGradientMaskParams,
   type BoxGradientMaskParams,
+  type WavyLineMaskParams,
 } from './mask'
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'
 export {
