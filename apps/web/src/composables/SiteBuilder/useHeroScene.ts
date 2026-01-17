@@ -365,7 +365,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   // Flag to skip watcher updates during fromHeroViewConfig execution
-  let isLoadingFromConfig = false
+  const isLoadingFromConfig = ref(false)
 
   // ============================================================
   // Foreground Config (HTML Layer)
@@ -393,7 +393,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const heroFilters = useHeroFilters({
     layerIds: LAYER_IDS,
     heroViewRepository,
-    isLoadingFromConfig: () => isLoadingFromConfig,
+    isLoadingFromConfig,
   })
 
   // ============================================================
@@ -898,17 +898,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Watchers
   // ============================================================
   watch(selectedBackgroundIndex, () => {
-    if (isLoadingFromConfig) return
+    if (isLoadingFromConfig.value) return
     initBackgroundSurfaceParamsFromPreset()
   }, { immediate: true })
 
   watch(selectedMaskIndex, () => {
-    if (isLoadingFromConfig) return
+    if (isLoadingFromConfig.value) return
     initMaskShapeParamsFromPreset()
   }, { immediate: true })
 
   watch(selectedMidgroundTextureIndex, () => {
-    if (isLoadingFromConfig) return
+    if (isLoadingFromConfig.value) return
     initSurfaceParamsFromPreset()
   }, { immediate: true })
 
@@ -986,35 +986,35 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Color watchers: write to surface layer colors only (deprecated config.colors is kept for reading only)
   watch(heroColors.backgroundColorKey1, (newValue) => {
-    if (isLoadingFromConfig) return
+    if (isLoadingFromConfig.value) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { primary: newValue as HeroPrimitiveKey | 'auto' })
     heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.backgroundColorKey2, (newValue) => {
-    if (isLoadingFromConfig) return
+    if (isLoadingFromConfig.value) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { secondary: newValue as HeroPrimitiveKey | 'auto' })
     heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.maskColorKey1, (newValue) => {
-    if (isLoadingFromConfig) return
+    if (isLoadingFromConfig.value) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: newValue as HeroPrimitiveKey | 'auto' })
     heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.maskColorKey2, (newValue) => {
-    if (isLoadingFromConfig) return
+    if (isLoadingFromConfig.value) return
     const config = heroViewRepository.get()
     const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: newValue as HeroPrimitiveKey | 'auto' })
     heroViewRepository.set({ ...config, layers: updatedLayers })
   })
 
   watch(heroColors.maskSemanticContext, (newValue) => {
-    if (isLoadingFromConfig) return
+    if (isLoadingFromConfig.value) return
     const config = heroViewRepository.get()
     heroViewRepository.set({
       ...config,
@@ -1062,8 +1062,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   const fromHeroViewConfig = async (config: HeroViewConfig) => {
-    isLoadingFromConfig = true
+    isLoadingFromConfig.value = true
 
+    try {
     // Migrate legacy configs before applying
     const migratedConfig = migrateHeroViewConfig(config)
     heroViewRepository.set(migratedConfig)
@@ -1204,8 +1205,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
     syncLayerConfigs()
     await render()
-
-    isLoadingFromConfig = false
+    } finally {
+      isLoadingFromConfig.value = false
+    }
   }
 
   // ============================================================
@@ -1257,7 +1259,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   if (repository) {
     repositoryUnsubscribe = repository.subscribe(async (config: HeroViewConfig) => {
-      if (isLoadingFromConfig) return
+      if (isLoadingFromConfig.value) return
       await fromHeroViewConfig(config)
     })
   }
