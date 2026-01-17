@@ -62,10 +62,14 @@ export class OverlayCompositorNode implements CompositorNode {
   readonly inputs: ReadonlyArray<RenderNode | CompositorNode>
 
   private readonly layers: ReadonlyArray<RenderNode | CompositorNode>
+  // blendMode reserved for future overlay shader implementation
+  // private readonly blendMode: BlendMode
 
   constructor(config: OverlayCompositorNodeConfig) {
     this.id = config.id
     this.layers = config.layers
+    // blendMode will be used when proper overlay blending is implemented
+    // this.blendMode = config.blendMode ?? 'normal'
     this.inputs = config.layers
   }
 
