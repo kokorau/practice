@@ -773,32 +773,48 @@ function findSurfaceLayer(layers: LayerNodeConfig[]): SurfaceLayerNodeConfig | n
   return null
 }
 
+
 /**
- * Find clip-group and extract its surface and processor layers
- * Returns null if clip-group structure is not found
+ * Find all clip-groups (groups with surface layers, excluding background-group)
+ * Returns array of { group, surface, processor } in config order
+ *
+ * A group is considered a clip-group if:
+ * - It's not the background-group
+ * - It contains at least one surface layer
  */
-function findClipGroupContents(layers: LayerNodeConfig[]): {
+function findAllClipGroups(layers: LayerNodeConfig[]): Array<{
+  group: GroupLayerNodeConfig
   surface: SurfaceLayerNodeConfig
   processor: ProcessorNodeConfig | null
-} | null {
-  // Look for clip-group by ID
-  const clipGroup = layers.find(
-    (layer): layer is GroupLayerNodeConfig => layer.type === 'group' && layer.id === 'clip-group'
-  )
-  if (!clipGroup) return null
+}> {
+  const results: Array<{
+    group: GroupLayerNodeConfig
+    surface: SurfaceLayerNodeConfig
+    processor: ProcessorNodeConfig | null
+  }> = []
 
-  // Find surface-mask inside clip-group
-  const surface = clipGroup.children.find(
-    (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'surface-mask'
-  )
-  if (!surface) return null
+  for (const layer of layers) {
+    // Skip non-groups and background-group
+    if (layer.type !== 'group') continue
+    if (layer.id === 'background-group') continue
 
-  // Find processor-mask inside clip-group (optional)
-  const processor = clipGroup.children.find(
-    (c): c is ProcessorNodeConfig => c.type === 'processor' && c.id === 'processor-mask'
-  ) ?? null
+    const group = layer as GroupLayerNodeConfig
 
-  return { surface, processor }
+    // Find first surface layer in this group
+    const surface = group.children.find(
+      (c): c is SurfaceLayerNodeConfig => c.type === 'surface'
+    )
+    if (!surface) continue
+
+    // Find first processor layer in this group (optional)
+    const processor = group.children.find(
+      (c): c is ProcessorNodeConfig => c.type === 'processor'
+    ) ?? null
+
+    results.push({ group, surface, processor })
+  }
+
+  return results
 }
 
 // ============================================================
@@ -905,15 +921,11 @@ export async function renderHeroConfig(
 
   // Find layers first (needed to resolve per-surface colors)
   const baseLayer = findBaseLayer(config.layers)
-  const clipGroupContents = findClipGroupContents(config.layers)
+  const allClipGroups = findAllClipGroups(config.layers)
 
   // Debug logging
   console.log('[renderHeroConfig] baseLayer:', baseLayer?.id, 'colors:', JSON.stringify(baseLayer?.colors))
-  console.log('[renderHeroConfig] clipGroupContents:', JSON.stringify(clipGroupContents ? {
-    surface: clipGroupContents.surface.id,
-    surfaceColors: clipGroupContents.surface.colors,
-    processor: clipGroupContents.processor?.id,
-  } : null))
+  console.log('[renderHeroConfig] allClipGroups:', allClipGroups.length, 'groups found')
 
   // Resolve background colors from surface layer
   const bgColors = getBackgroundColors(baseLayer)
@@ -922,20 +934,6 @@ export async function renderHeroConfig(
   const bgColor2 = bgColors.secondary === 'auto'
     ? getColorFromPalette(palette, canvasSurfaceKey)
     : getColorFromPalette(palette, bgColors.secondary)
-
-  // Resolve mask colors from surface layer
-  const maskColors = getMaskColors(clipGroupContents?.surface ?? null)
-  // midgroundTextureColor1: mask.primary or auto-shifted from surface
-  const midgroundTextureColor1 = getMidgroundTextureColor(
-    palette,
-    maskColors.primary,
-    maskSurfaceKey,
-    isDark
-  )
-  // midgroundTextureColor2: mask.secondary or mask surface color
-  const midgroundTextureColor2 = maskColors.secondary === 'auto'
-    ? getColorFromPalette(palette, maskSurfaceKey)
-    : getColorFromPalette(palette, maskColors.secondary)
 
   // 1. Render background (base layer)
   console.log('[renderHeroConfig] Rendering background')
@@ -969,70 +967,96 @@ export async function renderHeroConfig(
     console.log('[renderHeroConfig] Background NOT rendered - baseLayer is null')
   }
 
-  // 2. Render clip-group (surface-mask with processor-mask)
-  if (clipGroupContents) {
-    const { surface: surfaceLayer, processor } = clipGroupContents
+  // 2. Render all clip-groups in order (n-layer support)
+  if (allClipGroups.length > 0) {
+    for (let i = 0; i < allClipGroups.length; i++) {
+      const clipGroupItem = allClipGroups[i]!
+      const { group, surface: surfaceLayer, processor } = clipGroupItem
 
-    console.log('[renderHeroConfig] Rendering clip-group surface')
-    console.log('[renderHeroConfig] surfaceLayer.surface:', JSON.stringify(surfaceLayer.surface))
-    console.log('[renderHeroConfig] midgroundTextureColor1:', JSON.stringify(midgroundTextureColor1))
-    console.log('[renderHeroConfig] midgroundTextureColor2:', JSON.stringify(midgroundTextureColor2))
+      console.log(`[renderHeroConfig] Rendering clip-group ${i + 1}/${allClipGroups.length}: ${group.id}`)
 
-    // Create the surface texture spec
-    const surfaceSpec = createBackgroundSpecFromSurface(
-      surfaceLayer.surface,
-      midgroundTextureColor1,
-      midgroundTextureColor2,
-      viewport,
-      scale
-    )
-    console.log('[renderHeroConfig] surfaceSpec:', surfaceSpec ? 'created' : 'null')
+      // Resolve colors for this layer from its surface.colors
+      const layerColors = getMaskColors(surfaceLayer)
+      const layerColor1 = getMidgroundTextureColor(
+        palette,
+        layerColors.primary,
+        maskSurfaceKey,
+        isDark
+      )
+      const layerColor2 = layerColors.secondary === 'auto'
+        ? getColorFromPalette(palette, maskSurfaceKey)
+        : getColorFromPalette(palette, layerColors.secondary)
 
-    // Get mask from processor-mask (sibling processor node in clip-group)
-    const maskProcessor = processor ? getProcessorMask(processor) : undefined
-    console.log('[renderHeroConfig] maskProcessor:', maskProcessor ? maskProcessor.shape?.type : 'undefined')
+      console.log('[renderHeroConfig] surfaceLayer.surface:', JSON.stringify(surfaceLayer.surface))
+      console.log('[renderHeroConfig] layerColor1:', JSON.stringify(layerColor1))
+      console.log('[renderHeroConfig] layerColor2:', JSON.stringify(layerColor2))
 
-    // Get effects from surface layer filters
-    const effectFilters = getLayerFilters(surfaceLayer)
-    const effectFilter = effectFilters.find((f) => f.enabled)
+      // Create the surface texture spec
+      const surfaceSpec = createBackgroundSpecFromSurface(
+        surfaceLayer.surface,
+        layerColor1,
+        layerColor2,
+        viewport,
+        scale
+      )
+      console.log('[renderHeroConfig] surfaceSpec:', surfaceSpec ? 'created' : 'null')
 
-    // Get effects from processor modifiers (if processor exists)
-    const processorEffects = processor ? getEffectConfigsFromModifiers(processor.modifiers) : []
+      // Get mask from processor (sibling processor node in clip-group)
+      const maskProcessor = processor ? getProcessorMask(processor) : undefined
+      console.log('[renderHeroConfig] maskProcessor:', maskProcessor ? maskProcessor.shape?.type : 'undefined')
 
-    if (surfaceSpec && maskProcessor?.enabled && maskProcessor.shape) {
-      // Use new two-texture pipeline for proper alpha compositing
-      // This renders surface to offscreen, creates greymap mask, and combines them
-      const greymapSpec = createGreymapMaskSpecFromShape(maskProcessor.shape, viewport)
-      if (greymapSpec) {
-        console.log('[renderHeroConfig] Using two-texture pipeline for masked layer')
-        renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport)
-      } else {
-        // Fallback: render surface without mask
-        console.log('[renderHeroConfig] Fallback: rendering surface without mask (greymapSpec null)')
+      // Get effects from surface layer filters
+      const effectFilters = getLayerFilters(surfaceLayer)
+      const effectFilter = effectFilters.find((f) => f.enabled)
+
+      // Get effects from processor modifiers (if processor exists)
+      const processorEffects = processor ? getEffectConfigsFromModifiers(processor.modifiers) : []
+
+      if (surfaceSpec && maskProcessor?.enabled && maskProcessor.shape) {
+        // Use two-texture pipeline for proper alpha compositing
+        const greymapSpec = createGreymapMaskSpecFromShape(maskProcessor.shape, viewport)
+        if (greymapSpec) {
+          console.log('[renderHeroConfig] Using two-texture pipeline for masked layer')
+          renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport)
+        } else {
+          // Fallback: render surface without mask
+          console.log('[renderHeroConfig] Fallback: rendering surface without mask (greymapSpec null)')
+          renderer.render(surfaceSpec, { clear: false })
+        }
+      } else if (surfaceSpec) {
+        // No mask: render surface directly to canvas
+        console.log('[renderHeroConfig] Rendering surface to canvas (no mask)')
         renderer.render(surfaceSpec, { clear: false })
       }
-    } else if (surfaceSpec) {
-      // No mask: render surface directly to canvas
-      console.log('[renderHeroConfig] Rendering surface to canvas (no mask)')
-      renderer.render(surfaceSpec, { clear: false })
-    }
 
-    // Apply effects (color-modification) after mask compositing
-    // Note: Effects are applied after the layer is composited onto canvas
-    if (processorEffects.length > 0) {
-      applySingleEffects(renderer, processorEffects, viewport, scale)
-    } else if (effectFilter?.config) {
-      applyEffects(renderer, effectFilter.config, viewport, scale)
+      // Apply effects (color-modification) after mask compositing
+      if (processorEffects.length > 0) {
+        applySingleEffects(renderer, processorEffects, viewport, scale)
+      } else if (effectFilter?.config) {
+        applyEffects(renderer, effectFilter.config, viewport, scale)
+      }
     }
   } else {
     // Fallback: legacy structure without clip-group
     const surfaceLayer = findSurfaceLayer(config.layers)
     if (surfaceLayer) {
-      // First render the surface texture pattern
+      // Resolve colors for legacy layer
+      const layerColors = getMaskColors(surfaceLayer)
+      const layerColor1 = getMidgroundTextureColor(
+        palette,
+        layerColors.primary,
+        maskSurfaceKey,
+        isDark
+      )
+      const layerColor2 = layerColors.secondary === 'auto'
+        ? getColorFromPalette(palette, maskSurfaceKey)
+        : getColorFromPalette(palette, layerColors.secondary)
+
+      // Create surface spec
       const surfaceSpec = createBackgroundSpecFromSurface(
         surfaceLayer.surface,
-        midgroundTextureColor1,
-        midgroundTextureColor2,
+        layerColor1,
+        layerColor2,
         viewport,
         scale
       )
@@ -1045,7 +1069,7 @@ export async function renderHeroConfig(
       const effectFilter = effectFilters.find((f) => f.enabled)
 
       if (surfaceSpec && maskProcessor?.enabled && maskProcessor.shape) {
-        // Use new two-texture pipeline for proper alpha compositing
+        // Use two-texture pipeline for proper alpha compositing
         const greymapSpec = createGreymapMaskSpecFromShape(maskProcessor.shape, viewport)
         if (greymapSpec) {
           console.log('[renderHeroConfig] Legacy: Using two-texture pipeline for masked layer')
@@ -1065,6 +1089,7 @@ export async function renderHeroConfig(
   }
 
   // 3. Process Processor nodes (position-based processor application)
+  // These are standalone processors that apply effects to the rendered content
   const processorPairs = findProcessorTargetPairs(config.layers)
   for (const { processor, targets } of processorPairs) {
     // Skip if processor has no targets
@@ -1077,6 +1102,10 @@ export async function renderHeroConfig(
     // Use getEffectConfigsFromModifiers to normalize to SingleEffectConfig[]
     const effectList = getEffectConfigsFromModifiers(processor.modifiers)
 
+    // Calculate mask color based on semantic context
+    // Use bgColor1 as default mask color for processor effects
+    const processorMaskColor = getColorFromPalette(palette, maskSurfaceKey)
+
     // Apply effectors using unified pipeline (mask first, then effects)
     applyEffectors(
       renderer,
@@ -1085,7 +1114,7 @@ export async function renderHeroConfig(
         effectList,
       },
       viewport,
-      midgroundTextureColor1,
+      processorMaskColor,
       scale
     )
   }
