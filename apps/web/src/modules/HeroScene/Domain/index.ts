@@ -671,10 +671,10 @@ export type {
   NormalizedMaskConfig,
   AnyMaskConfig,
   // Filter config types (for JSON serialization)
-  FilterConfig,
-  EffectFilterConfig,
   SingleEffectConfig,
   AnyEffectConfig,
+  // Legacy effect config (for migration only)
+  EffectFilterConfig,
   // LayerNodeConfig types (for JSON serialization)
   LayerNodeConfig,
   BaseLayerNodeConfig,
@@ -687,7 +687,6 @@ export type {
   ProcessorNodeConfig,
   // Processor modifier config types
   ProcessorConfig,
-  EffectProcessorConfig,
   MaskProcessorConfig,
   // Foreground
   GridPosition,
@@ -705,8 +704,6 @@ export type {
 export {
   createDefaultColorsConfig,
   createDefaultForegroundConfig,
-  createDefaultEffectFilterConfig,
-  createDefaultEffectProcessorConfig,
   createDefaultHeroViewConfig,
   // Default colors for surface layers (palette keys)
   DEFAULT_LAYER_BACKGROUND_COLORS,
@@ -729,12 +726,9 @@ export {
   extractEnabledEffects,
   normalizeEffectFilterConfig,
   denormalizeToLayerEffectConfig,
-  denormalizeToEffectFilterConfig,
   getEffectsAsNormalized,
-  getEffectsAsLegacy,
   // Effect config migration
   migrateLegacyEffectConfig,
-  toLegacyEffectConfig,
   hasLegacyEffectConfigs,
   migrateEffectConfigsInModifiers,
   getEffectConfigsFromModifiers,

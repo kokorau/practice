@@ -693,13 +693,6 @@ export function isLegacyEffectFilterConfig(config: ProcessorConfig): config is E
   return config.type === 'effect' && 'config' in config && !('id' in config)
 }
 
-/**
- * Filter config type (effects only)
- * Masks are handled as MaskProcessorConfig in ProcessorNodeConfig.modifiers
- * @deprecated Use SingleEffectConfig[] instead
- */
-export type FilterConfig = EffectFilterConfig
-
 // ============================================================
 // Mask Processor Config
 // ============================================================
@@ -727,11 +720,9 @@ export type ProcessorConfig = SingleEffectConfig | EffectFilterConfig | MaskProc
 
 /**
  * Effect config type (union of new and legacy formats)
+ * @deprecated Prefer SingleEffectConfig. EffectFilterConfig is kept only for loading legacy data.
  */
 export type AnyEffectConfig = SingleEffectConfig | EffectFilterConfig
-
-/** @deprecated Use SingleEffectConfig instead */
-export type EffectProcessorConfig = EffectFilterConfig
 
 // ============================================================
 // Effect Normalization Utilities
@@ -885,19 +876,6 @@ export function denormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): L
 }
 
 /**
- * Convert SingleEffectConfig[] to legacy EffectFilterConfig
- *
- * @deprecated Use SingleEffectConfig[] directly
- */
-export function denormalizeToEffectFilterConfig(effects: SingleEffectConfig[]): EffectFilterConfig {
-  return {
-    type: 'effect',
-    enabled: effects.length > 0,
-    config: denormalizeToLayerEffectConfig(effects),
-  }
-}
-
-/**
  * Get effects from AnyEffectConfig as SingleEffectConfig[]
  * Accepts both new and legacy formats
  */
@@ -909,16 +887,6 @@ export function getEffectsAsNormalized(config: AnyEffectConfig): SingleEffectCon
     return normalizeEffectFilterConfig(config as EffectFilterConfig)
   }
   return []
-}
-
-/**
- * Get first effect from AnyEffectConfig as EffectFilterConfig (legacy format)
- * Returns a disabled config if no effects are present
- *
- * @deprecated Use SingleEffectConfig[] directly
- */
-export function getEffectsAsLegacy(effects: SingleEffectConfig[]): EffectFilterConfig {
-  return denormalizeToEffectFilterConfig(effects)
 }
 
 // ============================================================
@@ -1170,35 +1138,6 @@ export const DEFAULT_LAYER_MASK_COLORS: SurfaceColorsConfig = {
   secondary: 'auto',
 }
 
-/**
- * @deprecated Use createSingleEffectConfig or createEffectorModifier instead
- * This creates a legacy format EffectFilterConfig. Prefer SingleEffectConfig for new code.
- */
-export const createDefaultEffectFilterConfig = (): EffectFilterConfig => ({
-  type: 'effect',
-  enabled: true,
-  config: {
-    vignette: {
-      enabled: false,
-      shape: 'ellipse',
-      intensity: 0.5,
-      softness: 0.4,
-      color: [0, 0, 0, 1],
-      radius: 0.8,
-      centerX: 0.5,
-      centerY: 0.5,
-      aspectRatio: 1,
-    },
-    chromaticAberration: { enabled: false, intensity: 0.01 },
-    dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-    lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
-    blur: { enabled: false, radius: 8 },
-  },
-})
-
-/** @deprecated Use createDefaultEffectFilterConfig instead */
-export const createDefaultEffectProcessorConfig = createDefaultEffectFilterConfig
-
 export const createDefaultMaskProcessorConfig = (): MaskProcessorConfig => ({
   type: 'mask',
   enabled: true,
@@ -1224,7 +1163,7 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           visible: true,
           surface: { type: 'solid' },
           colors: { primary: 'B', secondary: 'auto' },
-          filters: [createDefaultEffectFilterConfig()],
+          filters: [],
         },
       ],
     },
@@ -1241,7 +1180,7 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           visible: true,
           surface: { type: 'solid' },
           colors: { primary: 'auto', secondary: 'auto' },
-          filters: [createDefaultEffectFilterConfig()],
+          filters: [],
         },
         {
           type: 'processor',
@@ -1486,48 +1425,6 @@ export const migrateLegacyEffectConfig = (legacy: EffectFilterConfig): SingleEff
   }
 
   return effects
-}
-
-/**
- * Convert SingleEffectConfig array back to legacy EffectFilterConfig
- *
- * This is useful for backward compatibility when exporting to legacy systems.
- *
- * @param effects - Array of SingleEffectConfig
- * @param defaultConfig - Default LayerEffectConfig to use as base
- * @returns Legacy EffectFilterConfig format
- */
-export const toLegacyEffectConfig = (
-  effects: SingleEffectConfig[],
-  defaultConfig: LayerEffectConfig
-): EffectFilterConfig => {
-  // Create a mutable copy with explicit typing to allow indexed assignment
-  const config: Record<string, unknown> = {}
-
-  // Copy default config and reset all effects to disabled
-  for (const effectType of EFFECT_TYPES) {
-    const defaultEffect = defaultConfig[effectType]
-    config[effectType] = { ...defaultEffect, enabled: false }
-  }
-
-  // Enable and apply params for each effect in the array
-  for (const effect of effects) {
-    const effectType = effect.id
-    if (effectType in config) {
-      const existing = config[effectType] as Record<string, unknown>
-      config[effectType] = {
-        ...existing,
-        ...effect.params,
-        enabled: true,
-      }
-    }
-  }
-
-  return {
-    type: 'effect',
-    enabled: effects.length > 0,
-    config: config as unknown as LayerEffectConfig,
-  }
 }
 
 /**

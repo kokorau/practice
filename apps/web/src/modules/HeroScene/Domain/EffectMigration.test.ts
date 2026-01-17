@@ -1,13 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
   migrateLegacyEffectConfig,
-  toLegacyEffectConfig,
   hasLegacyEffectConfigs,
   migrateEffectConfigsInModifiers,
   getEffectConfigsFromModifiers,
   isSingleEffectConfig,
   isLegacyEffectFilterConfig,
-  createDefaultEffectFilterConfig,
   migrateHeroViewConfig,
   configNeedsMigration,
   type SingleEffectConfig,
@@ -17,6 +15,32 @@ import {
   type HeroViewConfig,
   type ProcessorNodeConfig,
 } from './index'
+
+/**
+ * Helper to create legacy EffectFilterConfig for testing migration
+ * This is the format that was previously used and needs to be migrated
+ */
+const createLegacyEffectFilterConfig = (): EffectFilterConfig => ({
+  type: 'effect',
+  enabled: true,
+  config: {
+    vignette: {
+      enabled: false,
+      shape: 'ellipse',
+      intensity: 0.5,
+      softness: 0.4,
+      color: [0, 0, 0, 1],
+      radius: 0.8,
+      centerX: 0.5,
+      centerY: 0.5,
+      aspectRatio: 1,
+    },
+    chromaticAberration: { enabled: false, intensity: 0.01 },
+    dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
+    lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
+    blur: { enabled: false, radius: 8 },
+  },
+})
 
 describe('Effect Config Migration', () => {
   describe('isSingleEffectConfig', () => {
@@ -30,7 +54,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should return false for legacy format effect config', () => {
-      const config = createDefaultEffectFilterConfig()
+      const config = createLegacyEffectFilterConfig()
       expect(isSingleEffectConfig(config)).toBe(false)
     })
 
@@ -48,7 +72,7 @@ describe('Effect Config Migration', () => {
 
   describe('isLegacyEffectFilterConfig', () => {
     it('should return true for legacy format effect config', () => {
-      const config = createDefaultEffectFilterConfig()
+      const config = createLegacyEffectFilterConfig()
       expect(isLegacyEffectFilterConfig(config)).toBe(true)
     })
 
@@ -78,14 +102,14 @@ describe('Effect Config Migration', () => {
       const legacy: EffectFilterConfig = {
         type: 'effect',
         enabled: false,
-        config: createDefaultEffectFilterConfig().config,
+        config: createLegacyEffectFilterConfig().config,
       }
       const result = migrateLegacyEffectConfig(legacy)
       expect(result).toEqual([])
     })
 
     it('should return empty array when no effects are enabled', () => {
-      const legacy = createDefaultEffectFilterConfig()
+      const legacy = createLegacyEffectFilterConfig()
       legacy.enabled = true
       // All effects have enabled: false by default
       const result = migrateLegacyEffectConfig(legacy)
@@ -93,7 +117,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should migrate single enabled effect', () => {
-      const legacy = createDefaultEffectFilterConfig()
+      const legacy = createLegacyEffectFilterConfig()
       legacy.enabled = true
       legacy.config.blur = { enabled: true, radius: 12 }
 
@@ -107,7 +131,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should migrate multiple enabled effects', () => {
-      const legacy = createDefaultEffectFilterConfig()
+      const legacy = createLegacyEffectFilterConfig()
       legacy.enabled = true
       legacy.config.blur = { enabled: true, radius: 8 }
       legacy.config.chromaticAberration = { enabled: true, intensity: 5 }
@@ -119,7 +143,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should not include enabled property in params', () => {
-      const legacy = createDefaultEffectFilterConfig()
+      const legacy = createLegacyEffectFilterConfig()
       legacy.enabled = true
       legacy.config.blur = { enabled: true, radius: 10 }
 
@@ -129,49 +153,10 @@ describe('Effect Config Migration', () => {
     })
   })
 
-  describe('toLegacyEffectConfig', () => {
-    it('should create disabled legacy config for empty effects array', () => {
-      const defaultConfig = createDefaultEffectFilterConfig().config
-      const result = toLegacyEffectConfig([], defaultConfig)
-
-      expect(result.enabled).toBe(false)
-      expect(result.config.blur.enabled).toBe(false)
-    })
-
-    it('should enable specified effect in legacy config', () => {
-      const effects: SingleEffectConfig[] = [
-        { type: 'effect', id: 'blur', params: { radius: 15 } },
-      ]
-      const defaultConfig = createDefaultEffectFilterConfig().config
-
-      const result = toLegacyEffectConfig(effects, defaultConfig)
-
-      expect(result.enabled).toBe(true)
-      expect(result.config.blur.enabled).toBe(true)
-      expect(result.config.blur.radius).toBe(15)
-      expect(result.config.chromaticAberration.enabled).toBe(false)
-    })
-
-    it('should handle multiple effects', () => {
-      const effects: SingleEffectConfig[] = [
-        { type: 'effect', id: 'blur', params: { radius: 8 } },
-        { type: 'effect', id: 'chromaticAberration', params: { intensity: 10 } },
-      ]
-      const defaultConfig = createDefaultEffectFilterConfig().config
-
-      const result = toLegacyEffectConfig(effects, defaultConfig)
-
-      expect(result.enabled).toBe(true)
-      expect(result.config.blur.enabled).toBe(true)
-      expect(result.config.chromaticAberration.enabled).toBe(true)
-      expect(result.config.dotHalftone.enabled).toBe(false)
-    })
-  })
-
   describe('hasLegacyEffectConfigs', () => {
     it('should return true if array contains legacy effect config', () => {
       const configs: ProcessorConfig[] = [
-        createDefaultEffectFilterConfig(),
+        createLegacyEffectFilterConfig(),
         {
           type: 'mask',
           enabled: true,
@@ -204,7 +189,7 @@ describe('Effect Config Migration', () => {
 
   describe('migrateEffectConfigsInModifiers', () => {
     it('should migrate legacy effect configs to new format', () => {
-      const legacy = createDefaultEffectFilterConfig()
+      const legacy = createLegacyEffectFilterConfig()
       legacy.enabled = true
       legacy.config.blur = { enabled: true, radius: 10 }
 
@@ -238,7 +223,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should handle mixed old and new configs', () => {
-      const legacy = createDefaultEffectFilterConfig()
+      const legacy = createLegacyEffectFilterConfig()
       legacy.enabled = true
       legacy.config.chromaticAberration = { enabled: true, intensity: 5 }
 
@@ -286,7 +271,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should convert legacy format configs', () => {
-      const legacy = createDefaultEffectFilterConfig()
+      const legacy = createLegacyEffectFilterConfig()
       legacy.enabled = true
       legacy.config.blur = { enabled: true, radius: 12 }
 
@@ -300,7 +285,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should handle mixed formats', () => {
-      const legacy = createDefaultEffectFilterConfig()
+      const legacy = createLegacyEffectFilterConfig()
       legacy.enabled = true
       legacy.config.chromaticAberration = { enabled: true, intensity: 3 }
 
@@ -311,24 +296,6 @@ describe('Effect Config Migration', () => {
 
       expect(result).toHaveLength(2)
       expect(result.map((e) => e.id).sort()).toEqual(['blur', 'chromaticAberration'])
-    })
-  })
-
-  describe('Round-trip conversion', () => {
-    it('should preserve effect params through migration and back', () => {
-      const legacy = createDefaultEffectFilterConfig()
-      legacy.enabled = true
-      legacy.config.blur = { enabled: true, radius: 15 }
-
-      // Migrate to new format
-      const newFormat = migrateLegacyEffectConfig(legacy)
-
-      // Convert back to legacy
-      const backToLegacy = toLegacyEffectConfig(newFormat, createDefaultEffectFilterConfig().config)
-
-      // Check blur params are preserved
-      expect(backToLegacy.config.blur.enabled).toBe(true)
-      expect(backToLegacy.config.blur.radius).toBe(15)
     })
   })
 
@@ -360,7 +327,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should return true for config with legacy effects in processor', () => {
-      const legacyEffect = createDefaultEffectFilterConfig()
+      const legacyEffect = createLegacyEffectFilterConfig()
       legacyEffect.enabled = true
       legacyEffect.config.blur = { enabled: true, radius: 8 }
 
@@ -420,7 +387,7 @@ describe('Effect Config Migration', () => {
 
   describe('migrateHeroViewConfig', () => {
     it('should migrate legacy effects in processor nodes', () => {
-      const legacyEffect = createDefaultEffectFilterConfig()
+      const legacyEffect = createLegacyEffectFilterConfig()
       legacyEffect.enabled = true
       legacyEffect.config.blur = { enabled: true, radius: 12 }
       legacyEffect.config.vignette = {
@@ -480,7 +447,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should preserve non-effect modifiers', () => {
-      const legacyEffect = createDefaultEffectFilterConfig()
+      const legacyEffect = createLegacyEffectFilterConfig()
       legacyEffect.enabled = true
       legacyEffect.config.blur = { enabled: true, radius: 8 }
 
@@ -526,7 +493,7 @@ describe('Effect Config Migration', () => {
     })
 
     it('should handle nested groups recursively', () => {
-      const legacyEffect = createDefaultEffectFilterConfig()
+      const legacyEffect = createLegacyEffectFilterConfig()
       legacyEffect.enabled = true
       legacyEffect.config.chromaticAberration = { enabled: true, intensity: 5 }
 
