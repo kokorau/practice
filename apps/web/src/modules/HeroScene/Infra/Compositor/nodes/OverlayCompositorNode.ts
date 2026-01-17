@@ -5,6 +5,7 @@
  * The first layer is the bottom, subsequent layers are composited on top.
  */
 
+import { createOverlayBlendSpec } from '@practice/texture'
 import type {
   CompositorNode,
   RenderNode,
@@ -74,10 +75,10 @@ export class OverlayCompositorNode implements CompositorNode {
   }
 
   /**
-   * Composite all layers in order.
+   * Composite all layers in order using alpha blending.
    */
   composite(ctx: NodeContext): TextureHandle {
-    const { texturePool } = ctx
+    const { renderer, viewport, texturePool } = ctx
 
     if (this.layers.length === 0) {
       throw new Error(`[OverlayCompositorNode] No layers to composite: ${this.id}`)
@@ -91,18 +92,36 @@ export class OverlayCompositorNode implements CompositorNode {
       return currentHandle
     }
 
-    // Overlay subsequent layers
+    // Create the overlay blend spec
+    const blendSpec = createOverlayBlendSpec(viewport)
+
+    // Overlay subsequent layers using alpha compositing
     for (let i = 1; i < this.layers.length; i++) {
       const layerHandle = getTextureFromNode(this.layers[i]!, ctx)
 
-      // For now, we just return the last layer
-      // TODO: Implement proper overlay blending
-      // This would require a custom overlay shader that blends
-      // the current accumulated result with the new layer
+      // Get output texture index (alternates between 0 and 1)
+      const outputIndex = texturePool.getNextIndex(currentHandle._textureIndex)
 
-      // Release the current handle and use the new layer
+      // Apply overlay blending: base (current) + overlay (layer) → output
+      const gpuTexture = renderer.applyDualTextureEffectToOffscreen(
+        blendSpec,
+        currentHandle._gpuTexture,
+        layerHandle._gpuTexture,
+        outputIndex
+      )
+
+      // Release input textures
       texturePool.release(currentHandle)
-      currentHandle = layerHandle
+      texturePool.release(layerHandle)
+
+      // Update current handle to the blended result
+      currentHandle = {
+        id: `${this.id}-blend-${i}`,
+        width: viewport.width,
+        height: viewport.height,
+        _gpuTexture: gpuTexture,
+        _textureIndex: outputIndex,
+      }
     }
 
     // Return the final composited result
