@@ -78,10 +78,10 @@ export class MaskRenderNode extends BaseTextureOwner implements RenderNode, Text
    * Uses TextureOwner caching: skips rendering if not dirty and texture exists.
    */
   render(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, device } = ctx
+    const { renderer, viewport, device, format } = ctx
 
-    // Ensure texture exists (handles viewport resize)
-    const texture = this.ensureTexture(device, viewport)
+    // Ensure texture exists (handles viewport resize and format)
+    const texture = this.ensureTexture(device, viewport, format)
 
     // Skip if not dirty (cache hit)
     if (!this.isDirty) {

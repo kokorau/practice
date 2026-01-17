@@ -107,10 +107,10 @@ export class EffectRenderNode extends BaseTextureOwner implements RenderNode, Te
    * Uses TextureOwner caching: skips rendering if not dirty and texture exists.
    */
   render(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, scale, device } = ctx
+    const { renderer, viewport, scale, device, format } = ctx
 
-    // Ensure texture exists (handles viewport resize)
-    this.ensureTexture(device, viewport)
+    // Ensure texture exists (handles viewport resize and format)
+    this.ensureTexture(device, viewport, format)
 
     // Skip if not dirty (cache hit)
     if (!this.isDirty) {

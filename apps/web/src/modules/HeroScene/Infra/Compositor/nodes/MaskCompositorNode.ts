@@ -103,10 +103,10 @@ export class MaskCompositorNode extends BaseTextureOwner implements CompositorNo
    * Uses TextureOwner caching: skips compositing if not dirty and texture exists.
    */
   composite(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, device } = ctx
+    const { renderer, viewport, device, format } = ctx
 
-    // Ensure texture exists (handles viewport resize)
-    this.ensureTexture(device, viewport)
+    // Ensure texture exists (handles viewport resize and format)
+    this.ensureTexture(device, viewport, format)
 
     // Skip if not dirty (cache hit)
     if (!this.isDirty) {

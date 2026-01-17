@@ -30,6 +30,8 @@ function createMockRenderer(): TextureRendererLike & {
       createTexture: vi.fn(() => mockTexture),
     }) as unknown as GPUDevice),
 
+    getFormat: vi.fn(() => 'rgba8unorm' as GPUTextureFormat),
+
     render: vi.fn(function (this: ReturnType<typeof createMockRenderer>, spec: TextureRenderSpec, options?: { clear?: boolean }) {
       this.renderCalls.push({ spec, options })
     }),

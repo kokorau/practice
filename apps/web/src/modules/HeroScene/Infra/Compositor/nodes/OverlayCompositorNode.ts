@@ -98,14 +98,14 @@ export class OverlayCompositorNode extends BaseTextureOwner implements Composito
    * Uses TextureOwner caching: skips compositing if not dirty and texture exists.
    */
   composite(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, device } = ctx
+    const { renderer, viewport, device, format } = ctx
 
     if (this.layers.length === 0) {
       throw new Error(`[OverlayCompositorNode] No layers to composite (id: ${this.id})`)
     }
 
-    // Ensure texture exists (handles viewport resize)
-    this.ensureTexture(device, viewport)
+    // Ensure texture exists (handles viewport resize and format)
+    this.ensureTexture(device, viewport, format)
 
     // Skip if not dirty (cache hit)
     if (!this.isDirty) {

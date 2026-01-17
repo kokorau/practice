@@ -67,6 +67,7 @@ function createMockContext(): NodeContext {
     renderer: {
       getViewport: vi.fn(() => ({ width: 1280, height: 720 })),
       getDevice: vi.fn(() => mockDevice),
+      getFormat: vi.fn(() => 'rgba8unorm' as GPUTextureFormat),
       renderToOffscreen: vi.fn(() => mockGpuTexture),
       renderToTexture: vi.fn(),
       applyPostEffectToOffscreen: vi.fn(() => mockGpuTexture),
