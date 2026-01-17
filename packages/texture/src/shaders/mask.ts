@@ -1,4 +1,4 @@
-import { fullscreenVertex, aaUtils, maskBlendState } from './common'
+import { fullscreenVertex, aaUtils, maskBlendState, oklabUtils } from './common'
 import type { TextureRenderSpec, Viewport } from '../Domain'
 
 /** 円形マスクのパラメータ */
@@ -74,6 +74,8 @@ ${fullscreenVertex}
 
 ${aaUtils}
 
+${oklabUtils}
+
 struct CircleMaskParams {
   innerColor: vec4f,
   outerColor: vec4f,
@@ -110,7 +112,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let edge = params.radius;
   let aa = smoothstep(edge - pixelSize, edge + pixelSize, dist);
 
-  return mix(params.innerColor, params.outerColor, aa);
+  return mixOklabVec4(params.innerColor, params.outerColor, aa);
 }
 `
 
@@ -119,6 +121,8 @@ export const rectMaskShader = /* wgsl */ `
 ${fullscreenVertex}
 
 ${aaUtils}
+
+${oklabUtils}
 
 struct RectMaskParams {
   innerColor: vec4f,
@@ -222,7 +226,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let pixelSize = 1.0 / min(viewportWidth, viewportHeight);
   let inside = 1.0 - smoothstep(-pixelSize, pixelSize, dist);
 
-  return mix(params.outerColor, params.innerColor, inside);
+  return mixOklabVec4(params.outerColor, params.innerColor, inside);
 }
 `
 
@@ -439,6 +443,8 @@ export interface LinearGradientMaskParams {
 export const linearGradientMaskShader = /* wgsl */ `
 ${fullscreenVertex}
 
+${oklabUtils}
+
 struct LinearGradientMaskParams {
   innerColor: vec4f,
   outerColor: vec4f,
@@ -468,7 +474,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   // Apply gradient with start/end offsets
   let t = smoothstep(params.startOffset, params.endOffset, projected);
 
-  return mix(params.innerColor, params.outerColor, t);
+  return mixOklabVec4(params.innerColor, params.outerColor, t);
 }
 `
 
@@ -526,6 +532,8 @@ export interface RadialGradientMaskParams {
 export const radialGradientMaskShader = /* wgsl */ `
 ${fullscreenVertex}
 
+${oklabUtils}
+
 struct RadialGradientMaskParams {
   innerColor: vec4f,
   outerColor: vec4f,
@@ -573,7 +581,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   // Apply gradient with smooth interpolation
   let t = smoothstep(params.innerRadius, params.outerRadius, dist);
 
-  return mix(params.innerColor, params.outerColor, t);
+  return mixOklabVec4(params.innerColor, params.outerColor, t);
 }
 `
 
@@ -646,6 +654,8 @@ function curveTypeToNumber(curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut'): n
 /** Box gradient mask shader */
 export const boxGradientMaskShader = /* wgsl */ `
 ${fullscreenVertex}
+
+${oklabUtils}
 
 struct BoxGradientMaskParams {
   innerColor: vec4f,
@@ -746,7 +756,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   t = applyCurve(t, params.curve);
 
   // Mix like RadialGradient: t=0 -> innerColor (center), t=1 -> outerColor (edges)
-  return mix(params.innerColor, params.outerColor, t);
+  return mixOklabVec4(params.innerColor, params.outerColor, t);
 }
 `
 

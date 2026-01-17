@@ -1,4 +1,4 @@
-import { fullscreenVertex, hash21, depthMapUtils, depthMapTypeToNumber, type DepthMapType } from './common'
+import { fullscreenVertex, hash21, depthMapUtils, depthMapTypeToNumber, oklabUtils, type DepthMapType } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 // ============================================================
@@ -79,6 +79,8 @@ ${hash21}
 
 ${depthMapUtils}
 
+${oklabUtils}
+
 // Catmull-Rom spline interpolation
 fn catmullRom(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32 {
   let t2 = t * t;
@@ -146,8 +148,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     params.perlinOffset
   );
 
-  // Base gradient color
-  let baseColor = mix(params.colorA, params.colorB, t);
+  // Base gradient color (interpolated in OKLAB space for perceptually correct midtones)
+  let baseColor = mixOklabVec4(params.colorA, params.colorB, t);
 
   // Two independent noises (different seeds)
   let noiseA = hash21(pos.xy + params.seed);
