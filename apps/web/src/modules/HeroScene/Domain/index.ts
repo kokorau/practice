@@ -993,3 +993,44 @@ export {
   isLegacySurfaceConfig,
 } from './HeroViewConfig'
 
+// ============================================================
+// Compositor Node System
+// ============================================================
+
+export {
+  // Core types
+  type TextureHandle,
+  type TexturePool,
+  type CompositorRenderer,
+  type NodeContext,
+  type NodeType,
+  type BaseNode,
+  type RGBA,
+  type ColorKeyPair,
+  // RenderNode
+  type RenderNode,
+  type SurfaceRenderInput,
+  type MaskRenderInput,
+  type EffectRenderInput,
+  type ImageRenderInput,
+  type CompositorNodeLike,
+  isRenderNode,
+  // CompositorNode
+  type CompositorNode,
+  type MaskCompositorInput,
+  type OverlayCompositorInput,
+  type EffectChainCompositorInput,
+  type BlendMode as CompositorBlendMode,
+  type CompositorInput,
+  isCompositorNode,
+  getTextureFromNode,
+  DEFAULT_BLEND_MODE,
+  // OutputNode
+  type OutputNode,
+  type CanvasOutputOptions,
+  isOutputNode,
+  // Union types
+  type PipelineNode,
+  type TextureProducingNode,
+} from './Compositor'
+
