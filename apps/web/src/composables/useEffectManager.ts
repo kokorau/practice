@@ -3,11 +3,9 @@ import {
   type EffectType,
   type LayerEffectConfig,
   type SingleEffectConfig,
-  createDefaultEffectConfig,
   createSingleEffectConfig,
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
-  EFFECT_TYPES,
 } from '../modules/HeroScene'
 
 // ============================================================

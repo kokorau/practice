@@ -49,6 +49,7 @@ import type { InkRole } from '../../SemanticColorPalette/Domain'
 import type {
   LayerEffectConfig,
   EffectType,
+  SingleEffectConfig,
   HeroViewConfig,
   HeroViewPreset,
   LayerNodeConfig,
@@ -76,25 +77,46 @@ import type {
  * The actual implementation is in composables/useEffectManager.ts
  */
 export interface EffectManagerInterface {
-  /** All layer effect configs (reactive Map) */
-  readonly effects: ComputedRef<Map<string, LayerEffectConfig>>
+  // === New Multi-Effect API ===
+  /** All layer effect configs as SingleEffectConfig[][] (reactive Map) */
+  readonly effectPipelines: ComputedRef<Map<string, SingleEffectConfig[]>>
   /** Currently selected layer ID */
   readonly selectedLayerId: Ref<string | null>
-  /** Effect config for the currently selected layer */
-  readonly selectedEffect: ComputedRef<LayerEffectConfig | null>
+  /** Effect pipeline for the currently selected layer */
+  readonly selectedPipeline: ComputedRef<SingleEffectConfig[]>
   /** Select a layer by ID */
   readonly selectLayer: (id: string) => void
-  /** Set effect type for a layer (null to disable all effects) */
+  /** Add an effect to a layer's pipeline */
+  readonly addEffect: (layerId: string, effectType: EffectType, params?: Record<string, unknown>) => void
+  /** Remove an effect from a layer's pipeline by index */
+  readonly removeEffect: (layerId: string, index: number) => void
+  /** Update effect params at a specific index */
+  readonly updateEffectAt: (layerId: string, index: number, params: Record<string, unknown>) => void
+  /** Reorder effects in the pipeline */
+  readonly reorderEffects: (layerId: string, fromIndex: number, toIndex: number) => void
+  /** Clear all effects from a layer */
+  readonly clearEffects: (layerId: string) => void
+  /** Set entire effect pipeline for a layer */
+  readonly setEffectPipeline: (layerId: string, effects: SingleEffectConfig[]) => void
+  /** Delete effect pipeline for a layer */
+  readonly deleteEffectPipeline: (layerId: string) => void
+
+  // === Legacy API (deprecated, for backward compatibility) ===
+  /** All layer effect configs (reactive Map) @deprecated Use effectPipelines instead */
+  readonly effects: ComputedRef<Map<string, LayerEffectConfig>>
+  /** Effect config for the currently selected layer @deprecated Use selectedPipeline instead */
+  readonly selectedEffect: ComputedRef<LayerEffectConfig | null>
+  /** Set effect type for a layer (null to disable all effects) @deprecated Use addEffect/removeEffect instead */
   readonly setEffectType: (layerId: string, type: EffectType | null) => void
-  /** Update effect params for a layer */
+  /** Update effect params for a layer @deprecated Use updateEffectAt instead */
   readonly updateEffectParams: <T extends EffectType>(
     layerId: string,
     type: T,
     params: Partial<Omit<LayerEffectConfig[T], 'enabled'>>
   ) => void
-  /** Set entire effect config for a layer (for loading from repository) */
-  readonly setEffectConfig: (layerId: string, config: LayerEffectConfig) => void
-  /** Delete effect config for a layer */
+  /** Set entire effect config for a layer @deprecated Use setEffectPipeline instead */
+  readonly setEffectConfig: (layerId: string, config: LayerEffectConfig | SingleEffectConfig[]) => void
+  /** Delete effect config for a layer @deprecated Use deleteEffectPipeline instead */
   readonly deleteEffectConfig: (layerId: string) => void
 }
 
