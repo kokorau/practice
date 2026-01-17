@@ -9,6 +9,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
 import type { HeroViewConfig } from '../../modules/HeroScene/Domain/HeroViewConfig'
 import { useHeroScene } from '../../composables/SiteBuilder'
+import { provideLayerSelection } from '../../composables/useLayerSelection'
 import HeroPreview from '../HeroGenerator/HeroPreview.vue'
 
 const props = defineProps<{
@@ -22,6 +23,9 @@ const primitivePaletteRef = computed(() => props.primitivePalette)
 const isDarkRef = computed(() => props.isDark ?? false)
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
+
+// Provide layer selection for useHeroScene (this component is standalone, so it needs its own provider)
+provideLayerSelection()
 
 const heroScene = useHeroScene({
   primitivePalette: primitivePaletteRef,
