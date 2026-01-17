@@ -259,3 +259,10 @@ export {
   createImageGreymapUniforms,
   IMAGE_GREYMAP_BUFFER_SIZE,
 } from './imageGreymap'
+// Overlay blend shader (two-texture alpha compositing)
+export {
+  overlayBlendShader,
+  createOverlayBlendSpec,
+  OVERLAY_BLEND_BUFFER_SIZE,
+  type OverlayBlendSpec,
+} from './overlayBlend'

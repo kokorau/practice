@@ -515,6 +515,31 @@ describe('OverlayCompositorNode', () => {
     expect(result).toBeDefined()
     expect(result.id).toBe('scene-output')
   })
+
+  it('uses alpha blending shader for multi-layer composition', () => {
+    const ctx = createMockContext()
+    const layer1 = createMockRenderNode('bg')
+    const layer2 = createMockRenderNode('overlay')
+
+    const node = createOverlayCompositorNode('scene', [layer1, layer2])
+    node.composite(ctx)
+
+    // Should call applyDualTextureEffectToOffscreen for alpha blending
+    expect(ctx.renderer.applyDualTextureEffectToOffscreen).toHaveBeenCalledTimes(1)
+  })
+
+  it('applies alpha blending for each additional layer', () => {
+    const ctx = createMockContext()
+    const layer1 = createMockRenderNode('bg')
+    const layer2 = createMockRenderNode('mid')
+    const layer3 = createMockRenderNode('top')
+
+    const node = createOverlayCompositorNode('scene', [layer1, layer2, layer3])
+    node.composite(ctx)
+
+    // Should call applyDualTextureEffectToOffscreen twice (for layer2 and layer3)
+    expect(ctx.renderer.applyDualTextureEffectToOffscreen).toHaveBeenCalledTimes(2)
+  })
 })
 
 // ============================================================

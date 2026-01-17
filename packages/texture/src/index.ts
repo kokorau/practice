@@ -6,6 +6,9 @@ export { TextureRenderer, type PostEffectSpec, type DualTextureSpec } from './Te
 // Surface Mask shader (two-texture)
 export { createSurfaceMaskSpec, surfaceMaskShader } from './shaders/surfaceMask'
 
+// Overlay Blend shader (two-texture alpha compositing)
+export { createOverlayBlendSpec, overlayBlendShader, OVERLAY_BLEND_BUFFER_SIZE } from './shaders/overlayBlend'
+
 // Shader types and createSpec functions
 export type {
   SolidTextureParams,
