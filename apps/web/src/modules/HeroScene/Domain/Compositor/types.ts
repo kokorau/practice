@@ -85,6 +85,9 @@ export interface CompositorRenderer {
   /** Get the current viewport dimensions */
   getViewport(): Viewport
 
+  /** Get the WebGPU device (used by TextureOwner nodes for texture creation) */
+  getDevice(): GPUDevice
+
   /** Render a spec to an offscreen texture */
   renderToOffscreen(
     spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
@@ -125,7 +128,9 @@ export interface CompositorRenderer {
  * - viewport: Canvas dimensions
  * - palette: Color palette for resolving color keys
  * - scale: Preview scale factor
- * - texturePool: Texture allocation manager
+ * - texturePool: Texture allocation manager (legacy, will be removed)
+ * - device: WebGPU device for texture creation (new)
+ * - format: Texture format (new)
  */
 export interface NodeContext {
   /** Renderer for WebGPU operations */
@@ -140,8 +145,14 @@ export interface NodeContext {
   /** Scale factor for preview rendering (1.0 = full size) */
   readonly scale: number
 
-  /** Texture pool for offscreen texture management */
+  /** Texture pool for offscreen texture management (legacy - will be removed after node-owned texture migration) */
   readonly texturePool: TexturePool
+
+  /** WebGPU device for texture creation (used by TextureOwner nodes) */
+  readonly device: GPUDevice
+
+  /** Texture format for render targets */
+  readonly format: GPUTextureFormat
 }
 
 // ============================================================

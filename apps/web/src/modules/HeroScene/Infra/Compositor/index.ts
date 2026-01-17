@@ -10,6 +10,14 @@ export {
   createTexturePool,
 } from './TexturePool'
 
+// TextureOwner infrastructure (Node-Owned Texture Architecture)
+export { BaseTextureOwner } from './BaseTextureOwner'
+export {
+  createRenderTexture,
+  needsTextureResize,
+  DEFAULT_TEXTURE_FORMAT,
+} from './TextureFactory'
+
 // RenderNode implementations
 export {
   // Surface

@@ -9,6 +9,7 @@ import {
   isRenderNode,
   isCompositorNode,
   isOutputNode,
+  isTextureOwner,
   getTextureFromNode,
   DEFAULT_BLEND_MODE,
   type RenderNode,
@@ -16,6 +17,7 @@ import {
   type OutputNode,
   type NodeContext,
   type TextureHandle,
+  type TextureOwner,
 } from './index'
 
 // ============================================================
@@ -33,6 +35,7 @@ const mockTextureHandle: TextureHandle = {
 const mockNodeContext: NodeContext = {
   renderer: {
     getViewport: () => ({ width: 1280, height: 720 }),
+    getDevice: () => ({} as GPUDevice),
     renderToOffscreen: () => ({} as GPUTexture),
     applyPostEffectToOffscreen: () => ({} as GPUTexture),
     applyDualTextureEffectToOffscreen: () => ({} as GPUTexture),
@@ -46,6 +49,8 @@ const mockNodeContext: NodeContext = {
     release: () => {},
     getNextIndex: (current) => (current === 0 ? 1 : 0),
   },
+  device: {} as GPUDevice,
+  format: 'rgba8unorm',
 }
 
 const mockRenderNode: RenderNode = {
@@ -131,5 +136,53 @@ describe('getTextureFromNode', () => {
 describe('DEFAULT_BLEND_MODE', () => {
   it('is "normal"', () => {
     expect(DEFAULT_BLEND_MODE).toBe('normal')
+  })
+})
+
+describe('isTextureOwner', () => {
+  const mockTextureOwner: TextureOwner = {
+    outputTexture: null,
+    isDirty: true,
+    ensureTexture: () => ({} as GPUTexture),
+    invalidate: () => {},
+    dispose: () => {},
+  }
+
+  it('returns true for valid TextureOwner', () => {
+    expect(isTextureOwner(mockTextureOwner)).toBe(true)
+  })
+
+  it('returns true for TextureOwner with outputTexture', () => {
+    const owner = { ...mockTextureOwner, outputTexture: {} as GPUTexture }
+    expect(isTextureOwner(owner)).toBe(true)
+  })
+
+  it('returns false for null', () => {
+    expect(isTextureOwner(null)).toBe(false)
+  })
+
+  it('returns false for undefined', () => {
+    expect(isTextureOwner(undefined)).toBe(false)
+  })
+
+  it('returns false for non-object', () => {
+    expect(isTextureOwner('string')).toBe(false)
+    expect(isTextureOwner(123)).toBe(false)
+  })
+
+  it('returns false for object missing required methods', () => {
+    expect(isTextureOwner({ outputTexture: null, isDirty: true })).toBe(false)
+    expect(
+      isTextureOwner({
+        outputTexture: null,
+        isDirty: true,
+        ensureTexture: () => {},
+        // missing invalidate and dispose
+      })
+    ).toBe(false)
+  })
+
+  it('returns false for RenderNode (not TextureOwner)', () => {
+    expect(isTextureOwner(mockRenderNode)).toBe(false)
   })
 })
