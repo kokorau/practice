@@ -35,7 +35,7 @@ export function createSolidBackgroundConfig(colorKey = 'B'): HeroViewConfig {
 }
 
 /**
- * Create a gradient grain background config (multi-color pattern)
+ * Create a multi-color stripe background config
  */
 export function createGradientBackgroundConfig(): HeroViewConfig {
   return {
@@ -59,13 +59,10 @@ export function createGradientBackgroundConfig(): HeroViewConfig {
             name: 'Surface',
             visible: true,
             surface: {
-              type: 'gradientGrain',
+              type: 'stripe',
+              width1: 4,
+              width2: 4,
               angle: 45,
-              grainIntensity: 0.3,
-              curvePoints: [
-                { position: 0, colorSource: 'primary', opacity: 1 },
-                { position: 1, colorSource: 'secondary', opacity: 1 },
-              ],
             },
             colors: { primary: 'B', secondary: 'A' },
           } as SurfaceLayerNodeConfig,

@@ -15,10 +15,10 @@ export interface RGBA {
 export function getPixel(imageData: ImageData, x: number, y: number): RGBA {
   const index = (y * imageData.width + x) * 4
   return {
-    r: imageData.data[index],
-    g: imageData.data[index + 1],
-    b: imageData.data[index + 2],
-    a: imageData.data[index + 3],
+    r: imageData.data[index] ?? 0,
+    g: imageData.data[index + 1] ?? 0,
+    b: imageData.data[index + 2] ?? 0,
+    a: imageData.data[index + 3] ?? 0,
   }
 }
 
@@ -116,7 +116,7 @@ export function countMatchingPixels(
  */
 export function hasVisiblePixels(imageData: ImageData): boolean {
   for (let i = 3; i < imageData.data.length; i += 4) {
-    if (imageData.data[i] > 0) {
+    if ((imageData.data[i] ?? 0) > 0) {
       return true
     }
   }
@@ -129,9 +129,9 @@ export function hasVisiblePixels(imageData: ImageData): boolean {
 export function hasNonBlackPixels(imageData: ImageData): boolean {
   for (let i = 0; i < imageData.data.length; i += 4) {
     if (
-      imageData.data[i] > 0 ||      // R
-      imageData.data[i + 1] > 0 ||  // G
-      imageData.data[i + 2] > 0     // B
+      (imageData.data[i] ?? 0) > 0 ||      // R
+      (imageData.data[i + 1] ?? 0) > 0 ||  // G
+      (imageData.data[i + 2] ?? 0) > 0     // B
     ) {
       return true
     }
@@ -169,6 +169,6 @@ export function getDominantColor(imageData: ImageData): RGBA {
     }
   }
 
-  const [r, g, b, a] = dominantKey.split(',').map(Number)
-  return { r, g, b, a }
+  const parts = dominantKey.split(',').map(Number)
+  return { r: parts[0] ?? 0, g: parts[1] ?? 0, b: parts[2] ?? 0, a: parts[3] ?? 0 }
 }
