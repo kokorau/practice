@@ -1,0 +1,49 @@
+{
+  "id": "test-image-layer",
+  "name": "Test: Image Layer",
+  "config": {
+    "viewport": { "width": 1280, "height": 720 },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "solid"
+            },
+            "colors": {
+              "primary": "F1",
+              "secondary": "F1"
+            }
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "id": "image-layer-1",
+        "name": "Image Layer (Cover)",
+        "visible": true,
+        "imageId": "",
+        "mode": "cover"
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": { "hue": 200, "saturation": 70, "value": 55 },
+    "accent": { "hue": 30, "saturation": 80, "value": 60 },
+    "foundation": { "hue": 210, "saturation": 5, "value": 95 }
+  }
+}
