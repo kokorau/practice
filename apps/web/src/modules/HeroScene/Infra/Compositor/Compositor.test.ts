@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { PingPongTexturePool, createTexturePool } from './TexturePool'
+import { MultiBufferTexturePool, TripleBufferTexturePool, createTexturePool } from './TexturePool'
 import {
   SurfaceRenderNode,
   createSurfaceRenderNode,
@@ -43,7 +43,7 @@ import type { NodeContext, TextureHandle, RenderNode, CompositorNode } from '../
 const mockGpuTexture = {} as GPUTexture
 
 function createMockContext(): NodeContext {
-  const texturePool = new PingPongTexturePool(1280, 720)
+  const texturePool = new MultiBufferTexturePool(1280, 720)
 
   return {
     renderer: {
@@ -108,22 +108,22 @@ function createMockPalette() {
 // TexturePool Tests
 // ============================================================
 
-describe('PingPongTexturePool', () => {
-  it('alternates between texture indices 0 and 1', () => {
-    const pool = new PingPongTexturePool(1280, 720)
+describe('MultiBufferTexturePool', () => {
+  it('cycles through texture indices 0-5', () => {
+    const pool = new MultiBufferTexturePool(1280, 720)
 
-    const handle1 = pool.acquire()
-    expect(handle1._textureIndex).toBe(0)
-
-    const handle2 = pool.acquire()
-    expect(handle2._textureIndex).toBe(1)
-
-    const handle3 = pool.acquire()
-    expect(handle3._textureIndex).toBe(0)
+    expect(pool.acquire()._textureIndex).toBe(0)
+    expect(pool.acquire()._textureIndex).toBe(1)
+    expect(pool.acquire()._textureIndex).toBe(2)
+    expect(pool.acquire()._textureIndex).toBe(3)
+    expect(pool.acquire()._textureIndex).toBe(4)
+    expect(pool.acquire()._textureIndex).toBe(5)
+    // Cycles back to 0
+    expect(pool.acquire()._textureIndex).toBe(0)
   })
 
   it('assigns unique IDs to handles', () => {
-    const pool = new PingPongTexturePool(1280, 720)
+    const pool = new MultiBufferTexturePool(1280, 720)
 
     const handle1 = pool.acquire()
     const handle2 = pool.acquire()
@@ -132,7 +132,7 @@ describe('PingPongTexturePool', () => {
   })
 
   it('sets correct dimensions', () => {
-    const pool = new PingPongTexturePool(800, 600)
+    const pool = new MultiBufferTexturePool(800, 600)
 
     const handle = pool.acquire()
 
@@ -140,15 +140,19 @@ describe('PingPongTexturePool', () => {
     expect(handle.height).toBe(600)
   })
 
-  it('getNextIndex returns opposite index', () => {
-    const pool = new PingPongTexturePool(1280, 720)
+  it('getNextIndex returns next index in cycle', () => {
+    const pool = new MultiBufferTexturePool(1280, 720)
 
     expect(pool.getNextIndex(0)).toBe(1)
-    expect(pool.getNextIndex(1)).toBe(0)
+    expect(pool.getNextIndex(1)).toBe(2)
+    expect(pool.getNextIndex(2)).toBe(3)
+    expect(pool.getNextIndex(3)).toBe(4)
+    expect(pool.getNextIndex(4)).toBe(5)
+    expect(pool.getNextIndex(5)).toBe(0)
   })
 
   it('reset() resets the pool state', () => {
-    const pool = new PingPongTexturePool(1280, 720)
+    const pool = new MultiBufferTexturePool(1280, 720)
 
     pool.acquire()  // 0
     pool.acquire()  // 1
@@ -159,11 +163,17 @@ describe('PingPongTexturePool', () => {
   })
 })
 
+describe('TripleBufferTexturePool (legacy alias)', () => {
+  it('is an alias for MultiBufferTexturePool', () => {
+    expect(TripleBufferTexturePool).toBe(MultiBufferTexturePool)
+  })
+})
+
 describe('createTexturePool', () => {
-  it('creates a PingPongTexturePool', () => {
+  it('creates a MultiBufferTexturePool', () => {
     const pool = createTexturePool(1280, 720)
 
-    expect(pool).toBeInstanceOf(PingPongTexturePool)
+    expect(pool).toBeInstanceOf(MultiBufferTexturePool)
   })
 })
 

@@ -38,7 +38,7 @@ export interface TextureHandle {
    * Internal offscreen texture index (0 or 1).
    * Used for ping-pong rendering.
    */
-  readonly _textureIndex: 0 | 1
+  readonly _textureIndex: number
 }
 
 // ============================================================
@@ -68,7 +68,7 @@ export interface TexturePool {
    * Get the next available texture index for ping-pong rendering.
    * Returns the index that is NOT currently in use.
    */
-  getNextIndex(currentIndex: 0 | 1): 0 | 1
+  getNextIndex(currentIndex: number): number
 }
 
 // ============================================================
@@ -88,14 +88,14 @@ export interface CompositorRenderer {
   /** Render a spec to an offscreen texture */
   renderToOffscreen(
     spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
-    textureIndex: 0 | 1
+    textureIndex: number
   ): GPUTexture
 
   /** Apply a post-effect shader to a texture, output to offscreen */
   applyPostEffectToOffscreen(
     effect: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
     inputTexture: GPUTexture,
-    outputTextureIndex: 0 | 1
+    outputTextureIndex: number
   ): GPUTexture
 
   /** Apply a dual-texture effect (e.g., masking) to offscreen */
@@ -103,7 +103,7 @@ export interface CompositorRenderer {
     spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
     primaryTexture: GPUTexture,
     secondaryTexture: GPUTexture,
-    outputTextureIndex: 0 | 1
+    outputTextureIndex: number
   ): GPUTexture
 
   /** Composite an offscreen texture to the canvas */

@@ -84,10 +84,12 @@ export class MaskCompositorNode implements CompositorNode {
     // Create the two-texture blend spec
     const blendSpec = createSurfaceMaskSpec(viewport)
 
-    // Get output texture index (use the one not used by inputs)
-    // We need to pick an index that's different from both inputs
-    // If both inputs use the same index (shouldn't happen), use the other
-    const outputIndex = texturePool.getNextIndex(surfaceHandle._textureIndex)
+    // Get output texture index that differs from both inputs.
+    // With multi-buffer pool, we can always find an index different from both.
+    let outputIndex = texturePool.getNextIndex(surfaceHandle._textureIndex)
+    if (outputIndex === maskHandle._textureIndex) {
+      outputIndex = texturePool.getNextIndex(outputIndex)
+    }
 
     // Apply the two-texture effect to offscreen
     const gpuTexture = renderer.applyDualTextureEffectToOffscreen(

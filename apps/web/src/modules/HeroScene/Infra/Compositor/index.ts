@@ -6,7 +6,7 @@
 
 // TexturePool
 export {
-  PingPongTexturePool,
+  TripleBufferTexturePool,
   createTexturePool,
 } from './TexturePool'
 

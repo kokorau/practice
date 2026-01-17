@@ -103,8 +103,9 @@ export class TextureRenderer {
   private dualTextureCache: Map<string, DualTexturePipelineCache> = new Map()
   private passthroughPipelineCache: PassthroughPipelineCache | null = null
 
-  // オフスクリーンレンダリング用のテクスチャ（ダブルバッファ）
-  private offscreenTextures: [GPUTexture | null, GPUTexture | null] = [null, null]
+  // オフスクリーンレンダリング用のテクスチャ（6スロット）
+  // 複雑なパイプライン（背景 + マスク付きレイヤー等）で同時に必要なテクスチャ数に対応
+  private offscreenTextures: Array<GPUTexture | null> = [null, null, null, null, null, null]
   private currentTextureIndex: number = 0
 
   private constructor(
@@ -444,9 +445,9 @@ export class TextureRenderer {
   // ============================================================
 
   /**
-   * Get or create offscreen texture for ping-pong rendering
+   * Get or create offscreen texture for multi-buffer rendering
    */
-  private getOrCreateOffscreenTexture(index: 0 | 1): GPUTexture {
+  private getOrCreateOffscreenTexture(index: number): GPUTexture {
     const viewport = this.getViewport()
 
     if (this.offscreenTextures[index]) {
@@ -476,7 +477,7 @@ export class TextureRenderer {
    * Copy current canvas content to offscreen texture
    */
   copyCanvasToTexture(): GPUTexture {
-    const target = this.getOrCreateOffscreenTexture(this.currentTextureIndex as 0 | 1)
+    const target = this.getOrCreateOffscreenTexture(this.currentTextureIndex)
     const source = this.context.getCurrentTexture()
 
     const commandEncoder = this.device.createCommandEncoder()
@@ -595,7 +596,7 @@ export class TextureRenderer {
     spec: DualTextureSpec,
     primaryTexture: GPUTexture,
     secondaryTexture: GPUTexture,
-    outputTextureIndex: 0 | 1
+    outputTextureIndex: number
   ): GPUTexture {
     const target = this.getOrCreateOffscreenTexture(outputTextureIndex)
     const cached = this.getOrCreateDualTexturePipeline(spec)
@@ -717,7 +718,7 @@ export class TextureRenderer {
   applyPostEffectToOffscreen(
     spec: PostEffectSpec,
     inputTexture: GPUTexture,
-    outputTextureIndex: 0 | 1
+    outputTextureIndex: number
   ): GPUTexture {
     const target = this.getOrCreateOffscreenTexture(outputTextureIndex)
     const cached = this.getOrCreatePostEffectPipeline(spec)
@@ -840,7 +841,7 @@ export class TextureRenderer {
    */
   renderToOffscreen(
     spec: TextureRenderSpec,
-    textureIndex: 0 | 1 = 0
+    textureIndex: number = 0
   ): GPUTexture {
     const target = this.getOrCreateOffscreenTexture(textureIndex)
     const cached = this.getOrCreatePipeline(spec)
@@ -877,7 +878,7 @@ export class TextureRenderer {
    */
   async renderImageToOffscreen(
     source: ImageBitmap | HTMLImageElement,
-    textureIndex: 0 | 1 = 0
+    textureIndex: number = 0
   ): Promise<GPUTexture> {
     const target = this.getOrCreateOffscreenTexture(textureIndex)
     const cache = this.getOrCreateImagePipeline()
@@ -948,7 +949,7 @@ export class TextureRenderer {
   /**
    * Copy offscreen texture to canvas
    */
-  copyOffscreenToCanvas(textureIndex: 0 | 1): void {
+  copyOffscreenToCanvas(textureIndex: number): void {
     const source = this.offscreenTextures[textureIndex]
     if (!source) {
       console.warn('No offscreen texture at index', textureIndex)
@@ -969,7 +970,7 @@ export class TextureRenderer {
   /**
    * Get an offscreen texture by index (creates if needed)
    */
-  getOffscreenTexture(index: 0 | 1): GPUTexture {
+  getOffscreenTexture(index: number): GPUTexture {
     return this.getOrCreateOffscreenTexture(index)
   }
 
@@ -1101,6 +1102,6 @@ export class TextureRenderer {
     for (const tex of this.offscreenTextures) {
       tex?.destroy()
     }
-    this.offscreenTextures = [null, null]
+    this.offscreenTextures = [null, null, null, null, null, null]
   }
 }
