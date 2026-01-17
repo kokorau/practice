@@ -358,6 +358,21 @@ describe('useLayerOperations', () => {
 
       expect(onClearSelection).not.toHaveBeenCalled()
     })
+
+    it('should only call sceneCallbacks.removeLayer (no direct repository.set)', () => {
+      const callbacks = createMockSceneCallbacks()
+      const repository = createMockRepository()
+      const repositorySpy = vi.spyOn(repository, 'set')
+      const { handleRemoveLayer } = useLayerOperations(
+        createOptions({ sceneCallbacks: callbacks, repository }),
+      )
+
+      handleRemoveLayer(MASK_LAYER_ID)
+
+      // handleRemoveLayer should delegate to sceneCallbacks, not call repository.set directly
+      expect(callbacks.removeLayer).toHaveBeenCalledWith(MASK_LAYER_ID)
+      expect(repositorySpy).not.toHaveBeenCalled()
+    })
   })
 
   // ============================================================

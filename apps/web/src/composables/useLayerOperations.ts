@@ -12,7 +12,6 @@ import type {
 } from '../modules/HeroScene'
 import {
   findLayerInTree,
-  removeLayerFromTree,
   moveLayerInTree,
   isGroupLayerConfig,
 } from '../modules/HeroScene'
@@ -147,19 +146,6 @@ const getLayerVariant = (layer: LayerNodeConfig): LayerVariant | null => {
     default:
       return null
   }
-}
-
-/**
- * Recursively collect all descendant layer IDs
- */
-const collectDescendantIds = (node: LayerNodeConfig): string[] => {
-  const ids: string[] = [node.id]
-  if (isGroupLayerConfig(node)) {
-    for (const child of node.children) {
-      ids.push(...collectDescendantIds(child))
-    }
-  }
-  return ids
 }
 
 // ============================================================
@@ -333,26 +319,9 @@ export function useLayerOperations(
   }
 
   const handleRemoveLayer = (layerId: string) => {
-    const config = repository.get()
-    if (!config) return
-
-    const layer = findLayerInTree(config.layers, layerId)
-    if (!layer) return
-
-    // Collect all layer IDs to remove from scene (including children)
-    const idsToRemove = collectDescendantIds(layer)
-
-    // Remove non-group layers from scene
-    for (const id of idsToRemove) {
-      const l = findLayerInTree(config.layers, id)
-      if (l && !isGroupLayerConfig(l)) {
-        sceneCallbacks.removeLayer(id)
-      }
-    }
-
-    // Remove from layer tree
-    const newLayers = removeLayerFromTree(config.layers, layerId)
-    repository.set({ ...config, layers: newLayers })
+    // Delegate to sceneCallbacks - usecase handles repository update and effect cleanup
+    const removed = sceneCallbacks.removeLayer(layerId)
+    if (!removed) return
 
     // Clear selection if the removed layer was selected
     if (selectedLayerId?.value === layerId) {
