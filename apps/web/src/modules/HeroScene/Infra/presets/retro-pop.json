@@ -2,10 +2,11 @@
   "id": "retro-pop",
   "name": "Retro Pop",
   "config": {
-    "viewport": { "width": 1280, "height": 720 },
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
     "colors": {
-      "background": { "primary": "A", "secondary": "F3" },
-      "mask": { "primary": "B", "secondary": "F1" },
       "semanticContext": "sectionTint"
     },
     "layers": [
@@ -20,17 +21,52 @@
             "id": "background",
             "name": "Surface",
             "visible": true,
-            "surface": { "type": "checker", "cellSize": 48, "angle": 0 },
+            "surface": {
+              "type": "checker",
+              "cellSize": 48,
+              "angle": 0
+            },
             "filters": [
               {
                 "type": "effect",
                 "enabled": true,
                 "config": {
-                  "vignette": { "enabled": false, "intensity": 0.5, "radius": 0.5, "softness": 0.5, "shape": "ellipse", "color": [0, 0, 0, 1], "centerX": 0.5, "centerY": 0.5, "aspectRatio": 1 },
-                  "chromaticAberration": { "enabled": false, "intensity": 0.01 },
-                  "dotHalftone": { "enabled": false, "dotSize": 6, "spacing": 12, "angle": 30 },
-                  "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 },
-                  "blur": { "enabled": false, "radius": 8 }
+                  "vignette": {
+                    "enabled": false,
+                    "intensity": 0.5,
+                    "radius": 0.5,
+                    "softness": 0.5,
+                    "shape": "ellipse",
+                    "color": [
+                      0,
+                      0,
+                      0,
+                      1
+                    ],
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "aspectRatio": 1
+                  },
+                  "chromaticAberration": {
+                    "enabled": false,
+                    "intensity": 0.01
+                  },
+                  "dotHalftone": {
+                    "enabled": false,
+                    "dotSize": 6,
+                    "spacing": 12,
+                    "angle": 30
+                  },
+                  "lineHalftone": {
+                    "enabled": false,
+                    "lineWidth": 4,
+                    "spacing": 12,
+                    "angle": 45
+                  },
+                  "blur": {
+                    "enabled": false,
+                    "radius": 8
+                  }
                 }
               }
             ]
@@ -48,17 +84,53 @@
             "id": "surface-mask",
             "name": "Surface",
             "visible": true,
-            "surface": { "type": "polkaDot", "dotRadius": 12, "spacing": 36, "rowOffset": 0.5 },
+            "surface": {
+              "type": "polkaDot",
+              "dotRadius": 12,
+              "spacing": 36,
+              "rowOffset": 0.5
+            },
             "filters": [
               {
                 "type": "effect",
                 "enabled": true,
                 "config": {
-                  "vignette": { "enabled": false, "intensity": 0.5, "radius": 0.5, "softness": 0.5, "shape": "ellipse", "color": [0, 0, 0, 1], "centerX": 0.5, "centerY": 0.5, "aspectRatio": 1 },
-                  "chromaticAberration": { "enabled": false, "intensity": 0.01 },
-                  "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
-                  "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 },
-                  "blur": { "enabled": false, "radius": 8 }
+                  "vignette": {
+                    "enabled": false,
+                    "intensity": 0.5,
+                    "radius": 0.5,
+                    "softness": 0.5,
+                    "shape": "ellipse",
+                    "color": [
+                      0,
+                      0,
+                      0,
+                      1
+                    ],
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "aspectRatio": 1
+                  },
+                  "chromaticAberration": {
+                    "enabled": false,
+                    "intensity": 0.01
+                  },
+                  "dotHalftone": {
+                    "enabled": false,
+                    "dotSize": 8,
+                    "spacing": 16,
+                    "angle": 45
+                  },
+                  "lineHalftone": {
+                    "enabled": false,
+                    "lineWidth": 4,
+                    "spacing": 12,
+                    "angle": 45
+                  },
+                  "blur": {
+                    "enabled": false,
+                    "radius": 8
+                  }
                 }
               }
             ]
@@ -72,7 +144,13 @@
               {
                 "type": "mask",
                 "enabled": true,
-                "shape": { "type": "circle", "centerX": 0.5, "centerY": 0.5, "radius": 0.3, "cutout": false },
+                "shape": {
+                  "type": "circle",
+                  "centerX": 0.5,
+                  "centerY": 0.5,
+                  "radius": 0.3,
+                  "cutout": false
+                },
                 "invert": false,
                 "feather": 0
               }
@@ -83,14 +161,42 @@
     ],
     "foreground": {
       "elements": [
-        { "id": "title-1", "type": "title", "visible": true, "position": "middle-center", "content": "GROOVY", "fontSize": 5, "fontId": "bebas-neue" },
-        { "id": "description-1", "type": "description", "visible": true, "position": "bottom-center", "content": "Back to the classics", "fontSize": 1.5, "fontId": "comfortaa" }
+        {
+          "id": "title-1",
+          "type": "title",
+          "visible": true,
+          "position": "middle-center",
+          "content": "GROOVY",
+          "fontSize": 5,
+          "fontId": "bebas-neue"
+        },
+        {
+          "id": "description-1",
+          "type": "description",
+          "visible": true,
+          "position": "bottom-center",
+          "content": "Back to the classics",
+          "fontSize": 1.5,
+          "fontId": "comfortaa"
+        }
       ]
     }
   },
   "colorPreset": {
-    "brand": { "hue": 24, "saturation": 76, "value": 100 },
-    "accent": { "hue": 45, "saturation": 85, "value": 90 },
-    "foundation": { "hue": 50, "saturation": 25, "value": 93 }
+    "brand": {
+      "hue": 24,
+      "saturation": 76,
+      "value": 100
+    },
+    "accent": {
+      "hue": 45,
+      "saturation": 85,
+      "value": 90
+    },
+    "foundation": {
+      "hue": 50,
+      "saturation": 25,
+      "value": 93
+    }
   }
 }

@@ -53,24 +53,21 @@ export interface SurfaceColorsConfig {
 
 /**
  * Color configuration for HeroView
- * Contains global color state (palette colors, semantic context)
+ * Contains global color state (semantic context only)
  *
  * Note: Per-surface colors (primary/secondary) are now stored on each
  * SurfaceLayerNodeConfig.colors field, not here.
+ *
+ * Note: Brand/accent/foundation HSV colors are stored in the preset's
+ * colorPreset field, not in config.colors. UI manages these via useSiteColors.
  */
 export interface HeroColorsConfig {
   /** Semantic context for color resolution */
   semanticContext: HeroContextName
-  /** Brand color (HSV) */
-  brand: HsvColor
-  /** Accent color (HSV) */
-  accent: HsvColor
-  /** Foundation color (HSV) */
-  foundation: HsvColor
 }
 
 /**
- * Legacy HeroColorsConfig with background/mask fields
+ * Legacy HeroColorsConfig with deprecated fields
  * Used only for migration from old config format
  * @internal
  */
@@ -85,6 +82,12 @@ export interface LegacyHeroColorsConfig extends HeroColorsConfig {
     primary: HeroPrimitiveKey | 'auto'
     secondary: HeroPrimitiveKey | 'auto'
   }
+  /** @deprecated Use colorPreset in preset file instead */
+  brand?: HsvColor
+  /** @deprecated Use colorPreset in preset file instead */
+  accent?: HsvColor
+  /** @deprecated Use colorPreset in preset file instead */
+  foundation?: HsvColor
 }
 
 // ============================================================
@@ -963,9 +966,6 @@ export const createDefaultForegroundConfig = (): ForegroundLayerConfig => ({
 
 export const createDefaultColorsConfig = (): HeroColorsConfig => ({
   semanticContext: 'canvas',
-  brand: { hue: 198, saturation: 70, value: 65 },
-  accent: { hue: 30, saturation: 80, value: 60 },
-  foundation: { hue: 0, saturation: 0, value: 97 },
 })
 
 /** Default colors for background surface layer (palette keys) */

@@ -3,17 +3,13 @@ import { createPreset, exportPreset } from './exportPreset'
 import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
 import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 import type { PresetExportPort } from './PresetExportPort'
+import type { PresetColorConfig } from '../../Domain/HeroViewPreset'
 
 describe('createPreset', () => {
   const createTestConfig = (): HeroViewConfig => ({
     viewport: { width: 1280, height: 720 },
     colors: {
-      background: { primary: 'B', secondary: 'auto' },
-      mask: { primary: 'auto', secondary: 'auto' },
       semanticContext: 'canvas',
-      brand: { hue: 198, saturation: 70, value: 65 },
-      accent: { hue: 30, saturation: 80, value: 60 },
-      foundation: { hue: 0, saturation: 0, value: 97 },
     },
     layers: [
       {
@@ -22,11 +18,16 @@ describe('createPreset', () => {
         name: 'Test Group',
         visible: true,
         children: [],
-        processors: [],
       },
     ],
     foreground: { elements: [] },
   })
+
+  const testColorPreset: PresetColorConfig = {
+    brand: { hue: 198, saturation: 70, value: 65 },
+    accent: { hue: 30, saturation: 80, value: 60 },
+    foundation: { hue: 0, saturation: 0, value: 97 },
+  }
 
   it('should create preset from current config', () => {
     const repository = createHeroViewInMemoryRepository(createTestConfig())
@@ -39,16 +40,20 @@ describe('createPreset', () => {
     expect(preset.config.layers).toHaveLength(1)
   })
 
-  it('should include colorPreset from config colors', () => {
+  it('should include colorPreset when provided in options', () => {
+    const repository = createHeroViewInMemoryRepository(createTestConfig())
+
+    const preset = createPreset(repository, { colorPreset: testColorPreset })
+
+    expect(preset.colorPreset).toEqual(testColorPreset)
+  })
+
+  it('should have undefined colorPreset when not provided', () => {
     const repository = createHeroViewInMemoryRepository(createTestConfig())
 
     const preset = createPreset(repository)
 
-    expect(preset.colorPreset).toEqual({
-      brand: { hue: 198, saturation: 70, value: 65 },
-      accent: { hue: 30, saturation: 80, value: 60 },
-      foundation: { hue: 0, saturation: 0, value: 97 },
-    })
+    expect(preset.colorPreset).toBeUndefined()
   })
 
   it('should use custom id when provided', () => {
@@ -72,12 +77,7 @@ describe('exportPreset', () => {
   const createTestConfig = (): HeroViewConfig => ({
     viewport: { width: 1280, height: 720 },
     colors: {
-      background: { primary: 'B', secondary: 'auto' },
-      mask: { primary: 'auto', secondary: 'auto' },
       semanticContext: 'canvas',
-      brand: { hue: 198, saturation: 70, value: 65 },
-      accent: { hue: 30, saturation: 80, value: 60 },
-      foundation: { hue: 0, saturation: 0, value: 97 },
     },
     layers: [],
     foreground: { elements: [] },
@@ -121,6 +121,7 @@ describe('exportPreset', () => {
 
     expect(preset).toBeDefined()
     expect(preset.id).toMatch(/^custom-\d+$/)
-    expect(preset.colorPreset).toBeDefined()
+    // colorPreset is undefined when not provided
+    expect(preset.colorPreset).toBeUndefined()
   })
 })

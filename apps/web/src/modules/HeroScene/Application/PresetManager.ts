@@ -155,23 +155,20 @@ export class PresetManager {
 
   /**
    * Apply preset with complete replacement (current behavior)
+   *
+   * Note: colorPreset is returned to the caller for UI state updates.
+   * Brand/accent/foundation are no longer stored in config.colors.
    */
   private applyPresetReplace(preset: HeroViewPreset): void {
     // Set the complete config
     this.heroViewRepository.set(preset.config)
-
-    // Apply color preset if available
-    if (preset.colorPreset) {
-      this.heroViewRepository.updateColors({
-        brand: preset.colorPreset.brand,
-        accent: preset.colorPreset.accent,
-        foundation: preset.colorPreset.foundation,
-      })
-    }
   }
 
   /**
    * Apply preset with merge mode (preserve custom layers)
+   *
+   * Note: colorPreset is returned to the caller for UI state updates.
+   * Brand/accent/foundation are no longer stored in config.colors.
    */
   private applyPresetMerge(preset: HeroViewPreset): void {
     const currentConfig = this.heroViewRepository.get()
@@ -193,15 +190,6 @@ export class PresetManager {
       ...preset.config,
       layers: mergedLayers,
     })
-
-    // Apply color preset if available
-    if (preset.colorPreset) {
-      this.heroViewRepository.updateColors({
-        brand: preset.colorPreset.brand,
-        accent: preset.colorPreset.accent,
-        foundation: preset.colorPreset.foundation,
-      })
-    }
   }
 
   // ============================================================

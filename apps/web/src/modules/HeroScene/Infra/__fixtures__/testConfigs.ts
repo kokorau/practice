@@ -8,9 +8,6 @@ export function createSolidBackgroundConfig(colorKey = 'B'): HeroViewConfig {
     viewport: { width: 256, height: 256 },
     colors: {
       semanticContext: 'canvas',
-      brand: { hue: 220, saturation: 70, value: 60 },
-      accent: { hue: 30, saturation: 80, value: 60 },
-      foundation: { hue: 0, saturation: 0, value: 97 },
     },
     layers: [
       {
@@ -42,9 +39,6 @@ export function createGradientBackgroundConfig(): HeroViewConfig {
     viewport: { width: 256, height: 256 },
     colors: {
       semanticContext: 'canvas',
-      brand: { hue: 220, saturation: 70, value: 60 },
-      accent: { hue: 30, saturation: 80, value: 60 },
-      foundation: { hue: 0, saturation: 0, value: 97 },
     },
     layers: [
       {
@@ -81,9 +75,6 @@ export function createGridPatternConfig(): HeroViewConfig {
     viewport: { width: 256, height: 256 },
     colors: {
       semanticContext: 'canvas',
-      brand: { hue: 220, saturation: 70, value: 60 },
-      accent: { hue: 30, saturation: 80, value: 60 },
-      foundation: { hue: 0, saturation: 0, value: 97 },
     },
     layers: [
       {
@@ -119,9 +110,6 @@ export function createTwoLayerConfig(): HeroViewConfig {
     viewport: { width: 256, height: 256 },
     colors: {
       semanticContext: 'canvas',
-      brand: { hue: 220, saturation: 70, value: 60 },
-      accent: { hue: 30, saturation: 80, value: 60 },
-      foundation: { hue: 0, saturation: 0, value: 97 },
     },
     layers: [
       {
