@@ -165,7 +165,7 @@ export class ImageRenderNode implements RenderNode {
 interface ExtendedCompositorRenderer {
   renderImageToOffscreen?(
     source: ImageBitmap | HTMLImageElement,
-    textureIndex: 0 | 1
+    textureIndex: 0 | 1 | 2
   ): GPUTexture
 
   renderPositionedImageToOffscreen?(
@@ -178,7 +178,7 @@ interface ExtendedCompositorRenderer {
       rotation: number
       opacity: number
     },
-    textureIndex: 0 | 1
+    textureIndex: 0 | 1 | 2
   ): GPUTexture
 }
 

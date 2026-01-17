@@ -91,8 +91,8 @@ export interface TextureRendererLike {
     inputTexture: GPUTexture,
     options?: { clear?: boolean }
   ): void
-  /** Render to offscreen texture for 2-stage pipeline */
-  renderToOffscreen(spec: TextureRenderSpec, textureIndex?: 0 | 1): GPUTexture
+  /** Render to offscreen texture for triple-buffer pipeline */
+  renderToOffscreen(spec: TextureRenderSpec, textureIndex?: 0 | 1 | 2): GPUTexture
   /** Apply two-texture effect (surface + mask) */
   applyDualTextureEffect(
     spec: DualTextureSpec,
@@ -105,13 +105,13 @@ export interface TextureRendererLike {
     spec: DualTextureSpec,
     primaryTexture: GPUTexture,
     secondaryTexture: GPUTexture,
-    outputTextureIndex: 0 | 1
+    outputTextureIndex: 0 | 1 | 2
   ): GPUTexture
   /** Apply post-effect to offscreen texture */
   applyPostEffectToOffscreen(
     effect: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
     inputTexture: GPUTexture,
-    outputTextureIndex: 0 | 1
+    outputTextureIndex: 0 | 1 | 2
   ): GPUTexture
   /** Composite offscreen texture to canvas with alpha blending */
   compositeToCanvas(inputTexture: GPUTexture, options?: { clear?: boolean }): void
