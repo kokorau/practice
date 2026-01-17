@@ -130,12 +130,14 @@ describe('EffectorTypes', () => {
   })
 
   describe('createEffectorModifier', () => {
-    it('should create effect modifier for effect types', () => {
+    it('should create SingleEffectConfig for effect types', () => {
       const modifier = createEffectorModifier('vignette')
       expect(modifier.type).toBe('effect')
-      expect((modifier as { enabled: boolean }).enabled).toBe(true)
-      // Effect modifier has config with effect settings
-      expect((modifier as { config: object }).config).toBeDefined()
+      // SingleEffectConfig has id and params (not enabled and config)
+      expect((modifier as { id: string }).id).toBe('vignette')
+      expect((modifier as { params: object }).params).toBeDefined()
+      // Should not have legacy format properties
+      expect((modifier as { enabled?: boolean }).enabled).toBeUndefined()
     })
 
     it('should create mask modifier for mask type', () => {

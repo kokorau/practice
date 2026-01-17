@@ -696,6 +696,7 @@ export function isLegacyEffectFilterConfig(config: ProcessorConfig): config is E
 /**
  * Filter config type (effects only)
  * Masks are handled as MaskProcessorConfig in ProcessorNodeConfig.modifiers
+ * @deprecated Use SingleEffectConfig[] instead
  */
 export type FilterConfig = EffectFilterConfig
 
@@ -1169,6 +1170,10 @@ export const DEFAULT_LAYER_MASK_COLORS: SurfaceColorsConfig = {
   secondary: 'auto',
 }
 
+/**
+ * @deprecated Use createSingleEffectConfig or createEffectorModifier instead
+ * This creates a legacy format EffectFilterConfig. Prefer SingleEffectConfig for new code.
+ */
 export const createDefaultEffectFilterConfig = (): EffectFilterConfig => ({
   type: 'effect',
   enabled: true,
