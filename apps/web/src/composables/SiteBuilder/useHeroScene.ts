@@ -118,7 +118,6 @@ import {
   type UsecaseState,
   type EditorStateRef,
   type RendererActions,
-  renderHeroConfig,
   migrateHeroViewConfig,
 } from '../../modules/HeroScene'
 import { useLayerSelection } from '../useLayerSelection'
@@ -128,6 +127,7 @@ import { useHeroColors } from './useHeroColors'
 import { useHeroFilters } from './useHeroFilters'
 import { useHeroThumbnails } from './useHeroThumbnails'
 import { useHeroImages } from './useHeroImages'
+import { useHeroSceneRenderer } from './useHeroSceneRenderer'
 
 // Layer IDs for template layers
 const BASE_LAYER_ID = 'background'
@@ -408,6 +408,21 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     midgroundTextureColor2: heroColors.midgroundTextureColor2,
     selectedBackgroundIndex,
   })
+
+  // ============================================================
+  // Initialize Renderer Composable
+  // ============================================================
+  const editorConfig = computed(() => editorState.value.config)
+  const heroRenderer = useHeroSceneRenderer({
+    primitivePalette,
+    heroViewRepository,
+    canvasImageData,
+    editorConfig,
+    onDestroyPreview: () => heroThumbnails.destroyThumbnailRenderers(),
+  })
+
+  // Alias for backward compatibility and shorter access
+  const { render, renderSceneFromConfig, initPreview, destroyPreview } = heroRenderer
 
   // ============================================================
   // Color Usecase wrappers
@@ -837,49 +852,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       updateTextLayerRotation(id, updates.rotation, heroViewRepository)
     }
     render()
-  }
-
-  // ============================================================
-  // Rendering (inline implementation to avoid circular dependency)
-  // ============================================================
-  let previewRenderer: import('@practice/texture').TextureRenderer | null = null
-
-  const renderSceneFromConfig = async () => {
-    if (!previewRenderer) return
-    // Use repository directly as single source of truth
-    const config = heroViewRepository.get()
-    await renderHeroConfig(previewRenderer, config, primitivePalette.value)
-    try {
-      canvasImageData.value = await previewRenderer.readPixels()
-    } catch {
-      // Ignore errors
-    }
-  }
-
-  const render = async () => {
-    await renderSceneFromConfig()
-  }
-
-  const initPreview = async (canvas?: HTMLCanvasElement | null) => {
-    if (!canvas) return
-    canvas.width = editorState.value.config.width
-    canvas.height = editorState.value.config.height
-
-    try {
-      const { TextureRenderer } = await import('@practice/texture')
-      previewRenderer = await TextureRenderer.create(canvas)
-      // Repository already has default config from createDefaultHeroViewConfig()
-      // No need for additional initialization - just render
-      await render()
-    } catch (e) {
-      console.error('WebGPU not available:', e)
-    }
-  }
-
-  const destroyPreview = () => {
-    previewRenderer?.destroy()
-    previewRenderer = null
-    heroThumbnails.destroyThumbnailRenderers()
   }
 
   // ============================================================
