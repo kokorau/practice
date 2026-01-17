@@ -40,11 +40,15 @@ function createMockRenderer(): TextureRendererLike & {
 
     renderToOffscreen: vi.fn(() => mockTexture),
 
+    renderToTexture: vi.fn(),
+
     applyDualTextureEffect: vi.fn(),
 
     applyDualTextureEffectToOffscreen: vi.fn(() => mockTexture),
 
     applyPostEffectToOffscreen: vi.fn(() => mockTexture),
+
+    applyPostEffectToTexture: vi.fn(),
 
     compositeToCanvas: vi.fn(),
   }
@@ -144,13 +148,13 @@ describe('renderHeroConfig', () => {
       expect(renderer.compositeToCanvas).toHaveBeenCalled()
     })
 
-    it('should use renderToOffscreen for surface rendering', async () => {
+    it('should use renderToTexture for surface rendering', async () => {
       const config = createDefaultHeroViewConfig()
 
       await renderHeroConfig(renderer, config, lightPalette)
 
-      // Pipeline renders surfaces to offscreen textures
-      expect(renderer.renderToOffscreen).toHaveBeenCalled()
+      // Pipeline renders surfaces to owned textures (TextureOwner pattern)
+      expect(renderer.renderToTexture).toHaveBeenCalled()
     })
 
     it('should use applyDualTextureEffectToOffscreen for mask composition', async () => {

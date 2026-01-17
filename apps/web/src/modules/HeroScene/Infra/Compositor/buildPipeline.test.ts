@@ -84,7 +84,9 @@ function createMockRenderer(): CompositorRenderer {
       createTexture: vi.fn(() => mockGpuTexture),
     }) as unknown as GPUDevice),
     renderToOffscreen: vi.fn(() => mockGpuTexture),
+    renderToTexture: vi.fn(),
     applyPostEffectToOffscreen: vi.fn(() => mockGpuTexture),
+    applyPostEffectToTexture: vi.fn(),
     applyDualTextureEffectToOffscreen: vi.fn(() => mockGpuTexture),
     compositeToCanvas: vi.fn(),
   }
@@ -242,7 +244,7 @@ describe('executePipeline', () => {
     expect(renderer.compositeToCanvas).toHaveBeenCalled()
   })
 
-  it('renders with renderToOffscreen for surfaces', () => {
+  it('renders with renderToTexture for surfaces', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
     const renderer = createMockRenderer()
@@ -250,8 +252,8 @@ describe('executePipeline', () => {
     const { outputNode } = buildPipeline(config, palette)
     executePipeline(outputNode, renderer, palette)
 
-    // Should call renderToOffscreen for surface rendering
-    expect(renderer.renderToOffscreen).toHaveBeenCalled()
+    // Should call renderToTexture for surface rendering (TextureOwner pattern)
+    expect(renderer.renderToTexture).toHaveBeenCalled()
   })
 
   it('uses dual texture effect for masked layers', () => {
@@ -287,8 +289,8 @@ describe('Pipeline Integration', () => {
     // Execute
     executePipeline(outputNode, renderer, palette)
 
-    // Verify execution
-    expect(renderer.renderToOffscreen).toHaveBeenCalled()
+    // Verify execution (TextureOwner pattern uses renderToTexture)
+    expect(renderer.renderToTexture).toHaveBeenCalled()
     expect(renderer.compositeToCanvas).toHaveBeenCalled()
   })
 

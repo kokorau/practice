@@ -2,7 +2,7 @@
  * SurfaceRenderNode
  *
  * Renders a surface pattern (stripe, grid, polkaDot, etc.) to a texture.
- * Wraps the existing createBackgroundSpecFromSurface function.
+ * Implements TextureOwner pattern for per-node texture ownership and caching.
  */
 
 import type {
@@ -11,11 +11,13 @@ import type {
   TextureHandle,
   ColorKeyPair,
 } from '../../../Domain/Compositor'
+import type { TextureOwner } from '../../../Domain/Compositor/TextureOwner'
 import type { AnySurfaceConfig } from '../../../Domain/HeroViewConfig'
 import {
   getColorFromPalette,
   createBackgroundSpecFromSurface,
 } from '../../renderHeroConfig'
+import { BaseTextureOwner } from '../BaseTextureOwner'
 
 // ============================================================
 // SurfaceRenderNode Implementation
@@ -38,6 +40,11 @@ export interface SurfaceRenderNodeConfig {
 /**
  * RenderNode that renders a surface pattern to texture.
  *
+ * Implements TextureOwner pattern for:
+ * - Per-node texture ownership (no shared pool limits)
+ * - Dirty-flag based caching (skip re-rendering unchanged nodes)
+ * - Automatic viewport resize handling
+ *
  * Supports all 15 surface pattern types:
  * - solid, stripe, grid, polkaDot, checker
  * - triangle, hexagon, gradientGrain
@@ -52,10 +59,11 @@ export interface SurfaceRenderNodeConfig {
  *   colors: { primary: 'F1', secondary: 'F3' }
  * })
  *
- * const texture = node.render(context)
+ * node.render(context) // Renders to owned texture
+ * const texture = node.outputTexture // Get the texture
  * ```
  */
-export class SurfaceRenderNode implements RenderNode {
+export class SurfaceRenderNode extends BaseTextureOwner implements RenderNode, TextureOwner {
   readonly type = 'render' as const
   readonly id: string
 
@@ -63,16 +71,27 @@ export class SurfaceRenderNode implements RenderNode {
   private readonly colors: ColorKeyPair
 
   constructor(config: SurfaceRenderNodeConfig) {
+    super()
     this.id = config.id
     this.surface = config.surface
     this.colors = config.colors
   }
 
   /**
-   * Render the surface pattern to a texture.
+   * Render the surface pattern to the owned texture.
+   *
+   * Uses TextureOwner caching: skips rendering if not dirty and texture exists.
    */
   render(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, palette, scale, texturePool } = ctx
+    const { renderer, viewport, palette, scale, device } = ctx
+
+    // Ensure texture exists (handles viewport resize)
+    const texture = this.ensureTexture(device, viewport)
+
+    // Skip if not dirty (cache hit)
+    if (!this.isDirty) {
+      return this.createTextureHandle(viewport)
+    }
 
     // Resolve colors from palette
     const color1 = getColorFromPalette(palette, this.colors.primary)
@@ -91,16 +110,25 @@ export class SurfaceRenderNode implements RenderNode {
       throw new Error(`[SurfaceRenderNode] Failed to create surface spec (id: ${this.id})`)
     }
 
-    // Acquire a texture from the pool
-    const handle = texturePool.acquire()
+    // Render directly to our owned texture
+    renderer.renderToTexture(spec, texture)
 
-    // Render to offscreen texture
-    const gpuTexture = renderer.renderToOffscreen(spec, handle._textureIndex)
+    // Mark as clean (cache valid)
+    this._isDirty = false
 
-    // Return a new handle with the actual GPU texture
+    return this.createTextureHandle(viewport)
+  }
+
+  /**
+   * Create a TextureHandle for compatibility with legacy code.
+   */
+  private createTextureHandle(viewport: { width: number; height: number }): TextureHandle {
     return {
-      ...handle,
-      _gpuTexture: gpuTexture,
+      id: `${this.id}-owned`,
+      width: viewport.width,
+      height: viewport.height,
+      _gpuTexture: this.outputTexture!,
+      _textureIndex: -1, // Not used in TextureOwner pattern
     }
   }
 }

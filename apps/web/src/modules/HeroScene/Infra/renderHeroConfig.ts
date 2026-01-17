@@ -71,6 +71,8 @@ export interface TextureRendererLike {
   ): void
   /** Render to offscreen texture for multi-buffer pipeline */
   renderToOffscreen(spec: TextureRenderSpec, textureIndex?: number): GPUTexture
+  /** Render directly to a provided texture (TextureOwner pattern) */
+  renderToTexture(spec: TextureRenderSpec, outputTexture: GPUTexture): void
   /** Apply two-texture effect (surface + mask) */
   applyDualTextureEffect(
     spec: unknown,

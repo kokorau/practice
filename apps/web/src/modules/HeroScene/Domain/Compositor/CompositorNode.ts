@@ -16,6 +16,7 @@
 
 import type { BaseNode, NodeContext, TextureHandle } from './types'
 import type { RenderNode } from './RenderNode'
+import { isTextureOwner } from './TextureOwner'
 
 // ============================================================
 // CompositorNode Interface
@@ -138,11 +139,36 @@ export type CompositorInput = RenderNode | CompositorNode
 
 /**
  * Helper to get texture from either a RenderNode or CompositorNode.
+ *
+ * Supports both:
+ * - TextureOwner pattern (new): Returns outputTexture after rendering if needed
+ * - Legacy pattern: Returns TextureHandle from render/composite, extracts _gpuTexture
  */
 export function getTextureFromNode(
   node: CompositorInput,
   ctx: NodeContext
 ): TextureHandle {
+  // TextureOwner pattern (new)
+  if (isTextureOwner(node)) {
+    // Render if dirty or no texture yet
+    if (node.isDirty || !node.outputTexture) {
+      if (node.type === 'render') {
+        node.render(ctx)
+      } else {
+        node.composite(ctx)
+      }
+    }
+    // Return a TextureHandle-like object for compatibility
+    return {
+      id: `${node.id}-owned`,
+      width: ctx.viewport.width,
+      height: ctx.viewport.height,
+      _gpuTexture: node.outputTexture!,
+      _textureIndex: -1, // Not used in TextureOwner pattern
+    }
+  }
+
+  // Legacy pattern
   if (node.type === 'render') {
     return node.render(ctx)
   } else {

@@ -37,6 +37,7 @@ const mockNodeContext: NodeContext = {
     getViewport: () => ({ width: 1280, height: 720 }),
     getDevice: () => ({} as GPUDevice),
     renderToOffscreen: () => ({} as GPUTexture),
+    renderToTexture: () => {},
     applyPostEffectToOffscreen: () => ({} as GPUTexture),
     applyDualTextureEffectToOffscreen: () => ({} as GPUTexture),
     compositeToCanvas: () => {},

@@ -3,6 +3,7 @@
  *
  * Applies a post-processing effect to an input texture.
  * Uses the EFFECT_REGISTRY to create shader specs.
+ * Implements TextureOwner pattern for per-node texture ownership and caching.
  */
 
 import type {
@@ -11,9 +12,11 @@ import type {
   TextureHandle,
   CompositorNodeLike,
 } from '../../../Domain/Compositor'
-import { isRenderNode } from '../../../Domain/Compositor'
+import type { TextureOwner } from '../../../Domain/Compositor/TextureOwner'
+import { getTextureFromNode } from '../../../Domain/Compositor'
 import type { EffectType } from '../../../Domain/EffectRegistry'
 import { EFFECT_REGISTRY, isValidEffectType } from '../../../Domain/EffectRegistry'
+import { BaseTextureOwner } from '../BaseTextureOwner'
 
 // ============================================================
 // EffectRenderNode Implementation
@@ -39,6 +42,11 @@ export interface EffectRenderNodeConfig {
 /**
  * RenderNode that applies a post-processing effect to an input texture.
  *
+ * Implements TextureOwner pattern for:
+ * - Per-node texture ownership (no shared pool limits)
+ * - Dirty-flag based caching (skip re-rendering unchanged nodes)
+ * - Automatic viewport resize handling
+ *
  * Supports all 5 effect types from EFFECT_REGISTRY:
  * - vignette (with shapes: ellipse, circle, rectangle, linear)
  * - chromaticAberration
@@ -55,10 +63,11 @@ export interface EffectRenderNodeConfig {
  *   effectParams: { shape: 'ellipse', intensity: 0.5, radius: 0.8 }
  * })
  *
- * const texture = node.render(context)
+ * node.render(context) // Renders to owned texture
+ * const texture = node.outputTexture // Get the texture
  * ```
  */
-export class EffectRenderNode implements RenderNode {
+export class EffectRenderNode extends BaseTextureOwner implements RenderNode, TextureOwner {
   readonly type = 'render' as const
   readonly id: string
 
@@ -67,6 +76,7 @@ export class EffectRenderNode implements RenderNode {
   private readonly effectParams: Record<string, unknown>
 
   constructor(config: EffectRenderNodeConfig) {
+    super()
     this.id = config.id
     this.inputNode = config.inputNode
     this.effectType = config.effectType
@@ -79,14 +89,22 @@ export class EffectRenderNode implements RenderNode {
 
   /**
    * Apply the effect to the input texture.
+   *
+   * Uses TextureOwner caching: skips rendering if not dirty and texture exists.
    */
   render(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, scale, texturePool } = ctx
+    const { renderer, viewport, scale, device } = ctx
 
-    // Get input texture from the input node
-    const inputHandle = isRenderNode(this.inputNode)
-      ? this.inputNode.render(ctx)
-      : this.inputNode.composite(ctx)
+    // Ensure texture exists (handles viewport resize)
+    this.ensureTexture(device, viewport)
+
+    // Skip if not dirty (cache hit)
+    if (!this.isDirty) {
+      return this.createTextureHandle(viewport)
+    }
+
+    // Get input texture from the input node (supports both TextureOwner and legacy)
+    const inputHandle = getTextureFromNode(this.inputNode, ctx)
 
     // Get the effect definition from registry
     const effectDef = EFFECT_REGISTRY[this.effectType]
@@ -103,30 +121,91 @@ export class EffectRenderNode implements RenderNode {
 
     if (!spec) {
       // Effect returned null (possibly disabled or invalid params)
-      // Return input texture unchanged
-      return inputHandle
+      // Use passthrough shader to copy input to owned texture
+      renderer.applyPostEffectToTexture(
+        this.createPassthroughSpec(viewport),
+        inputHandle._gpuTexture,
+        this.outputTexture!
+      )
+    } else {
+      // Apply the effect to the owned texture
+      renderer.applyPostEffectToTexture(
+        spec,
+        inputHandle._gpuTexture,
+        this.outputTexture!
+      )
     }
 
-    // Get the next texture index for ping-pong rendering
-    const outputIndex = texturePool.getNextIndex(inputHandle._textureIndex)
+    // Mark as clean (cache valid)
+    this._isDirty = false
 
-    // Apply the effect
-    const gpuTexture = renderer.applyPostEffectToOffscreen(
-      spec,
-      inputHandle._gpuTexture,
-      outputIndex
-    )
+    return this.createTextureHandle(viewport)
+  }
 
-    // Release the input texture back to the pool
-    texturePool.release(inputHandle)
-
-    // Return a new handle with the output texture
+  /**
+   * Create a TextureHandle for compatibility with legacy code.
+   */
+  private createTextureHandle(viewport: { width: number; height: number }): TextureHandle {
     return {
-      id: `${this.id}-output`,
+      id: `${this.id}-owned`,
       width: viewport.width,
       height: viewport.height,
-      _gpuTexture: gpuTexture,
-      _textureIndex: outputIndex,
+      _gpuTexture: this.outputTexture!,
+      _textureIndex: -1, // Not used in TextureOwner pattern
+    }
+  }
+
+  /**
+   * Create a passthrough shader spec for copying input to output unchanged.
+   * Uses the same binding layout as other post-effect shaders.
+   */
+  private createPassthroughSpec(viewport: { width: number; height: number }): {
+    shader: string
+    uniforms: ArrayBuffer
+    bufferSize: number
+  } {
+    // Passthrough shader that samples from input texture and outputs unchanged
+    // Matches the binding layout used by applyPostEffectToTexture:
+    // binding 0 = uniform buffer, binding 1 = sampler, binding 2 = input texture
+    const passthroughShader = /* wgsl */ `
+struct Params {
+  viewportWidth: f32,
+  viewportHeight: f32,
+  _padding1: f32,
+  _padding2: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: Params;
+@group(0) @binding(1) var inputSampler: sampler;
+@group(0) @binding(2) var inputTexture: texture_2d<f32>;
+
+@vertex
+fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> @builtin(position) vec4f {
+  var pos = array<vec2f, 3>(
+    vec2f(-1.0, -1.0),
+    vec2f(3.0, -1.0),
+    vec2f(-1.0, 3.0)
+  );
+  return vec4f(pos[vertexIndex], 0.0, 1.0);
+}
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+  return textureSample(inputTexture, inputSampler, uv);
+}
+`
+    const buffer = new ArrayBuffer(16)
+    const view = new Float32Array(buffer)
+    view[0] = viewport.width
+    view[1] = viewport.height
+    view[2] = 0 // padding
+    view[3] = 0 // padding
+
+    return {
+      shader: passthroughShader,
+      uniforms: buffer,
+      bufferSize: 16,
     }
   }
 }
