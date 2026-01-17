@@ -190,6 +190,18 @@ export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMa
       cutout: params.cutout,
     }
   }
+  if (params.type === 'wavyLine') {
+    return {
+      type: 'wavyLine',
+      position: params.position,
+      direction: params.direction,
+      amplitude: params.amplitude,
+      frequency: params.frequency,
+      octaves: params.octaves,
+      seed: params.seed,
+      cutout: params.cutout,
+    }
+  }
   // blob (default)
   return {
     type: 'blob',
