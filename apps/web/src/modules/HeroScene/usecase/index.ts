@@ -20,24 +20,9 @@ export {
   type PresetExportPort,
   type ExportPresetOptions,
 } from './Preset'
-export {
-  // New generic functions
-  selectFilterType,
-  getFilterType,
-  updateEffectParams,
-  getEffectParams,
-  // Legacy aliases (deprecated)
-  updateVignetteParams,
-  updateChromaticAberrationParams,
-  updateDotHalftoneParams,
-  updateLineHalftoneParams,
-  updateBlurParams,
-  getVignetteParams,
-  getChromaticAberrationParams,
-  getDotHalftoneParams,
-  getLineHalftoneParams,
-  getBlurParams,
-} from './Filter'
+// Filter usecase exports - types only
+// NOTE: Legacy repository-based functions removed, use composables instead
+export type { FilterType } from './Filter'
 export {
   updateTextLayerText,
   updateTextLayerFont,

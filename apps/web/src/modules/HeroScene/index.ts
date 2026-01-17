@@ -401,22 +401,6 @@ export {
   exportPreset,
   exportPreset as exportPresetUsecase,
   createPreset,
-  // Filter UseCases (new generic functions)
-  selectFilterType,
-  getFilterType,
-  updateEffectParams,
-  getEffectParams,
-  // Filter UseCases (legacy aliases)
-  updateVignetteParams,
-  updateChromaticAberrationParams,
-  updateDotHalftoneParams,
-  updateLineHalftoneParams,
-  updateBlurParams,
-  getVignetteParams,
-  getChromaticAberrationParams,
-  getDotHalftoneParams,
-  getLineHalftoneParams,
-  getBlurParams,
   // TextLayer UseCases
   updateTextLayerText,
   updateTextLayerFont,

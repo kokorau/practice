@@ -11,7 +11,7 @@
 
 import { computed } from 'vue'
 import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig } from '../../modules/HeroScene'
-import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig, isLegacyEffectFilterConfig } from '../../modules/HeroScene'
+import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig } from '../../modules/HeroScene'
 
 // Layer variant type for UI display
 type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' | 'processor'
@@ -20,16 +20,9 @@ type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' 
 const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
 
 // Helper to check if an effect modifier is enabled
+// SingleEffectConfig: existence means enabled (no legacy format check needed)
 const isEffectEnabled = (mod: ProcessorConfig): boolean => {
-  if (isSingleEffectConfig(mod)) {
-    // New format: existence means enabled
-    return true
-  }
-  if (isLegacyEffectFilterConfig(mod)) {
-    // Legacy format: check enabled flag
-    return mod.enabled
-  }
-  return false
+  return isSingleEffectConfig(mod)
 }
 
 // ============================================================

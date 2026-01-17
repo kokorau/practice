@@ -10,7 +10,8 @@
  */
 
 import type { EffectType } from './EffectRegistry'
-import type { ProcessorConfig, EffectFilterConfig, MaskProcessorConfig } from './HeroViewConfig'
+import { EFFECT_REGISTRY } from './EffectRegistry'
+import type { ProcessorConfig, SingleEffectConfig, MaskProcessorConfig } from './HeroViewConfig'
 import {
   MaskShapeSchemas,
   MaskBaseSchema,
@@ -210,7 +211,7 @@ export type EffectorDefinition = EffectEffectorDefinition | MaskEffectorDefiniti
  * Create an effector modifier from type
  *
  * @param type - Effector type
- * @returns Appropriate modifier (EffectFilterConfig or MaskProcessorConfig)
+ * @returns Appropriate modifier (SingleEffectConfig or MaskProcessorConfig)
  */
 export function createEffectorModifier(type: EffectorType): EffectorModifier {
   if (type === 'mask') {
@@ -222,18 +223,20 @@ export function createEffectorModifier(type: EffectorType): EffectorModifier {
       feather: 0,
     } as MaskProcessorConfig
   }
-  // For effects, return a default EffectFilterConfig
+  // For effects, return a SingleEffectConfig with default params from registry
+  const effectType = type as EffectType
+  const definition = EFFECT_REGISTRY[effectType]
+  const defaultConfig = definition.createDefaultConfig()
+
+  // Extract params (remove 'enabled' as SingleEffectConfig doesn't use it)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { enabled: _enabled, ...params } = defaultConfig as Record<string, unknown>
+
   return {
     type: 'effect',
-    enabled: true,
-    config: {
-      vignette: { enabled: false, shape: 'ellipse', intensity: 0.5, softness: 0.4, radius: 0.8, aspectRatio: 1, centerX: 0.5, centerY: 0.5, color: [0, 0, 0, 1] },
-      chromaticAberration: { enabled: false, intensity: 3 },
-      dotHalftone: { enabled: false, dotSize: 8, spacing: 16, angle: 45 },
-      lineHalftone: { enabled: false, lineWidth: 4, spacing: 12, angle: 45 },
-      blur: { enabled: false, radius: 8 },
-    },
-  } as EffectFilterConfig
+    id: effectType,
+    params,
+  } as SingleEffectConfig
 }
 
 // ============================================================
