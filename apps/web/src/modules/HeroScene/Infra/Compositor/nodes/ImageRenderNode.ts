@@ -1,7 +1,7 @@
 /**
  * ImageRenderNode
  *
- * Renders an image to a texture.
+ * Renders an image to a texture using the TextureOwner pattern.
  * Supports both cover-fit and positioned rendering modes.
  */
 
@@ -10,6 +10,8 @@ import type {
   NodeContext,
   TextureHandle,
 } from '../../../Domain/Compositor'
+import type { TextureOwner } from '../../../Domain/Compositor/TextureOwner'
+import { BaseTextureOwner } from '../BaseTextureOwner'
 
 // ============================================================
 // Image Position Types
@@ -44,18 +46,21 @@ export interface ImageRenderNodeConfig {
   /** Unique node identifier */
   id: string
 
-  /** Image source (ImageBitmap, HTMLImageElement, or image URL) */
-  source: ImageBitmap | HTMLImageElement | string
+  /** Image ID for lookup in imageRegistry */
+  imageId: string
+
+  /** Fit mode: 'cover' fills viewport, 'positioned' uses explicit coordinates */
+  mode: 'cover' | 'positioned'
 
   /**
    * Optional position configuration.
-   * If not provided, image is rendered with cover-fit.
+   * Only used when mode is 'positioned'.
    */
   position?: ImagePosition
 }
 
 /**
- * RenderNode that renders an image to texture.
+ * RenderNode that renders an image to texture using TextureOwner pattern.
  *
  * Supports two rendering modes:
  * - Cover-fit: Image fills the viewport maintaining aspect ratio (default)
@@ -66,27 +71,32 @@ export interface ImageRenderNodeConfig {
  * // Cover-fit mode
  * const coverNode = new ImageRenderNode({
  *   id: 'background-image',
- *   source: imageBitmap
+ *   imageId: 'image-123',
+ *   mode: 'cover'
  * })
  *
  * // Positioned mode
  * const positionedNode = new ImageRenderNode({
  *   id: 'overlay-image',
- *   source: imageBitmap,
+ *   imageId: 'image-456',
+ *   mode: 'positioned',
  *   position: { x: 0.5, y: 0.5, width: 0.3, height: 0.3, rotation: 0.1 }
  * })
  * ```
  */
-export class ImageRenderNode implements RenderNode {
+export class ImageRenderNode extends BaseTextureOwner implements RenderNode, TextureOwner {
   readonly type = 'render' as const
   readonly id: string
 
-  private readonly source: ImageBitmap | HTMLImageElement | string
+  private readonly imageId: string
+  private readonly mode: 'cover' | 'positioned'
   private readonly position?: ImagePosition
 
   constructor(config: ImageRenderNodeConfig) {
+    super()
     this.id = config.id
-    this.source = config.source
+    this.imageId = config.imageId
+    this.mode = config.mode
     this.position = config.position
   }
 
@@ -94,92 +104,79 @@ export class ImageRenderNode implements RenderNode {
    * Render the image to a texture.
    */
   render(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, texturePool } = ctx
+    const { viewport, imageRegistry } = ctx
 
-    // Acquire a texture from the pool
-    const handle = texturePool.acquire()
+    // Ensure texture exists
+    const texture = this.ensureTexture(ctx.device, viewport, ctx.format)
 
-    // Get the actual image source
-    // Note: String URLs need to be loaded asynchronously before rendering
-    // For now, we only support ImageBitmap and HTMLImageElement
-    if (typeof this.source === 'string') {
-      throw new Error(
-        `[ImageRenderNode] String URLs are not supported. ` +
-        `Load the image first and pass ImageBitmap or HTMLImageElement (id: ${this.id})`
-      )
+    // Get image from registry
+    const source = imageRegistry?.get(this.imageId)
+
+    // If no image source or not dirty, return cached texture
+    if (!source) {
+      // No image available - return empty texture handle
+      return this.createTextureHandle(viewport)
     }
 
-    // Use the extended renderer interface for image rendering
-    // This requires the renderer to implement image rendering methods
-    const extendedRenderer = renderer as ExtendedCompositorRenderer
-
-    if (!extendedRenderer.renderImageToOffscreen) {
-      throw new Error(
-        `[ImageRenderNode] Renderer does not support image rendering. ` +
-        `Make sure the renderer implements renderImageToOffscreen (id: ${this.id})`
-      )
+    if (!this.isDirty) {
+      // Cache hit - return existing texture
+      return this.createTextureHandle(viewport)
     }
 
-    let gpuTexture: GPUTexture
+    // Check if renderer supports image rendering
+    const renderer = ctx.renderer
+    if (!renderer.renderImageToTexture) {
+      console.warn(
+        `[ImageRenderNode] Renderer does not support image rendering (id: ${this.id}). ` +
+        `Returning empty texture.`
+      )
+      this._isDirty = false
+      return this.createTextureHandle(viewport)
+    }
 
-    if (this.position) {
+    if (this.mode === 'positioned' && this.position) {
       // Positioned rendering
-      if (!extendedRenderer.renderPositionedImageToOffscreen) {
-        throw new Error(
-          `[ImageRenderNode] Renderer does not support positioned image rendering (id: ${this.id})`
+      if (!renderer.renderPositionedImageToTexture) {
+        console.warn(
+          `[ImageRenderNode] Renderer does not support positioned image rendering (id: ${this.id}). ` +
+          `Falling back to cover-fit mode.`
+        )
+        renderer.renderImageToTexture(source, texture)
+      } else {
+        renderer.renderPositionedImageToTexture(
+          source,
+          {
+            x: this.position.x * viewport.width,
+            y: this.position.y * viewport.height,
+            width: this.position.width * viewport.width,
+            height: this.position.height * viewport.height,
+            rotation: this.position.rotation ?? 0,
+            opacity: this.position.opacity ?? 1,
+          },
+          texture
         )
       }
-
-      gpuTexture = extendedRenderer.renderPositionedImageToOffscreen(
-        this.source,
-        {
-          x: this.position.x * viewport.width,
-          y: this.position.y * viewport.height,
-          width: this.position.width * viewport.width,
-          height: this.position.height * viewport.height,
-          rotation: this.position.rotation ?? 0,
-          opacity: this.position.opacity ?? 1,
-        },
-        handle._textureIndex
-      )
     } else {
       // Cover-fit rendering
-      gpuTexture = extendedRenderer.renderImageToOffscreen(
-        this.source,
-        handle._textureIndex
-      )
+      renderer.renderImageToTexture(source, texture)
     }
 
-    // Return a new handle with the actual GPU texture
+    this._isDirty = false
+    return this.createTextureHandle(viewport)
+  }
+
+  /**
+   * Create a TextureHandle from the owned texture.
+   */
+  private createTextureHandle(viewport: { width: number; height: number }): TextureHandle {
     return {
-      ...handle,
-      _gpuTexture: gpuTexture,
+      id: `${this.id}-texture`,
+      width: viewport.width,
+      height: viewport.height,
+      _gpuTexture: this._outputTexture!,
+      _textureIndex: -1, // Not using texture pool
     }
   }
-}
-
-/**
- * Extended renderer interface with image rendering support.
- * This extends CompositorRenderer with additional methods for images.
- */
-interface ExtendedCompositorRenderer {
-  renderImageToOffscreen?(
-    source: ImageBitmap | HTMLImageElement,
-    textureIndex: number
-  ): GPUTexture
-
-  renderPositionedImageToOffscreen?(
-    source: ImageBitmap | HTMLImageElement,
-    position: {
-      x: number
-      y: number
-      width: number
-      height: number
-      rotation: number
-      opacity: number
-    },
-    textureIndex: number
-  ): GPUTexture
 }
 
 /**
@@ -187,8 +184,9 @@ interface ExtendedCompositorRenderer {
  */
 export function createImageRenderNode(
   id: string,
-  source: ImageBitmap | HTMLImageElement,
+  imageId: string,
+  mode: 'cover' | 'positioned' = 'cover',
   position?: ImagePosition
 ): ImageRenderNode {
-  return new ImageRenderNode({ id, source, position })
+  return new ImageRenderNode({ id, imageId, mode, position })
 }

@@ -13,6 +13,7 @@ import type {
   SurfaceLayerNodeConfig,
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
+  ImageLayerNodeConfig,
   HeroPrimitiveKey,
   TextLayerNodeConfig,
 } from '../../Domain/HeroViewConfig'
@@ -39,6 +40,7 @@ import {
   createTextRenderNode,
   type EffectConfig,
 } from './index'
+import { createImageRenderNode } from './nodes/ImageRenderNode'
 import {
   isDarkTheme,
   getMaskSurfaceKey,
@@ -122,6 +124,24 @@ function findAllClipGroups(layers: LayerNodeConfig[]): Array<{
     ) ?? null
 
     results.push({ group, surface, processor })
+  }
+
+  return results
+}
+
+/**
+ * Find all image layers (recursively searches groups)
+ */
+function findAllImageLayers(layers: LayerNodeConfig[]): ImageLayerNodeConfig[] {
+  const results: ImageLayerNodeConfig[] = []
+
+  for (const layer of layers) {
+    if (layer.type === 'image') {
+      results.push(layer)
+    } else if (layer.type === 'group') {
+      // Recursively search in groups
+      results.push(...findAllImageLayers(layer.children))
+    }
   }
 
   return results
@@ -452,7 +472,24 @@ export function buildPipeline(
     layerNodes.push(layerNode)
   }
 
-  // 3. Build text layer nodes
+  // 3. Build image layer nodes
+  const imageLayers = findAllImageLayers(config.layers)
+  for (const imageLayer of imageLayers) {
+    // Skip invisible layers or layers without an image
+    if (!imageLayer.visible) continue
+    if (!imageLayer.imageId) continue // Skip if no image assigned
+
+    const imageNode = createImageRenderNode(
+      imageLayer.id,
+      imageLayer.imageId,
+      imageLayer.mode,
+      imageLayer.position
+    )
+    nodes.push(imageNode)
+    layerNodes.push(imageNode)
+  }
+
+  // 4. Build text layer nodes
   const textLayers = findAllTextLayers(config.layers)
   for (let i = 0; i < textLayers.length; i++) {
     const textLayer = textLayers[i]!
@@ -463,7 +500,7 @@ export function buildPipeline(
     layerNodes.push(textNode)
   }
 
-  // 4. Build overlay compositor (combines all layers)
+  // 5. Build overlay compositor (combines all layers)
   let finalNode: TextureProducingNode
 
   if (layerNodes.length === 0) {
@@ -476,7 +513,7 @@ export function buildPipeline(
     finalNode = overlayNode
   }
 
-  // 5. Apply root-level processor nodes (global masks/effects)
+  // 6. Apply root-level processor nodes (global masks/effects)
   const rootProcessors = findRootProcessors(config.layers)
   for (let i = 0; i < rootProcessors.length; i++) {
     const processor = rootProcessors[i]!
@@ -484,7 +521,7 @@ export function buildPipeline(
     finalNode = buildProcessorNode(processorId, finalNode, processor, nodes)
   }
 
-  // 6. Build canvas output node
+  // 7. Build canvas output node
   const outputNode = createCanvasOutputNode('output', finalNode)
   nodes.push(outputNode)
 

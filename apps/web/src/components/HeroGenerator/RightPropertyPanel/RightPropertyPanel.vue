@@ -18,6 +18,7 @@ import type {
 import PanelHeader from './PanelHeader.vue'
 import TextElementPanel from './TextElementPanel.vue'
 import LayerSettingsPanel from './LayerSettingsPanel.vue'
+import ImageLayerSettingsPanel from './ImageLayerSettingsPanel.vue'
 import EffectorSettingsPanel from './EffectorSettingsPanel.vue'
 import PlaceholderPanel from './PlaceholderPanel.vue'
 
@@ -120,6 +121,23 @@ interface FilterProps {
   blurConfig: WritableComputedRef<BlurConfigParams>
 }
 
+/** Image layer state */
+interface ImageProps {
+  layerId: string
+  imageId: string
+  mode: 'cover' | 'positioned'
+  position: {
+    x: number
+    y: number
+    width: number
+    height: number
+    rotation?: number
+    opacity?: number
+  } | undefined
+  imageUrl: string | null
+  isLoading: boolean
+}
+
 // ============================================================
 // Props (Grouped)
 // ============================================================
@@ -137,6 +155,8 @@ const props = defineProps<{
   mask: MaskProps
   /** Filter/effect state */
   filter: FilterProps
+  /** Image layer state */
+  image: ImageProps | null
   /** Primitive color palette */
   palette: PrimitivePalette
 }>()
@@ -158,6 +178,9 @@ const emit = defineEmits<{
 
   // Mask updates
   'update:mask': [key: keyof MaskProps | 'uploadImage' | 'clearImage' | 'selectPattern' | 'loadRandom', value: unknown]
+
+  // Image layer updates
+  'update:image': [key: 'uploadImage' | 'clearImage' | 'loadRandom' | 'mode' | 'position', value: unknown]
 }>()
 
 // ============================================================
@@ -187,6 +210,7 @@ const panelTitle = (): string => {
   if (props.selection.processorType === 'mask') return 'Mask Settings'
   if (isBackgroundLayer()) return 'Background'
   if (props.selection.layerVariant === 'surface') return 'Surface'
+  if (props.selection.layerVariant === 'image') return 'Image'
   return 'Properties'
 }
 </script>
@@ -303,6 +327,23 @@ const panelTitle = (): string => {
         @update:surface-params="handleSurfaceParamsUpdate"
       />
 
+      <!-- Image Layer Settings -->
+      <ImageLayerSettingsPanel
+        v-else-if="!selection.processorType && selection.layerVariant === 'image' && image"
+        key="image-layer-settings"
+        :layer-id="image.layerId"
+        :image-id="image.imageId"
+        :mode="image.mode"
+        :position="image.position"
+        :image-url="image.imageUrl"
+        :is-loading="image.isLoading"
+        @upload-image="emit('update:image', 'uploadImage', $event)"
+        @clear-image="emit('update:image', 'clearImage', null)"
+        @load-random="emit('update:image', 'loadRandom', $event)"
+        @update:mode="emit('update:image', 'mode', $event)"
+        @update:position="emit('update:image', 'position', $event)"
+      />
+
       <!-- Effector (Effect/Mask) Settings -->
       <EffectorSettingsPanel
         v-else-if="selection.processorType === 'effect' || selection.processorType === 'mask'"
@@ -327,9 +368,9 @@ const panelTitle = (): string => {
         type="processor"
       />
 
-      <!-- Layer placeholder (non-base, non-surface layers) -->
+      <!-- Layer placeholder (non-base, non-surface, non-image layers) -->
       <PlaceholderPanel
-        v-else-if="selection.layer && selection.layerVariant !== 'base' && selection.layerVariant !== 'surface'"
+        v-else-if="selection.layer && selection.layerVariant !== 'base' && selection.layerVariant !== 'surface' && selection.layerVariant !== 'image'"
         type="layer"
         :layer-name="selection.layer.name"
       />

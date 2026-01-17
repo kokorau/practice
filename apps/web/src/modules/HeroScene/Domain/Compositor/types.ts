@@ -138,6 +138,26 @@ export interface CompositorRenderer {
     inputTexture: GPUTexture,
     options?: { clear?: boolean }
   ): void
+
+  /** Render an image to a texture with cover-fit mode */
+  renderImageToTexture?(
+    source: ImageBitmap | HTMLImageElement,
+    outputTexture: GPUTexture
+  ): void
+
+  /** Render a positioned image to a texture */
+  renderPositionedImageToTexture?(
+    source: ImageBitmap | HTMLImageElement,
+    position: {
+      x: number
+      y: number
+      width: number
+      height: number
+      rotation: number
+      opacity: number
+    },
+    outputTexture: GPUTexture
+  ): void
 }
 
 // ============================================================
@@ -177,6 +197,9 @@ export interface NodeContext {
 
   /** Texture format for render targets */
   readonly format: GPUTextureFormat
+
+  /** Image registry mapping imageId to ImageBitmap (for ImageLayer rendering) */
+  readonly imageRegistry?: Map<string, ImageBitmap>
 }
 
 // ============================================================

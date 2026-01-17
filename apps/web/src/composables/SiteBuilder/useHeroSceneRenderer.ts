@@ -26,6 +26,8 @@ export interface UseHeroSceneRendererOptions {
   canvasImageData: ShallowRef<ImageData | null>
   editorConfig: ComputedRef<HeroSceneEditorConfig>
   onDestroyPreview?: () => void
+  /** Lazy getter for imageRegistry (to handle circular initialization order) */
+  getImageRegistry?: () => Map<string, ImageBitmap>
 }
 
 export interface UseHeroSceneRendererReturn {
@@ -44,6 +46,7 @@ export const useHeroSceneRenderer = (
     canvasImageData,
     editorConfig,
     onDestroyPreview,
+    getImageRegistry,
   } = options
 
   let previewRenderer: TextureRenderer | null = null
@@ -51,7 +54,10 @@ export const useHeroSceneRenderer = (
   const renderSceneFromConfig = async () => {
     if (!previewRenderer) return
     const config = heroViewRepository.get()
-    await renderHeroConfig(previewRenderer, config, primitivePalette.value)
+    const imageRegistry = getImageRegistry?.()
+    await renderHeroConfig(previewRenderer, config, primitivePalette.value, {
+      imageRegistry,
+    })
     try {
       canvasImageData.value = await previewRenderer.readPixels()
     } catch {

@@ -45,6 +45,8 @@ import {
   type LayerNodeConfig,
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
+  type ImageLayerNodeConfig,
+  type ImagePositionConfig,
   type ForegroundLayerConfig,
   type TextLayerConfig,
   type HeroViewRepository,
@@ -79,6 +81,7 @@ import {
   type ForegroundState,
   type PresetState,
   type LayerOperations,
+  type ImagesState,
   type InkColorHelpers,
   type CanvasState,
   type SerializationState,
@@ -373,12 +376,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Initialize Renderer Composable
   // ============================================================
   const editorConfig = computed(() => editorState.value.config)
+  // Mutable reference for lazy imageRegistry access (heroImages initialized later)
+  let _imageRegistryGetter: (() => Map<string, ImageBitmap>) | null = null
   const heroRenderer = useHeroSceneRenderer({
     primitivePalette,
     heroViewRepository,
     canvasImageData,
     editorConfig,
     onDestroyPreview: () => heroThumbnails.destroyThumbnailRenderers(),
+    getImageRegistry: () => _imageRegistryGetter?.() ?? new Map(),
   })
 
   // Alias for backward compatibility and shorter access
@@ -611,6 +617,27 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return id
   }
 
+  const addImageLayer = (options?: Partial<{
+    imageId: string
+    mode: 'cover' | 'positioned'
+    position: ImagePositionConfig
+  }>): string => {
+    const id = `image-${Date.now()}`
+    const imageLayerConfig: ImageLayerNodeConfig = {
+      type: 'image',
+      id,
+      name: 'Image Layer',
+      visible: true,
+      imageId: options?.imageId ?? '',
+      mode: options?.mode ?? 'cover',
+      position: options?.position,
+    }
+    layerUsecase.addLayer(imageLayerConfig)
+    heroFilters.effectManager.setEffectConfig(id, createDefaultEffectConfig())
+    render()
+    return id
+  }
+
   const removeLayer = (id: string): boolean => {
     if (id === LAYER_IDS.BASE) return false
     const existingConfig = heroViewRepository.get()
@@ -681,6 +708,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     heroViewRepository,
     render,
   })
+
+  // Set the imageRegistry getter now that heroImages is initialized
+  _imageRegistryGetter = () => heroImages.imageRegistry.value
 
   // ============================================================
   // Initialize Config Loader Composable
@@ -919,6 +949,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     addMaskLayer,
     addTextLayer,
     addObjectLayer,
+    addImageLayer,
     removeLayer,
     updateLayerVisibility,
     toggleLayerVisibility,
@@ -966,6 +997,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     renderSceneFromConfig,
   }
 
+  const images: ImagesState = {
+    imageRegistry: heroImages.imageRegistry,
+    setLayerImage: heroImages.setLayerImage,
+    clearLayerImage: heroImages.clearLayerImage,
+    loadRandomImage: heroImages.loadRandomImage,
+    getImageUrl: heroImages.getImageUrl,
+    isLayerLoading: heroImages.isLayerLoading,
+  }
+
   // ============================================================
   // Public API
   // ============================================================
@@ -978,6 +1018,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foreground,
     preset,
     layer,
+    images,
     inkColor,
     canvas,
     serialization,

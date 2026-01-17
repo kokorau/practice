@@ -13,10 +13,16 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
+import type { ImageLayerNodeConfig } from '../modules/HeroScene'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
 } from '../modules/HeroScene'
+
+// Type guard for ImageLayerNodeConfig
+function isImageLayerConfig(layer: unknown): layer is ImageLayerNodeConfig {
+  return !!layer && typeof layer === 'object' && 'type' in layer && layer.type === 'image'
+}
 import FloatingPanel from '../components/HeroGenerator/FloatingPanel.vue'
 import FontSelector from '../components/HeroGenerator/FontSelector.vue'
 import {
@@ -412,6 +418,54 @@ const {
   pattern: heroScene.pattern,
 })
 
+// ============================================================
+// Image Layer Handling
+// ============================================================
+
+// Computed property for image layer props (when an image layer is selected)
+const imageLayerProps = computed(() => {
+  const layer = selectedLayer.value
+  if (!layer || !isImageLayerConfig(layer)) return null
+
+  const layerId = layer.id
+  const isLoading = heroScene.images.isLayerLoading.value.get(layerId) ?? false
+  const imageUrl = heroScene.images.getImageUrl(layerId)
+
+  return {
+    layerId,
+    imageId: layer.imageId,
+    mode: layer.mode ?? 'cover',
+    position: layer.position,
+    imageUrl,
+    isLoading,
+  }
+})
+
+const handleImageUpdate = (key: string, value: unknown) => {
+  const layer = selectedLayer.value
+  if (!layer || !isImageLayerConfig(layer)) return
+
+  const layerId = layer.id
+
+  switch (key) {
+    case 'uploadImage':
+      heroScene.images.setLayerImage(layerId, value as File)
+      break
+    case 'clearImage':
+      heroScene.images.clearLayerImage(layerId)
+      break
+    case 'loadRandom':
+      heroScene.images.loadRandomImage(layerId, value as string | undefined)
+      break
+    case 'mode':
+      heroScene.usecase.layerUsecase.updateLayer(layerId, { mode: value } as Partial<ImageLayerNodeConfig>)
+      break
+    case 'position':
+      heroScene.usecase.layerUsecase.updateLayer(layerId, { position: value } as Partial<ImageLayerNodeConfig>)
+      break
+  }
+}
+
 </script>
 
 <template>
@@ -663,12 +717,14 @@ const {
         createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
       }"
       :filter="filterProps"
+      :image="imageLayerProps"
       :palette="primitivePalette"
       @export-preset="exportPreset"
       @open-font-panel="openFontPanel"
       @update:foreground="handleForegroundUpdate"
       @update:background="handleBackgroundUpdate"
       @update:mask="handleMaskUpdate"
+      @update:image="handleImageUpdate"
     />
 
     <!-- Context Menu -->

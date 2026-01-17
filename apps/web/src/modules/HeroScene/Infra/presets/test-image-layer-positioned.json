@@ -1,0 +1,59 @@
+{
+  "id": "test-image-layer-positioned",
+  "name": "Test: Image Layer (Positioned)",
+  "config": {
+    "viewport": { "width": 1280, "height": 720 },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "grid",
+              "lineWidth": 1,
+              "cellSize": 32
+            },
+            "colors": {
+              "primary": "F2",
+              "secondary": "F1"
+            }
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "id": "image-layer-positioned",
+        "name": "Image Layer (Positioned)",
+        "visible": true,
+        "imageId": "",
+        "mode": "positioned",
+        "position": {
+          "x": 0.1,
+          "y": 0.1,
+          "width": 0.4,
+          "height": 0.6,
+          "rotation": 0,
+          "opacity": 1
+        }
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": { "hue": 260, "saturation": 60, "value": 50 },
+    "accent": { "hue": 45, "saturation": 75, "value": 65 },
+    "foundation": { "hue": 260, "saturation": 3, "value": 97 }
+  }
+}

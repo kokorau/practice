@@ -682,6 +682,7 @@ export type {
   TextLayerNodeConfig,
   Model3DLayerNodeConfig,
   ImageLayerNodeConfig,
+  ImagePositionConfig,
   GroupLayerNodeConfig,
   ProcessorNodeConfig,
   // Processor modifier config types

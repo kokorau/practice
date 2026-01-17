@@ -466,6 +466,20 @@ export interface AddObjectLayerOptions {
   scale?: number
 }
 
+/** Add image layer options */
+export interface AddImageLayerOptions {
+  imageId?: string
+  mode?: 'cover' | 'positioned'
+  position?: {
+    x: number
+    y: number
+    width: number
+    height: number
+    rotation?: number
+    opacity?: number
+  }
+}
+
 /**
  * Layer operation actions
  */
@@ -476,6 +490,8 @@ export interface LayerOperations {
   readonly addTextLayer: (config?: Partial<{ text: string; fontFamily: string; fontSize: number }>) => string
   /** Add a 3D object layer (returns layer ID) */
   readonly addObjectLayer: (options?: Partial<AddObjectLayerOptions>) => string
+  /** Add an image layer (returns layer ID) */
+  readonly addImageLayer: (options?: Partial<AddImageLayerOptions>) => string
   /** Remove a layer by ID (returns true if removed) */
   readonly removeLayer: (layerId: string) => boolean
 
@@ -495,6 +511,34 @@ export interface LayerOperations {
     position: { x: number; y: number; anchor: TextAnchorPosition }
     rotation: number
   }>) => void
+}
+
+// ============================================================
+// ImagesState - Image Layer Management
+// ============================================================
+
+/**
+ * Image layer state and actions
+ * For generic ImageLayer image management (layer-agnostic)
+ */
+export interface ImagesState {
+  /** Image registry mapping layerId to ImageBitmap */
+  readonly imageRegistry: Ref<Map<string, ImageBitmap>>
+
+  /** Set image for any image layer */
+  readonly setLayerImage: (layerId: string, file: File) => Promise<void>
+
+  /** Clear image for a layer */
+  readonly clearLayerImage: (layerId: string) => void
+
+  /** Load random image for a layer */
+  readonly loadRandomImage: (layerId: string, query?: string) => Promise<void>
+
+  /** Get image URL for a layer */
+  readonly getImageUrl: (layerId: string) => string | null
+
+  /** Loading state per layer */
+  readonly isLayerLoading: Ref<Map<string, boolean>>
 }
 
 // ============================================================

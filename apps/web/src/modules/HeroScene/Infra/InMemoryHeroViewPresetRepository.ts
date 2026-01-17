@@ -24,6 +24,9 @@ import testLevel4MultiMask from './presets/test-level4-multi-mask.json'
 import testLevel6MaskWithEffect from './presets/test-level6-mask-with-effect.json'
 import testLevel7MultiMaskWithEffects from './presets/test-level7-multi-mask-with-effects.json'
 import testLevel8WithText from './presets/test-level8-with-text.json'
+// ImageLayer test presets
+import testImageLayer from './presets/test-image-layer.json'
+import testImageLayerPositioned from './presets/test-image-layer-positioned.json'
 
 // ============================================================
 // Preset Data
@@ -33,6 +36,8 @@ import testLevel8WithText from './presets/test-level8-with-text.json'
 // These are migrated when applied via migrateHeroViewConfig().
 const PRESETS: HeroViewPreset[] = [
   // Test presets (first for easy access during debugging)
+  testImageLayer as unknown as HeroViewPreset,
+  testImageLayerPositioned as unknown as HeroViewPreset,
   testLevel8WithText as unknown as HeroViewPreset,
   testLevel1BgOnly as unknown as HeroViewPreset,
   testLevel2BgSurface as unknown as HeroViewPreset,
