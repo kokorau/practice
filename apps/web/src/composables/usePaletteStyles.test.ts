@@ -7,10 +7,12 @@ import { usePaletteStyles } from './usePaletteStyles'
 import type { SemanticColorPalette } from '../modules/SemanticColorPalette/Domain'
 
 // Polyfill URL for happy-dom in CI environment
-if (typeof globalThis.URL !== 'function') {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { URL: NodeURL } = require('node:url')
-  globalThis.URL = NodeURL
+// Note: happy-dom should provide URL, but we check just in case
+if (typeof globalThis.URL === 'undefined') {
+  // Dynamic import for ESM compatibility
+  import('node:url').then(({ URL: NodeURL }) => {
+    globalThis.URL = NodeURL
+  })
 }
 
 // ============================================================
