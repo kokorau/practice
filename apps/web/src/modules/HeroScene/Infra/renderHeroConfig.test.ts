@@ -20,6 +20,7 @@ function createMockRenderer(): TextureRendererLike & {
   renderCalls: Array<{ spec: TextureRenderSpec; options?: { clear?: boolean } }>
   applyPostEffectCalls: Array<{ effect: unknown; inputTexture: GPUTexture; options?: { clear?: boolean } }>
   renderToOffscreenCalls: Array<{ spec: TextureRenderSpec; textureIndex?: 0 | 1 }>
+  applyDualTextureEffectCalls: Array<{ spec: unknown; primaryTexture: GPUTexture; secondaryTexture: GPUTexture; options?: { clear?: boolean } }>
   copyCanvasToTextureCalls: number
 } {
   const mockTexture = {} as GPUTexture
@@ -28,6 +29,7 @@ function createMockRenderer(): TextureRendererLike & {
     renderCalls: [],
     applyPostEffectCalls: [],
     renderToOffscreenCalls: [],
+    applyDualTextureEffectCalls: [],
     copyCanvasToTextureCalls: 0,
 
     getViewport: vi.fn(() => ({ width: 1280, height: 720 })),
@@ -53,6 +55,16 @@ function createMockRenderer(): TextureRendererLike & {
     renderToOffscreen: vi.fn(function (this: ReturnType<typeof createMockRenderer>, spec: TextureRenderSpec, textureIndex?: 0 | 1) {
       this.renderToOffscreenCalls.push({ spec, textureIndex })
       return mockTexture
+    }),
+
+    applyDualTextureEffect: vi.fn(function (
+      this: ReturnType<typeof createMockRenderer>,
+      spec: unknown,
+      primaryTexture: GPUTexture,
+      secondaryTexture: GPUTexture,
+      options?: { clear?: boolean }
+    ) {
+      this.applyDualTextureEffectCalls.push({ spec, primaryTexture, secondaryTexture, options })
     }),
   }
 }
