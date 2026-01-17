@@ -877,6 +877,25 @@ export interface ImagePositionConfig {
   opacity?: number
 }
 
+/**
+ * Position configuration for positioned image rendering.
+ * All values are normalized (0-1) relative to the viewport.
+ */
+export interface ImagePositionConfig {
+  /** X coordinate (normalized 0-1) */
+  x: number
+  /** Y coordinate (normalized 0-1) */
+  y: number
+  /** Width (normalized 0-1) */
+  width: number
+  /** Height (normalized 0-1) */
+  height: number
+  /** Rotation angle in radians */
+  rotation?: number
+  /** Opacity (0-1) */
+  opacity?: number
+}
+
 export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   type: 'image'
   /** Image identifier (Object URL or asset ID) */
@@ -885,6 +904,8 @@ export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   mode: 'cover' | 'positioned'
   /** Position configuration (only used when mode is 'positioned') */
   position?: ImagePositionConfig
+  /** Effect filters */
+  filters?: EffectFilterConfig[]
 }
 
 export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
