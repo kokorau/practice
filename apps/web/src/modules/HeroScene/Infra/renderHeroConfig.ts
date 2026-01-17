@@ -29,56 +29,27 @@ import {
   createLinearGradientGreymapMaskSpec,
   createRadialGradientGreymapMaskSpec,
   createBoxGradientGreymapMaskSpec,
-  // Colorize shader
-  createColorizeSpec,
-  // Two-texture shader for surface + mask
-  createSurfaceMaskSpec,
-  type DualTextureSpec,
   type TextureRenderSpec,
   type Viewport,
   type RGBA,
   type GreymapMaskSpec,
 } from '@practice/texture'
-// Note: Shader imports moved to EffectRegistry.ts for centralized effect management
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../SemanticColorPalette/Domain'
 import type {
   HeroViewConfig,
-  HeroPrimitiveKey,
-  BaseLayerNodeConfig,
-  SurfaceLayerNodeConfig,
-  GroupLayerNodeConfig,
-  LayerNodeConfig,
-  ProcessorNodeConfig,
   AnySurfaceConfig,
   AnyMaskConfig,
 } from '../Domain/HeroViewConfig'
 import {
-  getLayerFilters,
-  getLayerMaskProcessor,
-  isProcessorNodeConfig,
-  getProcessorTargetPairsFromConfig,
-  getProcessorMask,
-  // Normalization helpers (Phase 13)
   getSurfaceAsLegacy,
   getMaskAsLegacy,
-  // Default colors for surface layers
-  DEFAULT_LAYER_BACKGROUND_COLORS,
-  DEFAULT_LAYER_MASK_COLORS,
 } from '../Domain/HeroViewConfig'
-import type { LayerEffectConfig } from '../Domain/EffectSchema'
-import { EFFECT_REGISTRY, EFFECT_TYPES, type EffectType } from '../Domain/EffectRegistry'
-import type { SingleEffectConfig } from '../Domain/HeroViewConfig'
-import { getEffectConfigsFromModifiers } from '../Domain/HeroViewConfig'
 // Pipeline imports for node-based rendering
 import { buildPipeline, executePipeline } from './Compositor'
 // Shared color helpers
-import {
-  getOklchFromPalette,
-  isDarkTheme,
-  getMaskSurfaceKey,
-} from '../Domain/ColorHelpers'
+import { getOklchFromPalette } from '../Domain/ColorHelpers'
 
 // ============================================================
 // Types
@@ -101,14 +72,14 @@ export interface TextureRendererLike {
   renderToOffscreen(spec: TextureRenderSpec, textureIndex?: number): GPUTexture
   /** Apply two-texture effect (surface + mask) */
   applyDualTextureEffect(
-    spec: DualTextureSpec,
+    spec: unknown,
     primaryTexture: GPUTexture,
     secondaryTexture: GPUTexture,
     options?: { clear?: boolean }
   ): void
   /** Apply two-texture effect to offscreen texture */
   applyDualTextureEffectToOffscreen(
-    spec: DualTextureSpec,
+    spec: unknown,
     primaryTexture: GPUTexture,
     secondaryTexture: GPUTexture,
     outputTextureIndex: number
@@ -129,15 +100,6 @@ export interface RenderHeroConfigOptions {
    * For thumbnail preview, use ~0.3 to scale texture parameters
    */
   scale?: number
-
-  /**
-   * Use the new node-based compositor pipeline (default: true)
-   * When enabled, uses buildPipeline + executePipeline instead of
-   * the legacy procedural rendering.
-   *
-   * Set to false to use legacy rendering for debugging purposes.
-   */
-  useNodePipeline?: boolean
 }
 
 // ============================================================
@@ -169,28 +131,6 @@ export function getColorFromPalette(palette: PrimitivePalette, key: string, alph
     return oklchToRgba(oklch, alpha)
   }
   return [0.5, 0.5, 0.5, alpha]
-}
-
-/**
- * Calculate midground texture color (auto-shifted from surface)
- * Must match useHeroScene.ts midgroundTextureColor1 logic
- */
-function getMidgroundTextureColor(
-  palette: PrimitivePalette,
-  maskPrimaryKey: string,
-  maskSurfaceKey: string,
-  isDark: boolean
-): RGBA {
-  if (maskPrimaryKey !== 'auto') {
-    return getColorFromPalette(palette, maskPrimaryKey)
-  }
-  // Auto: shift lightness from mask surface
-  // Use a larger delta (0.12) to create visible contrast for patterns
-  // (Previous value of 0.05 was too subtle and made patterns look solid)
-  const surface = getOklchFromPalette(palette, maskSurfaceKey)
-  const deltaL = isDark ? 0.12 : -0.12
-  const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
-  return oklchToRgba(shifted)
 }
 
 // ============================================================
@@ -493,420 +433,14 @@ export function createGreymapMaskSpecFromShape(
   return null
 }
 
-/**
- * Render mask using 2-stage greymap pipeline with proper alpha masking
- * Stage 1: Copy current canvas content (surface) to texture
- * Stage 2: Render greymap to offscreen texture
- * Stage 3: Apply colorize shader to create alpha mask overlay
- *
- * The greymap values (cutout=false): inner=0.0, outer=1.0
- * This means:
- * - Inside mask (greymap=0): transparent -> preserves canvas (surface)
- * - Outside mask (greymap=1): keepColor with alpha=1 -> replaces with solid color
- *
- * Note: This architecture has a limitation - the area outside the mask is replaced
- * with a solid color instead of showing the background pattern. To fix this properly
- * would require rendering surface to offscreen and compositing with proper alpha.
- *
- * @deprecated Use renderLayerWithMask for proper alpha compositing
- */
-function renderMaskWithGreymapPipeline(
-  renderer: TextureRendererLike,
-  greymapSpec: GreymapMaskSpec,
-  maskColor: RGBA,
-  viewport: Viewport
-): void {
-  // Stage 1: Render greymap to offscreen texture
-  const greymapTexture = renderer.renderToOffscreen(
-    {
-      shader: greymapSpec.shader,
-      uniforms: greymapSpec.uniforms,
-      bufferSize: greymapSpec.bufferSize,
-    },
-    0
-  )
-
-  // Stage 2: Apply colorize shader to create mask overlay
-  // - Where greymap = 0 (inside mask): transparent -> preserves underlying surface
-  // - Where greymap = 1 (outside mask): maskColor -> replaces with solid color
-  const colorizeSpec = createColorizeSpec(
-    { keepColor: maskColor },
-    viewport
-  )
-
-  renderer.applyPostEffect(colorizeSpec, greymapTexture, { clear: false })
-}
-
-/**
- * Render a layer with mask using two-texture pipeline
- *
- * This is the proper way to render a masked layer:
- * 1. Render surface pattern to offscreen[0]
- * 2. Render greymap mask to offscreen[1]
- * 3. Combine surface + mask with alpha using two-texture shader
- * 4. If effects: Apply effects to offscreen texture (ping-pong)
- * 5. Composite result onto canvas with alpha blending
- *
- * This approach properly shows the background through transparent mask areas,
- * and ensures effects are applied only to this layer, not the entire canvas.
- */
-function renderLayerWithMask(
-  renderer: TextureRendererLike,
-  surfaceSpec: TextureRenderSpec,
-  greymapSpec: GreymapMaskSpec,
-  viewport: Viewport,
-  effects?: SingleEffectConfig[],
-  scale: number = 1
-): void {
-  // Stage 1: Render surface to offscreen[0]
-  const surfaceTexture = renderer.renderToOffscreen(surfaceSpec, 0)
-
-  // Stage 2: Render greymap mask to offscreen[1]
-  const greymapTexture = renderer.renderToOffscreen(
-    {
-      shader: greymapSpec.shader,
-      uniforms: greymapSpec.uniforms,
-      bufferSize: greymapSpec.bufferSize,
-    },
-    1
-  )
-
-  // Check if we have effects to apply
-  const hasEffects = effects && effects.length > 0
-
-  if (hasEffects) {
-    // Stage 3: Combine surface + greymap to offscreen[0] (not canvas)
-    const surfaceMaskSpec = createSurfaceMaskSpec(viewport)
-    let currentTexture = renderer.applyDualTextureEffectToOffscreen(
-      surfaceMaskSpec,
-      surfaceTexture,
-      greymapTexture,
-      0
-    )
-    let currentTextureIndex: 0 | 1 = 0
-
-    // Stage 4: Apply effects using ping-pong rendering
-    for (const effect of effects!) {
-      const effectType = effect.id as EffectType
-      if (!(effectType in EFFECT_REGISTRY)) continue
-
-      const definition = EFFECT_REGISTRY[effectType]
-      const spec = definition.createShaderSpec(effect.params as never, viewport, scale)
-      if (!spec) continue
-
-      // Ping-pong: render to the other offscreen texture
-      const outputIndex: 0 | 1 = currentTextureIndex === 0 ? 1 : 0
-      currentTexture = renderer.applyPostEffectToOffscreen(spec, currentTexture, outputIndex)
-      currentTextureIndex = outputIndex
-    }
-
-    // Stage 5: Composite final result to canvas
-    renderer.compositeToCanvas(currentTexture, { clear: false })
-  } else {
-    // No effects: composite directly to canvas (original behavior)
-    const surfaceMaskSpec = createSurfaceMaskSpec(viewport)
-    renderer.applyDualTextureEffect(surfaceMaskSpec, surfaceTexture, greymapTexture, { clear: false })
-  }
-}
-
-// ============================================================
-// Effect Application
-// ============================================================
-
-/**
- * Apply effect filters to current canvas content (legacy format)
- * Uses EFFECT_REGISTRY for dynamic effect application
- * @deprecated Use applySingleEffects for new format
- */
-function applyEffects(
-  renderer: TextureRendererLike,
-  effects: LayerEffectConfig,
-  viewport: Viewport,
-  scale: number
-): void {
-  // Apply effects in registry order
-  for (const effectType of EFFECT_TYPES) {
-    const config = effects[effectType]
-    if (!config?.enabled) continue
-
-    const definition = EFFECT_REGISTRY[effectType]
-    const spec = definition.createShaderSpec(config as never, viewport, scale)
-    if (!spec) continue
-
-    const inputTexture = renderer.copyCanvasToTexture()
-    renderer.applyPostEffect(spec, inputTexture, { clear: true })
-  }
-}
-
-/**
- * Apply effects from SingleEffectConfig array (new format)
- *
- * Each effect in the array is applied in order.
- * Uses EFFECT_REGISTRY for shader spec creation.
- */
-function applySingleEffects(
-  renderer: TextureRendererLike,
-  effects: SingleEffectConfig[],
-  viewport: Viewport,
-  scale: number
-): void {
-  for (const effect of effects) {
-    const effectType = effect.id as EffectType
-    if (!(effectType in EFFECT_REGISTRY)) continue
-
-    const definition = EFFECT_REGISTRY[effectType]
-    const spec = definition.createShaderSpec(effect.params as never, viewport, scale)
-    if (!spec) continue
-
-    const inputTexture = renderer.copyCanvasToTexture()
-    renderer.applyPostEffect(spec, inputTexture, { clear: true })
-  }
-}
-
-// ============================================================
-// Unified Effector Application
-// ============================================================
-
-/**
- * Effector configuration for unified processing
- */
-export interface EffectorConfig {
-  /** Mask configuration (transparency-modification) */
-  mask?: {
-    enabled: boolean
-    shape: AnyMaskConfig
-  }
-  /**
-   * Effect configuration (color-modification) - legacy format
-   * @deprecated Use effectList instead
-   */
-  effects?: LayerEffectConfig
-  /**
-   * Effect configuration (color-modification) - new format
-   * Array of SingleEffectConfig for normalized effect handling
-   */
-  effectList?: SingleEffectConfig[]
-}
-
-/**
- * Apply effectors (mask + effects) to current canvas content
- *
- * This is the unified effector pipeline that handles both masks and effects:
- * 1. First apply mask (transparency-modification) - modifies alpha channel
- * 2. Then apply effects (color-modification) - modifies color channels
- *
- * Order matters: masks create transparent regions, then effects are applied
- * to the visible (non-transparent) areas.
- *
- * Supports both legacy format (effects: LayerEffectConfig) and
- * new format (effectList: SingleEffectConfig[]). If both are provided,
- * effectList takes precedence.
- *
- * @param renderer - Texture renderer instance
- * @param config - Effector configuration (mask and/or effects)
- * @param viewport - Render viewport
- * @param maskColor - Color to use for mask (keepColor in greymap pipeline)
- * @param scale - Scale factor for preview rendering
- */
-export function applyEffectors(
-  renderer: TextureRendererLike,
-  config: EffectorConfig,
-  viewport: Viewport,
-  maskColor: RGBA,
-  scale: number
-): void {
-  // 1. Apply mask first (transparency-modification)
-  // Masks define visibility through grayscale values
-  if (config.mask?.enabled && config.mask.shape) {
-    const greymapSpec = createGreymapMaskSpecFromShape(config.mask.shape, viewport)
-    if (greymapSpec) {
-      renderMaskWithGreymapPipeline(renderer, greymapSpec, maskColor, viewport)
-    }
-  }
-
-  // 2. Apply effects (color-modification)
-  // Effects modify color/appearance of visible areas
-  // New format (effectList) takes precedence over legacy format (effects)
-  if (config.effectList && config.effectList.length > 0) {
-    applySingleEffects(renderer, config.effectList, viewport, scale)
-  } else if (config.effects) {
-    applyEffects(renderer, config.effects, viewport, scale)
-  }
-}
-
-// ============================================================
-// Layer Finders
-// ============================================================
-
-/**
- * Find base/background layer from layers array
- * Supports both new group-based structure and legacy flat structure
- */
-function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | SurfaceLayerNodeConfig | null {
-  // New structure: look inside background-group
-  for (const layer of layers) {
-    if (layer.type === 'group' && layer.id === 'background-group') {
-      const surfaceLayer = (layer as GroupLayerNodeConfig).children.find(
-        (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'background'
-      )
-      if (surfaceLayer) return surfaceLayer
-    }
-  }
-
-  // Fallback: legacy base layer
-  for (const layer of layers) {
-    if (layer.type === 'base') return layer
-  }
-  return null
-}
-
-/**
- * Find surface layer from layers array (may be nested in group)
- * Excludes ProcessorNodeConfig from search results
- */
-function findSurfaceLayer(layers: LayerNodeConfig[]): SurfaceLayerNodeConfig | null {
-  for (const layer of layers) {
-    // Skip processor nodes
-    if (isProcessorNodeConfig(layer)) continue
-
-    if (layer.type === 'surface') {
-      return layer
-    }
-    if (layer.type === 'group' && 'children' in layer && layer.children) {
-      const nested = layer.children.find((c): c is SurfaceLayerNodeConfig =>
-        c.type === 'surface' && !isProcessorNodeConfig(c)
-      )
-      if (nested) {
-        return nested
-      }
-    }
-  }
-  return null
-}
-
-
-/**
- * Find all clip-groups (groups with surface layers, excluding background-group)
- * Returns array of { group, surface, processor } in config order
- *
- * A group is considered a clip-group if:
- * - It's not the background-group
- * - It contains at least one surface layer
- */
-function findAllClipGroups(layers: LayerNodeConfig[]): Array<{
-  group: GroupLayerNodeConfig
-  surface: SurfaceLayerNodeConfig
-  processor: ProcessorNodeConfig | null
-}> {
-  const results: Array<{
-    group: GroupLayerNodeConfig
-    surface: SurfaceLayerNodeConfig
-    processor: ProcessorNodeConfig | null
-  }> = []
-
-  for (const layer of layers) {
-    // Skip non-groups and background-group
-    if (layer.type !== 'group') continue
-    if (layer.id === 'background-group') continue
-
-    const group = layer as GroupLayerNodeConfig
-
-    // Find first surface layer in this group
-    const surface = group.children.find(
-      (c): c is SurfaceLayerNodeConfig => c.type === 'surface'
-    )
-    if (!surface) continue
-
-    // Find first processor layer in this group (optional)
-    const processor = group.children.find(
-      (c): c is ProcessorNodeConfig => c.type === 'processor'
-    ) ?? null
-
-    results.push({ group, surface, processor })
-  }
-
-  return results
-}
-
-// ============================================================
-// Surface Color Resolution (Per-surface colors required)
-// ============================================================
-
-/**
- * Get background colors from surface layer
- * Merges with defaults to handle partial/incomplete color objects
- */
-function getBackgroundColors(
-  layer: BaseLayerNodeConfig | SurfaceLayerNodeConfig | null
-): { primary: HeroPrimitiveKey; secondary: HeroPrimitiveKey | 'auto' } {
-  // DEFAULT_LAYER_BACKGROUND_COLORS.primary is 'B' (HeroPrimitiveKey), cast needed due to SurfaceColorsConfig type
-  const defaultPrimary = DEFAULT_LAYER_BACKGROUND_COLORS.primary as HeroPrimitiveKey
-  const defaultSecondary = DEFAULT_LAYER_BACKGROUND_COLORS.secondary
-
-  if (layer?.colors) {
-    // Use per-surface colors, falling back to defaults for missing values
-    const primary = layer.colors.primary
-    const secondary = layer.colors.secondary
-
-    return {
-      // Resolve 'auto' or undefined to default for background primary
-      primary: (primary == null || primary === 'auto') ? defaultPrimary : primary,
-      // Use secondary if defined, otherwise default
-      secondary: secondary ?? defaultSecondary,
-    }
-  }
-  // Fallback to defaults
-  return {
-    primary: defaultPrimary,
-    secondary: defaultSecondary,
-  }
-}
-
-/**
- * Get mask colors from surface layer
- * Merges with defaults to handle partial/incomplete color objects
- */
-function getMaskColors(
-  layer: SurfaceLayerNodeConfig | null
-): { primary: HeroPrimitiveKey | 'auto'; secondary: HeroPrimitiveKey | 'auto' } {
-  const defaultPrimary = DEFAULT_LAYER_MASK_COLORS.primary
-  const defaultSecondary = DEFAULT_LAYER_MASK_COLORS.secondary
-
-  if (layer?.colors) {
-    // Use per-surface colors, falling back to defaults for missing values
-    return {
-      primary: layer.colors.primary ?? defaultPrimary,
-      secondary: layer.colors.secondary ?? defaultSecondary,
-    }
-  }
-  // Fallback to defaults
-  return {
-    primary: defaultPrimary,
-    secondary: defaultSecondary,
-  }
-}
-
-// ============================================================
-// Processor-based Layer Finding (Position-based)
-// ============================================================
-
-/**
- * Find all processor-target pairs at root level
- * This enables position-based processor application for rendering
- */
-function findProcessorTargetPairs(layers: LayerNodeConfig[]): Array<{
-  processor: ProcessorNodeConfig
-  targets: LayerNodeConfig[]
-}> {
-  return getProcessorTargetPairsFromConfig(layers, true)
-}
-
 // ============================================================
 // Main Render Function
 // ============================================================
 
 /**
  * Render HeroViewConfig to canvas using provided renderer and palette
+ *
+ * Uses the node-based compositor pipeline for all rendering.
  *
  * @param renderer - TextureRenderer instance or compatible object
  * @param config - HeroViewConfig to render
@@ -920,211 +454,6 @@ export async function renderHeroConfig(
   options?: RenderHeroConfigOptions
 ): Promise<void> {
   const scale = options?.scale ?? 1
-  const useNodePipeline = options?.useNodePipeline ?? true
-
-  // Use new node-based pipeline (default)
-  if (useNodePipeline) {
-    const { outputNode } = buildPipeline(config, palette)
-    executePipeline(outputNode, renderer, palette, { scale })
-    return
-  }
-
-  // Legacy procedural rendering below
-  const viewport = renderer.getViewport()
-  const configColors = config.colors
-
-  // Determine theme mode from palette
-  const isDark = isDarkTheme(palette)
-
-  // Get mask surface key based on semantic context
-  const semanticContext = configColors.semanticContext ?? 'canvas'
-  const maskSurfaceKey = getMaskSurfaceKey(semanticContext, isDark)
-
-  // Find layers first (needed to resolve per-surface colors)
-  const baseLayer = findBaseLayer(config.layers)
-  const allClipGroups = findAllClipGroups(config.layers)
-
-  // Resolve background colors from surface layer
-  const bgColors = getBackgroundColors(baseLayer)
-  const bgColor1 = getColorFromPalette(palette, bgColors.primary)
-  const canvasSurfaceKey = isDark ? 'F8' : 'F1'
-  const bgColor2 = bgColors.secondary === 'auto'
-    ? getColorFromPalette(palette, canvasSurfaceKey)
-    : getColorFromPalette(palette, bgColors.secondary)
-
-  // 1. Render background (base layer)
-  if (baseLayer) {
-    const bgSpec = createBackgroundSpecFromSurface(
-      baseLayer.surface,
-      bgColor1,
-      bgColor2,
-      viewport,
-      scale
-    )
-    if (bgSpec) {
-      renderer.render(bgSpec, { clear: true })
-    }
-
-    // Apply base layer effects (supports both filters and processors)
-    const effectFilters = getLayerFilters(baseLayer)
-    const effectFilter = effectFilters.find((f) => f.enabled)
-    if (effectFilter?.config) {
-      applyEffects(renderer, effectFilter.config, viewport, scale)
-    }
-  }
-
-  // 2. Render all clip-groups in order (n-layer support)
-  if (allClipGroups.length > 0) {
-    for (let i = 0; i < allClipGroups.length; i++) {
-      const clipGroupItem = allClipGroups[i]!
-      const { surface: surfaceLayer, processor } = clipGroupItem
-
-      // Resolve colors for this layer from its surface.colors
-      const layerColors = getMaskColors(surfaceLayer)
-      const layerColor1 = getMidgroundTextureColor(
-        palette,
-        layerColors.primary,
-        maskSurfaceKey,
-        isDark
-      )
-      const layerColor2 = layerColors.secondary === 'auto'
-        ? getColorFromPalette(palette, maskSurfaceKey)
-        : getColorFromPalette(palette, layerColors.secondary)
-
-      // Create the surface texture spec
-      const surfaceSpec = createBackgroundSpecFromSurface(
-        surfaceLayer.surface,
-        layerColor1,
-        layerColor2,
-        viewport,
-        scale
-      )
-
-      // Get mask from processor (sibling processor node in clip-group)
-      const maskProcessor = processor ? getProcessorMask(processor) : undefined
-
-      // Get effects from surface layer filters
-      const effectFilters = getLayerFilters(surfaceLayer)
-      const effectFilter = effectFilters.find((f) => f.enabled)
-
-      // Get effects from processor modifiers (if processor exists)
-      const processorEffects = processor ? getEffectConfigsFromModifiers(processor.modifiers) : []
-
-      // Collect all effects for this layer
-      const layerEffects = processorEffects.length > 0 ? processorEffects : []
-
-      if (surfaceSpec && maskProcessor?.enabled && maskProcessor.shape) {
-        // Use two-texture pipeline for proper alpha compositing
-        const greymapSpec = createGreymapMaskSpecFromShape(maskProcessor.shape, viewport)
-        if (greymapSpec) {
-          // Pass effects to renderLayerWithMask so they're applied only to this layer
-          renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport, layerEffects, scale)
-        } else {
-          // Fallback: render surface without mask (greymapSpec null)
-          renderer.render(surfaceSpec, { clear: false })
-          // Apply effects to canvas (fallback behavior)
-          if (layerEffects.length > 0) {
-            applySingleEffects(renderer, layerEffects, viewport, scale)
-          }
-        }
-      } else if (surfaceSpec) {
-        // No mask: render surface directly to canvas
-        renderer.render(surfaceSpec, { clear: false })
-        // Apply effects to canvas (entire layer is visible, so canvas-wide is correct)
-        if (layerEffects.length > 0) {
-          applySingleEffects(renderer, layerEffects, viewport, scale)
-        } else if (effectFilter?.config) {
-          // Legacy effect format support
-          applyEffects(renderer, effectFilter.config, viewport, scale)
-        }
-      }
-    }
-  } else {
-    // Fallback: legacy structure without clip-group
-    const surfaceLayer = findSurfaceLayer(config.layers)
-    if (surfaceLayer) {
-      // Resolve colors for legacy layer
-      const layerColors = getMaskColors(surfaceLayer)
-      const layerColor1 = getMidgroundTextureColor(
-        palette,
-        layerColors.primary,
-        maskSurfaceKey,
-        isDark
-      )
-      const layerColor2 = layerColors.secondary === 'auto'
-        ? getColorFromPalette(palette, maskSurfaceKey)
-        : getColorFromPalette(palette, layerColors.secondary)
-
-      // Create surface spec
-      const surfaceSpec = createBackgroundSpecFromSurface(
-        surfaceLayer.surface,
-        layerColor1,
-        layerColor2,
-        viewport,
-        scale
-      )
-
-      // Get mask from processors (legacy)
-      const maskProcessor = getLayerMaskProcessor(surfaceLayer)
-
-      // Get effects from filters
-      const effectFilters = getLayerFilters(surfaceLayer)
-      const effectFilter = effectFilters.find((f) => f.enabled)
-
-      if (surfaceSpec && maskProcessor?.enabled && maskProcessor.shape) {
-        // Use two-texture pipeline for proper alpha compositing
-        const greymapSpec = createGreymapMaskSpecFromShape(maskProcessor.shape, viewport)
-        if (greymapSpec) {
-          // Legacy format doesn't have SingleEffectConfig[], so pass empty and apply after
-          renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport, [], scale)
-          // Apply legacy effects after (canvas-wide - legacy behavior)
-          if (effectFilter?.config) {
-            applyEffects(renderer, effectFilter.config, viewport, scale)
-          }
-        } else {
-          renderer.render(surfaceSpec, { clear: false })
-          if (effectFilter?.config) {
-            applyEffects(renderer, effectFilter.config, viewport, scale)
-          }
-        }
-      } else if (surfaceSpec) {
-        renderer.render(surfaceSpec, { clear: false })
-        // Apply effects after compositing
-        if (effectFilter?.config) {
-          applyEffects(renderer, effectFilter.config, viewport, scale)
-        }
-      }
-    }
-  }
-
-  // 3. Process Processor nodes (position-based processor application)
-  // These are standalone processors that apply effects to the rendered content
-  const processorPairs = findProcessorTargetPairs(config.layers)
-  for (const { processor, targets } of processorPairs) {
-    // Skip if processor has no targets
-    if (targets.length === 0) continue
-
-    // Get mask from processor modifiers
-    const maskProcessor = getProcessorMask(processor)
-
-    // Get effects from processor modifiers (supports both legacy and new formats)
-    // Use getEffectConfigsFromModifiers to normalize to SingleEffectConfig[]
-    const effectList = getEffectConfigsFromModifiers(processor.modifiers)
-
-    // Calculate mask color based on semantic context
-    // Use bgColor1 as default mask color for processor effects
-    const processorMaskColor = getColorFromPalette(palette, maskSurfaceKey)
-
-    // Apply effectors using unified pipeline (mask first, then effects)
-    applyEffectors(
-      renderer,
-      {
-        mask: maskProcessor,
-        effectList,
-      },
-      viewport,
-      processorMaskColor,
-      scale
-    )
-  }
+  const { outputNode } = buildPipeline(config, palette)
+  executePipeline(outputNode, renderer, palette, { scale })
 }

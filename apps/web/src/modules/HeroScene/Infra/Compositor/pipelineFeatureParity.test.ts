@@ -771,22 +771,15 @@ describe('Pipeline Feature Parity', () => {
     })
   })
 
-  describe('Pipeline vs Legacy Equivalence', () => {
-    it('both paths produce output for default config', async () => {
+  describe('renderHeroConfig Integration', () => {
+    it('produces output via pipeline', async () => {
       const config = createDefaultHeroViewConfig()
-      const pipelineRenderer = createMockRenderer()
-      const legacyRenderer = createMockRenderer()
+      const renderer = createMockRenderer()
 
-      // Pipeline path
-      await renderHeroConfig(pipelineRenderer, config, palette, { useNodePipeline: true })
+      await renderHeroConfig(renderer, config, palette)
 
-      // Legacy path
-      await renderHeroConfig(legacyRenderer, config, palette, { useNodePipeline: false })
-
-      // Both should produce output
-      expect(pipelineRenderer.metrics.compositeToCanvasCount).toBe(1)
-      // Legacy uses render() directly for output
-      expect(legacyRenderer.render).toHaveBeenCalled()
+      // Pipeline should produce output
+      expect(renderer.metrics.compositeToCanvasCount).toBe(1)
     })
   })
 })
