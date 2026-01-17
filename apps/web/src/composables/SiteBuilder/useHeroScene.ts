@@ -978,7 +978,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     })
   }
 
-  // Color watchers: write to surface layer colors only (deprecated config.colors is kept for reading only)
+  // Color watchers: per-surface colors (primary/secondary) are written to layer.colors.
+  // Global semanticContext is written to config.colors (still used for context-based color resolution).
   watch(heroColors.backgroundColorKey1, (newValue) => {
     if (isLoadingFromConfig.value) return
     const config = heroViewRepository.get()
