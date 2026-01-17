@@ -1,0 +1,98 @@
+{
+  "id": "retro-pixel",
+  "name": "Retro Pixel",
+  "config": {
+    "viewport": { "width": 1280, "height": 720 },
+    "colors": {
+      "background": { "primary": "BN1", "secondary": "BN2" },
+      "mask": { "primary": "A", "secondary": "At" },
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "type": "grid", "lineWidth": 2, "cellSize": 32 },
+            "filters": [
+              {
+                "type": "effect",
+                "enabled": true,
+                "config": {
+                  "vignette": { "enabled": false, "intensity": 0.5, "radius": 0.8, "softness": 0.4, "shape": "ellipse", "color": [0, 0, 0, 1], "centerX": 0.5, "centerY": 0.5, "aspectRatio": 1 },
+                  "chromaticAberration": { "enabled": false, "intensity": 0.01 },
+                  "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
+                  "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 },
+                  "blur": { "enabled": false, "radius": 8 },
+                  "pixelation": { "enabled": true, "blockSize": 12 }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group",
+        "name": "Clip Group",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-mask",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "type": "solid" },
+            "filters": [
+              {
+                "type": "effect",
+                "enabled": true,
+                "config": {
+                  "vignette": { "enabled": false, "intensity": 0.5, "radius": 0.8, "softness": 0.4, "shape": "ellipse", "color": [0, 0, 0, 1], "centerX": 0.5, "centerY": 0.5, "aspectRatio": 1 },
+                  "chromaticAberration": { "enabled": false, "intensity": 0.01 },
+                  "dotHalftone": { "enabled": false, "dotSize": 8, "spacing": 16, "angle": 45 },
+                  "lineHalftone": { "enabled": false, "lineWidth": 4, "spacing": 12, "angle": 45 },
+                  "blur": { "enabled": false, "radius": 8 },
+                  "pixelation": { "enabled": true, "blockSize": 8 }
+                }
+              }
+            ]
+          },
+          {
+            "type": "processor",
+            "id": "processor-mask",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "mask",
+                "enabled": true,
+                "shape": { "type": "rect", "centerX": 0.5, "centerY": 0.5, "width": 0.7, "height": 0.6, "cornerRadius": 0.02 },
+                "invert": false,
+                "feather": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": [
+        { "id": "title-1", "type": "title", "visible": true, "position": "middle-center", "content": "8-BIT WORLD", "fontSize": 5, "fontId": "poppins", "fontWeight": 800 },
+        { "id": "description-1", "type": "description", "visible": true, "position": "bottom-center", "content": "Press Start to Begin", "fontSize": 1.5, "fontId": "inter" }
+      ]
+    }
+  },
+  "colorPreset": {
+    "brand": { "hue": 280, "saturation": 75, "value": 70 },
+    "accent": { "hue": 160, "saturation": 90, "value": 85 },
+    "foundation": { "hue": 240, "saturation": 15, "value": 15 }
+  }
+}

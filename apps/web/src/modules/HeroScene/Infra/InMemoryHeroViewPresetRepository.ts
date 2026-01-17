@@ -16,6 +16,7 @@ import fashionEditorial from './presets/fashion-editorial.json'
 import retroPop from './presets/retro-pop.json'
 import minimalZen from './presets/minimal-zen.json'
 import boldStatement from './presets/bold-statement.json'
+import retroPixel from './presets/retro-pixel.json'
 // Test presets for step-by-step verification
 import testLevel1BgOnly from './presets/test-level1-bg-only.json'
 import testLevel2BgSurface from './presets/test-level2-bg-surface.json'
@@ -48,6 +49,7 @@ const PRESETS: HeroViewPreset[] = [
   retroPop as unknown as HeroViewPreset,
   minimalZen as unknown as HeroViewPreset,
   boldStatement as unknown as HeroViewPreset,
+  retroPixel as unknown as HeroViewPreset,
 ]
 
 // ============================================================
