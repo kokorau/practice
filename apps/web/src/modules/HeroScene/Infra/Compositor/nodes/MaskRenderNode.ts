@@ -73,7 +73,7 @@ export class MaskRenderNode implements RenderNode {
     const spec = createGreymapMaskSpecFromShape(this.shape, viewport)
 
     if (!spec) {
-      throw new Error(`Failed to create mask spec for node: ${this.id}`)
+      throw new Error(`[MaskRenderNode] Failed to create mask spec (id: ${this.id})`)
     }
 
     // Acquire a texture from the pool

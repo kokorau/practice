@@ -37,6 +37,10 @@ import {
   createCanvasOutputNode,
   type EffectConfig,
 } from './index'
+import {
+  isDarkTheme,
+  getMaskSurfaceKey,
+} from '../../Domain/ColorHelpers'
 
 // ============================================================
 // Pipeline Build Context
@@ -58,55 +62,6 @@ interface BuildContext {
 
   /** Mask surface key based on semantic context */
   maskSurfaceKey: string
-}
-
-// ============================================================
-// Color Helpers (duplicated from renderHeroConfig to avoid coupling)
-// ============================================================
-
-/**
- * Get Oklch from palette by key
- */
-function getOklchFromPalette(palette: PrimitivePalette, key: string): { L: number; C: number; H: number } {
-  const oklch = (palette as Record<string, { L: number; C: number; H: number }>)[key]
-  return oklch ?? { L: 0.5, C: 0, H: 0 }
-}
-
-/**
- * Determine if palette represents dark theme
- */
-function isDarkTheme(palette: PrimitivePalette): boolean {
-  const f0 = getOklchFromPalette(palette, 'F0')
-  return f0.L < 0.5
-}
-
-type ContextName = 'canvas' | 'sectionNeutral' | 'sectionTint' | 'sectionContrast'
-
-/**
- * Semantic context to primitive surface key mapping
- */
-const CONTEXT_SURFACE_KEYS: Record<'light' | 'dark', Record<ContextName, string>> = {
-  light: {
-    canvas: 'F1',
-    sectionNeutral: 'F2',
-    sectionTint: 'Bt',
-    sectionContrast: 'Bf',
-  },
-  dark: {
-    canvas: 'F8',
-    sectionNeutral: 'F7',
-    sectionTint: 'Bs',
-    sectionContrast: 'Bf',
-  },
-}
-
-/**
- * Get mask surface key based on semantic context and theme
- */
-function getMaskSurfaceKey(semanticContext: string, isDark: boolean): string {
-  const mode = isDark ? 'dark' : 'light'
-  const context = (semanticContext as ContextName) || 'canvas'
-  return CONTEXT_SURFACE_KEYS[mode][context] ?? CONTEXT_SURFACE_KEYS[mode].canvas
 }
 
 // ============================================================

@@ -79,9 +79,6 @@ export interface MaskCompositorInput {
 export interface OverlayCompositorInput {
   /** Nodes providing layers to overlay, in order (first = bottom) */
   layers: ReadonlyArray<RenderNode | CompositorNode>
-
-  /** Blend mode for composition */
-  blendMode?: BlendMode
 }
 
 /**
@@ -105,13 +102,14 @@ export interface EffectChainCompositorInput {
 
 /**
  * Supported blend modes for overlay composition.
+ *
+ * Currently only 'normal' (standard alpha blending) is implemented.
+ * Additional blend modes may be added in the future if needed.
+ *
+ * Note: Per YAGNI principle, we only define what's currently used.
+ * See issue #455 for context.
  */
-export type BlendMode =
-  | 'normal'      // Standard alpha blending
-  | 'multiply'    // Darken by multiplying
-  | 'screen'      // Lighten by inverse multiply
-  | 'overlay'     // Contrast enhancement
-  | 'add'         // Additive blending
+export type BlendMode = 'normal'
 
 /**
  * Default blend mode when not specified.

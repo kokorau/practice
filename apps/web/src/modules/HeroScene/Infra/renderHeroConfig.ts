@@ -73,6 +73,14 @@ import type { SingleEffectConfig } from '../Domain/HeroViewConfig'
 import { getEffectConfigsFromModifiers } from '../Domain/HeroViewConfig'
 // Pipeline imports for node-based rendering
 import { buildPipeline, executePipeline } from './Compositor'
+// Shared color helpers
+import {
+  getOklchFromPalette,
+  isDarkTheme,
+  getMaskSurfaceKey,
+  CONTEXT_SURFACE_KEYS,
+  type SemanticContextName,
+} from '../Domain/ColorHelpers'
 
 // ============================================================
 // Types
@@ -138,27 +146,8 @@ export interface RenderHeroConfigOptions {
 // Color Helpers
 // ============================================================
 
-type ContextName = 'canvas' | 'sectionNeutral' | 'sectionTint' | 'sectionContrast'
-type PrimitiveKey = string
-
-/**
- * Semantic context to primitive surface key mapping
- * Must match useHeroScene.ts CONTEXT_SURFACE_KEYS
- */
-const CONTEXT_SURFACE_KEYS: Record<'light' | 'dark', Record<ContextName, PrimitiveKey>> = {
-  light: {
-    canvas: 'F1',
-    sectionNeutral: 'F2',
-    sectionTint: 'Bt',
-    sectionContrast: 'Bf',
-  },
-  dark: {
-    canvas: 'F8',
-    sectionNeutral: 'F7',
-    sectionTint: 'Bs',
-    sectionContrast: 'Bf',
-  },
-}
+// Note: getOklchFromPalette, isDarkTheme, getMaskSurfaceKey, CONTEXT_SURFACE_KEYS
+// are now imported from '../Domain/ColorHelpers'
 
 /**
  * Convert Oklch to RGBA
@@ -177,36 +166,11 @@ function oklchToRgba(oklch: Oklch, alpha = 1): RGBA {
  * Get color from palette by key
  */
 export function getColorFromPalette(palette: PrimitivePalette, key: string, alpha = 1): RGBA {
-  const oklch = (palette as Record<string, Oklch>)[key]
+  const oklch = getOklchFromPalette(palette, key)
   if (oklch) {
     return oklchToRgba(oklch, alpha)
   }
   return [0.5, 0.5, 0.5, alpha]
-}
-
-/**
- * Get Oklch from palette by key
- */
-function getOklchFromPalette(palette: PrimitivePalette, key: string): Oklch {
-  const oklch = (palette as Record<string, Oklch>)[key]
-  return oklch ?? { L: 0.5, C: 0, H: 0 }
-}
-
-/**
- * Determine if palette represents dark theme
- */
-function isDarkTheme(palette: PrimitivePalette): boolean {
-  const f0 = getOklchFromPalette(palette, 'F0')
-  return f0.L < 0.5
-}
-
-/**
- * Get mask surface key based on semantic context and theme
- */
-function getMaskSurfaceKey(semanticContext: string, isDark: boolean): PrimitiveKey {
-  const mode = isDark ? 'dark' : 'light'
-  const context = (semanticContext as ContextName) || 'canvas'
-  return CONTEXT_SURFACE_KEYS[mode][context] ?? CONTEXT_SURFACE_KEYS[mode].canvas
 }
 
 /**

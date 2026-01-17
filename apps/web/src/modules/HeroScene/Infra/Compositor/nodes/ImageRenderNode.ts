@@ -104,8 +104,8 @@ export class ImageRenderNode implements RenderNode {
     // For now, we only support ImageBitmap and HTMLImageElement
     if (typeof this.source === 'string') {
       throw new Error(
-        `ImageRenderNode: String URLs are not supported. ` +
-        `Load the image first and pass ImageBitmap or HTMLImageElement.`
+        `[ImageRenderNode] String URLs are not supported. ` +
+        `Load the image first and pass ImageBitmap or HTMLImageElement (id: ${this.id})`
       )
     }
 
@@ -115,8 +115,8 @@ export class ImageRenderNode implements RenderNode {
 
     if (!extendedRenderer.renderImageToOffscreen) {
       throw new Error(
-        `ImageRenderNode: Renderer does not support image rendering. ` +
-        `Make sure the renderer implements renderImageToOffscreen.`
+        `[ImageRenderNode] Renderer does not support image rendering. ` +
+        `Make sure the renderer implements renderImageToOffscreen (id: ${this.id})`
       )
     }
 
@@ -126,7 +126,7 @@ export class ImageRenderNode implements RenderNode {
       // Positioned rendering
       if (!extendedRenderer.renderPositionedImageToOffscreen) {
         throw new Error(
-          `ImageRenderNode: Renderer does not support positioned image rendering.`
+          `[ImageRenderNode] Renderer does not support positioned image rendering (id: ${this.id})`
         )
       }
 
