@@ -12,7 +12,6 @@ import type {
   CompositorRenderer,
 } from '../../Domain/Compositor'
 import { createTexturePool } from './TexturePool'
-import { DEFAULT_TEXTURE_FORMAT } from './TextureFactory'
 
 // ============================================================
 // Execution Options
@@ -54,6 +53,7 @@ export function executePipeline(
   const scale = options?.scale ?? 1
   const viewport = renderer.getViewport()
   const device = renderer.getDevice()
+  const format = renderer.getFormat()
 
   // Create texture pool for ping-pong rendering (legacy - will be removed)
   const texturePool = createTexturePool(viewport.width, viewport.height)
@@ -66,7 +66,7 @@ export function executePipeline(
     scale,
     texturePool,
     device,
-    format: DEFAULT_TEXTURE_FORMAT,
+    format,
   }
 
   // Execute the pipeline by calling output on the root node

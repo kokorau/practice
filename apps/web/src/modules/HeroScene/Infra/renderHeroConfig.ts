@@ -62,6 +62,7 @@ import { getOklchFromPalette } from '../Domain/ColorHelpers'
 export interface TextureRendererLike {
   getViewport(): Viewport
   getDevice(): GPUDevice
+  getFormat(): GPUTextureFormat
   render(spec: TextureRenderSpec, options?: { clear?: boolean }): void
   copyCanvasToTexture(): GPUTexture
   applyPostEffect(
@@ -87,6 +88,13 @@ export interface TextureRendererLike {
     secondaryTexture: GPUTexture,
     outputTextureIndex: number
   ): GPUTexture
+  /** Apply two-texture effect to owned texture (TextureOwner pattern) */
+  applyDualTextureEffectToTexture(
+    spec: unknown,
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void
   /** Apply post-effect to offscreen texture */
   applyPostEffectToOffscreen(
     effect: { shader: string; uniforms: ArrayBuffer; bufferSize: number },

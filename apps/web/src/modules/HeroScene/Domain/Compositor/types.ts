@@ -88,6 +88,9 @@ export interface CompositorRenderer {
   /** Get the WebGPU device (used by TextureOwner nodes for texture creation) */
   getDevice(): GPUDevice
 
+  /** Get the texture format used by this renderer */
+  getFormat(): GPUTextureFormat
+
   /** Render a spec to an offscreen texture (legacy - uses texture pool index) */
   renderToOffscreen(
     spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
@@ -114,13 +117,21 @@ export interface CompositorRenderer {
     outputTexture: GPUTexture
   ): void
 
-  /** Apply a dual-texture effect (e.g., masking) to offscreen */
+  /** Apply a dual-texture effect (e.g., masking) to offscreen (legacy - uses texture pool index) */
   applyDualTextureEffectToOffscreen(
     spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
     primaryTexture: GPUTexture,
     secondaryTexture: GPUTexture,
     outputTextureIndex: number
   ): GPUTexture
+
+  /** Apply a dual-texture effect (e.g., masking) to owned texture (TextureOwner pattern) */
+  applyDualTextureEffectToTexture(
+    spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void
 
   /** Composite an offscreen texture to the canvas */
   compositeToCanvas(

@@ -40,7 +40,7 @@ import { useForegroundElement } from '../composables/useForegroundElement'
 import { useContextMenu } from '../composables/useContextMenu'
 import { usePresetActions } from '../composables/usePresetActions'
 import { usePaletteStyles } from '../composables/usePaletteStyles'
-import { useHeroGeneratorPanelHandlers } from '../composables/HeroGenerator'
+import { useHeroGeneratorPanelHandlers, useHeroGeneratorColorHandlers } from '../composables/HeroGenerator'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
 import DebugPanel from '../components/HeroGenerator/DebugPanel.vue'
@@ -52,15 +52,15 @@ const uiDarkMode = ref(false)
 
 // ============================================================
 // Layer Selection (provide for child components)
-// Must be called before useHeroScene which depends on it
 // ============================================================
+const layerSelection = provideLayerSelection()
 const {
   layerId: selectedLayerId,
   processorType: selectedProcessorType,
   selectCanvasLayer,
   selectProcessor,
   clearSelection,
-} = provideLayerSelection()
+} = layerSelection
 
 // ============================================================
 // Brand, Accent & Foundation Color State
@@ -82,6 +82,15 @@ const {
   foundationHex,
   foundationColor,
 } = useSiteColors()
+
+// ============================================================
+// Color State Update Handler
+// ============================================================
+const { handleColorStateUpdate } = useHeroGeneratorColorHandlers({
+  brand: { hue, saturation, value },
+  accent: { hue: accentHue, saturation: accentSaturation, value: accentValue },
+  foundation: { hue: foundationHue, saturation: foundationSaturation, value: foundationValue },
+})
 
 // ============================================================
 // Primitive & Semantic Palette Generation
@@ -120,7 +129,7 @@ const actions = computed(() => [
 // ============================================================
 // Hero Scene (WebGPU rendering with layer system)
 // ============================================================
-const heroScene = useHeroScene({ primitivePalette, isDark: uiDarkMode })
+const heroScene = useHeroScene({ primitivePalette, isDark: uiDarkMode, layerSelection })
 
 // ============================================================
 // Filter Editor (Composable)
@@ -380,34 +389,6 @@ const {
   handleRemoveLayer,
   handleRemoveForegroundElement,
 })
-
-// ============================================================
-// HeroSidebar Event Handlers
-// ============================================================
-
-const handleColorStateUpdate = (
-  colorType: 'brand' | 'accent' | 'foundation',
-  key: 'hue' | 'saturation' | 'value' | 'hex',
-  newValue: number
-) => {
-  switch (colorType) {
-    case 'brand':
-      if (key === 'hue') hue.value = newValue
-      else if (key === 'saturation') saturation.value = newValue
-      else if (key === 'value') value.value = newValue
-      break
-    case 'accent':
-      if (key === 'hue') accentHue.value = newValue
-      else if (key === 'saturation') accentSaturation.value = newValue
-      else if (key === 'value') accentValue.value = newValue
-      break
-    case 'foundation':
-      if (key === 'hue') foundationHue.value = newValue
-      else if (key === 'saturation') foundationSaturation.value = newValue
-      else if (key === 'value') foundationValue.value = newValue
-      break
-  }
-}
 
 // ============================================================
 // RightPropertyPanel Event Handlers

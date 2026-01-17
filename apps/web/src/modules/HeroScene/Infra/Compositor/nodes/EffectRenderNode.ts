@@ -13,6 +13,7 @@ import type {
   CompositorNodeLike,
 } from '../../../Domain/Compositor'
 import type { TextureOwner } from '../../../Domain/Compositor/TextureOwner'
+import { isTextureOwner } from '../../../Domain/Compositor/TextureOwner'
 import { getTextureFromNode } from '../../../Domain/Compositor'
 import type { EffectType } from '../../../Domain/EffectRegistry'
 import { EFFECT_REGISTRY, isValidEffectType } from '../../../Domain/EffectRegistry'
@@ -88,15 +89,28 @@ export class EffectRenderNode extends BaseTextureOwner implements RenderNode, Te
   }
 
   /**
+   * Check if this node or the input node is dirty.
+   * Overrides base isDirty to propagate dirty state from input.
+   */
+  get isDirty(): boolean {
+    if (this._isDirty) return true
+
+    // Check if input is dirty (dirty propagation)
+    if (isTextureOwner(this.inputNode) && this.inputNode.isDirty) return true
+
+    return false
+  }
+
+  /**
    * Apply the effect to the input texture.
    *
    * Uses TextureOwner caching: skips rendering if not dirty and texture exists.
    */
   render(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, scale, device } = ctx
+    const { renderer, viewport, scale, device, format } = ctx
 
-    // Ensure texture exists (handles viewport resize)
-    this.ensureTexture(device, viewport)
+    // Ensure texture exists (handles viewport resize and format)
+    this.ensureTexture(device, viewport, format)
 
     // Skip if not dirty (cache hit)
     if (!this.isDirty) {

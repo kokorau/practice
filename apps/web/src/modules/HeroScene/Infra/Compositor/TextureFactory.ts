@@ -19,8 +19,9 @@ export const DEFAULT_TEXTURE_FORMAT: GPUTextureFormat = 'rgba8unorm'
  * - TEXTURE_BINDING (0x04): Can be sampled in shaders
  * - RENDER_ATTACHMENT (0x10): Can be used as a render target
  * - COPY_SRC (0x01): Can be copied from (for debugging/export)
+ * - COPY_DST (0x02): Can be copied to (for copyExternalImageToTexture)
  */
-export const RENDER_TEXTURE_USAGE = 0x04 | 0x10 | 0x01 // 21
+export const RENDER_TEXTURE_USAGE = 0x04 | 0x10 | 0x01 | 0x02 // 23
 
 /**
  * Create a texture suitable for rendering output.
@@ -29,6 +30,7 @@ export const RENDER_TEXTURE_USAGE = 0x04 | 0x10 | 0x01 // 21
  * - TEXTURE_BINDING: Can be sampled in shaders
  * - RENDER_ATTACHMENT: Can be used as a render target
  * - COPY_SRC: Can be copied from (for debugging/export)
+ * - COPY_DST: Can be copied to (for copyExternalImageToTexture)
  *
  * @param device - WebGPU device
  * @param viewport - Target dimensions

@@ -35,14 +35,15 @@ export interface TextureOwner {
   readonly isDirty: boolean
 
   /**
-   * Ensure a texture exists with the correct dimensions.
-   * Creates a new texture if none exists or if viewport size changed.
+   * Ensure a texture exists with the correct dimensions and format.
+   * Creates a new texture if none exists or if viewport/format changed.
    *
    * @param device - WebGPU device for texture creation
    * @param viewport - Target viewport dimensions
+   * @param format - Optional texture format (uses renderer's format from context)
    * @returns The output texture (existing or newly created)
    */
-  ensureTexture(device: GPUDevice, viewport: Viewport): GPUTexture
+  ensureTexture(device: GPUDevice, viewport: Viewport, format?: GPUTextureFormat): GPUTexture
 
   /**
    * Mark this node as needing re-render.

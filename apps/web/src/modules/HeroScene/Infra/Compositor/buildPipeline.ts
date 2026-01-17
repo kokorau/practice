@@ -14,6 +14,7 @@ import type {
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
   HeroPrimitiveKey,
+  TextLayerNodeConfig,
 } from '../../Domain/HeroViewConfig'
 import {
   getProcessorMask,
@@ -35,6 +36,7 @@ import {
   createEffectChainCompositorNode,
   createOverlayCompositorNode,
   createCanvasOutputNode,
+  createTextRenderNode,
   type EffectConfig,
 } from './index'
 import {
@@ -120,6 +122,24 @@ function findAllClipGroups(layers: LayerNodeConfig[]): Array<{
     ) ?? null
 
     results.push({ group, surface, processor })
+  }
+
+  return results
+}
+
+/**
+ * Find all text layers (including nested in groups)
+ */
+function findAllTextLayers(layers: LayerNodeConfig[]): TextLayerNodeConfig[] {
+  const results: TextLayerNodeConfig[] = []
+
+  for (const layer of layers) {
+    if (layer.type === 'text' && layer.visible) {
+      results.push(layer)
+    } else if (layer.type === 'group') {
+      // Recursively search in groups
+      results.push(...findAllTextLayers(layer.children))
+    }
   }
 
   return results
@@ -432,7 +452,18 @@ export function buildPipeline(
     layerNodes.push(layerNode)
   }
 
-  // 3. Build overlay compositor (combines all layers)
+  // 3. Build text layer nodes
+  const textLayers = findAllTextLayers(config.layers)
+  for (let i = 0; i < textLayers.length; i++) {
+    const textLayer = textLayers[i]!
+    const textId = textLayer.id || `text-${i}`
+
+    const textNode = createTextRenderNode(textId, textLayer)
+    nodes.push(textNode)
+    layerNodes.push(textNode)
+  }
+
+  // 4. Build overlay compositor (combines all layers)
   let finalNode: TextureProducingNode
 
   if (layerNodes.length === 0) {
@@ -445,7 +476,7 @@ export function buildPipeline(
     finalNode = overlayNode
   }
 
-  // 4. Apply root-level processor nodes (global masks/effects)
+  // 5. Apply root-level processor nodes (global masks/effects)
   const rootProcessors = findRootProcessors(config.layers)
   for (let i = 0; i < rootProcessors.length; i++) {
     const processor = rootProcessors[i]!
@@ -453,7 +484,7 @@ export function buildPipeline(
     finalNode = buildProcessorNode(processorId, finalNode, processor, nodes)
   }
 
-  // 5. Build canvas output node
+  // 6. Build canvas output node
   const outputNode = createCanvasOutputNode('output', finalNode)
   nodes.push(outputNode)
 
