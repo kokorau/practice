@@ -62,12 +62,11 @@ export class OverlayCompositorNode implements CompositorNode {
   readonly inputs: ReadonlyArray<RenderNode | CompositorNode>
 
   private readonly layers: ReadonlyArray<RenderNode | CompositorNode>
-  private readonly blendMode: BlendMode
 
   constructor(config: OverlayCompositorNodeConfig) {
     this.id = config.id
     this.layers = config.layers
-    this.blendMode = config.blendMode ?? 'normal'
+    // Note: config.blendMode is available for future use (currently defaults to 'normal' overlay)
     this.inputs = config.layers
   }
 
@@ -75,7 +74,7 @@ export class OverlayCompositorNode implements CompositorNode {
    * Composite all layers in order.
    */
   composite(ctx: NodeContext): TextureHandle {
-    const { viewport, texturePool } = ctx
+    const { texturePool } = ctx
 
     if (this.layers.length === 0) {
       throw new Error(`[OverlayCompositorNode] No layers to composite: ${this.id}`)
