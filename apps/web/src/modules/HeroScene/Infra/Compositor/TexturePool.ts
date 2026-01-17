@@ -2,28 +2,38 @@
  * TexturePool
  *
  * Manages offscreen texture allocation for compositor node rendering.
- * Uses a triple-buffer approach to avoid texture conflicts when
+ * Uses a multi-buffer approach to avoid texture conflicts when
  * combining multiple input textures into a single output.
  */
 
 import type { TextureHandle, TexturePool } from '../../Domain/Compositor'
 
 // ============================================================
-// Triple-Buffer TexturePool
+// Multi-Buffer TexturePool
 // ============================================================
 
+/** Number of texture slots in the pool */
+const POOL_SIZE = 6
+
 /**
- * A TexturePool implementation using three offscreen textures
+ * A TexturePool implementation using multiple offscreen textures
  * to avoid conflicts when combining multiple inputs.
  *
- * The triple-buffer approach is necessary because operations like
- * MaskCompositorNode need to read from two textures (surface + mask)
- * while writing to a third. With only two textures, one input would
- * be overwritten before it could be read.
+ * The multi-buffer approach is necessary because complex pipelines
+ * (e.g., background + masked layer with effects) may need to hold
+ * multiple textures simultaneously:
+ * - Background texture (held by OverlayCompositorNode)
+ * - Layer surface texture
+ * - Layer mask texture
+ * - Masked layer output
+ * - Effect chain intermediates
+ *
+ * With 6 slots, typical HeroScene pipelines can execute without
+ * texture conflicts.
  *
  * @example
  * ```typescript
- * const pool = new TripleBufferTexturePool(1280, 720)
+ * const pool = new MultiBufferTexturePool(1280, 720)
  *
  * const texture1 = pool.acquire()  // Gets texture 0
  * const texture2 = pool.acquire()  // Gets texture 1
@@ -32,10 +42,10 @@ import type { TextureHandle, TexturePool } from '../../Domain/Compositor'
  * pool.release(texture1)  // Returns texture 0 to pool
  * ```
  */
-export class TripleBufferTexturePool implements TexturePool {
+export class MultiBufferTexturePool implements TexturePool {
   private readonly width: number
   private readonly height: number
-  private nextIndex: 0 | 1 | 2 = 0
+  private nextIndex: number = 0
   private handleCounter = 0
 
   constructor(width: number, height: number) {
@@ -45,11 +55,11 @@ export class TripleBufferTexturePool implements TexturePool {
 
   /**
    * Acquire a texture handle for rendering.
-   * Cycles through indices 0, 1, 2.
+   * Cycles through indices 0 to POOL_SIZE-1.
    */
   acquire(): TextureHandle {
     const index = this.nextIndex
-    this.nextIndex = ((this.nextIndex + 1) % 3) as 0 | 1 | 2
+    this.nextIndex = (this.nextIndex + 1) % POOL_SIZE
     this.handleCounter++
 
     return {
@@ -68,7 +78,7 @@ export class TripleBufferTexturePool implements TexturePool {
    * Currently a no-op since we cycle through fixed indices.
    */
   release(_handle: TextureHandle): void {
-    // In the triple-buffer model, we don't need to do anything
+    // In the multi-buffer model, we don't need to do anything
     // The texture slots are managed by index cycling
   }
 
@@ -76,8 +86,8 @@ export class TripleBufferTexturePool implements TexturePool {
    * Get an available texture index that differs from the given index.
    * Returns the next index in the cycle.
    */
-  getNextIndex(currentIndex: 0 | 1 | 2): 0 | 1 | 2 {
-    return ((currentIndex + 1) % 3) as 0 | 1 | 2
+  getNextIndex(currentIndex: number): number {
+    return (currentIndex + 1) % POOL_SIZE
   }
 
   /**
@@ -90,12 +100,15 @@ export class TripleBufferTexturePool implements TexturePool {
   }
 }
 
+// Legacy alias for backwards compatibility
+export { MultiBufferTexturePool as TripleBufferTexturePool }
+
 /**
- * Factory function to create a TripleBufferTexturePool.
+ * Factory function to create a MultiBufferTexturePool.
  */
 export function createTexturePool(
   width: number,
   height: number
 ): TexturePool {
-  return new TripleBufferTexturePool(width, height)
+  return new MultiBufferTexturePool(width, height)
 }

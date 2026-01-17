@@ -85,7 +85,7 @@ export class MaskCompositorNode implements CompositorNode {
     const blendSpec = createSurfaceMaskSpec(viewport)
 
     // Get output texture index that differs from both inputs.
-    // With triple-buffer, we can always find an index different from both.
+    // With multi-buffer pool, we can always find an index different from both.
     let outputIndex = texturePool.getNextIndex(surfaceHandle._textureIndex)
     if (outputIndex === maskHandle._textureIndex) {
       outputIndex = texturePool.getNextIndex(outputIndex)
