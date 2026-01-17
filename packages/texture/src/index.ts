@@ -94,7 +94,6 @@ export {
   // Colorize spec
   createColorizeSpec,
   createMaskColorizeParams,
-  createDualColorParams,
   // Masked texture specs
   createCircleStripeSpec,
   createCircleGridSpec,
