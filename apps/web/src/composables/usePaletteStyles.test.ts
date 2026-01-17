@@ -6,15 +6,6 @@ import { ref, nextTick } from 'vue'
 import { usePaletteStyles } from './usePaletteStyles'
 import type { SemanticColorPalette } from '../modules/SemanticColorPalette/Domain'
 
-// Polyfill URL for happy-dom in CI environment
-// Note: happy-dom should provide URL, but we check just in case
-if (typeof globalThis.URL === 'undefined') {
-  // Dynamic import for ESM compatibility
-  import('node:url').then(({ URL: NodeURL }) => {
-    globalThis.URL = NodeURL
-  })
-}
-
 // ============================================================
 // Test Helpers
 // ============================================================

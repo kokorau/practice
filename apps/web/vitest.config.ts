@@ -10,6 +10,7 @@ export default defineConfig({
       ['src/composables/**/*.test.ts', 'happy-dom'],
       ['src/components/**/*.test.ts', 'happy-dom'],
     ],
+    setupFiles: ['./test/setup.happy-dom.ts'],
     isolate: false,
     pool: 'threads',
     // Browser tests (*.browser.test.ts) are excluded from default run
