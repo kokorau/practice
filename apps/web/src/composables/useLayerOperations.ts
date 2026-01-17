@@ -2,8 +2,6 @@ import { computed, type Ref, type ComputedRef, type ShallowRef } from 'vue'
 import type {
   LayerNodeConfig,
   GroupLayerNodeConfig,
-  SurfaceLayerNodeConfig,
-  TextLayerNodeConfig,
   ProcessorNodeConfig,
   LayerDropPosition,
   ModifierDropPosition,
@@ -50,6 +48,8 @@ export interface SceneOperationCallbacks {
   addTextLayer: (options?: Partial<TextLayerOptions>) => string
   /** Add object layer to scene. Returns layer ID */
   addObjectLayer: (options?: Partial<ObjectLayerOptions>) => string
+  /** Add group layer to scene. Returns layer ID */
+  addGroupLayer: () => string
   /** Remove layer from scene */
   removeLayer: (layerId: string) => boolean
   /** Toggle layer visibility in scene */
@@ -240,40 +240,20 @@ export function useLayerOperations(
     // Base layer cannot be added through UI
     if (type === 'base') return
 
-    const config = repository.get()
-    if (!config) return
-
-    let newLayer: LayerNodeConfig | null = null
-
+    // Delegate to sceneCallbacks - usecase handles repository update
     switch (type) {
       case 'surface': {
-        const layerId = sceneCallbacks.addMaskLayer()
-        if (!layerId) return // Surface layer limit reached
-
-        newLayer = {
-          type: 'surface',
-          id: layerId,
-          name: 'Surface',
-          visible: true,
-          surface: { type: 'solid', color: 'B' },
-        } as SurfaceLayerNodeConfig
+        sceneCallbacks.addMaskLayer()
         break
       }
       case 'group': {
-        const id = `group-${Date.now()}`
-        newLayer = {
-          type: 'group',
-          id,
-          name: 'Group',
-          visible: true,
-          children: [],
-        } as GroupLayerNodeConfig
-        // Expand the new group by default
-        expandedLayerIds.value = new Set([...expandedLayerIds.value, id])
+        const layerId = sceneCallbacks.addGroupLayer()
+        // Expand the new group by default (UI state only)
+        expandedLayerIds.value = new Set([...expandedLayerIds.value, layerId])
         break
       }
       case 'text': {
-        const layerId = sceneCallbacks.addTextLayer({
+        sceneCallbacks.addTextLayer({
           text: 'New Text',
           fontFamily: 'sans-serif',
           fontSize: 48,
@@ -286,37 +266,10 @@ export function useLayerOperations(
           anchor: 'center',
           rotation: 0,
         })
-
-        newLayer = {
-          type: 'text',
-          id: layerId,
-          name: 'Text',
-          visible: true,
-          text: 'New Text',
-          fontFamily: 'sans-serif',
-          fontSize: 48,
-          fontWeight: 400,
-          letterSpacing: 0,
-          lineHeight: 1.2,
-          color: '#ffffff',
-          position: { x: 0.5, y: 0.5, anchor: 'center' },
-          rotation: 0,
-        } as TextLayerNodeConfig
         break
       }
       case 'model3d': {
-        const layerId = sceneCallbacks.addObjectLayer({ modelUrl: '' })
-
-        newLayer = {
-          type: 'model3d',
-          id: layerId,
-          name: '3D Model',
-          visible: true,
-          modelUrl: '',
-          scale: 1,
-          rotation: { x: 0, y: 0, z: 0 },
-          position: { x: 0, y: 0, z: 0 },
-        }
+        sceneCallbacks.addObjectLayer({ modelUrl: '' })
         break
       }
       case 'image':
@@ -324,11 +277,6 @@ export function useLayerOperations(
         return
       default:
         return
-    }
-
-    if (newLayer) {
-      const newLayers = [...config.layers, newLayer]
-      repository.set({ ...config, layers: newLayers })
     }
   }
 

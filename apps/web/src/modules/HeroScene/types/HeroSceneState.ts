@@ -492,6 +492,8 @@ export interface LayerOperations {
   readonly addObjectLayer: (options?: Partial<AddObjectLayerOptions>) => string
   /** Add an image layer (returns layer ID) */
   readonly addImageLayer: (options?: Partial<AddImageLayerOptions>) => string
+  /** Add a group layer (returns layer ID) */
+  readonly addGroupLayer: () => string
   /** Remove a layer by ID (returns true if removed) */
   readonly removeLayer: (layerId: string) => boolean
 
