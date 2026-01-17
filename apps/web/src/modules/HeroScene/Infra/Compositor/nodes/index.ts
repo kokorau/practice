@@ -1,10 +1,13 @@
 /**
  * Compositor Nodes - Infrastructure Layer
  *
- * Concrete implementations of RenderNode and CompositorNode.
+ * Concrete implementations of RenderNode, CompositorNode, and OutputNode.
  */
 
+// ============================================================
 // RenderNode implementations
+// ============================================================
+
 export {
   SurfaceRenderNode,
   createSurfaceRenderNode,
@@ -29,3 +32,36 @@ export {
   type ImageRenderNodeConfig,
   type ImagePosition,
 } from './ImageRenderNode'
+
+// ============================================================
+// CompositorNode implementations
+// ============================================================
+
+export {
+  MaskCompositorNode,
+  createMaskCompositorNode,
+  type MaskCompositorNodeConfig,
+} from './MaskCompositorNode'
+
+export {
+  EffectChainCompositorNode,
+  createEffectChainCompositorNode,
+  type EffectChainCompositorNodeConfig,
+  type EffectConfig,
+} from './EffectChainCompositorNode'
+
+export {
+  OverlayCompositorNode,
+  createOverlayCompositorNode,
+  type OverlayCompositorNodeConfig,
+} from './OverlayCompositorNode'
+
+// ============================================================
+// OutputNode implementations
+// ============================================================
+
+export {
+  CanvasOutputNode,
+  createCanvasOutputNode,
+  type CanvasOutputNodeConfig,
+} from './CanvasOutputNode'
