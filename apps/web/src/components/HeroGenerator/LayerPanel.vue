@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, provide } from 'vue'
 import type { LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '../../modules/HeroScene'
+import { isProcessorLayerConfig } from '../../modules/HeroScene'
 import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
 import DragPreview from './DragPreview.vue'
 import ModifierDragPreview from './ModifierDragPreview.vue'
@@ -53,6 +54,16 @@ const emit = defineEmits<{
   'remove-foreground-element': [elementId: string]
   'foreground-contextmenu': [elementId: string, event: MouseEvent]
 }>()
+
+// ============================================================
+// Processor Target Helper
+// ============================================================
+
+/** Check if a layer at the given index is a Processor target (next sibling is Processor) */
+const isLayerProcessorTarget = (index: number): boolean => {
+  const nextSibling = props.layers[index + 1]
+  return nextSibling ? isProcessorLayerConfig(nextSibling) : false
+}
 
 // ============================================================
 // Drag & Drop (Layer)
@@ -304,7 +315,7 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
         @pointerup="handleLayerListPointerUp"
       >
         <DraggableLayerNode
-          v-for="layer in layers"
+          v-for="(layer, index) in layers"
           :key="layer.id"
           :node="layer"
           :depth="0"
@@ -312,6 +323,7 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           :selected-processor-type="selectedProcessorType ?? null"
           :layers="layers"
           :expanded-layer-ids="expandedLayerIds"
+          :is-processor-target="isLayerProcessorTarget(index)"
           @select="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
