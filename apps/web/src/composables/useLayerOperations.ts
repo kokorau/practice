@@ -2,8 +2,6 @@ import { computed, type Ref, type ComputedRef, type ShallowRef } from 'vue'
 import type {
   LayerNodeConfig,
   GroupLayerNodeConfig,
-  SurfaceLayerNodeConfig,
-  TextLayerNodeConfig,
   ProcessorNodeConfig,
   LayerDropPosition,
   ModifierDropPosition,
@@ -12,8 +10,6 @@ import type {
 } from '../modules/HeroScene'
 import {
   findLayerInTree,
-  updateLayerInTree,
-  removeLayerFromTree,
   moveLayerInTree,
   isGroupLayerConfig,
 } from '../modules/HeroScene'
@@ -51,6 +47,8 @@ export interface SceneOperationCallbacks {
   addTextLayer: (options?: Partial<TextLayerOptions>) => string
   /** Add object layer to scene. Returns layer ID */
   addObjectLayer: (options?: Partial<ObjectLayerOptions>) => string
+  /** Add group layer to scene. Returns layer ID */
+  addGroupLayer: () => string
   /** Remove layer from scene */
   removeLayer: (layerId: string) => boolean
   /** Toggle layer visibility in scene */
@@ -150,19 +148,6 @@ const getLayerVariant = (layer: LayerNodeConfig): LayerVariant | null => {
   }
 }
 
-/**
- * Recursively collect all descendant layer IDs
- */
-const collectDescendantIds = (node: LayerNodeConfig): string[] => {
-  const ids: string[] = [node.id]
-  if (isGroupLayerConfig(node)) {
-    for (const child of node.children) {
-      ids.push(...collectDescendantIds(child))
-    }
-  }
-  return ids
-}
-
 // ============================================================
 // Composable
 // ============================================================
@@ -229,16 +214,9 @@ export function useLayerOperations(
     const layer = findLayerInTree(layers.value, layerId)
     if (!layer) return
 
-    const config = repository.get()
-    if (!config) return
-
-    const newLayers = updateLayerInTree(config.layers, layerId, { visible: !layer.visible })
-    repository.set({ ...config, layers: newLayers })
-
-    // Also toggle in scene for non-group layers
-    if (!isGroupLayerConfig(layer)) {
-      sceneCallbacks.toggleLayerVisibility(layerId)
-    }
+    // Delegate to usecase via sceneCallbacks
+    // Config update and render are handled by the usecase
+    sceneCallbacks.toggleLayerVisibility(layerId)
   }
 
   // ============================================================
@@ -248,40 +226,20 @@ export function useLayerOperations(
     // Base layer cannot be added through UI
     if (type === 'base') return
 
-    const config = repository.get()
-    if (!config) return
-
-    let newLayer: LayerNodeConfig | null = null
-
+    // Delegate to sceneCallbacks - usecase handles repository update
     switch (type) {
       case 'surface': {
-        const layerId = sceneCallbacks.addMaskLayer()
-        if (!layerId) return // Surface layer limit reached
-
-        newLayer = {
-          type: 'surface',
-          id: layerId,
-          name: 'Surface',
-          visible: true,
-          surface: { type: 'solid', color: 'B' },
-        } as SurfaceLayerNodeConfig
+        sceneCallbacks.addMaskLayer()
         break
       }
       case 'group': {
-        const id = `group-${Date.now()}`
-        newLayer = {
-          type: 'group',
-          id,
-          name: 'Group',
-          visible: true,
-          children: [],
-        } as GroupLayerNodeConfig
-        // Expand the new group by default
-        expandedLayerIds.value = new Set([...expandedLayerIds.value, id])
+        const layerId = sceneCallbacks.addGroupLayer()
+        // Expand the new group by default (UI state only)
+        expandedLayerIds.value = new Set([...expandedLayerIds.value, layerId])
         break
       }
       case 'text': {
-        const layerId = sceneCallbacks.addTextLayer({
+        sceneCallbacks.addTextLayer({
           text: 'New Text',
           fontFamily: 'sans-serif',
           fontSize: 48,
@@ -294,37 +252,10 @@ export function useLayerOperations(
           anchor: 'center',
           rotation: 0,
         })
-
-        newLayer = {
-          type: 'text',
-          id: layerId,
-          name: 'Text',
-          visible: true,
-          text: 'New Text',
-          fontFamily: 'sans-serif',
-          fontSize: 48,
-          fontWeight: 400,
-          letterSpacing: 0,
-          lineHeight: 1.2,
-          color: '#ffffff',
-          position: { x: 0.5, y: 0.5, anchor: 'center' },
-          rotation: 0,
-        } as TextLayerNodeConfig
         break
       }
       case 'model3d': {
-        const layerId = sceneCallbacks.addObjectLayer({ modelUrl: '' })
-
-        newLayer = {
-          type: 'model3d',
-          id: layerId,
-          name: '3D Model',
-          visible: true,
-          modelUrl: '',
-          scale: 1,
-          rotation: { x: 0, y: 0, z: 0 },
-          position: { x: 0, y: 0, z: 0 },
-        }
+        sceneCallbacks.addObjectLayer({ modelUrl: '' })
         break
       }
       case 'image':
@@ -333,34 +264,12 @@ export function useLayerOperations(
       default:
         return
     }
-
-    if (newLayer) {
-      const newLayers = [...config.layers, newLayer]
-      repository.set({ ...config, layers: newLayers })
-    }
   }
 
   const handleRemoveLayer = (layerId: string) => {
-    const config = repository.get()
-    if (!config) return
-
-    const layer = findLayerInTree(config.layers, layerId)
-    if (!layer) return
-
-    // Collect all layer IDs to remove from scene (including children)
-    const idsToRemove = collectDescendantIds(layer)
-
-    // Remove non-group layers from scene
-    for (const id of idsToRemove) {
-      const l = findLayerInTree(config.layers, id)
-      if (l && !isGroupLayerConfig(l)) {
-        sceneCallbacks.removeLayer(id)
-      }
-    }
-
-    // Remove from layer tree
-    const newLayers = removeLayerFromTree(config.layers, layerId)
-    repository.set({ ...config, layers: newLayers })
+    // Delegate to sceneCallbacks - usecase handles repository update and effect cleanup
+    const removed = sceneCallbacks.removeLayer(layerId)
+    if (!removed) return
 
     // Clear selection if the removed layer was selected
     if (selectedLayerId?.value === layerId) {

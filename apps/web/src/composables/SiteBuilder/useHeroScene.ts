@@ -43,6 +43,7 @@ import {
   type HtmlLayer,
   type HeroViewConfig,
   type LayerNodeConfig,
+  type GroupLayerNodeConfig,
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
   type ImageLayerNodeConfig,
@@ -88,6 +89,8 @@ import {
   type UsecaseState,
   type EditorStateRef,
   type RendererActions,
+  findLayerInTree,
+  isGroupLayerConfig,
 } from '../../modules/HeroScene'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
 
@@ -638,14 +641,48 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     return id
   }
 
+  const addGroupLayer = (): string => {
+    const id = `group-${Date.now()}`
+    const groupLayerConfig: GroupLayerNodeConfig = {
+      type: 'group',
+      id,
+      name: 'Group',
+      visible: true,
+      children: [],
+    }
+    layerUsecase.addLayer(groupLayerConfig)
+    render()
+    return id
+  }
+
   const removeLayer = (id: string): boolean => {
     if (id === LAYER_IDS.BASE) return false
     const existingConfig = heroViewRepository.get()
     if (!existingConfig) return false
-    const layerExists = existingConfig.layers.some(l => l.id === id)
-    if (!layerExists) return false
+
+    // Find layer in tree (supports nested layers)
+    const layer = findLayerInTree(existingConfig.layers, id)
+    if (!layer) return false
+
+    // Collect all descendant IDs to clean up effects
+    const collectDescendantIds = (node: LayerNodeConfig): string[] => {
+      const ids: string[] = [node.id]
+      if (isGroupLayerConfig(node)) {
+        for (const child of node.children) {
+          ids.push(...collectDescendantIds(child))
+        }
+      }
+      return ids
+    }
+
+    // Delete effect configs for all descendants
+    const idsToCleanup = collectDescendantIds(layer)
+    for (const descendantId of idsToCleanup) {
+      heroFilters.effectManager.deleteEffectConfig(descendantId)
+    }
+
+    // Remove layer from tree via usecase
     layerUsecase.removeLayer(id)
-    heroFilters.effectManager.deleteEffectConfig(id)
     render()
     return true
   }
@@ -658,8 +695,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const toggleLayerVisibility = (id: string) => {
     const existingConfig = heroViewRepository.get()
     if (!existingConfig) return
-    const layer = existingConfig.layers.find(l => l.id === id)
+    const layer = findLayerInTree(existingConfig.layers, id)
     if (!layer) return
+
+    // Use usecase to update config (single source of truth)
     layerUsecase.toggleVisibility(id)
     render()
   }
@@ -667,7 +706,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const updateTextLayerConfig = (id: string, updates: Partial<TextLayerConfig>) => {
     const existingConfig = heroViewRepository.get()
     if (!existingConfig) return
-    const layer = existingConfig.layers.find(l => l.id === id)
+    const layer = findLayerInTree(existingConfig.layers, id)
     if (!layer || layer.type !== 'text') return
 
     if (updates.text !== undefined) {
@@ -950,6 +989,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     addTextLayer,
     addObjectLayer,
     addImageLayer,
+    addGroupLayer,
     removeLayer,
     updateLayerVisibility,
     toggleLayerVisibility,

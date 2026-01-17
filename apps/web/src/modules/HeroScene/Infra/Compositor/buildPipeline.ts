@@ -74,28 +74,30 @@ interface BuildContext {
 
 /**
  * Find base layer (background) from layers array
+ * Note: Returns null if the base layer is not visible
  */
 function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | SurfaceLayerNodeConfig | null {
   // First, check for background-group
   const bgGroup = layers.find(
-    (l): l is GroupLayerNodeConfig => l.type === 'group' && l.id === 'background-group'
+    (l): l is GroupLayerNodeConfig => l.type === 'group' && l.id === 'background-group' && l.visible
   )
   if (bgGroup) {
     const bgSurface = bgGroup.children.find(
-      (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'background'
+      (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'background' && c.visible
     )
     if (bgSurface) return bgSurface
   }
 
   // Fallback: legacy base layer
   for (const layer of layers) {
-    if (layer.type === 'base') return layer
+    if (layer.type === 'base' && layer.visible) return layer
   }
   return null
 }
 
 /**
  * Find all clip-groups (groups with surface layers, excluding background-group)
+ * Note: Skips groups or surfaces that are not visible
  */
 function findAllClipGroups(layers: LayerNodeConfig[]): Array<{
   group: GroupLayerNodeConfig
@@ -111,11 +113,13 @@ function findAllClipGroups(layers: LayerNodeConfig[]): Array<{
   for (const layer of layers) {
     if (layer.type !== 'group') continue
     if (layer.id === 'background-group') continue
+    // Skip hidden groups
+    if (!layer.visible) continue
 
     const group = layer as GroupLayerNodeConfig
 
     const surface = group.children.find(
-      (c): c is SurfaceLayerNodeConfig => c.type === 'surface'
+      (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.visible
     )
     if (!surface) continue
 
