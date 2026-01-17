@@ -34,6 +34,19 @@ pnpm test:run          # Run tests once
 pnpm --filter web test:run <path>   # Run a specific test file
 ```
 
+### Browser Testing (WebGPU/Canvas)
+```bash
+# Run browser tests (headed mode for full WebGPU support)
+HEADED=1 pnpm --filter web test:browser:run
+
+# Run browser tests (headless - WebGPU tests will be skipped)
+pnpm --filter web test:browser:run
+```
+
+Browser tests use Vitest Browser Mode with Playwright. Tests are in `*.browser.test.ts` files.
+- WebGPU requires headed mode on macOS (headless lacks GPU adapter)
+- Test fixtures are in `apps/web/src/modules/HeroScene/Infra/__fixtures__/`
+
 ## Architecture
 
 - **Monorepo structure**: Uses pnpm workspaces with `apps/*` and `packages/*` directories
@@ -55,4 +68,12 @@ Current modules: `Photo`, `PhotoLocal`, `Filter`, `Color`, `Pipe`
 
 - Domain/Application tests run in Node environment
 - Infrastructure and composables tests run in happy-dom environment
-- Tests are co-located with source files (`*.test.ts`)
+- Browser tests (`*.browser.test.ts`) run in real Chromium via Playwright
+- Tests are co-located with source files
+
+### MCP Integration
+
+Playwright MCP is configured in `.mcp.json` for AI-assisted visual inspection:
+- Use `browser_navigate` to open pages
+- Use `browser_screenshot` to capture Canvas rendering
+- Requires Claude Code restart after modifying `.mcp.json`
