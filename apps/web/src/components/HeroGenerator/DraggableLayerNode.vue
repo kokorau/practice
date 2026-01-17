@@ -49,6 +49,8 @@ const props = defineProps<{
   layers: LayerNodeConfig[]
   /** Expanded layer IDs (UI state) */
   expandedLayerIds: Set<string>
+  /** Whether this node is a target of a Processor (next sibling is Processor) */
+  isProcessorTarget?: boolean
 }>()
 
 /** Context menu target type */
@@ -79,7 +81,6 @@ const isExpanded = computed(() => props.expandedLayerIds.has(props.node.id))
 
 // Check if this node has expandable content (only children, modifiers are always visible)
 const hasExpandableContent = computed(() => hasChildren.value)
-const hasModifiers = computed(() => modifiers.value.length > 0)
 
 // Check if this node's processor is selected
 const isProcessorSelected = computed(() =>
@@ -101,6 +102,12 @@ const children = computed((): LayerNodeConfig[] => {
   }
   return []
 })
+
+// Check if a child is a Processor target (next sibling is Processor)
+const isChildProcessorTarget = (index: number): boolean => {
+  const nextSibling = children.value[index + 1]
+  return nextSibling ? isProcessorLayerConfig(nextSibling) : false
+}
 
 // Get node variant for display
 const nodeVariant = computed((): LayerVariant => {
@@ -306,8 +313,8 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         v-if="localDropTarget"
         :position="localDropTarget.position"
       />
-      <!-- Processor Link: 上向き矢印 (対象レイヤーの先頭) -->
-      <svg v-if="hasModifiers" class="processor-link-icon" viewBox="0 0 12 24" fill="none">
+      <!-- Processor Link: 上向き矢印 (対象レイヤーの先頭、次の兄弟がProcessorの場合表示) -->
+      <svg v-if="isProcessorTarget" class="processor-link-icon" viewBox="0 0 12 24" fill="none">
         <!-- 縦線 (矢印先端から下へ、次の要素まで伸ばす) -->
         <line x1="6" y1="6" x2="6" y2="36" stroke="currentColor" stroke-width="1" />
         <!-- 矢印ヘッド (上向き三角形) -->
@@ -323,7 +330,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
       >
         <span class="material-icons">chevron_right</span>
       </button>
-      <span v-else-if="!hasModifiers" class="expand-spacer" />
+      <span v-else-if="!isProcessorTarget" class="expand-spacer" />
 
       <!-- Type Icon -->
       <span class="material-icons layer-icon">{{ getLayerIcon(nodeVariant) }}</span>
@@ -414,7 +421,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
     <!-- Children (Recursive) -->
     <template v-if="isExpanded && children.length > 0 && node.visible">
       <DraggableLayerNode
-        v-for="child in children"
+        v-for="(child, index) in children"
         :key="child.id"
         :node="child"
         :depth="depth + 1"
@@ -422,6 +429,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         :selected-processor-type="selectedProcessorType"
         :layers="layers"
         :expanded-layer-ids="expandedLayerIds"
+        :is-processor-target="isChildProcessorTarget(index)"
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
