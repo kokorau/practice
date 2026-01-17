@@ -62,6 +62,7 @@ import type {
   PresetColorConfig,
   ExportPresetOptions,
   HeroEditorUIState,
+  LayerDropPosition,
 } from '../index'
 
 // ============================================================
@@ -517,6 +518,8 @@ export interface LayerOperations {
     position: { x: number; y: number; anchor: TextAnchorPosition }
     rotation: number
   }>) => void
+  /** Move layer to new position in tree */
+  readonly moveLayer: (layerId: string, position: LayerDropPosition) => void
 }
 
 // ============================================================

@@ -23,6 +23,8 @@ import {
   removeLayerFromTree,
   wrapLayerInGroupInTree,
   isGroupLayerConfig,
+  moveLayerInTree,
+  type LayerDropPosition,
 } from '../Domain/LayerTreeOps'
 
 // Re-export LayerUpdate type for backward compatibility
@@ -232,6 +234,14 @@ export const createHeroViewInMemoryRepository = (
       }
       notifySubscribers()
       return groupId
+    },
+
+    moveLayer: (layerId: string, position: LayerDropPosition) => {
+      config = {
+        ...config,
+        layers: moveLayerInTree(config.layers, layerId, position),
+      }
+      notifySubscribers()
     },
   }
 }

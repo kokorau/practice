@@ -51,6 +51,7 @@ import {
   type ForegroundLayerConfig,
   type TextLayerConfig,
   type HeroViewRepository,
+  type LayerDropPosition,
   createDefaultEffectConfig,
   createDefaultForegroundConfig,
   updateTextLayerText,
@@ -71,6 +72,7 @@ import {
   updateLayer as updateLayerUsecase,
   wrapLayerInGroup as wrapLayerInGroupUsecase,
   wrapLayerWithMask as wrapLayerWithMaskUsecase,
+  moveLayer as moveLayerUsecase,
   createForegroundElementUsecase,
   type ForegroundConfigPort,
   type SelectionPort,
@@ -493,6 +495,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     updateLayer: (layerId: string, updates: Partial<LayerNodeConfig>) => updateLayerUsecase(layerId, updates, heroViewRepository),
     wrapLayerInGroup: (layerId: string) => wrapLayerInGroupUsecase(layerId, heroViewRepository),
     wrapLayerWithMask: (layerId: string) => wrapLayerWithMaskUsecase(layerId, heroViewRepository),
+    moveLayer: (layerId: string, position: LayerDropPosition) => moveLayerUsecase(layerId, position, heroViewRepository),
   }
 
   // ============================================================
@@ -759,6 +762,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     render()
   }
 
+  const moveLayer = (id: string, position: LayerDropPosition) => {
+    layerUsecase.moveLayer(id, position)
+    render()
+  }
+
   // ============================================================
   // Initialize Images Composable
   // ============================================================
@@ -1016,6 +1024,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     groupLayer,
     useAsMask,
     updateTextLayerConfig,
+    moveLayer,
   }
 
   const inkColor: InkColorHelpers = {

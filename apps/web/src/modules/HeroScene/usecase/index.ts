@@ -20,6 +20,7 @@ export {
   updateLayer,
   wrapLayerInGroup,
   wrapLayerWithMask,
+  moveLayer,
 } from './Layer'
 export {
   applyPreset,

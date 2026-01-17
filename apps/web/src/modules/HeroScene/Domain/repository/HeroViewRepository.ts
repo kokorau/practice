@@ -13,6 +13,7 @@ import type {
   ForegroundLayerConfig,
   LayerNodeConfig,
 } from '../HeroViewConfig'
+import type { LayerDropPosition } from '../LayerTreeOps'
 
 /**
  * Subscribe callback type
@@ -120,4 +121,11 @@ export interface HeroViewRepository {
    * @returns 作成されたグループのID、失敗時はnull
    */
   wrapLayerWithMask(layerId: string): string | null
+
+  /**
+   * レイヤーを移動（ドラッグ&ドロップ用）
+   * @param layerId 移動するレイヤーのID
+   * @param position 移動先の位置
+   */
+  moveLayer(layerId: string, position: LayerDropPosition): void
 }

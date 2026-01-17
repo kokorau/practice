@@ -8,7 +8,6 @@ import type {
 } from '../modules/HeroScene'
 import {
   findLayerInTree,
-  moveLayerInTree,
 } from '../modules/HeroScene'
 import type { ProcessorType } from './useLayerSelection'
 
@@ -54,6 +53,8 @@ export interface SceneOperationCallbacks {
   groupLayer: (layerId: string) => string | null
   /** Wrap layer with mask in a new group. Returns group ID or null if failed */
   useAsMask: (layerId: string) => string | null
+  /** Move layer to new position in tree */
+  moveLayer: (layerId: string, position: LayerDropPosition) => void
 }
 
 /**
@@ -157,7 +158,6 @@ export function useLayerOperations(
   options: UseLayerOperationsOptions,
 ): UseLayerOperationsReturn {
   const {
-    repository,
     heroViewConfig,
     expandedLayerIds,
     sceneCallbacks,
@@ -303,11 +303,8 @@ export function useLayerOperations(
   // Handlers - DnD Move
   // ============================================================
   const handleMoveNode = (nodeId: string, position: LayerDropPosition) => {
-    const config = repository.get()
-    if (!config) return
-
-    const newLayers = moveLayerInTree(config.layers, nodeId, position)
-    repository.set({ ...config, layers: newLayers })
+    // Delegate to sceneCallbacks - usecase handles repository update and render
+    sceneCallbacks.moveLayer(nodeId, position)
   }
 
   const handleMoveModifier = (_sourceNodeId: string, _modifierIndex: number, _position: ModifierDropPosition) => {
