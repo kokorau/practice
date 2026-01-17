@@ -27,6 +27,10 @@
               "width2": 7,
               "angle": 4
             },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            },
             "filters": [
               {
                 "type": "effect",
@@ -87,6 +91,10 @@
             "visible": true,
             "surface": {
               "type": "solid"
+            },
+            "colors": {
+              "primary": "Bt",
+              "secondary": "Bs"
             },
             "filters": [
               {

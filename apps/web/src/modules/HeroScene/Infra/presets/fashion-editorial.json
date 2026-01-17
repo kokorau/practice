@@ -24,6 +24,10 @@
             "surface": {
               "type": "solid"
             },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            },
             "filters": [
               {
                 "type": "effect",
@@ -87,6 +91,10 @@
               "width1": 2,
               "width2": 8,
               "angle": 0
+            },
+            "colors": {
+              "primary": "Bt",
+              "secondary": "Bs"
             },
             "filters": [
               {
