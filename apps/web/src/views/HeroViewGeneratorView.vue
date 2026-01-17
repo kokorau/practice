@@ -46,6 +46,7 @@ import { useForegroundElement } from '../composables/useForegroundElement'
 import { useContextMenu } from '../composables/useContextMenu'
 import { usePresetActions } from '../composables/usePresetActions'
 import { usePaletteStyles } from '../composables/usePaletteStyles'
+import { useHeroGeneratorPanelHandlers, useHeroGeneratorColorHandlers } from '../composables/HeroGenerator'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
 import DebugPanel from '../components/HeroGenerator/DebugPanel.vue'
@@ -87,6 +88,15 @@ const {
   foundationHex,
   foundationColor,
 } = useSiteColors()
+
+// ============================================================
+// Color State Update Handler
+// ============================================================
+const { handleColorStateUpdate } = useHeroGeneratorColorHandlers({
+  brand: { hue, saturation, value },
+  accent: { hue: accentHue, saturation: accentSaturation, value: accentValue },
+  foundation: { hue: foundationHue, saturation: foundationSaturation, value: foundationValue },
+})
 
 // ============================================================
 // Primitive & Semantic Palette Generation
@@ -387,120 +397,26 @@ const {
 })
 
 // ============================================================
-// HeroSidebar Event Handlers
-// ============================================================
-
-const handleColorStateUpdate = (
-  colorType: 'brand' | 'accent' | 'foundation',
-  key: 'hue' | 'saturation' | 'value' | 'hex',
-  newValue: number
-) => {
-  switch (colorType) {
-    case 'brand':
-      if (key === 'hue') hue.value = newValue
-      else if (key === 'saturation') saturation.value = newValue
-      else if (key === 'value') value.value = newValue
-      break
-    case 'accent':
-      if (key === 'hue') accentHue.value = newValue
-      else if (key === 'saturation') accentSaturation.value = newValue
-      else if (key === 'value') accentValue.value = newValue
-      break
-    case 'foundation':
-      if (key === 'hue') foundationHue.value = newValue
-      else if (key === 'saturation') foundationSaturation.value = newValue
-      else if (key === 'value') foundationValue.value = newValue
-      break
-  }
-}
-
-// ============================================================
 // RightPropertyPanel Event Handlers
 // ============================================================
-
-const handleForegroundUpdate = (key: string, value: unknown) => {
-  switch (key) {
-    case 'elementColorKey':
-      selectedElementColorKey.value = value as HeroPrimitiveKey
-      break
-    case 'elementContent':
-      selectedElementContent.value = value as string
-      break
-    case 'elementPosition':
-      selectedElementPosition.value = value as typeof selectedElementPosition.value
-      break
-    case 'elementFontSize':
-      selectedElementFontSize.value = value as number
-      break
-    case 'elementFontWeight':
-      selectedElementFontWeight.value = value as number
-      break
-    case 'elementLetterSpacing':
-      selectedElementLetterSpacing.value = value as number
-      break
-    case 'elementLineHeight':
-      selectedElementLineHeight.value = value as number
-      break
-  }
-}
-
-const handleBackgroundUpdate = (key: string, value: unknown) => {
-  switch (key) {
-    case 'colorKey1':
-      heroScene.background.backgroundColorKey1.value = value as typeof heroScene.background.backgroundColorKey1.value
-      break
-    case 'colorKey2':
-      heroScene.background.backgroundColorKey2.value = value as typeof heroScene.background.backgroundColorKey2.value
-      break
-    case 'uploadImage':
-      heroScene.background.setBackgroundImage(value as File)
-      break
-    case 'clearImage':
-      heroScene.background.clearBackgroundImage()
-      break
-    case 'selectPattern':
-      if (value !== null) heroScene.pattern.selectedBackgroundIndex.value = value as number
-      break
-    case 'loadRandom':
-      heroScene.background.loadRandomBackgroundImage()
-      break
-    case 'surfaceParams':
-      heroScene.background.updateBackgroundSurfaceParams(value as Record<string, unknown>)
-      break
-  }
-}
-
-const handleMaskUpdate = (key: string, value: unknown) => {
-  switch (key) {
-    case 'colorKey1':
-      heroScene.mask.maskColorKey1.value = value as typeof heroScene.mask.maskColorKey1.value
-      break
-    case 'colorKey2':
-      heroScene.mask.maskColorKey2.value = value as typeof heroScene.mask.maskColorKey2.value
-      break
-    case 'uploadImage':
-      heroScene.mask.setMaskImage(value as File)
-      break
-    case 'clearImage':
-      heroScene.mask.clearMaskImage()
-      break
-    case 'selectPattern':
-      if (value !== null) heroScene.pattern.selectedMidgroundTextureIndex.value = value as number
-      break
-    case 'loadRandom':
-      heroScene.mask.loadRandomMaskImage()
-      break
-    case 'surfaceParams':
-      heroScene.mask.updateSurfaceParams(value as Record<string, unknown>)
-      break
-    case 'selectedShapeIndex':
-      heroScene.pattern.selectedMaskIndex.value = value as number
-      break
-    case 'shapeParams':
-      heroScene.mask.updateMaskShapeParams(value as Record<string, unknown>)
-      break
-  }
-}
+const {
+  handleForegroundUpdate,
+  handleBackgroundUpdate,
+  handleMaskUpdate,
+} = useHeroGeneratorPanelHandlers({
+  foregroundRefs: {
+    selectedElementColorKey,
+    selectedElementContent,
+    selectedElementPosition,
+    selectedElementFontSize,
+    selectedElementFontWeight,
+    selectedElementLetterSpacing,
+    selectedElementLineHeight,
+  },
+  background: heroScene.background,
+  mask: heroScene.mask,
+  pattern: heroScene.pattern,
+})
 
 // ============================================================
 // Image Layer Handling

@@ -15,6 +15,7 @@ import type {
   BaseLayerNodeConfig,
   ImageLayerNodeConfig,
   HeroPrimitiveKey,
+  TextLayerNodeConfig,
 } from '../../Domain/HeroViewConfig'
 import {
   getProcessorMask,
@@ -36,6 +37,7 @@ import {
   createEffectChainCompositorNode,
   createOverlayCompositorNode,
   createCanvasOutputNode,
+  createTextRenderNode,
   type EffectConfig,
 } from './index'
 import { createImageRenderNode } from './nodes/ImageRenderNode'
@@ -139,6 +141,24 @@ function findAllImageLayers(layers: LayerNodeConfig[]): ImageLayerNodeConfig[] {
     } else if (layer.type === 'group') {
       // Recursively search in groups
       results.push(...findAllImageLayers(layer.children))
+    }
+  }
+
+  return results
+}
+
+/**
+ * Find all text layers (including nested in groups)
+ */
+function findAllTextLayers(layers: LayerNodeConfig[]): TextLayerNodeConfig[] {
+  const results: TextLayerNodeConfig[] = []
+
+  for (const layer of layers) {
+    if (layer.type === 'text' && layer.visible) {
+      results.push(layer)
+    } else if (layer.type === 'group') {
+      // Recursively search in groups
+      results.push(...findAllTextLayers(layer.children))
     }
   }
 
@@ -469,7 +489,18 @@ export function buildPipeline(
     layerNodes.push(imageNode)
   }
 
-  // 4. Build overlay compositor (combines all layers)
+  // 4. Build text layer nodes
+  const textLayers = findAllTextLayers(config.layers)
+  for (let i = 0; i < textLayers.length; i++) {
+    const textLayer = textLayers[i]!
+    const textId = textLayer.id || `text-${i}`
+
+    const textNode = createTextRenderNode(textId, textLayer)
+    nodes.push(textNode)
+    layerNodes.push(textNode)
+  }
+
+  // 5. Build overlay compositor (combines all layers)
   let finalNode: TextureProducingNode
 
   if (layerNodes.length === 0) {
@@ -482,7 +513,7 @@ export function buildPipeline(
     finalNode = overlayNode
   }
 
-  // 4. Apply root-level processor nodes (global masks/effects)
+  // 6. Apply root-level processor nodes (global masks/effects)
   const rootProcessors = findRootProcessors(config.layers)
   for (let i = 0; i < rootProcessors.length; i++) {
     const processor = rootProcessors[i]!
@@ -490,7 +521,7 @@ export function buildPipeline(
     finalNode = buildProcessorNode(processorId, finalNode, processor, nodes)
   }
 
-  // 5. Build canvas output node
+  // 7. Build canvas output node
   const outputNode = createCanvasOutputNode('output', finalNode)
   nodes.push(outputNode)
 

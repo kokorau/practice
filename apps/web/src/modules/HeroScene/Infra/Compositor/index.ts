@@ -37,6 +37,10 @@ export {
   createImageRenderNode,
   type ImageRenderNodeConfig,
   type ImagePosition,
+  // Text
+  TextRenderNode,
+  createTextRenderNode,
+  type TextRenderNodeConfig,
 } from './nodes'
 
 // CompositorNode implementations

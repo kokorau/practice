@@ -583,3 +583,241 @@ describe('Root-Level Processor Support', () => {
     expect(renderer.compositeToCanvas).toHaveBeenCalled()
   })
 })
+
+// ============================================================
+// Text Layer Tests
+// ============================================================
+
+describe('Text Layer Support', () => {
+  it('creates text render node for text layer', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'solid' },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'text',
+          id: 'text-layer-1',
+          name: 'Title',
+          visible: true,
+          text: 'Hello World',
+          fontFamily: 'sans-serif',
+          fontSize: 48,
+          fontWeight: 700,
+          letterSpacing: 0,
+          lineHeight: 1.2,
+          color: '#ffffff',
+          position: { x: 0.5, y: 0.5, anchor: 'center' },
+          rotation: 0,
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    // Should have text render node
+    const textNode = result.nodes.find(n => n.id === 'text-layer-1')
+    expect(textNode).toBeDefined()
+    expect(textNode?.type).toBe('render')
+  })
+
+  it('creates multiple text render nodes', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'solid' },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'text',
+          id: 'text-title',
+          name: 'Title',
+          visible: true,
+          text: 'Title Text',
+          fontFamily: 'sans-serif',
+          fontSize: 64,
+          fontWeight: 700,
+          letterSpacing: 0,
+          lineHeight: 1.2,
+          color: '#ffffff',
+          position: { x: 0.5, y: 0.3, anchor: 'center' },
+          rotation: 0,
+        },
+        {
+          type: 'text',
+          id: 'text-subtitle',
+          name: 'Subtitle',
+          visible: true,
+          text: 'Subtitle Text',
+          fontFamily: 'sans-serif',
+          fontSize: 32,
+          fontWeight: 400,
+          letterSpacing: 0,
+          lineHeight: 1.4,
+          color: '#cccccc',
+          position: { x: 0.5, y: 0.6, anchor: 'center' },
+          rotation: 0,
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    // Should have both text nodes
+    const titleNode = result.nodes.find(n => n.id === 'text-title')
+    const subtitleNode = result.nodes.find(n => n.id === 'text-subtitle')
+
+    expect(titleNode).toBeDefined()
+    expect(subtitleNode).toBeDefined()
+  })
+
+  it('ignores invisible text layers', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'solid' },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'text',
+          id: 'text-hidden',
+          name: 'Hidden Text',
+          visible: false,  // Not visible
+          text: 'Hidden',
+          fontFamily: 'sans-serif',
+          fontSize: 48,
+          fontWeight: 400,
+          letterSpacing: 0,
+          lineHeight: 1.2,
+          color: '#ffffff',
+          position: { x: 0.5, y: 0.5, anchor: 'center' },
+          rotation: 0,
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    // Should NOT have text node for hidden layer
+    const textNode = result.nodes.find(n => n.id === 'text-hidden')
+    expect(textNode).toBeUndefined()
+  })
+
+  it('includes text layers in overlay compositor', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'solid' },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'text',
+          id: 'text-layer-1',
+          name: 'Text',
+          visible: true,
+          text: 'Hello',
+          fontFamily: 'sans-serif',
+          fontSize: 48,
+          fontWeight: 400,
+          letterSpacing: 0,
+          lineHeight: 1.2,
+          color: '#ffffff',
+          position: { x: 0.5, y: 0.5, anchor: 'center' },
+          rotation: 0,
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    // Should have overlay node (multiple layers: background + text)
+    const overlayNode = result.nodes.find(n => n.id === 'scene')
+    expect(overlayNode).toBeDefined()
+    expect(overlayNode?.type).toBe('compositor')
+  })
+})

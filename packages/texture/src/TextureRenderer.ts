@@ -85,6 +85,8 @@ export interface PostEffectSpec {
   shader: string
   uniforms: ArrayBuffer
   bufferSize: number
+  /** Sampler filter mode (default: 'linear') */
+  samplerFilter?: 'linear' | 'nearest'
 }
 
 /**
@@ -1025,7 +1027,10 @@ export class TextureRenderer {
   }
 
   private getOrCreatePostEffectPipeline(spec: PostEffectSpec): PostEffectPipelineCache {
-    const existing = this.postEffectCache.get(spec.shader)
+    // Include sampler filter in cache key to support different sampling modes
+    const filterMode = spec.samplerFilter || 'linear'
+    const cacheKey = `${spec.shader}:${filterMode}`
+    const existing = this.postEffectCache.get(cacheKey)
     if (existing) {
       return existing
     }
@@ -1056,12 +1061,12 @@ export class TextureRenderer {
     })
 
     const sampler = this.device.createSampler({
-      magFilter: 'linear',
-      minFilter: 'linear',
+      magFilter: filterMode,
+      minFilter: filterMode,
     })
 
     const cached: PostEffectPipelineCache = { pipeline, uniformBuffer, sampler }
-    this.postEffectCache.set(spec.shader, cached)
+    this.postEffectCache.set(cacheKey, cached)
     return cached
   }
 
