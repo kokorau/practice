@@ -13,6 +13,7 @@ import type {
   CompositorNodeLike,
 } from '../../../Domain/Compositor'
 import type { TextureOwner } from '../../../Domain/Compositor/TextureOwner'
+import { isTextureOwner } from '../../../Domain/Compositor/TextureOwner'
 import { getTextureFromNode } from '../../../Domain/Compositor'
 import type { EffectType } from '../../../Domain/EffectRegistry'
 import { EFFECT_REGISTRY, isValidEffectType } from '../../../Domain/EffectRegistry'
@@ -85,6 +86,19 @@ export class EffectRenderNode extends BaseTextureOwner implements RenderNode, Te
     if (!isValidEffectType(config.effectType)) {
       throw new Error(`[EffectRenderNode] Invalid effect type "${config.effectType}" (id: ${config.id})`)
     }
+  }
+
+  /**
+   * Check if this node or the input node is dirty.
+   * Overrides base isDirty to propagate dirty state from input.
+   */
+  get isDirty(): boolean {
+    if (this._isDirty) return true
+
+    // Check if input is dirty (dirty propagation)
+    if (isTextureOwner(this.inputNode) && this.inputNode.isDirty) return true
+
+    return false
   }
 
   /**

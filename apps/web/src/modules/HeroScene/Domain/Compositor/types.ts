@@ -114,13 +114,21 @@ export interface CompositorRenderer {
     outputTexture: GPUTexture
   ): void
 
-  /** Apply a dual-texture effect (e.g., masking) to offscreen */
+  /** Apply a dual-texture effect (e.g., masking) to offscreen (legacy - uses texture pool index) */
   applyDualTextureEffectToOffscreen(
     spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
     primaryTexture: GPUTexture,
     secondaryTexture: GPUTexture,
     outputTextureIndex: number
   ): GPUTexture
+
+  /** Apply a dual-texture effect (e.g., masking) to owned texture (TextureOwner pattern) */
+  applyDualTextureEffectToTexture(
+    spec: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void
 
   /** Composite an offscreen texture to the canvas */
   compositeToCanvas(

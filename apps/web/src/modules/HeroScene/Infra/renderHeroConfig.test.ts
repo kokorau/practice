@@ -46,6 +46,8 @@ function createMockRenderer(): TextureRendererLike & {
 
     applyDualTextureEffectToOffscreen: vi.fn(() => mockTexture),
 
+    applyDualTextureEffectToTexture: vi.fn(),
+
     applyPostEffectToOffscreen: vi.fn(() => mockTexture),
 
     applyPostEffectToTexture: vi.fn(),

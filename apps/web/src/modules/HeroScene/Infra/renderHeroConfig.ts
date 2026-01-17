@@ -87,6 +87,13 @@ export interface TextureRendererLike {
     secondaryTexture: GPUTexture,
     outputTextureIndex: number
   ): GPUTexture
+  /** Apply two-texture effect to owned texture (TextureOwner pattern) */
+  applyDualTextureEffectToTexture(
+    spec: unknown,
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    outputTexture: GPUTexture
+  ): void
   /** Apply post-effect to offscreen texture */
   applyPostEffectToOffscreen(
     effect: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
