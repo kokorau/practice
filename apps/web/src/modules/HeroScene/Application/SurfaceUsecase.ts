@@ -11,7 +11,9 @@ import type {
   SurfaceConfig,
   LayerNodeConfig,
   DepthMapType,
+  SurfaceColorsConfig,
 } from '../Domain/HeroViewConfig'
+import { DEFAULT_LAYER_BACKGROUND_COLORS, DEFAULT_LAYER_MASK_COLORS } from '../Domain/HeroViewConfig'
 
 // ============================================================
 // Types
@@ -214,19 +216,21 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
     updateColorKey(key: 'primary' | 'secondary', value: HeroPrimitiveKey | 'auto'): void {
       const layer = getSelectedLayer()
       if (!layer) return
+      if (layer.type !== 'surface' && layer.type !== 'base') return
 
+      // Get default colors based on layer type
       const colorPath = getColorPath(layer)
-      const config = repository.get()
-      const currentColors = config.colors[colorPath]
+      const defaults = colorPath === 'background' ? DEFAULT_LAYER_BACKGROUND_COLORS : DEFAULT_LAYER_MASK_COLORS
+      const currentColors: SurfaceColorsConfig = layer.colors ?? defaults
 
-      repository.set({
-        ...config,
+      // Update the layer's colors field
+      const layerId = selection.getSelectedLayerId()
+      if (!layerId) return
+
+      repository.updateLayer(layerId, {
         colors: {
-          ...config.colors,
-          [colorPath]: {
-            ...currentColors,
-            [key]: value,
-          },
+          ...currentColors,
+          [key]: value,
         },
       })
     },

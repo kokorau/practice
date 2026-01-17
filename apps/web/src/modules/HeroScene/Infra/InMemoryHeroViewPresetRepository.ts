@@ -21,14 +21,16 @@ import boldStatement from './presets/bold-statement.json'
 // Preset Data
 // ============================================================
 
+// Note: JSON presets may use legacy format (colors.background/mask).
+// These are migrated when applied via migrateHeroViewConfig().
 const PRESETS: HeroViewPreset[] = [
-  corporateClean as HeroViewPreset,
-  creativeStudio as HeroViewPreset,
-  techStartup as HeroViewPreset,
-  fashionEditorial as HeroViewPreset,
-  retroPop as HeroViewPreset,
-  minimalZen as HeroViewPreset,
-  boldStatement as HeroViewPreset,
+  corporateClean as unknown as HeroViewPreset,
+  creativeStudio as unknown as HeroViewPreset,
+  techStartup as unknown as HeroViewPreset,
+  fashionEditorial as unknown as HeroViewPreset,
+  retroPop as unknown as HeroViewPreset,
+  minimalZen as unknown as HeroViewPreset,
+  boldStatement as unknown as HeroViewPreset,
 ]
 
 // ============================================================

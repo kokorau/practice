@@ -42,7 +42,6 @@ import type { Oklch } from '@practice/color'
 import type { PrimitivePalette } from '../../SemanticColorPalette/Domain'
 import type {
   HeroViewConfig,
-  HeroColorsConfig,
   HeroPrimitiveKey,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
@@ -61,6 +60,9 @@ import {
   // Normalization helpers (Phase 13)
   getSurfaceAsLegacy,
   getMaskAsLegacy,
+  // Default colors for surface layers
+  DEFAULT_LAYER_BACKGROUND_COLORS,
+  DEFAULT_LAYER_MASK_COLORS,
 } from '../Domain/HeroViewConfig'
 import type { LayerEffectConfig } from '../Domain/EffectSchema'
 import { EFFECT_REGISTRY, EFFECT_TYPES, type EffectType } from '../Domain/EffectRegistry'
@@ -726,42 +728,61 @@ function findClipGroupContents(layers: LayerNodeConfig[]): {
 }
 
 // ============================================================
-// Surface Color Resolution (Per-surface with fallback)
+// Surface Color Resolution (Per-surface colors required)
 // ============================================================
 
 /**
- * Get background colors from surface layer or fallback to config.colors
+ * Get background colors from surface layer
+ * Merges with defaults to handle partial/incomplete color objects
  */
 function getBackgroundColors(
-  layer: BaseLayerNodeConfig | SurfaceLayerNodeConfig | null,
-  configColors: HeroColorsConfig
+  layer: BaseLayerNodeConfig | SurfaceLayerNodeConfig | null
 ): { primary: HeroPrimitiveKey; secondary: HeroPrimitiveKey | 'auto' } {
+  // DEFAULT_LAYER_BACKGROUND_COLORS.primary is 'B' (HeroPrimitiveKey), cast needed due to SurfaceColorsConfig type
+  const defaultPrimary = DEFAULT_LAYER_BACKGROUND_COLORS.primary as HeroPrimitiveKey
+  const defaultSecondary = DEFAULT_LAYER_BACKGROUND_COLORS.secondary
+
   if (layer?.colors) {
-    // Use per-surface colors (auto is not allowed for background primary)
+    // Use per-surface colors, falling back to defaults for missing values
+    const primary = layer.colors.primary
+    const secondary = layer.colors.secondary
+
     return {
-      primary: layer.colors.primary === 'auto' ? configColors.background.primary : layer.colors.primary,
-      secondary: layer.colors.secondary,
+      // Resolve 'auto' or undefined to default for background primary
+      primary: (primary == null || primary === 'auto') ? defaultPrimary : primary,
+      // Use secondary if defined, otherwise default
+      secondary: secondary ?? defaultSecondary,
     }
   }
-  // Fallback to config.colors
-  return configColors.background
+  // Fallback to defaults
+  return {
+    primary: defaultPrimary,
+    secondary: defaultSecondary,
+  }
 }
 
 /**
- * Get mask colors from surface layer or fallback to config.colors
+ * Get mask colors from surface layer
+ * Merges with defaults to handle partial/incomplete color objects
  */
 function getMaskColors(
-  layer: SurfaceLayerNodeConfig | null,
-  configColors: HeroColorsConfig
+  layer: SurfaceLayerNodeConfig | null
 ): { primary: HeroPrimitiveKey | 'auto'; secondary: HeroPrimitiveKey | 'auto' } {
+  const defaultPrimary = DEFAULT_LAYER_MASK_COLORS.primary
+  const defaultSecondary = DEFAULT_LAYER_MASK_COLORS.secondary
+
   if (layer?.colors) {
+    // Use per-surface colors, falling back to defaults for missing values
     return {
-      primary: layer.colors.primary,
-      secondary: layer.colors.secondary,
+      primary: layer.colors.primary ?? defaultPrimary,
+      secondary: layer.colors.secondary ?? defaultSecondary,
     }
   }
-  // Fallback to config.colors
-  return configColors.mask
+  // Fallback to defaults
+  return {
+    primary: defaultPrimary,
+    secondary: defaultSecondary,
+  }
 }
 
 // ============================================================
@@ -812,16 +833,16 @@ export async function renderHeroConfig(
   const baseLayer = findBaseLayer(config.layers)
   const clipGroupContents = findClipGroupContents(config.layers)
 
-  // Resolve background colors (per-surface with fallback to config.colors)
-  const bgColors = getBackgroundColors(baseLayer, configColors)
+  // Resolve background colors from surface layer
+  const bgColors = getBackgroundColors(baseLayer)
   const bgColor1 = getColorFromPalette(palette, bgColors.primary)
   const canvasSurfaceKey = isDark ? 'F8' : 'F1'
   const bgColor2 = bgColors.secondary === 'auto'
     ? getColorFromPalette(palette, canvasSurfaceKey)
     : getColorFromPalette(palette, bgColors.secondary)
 
-  // Resolve mask colors (per-surface with fallback to config.colors)
-  const maskColors = getMaskColors(clipGroupContents?.surface ?? null, configColors)
+  // Resolve mask colors from surface layer
+  const maskColors = getMaskColors(clipGroupContents?.surface ?? null)
   // midgroundTextureColor1: mask.primary or auto-shifted from surface
   const midgroundTextureColor1 = getMidgroundTextureColor(
     palette,

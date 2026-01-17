@@ -65,14 +65,6 @@ export const createHeroViewInMemoryRepository = (
         colors: {
           ...config.colors,
           ...colors,
-          background: {
-            ...config.colors.background,
-            ...(colors.background ?? {}),
-          },
-          mask: {
-            ...config.colors.mask,
-            ...(colors.mask ?? {}),
-          },
         },
       }
       notifySubscribers()

@@ -680,7 +680,11 @@ describe('renderHeroConfig', () => {
         cutout: false,
       })
 
-      config.colors.mask.primary = 'auto'
+      // Set auto color on surface layer (per-surface colors)
+      const surfaceLayer = config.layers[1]
+      if (surfaceLayer && surfaceLayer.type === 'surface') {
+        surfaceLayer.colors = { primary: 'auto', secondary: 'auto' }
+      }
 
       await renderHeroConfig(renderer, config, lightPalette)
 
