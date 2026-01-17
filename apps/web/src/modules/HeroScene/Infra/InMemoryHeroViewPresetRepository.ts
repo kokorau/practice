@@ -20,6 +20,7 @@ import boldStatement from './presets/bold-statement.json'
 import testLevel1BgOnly from './presets/test-level1-bg-only.json'
 import testLevel2BgSurface from './presets/test-level2-bg-surface.json'
 import testLevel3WithMask from './presets/test-level3-with-mask.json'
+import testLevel4MultiMask from './presets/test-level4-multi-mask.json'
 
 // ============================================================
 // Preset Data
@@ -32,6 +33,7 @@ const PRESETS: HeroViewPreset[] = [
   testLevel1BgOnly as unknown as HeroViewPreset,
   testLevel2BgSurface as unknown as HeroViewPreset,
   testLevel3WithMask as unknown as HeroViewPreset,
+  testLevel4MultiMask as unknown as HeroViewPreset,
   // Production presets
   corporateClean as unknown as HeroViewPreset,
   creativeStudio as unknown as HeroViewPreset,
