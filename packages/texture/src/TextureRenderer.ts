@@ -1,7 +1,31 @@
 import type { TextureRenderSpec } from './Domain'
 import { imageShader } from './shaders/image'
 import { positionedImageShader, type PositionedImageParams } from './shaders/positionedImage'
-import { maskBlendState } from './shaders/common'
+import { maskBlendState, fullscreenVertex } from './shaders/common'
+
+/**
+ * Passthrough shader for compositing textures with alpha blending
+ */
+const passthroughShader = /* wgsl */ `
+${fullscreenVertex}
+
+struct PassthroughParams {
+  viewportWidth: f32,
+  viewportHeight: f32,
+  _padding1: f32,
+  _padding2: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: PassthroughParams;
+@group(0) @binding(1) var inputSampler: sampler;
+@group(0) @binding(2) var inputTexture: texture_2d<f32>;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+  return textureSample(inputTexture, inputSampler, uv);
+}
+`
 
 interface PipelineCache {
   pipeline: GPURenderPipeline
@@ -39,6 +63,12 @@ interface DualTexturePipelineCache {
   sampler: GPUSampler
 }
 
+interface PassthroughPipelineCache {
+  pipeline: GPURenderPipeline
+  uniformBuffer: GPUBuffer
+  sampler: GPUSampler
+}
+
 /**
  * 2テクスチャエフェクト用のスペック
  */
@@ -71,6 +101,7 @@ export class TextureRenderer {
   private postEffectCache: Map<string, PostEffectPipelineCache> = new Map()
   private clipMaskCache: Map<string, ClipMaskPipelineCache> = new Map()
   private dualTextureCache: Map<string, DualTexturePipelineCache> = new Map()
+  private passthroughPipelineCache: PassthroughPipelineCache | null = null
 
   // オフスクリーンレンダリング用のテクスチャ（ダブルバッファ）
   private offscreenTextures: [GPUTexture | null, GPUTexture | null] = [null, null]
@@ -556,6 +587,129 @@ export class TextureRenderer {
   }
 
   /**
+   * Apply dual-texture effect to offscreen texture instead of canvas
+   * Used for combining surface + mask, then applying effects before final compositing
+   * Returns the output texture for further processing
+   */
+  applyDualTextureEffectToOffscreen(
+    spec: DualTextureSpec,
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    outputTextureIndex: 0 | 1
+  ): GPUTexture {
+    const target = this.getOrCreateOffscreenTexture(outputTextureIndex)
+    const cached = this.getOrCreateDualTexturePipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Create bind group for these specific textures
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: primaryTexture.createView() },
+        { binding: 3, resource: secondaryTexture.createView() },
+      ],
+    })
+
+    // Render to offscreen texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: target.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cached.pipeline)
+    renderPass.setBindGroup(0, bindGroup)
+    renderPass.draw(3)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+
+    return target
+  }
+
+  /**
+   * Composite an offscreen texture to canvas with alpha blending
+   * Used for final layer compositing after mask + effects
+   */
+  compositeToCanvas(
+    inputTexture: GPUTexture,
+    options?: { clear?: boolean }
+  ): void {
+    const cached = this.getOrCreatePassthroughPipeline()
+    const viewport = this.getViewport()
+
+    // Write viewport uniforms
+    const uniformData = new Float32Array([
+      viewport.width,
+      viewport.height,
+      0, // padding
+      0, // padding
+    ])
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, uniformData)
+
+    // Create bind group for this texture
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: inputTexture.createView() },
+      ],
+    })
+
+    this.executeRender(cached.pipeline, bindGroup, options)
+  }
+
+  private getOrCreatePassthroughPipeline(): PassthroughPipelineCache {
+    if (this.passthroughPipelineCache) {
+      return this.passthroughPipelineCache
+    }
+
+    const shaderModule = this.device.createShaderModule({
+      code: passthroughShader,
+    })
+
+    const pipeline = this.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: shaderModule,
+        entryPoint: 'vertexMain',
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [{ format: this.format, blend: maskBlendState }],
+      },
+      primitive: {
+        topology: 'triangle-list',
+      },
+    })
+
+    const uniformBuffer = this.device.createBuffer({
+      size: 16, // 4 floats
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    const sampler = this.device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+    })
+
+    this.passthroughPipelineCache = { pipeline, uniformBuffer, sampler }
+    return this.passthroughPipelineCache
+  }
+
+  /**
    * Apply post-effect shader to offscreen texture (for ClipGroup Effect)
    * Renders to offscreen buffer instead of main canvas
    * Returns the output texture for further processing (e.g., clip mask)
@@ -938,6 +1092,11 @@ export class TextureRenderer {
       cached.uniformBuffer.destroy()
     }
     this.dualTextureCache.clear()
+
+    if (this.passthroughPipelineCache) {
+      this.passthroughPipelineCache.uniformBuffer.destroy()
+      this.passthroughPipelineCache = null
+    }
 
     for (const tex of this.offscreenTextures) {
       tex?.destroy()

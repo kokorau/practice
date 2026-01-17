@@ -1,0 +1,96 @@
+{
+  "id": "test-level6-mask-with-effect",
+  "name": "Test Level 6: Mask with Layer-specific Effect",
+  "config": {
+    "viewport": { "width": 1280, "height": 720 },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "grid",
+              "lineWidth": 2,
+              "cellSize": 40
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            }
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group",
+        "name": "Clip Group with Effect",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-mask",
+            "name": "Stripe Surface",
+            "visible": true,
+            "surface": {
+              "type": "stripe",
+              "width1": 10,
+              "width2": 10,
+              "angle": 45
+            },
+            "colors": {
+              "primary": "Bt",
+              "secondary": "Bs"
+            }
+          },
+          {
+            "type": "processor",
+            "id": "processor-mask",
+            "name": "Circle Mask with Blur",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "mask",
+                "enabled": true,
+                "shape": {
+                  "type": "circle",
+                  "centerX": 0.5,
+                  "centerY": 0.5,
+                  "radius": 0.35,
+                  "cutout": false
+                },
+                "invert": false,
+                "feather": 0
+              },
+              {
+                "type": "effect",
+                "id": "blur",
+                "params": {
+                  "enabled": true,
+                  "radius": 12
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": { "hue": 220, "saturation": 70, "value": 60 },
+    "accent": { "hue": 30, "saturation": 80, "value": 60 },
+    "foundation": { "hue": 0, "saturation": 0, "value": 97 }
+  }
+}

@@ -98,6 +98,21 @@ export interface TextureRendererLike {
     secondaryTexture: GPUTexture,
     options?: { clear?: boolean }
   ): void
+  /** Apply two-texture effect to offscreen texture */
+  applyDualTextureEffectToOffscreen(
+    spec: DualTextureSpec,
+    primaryTexture: GPUTexture,
+    secondaryTexture: GPUTexture,
+    outputTextureIndex: 0 | 1
+  ): GPUTexture
+  /** Apply post-effect to offscreen texture */
+  applyPostEffectToOffscreen(
+    effect: { shader: string; uniforms: ArrayBuffer; bufferSize: number },
+    inputTexture: GPUTexture,
+    outputTextureIndex: 0 | 1
+  ): GPUTexture
+  /** Composite offscreen texture to canvas with alpha blending */
+  compositeToCanvas(inputTexture: GPUTexture, options?: { clear?: boolean }): void
 }
 
 export interface RenderHeroConfigOptions {
@@ -562,15 +577,19 @@ function renderMaskWithGreymapPipeline(
  * 1. Render surface pattern to offscreen[0]
  * 2. Render greymap mask to offscreen[1]
  * 3. Combine surface + mask with alpha using two-texture shader
- * 4. Composite result onto canvas with alpha blending
+ * 4. If effects: Apply effects to offscreen texture (ping-pong)
+ * 5. Composite result onto canvas with alpha blending
  *
- * This approach properly shows the background through transparent mask areas.
+ * This approach properly shows the background through transparent mask areas,
+ * and ensures effects are applied only to this layer, not the entire canvas.
  */
 function renderLayerWithMask(
   renderer: TextureRendererLike,
   surfaceSpec: TextureRenderSpec,
   greymapSpec: GreymapMaskSpec,
-  viewport: Viewport
+  viewport: Viewport,
+  effects?: SingleEffectConfig[],
+  scale: number = 1
 ): void {
   console.log('[renderLayerWithMask] Rendering surface to offscreen[0]')
   // Stage 1: Render surface to offscreen[0]
@@ -587,11 +606,46 @@ function renderLayerWithMask(
     1
   )
 
-  console.log('[renderLayerWithMask] Combining with two-texture shader')
-  // Stage 3: Combine surface + greymap using two-texture shader
-  // The shader uses greymap luminance as alpha, compositing onto canvas
-  const surfaceMaskSpec = createSurfaceMaskSpec(viewport)
-  renderer.applyDualTextureEffect(surfaceMaskSpec, surfaceTexture, greymapTexture, { clear: false })
+  // Check if we have effects to apply
+  const hasEffects = effects && effects.length > 0
+
+  if (hasEffects) {
+    console.log('[renderLayerWithMask] Combining with two-texture shader to offscreen[0]')
+    // Stage 3: Combine surface + greymap to offscreen[0] (not canvas)
+    const surfaceMaskSpec = createSurfaceMaskSpec(viewport)
+    let currentTexture = renderer.applyDualTextureEffectToOffscreen(
+      surfaceMaskSpec,
+      surfaceTexture,
+      greymapTexture,
+      0
+    )
+    let currentTextureIndex: 0 | 1 = 0
+
+    console.log(`[renderLayerWithMask] Applying ${effects!.length} effects`)
+    // Stage 4: Apply effects using ping-pong rendering
+    for (const effect of effects!) {
+      const effectType = effect.id as EffectType
+      if (!(effectType in EFFECT_REGISTRY)) continue
+
+      const definition = EFFECT_REGISTRY[effectType]
+      const spec = definition.createShaderSpec(effect.params as never, viewport, scale)
+      if (!spec) continue
+
+      // Ping-pong: render to the other offscreen texture
+      const outputIndex: 0 | 1 = currentTextureIndex === 0 ? 1 : 0
+      currentTexture = renderer.applyPostEffectToOffscreen(spec, currentTexture, outputIndex)
+      currentTextureIndex = outputIndex
+    }
+
+    console.log('[renderLayerWithMask] Compositing to canvas with alpha blending')
+    // Stage 5: Composite final result to canvas
+    renderer.compositeToCanvas(currentTexture, { clear: false })
+  } else {
+    console.log('[renderLayerWithMask] Combining with two-texture shader (no effects)')
+    // No effects: composite directly to canvas (original behavior)
+    const surfaceMaskSpec = createSurfaceMaskSpec(viewport)
+    renderer.applyDualTextureEffect(surfaceMaskSpec, surfaceTexture, greymapTexture, { clear: false })
+  }
 }
 
 // ============================================================
@@ -1012,28 +1066,36 @@ export async function renderHeroConfig(
       // Get effects from processor modifiers (if processor exists)
       const processorEffects = processor ? getEffectConfigsFromModifiers(processor.modifiers) : []
 
+      // Collect all effects for this layer
+      const layerEffects = processorEffects.length > 0 ? processorEffects : []
+
       if (surfaceSpec && maskProcessor?.enabled && maskProcessor.shape) {
         // Use two-texture pipeline for proper alpha compositing
         const greymapSpec = createGreymapMaskSpecFromShape(maskProcessor.shape, viewport)
         if (greymapSpec) {
-          console.log('[renderHeroConfig] Using two-texture pipeline for masked layer')
-          renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport)
+          console.log('[renderHeroConfig] Using two-texture pipeline for masked layer with effects:', layerEffects.length)
+          // Pass effects to renderLayerWithMask so they're applied only to this layer
+          renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport, layerEffects, scale)
         } else {
           // Fallback: render surface without mask
           console.log('[renderHeroConfig] Fallback: rendering surface without mask (greymapSpec null)')
           renderer.render(surfaceSpec, { clear: false })
+          // Apply effects to canvas (fallback behavior)
+          if (layerEffects.length > 0) {
+            applySingleEffects(renderer, layerEffects, viewport, scale)
+          }
         }
       } else if (surfaceSpec) {
         // No mask: render surface directly to canvas
         console.log('[renderHeroConfig] Rendering surface to canvas (no mask)')
         renderer.render(surfaceSpec, { clear: false })
-      }
-
-      // Apply effects (color-modification) after mask compositing
-      if (processorEffects.length > 0) {
-        applySingleEffects(renderer, processorEffects, viewport, scale)
-      } else if (effectFilter?.config) {
-        applyEffects(renderer, effectFilter.config, viewport, scale)
+        // Apply effects to canvas (entire layer is visible, so canvas-wide is correct)
+        if (layerEffects.length > 0) {
+          applySingleEffects(renderer, layerEffects, viewport, scale)
+        } else if (effectFilter?.config) {
+          // Legacy effect format support
+          applyEffects(renderer, effectFilter.config, viewport, scale)
+        }
       }
     }
   } else {
@@ -1073,17 +1135,24 @@ export async function renderHeroConfig(
         const greymapSpec = createGreymapMaskSpecFromShape(maskProcessor.shape, viewport)
         if (greymapSpec) {
           console.log('[renderHeroConfig] Legacy: Using two-texture pipeline for masked layer')
-          renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport)
+          // Legacy format doesn't have SingleEffectConfig[], so pass empty and apply after
+          renderLayerWithMask(renderer, surfaceSpec, greymapSpec, viewport, [], scale)
+          // Apply legacy effects after (canvas-wide - legacy behavior)
+          if (effectFilter?.config) {
+            applyEffects(renderer, effectFilter.config, viewport, scale)
+          }
         } else {
           renderer.render(surfaceSpec, { clear: false })
+          if (effectFilter?.config) {
+            applyEffects(renderer, effectFilter.config, viewport, scale)
+          }
         }
       } else if (surfaceSpec) {
         renderer.render(surfaceSpec, { clear: false })
-      }
-
-      // Apply effects after compositing
-      if (effectFilter?.config) {
-        applyEffects(renderer, effectFilter.config, viewport, scale)
+        // Apply effects after compositing
+        if (effectFilter?.config) {
+          applyEffects(renderer, effectFilter.config, viewport, scale)
+        }
       }
     }
   }
