@@ -224,10 +224,10 @@ export const createDefaultPresetUIState = (): PresetUIState => ({
 /**
  * デフォルトのLayerTreeUIStateを作成
  *
- * デフォルトで主要グループを展開状態にする
+ * デフォルトで全てのグループを展開状態にする
  */
 export const createDefaultLayerTreeUIState = (): LayerTreeUIState => ({
-  expandedLayerIds: new Set(['background-group', 'main-group']),
+  expandedLayerIds: new Set(['background-group', 'clip-group']),
 })
 
 /**
