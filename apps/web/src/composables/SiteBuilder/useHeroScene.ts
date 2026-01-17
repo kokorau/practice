@@ -14,9 +14,6 @@
 
 import { ref, shallowRef, computed, watch, onUnmounted, type ComputedRef, type Ref } from 'vue'
 import {
-  getSurfacePresets,
-  MaskShapeSchemas,
-  SurfaceSchemas,
   type RGBA,
   type SurfacePreset,
   type SurfacePresetParams,
@@ -36,30 +33,23 @@ import {
   type GridSurfaceParams,
   type PolkaDotSurfaceParams,
   type CheckerSurfaceParams,
-  type SolidSurfaceParams,
   type TriangleSurfaceParams,
   type HexagonSurfaceParams,
   type DepthMapType,
 } from '@practice/texture'
-import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, ContextName, PrimitiveKey } from '../../modules/SemanticColorPalette/Domain'
 import {
   type LayerEffectConfig,
   type HeroSceneConfig,
   type HtmlLayer,
   type HeroViewConfig,
-  type HeroPrimitiveKey,
-  type HeroSurfaceConfig,
   type MaskShapeConfig as HeroMaskShapeConfig,
   type LayerNodeConfig,
   type BaseLayerNodeConfig,
   type SurfaceLayerNodeConfig,
-  type SurfaceColorsConfig,
-  type GroupLayerNodeConfig,
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
   type MaskProcessorConfig,
-  type ProcessorNodeConfig,
   type ForegroundLayerConfig,
   type HeroViewPreset,
   type TextLayerConfig,
@@ -96,15 +86,8 @@ import {
   type ForegroundConfigPort,
   type SelectionPort,
   HERO_CANVAS_DIMENSIONS,
-  toCustomMaskShapeParams,
-  fromCustomMaskShapeParams,
-  toCustomSurfaceParams,
-  toCustomBackgroundSurfaceParams,
-  fromCustomSurfaceParams,
   type HeroEditorUIState,
   createDefaultHeroEditorUIState,
-  syncBackgroundSurfaceParams,
-  syncMaskSurfaceParams,
   type PatternState,
   type BackgroundState,
   type MaskState,
@@ -118,7 +101,6 @@ import {
   type UsecaseState,
   type EditorStateRef,
   type RendererActions,
-  renderHeroConfig,
   migrateHeroViewConfig,
 } from '../../modules/HeroScene'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
@@ -128,9 +110,10 @@ import { useHeroColors } from './useHeroColors'
 import { useHeroFilters } from './useHeroFilters'
 import { useHeroThumbnails } from './useHeroThumbnails'
 import { useHeroImages } from './useHeroImages'
-
-// Layer IDs for template layers
-const BASE_LAYER_ID = 'background'
+import { useHeroSceneRenderer } from './useHeroSceneRenderer'
+import { useHeroSurfaceParams } from './useHeroSurfaceParams'
+import { useHeroPatternPresets } from './useHeroPatternPresets'
+import { useHeroColorSync } from './useHeroColorSync'
 
 // Re-export types from extracted composables
 export type { SectionType } from './useHeroThumbnails'
@@ -411,6 +394,83 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   // ============================================================
+  // Initialize Renderer Composable
+  // ============================================================
+  const editorConfig = computed(() => editorState.value.config)
+  const heroRenderer = useHeroSceneRenderer({
+    primitivePalette,
+    heroViewRepository,
+    canvasImageData,
+    editorConfig,
+    onDestroyPreview: () => heroThumbnails.destroyThumbnailRenderers(),
+  })
+
+  // Alias for backward compatibility and shorter access
+  const { render, renderSceneFromConfig, initPreview, destroyPreview } = heroRenderer
+
+  // ============================================================
+  // Initialize Surface Params Composable
+  // ============================================================
+  const heroSurfaceParams = useHeroSurfaceParams({
+    repoConfig,
+    heroViewRepository,
+    selectedLayerId,
+    textureColor1: heroColors.textureColor1,
+    textureColor2: heroColors.textureColor2,
+    midgroundTextureColor1: heroColors.midgroundTextureColor1,
+    midgroundTextureColor2: heroColors.midgroundTextureColor2,
+  })
+
+  // Destructure for backward compatibility
+  const {
+    customMaskShapeParams,
+    customSurfaceParams,
+    customBackgroundSurfaceParams,
+    currentMaskShapeSchema,
+    currentSurfaceSchema,
+    currentBackgroundSurfaceSchema,
+  } = heroSurfaceParams
+
+  // ============================================================
+  // Initialize Pattern Presets Composable
+  // ============================================================
+  const heroPatternPresets = useHeroPatternPresets({
+    heroViewRepository,
+    midgroundTexturePatterns: heroThumbnails.midgroundTexturePatterns,
+    maskPatterns: heroThumbnails.maskPatterns,
+    surfaceParams: heroSurfaceParams,
+    selectedBackgroundIndex,
+    selectedMaskIndex,
+    selectedMidgroundTextureIndex,
+    textureColor1: heroColors.textureColor1,
+    textureColor2: heroColors.textureColor2,
+    midgroundTextureColor1: heroColors.midgroundTextureColor1,
+    midgroundTextureColor2: heroColors.midgroundTextureColor2,
+  })
+
+  // Destructure for backward compatibility
+  const {
+    surfacePresets,
+    initMaskShapeParamsFromPreset,
+    initSurfaceParamsFromPreset,
+    initBackgroundSurfaceParamsFromPreset,
+    updateMaskShapeParams,
+    updateSurfaceParams,
+    updateBackgroundSurfaceParams,
+  } = heroPatternPresets
+
+  // ============================================================
+  // Initialize Color Sync Composable
+  // ============================================================
+  useHeroColorSync({
+    heroViewRepository,
+    heroColors,
+    heroThumbnails,
+    isLoadingFromConfig,
+    selectCanvasLayer,
+  })
+
+  // ============================================================
   // Color Usecase wrappers
   // ============================================================
   const colorUsecase = {
@@ -510,189 +570,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     removeElement: (elementId: string) => getForegroundElementUsecase().removeElement(elementId),
     updateElement: (elementId: string, updates: { position?: string; content?: string; fontId?: string; fontSize?: number; colorKey?: string }) => getForegroundElementUsecase().updateElement(elementId, updates as Parameters<ReturnType<typeof createForegroundElementUsecase>['updateElement']>[1]),
     updateSelectedElement: (updates: { position?: string; content?: string; fontId?: string; fontSize?: number; colorKey?: string }) => getForegroundElementUsecase().updateSelectedElement(updates as Parameters<ReturnType<typeof createForegroundElementUsecase>['updateSelectedElement']>[0]),
-  }
-
-  // ============================================================
-  // Custom Shape/Surface Params State
-  // ============================================================
-
-  const extractSurfaceParams = (preset: MidgroundSurfacePreset, colorA: RGBA, colorB: RGBA): CustomSurfaceParams => {
-    return toCustomSurfaceParams(preset.params, colorA, colorB)
-  }
-
-  const extractBackgroundSurfaceParams = (params: SurfacePresetParams, colorA: RGBA, colorB: RGBA): CustomBackgroundSurfaceParams => {
-    return toCustomBackgroundSurfaceParams(params, colorA, colorB)
-  }
-
-  // Helper to find processor with mask modifier in layers (including groups)
-  const findProcessorWithMask = (layers: LayerNodeConfig[]): ProcessorNodeConfig | null => {
-    for (const layer of layers) {
-      if (layer.type === 'processor') {
-        const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
-        if (maskModifier) {
-          return layer
-        }
-      }
-      if (layer.type === 'group') {
-        const found = findProcessorWithMask((layer as GroupLayerNodeConfig).children)
-        if (found) return found
-      }
-    }
-    return null
-  }
-
-  // Current custom params (derived from Repository via repoConfig)
-  const customMaskShapeParams = computed({
-    get: (): CustomMaskShapeParams | null => {
-      const config = repoConfig.value
-      if (!config) return null
-      const processor = findProcessorWithMask(config.layers)
-      if (!processor) return null
-      const maskModifier = processor.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
-      if (!maskModifier) return null
-      return toCustomMaskShapeParams(maskModifier.shape)
-    },
-    set: (val: CustomMaskShapeParams | null) => {
-      if (val === null) return
-      const config = repoConfig.value
-      if (!config) return
-      // Find processor layer with mask modifier and update it
-      const processor = findProcessorWithMask(config.layers)
-      if (!processor) return
-      const maskModifierIndex = processor.modifiers.findIndex((m): m is MaskProcessorConfig => m.type === 'mask')
-      if (maskModifierIndex === -1) return
-      const newModifiers = [...processor.modifiers]
-      const existingMask = newModifiers[maskModifierIndex] as MaskProcessorConfig
-      newModifiers[maskModifierIndex] = {
-        ...existingMask,
-        shape: fromCustomMaskShapeParams(val),
-      }
-      heroViewRepository.updateLayer(processor.id, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
-    },
-  })
-
-  const customSurfaceParams = computed({
-    get: (): CustomSurfaceParams | null => {
-      const result = syncMaskSurfaceParams(repoConfig.value, heroColors.midgroundTextureColor1.value, heroColors.midgroundTextureColor2.value)
-      return result.surfaceParams
-    },
-    set: (val: CustomSurfaceParams | null) => {
-      if (val === null) return
-      // Use selected layer ID if available, otherwise fallback to 'surface-mask'
-      const targetLayerId = selectedLayerId.value ?? 'surface-mask'
-      heroViewRepository.updateLayer(targetLayerId, { surface: fromCustomSurfaceParams(val) })
-    },
-  })
-
-  const customBackgroundSurfaceParams = computed({
-    get: (): CustomBackgroundSurfaceParams | null => {
-      const result = syncBackgroundSurfaceParams(repoConfig.value, heroColors.textureColor1.value, heroColors.textureColor2.value)
-      return result.surfaceParams
-    },
-    set: (val: CustomBackgroundSurfaceParams | null) => {
-      if (val === null) return
-      heroViewRepository.updateLayer(BASE_LAYER_ID, { surface: fromCustomSurfaceParams(val) })
-    },
-  })
-
-  // Current schema for UI rendering
-  const currentMaskShapeSchema = computed(() => {
-    if (!customMaskShapeParams.value) return null
-    return MaskShapeSchemas[customMaskShapeParams.value.type] as ObjectSchema
-  })
-
-  const currentSurfaceSchema = computed(() => {
-    if (!customSurfaceParams.value) return null
-    return SurfaceSchemas[customSurfaceParams.value.type] as ObjectSchema
-  })
-
-  const currentBackgroundSurfaceSchema = computed(() => {
-    if (!customBackgroundSurfaceParams.value) return null
-    return SurfaceSchemas[customBackgroundSurfaceParams.value.type] as ObjectSchema
-  })
-
-  // ============================================================
-  // Pattern Preset Initialization
-  // ============================================================
-  const midgroundTexturePatterns = heroThumbnails.midgroundTexturePatterns
-  const maskPatterns = heroThumbnails.maskPatterns
-  const surfacePresets = getSurfacePresets()
-
-  const setBaseSurface = (surface: HeroSurfaceConfig) => {
-    heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
-  }
-
-  const initMaskShapeParamsFromPreset = () => {
-    const idx = selectedMaskIndex.value
-    if (idx === null) return
-    const pattern = maskPatterns[idx]
-    if (pattern) {
-      customMaskShapeParams.value = toCustomMaskShapeParams(pattern.maskConfig)
-    }
-  }
-
-  const initSurfaceParamsFromPreset = () => {
-    const idx = selectedMidgroundTextureIndex.value
-    const preset = midgroundTexturePatterns[idx]
-    if (preset) {
-      customSurfaceParams.value = extractSurfaceParams(preset, heroColors.midgroundTextureColor1.value, heroColors.midgroundTextureColor2.value)
-    }
-  }
-
-  const initBackgroundSurfaceParamsFromPreset = () => {
-    const idx = selectedBackgroundIndex.value
-    const preset = surfacePresets[idx]
-    if (preset) {
-      const params = extractBackgroundSurfaceParams(preset.params, heroColors.textureColor1.value, heroColors.textureColor2.value)
-      if (params.type === 'solid') {
-        setBaseSurface({ type: 'solid' })
-      } else if (params.type === 'stripe') {
-        setBaseSurface({ type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle })
-      } else if (params.type === 'grid') {
-        setBaseSurface({ type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize })
-      } else if (params.type === 'polkaDot') {
-        setBaseSurface({ type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
-      } else if (params.type === 'checker') {
-        setBaseSurface({ type: 'checker', cellSize: params.cellSize, angle: params.angle })
-      } else if (params.type === 'gradientGrain') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'asanoha') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'seigaiha') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'wave') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'scales') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'ogee') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'sunburst') {
-        customBackgroundSurfaceParams.value = params
-      }
-    } else {
-      customBackgroundSurfaceParams.value = null
-    }
-  }
-
-  const updateMaskShapeParams = (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams>) => {
-    if (!customMaskShapeParams.value) return
-    customMaskShapeParams.value = { ...customMaskShapeParams.value, ...updates } as CustomMaskShapeParams
-  }
-
-  const updateSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams>) => {
-    if (!customSurfaceParams.value) return
-    customSurfaceParams.value = { ...customSurfaceParams.value, ...updates } as CustomSurfaceParams
-  }
-
-  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams | GradientGrainSurfaceParams>) => {
-    if (!customBackgroundSurfaceParams.value) return
-    const type = customBackgroundSurfaceParams.value.type
-    const layer = heroViewRepository.findLayer(BASE_LAYER_ID)
-    if (!layer || layer.type !== 'surface') return
-    const currentSurface = layer.surface
-    if (currentSurface.type !== type) return
-    const newSurface = { ...currentSurface, ...updates } as HeroSurfaceConfig
-    heroViewRepository.updateLayer(BASE_LAYER_ID, { surface: newSurface })
   }
 
   // ============================================================
@@ -841,49 +718,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
-  // Rendering (inline implementation to avoid circular dependency)
-  // ============================================================
-  let previewRenderer: import('@practice/texture').TextureRenderer | null = null
-
-  const renderSceneFromConfig = async () => {
-    if (!previewRenderer) return
-    // Use repository directly as single source of truth
-    const config = heroViewRepository.get()
-    await renderHeroConfig(previewRenderer, config, primitivePalette.value)
-    try {
-      canvasImageData.value = await previewRenderer.readPixels()
-    } catch {
-      // Ignore errors
-    }
-  }
-
-  const render = async () => {
-    await renderSceneFromConfig()
-  }
-
-  const initPreview = async (canvas?: HTMLCanvasElement | null) => {
-    if (!canvas) return
-    canvas.width = editorState.value.config.width
-    canvas.height = editorState.value.config.height
-
-    try {
-      const { TextureRenderer } = await import('@practice/texture')
-      previewRenderer = await TextureRenderer.create(canvas)
-      // Repository already has default config from createDefaultHeroViewConfig()
-      // No need for additional initialization - just render
-      await render()
-    } catch (e) {
-      console.error('WebGPU not available:', e)
-    }
-  }
-
-  const destroyPreview = () => {
-    previewRenderer?.destroy()
-    previewRenderer = null
-    heroThumbnails.destroyThumbnailRenderers()
-  }
-
-  // ============================================================
   // Initialize Images Composable
   // ============================================================
   const heroImages = useHeroImages({
@@ -949,93 +783,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     () => render(),
     { deep: true }
   )
-
-  // Helper to update colors on surface layer within layer tree
-  const updateSurfaceLayerColors = (
-    layers: LayerNodeConfig[],
-    layerId: string,
-    colorUpdate: Partial<SurfaceColorsConfig>
-  ): LayerNodeConfig[] => {
-    return layers.map((layer): LayerNodeConfig => {
-      if (layer.type === 'group') {
-        return {
-          ...layer,
-          children: layer.children.map((child): LayerNodeConfig => {
-            if ((child.type === 'surface' || child.type === 'base') && child.id === layerId) {
-              return {
-                ...child,
-                colors: { ...(child.colors ?? { primary: 'B', secondary: 'auto' }), ...colorUpdate },
-              }
-            }
-            return child
-          }),
-        }
-      }
-      if ((layer.type === 'surface' || layer.type === 'base') && layer.id === layerId) {
-        return {
-          ...layer,
-          colors: { ...(layer.colors ?? { primary: 'B', secondary: 'auto' }), ...colorUpdate },
-        }
-      }
-      return layer
-    })
-  }
-
-  // Color watchers: per-surface colors (primary/secondary) are written to layer.colors.
-  // Global semanticContext is written to config.colors (still used for context-based color resolution).
-  watch(heroColors.backgroundColorKey1, (newValue) => {
-    if (isLoadingFromConfig.value) return
-    const config = heroViewRepository.get()
-    const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { primary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({ ...config, layers: updatedLayers })
-  })
-
-  watch(heroColors.backgroundColorKey2, (newValue) => {
-    if (isLoadingFromConfig.value) return
-    const config = heroViewRepository.get()
-    const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { secondary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({ ...config, layers: updatedLayers })
-  })
-
-  watch(heroColors.maskColorKey1, (newValue) => {
-    if (isLoadingFromConfig.value) return
-    const config = heroViewRepository.get()
-    const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({ ...config, layers: updatedLayers })
-  })
-
-  watch(heroColors.maskColorKey2, (newValue) => {
-    if (isLoadingFromConfig.value) return
-    const config = heroViewRepository.get()
-    const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({ ...config, layers: updatedLayers })
-  })
-
-  watch(heroColors.maskSemanticContext, (newValue) => {
-    if (isLoadingFromConfig.value) return
-    const config = heroViewRepository.get()
-    heroViewRepository.set({
-      ...config,
-      colors: {
-        ...config.colors,
-        semanticContext: newValue,
-      },
-    })
-  })
-
-  // Sync activeSection to layer selection for proper surface targeting
-  watch(heroThumbnails.activeSection, (section) => {
-    if (!section) return
-    // Map section to layer ID
-    const sectionToLayerId: Record<string, string> = {
-      'background': 'background',
-      'clip-group-surface': 'surface-mask',
-    }
-    const layerId = sectionToLayerId[section]
-    if (layerId) {
-      selectCanvasLayer(layerId)
-    }
-  })
 
   onUnmounted(() => {
     destroyPreview()
@@ -1172,7 +919,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     }
 
     if (maskShape) {
-      selectedMaskIndex.value = findMaskPatternIndex(maskShape, maskPatterns)
+      selectedMaskIndex.value = findMaskPatternIndex(maskShape, heroThumbnails.maskPatterns)
     } else {
       selectedMaskIndex.value = null
     }
@@ -1182,7 +929,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       if (maskSurface.type === 'image') {
         await heroImages.restoreMaskImage(maskSurface.imageId)
       }
-      const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, midgroundTexturePatterns)
+      const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, heroThumbnails.midgroundTexturePatterns)
       selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
 
       const maskEffectFilter = (maskSurfaceLayer.filters ?? []).find((p) => p.type === 'effect')

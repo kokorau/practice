@@ -13,7 +13,6 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { HeroPrimitiveKey } from '../modules/HeroScene'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
@@ -41,6 +40,7 @@ import { useForegroundElement } from '../composables/useForegroundElement'
 import { useContextMenu } from '../composables/useContextMenu'
 import { usePresetActions } from '../composables/usePresetActions'
 import { usePaletteStyles } from '../composables/usePaletteStyles'
+import { useHeroGeneratorPanelHandlers } from '../composables/HeroGenerator'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
 import DebugPanel from '../components/HeroGenerator/DebugPanel.vue'
@@ -412,90 +412,24 @@ const handleColorStateUpdate = (
 // ============================================================
 // RightPropertyPanel Event Handlers
 // ============================================================
-
-const handleForegroundUpdate = (key: string, value: unknown) => {
-  switch (key) {
-    case 'elementColorKey':
-      selectedElementColorKey.value = value as HeroPrimitiveKey
-      break
-    case 'elementContent':
-      selectedElementContent.value = value as string
-      break
-    case 'elementPosition':
-      selectedElementPosition.value = value as typeof selectedElementPosition.value
-      break
-    case 'elementFontSize':
-      selectedElementFontSize.value = value as number
-      break
-    case 'elementFontWeight':
-      selectedElementFontWeight.value = value as number
-      break
-    case 'elementLetterSpacing':
-      selectedElementLetterSpacing.value = value as number
-      break
-    case 'elementLineHeight':
-      selectedElementLineHeight.value = value as number
-      break
-  }
-}
-
-const handleBackgroundUpdate = (key: string, value: unknown) => {
-  switch (key) {
-    case 'colorKey1':
-      heroScene.background.backgroundColorKey1.value = value as typeof heroScene.background.backgroundColorKey1.value
-      break
-    case 'colorKey2':
-      heroScene.background.backgroundColorKey2.value = value as typeof heroScene.background.backgroundColorKey2.value
-      break
-    case 'uploadImage':
-      heroScene.background.setBackgroundImage(value as File)
-      break
-    case 'clearImage':
-      heroScene.background.clearBackgroundImage()
-      break
-    case 'selectPattern':
-      if (value !== null) heroScene.pattern.selectedBackgroundIndex.value = value as number
-      break
-    case 'loadRandom':
-      heroScene.background.loadRandomBackgroundImage()
-      break
-    case 'surfaceParams':
-      heroScene.background.updateBackgroundSurfaceParams(value as Record<string, unknown>)
-      break
-  }
-}
-
-const handleMaskUpdate = (key: string, value: unknown) => {
-  switch (key) {
-    case 'colorKey1':
-      heroScene.mask.maskColorKey1.value = value as typeof heroScene.mask.maskColorKey1.value
-      break
-    case 'colorKey2':
-      heroScene.mask.maskColorKey2.value = value as typeof heroScene.mask.maskColorKey2.value
-      break
-    case 'uploadImage':
-      heroScene.mask.setMaskImage(value as File)
-      break
-    case 'clearImage':
-      heroScene.mask.clearMaskImage()
-      break
-    case 'selectPattern':
-      if (value !== null) heroScene.pattern.selectedMidgroundTextureIndex.value = value as number
-      break
-    case 'loadRandom':
-      heroScene.mask.loadRandomMaskImage()
-      break
-    case 'surfaceParams':
-      heroScene.mask.updateSurfaceParams(value as Record<string, unknown>)
-      break
-    case 'selectedShapeIndex':
-      heroScene.pattern.selectedMaskIndex.value = value as number
-      break
-    case 'shapeParams':
-      heroScene.mask.updateMaskShapeParams(value as Record<string, unknown>)
-      break
-  }
-}
+const {
+  handleForegroundUpdate,
+  handleBackgroundUpdate,
+  handleMaskUpdate,
+} = useHeroGeneratorPanelHandlers({
+  foregroundRefs: {
+    selectedElementColorKey,
+    selectedElementContent,
+    selectedElementPosition,
+    selectedElementFontSize,
+    selectedElementFontWeight,
+    selectedElementLetterSpacing,
+    selectedElementLineHeight,
+  },
+  background: heroScene.background,
+  mask: heroScene.mask,
+  pattern: heroScene.pattern,
+})
 
 </script>
 
