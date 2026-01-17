@@ -302,3 +302,274 @@ describe('Pipeline Integration', () => {
     expect(outputNode).toBeDefined()
   })
 })
+
+// ============================================================
+// Root-Level Processor Tests
+// ============================================================
+
+describe('Root-Level Processor Support', () => {
+  it('handles root-level processor with effects', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'solid' },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'group',
+          id: 'clip-group',
+          name: 'Clip Group',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'surface-mask',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'stripe', width1: 10, width2: 10, angle: 45 },
+              colors: { primary: 'auto', secondary: 'auto' },
+            },
+          ],
+        },
+        // Root-level processor (applies to clip-group)
+        {
+          type: 'processor',
+          id: 'root-processor',
+          name: 'Global Effects',
+          visible: true,
+          modifiers: [
+            { type: 'effect', id: 'blur', params: { strength: 5 } },
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    // Should have effect node for root processor
+    const effectNode = result.nodes.find(n => n.id === 'root-processor-effects')
+    expect(effectNode).toBeDefined()
+    expect(effectNode?.type).toBe('compositor')
+  })
+
+  it('handles root-level processor with mask', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'solid' },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'group',
+          id: 'clip-group',
+          name: 'Clip Group',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'surface-mask',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'stripe', width1: 10, width2: 10, angle: 45 },
+              colors: { primary: 'auto', secondary: 'auto' },
+            },
+          ],
+        },
+        // Root-level processor with mask
+        {
+          type: 'processor',
+          id: 'root-processor',
+          name: 'Global Mask',
+          visible: true,
+          modifiers: [
+            {
+              type: 'mask',
+              enabled: true,
+              shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.4 },
+              invert: false,
+              feather: 0,
+            },
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    // Should have mask node for root processor
+    const maskNode = result.nodes.find(n => n.id === 'root-processor-mask')
+    expect(maskNode).toBeDefined()
+    expect(maskNode?.type).toBe('render')
+
+    // Should have masked compositor node
+    const maskedNode = result.nodes.find(n => n.id === 'root-processor-masked')
+    expect(maskedNode).toBeDefined()
+    expect(maskedNode?.type).toBe('compositor')
+  })
+
+  it('ignores root-level processor without valid targets', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        // Processor at the start (no preceding layer = no targets)
+        {
+          type: 'processor',
+          id: 'invalid-processor',
+          name: 'Invalid Processor',
+          visible: true,
+          modifiers: [
+            { type: 'effect', id: 'blur', params: { strength: 5 } },
+          ],
+        },
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'solid' },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    // Should NOT have nodes for invalid processor
+    const processorNode = result.nodes.find(n => n.id.includes('invalid-processor'))
+    expect(processorNode).toBeUndefined()
+  })
+
+  it('executes pipeline with root-level processor', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'solid' },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'group',
+          id: 'clip-group',
+          name: 'Clip Group',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'surface-mask',
+              name: 'Surface',
+              visible: true,
+              surface: { type: 'solid' },
+              colors: { primary: 'auto', secondary: 'auto' },
+            },
+          ],
+        },
+        // Root-level processor with mask and effects
+        {
+          type: 'processor',
+          id: 'root-processor',
+          name: 'Global Effects',
+          visible: true,
+          modifiers: [
+            {
+              type: 'mask',
+              enabled: true,
+              shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.4 },
+              invert: false,
+              feather: 0,
+            },
+            { type: 'effect', id: 'vignette', params: { shape: 'ellipse', intensity: 0.5 } },
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+    const renderer = createMockRenderer()
+
+    const { outputNode } = buildPipeline(config, palette)
+    executePipeline(outputNode, renderer, palette)
+
+    // Should call applyPostEffectToOffscreen for vignette
+    expect(renderer.applyPostEffectToOffscreen).toHaveBeenCalled()
+    // Should call applyDualTextureEffectToOffscreen for mask
+    expect(renderer.applyDualTextureEffectToOffscreen).toHaveBeenCalled()
+    // Should output to canvas
+    expect(renderer.compositeToCanvas).toHaveBeenCalled()
+  })
+})

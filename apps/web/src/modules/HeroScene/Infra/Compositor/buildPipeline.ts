@@ -20,6 +20,7 @@ import {
   DEFAULT_LAYER_BACKGROUND_COLORS,
   DEFAULT_LAYER_MASK_COLORS,
   getEffectConfigsFromModifiers,
+  getProcessorTargetPairsFromConfig,
 } from '../../Domain/HeroViewConfig'
 import type {
   RenderNode,
@@ -330,6 +331,59 @@ function buildMaskedLayerNode(
   return maskedNode
 }
 
+/**
+ * Find root-level processor nodes with valid targets
+ */
+function findRootProcessors(layers: LayerNodeConfig[]): ProcessorNodeConfig[] {
+  const pairs = getProcessorTargetPairsFromConfig(layers, true)
+  // Filter to only include processors with targets
+  return pairs
+    .filter(({ targets }) => targets.length > 0)
+    .map(({ processor }) => processor)
+}
+
+/**
+ * Build processor compositor node that applies to the final composite
+ * Returns the new final node after applying processor effects
+ */
+function buildProcessorNode(
+  id: string,
+  inputNode: TextureProducingNode,
+  processor: ProcessorNodeConfig,
+  nodes: Array<RenderNode | CompositorNode | OutputNode>
+): TextureProducingNode {
+  let currentNode: TextureProducingNode = inputNode
+
+  // 1. Apply mask if present
+  const maskProcessor = getProcessorMask(processor)
+  if (maskProcessor?.enabled && maskProcessor.shape) {
+    const maskNode = createMaskRenderNode(`${id}-mask`, maskProcessor.shape)
+    nodes.push(maskNode)
+
+    const maskedNode = createMaskCompositorNode(
+      `${id}-masked`,
+      currentNode,
+      maskNode
+    )
+    nodes.push(maskedNode)
+    currentNode = maskedNode
+  }
+
+  // 2. Apply effects if present
+  const effectConfigs = getEffectConfigsFromModifiers(processor.modifiers)
+  if (effectConfigs.length > 0) {
+    const effects: EffectConfig[] = effectConfigs.map((e) => ({
+      id: e.id,
+      params: e.params,
+    }))
+    const effectsNode = createEffectChainCompositorNode(`${id}-effects`, currentNode, effects)
+    nodes.push(effectsNode)
+    currentNode = effectsNode
+  }
+
+  return currentNode
+}
+
 // ============================================================
 // Main Pipeline Builder
 // ============================================================
@@ -436,7 +490,15 @@ export function buildPipeline(
     finalNode = overlayNode
   }
 
-  // 4. Build canvas output node
+  // 4. Apply root-level processor nodes (global masks/effects)
+  const rootProcessors = findRootProcessors(config.layers)
+  for (let i = 0; i < rootProcessors.length; i++) {
+    const processor = rootProcessors[i]!
+    const processorId = processor.id || `root-processor-${i}`
+    finalNode = buildProcessorNode(processorId, finalNode, processor, nodes)
+  }
+
+  // 5. Build canvas output node
   const outputNode = createCanvasOutputNode('output', finalNode)
   nodes.push(outputNode)
 
