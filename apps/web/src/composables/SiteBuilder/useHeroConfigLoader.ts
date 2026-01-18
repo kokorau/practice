@@ -18,7 +18,7 @@ import {
   type BaseLayerNodeConfig,
   type GroupLayerNodeConfig,
   type MaskProcessorConfig,
-  type MaskShapeConfig as HeroMaskShapeConfig,
+  type NormalizedMaskConfig as HeroMaskShapeConfig,
   type ForegroundLayerConfig,
   type HeroViewRepository,
   createDefaultColorsConfig,
@@ -27,6 +27,8 @@ import {
   findSurfacePresetIndex,
   findMaskPatternIndex,
   isSingleEffectConfig,
+  denormalizeSurfaceConfig,
+  denormalizeMaskConfig,
 } from '../../modules/HeroScene'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroFiltersReturn } from './useHeroFilters'
@@ -148,10 +150,10 @@ export const useHeroConfigLoader = (
 
       if (backgroundSurfaceLayer) {
         const bgSurface = backgroundSurfaceLayer.surface
-        if (bgSurface.type === 'image') {
-          await heroImages.restoreBackgroundImage(bgSurface.imageId)
+        if (bgSurface.id === 'image') {
+          await heroImages.restoreBackgroundImage(bgSurface.params.imageId as string)
         }
-        const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
+        const bgPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(bgSurface), surfacePresets)
         selectedBackgroundIndex.value = bgPresetIndex ?? 0
       }
 
@@ -196,17 +198,17 @@ export const useHeroConfigLoader = (
       }
 
       if (maskShape) {
-        selectedMaskIndex.value = findMaskPatternIndex(maskShape, heroThumbnails.maskPatterns)
+        selectedMaskIndex.value = findMaskPatternIndex(denormalizeMaskConfig(maskShape), heroThumbnails.maskPatterns)
       } else {
         selectedMaskIndex.value = null
       }
 
       if (maskSurfaceLayer) {
         const maskSurface = maskSurfaceLayer.surface
-        if (maskSurface.type === 'image') {
-          await heroImages.restoreMaskImage(maskSurface.imageId)
+        if (maskSurface.id === 'image') {
+          await heroImages.restoreMaskImage(maskSurface.params.imageId as string)
         }
-        const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, heroThumbnails.midgroundTexturePatterns)
+        const midgroundPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(maskSurface), heroThumbnails.midgroundTexturePatterns)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
       }
 

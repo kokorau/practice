@@ -7,6 +7,7 @@
 
 import type { RGBA } from '@practice/texture'
 import type { HeroViewConfig, BaseLayerNodeConfig, SurfaceLayerNodeConfig, GroupLayerNodeConfig } from '../Domain/HeroViewConfig'
+import { denormalizeSurfaceConfig } from '../Domain/HeroViewConfig'
 import type { CustomBackgroundSurfaceParams, CustomSurfaceParams } from '../types/HeroSceneState'
 import { toCustomBackgroundSurfaceParams, toCustomSurfaceParams } from '../Domain/SurfaceMapper'
 
@@ -65,12 +66,13 @@ export function syncBackgroundSurfaceParams(
   }
 
   // Image type is handled separately via customBackgroundImage
-  if (bgSurface.type === 'image') {
+  if (bgSurface.id === 'image') {
     return { surfaceParams: null }
   }
 
-  // Convert SurfaceConfig to CustomBackgroundSurfaceParams
-  const surfaceParams = toCustomBackgroundSurfaceParams(bgSurface, colorA, colorB)
+  // Convert NormalizedSurfaceConfig to SurfaceConfig, then to CustomBackgroundSurfaceParams
+  const legacySurface = denormalizeSurfaceConfig(bgSurface)
+  const surfaceParams = toCustomBackgroundSurfaceParams(legacySurface, colorA, colorB)
 
   return { surfaceParams }
 }
@@ -130,12 +132,13 @@ export function syncMaskSurfaceParams(
   }
 
   // Image type is handled separately via customMaskImage
-  if (maskSurface.type === 'image') {
+  if (maskSurface.id === 'image') {
     return { surfaceParams: null }
   }
 
-  // Convert SurfaceConfig to CustomSurfaceParams
-  const surfaceParams = toCustomSurfaceParams(maskSurface, colorA, colorB)
+  // Convert NormalizedSurfaceConfig to SurfaceConfig, then to CustomSurfaceParams
+  const legacySurface = denormalizeSurfaceConfig(maskSurface)
+  const surfaceParams = toCustomSurfaceParams(legacySurface, colorA, colorB)
 
   return { surfaceParams }
 }

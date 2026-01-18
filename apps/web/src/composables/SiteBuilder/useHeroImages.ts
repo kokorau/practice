@@ -13,7 +13,7 @@ import { ref, computed, onUnmounted, type Ref, type ComputedRef } from 'vue'
 import {
   type HeroViewConfig,
   type HeroViewRepository,
-  type HeroSurfaceConfig,
+  type NormalizedSurfaceConfig,
   type BaseLayerNodeConfig,
   type SurfaceLayerNodeConfig,
   type GroupLayerNodeConfig,
@@ -233,15 +233,15 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
         const surfaceLayer = backgroundGroup.children.find(
           (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'background'
         )
-        if (surfaceLayer?.surface.type === 'image') {
-          return surfaceLayer.surface.imageId
+        if (surfaceLayer?.surface.id === 'image') {
+          return surfaceLayer.surface.params.imageId as string
         }
       }
 
       // Fallback: legacy base layer
       const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
-      if (baseLayer?.surface.type === 'image') {
-        return baseLayer.surface.imageId
+      if (baseLayer?.surface.id === 'image') {
+        return baseLayer.surface.params.imageId as string
       }
       return null
     },
@@ -261,13 +261,13 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
       const config = repoConfig.value
       if (!config) return null
       for (const layer of config.layers) {
-        if (layer.type === 'surface' && layer.surface.type === 'image') {
-          return layer.surface.imageId
+        if (layer.type === 'surface' && layer.surface.id === 'image') {
+          return layer.surface.params.imageId as string
         }
         if (layer.type === 'group' && layer.children) {
           const surfaceLayer = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
-          if (surfaceLayer?.surface.type === 'image') {
-            return surfaceLayer.surface.imageId
+          if (surfaceLayer?.surface.id === 'image') {
+            return surfaceLayer.surface.params.imageId as string
           }
         }
       }
@@ -291,7 +291,7 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
   /**
    * Update base layer surface in repository
    */
-  const setBaseSurface = (surface: HeroSurfaceConfig) => {
+  const setBaseSurface = (surface: NormalizedSurfaceConfig) => {
     heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
   }
 
@@ -315,7 +315,7 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
     customBackgroundBitmap = await createImageBitmap(file)
 
     // Update Repository
-    setBaseSurface({ type: 'image', imageId })
+    setBaseSurface({ id: 'image', params: { imageId } })
 
     await render()
   }
@@ -331,7 +331,7 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
     customBackgroundFile.value = null
 
     // Update Repository
-    setBaseSurface({ type: 'solid' })
+    setBaseSurface({ id: 'solid', params: {} })
 
     render()
   }

@@ -17,7 +17,8 @@ import type { MaskPattern, TextureRenderSpec, RGBA } from '@practice/texture'
 import SchemaFields from '../../SchemaFields.vue'
 import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
 import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
-import type { HeroViewConfig, MaskShapeConfig, MaskProcessorConfig } from '../../../modules/HeroScene'
+import type { HeroViewConfig, MaskProcessorConfig, NormalizedMaskConfig } from '../../../modules/HeroScene'
+import { normalizeMaskConfig } from '../../../modules/HeroScene'
 import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
 
 const props = defineProps<{
@@ -50,7 +51,7 @@ const isHeroMode = computed(() => props.previewMode === 'hero' && props.baseConf
  * Create a preview config with a specific mask shape
  * Updates processor nodes that contain mask modifiers
  */
-const createMaskPreviewConfig = (base: HeroViewConfig, shape: MaskShapeConfig): HeroViewConfig => {
+const createMaskPreviewConfig = (base: HeroViewConfig, shape: NormalizedMaskConfig): HeroViewConfig => {
   return {
     ...base,
     layers: base.layers.map(layer => {
@@ -81,12 +82,13 @@ const previewConfigs = computed(() => {
 
   return props.patterns.map(pattern => {
     if (pattern.maskConfig) {
-      // Convert @practice/texture MaskShapeConfig to HeroViewConfig MaskShapeConfig
-      // by ensuring cutout has a default value
-      const shape: MaskShapeConfig = {
+      // Convert @practice/texture MaskShapeConfig to NormalizedMaskConfig
+      // Use type assertion since texture's MaskShapeConfig has optional fields
+      const flatShape = {
         ...pattern.maskConfig,
         cutout: pattern.maskConfig.cutout ?? false,
-      } as MaskShapeConfig
+      } as Parameters<typeof normalizeMaskConfig>[0]
+      const shape = normalizeMaskConfig(flatShape)
       return createMaskPreviewConfig(props.baseConfig!, shape)
     }
     return null

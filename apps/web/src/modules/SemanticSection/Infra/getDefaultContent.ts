@@ -281,7 +281,7 @@ const corporateCleanConfig: HeroViewConfig = {
       id: 'base',
       name: 'Background',
       visible: true,
-      surface: { type: 'grid', lineWidth: 1, cellSize: 48 },
+      surface: { id: 'grid', params: { lineWidth: 1, cellSize: 48 } },
       colors: { primary: 'BN1', secondary: 'BN2' },
     },
     {
@@ -302,7 +302,7 @@ const corporateCleanConfig: HeroViewConfig = {
       id: 'surface-1',
       name: 'Mask Surface',
       visible: true,
-      surface: { type: 'solid' },
+      surface: { id: 'solid', params: {} },
       colors: { primary: 'B', secondary: 'Bt' },
     },
     {
@@ -315,12 +315,14 @@ const corporateCleanConfig: HeroViewConfig = {
           type: 'mask',
           enabled: true,
           shape: {
-            type: 'rect',
-            left: 0.05, right: 0.55, top: 0.1, bottom: 0.9,
-            radiusTopLeft: 0.02, radiusTopRight: 0.02,
-            radiusBottomLeft: 0.02, radiusBottomRight: 0.02,
-            rotation: 0, perspectiveX: 0, perspectiveY: 0,
-            cutout: true,
+            id: 'rect',
+            params: {
+              left: 0.05, right: 0.55, top: 0.1, bottom: 0.9,
+              radiusTopLeft: 0.02, radiusTopRight: 0.02,
+              radiusBottomLeft: 0.02, radiusBottomRight: 0.02,
+              rotation: 0, perspectiveX: 0, perspectiveY: 0,
+              cutout: true,
+            },
           },
           invert: false,
           feather: 0,

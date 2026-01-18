@@ -199,7 +199,7 @@ export const createHeroViewInMemoryRepository = (
         modifiers: [{
           type: 'mask',
           enabled: true,
-          shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false },
+          shape: { id: 'circle', params: { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false } },
           invert: false,
           feather: 0,
         }],

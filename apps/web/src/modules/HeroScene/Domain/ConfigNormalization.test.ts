@@ -199,7 +199,8 @@ describe('Mask Config Normalization', () => {
       expect(MASK_SHAPE_TYPE_IDS).toContain('linearGradient')
       expect(MASK_SHAPE_TYPE_IDS).toContain('radialGradient')
       expect(MASK_SHAPE_TYPE_IDS).toContain('boxGradient')
-      expect(MASK_SHAPE_TYPE_IDS).toHaveLength(7)
+      expect(MASK_SHAPE_TYPE_IDS).toContain('wavyLine')
+      expect(MASK_SHAPE_TYPE_IDS).toHaveLength(8)
     })
   })
 
