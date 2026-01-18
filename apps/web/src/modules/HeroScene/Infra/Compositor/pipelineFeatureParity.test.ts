@@ -25,10 +25,9 @@
  *
  * ## Known Differences
  *
- * 1. Layer filters (legacy `filters` array on BaseLayerNodeConfig):
- *    - Legacy: Supports `filters: [{ type: 'effect', config: LayerEffectConfig }]`
- *    - Pipeline: Uses processor nodes for effects
- *    - Migration: Convert legacy filters to processor modifiers
+ * 1. Effects are only on processors:
+ *    - All effects must be placed in processor node modifiers
+ *    - Use bg-processor for background effects, processor-mask for mask effects
  *
  * 2. Rendering order:
  *    - Legacy: Renders directly to canvas with { clear: false } for overlays

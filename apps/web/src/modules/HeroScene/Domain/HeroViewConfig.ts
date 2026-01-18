@@ -982,11 +982,19 @@ export interface ForegroundLayerConfig {
  *       name: 'Background',
  *       visible: true,
  *       surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
- *       filters: [{ type: 'effect', id: 'vignette', params: { intensity: 0.5 } }]
  *     },
  *     {
  *       type: 'processor',
- *       id: 'processor-1',
+ *       id: 'bg-processor',
+ *       name: 'Background Effects',
+ *       visible: true,
+ *       modifiers: [
+ *         { type: 'effect', id: 'vignette', params: { intensity: 0.5 } },
+ *       ]
+ *     },
+ *     {
+ *       type: 'processor',
+ *       id: 'processor-mask',
  *       name: 'Mask Processor',
  *       visible: true,
  *       modifiers: [
@@ -1237,7 +1245,6 @@ export const getProcessorEffects = (processor: ProcessorNodeConfig): SingleEffec
 interface LegacyGroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
-  filters?: SingleEffectConfig[]
   expanded?: boolean
 }
 
