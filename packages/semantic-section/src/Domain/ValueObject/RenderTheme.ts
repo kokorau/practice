@@ -5,8 +5,8 @@
  */
 
 import type { SemanticColorPalette } from '@practice/semantic-color-palette/Domain'
-import type { DesignTokens } from '../../../DesignTokens/Domain'
-import { createDesignTokens } from '../../../DesignTokens/Domain'
+import type { DesignTokens } from '@practice/design-tokens/Domain'
+import { createDesignTokens } from '@practice/design-tokens/Domain'
 
 // ============================================================================
 // RenderTheme

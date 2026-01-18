@@ -14,7 +14,7 @@ import type {
   RenderTheme,
 } from '../Domain'
 import type { SemanticColorPalette } from '@practice/semantic-color-palette/Domain'
-import type { DesignTokens } from '../../DesignTokens/Domain'
+import type { DesignTokens } from '@practice/design-tokens/Domain'
 import { DEFAULT_TOKENS } from '../Domain'
 import { DEFAULT_SCHEMAS } from './defaultSchemas'
 import {
