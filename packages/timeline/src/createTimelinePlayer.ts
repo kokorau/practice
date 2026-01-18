@@ -2,11 +2,18 @@ import type { Timeline } from './Timeline'
 import type { TimelinePlayer, FrameState } from './Player'
 import type { Binding, ParamId } from './Binding'
 import type { Ms } from './Unit'
+import type { PhaseId } from './Phase'
 import { evaluateTrack } from './evaluate'
 
 export interface CreateTimelinePlayerOptions {
   timeline: Timeline
   bindings: Binding[]
+}
+
+interface PhaseBoundary {
+  startMs: Ms
+  endMs: Ms
+  duration: Ms
 }
 
 /**
@@ -15,8 +22,21 @@ export interface CreateTimelinePlayerOptions {
 export function createTimelinePlayer(options: CreateTimelinePlayerOptions): TimelinePlayer {
   const { timeline, bindings } = options
 
-  // Calculate total duration
-  const totalDuration = timeline.phases.reduce((sum, p) => sum + p.duration, 0)
+  // Calculate phase boundaries
+  const phaseBoundaries = new Map<PhaseId, PhaseBoundary>()
+  let accumulated: Ms = 0
+  for (const phase of timeline.phases) {
+    const duration = phase.duration ?? Infinity
+    phaseBoundaries.set(phase.id, {
+      startMs: accumulated,
+      endMs: accumulated + duration,
+      duration,
+    })
+    accumulated += duration
+  }
+
+  // Calculate total duration (infinite phases contribute Infinity)
+  const totalDuration = accumulated
 
   // Internal state
   let playhead: Ms = 0
@@ -74,11 +94,35 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
       const track = trackMap.get(binding.sourceTrack)
       if (!track) continue
 
-      // Get time based on clock type
-      const trackTime = getTrackTime(track.clock, playhead, timeline)
+      // Get phase boundary for this track
+      const boundary = phaseBoundaries.get(track.phaseId)
+      if (!boundary) continue
 
-      // Evaluate track
-      const rawValue = evaluateTrack(track, trackTime)
+      // Determine track evaluation time based on phase state
+      let trackTime: Ms
+      let rawValue: number
+
+      if (playhead < boundary.startMs) {
+        // Phase hasn't started yet - use initial value (evaluate at time 0)
+        trackTime = 0
+        rawValue = evaluateTrack(track, trackTime)
+      } else if (playhead >= boundary.endMs) {
+        // Phase has ended - use final value (evaluate at phase duration)
+        trackTime = boundary.duration
+        rawValue = evaluateTrack(track, trackTime)
+      } else {
+        // Currently in this phase - evaluate at phase-relative time
+        const phaseRelativeTime = playhead - boundary.startMs
+
+        // For Loop clock, wrap the time within the generator's period
+        if (track.clock === 'Loop' && track.mode === 'Generator') {
+          trackTime = phaseRelativeTime
+        } else {
+          trackTime = phaseRelativeTime
+        }
+
+        rawValue = evaluateTrack(track, trackTime)
+      }
 
       // Apply range mapping
       const { min, max, clamp } = binding.map
@@ -98,35 +142,4 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
   }
 
   return { play, pause, seek, update }
-}
-
-/**
- * Get track time based on clock type
- */
-function getTrackTime(clock: 'Global' | 'Phase' | 'Loop', playhead: Ms, timeline: Timeline): Ms {
-  if (clock === 'Global') {
-    return playhead
-  }
-
-  // Find current phase
-  let accumulated = 0
-  for (const phase of timeline.phases) {
-    if (playhead < accumulated + phase.duration) {
-      const phaseTime = playhead - accumulated
-
-      if (clock === 'Phase') {
-        return phaseTime
-      }
-
-      // Loop clock: wrap within phase
-      if (clock === 'Loop' && phase.type === 'Loop') {
-        return phaseTime % phase.duration
-      }
-
-      return phaseTime
-    }
-    accumulated += phase.duration
-  }
-
-  return playhead
 }

@@ -4,49 +4,59 @@ import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState, Track, Env
 import { createTimelinePlayer, evaluateGenerator } from '@practice/timeline'
 
 // ============================================================
+// Editor Config
+// ============================================================
+const editorConfig = {
+  /** Total visible duration in the editor (for infinite loops) */
+  visibleDuration: 30000,  // 30 seconds
+}
+
+// ============================================================
 // Mock Data
 // ============================================================
 const mockTimeline: Timeline = {
   loopType: 'forward',
   phases: [
-    { id: 'phase-1' as PhaseId, type: 'Opening', duration: 2000 },
-    { id: 'phase-2' as PhaseId, type: 'Loop', duration: 4000 },
-    { id: 'phase-3' as PhaseId, type: 'Ending', duration: 2000 },
+    { id: 'phase-opening' as PhaseId, type: 'Opening', duration: 5000 },
+    { id: 'phase-loop' as PhaseId, type: 'Loop' },  // No duration = infinite
+    // { id: 'phase-ending' as PhaseId, type: 'Ending', duration: 2000 },  // Commented out for PoC
   ],
   tracks: [
+    // Opening phase tracks - fade in effects
     {
-      id: 'track-1' as TrackId,
+      id: 'track-opacity-opening' as TrackId,
       name: 'Opacity',
-      clock: 'Global',
+      clock: 'Phase',
+      phaseId: 'phase-opening' as PhaseId,
       mode: 'Envelope',
       envelope: {
         points: [
           { time: 0, value: 0 },
-          { time: 2000, value: 1 },
-          { time: 6000, value: 1 },
-          { time: 8000, value: 0 },
+          { time: 5000, value: 1 },
         ],
         interpolation: 'Linear',
       },
     },
     {
-      id: 'track-2' as TrackId,
+      id: 'track-scale-opening' as TrackId,
       name: 'Scale',
-      clock: 'Global',
+      clock: 'Phase',
+      phaseId: 'phase-opening' as PhaseId,
       mode: 'Envelope',
       envelope: {
         points: [
           { time: 0, value: 0.5 },
-          { time: 4000, value: 1 },
-          { time: 8000, value: 0.5 },
+          { time: 5000, value: 1 },
         ],
         interpolation: 'Bezier',
       },
     },
+    // Loop phase tracks - continuous animation
     {
-      id: 'track-3' as TrackId,
+      id: 'track-rotation-loop' as TrackId,
       name: 'Rotation',
       clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
       mode: 'Generator',
       generator: { type: 'Sin', period: 1000, offset: 0, params: {} },
     },
@@ -56,17 +66,17 @@ const mockTimeline: Timeline = {
 const mockBindings: Binding[] = [
   {
     targetParam: 'opacity',
-    sourceTrack: 'track-1' as TrackId,
+    sourceTrack: 'track-opacity-opening' as TrackId,
     map: { min: 0, max: 1 },
   },
   {
     targetParam: 'scale',
-    sourceTrack: 'track-2' as TrackId,
+    sourceTrack: 'track-scale-opening' as TrackId,
     map: { min: 0.5, max: 1.5 },
   },
   {
     targetParam: 'rotation',
-    sourceTrack: 'track-3' as TrackId,
+    sourceTrack: 'track-rotation-loop' as TrackId,
     map: { min: -15, max: 15 },
   },
 ]
@@ -79,10 +89,8 @@ const playhead = ref(0) // ms
 const isPlaying = ref(false)
 const frameState = ref<FrameState>({ time: 0, params: {} })
 
-// Total duration in ms
-const totalDuration = computed(() =>
-  timeline.value.phases.reduce((sum, p) => sum + p.duration, 0)
-)
+// Total visible duration in ms (uses editor config for infinite loops)
+const totalDuration = computed(() => editorConfig.visibleDuration)
 
 // ============================================================
 // Timeline Player
@@ -163,24 +171,31 @@ const previewOpacity = computed(() => frameState.value.params.opacity ?? 1)
 const previewScale = computed(() => frameState.value.params.scale ?? 1)
 const previewRotation = computed(() => frameState.value.params.rotation ?? 0)
 
-// Phase positions for rendering
+// Phase positions for rendering (handles infinite loops)
 const phasePositions = computed(() => {
   const positions: { phase: Phase; startMs: number; endMs: number; startPercent: number; widthPercent: number }[] = []
   let currentMs = 0
   for (const phase of timeline.value.phases) {
+    // For infinite phases (no duration), fill remaining visible duration
+    const phaseDuration = phase.duration ?? (totalDuration.value - currentMs)
     const startPercent = (currentMs / totalDuration.value) * 100
-    const widthPercent = (phase.duration / totalDuration.value) * 100
+    const widthPercent = (phaseDuration / totalDuration.value) * 100
     positions.push({
       phase,
       startMs: currentMs,
-      endMs: currentMs + phase.duration,
+      endMs: currentMs + phaseDuration,
       startPercent,
       widthPercent,
     })
-    currentMs += phase.duration
+    currentMs += phaseDuration
   }
   return positions
 })
+
+// Get phase position for a track
+function getPhasePositionForTrack(track: Track) {
+  return phasePositions.value.find(p => p.phase.id === track.phaseId)
+}
 
 // Playhead position as percentage
 const playheadPercent = computed(() =>
@@ -424,10 +439,14 @@ function redrawAllCanvases() {
     const canvas = canvasRefs.value.get(track.id)
     if (!canvas) continue
 
+    // Use calculated phase duration (handles infinite loops)
+    const phasePos = getPhasePositionForTrack(track)
+    const duration = phasePos ? (phasePos.endMs - phasePos.startMs) : totalDuration.value
+
     if (isEnvelopeTrack(track)) {
-      drawEnvelope(canvas, track, totalDuration.value)
+      drawEnvelope(canvas, track, duration)
     } else if (isGeneratorTrack(track)) {
-      drawGenerator(canvas, track, totalDuration.value)
+      drawGenerator(canvas, track, duration)
     }
   }
 }
@@ -564,15 +583,29 @@ onMounted(() => {
                 class="phase-separator"
                 :style="{ left: `${pos.startPercent + pos.widthPercent}%` }"
               />
-              <!-- Envelope Track Content -->
-              <div v-if="track.mode === 'Envelope'" class="track-content track-content--envelope">
+              <!-- Envelope Track Content - positioned within its phase -->
+              <div
+                v-if="track.mode === 'Envelope'"
+                class="track-content track-content--envelope"
+                :style="{
+                  left: `calc(${getPhasePositionForTrack(track)?.startPercent ?? 0}% + 0.25rem)`,
+                  width: `calc(${getPhasePositionForTrack(track)?.widthPercent ?? 100}% - 0.5rem)`,
+                }"
+              >
                 <canvas
                   :ref="(el) => setCanvasRef(track.id, el as HTMLCanvasElement)"
                   class="track-canvas"
                 />
               </div>
-              <!-- Generator Track Content -->
-              <div v-else class="track-content track-content--generator">
+              <!-- Generator Track Content - positioned within its phase -->
+              <div
+                v-else
+                class="track-content track-content--generator"
+                :style="{
+                  left: `calc(${getPhasePositionForTrack(track)?.startPercent ?? 0}% + 0.25rem)`,
+                  width: `calc(${getPhasePositionForTrack(track)?.widthPercent ?? 100}% - 0.5rem)`,
+                }"
+              >
                 <canvas
                   :ref="(el) => setCanvasRef(track.id, el as HTMLCanvasElement)"
                   class="track-canvas"
@@ -912,7 +945,9 @@ onMounted(() => {
 
 .track-content {
   position: absolute;
-  inset: 0.25rem;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  /* left and width are set via inline style for phase positioning */
   background: oklch(0.94 0.01 260);
   border-radius: 0.25rem;
   display: flex;
