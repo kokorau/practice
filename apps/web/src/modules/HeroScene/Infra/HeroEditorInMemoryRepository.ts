@@ -28,7 +28,11 @@ import type {
   ViewportConfig,
   ForegroundLayerConfig,
 } from '../Domain/HeroViewConfig'
-import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
+import {
+  createDefaultHeroViewConfig,
+  migrateToNormalizedFormat,
+  validateHeroViewConfig,
+} from '../Domain/HeroViewConfig'
 import {
   findLayerInTree,
   updateLayerInTree,
@@ -340,7 +344,17 @@ export const createHeroEditorInMemoryRepository = (
 
     restore: (snapshot: string): void => {
       try {
-        const config = JSON.parse(snapshot) as HeroViewConfig
+        const rawConfig = JSON.parse(snapshot) as HeroViewConfig
+
+        // Migrate legacy format to normalized format at I/O boundary
+        const config = migrateToNormalizedFormat(rawConfig)
+
+        // Validate at I/O boundary
+        const validationResult = validateHeroViewConfig(config)
+        if (!validationResult.valid) {
+          console.warn('Snapshot validation errors:', validationResult.errors)
+        }
+
         state = {
           ...state,
           config,

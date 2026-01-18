@@ -9,9 +9,13 @@
 
 import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
 import type { HeroViewPreset } from '../../Domain/HeroViewPreset'
+import { migrateToNormalizedFormat, validateHeroViewConfig } from '../../Domain/HeroViewConfig'
 
 /**
  * プリセットをHeroViewに適用する
+ *
+ * レガシー形式のプリセットは自動的に正規化形式に変換される。
+ * 変換後にバリデーションを実行し、エラーがあればコンソールに警告を出力する。
  *
  * Note: colorPreset is available on the preset object for the caller to apply
  * to UI state (useSiteColors). This function only applies the layout config.
@@ -23,5 +27,14 @@ export function applyPreset(
   preset: HeroViewPreset,
   repository: HeroViewRepository
 ): void {
-  repository.set(preset.config)
+  // Migrate legacy format to normalized format
+  const normalizedConfig = migrateToNormalizedFormat(preset.config)
+
+  // Validate at I/O boundary
+  const validationResult = validateHeroViewConfig(normalizedConfig)
+  if (!validationResult.valid) {
+    console.warn('Preset validation errors:', validationResult.errors)
+  }
+
+  repository.set(normalizedConfig)
 }

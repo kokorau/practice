@@ -743,6 +743,10 @@ export {
   denormalizeMaskConfig,
   getMaskAsNormalized,
   getMaskAsLegacy,
+  // Migration and validation functions
+  migrateToNormalizedFormat,
+  validateHeroViewConfig,
+  type ConfigValidationResult,
 } from './HeroViewConfig'
 
 // ============================================================
