@@ -5,18 +5,18 @@ import type { Binding } from './Binding'
 import type { PhaseId, TrackId } from './index'
 
 describe('createTimelinePlayer', () => {
+  // Test timeline with a single phase covering 4000ms for simplicity
   const createTestTimeline = (): Timeline => ({
     loopType: 'forward',
     phases: [
-      { id: 'phase-1' as PhaseId, type: 'Opening', duration: 1000 },
-      { id: 'phase-2' as PhaseId, type: 'Loop', duration: 2000 },
-      { id: 'phase-3' as PhaseId, type: 'Ending', duration: 1000 },
+      { id: 'phase-1' as PhaseId, type: 'Opening', duration: 4000 },
     ],
     tracks: [
       {
         id: 'track-opacity' as TrackId,
         name: 'Opacity',
         clock: 'Global',
+        phaseId: 'phase-1' as PhaseId,
         mode: 'Envelope',
         envelope: {
           points: [
@@ -30,6 +30,7 @@ describe('createTimelinePlayer', () => {
         id: 'track-pulse' as TrackId,
         name: 'Pulse',
         clock: 'Global',
+        phaseId: 'phase-1' as PhaseId,
         mode: 'Generator',
         generator: { type: 'Sin', period: 1000, offset: 0, params: {} },
       },
@@ -186,40 +187,73 @@ describe('createTimelinePlayer', () => {
   })
 
   it('handles Phase clock type', () => {
-    const timeline = createTestTimeline()
-    timeline.tracks = [
-      {
-        id: 'track-phase' as TrackId,
-        name: 'Phase',
-        clock: 'Phase',
-        mode: 'Envelope',
-        envelope: {
-          points: [
-            { time: 0, value: 0 },
-            { time: 1000, value: 1 },
-          ],
-          interpolation: 'Linear',
+    const timeline: Timeline = {
+      loopType: 'forward',
+      phases: [
+        { id: 'phase-opening' as PhaseId, type: 'Opening', duration: 1000 },
+        { id: 'phase-loop' as PhaseId, type: 'Loop', duration: 2000 },
+      ],
+      tracks: [
+        {
+          id: 'track-opening' as TrackId,
+          name: 'Opening Track',
+          clock: 'Phase',
+          phaseId: 'phase-opening' as PhaseId,
+          mode: 'Envelope',
+          envelope: {
+            points: [
+              { time: 0, value: 0 },
+              { time: 1000, value: 1 },
+            ],
+            interpolation: 'Linear',
+          },
         },
-      },
-    ]
+        {
+          id: 'track-loop' as TrackId,
+          name: 'Loop Track',
+          clock: 'Phase',
+          phaseId: 'phase-loop' as PhaseId,
+          mode: 'Envelope',
+          envelope: {
+            points: [
+              { time: 0, value: 0 },
+              { time: 2000, value: 1 },
+            ],
+            interpolation: 'Linear',
+          },
+        },
+      ],
+    }
 
     const player = createTimelinePlayer({
       timeline,
       bindings: [
         {
-          targetParam: 'test',
-          sourceTrack: 'track-phase' as TrackId,
+          targetParam: 'opening',
+          sourceTrack: 'track-opening' as TrackId,
+          map: { min: 0, max: 1 },
+        },
+        {
+          targetParam: 'loop',
+          sourceTrack: 'track-loop' as TrackId,
           map: { min: 0, max: 1 },
         },
       ],
     })
 
-    // In Opening phase (0-1000ms), phase time = global time
+    // In Opening phase (0-1000ms)
     player.seek(500)
-    expect(player.update(0).params.test).toBeCloseTo(0.5, 5)
+    expect(player.update(0).params.opening).toBeCloseTo(0.5, 5) // midway through Opening
+    expect(player.update(0).params.loop).toBeCloseTo(0, 5) // Loop hasn't started, initial value
 
-    // In Loop phase (1000-3000ms), phase time resets
-    player.seek(1500)
-    expect(player.update(0).params.test).toBeCloseTo(0.5, 5) // 500ms into Loop phase
+    // At end of Opening phase
+    player.seek(1000)
+    expect(player.update(0).params.opening).toBeCloseTo(1, 5) // final value of Opening
+    expect(player.update(0).params.loop).toBeCloseTo(0, 5) // Loop just started
+
+    // In Loop phase (1000-3000ms)
+    player.seek(2000)
+    expect(player.update(0).params.opening).toBeCloseTo(1, 5) // Opening ended, stays at final value
+    expect(player.update(0).params.loop).toBeCloseTo(0.5, 5) // 1000ms into Loop phase (2000ms total)
   })
 })
