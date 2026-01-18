@@ -838,8 +838,11 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
 
 .track-lane {
   height: 2.5rem;
+  min-height: 2.5rem;
+  max-height: 2.5rem;
   position: relative;
   border-bottom: 1px solid oklch(0.92 0.01 260);
+  overflow: hidden;
 }
 
 .phase-separator {
@@ -868,6 +871,9 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
 .track-content--generator {
   background: oklch(0.94 0.02 150);
   position: relative;
+  padding: 0;
+  /* Force height to match track-lane minus margins (2.5rem - 0.5rem) */
+  height: 2rem;
 }
 
 .track-content-label {
@@ -879,6 +885,7 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
 .envelope-graph {
   width: 100%;
   height: 100%;
+  shape-rendering: geometricPrecision;
 }
 
 .envelope-path {
@@ -886,6 +893,8 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
   stroke: oklch(0.50 0.20 250);
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .envelope-point {
@@ -899,8 +908,7 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
 .generator-graph {
   width: 100%;
   height: 100%;
-  position: absolute;
-  inset: 0;
+  shape-rendering: geometricPrecision;
 }
 
 .generator-path {
@@ -908,6 +916,8 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
   stroke: oklch(0.50 0.20 150);
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .generator-type-label {
