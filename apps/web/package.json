@@ -22,6 +22,7 @@
     "@practice/pipe": "workspace:^",
     "@practice/schema": "workspace:^",
     "@practice/texture": "workspace:^",
+    "@practice/timeline": "workspace:^",
     "@practice/vector": "workspace:^",
     "@tailwindcss/vite": "^4.1.17",
     "@vueuse/core": "^14.0.0",
