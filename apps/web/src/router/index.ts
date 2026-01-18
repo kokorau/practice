@@ -89,6 +89,11 @@ const router = createRouter({
       name: 'texture-playground',
       component: () => import('../views/TexturePlaygroundView.vue'),
     },
+    {
+      path: '/timeline-editor',
+      name: 'timeline-editor',
+      component: () => import('../views/TimelineEditorView.vue'),
+    },
   ],
 })
 

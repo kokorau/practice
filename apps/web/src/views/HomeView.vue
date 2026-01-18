@@ -80,6 +80,11 @@ const pages = [
     title: 'Texture Playground',
     description: 'WebGPUテクスチャ合成フローのプレイグラウンド',
   },
+  {
+    to: '/timeline-editor',
+    title: 'Timeline Editor',
+    description: 'KeyframeとCutを組めるタイムラインエディタ',
+  },
 ]
 </script>
 

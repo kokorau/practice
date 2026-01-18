@@ -53,6 +53,9 @@ importers:
       '@practice/texture':
         specifier: workspace:^
         version: link:../../packages/texture
+      '@practice/timeline':
+        specifier: workspace:^
+        version: link:../../packages/timeline
       '@practice/vector':
         specifier: workspace:^
         version: link:../../packages/vector
@@ -168,6 +171,8 @@ importers:
       '@practice/schema':
         specifier: workspace:*
         version: link:../schema
+
+  packages/timeline: {}
 
   packages/vector: {}
 
