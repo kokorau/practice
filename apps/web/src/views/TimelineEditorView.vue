@@ -28,20 +28,20 @@ function stopResize() {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-gray-900 text-white">
+  <div class="timeline-editor">
     <!-- Top: Preview Area -->
     <section
-      class="flex-1 bg-gray-950 flex flex-col items-center justify-center overflow-hidden"
+      class="preview-area"
       :style="{ minHeight: `${100 - timelineHeightPercent}%` }"
     >
-      <RouterLink to="/" class="absolute top-4 left-4 text-xs text-teal-400 hover:underline">
+      <RouterLink to="/" class="back-link">
         Back to Home
       </RouterLink>
 
       <!-- 16:9 Preview Box -->
       <div class="preview-container">
         <div class="preview-box">
-          <span class="text-gray-500 text-sm">16:9 Preview</span>
+          <span class="preview-label">16:9 Preview</span>
         </div>
       </div>
     </section>
@@ -55,26 +55,61 @@ function stopResize() {
 
     <!-- Bottom: Timeline Area -->
     <section
-      class="bg-gray-900 border-t border-gray-700 flex flex-col"
+      class="timeline-area"
       :style="{ height: `${timelineHeightPercent}%` }"
     >
       <!-- Timeline Controls -->
-      <div class="h-10 bg-gray-800 border-b border-gray-700 flex items-center px-4 gap-4 shrink-0">
-        <button class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 text-xs">Play</button>
-        <button class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 text-xs">Pause</button>
-        <button class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 text-xs">Stop</button>
-        <div class="text-xs text-gray-500 ml-auto">00:00:00.000</div>
+      <div class="timeline-controls">
+        <button class="control-button">Play</button>
+        <button class="control-button">Pause</button>
+        <button class="control-button">Stop</button>
+        <div class="timecode">00:00:00.000</div>
       </div>
 
       <!-- Timeline Tracks -->
-      <div class="flex-1 overflow-auto p-4">
-        <div class="text-gray-500 text-sm">Timeline (Keyframes & Cuts)</div>
+      <div class="timeline-tracks">
+        <div class="timeline-placeholder">Timeline (Keyframes & Cuts)</div>
       </div>
     </section>
   </div>
 </template>
 
 <style scoped>
+.timeline-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: oklch(0.97 0.005 260);
+  color: oklch(0.25 0.02 260);
+}
+
+.preview-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: oklch(0.94 0.01 260);
+  position: relative;
+}
+
+.back-link {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  font-size: 0.75rem;
+  color: oklch(0.45 0.15 180);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.back-link:hover {
+  color: oklch(0.35 0.15 180);
+  text-decoration: underline;
+}
+
 .preview-container {
   width: 100%;
   height: 100%;
@@ -90,23 +125,82 @@ function stopResize() {
   max-height: 100%;
   width: auto;
   height: 80%;
-  background: #1a1a2e;
-  border: 1px solid #3a3a5a;
+  background: white;
+  border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.preview-label {
+  font-size: 0.875rem;
+  color: oklch(0.55 0.02 260);
 }
 
 .resize-handle {
   height: 4px;
-  background: #374151;
+  background: oklch(0.85 0.01 260);
   cursor: ns-resize;
   transition: background 0.15s;
 }
 
 .resize-handle:hover,
 .resize-handle--active {
-  background: #4ecdc4;
+  background: oklch(0.50 0.20 250);
+}
+
+.timeline-area {
+  display: flex;
+  flex-direction: column;
+  background: oklch(0.97 0.005 260);
+  border-top: 1px solid oklch(0.88 0.01 260);
+}
+
+.timeline-controls {
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 0.5rem;
+  background: oklch(0.94 0.01 260);
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+  flex-shrink: 0;
+}
+
+.control-button {
+  padding: 0.375rem 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: oklch(0.90 0.01 260);
+  color: oklch(0.45 0.02 260);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.control-button:hover {
+  background: oklch(0.85 0.01 260);
+  color: oklch(0.35 0.02 260);
+}
+
+.timecode {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-family: ui-monospace, monospace;
+  color: oklch(0.55 0.02 260);
+}
+
+.timeline-tracks {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.timeline-placeholder {
+  font-size: 0.875rem;
+  color: oklch(0.55 0.02 260);
 }
 </style>
