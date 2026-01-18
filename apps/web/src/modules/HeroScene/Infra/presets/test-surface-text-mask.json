@@ -1,0 +1,122 @@
+{
+  "id": "test-surface-text-mask",
+  "name": "Test: Surface + Text + Mask (Group)",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "grid",
+              "lineWidth": 2,
+              "cellSize": 40
+            },
+            "colors": {
+              "primary": "F1",
+              "secondary": "F2"
+            }
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "masked-content-group",
+        "name": "Masked Content",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "inner-surface",
+            "name": "Inner Surface",
+            "visible": true,
+            "surface": {
+              "type": "stripe",
+              "width1": 12,
+              "width2": 12,
+              "angle": 45
+            },
+            "colors": {
+              "primary": "Bt",
+              "secondary": "Bs"
+            }
+          },
+          {
+            "type": "text",
+            "id": "text-title",
+            "name": "Title",
+            "visible": true,
+            "text": "HELLO",
+            "fontFamily": "sans-serif",
+            "fontSize": 120,
+            "fontWeight": 900,
+            "letterSpacing": 0.1,
+            "lineHeight": 1.0,
+            "color": "#ffffff",
+            "position": {
+              "x": 0.5,
+              "y": 0.5,
+              "anchor": "center"
+            },
+            "rotation": 0
+          },
+          {
+            "type": "processor",
+            "id": "group-mask-processor",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "mask",
+                "enabled": true,
+                "shape": {
+                  "type": "circle",
+                  "centerX": 0.5,
+                  "centerY": 0.5,
+                  "radius": 0.35,
+                  "cutout": false
+                },
+                "invert": false,
+                "feather": 0.02
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 240,
+      "saturation": 70,
+      "value": 55
+    },
+    "accent": {
+      "hue": 30,
+      "saturation": 80,
+      "value": 60
+    },
+    "foundation": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 95
+    }
+  }
+}

@@ -13,9 +13,7 @@ import type {
   SurfaceLayerNodeConfig,
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
-  ImageLayerNodeConfig,
   HeroPrimitiveKey,
-  TextLayerNodeConfig,
   SingleEffectConfig,
 } from '../../Domain/HeroViewConfig'
 import {
@@ -97,77 +95,14 @@ function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | Surface
 }
 
 /**
- * Find all clip-groups (groups with surface layers, excluding background-group)
- * Note: Skips groups or surfaces that are not visible
+ * Find all non-background groups at the specified level
+ * Note: Does not recurse into nested groups (they are handled by buildGroupNode)
  */
-function findAllClipGroups(layers: LayerNodeConfig[]): Array<{
-  group: GroupLayerNodeConfig
-  surface: SurfaceLayerNodeConfig
-  processor: ProcessorNodeConfig | null
-}> {
-  const results: Array<{
-    group: GroupLayerNodeConfig
-    surface: SurfaceLayerNodeConfig
-    processor: ProcessorNodeConfig | null
-  }> = []
-
-  for (const layer of layers) {
-    if (layer.type !== 'group') continue
-    if (layer.id === 'background-group') continue
-    // Skip hidden groups
-    if (!layer.visible) continue
-
-    const group = layer as GroupLayerNodeConfig
-
-    const surface = group.children.find(
-      (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.visible
-    )
-    if (!surface) continue
-
-    const processor = group.children.find(
-      (c): c is ProcessorNodeConfig => c.type === 'processor'
-    ) ?? null
-
-    results.push({ group, surface, processor })
-  }
-
-  return results
-}
-
-/**
- * Find all image layers (recursively searches groups)
- */
-function findAllImageLayers(layers: LayerNodeConfig[]): ImageLayerNodeConfig[] {
-  const results: ImageLayerNodeConfig[] = []
-
-  for (const layer of layers) {
-    if (layer.type === 'image') {
-      results.push(layer)
-    } else if (layer.type === 'group') {
-      // Recursively search in groups
-      results.push(...findAllImageLayers(layer.children))
-    }
-  }
-
-  return results
-}
-
-/**
- * Find all text layers (including nested in groups)
- */
-function findAllTextLayers(layers: LayerNodeConfig[]): TextLayerNodeConfig[] {
-  const results: TextLayerNodeConfig[] = []
-
-  for (const layer of layers) {
-    if (layer.type === 'text' && layer.visible) {
-      results.push(layer)
-    } else if (layer.type === 'group') {
-      // Recursively search in groups
-      results.push(...findAllTextLayers(layer.children))
-    }
-  }
-
-  return results
+function findNonBackgroundGroups(layers: LayerNodeConfig[]): GroupLayerNodeConfig[] {
+  return layers.filter(
+    (l): l is GroupLayerNodeConfig =>
+      l.type === 'group' && l.id !== 'background-group' && l.visible
+  )
 }
 
 // ============================================================
@@ -263,77 +198,6 @@ function buildSurfaceNode(
 }
 
 /**
- * Build a mask render node from processor config
- */
-function buildMaskNode(
-  id: string,
-  processor: ProcessorNodeConfig
-): RenderNode | null {
-  const maskProcessor = getProcessorMask(processor)
-  if (!maskProcessor?.enabled || !maskProcessor.shape) {
-    return null
-  }
-
-  return createMaskRenderNode(id, maskProcessor.shape)
-}
-
-/**
- * Build effect chain compositor node from effect configs
- */
-function buildEffectChainNode(
-  id: string,
-  inputNode: RenderNode | CompositorNode,
-  processor: ProcessorNodeConfig
-): CompositorNode | null {
-  const effectConfigs = processor.modifiers.filter(
-    (m): m is SingleEffectConfig => isSingleEffectConfig(m)
-  )
-
-  if (effectConfigs.length === 0) {
-    return null
-  }
-
-  // Convert SingleEffectConfig to EffectConfig
-  const effects: EffectConfig[] = effectConfigs.map((e) => ({
-    id: e.id,
-    params: e.params,
-  }))
-
-  return createEffectChainCompositorNode(id, inputNode, effects)
-}
-
-/**
- * Build a masked layer compositor node
- */
-function buildMaskedLayerNode(
-  id: string,
-  surfaceNode: RenderNode,
-  maskNode: RenderNode,
-  processor: ProcessorNodeConfig | null
-): CompositorNode {
-  // First, combine surface and mask
-  const maskedNode = createMaskCompositorNode(
-    `${id}-masked`,
-    surfaceNode,
-    maskNode
-  )
-
-  // Then apply effects if any
-  if (processor) {
-    const effectsNode = buildEffectChainNode(
-      `${id}-effects`,
-      maskedNode,
-      processor
-    )
-    if (effectsNode) {
-      return effectsNode
-    }
-  }
-
-  return maskedNode
-}
-
-/**
  * Find root-level processor nodes with valid targets
  */
 function findRootProcessors(layers: LayerNodeConfig[]): ProcessorNodeConfig[] {
@@ -389,6 +253,96 @@ function buildProcessorNode(
 }
 
 // ============================================================
+// Group Node Builder (Sequential Processing)
+// ============================================================
+
+/**
+ * Build a group node by sequentially processing children.
+ *
+ * Processor semantics:
+ * - A Processor applies to all preceding siblings (accumulated so far)
+ * - Multiple Processors apply cumulatively
+ *
+ * Example:
+ *   <group>
+ *     <surface/>        [0]
+ *     <text/>           [1]
+ *     <processor mask/> → applies to [0]+[1]
+ *     <text/>           [3]
+ *     <processor fx/>   → applies to masked([0]+[1]) + [3]
+ *   </group>
+ */
+function buildGroupNode(
+  group: GroupLayerNodeConfig,
+  ctx: BuildContext,
+  nodes: Array<RenderNode | CompositorNode | OutputNode>
+): TextureProducingNode | null {
+  const groupId = group.id || 'group'
+  let accumulatedNodes: TextureProducingNode[] = []
+
+  for (let i = 0; i < group.children.length; i++) {
+    const child = group.children[i]!
+    if (!child.visible) continue
+
+    const childId = child.id || `${groupId}-child-${i}`
+
+    if (child.type === 'surface') {
+      const surfaceNode = buildSurfaceNode(childId, child, ctx)
+      nodes.push(surfaceNode)
+      accumulatedNodes.push(surfaceNode)
+    } else if (child.type === 'text') {
+      const textNode = createTextRenderNode(childId, child)
+      nodes.push(textNode)
+      accumulatedNodes.push(textNode)
+    } else if (child.type === 'image' && child.imageId) {
+      const imageNode = createImageRenderNode(
+        childId,
+        child.imageId,
+        child.mode,
+        child.position
+      )
+      nodes.push(imageNode)
+      accumulatedNodes.push(imageNode)
+    } else if (child.type === 'processor') {
+      // Processor applies to accumulated nodes so far
+      if (accumulatedNodes.length === 0) continue
+
+      // Combine accumulated nodes
+      let accumulated: TextureProducingNode
+      if (accumulatedNodes.length === 1) {
+        accumulated = accumulatedNodes[0]!
+      } else {
+        accumulated = createOverlayCompositorNode(
+          `${groupId}-pre-processor-${i}`,
+          accumulatedNodes
+        )
+        nodes.push(accumulated)
+      }
+
+      // Apply processor (mask and/or effects)
+      const processed = buildProcessorNode(childId, accumulated, child, nodes)
+
+      // Reset accumulation with processed result
+      accumulatedNodes = [processed]
+    } else if (child.type === 'group') {
+      // Recursively process nested groups
+      const nestedNode = buildGroupNode(child, ctx, nodes)
+      if (nestedNode) {
+        accumulatedNodes.push(nestedNode)
+      }
+    }
+  }
+
+  // Combine remaining accumulated nodes
+  if (accumulatedNodes.length === 0) return null
+  if (accumulatedNodes.length === 1) return accumulatedNodes[0]!
+
+  const finalNode = createOverlayCompositorNode(`${groupId}-final`, accumulatedNodes)
+  nodes.push(finalNode)
+  return finalNode
+}
+
+// ============================================================
 // Main Pipeline Builder
 // ============================================================
 
@@ -428,7 +382,7 @@ export function buildPipeline(
   const nodes: Array<RenderNode | CompositorNode | OutputNode> = []
   const layerNodes: TextureProducingNode[] = []
 
-  // 1. Build background layer node
+  // 1. Build background layer node (from background-group)
   const baseLayer = findBaseLayer(config.layers)
   if (baseLayer) {
     const bgSurfaceNode = buildSurfaceNode('bg-surface', baseLayer, ctx)
@@ -436,80 +390,45 @@ export function buildPipeline(
     layerNodes.push(bgSurfaceNode)
   }
 
-  // 2. Build clip-group layer nodes
-  const clipGroups = findAllClipGroups(config.layers)
-  for (let i = 0; i < clipGroups.length; i++) {
-    const { group, surface, processor } = clipGroups[i]!
-    const groupId = group.id || `clip-${i}`
-
-    // Build surface node
-    const surfaceNode = buildSurfaceNode(`${groupId}-surface`, surface, ctx)
-    nodes.push(surfaceNode)
-
-    // Build mask node if processor has mask
-    let layerNode: TextureProducingNode = surfaceNode
-
-    if (processor) {
-      const maskNode = buildMaskNode(`${groupId}-mask`, processor)
-
-      if (maskNode) {
-        nodes.push(maskNode)
-
-        // Build masked layer with effects
-        const maskedLayerNode = buildMaskedLayerNode(
-          groupId,
-          surfaceNode,
-          maskNode,
-          processor
-        )
-        nodes.push(maskedLayerNode)
-        layerNode = maskedLayerNode
-      } else {
-        // No mask, but may have effects
-        const effectsNode = buildEffectChainNode(
-          `${groupId}-effects`,
-          surfaceNode,
-          processor
-        )
-        if (effectsNode) {
-          nodes.push(effectsNode)
-          layerNode = effectsNode
-        }
-      }
+  // 2. Build non-background groups using sequential processing
+  const groups = findNonBackgroundGroups(config.layers)
+  for (const group of groups) {
+    const groupNode = buildGroupNode(group, ctx, nodes)
+    if (groupNode) {
+      layerNodes.push(groupNode)
     }
-
-    layerNodes.push(layerNode)
   }
 
-  // 3. Build image layer nodes
-  const imageLayers = findAllImageLayers(config.layers)
-  for (const imageLayer of imageLayers) {
-    // Skip invisible layers or layers without an image
-    if (!imageLayer.visible) continue
-    if (!imageLayer.imageId) continue // Skip if no image assigned
+  // 3. Build root-level layers (not in groups)
+  for (let i = 0; i < config.layers.length; i++) {
+    const layer = config.layers[i]!
+    if (!layer.visible) continue
+    if (layer.type === 'group') continue // Already processed above
 
-    const imageNode = createImageRenderNode(
-      imageLayer.id,
-      imageLayer.imageId,
-      imageLayer.mode,
-      imageLayer.position
-    )
-    nodes.push(imageNode)
-    layerNodes.push(imageNode)
+    const layerId = layer.id || `root-layer-${i}`
+
+    if (layer.type === 'surface' && layer.id !== 'background') {
+      const surfaceNode = buildSurfaceNode(layerId, layer, ctx)
+      nodes.push(surfaceNode)
+      layerNodes.push(surfaceNode)
+    } else if (layer.type === 'text') {
+      const textNode = createTextRenderNode(layerId, layer)
+      nodes.push(textNode)
+      layerNodes.push(textNode)
+    } else if (layer.type === 'image' && layer.imageId) {
+      const imageNode = createImageRenderNode(
+        layerId,
+        layer.imageId,
+        layer.mode,
+        layer.position
+      )
+      nodes.push(imageNode)
+      layerNodes.push(imageNode)
+    }
+    // Note: root-level processors are handled in step 5
   }
 
-  // 4. Build text layer nodes
-  const textLayers = findAllTextLayers(config.layers)
-  for (let i = 0; i < textLayers.length; i++) {
-    const textLayer = textLayers[i]!
-    const textId = textLayer.id || `text-${i}`
-
-    const textNode = createTextRenderNode(textId, textLayer)
-    nodes.push(textNode)
-    layerNodes.push(textNode)
-  }
-
-  // 5. Build overlay compositor (combines all layers)
+  // 4. Build overlay compositor (combines all layers)
   let finalNode: TextureProducingNode
 
   if (layerNodes.length === 0) {
@@ -522,7 +441,7 @@ export function buildPipeline(
     finalNode = overlayNode
   }
 
-  // 6. Apply root-level processor nodes (global masks/effects)
+  // 5. Apply root-level processor nodes (global masks/effects)
   const rootProcessors = findRootProcessors(config.layers)
   for (let i = 0; i < rootProcessors.length; i++) {
     const processor = rootProcessors[i]!
@@ -530,7 +449,7 @@ export function buildPipeline(
     finalNode = buildProcessorNode(processorId, finalNode, processor, nodes)
   }
 
-  // 7. Build canvas output node
+  // 6. Build canvas output node
   const outputNode = createCanvasOutputNode('output', finalNode)
   nodes.push(outputNode)
 
