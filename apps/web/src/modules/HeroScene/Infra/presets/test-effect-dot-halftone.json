@@ -1,0 +1,73 @@
+{
+  "id": "test-effect-dot-halftone",
+  "name": "Test Effect: Dot Halftone",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "solid"
+            },
+            "colors": {
+              "primary": "F0",
+              "secondary": "auto"
+            }
+          },
+          {
+            "type": "processor",
+            "id": "processor-halftone",
+            "name": "Dot Halftone Effect",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "effect",
+                "id": "dotHalftone",
+                "params": {
+                  "dotSize": 4,
+                  "angle": 45,
+                  "contrast": 1.0
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 15
+    },
+    "accent": {
+      "hue": 0,
+      "saturation": 75,
+      "value": 55
+    },
+    "foundation": {
+      "hue": 45,
+      "saturation": 10,
+      "value": 95
+    }
+  }
+}
