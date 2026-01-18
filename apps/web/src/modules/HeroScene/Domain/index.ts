@@ -356,6 +356,11 @@ export {
   // Modifier operations
   canMoveModifierInTree,
   moveModifierInTree,
+  addModifierToProcessor,
+  removeModifierFromProcessor,
+  findProcessorForLayer,
+  createProcessorNodeConfig,
+  ensureProcessorForLayer,
 } from './LayerTreeOps'
 
 
@@ -721,6 +726,7 @@ export {
   createSingleEffectConfig,
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
+  createDefaultMaskProcessorConfig,
   // Surface config normalization (Phase 12)
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,

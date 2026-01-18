@@ -1,12 +1,8 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { ContextTargetType } from '../components/HeroGenerator/DraggableLayerNode.vue'
 import type { ContextMenuItem } from '../components/HeroGenerator/ContextMenu.vue'
-import type { LayerNodeConfig, ProcessorConfig, ProcessorNodeConfig } from '../modules/HeroScene'
-import {
-  findLayerInTree,
-  updateLayerInTree,
-  isProcessorLayerConfig,
-} from '../modules/HeroScene'
+import type { LayerNodeConfig } from '../modules/HeroScene'
+import { findLayerInTree } from '../modules/HeroScene'
 
 // ============================================================
 // Types
@@ -18,6 +14,8 @@ export interface ContextMenuCallbacks {
   handleToggleVisibility: (layerId: string) => void
   handleRemoveLayer: (layerId: string) => void
   handleRemoveForegroundElement: (elementId: string) => void
+  handleRemoveProcessor: (processorNodeId: string, modifierIndex: number) => void
+  handleRemoveProcessorNode: (processorNodeId: string) => void
 }
 
 export interface UseContextMenuReturn {
@@ -32,19 +30,12 @@ export interface UseContextMenuReturn {
   contextMenuItems: ComputedRef<ContextMenuItem[]>
 
   // Handlers
-  handleLayerContextMenu: (layerId: string, event: MouseEvent, targetType: ContextTargetType) => void
+  handleLayerContextMenu: (layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number) => void
   handleForegroundContextMenu: (elementId: string, event: MouseEvent) => void
   handleContextMenuClose: () => void
   handleContextMenuSelect: (itemId: string) => void
   handleGlobalContextMenu: (e: MouseEvent) => void
 }
-
-// ============================================================
-// Helper Functions
-// ============================================================
-
-const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
-const isMaskModifier = (mod: ProcessorConfig): boolean => mod.type === 'mask'
 
 // ============================================================
 // Composable
@@ -61,6 +52,7 @@ export function useContextMenu(
   const contextMenuPosition = ref({ x: 0, y: 0 })
   const contextMenuLayerId = ref<string | null>(null)
   const contextMenuTargetType = ref<ContextTargetType | 'html'>('layer')
+  const contextMenuModifierIndex = ref<number | null>(null)
 
   // ============================================================
   // Computed
@@ -89,10 +81,10 @@ export function useContextMenu(
       ]
     }
 
-    // Processor group: no actions
+    // Processor group: Remove only
     if (targetType === 'processor') {
       return [
-        { id: 'processor-info', label: 'Processor', disabled: true },
+        { id: 'remove-processor', label: 'Remove Processor', icon: 'delete' },
       ]
     }
 
@@ -111,9 +103,10 @@ export function useContextMenu(
   // Handlers
   // ============================================================
 
-  const handleLayerContextMenu = (layerId: string, event: MouseEvent, targetType: ContextTargetType) => {
+  const handleLayerContextMenu = (layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number) => {
     contextMenuLayerId.value = layerId
     contextMenuTargetType.value = targetType
+    contextMenuModifierIndex.value = modifierIndex ?? null
     contextMenuPosition.value = { x: event.clientX, y: event.clientY }
     contextMenuOpen.value = true
   }
@@ -129,24 +122,7 @@ export function useContextMenu(
     contextMenuOpen.value = false
     contextMenuLayerId.value = null
     contextMenuTargetType.value = 'layer'
-  }
-
-  const handleRemoveModifier = (layerId: string, modifierType: 'effect' | 'mask') => {
-    const layer = findLayerInTree(layers.value, layerId)
-    if (!layer || !isProcessorLayerConfig(layer)) return
-
-    const processor = layer as ProcessorNodeConfig
-
-    // Filter out the modifier of the specified type
-    const newModifiers = processor.modifiers.filter((mod: ProcessorConfig) => {
-      if (modifierType === 'effect') return !isEffectModifier(mod)
-      if (modifierType === 'mask') return !isMaskModifier(mod)
-      return true
-    })
-
-    layers.value = updateLayerInTree(layers.value, layerId, {
-      modifiers: newModifiers,
-    })
+    contextMenuModifierIndex.value = null
   }
 
   const handleContextMenuSelect = (itemId: string) => {
@@ -154,6 +130,7 @@ export function useContextMenu(
     if (!layerId) return
 
     const targetType = contextMenuTargetType.value
+    const modifierIndex = contextMenuModifierIndex.value
 
     switch (itemId) {
       case 'group-selection':
@@ -174,9 +151,15 @@ export function useContextMenu(
         }
         break
       case 'remove-modifier':
-        // Remove the specific modifier (effect or mask)
-        if (targetType === 'effect' || targetType === 'mask') {
-          handleRemoveModifier(layerId, targetType)
+        // Remove the specific modifier by index
+        if ((targetType === 'effect' || targetType === 'mask') && modifierIndex !== null) {
+          callbacks.handleRemoveProcessor(layerId, modifierIndex)
+        }
+        break
+      case 'remove-processor':
+        // Remove the entire processor node
+        if (targetType === 'processor') {
+          callbacks.handleRemoveProcessorNode(layerId)
         }
         break
     }

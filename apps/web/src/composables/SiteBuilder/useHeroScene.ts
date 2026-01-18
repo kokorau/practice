@@ -91,6 +91,8 @@ import {
   type RendererActions,
   findLayerInTree,
   isGroupLayerConfig,
+  createProcessorUsecase,
+  type ProcessorUsecase,
 } from '../../modules/HeroScene'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
 
@@ -471,6 +473,13 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
+  // Processor Usecase
+  // ============================================================
+  const processorUsecase: ProcessorUsecase = createProcessorUsecase({
+    repository: heroViewRepository,
+  })
+
+  // ============================================================
   // ForegroundElement Usecase
   // ============================================================
   const selectedForegroundElementId = computed({
@@ -664,6 +673,32 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     layerUsecase.removeLayer(id)
     render()
     return true
+  }
+
+  /**
+   * Add a processor (effect or mask) to a layer
+   * If the layer doesn't have a processor node, one will be created
+   */
+  const addProcessorToLayer = (layerId: string, processorType: 'effect' | 'mask') => {
+    processorUsecase.addModifier(layerId, processorType)
+    render()
+  }
+
+  /**
+   * Remove a processor modifier (effect or mask) from a layer by index
+   * If modifiers becomes empty, the processor node is automatically removed
+   */
+  const removeProcessorFromLayer = (processorNodeId: string, modifierIndex: number) => {
+    processorUsecase.removeModifier(processorNodeId, modifierIndex)
+    render()
+  }
+
+  /**
+   * Remove an entire processor node (with all its modifiers)
+   */
+  const removeProcessor = (processorNodeId: string) => {
+    processorUsecase.removeProcessor(processorNodeId)
+    render()
   }
 
   const updateLayerVisibility = (id: string, visible: boolean) => {
@@ -991,6 +1026,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     addImageLayer,
     addGroupLayer,
     removeLayer,
+    addProcessorToLayer,
+    removeProcessorFromLayer,
+    removeProcessor,
     updateLayerVisibility,
     toggleLayerVisibility,
     groupLayer,

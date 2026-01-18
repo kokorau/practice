@@ -7,7 +7,7 @@ import FloatingPanel from './FloatingPanel.vue'
 import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
 import type { HeroViewPreset, LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '../../modules/HeroScene'
-import type { ContextTargetType } from './DraggableLayerNode.vue'
+import type { ContextTargetType, AddProcessorType } from './DraggableLayerNode.vue'
 
 // ============================================================
 // Grouped Props Types
@@ -76,9 +76,10 @@ const emit = defineEmits<{
   'select-processor': [layerId: string, processorType: 'effect' | 'mask' | 'processor']
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
+  'add-processor': [layerId: string, processorType: AddProcessorType]
   'group-selection': [layerId: string]
   'use-as-mask': [layerId: string]
-  'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
+  'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number]
   'move-node': [nodeId: string, position: LayerDropPosition]
   'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
   // Foreground events
@@ -283,7 +284,8 @@ const selectedPresetName = computed(() => {
           @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
           @add-layer="(type: LayerType) => emit('add-layer', type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
-          @layer-contextmenu="(id: string, e: MouseEvent, type: ContextTargetType) => emit('layer-contextmenu', id, e, type)"
+          @add-processor="(id: string, type: AddProcessorType) => emit('add-processor', id, type)"
+          @layer-contextmenu="(id: string, e: MouseEvent, type: ContextTargetType, modifierIndex?: number) => emit('layer-contextmenu', id, e, type, modifierIndex)"
           @move-node="(id: string, pos: LayerDropPosition) => emit('move-node', id, pos)"
           @move-modifier="(srcId: string, idx: number, pos: ModifierDropPosition) => emit('move-modifier', srcId, idx, pos)"
           @select-foreground-element="(id: string) => emit('select-foreground-element', id)"
