@@ -30,8 +30,7 @@
             "colors": {
               "primary": "B",
               "secondary": "F1"
-            },
-            "filters": []
+            }
           }
         ]
       },
@@ -52,16 +51,7 @@
             "colors": {
               "primary": "Bt",
               "secondary": "Bs"
-            },
-            "filters": [
-              {
-                "type": "effect",
-                "id": "chromaticAberration",
-                "params": {
-                  "intensity": 0.02
-                }
-              }
-            ]
+            }
           },
           {
             "type": "processor",
@@ -69,6 +59,13 @@
             "name": "Mask",
             "visible": true,
             "modifiers": [
+              {
+                "type": "effect",
+                "id": "chromaticAberration",
+                "params": {
+                  "intensity": 0.02
+                }
+              },
               {
                 "type": "mask",
                 "enabled": true,
