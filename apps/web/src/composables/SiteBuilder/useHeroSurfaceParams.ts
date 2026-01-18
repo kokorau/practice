@@ -30,6 +30,9 @@ import {
   fromCustomSurfaceParams,
   syncBackgroundSurfaceParams,
   syncMaskSurfaceParams,
+  denormalizeMaskConfig,
+  normalizeMaskConfig,
+  normalizeSurfaceConfig,
 } from '../../modules/HeroScene'
 import type {
   CustomMaskShapeParams,
@@ -109,7 +112,8 @@ export const useHeroSurfaceParams = (
       if (!processor) return null
       const maskModifier = processor.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
       if (!maskModifier) return null
-      return toCustomMaskShapeParams(maskModifier.shape)
+      // Convert NormalizedMaskConfig to legacy format for toCustomMaskShapeParams
+      return toCustomMaskShapeParams(denormalizeMaskConfig(maskModifier.shape))
     },
     set: (val: CustomMaskShapeParams | null) => {
       if (val === null) return
@@ -121,9 +125,10 @@ export const useHeroSurfaceParams = (
       if (maskModifierIndex === -1) return
       const newModifiers = [...processor.modifiers]
       const existingMask = newModifiers[maskModifierIndex] as MaskProcessorConfig
+      // Convert legacy format to NormalizedMaskConfig
       newModifiers[maskModifierIndex] = {
         ...existingMask,
-        shape: fromCustomMaskShapeParams(val),
+        shape: normalizeMaskConfig(fromCustomMaskShapeParams(val)),
       }
       heroViewRepository.updateLayer(processor.id, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
     },
@@ -137,7 +142,8 @@ export const useHeroSurfaceParams = (
     set: (val: CustomSurfaceParams | null) => {
       if (val === null) return
       const targetLayerId = selectedLayerId.value ?? 'surface-mask'
-      heroViewRepository.updateLayer(targetLayerId, { surface: fromCustomSurfaceParams(val) })
+      // Convert legacy format to NormalizedSurfaceConfig
+      heroViewRepository.updateLayer(targetLayerId, { surface: normalizeSurfaceConfig(fromCustomSurfaceParams(val)) })
     },
   })
 
@@ -148,7 +154,8 @@ export const useHeroSurfaceParams = (
     },
     set: (val: CustomBackgroundSurfaceParams | null) => {
       if (val === null) return
-      heroViewRepository.updateLayer(BASE_LAYER_ID, { surface: fromCustomSurfaceParams(val) })
+      // Convert legacy format to NormalizedSurfaceConfig
+      heroViewRepository.updateLayer(BASE_LAYER_ID, { surface: normalizeSurfaceConfig(fromCustomSurfaceParams(val)) })
     },
   })
 

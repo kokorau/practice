@@ -24,7 +24,7 @@ import {
 } from '@practice/texture'
 import {
   type HeroViewRepository,
-  type HeroSurfaceConfig,
+  type NormalizedSurfaceConfig,
   toCustomMaskShapeParams,
 } from '../../modules/HeroScene'
 import type {
@@ -54,7 +54,7 @@ export interface UseHeroPatternPresetsOptions {
 
 export interface UseHeroPatternPresetsReturn {
   surfacePresets: ReturnType<typeof getSurfacePresets>
-  setBaseSurface: (surface: HeroSurfaceConfig) => void
+  setBaseSurface: (surface: NormalizedSurfaceConfig) => void
   initMaskShapeParamsFromPreset: () => void
   initSurfaceParamsFromPreset: () => void
   initBackgroundSurfaceParamsFromPreset: () => void
@@ -90,7 +90,7 @@ export const useHeroPatternPresets = (
 
   const surfacePresets = getSurfacePresets()
 
-  const setBaseSurface = (surface: HeroSurfaceConfig) => {
+  const setBaseSurface = (surface: NormalizedSurfaceConfig) => {
     heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
   }
 
@@ -117,15 +117,15 @@ export const useHeroPatternPresets = (
     if (preset) {
       const params = extractBackgroundSurfaceParams(preset.params, textureColor1.value, textureColor2.value)
       if (params.type === 'solid') {
-        setBaseSurface({ type: 'solid' })
+        setBaseSurface({ id: 'solid', params: {} })
       } else if (params.type === 'stripe') {
-        setBaseSurface({ type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle })
+        setBaseSurface({ id: 'stripe', params: { width1: params.width1, width2: params.width2, angle: params.angle } })
       } else if (params.type === 'grid') {
-        setBaseSurface({ type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize })
+        setBaseSurface({ id: 'grid', params: { lineWidth: params.lineWidth, cellSize: params.cellSize } })
       } else if (params.type === 'polkaDot') {
-        setBaseSurface({ type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset })
+        setBaseSurface({ id: 'polkaDot', params: { dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset } })
       } else if (params.type === 'checker') {
-        setBaseSurface({ type: 'checker', cellSize: params.cellSize, angle: params.angle })
+        setBaseSurface({ id: 'checker', params: { cellSize: params.cellSize, angle: params.angle } })
       } else if (params.type === 'gradientGrain') {
         customBackgroundSurfaceParams.value = params
       } else if (params.type === 'asanoha') {
@@ -162,8 +162,13 @@ export const useHeroPatternPresets = (
     const layer = heroViewRepository.findLayer(BASE_LAYER_ID)
     if (!layer || layer.type !== 'surface') return
     const currentSurface = layer.surface
-    if (currentSurface.type !== type) return
-    const newSurface = { ...currentSurface, ...updates } as HeroSurfaceConfig
+    if (currentSurface.id !== type) return
+    const newSurface: NormalizedSurfaceConfig = {
+      id: currentSurface.id,
+      params: { ...currentSurface.params, ...updates },
+    }
+    // Remove 'type' from params as it's now in 'id'
+    delete (newSurface.params as Record<string, unknown>).type
     heroViewRepository.updateLayer(BASE_LAYER_ID, { surface: newSurface })
   }
 

@@ -18,13 +18,14 @@ import {
   BlurEffectSchema,
   createDefaultEffectConfig,
   extractEnabledEffects,
+  normalizeMaskConfig,
   type FilterType,
   type HeroViewConfig,
   type LayerEffectConfig,
   type LayerNodeConfig,
   type GroupLayerNodeConfig,
   type ProcessorNodeConfig,
-  type MaskShapeConfig,
+  type NormalizedMaskConfig,
   type MaskProcessorConfig,
 } from '../../../modules/HeroScene'
 import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
@@ -187,7 +188,7 @@ const effectPreviewConfigs = computed(() => {
 
 const isHeroMode = computed(() => props.showPreview && props.baseConfig && props.palette)
 
-const createMaskPreviewConfig = (base: HeroViewConfig, shape: MaskShapeConfig): HeroViewConfig => {
+const createMaskPreviewConfig = (base: HeroViewConfig, shape: NormalizedMaskConfig): HeroViewConfig => {
   return {
     ...base,
     layers: base.layers.map(layer => {
@@ -217,10 +218,13 @@ const maskPreviewConfigs = computed(() => {
 
   return props.maskPatterns.map(pattern => {
     if (pattern.maskConfig) {
-      const shape: MaskShapeConfig = {
+      // Convert @practice/texture MaskShapeConfig to NormalizedMaskConfig
+      // Use type assertion since texture's MaskShapeConfig has optional fields
+      const flatShape = {
         ...pattern.maskConfig,
         cutout: pattern.maskConfig.cutout ?? false,
-      } as MaskShapeConfig
+      } as Parameters<typeof normalizeMaskConfig>[0]
+      const shape = normalizeMaskConfig(flatShape)
       return createMaskPreviewConfig(props.baseConfig!, shape)
     }
     return null

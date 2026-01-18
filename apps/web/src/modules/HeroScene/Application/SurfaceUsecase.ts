@@ -8,7 +8,7 @@
 import type { HeroViewRepository } from './ports/HeroViewRepository'
 import type {
   HeroPrimitiveKey,
-  SurfaceConfig,
+  NormalizedSurfaceConfig,
   LayerNodeConfig,
   DepthMapType,
   SurfaceColorsConfig,
@@ -84,14 +84,14 @@ export interface SurfaceUsecase {
    * 選択中のレイヤーのサーフェスを選択
    * @param surface サーフェス設定
    */
-  selectSurface(surface: SurfaceConfig): void
+  selectSurface(surface: NormalizedSurfaceConfig): void
 
   /**
    * 指定レイヤーのサーフェスを選択（明示的な制御用）
    * @param layerId レイヤーID
    * @param surface サーフェス設定
    */
-  selectSurfaceForLayer(layerId: string, surface: SurfaceConfig): void
+  selectSurfaceForLayer(layerId: string, surface: NormalizedSurfaceConfig): void
 
   /**
    * サーフェスパラメータを更新
@@ -186,13 +186,13 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
     // Surface Operations
     // ----------------------------------------
 
-    selectSurface(surface: SurfaceConfig): void {
+    selectSurface(surface: NormalizedSurfaceConfig): void {
       const layerId = getSelectedLayerId()
       if (!layerId) return
       repository.updateLayer(layerId, { surface })
     },
 
-    selectSurfaceForLayer(layerId: string, surface: SurfaceConfig): void {
+    selectSurfaceForLayer(layerId: string, surface: NormalizedSurfaceConfig): void {
       repository.updateLayer(layerId, { surface })
     },
 
@@ -207,9 +207,14 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       if (layer.type !== 'base' && layer.type !== 'surface') return
 
       const currentSurface = layer.surface
-      if (currentSurface.type !== params.type) return
+      if (currentSurface.id !== params.type) return
 
-      const newSurface = { ...currentSurface, ...params } as SurfaceConfig
+      const newSurface: NormalizedSurfaceConfig = {
+        id: currentSurface.id,
+        params: { ...currentSurface.params, ...params },
+      }
+      // Remove 'type' from params as it's now in 'id'
+      delete (newSurface.params as Record<string, unknown>).type
       repository.updateLayer(layerId, { surface: newSurface })
     },
 
@@ -245,7 +250,7 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
 
       const imageId = await imageUpload.upload(file)
       repository.updateLayer(layerId, {
-        surface: { type: 'image', imageId },
+        surface: { id: 'image', params: { imageId } },
       })
     },
 
@@ -254,7 +259,7 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       if (!layerId) return
 
       repository.updateLayer(layerId, {
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
       })
     },
 
@@ -269,7 +274,7 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       const file = await imageUpload.fetchRandom(query)
       const imageId = await imageUpload.upload(file)
       repository.updateLayer(layerId, {
-        surface: { type: 'image', imageId },
+        surface: { id: 'image', params: { imageId } },
       })
     },
 

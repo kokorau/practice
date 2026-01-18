@@ -144,7 +144,7 @@ const modifiers = computed(() => {
       result.push({
         type: 'mask',
         label: 'Mask',
-        value: maskMod.shape.type,
+        value: maskMod.shape.id,
         icon: 'content_cut',
         enabled: maskMod.enabled,
         index,

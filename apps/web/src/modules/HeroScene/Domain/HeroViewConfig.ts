@@ -540,6 +540,7 @@ export const MASK_SHAPE_TYPE_IDS: MaskShapeTypeId[] = [
   'linearGradient',
   'radialGradient',
   'boxGradient',
+  'wavyLine',
 ]
 
 /**
@@ -661,7 +662,7 @@ export function isSingleEffectConfig(config: ProcessorConfig): config is SingleE
 export interface MaskProcessorConfig {
   type: 'mask'
   enabled: boolean
-  shape: MaskShapeConfig
+  shape: NormalizedMaskConfig
   invert: boolean
   feather: number
 }
@@ -825,14 +826,14 @@ interface LayerNodeConfigBase {
  */
 export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   type: 'base'
-  surface: SurfaceConfig
+  surface: NormalizedSurfaceConfig
   /** Per-surface color configuration */
   colors?: SurfaceColorsConfig
 }
 
 export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
   type: 'surface'
-  surface: SurfaceConfig
+  surface: NormalizedSurfaceConfig
   /** Per-surface color configuration */
   colors?: SurfaceColorsConfig
 }
@@ -1074,7 +1075,7 @@ export const DEFAULT_LAYER_MASK_COLORS: SurfaceColorsConfig = {
 export const createDefaultMaskProcessorConfig = (): MaskProcessorConfig => ({
   type: 'mask',
   enabled: true,
-  shape: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false },
+  shape: { id: 'circle', params: { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false } },
   invert: false,
   feather: 0,
 })
@@ -1094,7 +1095,7 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           id: 'background',
           name: 'Surface',
           visible: true,
-          surface: { type: 'solid' },
+          surface: { id: 'solid', params: {} },
           colors: { primary: 'B', secondary: 'auto' },
         },
       ],
@@ -1110,7 +1111,7 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           id: 'surface-mask',
           name: 'Surface',
           visible: true,
-          surface: { type: 'solid' },
+          surface: { id: 'solid', params: {} },
           colors: { primary: 'auto', secondary: 'auto' },
         },
         {
@@ -1320,4 +1321,253 @@ export const migrateExpandedFromConfig = (layers: LayerNodeConfig[]): LayerNodeC
   }
 
   return migrate(layers)
+}
+
+// ============================================================
+// Config Migration: Legacy to Normalized Format
+// ============================================================
+
+/**
+ * Type guard to check if a surface config is in legacy flat format
+ */
+export function isLegacyFlatSurfaceConfig(
+  config: unknown
+): config is SurfaceConfig {
+  return (
+    typeof config === 'object' &&
+    config !== null &&
+    'type' in config &&
+    !('id' in config) &&
+    !('params' in config)
+  )
+}
+
+/**
+ * Type guard to check if a mask config is in legacy flat format
+ */
+export function isLegacyFlatMaskConfig(
+  config: unknown
+): config is MaskShapeConfig {
+  return (
+    typeof config === 'object' &&
+    config !== null &&
+    'type' in config &&
+    !('id' in config) &&
+    !('params' in config)
+  )
+}
+
+/**
+ * Migrate a single layer config from legacy to normalized format
+ */
+function migrateLayerConfig(layer: LayerNodeConfig): LayerNodeConfig {
+  switch (layer.type) {
+    case 'base':
+    case 'surface': {
+      const surfaceLayer = layer as BaseLayerNodeConfig | SurfaceLayerNodeConfig
+      // Check if surface is in legacy format
+      if (isLegacyFlatSurfaceConfig(surfaceLayer.surface)) {
+        return {
+          ...surfaceLayer,
+          surface: normalizeSurfaceConfig(surfaceLayer.surface),
+        }
+      }
+      return layer
+    }
+    case 'processor': {
+      const processorLayer = layer as ProcessorNodeConfig
+      const migratedModifiers = processorLayer.modifiers.map((modifier) => {
+        if (modifier.type === 'mask') {
+          const maskModifier = modifier as MaskProcessorConfig
+          // Check if shape is in legacy format (cast to unknown first for type safety)
+          const shape = maskModifier.shape as unknown
+          if (isLegacyFlatMaskConfig(shape)) {
+            return {
+              ...maskModifier,
+              shape: normalizeMaskConfig(shape),
+            }
+          }
+        }
+        return modifier
+      })
+      return {
+        ...processorLayer,
+        modifiers: migratedModifiers,
+      }
+    }
+    case 'group': {
+      const groupLayer = layer as GroupLayerNodeConfig
+      return {
+        ...groupLayer,
+        children: groupLayer.children.map(migrateLayerConfig),
+      }
+    }
+    default:
+      return layer
+  }
+}
+
+/**
+ * Migrate HeroViewConfig from legacy flat format to normalized format
+ *
+ * This function detects and converts:
+ * - SurfaceLayerNodeConfig.surface: { type: 'stripe', ... } → { id: 'stripe', params: { ... } }
+ * - MaskProcessorConfig.shape: { type: 'circle', ... } → { id: 'circle', params: { ... } }
+ *
+ * @param config - HeroViewConfig (may contain legacy flat formats)
+ * @returns HeroViewConfig with all configs in normalized format
+ */
+export function migrateToNormalizedFormat(config: HeroViewConfig): HeroViewConfig {
+  return {
+    ...config,
+    layers: config.layers.map(migrateLayerConfig),
+  }
+}
+
+// ============================================================
+// Config Validation (I/O Boundary)
+// ============================================================
+
+/**
+ * Validation error for HeroViewConfig
+ */
+export interface ConfigValidationError {
+  path: string
+  message: string
+}
+
+/**
+ * Validation result for HeroViewConfig
+ */
+export interface ConfigValidationResult {
+  valid: boolean
+  errors: ConfigValidationError[]
+}
+
+/**
+ * Validate a NormalizedSurfaceConfig
+ */
+function validateNormalizedSurfaceConfig(
+  config: unknown,
+  path: string
+): ConfigValidationError[] {
+  const errors: ConfigValidationError[] = []
+
+  if (typeof config !== 'object' || config === null) {
+    errors.push({ path, message: 'Surface config must be an object' })
+    return errors
+  }
+
+  const surfaceConfig = config as Record<string, unknown>
+
+  if (!('id' in surfaceConfig) || typeof surfaceConfig.id !== 'string') {
+    errors.push({ path: `${path}.id`, message: 'Surface config must have a string id' })
+  } else if (!SURFACE_TYPES.includes(surfaceConfig.id as SurfaceType)) {
+    errors.push({ path: `${path}.id`, message: `Invalid surface type: ${surfaceConfig.id}` })
+  }
+
+  if (!('params' in surfaceConfig) || typeof surfaceConfig.params !== 'object') {
+    errors.push({ path: `${path}.params`, message: 'Surface config must have params object' })
+  }
+
+  return errors
+}
+
+/**
+ * Validate a NormalizedMaskConfig
+ */
+function validateNormalizedMaskConfig(
+  config: unknown,
+  path: string
+): ConfigValidationError[] {
+  const errors: ConfigValidationError[] = []
+
+  if (typeof config !== 'object' || config === null) {
+    errors.push({ path, message: 'Mask config must be an object' })
+    return errors
+  }
+
+  const maskConfig = config as Record<string, unknown>
+
+  if (!('id' in maskConfig) || typeof maskConfig.id !== 'string') {
+    errors.push({ path: `${path}.id`, message: 'Mask config must have a string id' })
+  } else if (!MASK_SHAPE_TYPE_IDS.includes(maskConfig.id as MaskShapeTypeId)) {
+    errors.push({ path: `${path}.id`, message: `Invalid mask shape type: ${maskConfig.id}` })
+  }
+
+  if (!('params' in maskConfig) || typeof maskConfig.params !== 'object') {
+    errors.push({ path: `${path}.params`, message: 'Mask config must have params object' })
+  }
+
+  return errors
+}
+
+/**
+ * Validate layer configs recursively
+ */
+function validateLayerConfigs(
+  layers: LayerNodeConfig[],
+  basePath: string
+): ConfigValidationError[] {
+  const errors: ConfigValidationError[] = []
+
+  layers.forEach((layer, index) => {
+    const layerPath = `${basePath}[${index}]`
+
+    switch (layer.type) {
+      case 'base':
+      case 'surface': {
+        const surfaceLayer = layer as BaseLayerNodeConfig | SurfaceLayerNodeConfig
+        errors.push(...validateNormalizedSurfaceConfig(surfaceLayer.surface, `${layerPath}.surface`))
+        break
+      }
+      case 'processor': {
+        const processorLayer = layer as ProcessorNodeConfig
+        processorLayer.modifiers.forEach((modifier, modIndex) => {
+          if (modifier.type === 'mask') {
+            const maskModifier = modifier as MaskProcessorConfig
+            errors.push(
+              ...validateNormalizedMaskConfig(
+                maskModifier.shape,
+                `${layerPath}.modifiers[${modIndex}].shape`
+              )
+            )
+          }
+        })
+        break
+      }
+      case 'group': {
+        const groupLayer = layer as GroupLayerNodeConfig
+        errors.push(...validateLayerConfigs(groupLayer.children, `${layerPath}.children`))
+        break
+      }
+    }
+  })
+
+  return errors
+}
+
+/**
+ * Validate HeroViewConfig at I/O boundary
+ *
+ * This function validates that:
+ * - All surface configs are in normalized format with valid types
+ * - All mask configs are in normalized format with valid types
+ *
+ * Use this at I/O boundaries (preset loading, snapshot restore) to ensure
+ * data integrity before processing.
+ *
+ * @param config - HeroViewConfig to validate
+ * @returns Validation result with any errors found
+ */
+export function validateHeroViewConfig(config: HeroViewConfig): ConfigValidationResult {
+  const errors: ConfigValidationError[] = []
+
+  // Validate layers
+  errors.push(...validateLayerConfigs(config.layers, 'layers'))
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  }
 }
