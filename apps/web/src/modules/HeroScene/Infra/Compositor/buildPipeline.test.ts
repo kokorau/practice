@@ -128,12 +128,12 @@ describe('buildPipeline', () => {
 
     const result = buildPipeline(config, palette)
 
-    // Should have surface node for clip-group
-    const clipSurfaceNode = result.nodes.find(n => n.id === 'clip-group-surface')
+    // Should have surface node for clip-group (uses child's ID directly)
+    const clipSurfaceNode = result.nodes.find(n => n.id === 'surface-mask')
     expect(clipSurfaceNode).toBeDefined()
 
-    // Should have mask node
-    const maskNode = result.nodes.find(n => n.id === 'clip-group-mask')
+    // Should have mask node (processor ID + "-mask")
+    const maskNode = result.nodes.find(n => n.id === 'processor-mask-mask')
     expect(maskNode).toBeDefined()
   })
 
@@ -211,9 +211,12 @@ describe('buildPipeline', () => {
 
     // Should still work without mask
     expect(result.outputNode).toBeDefined()
-    // Should not have mask node
-    const maskNode = result.nodes.find(n => n.id.includes('mask') && n.type === 'render')
-    expect(maskNode).toBeUndefined()
+    // Should have surface node for clip-group
+    const surfaceNode = result.nodes.find(n => n.id === 'surface-mask')
+    expect(surfaceNode).toBeDefined()
+    // Should not have mask compositor node (no processor means no mask applied)
+    const maskCompositorNode = result.nodes.find(n => n.id.includes('-masked'))
+    expect(maskCompositorNode).toBeUndefined()
   })
 })
 
