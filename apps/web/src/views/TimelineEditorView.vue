@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { Timeline, Phase, PhaseId, TrackId } from '@practice/timeline'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState } from '@practice/timeline'
+import { createTimelinePlayer } from '@practice/timeline'
 
 // ============================================================
 // Mock Data
@@ -18,14 +19,29 @@ const mockTimeline: Timeline = {
       name: 'Opacity',
       clock: 'Global',
       mode: 'Envelope',
-      envelope: { points: [], interpolation: 'Linear' },
+      envelope: {
+        points: [
+          { time: 0, value: 0 },
+          { time: 2000, value: 1 },
+          { time: 6000, value: 1 },
+          { time: 8000, value: 0 },
+        ],
+        interpolation: 'Linear',
+      },
     },
     {
       id: 'track-2' as TrackId,
       name: 'Scale',
       clock: 'Global',
       mode: 'Envelope',
-      envelope: { points: [], interpolation: 'Bezier' },
+      envelope: {
+        points: [
+          { time: 0, value: 0.5 },
+          { time: 4000, value: 1 },
+          { time: 8000, value: 0.5 },
+        ],
+        interpolation: 'Bezier',
+      },
     },
     {
       id: 'track-3' as TrackId,
@@ -37,17 +53,115 @@ const mockTimeline: Timeline = {
   ],
 }
 
+const mockBindings: Binding[] = [
+  {
+    targetParam: 'opacity',
+    sourceTrack: 'track-1' as TrackId,
+    map: { min: 0, max: 1 },
+  },
+  {
+    targetParam: 'scale',
+    sourceTrack: 'track-2' as TrackId,
+    map: { min: 0.5, max: 1.5 },
+  },
+  {
+    targetParam: 'rotation',
+    sourceTrack: 'track-3' as TrackId,
+    map: { min: -15, max: 15 },
+  },
+]
+
 // ============================================================
 // Timeline State
 // ============================================================
 const timeline = ref<Timeline>(mockTimeline)
 const playhead = ref(0) // ms
 const isPlaying = ref(false)
+const frameState = ref<FrameState>({ time: 0, params: {} })
 
 // Total duration in ms
 const totalDuration = computed(() =>
   timeline.value.phases.reduce((sum, p) => sum + p.duration, 0)
 )
+
+// ============================================================
+// Timeline Player
+// ============================================================
+const player = createTimelinePlayer({
+  timeline: mockTimeline,
+  bindings: mockBindings,
+})
+
+let animationFrameId: number | null = null
+let startTime: number | null = null
+
+function startPlayback() {
+  isPlaying.value = true
+  player.seek(playhead.value)
+  player.play()
+  startTime = performance.now() - playhead.value
+  tick()
+}
+
+function stopPlayback() {
+  isPlaying.value = false
+  player.pause()
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+}
+
+function resetPlayback() {
+  stopPlayback()
+  playhead.value = 0
+  player.seek(0)
+  frameState.value = player.update(0)
+}
+
+function tick() {
+  if (!isPlaying.value) return
+
+  const now = performance.now()
+  const engineTime = startTime !== null ? now - startTime : 0
+
+  frameState.value = player.update(engineTime)
+  playhead.value = frameState.value.time
+
+  animationFrameId = requestAnimationFrame(tick)
+}
+
+function togglePlayback() {
+  if (isPlaying.value) {
+    stopPlayback()
+  } else {
+    startPlayback()
+  }
+}
+
+// Sync playhead when seeking via UI
+watch(playhead, (newVal) => {
+  if (!isPlaying.value) {
+    player.seek(newVal)
+    frameState.value = player.update(0)
+  }
+})
+
+onMounted(() => {
+  // Initialize frame state
+  frameState.value = player.update(0)
+})
+
+onUnmounted(() => {
+  stopPlayback()
+})
+
+// ============================================================
+// Preview Values
+// ============================================================
+const previewOpacity = computed(() => frameState.value.params.opacity ?? 1)
+const previewScale = computed(() => frameState.value.params.scale ?? 1)
+const previewRotation = computed(() => frameState.value.params.rotation ?? 0)
 
 // Phase positions for rendering
 const phasePositions = computed(() => {
@@ -106,7 +220,14 @@ function onRulerClick(e: MouseEvent) {
   if (!rulerRef.value) return
   const rect = rulerRef.value.getBoundingClientRect()
   const percent = (e.clientX - rect.left) / rect.width
-  playhead.value = Math.round(percent * totalDuration.value)
+  const newPlayhead = Math.round(percent * totalDuration.value)
+
+  if (isPlaying.value) {
+    // Update start time to maintain continuity
+    startTime = performance.now() - newPlayhead
+  }
+  playhead.value = newPlayhead
+  player.seek(newPlayhead)
 }
 
 // ============================================================
@@ -155,8 +276,29 @@ const trackListWidth = 150
 
       <!-- 16:9 Preview Box -->
       <div class="preview-container">
-        <div class="preview-box">
-          <span class="preview-label">16:9 Preview</span>
+        <div
+          class="preview-box"
+          :style="{
+            opacity: previewOpacity,
+            transform: `scale(${previewScale}) rotate(${previewRotation}deg)`,
+          }"
+        >
+          <div class="preview-content">
+            <div class="preview-values">
+              <div class="preview-value">
+                <span class="value-label">Opacity</span>
+                <span class="value-num">{{ previewOpacity.toFixed(2) }}</span>
+              </div>
+              <div class="preview-value">
+                <span class="value-label">Scale</span>
+                <span class="value-num">{{ previewScale.toFixed(2) }}</span>
+              </div>
+              <div class="preview-value">
+                <span class="value-label">Rotation</span>
+                <span class="value-num">{{ previewRotation.toFixed(1) }}°</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -175,10 +317,10 @@ const trackListWidth = 150
     >
       <!-- Timeline Controls -->
       <div class="timeline-controls">
-        <button class="control-button" :class="{ active: isPlaying }" @click="isPlaying = !isPlaying">
+        <button class="control-button" :class="{ active: isPlaying }" @click="togglePlayback">
           {{ isPlaying ? 'Pause' : 'Play' }}
         </button>
-        <button class="control-button" @click="playhead = 0">Stop</button>
+        <button class="control-button" @click="resetPlayback">Stop</button>
         <div class="timecode">{{ formatTime(playhead) }} / {{ formatTime(totalDuration) }}</div>
       </div>
 
@@ -304,18 +446,44 @@ const trackListWidth = 150
   max-height: 100%;
   width: auto;
   height: 80%;
-  background: white;
+  background: linear-gradient(135deg, oklch(0.55 0.20 250), oklch(0.45 0.25 280));
   border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: transform 0.05s ease-out;
 }
 
-.preview-label {
-  font-size: 0.875rem;
-  color: oklch(0.55 0.02 260);
+.preview-content {
+  text-align: center;
+  color: white;
+}
+
+.preview-values {
+  display: flex;
+  gap: 2rem;
+}
+
+.preview-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.value-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+}
+
+.value-num {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-family: ui-monospace, monospace;
 }
 
 .resize-handle {

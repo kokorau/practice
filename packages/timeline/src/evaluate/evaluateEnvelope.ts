@@ -13,30 +13,30 @@ export function evaluateEnvelope(envelope: Envelope, time: Ms): number {
   }
 
   if (points.length === 1) {
-    return points[0].value
+    return points[0]!.value
   }
 
   // Sort points by time (defensive)
   const sorted = [...points].sort((a, b) => a.time - b.time)
 
   // Before first point
-  if (time <= sorted[0].time) {
-    return sorted[0].value
+  if (time <= sorted[0]!.time) {
+    return sorted[0]!.value
   }
 
   // After last point
-  if (time >= sorted[sorted.length - 1].time) {
-    return sorted[sorted.length - 1].value
+  if (time >= sorted[sorted.length - 1]!.time) {
+    return sorted[sorted.length - 1]!.value
   }
 
   // Find surrounding points
-  let p0: ControlPoint = sorted[0]
-  let p1: ControlPoint = sorted[1]
+  let p0: ControlPoint = sorted[0]!
+  let p1: ControlPoint = sorted[1]!
 
   for (let i = 0; i < sorted.length - 1; i++) {
-    if (time >= sorted[i].time && time <= sorted[i + 1].time) {
-      p0 = sorted[i]
-      p1 = sorted[i + 1]
+    if (time >= sorted[i]!.time && time <= sorted[i + 1]!.time) {
+      p0 = sorted[i]!
+      p1 = sorted[i + 1]!
       break
     }
   }
