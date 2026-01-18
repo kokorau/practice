@@ -394,13 +394,16 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
 
       <!-- 16:9 Preview Box -->
       <div class="preview-container">
-        <div
-          class="preview-box"
-          :style="{
-            opacity: previewOpacity,
-            transform: `scale(${previewScale}) rotate(${previewRotation}deg)`,
-          }"
-        >
+        <div class="preview-box">
+          <!-- Animated inner element -->
+          <div
+            class="preview-inner"
+            :style="{
+              opacity: previewOpacity,
+              transform: `scale(${previewScale}) rotate(${previewRotation}deg)`,
+            }"
+          />
+          <!-- Values overlay (not animated) -->
           <div class="preview-content">
             <div class="preview-values">
               <div class="preview-value">
@@ -599,17 +602,27 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
   max-height: 100%;
   width: auto;
   height: 80%;
-  background: linear-gradient(135deg, oklch(0.55 0.20 250), oklch(0.45 0.25 280));
+  background: oklch(0.20 0.02 260);
   border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  transition: transform 0.05s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-inner {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, oklch(0.55 0.20 250), oklch(0.45 0.25 280));
+  transition: transform 0.05s ease-out, opacity 0.05s ease-out;
 }
 
 .preview-content {
+  position: relative;
+  z-index: 1;
   text-align: center;
   color: white;
 }
