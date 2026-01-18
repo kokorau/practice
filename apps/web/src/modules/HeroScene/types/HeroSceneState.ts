@@ -64,6 +64,7 @@ import type {
   ExportPresetOptions,
   HeroEditorUIState,
   LayerDropPosition,
+  ModifierDropPosition,
 } from '../index'
 
 // ============================================================
@@ -548,6 +549,8 @@ export interface LayerOperations {
   }>) => void
   /** Move layer to new position in tree */
   readonly moveLayer: (layerId: string, position: LayerDropPosition) => void
+  /** Move modifier to new position */
+  readonly moveModifier: (sourceNodeId: string, sourceModifierIndex: number, position: ModifierDropPosition) => void
 }
 
 // ============================================================
