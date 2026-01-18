@@ -904,8 +904,6 @@ export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   mode: 'cover' | 'positioned'
   /** Position configuration (only used when mode is 'positioned') */
   position?: ImagePositionConfig
-  /** Effect filters */
-  filters?: EffectFilterConfig[]
 }
 
 export interface GroupLayerNodeConfig extends LayerNodeConfigBase {

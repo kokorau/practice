@@ -48,8 +48,6 @@ import {
   type Model3DLayerNodeConfig,
   type ImageLayerNodeConfig,
   type ImagePositionConfig,
-  type MaskProcessorConfig,
-  type ProcessorNodeConfig,
   type ForegroundLayerConfig,
   type TextLayerConfig,
   type HeroViewRepository,
