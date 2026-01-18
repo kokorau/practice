@@ -22,20 +22,20 @@ export function toCustomSurfaceParams(
   colorB?: RGBA,
 ): CustomSurfaceParams {
   if (config.type === 'solid') {
-    return { type: 'solid' }
+    return { id: 'solid' }
   }
   if (config.type === 'stripe') {
-    return { type: 'stripe', width1: config.width1, width2: config.width2, angle: config.angle }
+    return { id: 'stripe', width1: config.width1, width2: config.width2, angle: config.angle }
   }
   if (config.type === 'grid') {
-    return { type: 'grid', lineWidth: config.lineWidth, cellSize: config.cellSize }
+    return { id: 'grid', lineWidth: config.lineWidth, cellSize: config.cellSize }
   }
   if (config.type === 'polkaDot') {
-    return { type: 'polkaDot', dotRadius: config.dotRadius, spacing: config.spacing, rowOffset: config.rowOffset }
+    return { id: 'polkaDot', dotRadius: config.dotRadius, spacing: config.spacing, rowOffset: config.rowOffset }
   }
   if (config.type === 'gradientGrain') {
     return {
-      type: 'gradientGrain',
+      id: 'gradientGrain',
       depthMapType: config.depthMapType,
       angle: config.angle,
       centerX: config.centerX,
@@ -54,34 +54,34 @@ export function toCustomSurfaceParams(
     }
   }
   if (config.type === 'checker') {
-    return { type: 'checker', cellSize: config.cellSize, angle: config.angle }
+    return { id: 'checker', cellSize: config.cellSize, angle: config.angle }
   }
   if (config.type === 'triangle') {
-    return { type: 'triangle', size: config.size, angle: config.angle }
+    return { id: 'triangle', size: config.size, angle: config.angle }
   }
   if (config.type === 'hexagon') {
-    return { type: 'hexagon', size: config.size, angle: config.angle }
+    return { id: 'hexagon', size: config.size, angle: config.angle }
   }
   if (config.type === 'asanoha') {
-    return { type: 'asanoha', size: config.size, lineWidth: config.lineWidth }
+    return { id: 'asanoha', size: config.size, lineWidth: config.lineWidth }
   }
   if (config.type === 'seigaiha') {
-    return { type: 'seigaiha', radius: config.radius, rings: config.rings, lineWidth: config.lineWidth }
+    return { id: 'seigaiha', radius: config.radius, rings: config.rings, lineWidth: config.lineWidth }
   }
   if (config.type === 'wave') {
-    return { type: 'wave', amplitude: config.amplitude, wavelength: config.wavelength, thickness: config.thickness, angle: config.angle }
+    return { id: 'wave', amplitude: config.amplitude, wavelength: config.wavelength, thickness: config.thickness, angle: config.angle }
   }
   if (config.type === 'scales') {
-    return { type: 'scales', size: config.size, overlap: config.overlap, angle: config.angle }
+    return { id: 'scales', size: config.size, overlap: config.overlap, angle: config.angle }
   }
   if (config.type === 'ogee') {
-    return { type: 'ogee', width: config.width, height: config.height, lineWidth: config.lineWidth }
+    return { id: 'ogee', width: config.width, height: config.height, lineWidth: config.lineWidth }
   }
   if (config.type === 'sunburst') {
-    return { type: 'sunburst', rays: config.rays, centerX: config.centerX, centerY: config.centerY, twist: config.twist }
+    return { id: 'sunburst', rays: config.rays, centerX: config.centerX, centerY: config.centerY, twist: config.twist }
   }
   // fallback to solid (handles 'image' type)
-  return { type: 'solid' }
+  return { id: 'solid' }
 }
 
 /**
@@ -91,28 +91,28 @@ export function toCustomSurfaceParams(
  * @returns SurfaceConfig (JSON serializable)
  */
 export function fromCustomSurfaceParams(params: CustomSurfaceParams): SurfaceConfig {
-  if (params.type === 'solid') {
+  if (params.id === 'solid') {
     return { type: 'solid' }
   }
-  if (params.type === 'stripe') {
+  if (params.id === 'stripe') {
     return { type: 'stripe', width1: params.width1, width2: params.width2, angle: params.angle }
   }
-  if (params.type === 'grid') {
+  if (params.id === 'grid') {
     return { type: 'grid', lineWidth: params.lineWidth, cellSize: params.cellSize }
   }
-  if (params.type === 'polkaDot') {
+  if (params.id === 'polkaDot') {
     return { type: 'polkaDot', dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }
   }
-  if (params.type === 'checker') {
+  if (params.id === 'checker') {
     return { type: 'checker', cellSize: params.cellSize, angle: params.angle }
   }
-  if (params.type === 'triangle') {
+  if (params.id === 'triangle') {
     return { type: 'triangle', size: params.size, angle: params.angle }
   }
-  if (params.type === 'hexagon') {
+  if (params.id === 'hexagon') {
     return { type: 'hexagon', size: params.size, angle: params.angle }
   }
-  if (params.type === 'gradientGrain') {
+  if (params.id === 'gradientGrain') {
     return {
       type: 'gradientGrain',
       depthMapType: params.depthMapType,
@@ -129,22 +129,22 @@ export function fromCustomSurfaceParams(params: CustomSurfaceParams): SurfaceCon
       sparsity: params.sparsity,
     }
   }
-  if (params.type === 'asanoha') {
+  if (params.id === 'asanoha') {
     return { type: 'asanoha', size: params.size, lineWidth: params.lineWidth }
   }
-  if (params.type === 'seigaiha') {
+  if (params.id === 'seigaiha') {
     return { type: 'seigaiha', radius: params.radius, rings: params.rings, lineWidth: params.lineWidth }
   }
-  if (params.type === 'wave') {
+  if (params.id === 'wave') {
     return { type: 'wave', amplitude: params.amplitude, wavelength: params.wavelength, thickness: params.thickness, angle: params.angle }
   }
-  if (params.type === 'scales') {
+  if (params.id === 'scales') {
     return { type: 'scales', size: params.size, overlap: params.overlap, angle: params.angle }
   }
-  if (params.type === 'ogee') {
+  if (params.id === 'ogee') {
     return { type: 'ogee', width: params.width, height: params.height, lineWidth: params.lineWidth }
   }
-  if (params.type === 'sunburst') {
+  if (params.id === 'sunburst') {
     return { type: 'sunburst', rays: params.rays, centerX: params.centerX, centerY: params.centerY, twist: params.twist }
   }
   // fallback to solid
