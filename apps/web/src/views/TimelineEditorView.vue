@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState, Track, EnvelopeTrack } from '@practice/timeline'
-import { createTimelinePlayer, evaluateEnvelope } from '@practice/timeline'
+import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState, Track, EnvelopeTrack, GeneratorTrack } from '@practice/timeline'
+import { createTimelinePlayer, evaluateEnvelope, evaluateGenerator } from '@practice/timeline'
 
 // ============================================================
 // Mock Data
@@ -333,6 +333,52 @@ const envelopeGraphs = computed(() => {
 function getEnvelopeGraph(trackId: TrackId): EnvelopeGraphData | undefined {
   return envelopeGraphs.value.get(trackId)
 }
+
+// ============================================================
+// Generator Waveform Helpers
+// ============================================================
+
+function isGeneratorTrack(track: Track): track is GeneratorTrack {
+  return track.mode === 'Generator'
+}
+
+interface GeneratorWaveformData {
+  pathD: string
+}
+
+function computeGeneratorWaveform(track: GeneratorTrack, duration: number): GeneratorWaveformData {
+  const { generator } = track
+  const sampleCount = 200
+
+  const points: { x: number; y: number }[] = []
+
+  for (let i = 0; i <= sampleCount; i++) {
+    const t = (i / sampleCount) * duration
+    const value = evaluateGenerator(generator, t)
+    points.push({
+      x: (t / duration) * 100,
+      y: (1 - value) * 100, // Invert Y for SVG coordinates
+    })
+  }
+
+  const pathParts = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
+  return { pathD: pathParts.join(' ') }
+}
+
+// Computed generator waveform data for each track
+const generatorWaveforms = computed(() => {
+  const waveforms = new Map<TrackId, GeneratorWaveformData>()
+  for (const track of timeline.value.tracks) {
+    if (isGeneratorTrack(track)) {
+      waveforms.set(track.id, computeGeneratorWaveform(track, totalDuration.value))
+    }
+  }
+  return waveforms
+})
+
+function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefined {
+  return generatorWaveforms.value.get(trackId)
+}
 </script>
 
 <template>
@@ -477,9 +523,20 @@ function getEnvelopeGraph(trackId: TrackId): EnvelopeGraphData | undefined {
                   />
                 </svg>
               </div>
-              <!-- Generator Track Content (placeholder for now) -->
+              <!-- Generator Track Content -->
               <div v-else class="track-content track-content--generator">
-                <span class="track-content-label">{{ track.generator.type }}</span>
+                <svg
+                  class="generator-graph"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    v-if="getGeneratorWaveform(track.id)?.pathD"
+                    :d="getGeneratorWaveform(track.id)?.pathD"
+                    class="generator-path"
+                  />
+                </svg>
+                <span class="generator-type-label">{{ track.generator.type }}</span>
               </div>
             </div>
             <!-- Playhead line -->
@@ -809,7 +866,8 @@ function getEnvelopeGraph(trackId: TrackId): EnvelopeGraphData | undefined {
 }
 
 .track-content--generator {
-  background: oklch(0.92 0.02 180);
+  background: oklch(0.94 0.02 150);
+  position: relative;
 }
 
 .track-content-label {
@@ -835,6 +893,34 @@ function getEnvelopeGraph(trackId: TrackId): EnvelopeGraphData | undefined {
   stroke: oklch(0.45 0.22 250);
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
+}
+
+/* Generator Graph */
+.generator-graph {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.generator-path {
+  fill: none;
+  stroke: oklch(0.50 0.20 150);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.generator-type-label {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.375rem;
+  font-size: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: oklch(0.45 0.15 150);
+  background: oklch(0.96 0.02 150 / 0.8);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
 }
 
 .playhead-line {
