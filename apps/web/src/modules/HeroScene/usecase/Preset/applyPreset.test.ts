@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { applyPreset } from './applyPreset'
 import { createHeroViewInMemoryRepository } from '../../Infra/HeroViewInMemoryRepository'
-import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
+import type { HeroViewConfig, SurfaceLayerNodeConfig } from '../../Domain/HeroViewConfig'
 import type { HeroViewPreset } from '../../Domain/HeroViewPreset'
 
 describe('applyPreset', () => {
@@ -85,5 +85,41 @@ describe('applyPreset', () => {
 
     const result = repository.get()
     expect(result.colors.semanticContext).toBe('sectionTint')
+  })
+
+  it('should migrate legacy flat surface format to normalized format', () => {
+    const repository = createHeroViewInMemoryRepository(createTestConfig())
+
+    // Create preset with legacy flat surface format (type instead of id/params)
+    const legacyPresetConfig = {
+      viewport: { width: 1920, height: 1080 },
+      colors: { semanticContext: 'canvas' as const },
+      layers: [
+        {
+          type: 'surface' as const,
+          id: 'test-surface',
+          name: 'Test Surface',
+          visible: true,
+          // Legacy flat format: { type: 'stripe', width1: 20, ... }
+          surface: { type: 'stripe', width1: 20, width2: 10, angle: 45 },
+        },
+      ],
+      foreground: { elements: [] },
+    } as unknown as HeroViewConfig // Cast since legacy format doesn't match current types
+
+    const preset: HeroViewPreset = {
+      id: 'legacy-preset',
+      name: 'Legacy Preset',
+      config: legacyPresetConfig,
+    }
+
+    applyPreset(preset, repository)
+
+    const result = repository.get()
+    const surfaceLayer = result.layers[0] as SurfaceLayerNodeConfig
+
+    // Should be migrated to normalized format: { id: 'stripe', params: { width1: 20, ... } }
+    expect(surfaceLayer.surface.id).toBe('stripe')
+    expect(surfaceLayer.surface.params).toEqual({ width1: 20, width2: 10, angle: 45 })
   })
 })

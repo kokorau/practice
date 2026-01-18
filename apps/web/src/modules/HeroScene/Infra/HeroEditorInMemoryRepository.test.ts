@@ -181,7 +181,7 @@ describe('HeroEditorInMemoryRepository', () => {
         id: 'surface-1',
         name: 'Surface 1',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
       })
 
       const layer = repo.findLayer('surface-1')
@@ -197,7 +197,7 @@ describe('HeroEditorInMemoryRepository', () => {
           id: 'surface-1',
           name: 'Surface 1',
           visible: true,
-          surface: { type: 'solid' },
+          surface: { id: 'solid', params: {} },
         },
         0
       )
@@ -212,7 +212,7 @@ describe('HeroEditorInMemoryRepository', () => {
         id: 'surface-1',
         name: 'Surface 1',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
       })
 
       repo.removeLayer('surface-1')
@@ -228,14 +228,14 @@ describe('HeroEditorInMemoryRepository', () => {
         id: 'surface-1',
         name: 'Surface 1',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
       })
       repo.addLayer({
         type: 'surface',
         id: 'surface-2',
         name: 'Surface 2',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
       })
 
       repo.reorderLayers(['surface-2', 'surface-1', 'background-group'])
@@ -304,16 +304,49 @@ describe('HeroEditorInMemoryRepository', () => {
       expect(consoleSpy).toHaveBeenCalledWith('Failed to restore snapshot: invalid JSON')
       consoleSpy.mockRestore()
     })
+
+    it('should migrate legacy flat surface format when restoring', () => {
+      const repo = createHeroEditorInMemoryRepository()
+
+      // Create legacy format snapshot (type instead of id/params)
+      const legacySnapshot = JSON.stringify({
+        viewport: { width: 1920, height: 1080 },
+        colors: { semanticContext: 'canvas' },
+        layers: [
+          {
+            type: 'surface',
+            id: 'test-surface',
+            name: 'Test Surface',
+            visible: true,
+            // Legacy flat format: { type: 'stripe', width1: 20, ... }
+            surface: { type: 'stripe', width1: 20, width2: 10, angle: 45 },
+          },
+        ],
+        foreground: { elements: [] },
+      })
+
+      repo.restore(legacySnapshot)
+
+      const state = repo.get()
+      const surfaceLayer = state.config.layers[0]
+
+      // Should be migrated to normalized format: { id: 'stripe', params: { width1: 20, ... } }
+      expect(surfaceLayer?.type).toBe('surface')
+      if (surfaceLayer?.type === 'surface') {
+        expect(surfaceLayer.surface.id).toBe('stripe')
+        expect(surfaceLayer.surface.params).toEqual({ width1: 20, width2: 10, angle: 45 })
+      }
+    })
   })
 
   describe('Unified State Source', () => {
     it('should provide single source of truth', () => {
       const repo = createHeroEditorInMemoryRepository()
 
-      // Update both UI and config
+      // Update both UI and config (using normalized format)
       repo.setActiveSection('background')
       repo.updateBackgroundUI({ selectedPresetIndex: 3 })
-      repo.updateLayer('background', { surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 } })
+      repo.updateLayer('background', { surface: { id: 'stripe', params: { width1: 20, width2: 20, angle: 45 } } })
 
       // Verify single state object contains all
       const state = repo.get()
@@ -328,7 +361,7 @@ describe('HeroEditorInMemoryRepository', () => {
         const bgLayer = backgroundGroup.children[0]
         expect(bgLayer?.type).toBe('surface')
         if (bgLayer?.type === 'surface') {
-          expect(bgLayer.surface.type).toBe('stripe')
+          expect(bgLayer.surface.id).toBe('stripe')
         }
       }
     })
