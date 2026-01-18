@@ -4,8 +4,8 @@ import {
   type ComponentTokens,
   type ActionState,
   COMPONENT_CLASS_NAMES,
-} from '../../modules/SemanticColorPalette/Domain'
-import type { BaseTokenRefs, PrimitiveRef } from '../../modules/SemanticColorPalette/Infra'
+} from '@practice/semantic-color-palette/Domain'
+import type { BaseTokenRefs, PrimitiveRef } from '@practice/semantic-color-palette/Infra'
 
 type Context = {
   name: string

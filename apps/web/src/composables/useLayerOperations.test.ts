@@ -12,7 +12,7 @@ import type {
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   GroupLayerNodeConfig,
-} from '../modules/HeroScene'
+} from '@practice/hero-scene'
 
 // ============================================================
 // Test Fixtures

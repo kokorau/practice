@@ -1,5 +1,5 @@
 import { computed, type Ref, type ComputedRef } from 'vue'
-import type { AnySurfaceConfig } from '../../modules/HeroScene'
+import type { AnySurfaceConfig } from '@practice/hero-scene'
 import type { RGBA, TextureRenderSpec, SurfacePresetParams } from '@practice/texture'
 
 type Viewport = { width: number; height: number }

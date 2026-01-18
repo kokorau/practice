@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, provide } from 'vue'
-import type { LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '../../modules/HeroScene'
-import { isProcessorLayerConfig } from '../../modules/HeroScene'
+import type { LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '@practice/hero-scene'
+import { isProcessorLayerConfig } from '@practice/hero-scene'
 import DraggableLayerNode, { type ContextTargetType, type AddProcessorType } from './DraggableLayerNode.vue'
 import DragPreview from './DragPreview.vue'
 import ModifierDragPreview from './ModifierDragPreview.vue'

@@ -3,7 +3,7 @@ import { renderPage, renderSection } from './SectionRenderer'
 import { $Page, $Section, DEFAULT_TOKENS } from '../Domain'
 import type { RenderTheme, HeaderContent, HeroContent } from '../Domain'
 import { getDefaultContent, createDemoPage } from './getDefaultContent'
-import { createSemanticFromPrimitive, createPrimitivePalette } from '../../SemanticColorPalette/Infra'
+import { createSemanticFromPrimitive, createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
 
 // Create a test theme
 const createTestTheme = (): RenderTheme => {

@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
-} from '../modules/SemanticColorPalette/Domain'
+} from '@practice/semantic-color-palette/Domain'
 import {
   createPrimitivePalette,
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
-} from '../modules/SemanticColorPalette/Infra'
+} from '@practice/semantic-color-palette/Infra'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { ImageLayerNodeConfig } from '../modules/HeroScene'
+import type { ImageLayerNodeConfig } from '@practice/hero-scene'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
-} from '../modules/HeroScene'
+} from '@practice/hero-scene'
 
 // Type guard for ImageLayerNodeConfig
 function isImageLayerConfig(layer: unknown): layer is ImageLayerNodeConfig {

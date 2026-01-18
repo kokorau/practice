@@ -44,7 +44,7 @@ import { renderHeroConfig } from '../renderHeroConfig'
 import type { TextureRendererLike } from '../renderHeroConfig'
 import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
-import type { PrimitivePalette } from '../../../SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type { CompositorRenderer } from '../../Domain/Compositor'
 
 // ============================================================

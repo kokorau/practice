@@ -1,5 +1,5 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
-import type { HeroViewConfig, TextLayerNodeConfigType, LayerNodeConfig, TextLayerConfig } from '../modules/HeroScene'
+import type { HeroViewConfig, TextLayerNodeConfigType, LayerNodeConfig, TextLayerConfig } from '@practice/hero-scene'
 
 // ============================================================
 // Types

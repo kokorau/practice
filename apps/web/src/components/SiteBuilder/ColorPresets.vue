@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
-import { COLOR_PRESETS } from '../../modules/SemanticColorPalette/Infra'
+import type { ColorPreset } from '@practice/semantic-color-palette/Domain'
+import { COLOR_PRESETS } from '@practice/semantic-color-palette/Infra'
 import { hsvToRgb, rgbToHex } from './utils'
 
 const props = defineProps<{

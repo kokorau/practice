@@ -19,8 +19,6 @@ export type { RenderHeroConfigOptions, TextureRendererLike } from './renderHeroC
 
 export { createBrowserPresetExporter } from './Preset'
 
-export { createUnsplashImageUploadAdapter } from './UnsplashImageUploadAdapter'
-
 // ============================================================
 // Shader Registry (UUID-based shader system)
 // ============================================================

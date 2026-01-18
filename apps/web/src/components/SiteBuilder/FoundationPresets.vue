@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { $Oklch, contrastRatio } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import { $ColorPairValidation } from '../../modules/SemanticColorPalette/Domain'
+import { $ColorPairValidation } from '@practice/semantic-color-palette/Domain'
 import { FOUNDATION_PRESETS } from './foundationPresets'
 
 const MIN_FOUNDATION_BRAND_CONTRAST = 2

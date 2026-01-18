@@ -1,0 +1,24 @@
+{
+  "name": "@practice/semantic-color-palette",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./Domain": {
+      "types": "./src/Domain/index.ts",
+      "default": "./src/Domain/index.ts"
+    },
+    "./Infra": {
+      "types": "./src/Infra/index.ts",
+      "default": "./src/Infra/index.ts"
+    }
+  },
+  "files": ["src"],
+  "dependencies": {
+    "@practice/color": "workspace:*"
+  }
+}

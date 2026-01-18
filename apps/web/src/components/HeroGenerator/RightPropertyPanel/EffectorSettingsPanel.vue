@@ -12,7 +12,7 @@ import {
   LineHalftoneEffectSchema,
   BlurEffectSchema,
   type FilterType,
-} from '../../../modules/HeroScene'
+} from '@practice/hero-scene'
 import type {
   ChromaticConfigParams,
   DotHalftoneConfigParams,

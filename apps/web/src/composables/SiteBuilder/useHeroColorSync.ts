@@ -13,7 +13,7 @@ import type {
   LayerNodeConfig,
   SurfaceColorsConfig,
   HeroPrimitiveKey,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroThumbnailsReturn } from './useHeroThumbnails'
 

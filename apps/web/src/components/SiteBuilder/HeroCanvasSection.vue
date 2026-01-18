@@ -6,8 +6,8 @@
  * HeroScene WebGPU renderer instead of HTML templates.
  */
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
-import type { HeroViewConfig } from '../../modules/HeroScene/Domain/HeroViewConfig'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
+import type { HeroViewConfig } from '@practice/hero-scene'
 import { useHeroScene } from '../../composables/SiteBuilder'
 import { provideLayerSelection } from '../../composables/useLayerSelection'
 import HeroPreview from '../HeroGenerator/HeroPreview.vue'

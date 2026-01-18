@@ -6,8 +6,8 @@ import type {
   ContextTokens,
   ComponentTokens,
   ActionState,
-} from '../../modules/SemanticColorPalette/Domain'
-import type { BaseTokenRefs, PrimitiveRef } from '../../modules/SemanticColorPalette/Infra'
+} from '@practice/semantic-color-palette/Domain'
+import type { BaseTokenRefs, PrimitiveRef } from '@practice/semantic-color-palette/Infra'
 
 // ============================================================
 // Test Helpers

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { ref } from 'vue'
 import { useForegroundElement } from './useForegroundElement'
-import type { ForegroundLayerConfig } from '../modules/HeroScene'
+import type { ForegroundLayerConfig } from '@practice/hero-scene'
 
 // ============================================================
 // Test Helpers

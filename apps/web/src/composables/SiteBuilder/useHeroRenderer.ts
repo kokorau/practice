@@ -12,13 +12,13 @@ import { shallowRef, onUnmounted, type Ref, type ComputedRef, type ShallowRef } 
 import {
   TextureRenderer,
 } from '@practice/texture'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   type HeroViewConfig,
   type HeroSceneConfig,
   type Object3DRendererPort,
   renderHeroConfig,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 
 // ============================================================
 // Types

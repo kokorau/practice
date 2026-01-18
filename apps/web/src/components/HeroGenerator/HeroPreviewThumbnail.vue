@@ -8,9 +8,9 @@
 
 import { ref, onMounted, onUnmounted, watch, useId, computed } from 'vue'
 import { TextureRenderer } from '@practice/texture'
-import type { HeroViewConfig } from '../../modules/HeroScene'
-import { renderHeroConfig } from '../../modules/HeroScene'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import type { HeroViewConfig } from '@practice/hero-scene'
+import { renderHeroConfig } from '@practice/hero-scene'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   PREVIEW_ORIGINAL_WIDTH,
   PREVIEW_THUMBNAIL_WIDTH,

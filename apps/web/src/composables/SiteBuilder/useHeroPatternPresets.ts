@@ -26,7 +26,7 @@ import {
   type HeroViewRepository,
   type NormalizedSurfaceConfig,
   toCustomMaskShapeParams,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 import type {
   CustomMaskShapeParams,
   CustomSurfaceParams,

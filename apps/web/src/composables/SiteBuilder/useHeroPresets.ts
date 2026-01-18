@@ -19,7 +19,7 @@ import {
   createInMemoryHeroViewPresetRepository,
   createBrowserPresetExporter,
   createPresetManager,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 
 export interface UseHeroPresetsOptions {
   heroViewRepository: HeroViewRepository

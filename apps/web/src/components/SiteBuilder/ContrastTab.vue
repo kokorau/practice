@@ -9,7 +9,7 @@ import {
   NEUTRAL_KEYS,
   ACCENT_RAMP_KEYS,
   FOUNDATION_KEYS,
-} from '../../modules/SemanticColorPalette/Domain'
+} from '@practice/semantic-color-palette/Domain'
 import ColorSwatchTooltip from './ColorSwatchTooltip.vue'
 
 const props = defineProps<{

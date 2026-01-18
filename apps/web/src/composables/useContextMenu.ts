@@ -1,8 +1,8 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { ContextTargetType } from '../components/HeroGenerator/DraggableLayerNode.vue'
 import type { ContextMenuItem } from '../components/HeroGenerator/ContextMenu.vue'
-import type { LayerNodeConfig } from '../modules/HeroScene'
-import { findLayerInTree } from '../modules/HeroScene'
+import type { LayerNodeConfig } from '@practice/hero-scene'
+import { findLayerInTree } from '@practice/hero-scene'
 
 // ============================================================
 // Types

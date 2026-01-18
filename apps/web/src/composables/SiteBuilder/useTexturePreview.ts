@@ -23,7 +23,7 @@ import {
 } from '@practice/texture'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   PREVIEW_ORIGINAL_WIDTH,
   PREVIEW_ORIGINAL_HEIGHT,

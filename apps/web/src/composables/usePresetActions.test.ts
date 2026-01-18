@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ref } from 'vue'
 import { usePresetActions, type ColorStateRefs, type ColorPresetColors } from './usePresetActions'
-import type { HeroViewConfig, PresetColorConfig } from '../modules/HeroScene'
+import type { HeroViewConfig, PresetColorConfig } from '@practice/hero-scene'
 
 describe('usePresetActions', () => {
   const createColorState = (): ColorStateRefs => ({

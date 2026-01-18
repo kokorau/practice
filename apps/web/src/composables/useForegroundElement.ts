@@ -6,7 +6,7 @@ import {
   type ForegroundElementConfig,
   type GridPosition,
   type HeroPrimitiveKey,
-} from '../modules/HeroScene'
+} from '@practice/hero-scene'
 
 // ============================================================
 // Types

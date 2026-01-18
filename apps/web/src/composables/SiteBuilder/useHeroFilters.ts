@@ -13,7 +13,7 @@ import {
   type EffectType,
   type FilterType,
   type HeroViewRepository,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 import { useEffectManager, type UseEffectManagerReturn } from '../useEffectManager'
 
 // ============================================================

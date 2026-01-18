@@ -1,5 +1,5 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
-import type { SemanticColorPalette } from '../../modules/SemanticColorPalette/Domain'
+import type { SemanticColorPalette } from '@practice/semantic-color-palette/Domain'
 import type { DesignTokens } from '../../modules/DesignTokens/Domain'
 import {
   createSite,

@@ -6,7 +6,7 @@
  * For other sections, renders HTML templates.
  */
 import type { Section, RenderTheme } from '../../modules/SemanticSection/Domain'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import { $Section, renderSection } from '../../modules/SemanticSection'
 import HeroCanvasSection from './HeroCanvasSection.vue'
 

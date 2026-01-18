@@ -7,8 +7,8 @@
  * - handleMaskUpdate: マスクの更新
  */
 
-import type { HeroPrimitiveKey } from '../../modules/HeroScene'
-import type { PrimitiveKey } from '../../modules/SemanticColorPalette/Domain'
+import type { HeroPrimitiveKey } from '@practice/hero-scene'
+import type { PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 
 // Generic writable ref type that accepts both Ref and WritableComputedRef
 type WritableRef<T> = { value: T }
