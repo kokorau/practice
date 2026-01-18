@@ -3,19 +3,13 @@ import {
   // Surface normalization
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,
-  isLegacyTypeSurfaceConfig,
   normalizeSurfaceConfig,
-  denormalizeSurfaceConfig,
   getSurfaceAsNormalized,
-  getSurfaceAsLegacy,
   // Mask normalization
   MASK_SHAPE_TYPE_IDS,
   isNormalizedMaskConfig,
-  isLegacyTypeMaskConfig,
   normalizeMaskConfig,
-  denormalizeMaskConfig,
   getMaskAsNormalized,
-  getMaskAsLegacy,
   // Effect normalization
   EFFECT_TYPES,
   isEffectOfType,
@@ -28,13 +22,22 @@ import {
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
   // Types
-  type SurfaceConfig,
   type NormalizedSurfaceConfig,
-  type MaskShapeConfig,
   type NormalizedMaskConfig,
   type SingleEffectConfig,
   type LayerEffectConfig,
 } from './index'
+// Internal imports for denormalize functions and legacy type guards (used in tests only)
+import {
+  type SurfaceConfig,
+  type MaskShapeConfig,
+  isLegacyTypeSurfaceConfig,
+  isLegacyTypeMaskConfig,
+  denormalizeSurfaceConfig,
+  getSurfaceAsLegacy,
+  denormalizeMaskConfig,
+  getMaskAsLegacy,
+} from './HeroViewConfig'
 
 describe('Surface Config Normalization', () => {
   describe('SURFACE_TYPES', () => {

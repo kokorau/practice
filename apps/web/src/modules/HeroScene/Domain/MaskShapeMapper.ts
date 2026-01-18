@@ -24,7 +24,7 @@ type MaskShapeConfigInput = TextureMaskShapeConfig | HeroMaskShapeConfig
 export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): CustomMaskShapeParams {
   if (maskConfig.type === 'circle') {
     return {
-      type: 'circle',
+      id: 'circle',
       centerX: maskConfig.centerX,
       centerY: maskConfig.centerY,
       radius: maskConfig.radius,
@@ -33,7 +33,7 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
   }
   if (maskConfig.type === 'rect') {
     return {
-      type: 'rect',
+      id: 'rect',
       left: maskConfig.left,
       right: maskConfig.right,
       top: maskConfig.top,
@@ -50,7 +50,7 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
   }
   if (maskConfig.type === 'perlin') {
     return {
-      type: 'perlin',
+      id: 'perlin',
       seed: maskConfig.seed,
       threshold: maskConfig.threshold,
       scale: maskConfig.scale,
@@ -60,7 +60,7 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
   }
   if (maskConfig.type === 'linearGradient') {
     return {
-      type: 'linearGradient',
+      id: 'linearGradient',
       angle: maskConfig.angle,
       startOffset: maskConfig.startOffset,
       endOffset: maskConfig.endOffset,
@@ -69,7 +69,7 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
   }
   if (maskConfig.type === 'radialGradient') {
     return {
-      type: 'radialGradient',
+      id: 'radialGradient',
       centerX: maskConfig.centerX,
       centerY: maskConfig.centerY,
       innerRadius: maskConfig.innerRadius,
@@ -80,7 +80,7 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
   }
   if (maskConfig.type === 'boxGradient') {
     return {
-      type: 'boxGradient',
+      id: 'boxGradient',
       left: maskConfig.left,
       right: maskConfig.right,
       top: maskConfig.top,
@@ -92,7 +92,7 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
   }
   if (maskConfig.type === 'wavyLine') {
     return {
-      type: 'wavyLine',
+      id: 'wavyLine',
       position: maskConfig.position,
       direction: maskConfig.direction,
       amplitude: maskConfig.amplitude,
@@ -104,7 +104,7 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
   }
   // blob (default)
   return {
-    type: 'blob',
+    id: 'blob',
     centerX: maskConfig.centerX,
     centerY: maskConfig.centerY,
     baseRadius: maskConfig.baseRadius,
@@ -122,7 +122,7 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
  * @returns MaskShapeConfig (JSON serializable)
  */
 export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMaskShapeConfig {
-  if (params.type === 'circle') {
+  if (params.id === 'circle') {
     return {
       type: 'circle',
       centerX: params.centerX,
@@ -131,7 +131,7 @@ export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMa
       cutout: params.cutout,
     }
   }
-  if (params.type === 'rect') {
+  if (params.id === 'rect') {
     return {
       type: 'rect',
       left: params.left,
@@ -148,7 +148,7 @@ export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMa
       cutout: params.cutout,
     }
   }
-  if (params.type === 'perlin') {
+  if (params.id === 'perlin') {
     return {
       type: 'perlin',
       seed: params.seed,
@@ -158,7 +158,7 @@ export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMa
       cutout: params.cutout,
     }
   }
-  if (params.type === 'linearGradient') {
+  if (params.id === 'linearGradient') {
     return {
       type: 'linearGradient',
       angle: params.angle,
@@ -167,7 +167,7 @@ export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMa
       cutout: params.cutout,
     }
   }
-  if (params.type === 'radialGradient') {
+  if (params.id === 'radialGradient') {
     return {
       type: 'radialGradient',
       centerX: params.centerX,
@@ -178,7 +178,7 @@ export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMa
       cutout: params.cutout,
     }
   }
-  if (params.type === 'boxGradient') {
+  if (params.id === 'boxGradient') {
     return {
       type: 'boxGradient',
       left: params.left,
@@ -190,7 +190,7 @@ export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMa
       cutout: params.cutout,
     }
   }
-  if (params.type === 'wavyLine') {
+  if (params.id === 'wavyLine') {
     return {
       type: 'wavyLine',
       position: params.position,

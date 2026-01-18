@@ -116,29 +116,29 @@ export const useHeroPatternPresets = (
     const preset = surfacePresets[idx]
     if (preset) {
       const params = extractBackgroundSurfaceParams(preset.params, textureColor1.value, textureColor2.value)
-      if (params.type === 'solid') {
+      if (params.id === 'solid') {
         setBaseSurface({ id: 'solid', params: {} })
-      } else if (params.type === 'stripe') {
+      } else if (params.id === 'stripe') {
         setBaseSurface({ id: 'stripe', params: { width1: params.width1, width2: params.width2, angle: params.angle } })
-      } else if (params.type === 'grid') {
+      } else if (params.id === 'grid') {
         setBaseSurface({ id: 'grid', params: { lineWidth: params.lineWidth, cellSize: params.cellSize } })
-      } else if (params.type === 'polkaDot') {
+      } else if (params.id === 'polkaDot') {
         setBaseSurface({ id: 'polkaDot', params: { dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset } })
-      } else if (params.type === 'checker') {
+      } else if (params.id === 'checker') {
         setBaseSurface({ id: 'checker', params: { cellSize: params.cellSize, angle: params.angle } })
-      } else if (params.type === 'gradientGrain') {
+      } else if (params.id === 'gradientGrain') {
         customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'asanoha') {
+      } else if (params.id === 'asanoha') {
         customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'seigaiha') {
+      } else if (params.id === 'seigaiha') {
         customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'wave') {
+      } else if (params.id === 'wave') {
         customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'scales') {
+      } else if (params.id === 'scales') {
         customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'ogee') {
+      } else if (params.id === 'ogee') {
         customBackgroundSurfaceParams.value = params
-      } else if (params.type === 'sunburst') {
+      } else if (params.id === 'sunburst') {
         customBackgroundSurfaceParams.value = params
       }
     } else {
@@ -158,17 +158,15 @@ export const useHeroPatternPresets = (
 
   const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams | GradientGrainSurfaceParams>) => {
     if (!customBackgroundSurfaceParams.value) return
-    const type = customBackgroundSurfaceParams.value.type
+    const surfaceId = customBackgroundSurfaceParams.value.id
     const layer = heroViewRepository.findLayer(BASE_LAYER_ID)
     if (!layer || layer.type !== 'surface') return
     const currentSurface = layer.surface
-    if (currentSurface.id !== type) return
+    if (currentSurface.id !== surfaceId) return
     const newSurface: NormalizedSurfaceConfig = {
       id: currentSurface.id,
       params: { ...currentSurface.params, ...updates },
     }
-    // Remove 'type' from params as it's now in 'id'
-    delete (newSurface.params as Record<string, unknown>).type
     heroViewRepository.updateLayer(BASE_LAYER_ID, { surface: newSurface })
   }
 

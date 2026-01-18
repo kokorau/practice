@@ -15,7 +15,7 @@ describe('toCustomMaskShapeParams', () => {
       }
       const result = toCustomMaskShapeParams(config)
       expect(result).toEqual({
-        type: 'circle',
+        id: 'circle',
         centerX: 0.5,
         centerY: 0.5,
         radius: 0.3,
@@ -54,7 +54,7 @@ describe('toCustomMaskShapeParams', () => {
       }
       const result = toCustomMaskShapeParams(config)
       expect(result).toEqual({
-        type: 'rect',
+        id: 'rect',
         left: 0.1,
         right: 0.9,
         top: 0.1,
@@ -80,7 +80,7 @@ describe('toCustomMaskShapeParams', () => {
       } as MaskShapeConfig
       const result = toCustomMaskShapeParams(config)
       expect(result).toMatchObject({
-        type: 'rect',
+        id: 'rect',
         radiusTopLeft: 0,
         radiusTopRight: 0,
         radiusBottomLeft: 0,
@@ -107,7 +107,7 @@ describe('toCustomMaskShapeParams', () => {
       }
       const result = toCustomMaskShapeParams(config)
       expect(result).toEqual({
-        type: 'blob',
+        id: 'blob',
         centerX: 0.5,
         centerY: 0.5,
         baseRadius: 0.3,
@@ -145,7 +145,7 @@ describe('toCustomMaskShapeParams', () => {
       }
       const result = toCustomMaskShapeParams(config)
       expect(result).toEqual({
-        type: 'perlin',
+        id: 'perlin',
         seed: 123,
         threshold: 0.5,
         scale: 4,
@@ -178,7 +178,7 @@ describe('toCustomMaskShapeParams', () => {
       }
       const result = toCustomMaskShapeParams(config)
       expect(result).toEqual({
-        type: 'linearGradient',
+        id: 'linearGradient',
         angle: 90,
         startOffset: 0.2,
         endOffset: 0.8,
@@ -211,7 +211,7 @@ describe('toCustomMaskShapeParams', () => {
       }
       const result = toCustomMaskShapeParams(config)
       expect(result).toEqual({
-        type: 'radialGradient',
+        id: 'radialGradient',
         centerX: 0.5,
         centerY: 0.5,
         innerRadius: 0.1,
@@ -249,7 +249,7 @@ describe('toCustomMaskShapeParams', () => {
       }
       const result = toCustomMaskShapeParams(config)
       expect(result).toEqual({
-        type: 'boxGradient',
+        id: 'boxGradient',
         left: 0.1,
         right: 0.1,
         top: 0.1,
@@ -280,7 +280,7 @@ describe('fromCustomMaskShapeParams', () => {
   describe('circle mask', () => {
     it('should convert circle custom params to config', () => {
       const params: CustomMaskShapeParams = {
-        type: 'circle',
+        id: 'circle',
         centerX: 0.5,
         centerY: 0.5,
         radius: 0.3,
@@ -300,7 +300,7 @@ describe('fromCustomMaskShapeParams', () => {
   describe('rect mask', () => {
     it('should convert rect custom params to config', () => {
       const params: CustomMaskShapeParams = {
-        type: 'rect',
+        id: 'rect',
         left: 0.1,
         right: 0.9,
         top: 0.1,
@@ -336,7 +336,7 @@ describe('fromCustomMaskShapeParams', () => {
   describe('blob mask', () => {
     it('should convert blob custom params to config', () => {
       const params: CustomMaskShapeParams = {
-        type: 'blob',
+        id: 'blob',
         centerX: 0.5,
         centerY: 0.5,
         baseRadius: 0.3,
@@ -362,7 +362,7 @@ describe('fromCustomMaskShapeParams', () => {
   describe('gradient masks', () => {
     it('should convert linearGradient custom params to config', () => {
       const params: CustomMaskShapeParams = {
-        type: 'linearGradient',
+        id: 'linearGradient',
         angle: 90,
         startOffset: 0.2,
         endOffset: 0.8,
@@ -380,7 +380,7 @@ describe('fromCustomMaskShapeParams', () => {
 
     it('should convert radialGradient custom params to config', () => {
       const params: CustomMaskShapeParams = {
-        type: 'radialGradient',
+        id: 'radialGradient',
         centerX: 0.5,
         centerY: 0.5,
         innerRadius: 0.1,
@@ -402,7 +402,7 @@ describe('fromCustomMaskShapeParams', () => {
 
     it('should convert boxGradient custom params to config', () => {
       const params: CustomMaskShapeParams = {
-        type: 'boxGradient',
+        id: 'boxGradient',
         left: 0.1,
         right: 0.1,
         top: 0.1,
@@ -428,7 +428,7 @@ describe('fromCustomMaskShapeParams', () => {
   describe('perlin mask', () => {
     it('should convert perlin custom params to config', () => {
       const params: CustomMaskShapeParams = {
-        type: 'perlin',
+        id: 'perlin',
         seed: 123,
         threshold: 0.5,
         scale: 4,

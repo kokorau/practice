@@ -172,14 +172,14 @@ export const isPatternPresetParams = (
  * Custom mask shape params union type
  */
 export type CustomMaskShapeParams =
-  | ({ type: 'circle' } & CircleMaskShapeParams)
-  | ({ type: 'rect' } & RectMaskShapeParams)
-  | ({ type: 'blob' } & BlobMaskShapeParams)
-  | ({ type: 'perlin' } & PerlinMaskShapeParams)
-  | ({ type: 'linearGradient' } & LinearGradientMaskShapeParams)
-  | ({ type: 'radialGradient' } & RadialGradientMaskShapeParams)
-  | ({ type: 'boxGradient' } & BoxGradientMaskShapeParams)
-  | ({ type: 'wavyLine' } & WavyLineMaskShapeParams)
+  | ({ id: 'circle' } & CircleMaskShapeParams)
+  | ({ id: 'rect' } & RectMaskShapeParams)
+  | ({ id: 'blob' } & BlobMaskShapeParams)
+  | ({ id: 'perlin' } & PerlinMaskShapeParams)
+  | ({ id: 'linearGradient' } & LinearGradientMaskShapeParams)
+  | ({ id: 'radialGradient' } & RadialGradientMaskShapeParams)
+  | ({ id: 'boxGradient' } & BoxGradientMaskShapeParams)
+  | ({ id: 'wavyLine' } & WavyLineMaskShapeParams)
 
 /**
  * Textile pattern surface params
@@ -223,22 +223,23 @@ export interface SunburstSurfaceParams {
 
 /**
  * Custom surface params union type
+ * Uses 'id' field for consistency with NormalizedSurfaceConfig
  */
 export type CustomSurfaceParams =
-  | { type: 'solid' }
-  | ({ type: 'stripe' } & StripeSurfaceParams)
-  | ({ type: 'grid' } & GridSurfaceParams)
-  | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ type: 'checker' } & CheckerSurfaceParams)
-  | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
-  | ({ type: 'triangle' } & TriangleSurfaceParams)
-  | ({ type: 'hexagon' } & HexagonSurfaceParams)
-  | ({ type: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ type: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ type: 'wave' } & WaveSurfaceParams)
-  | ({ type: 'scales' } & ScalesSurfaceParams)
-  | ({ type: 'ogee' } & OgeeSurfaceParams)
-  | ({ type: 'sunburst' } & SunburstSurfaceParams)
+  | { id: 'solid' }
+  | ({ id: 'stripe' } & StripeSurfaceParams)
+  | ({ id: 'grid' } & GridSurfaceParams)
+  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
+  | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ id: 'triangle' } & TriangleSurfaceParams)
+  | ({ id: 'hexagon' } & HexagonSurfaceParams)
+  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
+  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
+  | ({ id: 'wave' } & WaveSurfaceParams)
+  | ({ id: 'scales' } & ScalesSurfaceParams)
+  | ({ id: 'ogee' } & OgeeSurfaceParams)
+  | ({ id: 'sunburst' } & SunburstSurfaceParams)
 
 /**
  * Gradient grain surface params
@@ -263,22 +264,23 @@ export interface GradientGrainSurfaceParams {
 
 /**
  * Custom background surface params union type
+ * Uses 'id' field for consistency with NormalizedSurfaceConfig
  */
 export type CustomBackgroundSurfaceParams =
-  | ({ type: 'stripe' } & StripeSurfaceParams)
-  | ({ type: 'grid' } & GridSurfaceParams)
-  | ({ type: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ type: 'checker' } & CheckerSurfaceParams)
-  | ({ type: 'gradientGrain' } & GradientGrainSurfaceParams)
-  | ({ type: 'triangle' } & TriangleSurfaceParams)
-  | ({ type: 'hexagon' } & HexagonSurfaceParams)
-  | ({ type: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ type: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ type: 'wave' } & WaveSurfaceParams)
-  | ({ type: 'scales' } & ScalesSurfaceParams)
-  | ({ type: 'ogee' } & OgeeSurfaceParams)
-  | ({ type: 'sunburst' } & SunburstSurfaceParams)
-  | { type: 'solid' }
+  | ({ id: 'stripe' } & StripeSurfaceParams)
+  | ({ id: 'grid' } & GridSurfaceParams)
+  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
+  | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ id: 'triangle' } & TriangleSurfaceParams)
+  | ({ id: 'hexagon' } & HexagonSurfaceParams)
+  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
+  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
+  | ({ id: 'wave' } & WaveSurfaceParams)
+  | ({ id: 'scales' } & ScalesSurfaceParams)
+  | ({ id: 'ogee' } & OgeeSurfaceParams)
+  | ({ id: 'sunburst' } & SunburstSurfaceParams)
+  | { id: 'solid' }
 
 export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>

@@ -166,7 +166,7 @@ describe('HeroViewInMemoryRepository', () => {
         id: 'surface-1',
         name: 'Surface 1',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
       })
       const repository = createHeroViewInMemoryRepository(config)
 
@@ -224,7 +224,7 @@ describe('HeroViewInMemoryRepository', () => {
         id: 'surface-1',
         name: 'Surface 1',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
         processors: [],
       })
       const repository = createHeroViewInMemoryRepository(config)
@@ -241,9 +241,9 @@ describe('HeroViewInMemoryRepository', () => {
     it('should reorder layers according to provided ids', () => {
       const config = createDefaultHeroViewConfig()
       config.layers = [
-        { type: 'base', id: 'layer-1', name: 'Layer 1', visible: true, surface: { type: 'solid' }, processors: [] },
-        { type: 'surface', id: 'layer-2', name: 'Layer 2', visible: true, surface: { type: 'solid' }, processors: [] },
-        { type: 'surface', id: 'layer-3', name: 'Layer 3', visible: true, surface: { type: 'solid' }, processors: [] },
+        { type: 'base', id: 'layer-1', name: 'Layer 1', visible: true, surface: { id: 'solid', params: {} }, processors: [] },
+        { type: 'surface', id: 'layer-2', name: 'Layer 2', visible: true, surface: { id: 'solid', params: {} }, processors: [] },
+        { type: 'surface', id: 'layer-3', name: 'Layer 3', visible: true, surface: { id: 'solid', params: {} }, processors: [] },
       ]
       const repository = createHeroViewInMemoryRepository(config)
 
@@ -258,8 +258,8 @@ describe('HeroViewInMemoryRepository', () => {
     it('should only include layers that exist', () => {
       const config = createDefaultHeroViewConfig()
       config.layers = [
-        { type: 'base', id: 'layer-1', name: 'Layer 1', visible: true, surface: { type: 'solid' }, processors: [] },
-        { type: 'surface', id: 'layer-2', name: 'Layer 2', visible: true, surface: { type: 'solid' }, processors: [] },
+        { type: 'base', id: 'layer-1', name: 'Layer 1', visible: true, surface: { id: 'solid', params: {} }, processors: [] },
+        { type: 'surface', id: 'layer-2', name: 'Layer 2', visible: true, surface: { id: 'solid', params: {} }, processors: [] },
       ]
       const repository = createHeroViewInMemoryRepository(config)
 

@@ -11,7 +11,7 @@ describe('toCustomSurfaceParams', () => {
     it('should convert solid surface config', () => {
       const config: SurfaceConfig = { type: 'solid' }
       const result = toCustomSurfaceParams(config)
-      expect(result).toEqual({ type: 'solid' })
+      expect(result).toEqual({ id: 'solid' })
     })
   })
 
@@ -25,7 +25,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'stripe',
+        id: 'stripe',
         width1: 20,
         width2: 10,
         angle: 45,
@@ -42,7 +42,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'grid',
+        id: 'grid',
         lineWidth: 2,
         cellSize: 50,
       })
@@ -59,7 +59,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'polkaDot',
+        id: 'polkaDot',
         dotRadius: 5,
         spacing: 20,
         rowOffset: 0.5,
@@ -76,7 +76,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'checker',
+        id: 'checker',
         cellSize: 30,
         angle: 0,
       })
@@ -92,7 +92,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'triangle',
+        id: 'triangle',
         size: 40,
         angle: 30,
       })
@@ -108,7 +108,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'hexagon',
+        id: 'hexagon',
         size: 35,
         angle: 15,
       })
@@ -124,7 +124,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'asanoha',
+        id: 'asanoha',
         size: 50,
         lineWidth: 2,
       })
@@ -141,7 +141,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'seigaiha',
+        id: 'seigaiha',
         radius: 30,
         rings: 5,
         lineWidth: 1,
@@ -160,7 +160,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'wave',
+        id: 'wave',
         amplitude: 10,
         wavelength: 50,
         thickness: 3,
@@ -179,7 +179,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'scales',
+        id: 'scales',
         size: 25,
         overlap: 0.3,
         angle: 0,
@@ -197,7 +197,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'ogee',
+        id: 'ogee',
         width: 40,
         height: 60,
         lineWidth: 2,
@@ -216,7 +216,7 @@ describe('toCustomSurfaceParams', () => {
       }
       const result = toCustomSurfaceParams(config)
       expect(result).toEqual({
-        type: 'sunburst',
+        id: 'sunburst',
         rays: 12,
         centerX: 0.5,
         centerY: 0.5,
@@ -247,8 +247,8 @@ describe('toCustomSurfaceParams', () => {
 
       const result = toCustomSurfaceParams(config, colorA, colorB)
 
-      expect(result.type).toBe('gradientGrain')
-      if (result.type === 'gradientGrain') {
+      expect(result.id).toBe('gradientGrain')
+      if (result.id === 'gradientGrain') {
         expect(result.depthMapType).toBe('linear')
         expect(result.angle).toBe(45)
         expect(result.colorA).toEqual(colorA)
@@ -277,8 +277,8 @@ describe('toCustomSurfaceParams', () => {
 
       const result = toCustomSurfaceParams(config)
 
-      expect(result.type).toBe('gradientGrain')
-      if (result.type === 'gradientGrain') {
+      expect(result.id).toBe('gradientGrain')
+      if (result.id === 'gradientGrain') {
         expect(result.colorA).toEqual([0, 0, 0, 1])
         expect(result.colorB).toEqual([1, 1, 1, 1])
       }
@@ -292,7 +292,7 @@ describe('toCustomSurfaceParams', () => {
         imageId: 'some-image-id',
       }
       const result = toCustomSurfaceParams(config)
-      expect(result).toEqual({ type: 'solid' })
+      expect(result).toEqual({ id: 'solid' })
     })
   })
 })
@@ -307,7 +307,7 @@ describe('toCustomBackgroundSurfaceParams', () => {
     }
     const result = toCustomBackgroundSurfaceParams(config)
     expect(result).toEqual({
-      type: 'stripe',
+      id: 'stripe',
       width1: 20,
       width2: 10,
       angle: 45,
@@ -335,8 +335,8 @@ describe('toCustomBackgroundSurfaceParams', () => {
 
     const result = toCustomBackgroundSurfaceParams(config, colorA, colorB)
 
-    expect(result.type).toBe('gradientGrain')
-    if (result.type === 'gradientGrain') {
+    expect(result.id).toBe('gradientGrain')
+    if (result.id === 'gradientGrain') {
       expect(result.colorA).toEqual(colorA)
       expect(result.colorB).toEqual(colorB)
     }

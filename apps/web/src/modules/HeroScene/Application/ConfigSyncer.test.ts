@@ -37,7 +37,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const config = createTestConfig({ id: 'solid', params: {} })
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
-      expect(result.surfaceParams).toEqual({ type: 'solid' })
+      expect(result.surfaceParams).toEqual({ id: 'solid' })
     })
   })
 
@@ -50,7 +50,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'stripe',
+        id: 'stripe',
         width1: 20,
         width2: 10,
         angle: 45,
@@ -67,7 +67,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'grid',
+        id: 'grid',
         lineWidth: 2,
         cellSize: 50,
       })
@@ -83,7 +83,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'polkaDot',
+        id: 'polkaDot',
         dotRadius: 5,
         spacing: 20,
         rowOffset: 0.5,
@@ -100,7 +100,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'checker',
+        id: 'checker',
         cellSize: 30,
         angle: 0,
       })
@@ -129,8 +129,8 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).not.toBeNull()
-      expect(result.surfaceParams?.type).toBe('gradientGrain')
-      if (result.surfaceParams?.type === 'gradientGrain') {
+      expect(result.surfaceParams?.id).toBe('gradientGrain')
+      if (result.surfaceParams?.id === 'gradientGrain') {
         expect(result.surfaceParams.colorA).toEqual(defaultColorA)
         expect(result.surfaceParams.colorB).toEqual(defaultColorB)
         expect(result.surfaceParams.curvePoints).toBeInstanceOf(Array)
@@ -147,7 +147,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'asanoha',
+        id: 'asanoha',
         size: 50,
         lineWidth: 2,
       })
@@ -161,7 +161,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'seigaiha',
+        id: 'seigaiha',
         radius: 30,
         rings: 5,
         lineWidth: 1,
@@ -176,7 +176,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'wave',
+        id: 'wave',
         amplitude: 10,
         wavelength: 50,
         thickness: 3,
@@ -192,7 +192,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'scales',
+        id: 'scales',
         size: 25,
         overlap: 0.3,
         angle: 0,
@@ -207,7 +207,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'ogee',
+        id: 'ogee',
         width: 40,
         height: 60,
         lineWidth: 2,
@@ -222,7 +222,7 @@ describe('syncBackgroundSurfaceParams', () => {
       const result = syncBackgroundSurfaceParams(config, defaultColorA, defaultColorB)
 
       expect(result.surfaceParams).toEqual({
-        type: 'sunburst',
+        id: 'sunburst',
         rays: 12,
         centerX: 0.5,
         centerY: 0.5,

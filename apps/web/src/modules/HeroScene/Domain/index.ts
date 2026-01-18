@@ -652,26 +652,11 @@ export type {
   HeroColorsConfig,
   SurfaceColorsConfig,
   ViewportConfig,
-  StripeSurfaceConfig,
-  GridSurfaceConfig,
-  PolkaDotSurfaceConfig,
-  CheckerSurfaceConfig,
-  SolidSurfaceConfig,
-  ImageSurfaceConfig,
-  // New SurfaceConfig type (replaces BackgroundSurfaceConfig/MaskSurfaceConfig)
-  SurfaceConfig as HeroSurfaceConfig,
-  // Normalized Surface config (Phase 12)
+  // Normalized Surface config
   SurfaceType,
   NormalizedSurfaceConfig,
   AnySurfaceConfig,
-  // Mask shape types
-  CircleMaskShapeConfig as HeroCircleMaskShapeConfig,
-  RectMaskShapeConfig as HeroRectMaskShapeConfig,
-  BlobMaskShapeConfig as HeroBlobMaskShapeConfig,
-  PerlinMaskShapeConfig as HeroPerlinMaskShapeConfig,
-  MaskShapeConfig,
-  MaskShapeConfig as HeroMaskShapeConfig,
-  // Normalized Mask config (Phase 12)
+  // Normalized Mask config
   MaskShapeTypeId,
   NormalizedMaskConfig,
   AnyMaskConfig,
@@ -696,11 +681,6 @@ export type {
   ForegroundElementConfig,
   ForegroundLayerConfig,
   HeroViewConfig,
-  // Legacy types (deprecated)
-  BackgroundSurfaceConfig,
-  MaskSurfaceConfig,
-  BackgroundLayerConfig,
-  MaskLayerConfig,
 } from './HeroViewConfig'
 
 export {
@@ -727,22 +707,16 @@ export {
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
   createDefaultMaskProcessorConfig,
-  // Surface config normalization (Phase 12)
+  // Surface config normalization
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,
-  isLegacyTypeSurfaceConfig,
   normalizeSurfaceConfig,
-  denormalizeSurfaceConfig,
   getSurfaceAsNormalized,
-  getSurfaceAsLegacy,
-  // Mask config normalization (Phase 12)
+  // Mask config normalization
   MASK_SHAPE_TYPE_IDS,
   isNormalizedMaskConfig,
-  isLegacyTypeMaskConfig,
   normalizeMaskConfig,
-  denormalizeMaskConfig,
   getMaskAsNormalized,
-  getMaskAsLegacy,
   // Migration and validation functions
   migrateToNormalizedFormat,
   validateHeroViewConfig,

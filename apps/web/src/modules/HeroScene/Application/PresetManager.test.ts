@@ -24,7 +24,7 @@ const createMockPreset = (id: string, name: string): HeroViewPreset => ({
   id,
   name,
   config: createMockHeroViewConfig([
-    { type: 'base', id: BASE_LAYER_ID, name: 'Background', visible: true, surface: { type: 'solid' } },
+    { type: 'base', id: BASE_LAYER_ID, name: 'Background', visible: true, surface: { id: 'solid', params: {} } },
   ]),
   colorPreset: {
     brand: { hue: 200, saturation: 60, value: 70 },
@@ -200,10 +200,10 @@ describe('PresetManager', () => {
         id: 'custom-layer-1',
         name: 'Custom Layer',
         visible: true,
-        surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
+        surface: { id: 'stripe', params: { width1: 20, width2: 20, angle: 45 } },
       }
       const currentConfig = createMockHeroViewConfig([
-        { type: 'base', id: BASE_LAYER_ID, name: 'Background', visible: true, surface: { type: 'solid' } },
+        { type: 'base', id: BASE_LAYER_ID, name: 'Background', visible: true, surface: { id: 'solid', params: {} } },
         customLayer,
       ])
       ;(mockHeroViewRepository.get as any).mockReturnValue(currentConfig)
@@ -222,7 +222,7 @@ describe('PresetManager', () => {
     it('should replace template layers from preset', async () => {
       // Set up current config
       const currentConfig = createMockHeroViewConfig([
-        { type: 'base', id: BASE_LAYER_ID, name: 'Old Background', visible: true, surface: { type: 'stripe', width1: 10, width2: 10, angle: 0 } },
+        { type: 'base', id: BASE_LAYER_ID, name: 'Old Background', visible: true, surface: { id: 'stripe', params: { width1: 10, width2: 10, angle: 0 } } },
       ])
       ;(mockHeroViewRepository.get as any).mockReturnValue(currentConfig)
 
@@ -232,7 +232,7 @@ describe('PresetManager', () => {
       const baseLayer = setCall.layers.find((l: LayerNodeConfig) => l.id === BASE_LAYER_ID)
 
       // Base layer should come from preset (solid, not stripe)
-      expect(baseLayer?.surface?.type).toBe('solid')
+      expect(baseLayer?.surface?.id).toBe('solid')
     })
   })
 

@@ -20,7 +20,7 @@ describe('removeLayer', () => {
         id: 'base',
         name: 'Background',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
         processors: [],
       },
       {
@@ -28,7 +28,7 @@ describe('removeLayer', () => {
         id: 'surface-1',
         name: 'Surface 1',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
         processors: [],
       },
       {
@@ -36,7 +36,7 @@ describe('removeLayer', () => {
         id: 'surface-2',
         name: 'Surface 2',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
         processors: [],
       },
     ],

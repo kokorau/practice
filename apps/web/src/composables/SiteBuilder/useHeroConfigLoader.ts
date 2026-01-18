@@ -27,9 +27,12 @@ import {
   findSurfacePresetIndex,
   findMaskPatternIndex,
   isSingleEffectConfig,
+} from '../../modules/HeroScene'
+// Internal imports for denormalize functions (not part of public API)
+import {
   denormalizeSurfaceConfig,
   denormalizeMaskConfig,
-} from '../../modules/HeroScene'
+} from '../../modules/HeroScene/Domain/HeroViewConfig'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroFiltersReturn } from './useHeroFilters'
 import type { UseHeroImagesReturn } from './useHeroImages'

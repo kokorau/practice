@@ -28,7 +28,7 @@ const createSurfaceLayer = (id: string, name: string = 'Surface'): SurfaceLayerN
   id,
   name,
   visible: true,
-  surface: { type: 'solid' },
+  surface: { id: 'solid', params: {} },
 })
 
 const createGroupLayer = (id: string, children: LayerNodeConfig[], name: string = 'Group'): GroupLayerNodeConfig => ({

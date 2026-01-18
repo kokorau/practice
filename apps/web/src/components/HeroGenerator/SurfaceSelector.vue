@@ -14,7 +14,7 @@ import { computed } from 'vue'
 import PatternThumbnail, { type SpecCreator } from './PatternThumbnail.vue'
 import HeroPreviewThumbnail from './HeroPreviewThumbnail.vue'
 import type { HeroViewConfig, AnySurfaceConfig, NormalizedSurfaceConfig, LayerNodeConfig } from '../../modules/HeroScene'
-import { normalizeSurfaceConfig, isLegacyTypeSurfaceConfig } from '../../modules/HeroScene'
+import { normalizeSurfaceConfig, isNormalizedSurfaceConfig } from '../../modules/HeroScene'
 import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
 
 export interface PatternItem {
@@ -92,9 +92,9 @@ const previewConfigs = computed(() => {
   const configs: (HeroViewConfig | null)[] = props.patterns.map(pattern => {
     if (pattern.surfaceConfig) {
       // Convert to normalized format if legacy flat format
-      const normalized = isLegacyTypeSurfaceConfig(pattern.surfaceConfig)
-        ? normalizeSurfaceConfig(pattern.surfaceConfig)
-        : pattern.surfaceConfig as NormalizedSurfaceConfig
+      const normalized = isNormalizedSurfaceConfig(pattern.surfaceConfig)
+        ? pattern.surfaceConfig
+        : normalizeSurfaceConfig(pattern.surfaceConfig)
       return createSurfacePreviewConfig(props.baseConfig!, normalized)
     }
     return null
