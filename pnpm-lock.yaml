@@ -169,6 +169,8 @@ importers:
         specifier: workspace:*
         version: link:../schema
 
+  packages/timeline: {}
+
   packages/vector: {}
 
   tools/google-fonts:
