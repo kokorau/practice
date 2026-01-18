@@ -127,7 +127,6 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
     if (layer.type === 'processor') return
 
     // Store SingleEffectConfig[] directly as filters
-    // filters type now accepts AnyEffectConfig[] (both legacy and new formats)
     heroViewRepository.updateLayer(layerId, { filters: pipeline })
   }
 

@@ -32,8 +32,6 @@ import testImageLayerPositioned from './presets/test-image-layer-positioned.json
 // Preset Data
 // ============================================================
 
-// Note: JSON presets may use legacy format (colors.background/mask).
-// These are migrated when applied via migrateHeroViewConfig().
 const PRESETS: HeroViewPreset[] = [
   // Test presets (first for easy access during debugging)
   testImageLayer as unknown as HeroViewPreset,

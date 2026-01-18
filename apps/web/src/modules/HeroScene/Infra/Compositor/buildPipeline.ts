@@ -16,13 +16,14 @@ import type {
   ImageLayerNodeConfig,
   HeroPrimitiveKey,
   TextLayerNodeConfig,
+  SingleEffectConfig,
 } from '../../Domain/HeroViewConfig'
 import {
   getProcessorMask,
   DEFAULT_LAYER_BACKGROUND_COLORS,
   DEFAULT_LAYER_MASK_COLORS,
-  getEffectConfigsFromModifiers,
   getProcessorTargetPairsFromConfig,
+  isSingleEffectConfig,
 } from '../../Domain/HeroViewConfig'
 import type {
   RenderNode,
@@ -284,7 +285,9 @@ function buildEffectChainNode(
   inputNode: RenderNode | CompositorNode,
   processor: ProcessorNodeConfig
 ): CompositorNode | null {
-  const effectConfigs = getEffectConfigsFromModifiers(processor.modifiers)
+  const effectConfigs = processor.modifiers.filter(
+    (m): m is SingleEffectConfig => isSingleEffectConfig(m)
+  )
 
   if (effectConfigs.length === 0) {
     return null
@@ -369,7 +372,9 @@ function buildProcessorNode(
   }
 
   // 2. Apply effects if present
-  const effectConfigs = getEffectConfigsFromModifiers(processor.modifiers)
+  const effectConfigs = processor.modifiers.filter(
+    (m): m is SingleEffectConfig => isSingleEffectConfig(m)
+  )
   if (effectConfigs.length > 0) {
     const effects: EffectConfig[] = effectConfigs.map((e) => ({
       id: e.id,

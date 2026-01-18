@@ -112,10 +112,7 @@ export type {
   // Processor config types (JSON serialization)
   ProcessorConfig,
   SingleEffectConfig,
-  AnyEffectConfig,
   MaskProcessorConfig,
-  // Legacy effect config (for migration only)
-  EffectFilterConfig,
   // LayerNodeConfig types (JSON serialization)
   LayerNodeConfig,
   BaseLayerNodeConfig,
@@ -272,15 +269,9 @@ export {
   fromCustomSurfaceParams,
   // Layer helpers
   getLayerFilters,
-  // Effect config type guards
+  // Effect config type guard
   isSingleEffectConfig,
-  isLegacyEffectFilterConfig,
-  // Effect config migration
-  migrateLegacyEffectConfig,
-  hasLegacyEffectConfigs,
-  migrateEffectConfigsInModifiers,
-  getEffectConfigsFromModifiers,
-  // Effect normalization utilities (Surface/Mask pattern)
+  // Effect utilities
   isEffectOfType,
   isVignetteEffect,
   isChromaticAberrationEffect,
@@ -289,9 +280,7 @@ export {
   isBlurEffect,
   createSingleEffectConfig,
   extractEnabledEffects,
-  normalizeEffectFilterConfig,
   denormalizeToLayerEffectConfig,
-  getEffectsAsNormalized,
   // Surface config normalization (Phase 12)
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,
@@ -308,9 +297,6 @@ export {
   denormalizeMaskConfig,
   getMaskAsNormalized,
   getMaskAsLegacy,
-  // Full config migration (Phase 13)
-  migrateHeroViewConfig,
-  configNeedsMigration,
   // Default colors for surface layers (palette keys for layer config)
   DEFAULT_LAYER_BACKGROUND_COLORS,
   DEFAULT_LAYER_MASK_COLORS,
