@@ -388,6 +388,7 @@ export {
   wrapLayerInGroup,
   wrapLayerWithMask,
   moveLayer,
+  moveModifier,
   // Preset UseCases
   applyPreset,
   applyPreset as applyPresetUsecase,

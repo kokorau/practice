@@ -13,7 +13,7 @@ import type {
   ForegroundLayerConfig,
   LayerNodeConfig,
 } from '../HeroViewConfig'
-import type { LayerDropPosition } from '../LayerTreeOps'
+import type { LayerDropPosition, ModifierDropPosition } from '../LayerTreeOps'
 
 /**
  * Subscribe callback type
@@ -128,4 +128,12 @@ export interface HeroViewRepository {
    * @param position 移動先の位置
    */
   moveLayer(layerId: string, position: LayerDropPosition): void
+
+  /**
+   * 修飾子を移動（ドラッグ&ドロップ用）
+   * @param sourceNodeId 移動元のレイヤーID
+   * @param sourceModifierIndex 移動する修飾子のインデックス
+   * @param position 移動先の位置
+   */
+  moveModifier(sourceNodeId: string, sourceModifierIndex: number, position: ModifierDropPosition): void
 }
