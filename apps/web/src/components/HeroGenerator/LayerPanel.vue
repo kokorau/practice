@@ -2,7 +2,7 @@
 import { ref, computed, provide } from 'vue'
 import type { LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '../../modules/HeroScene'
 import { isProcessorLayerConfig } from '../../modules/HeroScene'
-import DraggableLayerNode, { type ContextTargetType } from './DraggableLayerNode.vue'
+import DraggableLayerNode, { type ContextTargetType, type AddProcessorType } from './DraggableLayerNode.vue'
 import DragPreview from './DragPreview.vue'
 import ModifierDragPreview from './ModifierDragPreview.vue'
 import { useLayerSelection } from '../../composables/useLayerSelection'
@@ -46,7 +46,8 @@ const emit = defineEmits<{
   'select-processor': [layerId: string, processorType: 'effect' | 'mask' | 'processor']
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
-  'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType]
+  'add-processor': [layerId: string, processorType: AddProcessorType]
+  'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number]
   'move-node': [nodeId: string, position: LayerDropPosition]
   'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
   'select-foreground-element': [elementId: string]
@@ -206,8 +207,8 @@ const handleLayerListPointerUp = () => {
 // Context Menu
 // ============================================================
 
-const handleLayerContextMenu = (layerId: string, event: MouseEvent, targetType: ContextTargetType) => {
-  emit('layer-contextmenu', layerId, event, targetType)
+const handleLayerContextMenu = (layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number) => {
+  emit('layer-contextmenu', layerId, event, targetType, modifierIndex)
 }
 
 // ============================================================
@@ -329,6 +330,7 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
           @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
+          @add-processor="(id: string, type: AddProcessorType) => emit('add-processor', id, type)"
           @contextmenu="handleLayerContextMenu"
           @move-node="handleMoveNode"
           @move-modifier="handleMoveModifier"

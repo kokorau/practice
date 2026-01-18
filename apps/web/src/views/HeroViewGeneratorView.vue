@@ -330,6 +330,9 @@ const {
   handleSelectProcessor,
   handleAddLayer,
   handleRemoveLayer,
+  handleAddProcessor,
+  handleRemoveProcessor,
+  handleRemoveProcessorNode,
   handleGroupSelection,
   handleUseAsMask,
   handleMoveNode,
@@ -348,6 +351,9 @@ const {
     groupLayer: heroScene.layer.groupLayer,
     useAsMask: heroScene.layer.useAsMask,
     moveLayer: heroScene.layer.moveLayer,
+    addProcessorToLayer: heroScene.layer.addProcessorToLayer,
+    removeProcessorFromLayer: heroScene.layer.removeProcessorFromLayer,
+    removeProcessor: heroScene.layer.removeProcessor,
   },
   selectedLayerId,
   onSelectLayer: (id) => {
@@ -398,6 +404,8 @@ const {
   handleToggleVisibility,
   handleRemoveLayer,
   handleRemoveForegroundElement,
+  handleRemoveProcessor,
+  handleRemoveProcessorNode,
 })
 
 // ============================================================
@@ -501,6 +509,7 @@ const handleImageUpdate = (key: string, value: unknown) => {
       @select-processor="handleSelectProcessor"
       @add-layer="handleAddLayer"
       @remove-layer="handleRemoveLayer"
+      @add-processor="handleAddProcessor"
       @layer-contextmenu="handleLayerContextMenu"
       @move-node="handleMoveNode"
       @move-modifier="handleMoveModifier"

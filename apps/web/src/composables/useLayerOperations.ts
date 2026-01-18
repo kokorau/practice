@@ -33,6 +33,9 @@ export interface ObjectLayerOptions {
   modelUrl: string
 }
 
+/** Processor type for add-processor operation */
+export type AddProcessorType = 'effect' | 'mask'
+
 /**
  * Scene operation callbacks from useHeroScene
  */
@@ -55,6 +58,12 @@ export interface SceneOperationCallbacks {
   useAsMask: (layerId: string) => string | null
   /** Move layer to new position in tree */
   moveLayer: (layerId: string, position: LayerDropPosition) => void
+  /** Add processor (effect or mask) to a layer */
+  addProcessorToLayer: (layerId: string, processorType: AddProcessorType) => void
+  /** Remove a processor modifier from a layer by index */
+  removeProcessorFromLayer: (processorNodeId: string, modifierIndex: number) => void
+  /** Remove an entire processor node */
+  removeProcessor: (processorNodeId: string) => void
 }
 
 /**
@@ -112,6 +121,9 @@ export interface UseLayerOperationsReturn {
   // Layer CRUD
   handleAddLayer: (type: UILayerType) => void
   handleRemoveLayer: (layerId: string) => void
+  handleAddProcessor: (layerId: string, processorType: AddProcessorType) => void
+  handleRemoveProcessor: (processorNodeId: string, modifierIndex: number) => void
+  handleRemoveProcessorNode: (processorNodeId: string) => void
 
   // Grouping
   handleGroupSelection: (layerId: string) => void
@@ -278,6 +290,21 @@ export function useLayerOperations(
     }
   }
 
+  const handleAddProcessor = (layerId: string, processorType: AddProcessorType) => {
+    // Delegate to sceneCallbacks - usecase handles processor creation and modifier addition
+    sceneCallbacks.addProcessorToLayer(layerId, processorType)
+  }
+
+  const handleRemoveProcessor = (processorNodeId: string, modifierIndex: number) => {
+    // Delegate to sceneCallbacks - usecase handles modifier removal
+    sceneCallbacks.removeProcessorFromLayer(processorNodeId, modifierIndex)
+  }
+
+  const handleRemoveProcessorNode = (processorNodeId: string) => {
+    // Delegate to sceneCallbacks - usecase handles processor node removal
+    sceneCallbacks.removeProcessor(processorNodeId)
+  }
+
   // ============================================================
   // Handlers - Grouping
   // ============================================================
@@ -334,6 +361,9 @@ export function useLayerOperations(
     // Layer CRUD
     handleAddLayer,
     handleRemoveLayer,
+    handleAddProcessor,
+    handleRemoveProcessor,
+    handleRemoveProcessorNode,
 
     // Grouping
     handleGroupSelection,

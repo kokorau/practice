@@ -519,6 +519,12 @@ export interface LayerOperations {
   readonly addGroupLayer: () => string
   /** Remove a layer by ID (returns true if removed) */
   readonly removeLayer: (layerId: string) => boolean
+  /** Add a processor (effect or mask) to a layer */
+  readonly addProcessorToLayer: (layerId: string, processorType: 'effect' | 'mask') => void
+  /** Remove a processor modifier from a layer by index (auto-removes processor if empty) */
+  readonly removeProcessorFromLayer: (processorNodeId: string, modifierIndex: number) => void
+  /** Remove an entire processor node (with all modifiers) */
+  readonly removeProcessor: (processorNodeId: string) => void
 
   /** Update layer visibility */
   readonly updateLayerVisibility: (layerId: string, visible: boolean) => void

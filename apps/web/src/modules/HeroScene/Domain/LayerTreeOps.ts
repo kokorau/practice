@@ -524,3 +524,143 @@ export const moveModifierInTree = (
     modifiers: targetModifiers,
   } as Partial<ProcessorNodeConfig>)
 }
+
+// ============================================================
+// Modifier Add/Remove Functions
+// ============================================================
+
+/**
+ * Add a modifier to a processor node's modifiers array
+ *
+ * @param layers - Current layer tree
+ * @param processorNodeId - ID of the ProcessorNode to add modifier to
+ * @param modifier - The modifier to add (SingleEffectConfig or MaskProcessorConfig)
+ * @returns New layer tree with the modifier added, or original tree if processor not found
+ */
+export const addModifierToProcessor = (
+  layers: LayerNodeConfig[],
+  processorNodeId: string,
+  modifier: ProcessorConfig
+): LayerNodeConfig[] => {
+  const processorNode = findLayerInTree(layers, processorNodeId)
+  if (!processorNode || !isProcessorLayerConfig(processorNode)) {
+    return layers
+  }
+
+  const newModifiers = [...processorNode.modifiers, modifier]
+
+  return updateLayerInTree(layers, processorNodeId, {
+    modifiers: newModifiers,
+  } as Partial<ProcessorNodeConfig>)
+}
+
+/**
+ * Remove a modifier from a processor node by index
+ *
+ * @param layers - Current layer tree
+ * @param processorNodeId - ID of the ProcessorNode to remove modifier from
+ * @param modifierIndex - Index of the modifier to remove
+ * @returns New layer tree with the modifier removed, or original tree if invalid
+ */
+export const removeModifierFromProcessor = (
+  layers: LayerNodeConfig[],
+  processorNodeId: string,
+  modifierIndex: number
+): LayerNodeConfig[] => {
+  const processorNode = findLayerInTree(layers, processorNodeId)
+  if (!processorNode || !isProcessorLayerConfig(processorNode)) {
+    return layers
+  }
+
+  if (modifierIndex < 0 || modifierIndex >= processorNode.modifiers.length) {
+    return layers
+  }
+
+  const newModifiers = processorNode.modifiers.filter((_, i) => i !== modifierIndex)
+
+  return updateLayerInTree(layers, processorNodeId, {
+    modifiers: newModifiers,
+  } as Partial<ProcessorNodeConfig>)
+}
+
+/**
+ * Find the processor node that follows a given layer (sibling processor)
+ * In the layer tree, a Processor node typically follows the layer it affects
+ *
+ * @param layers - Current layer tree
+ * @param layerId - ID of the layer to find processor for
+ * @returns The processor node ID if found, otherwise undefined
+ */
+export const findProcessorForLayer = (
+  layers: LayerNodeConfig[],
+  layerId: string
+): string | undefined => {
+  // Helper function to search at a specific level
+  const findAtLevel = (siblings: LayerNodeConfig[]): string | undefined => {
+    for (let i = 0; i < siblings.length; i++) {
+      const layer = siblings[i]
+      if (!layer) continue
+      if (layer.id === layerId) {
+        // Check if next sibling is a processor
+        const nextSibling = siblings[i + 1]
+        if (nextSibling && isProcessorLayerConfig(nextSibling)) {
+          return nextSibling.id
+        }
+        return undefined
+      }
+      // Search in group children
+      if (isGroupLayerConfig(layer)) {
+        const found = findAtLevel(layer.children)
+        if (found) return found
+      }
+    }
+    return undefined
+  }
+
+  return findAtLevel(layers)
+}
+
+/**
+ * Create a new ProcessorNodeConfig
+ */
+export const createProcessorNodeConfig = (
+  id: string,
+  modifiers: ProcessorConfig[] = [],
+  options?: Partial<Omit<ProcessorNodeConfig, 'type' | 'id' | 'modifiers'>>
+): ProcessorNodeConfig => ({
+  type: 'processor',
+  id,
+  name: options?.name ?? 'Processor',
+  visible: options?.visible ?? true,
+  modifiers,
+})
+
+/**
+ * Add a processor node after a layer if one doesn't already exist
+ * If a processor already exists, returns the existing processor ID
+ *
+ * @param layers - Current layer tree
+ * @param layerId - ID of the layer to add processor after
+ * @param processorId - ID for the new processor (optional, auto-generated if not provided)
+ * @returns Tuple of [new layers, processor ID]
+ */
+export const ensureProcessorForLayer = (
+  layers: LayerNodeConfig[],
+  layerId: string,
+  processorId?: string
+): [LayerNodeConfig[], string] => {
+  // Check if processor already exists
+  const existingProcessorId = findProcessorForLayer(layers, layerId)
+  if (existingProcessorId) {
+    return [layers, existingProcessorId]
+  }
+
+  // Create new processor
+  const newProcessorId = processorId ?? `processor-${Date.now()}`
+  const newProcessor = createProcessorNodeConfig(newProcessorId, [], { name: 'Processor' })
+
+  // Insert processor after the target layer
+  const newLayers = insertLayerInTree(layers, newProcessor, { type: 'after', targetId: layerId })
+
+  return [newLayers, newProcessorId]
+}

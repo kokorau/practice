@@ -46,3 +46,11 @@ export { createForegroundElementUsecase } from './ForegroundElementUsecase'
 // Re-export ConfigSyncer
 export type { SyncBackgroundSurfaceResult, SyncMaskSurfaceResult } from './ConfigSyncer'
 export { syncBackgroundSurfaceParams, syncMaskSurfaceParams } from './ConfigSyncer'
+
+// Re-export Processor UseCase
+export type {
+  ProcessorModifierType,
+  ProcessorUsecase,
+  ProcessorUsecaseDeps,
+} from './ProcessorUsecase'
+export { createProcessorUsecase } from './ProcessorUsecase'

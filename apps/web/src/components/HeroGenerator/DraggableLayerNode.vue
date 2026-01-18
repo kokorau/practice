@@ -49,14 +49,18 @@ const props = defineProps<{
 /** Context menu target type */
 export type ContextTargetType = 'layer' | 'processor' | 'effect' | 'mask'
 
+/** Processor type for add-processor event */
+export type AddProcessorType = 'effect' | 'mask'
+
 const emit = defineEmits<{
   select: [nodeId: string]
   'toggle-expand': [nodeId: string]
   'toggle-visibility': [nodeId: string]
   'select-processor': [nodeId: string, processorType: 'effect' | 'mask' | 'processor']
   'remove-layer': [nodeId: string]
-  // Context menu event (with target type)
-  contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType]
+  'add-processor': [nodeId: string, processorType: AddProcessorType]
+  // Context menu event (with target type and optional modifier index)
+  contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number]
   // DnD move events
   'move-node': [nodeId: string, position: LayerDropPosition]
   'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
@@ -176,10 +180,10 @@ const handleSelect = () => {
   emit('select', props.node.id)
 }
 
-const handleContextMenu = (e: MouseEvent, targetType: ContextTargetType = 'layer') => {
+const handleContextMenu = (e: MouseEvent, targetType: ContextTargetType = 'layer', modifierIndex?: number) => {
   e.preventDefault()
   e.stopPropagation()
-  emit('contextmenu', props.node.id, e, targetType)
+  emit('contextmenu', props.node.id, e, targetType, modifierIndex)
 }
 
 const handleToggleExpand = (e: Event) => {
@@ -203,6 +207,23 @@ const handleRemove = (e: Event) => {
 
 const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
   emit('select-processor', props.node.id, type)
+}
+
+// ============================================================
+// Add Processor Menu
+// ============================================================
+
+const showAddProcessorMenu = ref(false)
+
+const handleToggleAddProcessorMenu = (e: Event) => {
+  e.stopPropagation()
+  showAddProcessorMenu.value = !showAddProcessorMenu.value
+}
+
+const handleAddProcessor = (type: AddProcessorType, e: Event) => {
+  e.stopPropagation()
+  emit('add-processor', props.node.id, type)
+  showAddProcessorMenu.value = false
 }
 
 // ============================================================
@@ -333,6 +354,45 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <span class="layer-name">{{ node.name }}</span>
       </div>
 
+      <!-- Add Processor Button (only for non-processor, non-group layers) -->
+      <div
+        v-if="!isProcessorNode && !isGroupNode"
+        class="add-processor-container"
+        @click.stop
+      >
+        <button
+          class="add-processor-toggle"
+          :class="{ active: showAddProcessorMenu }"
+          title="Add Effect or Mask"
+          @click="handleToggleAddProcessorMenu"
+        >
+          <span class="material-icons">add</span>
+        </button>
+
+        <Transition name="fade">
+          <div
+            v-if="showAddProcessorMenu"
+            class="add-processor-menu"
+            @click.stop
+          >
+            <button
+              class="add-processor-item"
+              @click="(e) => handleAddProcessor('effect', e)"
+            >
+              <span class="material-icons">auto_fix_high</span>
+              <span>Effect</span>
+            </button>
+            <button
+              class="add-processor-item"
+              @click="(e) => handleAddProcessor('mask', e)"
+            >
+              <span class="material-icons">content_cut</span>
+              <span>Mask</span>
+            </button>
+          </div>
+        </Transition>
+      </div>
+
       <!-- Visibility Toggle -->
       <button
         class="visibility-toggle"
@@ -392,7 +452,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
           :data-modifier-node-id="node.id"
           :data-modifier-index="mod.index"
           @click="handleSelectProcessor(mod.type)"
-          @contextmenu="(e: MouseEvent) => handleContextMenu(e, mod.type)"
+          @contextmenu="(e: MouseEvent) => handleContextMenu(e, mod.type, mod.index)"
           @pointerdown="(e: PointerEvent) => handleModifierPointerDown(e, mod.index, mod.type)"
         >
           <!-- Drop Indicator for Modifier -->
@@ -428,7 +488,8 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
         @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
-        @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType) => emit('contextmenu', id, e, targetType)"
+        @add-processor="(id: string, type: AddProcessorType) => emit('add-processor', id, type)"
+        @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType, modifierIndex?: number) => emit('contextmenu', id, e, targetType, modifierIndex)"
         @move-node="(id: string, position: LayerDropPosition) => emit('move-node', id, position)"
         @move-modifier="(sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => emit('move-modifier', sourceNodeId, modifierIndex, position)"
       />
@@ -741,5 +802,130 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
 
 .processor-child-node:hover .processor-arrow {
   opacity: 1;
+}
+
+/* ============================================================
+   Add Processor Button & Menu
+   ============================================================ */
+
+.add-processor-container {
+  position: relative;
+}
+
+.add-processor-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: oklch(0.50 0.02 260);
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.node-header:hover .add-processor-toggle {
+  opacity: 1;
+}
+
+:global(.dark) .add-processor-toggle {
+  color: oklch(0.60 0.02 260);
+}
+
+.add-processor-toggle:hover {
+  color: oklch(0.35 0.02 260);
+  background: oklch(0.88 0.01 260);
+}
+
+:global(.dark) .add-processor-toggle:hover {
+  color: oklch(0.80 0.02 260);
+  background: oklch(0.28 0.02 260);
+}
+
+.add-processor-toggle.active {
+  opacity: 1;
+  color: oklch(0.50 0.15 250);
+  background: oklch(0.90 0.01 260);
+}
+
+:global(.dark) .add-processor-toggle.active {
+  color: oklch(0.65 0.15 250);
+  background: oklch(0.28 0.02 260);
+}
+
+.add-processor-toggle .material-icons {
+  font-size: 1rem;
+}
+
+.add-processor-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 7rem;
+  margin-top: 0.25rem;
+  background: oklch(0.96 0.01 260);
+  border: 1px solid oklch(0.85 0.01 260);
+  border-radius: 0.375rem;
+  overflow: hidden;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+:global(.dark) .add-processor-menu {
+  background: oklch(0.22 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.add-processor-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  color: oklch(0.25 0.02 260);
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+:global(.dark) .add-processor-item {
+  color: oklch(0.85 0.02 260);
+}
+
+.add-processor-item:hover {
+  background: oklch(0.90 0.01 260);
+}
+
+:global(.dark) .add-processor-item:hover {
+  background: oklch(0.28 0.02 260);
+}
+
+.add-processor-item .material-icons {
+  font-size: 1rem;
+  color: oklch(0.50 0.02 260);
+}
+
+:global(.dark) .add-processor-item .material-icons {
+  color: oklch(0.60 0.02 260);
+}
+
+/* Fade transition for menu */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

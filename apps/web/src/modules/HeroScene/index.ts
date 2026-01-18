@@ -220,6 +220,11 @@ export {
   // LayerTreeOps - Modifier operations
   canMoveModifierInTree,
   moveModifierInTree,
+  addModifierToProcessor,
+  removeModifierFromProcessor,
+  findProcessorForLayer,
+  createProcessorNodeConfig,
+  ensureProcessorForLayer,
   // Layer factories (deprecated - use HeroViewConfig instead)
   createCanvasLayer,
   createTextureLayer,
@@ -281,6 +286,7 @@ export {
   createSingleEffectConfig,
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
+  createDefaultMaskProcessorConfig,
   // Surface config normalization (Phase 12)
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,
@@ -336,6 +342,10 @@ export type {
   SurfaceUsecase,
   SurfaceUsecaseDeps,
   SurfaceSelectionPort,
+  // Processor Usecase types
+  ProcessorModifierType,
+  ProcessorUsecase,
+  ProcessorUsecaseDeps,
 } from './Application'
 
 export {
@@ -348,6 +358,7 @@ export {
   createForegroundElementUsecase,
   // Usecases
   createSurfaceUsecase,
+  createProcessorUsecase,
   // ConfigSyncer
   syncBackgroundSurfaceParams,
   syncMaskSurfaceParams,
