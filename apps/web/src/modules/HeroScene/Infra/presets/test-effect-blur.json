@@ -30,21 +30,22 @@
               "primary": "B",
               "secondary": "F1"
             }
-          },
+          }
+        ]
+      },
+      {
+        "type": "processor",
+        "id": "processor-blur",
+        "name": "Blur Effect",
+        "visible": true,
+        "modifiers": [
           {
-            "type": "processor",
-            "id": "processor-blur",
-            "name": "Blur Effect",
-            "visible": true,
-            "modifiers": [
-              {
-                "type": "effect",
-                "id": "blur",
-                "params": {
-                  "radius": 8
-                }
-              }
-            ]
+            "type": "effect",
+            "id": "blur",
+            "params": {
+              "enabled": true,
+              "radius": 15
+            }
           }
         ]
       }

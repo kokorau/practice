@@ -31,23 +31,29 @@
               "primary": "B",
               "secondary": "Bt"
             }
-          },
+          }
+        ]
+      },
+      {
+        "type": "processor",
+        "id": "processor-vignette",
+        "name": "Vignette Effect",
+        "visible": true,
+        "modifiers": [
           {
-            "type": "processor",
-            "id": "processor-vignette",
-            "name": "Vignette Effect",
-            "visible": true,
-            "modifiers": [
-              {
-                "type": "effect",
-                "id": "vignette",
-                "params": {
-                  "intensity": 0.6,
-                  "radius": 0.8,
-                  "softness": 0.4
-                }
-              }
-            ]
+            "type": "effect",
+            "id": "vignette",
+            "params": {
+              "enabled": true,
+              "shape": "ellipse",
+              "intensity": 0.8,
+              "softness": 0.4,
+              "color": [0, 0, 0, 1],
+              "radius": 0.7,
+              "centerX": 0.5,
+              "centerY": 0.5,
+              "aspectRatio": 1.78
+            }
           }
         ]
       }

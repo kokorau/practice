@@ -28,23 +28,24 @@
               "primary": "B",
               "secondary": "auto"
             }
-          },
+          }
+        ]
+      },
+      {
+        "type": "processor",
+        "id": "processor-line-halftone",
+        "name": "Line Halftone Effect",
+        "visible": true,
+        "modifiers": [
           {
-            "type": "processor",
-            "id": "processor-line-halftone",
-            "name": "Line Halftone Effect",
-            "visible": true,
-            "modifiers": [
-              {
-                "type": "effect",
-                "id": "lineHalftone",
-                "params": {
-                  "lineWidth": 3,
-                  "angle": 30,
-                  "contrast": 1.0
-                }
-              }
-            ]
+            "type": "effect",
+            "id": "lineHalftone",
+            "params": {
+              "enabled": true,
+              "lineWidth": 4,
+              "spacing": 12,
+              "angle": 45
+            }
           }
         ]
       }

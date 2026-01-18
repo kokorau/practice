@@ -34,14 +34,6 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let texSize = vec2f(u.viewportWidth, u.viewportHeight);
   let uv = pos.xy / texSize;
 
-  // 現在ピクセルの色を取得
-  let originalColor = textureSample(inputTexture, inputSampler, uv);
-
-  // 透明領域はEffectをスキップ（Mask範囲外を保護）
-  if (originalColor.a < 0.01) {
-    return originalColor;
-  }
-
   // 画面中心からの方向ベクトル
   let center = vec2f(0.5, 0.5);
   let toCenter = uv - center;
@@ -51,12 +43,17 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let dir = normalize(toCenter);
   let offset = dir * u.intensity / texSize * dist * 2.0;
 
-  // RGBチャンネルを別々にサンプリング
-  let r = textureSample(inputTexture, inputSampler, uv + offset).r;
-  let g = originalColor.g;
-  let b = textureSample(inputTexture, inputSampler, uv - offset).b;
+  // 全てのサンプリングを先に行う（uniform control flow維持）
+  let originalColor = textureSample(inputTexture, inputSampler, uv);
+  let rSample = textureSample(inputTexture, inputSampler, uv + offset).r;
+  let bSample = textureSample(inputTexture, inputSampler, uv - offset).b;
 
-  return vec4f(r, g, b, originalColor.a);
+  // RGBチャンネルを合成
+  let effectColor = vec4f(rSample, originalColor.g, bSample, originalColor.a);
+
+  // 透明領域はEffectをスキップ（Mask範囲外を保護）
+  // select(falseValue, trueValue, condition) - condition=trueならtrueValueを返す
+  return select(effectColor, originalColor, originalColor.a < 0.01);
 }
 `
 

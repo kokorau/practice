@@ -31,22 +31,22 @@
               "primary": "A",
               "secondary": "At"
             }
-          },
+          }
+        ]
+      },
+      {
+        "type": "processor",
+        "id": "processor-chromatic",
+        "name": "Chromatic Aberration Effect",
+        "visible": true,
+        "modifiers": [
           {
-            "type": "processor",
-            "id": "processor-chromatic",
-            "name": "Chromatic Aberration Effect",
-            "visible": true,
-            "modifiers": [
-              {
-                "type": "effect",
-                "id": "chromaticAberration",
-                "params": {
-                  "intensity": 12,
-                  "angle": 45
-                }
-              }
-            ]
+            "type": "effect",
+            "id": "chromaticAberration",
+            "params": {
+              "enabled": true,
+              "intensity": 12
+            }
           }
         ]
       }
