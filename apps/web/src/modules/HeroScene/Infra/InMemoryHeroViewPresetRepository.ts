@@ -27,13 +27,25 @@ import testLevel8WithText from './presets/test-level8-with-text.json'
 // ImageLayer test presets
 import testImageLayer from './presets/test-image-layer.json'
 import testImageLayerPositioned from './presets/test-image-layer-positioned.json'
+// Effect test presets (individual effect types)
+import testEffectBlur from './presets/test-effect-blur.json'
+import testEffectVignette from './presets/test-effect-vignette.json'
+import testEffectChromatic from './presets/test-effect-chromatic.json'
+import testEffectDotHalftone from './presets/test-effect-dot-halftone.json'
+import testEffectLineHalftone from './presets/test-effect-line-halftone.json'
 
 // ============================================================
 // Preset Data
 // ============================================================
 
 const PRESETS: HeroViewPreset[] = [
-  // Test presets (first for easy access during debugging)
+  // Effect test presets (first for easy access during debugging)
+  testEffectBlur as unknown as HeroViewPreset,
+  testEffectVignette as unknown as HeroViewPreset,
+  testEffectChromatic as unknown as HeroViewPreset,
+  testEffectDotHalftone as unknown as HeroViewPreset,
+  testEffectLineHalftone as unknown as HeroViewPreset,
+  // Other test presets
   testImageLayer as unknown as HeroViewPreset,
   testImageLayerPositioned as unknown as HeroViewPreset,
   testLevel8WithText as unknown as HeroViewPreset,

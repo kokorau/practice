@@ -1,0 +1,75 @@
+{
+  "id": "test-effect-chromatic",
+  "name": "Test Effect: Chromatic Aberration",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "polkaDot",
+              "dotRadius": 6,
+              "spacing": 20,
+              "rowOffset": 0.5
+            },
+            "colors": {
+              "primary": "A",
+              "secondary": "At"
+            }
+          }
+        ]
+      },
+      {
+        "type": "processor",
+        "id": "processor-chromatic",
+        "name": "Chromatic Aberration Effect",
+        "visible": true,
+        "modifiers": [
+          {
+            "type": "effect",
+            "id": "chromaticAberration",
+            "params": {
+              "enabled": true,
+              "intensity": 12
+            }
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 180,
+      "saturation": 65,
+      "value": 50
+    },
+    "accent": {
+      "hue": 320,
+      "saturation": 70,
+      "value": 60
+    },
+    "foundation": {
+      "hue": 200,
+      "saturation": 5,
+      "value": 98
+    }
+  }
+}

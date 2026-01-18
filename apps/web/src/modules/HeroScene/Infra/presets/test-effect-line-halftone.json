@@ -1,0 +1,74 @@
+{
+  "id": "test-effect-line-halftone",
+  "name": "Test Effect: Line Halftone",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "solid"
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "auto"
+            }
+          }
+        ]
+      },
+      {
+        "type": "processor",
+        "id": "processor-line-halftone",
+        "name": "Line Halftone Effect",
+        "visible": true,
+        "modifiers": [
+          {
+            "type": "effect",
+            "id": "lineHalftone",
+            "params": {
+              "enabled": true,
+              "lineWidth": 4,
+              "spacing": 12,
+              "angle": 45
+            }
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 220,
+      "saturation": 80,
+      "value": 45
+    },
+    "accent": {
+      "hue": 50,
+      "saturation": 90,
+      "value": 70
+    },
+    "foundation": {
+      "hue": 220,
+      "saturation": 5,
+      "value": 97
+    }
+  }
+}

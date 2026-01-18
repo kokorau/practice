@@ -1,0 +1,74 @@
+{
+  "id": "test-effect-blur",
+  "name": "Test Effect: Blur",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "grid",
+              "lineWidth": 2,
+              "cellSize": 32
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            }
+          }
+        ]
+      },
+      {
+        "type": "processor",
+        "id": "processor-blur",
+        "name": "Blur Effect",
+        "visible": true,
+        "modifiers": [
+          {
+            "type": "effect",
+            "id": "blur",
+            "params": {
+              "enabled": true,
+              "radius": 15
+            }
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 220,
+      "saturation": 70,
+      "value": 60
+    },
+    "accent": {
+      "hue": 30,
+      "saturation": 80,
+      "value": 60
+    },
+    "foundation": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 97
+    }
+  }
+}
