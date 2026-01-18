@@ -727,10 +727,10 @@ export function isBlurEffect(config: SingleEffectConfig): config is SingleEffect
  * @example
  * ```typescript
  * const blurEffect = createSingleEffectConfig('blur')
- * // { type: 'effect', id: 'blur', params: { enabled: false, radius: 8 } }
+ * // { type: 'effect', id: 'blur', params: { radius: 8 } }
  *
  * const customBlur = createSingleEffectConfig('blur', { radius: 16 })
- * // { type: 'effect', id: 'blur', params: { enabled: false, radius: 16 } }
+ * // { type: 'effect', id: 'blur', params: { radius: 16 } }
  * ```
  */
 export function createSingleEffectConfig(
@@ -991,12 +991,12 @@ export interface ForegroundLayerConfig {
  *   colors: { ... },
  *   layers: [
  *     {
- *       type: 'base',
- *       id: 'base',
+ *       type: 'surface',
+ *       id: 'background',
  *       name: 'Background',
  *       visible: true,
  *       surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
- *       filters: [{ type: 'effect', enabled: true, config: { ... } }]
+ *       filters: [{ type: 'effect', id: 'vignette', params: { intensity: 0.5 } }]
  *     },
  *     {
  *       type: 'processor',
@@ -1004,7 +1004,7 @@ export interface ForegroundLayerConfig {
  *       name: 'Mask Processor',
  *       visible: true,
  *       modifiers: [
- *         { type: 'effect', enabled: true, config: { ... } },
+ *         { type: 'effect', id: 'blur', params: { radius: 8 } },
  *         { type: 'mask', enabled: true, shape: { ... }, invert: false, feather: 0 }
  *       ]
  *     }
