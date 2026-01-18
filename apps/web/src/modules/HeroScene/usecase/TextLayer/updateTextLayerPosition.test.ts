@@ -20,7 +20,7 @@ describe('updateTextLayerPosition', () => {
         id: 'base',
         name: 'Background',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
         processors: [],
       },
       {

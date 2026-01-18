@@ -46,14 +46,15 @@ export interface SelectionPort {
 
 /**
  * サーフェスパラメータの更新型（各パターンタイプに対応）
+ * id はサーフェスタイプの識別子（NormalizedSurfaceConfig.id と対応）
  */
 export type SurfaceParamsUpdate =
-  | { type: 'stripe'; width1?: number; width2?: number; angle?: number }
-  | { type: 'grid'; lineWidth?: number; cellSize?: number }
-  | { type: 'polkaDot'; dotRadius?: number; spacing?: number; rowOffset?: number }
-  | { type: 'checker'; cellSize?: number; angle?: number }
+  | { id: 'stripe'; width1?: number; width2?: number; angle?: number }
+  | { id: 'grid'; lineWidth?: number; cellSize?: number }
+  | { id: 'polkaDot'; dotRadius?: number; spacing?: number; rowOffset?: number }
+  | { id: 'checker'; cellSize?: number; angle?: number }
   | {
-      type: 'gradientGrain'
+      id: 'gradientGrain'
       depthMapType?: DepthMapType
       angle?: number
       centerX?: number
@@ -207,14 +208,14 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       if (layer.type !== 'base' && layer.type !== 'surface') return
 
       const currentSurface = layer.surface
-      if (currentSurface.id !== params.type) return
+      if (currentSurface.id !== params.id) return
 
+      // Extract params without 'id' field
+      const { id: _id, ...updateParams } = params
       const newSurface: NormalizedSurfaceConfig = {
         id: currentSurface.id,
-        params: { ...currentSurface.params, ...params },
+        params: { ...currentSurface.params, ...updateParams },
       }
-      // Remove 'type' from params as it's now in 'id'
-      delete (newSurface.params as Record<string, unknown>).type
       repository.updateLayer(layerId, { surface: newSurface })
     },
 

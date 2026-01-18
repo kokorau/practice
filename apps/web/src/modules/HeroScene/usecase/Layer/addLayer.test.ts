@@ -20,7 +20,7 @@ describe('addLayer', () => {
         id: 'base',
         name: 'Background',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
         processors: [],
       },
     ],
@@ -32,7 +32,7 @@ describe('addLayer', () => {
     id,
     name: 'New Surface',
     visible: true,
-    surface: { type: 'solid' },
+    surface: { id: 'solid', params: {} },
     processors: [],
   })
 

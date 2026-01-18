@@ -34,7 +34,7 @@ describe('LayerWorkflow Integration', () => {
         id: 'base',
         name: 'Background',
         visible: true,
-        surface: { type: 'solid' },
+        surface: { id: 'solid', params: {} },
         processors: [],
       },
     ],
@@ -46,7 +46,7 @@ describe('LayerWorkflow Integration', () => {
     id,
     name,
     visible: true,
-    surface: { type: 'solid' },
+    surface: { id: 'solid', params: {} },
     processors: [],
   })
 
