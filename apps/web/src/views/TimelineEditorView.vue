@@ -615,8 +615,14 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
 
 .preview-inner {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, oklch(0.55 0.20 250), oklch(0.45 0.25 280));
+  top: 50%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, oklch(0.65 0.25 250), oklch(0.55 0.30 280));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   transition: transform 0.05s ease-out, opacity 0.05s ease-out;
 }
 
