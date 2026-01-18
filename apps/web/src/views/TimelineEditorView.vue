@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState } from '@practice/timeline'
-import { createTimelinePlayer } from '@practice/timeline'
+import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState, Track, EnvelopeTrack } from '@practice/timeline'
+import { createTimelinePlayer, evaluateEnvelope } from '@practice/timeline'
 
 // ============================================================
 // Mock Data
@@ -261,6 +261,78 @@ function stopResize() {
 // Track list width
 // ============================================================
 const trackListWidth = 150
+
+// ============================================================
+// Envelope Graph Helpers
+// ============================================================
+
+function isEnvelopeTrack(track: Track): track is EnvelopeTrack {
+  return track.mode === 'Envelope'
+}
+
+interface EnvelopeGraphData {
+  pathD: string
+  points: { x: number; y: number; time: number; value: number }[]
+}
+
+function computeEnvelopeGraph(track: EnvelopeTrack, duration: number): EnvelopeGraphData {
+  const { envelope } = track
+  const points = envelope.points
+    .map(p => ({
+      x: (p.time / duration) * 100,
+      y: (1 - p.value) * 100, // Invert Y for SVG coordinates
+      time: p.time,
+      value: p.value,
+    }))
+    .sort((a, b) => a.x - b.x)
+
+  if (points.length === 0) {
+    return { pathD: '', points: [] }
+  }
+
+  // Generate path based on interpolation type
+  if (envelope.interpolation === 'Linear') {
+    // Linear: straight lines between points
+    const pathParts = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
+    return { pathD: pathParts.join(' '), points }
+  }
+
+  // Bezier: smooth curves using cubic bezier
+  if (points.length === 1) {
+    return { pathD: `M ${points[0]!.x} ${points[0]!.y}`, points }
+  }
+
+  // Sample the envelope at many points for smooth curve
+  const sampleCount = 100
+  const sampledPoints: { x: number; y: number }[] = []
+
+  for (let i = 0; i <= sampleCount; i++) {
+    const t = (i / sampleCount) * duration
+    const value = evaluateEnvelope(envelope, t)
+    sampledPoints.push({
+      x: (t / duration) * 100,
+      y: (1 - value) * 100,
+    })
+  }
+
+  const pathParts = sampledPoints.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
+  return { pathD: pathParts.join(' '), points }
+}
+
+// Computed envelope data for each track
+const envelopeGraphs = computed(() => {
+  const graphs = new Map<TrackId, EnvelopeGraphData>()
+  for (const track of timeline.value.tracks) {
+    if (isEnvelopeTrack(track)) {
+      graphs.set(track.id, computeEnvelopeGraph(track, totalDuration.value))
+    }
+  }
+  return graphs
+})
+
+function getEnvelopeGraph(trackId: TrackId): EnvelopeGraphData | undefined {
+  return envelopeGraphs.value.get(trackId)
+}
 </script>
 
 <template>
@@ -381,9 +453,33 @@ const trackListWidth = 150
                 class="phase-separator"
                 :style="{ left: `${pos.startPercent + pos.widthPercent}%` }"
               />
-              <!-- Track content placeholder -->
-              <div class="track-content">
-                <span class="track-content-label">{{ track.mode }}</span>
+              <!-- Envelope Track Content -->
+              <div v-if="track.mode === 'Envelope'" class="track-content track-content--envelope">
+                <svg
+                  class="envelope-graph"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  <!-- Envelope curve -->
+                  <path
+                    v-if="getEnvelopeGraph(track.id)?.pathD"
+                    :d="getEnvelopeGraph(track.id)?.pathD"
+                    class="envelope-path"
+                  />
+                  <!-- Control points -->
+                  <circle
+                    v-for="(point, idx) in getEnvelopeGraph(track.id)?.points ?? []"
+                    :key="idx"
+                    :cx="point.x"
+                    :cy="point.y"
+                    r="2"
+                    class="envelope-point"
+                  />
+                </svg>
+              </div>
+              <!-- Generator Track Content (placeholder for now) -->
+              <div v-else class="track-content track-content--generator">
+                <span class="track-content-label">{{ track.generator.type }}</span>
               </div>
             </div>
             <!-- Playhead line -->
@@ -705,11 +801,40 @@ const trackListWidth = 150
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.track-content--envelope {
+  padding: 0;
+}
+
+.track-content--generator {
+  background: oklch(0.92 0.02 180);
 }
 
 .track-content-label {
   font-size: 0.625rem;
   color: oklch(0.65 0.02 260);
+}
+
+/* Envelope Graph */
+.envelope-graph {
+  width: 100%;
+  height: 100%;
+}
+
+.envelope-path {
+  fill: none;
+  stroke: oklch(0.50 0.20 250);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.envelope-point {
+  fill: oklch(0.98 0 0);
+  stroke: oklch(0.45 0.22 250);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
 }
 
 .playhead-line {
