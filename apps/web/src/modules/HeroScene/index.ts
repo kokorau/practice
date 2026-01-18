@@ -89,19 +89,6 @@ export type {
   HeroContextName,
   HeroColorsConfig,
   ViewportConfig,
-  StripeSurfaceConfig,
-  GridSurfaceConfig,
-  PolkaDotSurfaceConfig,
-  CheckerSurfaceConfig,
-  SolidSurfaceConfig,
-  ImageSurfaceConfig,
-  HeroSurfaceConfig,
-  HeroCircleMaskShapeConfig,
-  HeroRectMaskShapeConfig,
-  HeroBlobMaskShapeConfig,
-  HeroPerlinMaskShapeConfig,
-  MaskShapeConfig,
-  HeroMaskShapeConfig,
   // Normalized config types (Phase 12)
   SurfaceType,
   NormalizedSurfaceConfig,
@@ -132,11 +119,6 @@ export type {
   ForegroundElementConfig,
   ForegroundLayerConfig,
   HeroViewConfig,
-  // Legacy types (deprecated)
-  BackgroundSurfaceConfig,
-  MaskSurfaceConfig,
-  BackgroundLayerConfig,
-  MaskLayerConfig,
   // HeroViewPreset types
   PresetHsvColor,
   PresetFoundation,
@@ -287,22 +269,16 @@ export {
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
   createDefaultMaskProcessorConfig,
-  // Surface config normalization (Phase 12)
+  // Surface config normalization
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,
-  isLegacyTypeSurfaceConfig,
   normalizeSurfaceConfig,
-  denormalizeSurfaceConfig,
   getSurfaceAsNormalized,
-  getSurfaceAsLegacy,
-  // Mask config normalization (Phase 12)
+  // Mask config normalization
   MASK_SHAPE_TYPE_IDS,
   isNormalizedMaskConfig,
-  isLegacyTypeMaskConfig,
   normalizeMaskConfig,
-  denormalizeMaskConfig,
   getMaskAsNormalized,
-  getMaskAsLegacy,
   // Default colors for surface layers (palette keys for layer config)
   DEFAULT_LAYER_BACKGROUND_COLORS,
   DEFAULT_LAYER_MASK_COLORS,

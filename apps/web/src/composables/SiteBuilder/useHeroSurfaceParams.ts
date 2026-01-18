@@ -30,10 +30,11 @@ import {
   fromCustomSurfaceParams,
   syncBackgroundSurfaceParams,
   syncMaskSurfaceParams,
-  denormalizeMaskConfig,
   normalizeMaskConfig,
   normalizeSurfaceConfig,
 } from '../../modules/HeroScene'
+// Internal import for denormalize function (not part of public API)
+import { denormalizeMaskConfig } from '../../modules/HeroScene/Domain/HeroViewConfig'
 import type {
   CustomMaskShapeParams,
   CustomSurfaceParams,

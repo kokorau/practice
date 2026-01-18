@@ -1,5 +1,5 @@
 import { computed, type Ref, type ComputedRef } from 'vue'
-import type { HeroSurfaceConfig } from '../../modules/HeroScene'
+import type { AnySurfaceConfig } from '../../modules/HeroScene'
 import type { RGBA, TextureRenderSpec, SurfacePresetParams } from '@practice/texture'
 
 type Viewport = { width: number; height: number }
@@ -25,7 +25,7 @@ export type CreateSurfacePatternsOptions<P> = {
 export type SurfacePatternItem = {
   label: string
   createSpec: (viewport: Viewport) => TextureRenderSpec | null
-  surfaceConfig: HeroSurfaceConfig | undefined
+  surfaceConfig: AnySurfaceConfig | undefined
 }
 
 /**
@@ -55,7 +55,7 @@ export function createSurfacePatterns<P extends { label: string; params?: Surfac
       label: pattern.label,
       createSpec: (viewport: Viewport) =>
         createSpec(pattern, color1.value, color2.value, viewport),
-      surfaceConfig: pattern.params as HeroSurfaceConfig | undefined,
+      surfaceConfig: pattern.params as AnySurfaceConfig | undefined,
     }))
   })
 }
