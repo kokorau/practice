@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState, Track, EnvelopeTrack, GeneratorTrack } from '@practice/timeline'
-import { createTimelinePlayer, evaluateEnvelope, evaluateGenerator } from '@practice/timeline'
+import { createTimelinePlayer, evaluateGenerator } from '@practice/timeline'
 
 // ============================================================
 // Mock Data
@@ -263,122 +263,184 @@ function stopResize() {
 const trackListWidth = 150
 
 // ============================================================
-// Envelope Graph Helpers
+// Canvas Drawing Helpers
 // ============================================================
 
 function isEnvelopeTrack(track: Track): track is EnvelopeTrack {
   return track.mode === 'Envelope'
 }
 
-interface EnvelopeGraphData {
-  pathD: string
-  points: { x: number; y: number; time: number; value: number }[]
-}
-
-function computeEnvelopeGraph(track: EnvelopeTrack, duration: number): EnvelopeGraphData {
-  const { envelope } = track
-  const points = envelope.points
-    .map(p => ({
-      x: (p.time / duration) * 100,
-      y: (1 - p.value) * 100, // Invert Y for SVG coordinates
-      time: p.time,
-      value: p.value,
-    }))
-    .sort((a, b) => a.x - b.x)
-
-  if (points.length === 0) {
-    return { pathD: '', points: [] }
-  }
-
-  // Generate path based on interpolation type
-  if (envelope.interpolation === 'Linear') {
-    // Linear: straight lines between points
-    const pathParts = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
-    return { pathD: pathParts.join(' '), points }
-  }
-
-  // Bezier: smooth curves using cubic bezier
-  if (points.length === 1) {
-    return { pathD: `M ${points[0]!.x} ${points[0]!.y}`, points }
-  }
-
-  // Sample the envelope at many points for smooth curve
-  const sampleCount = 100
-  const sampledPoints: { x: number; y: number }[] = []
-
-  for (let i = 0; i <= sampleCount; i++) {
-    const t = (i / sampleCount) * duration
-    const value = evaluateEnvelope(envelope, t)
-    sampledPoints.push({
-      x: (t / duration) * 100,
-      y: (1 - value) * 100,
-    })
-  }
-
-  const pathParts = sampledPoints.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
-  return { pathD: pathParts.join(' '), points }
-}
-
-// Computed envelope data for each track
-const envelopeGraphs = computed(() => {
-  const graphs = new Map<TrackId, EnvelopeGraphData>()
-  for (const track of timeline.value.tracks) {
-    if (isEnvelopeTrack(track)) {
-      graphs.set(track.id, computeEnvelopeGraph(track, totalDuration.value))
-    }
-  }
-  return graphs
-})
-
-function getEnvelopeGraph(trackId: TrackId): EnvelopeGraphData | undefined {
-  return envelopeGraphs.value.get(trackId)
-}
-
-// ============================================================
-// Generator Waveform Helpers
-// ============================================================
-
 function isGeneratorTrack(track: Track): track is GeneratorTrack {
   return track.mode === 'Generator'
 }
 
-interface GeneratorWaveformData {
-  pathD: string
+// Canvas refs for each track
+const canvasRefs = ref<Map<TrackId, HTMLCanvasElement>>(new Map())
+
+function setCanvasRef(trackId: TrackId, el: HTMLCanvasElement | null) {
+  if (el) {
+    canvasRefs.value.set(trackId, el)
+  } else {
+    canvasRefs.value.delete(trackId)
+  }
 }
 
-function computeGeneratorWaveform(track: GeneratorTrack, duration: number): GeneratorWaveformData {
-  const { generator } = track
-  const sampleCount = 200
+// Draw envelope on canvas
+function drawEnvelope(canvas: HTMLCanvasElement, track: EnvelopeTrack, duration: number) {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
 
-  const points: { x: number; y: number }[] = []
+  const dpr = window.devicePixelRatio || 1
+  const rect = canvas.getBoundingClientRect()
+  const width = rect.width * dpr
+  const height = rect.height * dpr
+
+  canvas.width = width
+  canvas.height = height
+  ctx.scale(dpr, dpr)
+
+  ctx.clearRect(0, 0, rect.width, rect.height)
+
+  const { envelope } = track
+  const points = [...envelope.points].sort((a, b) => a.time - b.time)
+
+  if (points.length === 0) return
+
+  // Convert to canvas coordinates
+  const toX = (time: number) => (time / duration) * rect.width
+  const toY = (value: number) => (1 - value) * rect.height
+
+  ctx.strokeStyle = 'oklch(0.50 0.20 250)'
+  ctx.lineWidth = 1.5
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  ctx.beginPath()
+
+  if (envelope.interpolation === 'Linear') {
+    // Linear interpolation: straight lines
+    points.forEach((p, i) => {
+      const x = toX(p.time)
+      const y = toY(p.value)
+      if (i === 0) {
+        ctx.moveTo(x, y)
+      } else {
+        ctx.lineTo(x, y)
+      }
+    })
+  } else {
+    // Bezier interpolation: smooth curves using quadratic bezier
+    if (points.length === 1) {
+      const x = toX(points[0]!.time)
+      const y = toY(points[0]!.value)
+      ctx.moveTo(x, y)
+      ctx.lineTo(x, y)
+    } else {
+      // Use quadratic bezier for smooth curves
+      ctx.moveTo(toX(points[0]!.time), toY(points[0]!.value))
+
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i]!
+        const p1 = points[i + 1]!
+
+        const x0 = toX(p0.time)
+        const y0 = toY(p0.value)
+        const x1 = toX(p1.time)
+        const y1 = toY(p1.value)
+
+        // Control point at midpoint with averaged Y
+        const cpX = (x0 + x1) / 2
+        const cpY0 = y0
+        const cpY1 = y1
+
+        // Use cubic bezier for smoother curves
+        ctx.bezierCurveTo(cpX, cpY0, cpX, cpY1, x1, y1)
+      }
+    }
+  }
+
+  ctx.stroke()
+
+  // Draw control points
+  ctx.fillStyle = 'oklch(0.98 0 0)'
+  ctx.strokeStyle = 'oklch(0.45 0.22 250)'
+  ctx.lineWidth = 1.5
+
+  points.forEach(p => {
+    const x = toX(p.time)
+    const y = toY(p.value)
+    ctx.beginPath()
+    ctx.arc(x, y, 4, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  })
+}
+
+// Draw generator waveform on canvas
+function drawGenerator(canvas: HTMLCanvasElement, track: GeneratorTrack, duration: number) {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const dpr = window.devicePixelRatio || 1
+  const rect = canvas.getBoundingClientRect()
+  const width = rect.width * dpr
+  const height = rect.height * dpr
+
+  canvas.width = width
+  canvas.height = height
+  ctx.scale(dpr, dpr)
+
+  ctx.clearRect(0, 0, rect.width, rect.height)
+
+  const { generator } = track
+  const sampleCount = Math.max(200, Math.floor(rect.width))
+
+  ctx.strokeStyle = 'oklch(0.50 0.20 150)'
+  ctx.lineWidth = 1.5
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  ctx.beginPath()
 
   for (let i = 0; i <= sampleCount; i++) {
     const t = (i / sampleCount) * duration
     const value = evaluateGenerator(generator, t)
-    points.push({
-      x: (t / duration) * 100,
-      y: (1 - value) * 100, // Invert Y for SVG coordinates
-    })
-  }
+    const x = (i / sampleCount) * rect.width
+    const y = (1 - value) * rect.height
 
-  const pathParts = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
-  return { pathD: pathParts.join(' ') }
-}
-
-// Computed generator waveform data for each track
-const generatorWaveforms = computed(() => {
-  const waveforms = new Map<TrackId, GeneratorWaveformData>()
-  for (const track of timeline.value.tracks) {
-    if (isGeneratorTrack(track)) {
-      waveforms.set(track.id, computeGeneratorWaveform(track, totalDuration.value))
+    if (i === 0) {
+      ctx.moveTo(x, y)
+    } else {
+      ctx.lineTo(x, y)
     }
   }
-  return waveforms
+
+  ctx.stroke()
+}
+
+// Redraw all canvases
+function redrawAllCanvases() {
+  for (const track of timeline.value.tracks) {
+    const canvas = canvasRefs.value.get(track.id)
+    if (!canvas) continue
+
+    if (isEnvelopeTrack(track)) {
+      drawEnvelope(canvas, track, totalDuration.value)
+    } else if (isGeneratorTrack(track)) {
+      drawGenerator(canvas, track, totalDuration.value)
+    }
+  }
+}
+
+// Watch for changes and redraw
+watch([timeline, totalDuration], () => {
+  nextTick(() => redrawAllCanvases())
+}, { deep: true })
+
+onMounted(() => {
+  nextTick(() => redrawAllCanvases())
 })
 
-function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefined {
-  return generatorWaveforms.value.get(trackId)
-}
 </script>
 
 <template>
@@ -504,41 +566,17 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
               />
               <!-- Envelope Track Content -->
               <div v-if="track.mode === 'Envelope'" class="track-content track-content--envelope">
-                <svg
-                  class="envelope-graph"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                >
-                  <!-- Envelope curve -->
-                  <path
-                    v-if="getEnvelopeGraph(track.id)?.pathD"
-                    :d="getEnvelopeGraph(track.id)?.pathD"
-                    class="envelope-path"
-                  />
-                  <!-- Control points -->
-                  <circle
-                    v-for="(point, idx) in getEnvelopeGraph(track.id)?.points ?? []"
-                    :key="idx"
-                    :cx="point.x"
-                    :cy="point.y"
-                    r="2"
-                    class="envelope-point"
-                  />
-                </svg>
+                <canvas
+                  :ref="(el) => setCanvasRef(track.id, el as HTMLCanvasElement)"
+                  class="track-canvas"
+                />
               </div>
               <!-- Generator Track Content -->
               <div v-else class="track-content track-content--generator">
-                <svg
-                  class="generator-graph"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                >
-                  <path
-                    v-if="getGeneratorWaveform(track.id)?.pathD"
-                    :d="getGeneratorWaveform(track.id)?.pathD"
-                    class="generator-path"
-                  />
-                </svg>
+                <canvas
+                  :ref="(el) => setCanvasRef(track.id, el as HTMLCanvasElement)"
+                  class="track-canvas"
+                />
                 <span class="generator-type-label">{{ track.generator.type }}</span>
               </div>
             </div>
@@ -900,43 +938,11 @@ function getGeneratorWaveform(trackId: TrackId): GeneratorWaveformData | undefin
   color: oklch(0.65 0.02 260);
 }
 
-/* Envelope Graph */
-.envelope-graph {
+/* Track Canvas */
+.track-canvas {
   width: 100%;
   height: 100%;
-  shape-rendering: geometricPrecision;
-}
-
-.envelope-path {
-  fill: none;
-  stroke: oklch(0.50 0.20 250);
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.envelope-point {
-  fill: oklch(0.98 0 0);
-  stroke: oklch(0.45 0.22 250);
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Generator Graph */
-.generator-graph {
-  width: 100%;
-  height: 100%;
-  shape-rendering: geometricPrecision;
-}
-
-.generator-path {
-  fill: none;
-  stroke: oklch(0.50 0.20 150);
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  display: block;
 }
 
 .generator-type-label {
