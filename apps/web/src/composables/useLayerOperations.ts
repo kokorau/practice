@@ -58,6 +58,8 @@ export interface SceneOperationCallbacks {
   useAsMask: (layerId: string) => string | null
   /** Move layer to new position in tree */
   moveLayer: (layerId: string, position: LayerDropPosition) => void
+  /** Move modifier to new position */
+  moveModifier: (sourceNodeId: string, sourceModifierIndex: number, position: ModifierDropPosition) => void
   /** Add processor (effect or mask) to a layer */
   addProcessorToLayer: (layerId: string, processorType: AddProcessorType) => void
   /** Remove a processor modifier from a layer by index */
@@ -334,9 +336,9 @@ export function useLayerOperations(
     sceneCallbacks.moveLayer(nodeId, position)
   }
 
-  const handleMoveModifier = (_sourceNodeId: string, _modifierIndex: number, _position: ModifierDropPosition) => {
-    // TODO: Implement modifier move using moveModifierInTree
-    console.warn('handleMoveModifier not yet implemented')
+  const handleMoveModifier = (sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => {
+    // Delegate to sceneCallbacks - usecase handles repository update and render
+    sceneCallbacks.moveModifier(sourceNodeId, modifierIndex, position)
   }
 
   // ============================================================

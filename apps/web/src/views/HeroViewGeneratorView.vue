@@ -351,6 +351,7 @@ const {
     groupLayer: heroScene.layer.groupLayer,
     useAsMask: heroScene.layer.useAsMask,
     moveLayer: heroScene.layer.moveLayer,
+    moveModifier: heroScene.layer.moveModifier,
     addProcessorToLayer: heroScene.layer.addProcessorToLayer,
     removeProcessorFromLayer: heroScene.layer.removeProcessorFromLayer,
     removeProcessor: heroScene.layer.removeProcessor,
