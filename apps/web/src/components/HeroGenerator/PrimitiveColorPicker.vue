@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette, PrimitiveKey } from '../../modules/SemanticColorPalette/Domain'
 import {
@@ -23,6 +23,9 @@ const emit = defineEmits<{
 
 const isOpen = ref(false)
 const pickerRef = ref<HTMLElement | null>(null)
+const popupRef = ref<HTMLElement | null>(null)
+const triggerRef = ref<HTMLElement | null>(null)
+const popupStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0', left: '0' })
 
 // Group colors for display
 const colorGroups = computed(() => [
@@ -50,8 +53,40 @@ const selectedLabel = computed(() => {
   return props.modelValue
 })
 
-const togglePopup = () => {
+const togglePopup = async () => {
   isOpen.value = !isOpen.value
+  if (isOpen.value) {
+    await nextTick()
+    updatePopupPosition()
+  }
+}
+
+const updatePopupPosition = () => {
+  if (!triggerRef.value || !popupRef.value) return
+
+  const triggerRect = triggerRef.value.getBoundingClientRect()
+  const popupRect = popupRef.value.getBoundingClientRect()
+  const viewportWidth = window.innerWidth
+  const gap = 4 // 0.25rem
+
+  const top = triggerRect.bottom + gap
+  const leftAligned = triggerRect.left
+  const rightOverflow = leftAligned + popupRect.width > viewportWidth
+
+  if (rightOverflow) {
+    // Align to right edge of trigger
+    popupStyle.value = {
+      top: `${top}px`,
+      left: undefined,
+      right: `${viewportWidth - triggerRect.right}px`,
+    }
+  } else {
+    popupStyle.value = {
+      top: `${top}px`,
+      left: `${leftAligned}px`,
+      right: undefined,
+    }
+  }
 }
 
 const selectColor = (key: PrimitiveKey | 'auto') => {
@@ -79,6 +114,7 @@ onUnmounted(() => {
   <div ref="pickerRef" class="primitive-color-picker">
     <!-- Trigger button -->
     <button
+      ref="triggerRef"
       class="picker-trigger"
       @click="togglePopup"
     >
@@ -93,7 +129,7 @@ onUnmounted(() => {
 
     <!-- Popup panel -->
     <Transition name="popup">
-      <div v-if="isOpen" class="picker-popup">
+      <div v-if="isOpen" ref="popupRef" class="picker-popup" :style="popupStyle">
         <!-- Auto option -->
         <div v-if="showAuto" class="color-group">
           <button
@@ -218,11 +254,10 @@ onUnmounted(() => {
 
 /* Popup Panel */
 .picker-popup {
-  position: absolute;
-  top: calc(100% + 0.25rem);
-  left: 0;
-  right: 0;
-  z-index: 100;
+  position: fixed;
+  z-index: 1000;
+  min-width: 16rem;
+  width: max-content;
   padding: 0.75rem;
   background: oklch(0.98 0.01 260);
   border: 1px solid oklch(0.85 0.01 260);
