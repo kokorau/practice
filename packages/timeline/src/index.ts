@@ -15,3 +15,9 @@ export type { TrackId, ClockType, EnvelopeTrack, GeneratorTrack, Track } from '.
 
 // Timeline
 export type { Timeline } from './Timeline'
+
+// Binding
+export type { ParamId, RangeMap, Binding } from './Binding'
+
+// Player
+export type { FrameState, TimelinePlayer } from './Player'
