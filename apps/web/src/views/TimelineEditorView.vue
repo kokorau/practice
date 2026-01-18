@@ -1,6 +1,15 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { Timeline, Phase, PhaseId, TrackId } from '@practice/timeline'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState, Track, EnvelopeTrack, GeneratorTrack } from '@practice/timeline'
+import { createTimelinePlayer, evaluateGenerator } from '@practice/timeline'
+
+// ============================================================
+// Editor Config
+// ============================================================
+const editorConfig = {
+  /** Total visible duration in the editor (for infinite loops) */
+  visibleDuration: 30000,  // 30 seconds
+}
 
 // ============================================================
 // Mock Data
@@ -8,34 +17,69 @@ import type { Timeline, Phase, PhaseId, TrackId } from '@practice/timeline'
 const mockTimeline: Timeline = {
   loopType: 'forward',
   phases: [
-    { id: 'phase-1' as PhaseId, type: 'Opening', duration: 2000 },
-    { id: 'phase-2' as PhaseId, type: 'Loop', duration: 4000 },
-    { id: 'phase-3' as PhaseId, type: 'Ending', duration: 2000 },
+    { id: 'phase-opening' as PhaseId, type: 'Opening', duration: 5000 },
+    { id: 'phase-loop' as PhaseId, type: 'Loop' },  // No duration = infinite
+    // { id: 'phase-ending' as PhaseId, type: 'Ending', duration: 2000 },  // Commented out for PoC
   ],
   tracks: [
+    // Opening phase tracks - fade in effects
     {
-      id: 'track-1' as TrackId,
+      id: 'track-opacity-opening' as TrackId,
       name: 'Opacity',
-      clock: 'Global',
+      clock: 'Phase',
+      phaseId: 'phase-opening' as PhaseId,
       mode: 'Envelope',
-      envelope: { points: [], interpolation: 'Linear' },
+      envelope: {
+        points: [
+          { time: 0, value: 0 },
+          { time: 5000, value: 1 },
+        ],
+        interpolation: 'Linear',
+      },
     },
     {
-      id: 'track-2' as TrackId,
+      id: 'track-scale-opening' as TrackId,
       name: 'Scale',
-      clock: 'Global',
+      clock: 'Phase',
+      phaseId: 'phase-opening' as PhaseId,
       mode: 'Envelope',
-      envelope: { points: [], interpolation: 'Bezier' },
+      envelope: {
+        points: [
+          { time: 0, value: 0.5 },
+          { time: 5000, value: 1 },
+        ],
+        interpolation: 'Bezier',
+      },
     },
+    // Loop phase tracks - continuous animation
     {
-      id: 'track-3' as TrackId,
+      id: 'track-rotation-loop' as TrackId,
       name: 'Rotation',
       clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
       mode: 'Generator',
       generator: { type: 'Sin', period: 1000, offset: 0, params: {} },
     },
   ],
 }
+
+const mockBindings: Binding[] = [
+  {
+    targetParam: 'opacity',
+    sourceTrack: 'track-opacity-opening' as TrackId,
+    map: { min: 0, max: 1 },
+  },
+  {
+    targetParam: 'scale',
+    sourceTrack: 'track-scale-opening' as TrackId,
+    map: { min: 0.5, max: 1.5 },
+  },
+  {
+    targetParam: 'rotation',
+    sourceTrack: 'track-rotation-loop' as TrackId,
+    map: { min: -15, max: 15 },
+  },
+]
 
 // ============================================================
 // Timeline State
@@ -43,30 +87,115 @@ const mockTimeline: Timeline = {
 const timeline = ref<Timeline>(mockTimeline)
 const playhead = ref(0) // ms
 const isPlaying = ref(false)
+const frameState = ref<FrameState>({ time: 0, params: {} })
 
-// Total duration in ms
-const totalDuration = computed(() =>
-  timeline.value.phases.reduce((sum, p) => sum + p.duration, 0)
-)
+// Total visible duration in ms (uses editor config for infinite loops)
+const totalDuration = computed(() => editorConfig.visibleDuration)
 
-// Phase positions for rendering
+// ============================================================
+// Timeline Player
+// ============================================================
+const player = createTimelinePlayer({
+  timeline: mockTimeline,
+  bindings: mockBindings,
+})
+
+let animationFrameId: number | null = null
+let startTime: number | null = null
+
+function startPlayback() {
+  isPlaying.value = true
+  player.seek(playhead.value)
+  player.play()
+  startTime = performance.now() - playhead.value
+  tick()
+}
+
+function stopPlayback() {
+  isPlaying.value = false
+  player.pause()
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+}
+
+function resetPlayback() {
+  stopPlayback()
+  playhead.value = 0
+  player.seek(0)
+  frameState.value = player.update(0)
+}
+
+function tick() {
+  if (!isPlaying.value) return
+
+  const now = performance.now()
+  const engineTime = startTime !== null ? now - startTime : 0
+
+  frameState.value = player.update(engineTime)
+  playhead.value = frameState.value.time
+
+  animationFrameId = requestAnimationFrame(tick)
+}
+
+function togglePlayback() {
+  if (isPlaying.value) {
+    stopPlayback()
+  } else {
+    startPlayback()
+  }
+}
+
+// Sync playhead when seeking via UI
+watch(playhead, (newVal) => {
+  if (!isPlaying.value) {
+    player.seek(newVal)
+    frameState.value = player.update(0)
+  }
+})
+
+onMounted(() => {
+  // Initialize frame state
+  frameState.value = player.update(0)
+})
+
+onUnmounted(() => {
+  stopPlayback()
+})
+
+// ============================================================
+// Preview Values
+// ============================================================
+const previewOpacity = computed(() => frameState.value.params.opacity ?? 1)
+const previewScale = computed(() => frameState.value.params.scale ?? 1)
+const previewRotation = computed(() => frameState.value.params.rotation ?? 0)
+
+// Phase positions for rendering (handles infinite loops)
 const phasePositions = computed(() => {
   const positions: { phase: Phase; startMs: number; endMs: number; startPercent: number; widthPercent: number }[] = []
   let currentMs = 0
   for (const phase of timeline.value.phases) {
+    // For infinite phases (no duration), fill remaining visible duration
+    const phaseDuration = phase.duration ?? (totalDuration.value - currentMs)
     const startPercent = (currentMs / totalDuration.value) * 100
-    const widthPercent = (phase.duration / totalDuration.value) * 100
+    const widthPercent = (phaseDuration / totalDuration.value) * 100
     positions.push({
       phase,
       startMs: currentMs,
-      endMs: currentMs + phase.duration,
+      endMs: currentMs + phaseDuration,
       startPercent,
       widthPercent,
     })
-    currentMs += phase.duration
+    currentMs += phaseDuration
   }
   return positions
 })
+
+// Get phase position for a track
+function getPhasePositionForTrack(track: Track) {
+  return phasePositions.value.find(p => p.phase.id === track.phaseId)
+}
 
 // Playhead position as percentage
 const playheadPercent = computed(() =>
@@ -106,7 +235,14 @@ function onRulerClick(e: MouseEvent) {
   if (!rulerRef.value) return
   const rect = rulerRef.value.getBoundingClientRect()
   const percent = (e.clientX - rect.left) / rect.width
-  playhead.value = Math.round(percent * totalDuration.value)
+  const newPlayhead = Math.round(percent * totalDuration.value)
+
+  if (isPlaying.value) {
+    // Update start time to maintain continuity
+    startTime = performance.now() - newPlayhead
+  }
+  playhead.value = newPlayhead
+  player.seek(newPlayhead)
 }
 
 // ============================================================
@@ -140,6 +276,190 @@ function stopResize() {
 // Track list width
 // ============================================================
 const trackListWidth = 150
+
+// ============================================================
+// Canvas Drawing Helpers
+// ============================================================
+
+function isEnvelopeTrack(track: Track): track is EnvelopeTrack {
+  return track.mode === 'Envelope'
+}
+
+function isGeneratorTrack(track: Track): track is GeneratorTrack {
+  return track.mode === 'Generator'
+}
+
+// Canvas refs for each track
+const canvasRefs = ref<Map<TrackId, HTMLCanvasElement>>(new Map())
+
+function setCanvasRef(trackId: TrackId, el: HTMLCanvasElement | null) {
+  if (el) {
+    canvasRefs.value.set(trackId, el)
+  } else {
+    canvasRefs.value.delete(trackId)
+  }
+}
+
+// Draw envelope on canvas
+function drawEnvelope(canvas: HTMLCanvasElement, track: EnvelopeTrack, duration: number) {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const dpr = window.devicePixelRatio || 1
+  const rect = canvas.getBoundingClientRect()
+  const width = rect.width * dpr
+  const height = rect.height * dpr
+
+  canvas.width = width
+  canvas.height = height
+  ctx.scale(dpr, dpr)
+
+  ctx.clearRect(0, 0, rect.width, rect.height)
+
+  const { envelope } = track
+  const points = [...envelope.points].sort((a, b) => a.time - b.time)
+
+  if (points.length === 0) return
+
+  // Convert to canvas coordinates
+  const toX = (time: number) => (time / duration) * rect.width
+  const toY = (value: number) => (1 - value) * rect.height
+
+  ctx.strokeStyle = 'oklch(0.50 0.20 250)'
+  ctx.lineWidth = 1.5
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  ctx.beginPath()
+
+  if (envelope.interpolation === 'Linear') {
+    // Linear interpolation: straight lines
+    points.forEach((p, i) => {
+      const x = toX(p.time)
+      const y = toY(p.value)
+      if (i === 0) {
+        ctx.moveTo(x, y)
+      } else {
+        ctx.lineTo(x, y)
+      }
+    })
+  } else {
+    // Bezier interpolation: smooth curves using quadratic bezier
+    if (points.length === 1) {
+      const x = toX(points[0]!.time)
+      const y = toY(points[0]!.value)
+      ctx.moveTo(x, y)
+      ctx.lineTo(x, y)
+    } else {
+      // Use quadratic bezier for smooth curves
+      ctx.moveTo(toX(points[0]!.time), toY(points[0]!.value))
+
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i]!
+        const p1 = points[i + 1]!
+
+        const x0 = toX(p0.time)
+        const y0 = toY(p0.value)
+        const x1 = toX(p1.time)
+        const y1 = toY(p1.value)
+
+        // Control point at midpoint with averaged Y
+        const cpX = (x0 + x1) / 2
+        const cpY0 = y0
+        const cpY1 = y1
+
+        // Use cubic bezier for smoother curves
+        ctx.bezierCurveTo(cpX, cpY0, cpX, cpY1, x1, y1)
+      }
+    }
+  }
+
+  ctx.stroke()
+
+  // Draw control points
+  ctx.fillStyle = 'oklch(0.98 0 0)'
+  ctx.strokeStyle = 'oklch(0.45 0.22 250)'
+  ctx.lineWidth = 1.5
+
+  points.forEach(p => {
+    const x = toX(p.time)
+    const y = toY(p.value)
+    ctx.beginPath()
+    ctx.arc(x, y, 4, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  })
+}
+
+// Draw generator waveform on canvas
+function drawGenerator(canvas: HTMLCanvasElement, track: GeneratorTrack, duration: number) {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const dpr = window.devicePixelRatio || 1
+  const rect = canvas.getBoundingClientRect()
+  const width = rect.width * dpr
+  const height = rect.height * dpr
+
+  canvas.width = width
+  canvas.height = height
+  ctx.scale(dpr, dpr)
+
+  ctx.clearRect(0, 0, rect.width, rect.height)
+
+  const { generator } = track
+  const sampleCount = Math.max(200, Math.floor(rect.width))
+
+  ctx.strokeStyle = 'oklch(0.50 0.20 150)'
+  ctx.lineWidth = 1.5
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  ctx.beginPath()
+
+  for (let i = 0; i <= sampleCount; i++) {
+    const t = (i / sampleCount) * duration
+    const value = evaluateGenerator(generator, t)
+    const x = (i / sampleCount) * rect.width
+    const y = (1 - value) * rect.height
+
+    if (i === 0) {
+      ctx.moveTo(x, y)
+    } else {
+      ctx.lineTo(x, y)
+    }
+  }
+
+  ctx.stroke()
+}
+
+// Redraw all canvases
+function redrawAllCanvases() {
+  for (const track of timeline.value.tracks) {
+    const canvas = canvasRefs.value.get(track.id)
+    if (!canvas) continue
+
+    // Use calculated phase duration (handles infinite loops)
+    const phasePos = getPhasePositionForTrack(track)
+    const duration = phasePos ? (phasePos.endMs - phasePos.startMs) : totalDuration.value
+
+    if (isEnvelopeTrack(track)) {
+      drawEnvelope(canvas, track, duration)
+    } else if (isGeneratorTrack(track)) {
+      drawGenerator(canvas, track, duration)
+    }
+  }
+}
+
+// Watch for changes and redraw
+watch([timeline, totalDuration], () => {
+  nextTick(() => redrawAllCanvases())
+}, { deep: true })
+
+onMounted(() => {
+  nextTick(() => redrawAllCanvases())
+})
+
 </script>
 
 <template>
@@ -156,7 +476,31 @@ const trackListWidth = 150
       <!-- 16:9 Preview Box -->
       <div class="preview-container">
         <div class="preview-box">
-          <span class="preview-label">16:9 Preview</span>
+          <!-- Animated inner element -->
+          <div
+            class="preview-inner"
+            :style="{
+              opacity: previewOpacity,
+              transform: `scale(${previewScale}) rotate(${previewRotation}deg)`,
+            }"
+          />
+          <!-- Values overlay (not animated) -->
+          <div class="preview-content">
+            <div class="preview-values">
+              <div class="preview-value">
+                <span class="value-label">Opacity</span>
+                <span class="value-num">{{ previewOpacity.toFixed(2) }}</span>
+              </div>
+              <div class="preview-value">
+                <span class="value-label">Scale</span>
+                <span class="value-num">{{ previewScale.toFixed(2) }}</span>
+              </div>
+              <div class="preview-value">
+                <span class="value-label">Rotation</span>
+                <span class="value-num">{{ previewRotation.toFixed(1) }}°</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -175,10 +519,10 @@ const trackListWidth = 150
     >
       <!-- Timeline Controls -->
       <div class="timeline-controls">
-        <button class="control-button" :class="{ active: isPlaying }" @click="isPlaying = !isPlaying">
+        <button class="control-button" :class="{ active: isPlaying }" @click="togglePlayback">
           {{ isPlaying ? 'Pause' : 'Play' }}
         </button>
-        <button class="control-button" @click="playhead = 0">Stop</button>
+        <button class="control-button" @click="resetPlayback">Stop</button>
         <div class="timecode">{{ formatTime(playhead) }} / {{ formatTime(totalDuration) }}</div>
       </div>
 
@@ -239,9 +583,34 @@ const trackListWidth = 150
                 class="phase-separator"
                 :style="{ left: `${pos.startPercent + pos.widthPercent}%` }"
               />
-              <!-- Track content placeholder -->
-              <div class="track-content">
-                <span class="track-content-label">{{ track.mode }}</span>
+              <!-- Envelope Track Content - positioned within its phase -->
+              <div
+                v-if="track.mode === 'Envelope'"
+                class="track-content track-content--envelope"
+                :style="{
+                  left: `calc(${getPhasePositionForTrack(track)?.startPercent ?? 0}% + 0.25rem)`,
+                  width: `calc(${getPhasePositionForTrack(track)?.widthPercent ?? 100}% - 0.5rem)`,
+                }"
+              >
+                <canvas
+                  :ref="(el) => setCanvasRef(track.id, el as HTMLCanvasElement)"
+                  class="track-canvas"
+                />
+              </div>
+              <!-- Generator Track Content - positioned within its phase -->
+              <div
+                v-else
+                class="track-content track-content--generator"
+                :style="{
+                  left: `calc(${getPhasePositionForTrack(track)?.startPercent ?? 0}% + 0.25rem)`,
+                  width: `calc(${getPhasePositionForTrack(track)?.widthPercent ?? 100}% - 0.5rem)`,
+                }"
+              >
+                <canvas
+                  :ref="(el) => setCanvasRef(track.id, el as HTMLCanvasElement)"
+                  class="track-canvas"
+                />
+                <span class="generator-type-label">{{ track.generator.type }}</span>
               </div>
             </div>
             <!-- Playhead line -->
@@ -304,18 +673,60 @@ const trackListWidth = 150
   max-height: 100%;
   width: auto;
   height: 80%;
-  background: white;
+  background: oklch(0.20 0.02 260);
   border: 1px solid oklch(0.85 0.01 260);
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
 }
 
-.preview-label {
-  font-size: 0.875rem;
-  color: oklch(0.55 0.02 260);
+.preview-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, oklch(0.65 0.25 250), oklch(0.55 0.30 280));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.05s ease-out, opacity 0.05s ease-out;
+}
+
+.preview-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+}
+
+.preview-values {
+  display: flex;
+  gap: 2rem;
+}
+
+.preview-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.value-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+}
+
+.value-num {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-family: ui-monospace, monospace;
 }
 
 .resize-handle {
@@ -517,8 +928,11 @@ const trackListWidth = 150
 
 .track-lane {
   height: 2.5rem;
+  min-height: 2.5rem;
+  max-height: 2.5rem;
   position: relative;
   border-bottom: 1px solid oklch(0.92 0.01 260);
+  overflow: hidden;
 }
 
 .phase-separator {
@@ -531,17 +945,52 @@ const trackListWidth = 150
 
 .track-content {
   position: absolute;
-  inset: 0.25rem;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  /* left and width are set via inline style for phase positioning */
   background: oklch(0.94 0.01 260);
   border-radius: 0.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.track-content--envelope {
+  padding: 0;
+}
+
+.track-content--generator {
+  background: oklch(0.94 0.02 150);
+  position: relative;
+  padding: 0;
+  /* Force height to match track-lane minus margins (2.5rem - 0.5rem) */
+  height: 2rem;
 }
 
 .track-content-label {
   font-size: 0.625rem;
   color: oklch(0.65 0.02 260);
+}
+
+/* Track Canvas */
+.track-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.generator-type-label {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.375rem;
+  font-size: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: oklch(0.45 0.15 150);
+  background: oklch(0.96 0.02 150 / 0.8);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
 }
 
 .playhead-line {

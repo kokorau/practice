@@ -1,5 +1,6 @@
 import type { Envelope } from './Envelope'
 import type { Generator } from './Generator'
+import type { PhaseId } from './Phase'
 
 export type TrackId = string & { readonly __brand: unique symbol }
 
@@ -9,6 +10,8 @@ interface BaseTrack {
   id: TrackId
   name: string
   clock: ClockType
+  /** Phase this track belongs to. Times in envelope are relative to phase start. */
+  phaseId: PhaseId
 }
 
 export interface EnvelopeTrack extends BaseTrack {
