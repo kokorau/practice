@@ -489,12 +489,16 @@ describe('Pipeline Feature Parity', () => {
       const { outputNode, nodes } = buildPipeline(config, palette)
       executePipeline(outputNode, renderer, palette)
 
-      // Should have nodes for both clip-groups
-      const clipGroup1Nodes = nodes.filter(n => n.id.includes('clip-group-1'))
-      const clipGroup2Nodes = nodes.filter(n => n.id.includes('clip-group-2'))
+      // Should have nodes for both clip-groups (using child IDs directly)
+      const surface1Node = nodes.find(n => n.id === 'surface-1')
+      const surface2Node = nodes.find(n => n.id === 'surface-2')
+      const mask1Node = nodes.find(n => n.id === 'processor-1-mask')
+      const mask2Node = nodes.find(n => n.id === 'processor-2-mask')
 
-      expect(clipGroup1Nodes.length).toBeGreaterThan(0)
-      expect(clipGroup2Nodes.length).toBeGreaterThan(0)
+      expect(surface1Node).toBeDefined()
+      expect(surface2Node).toBeDefined()
+      expect(mask1Node).toBeDefined()
+      expect(mask2Node).toBeDefined()
 
       // Should have overlay compositor
       const overlayNode = nodes.find(n => n.id === 'scene')

@@ -33,12 +33,16 @@ import testEffectVignette from './presets/test-effect-vignette.json'
 import testEffectChromatic from './presets/test-effect-chromatic.json'
 import testEffectDotHalftone from './presets/test-effect-dot-halftone.json'
 import testEffectLineHalftone from './presets/test-effect-line-halftone.json'
+// Surface + Text + Mask combined test
+import testSurfaceTextMask from './presets/test-surface-text-mask.json'
 
 // ============================================================
 // Preset Data
 // ============================================================
 
 const PRESETS: HeroViewPreset[] = [
+  // Surface + Text + Mask combined test (first for debugging)
+  testSurfaceTextMask as unknown as HeroViewPreset,
   // Effect test presets (first for easy access during debugging)
   testEffectBlur as unknown as HeroViewPreset,
   testEffectVignette as unknown as HeroViewPreset,
