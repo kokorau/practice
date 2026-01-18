@@ -6,7 +6,7 @@ import {
   createSingleEffectConfig,
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
-} from '../modules/HeroScene'
+} from '@practice/hero-scene'
 
 // ============================================================
 // Types

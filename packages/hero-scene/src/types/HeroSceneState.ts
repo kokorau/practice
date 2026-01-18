@@ -44,8 +44,7 @@ import type {
   DepthMapType,
 } from '@practice/texture'
 import type { Oklch } from '@practice/color'
-import type { PrimitiveKey } from '../../SemanticColorPalette/Domain'
-import type { InkRole } from '../../SemanticColorPalette/Domain'
+import type { PrimitiveKey, InkRole } from '@practice/semantic-color-palette'
 import type {
   LayerEffectConfig,
   EffectType,

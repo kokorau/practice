@@ -2,8 +2,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import HeroPreviewThumbnail from './HeroPreviewThumbnail.vue'
-import type { HeroViewConfig } from '../../modules/HeroScene'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import type { HeroViewConfig } from '@practice/hero-scene'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 
 // ============================================================
 // Mocks
@@ -26,8 +26,8 @@ vi.mock('@practice/texture', () => ({
   DEFAULT_GRADIENT_GRAIN_CURVE_POINTS: [0.0, 0.0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1.0, 1.0],
 }))
 
-vi.mock('../../modules/HeroScene', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../../modules/HeroScene')>()
+vi.mock('@practice/hero-scene', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@practice/hero-scene')>()
   return {
     ...original,
     renderHeroConfig: vi.fn(() => Promise.resolve()),
@@ -200,7 +200,7 @@ describe('HeroPreviewThumbnail', () => {
     })
 
     it('calls renderHeroConfig with correct parameters', async () => {
-      const { renderHeroConfig } = await import('../../modules/HeroScene')
+      const { renderHeroConfig } = await import('@practice/hero-scene')
       const config = createMockHeroConfig()
       const palette = createMockPalette()
 
@@ -235,7 +235,7 @@ describe('HeroPreviewThumbnail', () => {
 
   describe('reactivity', () => {
     it('re-renders when config changes', async () => {
-      const { renderHeroConfig } = await import('../../modules/HeroScene')
+      const { renderHeroConfig } = await import('@practice/hero-scene')
       const config = createMockHeroConfig()
       const palette = createMockPalette()
 
@@ -255,7 +255,7 @@ describe('HeroPreviewThumbnail', () => {
     })
 
     it('re-renders when palette changes', async () => {
-      const { renderHeroConfig } = await import('../../modules/HeroScene')
+      const { renderHeroConfig } = await import('@practice/hero-scene')
       const config = createMockHeroConfig()
       const palette = createMockPalette()
 

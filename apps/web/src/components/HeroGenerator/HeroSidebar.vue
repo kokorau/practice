@@ -5,8 +5,8 @@ import ColorPresets from '../SiteBuilder/ColorPresets.vue'
 import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
 import LayerPanel, { type LayerType } from './LayerPanel.vue'
-import type { ColorPreset } from '../../modules/SemanticColorPalette/Domain'
-import type { HeroViewPreset, LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '../../modules/HeroScene'
+import type { ColorPreset } from '@practice/semantic-color-palette/Domain'
+import type { HeroViewPreset, LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '@practice/hero-scene'
 import type { ContextTargetType, AddProcessorType } from './DraggableLayerNode.vue'
 
 // ============================================================

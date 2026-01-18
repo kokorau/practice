@@ -5,8 +5,8 @@
  * 背景テクスチャ選択パネルのコンテンツ
  */
 import type { ObjectSchema } from '@practice/schema'
-import type { PrimitivePalette, PrimitiveKey } from '../../../modules/SemanticColorPalette/Domain'
-import type { HeroViewConfig } from '../../../modules/HeroScene'
+import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
+import type { HeroViewConfig } from '@practice/hero-scene'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import SchemaFields from '../../SchemaFields.vue'

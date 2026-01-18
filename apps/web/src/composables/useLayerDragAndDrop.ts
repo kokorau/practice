@@ -1,6 +1,6 @@
 import { ref, computed, readonly, type InjectionKey, type Ref, type ComputedRef } from 'vue'
-import type { LayerNodeConfig, LayerDropPosition } from '../modules/HeroScene'
-import { canMoveLayerInTree, findLayerInTree, isGroupLayerConfig } from '../modules/HeroScene'
+import type { LayerNodeConfig, LayerDropPosition } from '@practice/hero-scene'
+import { canMoveLayerInTree, findLayerInTree, isGroupLayerConfig } from '@practice/hero-scene'
 
 // ============================================================
 // Types

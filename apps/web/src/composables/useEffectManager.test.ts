@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { useEffectManager } from './useEffectManager'
-import { EFFECT_TYPES } from '../modules/HeroScene'
+import { EFFECT_TYPES } from '@practice/hero-scene'
 
 // ============================================================
 // Tests

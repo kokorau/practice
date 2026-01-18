@@ -8,7 +8,7 @@
 
 import { type Ref, type ShallowRef } from 'vue'
 import type { SurfacePreset } from '@practice/texture'
-import type { ContextName, PrimitiveKey } from '../../modules/SemanticColorPalette/Domain'
+import type { ContextName, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import {
   type HeroViewConfig,
   type HeroSceneConfig,
@@ -27,12 +27,12 @@ import {
   findSurfacePresetIndex,
   findMaskPatternIndex,
   isSingleEffectConfig,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 // Internal imports for denormalize functions (not part of public API)
 import {
   denormalizeSurfaceConfig,
   denormalizeMaskConfig,
-} from '../../modules/HeroScene/Domain/HeroViewConfig'
+} from '@practice/hero-scene'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroFiltersReturn } from './useHeroFilters'
 import type { UseHeroImagesReturn } from './useHeroImages'

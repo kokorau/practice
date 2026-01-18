@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { $Oklch } from '@practice/color'
-import type { PrimitivePalette, PrimitiveKey } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import {
   BRAND_KEYS,
   ACCENT_KEYS,
   FOUNDATION_KEYS,
   NEUTRAL_KEYS,
   ACCENT_RAMP_KEYS,
-} from '../../modules/SemanticColorPalette/Domain/ValueObject/PrimitivePalette'
+} from '@practice/semantic-color-palette/Domain'
 
 const props = defineProps<{
   modelValue: PrimitiveKey | 'auto'

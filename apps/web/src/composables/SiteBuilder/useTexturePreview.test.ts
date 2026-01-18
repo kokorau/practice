@@ -10,7 +10,7 @@ if (typeof globalThis.URL !== 'function' || !(globalThis.URL.prototype instanceo
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { computed, nextTick } from 'vue'
 import { useTexturePreview, type SectionType } from './useTexturePreview'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 
 // ============================================================
 // Mocks

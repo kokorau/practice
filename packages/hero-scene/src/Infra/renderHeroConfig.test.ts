@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { TextureRendererLike } from './renderHeroConfig'
 import { renderHeroConfig } from './renderHeroConfig'
 import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
-import type { PrimitivePalette } from '../../SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type { TextureRenderSpec } from '@practice/texture'
 
 // ============================================================

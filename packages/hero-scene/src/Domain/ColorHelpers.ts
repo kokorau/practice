@@ -5,7 +5,7 @@
  * Used by both buildPipeline and renderHeroConfig.
  */
 
-import type { PrimitivePalette } from '../../SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette'
 
 // ============================================================
 // Types

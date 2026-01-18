@@ -27,8 +27,8 @@ import {
   type ProcessorNodeConfig,
   type NormalizedMaskConfig,
   type MaskProcessorConfig,
-} from '../../../modules/HeroScene'
-import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
+} from '@practice/hero-scene'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type {
   ChromaticConfigParams,
   DotHalftoneConfigParams,

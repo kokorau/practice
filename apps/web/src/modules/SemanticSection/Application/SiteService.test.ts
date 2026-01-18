@@ -8,7 +8,7 @@ import {
   exportToHTML,
   exportToCSS,
 } from './SiteService'
-import { createDefaultLightPalette } from '../../SemanticColorPalette/Infra'
+import { createDefaultLightPalette } from '@practice/semantic-color-palette/Infra'
 import { createDemoPage } from '../Infra'
 
 describe('SiteService', () => {

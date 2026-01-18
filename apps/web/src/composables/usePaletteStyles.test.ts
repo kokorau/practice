@@ -12,7 +12,7 @@ if (typeof globalThis.URL !== 'function' || !(globalThis.URL.prototype instanceo
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ref, nextTick } from 'vue'
 import { usePaletteStyles } from './usePaletteStyles'
-import type { SemanticColorPalette } from '../modules/SemanticColorPalette/Domain'
+import type { SemanticColorPalette } from '@practice/semantic-color-palette/Domain'
 
 // ============================================================
 // Test Helpers

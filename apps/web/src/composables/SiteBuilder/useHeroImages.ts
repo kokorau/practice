@@ -18,8 +18,8 @@ import {
   type SurfaceLayerNodeConfig,
   type GroupLayerNodeConfig,
   type ImageLayerNodeConfig,
-  createUnsplashImageUploadAdapter,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
+import { createUnsplashImageUploadAdapter } from '../../adapters/UnsplashImageUploadAdapter'
 
 // Layer IDs for template layers
 const BASE_LAYER_ID = 'background'

@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { $Oklch } from '@practice/color'
-import type { PrimitivePalette } from '../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
   NEUTRAL_KEYS,
   FOUNDATION_KEYS,
   ACCENT_RAMP_KEYS,
-} from '../modules/SemanticColorPalette/Domain'
+} from '@practice/semantic-color-palette/Domain'
 import {
   createPrimitivePalette,
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
   toCSSText,
   toCSSRuleSetsText,
-} from '../modules/SemanticColorPalette/Infra'
+} from '@practice/semantic-color-palette/Infra'
 import { useSiteColors } from '../composables/SiteBuilder'
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import ColorPresets from '../components/SiteBuilder/ColorPresets.vue'
-import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
+import type { ColorPreset } from '@practice/semantic-color-palette/Domain'
 import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import ContrastTab from '../components/SiteBuilder/ContrastTab.vue'

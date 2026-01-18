@@ -8,7 +8,7 @@ import type {
   DotHalftoneEffectConfig,
   LineHalftoneEffectConfig,
   BlurEffectConfig,
-} from '../modules/HeroScene'
+} from '@practice/hero-scene'
 import type { UseEffectManagerReturn } from './useEffectManager'
 
 // ============================================================

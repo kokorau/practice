@@ -37,7 +37,7 @@ import {
   type HexagonSurfaceParams,
   type DepthMapType,
 } from '@practice/texture'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   type HeroSceneConfig,
   type HtmlLayer,
@@ -95,7 +95,7 @@ import {
   isGroupLayerConfig,
   createProcessorUsecase,
   type ProcessorUsecase,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
 
 // Import extracted composables

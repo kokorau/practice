@@ -36,7 +36,7 @@ import {
 } from '@practice/texture'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import type { PrimitivePalette } from '../../SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type {
   HeroViewConfig,
   AnySurfaceConfig,

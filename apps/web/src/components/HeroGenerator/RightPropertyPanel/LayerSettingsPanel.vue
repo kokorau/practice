@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PrimitivePalette, PrimitiveKey } from '../../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import type { ObjectSchema } from '@practice/schema'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import SurfaceSelector, { type PatternItem } from '../SurfaceSelector.vue'

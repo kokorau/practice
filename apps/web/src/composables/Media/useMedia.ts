@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 import { type Media, type Photo, $Media, mediaRepository } from '../../modules/Media'
 import { uploadLocalPhoto } from '../../modules/PhotoLocal/Infra/localPhotoUploader'
-import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '../../modules/HeroScene'
+import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '@practice/hero-scene'
 
 export type UseMediaReturn = {
   /** 現在のメディア */

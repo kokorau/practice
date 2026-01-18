@@ -5,7 +5,7 @@
  * This enables decoupled rendering with clear node responsibilities.
  */
 
-import type { PrimitivePalette } from '../../../SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type {
   HeroViewConfig,
   LayerNodeConfig,

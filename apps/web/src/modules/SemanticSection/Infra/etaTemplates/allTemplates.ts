@@ -10,7 +10,7 @@
  */
 
 import type { SectionKind } from '../../Domain'
-import { CONTEXT_CLASS_NAMES, COMPONENT_CLASS_NAMES } from '../../../SemanticColorPalette/Domain'
+import { CONTEXT_CLASS_NAMES, COMPONENT_CLASS_NAMES } from '@practice/semantic-color-palette/Domain'
 
 const ctx = CONTEXT_CLASS_NAMES
 const cmp = COMPONENT_CLASS_NAMES

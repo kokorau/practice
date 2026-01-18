@@ -18,20 +18,20 @@ import type {
   ContextName,
   PrimitiveKey,
   NeutralKey,
-} from '../../modules/SemanticColorPalette/Domain'
+} from '@practice/semantic-color-palette/Domain'
 import {
   NEUTRAL_KEYS,
   selectNeutralByHistogram,
   APCA_INK_TARGETS,
   type NeutralEntry,
-} from '../../modules/SemanticColorPalette/Domain'
-import { selectInkForSurface } from '../../modules/SemanticColorPalette/Infra'
-import type { InkRole } from '../../modules/SemanticColorPalette/Domain'
+} from '@practice/semantic-color-palette/Domain'
+import { selectInkForSurface } from '@practice/semantic-color-palette/Infra'
+import type { InkRole } from '@practice/semantic-color-palette/Domain'
 import { generateLuminanceMap } from '../../modules/ContrastChecker'
 import type {
   HeroPrimitiveKey,
   ForegroundLayerConfig,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 
 // ============================================================
 // Types

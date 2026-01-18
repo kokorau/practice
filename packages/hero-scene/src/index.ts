@@ -273,11 +273,13 @@ export {
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,
   normalizeSurfaceConfig,
+  denormalizeSurfaceConfig,
   getSurfaceAsNormalized,
   // Mask config normalization
   MASK_SHAPE_TYPE_IDS,
   isNormalizedMaskConfig,
   normalizeMaskConfig,
+  denormalizeMaskConfig,
   getMaskAsNormalized,
   // Default colors for surface layers (palette keys for layer config)
   DEFAULT_LAYER_BACKGROUND_COLORS,
@@ -407,8 +409,6 @@ export {
   createObject3DRenderer,
   // Config-based rendering
   renderHeroConfig,
-  // ImageUpload Adapter
-  createUnsplashImageUploadAdapter,
 } from './Infra'
 
 // Types (grouped state definitions for useHeroScene)

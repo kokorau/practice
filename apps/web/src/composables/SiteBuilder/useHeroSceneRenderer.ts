@@ -8,11 +8,11 @@
 
 import { type ComputedRef, type ShallowRef } from 'vue'
 import type { TextureRenderer } from '@practice/texture'
-import type { PrimitivePalette } from '../../modules/SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   type HeroViewRepository,
   renderHeroConfig,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 
 export interface HeroSceneEditorConfig {
   width: number

@@ -5,7 +5,7 @@
  */
 
 import type { Viewport } from '@practice/texture'
-import type { PrimitivePalette } from '../../../SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette'
 
 // ============================================================
 // Texture Handle

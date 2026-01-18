@@ -10,14 +10,14 @@ import {
   COMPONENT_CLASS_NAMES,
   NEUTRAL_KEYS,
   ACCENT_RAMP_KEYS,
-} from '../modules/SemanticColorPalette/Domain'
+} from '@practice/semantic-color-palette/Domain'
 import {
   toCSSText,
   toCSSRuleSetsText,
   createPrimitivePalette,
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
-} from '../modules/SemanticColorPalette/Infra'
+} from '@practice/semantic-color-palette/Infra'
 import { toCSSText as toDesignTokensCSSText } from '../modules/DesignTokens/Infra'
 import type { Preset } from '../modules/Filter/Domain'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
@@ -26,7 +26,7 @@ import { useFilter } from '../composables/Filter/useFilter'
 import { useDemoSite } from '../composables/SemanticColorPalette/useDemoSite'
 import { useSiteBuilderAssets } from '../composables/SiteBuilder'
 import { hsvToRgb, rgbToHex, applyLutToPalette } from '../components/SiteBuilder/utils'
-import type { ColorPreset } from '../modules/SemanticColorPalette/Domain'
+import type { ColorPreset } from '@practice/semantic-color-palette/Domain'
 // Child components
 import PaletteSidebar from '../components/SiteBuilder/PaletteSidebar.vue'
 import PrimitiveTab from '../components/SiteBuilder/PrimitiveTab.vue'

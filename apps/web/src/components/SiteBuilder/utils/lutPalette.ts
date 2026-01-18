@@ -10,7 +10,7 @@ import {
   NEUTRAL_KEYS,
   FOUNDATION_KEYS,
   BRAND_KEYS,
-} from '../../../modules/SemanticColorPalette/Domain'
+} from '@practice/semantic-color-palette/Domain'
 
 /**
  * Apply LUT to a single Oklch color (supports both 1D and 3D LUTs)

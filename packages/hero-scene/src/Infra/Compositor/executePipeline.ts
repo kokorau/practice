@@ -5,7 +5,7 @@
  * Provides the NodeContext required for all node operations.
  */
 
-import type { PrimitivePalette } from '../../../SemanticColorPalette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type {
   OutputNode,
   NodeContext,

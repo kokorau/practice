@@ -5,7 +5,7 @@ import {
   BRAND_KEYS,
   ACCENT_KEYS,
   FOUNDATION_DERIVED_KEYS,
-} from '../../modules/SemanticColorPalette/Domain'
+} from '@practice/semantic-color-palette/Domain'
 import ColorSwatchTooltip from './ColorSwatchTooltip.vue'
 
 defineProps<{

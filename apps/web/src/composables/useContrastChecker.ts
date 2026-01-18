@@ -1,6 +1,6 @@
 import { ref, watch, nextTick, type Ref, type ComputedRef } from 'vue'
 import { checkContrastAsync, type ContrastAnalysisResult } from '../modules/ContrastChecker'
-import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '../modules/HeroScene'
+import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '@practice/hero-scene'
 
 // ============================================================
 // Types

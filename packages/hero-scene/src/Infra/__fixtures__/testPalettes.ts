@@ -1,6 +1,5 @@
 import { $Oklch, type Oklch } from '@practice/color'
-import { createPrimitivePalette } from '../../../SemanticColorPalette/Infra'
-import type { PrimitivePalette } from '../../../SemanticColorPalette/Domain'
+import { createPrimitivePalette, type PrimitivePalette } from '@practice/semantic-color-palette'
 
 /**
  * Default test colors (blue brand, orange accent, light foundation)

@@ -22,9 +22,9 @@ import {
   type LayerNodeConfig,
   type GroupLayerNodeConfig,
   type ProcessorNodeConfig,
-} from '../../../modules/HeroScene'
-import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
-import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
+} from '@practice/hero-scene'
+import type { HeroViewConfig, LayerEffectConfig } from '@practice/hero-scene'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type {
   VignetteConfigParams,
   ChromaticConfigParams,

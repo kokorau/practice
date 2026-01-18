@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ref, type Ref } from 'vue'
 import { useTextLayerEditor, type UseTextLayerEditorOptions, type TextLayerConfig } from './useTextLayerEditor'
-import type { HeroViewConfig, TextLayerNodeConfigType } from '../modules/HeroScene'
+import type { HeroViewConfig, TextLayerNodeConfigType } from '@practice/hero-scene'
 
 describe('useTextLayerEditor', () => {
   let heroViewConfig: Ref<HeroViewConfig>

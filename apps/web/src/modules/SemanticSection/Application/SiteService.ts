@@ -13,7 +13,7 @@ import type {
   SectionKind,
   RenderTheme,
 } from '../Domain'
-import type { SemanticColorPalette } from '../../SemanticColorPalette/Domain'
+import type { SemanticColorPalette } from '@practice/semantic-color-palette/Domain'
 import type { DesignTokens } from '../../DesignTokens/Domain'
 import { DEFAULT_TOKENS } from '../Domain'
 import { DEFAULT_SCHEMAS } from './defaultSchemas'

@@ -1,6 +1,6 @@
 import { watch, onMounted, onUnmounted, type Ref } from 'vue'
-import { toCSSText, toCSSRuleSetsText } from '../modules/SemanticColorPalette/Infra'
-import type { SemanticColorPalette } from '../modules/SemanticColorPalette/Domain'
+import { toCSSText, toCSSRuleSetsText } from '@practice/semantic-color-palette/Infra'
+import type { SemanticColorPalette } from '@practice/semantic-color-palette/Domain'
 
 // ============================================================
 // Types

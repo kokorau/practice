@@ -32,9 +32,9 @@ import {
   syncMaskSurfaceParams,
   normalizeMaskConfig,
   normalizeSurfaceConfig,
-} from '../../modules/HeroScene'
+} from '@practice/hero-scene'
 // Internal import for denormalize function (not part of public API)
-import { denormalizeMaskConfig } from '../../modules/HeroScene/Domain/HeroViewConfig'
+import { denormalizeMaskConfig } from '@practice/hero-scene'
 import type {
   CustomMaskShapeParams,
   CustomSurfaceParams,
