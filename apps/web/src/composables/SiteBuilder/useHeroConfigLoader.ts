@@ -16,6 +16,7 @@ import {
   type SingleEffectConfig,
   type SurfaceLayerNodeConfig,
   type BaseLayerNodeConfig,
+  type GroupLayerNodeConfig,
   type MaskProcessorConfig,
   type MaskShapeConfig as HeroMaskShapeConfig,
   type ForegroundLayerConfig,
@@ -152,13 +153,19 @@ export const useHeroConfigLoader = (
         }
         const bgPresetIndex = findSurfacePresetIndex(bgSurface, surfacePresets)
         selectedBackgroundIndex.value = bgPresetIndex ?? 0
+      }
 
-        // Load effect filters
-        const effectFilters = (backgroundSurfaceLayer.filters ?? []).filter(
-          (p): p is SingleEffectConfig => isSingleEffectConfig(p)
-        )
-        if (effectFilters.length > 0) {
-          heroFilters.effectManager.setEffectPipeline(LAYER_IDS.BASE, effectFilters)
+      // Load background effects from processor (background-group or root-level)
+      const bgGroup = config.layers.find((l) => l.type === 'group' && l.id === 'background-group') as GroupLayerNodeConfig | undefined
+      if (bgGroup) {
+        for (const child of bgGroup.children) {
+          if (child.type === 'processor') {
+            const effectFilters = child.modifiers.filter((m): m is SingleEffectConfig => isSingleEffectConfig(m))
+            if (effectFilters.length > 0) {
+              heroFilters.effectManager.setEffectPipeline(LAYER_IDS.BASE, effectFilters)
+              break
+            }
+          }
         }
       }
 
@@ -201,13 +208,18 @@ export const useHeroConfigLoader = (
         }
         const midgroundPresetIndex = findSurfacePresetIndex(maskSurface, heroThumbnails.midgroundTexturePatterns)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
+      }
 
-        // Load mask effect filters
-        const maskEffectFilters = (maskSurfaceLayer.filters ?? []).filter(
-          (p): p is SingleEffectConfig => isSingleEffectConfig(p)
-        )
-        if (maskEffectFilters.length > 0) {
-          heroFilters.effectManager.setEffectPipeline(LAYER_IDS.MASK, maskEffectFilters)
+      // Load mask effects from processor (clip-group)
+      if (clipGroup && clipGroup.type === 'group') {
+        for (const child of clipGroup.children) {
+          if (child.type === 'processor') {
+            const effectFilters = child.modifiers.filter((m): m is SingleEffectConfig => isSingleEffectConfig(m))
+            if (effectFilters.length > 0) {
+              heroFilters.effectManager.setEffectPipeline(LAYER_IDS.MASK, effectFilters)
+              break
+            }
+          }
         }
       }
 

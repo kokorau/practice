@@ -366,7 +366,6 @@ export const createGroupLayerConfig = (
   name: options?.name ?? 'Group',
   visible: options?.visible ?? true,
   children,
-  filters: options?.filters,
 })
 
 /**

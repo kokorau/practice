@@ -116,18 +116,37 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
   // ============================================================
 
   /**
+   * Find processor ID for a given layer ID
+   * Maps surface layer IDs to their corresponding processor
+   */
+  const findProcessorIdForLayer = (layerId: string): string | null => {
+    // Map layer IDs to their processor IDs
+    if (layerId === layerIds.BASE) {
+      return 'bg-processor'
+    }
+    if (layerId === layerIds.MASK) {
+      return 'processor-mask'
+    }
+    return null
+  }
+
+  /**
    * Sync a single layer's effect pipeline to repository
-   * Stores SingleEffectConfig[] directly (new format)
+   * Effects are stored in processor.modifiers
    */
   const syncLayerEffectToRepository = (layerId: string, pipeline: SingleEffectConfig[]) => {
-    const layer = heroViewRepository.findLayer(layerId)
-    if (!layer) return
+    const processorId = findProcessorIdForLayer(layerId)
+    if (!processorId) return
 
-    // Skip processor nodes (they use modifiers, not filters)
-    if (layer.type === 'processor') return
+    const processor = heroViewRepository.findLayer(processorId)
+    if (!processor || processor.type !== 'processor') return
 
-    // Store SingleEffectConfig[] directly as filters
-    heroViewRepository.updateLayer(layerId, { filters: pipeline })
+    // Get existing modifiers, keeping non-effect modifiers (like masks)
+    const existingModifiers = processor.modifiers.filter(m => m.type !== 'effect')
+
+    // Merge effects with existing modifiers
+    const newModifiers = [...pipeline, ...existingModifiers]
+    heroViewRepository.updateLayer(processorId, { modifiers: newModifiers })
   }
 
   /**

@@ -29,8 +29,7 @@
             "colors": {
               "primary": "B",
               "secondary": "F1"
-            },
-            "filters": []
+            }
           }
         ]
       },
@@ -53,8 +52,7 @@
             "colors": {
               "primary": "Bt",
               "secondary": "Bs"
-            },
-            "filters": []
+            }
           },
           {
             "type": "processor",

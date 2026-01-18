@@ -17,8 +17,11 @@ import {
   LineHalftoneEffectSchema,
   BlurEffectSchema,
   createDefaultEffectConfig,
-  getLayerFilters,
+  extractEnabledEffects,
   type FilterType,
+  type LayerNodeConfig,
+  type GroupLayerNodeConfig,
+  type ProcessorNodeConfig,
 } from '../../../modules/HeroScene'
 import type { HeroViewConfig, LayerEffectConfig } from '../../../modules/HeroScene'
 import type { PrimitivePalette } from '../../../modules/SemanticColorPalette/Domain'
@@ -61,6 +64,48 @@ const {
 } = useVignetteEditor({ vignetteConfig: props.filter.vignetteConfig })
 
 /**
+ * Update processor modifiers with effects
+ */
+const updateProcessorWithEffects = (
+  layers: LayerNodeConfig[],
+  effects: LayerEffectConfig
+): LayerNodeConfig[] => {
+  const effectConfigs = extractEnabledEffects(effects)
+
+  return layers.map(layer => {
+    // Find processor in background-group or at root level
+    if (layer.type === 'group' && layer.id === 'background-group') {
+      const group = layer as GroupLayerNodeConfig
+      return {
+        ...group,
+        children: group.children.map(child => {
+          if (child.type === 'processor') {
+            const processor = child as ProcessorNodeConfig
+            // Keep non-effect modifiers (like masks), replace effects
+            const nonEffectModifiers = processor.modifiers.filter(m => m.type !== 'effect')
+            return {
+              ...processor,
+              modifiers: [...effectConfigs, ...nonEffectModifiers],
+            }
+          }
+          return child
+        }),
+      }
+    }
+    // Handle root-level processors (like bg-processor)
+    if (layer.type === 'processor' && layer.id === 'bg-processor') {
+      const processor = layer as ProcessorNodeConfig
+      const nonEffectModifiers = processor.modifiers.filter(m => m.type !== 'effect')
+      return {
+        ...processor,
+        modifiers: [...effectConfigs, ...nonEffectModifiers],
+      }
+    }
+    return layer
+  })
+}
+
+/**
  * Create a config with specific effect enabled
  */
 const createEffectPreviewConfig = (
@@ -96,20 +141,7 @@ const createEffectPreviewConfig = (
 
   return {
     ...base,
-    layers: base.layers.map(layer => {
-      if (layer.type === 'base') {
-        return {
-          ...layer,
-          filters: getLayerFilters(layer).map(f => {
-            if (f.type === 'effect') {
-              return { ...f, enabled: true, config: effects }
-            }
-            return f
-          }),
-        }
-      }
-      return layer
-    }),
+    layers: updateProcessorWithEffects(base.layers, effects),
   }
 }
 

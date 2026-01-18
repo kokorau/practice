@@ -30,8 +30,14 @@
             "colors": {
               "primary": "B",
               "secondary": "F1"
-            },
-            "filters": [
+            }
+          },
+          {
+            "type": "processor",
+            "id": "bg-processor",
+            "name": "Background Effects",
+            "visible": true,
+            "modifiers": [
               {
                 "type": "effect",
                 "id": "chromaticAberration",
@@ -63,8 +69,7 @@
             "colors": {
               "primary": "Bt",
               "secondary": "Bs"
-            },
-            "filters": []
+            }
           },
           {
             "type": "processor",

@@ -283,7 +283,13 @@ const corporateCleanConfig: HeroViewConfig = {
       visible: true,
       surface: { type: 'grid', lineWidth: 1, cellSize: 48 },
       colors: { primary: 'BN1', secondary: 'BN2' },
-      filters: [
+    },
+    {
+      type: 'processor',
+      id: 'bg-processor',
+      name: 'Background Effects',
+      visible: true,
+      modifiers: [
         {
           type: 'effect',
           id: 'vignette',
@@ -298,7 +304,6 @@ const corporateCleanConfig: HeroViewConfig = {
       visible: true,
       surface: { type: 'solid' },
       colors: { primary: 'B', secondary: 'Bt' },
-      filters: [],
     },
     {
       type: 'processor',

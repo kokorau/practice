@@ -828,8 +828,6 @@ export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   surface: SurfaceConfig
   /** Per-surface color configuration */
   colors?: SurfaceColorsConfig
-  /** Effect filters */
-  filters?: SingleEffectConfig[]
 }
 
 export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
@@ -837,8 +835,6 @@ export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
   surface: SurfaceConfig
   /** Per-surface color configuration */
   colors?: SurfaceColorsConfig
-  /** Effect filters */
-  filters?: SingleEffectConfig[]
 }
 
 export interface TextLayerNodeConfig extends LayerNodeConfigBase {
@@ -852,8 +848,6 @@ export interface TextLayerNodeConfig extends LayerNodeConfigBase {
   color: string
   position: { x: number; y: number; anchor: string }
   rotation: number
-  /** Effect filters */
-  filters?: SingleEffectConfig[]
 }
 
 export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
@@ -862,8 +856,6 @@ export interface Model3DLayerNodeConfig extends LayerNodeConfigBase {
   position: { x: number; y: number; z: number }
   rotation: { x: number; y: number; z: number }
   scale: number
-  /** Effect filters */
-  filters?: SingleEffectConfig[]
 }
 
 /**
@@ -893,15 +885,11 @@ export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   mode: 'cover' | 'positioned'
   /** Position configuration (only used when mode is 'positioned') */
   position?: ImagePositionConfig
-  /** Effect filters */
-  filters?: SingleEffectConfig[]
 }
 
 export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
-  /** Effect filters applied to the group */
-  filters?: SingleEffectConfig[]
 }
 
 /**
@@ -934,14 +922,12 @@ export type LayerNodeConfig =
 /** @deprecated Use LayerNodeConfig instead */
 export interface BackgroundLayerConfig {
   surface: SurfaceConfig
-  filters: LayerEffectConfig
 }
 
 /** @deprecated Use LayerNodeConfig instead */
 export interface MaskLayerConfig {
   shape: MaskShapeConfig
   surface: SurfaceConfig
-  filters: LayerEffectConfig
 }
 
 // ============================================================
@@ -996,11 +982,19 @@ export interface ForegroundLayerConfig {
  *       name: 'Background',
  *       visible: true,
  *       surface: { type: 'stripe', width1: 20, width2: 20, angle: 45 },
- *       filters: [{ type: 'effect', id: 'vignette', params: { intensity: 0.5 } }]
  *     },
  *     {
  *       type: 'processor',
- *       id: 'processor-1',
+ *       id: 'bg-processor',
+ *       name: 'Background Effects',
+ *       visible: true,
+ *       modifiers: [
+ *         { type: 'effect', id: 'vignette', params: { intensity: 0.5 } },
+ *       ]
+ *     },
+ *     {
+ *       type: 'processor',
+ *       id: 'processor-mask',
  *       name: 'Mask Processor',
  *       visible: true,
  *       modifiers: [
@@ -1083,7 +1077,6 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           visible: true,
           surface: { type: 'solid' },
           colors: { primary: 'B', secondary: 'auto' },
-          filters: [],
         },
       ],
     },
@@ -1100,7 +1093,6 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           visible: true,
           surface: { type: 'solid' },
           colors: { primary: 'auto', secondary: 'auto' },
-          filters: [],
         },
         {
           type: 'processor',
@@ -1121,14 +1113,13 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
 
 /**
  * Get effect filters from a layer config
- * Returns SingleEffectConfig[] (supports both legacy and new formats)
+ * Only processor nodes have effects (via modifiers)
  */
 export const getLayerFilters = (layer: LayerNodeConfig): SingleEffectConfig[] => {
-  // ProcessorNodeConfig uses modifiers
   if (layer.type === 'processor') {
     return layer.modifiers.filter((m): m is SingleEffectConfig => m.type === 'effect')
   }
-  return layer.filters ?? []
+  return []
 }
 
 /**
@@ -1254,7 +1245,6 @@ export const getProcessorEffects = (processor: ProcessorNodeConfig): SingleEffec
 interface LegacyGroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
-  filters?: SingleEffectConfig[]
   expanded?: boolean
 }
 
