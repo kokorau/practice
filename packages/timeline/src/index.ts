@@ -21,3 +21,9 @@ export type { ParamId, RangeMap, Binding } from './Binding'
 
 // Player
 export type { FrameState, TimelinePlayer } from './Player'
+
+// Evaluate
+export { evaluateEnvelope, evaluateGenerator, evaluateTrack } from './evaluate'
+
+// Player Implementation
+export { createTimelinePlayer, type CreateTimelinePlayerOptions } from './createTimelinePlayer'
