@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import type { HeroViewConfig, PresetColorConfig, PresetHsvColor } from '@practice/hero-scene'
+import type { HeroViewConfig, PresetColorConfig, PresetHsvColor } from '@practice/section-visual'
 
 /**
  * HSV color values for brand/accent/foundation

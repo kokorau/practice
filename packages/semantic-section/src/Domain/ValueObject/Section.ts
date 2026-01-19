@@ -18,7 +18,7 @@ import type {
   CTAContent,
   FooterContent,
 } from './SectionContent'
-import type { HeroViewConfig } from '@practice/hero-scene'
+import type { HeroViewConfig } from '@practice/section-visual'
 
 // ============================================================================
 // Section Kind Constants

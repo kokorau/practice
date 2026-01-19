@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { computed, ref, type WritableComputedRef } from 'vue'
 import { useVignetteEditor } from './useVignetteEditor'
 import type { VignetteConfigParams } from './useFilterEditor'
-import type { VignetteConfig } from '@practice/hero-scene'
+import type { VignetteConfig } from '@practice/section-visual'
 
 // ============================================================
 // Test Helpers

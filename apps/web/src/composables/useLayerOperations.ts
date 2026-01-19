@@ -5,10 +5,10 @@ import type {
   ModifierDropPosition,
   HeroViewRepository,
   HeroViewConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 import {
   findLayerInTree,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 import type { ProcessorType } from './useLayerSelection'
 
 // ============================================================

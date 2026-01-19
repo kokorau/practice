@@ -5,7 +5,7 @@
  * ファイルをBlob URLに変換し、Unsplash APIからランダム画像を取得
  */
 
-import type { ImageUploadPort } from '@practice/hero-scene'
+import type { ImageUploadPort } from '@practice/section-visual'
 import { fetchUnsplashPhotoUrl } from '../modules/PhotoUnsplash/Infra/fetchUnsplashPhoto'
 
 /**

@@ -17,8 +17,8 @@ import type { MaskPattern, TextureRenderSpec, RGBA } from '@practice/texture'
 import SchemaFields from '../../SchemaFields.vue'
 import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
 import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
-import type { HeroViewConfig, MaskProcessorConfig, NormalizedMaskConfig } from '@practice/hero-scene'
-import { normalizeMaskConfig } from '@practice/hero-scene'
+import type { HeroViewConfig, MaskProcessorConfig, NormalizedMaskConfig } from '@practice/section-visual'
+import { normalizeMaskConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 
 const props = defineProps<{

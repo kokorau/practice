@@ -18,7 +18,7 @@ import {
   type SurfaceLayerNodeConfig,
   type GroupLayerNodeConfig,
   type ImageLayerNodeConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 import { createUnsplashImageUploadAdapter } from '../../adapters/UnsplashImageUploadAdapter'
 
 // Layer IDs for template layers

@@ -13,7 +13,7 @@ import {
   type EffectType,
   type FilterType,
   type HeroViewRepository,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 import { useEffectManager, type UseEffectManagerReturn } from '../useEffectManager'
 
 // ============================================================

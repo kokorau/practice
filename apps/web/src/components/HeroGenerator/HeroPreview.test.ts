@@ -4,7 +4,7 @@ import { ref, nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import HeroPreview from './HeroPreview.vue'
 import { DEFAULT_FOREGROUND_CONFIG, type ForegroundConfig } from '../../composables/SiteBuilder'
-import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '@practice/hero-scene'
+import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '@practice/section-visual'
 
 // ============================================================
 // Mocks

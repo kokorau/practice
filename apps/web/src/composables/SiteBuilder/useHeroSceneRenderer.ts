@@ -12,7 +12,7 @@ import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   type HeroViewRepository,
   renderHeroConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 
 export interface HeroSceneEditorConfig {
   width: number

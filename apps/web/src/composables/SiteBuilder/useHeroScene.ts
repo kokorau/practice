@@ -95,7 +95,7 @@ import {
   isGroupLayerConfig,
   createProcessorUsecase,
   type ProcessorUsecase,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
 
 // Import extracted composables

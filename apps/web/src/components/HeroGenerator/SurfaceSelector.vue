@@ -13,8 +13,8 @@
 import { computed } from 'vue'
 import PatternThumbnail, { type SpecCreator } from './PatternThumbnail.vue'
 import HeroPreviewThumbnail from './HeroPreviewThumbnail.vue'
-import type { HeroViewConfig, AnySurfaceConfig, NormalizedSurfaceConfig, LayerNodeConfig } from '@practice/hero-scene'
-import { normalizeSurfaceConfig, isNormalizedSurfaceConfig } from '@practice/hero-scene'
+import type { HeroViewConfig, AnySurfaceConfig, NormalizedSurfaceConfig, LayerNodeConfig } from '@practice/section-visual'
+import { normalizeSurfaceConfig, isNormalizedSurfaceConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 
 export interface PatternItem {

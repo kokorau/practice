@@ -7,7 +7,7 @@
  */
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import type { HeroViewConfig } from '@practice/hero-scene'
+import type { HeroViewConfig } from '@practice/section-visual'
 import { useHeroScene } from '../../composables/SiteBuilder'
 import { provideLayerSelection } from '../../composables/useLayerSelection'
 import HeroPreview from '../HeroGenerator/HeroPreview.vue'

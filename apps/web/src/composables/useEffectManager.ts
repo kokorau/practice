@@ -6,7 +6,7 @@ import {
   createSingleEffectConfig,
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 
 // ============================================================
 // Types

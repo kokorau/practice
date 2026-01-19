@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ref, nextTick } from 'vue'
 import { useBatchPreviewRenderer } from './useBatchPreviewRenderer'
-import type { HeroViewConfig } from '@practice/hero-scene'
+import type { HeroViewConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 
 // ============================================================
@@ -26,8 +26,8 @@ vi.mock('@practice/texture', () => ({
 }))
 
 // Mock renderHeroConfig
-vi.mock('@practice/hero-scene', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@practice/hero-scene')>()
+vi.mock('@practice/section-visual', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@practice/section-visual')>()
   return {
     ...original,
     renderHeroConfig: vi.fn(() => Promise.resolve()),

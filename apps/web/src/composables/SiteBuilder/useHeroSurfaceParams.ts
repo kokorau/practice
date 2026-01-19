@@ -32,9 +32,9 @@ import {
   syncMaskSurfaceParams,
   normalizeMaskConfig,
   normalizeSurfaceConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 // Internal import for denormalize function (not part of public API)
-import { denormalizeMaskConfig } from '@practice/hero-scene'
+import { denormalizeMaskConfig } from '@practice/section-visual'
 import type {
   CustomMaskShapeParams,
   CustomSurfaceParams,

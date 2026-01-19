@@ -19,7 +19,7 @@
     "@practice/color": "workspace:^",
     "@practice/design-tokens": "workspace:^",
     "@practice/font": "workspace:^",
-    "@practice/hero-scene": "workspace:^",
+    "@practice/section-visual": "workspace:^",
     "@practice/lighting": "workspace:^",
     "@practice/pipe": "workspace:^",
     "@practice/schema": "workspace:^",

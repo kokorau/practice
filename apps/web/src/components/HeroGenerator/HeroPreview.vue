@@ -8,7 +8,7 @@ import {
   type ForegroundElementType,
 } from '../../composables/SiteBuilder'
 import { ensureFontLoaded } from '@practice/font'
-import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '@practice/hero-scene'
+import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '@practice/section-visual'
 import { useResponsiveScale } from '../../composables/useResponsiveScale'
 import { PREVIEW_CONTAINER_PADDING, BASE_FONT_SIZE_PX } from '../../constants/preview'
 

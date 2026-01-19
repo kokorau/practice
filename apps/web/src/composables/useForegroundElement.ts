@@ -6,7 +6,7 @@ import {
   type ForegroundElementConfig,
   type GridPosition,
   type HeroPrimitiveKey,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 
 // ============================================================
 // Types

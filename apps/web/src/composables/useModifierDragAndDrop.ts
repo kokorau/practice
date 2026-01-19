@@ -1,6 +1,6 @@
 import { ref, computed, readonly, type InjectionKey, type Ref, type ComputedRef } from 'vue'
-import type { LayerNodeConfig, ModifierDropPosition, ProcessorNodeConfig } from '@practice/hero-scene'
-import { canMoveModifierInTree, findLayerInTree, isProcessorLayerConfig } from '@practice/hero-scene'
+import type { LayerNodeConfig, ModifierDropPosition, ProcessorNodeConfig } from '@practice/section-visual'
+import { canMoveModifierInTree, findLayerInTree, isProcessorLayerConfig } from '@practice/section-visual'
 
 // ============================================================
 // Types
