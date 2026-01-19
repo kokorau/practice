@@ -30,15 +30,6 @@ const previewOpacity = computed(() => frameState.value.params.opacity ?? 1)
 const previewScale = computed(() => frameState.value.params.scale ?? 1)
 const previewRotation = computed(() => frameState.value.params.rotation ?? 0)
 
-// Format time as MM:SS.mmm
-function formatTime(ms: number): string {
-  const totalSec = Math.floor(ms / 1000)
-  const min = Math.floor(totalSec / 60)
-  const sec = totalSec % 60
-  const millis = ms % 1000
-  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(millis).padStart(3, '0')}`
-}
-
 // ============================================================
 // Layout Resize
 // ============================================================
