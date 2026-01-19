@@ -1,167 +1,31 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState, Track, EnvelopeTrack, GeneratorTrack } from '@practice/timeline'
-import { createTimelinePlayer, evaluateGenerator } from '@practice/timeline'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import type { Track, TrackId, RenderContext, Ms, PhaseLayout, Phase } from '@practice/timeline'
+import { createCanvasTrackRenderer } from '@practice/timeline'
+import { mockTimeline, mockBindings } from '../modules/Timeline/Infra/mockData'
+import { useTimelinePlayer } from '../modules/Timeline/Application/useTimelinePlayer'
 
 // ============================================================
 // Editor Config
 // ============================================================
-const editorConfig = {
-  /** Total visible duration in the editor (for infinite loops) */
-  visibleDuration: 30000,  // 30 seconds
-}
+const VISIBLE_DURATION = 30000 as Ms // 30 seconds
 
 // ============================================================
-// Mock Data
+// Timeline Player (via composable)
 // ============================================================
-const mockTimeline: Timeline = {
-  loopType: 'forward',
-  phases: [
-    { id: 'phase-opening' as PhaseId, type: 'Opening', duration: 5000 },
-    { id: 'phase-loop' as PhaseId, type: 'Loop' },  // No duration = infinite
-    // { id: 'phase-ending' as PhaseId, type: 'Ending', duration: 2000 },  // Commented out for PoC
-  ],
-  tracks: [
-    // Opening phase tracks - fade in effects
-    {
-      id: 'track-opacity-opening' as TrackId,
-      name: 'Opacity',
-      clock: 'Phase',
-      phaseId: 'phase-opening' as PhaseId,
-      mode: 'Envelope',
-      envelope: {
-        points: [
-          { time: 0, value: 0 },
-          { time: 5000, value: 1 },
-        ],
-        interpolation: 'Linear',
-      },
-    },
-    {
-      id: 'track-scale-opening' as TrackId,
-      name: 'Scale',
-      clock: 'Phase',
-      phaseId: 'phase-opening' as PhaseId,
-      mode: 'Envelope',
-      envelope: {
-        points: [
-          { time: 0, value: 0.5 },
-          { time: 5000, value: 1 },
-        ],
-        interpolation: 'Bezier',
-      },
-    },
-    // Loop phase tracks - continuous animation
-    {
-      id: 'track-rotation-loop' as TrackId,
-      name: 'Rotation',
-      clock: 'Loop',
-      phaseId: 'phase-loop' as PhaseId,
-      mode: 'Generator',
-      generator: { type: 'Sin', period: 1000, offset: 0, params: {} },
-    },
-  ],
-}
-
-const mockBindings: Binding[] = [
-  {
-    targetParam: 'opacity',
-    sourceTrack: 'track-opacity-opening' as TrackId,
-    map: { min: 0, max: 1 },
-  },
-  {
-    targetParam: 'scale',
-    sourceTrack: 'track-scale-opening' as TrackId,
-    map: { min: 0.5, max: 1.5 },
-  },
-  {
-    targetParam: 'rotation',
-    sourceTrack: 'track-rotation-loop' as TrackId,
-    map: { min: -15, max: 15 },
-  },
-]
-
-// ============================================================
-// Timeline State
-// ============================================================
-const timeline = ref<Timeline>(mockTimeline)
-const playhead = ref(0) // ms
-const isPlaying = ref(false)
-const frameState = ref<FrameState>({ time: 0, params: {} })
-
-// Total visible duration in ms (uses editor config for infinite loops)
-const totalDuration = computed(() => editorConfig.visibleDuration)
-
-// ============================================================
-// Timeline Player
-// ============================================================
-const player = createTimelinePlayer({
+const {
+  playhead,
+  isPlaying,
+  frameState,
+  phaseLayouts,
+  toggle,
+  stop,
+  seek,
+  getPhaseLayout,
+} = useTimelinePlayer({
   timeline: mockTimeline,
   bindings: mockBindings,
-})
-
-let animationFrameId: number | null = null
-let startTime: number | null = null
-
-function startPlayback() {
-  isPlaying.value = true
-  player.seek(playhead.value)
-  player.play()
-  startTime = performance.now() - playhead.value
-  tick()
-}
-
-function stopPlayback() {
-  isPlaying.value = false
-  player.pause()
-  if (animationFrameId !== null) {
-    cancelAnimationFrame(animationFrameId)
-    animationFrameId = null
-  }
-}
-
-function resetPlayback() {
-  stopPlayback()
-  playhead.value = 0
-  player.seek(0)
-  frameState.value = player.update(0)
-}
-
-function tick() {
-  if (!isPlaying.value) return
-
-  const now = performance.now()
-  const engineTime = startTime !== null ? now - startTime : 0
-
-  frameState.value = player.update(engineTime)
-  playhead.value = frameState.value.time
-
-  animationFrameId = requestAnimationFrame(tick)
-}
-
-function togglePlayback() {
-  if (isPlaying.value) {
-    stopPlayback()
-  } else {
-    startPlayback()
-  }
-}
-
-// Sync playhead when seeking via UI
-watch(playhead, (newVal) => {
-  if (!isPlaying.value) {
-    player.seek(newVal)
-    frameState.value = player.update(0)
-  }
-})
-
-onMounted(() => {
-  // Initialize frame state
-  frameState.value = player.update(0)
-})
-
-onUnmounted(() => {
-  stopPlayback()
+  visibleDuration: VISIBLE_DURATION,
 })
 
 // ============================================================
@@ -171,35 +35,33 @@ const previewOpacity = computed(() => frameState.value.params.opacity ?? 1)
 const previewScale = computed(() => frameState.value.params.scale ?? 1)
 const previewRotation = computed(() => frameState.value.params.rotation ?? 0)
 
-// Phase positions for rendering (handles infinite loops)
+// Phase positions with percentage for UI rendering
 const phasePositions = computed(() => {
-  const positions: { phase: Phase; startMs: number; endMs: number; startPercent: number; widthPercent: number }[] = []
-  let currentMs = 0
-  for (const phase of timeline.value.phases) {
-    // For infinite phases (no duration), fill remaining visible duration
-    const phaseDuration = phase.duration ?? (totalDuration.value - currentMs)
-    const startPercent = (currentMs / totalDuration.value) * 100
-    const widthPercent = (phaseDuration / totalDuration.value) * 100
-    positions.push({
+  return phaseLayouts.value.map((layout: PhaseLayout) => {
+    const phase = mockTimeline.phases.find((p: Phase) => p.id === layout.phaseId)!
+    return {
       phase,
-      startMs: currentMs,
-      endMs: currentMs + phaseDuration,
-      startPercent,
-      widthPercent,
-    })
-    currentMs += phaseDuration
-  }
-  return positions
+      startMs: layout.startMs,
+      endMs: layout.endMs,
+      startPercent: (layout.startMs / VISIBLE_DURATION) * 100,
+      widthPercent: (layout.duration / VISIBLE_DURATION) * 100,
+    }
+  })
 })
 
 // Get phase position for a track
 function getPhasePositionForTrack(track: Track) {
-  return phasePositions.value.find(p => p.phase.id === track.phaseId)
+  const layout = getPhaseLayout(track.phaseId)
+  if (!layout) return undefined
+  return {
+    startPercent: (layout.startMs / VISIBLE_DURATION) * 100,
+    widthPercent: (layout.duration / VISIBLE_DURATION) * 100,
+  }
 }
 
 // Playhead position as percentage
 const playheadPercent = computed(() =>
-  (playhead.value / totalDuration.value) * 100
+  (playhead.value / VISIBLE_DURATION) * 100
 )
 
 // Format time as MM:SS.mmm
@@ -215,10 +77,10 @@ function formatTime(ms: number): string {
 const rulerTicks = computed(() => {
   const ticks: { ms: number; percent: number; label: string; major: boolean }[] = []
   const interval = 1000 // 1 second intervals
-  for (let ms = 0; ms <= totalDuration.value; ms += interval) {
+  for (let ms = 0; ms <= VISIBLE_DURATION; ms += interval) {
     ticks.push({
       ms,
-      percent: (ms / totalDuration.value) * 100,
+      percent: (ms / VISIBLE_DURATION) * 100,
       label: `${ms / 1000}s`,
       major: ms % 2000 === 0,
     })
@@ -235,14 +97,8 @@ function onRulerClick(e: MouseEvent) {
   if (!rulerRef.value) return
   const rect = rulerRef.value.getBoundingClientRect()
   const percent = (e.clientX - rect.left) / rect.width
-  const newPlayhead = Math.round(percent * totalDuration.value)
-
-  if (isPlaying.value) {
-    // Update start time to maintain continuity
-    startTime = performance.now() - newPlayhead
-  }
-  playhead.value = newPlayhead
-  player.seek(newPlayhead)
+  const newPlayhead = Math.round(percent * VISIBLE_DURATION) as Ms
+  seek(newPlayhead)
 }
 
 // ============================================================
@@ -278,16 +134,10 @@ function stopResize() {
 const trackListWidth = 150
 
 // ============================================================
-// Canvas Drawing Helpers
+// Canvas Drawing (using TrackRenderer from @practice/timeline)
 // ============================================================
 
-function isEnvelopeTrack(track: Track): track is EnvelopeTrack {
-  return track.mode === 'Envelope'
-}
-
-function isGeneratorTrack(track: Track): track is GeneratorTrack {
-  return track.mode === 'Generator'
-}
+const trackRenderer = createCanvasTrackRenderer()
 
 // Canvas refs for each track
 const canvasRefs = ref<Map<TrackId, HTMLCanvasElement>>(new Map())
@@ -300,159 +150,43 @@ function setCanvasRef(trackId: TrackId, el: HTMLCanvasElement | null) {
   }
 }
 
-// Draw envelope on canvas
-function drawEnvelope(canvas: HTMLCanvasElement, track: EnvelopeTrack, duration: number) {
+function setupRenderContext(canvas: HTMLCanvasElement): RenderContext | null {
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) return null
 
   const dpr = window.devicePixelRatio || 1
   const rect = canvas.getBoundingClientRect()
-  const width = rect.width * dpr
-  const height = rect.height * dpr
 
-  canvas.width = width
-  canvas.height = height
+  canvas.width = rect.width * dpr
+  canvas.height = rect.height * dpr
   ctx.scale(dpr, dpr)
 
-  ctx.clearRect(0, 0, rect.width, rect.height)
-
-  const { envelope } = track
-  const points = [...envelope.points].sort((a, b) => a.time - b.time)
-
-  if (points.length === 0) return
-
-  // Convert to canvas coordinates
-  const toX = (time: number) => (time / duration) * rect.width
-  const toY = (value: number) => (1 - value) * rect.height
-
-  ctx.strokeStyle = 'oklch(0.50 0.20 250)'
-  ctx.lineWidth = 1.5
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-
-  ctx.beginPath()
-
-  if (envelope.interpolation === 'Linear') {
-    // Linear interpolation: straight lines
-    points.forEach((p, i) => {
-      const x = toX(p.time)
-      const y = toY(p.value)
-      if (i === 0) {
-        ctx.moveTo(x, y)
-      } else {
-        ctx.lineTo(x, y)
-      }
-    })
-  } else {
-    // Bezier interpolation: smooth curves using quadratic bezier
-    if (points.length === 1) {
-      const x = toX(points[0]!.time)
-      const y = toY(points[0]!.value)
-      ctx.moveTo(x, y)
-      ctx.lineTo(x, y)
-    } else {
-      // Use quadratic bezier for smooth curves
-      ctx.moveTo(toX(points[0]!.time), toY(points[0]!.value))
-
-      for (let i = 0; i < points.length - 1; i++) {
-        const p0 = points[i]!
-        const p1 = points[i + 1]!
-
-        const x0 = toX(p0.time)
-        const y0 = toY(p0.value)
-        const x1 = toX(p1.time)
-        const y1 = toY(p1.value)
-
-        // Control point at midpoint with averaged Y
-        const cpX = (x0 + x1) / 2
-        const cpY0 = y0
-        const cpY1 = y1
-
-        // Use cubic bezier for smoother curves
-        ctx.bezierCurveTo(cpX, cpY0, cpX, cpY1, x1, y1)
-      }
-    }
-  }
-
-  ctx.stroke()
-
-  // Draw control points
-  ctx.fillStyle = 'oklch(0.98 0 0)'
-  ctx.strokeStyle = 'oklch(0.45 0.22 250)'
-  ctx.lineWidth = 1.5
-
-  points.forEach(p => {
-    const x = toX(p.time)
-    const y = toY(p.value)
-    ctx.beginPath()
-    ctx.arc(x, y, 4, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.stroke()
-  })
-}
-
-// Draw generator waveform on canvas
-function drawGenerator(canvas: HTMLCanvasElement, track: GeneratorTrack, duration: number) {
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-
-  const dpr = window.devicePixelRatio || 1
-  const rect = canvas.getBoundingClientRect()
-  const width = rect.width * dpr
-  const height = rect.height * dpr
-
-  canvas.width = width
-  canvas.height = height
-  ctx.scale(dpr, dpr)
-
-  ctx.clearRect(0, 0, rect.width, rect.height)
-
-  const { generator } = track
-  const sampleCount = Math.max(200, Math.floor(rect.width))
-
-  ctx.strokeStyle = 'oklch(0.50 0.20 150)'
-  ctx.lineWidth = 1.5
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-
-  ctx.beginPath()
-
-  for (let i = 0; i <= sampleCount; i++) {
-    const t = (i / sampleCount) * duration
-    const value = evaluateGenerator(generator, t)
-    const x = (i / sampleCount) * rect.width
-    const y = (1 - value) * rect.height
-
-    if (i === 0) {
-      ctx.moveTo(x, y)
-    } else {
-      ctx.lineTo(x, y)
-    }
-  }
-
-  ctx.stroke()
+  return { ctx, width: rect.width, height: rect.height, dpr }
 }
 
 // Redraw all canvases
 function redrawAllCanvases() {
-  for (const track of timeline.value.tracks) {
+  for (const track of mockTimeline.tracks) {
     const canvas = canvasRefs.value.get(track.id)
     if (!canvas) continue
 
-    // Use calculated phase duration (handles infinite loops)
-    const phasePos = getPhasePositionForTrack(track)
-    const duration = phasePos ? (phasePos.endMs - phasePos.startMs) : totalDuration.value
+    const renderContext = setupRenderContext(canvas)
+    if (!renderContext) continue
 
-    if (isEnvelopeTrack(track)) {
-      drawEnvelope(canvas, track, duration)
-    } else if (isGeneratorTrack(track)) {
-      drawGenerator(canvas, track, duration)
+    // Use calculated phase duration (handles infinite loops)
+    const layout = getPhaseLayout(track.phaseId)
+    const duration = layout?.duration ?? VISIBLE_DURATION
+
+    if (track.mode === 'Envelope') {
+      trackRenderer.renderEnvelope(renderContext, track.envelope, duration)
+    } else {
+      trackRenderer.renderGenerator(renderContext, track.generator, duration)
     }
   }
 }
 
 // Watch for changes and redraw
-watch([timeline, totalDuration], () => {
+watch(phaseLayouts, () => {
   nextTick(() => redrawAllCanvases())
 }, { deep: true })
 
@@ -519,11 +253,11 @@ onMounted(() => {
     >
       <!-- Timeline Controls -->
       <div class="timeline-controls">
-        <button class="control-button" :class="{ active: isPlaying }" @click="togglePlayback">
+        <button class="control-button" :class="{ active: isPlaying }" @click="toggle">
           {{ isPlaying ? 'Pause' : 'Play' }}
         </button>
-        <button class="control-button" @click="resetPlayback">Stop</button>
-        <div class="timecode">{{ formatTime(playhead) }} / {{ formatTime(totalDuration) }}</div>
+        <button class="control-button" @click="stop">Stop</button>
+        <div class="timecode">{{ formatTime(playhead) }} / {{ formatTime(VISIBLE_DURATION) }}</div>
       </div>
 
       <!-- Timeline Content -->
@@ -532,7 +266,7 @@ onMounted(() => {
         <div class="track-list" :style="{ width: `${trackListWidth}px` }">
           <div class="track-list-header">Tracks</div>
           <div
-            v-for="track in timeline.tracks"
+            v-for="track in mockTimeline.tracks"
             :key="track.id"
             class="track-list-item"
           >
@@ -572,7 +306,7 @@ onMounted(() => {
           <!-- Track Lanes -->
           <div class="track-lanes">
             <div
-              v-for="track in timeline.tracks"
+              v-for="track in mockTimeline.tracks"
               :key="track.id"
               class="track-lane"
             >

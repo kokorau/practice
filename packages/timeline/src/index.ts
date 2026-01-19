@@ -32,5 +32,6 @@ export { evaluateEnvelope, evaluateGenerator, evaluateTrack } from './evaluate'
 // Player Implementation
 export { createTimelinePlayer, type CreateTimelinePlayerOptions } from './createTimelinePlayer'
 
-// Render (Port interfaces)
+// Render (Port interfaces + implementation)
 export type { RenderContext, TrackRenderer } from './render'
+export { createCanvasTrackRenderer } from './render'
