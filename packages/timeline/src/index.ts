@@ -4,6 +4,10 @@ export type { Ms } from './Unit'
 // Phase
 export type { PhaseId, PhaseType, Phase, LoopType } from './Phase'
 
+// PhaseLayout
+export type { PhaseLayout } from './PhaseLayout'
+export { calculatePhaseLayouts } from './PhaseLayout'
+
 // Envelope
 export type { InterpolationType, ControlPoint, Envelope } from './Envelope'
 
@@ -27,3 +31,6 @@ export { evaluateEnvelope, evaluateGenerator, evaluateTrack } from './evaluate'
 
 // Player Implementation
 export { createTimelinePlayer, type CreateTimelinePlayerOptions } from './createTimelinePlayer'
+
+// Render (Port interfaces)
+export type { RenderContext, TrackRenderer } from './render'
