@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import type { Track, TrackId, RenderContext, Ms, Phase } from '@practice/timeline'
+import type { Track, TrackId, RenderContext, Ms, PhaseLayout, Phase } from '@practice/timeline'
 import { createCanvasTrackRenderer } from '@practice/timeline'
-import { mockTimeline, mockBindings } from '@/modules/Timeline/Infra/mockData'
-import { useTimelinePlayer } from '@/modules/Timeline/Application/useTimelinePlayer'
+import { mockTimeline, mockBindings } from '../modules/Timeline/Infra/mockData'
+import { useTimelinePlayer } from '../modules/Timeline/Application/useTimelinePlayer'
 
 // ============================================================
 // Editor Config
@@ -37,8 +37,8 @@ const previewRotation = computed(() => frameState.value.params.rotation ?? 0)
 
 // Phase positions with percentage for UI rendering
 const phasePositions = computed(() => {
-  return phaseLayouts.value.map(layout => {
-    const phase = mockTimeline.phases.find(p => p.id === layout.phaseId)!
+  return phaseLayouts.value.map((layout: PhaseLayout) => {
+    const phase = mockTimeline.phases.find((p: Phase) => p.id === layout.phaseId)!
     return {
       phase,
       startMs: layout.startMs,
