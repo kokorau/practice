@@ -11,11 +11,7 @@
  * - exportToCSS() - Export site CSS
  */
 
-import type { Page } from './Section'
-import type { PageContents } from './SectionContent'
-import type { RenderTheme } from './RenderTheme'
-import type { SectionSchema } from './SectionSchema'
-import type { StringSectionTemplate } from './SectionTemplate'
+import type { Page, PageContents, SectionSchema, StringSectionTemplate, RenderTheme } from '@practice/section-semantic/Domain'
 
 // ============================================================================
 // SiteMeta

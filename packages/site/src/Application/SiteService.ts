@@ -7,22 +7,24 @@
 import type {
   Site,
   SiteMeta,
+} from '../Domain'
+import type {
   Page,
   PageContents,
   SectionContent,
   SectionKind,
   RenderTheme,
-} from '../Domain'
+} from '@practice/section-semantic/Domain'
 import type { SemanticColorPalette } from '@practice/semantic-color-palette/Domain'
 import type { DesignTokens } from '@practice/design-tokens/Domain'
-import { DEFAULT_TOKENS } from '../Domain'
-import { DEFAULT_SCHEMAS } from './defaultSchemas'
+import { DEFAULT_TOKENS } from '@practice/section-semantic/Domain'
 import {
+  DEFAULT_SCHEMAS,
   DEFAULT_TEMPLATES,
   createDemoPage,
   renderPage,
   generateCSS,
-} from '../Infra'
+} from '@practice/section-semantic/Infra'
 
 // ============================================================================
 // Create Site
