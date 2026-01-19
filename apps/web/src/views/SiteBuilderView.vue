@@ -18,10 +18,9 @@ import {
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
 } from '@practice/semantic-color-palette/Infra'
-import { toCSSText as toDesignTokensCSSText } from '../modules/DesignTokens/Infra'
+import { toCSSText as toDesignTokensCSSText, getTokenPresetEntries } from '@practice/design-tokens/Infra'
 import type { Preset } from '../modules/Filter/Domain'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
-import { getTokenPresetEntries } from '../modules/DesignTokens/Infra'
 import { useFilter } from '../composables/Filter/useFilter'
 import { useDemoSite } from '../composables/SemanticColorPalette/useDemoSite'
 import { useSiteBuilderAssets } from '../composables/SiteBuilder'

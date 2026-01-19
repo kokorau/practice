@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getTokenPresetEntries, type TokenPresetEntry } from '../../modules/DesignTokens/Infra'
+import { getTokenPresetEntries, type TokenPresetEntry } from '@practice/design-tokens/Infra'
 
 const props = defineProps<{
   selectedId: string

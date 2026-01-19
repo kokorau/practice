@@ -38,6 +38,9 @@ importers:
       '@practice/color':
         specifier: workspace:^
         version: link:../../packages/color
+      '@practice/design-tokens':
+        specifier: workspace:^
+        version: link:../../packages/design-tokens
       '@practice/font':
         specifier: workspace:^
         version: link:../../packages/font
@@ -56,6 +59,9 @@ importers:
       '@practice/semantic-color-palette':
         specifier: workspace:^
         version: link:../../packages/semantic-color-palette
+      '@practice/semantic-section':
+        specifier: workspace:^
+        version: link:../../packages/semantic-section
       '@practice/texture':
         specifier: workspace:^
         version: link:../../packages/texture
@@ -147,6 +153,8 @@ importers:
 
   packages/color: {}
 
+  packages/design-tokens: {}
+
   packages/font: {}
 
   packages/hero-scene:
@@ -202,6 +210,21 @@ importers:
       '@practice/color':
         specifier: workspace:*
         version: link:../color
+
+  packages/semantic-section:
+    dependencies:
+      '@practice/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
+      '@practice/hero-scene':
+        specifier: workspace:*
+        version: link:../hero-scene
+      '@practice/semantic-color-palette':
+        specifier: workspace:*
+        version: link:../semantic-color-palette
+      eta:
+        specifier: ^4.5.0
+        version: 4.5.0
 
   packages/texture:
     dependencies:

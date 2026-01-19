@@ -1,6 +1,6 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { SemanticColorPalette } from '@practice/semantic-color-palette/Domain'
-import type { DesignTokens } from '../../modules/DesignTokens/Domain'
+import type { DesignTokens } from '@practice/design-tokens/Domain'
 import {
   createSite,
   createDemoPage,
@@ -10,7 +10,7 @@ import {
   type Section,
   type SectionContent,
   type Page,
-} from '../../modules/SemanticSection'
+} from '@practice/semantic-section'
 
 export interface UseDemoSiteParams {
   palette: ComputedRef<SemanticColorPalette>
@@ -20,7 +20,7 @@ export interface UseDemoSiteParams {
 export interface UseDemoSiteReturn {
   siteContents: Ref<Record<string, SectionContent>>
   demoSite: ComputedRef<Site>
-  demoTheme: ComputedRef<import('../../modules/SemanticSection').RenderTheme>
+  demoTheme: ComputedRef<import('@practice/semantic-section').RenderTheme>
   currentSections: ComputedRef<readonly Section[]>
   demoHtml: ComputedRef<string>
   selectedSectionId: Ref<string | null>

@@ -10,7 +10,7 @@ import type {
   RenderTheme,
 } from '../Domain'
 import { toCSSText, toCSSRuleSetsText } from '@practice/semantic-color-palette/Infra'
-import { toCSSText as toDesignTokensCSSText } from '../../DesignTokens/Infra'
+import { toCSSText as toDesignTokensCSSText } from '@practice/design-tokens/Infra'
 import { eta } from './etaConfig'
 import { getEtaTemplate } from './etaTemplates'
 

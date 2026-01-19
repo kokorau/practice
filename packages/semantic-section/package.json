@@ -1,0 +1,31 @@
+{
+  "name": "@practice/semantic-section",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./Domain": {
+      "types": "./src/Domain/index.ts",
+      "default": "./src/Domain/index.ts"
+    },
+    "./Application": {
+      "types": "./src/Application/index.ts",
+      "default": "./src/Application/index.ts"
+    },
+    "./Infra": {
+      "types": "./src/Infra/index.ts",
+      "default": "./src/Infra/index.ts"
+    }
+  },
+  "files": ["src"],
+  "dependencies": {
+    "@practice/design-tokens": "workspace:*",
+    "@practice/hero-scene": "workspace:*",
+    "@practice/semantic-color-palette": "workspace:*",
+    "eta": "^4.5.0"
+  }
+}
