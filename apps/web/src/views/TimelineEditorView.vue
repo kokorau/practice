@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState, Track, EnvelopeTrack, GeneratorTrack } from '@practice/timeline'
-import { createTimelinePlayer, evaluateGenerator } from '@practice/timeline'
+import type { Timeline, Phase, PhaseId, TrackId, Binding, FrameState, Track, RenderContext } from '@practice/timeline'
+import { createTimelinePlayer, createCanvasTrackRenderer } from '@practice/timeline'
 
 // ============================================================
 // Editor Config
@@ -278,16 +278,10 @@ function stopResize() {
 const trackListWidth = 150
 
 // ============================================================
-// Canvas Drawing Helpers
+// Canvas Drawing (using TrackRenderer from @practice/timeline)
 // ============================================================
 
-function isEnvelopeTrack(track: Track): track is EnvelopeTrack {
-  return track.mode === 'Envelope'
-}
-
-function isGeneratorTrack(track: Track): track is GeneratorTrack {
-  return track.mode === 'Generator'
-}
+const trackRenderer = createCanvasTrackRenderer()
 
 // Canvas refs for each track
 const canvasRefs = ref<Map<TrackId, HTMLCanvasElement>>(new Map())
@@ -300,137 +294,18 @@ function setCanvasRef(trackId: TrackId, el: HTMLCanvasElement | null) {
   }
 }
 
-// Draw envelope on canvas
-function drawEnvelope(canvas: HTMLCanvasElement, track: EnvelopeTrack, duration: number) {
+function setupRenderContext(canvas: HTMLCanvasElement): RenderContext | null {
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) return null
 
   const dpr = window.devicePixelRatio || 1
   const rect = canvas.getBoundingClientRect()
-  const width = rect.width * dpr
-  const height = rect.height * dpr
 
-  canvas.width = width
-  canvas.height = height
+  canvas.width = rect.width * dpr
+  canvas.height = rect.height * dpr
   ctx.scale(dpr, dpr)
 
-  ctx.clearRect(0, 0, rect.width, rect.height)
-
-  const { envelope } = track
-  const points = [...envelope.points].sort((a, b) => a.time - b.time)
-
-  if (points.length === 0) return
-
-  // Convert to canvas coordinates
-  const toX = (time: number) => (time / duration) * rect.width
-  const toY = (value: number) => (1 - value) * rect.height
-
-  ctx.strokeStyle = 'oklch(0.50 0.20 250)'
-  ctx.lineWidth = 1.5
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-
-  ctx.beginPath()
-
-  if (envelope.interpolation === 'Linear') {
-    // Linear interpolation: straight lines
-    points.forEach((p, i) => {
-      const x = toX(p.time)
-      const y = toY(p.value)
-      if (i === 0) {
-        ctx.moveTo(x, y)
-      } else {
-        ctx.lineTo(x, y)
-      }
-    })
-  } else {
-    // Bezier interpolation: smooth curves using quadratic bezier
-    if (points.length === 1) {
-      const x = toX(points[0]!.time)
-      const y = toY(points[0]!.value)
-      ctx.moveTo(x, y)
-      ctx.lineTo(x, y)
-    } else {
-      // Use quadratic bezier for smooth curves
-      ctx.moveTo(toX(points[0]!.time), toY(points[0]!.value))
-
-      for (let i = 0; i < points.length - 1; i++) {
-        const p0 = points[i]!
-        const p1 = points[i + 1]!
-
-        const x0 = toX(p0.time)
-        const y0 = toY(p0.value)
-        const x1 = toX(p1.time)
-        const y1 = toY(p1.value)
-
-        // Control point at midpoint with averaged Y
-        const cpX = (x0 + x1) / 2
-        const cpY0 = y0
-        const cpY1 = y1
-
-        // Use cubic bezier for smoother curves
-        ctx.bezierCurveTo(cpX, cpY0, cpX, cpY1, x1, y1)
-      }
-    }
-  }
-
-  ctx.stroke()
-
-  // Draw control points
-  ctx.fillStyle = 'oklch(0.98 0 0)'
-  ctx.strokeStyle = 'oklch(0.45 0.22 250)'
-  ctx.lineWidth = 1.5
-
-  points.forEach(p => {
-    const x = toX(p.time)
-    const y = toY(p.value)
-    ctx.beginPath()
-    ctx.arc(x, y, 4, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.stroke()
-  })
-}
-
-// Draw generator waveform on canvas
-function drawGenerator(canvas: HTMLCanvasElement, track: GeneratorTrack, duration: number) {
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-
-  const dpr = window.devicePixelRatio || 1
-  const rect = canvas.getBoundingClientRect()
-  const width = rect.width * dpr
-  const height = rect.height * dpr
-
-  canvas.width = width
-  canvas.height = height
-  ctx.scale(dpr, dpr)
-
-  ctx.clearRect(0, 0, rect.width, rect.height)
-
-  const { generator } = track
-  const sampleCount = Math.max(200, Math.floor(rect.width))
-
-  ctx.strokeStyle = 'oklch(0.50 0.20 150)'
-  ctx.lineWidth = 1.5
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-
-  ctx.beginPath()
-
-  for (let i = 0; i <= sampleCount; i++) {
-    const t = (i / sampleCount) * duration
-    const value = evaluateGenerator(generator, t)
-    const x = (i / sampleCount) * rect.width
-    const y = (1 - value) * rect.height
-
-    if (i === 0) {
-      ctx.moveTo(x, y)
-    } else {
-      ctx.lineTo(x, y)
-    }
-  }
-
-  ctx.stroke()
+  return { ctx, width: rect.width, height: rect.height, dpr }
 }
 
 // Redraw all canvases
@@ -439,14 +314,17 @@ function redrawAllCanvases() {
     const canvas = canvasRefs.value.get(track.id)
     if (!canvas) continue
 
+    const renderContext = setupRenderContext(canvas)
+    if (!renderContext) continue
+
     // Use calculated phase duration (handles infinite loops)
     const phasePos = getPhasePositionForTrack(track)
     const duration = phasePos ? (phasePos.endMs - phasePos.startMs) : totalDuration.value
 
-    if (isEnvelopeTrack(track)) {
-      drawEnvelope(canvas, track, duration)
-    } else if (isGeneratorTrack(track)) {
-      drawGenerator(canvas, track, duration)
+    if (track.mode === 'Envelope') {
+      trackRenderer.renderEnvelope(renderContext, track.envelope, duration)
+    } else {
+      trackRenderer.renderGenerator(renderContext, track.generator, duration)
     }
   }
 }
