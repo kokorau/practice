@@ -59,9 +59,9 @@ importers:
       '@practice/semantic-color-palette':
         specifier: workspace:^
         version: link:../../packages/semantic-color-palette
-      '@practice/semantic-section':
+      '@practice/site':
         specifier: workspace:^
-        version: link:../../packages/semantic-section
+        version: link:../../packages/site
       '@practice/texture':
         specifier: workspace:^
         version: link:../../packages/texture
@@ -180,6 +180,21 @@ importers:
 
   packages/schema: {}
 
+  packages/section-semantic:
+    dependencies:
+      '@practice/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
+      '@practice/section-visual':
+        specifier: workspace:*
+        version: link:../section-visual
+      '@practice/semantic-color-palette':
+        specifier: workspace:*
+        version: link:../semantic-color-palette
+      eta:
+        specifier: ^4.5.0
+        version: 4.5.0
+
   packages/section-visual:
     dependencies:
       '@practice/color':
@@ -211,20 +226,17 @@ importers:
         specifier: workspace:*
         version: link:../color
 
-  packages/semantic-section:
+  packages/site:
     dependencies:
       '@practice/design-tokens':
         specifier: workspace:*
         version: link:../design-tokens
-      '@practice/section-visual':
+      '@practice/section-semantic':
         specifier: workspace:*
-        version: link:../section-visual
+        version: link:../section-semantic
       '@practice/semantic-color-palette':
         specifier: workspace:*
         version: link:../semantic-color-palette
-      eta:
-        specifier: ^4.5.0
-        version: 4.5.0
 
   packages/texture:
     dependencies:

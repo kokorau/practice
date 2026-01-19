@@ -15,3 +15,6 @@ export type { EtaTemplate } from './etaTemplates'
 // Default templates for Site creation (re-export as DEFAULT_TEMPLATES for backward compatibility)
 import { ETA_TEMPLATES } from './etaTemplates'
 export const DEFAULT_TEMPLATES = Object.values(ETA_TEMPLATES)
+
+// Default Schemas
+export { DEFAULT_SCHEMAS, getSchemaByType, getSchemaById } from './defaultSchemas'

@@ -1,4 +1,5 @@
-export { DEFAULT_SCHEMAS, getSchemaByType, getSchemaById } from './defaultSchemas'
+// Re-export from section-semantic for convenience
+export { DEFAULT_SCHEMAS, getSchemaByType, getSchemaById } from '@practice/section-semantic/Infra'
 
 // Site Service - Use Cases
 export {
