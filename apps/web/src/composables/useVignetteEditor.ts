@@ -4,7 +4,7 @@ import {
   createVignetteConfigForShape,
   type VignetteShape,
   type VignetteConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 import type { VignetteConfigParams } from './useFilterEditor'
 
 // ============================================================

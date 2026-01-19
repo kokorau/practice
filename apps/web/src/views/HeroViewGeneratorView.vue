@@ -13,11 +13,11 @@ import {
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { ImageLayerNodeConfig } from '@practice/hero-scene'
+import type { ImageLayerNodeConfig } from '@practice/section-visual'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 
 // Type guard for ImageLayerNodeConfig
 function isImageLayerConfig(layer: unknown): layer is ImageLayerNodeConfig {

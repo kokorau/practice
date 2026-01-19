@@ -31,7 +31,7 @@ import { generateLuminanceMap } from '../../modules/ContrastChecker'
 import type {
   HeroPrimitiveKey,
   ForegroundLayerConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 
 // ============================================================
 // Types

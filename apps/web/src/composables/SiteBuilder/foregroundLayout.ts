@@ -7,8 +7,8 @@ import type {
   ForegroundLayerConfig,
   ForegroundElementType,
   HeroPrimitiveKey,
-} from '@practice/hero-scene'
-import { createDefaultForegroundConfig } from '@practice/hero-scene'
+} from '@practice/section-visual'
+import { createDefaultForegroundConfig } from '@practice/section-visual'
 
 export type { GridPosition, ForegroundElementConfig, ForegroundElementType }
 

@@ -19,7 +19,7 @@ import type {
   FooterContent,
 } from '../Domain'
 import { $Page, $Section } from '../Domain'
-import type { HeroViewConfig } from '@practice/hero-scene'
+import type { HeroViewConfig } from '@practice/section-visual'
 
 // Legacy type alias
 type SectionType = SectionKind

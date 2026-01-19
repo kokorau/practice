@@ -6,7 +6,7 @@
  */
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
-import type { HeroViewConfig } from '@practice/hero-scene'
+import type { HeroViewConfig } from '@practice/section-visual'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import SchemaFields from '../../SchemaFields.vue'

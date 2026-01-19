@@ -2,7 +2,7 @@
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import { NEUTRAL_KEYS } from '@practice/semantic-color-palette/Domain'
-import type { GridPosition } from '@practice/hero-scene'
+import type { GridPosition } from '@practice/section-visual'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import GridPositionPicker from '../GridPositionPicker.vue'

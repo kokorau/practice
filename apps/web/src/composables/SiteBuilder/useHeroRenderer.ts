@@ -18,7 +18,7 @@ import {
   type HeroSceneConfig,
   type Object3DRendererPort,
   renderHeroConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 
 // ============================================================
 // Types

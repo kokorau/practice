@@ -6,7 +6,7 @@ import LayoutPresetSelector from './LayoutPresetSelector.vue'
 import FloatingPanel from './FloatingPanel.vue'
 import LayerPanel, { type LayerType } from './LayerPanel.vue'
 import type { ColorPreset } from '@practice/semantic-color-palette/Domain'
-import type { HeroViewPreset, LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '@practice/hero-scene'
+import type { HeroViewPreset, LayerNodeConfig, ForegroundElementConfig, ForegroundElementType, LayerDropPosition, ModifierDropPosition } from '@practice/section-visual'
 import type { ContextTargetType, AddProcessorType } from './DraggableLayerNode.vue'
 
 // ============================================================

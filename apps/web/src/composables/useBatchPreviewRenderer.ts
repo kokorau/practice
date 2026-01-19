@@ -9,8 +9,8 @@
 
 import { ref, watch, onUnmounted, type Ref } from 'vue'
 import { TextureRenderer } from '@practice/texture'
-import type { HeroViewConfig } from '@practice/hero-scene'
-import { renderHeroConfig } from '@practice/hero-scene'
+import type { HeroViewConfig } from '@practice/section-visual'
+import { renderHeroConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   PREVIEW_ORIGINAL_WIDTH,

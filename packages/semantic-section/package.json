@@ -24,7 +24,7 @@
   "files": ["src"],
   "dependencies": {
     "@practice/design-tokens": "workspace:*",
-    "@practice/hero-scene": "workspace:*",
+    "@practice/section-visual": "workspace:*",
     "@practice/semantic-color-palette": "workspace:*",
     "eta": "^4.5.0"
   }

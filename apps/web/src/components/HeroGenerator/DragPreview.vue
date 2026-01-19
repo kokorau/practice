@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { LayerNodeConfig } from '@practice/hero-scene'
-import { findLayerInTree, isBaseLayerConfig, isSurfaceLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isGroupLayerConfig, isProcessorLayerConfig } from '@practice/hero-scene'
+import type { LayerNodeConfig } from '@practice/section-visual'
+import { findLayerInTree, isBaseLayerConfig, isSurfaceLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isGroupLayerConfig, isProcessorLayerConfig } from '@practice/section-visual'
 
 // Layer variant type for UI display
 type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' | 'processor'

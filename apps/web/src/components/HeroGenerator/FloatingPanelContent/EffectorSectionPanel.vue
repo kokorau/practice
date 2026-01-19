@@ -27,7 +27,7 @@ import {
   type ProcessorNodeConfig,
   type NormalizedMaskConfig,
   type MaskProcessorConfig,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type {
   ChromaticConfigParams,

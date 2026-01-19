@@ -22,8 +22,8 @@ import {
   type LayerNodeConfig,
   type GroupLayerNodeConfig,
   type ProcessorNodeConfig,
-} from '@practice/hero-scene'
-import type { HeroViewConfig, LayerEffectConfig } from '@practice/hero-scene'
+} from '@practice/section-visual'
+import type { HeroViewConfig, LayerEffectConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type {
   VignetteConfigParams,

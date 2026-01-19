@@ -11,7 +11,7 @@ import {
   LineHalftoneEffectSchema,
   BlurEffectSchema,
   type FilterType,
-} from '@practice/hero-scene'
+} from '@practice/section-visual'
 import type {
   VignetteConfigParams,
   ChromaticConfigParams,

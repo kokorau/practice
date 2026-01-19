@@ -1,7 +1,7 @@
 import { ref, computed, type Ref, type ComputedRef, type WritableComputedRef } from 'vue'
 import type { ObjectSchema } from '@practice/schema'
 import type { RGBA } from '@practice/texture'
-import type { FilterType } from '@practice/hero-scene'
+import type { FilterType } from '@practice/section-visual'
 import type {
   VignetteConfigParams,
   ChromaticConfigParams,
