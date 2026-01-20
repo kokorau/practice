@@ -15,6 +15,10 @@
     "./Infra": {
       "types": "./src/Infra/index.ts",
       "default": "./src/Infra/index.ts"
+    },
+    "./Application": {
+      "types": "./src/Application/index.ts",
+      "default": "./src/Application/index.ts"
     }
   },
   "files": ["src"]
