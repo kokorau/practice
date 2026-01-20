@@ -5,9 +5,9 @@
  * For sections with canvas config, renders using WebGPU.
  * For other sections, renders HTML templates.
  */
-import type { Section, RenderTheme } from '@practice/semantic-site/Domain'
+import type { Section, RenderTheme } from '@practice/section-semantic'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import { $Section, renderSection } from '@practice/semantic-site'
+import { $Section, renderSection } from '@practice/section-semantic'
 import HeroCanvasSection from './HeroCanvasSection.vue'
 
 const props = defineProps<{
