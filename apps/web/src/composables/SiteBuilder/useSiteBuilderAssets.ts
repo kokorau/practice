@@ -24,12 +24,6 @@ import {
   getSiteConfigUseCase,
   observeSiteConfigUseCase,
   SITE_CONFIG_ASSET_ID,
-  // FilterConfig
-  type FilterConfig,
-  updateFilterConfigUseCase,
-  getFilterConfigUseCase,
-  observeFilterConfigUseCase,
-  FILTER_CONFIG_ASSET_ID,
   // SiteContents
   type SiteContents,
   updateSiteContentsUseCase,
@@ -68,7 +62,6 @@ let isLoading = false
 /** ロード済みの初期データをキャッシュ */
 type InitialData = {
   siteConfig: SiteConfig
-  filterConfig: FilterConfig
   siteContents: SiteContents
   brandGuideContent: string
 }
@@ -108,7 +101,6 @@ export function useSiteBuilderAssets() {
 
     tree.value = $AssetTree.addAssetRef(tree.value, 'brand-guide.md', configFolderId, BRAND_GUIDE_ASSET_ID)
     tree.value = $AssetTree.addAssetRef(tree.value, 'site-config.json', configFolderId, SITE_CONFIG_ASSET_ID)
-    tree.value = $AssetTree.addAssetRef(tree.value, 'filter-config.json', configFolderId, FILTER_CONFIG_ASSET_ID)
     tree.value = $AssetTree.addAssetRef(tree.value, 'site-contents.json', configFolderId, SITE_CONTENTS_ASSET_ID)
 
     // 2. assets/ フォルダを作成（サブフォルダ付き）
@@ -343,26 +335,6 @@ export function useSiteBuilderAssets() {
   }
 
   // ============================================================
-  // FilterConfig 関連
-  // ============================================================
-
-  /** FilterConfig を更新 */
-  const updateFilterConfig = (config: FilterConfig) => {
-    updateFilterConfigUseCase(repository, config)
-    refreshAssetsMap(repository)
-  }
-
-  /** FilterConfig を取得 */
-  const getFilterConfig = (): Promise<FilterConfig> => {
-    return getFilterConfigUseCase(repository)
-  }
-
-  /** FilterConfig の変更を監視 */
-  const observeFilterConfig = (callback: (config: FilterConfig) => void) => {
-    return observeFilterConfigUseCase(repository, callback)
-  }
-
-  // ============================================================
   // SiteContents 関連
   // ============================================================
 
@@ -418,16 +390,14 @@ export function useSiteBuilderAssets() {
 
     try {
       // 並列でロード
-      const [siteConfig, filterConfig, siteContents, brandGuideContent] = await Promise.all([
+      const [siteConfig, siteContents, brandGuideContent] = await Promise.all([
         getSiteConfig(),
-        getFilterConfig(),
         getSiteContents(),
         getBrandGuideContent(),
       ])
 
       cachedInitialData = {
         siteConfig,
-        filterConfig,
         siteContents,
         brandGuideContent,
       }
@@ -481,12 +451,6 @@ export function useSiteBuilderAssets() {
     getSiteConfig,
     observeSiteConfig,
     SITE_CONFIG_ASSET_ID,
-
-    // FilterConfig
-    updateFilterConfig,
-    getFilterConfig,
-    observeFilterConfig,
-    FILTER_CONFIG_ASSET_ID,
 
     // SiteContents
     updateSiteContents,

@@ -23,17 +23,6 @@ export type {
   ObserveSiteConfigResult,
 } from './ObserveSiteConfigUseCase'
 
-export { updateFilterConfigUseCase } from './UpdateFilterConfigUseCase'
-
-export {
-  observeFilterConfigUseCase,
-  getFilterConfigUseCase,
-} from './ObserveFilterConfigUseCase'
-export type {
-  FilterConfigObserver,
-  ObserveFilterConfigResult,
-} from './ObserveFilterConfigUseCase'
-
 export { updateSiteContentsUseCase } from './UpdateSiteContentsUseCase'
 
 export {

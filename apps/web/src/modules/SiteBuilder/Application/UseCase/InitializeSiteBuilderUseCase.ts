@@ -19,12 +19,6 @@ import {
   SITE_CONFIG_FILENAME,
 } from '../../Domain/ValueObject/SiteConfig'
 import {
-  type FilterConfig,
-  $FilterConfig,
-  FILTER_CONFIG_ASSET_ID,
-  FILTER_CONFIG_FILENAME,
-} from '../../Domain/ValueObject/FilterConfig'
-import {
   type SiteContents,
   $SiteContents,
   SITE_CONTENTS_ASSET_ID,
@@ -38,8 +32,6 @@ export interface InitializeSiteBuilderOptions {
   overwrite?: boolean
   /** 初期 SiteConfig（指定しない場合はデフォルト値） */
   initialSiteConfig?: Partial<SiteConfig>
-  /** 初期 FilterConfig（指定しない場合はデフォルト値） */
-  initialFilterConfig?: Partial<FilterConfig>
   /** 初期 SiteContents（指定しない場合はデフォルト値） */
   initialSiteContents?: SiteContents
 }
@@ -73,21 +65,6 @@ const createSiteConfigAsset = (config: SiteConfig): Asset => {
   })
 }
 
-/** FilterConfig アセットを作成 */
-const createFilterConfigAsset = (config: FilterConfig): Asset => {
-  const json = $FilterConfig.toJSON(config)
-  const blob = new Blob([json], { type: 'application/json' })
-  return $Asset.create({
-    id: FILTER_CONFIG_ASSET_ID,
-    name: FILTER_CONFIG_FILENAME,
-    source: $AssetSource.fromBlob(blob),
-    meta: {
-      mimeType: 'application/json',
-      size: blob.size,
-    },
-  })
-}
-
 /** SiteContents アセットを作成 */
 const createSiteContentsAsset = (contents: SiteContents): Asset => {
   const json = $SiteContents.toJSON(contents)
@@ -113,7 +90,7 @@ export function initializeSiteBuilderUseCase(
   repository: AssetRepository,
   options: InitializeSiteBuilderOptions = {}
 ): void {
-  const { overwrite = false, initialSiteConfig, initialFilterConfig, initialSiteContents } = options
+  const { overwrite = false, initialSiteConfig, initialSiteContents } = options
 
   // Brand Guide の初期化
   const existingBrandGuide = repository.get(BRAND_GUIDE_ASSET_ID)
@@ -128,14 +105,6 @@ export function initializeSiteBuilderUseCase(
     const config = $SiteConfig.create(initialSiteConfig)
     const siteConfigAsset = createSiteConfigAsset(config)
     repository.set(SITE_CONFIG_ASSET_ID, siteConfigAsset)
-  }
-
-  // FilterConfig の初期化
-  const existingFilterConfig = repository.get(FILTER_CONFIG_ASSET_ID)
-  if (!existingFilterConfig || overwrite) {
-    const config = $FilterConfig.create(initialFilterConfig)
-    const filterConfigAsset = createFilterConfigAsset(config)
-    repository.set(FILTER_CONFIG_ASSET_ID, filterConfigAsset)
   }
 
   // SiteContents の初期化

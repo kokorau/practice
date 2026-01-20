@@ -237,6 +237,7 @@ const {
   setters: filterSetters,
   setMasterPoint,
   reset: resetFilter,
+  initializeFrom: initializeFilter,
 } = useFilter()
 
 // Current preset name for display in list view
@@ -401,20 +402,8 @@ onMounted(async () => {
     siteState.setTokensById(initialData.siteConfig.tokensId)
   }
 
-  // FilterConfig の値を設定 (legacy → useFilter → siteState)
-  filter.value = initialData.filterConfig.filter
-  intensity.value = initialData.filterConfig.intensity
-  currentPresetId.value = initialData.filterConfig.presetId
-  // Also sync to Site Repository
-  siteState.updateFilter({
-    adjustment: initialData.filterConfig.filter.adjustment,
-    master: initialData.filterConfig.filter.master,
-    r: initialData.filterConfig.filter.r,
-    g: initialData.filterConfig.filter.g,
-    b: initialData.filterConfig.filter.b,
-    intensity: initialData.filterConfig.intensity,
-    presetId: initialData.filterConfig.presetId,
-  })
+  // Filter を siteState から初期化（Site Repository が真実のソース）
+  initializeFilter(siteState.filter.value)
 
   // BrandGuide の値を設定
   brandGuideMarkdown.value = initialData.brandGuideContent
