@@ -14,6 +14,7 @@ import type { SectionVisual } from '@practice/section-visual'
 import type { Palette } from '@practice/semantic-color-palette/Domain'
 import type { SiteMeta } from '@practice/site-meta/Domain'
 import type { Timeline } from '@practice/timeline'
+import type { FilterConfig } from './FilterConfig'
 
 // Re-export from other packages
 export type { Contents } from '@practice/contents'
@@ -55,6 +56,9 @@ export interface Site {
   /** スタイル (CSS vars source) */
   readonly token: DesignTokens
   readonly palette: Palette
+
+  /** フィルター設定 (画像調整) */
+  readonly filter: FilterConfig
 
   /** コンテンツ */
   readonly contents: Contents

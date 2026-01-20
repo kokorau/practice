@@ -6,7 +6,11 @@
  */
 
 import { computed, onUnmounted, type Ref, type ComputedRef, shallowRef } from 'vue'
-import type { Site, Page, PageUuid, Section, Contents, ContentValue, TemplateRegistry, SectionSchemas } from '@practice/site/Domain'
+import type {
+  Site, Page, PageUuid, Section, Contents, ContentValue, TemplateRegistry, SectionSchemas,
+  FilterConfig, AdjustmentConfig, CurveConfig,
+} from '@practice/site/Domain'
+import { $FilterConfig } from '@practice/site/Domain'
 import type { SiteRepository } from '@practice/site/Application'
 import { createSiteInMemoryRepository } from '@practice/site/Infra'
 import type { Palette, SeedColors, SemanticColorPalette, PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -41,6 +45,10 @@ export interface UseSiteStateReturn {
   // Tokens
   tokens: ComputedRef<DesignTokens>
 
+  // Filter
+  filter: ComputedRef<FilterConfig>
+  adjustment: ComputedRef<AdjustmentConfig>
+
   // Contents
   contents: ComputedRef<Contents>
 
@@ -60,6 +68,12 @@ export interface UseSiteStateReturn {
   // Actions - Tokens
   updateTokens: (tokens: DesignTokens) => void
   setTokensById: (presetId: string) => void
+
+  // Actions - Filter
+  updateFilter: (filter: Partial<FilterConfig>) => void
+  updateAdjustment: (adjustment: Partial<AdjustmentConfig>) => void
+  updateMasterCurve: (curve: CurveConfig) => void
+  updateChannelCurve: (channel: 'r' | 'g' | 'b', curve: CurveConfig | null) => void
 
   // Actions - Contents
   updateContents: (updates: Partial<Contents>) => void
@@ -136,6 +150,7 @@ const createDefaultSite = (): Site => {
     },
     token: defaultTokens,
     palette,
+    filter: $FilterConfig.identity(),
     contents: {},
     templates: createEmptyTemplateRegistry(),
     schemas: createEmptySectionSchemas(),
@@ -173,6 +188,8 @@ export const useSiteState = (options: UseSiteStateOptions = {}): UseSiteStateRet
   const palette = computed(() => site.value.palette)
   const primitivePalette = computed(() => site.value.palette.primitivePalette)
   const tokens = computed(() => site.value.token)
+  const filter = computed(() => site.value.filter)
+  const adjustment = computed(() => site.value.filter.adjustment)
   const contents = computed(() => site.value.contents)
   const pages = computed(() => site.value.pages)
 
@@ -240,6 +257,26 @@ export const useSiteState = (options: UseSiteStateOptions = {}): UseSiteStateRet
   }
 
   // ========================================================================
+  // Actions - Filter
+  // ========================================================================
+
+  const updateFilter = (filterUpdates: Partial<FilterConfig>) => {
+    repository.updateFilter(filterUpdates)
+  }
+
+  const updateAdjustment = (adjustmentUpdates: Partial<AdjustmentConfig>) => {
+    repository.updateAdjustment(adjustmentUpdates)
+  }
+
+  const updateMasterCurve = (curve: CurveConfig) => {
+    repository.updateMasterCurve(curve)
+  }
+
+  const updateChannelCurve = (channel: 'r' | 'g' | 'b', curve: CurveConfig | null) => {
+    repository.updateChannelCurve(channel, curve)
+  }
+
+  // ========================================================================
   // Actions - Contents
   // ========================================================================
 
@@ -278,6 +315,8 @@ export const useSiteState = (options: UseSiteStateOptions = {}): UseSiteStateRet
     primitivePalette,
     semanticPalette,
     tokens,
+    filter,
+    adjustment,
     contents,
     pages,
     currentPage,
@@ -292,6 +331,12 @@ export const useSiteState = (options: UseSiteStateOptions = {}): UseSiteStateRet
     // Actions - Tokens
     updateTokens,
     setTokensById,
+
+    // Actions - Filter
+    updateFilter,
+    updateAdjustment,
+    updateMasterCurve,
+    updateChannelCurve,
 
     // Actions - Contents
     updateContents,
