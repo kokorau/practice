@@ -42,7 +42,6 @@ const {
   loadInitialData,
   updateBrandGuide,
   updateSiteConfig,
-  updateFilterConfig,
   updateSiteContents,
 } = useSiteBuilderAssets()
 
@@ -248,26 +247,31 @@ const currentFilterName = computed(() => {
 })
 
 // ============================================================
-// FilterConfig 同期
+// FilterConfig 同期 (to Site Repository)
 // ============================================================
 
-// Sync FilterConfig back to Asset when changed (debounced)
-let filterConfigSyncTimeout: ReturnType<typeof setTimeout> | null = null
-const syncFilterConfig = () => {
-  // ロード完了前は同期しない
+// Sync Filter changes to Site Repository
+watch(filter, (newFilter) => {
   if (!isLoaded.value) return
+  // Sync adjustment and curves to siteState
+  siteState.updateFilter({
+    adjustment: newFilter.adjustment,
+    master: newFilter.master,
+    r: newFilter.r,
+    g: newFilter.g,
+    b: newFilter.b,
+  })
+}, { deep: true })
 
-  if (filterConfigSyncTimeout) clearTimeout(filterConfigSyncTimeout)
-  filterConfigSyncTimeout = setTimeout(() => {
-    updateFilterConfig({
-      filter: filter.value,
-      intensity: intensity.value,
-      presetId: currentPresetId.value,
-    })
-  }, 500)
-}
+watch(intensity, (newIntensity) => {
+  if (!isLoaded.value) return
+  siteState.updateFilterIntensity(newIntensity)
+})
 
-watch([filter, intensity, currentPresetId], syncFilterConfig, { deep: true })
+watch(currentPresetId, (newPresetId) => {
+  if (!isLoaded.value) return
+  siteState.updateFilterPresetId(newPresetId)
+})
 
 // ============================================================
 // Primitive Palette Generation
@@ -397,10 +401,20 @@ onMounted(async () => {
     siteState.setTokensById(initialData.siteConfig.tokensId)
   }
 
-  // FilterConfig の値を設定
+  // FilterConfig の値を設定 (legacy → useFilter → siteState)
   filter.value = initialData.filterConfig.filter
   intensity.value = initialData.filterConfig.intensity
   currentPresetId.value = initialData.filterConfig.presetId
+  // Also sync to Site Repository
+  siteState.updateFilter({
+    adjustment: initialData.filterConfig.filter.adjustment,
+    master: initialData.filterConfig.filter.master,
+    r: initialData.filterConfig.filter.r,
+    g: initialData.filterConfig.filter.g,
+    b: initialData.filterConfig.filter.b,
+    intensity: initialData.filterConfig.intensity,
+    presetId: initialData.filterConfig.presetId,
+  })
 
   // BrandGuide の値を設定
   brandGuideMarkdown.value = initialData.brandGuideContent
