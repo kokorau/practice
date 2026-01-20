@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { $Oklch, type Oklch } from '@practice/color'
 import type { Filter, Preset } from '../../modules/Filter/Domain'
-import type { Section, SectionContent } from '@practice/semantic-site'
+import type { Section, SectionContent } from '@practice/section-semantic'
 import type { FilterSetters } from '../../composables/Filter/useFilter'
 import BrandColorPicker from './BrandColorPicker.vue'
 import FoundationPresets from './FoundationPresets.vue'

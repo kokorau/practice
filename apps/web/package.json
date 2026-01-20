@@ -25,7 +25,7 @@
     "@practice/schema": "workspace:^",
     "@practice/section-semantic": "workspace:^",
     "@practice/semantic-color-palette": "workspace:^",
-    "@practice/semantic-site": "workspace:^",
+    "@practice/site": "workspace:^",
     "@practice/texture": "workspace:^",
     "@practice/timeline": "workspace:^",
     "@practice/vector": "workspace:^",

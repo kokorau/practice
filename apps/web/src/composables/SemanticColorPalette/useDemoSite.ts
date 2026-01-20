@@ -10,12 +10,12 @@ import {
   type Page,
   type RenderTheme,
 } from '@practice/section-semantic'
-// semantic-site provides Site creation and export
+// site provides Site creation and export
 import {
-  createSite,
+  createRenderableSite,
   exportToHTML,
-  type Site,
-} from '@practice/semantic-site'
+  type RenderableSite,
+} from '@practice/site/Application'
 
 export interface UseDemoSiteParams {
   palette: ComputedRef<SemanticColorPalette>
@@ -24,7 +24,7 @@ export interface UseDemoSiteParams {
 
 export interface UseDemoSiteReturn {
   siteContents: Ref<Record<string, SectionContent>>
-  demoSite: ComputedRef<Site>
+  demoSite: ComputedRef<RenderableSite>
   demoTheme: ComputedRef<RenderTheme>
   currentSections: ComputedRef<readonly Section[]>
   demoHtml: ComputedRef<string>
@@ -63,7 +63,7 @@ export function useDemoSite(params: UseDemoSiteParams): UseDemoSiteReturn {
     sections: sections.value,
   }))
 
-  const demoSite = computed((): Site => createSite({
+  const demoSite = computed((): RenderableSite => createRenderableSite({
     meta: {
       id: 'demo-site',
       name: 'Demo Site',

@@ -73,7 +73,8 @@ export const $Site = {
 
   getFirstPage: (site: Site): Page | undefined => {
     const pageIds = Object.keys(site.pages) as PageUuid[]
-    return pageIds.length > 0 ? site.pages[pageIds[0]] : undefined
+    const firstPageId = pageIds[0]
+    return firstPageId !== undefined ? site.pages[firstPageId] : undefined
   },
 
   getPageIds: (site: Site): PageUuid[] => Object.keys(site.pages) as PageUuid[],
