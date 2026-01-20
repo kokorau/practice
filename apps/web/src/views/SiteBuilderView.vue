@@ -407,6 +407,8 @@ onMounted(async () => {
 
   // SiteContents の値を設定（既存のデフォルト値とマージ）
   siteContents.value = { ...siteContents.value, ...initialData.siteContents }
+  // Also initialize Site Repository contents
+  siteState.updateContents(siteContents.value as unknown as import('@practice/site/Domain').Contents)
 
   // スタイルを更新
   updateStyles()
@@ -444,6 +446,8 @@ watch(siteContents, (newContents) => {
   if (siteContentsSyncTimeout) clearTimeout(siteContentsSyncTimeout)
   siteContentsSyncTimeout = setTimeout(() => {
     updateSiteContents(newContents)
+    // Also sync to Site Repository
+    siteState.updateContents(newContents as unknown as import('@practice/site/Domain').Contents)
   }, 500)
 }, { deep: true })
 
