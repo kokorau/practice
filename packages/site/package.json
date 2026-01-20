@@ -11,6 +11,10 @@
     "./Domain": {
       "types": "./src/Domain/index.ts",
       "default": "./src/Domain/index.ts"
+    },
+    "./Application": {
+      "types": "./src/Application/index.ts",
+      "default": "./src/Application/index.ts"
     }
   },
   "files": ["src"],
