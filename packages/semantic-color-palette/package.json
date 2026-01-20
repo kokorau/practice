@@ -22,7 +22,14 @@
     }
   },
   "files": ["src"],
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
   "dependencies": {
     "@practice/color": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.15"
   }
 }

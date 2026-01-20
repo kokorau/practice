@@ -21,5 +21,12 @@
       "default": "./src/Application/index.ts"
     }
   },
-  "files": ["src"]
+  "files": ["src"],
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.15"
+  }
 }

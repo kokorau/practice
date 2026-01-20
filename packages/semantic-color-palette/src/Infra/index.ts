@@ -39,3 +39,9 @@ export {
 export type { InkRole } from '../Domain/NeutralSelection'
 
 export { COLOR_PRESETS } from './ColorPresets'
+
+// Repository
+export {
+  createPaletteInMemoryRepository,
+  type CreatePaletteInMemoryRepositoryOptions,
+} from './PaletteInMemoryRepository'

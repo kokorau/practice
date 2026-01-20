@@ -15,7 +15,18 @@
     "./Application": {
       "types": "./src/Application/index.ts",
       "default": "./src/Application/index.ts"
+    },
+    "./Infra": {
+      "types": "./src/Infra/index.ts",
+      "default": "./src/Infra/index.ts"
     }
   },
-  "files": ["src"]
+  "files": ["src"],
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.15"
+  }
 }
