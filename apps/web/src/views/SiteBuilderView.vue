@@ -23,8 +23,8 @@ import type { Preset } from '../modules/Filter/Domain'
 import { getPresets } from '../modules/Filter/Infra/PresetRepository'
 import { useFilter } from '../composables/Filter/useFilter'
 import { useDemoSite } from '../composables/SemanticColorPalette/useDemoSite'
-import { useSiteBuilderAssets } from '../composables/SiteBuilder'
-import { hsvToRgb, rgbToHex, applyLutToPalette } from '../components/SiteBuilder/utils'
+import { useSiteBuilderAssets, useSiteState } from '../composables/SiteBuilder'
+import { hsvToRgb, rgbToHex, applyLutToPalette, hsvToOklch } from '../components/SiteBuilder/utils'
 import type { ColorPreset } from '@practice/semantic-color-palette/Domain'
 // Child components
 import PaletteSidebar from '../components/SiteBuilder/PaletteSidebar.vue'
@@ -35,7 +35,7 @@ import AssetsTab from '../components/SiteBuilder/AssetsTab.vue'
 import DemoPageRenderer from '../components/SiteBuilder/DemoPageRenderer.vue'
 
 // ============================================================
-// SiteBuilder Assets (Single Source of Truth)
+// SiteBuilder Assets (Legacy persistence)
 // ============================================================
 const {
   isLoaded,
@@ -45,6 +45,11 @@ const {
   updateFilterConfig,
   updateSiteContents,
 } = useSiteBuilderAssets()
+
+// ============================================================
+// Site State (Repository-based state management)
+// ============================================================
+const siteState = useSiteState()
 
 // ============================================================
 // Brand Color State (HSV Color Picker - the "ink")
@@ -127,6 +132,42 @@ const syncSiteConfig = () => {
 }
 
 watch([hue, saturation, value, foundationL, foundationC, foundationH, foundationHueLinkedToBrand, selectedTokensId], syncSiteConfig)
+
+// ============================================================
+// Sync to Site Repository (useSiteState)
+// ============================================================
+// Sync brand color (HSV → Oklch) to Site Repository
+watch([hue, saturation, value], ([h, s, v]) => {
+  if (!isLoaded.value) return
+  if (h === undefined || s === undefined || v === undefined) return
+  const oklch = hsvToOklch({ h, s, v })
+  siteState.updateBrandColor(oklch)
+})
+
+// Sync accent color (HSV → Oklch) to Site Repository
+watch([accentHue, accentSaturation, accentValue], ([h, s, v]) => {
+  if (!isLoaded.value) return
+  if (h === undefined || s === undefined || v === undefined) return
+  const oklch = hsvToOklch({ h, s, v })
+  siteState.updateAccentColor(oklch)
+})
+
+// Sync foundation color (Oklch) to Site Repository
+watch([foundationL, foundationC, foundationH, foundationHueLinkedToBrand], ([L, C, H, hueLinked]) => {
+  if (!isLoaded.value) return
+  if (L === undefined || C === undefined) return
+  // When hue is linked to brand, use brand hue
+  const effectiveH = hueLinked ? (hue.value ?? 0) : (H ?? 0)
+  const oklch: Oklch = { L, C, H: effectiveH }
+  siteState.updateFoundationColor(oklch)
+})
+
+// Sync tokens to Site Repository
+watch(selectedTokensId, (tokensId) => {
+  if (!isLoaded.value) return
+  if (tokensId === undefined) return
+  siteState.setTokensById(tokensId)
+})
 
 const currentTokensPreset = computed(() =>
   tokenPresets.find((p) => p.id === selectedTokensId.value) ?? tokenPresets[0]!
