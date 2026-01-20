@@ -1,3 +1,6 @@
+// SectionSemantic (abstract type for Site)
+export type { SectionSemantic } from './SectionSemantic'
+
 // Section
 export type {
   SectionKind,

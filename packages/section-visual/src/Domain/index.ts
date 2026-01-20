@@ -1015,3 +1015,16 @@ export {
   type TextureProducingNode,
 } from './Compositor'
 
+// ============================================================
+// SectionVisual (Site Section Type)
+// ============================================================
+
+export type {
+  StaticValue,
+  BindingValue,
+  PropertyValue,
+  VisualProperties,
+  SectionVisual,
+} from './SectionVisual'
+
+export { $PropertyValue } from './SectionVisual'

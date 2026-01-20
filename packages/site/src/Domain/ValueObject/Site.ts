@@ -9,16 +9,18 @@
 
 import type { DesignTokens } from '@practice/design-tokens/Domain'
 import type { Palette, SeedColors } from '@practice/semantic-color-palette/Domain'
+import type { SectionSemantic } from '@practice/section-semantic'
+import type { SectionVisual } from '@practice/section-visual'
 import type { SiteMeta } from '@practice/site-meta/Domain'
 import type { Timeline } from '@practice/timeline'
-import type { SectionSemantic } from './SectionSemantic'
-import type { SectionVisual } from './SectionVisual'
 import type { Contents } from './Contents'
 import type { SectionTemplates, SectionSchemas } from './SectionDefinitions'
 
 // Re-export from other packages
 export type { SiteMeta } from '@practice/site-meta/Domain'
 export type { Palette, SeedColors } from '@practice/semantic-color-palette/Domain'
+export type { SectionSemantic } from '@practice/section-semantic'
+export type { SectionVisual } from '@practice/section-visual'
 
 // ============================================================================
 // Branded Types
