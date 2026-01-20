@@ -172,7 +172,8 @@ watch(selectedTokensId, (tokensId) => {
 const currentTokensPreset = computed(() =>
   tokenPresets.find((p) => p.id === selectedTokensId.value) ?? tokenPresets[0]!
 )
-const currentTokens = computed(() => currentTokensPreset.value.tokens)
+// Use tokens from Site Repository as source of truth
+const currentTokens = computed(() => siteState.tokens.value)
 
 const tabs: { id: TabId; label: string }[] = [
   { id: 'primitive', label: 'Primitive' },
@@ -375,6 +376,26 @@ onMounted(async () => {
     foundationHueLinkedToBrand.value = false
   }
   selectedTokensId.value = initialData.siteConfig.tokensId
+
+  // Initialize Site Repository with loaded values
+  const brandOklch = hsvToOklch({
+    h: hue.value,
+    s: saturation.value,
+    v: value.value,
+  })
+  const foundationOklch: Oklch = {
+    L: foundationL.value,
+    C: foundationC.value ?? 0,
+    H: foundationHueLinkedToBrand.value ? hue.value : (foundationH.value ?? 0),
+  }
+  siteState.updateSeedColors({
+    brand: brandOklch,
+    foundation: foundationOklch,
+    // Accent uses default values since not stored in SiteConfig
+  })
+  if (initialData.siteConfig.tokensId) {
+    siteState.setTokensById(initialData.siteConfig.tokensId)
+  }
 
   // FilterConfig の値を設定
   filter.value = initialData.filterConfig.filter
