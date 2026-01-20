@@ -57,11 +57,14 @@ export const $Contents = {
    */
   set: (contents: Contents, path: string, value: ContentValue): Contents => {
     const parts = path.split('.')
-    if (parts.length === 1) {
+    const first = parts[0]
+
+    // Handle single-part paths or empty paths
+    if (parts.length <= 1 || first === undefined) {
       return { ...contents, [path]: value }
     }
 
-    const [first, ...rest] = parts
+    const rest = parts.slice(1)
     const nested = (contents[first] ?? {}) as ContentObject
 
     return {

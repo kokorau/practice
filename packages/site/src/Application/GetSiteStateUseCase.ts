@@ -30,7 +30,8 @@ export const createGetSiteStateUseCase = (
   getFirstPage: () => {
     const site = deps.siteRepository.get()
     const pageIds = Object.keys(site.pages) as PageUuid[]
-    return pageIds.length > 0 ? site.pages[pageIds[0]] : undefined
+    const firstPageId = pageIds[0]
+    return firstPageId !== undefined ? site.pages[firstPageId] : undefined
   },
 
   subscribe: (subscriber: SiteSubscriber) => deps.siteRepository.subscribe(subscriber),

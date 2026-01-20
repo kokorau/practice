@@ -62,9 +62,9 @@ importers:
       '@practice/semantic-color-palette':
         specifier: workspace:^
         version: link:../../packages/semantic-color-palette
-      '@practice/semantic-site':
+      '@practice/site':
         specifier: workspace:^
-        version: link:../../packages/semantic-site
+        version: link:../../packages/site
       '@practice/texture':
         specifier: workspace:^
         version: link:../../packages/texture
