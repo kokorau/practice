@@ -16,6 +16,7 @@
   "files": ["src"],
   "dependencies": {
     "@practice/color": "workspace:*",
+    "@practice/site-meta": "workspace:*",
     "@practice/design-tokens": "workspace:*",
     "@practice/section-semantic": "workspace:*",
     "@practice/section-visual": "workspace:*",
