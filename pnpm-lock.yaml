@@ -255,9 +255,14 @@ importers:
       '@practice/semantic-color-palette':
         specifier: workspace:*
         version: link:../semantic-color-palette
+      '@practice/site-meta':
+        specifier: workspace:*
+        version: link:../site-meta
       '@practice/timeline':
         specifier: workspace:*
         version: link:../timeline
+
+  packages/site-meta: {}
 
   packages/texture:
     dependencies:

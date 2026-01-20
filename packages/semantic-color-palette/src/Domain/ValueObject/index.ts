@@ -1,3 +1,6 @@
+export type { SeedColors } from './SeedColors'
+export type { Palette } from './Palette'
+
 export type {
   ColorValue,
   ActionState,

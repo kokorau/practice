@@ -7,14 +7,18 @@
  * - contents → layout/section が参照
  */
 
-import type { Color } from '@practice/color'
 import type { DesignTokens } from '@practice/design-tokens/Domain'
-import type { SemanticColorPalette, PrimitivePalette } from '@practice/semantic-color-palette/Domain'
+import type { Palette, SeedColors } from '@practice/semantic-color-palette/Domain'
+import type { SiteMeta } from '@practice/site-meta/Domain'
 import type { Timeline } from '@practice/timeline'
 import type { SectionSemantic } from './SectionSemantic'
 import type { SectionVisual } from './SectionVisual'
 import type { Contents } from './Contents'
 import type { SectionTemplates, SectionSchemas } from './SectionDefinitions'
+
+// Re-export from other packages
+export type { SiteMeta } from '@practice/site-meta/Domain'
+export type { Palette, SeedColors } from '@practice/semantic-color-palette/Domain'
 
 // ============================================================================
 // Branded Types
@@ -23,32 +27,6 @@ import type { SectionTemplates, SectionSchemas } from './SectionDefinitions'
 export type PageUuid = string & { readonly __brand: 'PageUuid' }
 
 export const PageUuid = (uuid: string): PageUuid => uuid as PageUuid
-
-// ============================================================================
-// SiteMeta
-// ============================================================================
-
-export interface SiteMeta {
-  readonly id: string
-  readonly name: string
-  readonly description?: string
-}
-
-// ============================================================================
-// Palette
-// ============================================================================
-
-export interface SeedColors {
-  readonly brand: Color
-  readonly foundation: Color
-  readonly accent: Color
-}
-
-export interface Palette {
-  readonly seedColors: SeedColors
-  readonly semanticPalette: SemanticColorPalette
-  readonly primitivePalette: PrimitivePalette
-}
 
 // ============================================================================
 // Page
