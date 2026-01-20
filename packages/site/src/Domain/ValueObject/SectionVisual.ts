@@ -40,8 +40,6 @@ export interface VisualProperties {
 export interface SectionVisual {
   readonly kind: 'visual'
   readonly id: string
-  /** ビジュアルタイプ (hero-canvas, etc.) */
-  readonly type: string
   /** プロパティ (binding 式を含む) */
   readonly properties: VisualProperties
 }
