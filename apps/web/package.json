@@ -23,6 +23,7 @@
     "@practice/lighting": "workspace:^",
     "@practice/pipe": "workspace:^",
     "@practice/schema": "workspace:^",
+    "@practice/section-semantic": "workspace:^",
     "@practice/semantic-color-palette": "workspace:^",
     "@practice/semantic-site": "workspace:^",
     "@practice/texture": "workspace:^",

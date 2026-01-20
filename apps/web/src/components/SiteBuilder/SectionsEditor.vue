@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import {
-  getSchemaByType,
   validateContent,
   hasErrorAt,
   getErrorsAt,
@@ -11,7 +10,8 @@ import {
   type SectionSchema,
   type FieldSchema,
   type ValidationResult,
-} from '@practice/semantic-site'
+} from '@practice/section-semantic'
+import { getSchemaByType } from '@practice/section-semantic/Infra'
 
 // Section kind labels for display
 const SECTION_KIND_LABELS: Record<SectionKind, string> = {

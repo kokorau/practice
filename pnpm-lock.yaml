@@ -53,6 +53,9 @@ importers:
       '@practice/schema':
         specifier: workspace:^
         version: link:../../packages/schema
+      '@practice/section-semantic':
+        specifier: workspace:^
+        version: link:../../packages/section-semantic
       '@practice/section-visual':
         specifier: workspace:^
         version: link:../../packages/section-visual
