@@ -48,6 +48,8 @@ export interface UseSiteStateReturn {
   // Filter
   filter: ComputedRef<FilterConfig>
   adjustment: ComputedRef<AdjustmentConfig>
+  filterIntensity: ComputedRef<number>
+  filterPresetId: ComputedRef<string | null>
 
   // Contents
   contents: ComputedRef<Contents>
@@ -74,6 +76,8 @@ export interface UseSiteStateReturn {
   updateAdjustment: (adjustment: Partial<AdjustmentConfig>) => void
   updateMasterCurve: (curve: CurveConfig) => void
   updateChannelCurve: (channel: 'r' | 'g' | 'b', curve: CurveConfig | null) => void
+  updateFilterIntensity: (intensity: number) => void
+  updateFilterPresetId: (presetId: string | null) => void
 
   // Actions - Contents
   updateContents: (updates: Partial<Contents>) => void
@@ -190,6 +194,8 @@ export const useSiteState = (options: UseSiteStateOptions = {}): UseSiteStateRet
   const tokens = computed(() => site.value.token)
   const filter = computed(() => site.value.filter)
   const adjustment = computed(() => site.value.filter.adjustment)
+  const filterIntensity = computed(() => site.value.filter.intensity)
+  const filterPresetId = computed(() => site.value.filter.presetId)
   const contents = computed(() => site.value.contents)
   const pages = computed(() => site.value.pages)
 
@@ -276,6 +282,14 @@ export const useSiteState = (options: UseSiteStateOptions = {}): UseSiteStateRet
     repository.updateChannelCurve(channel, curve)
   }
 
+  const updateFilterIntensity = (intensity: number) => {
+    repository.updateFilter({ intensity: Math.max(0, Math.min(1, intensity)) })
+  }
+
+  const updateFilterPresetId = (presetId: string | null) => {
+    repository.updateFilter({ presetId })
+  }
+
   // ========================================================================
   // Actions - Contents
   // ========================================================================
@@ -317,6 +331,8 @@ export const useSiteState = (options: UseSiteStateOptions = {}): UseSiteStateRet
     tokens,
     filter,
     adjustment,
+    filterIntensity,
+    filterPresetId,
     contents,
     pages,
     currentPage,
@@ -337,6 +353,8 @@ export const useSiteState = (options: UseSiteStateOptions = {}): UseSiteStateRet
     updateAdjustment,
     updateMasterCurve,
     updateChannelCurve,
+    updateFilterIntensity,
+    updateFilterPresetId,
 
     // Actions - Contents
     updateContents,

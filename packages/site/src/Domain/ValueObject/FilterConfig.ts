@@ -161,6 +161,10 @@ export interface FilterConfig {
   readonly g: CurveConfig | null
   /** B チャンネルカーブ (null の場合は Master を使用) */
   readonly b: CurveConfig | null
+  /** フィルター強度 (0.0〜1.0) */
+  readonly intensity: number
+  /** 適用中のプリセットID (null = カスタム) */
+  readonly presetId: string | null
 }
 
 export const $FilterConfig = {
@@ -171,6 +175,8 @@ export const $FilterConfig = {
     r: null,
     g: null,
     b: null,
+    intensity: 1.0,
+    presetId: null,
   }),
 
   /** 調整が無変更かどうか */
@@ -208,7 +214,9 @@ export const $FilterConfig = {
       config.r === null &&
       config.g === null &&
       config.b === null &&
-      isIdentityCurve(config.master)
+      isIdentityCurve(config.master) &&
+      config.intensity >= 0.999 &&
+      config.presetId === null
     )
   },
 } as const
