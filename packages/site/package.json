@@ -15,12 +15,12 @@
   },
   "files": ["src"],
   "dependencies": {
-    "@practice/color": "workspace:*",
-    "@practice/site-meta": "workspace:*",
+    "@practice/contents": "workspace:*",
     "@practice/design-tokens": "workspace:*",
     "@practice/section-semantic": "workspace:*",
     "@practice/section-visual": "workspace:*",
     "@practice/semantic-color-palette": "workspace:*",
+    "@practice/site-meta": "workspace:*",
     "@practice/timeline": "workspace:*"
   }
 }

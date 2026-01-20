@@ -4,14 +4,16 @@ export type {
   SiteMeta,
   SeedColors,
   Palette,
+  Contents,
+  SectionSemantic,
+  SectionTemplates,
+  SectionSchemas,
+  SectionVisual,
   Section,
   Page,
   Site,
 } from './Site'
 export { PageUuid as createPageUuid, $Site } from './Site'
-
-// SectionSemantic (re-export from @practice/section-semantic)
-export type { SectionSemantic } from '@practice/section-semantic'
 
 // SectionVisual (re-export from @practice/section-visual)
 export type {
@@ -19,20 +21,18 @@ export type {
   BindingValue,
   PropertyValue,
   VisualProperties,
-  SectionVisual,
 } from '@practice/section-visual'
 export { $PropertyValue } from '@practice/section-visual'
 
-// Contents
-export type { ContentValue, ContentObject, ContentArray, Contents } from './Contents'
-export { $Contents } from './Contents'
+// Contents (re-export from @practice/contents)
+export type { ContentValue, ContentObject, ContentArray } from '@practice/contents'
+export { $Contents } from '@practice/contents'
 
-// SectionDefinitions
+// SectionDefinitions (re-export from @practice/section-semantic)
 export type {
   SectionTemplate,
-  SectionTemplates,
+  TemplateRegistry,
   FieldConstraints,
   FieldSchema,
   SectionSchema,
-  SectionSchemas,
-} from './SectionDefinitions'
+} from '@practice/section-semantic'

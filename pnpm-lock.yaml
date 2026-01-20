@@ -153,6 +153,8 @@ importers:
 
   packages/color: {}
 
+  packages/contents: {}
+
   packages/design-tokens: {}
 
   packages/font: {}
@@ -240,9 +242,9 @@ importers:
 
   packages/site:
     dependencies:
-      '@practice/color':
+      '@practice/contents':
         specifier: workspace:*
-        version: link:../color
+        version: link:../contents
       '@practice/design-tokens':
         specifier: workspace:*
         version: link:../design-tokens

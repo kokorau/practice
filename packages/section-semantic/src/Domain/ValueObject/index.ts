@@ -73,6 +73,7 @@ export type {
   ObjectFieldSchema,
   FieldSchema,
   SectionSchema,
+  SectionSchemas,
 } from './SectionSchema'
 export { $FieldSchema } from './SectionSchema'
 
