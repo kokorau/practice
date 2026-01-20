@@ -12,3 +12,9 @@ export {
   createComfortableTokens,
   getTokenPresetEntries,
 } from './DefaultTokens'
+
+// Repository
+export {
+  createTokenInMemoryRepository,
+  type CreateTokenInMemoryRepositoryOptions,
+} from './TokenInMemoryRepository'
