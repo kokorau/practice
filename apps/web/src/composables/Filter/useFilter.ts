@@ -62,6 +62,17 @@ export type FilterSetters = {
   hueRotation: Setter
 }
 
+/** Site Repository の FilterConfig と互換の初期化データ */
+export type FilterInitData = {
+  adjustment: Filter['adjustment']
+  master: { points: readonly number[] }
+  r: { points: readonly number[] } | null
+  g: { points: readonly number[] } | null
+  b: { points: readonly number[] } | null
+  intensity: number
+  presetId: string | null
+}
+
 export type UseFilterReturn = {
   filter: Ref<Filter>
   /** LUT (1D or 3D depending on configuration) */
@@ -84,6 +95,8 @@ export type UseFilterReturn = {
   setMasterPoints: (points: number[]) => void
   /** フィルターをリセット */
   reset: () => void
+  /** FilterConfig から初期化 (Site Repository 統合用) */
+  initializeFrom: (data: FilterInitData) => void
 }
 
 /** セッター定義 */
@@ -235,6 +248,23 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
     intensity.value = 1.0
   }
 
+  /** FilterConfig から初期化 (Site Repository 統合用) */
+  const initializeFrom = (data: FilterInitData) => {
+    // adjustment と curves を Filter に変換
+    const newFilter: Filter = {
+      adjustment: data.adjustment,
+      master: { points: [...data.master.points] },
+      r: data.r ? { points: [...data.r.points] } : null,
+      g: data.g ? { points: [...data.g.points] } : null,
+      b: data.b ? { points: [...data.b.points] } : null,
+    }
+    filter.value = newFilter
+    intensity.value = data.intensity
+    currentPresetId.value = data.presetId
+    // 3D LUT はプリセット適用時のみ設定されるため、ここではクリア
+    currentLut3d.value = null
+  }
+
   return {
     filter,
     lut,
@@ -247,5 +277,6 @@ export const useFilter = (pointCount: number = 7): UseFilterReturn => {
     setMasterPoint,
     setMasterPoints,
     reset,
+    initializeFrom,
   }
 }
