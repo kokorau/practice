@@ -15,6 +15,10 @@ export type {
 } from './Site'
 export { PageUuid as createPageUuid, $Site } from './Site'
 
+// FilterConfig
+export type { FilterConfig, AdjustmentConfig, CurveConfig } from './FilterConfig'
+export { $FilterConfig, $AdjustmentConfig, $CurveConfig } from './FilterConfig'
+
 // SectionVisual (re-export from @practice/section-visual)
 export type {
   StaticValue,

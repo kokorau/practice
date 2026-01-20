@@ -10,6 +10,7 @@ import type { Palette, SeedColors } from '@practice/semantic-color-palette/Domai
 import type { DesignTokens } from '@practice/design-tokens/Domain'
 import type { Contents, ContentValue } from '@practice/contents'
 import type { Timeline } from '@practice/timeline'
+import type { FilterConfig, AdjustmentConfig, CurveConfig } from '../../Domain/ValueObject/FilterConfig'
 
 export type SiteSubscriber = (site: Site) => void
 export type SiteUnsubscribe = () => void
@@ -91,4 +92,23 @@ export interface SiteRepository {
 
   /** ページのTimelineを更新 */
   updateTimeline(pageId: PageUuid, timeline: Partial<Timeline>): void
+
+  // ============================================================================
+  // Filter Operations
+  // ============================================================================
+
+  /** FilterConfigを取得 */
+  getFilter(): FilterConfig
+
+  /** FilterConfigを更新 */
+  updateFilter(filter: Partial<FilterConfig>): void
+
+  /** Adjustmentを更新 */
+  updateAdjustment(adjustment: Partial<AdjustmentConfig>): void
+
+  /** Masterカーブを更新 */
+  updateMasterCurve(curve: CurveConfig): void
+
+  /** 個別チャンネルカーブを更新 */
+  updateChannelCurve(channel: 'r' | 'g' | 'b', curve: CurveConfig | null): void
 }

@@ -13,6 +13,7 @@ import type { DesignTokens } from '@practice/design-tokens/Domain'
 import type { Contents, ContentValue } from '@practice/contents'
 import { $Contents } from '@practice/contents'
 import type { Timeline } from '@practice/timeline'
+import type { FilterConfig, AdjustmentConfig, CurveConfig } from '../Domain/ValueObject/FilterConfig'
 
 export interface CreateSiteInMemoryRepositoryOptions {
   initialSite: Site
@@ -244,6 +245,59 @@ export const createSiteInMemoryRepository = (
               ...timelineUpdates,
             },
           },
+        },
+      }
+      notifySubscribers()
+    },
+
+    // ========================================================================
+    // Filter Operations
+    // ========================================================================
+
+    getFilter: (): FilterConfig => site.filter,
+
+    updateFilter: (filterUpdates: Partial<FilterConfig>) => {
+      site = {
+        ...site,
+        filter: {
+          ...site.filter,
+          ...filterUpdates,
+        },
+      }
+      notifySubscribers()
+    },
+
+    updateAdjustment: (adjustmentUpdates: Partial<AdjustmentConfig>) => {
+      site = {
+        ...site,
+        filter: {
+          ...site.filter,
+          adjustment: {
+            ...site.filter.adjustment,
+            ...adjustmentUpdates,
+          },
+        },
+      }
+      notifySubscribers()
+    },
+
+    updateMasterCurve: (curve: CurveConfig) => {
+      site = {
+        ...site,
+        filter: {
+          ...site.filter,
+          master: curve,
+        },
+      }
+      notifySubscribers()
+    },
+
+    updateChannelCurve: (channel: 'r' | 'g' | 'b', curve: CurveConfig | null) => {
+      site = {
+        ...site,
+        filter: {
+          ...site.filter,
+          [channel]: curve,
         },
       }
       notifySubscribers()
