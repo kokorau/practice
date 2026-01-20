@@ -11,7 +11,7 @@ import {
   type SectionSchema,
   type FieldSchema,
   type ValidationResult,
-} from '@practice/site'
+} from '@practice/semantic-site'
 
 // Section kind labels for display
 const SECTION_KIND_LABELS: Record<SectionKind, string> = {

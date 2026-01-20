@@ -1,5 +1,5 @@
 {
-  "name": "@practice/site",
+  "name": "@practice/semantic-site",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -11,15 +11,20 @@
     "./Domain": {
       "types": "./src/Domain/index.ts",
       "default": "./src/Domain/index.ts"
+    },
+    "./Application": {
+      "types": "./src/Application/index.ts",
+      "default": "./src/Application/index.ts"
+    },
+    "./Infra": {
+      "types": "./src/Infra/index.ts",
+      "default": "./src/Infra/index.ts"
     }
   },
   "files": ["src"],
   "dependencies": {
-    "@practice/color": "workspace:*",
     "@practice/design-tokens": "workspace:*",
     "@practice/section-semantic": "workspace:*",
-    "@practice/section-visual": "workspace:*",
-    "@practice/semantic-color-palette": "workspace:*",
-    "@practice/timeline": "workspace:*"
+    "@practice/semantic-color-palette": "workspace:*"
   }
 }

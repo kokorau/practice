@@ -5,8 +5,8 @@
  */
 
 import type { AssetId } from '../../../Asset'
-import type { SectionContent } from '@practice/site'
-import { createDemoPage } from '@practice/site'
+import type { SectionContent } from '@practice/semantic-site'
+import { createDemoPage } from '@practice/semantic-site'
 
 /** サイトコンテンツ (sectionId -> SectionContent) */
 export type SiteContents = Record<string, SectionContent>

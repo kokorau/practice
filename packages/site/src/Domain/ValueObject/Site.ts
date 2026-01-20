@@ -1,26 +1,33 @@
 /**
- * Site - Unified type for site data
+ * Site - サイト全体のデータ構造
  *
- * Combines theme, pages, and contents into a single cohesive structure.
- * This is the top-level data structure that will be persisted and passed around.
- *
- * NOTE: For creating sites, use the Application layer functions:
- * - createSite() - Create a new site with custom parameters
- * - createDemoSite() - Create a demo site for previewing palettes
- * - exportToHTML() - Export site to standalone HTML
- * - exportToCSS() - Export site CSS
+ * 各パッケージは互いを知らず、Site が組み合わせ層として機能する。
+ * - palette/token → CSS vars 生成 (Source)
+ * - timeline → binding 式の source (section-visual が参照)
+ * - contents → layout/section が参照
  */
 
-import type { Page, PageContents, SectionSchema, StringSectionTemplate, RenderTheme } from '@practice/section-semantic/Domain'
+import type { Color } from '@practice/color'
+import type { DesignTokens } from '@practice/design-tokens/Domain'
+import type { SemanticColorPalette, PrimitivePalette } from '@practice/semantic-color-palette/Domain'
+import type { Timeline } from '@practice/timeline'
+import type { SectionSemantic } from './SectionSemantic'
+import type { SectionVisual } from './SectionVisual'
+import type { Contents } from './Contents'
+import type { SectionTemplates, SectionSchemas } from './SectionDefinitions'
+
+// ============================================================================
+// Branded Types
+// ============================================================================
+
+export type PageUuid = string & { readonly __brand: 'PageUuid' }
+
+export const PageUuid = (uuid: string): PageUuid => uuid as PageUuid
 
 // ============================================================================
 // SiteMeta
 // ============================================================================
 
-/**
- * Metadata about the site
- * Will be extended with AI context in later phases
- */
 export interface SiteMeta {
   readonly id: string
   readonly name: string
@@ -28,65 +35,66 @@ export interface SiteMeta {
 }
 
 // ============================================================================
-// Site
+// Palette
 // ============================================================================
 
-/**
- * Complete site data structure
- *
- * Contains all data needed to render a site:
- * - meta: Site metadata
- * - theme: Color palette and style settings
- * - templates: Section templates (DB-storable strings)
- * - schemas: Content validation schemas
- * - pages: Page definitions with sections
- * - contents: Actual content for each section
- */
-export interface Site {
-  readonly meta: SiteMeta
-  readonly theme: RenderTheme
-  readonly templates: readonly StringSectionTemplate[]
-  readonly schemas: readonly SectionSchema[]
-  readonly pages: readonly Page[]
-  readonly contents: PageContents
+export interface SeedColors {
+  readonly brand: Color
+  readonly foundation: Color
+  readonly accent: Color
+}
+
+export interface Palette {
+  readonly seedColors: SeedColors
+  readonly semanticPalette: SemanticColorPalette
+  readonly primitivePalette: PrimitivePalette
 }
 
 // ============================================================================
-// Query Helpers (Pure functions, no external dependencies)
+// Page
+// ============================================================================
+
+export type Section = SectionSemantic | SectionVisual
+
+export interface Page {
+  readonly id: PageUuid
+  readonly sections: readonly Section[]
+  readonly timeline: Timeline
+}
+
+// ============================================================================
+// Site
+// ============================================================================
+
+export interface Site {
+  readonly meta: SiteMeta
+
+  /** ページ構造 */
+  readonly pages: Record<PageUuid, Page>
+
+  /** スタイル (CSS vars source) */
+  readonly token: DesignTokens
+  readonly palette: Palette
+
+  /** コンテンツ */
+  readonly contents: Contents
+
+  /** セクション定義への参照 */
+  readonly templates: SectionTemplates
+  readonly schemas: SectionSchemas
+}
+
+// ============================================================================
+// Factory / Helpers
 // ============================================================================
 
 export const $Site = {
-  /**
-   * Get the first page of a site (convenience helper)
-   */
-  getFirstPage: (site: Site): Page | undefined => site.pages[0],
+  getPage: (site: Site, pageId: PageUuid): Page | undefined => site.pages[pageId],
 
-  /**
-   * Get schema for a section kind
-   */
-  getSchema: (site: Site, kind: string): SectionSchema | undefined =>
-    site.schemas.find((s) => s.type === kind),
+  getFirstPage: (site: Site): Page | undefined => {
+    const pageIds = Object.keys(site.pages) as PageUuid[]
+    return pageIds.length > 0 ? site.pages[pageIds[0]] : undefined
+  },
 
-  /**
-   * Get template for a section kind
-   */
-  getTemplate: (site: Site, kind: string): StringSectionTemplate | undefined =>
-    site.templates.find((t) => t.kind === kind),
-
-  /**
-   * Get content for a section by ID
-   */
-  getContent: (site: Site, sectionId: string) => site.contents[sectionId],
-
-  /**
-   * Check if site has a page
-   */
-  hasPage: (site: Site, pageId: string): boolean =>
-    site.pages.some((p) => p.id === pageId),
-
-  /**
-   * Get page by ID
-   */
-  getPage: (site: Site, pageId: string): Page | undefined =>
-    site.pages.find((p) => p.id === pageId),
+  getPageIds: (site: Site): PageUuid[] => Object.keys(site.pages) as PageUuid[],
 } as const
