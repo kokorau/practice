@@ -152,6 +152,12 @@ export type {
   PresetUIState,
   HeroEditorUIState,
   HeroEditorState,
+  // SectionVisual types
+  StaticValue,
+  BindingValue,
+  PropertyValue,
+  VisualProperties,
+  SectionVisual,
 } from './Domain'
 
 export {
@@ -292,6 +298,8 @@ export {
   createDefaultPresetUIState,
   createDefaultHeroEditorUIState,
   isValidEditorSection,
+  // SectionVisual helpers
+  $PropertyValue,
 } from './Domain'
 
 // Application

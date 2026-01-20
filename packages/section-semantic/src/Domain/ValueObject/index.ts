@@ -1,3 +1,6 @@
+// SectionSemantic (abstract type for Site)
+export type { SectionSemantic } from './SectionSemantic'
+
 // Section
 export type {
   SectionKind,
@@ -70,6 +73,7 @@ export type {
   ObjectFieldSchema,
   FieldSchema,
   SectionSchema,
+  SectionSchemas,
 } from './SectionSchema'
 export { $FieldSchema } from './SectionSchema'
 

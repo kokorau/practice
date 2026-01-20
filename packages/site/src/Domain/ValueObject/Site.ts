@@ -7,18 +7,20 @@
  * - contents → layout/section が参照
  */
 
+import type { Contents } from '@practice/contents'
 import type { DesignTokens } from '@practice/design-tokens/Domain'
-import type { Palette, SeedColors } from '@practice/semantic-color-palette/Domain'
+import type { SectionSemantic, TemplateRegistry, SectionSchemas } from '@practice/section-semantic'
+import type { SectionVisual } from '@practice/section-visual'
+import type { Palette } from '@practice/semantic-color-palette/Domain'
 import type { SiteMeta } from '@practice/site-meta/Domain'
 import type { Timeline } from '@practice/timeline'
-import type { SectionSemantic } from './SectionSemantic'
-import type { SectionVisual } from './SectionVisual'
-import type { Contents } from './Contents'
-import type { SectionTemplates, SectionSchemas } from './SectionDefinitions'
 
 // Re-export from other packages
+export type { Contents } from '@practice/contents'
 export type { SiteMeta } from '@practice/site-meta/Domain'
 export type { Palette, SeedColors } from '@practice/semantic-color-palette/Domain'
+export type { SectionSemantic, TemplateRegistry as SectionTemplates, SectionSchemas } from '@practice/section-semantic'
+export type { SectionVisual } from '@practice/section-visual'
 
 // ============================================================================
 // Branded Types
@@ -58,7 +60,7 @@ export interface Site {
   readonly contents: Contents
 
   /** セクション定義への参照 */
-  readonly templates: SectionTemplates
+  readonly templates: TemplateRegistry
   readonly schemas: SectionSchemas
 }
 
