@@ -1,5 +1,5 @@
 /**
- * HSV/RGB/Hex color conversion utilities for SiteBuilder
+ * HSV/RGB/Hex/Oklch color conversion utilities for SiteBuilder
  *
  * These wrappers provide a percentage-based API (s: 0-100, v: 0-100)
  * suitable for UI components while using the shared color utilities internally.
@@ -11,6 +11,7 @@ import {
   hexToRgb as hexToRgbCore,
   rgbToHex as rgbToHexCore,
 } from '../../../modules/Filter/Domain/ValueObject/colors'
+import { $Oklch, type Oklch } from '@practice/color'
 
 /**
  * Convert HSV values to RGB
@@ -65,4 +66,44 @@ export const hexToHsv = (hex: string): [number, number, number] | null => {
   const rgb = hexToRgb(hex)
   if (!rgb) return null
   return rgbToHsv(...rgb)
+}
+
+// ============================================================================
+// HSV ↔ Oklch Conversions
+// ============================================================================
+
+/**
+ * HSV color representation used in UI color pickers
+ */
+export interface HSVColor {
+  /** Hue (0-360) */
+  h: number
+  /** Saturation (0-100) */
+  s: number
+  /** Value (0-100) */
+  v: number
+}
+
+/**
+ * Convert HSV to Oklch
+ * @param hsv - HSV color with h: 0-360, s: 0-100, v: 0-100
+ * @returns Oklch color
+ */
+export const hsvToOklch = (hsv: HSVColor): Oklch => {
+  const [r, g, b] = hsvToRgb(hsv.h, hsv.s, hsv.v)
+  return $Oklch.fromSrgb({ r: r / 255, g: g / 255, b: b / 255 })
+}
+
+/**
+ * Convert Oklch to HSV
+ * @param oklch - Oklch color
+ * @returns HSV color with h: 0-360, s: 0-100, v: 0-100
+ */
+export const oklchToHsv = (oklch: Oklch): HSVColor => {
+  const srgb = $Oklch.toSrgb(oklch)
+  const r = Math.round(Math.max(0, Math.min(1, srgb.r)) * 255)
+  const g = Math.round(Math.max(0, Math.min(1, srgb.g)) * 255)
+  const b = Math.round(Math.max(0, Math.min(1, srgb.b)) * 255)
+  const [h, s, v] = rgbToHsv(r, g, b)
+  return { h, s, v }
 }

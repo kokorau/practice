@@ -18,7 +18,7 @@ import type { PageUuid } from '../Domain/ValueObject/Site'
 const createDefaultTimeline = (): Timeline => ({
   tracks: [],
   phases: [],
-  loopType: 'none',
+  loopType: 'once',
 })
 
 export const createTimelineSlice = (
@@ -65,7 +65,7 @@ export const createTimelineSlice = (
       siteRepository.updateTimeline(pageId, {
         ...timeline,
         tracks: timeline.tracks.map((track) =>
-          track.id === trackId ? { ...track, ...updates } : track
+          track.id === trackId ? ({ ...track, ...updates } as Track) : track
         ),
       })
     },

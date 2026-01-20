@@ -1,2 +1,2 @@
-export { hsvToRgb, rgbToHex } from './colorConversion'
+export { hsvToRgb, rgbToHex, hsvToOklch, oklchToHsv, type HSVColor } from './colorConversion'
 export { applyLutToOklch, applyLutToPalette } from './lutPalette'

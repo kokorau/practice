@@ -195,11 +195,15 @@ export const createSiteInMemoryRepository = (
     // ========================================================================
 
     updateContents: (contentsUpdates: Partial<Contents>) => {
+      // Filter out undefined values and merge
+      const filteredUpdates: Contents = Object.fromEntries(
+        Object.entries(contentsUpdates).filter(([_, v]) => v !== undefined)
+      ) as Contents
       site = {
         ...site,
         contents: {
           ...site.contents,
-          ...contentsUpdates,
+          ...filteredUpdates,
         },
       }
       notifySubscribers()
