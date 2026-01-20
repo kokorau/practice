@@ -15,9 +15,17 @@
     "./Application": {
       "types": "./src/Application/index.ts",
       "default": "./src/Application/index.ts"
+    },
+    "./Infra": {
+      "types": "./src/Infra/index.ts",
+      "default": "./src/Infra/index.ts"
     }
   },
   "files": ["src"],
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
   "dependencies": {
     "@practice/contents": "workspace:*",
     "@practice/design-tokens": "workspace:*",
@@ -26,5 +34,8 @@
     "@practice/semantic-color-palette": "workspace:*",
     "@practice/site-meta": "workspace:*",
     "@practice/timeline": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.15"
   }
 }
