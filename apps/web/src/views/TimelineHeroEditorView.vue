@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
-import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type { Ms, ParamResolver } from '@practice/timeline'
 import {
   createPrimitivePalette,
@@ -17,7 +17,9 @@ import {
 import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useFilterEditor } from '../composables/useFilterEditor'
-import { useHeroGeneratorColorHandlers } from '../composables/HeroGenerator'
+import { useHeroGeneratorColorHandlers, useHeroGeneratorPanelHandlers } from '../composables/HeroGenerator'
+import { useForegroundElement } from '../composables/useForegroundElement'
+import { usePresetActions } from '../composables/usePresetActions'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 
 // ============================================================
@@ -39,6 +41,7 @@ const {
   processorType: selectedProcessorType,
   selectCanvasLayer,
   selectProcessor,
+  clearSelection,
 } = layerSelection
 
 // ============================================================
@@ -129,6 +132,49 @@ const filterProps = {
   blurConfig: effectConfigs.blur,
 }
 
+// ============================================================
+// Preset Actions (Composable)
+// ============================================================
+const {
+  applyColorPreset: handleApplyColorPreset,
+  applyLayoutPreset: handleApplyLayoutPreset,
+} = usePresetActions({
+  colorState: {
+    hue,
+    saturation,
+    value,
+    accentHue,
+    accentSaturation,
+    accentValue,
+    foundationHue,
+    foundationSaturation,
+    foundationValue,
+  },
+  toHeroViewConfig: heroScene.serialization.toHeroViewConfig,
+  applyPreset: heroScene.preset.applyPreset,
+})
+
+// ============================================================
+// Foreground Element (Composable)
+// ============================================================
+const {
+  selectedForegroundElementId,
+  selectedForegroundElement,
+  handleSelectForegroundElement,
+  selectedElementPosition,
+  selectedElementFontSize,
+  selectedElementFontWeight,
+  selectedElementLetterSpacing,
+  selectedElementLineHeight,
+  selectedElementContent,
+  selectedElementColorKey,
+  selectedFontPreset,
+  selectedFontDisplayName,
+} = useForegroundElement({
+  foregroundConfig: heroScene.foreground.foregroundConfig,
+  clearCanvasSelection: clearSelection,
+})
+
 // Convert texture patterns to SurfaceSelector format
 const backgroundPatterns = createSurfacePatterns({
   patterns: heroScene.pattern.texturePatterns,
@@ -209,29 +255,26 @@ const {
 })
 
 // ============================================================
-// Panel Handlers (simplified for this view)
+// Panel Handlers (via composable)
 // ============================================================
-const handleBackgroundUpdate = (key: string, value: unknown) => {
-  if (key === 'colorKey1' && typeof value === 'string' && value !== 'auto') {
-    heroScene.background.backgroundColorKey1.value = value as PrimitiveKey
-  } else if (key === 'colorKey2' && typeof value === 'string') {
-    heroScene.background.backgroundColorKey2.value = value as PrimitiveKey | 'auto'
-  } else if (key === 'surfaceParams' && typeof value === 'object') {
-    heroScene.background.updateBackgroundSurfaceParams(value as Record<string, unknown>)
-  }
-}
-
-const handleMaskUpdate = (key: string, value: unknown) => {
-  if (key === 'colorKey1' && typeof value === 'string') {
-    heroScene.mask.maskColorKey1.value = value as PrimitiveKey | 'auto'
-  } else if (key === 'colorKey2' && typeof value === 'string') {
-    heroScene.mask.maskColorKey2.value = value as PrimitiveKey | 'auto'
-  } else if (key === 'surfaceParams' && typeof value === 'object') {
-    heroScene.mask.updateSurfaceParams(value as Record<string, unknown>)
-  } else if (key === 'shapeParams' && typeof value === 'object') {
-    heroScene.mask.updateMaskShapeParams(value as Record<string, unknown>)
-  }
-}
+const {
+  handleForegroundUpdate,
+  handleBackgroundUpdate,
+  handleMaskUpdate,
+} = useHeroGeneratorPanelHandlers({
+  foregroundRefs: {
+    selectedElementColorKey,
+    selectedElementContent,
+    selectedElementPosition,
+    selectedElementFontSize,
+    selectedElementFontWeight,
+    selectedElementLetterSpacing,
+    selectedElementLineHeight,
+  },
+  background: heroScene.background,
+  mask: heroScene.mask,
+  pattern: heroScene.pattern,
+})
 
 // ============================================================
 // Initialize on mount
@@ -305,11 +348,14 @@ function stopResize() {
         :layers="{
           items: layers,
           foregroundElements: heroScene.foreground.foregroundConfig.value.elements,
-          selectedForegroundElementId: null,
+          selectedForegroundElementId: selectedForegroundElementId,
           expandedLayerIds: expandedLayerIds,
         }"
         @update:color-state="handleColorStateUpdate"
+        @apply-color-preset="handleApplyColorPreset"
+        @apply-layout-preset="handleApplyLayoutPreset"
         @select-layer="handleSelectLayer"
+        @select-foreground-element="handleSelectForegroundElement"
         @toggle-expand="handleToggleExpand"
         @toggle-visibility="handleToggleVisibility"
         @select-processor="handleSelectProcessor"
@@ -336,7 +382,7 @@ function stopResize() {
       <RightPropertyPanel
         ref="rightPanelRef"
         :selection="{
-          foregroundElement: null,
+          foregroundElement: selectedForegroundElement,
           layer: selectedLayer,
           layerVariant: selectedLayerVariant,
           processorType: selectedProcessorType,
@@ -344,15 +390,15 @@ function stopResize() {
         :foreground="{
           titleAutoKey: heroScene.foreground.foregroundTitleAutoKey.value,
           bodyAutoKey: heroScene.foreground.foregroundBodyAutoKey.value,
-          elementColorKey: 'auto',
-          elementContent: '',
-          elementPosition: 'middle-center',
-          elementFontSize: 16,
-          elementFontWeight: 400,
-          elementLetterSpacing: 0,
-          elementLineHeight: 1.5,
-          fontPreset: null,
-          fontDisplayName: '',
+          elementColorKey: selectedElementColorKey,
+          elementContent: selectedElementContent,
+          elementPosition: selectedElementPosition,
+          elementFontSize: selectedElementFontSize,
+          elementFontWeight: selectedElementFontWeight,
+          elementLetterSpacing: selectedElementLetterSpacing,
+          elementLineHeight: selectedElementLineHeight,
+          fontPreset: selectedFontPreset,
+          fontDisplayName: selectedFontDisplayName,
         }"
         :contrast="{
           title: null,
@@ -390,6 +436,7 @@ function stopResize() {
         :filter="filterProps"
         :image="null"
         :palette="primitivePalette"
+        @update:foreground="handleForegroundUpdate"
         @update:background="handleBackgroundUpdate"
         @update:mask="handleMaskUpdate"
       />

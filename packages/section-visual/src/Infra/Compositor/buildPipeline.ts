@@ -23,6 +23,8 @@ import {
   getProcessorTargetPairsFromConfig,
   isSingleEffectConfig,
 } from '../../Domain/HeroViewConfig'
+import type { PropertyValue } from '../../Domain/SectionVisual'
+import { $PropertyValue } from '../../Domain/SectionVisual'
 import type {
   RenderNode,
   CompositorNode,
@@ -168,6 +170,50 @@ function resolveAutoColor(
 }
 
 // ============================================================
+// Effect Params Helpers
+// ============================================================
+
+/**
+ * Check if a value is a PropertyValue object
+ */
+function isPropertyValue(value: unknown): value is PropertyValue {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    (value.type === 'static' || value.type === 'binding')
+  )
+}
+
+/**
+ * Extract raw value from a potential PropertyValue
+ * Handles: PropertyValue objects, raw values (number, string, boolean)
+ */
+function extractRawValue(value: unknown): unknown {
+  if (isPropertyValue(value)) {
+    if ($PropertyValue.isStatic(value)) {
+      return value.value
+    }
+    // BindingValue - return 0 as fallback (should be resolved before this point)
+    return 0
+  }
+  // Already a raw value
+  return value
+}
+
+/**
+ * Extract raw values from effect params
+ * Converts PropertyValue objects to their underlying values
+ */
+function extractEffectParams(params: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(params)) {
+    result[key] = extractRawValue(value)
+  }
+  return result
+}
+
+// ============================================================
 // Node Building Functions
 // ============================================================
 
@@ -242,7 +288,8 @@ function buildProcessorNode(
   if (effectConfigs.length > 0) {
     const effects: EffectConfig[] = effectConfigs.map((e) => ({
       id: e.id,
-      params: e.params,
+      // Extract raw values from PropertyValue objects
+      params: extractEffectParams(e.params as Record<string, unknown>),
     }))
     const effectsNode = createEffectChainCompositorNode(`${id}-effects`, currentNode, effects)
     nodes.push(effectsNode)
