@@ -328,11 +328,6 @@ function stopResize() {
       class="hero-editor-area"
       :style="{ minHeight: `${100 - timelineHeightPercent}%` }"
     >
-      <!-- Back Link -->
-      <RouterLink to="/" class="back-link">
-        Back to Home
-      </RouterLink>
-
       <!-- Left: Sidebar -->
       <HeroSidebar
         :active-tab="'generator'"
@@ -484,23 +479,6 @@ function stopResize() {
   flex: 1;
   display: flex;
   overflow: hidden;
-  position: relative;
-}
-
-.back-link {
-  position: absolute;
-  top: 1rem;
-  left: calc(280px + 1rem);
-  z-index: 10;
-  font-size: 0.75rem;
-  color: oklch(0.45 0.15 180);
-  text-decoration: none;
-  transition: color 0.15s;
-}
-
-.back-link:hover {
-  color: oklch(0.35 0.15 180);
-  text-decoration: underline;
 }
 
 .hero-main {
