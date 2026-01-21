@@ -13,11 +13,14 @@ import {
   TextureRenderer,
 } from '@practice/texture'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
+import type { ParamStore } from '@practice/timeline'
 import {
   type HeroViewConfig,
   type HeroSceneConfig,
   type Object3DRendererPort,
   renderHeroConfig,
+  createPropertyResolver,
+  resolveHeroViewConfig,
 } from '@practice/section-visual'
 
 // ============================================================
@@ -41,6 +44,8 @@ export interface UseHeroRendererOptions {
   editorState: Ref<HeroSceneEditorState>
   /** Function to build HeroViewConfig from current state */
   toHeroViewConfig: () => HeroViewConfig
+  /** ParamStore for timeline-driven animations (optional) */
+  paramStore?: ParamStore
 }
 
 /**
@@ -73,7 +78,7 @@ export interface UseHeroRendererReturn {
  * Composable for scene rendering in HeroScene
  */
 export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendererReturn {
-  const { primitivePalette, editorState, toHeroViewConfig } = options
+  const { primitivePalette, editorState, toHeroViewConfig, paramStore } = options
 
   // ============================================================
   // Renderer State
@@ -86,6 +91,12 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
   // Track loaded model URLs to avoid reloading
   const loadedModelUrls = new Map<string, string>()
 
+  // PropertyResolver for timeline-driven params
+  const propertyResolver = paramStore ? createPropertyResolver(paramStore) : null
+
+  // Unsubscribe function for frame-end listener
+  let unsubscribeFrameEnd: (() => void) | null = null
+
   // ============================================================
   // Rendering Functions
   // ============================================================
@@ -96,7 +107,13 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
   const renderSceneFromConfig = async () => {
     if (!previewRenderer.value) return
 
-    const config = toHeroViewConfig()
+    let config = toHeroViewConfig()
+
+    // Resolve PropertyValue bindings if PropertyResolver is available
+    if (propertyResolver) {
+      config = resolveHeroViewConfig(config, propertyResolver)
+    }
+
     await renderHeroConfig(previewRenderer.value, config, primitivePalette.value)
 
     // Update cached ImageData for contrast analysis
@@ -130,6 +147,14 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
     try {
       previewRenderer.value = await TextureRenderer.create(canvas)
       await render()
+
+      // Subscribe to ParamStore frame-end for automatic re-rendering
+      if (paramStore) {
+        unsubscribeFrameEnd = paramStore.onFrameEnd(() => {
+          // Re-render when timeline params change
+          render()
+        })
+      }
     } catch (e) {
       console.error('WebGPU not available:', e)
     }
@@ -139,6 +164,12 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
    * Destroy preview renderer and cleanup
    */
   const destroyPreview = () => {
+    // Unsubscribe from ParamStore
+    if (unsubscribeFrameEnd) {
+      unsubscribeFrameEnd()
+      unsubscribeFrameEnd = null
+    }
+
     previewRenderer.value?.destroy()
     previewRenderer.value = null
 

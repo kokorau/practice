@@ -158,6 +158,8 @@ export type {
   PropertyValue,
   VisualProperties,
   SectionVisual,
+  // PropertyResolver
+  PropertyResolver,
 } from './Domain'
 
 export {
@@ -300,6 +302,9 @@ export {
   isValidEditorSection,
   // SectionVisual helpers
   $PropertyValue,
+  // PropertyResolver
+  createPropertyResolver,
+  resolveHeroViewConfig,
 } from './Domain'
 
 // Application

@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { useEffectManager } from './useEffectManager'
-import { EFFECT_TYPES } from '@practice/section-visual'
+import { EFFECT_TYPES, type PropertyValue } from '@practice/section-visual'
+
+/**
+ * Helper to extract raw value from PropertyValue
+ */
+function getValue(prop: PropertyValue): string | number | boolean {
+  if (prop.type === 'static') return prop.value
+  throw new Error('Cannot get value from BindingValue in tests')
+}
 
 // ============================================================
 // Tests
@@ -339,7 +347,7 @@ describe('useEffectManager', () => {
         const pipeline = effectPipelines.value.get('layer-1')!
         expect(pipeline).toHaveLength(1)
         expect(pipeline[0]!.id).toBe('blur')
-        expect(pipeline[0]!.params.radius).toBe(10)
+        expect(getValue(pipeline[0]!.params.radius)).toBe(10)
       })
 
       it('supports multiple effects (no exclusive selection)', () => {
@@ -363,8 +371,8 @@ describe('useEffectManager', () => {
 
         const pipeline = effectPipelines.value.get('layer-1')!
         expect(pipeline).toHaveLength(2)
-        expect(pipeline[0]!.params.radius).toBe(5)
-        expect(pipeline[1]!.params.radius).toBe(10)
+        expect(getValue(pipeline[0]!.params.radius)).toBe(5)
+        expect(getValue(pipeline[1]!.params.radius)).toBe(10)
       })
     })
 
@@ -409,8 +417,8 @@ describe('useEffectManager', () => {
         updateEffectAt('layer-1', 0, { radius: 15 })
 
         const pipeline = effectPipelines.value.get('layer-1')!
-        expect(pipeline[0]!.params.radius).toBe(15)
-        expect(pipeline[1]!.params.intensity).toBe(0.3) // Unchanged
+        expect(getValue(pipeline[0]!.params.radius)).toBe(15)
+        expect(getValue(pipeline[1]!.params.intensity)).toBe(0.3) // Unchanged
       })
 
       it('merges params with existing', () => {
@@ -422,7 +430,7 @@ describe('useEffectManager', () => {
         updateEffectAt('layer-1', 0, { radius: 10 })
 
         const pipeline = effectPipelines.value.get('layer-1')!
-        expect(pipeline[0]!.params.radius).toBe(10)
+        expect(getValue(pipeline[0]!.params.radius)).toBe(10)
       })
     })
 

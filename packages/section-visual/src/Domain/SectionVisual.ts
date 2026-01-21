@@ -11,7 +11,7 @@
 /** 静的な値 */
 export interface StaticValue {
   readonly type: 'static'
-  readonly value: string | number
+  readonly value: string | number | boolean
 }
 
 /** timeline track への binding */
@@ -49,7 +49,7 @@ export interface SectionVisual {
 // ============================================================================
 
 export const $PropertyValue = {
-  static: (value: string | number): StaticValue => ({
+  static: (value: string | number | boolean): StaticValue => ({
     type: 'static',
     value,
   }),

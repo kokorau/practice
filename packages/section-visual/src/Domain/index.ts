@@ -1028,3 +1028,10 @@ export type {
 } from './SectionVisual'
 
 export { $PropertyValue } from './SectionVisual'
+
+// ============================================================
+// PropertyResolver
+// ============================================================
+
+export type { PropertyResolver } from './PropertyResolver'
+export { createPropertyResolver, resolveHeroViewConfig } from './PropertyResolver'
