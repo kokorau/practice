@@ -41,6 +41,9 @@ importers:
       '@practice/design-tokens':
         specifier: workspace:^
         version: link:../../packages/design-tokens
+      '@practice/dsl':
+        specifier: workspace:^
+        version: link:../../packages/dsl
       '@practice/font':
         specifier: workspace:^
         version: link:../../packages/font

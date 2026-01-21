@@ -1,13 +1,41 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { FrameState, Ms } from '@practice/timeline'
+import { prepareTimeline } from '@practice/timeline'
+import { extractPeriod } from '@practice/dsl'
 import { mockTimeline } from '../modules/Timeline/Infra/mockData'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
+import {
+  CircleArcIndicator,
+  RotateIndicator,
+  ScaleIndicator,
+  BarIndicator,
+  PulseIndicator,
+  WaveIndicator,
+  NoiseIndicator,
+  StepIndicator,
+} from '../components/Timeline/indicators'
 
 // ============================================================
 // Editor Config
 // ============================================================
 const VISIBLE_DURATION = 30000 as Ms // 30 seconds
+
+// ============================================================
+// Prepare timeline (parse AST and cache)
+// ============================================================
+prepareTimeline(mockTimeline)
+
+// Extract periods from tracks (targetParam → period)
+const trackPeriods = computed(() => {
+  const periods: Record<string, number | undefined> = {}
+  for (const track of mockTimeline.tracks) {
+    if (track._cachedAst) {
+      periods[track.targetParam] = extractPeriod(track._cachedAst)
+    }
+  }
+  return periods
+})
 
 // ============================================================
 // Timeline State (received from TimelinePanel)
@@ -24,34 +52,17 @@ function onPlayheadUpdate(ms: Ms) {
 }
 
 // ============================================================
-// Parameter Groups for Display
+// Parameter Getters
 // ============================================================
-const openingParams = computed(() => ({
-  opacity: frameState.value.params.opacity ?? 0,
-  scale: frameState.value.params.scale ?? 0.5,
-}))
+const p = (name: string, fallback = 0) => frameState.value.params[name] ?? fallback
 
-const simpleWaves = computed(() => ({
-  osc: frameState.value.params.wave_osc ?? 0,
-  saw: frameState.value.params.wave_saw ?? 0,
-  tri: frameState.value.params.wave_tri ?? 0,
-  pulse: frameState.value.params.wave_pulse ?? 0,
-  step: frameState.value.params.wave_step ?? 0,
-  noise: frameState.value.params.wave_noise ?? 0,
-}))
-
-const compositeParams = computed(() => ({
-  rotation: frameState.value.params.rotation ?? 0,
-  layered: frameState.value.params.layered ?? 0,
-  noise_mod: frameState.value.params.noise_mod ?? 0,
-  bounce: frameState.value.params.bounce ?? 0,
-  elastic: frameState.value.params.elastic ?? 0,
-  heartbeat: frameState.value.params.heartbeat ?? 0,
-  wobble: frameState.value.params.wobble ?? 0,
-  breathing: frameState.value.params.breathing ?? 0,
-  clamped: frameState.value.params.clamped ?? 0,
-  quantized: frameState.value.params.quantized ?? 0,
-}))
+// Progress within period (0-1)
+const progress = (name: string) => {
+  const period = trackPeriods.value[name]
+  if (!period) return 0
+  const t = frameState.value.time
+  return (t % period) / period
+}
 
 // ============================================================
 // Layout Resize
@@ -79,15 +90,6 @@ function stopResize() {
   document.removeEventListener('mousemove', onResize)
   document.removeEventListener('mouseup', stopResize)
 }
-
-// ============================================================
-// Helper for bar visualization
-// ============================================================
-function barStyle(value: number, min = 0, max = 1) {
-  const normalized = (value - min) / (max - min)
-  const percent = Math.max(0, Math.min(100, normalized * 100))
-  return { width: `${percent}%` }
-}
 </script>
 
 <template>
@@ -101,163 +103,161 @@ function barStyle(value: number, min = 0, max = 1) {
         Back to Home
       </RouterLink>
 
-      <div class="preview-container">
-        <!-- Animated Preview Box -->
-        <div class="preview-box">
-          <div
-            class="preview-inner"
-            :style="{
-              opacity: openingParams.opacity,
-              transform: `scale(${openingParams.scale}) rotate(${compositeParams.rotation}deg)`,
-            }"
-          />
+      <div class="indicators-container">
+        <!-- Simple Waves -->
+        <div class="indicator-group">
+          <h3 class="group-title">Simple Waves</h3>
+          <div class="indicator-grid">
+            <div class="indicator-item">
+              <CircleArcIndicator
+                :intensity="p('wave_osc')"
+                :progress="progress('wave_osc')"
+                :period="trackPeriods.wave_osc"
+              />
+              <span class="indicator-label">osc</span>
+            </div>
+            <div class="indicator-item">
+              <RotateIndicator
+                :intensity="p('wave_saw')"
+                :period="trackPeriods.wave_saw"
+              />
+              <span class="indicator-label">saw</span>
+            </div>
+            <div class="indicator-item">
+              <WaveIndicator
+                :intensity="p('wave_tri')"
+                :period="trackPeriods.wave_tri"
+              />
+              <span class="indicator-label">tri</span>
+            </div>
+            <div class="indicator-item">
+              <PulseIndicator
+                :intensity="p('wave_pulse')"
+                :period="trackPeriods.wave_pulse"
+              />
+              <span class="indicator-label">pulse</span>
+            </div>
+            <div class="indicator-item">
+              <StepIndicator
+                :intensity="p('wave_step')"
+                :steps="4"
+                :period="trackPeriods.wave_step"
+              />
+              <span class="indicator-label">step</span>
+            </div>
+            <div class="indicator-item">
+              <NoiseIndicator
+                :intensity="p('wave_noise')"
+              />
+              <span class="indicator-label">noise</span>
+            </div>
+          </div>
         </div>
 
-        <!-- Parameter Display Grid -->
-        <div class="params-grid">
-          <!-- Opening Parameters -->
-          <div class="param-group">
-            <h3 class="group-title">Opening (smoothstep)</h3>
-            <div class="param-row">
-              <span class="param-name">opacity</span>
-              <div class="param-bar">
-                <div class="param-bar-fill" :style="barStyle(openingParams.opacity)" />
-              </div>
-              <span class="param-value">{{ openingParams.opacity.toFixed(2) }}</span>
+        <!-- Opening -->
+        <div class="indicator-group">
+          <h3 class="group-title">Opening</h3>
+          <div class="indicator-grid">
+            <div class="indicator-item">
+              <ScaleIndicator
+                :intensity="p('opacity')"
+              />
+              <span class="indicator-label">opacity</span>
+              <span class="indicator-value">{{ p('opacity').toFixed(2) }}</span>
             </div>
-            <div class="param-row">
-              <span class="param-name">scale</span>
-              <div class="param-bar">
-                <div class="param-bar-fill" :style="barStyle(openingParams.scale, 0.5, 1)" />
-              </div>
-              <span class="param-value">{{ openingParams.scale.toFixed(2) }}</span>
-            </div>
-          </div>
-
-          <!-- Simple Waves -->
-          <div class="param-group">
-            <h3 class="group-title">Simple Waves</h3>
-            <div class="param-row">
-              <span class="param-name">osc</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-sine" :style="barStyle(simpleWaves.osc)" />
-              </div>
-              <span class="param-value">{{ simpleWaves.osc.toFixed(2) }}</span>
-            </div>
-            <div class="param-row">
-              <span class="param-name">saw</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-saw" :style="barStyle(simpleWaves.saw)" />
-              </div>
-              <span class="param-value">{{ simpleWaves.saw.toFixed(2) }}</span>
-            </div>
-            <div class="param-row">
-              <span class="param-name">tri</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-tri" :style="barStyle(simpleWaves.tri)" />
-              </div>
-              <span class="param-value">{{ simpleWaves.tri.toFixed(2) }}</span>
-            </div>
-            <div class="param-row">
-              <span class="param-name">pulse</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-pulse" :style="barStyle(simpleWaves.pulse)" />
-              </div>
-              <span class="param-value">{{ simpleWaves.pulse.toFixed(0) }}</span>
-            </div>
-            <div class="param-row">
-              <span class="param-name">step</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-step" :style="barStyle(simpleWaves.step)" />
-              </div>
-              <span class="param-value">{{ simpleWaves.step.toFixed(2) }}</span>
-            </div>
-            <div class="param-row">
-              <span class="param-name">noise</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-noise" :style="barStyle(simpleWaves.noise)" />
-              </div>
-              <span class="param-value">{{ simpleWaves.noise.toFixed(2) }}</span>
+            <div class="indicator-item">
+              <BarIndicator
+                :intensity="(p('scale', 0.5) - 0.5) * 2"
+              />
+              <span class="indicator-label">scale</span>
+              <span class="indicator-value">{{ p('scale', 0.5).toFixed(2) }}</span>
             </div>
           </div>
+        </div>
 
-          <!-- Composite Examples -->
-          <div class="param-group">
-            <h3 class="group-title">Composite</h3>
-            <div class="param-row">
-              <span class="param-name">rotation</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-composite" :style="barStyle(compositeParams.rotation, -30, 30)" />
-              </div>
-              <span class="param-value">{{ compositeParams.rotation.toFixed(1) }}°</span>
+        <!-- Composite -->
+        <div class="indicator-group">
+          <h3 class="group-title">Composite</h3>
+          <div class="indicator-grid">
+            <div class="indicator-item">
+              <RotateIndicator
+                :intensity="(p('rotation') + 30) / 60"
+                :period="trackPeriods.rotation"
+              />
+              <span class="indicator-label">rotation</span>
+              <span class="indicator-value">{{ p('rotation').toFixed(0) }}°</span>
             </div>
-            <div class="param-row">
-              <span class="param-name">layered</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-composite" :style="barStyle(compositeParams.layered)" />
-              </div>
-              <span class="param-value">{{ compositeParams.layered.toFixed(2) }}</span>
+            <div class="indicator-item">
+              <CircleArcIndicator
+                :intensity="p('layered')"
+                :progress="progress('layered')"
+                :period="trackPeriods.layered"
+              />
+              <span class="indicator-label">layered</span>
             </div>
-            <div class="param-row">
-              <span class="param-name">noise_mod</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-composite" :style="barStyle(compositeParams.noise_mod)" />
-              </div>
-              <span class="param-value">{{ compositeParams.noise_mod.toFixed(2) }}</span>
+            <div class="indicator-item">
+              <WaveIndicator
+                :intensity="p('noise_mod')"
+                :period="trackPeriods.noise_mod"
+              />
+              <span class="indicator-label">noise_mod</span>
             </div>
-            <div class="param-row">
-              <span class="param-name">bounce</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-composite" :style="barStyle(compositeParams.bounce, 0.3, 1)" />
-              </div>
-              <span class="param-value">{{ compositeParams.bounce.toFixed(2) }}</span>
+            <div class="indicator-item">
+              <ScaleIndicator
+                :intensity="p('bounce', 0.3)"
+                :period="trackPeriods.bounce"
+              />
+              <span class="indicator-label">bounce</span>
             </div>
-            <div class="param-row">
-              <span class="param-name">elastic</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-composite" :style="barStyle(compositeParams.elastic)" />
-              </div>
-              <span class="param-value">{{ compositeParams.elastic.toFixed(2) }}</span>
+            <div class="indicator-item">
+              <WaveIndicator
+                :intensity="p('elastic', 0.5)"
+                :period="trackPeriods.elastic"
+              />
+              <span class="indicator-label">elastic</span>
             </div>
           </div>
+        </div>
 
-          <!-- More Composite -->
-          <div class="param-group">
-            <h3 class="group-title">More Composite</h3>
-            <div class="param-row">
-              <span class="param-name">heartbeat</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-heartbeat" :style="barStyle(compositeParams.heartbeat)" />
-              </div>
-              <span class="param-value">{{ compositeParams.heartbeat.toFixed(0) }}</span>
+        <!-- More Composite -->
+        <div class="indicator-group">
+          <h3 class="group-title">More Composite</h3>
+          <div class="indicator-grid">
+            <div class="indicator-item">
+              <PulseIndicator
+                :intensity="p('heartbeat')"
+                :period="trackPeriods.heartbeat"
+              />
+              <span class="indicator-label">heartbeat</span>
             </div>
-            <div class="param-row">
-              <span class="param-name">wobble</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-composite" :style="barStyle(compositeParams.wobble)" />
-              </div>
-              <span class="param-value">{{ compositeParams.wobble.toFixed(2) }}</span>
+            <div class="indicator-item">
+              <NoiseIndicator
+                :intensity="p('wobble')"
+                :period="trackPeriods.wobble"
+              />
+              <span class="indicator-label">wobble</span>
             </div>
-            <div class="param-row">
-              <span class="param-name">breathing</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-breathing" :style="barStyle(compositeParams.breathing)" />
-              </div>
-              <span class="param-value">{{ compositeParams.breathing.toFixed(2) }}</span>
+            <div class="indicator-item">
+              <ScaleIndicator
+                :intensity="p('breathing')"
+                :period="trackPeriods.breathing"
+              />
+              <span class="indicator-label">breathing</span>
             </div>
-            <div class="param-row">
-              <span class="param-name">clamped</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-composite" :style="barStyle(compositeParams.clamped, 0.2, 0.8)" />
-              </div>
-              <span class="param-value">{{ compositeParams.clamped.toFixed(2) }}</span>
+            <div class="indicator-item">
+              <BarIndicator
+                :intensity="(p('clamped', 0.2) - 0.2) / 0.6"
+              />
+              <span class="indicator-label">clamped</span>
+              <span class="indicator-value">{{ p('clamped', 0.2).toFixed(2) }}</span>
             </div>
-            <div class="param-row">
-              <span class="param-name">quantized</span>
-              <div class="param-bar">
-                <div class="param-bar-fill bar-step" :style="barStyle(compositeParams.quantized)" />
-              </div>
-              <span class="param-value">{{ compositeParams.quantized.toFixed(2) }}</span>
+            <div class="indicator-item">
+              <StepIndicator
+                :intensity="p('quantized')"
+                :steps="8"
+                :period="trackPeriods.quantized"
+              />
+              <span class="indicator-label">quantized</span>
             </div>
           </div>
         </div>
@@ -321,117 +321,59 @@ function barStyle(value: number, min = 0, max = 1) {
   text-decoration: underline;
 }
 
-.preview-container {
+/* Indicators Layout */
+.indicators-container {
   flex: 1;
   display: flex;
+  flex-wrap: wrap;
   gap: 1.5rem;
-  padding: 1rem;
-  overflow: hidden;
-}
-
-/* Animated Preview Box */
-.preview-box {
-  width: 200px;
-  height: 200px;
-  flex-shrink: 0;
-  background: oklch(0.08 0.02 260);
-  border: 1px solid oklch(0.25 0.02 260);
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  align-self: center;
-}
-
-.preview-inner {
-  width: 60px;
-  height: 60px;
-  border-radius: 0.75rem;
-  background: linear-gradient(135deg, oklch(0.65 0.25 250), oklch(0.55 0.30 280));
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  transition: transform 0.03s ease-out, opacity 0.03s ease-out;
-}
-
-/* Parameter Display Grid */
-.params-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  padding: 3rem 1.5rem 1.5rem;
   overflow-y: auto;
-  align-content: start;
+  align-content: flex-start;
 }
 
-.param-group {
+.indicator-group {
   background: oklch(0.18 0.015 260);
   border: 1px solid oklch(0.25 0.02 260);
   border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 1rem;
+  min-width: 200px;
 }
 
 .group-title {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: oklch(0.65 0.02 260);
-  margin: 0 0 0.5rem 0;
+  color: oklch(0.55 0.02 260);
+  margin: 0 0 1rem 0;
 }
 
-.param-row {
+.indicator-grid {
   display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.indicator-item {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.35rem;
+  min-width: 40px;
 }
 
-.param-row:last-child {
-  margin-bottom: 0;
+.indicator-label {
+  font-size: 0.6rem;
+  font-family: ui-monospace, monospace;
+  color: oklch(0.55 0.02 260);
+  text-align: center;
 }
 
-.param-name {
-  font-size: 0.65rem;
+.indicator-value {
+  font-size: 0.55rem;
   font-family: ui-monospace, monospace;
   color: oklch(0.70 0.02 260);
-  width: 70px;
-  flex-shrink: 0;
-}
-
-.param-bar {
-  flex: 1;
-  height: 12px;
-  background: oklch(0.10 0.02 260);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.param-bar-fill {
-  height: 100%;
-  background: oklch(0.55 0.20 250);
-  border-radius: 2px;
-  transition: width 0.03s ease-out;
-}
-
-/* Wave type colors */
-.bar-sine { background: oklch(0.60 0.25 250); }
-.bar-saw { background: oklch(0.60 0.25 30); }
-.bar-tri { background: oklch(0.60 0.25 150); }
-.bar-pulse { background: oklch(0.70 0.30 60); }
-.bar-step { background: oklch(0.55 0.20 200); }
-.bar-noise { background: oklch(0.50 0.15 300); }
-.bar-composite { background: oklch(0.55 0.22 280); }
-.bar-heartbeat { background: oklch(0.60 0.30 0); }
-.bar-breathing { background: oklch(0.55 0.20 180); }
-
-.param-value {
-  font-size: 0.65rem;
-  font-family: ui-monospace, monospace;
-  color: oklch(0.85 0.02 260);
-  width: 50px;
-  text-align: right;
-  flex-shrink: 0;
 }
 
 .resize-handle {
