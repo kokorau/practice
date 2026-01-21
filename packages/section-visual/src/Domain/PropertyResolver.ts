@@ -8,6 +8,14 @@ import type {
   NormalizedMaskConfig,
   SingleEffectConfig,
   ProcessorConfig,
+  AnySurfaceConfig,
+  AnyMaskConfig,
+} from './HeroViewConfig'
+import {
+  isNormalizedSurfaceConfig,
+  normalizeSurfaceConfig,
+  isNormalizedMaskConfig,
+  normalizeMaskConfig,
 } from './HeroViewConfig'
 
 /**
@@ -74,42 +82,78 @@ export function createPropertyResolver(paramResolver: TimelineParamResolver): Pr
 // ============================================================
 
 /**
+ * Check if a value is a PropertyValue (has 'type' property)
+ */
+function isPropertyValue(value: unknown): value is PropertyValue {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    (value.type === 'static' || value.type === 'binding')
+  )
+}
+
+/**
+ * Normalize a param value to PropertyValue
+ * If already a PropertyValue, return as-is
+ * If raw value (number, string, boolean), wrap in StaticValue
+ */
+function normalizeToPropertyValue(value: unknown): PropertyValue {
+  if (isPropertyValue(value)) {
+    return value
+  }
+  // Raw value - wrap in StaticValue
+  if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+    return $PropertyValue.static(value)
+  }
+  // Fallback for unexpected types
+  return $PropertyValue.static(0)
+}
+
+/**
  * Resolve all PropertyValue in params to static values
+ * Handles both raw values and PropertyValue objects
  */
 function resolveParams(
-  params: Record<string, PropertyValue>,
+  params: Record<string, PropertyValue | unknown>,
   resolver: PropertyResolver
 ): Record<string, PropertyValue> {
   const result: Record<string, PropertyValue> = {}
-  for (const [key, prop] of Object.entries(params)) {
+  for (const [key, rawProp] of Object.entries(params)) {
+    // Normalize raw values to PropertyValue first
+    const prop = normalizeToPropertyValue(rawProp)
     result[key] = $PropertyValue.static(resolver.resolve(prop))
   }
   return result
 }
 
 /**
- * Resolve NormalizedSurfaceConfig params
+ * Resolve surface config params (handles both legacy and normalized formats)
  */
 function resolveSurfaceConfig(
-  config: NormalizedSurfaceConfig,
+  config: AnySurfaceConfig,
   resolver: PropertyResolver
 ): NormalizedSurfaceConfig {
+  // Normalize first if legacy format
+  const normalized = isNormalizedSurfaceConfig(config) ? config : normalizeSurfaceConfig(config)
   return {
-    id: config.id,
-    params: resolveParams(config.params, resolver),
+    id: normalized.id,
+    params: resolveParams(normalized.params, resolver),
   }
 }
 
 /**
- * Resolve NormalizedMaskConfig params
+ * Resolve mask config params (handles both legacy and normalized formats)
  */
 function resolveMaskConfig(
-  config: NormalizedMaskConfig,
+  config: AnyMaskConfig,
   resolver: PropertyResolver
 ): NormalizedMaskConfig {
+  // Normalize first if legacy format
+  const normalized = isNormalizedMaskConfig(config) ? config : normalizeMaskConfig(config)
   return {
-    id: config.id,
-    params: resolveParams(config.params, resolver),
+    id: normalized.id,
+    params: resolveParams(normalized.params, resolver),
   }
 }
 

@@ -9,9 +9,12 @@
 import { type ComputedRef, type ShallowRef } from 'vue'
 import type { TextureRenderer } from '@practice/texture'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
+import type { ParamResolver } from '@practice/timeline'
 import {
   type HeroViewRepository,
   renderHeroConfig,
+  createPropertyResolver,
+  resolveHeroViewConfig,
 } from '@practice/section-visual'
 
 export interface HeroSceneEditorConfig {
@@ -28,6 +31,8 @@ export interface UseHeroSceneRendererOptions {
   onDestroyPreview?: () => void
   /** Lazy getter for imageRegistry (to handle circular initialization order) */
   getImageRegistry?: () => Map<string, ImageBitmap>
+  /** Lazy getter for ParamResolver (to handle async mount order) */
+  getParamResolver?: () => ParamResolver | undefined
 }
 
 export interface UseHeroSceneRendererReturn {
@@ -47,14 +52,26 @@ export const useHeroSceneRenderer = (
     editorConfig,
     onDestroyPreview,
     getImageRegistry,
+    getParamResolver,
   } = options
 
   let previewRenderer: TextureRenderer | null = null
 
+  // Unsubscribe function for param change listener
+  let unsubscribeParamChange: (() => void) | null = null
+
   const renderSceneFromConfig = async () => {
     if (!previewRenderer) return
-    const config = heroViewRepository.get()
+    let config = heroViewRepository.get()
     const imageRegistry = getImageRegistry?.()
+
+    // Resolve PropertyValue bindings if ParamResolver is available
+    const paramResolver = getParamResolver?.()
+    if (paramResolver) {
+      const propertyResolver = createPropertyResolver(paramResolver)
+      config = resolveHeroViewConfig(config, propertyResolver)
+    }
+
     await renderHeroConfig(previewRenderer, config, primitivePalette.value, {
       imageRegistry,
     })
@@ -78,12 +95,28 @@ export const useHeroSceneRenderer = (
       const { TextureRenderer } = await import('@practice/texture')
       previewRenderer = await TextureRenderer.create(canvas)
       await render()
+
+      // Subscribe to ParamResolver for automatic re-rendering on param changes
+      // Use getter to get the resolver at subscription time
+      const paramResolver = getParamResolver?.()
+      if (paramResolver) {
+        unsubscribeParamChange = paramResolver.onParamChange(() => {
+          // Re-render when timeline params change
+          render()
+        })
+      }
     } catch (e) {
       console.error('WebGPU not available:', e)
     }
   }
 
   const destroyPreview = () => {
+    // Unsubscribe from ParamResolver
+    if (unsubscribeParamChange) {
+      unsubscribeParamChange()
+      unsubscribeParamChange = null
+    }
+
     previewRenderer?.destroy()
     previewRenderer = null
     onDestroyPreview?.()

@@ -94,6 +94,11 @@ const router = createRouter({
       name: 'timeline-editor',
       component: () => import('../views/TimelineEditorView.vue'),
     },
+    {
+      path: '/timeline-hero',
+      name: 'timeline-hero',
+      component: () => import('../views/TimelineHeroEditorView.vue'),
+    },
   ],
 })
 

@@ -23,6 +23,7 @@ import {
   type GroupLayerNodeConfig,
   type MaskProcessorConfig,
   type ProcessorNodeConfig,
+  type NormalizedMaskConfig,
   toCustomMaskShapeParams,
   fromCustomMaskShapeParams,
   toCustomSurfaceParams,
@@ -32,15 +33,24 @@ import {
   syncMaskSurfaceParams,
   normalizeMaskConfig,
   normalizeSurfaceConfig,
+  $PropertyValue,
 } from '@practice/section-visual'
 // Internal import for denormalize function (not part of public API)
-import { denormalizeMaskConfig } from '@practice/section-visual'
+import { getMaskAsNormalized, denormalizeMaskConfig } from '@practice/section-visual'
+
 import type {
   CustomMaskShapeParams,
   CustomSurfaceParams,
   CustomBackgroundSurfaceParams,
   MidgroundSurfacePreset,
 } from './useHeroScene'
+
+/**
+ * Check if a normalized mask config has any binding values
+ */
+function hasMaskBindingValues(config: NormalizedMaskConfig): boolean {
+  return Object.values(config.params).some((prop) => $PropertyValue.isBinding(prop))
+}
 
 // Layer ID for background
 const BASE_LAYER_ID = 'background'
@@ -113,8 +123,14 @@ export const useHeroSurfaceParams = (
       if (!processor) return null
       const maskModifier = processor.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
       if (!maskModifier) return null
-      // Convert NormalizedMaskConfig to legacy format for toCustomMaskShapeParams
-      return toCustomMaskShapeParams(denormalizeMaskConfig(maskModifier.shape))
+      // Normalize first (ensures consistent format), then extract static values for UI params
+      const normalizedMask = getMaskAsNormalized(maskModifier.shape)
+      // Skip if config has binding values (timeline-driven params can't be synced to UI)
+      if (hasMaskBindingValues(normalizedMask)) {
+        return null
+      }
+      const staticMask = denormalizeMaskConfig(normalizedMask)
+      return toCustomMaskShapeParams(staticMask)
     },
     set: (val: CustomMaskShapeParams | null) => {
       if (val === null) return

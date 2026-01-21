@@ -29,6 +29,7 @@ const {
   isPlaying,
   frameState,
   phaseLayouts,
+  paramResolver,
   toggle,
   stop,
   seek,
@@ -184,13 +185,14 @@ onMounted(() => {
   nextTick(() => redrawAllCanvases())
 })
 
-// Expose methods for parent component
+// Expose methods and paramResolver for parent component
 defineExpose({
   play: () => { if (!isPlaying.value) toggle() },
   pause: () => { if (isPlaying.value) toggle() },
   stop,
   seek,
   toggle,
+  paramResolver,
 })
 </script>
 

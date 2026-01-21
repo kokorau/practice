@@ -28,7 +28,10 @@ export interface ParamResolverWriter extends ParamResolver {
   /** 強度を受け取り、実値に変換して保持 */
   update(intensity: Record<TrackId, number>): void
 
-  /** 変更を通知（update 後に呼ぶ） */
+  /** すでにマッピング済みの値を直接設定（Player からの出力用） */
+  setParams(params: Record<ParamId, number>): void
+
+  /** 変更を通知（update/setParams 後に呼ぶ） */
   flush(): void
 }
 
@@ -94,6 +97,13 @@ export function createParamResolver(): ParamResolverWriter {
           const resolvedValue = mapValue(value, binding.map)
           pending[binding.targetParam] = resolvedValue
         }
+      }
+    },
+
+    setParams(params: Record<ParamId, number>): void {
+      // すでにマッピング済みの値を直接設定（Player からの出力がマッピング済みの場合に使用）
+      for (const [paramId, value] of Object.entries(params)) {
+        pending[paramId as ParamId] = value
       }
     },
 

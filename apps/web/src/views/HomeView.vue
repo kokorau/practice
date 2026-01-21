@@ -85,6 +85,11 @@ const pages = [
     title: 'Timeline Editor',
     description: 'KeyframeとCutを組めるタイムラインエディタ',
   },
+  {
+    to: '/timeline-hero',
+    title: 'Timeline Hero Editor',
+    description: 'タイムラインでHeroシーンのパラメータをアニメーション制御',
+  },
 ]
 </script>
 

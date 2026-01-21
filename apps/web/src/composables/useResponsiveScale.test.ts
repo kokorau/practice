@@ -52,9 +52,10 @@ vi.mock('vue', async (importOriginal) => {
 // Test Helpers
 // ============================================================
 
-const createMockElement = (clientWidth: number): HTMLElement => {
+const createMockElement = (clientWidth: number, clientHeight = 10000): HTMLElement => {
   return {
     clientWidth,
+    clientHeight,
   } as HTMLElement
 }
 
@@ -137,7 +138,7 @@ describe('useResponsiveScale', () => {
 
   describe('resize handling', () => {
     it('should update scale when container resizes', async () => {
-      const mockElement = createMockElement(1500)
+      const mockElement = createMockElement(1500, 10000)
       const containerRef = ref(mockElement)
 
       const scale = useResponsiveScale(containerRef, {
@@ -150,10 +151,27 @@ describe('useResponsiveScale', () => {
       expect(scale.value).toBe(1)
 
       // Change container width and trigger resize
-      ;(mockElement as { clientWidth: number }).clientWidth = 640
+      ;(mockElement as { clientWidth: number; clientHeight: number }).clientWidth = 640
       triggerResize([{ target: mockElement }])
       await nextTick()
 
+      expect(scale.value).toBe(0.5)
+    })
+
+    it('should consider height constraint when container is shorter', async () => {
+      // Container is wide enough but not tall enough
+      const mockElement = createMockElement(1500, 360)
+      const containerRef = ref(mockElement)
+
+      const scale = useResponsiveScale(containerRef, {
+        originalWidth: 1280,
+        originalHeight: 720,
+      })
+
+      // Simulate mount
+      mountedCallbacks.forEach(cb => cb())
+
+      // Height constrains the scale: 360 / 720 = 0.5
       expect(scale.value).toBe(0.5)
     })
   })

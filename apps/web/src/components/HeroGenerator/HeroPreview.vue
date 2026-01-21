@@ -177,10 +177,10 @@ defineExpose({
 .hero-preview-container {
   flex: 1;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   padding: 2rem;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .hero-preview-wrapper {

@@ -6,10 +6,19 @@
  */
 
 import type { RGBA } from '@practice/texture'
-import type { HeroViewConfig, BaseLayerNodeConfig, SurfaceLayerNodeConfig, GroupLayerNodeConfig } from '../Domain/HeroViewConfig'
-import { denormalizeSurfaceConfig } from '../Domain/HeroViewConfig'
+import type { HeroViewConfig, BaseLayerNodeConfig, SurfaceLayerNodeConfig, GroupLayerNodeConfig, NormalizedSurfaceConfig } from '../Domain/HeroViewConfig'
+import { getSurfaceAsNormalized, denormalizeSurfaceConfig } from '../Domain/HeroViewConfig'
 import type { CustomBackgroundSurfaceParams, CustomSurfaceParams } from '../types/HeroSceneState'
 import { toCustomBackgroundSurfaceParams, toCustomSurfaceParams } from '../Domain/SurfaceMapper'
+import { $PropertyValue } from '../Domain/SectionVisual'
+
+/**
+ * Check if a normalized surface config has any binding values
+ * If bindings are present, the config cannot be denormalized for UI sync
+ */
+function hasBindingValues(config: NormalizedSurfaceConfig): boolean {
+  return Object.values(config.params).some((prop) => $PropertyValue.isBinding(prop))
+}
 
 /**
  * Background Surface 同期結果
@@ -70,9 +79,16 @@ export function syncBackgroundSurfaceParams(
     return { surfaceParams: null }
   }
 
-  // Convert NormalizedSurfaceConfig to SurfaceConfig, then to CustomBackgroundSurfaceParams
-  const legacySurface = denormalizeSurfaceConfig(bgSurface)
-  const surfaceParams = toCustomBackgroundSurfaceParams(legacySurface, colorA, colorB)
+  // Normalize first (ensures consistent format), then extract static values for UI params
+  const normalizedSurface = getSurfaceAsNormalized(bgSurface)
+
+  // Skip if config has binding values (timeline-driven params can't be synced to UI)
+  if (hasBindingValues(normalizedSurface)) {
+    return { surfaceParams: null }
+  }
+
+  const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
+  const surfaceParams = toCustomBackgroundSurfaceParams(staticSurface, colorA, colorB)
 
   return { surfaceParams }
 }
@@ -136,9 +152,16 @@ export function syncMaskSurfaceParams(
     return { surfaceParams: null }
   }
 
-  // Convert NormalizedSurfaceConfig to SurfaceConfig, then to CustomSurfaceParams
-  const legacySurface = denormalizeSurfaceConfig(maskSurface)
-  const surfaceParams = toCustomSurfaceParams(legacySurface, colorA, colorB)
+  // Normalize first (ensures consistent format), then extract static values for UI params
+  const normalizedSurface = getSurfaceAsNormalized(maskSurface)
+
+  // Skip if config has binding values (timeline-driven params can't be synced to UI)
+  if (hasBindingValues(normalizedSurface)) {
+    return { surfaceParams: null }
+  }
+
+  const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
+  const surfaceParams = toCustomSurfaceParams(staticSurface, colorA, colorB)
 
   return { surfaceParams }
 }
