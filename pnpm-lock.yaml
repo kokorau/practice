@@ -289,6 +289,10 @@ importers:
         version: link:../schema
 
   packages/timeline:
+    dependencies:
+      '@practice/dsl':
+        specifier: workspace:*
+        version: link:../dsl
     devDependencies:
       vitest:
         specifier: ^4.0.15

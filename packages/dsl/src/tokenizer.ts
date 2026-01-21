@@ -20,8 +20,11 @@ export interface Token {
 export class Tokenizer {
   private pos = 0
   private tokens: Token[] = []
+  private input: string
 
-  constructor(private input: string) {}
+  constructor(input: string) {
+    this.input = input
+  }
 
   tokenize(): Token[] {
     this.pos = 0
@@ -31,7 +34,7 @@ export class Tokenizer {
       this.skipWhitespace()
       if (this.pos >= this.input.length) break
 
-      const char = this.input[this.pos]
+      const char = this.input[this.pos]!
 
       if (this.isDigit(char) || (char === '.' && this.isDigit(this.peek(1)))) {
         this.readNumber()
@@ -59,7 +62,7 @@ export class Tokenizer {
   }
 
   private skipWhitespace(): void {
-    while (this.pos < this.input.length && /\s/.test(this.input[this.pos])) {
+    while (this.pos < this.input.length && /\s/.test(this.input[this.pos]!)) {
       this.pos++
     }
   }
@@ -84,7 +87,7 @@ export class Tokenizer {
     const startPos = this.pos
     let value = ''
 
-    while (this.pos < this.input.length && this.isDigit(this.input[this.pos])) {
+    while (this.pos < this.input.length && this.isDigit(this.input[this.pos]!)) {
       value += this.input[this.pos]
       this.pos++
     }
@@ -93,7 +96,7 @@ export class Tokenizer {
       value += '.'
       this.pos++
 
-      while (this.pos < this.input.length && this.isDigit(this.input[this.pos])) {
+      while (this.pos < this.input.length && this.isDigit(this.input[this.pos]!)) {
         value += this.input[this.pos]
         this.pos++
       }
@@ -106,7 +109,7 @@ export class Tokenizer {
     const startPos = this.pos
     let value = ''
 
-    while (this.pos < this.input.length && this.isAlphaNumeric(this.input[this.pos])) {
+    while (this.pos < this.input.length && this.isAlphaNumeric(this.input[this.pos]!)) {
       value += this.input[this.pos]
       this.pos++
     }

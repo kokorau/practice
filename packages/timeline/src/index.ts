@@ -8,26 +8,17 @@ export type { PhaseId, PhaseType, Phase, LoopType } from './Phase'
 export type { PhaseLayout } from './PhaseLayout'
 export { calculatePhaseLayouts } from './PhaseLayout'
 
-// Envelope
-export type { InterpolationType, ControlPoint, Envelope } from './Envelope'
-
-// Generator
-export type { GeneratorType, GeneratorParams, Generator } from './Generator'
-
-// Track
-export type { TrackId, ClockType, EnvelopeTrack, GeneratorTrack, Track } from './Track'
+// Track (DSL-based)
+export type { TrackId, ParamId, ClockType, DslTrack, Track } from './Track'
 
 // Timeline
 export type { Timeline } from './Timeline'
 
-// Binding
-export type { ParamId, RangeMap, Binding } from './Binding'
-
 // Player
 export type { FrameState, TimelinePlayer } from './Player'
 
-// Evaluate
-export { evaluateEnvelope, evaluateGenerator, evaluateTrack } from './evaluate'
+// Timeline Preparation (AST caching)
+export { prepareTimeline, prepareTrack } from './prepareTimeline'
 
 // Player Implementation
 export { createTimelinePlayer, type CreateTimelinePlayerOptions } from './createTimelinePlayer'

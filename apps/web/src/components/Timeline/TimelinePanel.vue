@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import type { Timeline, Track, TrackId, RenderContext, Ms, PhaseLayout, Phase, Binding, FrameState } from '@practice/timeline'
+import type { Timeline, Track, TrackId, RenderContext, Ms, PhaseLayout, Phase, FrameState } from '@practice/timeline'
 import { createCanvasTrackRenderer } from '@practice/timeline'
 import { useTimelinePlayer } from '../../modules/Timeline/Application/useTimelinePlayer'
 
@@ -9,10 +9,8 @@ import { useTimelinePlayer } from '../../modules/Timeline/Application/useTimelin
 // ============================================================
 const props = withDefaults(defineProps<{
   timeline: Timeline
-  bindings?: Binding[]
   visibleDuration?: Ms
 }>(), {
-  bindings: () => [],
   visibleDuration: 30000 as Ms,
 })
 
@@ -36,7 +34,6 @@ const {
   getPhaseLayout,
 } = useTimelinePlayer({
   timeline: props.timeline,
-  bindings: props.bindings,
   visibleDuration: props.visibleDuration,
 })
 
@@ -168,11 +165,7 @@ function redrawAllCanvases() {
     const layout = getPhaseLayout(track.phaseId)
     const duration = layout?.duration ?? props.visibleDuration
 
-    if (track.mode === 'Envelope') {
-      trackRenderer.renderEnvelope(renderContext, track.envelope, duration)
-    } else {
-      trackRenderer.renderGenerator(renderContext, track.generator, duration)
-    }
+    trackRenderer.renderTrack(renderContext, track, duration)
   }
 }
 
@@ -218,7 +211,7 @@ defineExpose({
           class="track-list-item"
         >
           <span class="track-name">{{ track.name }}</span>
-          <span class="track-mode">{{ track.mode === 'Envelope' ? 'E' : 'G' }}</span>
+          <span class="track-param">{{ track.targetParam }}</span>
         </div>
       </div>
 
@@ -264,10 +257,9 @@ defineExpose({
               class="phase-separator"
               :style="{ left: `${pos.startPercent + pos.widthPercent}%` }"
             />
-            <!-- Envelope Track Content - positioned within its phase -->
+            <!-- Track Content - positioned within its phase -->
             <div
-              v-if="track.mode === 'Envelope'"
-              class="track-content track-content--envelope"
+              class="track-content"
               :style="{
                 left: `calc(${getPhasePositionForTrack(track)?.startPercent ?? 0}% + 0.25rem)`,
                 width: `calc(${getPhasePositionForTrack(track)?.widthPercent ?? 100}% - 0.5rem)`,
@@ -277,21 +269,6 @@ defineExpose({
                 :ref="(el) => setCanvasRef(track.id, el as HTMLCanvasElement)"
                 class="track-canvas"
               />
-            </div>
-            <!-- Generator Track Content - positioned within its phase -->
-            <div
-              v-else
-              class="track-content track-content--generator"
-              :style="{
-                left: `calc(${getPhasePositionForTrack(track)?.startPercent ?? 0}% + 0.25rem)`,
-                width: `calc(${getPhasePositionForTrack(track)?.widthPercent ?? 100}% - 0.5rem)`,
-              }"
-            >
-              <canvas
-                :ref="(el) => setCanvasRef(track.id, el as HTMLCanvasElement)"
-                class="track-canvas"
-              />
-              <span class="generator-type-label">{{ track.generator.type }}</span>
             </div>
           </div>
           <!-- Playhead line -->
@@ -397,13 +374,17 @@ defineExpose({
   white-space: nowrap;
 }
 
-.track-mode {
+.track-param {
   font-size: 0.625rem;
-  font-weight: 600;
+  font-weight: 500;
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   background: oklch(0.88 0.01 260);
   color: oklch(0.45 0.02 260);
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Timeline Grid (Right Panel) */
@@ -512,21 +493,12 @@ defineExpose({
   top: 0.25rem;
   bottom: 0.25rem;
   /* left and width are set via inline style for phase positioning */
-  background: oklch(0.94 0.01 260);
+  background: oklch(0.94 0.02 200);
   border-radius: 0.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-}
-
-.track-content--envelope {
-  padding: 0;
-}
-
-.track-content--generator {
-  background: oklch(0.94 0.02 150);
-  position: relative;
   padding: 0;
   /* Force height to match track-lane minus margins (2.5rem - 0.5rem) */
   height: 2rem;
@@ -537,19 +509,6 @@ defineExpose({
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.generator-type-label {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.375rem;
-  font-size: 0.5rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: oklch(0.45 0.15 150);
-  background: oklch(0.96 0.02 150 / 0.8);
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.125rem;
 }
 
 .playhead-line {

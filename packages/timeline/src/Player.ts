@@ -1,5 +1,5 @@
 import type { Ms } from './Unit'
-import type { ParamId } from './Binding'
+import type { ParamId } from './Track'
 
 export interface FrameState {
   time: Ms

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { FrameState, Ms } from '@practice/timeline'
-import { mockTimeline, mockBindings } from '../modules/Timeline/Infra/mockData'
+import { mockTimeline } from '../modules/Timeline/Infra/mockData'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
 
 // ============================================================
@@ -115,7 +115,6 @@ function stopResize() {
     >
       <TimelinePanel
         :timeline="mockTimeline"
-        :bindings="mockBindings"
         :visible-duration="VISIBLE_DURATION"
         @update:frame-state="onFrameStateUpdate"
         @update:playhead="onPlayheadUpdate"

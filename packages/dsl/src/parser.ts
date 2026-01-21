@@ -9,14 +9,19 @@
  *   argList := expression (',' expression)*
  */
 
-import { AstNode, $Ast } from './ast'
-import { Token, tokenize } from './tokenizer'
+import type { AstNode } from './ast'
+import { $Ast } from './ast'
+import type { Token } from './tokenizer'
+import { tokenize } from './tokenizer'
 
 export class Parser {
   private pos = 0
   private tokens: Token[] = []
+  private input: string
 
-  constructor(private input: string) {}
+  constructor(input: string) {
+    this.input = input
+  }
 
   parse(): AstNode {
     this.tokens = tokenize(this.input)
@@ -31,11 +36,11 @@ export class Parser {
   }
 
   private current(): Token {
-    return this.tokens[this.pos]
+    return this.tokens[this.pos]!
   }
 
   private advance(): Token {
-    return this.tokens[this.pos++]
+    return this.tokens[this.pos++]!
   }
 
   private expect(type: Token['type']): Token {

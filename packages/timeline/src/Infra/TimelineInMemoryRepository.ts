@@ -18,7 +18,7 @@ export interface CreateTimelineInMemoryRepositoryOptions {
 const createDefaultTimeline = (): Timeline => ({
   tracks: [],
   phases: [],
-  loopType: 'none',
+  loopType: 'forward',
 })
 
 export const createTimelineInMemoryRepository = (

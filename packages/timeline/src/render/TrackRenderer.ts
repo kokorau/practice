@@ -1,6 +1,5 @@
 import type { Ms } from '../Unit'
-import type { Envelope } from '../Envelope'
-import type { Generator } from '../Generator'
+import type { DslTrack } from '../Track'
 
 /**
  * Canvas rendering context with device pixel ratio support.
@@ -21,18 +20,11 @@ export interface RenderContext {
  */
 export interface TrackRenderer {
   /**
-   * Render an envelope curve.
+   * Render a DSL-based track waveform.
+   * Samples the DSL expression over the duration and draws the resulting curve.
    * @param context - Canvas rendering context
-   * @param envelope - Envelope data with control points
+   * @param track - DSL track with expression
    * @param duration - Total duration to render (x-axis scale)
    */
-  renderEnvelope(context: RenderContext, envelope: Envelope, duration: Ms): void
-
-  /**
-   * Render a generator waveform.
-   * @param context - Canvas rendering context
-   * @param generator - Generator configuration
-   * @param duration - Total duration to render (x-axis scale)
-   */
-  renderGenerator(context: RenderContext, generator: Generator, duration: Ms): void
+  renderTrack(context: RenderContext, track: DslTrack, duration: Ms): void
 }

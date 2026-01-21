@@ -1,4 +1,4 @@
-import type { Timeline, Binding, PhaseId, TrackId } from '@practice/timeline'
+import type { Timeline, PhaseId, TrackId } from '@practice/timeline'
 
 export const mockTimeline: Timeline = {
   loopType: 'forward',
@@ -13,28 +13,18 @@ export const mockTimeline: Timeline = {
       name: 'Opacity',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      mode: 'Envelope',
-      envelope: {
-        points: [
-          { time: 0, value: 0 },
-          { time: 5000, value: 1 },
-        ],
-        interpolation: 'Linear',
-      },
+      targetParam: 'opacity',
+      // Linear interpolation from 0 to 1 over 5000ms
+      expression: 'range(div(t, 5000), 0, 1)',
     },
     {
       id: 'track-scale-opening' as TrackId,
       name: 'Scale',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      mode: 'Envelope',
-      envelope: {
-        points: [
-          { time: 0, value: 0.5 },
-          { time: 5000, value: 1 },
-        ],
-        interpolation: 'Bezier',
-      },
+      targetParam: 'scale',
+      // Smooth interpolation from 0.5 to 1.5 over 5000ms
+      expression: 'range(smoothstep(0, 5000, t), 0.5, 1.5)',
     },
     // Loop phase tracks - continuous animation
     {
@@ -42,26 +32,9 @@ export const mockTimeline: Timeline = {
       name: 'Rotation',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      mode: 'Generator',
-      generator: { type: 'Sin', period: 1000, offset: 0, params: {} },
+      targetParam: 'rotation',
+      // Oscillate between -15 and 15 degrees with period 1000ms
+      expression: 'range(osc(t, 1000), -15, 15)',
     },
   ],
 }
-
-export const mockBindings: Binding[] = [
-  {
-    targetParam: 'opacity',
-    sourceTrack: 'track-opacity-opening' as TrackId,
-    map: { min: 0, max: 1 },
-  },
-  {
-    targetParam: 'scale',
-    sourceTrack: 'track-scale-opening' as TrackId,
-    map: { min: 0.5, max: 1.5 },
-  },
-  {
-    targetParam: 'rotation',
-    sourceTrack: 'track-rotation-loop' as TrackId,
-    map: { min: -15, max: 15 },
-  },
-]
