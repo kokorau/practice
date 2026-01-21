@@ -15,9 +15,6 @@ import type {
  *
  * ParamResolver から取得した解決済みの値を使用して
  * PropertyValue を実際の値に変換する。
- *
- * Note: BindingValue.track は ParamResolver の paramId として扱う。
- * BindingValue.range は ParamResolver が既にマッピング済みのため無視される。
  */
 export interface PropertyResolver {
   /** PropertyValue を実際の値に解決 */
@@ -43,16 +40,13 @@ export function createPropertyResolver(paramResolver: TimelineParamResolver): Pr
       }
 
       // BindingValue: ParamResolver から解決済みの値を取得
-      // prop.track を paramId として使用
-      // prop.range は ParamResolver で既にマッピング済みのため無視
-      const resolvedValue = paramResolver.get(prop.track)
+      const resolvedValue = paramResolver.get(prop.paramId)
       if (resolvedValue !== undefined) {
         return resolvedValue
       }
 
-      // Fallback: BindingValue.range の min を返す
-      const [min] = prop.range
-      return min
+      // Fallback: 未解決の場合は 0 を返す
+      return 0
     },
 
     resolveAll(params: Record<string, PropertyValue>): Record<string, number | string | boolean> {
@@ -67,7 +61,7 @@ export function createPropertyResolver(paramResolver: TimelineParamResolver): Pr
       const deps = new Set<string>()
       for (const prop of Object.values(params)) {
         if ($PropertyValue.isBinding(prop)) {
-          deps.add(prop.track)
+          deps.add(prop.paramId)
         }
       }
       return deps
