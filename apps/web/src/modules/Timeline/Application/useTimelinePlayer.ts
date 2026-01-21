@@ -93,7 +93,8 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     playhead.value = frameState.value.time as Ms
 
     // Update ParamResolver and notify subscribers
-    paramResolverWriter.update(frameState.value.params)
+    // Use setParams since player.update() returns already-mapped values by ParamId
+    paramResolverWriter.setParams(frameState.value.params)
     paramResolverWriter.flush()
 
     animationFrameId = requestAnimationFrame(tick)
@@ -105,14 +106,14 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
       player.seek(newVal)
       frameState.value = player.update(0)
       // Update ParamResolver for non-playing seek
-      paramResolverWriter.update(frameState.value.params)
+      paramResolverWriter.setParams(frameState.value.params)
       paramResolverWriter.flush()
     }
   })
 
   // Initialize
   frameState.value = player.update(0)
-  paramResolverWriter.update(frameState.value.params)
+  paramResolverWriter.setParams(frameState.value.params)
   paramResolverWriter.flush()
 
   // Cleanup
