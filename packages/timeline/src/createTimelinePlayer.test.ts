@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createTimelinePlayer } from './createTimelinePlayer'
 import type { Timeline } from './Timeline'
-import type { Binding } from './Binding'
 import type { PhaseId, TrackId } from './index'
 
 describe('createTimelinePlayer', () => {
@@ -17,43 +16,25 @@ describe('createTimelinePlayer', () => {
         name: 'Opacity',
         clock: 'Global',
         phaseId: 'phase-1' as PhaseId,
-        mode: 'Envelope',
-        envelope: {
-          points: [
-            { time: 0, value: 0 },
-            { time: 4000, value: 1 },
-          ],
-          interpolation: 'Linear',
-        },
+        targetParam: 'opacity',
+        // Linear interpolation: 0 at t=0, 1 at t=4000
+        expression: 'div(t, 4000)',
       },
       {
         id: 'track-pulse' as TrackId,
         name: 'Pulse',
         clock: 'Global',
         phaseId: 'phase-1' as PhaseId,
-        mode: 'Generator',
-        generator: { type: 'Sin', period: 1000, offset: 0, params: {} },
+        targetParam: 'scale',
+        // Oscillates between 0.5 and 1.5 with period 1000ms
+        expression: 'range(osc(t, 1000), 0.5, 1.5)',
       },
     ],
   })
 
-  const createTestBindings = (): Binding[] => [
-    {
-      targetParam: 'opacity',
-      sourceTrack: 'track-opacity' as TrackId,
-      map: { min: 0, max: 1 },
-    },
-    {
-      targetParam: 'scale',
-      sourceTrack: 'track-pulse' as TrackId,
-      map: { min: 0.5, max: 1.5 },
-    },
-  ]
-
   it('creates a player with initial state', () => {
     const player = createTimelinePlayer({
       timeline: createTestTimeline(),
-      bindings: createTestBindings(),
     })
 
     const state = player.update(0)
@@ -65,7 +46,6 @@ describe('createTimelinePlayer', () => {
   it('seek updates playhead', () => {
     const player = createTimelinePlayer({
       timeline: createTestTimeline(),
-      bindings: createTestBindings(),
     })
 
     player.seek(2000)
@@ -76,7 +56,6 @@ describe('createTimelinePlayer', () => {
   it('seek clamps to valid range', () => {
     const player = createTimelinePlayer({
       timeline: createTestTimeline(),
-      bindings: createTestBindings(),
     })
 
     player.seek(-100)
@@ -89,7 +68,6 @@ describe('createTimelinePlayer', () => {
   it('play advances playhead over time', () => {
     const player = createTimelinePlayer({
       timeline: createTestTimeline(),
-      bindings: createTestBindings(),
     })
 
     player.play()
@@ -101,7 +79,6 @@ describe('createTimelinePlayer', () => {
   it('pause stops playhead advancement', () => {
     const player = createTimelinePlayer({
       timeline: createTestTimeline(),
-      bindings: createTestBindings(),
     })
 
     player.play()
@@ -117,7 +94,6 @@ describe('createTimelinePlayer', () => {
   it('loops when loopType is forward', () => {
     const player = createTimelinePlayer({
       timeline: createTestTimeline(),
-      bindings: createTestBindings(),
     })
 
     player.seek(3900)
@@ -131,10 +107,7 @@ describe('createTimelinePlayer', () => {
     const timeline = createTestTimeline()
     timeline.loopType = 'once'
 
-    const player = createTimelinePlayer({
-      timeline,
-      bindings: createTestBindings(),
-    })
+    const player = createTimelinePlayer({ timeline })
 
     player.seek(3900)
     player.play()
@@ -143,45 +116,59 @@ describe('createTimelinePlayer', () => {
     expect(state.time).toBe(4000) // clamped to end
   })
 
-  it('evaluates envelope track with range mapping', () => {
-    const player = createTimelinePlayer({
-      timeline: createTestTimeline(),
-      bindings: [
+  it('evaluates linear DSL expression', () => {
+    const timeline: Timeline = {
+      loopType: 'forward',
+      phases: [{ id: 'phase-1' as PhaseId, type: 'Opening', duration: 4000 }],
+      tracks: [
         {
+          id: 'track-test' as TrackId,
+          name: 'Test',
+          clock: 'Global',
+          phaseId: 'phase-1' as PhaseId,
           targetParam: 'test',
-          sourceTrack: 'track-opacity' as TrackId,
-          map: { min: 10, max: 20 },
+          // Maps t=0 -> 10, t=4000 -> 20
+          expression: 'range(div(t, 4000), 10, 20)',
         },
       ],
-    })
+    }
+
+    const player = createTimelinePlayer({ timeline })
 
     player.seek(0)
-    expect(player.update(0).params.test).toBe(10) // 0 -> 10
+    expect(player.update(0).params.test).toBe(10)
 
     player.seek(2000)
-    expect(player.update(0).params.test).toBe(15) // 0.5 -> 15
+    expect(player.update(0).params.test).toBe(15)
 
     player.seek(4000)
-    expect(player.update(0).params.test).toBe(20) // 1 -> 20
+    expect(player.update(0).params.test).toBe(20)
   })
 
-  it('evaluates generator track', () => {
-    const player = createTimelinePlayer({
-      timeline: createTestTimeline(),
-      bindings: [
+  it('evaluates oscillator DSL expression', () => {
+    const timeline: Timeline = {
+      loopType: 'forward',
+      phases: [{ id: 'phase-1' as PhaseId, type: 'Opening', duration: 4000 }],
+      tracks: [
         {
+          id: 'track-pulse' as TrackId,
+          name: 'Pulse',
+          clock: 'Global',
+          phaseId: 'phase-1' as PhaseId,
           targetParam: 'pulse',
-          sourceTrack: 'track-pulse' as TrackId,
-          map: { min: 0, max: 1 },
+          // osc outputs 0-1 sine wave
+          expression: 'osc(t, 1000)',
         },
       ],
-    })
+    }
 
-    // Sin wave at time 0 should be 0.5
+    const player = createTimelinePlayer({ timeline })
+
+    // osc at time 0 should be 0.5 (sine starts at 0, normalized to 0-1)
     player.seek(0)
     expect(player.update(0).params.pulse).toBeCloseTo(0.5, 5)
 
-    // Sin wave at time 250 (quarter period) should be 1
+    // osc at time 250 (quarter period) should be 1 (sine peak)
     player.seek(250)
     expect(player.update(0).params.pulse).toBeCloseTo(1, 5)
   })
@@ -199,47 +186,23 @@ describe('createTimelinePlayer', () => {
           name: 'Opening Track',
           clock: 'Phase',
           phaseId: 'phase-opening' as PhaseId,
-          mode: 'Envelope',
-          envelope: {
-            points: [
-              { time: 0, value: 0 },
-              { time: 1000, value: 1 },
-            ],
-            interpolation: 'Linear',
-          },
+          targetParam: 'opening',
+          // Linear interpolation over 1000ms phase
+          expression: 'div(t, 1000)',
         },
         {
           id: 'track-loop' as TrackId,
           name: 'Loop Track',
           clock: 'Phase',
           phaseId: 'phase-loop' as PhaseId,
-          mode: 'Envelope',
-          envelope: {
-            points: [
-              { time: 0, value: 0 },
-              { time: 2000, value: 1 },
-            ],
-            interpolation: 'Linear',
-          },
+          targetParam: 'loop',
+          // Linear interpolation over 2000ms phase
+          expression: 'div(t, 2000)',
         },
       ],
     }
 
-    const player = createTimelinePlayer({
-      timeline,
-      bindings: [
-        {
-          targetParam: 'opening',
-          sourceTrack: 'track-opening' as TrackId,
-          map: { min: 0, max: 1 },
-        },
-        {
-          targetParam: 'loop',
-          sourceTrack: 'track-loop' as TrackId,
-          map: { min: 0, max: 1 },
-        },
-      ],
-    })
+    const player = createTimelinePlayer({ timeline })
 
     // In Opening phase (0-1000ms)
     player.seek(500)
@@ -254,6 +217,6 @@ describe('createTimelinePlayer', () => {
     // In Loop phase (1000-3000ms)
     player.seek(2000)
     expect(player.update(0).params.opening).toBeCloseTo(1, 5) // Opening ended, stays at final value
-    expect(player.update(0).params.loop).toBeCloseTo(0.5, 5) // 1000ms into Loop phase (2000ms total)
+    expect(player.update(0).params.loop).toBeCloseTo(0.5, 5) // 1000ms into Loop phase
   })
 })

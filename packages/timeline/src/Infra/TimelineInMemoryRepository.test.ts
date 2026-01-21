@@ -1,18 +1,21 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createTimelineInMemoryRepository } from './TimelineInMemoryRepository'
 import type { Timeline } from '../Timeline'
-import type { Track } from '../Track'
-import type { Phase } from '../Phase'
+import type { Track, TrackId, ParamId } from '../Track'
+import type { Phase, PhaseId } from '../Phase'
 
 const createMockTrack = (id: string): Track => ({
-  id,
-  targetPath: `target.${id}`,
-  envelope: { type: 'hold', value: 0 },
+  id: id as TrackId,
+  name: `Track ${id}`,
+  clock: 'Global',
+  phaseId: 'phase-1' as PhaseId,
+  targetParam: `param-${id}` as ParamId,
+  expression: 'div(t, 1000)',
 })
 
 const createMockPhase = (id: string): Phase => ({
-  id,
-  label: `Phase ${id}`,
+  id: id as PhaseId,
+  type: 'Opening',
   duration: 1000,
 })
 
@@ -23,7 +26,7 @@ describe('TimelineInMemoryRepository', () => {
     expect(repo.get()).toEqual({
       tracks: [],
       phases: [],
-      loopType: 'none',
+      loopType: 'forward',
     })
   })
 
@@ -31,7 +34,7 @@ describe('TimelineInMemoryRepository', () => {
     const initialTimeline: Timeline = {
       tracks: [createMockTrack('track-1')],
       phases: [createMockPhase('phase-1')],
-      loopType: 'loop',
+      loopType: 'forward',
     }
     const repo = createTimelineInMemoryRepository({ initialTimeline })
 
@@ -57,7 +60,7 @@ describe('TimelineInMemoryRepository', () => {
     const subscriber = vi.fn()
     repo.subscribe(subscriber)
 
-    repo.set({ tracks: [], phases: [], loopType: 'loop' })
+    repo.set({ tracks: [], phases: [], loopType: 'forward' })
 
     expect(subscriber).toHaveBeenCalled()
   })
@@ -69,7 +72,7 @@ describe('TimelineInMemoryRepository', () => {
     const unsubscribe = repo.subscribe(subscriber)
 
     unsubscribe()
-    repo.set({ tracks: [], phases: [], loopType: 'loop' })
+    repo.set({ tracks: [], phases: [], loopType: 'forward' })
 
     expect(subscriber).not.toHaveBeenCalled()
   })
@@ -88,18 +91,18 @@ describe('TimelineInMemoryRepository', () => {
   it('should update track', () => {
     const track = createMockTrack('track-1')
     const repo = createTimelineInMemoryRepository({
-      initialTimeline: { tracks: [track], phases: [], loopType: 'none' },
+      initialTimeline: { tracks: [track], phases: [], loopType: 'forward' },
     })
 
-    repo.updateTrack('track-1', { targetPath: 'new.target' })
+    repo.updateTrack('track-1', { expression: 'osc(t, 2000)' })
 
-    expect(repo.get().tracks[0].targetPath).toBe('new.target')
+    expect(repo.get().tracks[0].expression).toBe('osc(t, 2000)')
   })
 
   it('should remove track', () => {
     const track = createMockTrack('track-1')
     const repo = createTimelineInMemoryRepository({
-      initialTimeline: { tracks: [track], phases: [], loopType: 'none' },
+      initialTimeline: { tracks: [track], phases: [], loopType: 'forward' },
     })
 
     repo.removeTrack('track-1')
@@ -121,18 +124,18 @@ describe('TimelineInMemoryRepository', () => {
   it('should update phase', () => {
     const phase = createMockPhase('phase-1')
     const repo = createTimelineInMemoryRepository({
-      initialTimeline: { tracks: [], phases: [phase], loopType: 'none' },
+      initialTimeline: { tracks: [], phases: [phase], loopType: 'forward' },
     })
 
-    repo.updatePhase('phase-1', { label: 'Updated Phase' })
+    repo.updatePhase('phase-1', { duration: 2000 })
 
-    expect(repo.get().phases[0].label).toBe('Updated Phase')
+    expect(repo.get().phases[0].duration).toBe(2000)
   })
 
   it('should remove phase', () => {
     const phase = createMockPhase('phase-1')
     const repo = createTimelineInMemoryRepository({
-      initialTimeline: { tracks: [], phases: [phase], loopType: 'none' },
+      initialTimeline: { tracks: [], phases: [phase], loopType: 'forward' },
     })
 
     repo.removePhase('phase-1')
@@ -156,12 +159,12 @@ describe('TimelineInMemoryRepository', () => {
     repo.subscribe(subscriber)
 
     repo.addTrack(createMockTrack('track-1'))
-    repo.updateTrack('track-1', { targetPath: 'new' })
+    repo.updateTrack('track-1', { expression: 'new' })
     repo.removeTrack('track-1')
     repo.addPhase(createMockPhase('phase-1'))
-    repo.updatePhase('phase-1', { label: 'New' })
+    repo.updatePhase('phase-1', { duration: 2000 })
     repo.removePhase('phase-1')
-    repo.setLoopType('loop')
+    repo.setLoopType('once')
 
     expect(subscriber).toHaveBeenCalledTimes(7)
   })

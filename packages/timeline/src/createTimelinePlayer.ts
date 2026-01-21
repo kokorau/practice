@@ -1,13 +1,12 @@
 import type { Timeline } from './Timeline'
 import type { TimelinePlayer, FrameState } from './Player'
-import type { Binding, ParamId } from './Binding'
+import type { ParamId } from './Track'
 import type { Ms } from './Unit'
 import type { PhaseId } from './Phase'
-import { evaluateTrack } from './evaluate'
+import { evaluate, parse } from '@practice/dsl'
 
 export interface CreateTimelinePlayerOptions {
   timeline: Timeline
-  bindings: Binding[]
 }
 
 interface PhaseBoundary {
@@ -20,7 +19,7 @@ interface PhaseBoundary {
  * Create a timeline player instance
  */
 export function createTimelinePlayer(options: CreateTimelinePlayerOptions): TimelinePlayer {
-  const { timeline, bindings } = options
+  const { timeline } = options
 
   // Calculate phase boundaries
   const phaseBoundaries = new Map<PhaseId, PhaseBoundary>()
@@ -42,9 +41,6 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
   let playhead: Ms = 0
   let isPlaying = false
   let lastEngineTime: Ms | null = null
-
-  // Build track lookup
-  const trackMap = new Map(timeline.tracks.map(t => [t.id, t]))
 
   function play(): void {
     isPlaying = true
@@ -87,52 +83,34 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
       lastEngineTime = engineTime
     }
 
-    // Evaluate all tracks and apply bindings
+    // Evaluate all tracks
     const params: Record<ParamId, number> = {}
 
-    for (const binding of bindings) {
-      const track = trackMap.get(binding.sourceTrack)
-      if (!track) continue
-
+    for (const track of timeline.tracks) {
       // Get phase boundary for this track
       const boundary = phaseBoundaries.get(track.phaseId)
       if (!boundary) continue
 
       // Determine track evaluation time based on phase state
       let trackTime: Ms
-      let rawValue: number
 
       if (playhead < boundary.startMs) {
         // Phase hasn't started yet - use initial value (evaluate at time 0)
         trackTime = 0
-        rawValue = evaluateTrack(track, trackTime)
       } else if (playhead >= boundary.endMs) {
         // Phase has ended - use final value (evaluate at phase duration)
         trackTime = boundary.duration
-        rawValue = evaluateTrack(track, trackTime)
       } else {
         // Currently in this phase - evaluate at phase-relative time
-        const phaseRelativeTime = playhead - boundary.startMs
-
-        // For Loop clock, wrap the time within the generator's period
-        if (track.clock === 'Loop' && track.mode === 'Generator') {
-          trackTime = phaseRelativeTime
-        } else {
-          trackTime = phaseRelativeTime
-        }
-
-        rawValue = evaluateTrack(track, trackTime)
+        trackTime = playhead - boundary.startMs
       }
 
-      // Apply range mapping
-      const { min, max, clamp } = binding.map
-      let mappedValue = min + rawValue * (max - min)
+      // Get or parse AST
+      const ast = track._cachedAst ?? parse(track.expression)
 
-      if (clamp) {
-        mappedValue = Math.max(min, Math.min(max, mappedValue))
-      }
-
-      params[binding.targetParam] = mappedValue
+      // Evaluate the DSL expression with time context
+      const value = evaluate(ast, { t: trackTime })
+      params[track.targetParam] = value
     }
 
     return {

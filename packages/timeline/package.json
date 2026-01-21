@@ -22,6 +22,9 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
+  "dependencies": {
+    "@practice/dsl": "workspace:*"
+  },
   "devDependencies": {
     "vitest": "^4.0.15"
   }

@@ -41,6 +41,9 @@ importers:
       '@practice/design-tokens':
         specifier: workspace:^
         version: link:../../packages/design-tokens
+      '@practice/dsl':
+        specifier: workspace:^
+        version: link:../../packages/dsl
       '@practice/font':
         specifier: workspace:^
         version: link:../../packages/font
@@ -289,6 +292,10 @@ importers:
         version: link:../schema
 
   packages/timeline:
+    dependencies:
+      '@practice/dsl':
+        specifier: workspace:*
+        version: link:../dsl
     devDependencies:
       vitest:
         specifier: ^4.0.15

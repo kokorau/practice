@@ -1,15 +1,17 @@
 import { ref, computed, onUnmounted, watch } from 'vue'
-import type { Timeline, Binding, FrameState, Ms, PhaseLayout, ParamResolver } from '@practice/timeline'
-import { createTimelinePlayer, calculatePhaseLayouts, createParamResolver } from '@practice/timeline'
+import type { Timeline, FrameState, Ms, PhaseLayout, ParamResolver } from '@practice/timeline'
+import { createTimelinePlayer, calculatePhaseLayouts, createParamResolver, prepareTimeline } from '@practice/timeline'
 
 export interface UseTimelinePlayerOptions {
   timeline: Timeline
-  bindings: Binding[]
   visibleDuration: Ms
 }
 
 export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
-  const { timeline, bindings, visibleDuration } = options
+  const { timeline, visibleDuration } = options
+
+  // Prepare timeline (parse DSL expressions into AST)
+  prepareTimeline(timeline)
 
   // State
   const playhead = ref<Ms>(0 as Ms)
@@ -17,11 +19,10 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
   const frameState = ref<FrameState>({ time: 0, params: {} })
 
   // Player instance
-  const player = createTimelinePlayer({ timeline, bindings })
+  const player = createTimelinePlayer({ timeline })
 
-  // ParamResolver for intensity → real value transformation
+  // ParamResolver for param change notifications
   const paramResolverWriter = createParamResolver()
-  paramResolverWriter.setBindings(bindings)
   const paramResolver: ParamResolver = paramResolverWriter
 
   // Animation frame
@@ -93,7 +94,6 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     playhead.value = frameState.value.time as Ms
 
     // Update ParamResolver and notify subscribers
-    // Use setParams since player.update() returns already-mapped values by ParamId
     paramResolverWriter.setParams(frameState.value.params)
     paramResolverWriter.flush()
 

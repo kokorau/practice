@@ -18,6 +18,7 @@
     "@mediapipe/tasks-vision": "0.10.22-rc.20250304",
     "@practice/color": "workspace:^",
     "@practice/design-tokens": "workspace:^",
+    "@practice/dsl": "workspace:^",
     "@practice/font": "workspace:^",
     "@practice/section-visual": "workspace:^",
     "@practice/lighting": "workspace:^",

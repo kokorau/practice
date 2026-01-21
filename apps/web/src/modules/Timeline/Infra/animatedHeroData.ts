@@ -1,16 +1,16 @@
 /**
  * Animated Hero Data
  *
- * Timeline data with tracks that animate HeroScene parameters.
- * Uses PropertyValue bindings to connect timeline to NormalizedSurfaceConfig/NormalizedMaskConfig params.
+ * Timeline data with DSL-based tracks that animate HeroScene parameters.
+ * Each track directly outputs the final parameter value via DSL expression.
  */
 
-import type { Timeline, Binding, PhaseId, TrackId } from '@practice/timeline'
+import type { Timeline, PhaseId, TrackId } from '@practice/timeline'
 import type { HeroViewConfig } from '@practice/section-visual'
 import { $PropertyValue } from '@practice/section-visual'
 
 // ============================================================
-// Timeline with HeroScene parameter tracks
+// Timeline with DSL-based HeroScene parameter tracks
 // ============================================================
 
 export const animatedHeroTimeline: Timeline = {
@@ -20,81 +20,46 @@ export const animatedHeroTimeline: Timeline = {
     { id: 'phase-loop' as PhaseId, type: 'Loop', duration: 8000 },
   ],
   tracks: [
-    // Opening phase: mask radius expands
+    // Opening phase: mask radius expands with smooth easing
+    // smoothstep(0, 3000, t) gives smooth 0->1 over 3s, then range maps to 0.1->0.45
     {
       id: 'track-mask-radius' as TrackId,
       name: 'Mask Radius',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      mode: 'Envelope',
-      envelope: {
-        points: [
-          { time: 0, value: 0 },
-          { time: 3000, value: 1 },
-        ],
-        interpolation: 'Bezier',
-      },
+      targetParam: 'mask-radius',
+      expression: 'range(smoothstep(0, 3000, t), 0.1, 0.45)',
     },
-    // Loop phase: stripe angle oscillates
+    // Loop phase: stripe angle oscillates between 30° and 60°
     {
       id: 'track-stripe-angle' as TrackId,
       name: 'Stripe Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      mode: 'Generator',
-      generator: { type: 'Sin', period: 4000, offset: 0, params: {} },
+      targetParam: 'stripe-angle',
+      expression: 'range(osc(t, 4000), 30, 60)',
     },
-    // Loop phase: surface pattern width pulses
+    // Loop phase: stripe width pulses between 15 and 35
+    // Original had offset 0.25 (quarter period), so offset = 0.25 * 2000 = 500ms
     {
       id: 'track-stripe-width' as TrackId,
       name: 'Stripe Width',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      mode: 'Generator',
-      generator: { type: 'Sin', period: 2000, offset: 0.25, params: {} },
+      targetParam: 'stripe-width',
+      expression: 'range(osc(t, 2000, 500), 15, 35)',
     },
-    // Loop phase: mask center X oscillates
+    // Loop phase: mask center X oscillates between 0.35 and 0.65
     {
       id: 'track-mask-center-x' as TrackId,
       name: 'Mask Center X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      mode: 'Generator',
-      generator: { type: 'Sin', period: 6000, offset: 0, params: {} },
+      targetParam: 'mask-center-x',
+      expression: 'range(osc(t, 6000), 0.35, 0.65)',
     },
   ],
 }
-
-// ============================================================
-// Bindings: Map timeline tracks to HeroScene parameters
-// ============================================================
-
-export const animatedHeroBindings: Binding[] = [
-  // Mask radius: expands from 0.1 to 0.45 during opening
-  {
-    targetParam: 'mask-radius',
-    sourceTrack: 'track-mask-radius' as TrackId,
-    map: { min: 0.1, max: 0.45 },
-  },
-  // Stripe angle: oscillates between 30° and 60°
-  {
-    targetParam: 'stripe-angle',
-    sourceTrack: 'track-stripe-angle' as TrackId,
-    map: { min: 30, max: 60 },
-  },
-  // Stripe width: pulses between 15 and 35
-  {
-    targetParam: 'stripe-width',
-    sourceTrack: 'track-stripe-width' as TrackId,
-    map: { min: 15, max: 35 },
-  },
-  // Mask center X: oscillates between 0.35 and 0.65
-  {
-    targetParam: 'mask-center-x',
-    sourceTrack: 'track-mask-center-x' as TrackId,
-    map: { min: 0.35, max: 0.65 },
-  },
-]
 
 // ============================================================
 // Preset config with PropertyValue bindings

@@ -8,7 +8,7 @@ import {
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
-import { animatedHeroTimeline, animatedHeroBindings, createAnimatedHeroConfig } from '../modules/Timeline/Infra/animatedHeroData'
+import { animatedHeroTimeline, createAnimatedHeroConfig } from '../modules/Timeline/Infra/animatedHeroData'
 import {
   useSiteColors,
   useHeroScene,
@@ -452,7 +452,6 @@ function stopResize() {
       <TimelinePanel
         ref="timelinePanelRef"
         :timeline="animatedHeroTimeline"
-        :bindings="animatedHeroBindings"
         :visible-duration="VISIBLE_DURATION"
         @update:frame-state="handleFrameStateUpdate"
       />
