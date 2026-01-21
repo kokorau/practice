@@ -18,8 +18,6 @@ export function createCanvasTrackRenderer(): TrackRenderer {
 
       // Sample the expression over time
       const sampleCount = Math.max(200, Math.floor(width))
-
-      // First pass: determine value range for normalization
       const values: number[] = []
       for (let i = 0; i <= sampleCount; i++) {
         const t = (i / sampleCount) * duration
@@ -27,14 +25,13 @@ export function createCanvasTrackRenderer(): TrackRenderer {
         values.push(value)
       }
 
-      const minValue = Math.min(...values)
-      const maxValue = Math.max(...values)
-      const valueRange = maxValue - minValue
+      // Fixed display range: -0.05 to 1.05 (intensity is 0-1, with padding for line thickness)
+      const displayMin = -0.05
+      const displayMax = 1.05
+      const displayRange = displayMax - displayMin
 
-      // Normalize function: map value to 0-1 range (or use as-is if flat)
-      const normalize = valueRange > 0.0001
-        ? (v: number) => (v - minValue) / valueRange
-        : () => 0.5
+      // Normalize function: map value to display range
+      const normalize = (v: number) => (v - displayMin) / displayRange
 
       // Draw waveform
       ctx.strokeStyle = 'oklch(0.50 0.20 200)'
@@ -58,13 +55,13 @@ export function createCanvasTrackRenderer(): TrackRenderer {
 
       ctx.stroke()
 
-      // Draw value range indicators (min/max labels)
+      // Draw value range indicators (intensity range: 0-1)
       ctx.fillStyle = 'oklch(0.55 0.02 260)'
       ctx.font = '9px system-ui'
       ctx.textBaseline = 'top'
-      ctx.fillText(maxValue.toFixed(1), 2, 2)
+      ctx.fillText('1', 2, 2)
       ctx.textBaseline = 'bottom'
-      ctx.fillText(minValue.toFixed(1), 2, height - 2)
+      ctx.fillText('0', 2, height - 2)
     },
   }
 }
