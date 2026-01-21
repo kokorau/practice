@@ -138,7 +138,7 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     seek,
     toggle,
 
-    // Helpers
+    // Helpers,
     getPhaseLayout,
   }
 }
