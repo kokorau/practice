@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type { Ms, ParamResolver } from '@practice/timeline'
 import {
@@ -8,7 +8,7 @@ import {
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
-import { animatedHeroTimeline, createAnimatedHeroConfig } from '../modules/Timeline/Infra/animatedHeroData'
+import { ANIMATED_PRESETS, type AnimatedPreset } from '../modules/Timeline/Infra/animatedHeroData'
 import {
   useSiteColors,
   useHeroScene,
@@ -26,6 +26,31 @@ import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPan
 // Editor Config
 // ============================================================
 const VISIBLE_DURATION = 30000 as Ms // 30 seconds
+
+// ============================================================
+// Animated Preset Selection
+// ============================================================
+const selectedPresetId = ref(ANIMATED_PRESETS[0]!.id)
+const selectedPreset = computed((): AnimatedPreset =>
+  ANIMATED_PRESETS.find((p) => p.id === selectedPresetId.value) ?? ANIMATED_PRESETS[0]!
+)
+
+function handleSelectAnimatedPreset(presetId: string) {
+  selectedPresetId.value = presetId
+  // Update colors when preset changes
+  const preset = ANIMATED_PRESETS.find((p) => p.id === presetId)
+  if (preset?.colorPreset) {
+    hue.value = preset.colorPreset.brand.hue
+    saturation.value = preset.colorPreset.brand.saturation
+    value.value = preset.colorPreset.brand.value
+    accentHue.value = preset.colorPreset.accent.hue
+    accentSaturation.value = preset.colorPreset.accent.saturation
+    accentValue.value = preset.colorPreset.accent.value
+    foundationHue.value = preset.colorPreset.foundation.hue
+    foundationSaturation.value = preset.colorPreset.foundation.saturation
+    foundationValue.value = preset.colorPreset.foundation.value
+  }
+}
 
 // ============================================================
 // UI Dark Mode (independent from palette)
@@ -284,13 +309,36 @@ onMounted(async () => {
   await heroScene.preset.loadPresets()
 
   // Set animated config directly (bypasses fromHeroViewConfig which can't handle bindings)
-  heroScene.usecase.heroViewRepository.set(createAnimatedHeroConfig())
+  heroScene.usecase.heroViewRepository.set(selectedPreset.value.createConfig())
+
+  // Apply initial color preset
+  const initialPreset = selectedPreset.value
+  if (initialPreset.colorPreset) {
+    hue.value = initialPreset.colorPreset.brand.hue
+    saturation.value = initialPreset.colorPreset.brand.saturation
+    value.value = initialPreset.colorPreset.brand.value
+    accentHue.value = initialPreset.colorPreset.accent.hue
+    accentSaturation.value = initialPreset.colorPreset.accent.saturation
+    accentValue.value = initialPreset.colorPreset.accent.value
+    foundationHue.value = initialPreset.colorPreset.foundation.hue
+    foundationSaturation.value = initialPreset.colorPreset.foundation.saturation
+    foundationValue.value = initialPreset.colorPreset.foundation.value
+  }
 
   // Wait for next tick to ensure TimelinePanel is fully mounted and refs are ready
   await nextTick()
 
   // Initialize preview canvas (after TimelinePanel mounts so paramResolver is available)
   await heroScene.renderer.initPreview(heroPreviewRef.value?.canvasRef)
+})
+
+// Watch for preset changes to update config
+watch(selectedPresetId, async () => {
+  // Update hero config when preset changes
+  heroScene.usecase.heroViewRepository.set(selectedPreset.value.createConfig())
+  // Re-render scene
+  await nextTick()
+  heroScene.renderer.renderSceneFromConfig?.()
 })
 
 // ============================================================
@@ -449,9 +497,26 @@ function stopResize() {
       class="timeline-area"
       :style="{ height: `${timelineHeightPercent}%` }"
     >
+      <!-- Preset Selector -->
+      <div class="preset-selector">
+        <span class="preset-selector__label">Animation Preset:</span>
+        <div class="preset-selector__buttons">
+          <button
+            v-for="preset in ANIMATED_PRESETS"
+            :key="preset.id"
+            class="preset-button"
+            :class="{ 'preset-button--active': selectedPresetId === preset.id }"
+            :title="preset.description"
+            @click="handleSelectAnimatedPreset(preset.id)"
+          >
+            {{ preset.name }}
+          </button>
+        </div>
+      </div>
       <TimelinePanel
+        :key="selectedPresetId"
         ref="timelinePanelRef"
-        :timeline="animatedHeroTimeline"
+        :timeline="selectedPreset.timeline"
         :visible-duration="VISIBLE_DURATION"
         @update:frame-state="handleFrameStateUpdate"
       />
@@ -516,5 +581,81 @@ function stopResize() {
   background: oklch(0.97 0.005 260);
   border-top: 1px solid oklch(0.88 0.01 260);
   flex-shrink: 0;
+}
+
+.preset-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: oklch(0.95 0.005 260);
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+  flex-shrink: 0;
+}
+
+.preset-selector__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: oklch(0.45 0.02 260);
+  white-space: nowrap;
+}
+
+.preset-selector__buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.preset-button {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid oklch(0.80 0.01 260);
+  border-radius: 6px;
+  background: oklch(0.98 0.005 260);
+  color: oklch(0.35 0.02 260);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-button:hover {
+  background: oklch(0.94 0.01 260);
+  border-color: oklch(0.70 0.02 260);
+}
+
+.preset-button--active {
+  background: oklch(0.50 0.15 250);
+  border-color: oklch(0.45 0.18 250);
+  color: oklch(0.98 0.01 260);
+}
+
+.preset-button--active:hover {
+  background: oklch(0.55 0.15 250);
+}
+
+.dark .preset-selector {
+  background: oklch(0.15 0.02 260);
+  border-bottom-color: oklch(0.25 0.02 260);
+}
+
+.dark .preset-selector__label {
+  color: oklch(0.70 0.01 260);
+}
+
+.dark .preset-button {
+  background: oklch(0.18 0.02 260);
+  border-color: oklch(0.30 0.02 260);
+  color: oklch(0.80 0.01 260);
+}
+
+.dark .preset-button:hover {
+  background: oklch(0.25 0.02 260);
+  border-color: oklch(0.40 0.02 260);
+}
+
+.dark .preset-button--active {
+  background: oklch(0.50 0.15 250);
+  border-color: oklch(0.55 0.18 250);
+  color: oklch(0.98 0.01 260);
 }
 </style>
