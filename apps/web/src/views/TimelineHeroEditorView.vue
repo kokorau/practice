@@ -95,7 +95,7 @@ const getParamResolver = (): ParamResolver | undefined => {
 // Handler for frameState changes - triggers re-render when timeline params change
 const handleFrameStateUpdate = () => {
   // Re-render when timeline updates params
-  heroScene.renderer.renderSceneFromConfig()
+  heroScene.renderer.renderSceneFromConfig?.()
 }
 
 // ============================================================
