@@ -31,8 +31,8 @@ export interface UseHeroSceneRendererOptions {
   onDestroyPreview?: () => void
   /** Lazy getter for imageRegistry (to handle circular initialization order) */
   getImageRegistry?: () => Map<string, ImageBitmap>
-  /** ParamResolver for timeline-driven animations (optional) */
-  paramResolver?: ParamResolver
+  /** Lazy getter for ParamResolver (to handle async mount order) */
+  getParamResolver?: () => ParamResolver | undefined
 }
 
 export interface UseHeroSceneRendererReturn {
@@ -52,13 +52,10 @@ export const useHeroSceneRenderer = (
     editorConfig,
     onDestroyPreview,
     getImageRegistry,
-    paramResolver,
+    getParamResolver,
   } = options
 
   let previewRenderer: TextureRenderer | null = null
-
-  // PropertyResolver for timeline-driven params
-  const propertyResolver = paramResolver ? createPropertyResolver(paramResolver) : null
 
   // Unsubscribe function for param change listener
   let unsubscribeParamChange: (() => void) | null = null
@@ -68,8 +65,10 @@ export const useHeroSceneRenderer = (
     let config = heroViewRepository.get()
     const imageRegistry = getImageRegistry?.()
 
-    // Resolve PropertyValue bindings if PropertyResolver is available
-    if (propertyResolver) {
+    // Resolve PropertyValue bindings if ParamResolver is available
+    const paramResolver = getParamResolver?.()
+    if (paramResolver) {
+      const propertyResolver = createPropertyResolver(paramResolver)
       config = resolveHeroViewConfig(config, propertyResolver)
     }
 
@@ -98,6 +97,8 @@ export const useHeroSceneRenderer = (
       await render()
 
       // Subscribe to ParamResolver for automatic re-rendering on param changes
+      // Use getter to get the resolver at subscription time
+      const paramResolver = getParamResolver?.()
       if (paramResolver) {
         unsubscribeParamChange = paramResolver.onParamChange(() => {
           // Re-render when timeline params change

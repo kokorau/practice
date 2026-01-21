@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import type { Ms, ParamResolver } from '@practice/timeline'
 import {
@@ -8,7 +8,7 @@ import {
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
-import { mockTimeline, mockBindings } from '../modules/Timeline/Infra/mockData'
+import { animatedHeroTimeline, animatedHeroBindings, createAnimatedHeroConfig } from '../modules/Timeline/Infra/animatedHeroData'
 import {
   useSiteColors,
   useHeroScene,
@@ -87,21 +87,26 @@ const primitivePalette = computed((): PrimitivePalette => {
 // ============================================================
 const timelinePanelRef = ref<InstanceType<typeof TimelinePanel> | null>(null)
 
-// ParamResolver wrapper - reactive access to TimelinePanel's paramResolver
-const paramResolverComputed = computed<ParamResolver | undefined>(() => {
+// Lazy getter for ParamResolver - evaluated at render time
+const getParamResolver = (): ParamResolver | undefined => {
   return timelinePanelRef.value?.paramResolver
-})
+}
+
+// Handler for frameState changes - triggers re-render when timeline params change
+const handleFrameStateUpdate = () => {
+  // Re-render when timeline updates params
+  heroScene.renderer.renderSceneFromConfig()
+}
 
 // ============================================================
 // Hero Scene (WebGPU rendering with layer system + ParamResolver)
 // ============================================================
-// Note: We pass paramResolver after TimelinePanel mounts
-// For initial render, paramResolver will be undefined
+// Uses lazy getter so paramResolver is available after TimelinePanel mounts
 const heroScene = useHeroScene({
   primitivePalette,
   isDark: uiDarkMode,
   layerSelection,
-  paramResolver: paramResolverComputed.value,
+  getParamResolver,
 })
 
 // ============================================================
@@ -235,7 +240,13 @@ onMounted(async () => {
   // Load layout presets
   await heroScene.preset.loadPresets()
 
-  // Initialize preview canvas
+  // Set animated config directly (bypasses fromHeroViewConfig which can't handle bindings)
+  heroScene.usecase.heroViewRepository.set(createAnimatedHeroConfig())
+
+  // Wait for next tick to ensure TimelinePanel is fully mounted and refs are ready
+  await nextTick()
+
+  // Initialize preview canvas (after TimelinePanel mounts so paramResolver is available)
   await heroScene.renderer.initPreview(heroPreviewRef.value?.canvasRef)
 })
 
@@ -398,9 +409,10 @@ function stopResize() {
     >
       <TimelinePanel
         ref="timelinePanelRef"
-        :timeline="mockTimeline"
-        :bindings="mockBindings"
+        :timeline="animatedHeroTimeline"
+        :bindings="animatedHeroBindings"
         :visible-duration="VISIBLE_DURATION"
+        @update:frame-state="handleFrameStateUpdate"
       />
     </section>
   </div>

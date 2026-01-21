@@ -288,8 +288,8 @@ export interface UseHeroSceneOptions {
   isDark: Ref<boolean> | ComputedRef<boolean>
   repository?: HeroViewRepository
   layerSelection?: LayerSelectionReturn
-  /** ParamResolver for timeline-driven animations (optional) */
-  paramResolver?: ParamResolver
+  /** Lazy getter for ParamResolver (to handle async mount order) */
+  getParamResolver?: () => ParamResolver | undefined
 }
 
 // ============================================================
@@ -297,7 +297,7 @@ export interface UseHeroSceneOptions {
 // ============================================================
 
 export const useHeroScene = (options: UseHeroSceneOptions) => {
-  const { primitivePalette, isDark, repository, layerSelection = createLayerSelection(), paramResolver } = options
+  const { primitivePalette, isDark, repository, layerSelection = createLayerSelection(), getParamResolver } = options
 
   // ============================================================
   // Editor State (unified UI state management)
@@ -397,7 +397,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     editorConfig,
     onDestroyPreview: () => heroThumbnails.destroyThumbnailRenderers(),
     getImageRegistry: () => _imageRegistryGetter?.() ?? new Map(),
-    paramResolver,
+    getParamResolver,
   })
 
   // Alias for backward compatibility and shorter access
