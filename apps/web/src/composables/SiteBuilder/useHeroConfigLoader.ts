@@ -42,9 +42,11 @@ function getStaticValue(prop: PropertyValue | undefined): string | number | bool
   // BindingValue - return undefined (shouldn't happen for imageId)
   return undefined
 }
-// Internal imports for denormalize functions (not part of public API)
+// Internal imports for normalization/denormalization functions
 import {
+  getSurfaceAsNormalized,
   denormalizeSurfaceConfig,
+  getMaskAsNormalized,
   denormalizeMaskConfig,
 } from '@practice/section-visual'
 import type { UseHeroColorsReturn } from './useHeroColors'
@@ -173,7 +175,8 @@ export const useHeroConfigLoader = (
             await heroImages.restoreBackgroundImage(imageId)
           }
         }
-        const bgPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(bgSurface), surfacePresets)
+        const normalizedBgSurface = getSurfaceAsNormalized(bgSurface)
+        const bgPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(normalizedBgSurface), surfacePresets)
         selectedBackgroundIndex.value = bgPresetIndex ?? 0
       }
 
@@ -218,7 +221,8 @@ export const useHeroConfigLoader = (
       }
 
       if (maskShape) {
-        selectedMaskIndex.value = findMaskPatternIndex(denormalizeMaskConfig(maskShape), heroThumbnails.maskPatterns)
+        const normalizedMaskShape = getMaskAsNormalized(maskShape)
+        selectedMaskIndex.value = findMaskPatternIndex(denormalizeMaskConfig(normalizedMaskShape), heroThumbnails.maskPatterns)
       } else {
         selectedMaskIndex.value = null
       }
@@ -231,7 +235,8 @@ export const useHeroConfigLoader = (
             await heroImages.restoreMaskImage(imageId)
           }
         }
-        const midgroundPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(maskSurface), heroThumbnails.midgroundTexturePatterns)
+        const normalizedMaskSurface = getSurfaceAsNormalized(maskSurface)
+        const midgroundPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(normalizedMaskSurface), heroThumbnails.midgroundTexturePatterns)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
       }
 

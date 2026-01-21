@@ -7,7 +7,7 @@
 
 import type { RGBA } from '@practice/texture'
 import type { HeroViewConfig, BaseLayerNodeConfig, SurfaceLayerNodeConfig, GroupLayerNodeConfig } from '../Domain/HeroViewConfig'
-import { denormalizeSurfaceConfig } from '../Domain/HeroViewConfig'
+import { getSurfaceAsNormalized, denormalizeSurfaceConfig } from '../Domain/HeroViewConfig'
 import type { CustomBackgroundSurfaceParams, CustomSurfaceParams } from '../types/HeroSceneState'
 import { toCustomBackgroundSurfaceParams, toCustomSurfaceParams } from '../Domain/SurfaceMapper'
 
@@ -70,9 +70,10 @@ export function syncBackgroundSurfaceParams(
     return { surfaceParams: null }
   }
 
-  // Convert NormalizedSurfaceConfig to SurfaceConfig, then to CustomBackgroundSurfaceParams
-  const legacySurface = denormalizeSurfaceConfig(bgSurface)
-  const surfaceParams = toCustomBackgroundSurfaceParams(legacySurface, colorA, colorB)
+  // Normalize first (ensures consistent format), then extract static values for UI params
+  const normalizedSurface = getSurfaceAsNormalized(bgSurface)
+  const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
+  const surfaceParams = toCustomBackgroundSurfaceParams(staticSurface, colorA, colorB)
 
   return { surfaceParams }
 }
@@ -136,9 +137,10 @@ export function syncMaskSurfaceParams(
     return { surfaceParams: null }
   }
 
-  // Convert NormalizedSurfaceConfig to SurfaceConfig, then to CustomSurfaceParams
-  const legacySurface = denormalizeSurfaceConfig(maskSurface)
-  const surfaceParams = toCustomSurfaceParams(legacySurface, colorA, colorB)
+  // Normalize first (ensures consistent format), then extract static values for UI params
+  const normalizedSurface = getSurfaceAsNormalized(maskSurface)
+  const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
+  const surfaceParams = toCustomSurfaceParams(staticSurface, colorA, colorB)
 
   return { surfaceParams }
 }

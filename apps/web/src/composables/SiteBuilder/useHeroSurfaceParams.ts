@@ -34,7 +34,7 @@ import {
   normalizeSurfaceConfig,
 } from '@practice/section-visual'
 // Internal import for denormalize function (not part of public API)
-import { denormalizeMaskConfig } from '@practice/section-visual'
+import { getMaskAsNormalized, denormalizeMaskConfig } from '@practice/section-visual'
 import type {
   CustomMaskShapeParams,
   CustomSurfaceParams,
@@ -113,8 +113,10 @@ export const useHeroSurfaceParams = (
       if (!processor) return null
       const maskModifier = processor.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
       if (!maskModifier) return null
-      // Convert NormalizedMaskConfig to legacy format for toCustomMaskShapeParams
-      return toCustomMaskShapeParams(denormalizeMaskConfig(maskModifier.shape))
+      // Normalize first (ensures consistent format), then extract static values for UI params
+      const normalizedMask = getMaskAsNormalized(maskModifier.shape)
+      const staticMask = denormalizeMaskConfig(normalizedMask)
+      return toCustomMaskShapeParams(staticMask)
     },
     set: (val: CustomMaskShapeParams | null) => {
       if (val === null) return
