@@ -19,7 +19,11 @@ import type {
   FooterContent,
 } from '../Domain'
 import { $Page, $Section } from '../Domain'
-import type { HeroViewConfig } from '@practice/section-visual'
+import type { HeroViewConfig, PropertyValue } from '@practice/section-visual'
+import { $PropertyValue } from '@practice/section-visual'
+
+/** Shorthand for wrapping value as PropertyValue */
+const sv = (v: string | number | boolean): PropertyValue => $PropertyValue.static(v)
 
 // Legacy type alias
 type SectionType = SectionKind
@@ -281,7 +285,7 @@ const corporateCleanConfig: HeroViewConfig = {
       id: 'base',
       name: 'Background',
       visible: true,
-      surface: { id: 'grid', params: { lineWidth: 1, cellSize: 48 } },
+      surface: { id: 'grid', params: { lineWidth: sv(1), cellSize: sv(48) } },
       colors: { primary: 'BN1', secondary: 'BN2' },
     },
     {
@@ -293,7 +297,7 @@ const corporateCleanConfig: HeroViewConfig = {
         {
           type: 'effect',
           id: 'vignette',
-          params: { shape: 'ellipse', intensity: 0.3, softness: 0.6, color: [0, 0, 0, 1], radius: 0.8, centerX: 0.5, centerY: 0.5, aspectRatio: 1 },
+          params: { shape: sv('ellipse'), intensity: sv(0.3), softness: sv(0.6), radius: sv(0.8), centerX: sv(0.5), centerY: sv(0.5), aspectRatio: sv(1) },
         },
       ],
     },
@@ -317,11 +321,11 @@ const corporateCleanConfig: HeroViewConfig = {
           shape: {
             id: 'rect',
             params: {
-              left: 0.05, right: 0.55, top: 0.1, bottom: 0.9,
-              radiusTopLeft: 0.02, radiusTopRight: 0.02,
-              radiusBottomLeft: 0.02, radiusBottomRight: 0.02,
-              rotation: 0, perspectiveX: 0, perspectiveY: 0,
-              cutout: true,
+              left: sv(0.05), right: sv(0.55), top: sv(0.1), bottom: sv(0.9),
+              radiusTopLeft: sv(0.02), radiusTopRight: sv(0.02),
+              radiusBottomLeft: sv(0.02), radiusBottomRight: sv(0.02),
+              rotation: sv(0), perspectiveX: sv(0), perspectiveY: sv(0),
+              cutout: sv(true),
             },
           },
           invert: false,

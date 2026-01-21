@@ -5,22 +5,20 @@
  */
 
 // ============================================================================
-// Binding DSL
+// PropertyValue DSL
 // ============================================================================
 
 /** 静的な値 */
 export interface StaticValue {
   readonly type: 'static'
-  readonly value: string | number
+  readonly value: string | number | boolean
 }
 
-/** timeline track への binding */
+/** ParamResolver の解決済み値への参照 */
 export interface BindingValue {
   readonly type: 'binding'
-  /** timeline.tracks[trackUuid] を参照 */
-  readonly track: string
-  /** progress を range にマッピング [min, max] */
-  readonly range: readonly [number, number]
+  /** ParamResolver のパラメータID */
+  readonly paramId: string
 }
 
 export type PropertyValue = StaticValue | BindingValue
@@ -49,15 +47,14 @@ export interface SectionVisual {
 // ============================================================================
 
 export const $PropertyValue = {
-  static: (value: string | number): StaticValue => ({
+  static: (value: string | number | boolean): StaticValue => ({
     type: 'static',
     value,
   }),
 
-  binding: (track: string, range: [number, number]): BindingValue => ({
+  binding: (paramId: string): BindingValue => ({
     type: 'binding',
-    track,
-    range,
+    paramId,
   }),
 
   isBinding: (value: PropertyValue): value is BindingValue =>

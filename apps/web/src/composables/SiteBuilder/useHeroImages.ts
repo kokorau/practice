@@ -18,7 +18,20 @@ import {
   type SurfaceLayerNodeConfig,
   type GroupLayerNodeConfig,
   type ImageLayerNodeConfig,
+  type PropertyValue,
+  $PropertyValue,
 } from '@practice/section-visual'
+
+/**
+ * Extract value from PropertyValue (returns undefined for BindingValue)
+ */
+function getStaticValue(prop: PropertyValue | undefined): string | number | boolean | undefined {
+  if (!prop) return undefined
+  if ($PropertyValue.isStatic(prop)) {
+    return prop.value
+  }
+  return undefined
+}
 import { createUnsplashImageUploadAdapter } from '../../adapters/UnsplashImageUploadAdapter'
 
 // Layer IDs for template layers
@@ -234,14 +247,16 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
           (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'background'
         )
         if (surfaceLayer?.surface.id === 'image') {
-          return surfaceLayer.surface.params.imageId as string
+          const imageId = getStaticValue(surfaceLayer.surface.params.imageId)
+          return typeof imageId === 'string' ? imageId : null
         }
       }
 
       // Fallback: legacy base layer
       const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
       if (baseLayer?.surface.id === 'image') {
-        return baseLayer.surface.params.imageId as string
+        const imageId = getStaticValue(baseLayer.surface.params.imageId)
+        return typeof imageId === 'string' ? imageId : null
       }
       return null
     },
@@ -262,12 +277,14 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
       if (!config) return null
       for (const layer of config.layers) {
         if (layer.type === 'surface' && layer.surface.id === 'image') {
-          return layer.surface.params.imageId as string
+          const imageId = getStaticValue(layer.surface.params.imageId)
+          return typeof imageId === 'string' ? imageId : null
         }
         if (layer.type === 'group' && layer.children) {
           const surfaceLayer = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
           if (surfaceLayer?.surface.id === 'image') {
-            return surfaceLayer.surface.params.imageId as string
+            const imageId = getStaticValue(surfaceLayer.surface.params.imageId)
+            return typeof imageId === 'string' ? imageId : null
           }
         }
       }
@@ -315,7 +332,7 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
     customBackgroundBitmap = await createImageBitmap(file)
 
     // Update Repository
-    setBaseSurface({ id: 'image', params: { imageId } })
+    setBaseSurface({ id: 'image', params: { imageId: $PropertyValue.static(imageId) } })
 
     await render()
   }

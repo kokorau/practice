@@ -3,10 +3,25 @@ import {
   type EffectType,
   type LayerEffectConfig,
   type SingleEffectConfig,
+  type PropertyValue,
   createSingleEffectConfig,
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
+  $PropertyValue,
 } from '@practice/section-visual'
+
+/**
+ * Convert raw params to PropertyValue format
+ */
+function toPropertyValueParams(params: Record<string, unknown>): Record<string, PropertyValue> {
+  const result: Record<string, PropertyValue> = {}
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+      result[key] = $PropertyValue.static(value)
+    }
+  }
+  return result
+}
 
 // ============================================================
 // Types
@@ -219,9 +234,11 @@ export function useEffectManager(): UseEffectManagerReturn {
     updatePipeline(layerId, (current) => {
       if (index < 0 || index >= current.length) return current
       const effect = current[index]!
+      // Convert raw params to PropertyValue format
+      const propertyParams = toPropertyValueParams(params)
       return [
         ...current.slice(0, index),
-        { ...effect, params: { ...effect.params, ...params } },
+        { ...effect, params: { ...effect.params, ...propertyParams } },
         ...current.slice(index + 1),
       ]
     })

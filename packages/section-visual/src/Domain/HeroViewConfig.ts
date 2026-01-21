@@ -10,6 +10,8 @@
 import type { LayerEffectConfig } from './EffectSchema'
 import { createDefaultEffectConfig } from './EffectSchema'
 import { type EffectType, EFFECT_TYPES, EFFECT_REGISTRY, isValidEffectType } from './EffectRegistry'
+import type { PropertyValue } from './SectionVisual'
+import { $PropertyValue } from './SectionVisual'
 
 // ============================================================
 // Color Config Types (for serialization)
@@ -287,8 +289,8 @@ export const SURFACE_TYPES: SurfaceType[] = [
 export interface NormalizedSurfaceConfig {
   /** Surface type identifier */
   id: SurfaceType
-  /** Surface-specific parameters (validated against schema at runtime) */
-  params: Record<string, unknown>
+  /** Surface-specific parameters (static or bound to timeline) */
+  params: Record<string, PropertyValue>
 }
 
 /**
@@ -311,17 +313,33 @@ export function isLegacyTypeSurfaceConfig(
 
 /**
  * Convert legacy SurfaceConfig to NormalizedSurfaceConfig
+ * Legacy params (raw values) are wrapped in StaticValue
  */
 export function normalizeSurfaceConfig(config: SurfaceConfig): NormalizedSurfaceConfig {
-  const { type, ...params } = config
+  const { type, ...rawParams } = config
+  const params: Record<string, PropertyValue> = {}
+  for (const [key, value] of Object.entries(rawParams)) {
+    if (typeof value === 'number' || typeof value === 'string') {
+      params[key] = $PropertyValue.static(value)
+    }
+  }
   return { id: type, params }
 }
 
 /**
  * Convert NormalizedSurfaceConfig to legacy SurfaceConfig
+ * Only StaticValue params are extracted; BindingValue throws error
  */
 export function denormalizeSurfaceConfig(config: NormalizedSurfaceConfig): SurfaceConfig {
-  return { type: config.id, ...config.params } as SurfaceConfig
+  const rawParams: Record<string, unknown> = {}
+  for (const [key, prop] of Object.entries(config.params)) {
+    if ($PropertyValue.isStatic(prop)) {
+      rawParams[key] = prop.value
+    } else {
+      throw new Error(`Cannot denormalize BindingValue for key "${key}". Use resolveParams() instead.`)
+    }
+  }
+  return { type: config.id, ...rawParams } as SurfaceConfig
 }
 
 /**
@@ -560,8 +578,8 @@ export const MASK_SHAPE_TYPE_IDS: MaskShapeTypeId[] = [
 export interface NormalizedMaskConfig {
   /** Mask shape type identifier */
   id: MaskShapeTypeId
-  /** Mask-specific parameters (validated against schema at runtime) */
-  params: Record<string, unknown>
+  /** Mask-specific parameters (static or bound to timeline) */
+  params: Record<string, PropertyValue>
 }
 
 /**
@@ -584,17 +602,33 @@ export function isLegacyTypeMaskConfig(
 
 /**
  * Convert legacy MaskShapeConfig to NormalizedMaskConfig
+ * Legacy params (raw values) are wrapped in StaticValue
  */
 export function normalizeMaskConfig(config: MaskShapeConfig): NormalizedMaskConfig {
-  const { type, ...params } = config
+  const { type, ...rawParams } = config
+  const params: Record<string, PropertyValue> = {}
+  for (const [key, value] of Object.entries(rawParams)) {
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+      params[key] = $PropertyValue.static(value)
+    }
+  }
   return { id: type, params }
 }
 
 /**
  * Convert NormalizedMaskConfig to legacy MaskShapeConfig
+ * Only StaticValue params are extracted; BindingValue throws error
  */
 export function denormalizeMaskConfig(config: NormalizedMaskConfig): MaskShapeConfig {
-  return { type: config.id, ...config.params } as MaskShapeConfig
+  const rawParams: Record<string, unknown> = {}
+  for (const [key, prop] of Object.entries(config.params)) {
+    if ($PropertyValue.isStatic(prop)) {
+      rawParams[key] = prop.value
+    } else {
+      throw new Error(`Cannot denormalize BindingValue for key "${key}". Use resolveParams() instead.`)
+    }
+  }
+  return { type: config.id, ...rawParams } as MaskShapeConfig
 }
 
 /**
@@ -641,8 +675,8 @@ export interface SingleEffectConfig {
   type: 'effect'
   /** Effect type identifier */
   id: EffectType
-  /** Effect-specific parameters (validated against schema at runtime) */
-  params: Record<string, unknown>
+  /** Effect-specific parameters (static or bound to timeline) */
+  params: Record<string, PropertyValue>
 }
 
 /**
@@ -745,10 +779,21 @@ export function createSingleEffectConfig(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { enabled: _enabled, ...defaultParams } = defaultConfig as Record<string, unknown>
 
+  // Merge with overrides
+  const mergedParams = params ? { ...defaultParams, ...params } : defaultParams
+
+  // Convert raw values to PropertyValue
+  const propertyParams: Record<string, PropertyValue> = {}
+  for (const [key, value] of Object.entries(mergedParams)) {
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+      propertyParams[key] = $PropertyValue.static(value)
+    }
+  }
+
   return {
     type: 'effect',
     id: effectType,
-    params: params ? { ...defaultParams, ...params } : defaultParams,
+    params: propertyParams,
   }
 }
 
@@ -777,11 +822,20 @@ export function extractEnabledEffects(config: LayerEffectConfig): SingleEffectCo
     const effectConfig = config[effectType]
     if (effectConfig && 'enabled' in effectConfig && effectConfig.enabled) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { enabled: _enabled, ...params } = effectConfig as Record<string, unknown>
+      const { enabled: _enabled, ...rawParams } = effectConfig as Record<string, unknown>
+
+      // Convert raw values to PropertyValue
+      const propertyParams: Record<string, PropertyValue> = {}
+      for (const [key, value] of Object.entries(rawParams)) {
+        if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+          propertyParams[key] = $PropertyValue.static(value)
+        }
+      }
+
       effects.push({
         type: 'effect',
         id: effectType,
-        params,
+        params: propertyParams,
       })
     }
   }
@@ -791,6 +845,7 @@ export function extractEnabledEffects(config: LayerEffectConfig): SingleEffectCo
 
 /**
  * Convert SingleEffectConfig[] to LayerEffectConfig for UI display
+ * Only StaticValue params are extracted; BindingValue throws error
  */
 export function denormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): LayerEffectConfig {
   const config = createDefaultEffectConfig()
@@ -798,10 +853,21 @@ export function denormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): L
   for (const effect of effects) {
     if (isValidEffectType(effect.id)) {
       const effectKey = effect.id as keyof LayerEffectConfig
+
+      // Extract raw values from PropertyValue
+      const rawParams: Record<string, unknown> = {}
+      for (const [key, prop] of Object.entries(effect.params)) {
+        if ($PropertyValue.isStatic(prop)) {
+          rawParams[key] = prop.value
+        } else {
+          throw new Error(`Cannot denormalize BindingValue for effect "${effect.id}" key "${key}". Use resolveParams() instead.`)
+        }
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(config[effectKey] as any) = {
         ...config[effectKey],
-        ...effect.params,
+        ...rawParams,
         enabled: true,
       }
     }
@@ -1075,7 +1141,15 @@ export const DEFAULT_LAYER_MASK_COLORS: SurfaceColorsConfig = {
 export const createDefaultMaskProcessorConfig = (): MaskProcessorConfig => ({
   type: 'mask',
   enabled: true,
-  shape: { id: 'circle', params: { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false } },
+  shape: {
+    id: 'circle',
+    params: {
+      centerX: $PropertyValue.static(0.5),
+      centerY: $PropertyValue.static(0.5),
+      radius: $PropertyValue.static(0.3),
+      cutout: $PropertyValue.static(false),
+    },
+  },
   invert: false,
   feather: 0,
 })

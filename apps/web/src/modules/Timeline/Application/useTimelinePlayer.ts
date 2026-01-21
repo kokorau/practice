@@ -1,6 +1,6 @@
 import { ref, computed, onUnmounted, watch } from 'vue'
-import type { Timeline, Binding, FrameState, Ms, PhaseLayout } from '@practice/timeline'
-import { createTimelinePlayer, calculatePhaseLayouts } from '@practice/timeline'
+import type { Timeline, Binding, FrameState, Ms, PhaseLayout, ParamResolver } from '@practice/timeline'
+import { createTimelinePlayer, calculatePhaseLayouts, createParamResolver } from '@practice/timeline'
 
 export interface UseTimelinePlayerOptions {
   timeline: Timeline
@@ -18,6 +18,11 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
 
   // Player instance
   const player = createTimelinePlayer({ timeline, bindings })
+
+  // ParamResolver for intensity → real value transformation
+  const paramResolverWriter = createParamResolver()
+  paramResolverWriter.setBindings(bindings)
+  const paramResolver: ParamResolver = paramResolverWriter
 
   // Animation frame
   let animationFrameId: number | null = null
@@ -87,6 +92,10 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     frameState.value = player.update(engineTime)
     playhead.value = frameState.value.time as Ms
 
+    // Update ParamResolver and notify subscribers
+    paramResolverWriter.update(frameState.value.params)
+    paramResolverWriter.flush()
+
     animationFrameId = requestAnimationFrame(tick)
   }
 
@@ -95,11 +104,16 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     if (!isPlaying.value) {
       player.seek(newVal)
       frameState.value = player.update(0)
+      // Update ParamResolver for non-playing seek
+      paramResolverWriter.update(frameState.value.params)
+      paramResolverWriter.flush()
     }
   })
 
   // Initialize
   frameState.value = player.update(0)
+  paramResolverWriter.update(frameState.value.params)
+  paramResolverWriter.flush()
 
   // Cleanup
   onUnmounted(() => {
@@ -112,6 +126,9 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     isPlaying: computed(() => isPlaying.value),
     frameState: computed(() => frameState.value),
     phaseLayouts,
+
+    // ParamResolver for reactive param subscriptions
+    paramResolver,
 
     // Actions
     play,
