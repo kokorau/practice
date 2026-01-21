@@ -16,7 +16,7 @@ import type {
   ViewportConfig,
   ForegroundLayerConfig,
 } from '../Domain/HeroViewConfig'
-import { createDefaultHeroViewConfig } from '../Domain/HeroViewConfig'
+import { createDefaultHeroViewConfig, createDefaultMaskProcessorConfig } from '../Domain/HeroViewConfig'
 import {
   findLayerInTree,
   updateLayerInTree,
@@ -196,13 +196,7 @@ export const createHeroViewInMemoryRepository = (
         id: processorId,
         name: 'Mask',
         visible: true,
-        modifiers: [{
-          type: 'mask',
-          enabled: true,
-          shape: { id: 'circle', params: { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false } },
-          invert: false,
-          feather: 0,
-        }],
+        modifiers: [createDefaultMaskProcessorConfig()],
       }
 
       // Create group containing layer and processor

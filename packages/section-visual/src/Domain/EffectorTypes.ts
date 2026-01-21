@@ -11,7 +11,8 @@
 
 import type { EffectType } from './EffectRegistry'
 import { EFFECT_REGISTRY } from './EffectRegistry'
-import type { ProcessorConfig, SingleEffectConfig, MaskProcessorConfig } from './HeroViewConfig'
+import type { ProcessorConfig, SingleEffectConfig } from './HeroViewConfig'
+import { createDefaultMaskProcessorConfig } from './HeroViewConfig'
 import {
   MaskShapeSchemas,
   MaskBaseSchema,
@@ -215,13 +216,7 @@ export type EffectorDefinition = EffectEffectorDefinition | MaskEffectorDefiniti
  */
 export function createEffectorModifier(type: EffectorType): EffectorModifier {
   if (type === 'mask') {
-    return {
-      type: 'mask',
-      enabled: true,
-      shape: { id: 'circle', params: { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false } },
-      invert: false,
-      feather: 0,
-    } as MaskProcessorConfig
+    return createDefaultMaskProcessorConfig()
   }
   // For effects, return a SingleEffectConfig with default params from registry
   const effectType = type as EffectType

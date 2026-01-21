@@ -36,5 +36,6 @@ export { createTimelinePlayer, type CreateTimelinePlayerOptions } from './create
 export type { RenderContext, TrackRenderer } from './render'
 export { createCanvasTrackRenderer } from './render'
 
-// ParamStore
-export type { ParamStore, ParamStoreWriter } from './ParamStore'
+// ParamResolver
+export type { ParamResolver, ParamResolverWriter } from './ParamResolver'
+export { createParamResolver } from './ParamResolver'

@@ -14,6 +14,23 @@ import type {
   SurfaceColorsConfig,
 } from '../Domain/HeroViewConfig'
 import { DEFAULT_LAYER_BACKGROUND_COLORS, DEFAULT_LAYER_MASK_COLORS } from '../Domain/HeroViewConfig'
+import type { PropertyValue } from '../Domain/SectionVisual'
+import { $PropertyValue } from '../Domain/SectionVisual'
+
+/**
+ * Convert raw param values to PropertyValue format
+ */
+function toPropertyValueParams(
+  params: Record<string, string | number | boolean | undefined>
+): Record<string, PropertyValue> {
+  const result: Record<string, PropertyValue> = {}
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) {
+      result[key] = $PropertyValue.static(value)
+    }
+  }
+  return result
+}
 
 // ============================================================
 // Types
@@ -210,11 +227,11 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       const currentSurface = layer.surface
       if (currentSurface.id !== params.id) return
 
-      // Extract params without 'id' field
+      // Extract params without 'id' field and convert to PropertyValue
       const { id: _id, ...updateParams } = params
       const newSurface: NormalizedSurfaceConfig = {
         id: currentSurface.id,
-        params: { ...currentSurface.params, ...updateParams },
+        params: { ...currentSurface.params, ...toPropertyValueParams(updateParams) },
       }
       repository.updateLayer(layerId, { surface: newSurface })
     },
@@ -251,7 +268,7 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
 
       const imageId = await imageUpload.upload(file)
       repository.updateLayer(layerId, {
-        surface: { id: 'image', params: { imageId } },
+        surface: { id: 'image', params: { imageId: $PropertyValue.static(imageId) } },
       })
     },
 
@@ -275,7 +292,7 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       const file = await imageUpload.fetchRandom(query)
       const imageId = await imageUpload.upload(file)
       repository.updateLayer(layerId, {
-        surface: { id: 'image', params: { imageId } },
+        surface: { id: 'image', params: { imageId: $PropertyValue.static(imageId) } },
       })
     },
 

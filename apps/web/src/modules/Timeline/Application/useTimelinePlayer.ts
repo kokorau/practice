@@ -1,7 +1,6 @@
 import { ref, computed, onUnmounted, watch } from 'vue'
-import type { Timeline, Binding, FrameState, Ms, PhaseLayout, ParamStore } from '@practice/timeline'
-import { createTimelinePlayer, calculatePhaseLayouts } from '@practice/timeline'
-import { createParamStore } from '@practice/timeline/Infra'
+import type { Timeline, Binding, FrameState, Ms, PhaseLayout, ParamResolver } from '@practice/timeline'
+import { createTimelinePlayer, calculatePhaseLayouts, createParamResolver } from '@practice/timeline'
 
 export interface UseTimelinePlayerOptions {
   timeline: Timeline
@@ -20,9 +19,10 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
   // Player instance
   const player = createTimelinePlayer({ timeline, bindings })
 
-  // ParamStore for reactive param updates
-  const paramStoreWriter = createParamStore()
-  const paramStore: ParamStore = paramStoreWriter
+  // ParamResolver for intensity → real value transformation
+  const paramResolverWriter = createParamResolver()
+  paramResolverWriter.setBindings(bindings)
+  const paramResolver: ParamResolver = paramResolverWriter
 
   // Animation frame
   let animationFrameId: number | null = null
@@ -92,9 +92,9 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     frameState.value = player.update(engineTime)
     playhead.value = frameState.value.time as Ms
 
-    // Update ParamStore and notify subscribers
-    paramStoreWriter.update(frameState.value.params)
-    paramStoreWriter.flush()
+    // Update ParamResolver and notify subscribers
+    paramResolverWriter.update(frameState.value.params)
+    paramResolverWriter.flush()
 
     animationFrameId = requestAnimationFrame(tick)
   }
@@ -104,16 +104,16 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     if (!isPlaying.value) {
       player.seek(newVal)
       frameState.value = player.update(0)
-      // Update ParamStore for non-playing seek
-      paramStoreWriter.update(frameState.value.params)
-      paramStoreWriter.flush()
+      // Update ParamResolver for non-playing seek
+      paramResolverWriter.update(frameState.value.params)
+      paramResolverWriter.flush()
     }
   })
 
   // Initialize
   frameState.value = player.update(0)
-  paramStoreWriter.update(frameState.value.params)
-  paramStoreWriter.flush()
+  paramResolverWriter.update(frameState.value.params)
+  paramResolverWriter.flush()
 
   // Cleanup
   onUnmounted(() => {
@@ -127,8 +127,8 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     frameState: computed(() => frameState.value),
     phaseLayouts,
 
-    // ParamStore for reactive param subscriptions
-    paramStore,
+    // ParamResolver for reactive param subscriptions
+    paramResolver,
 
     // Actions
     play,

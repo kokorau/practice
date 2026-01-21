@@ -12,6 +12,7 @@
   "files": ["src"],
   "dependencies": {
     "@practice/texture": "workspace:*",
+    "@practice/timeline": "workspace:*",
     "@practice/color": "workspace:*",
     "@practice/schema": "workspace:*",
     "@practice/semantic-color-palette": "workspace:*"

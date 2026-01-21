@@ -1,4 +1,4 @@
-import type { ParamStore } from '@practice/timeline'
+import type { ParamResolver as TimelineParamResolver } from '@practice/timeline'
 import type { PropertyValue } from './SectionVisual'
 import { $PropertyValue } from './SectionVisual'
 import type {
@@ -13,8 +13,11 @@ import type {
 /**
  * PropertyResolver - PropertyValue を実際の値に解決する
  *
- * ParamStore から取得した強度値 (0-1) を BindingValue の range で
- * 実際のパラメータ値に変換する。
+ * ParamResolver から取得した解決済みの値を使用して
+ * PropertyValue を実際の値に変換する。
+ *
+ * Note: BindingValue.track は ParamResolver の paramId として扱う。
+ * BindingValue.range は ParamResolver が既にマッピング済みのため無視される。
  */
 export interface PropertyResolver {
   /** PropertyValue を実際の値に解決 */
@@ -23,31 +26,33 @@ export interface PropertyResolver {
   /** params 一括解決 */
   resolveAll(params: Record<string, PropertyValue>): Record<string, number | string | boolean>
 
-  /** この params が依存する trackId 一覧 */
+  /** この params が依存する paramId 一覧 */
   getDependencies(params: Record<string, PropertyValue>): Set<string>
 }
 
 /**
- * 線形補間
- */
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t
-}
-
-/**
  * PropertyResolver を作成
+ *
+ * @param paramResolver - ParamResolver from @practice/timeline (contains resolved values)
  */
-export function createPropertyResolver(paramStore: ParamStore): PropertyResolver {
+export function createPropertyResolver(paramResolver: TimelineParamResolver): PropertyResolver {
   return {
     resolve(prop: PropertyValue): number | string | boolean {
       if ($PropertyValue.isStatic(prop)) {
         return prop.value
       }
 
-      // BindingValue: ParamStore から強度を取得し、range でマッピング
-      const intensity = paramStore.get(prop.track) ?? 0
-      const [min, max] = prop.range
-      return lerp(min, max, intensity)
+      // BindingValue: ParamResolver から解決済みの値を取得
+      // prop.track を paramId として使用
+      // prop.range は ParamResolver で既にマッピング済みのため無視
+      const resolvedValue = paramResolver.get(prop.track)
+      if (resolvedValue !== undefined) {
+        return resolvedValue
+      }
+
+      // Fallback: BindingValue.range の min を返す
+      const [min] = prop.range
+      return min
     },
 
     resolveAll(params: Record<string, PropertyValue>): Record<string, number | string | boolean> {

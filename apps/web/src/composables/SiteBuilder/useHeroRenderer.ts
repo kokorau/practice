@@ -13,7 +13,7 @@ import {
   TextureRenderer,
 } from '@practice/texture'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import type { ParamStore } from '@practice/timeline'
+import type { ParamResolver } from '@practice/timeline'
 import {
   type HeroViewConfig,
   type HeroSceneConfig,
@@ -44,8 +44,8 @@ export interface UseHeroRendererOptions {
   editorState: Ref<HeroSceneEditorState>
   /** Function to build HeroViewConfig from current state */
   toHeroViewConfig: () => HeroViewConfig
-  /** ParamStore for timeline-driven animations (optional) */
-  paramStore?: ParamStore
+  /** ParamResolver for timeline-driven animations (optional) */
+  paramResolver?: ParamResolver
 }
 
 /**
@@ -78,7 +78,7 @@ export interface UseHeroRendererReturn {
  * Composable for scene rendering in HeroScene
  */
 export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendererReturn {
-  const { primitivePalette, editorState, toHeroViewConfig, paramStore } = options
+  const { primitivePalette, editorState, toHeroViewConfig, paramResolver } = options
 
   // ============================================================
   // Renderer State
@@ -92,10 +92,10 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
   const loadedModelUrls = new Map<string, string>()
 
   // PropertyResolver for timeline-driven params
-  const propertyResolver = paramStore ? createPropertyResolver(paramStore) : null
+  const propertyResolver = paramResolver ? createPropertyResolver(paramResolver) : null
 
-  // Unsubscribe function for frame-end listener
-  let unsubscribeFrameEnd: (() => void) | null = null
+  // Unsubscribe function for param change listener
+  let unsubscribeParamChange: (() => void) | null = null
 
   // ============================================================
   // Rendering Functions
@@ -148,9 +148,9 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
       previewRenderer.value = await TextureRenderer.create(canvas)
       await render()
 
-      // Subscribe to ParamStore frame-end for automatic re-rendering
-      if (paramStore) {
-        unsubscribeFrameEnd = paramStore.onFrameEnd(() => {
+      // Subscribe to ParamResolver for automatic re-rendering on param changes
+      if (paramResolver) {
+        unsubscribeParamChange = paramResolver.onParamChange(() => {
           // Re-render when timeline params change
           render()
         })
@@ -164,10 +164,10 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
    * Destroy preview renderer and cleanup
    */
   const destroyPreview = () => {
-    // Unsubscribe from ParamStore
-    if (unsubscribeFrameEnd) {
-      unsubscribeFrameEnd()
-      unsubscribeFrameEnd = null
+    // Unsubscribe from ParamResolver
+    if (unsubscribeParamChange) {
+      unsubscribeParamChange()
+      unsubscribeParamChange = null
     }
 
     previewRenderer.value?.destroy()
