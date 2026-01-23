@@ -117,9 +117,56 @@ function onRulerClick(e: MouseEvent) {
 }
 
 // ============================================================
-// Track list width
+// Scroll Synchronization
 // ============================================================
-const trackListWidth = 150
+const trackListBodyRef = ref<HTMLElement | null>(null)
+const trackLanesRef = ref<HTMLElement | null>(null)
+let isSyncingScroll = false
+
+function onTrackListScroll(e: Event) {
+  if (isSyncingScroll) return
+  const target = e.target as HTMLElement
+  if (trackLanesRef.value) {
+    isSyncingScroll = true
+    trackLanesRef.value.scrollTop = target.scrollTop
+    isSyncingScroll = false
+  }
+}
+
+function onTrackLanesScroll(e: Event) {
+  if (isSyncingScroll) return
+  const target = e.target as HTMLElement
+  if (trackListBodyRef.value) {
+    isSyncingScroll = true
+    trackListBodyRef.value.scrollTop = target.scrollTop
+    isSyncingScroll = false
+  }
+}
+
+// ============================================================
+// Track list width (resizable)
+// ============================================================
+const trackListWidth = ref(300)
+const isResizingTrackList = ref(false)
+
+function startTrackListResize(e: MouseEvent) {
+  isResizingTrackList.value = true
+  document.addEventListener('mousemove', onTrackListResize)
+  document.addEventListener('mouseup', stopTrackListResize)
+  e.preventDefault()
+}
+
+function onTrackListResize(e: MouseEvent) {
+  if (!isResizingTrackList.value) return
+  const newWidth = Math.min(Math.max(e.clientX, 100), 500)
+  trackListWidth.value = newWidth
+}
+
+function stopTrackListResize() {
+  isResizingTrackList.value = false
+  document.removeEventListener('mousemove', onTrackListResize)
+  document.removeEventListener('mouseup', stopTrackListResize)
+}
 
 // ============================================================
 // Canvas Drawing (using TrackRenderer from @practice/timeline)
@@ -200,51 +247,78 @@ defineExpose({
       <div class="timecode">{{ formatTime(playhead) }} / {{ formatTime(visibleDuration) }}</div>
     </div>
 
-    <!-- Timeline Content -->
-    <div class="timeline-content">
-      <!-- Track List (Left) -->
-      <div class="track-list" :style="{ width: `${trackListWidth}px` }">
-        <div class="track-list-header">Tracks</div>
+    <!-- Timeline Header (fixed) -->
+    <div class="timeline-header">
+      <!-- Track List Header -->
+      <div class="track-list-header" :style="{ width: `${trackListWidth}px` }">
+        Tracks
+      </div>
+
+      <!-- Resize Handle Header -->
+      <div class="resize-handle-header" />
+
+      <!-- Ruler -->
+      <div ref="rulerRef" class="ruler" @click="onRulerClick">
+        <!-- Phase backgrounds -->
         <div
-          v-for="track in timeline.tracks"
-          :key="track.id"
-          class="track-list-item"
+          v-for="pos in phasePositions"
+          :key="pos.phase.id"
+          class="phase-bg"
+          :class="`phase-${pos.phase.type.toLowerCase()}`"
+          :style="{ left: `${pos.startPercent}%`, width: `${pos.widthPercent}%` }"
         >
-          <span class="track-name">{{ track.name }}</span>
-          <span class="track-param">{{ track.id }}</span>
+          <span class="phase-label">{{ pos.phase.type }}</span>
+        </div>
+        <!-- Ticks -->
+        <div
+          v-for="tick in rulerTicks"
+          :key="tick.ms"
+          class="ruler-tick"
+          :class="{ major: tick.major }"
+          :style="{ left: `${tick.percent}%` }"
+        >
+          <span v-if="tick.major" class="tick-label">{{ tick.label }}</span>
+        </div>
+        <!-- Playhead -->
+        <div class="playhead" :style="{ left: `${playheadPercent}%` }" />
+      </div>
+    </div>
+
+    <!-- Timeline Body (scrollable) -->
+    <div class="timeline-body">
+      <!-- Track List Body -->
+      <div
+        ref="trackListBodyRef"
+        class="track-list-body"
+        :style="{ width: `${trackListWidth}px` }"
+        @scroll="onTrackListScroll"
+      >
+        <div class="track-list-body-inner">
+          <div
+            v-for="track in timeline.tracks"
+            :key="track.id"
+            class="track-list-item"
+          >
+            <span class="track-name">{{ track.name }}</span>
+            <span class="track-param">{{ track.id }}</span>
+          </div>
         </div>
       </div>
 
-      <!-- Timeline Grid (Right) -->
-      <div class="timeline-grid">
-        <!-- Ruler -->
-        <div ref="rulerRef" class="ruler" @click="onRulerClick">
-          <!-- Phase backgrounds -->
-          <div
-            v-for="pos in phasePositions"
-            :key="pos.phase.id"
-            class="phase-bg"
-            :class="`phase-${pos.phase.type.toLowerCase()}`"
-            :style="{ left: `${pos.startPercent}%`, width: `${pos.widthPercent}%` }"
-          >
-            <span class="phase-label">{{ pos.phase.type }}</span>
-          </div>
-          <!-- Ticks -->
-          <div
-            v-for="tick in rulerTicks"
-            :key="tick.ms"
-            class="ruler-tick"
-            :class="{ major: tick.major }"
-            :style="{ left: `${tick.percent}%` }"
-          >
-            <span v-if="tick.major" class="tick-label">{{ tick.label }}</span>
-          </div>
-          <!-- Playhead -->
-          <div class="playhead" :style="{ left: `${playheadPercent}%` }" />
-        </div>
+      <!-- Track List Resize Handle -->
+      <div
+        class="track-list-resize-handle"
+        :class="{ 'track-list-resize-handle--active': isResizingTrackList }"
+        @mousedown="startTrackListResize"
+      />
 
-        <!-- Track Lanes -->
-        <div class="track-lanes">
+      <!-- Track Lanes -->
+      <div
+        ref="trackLanesRef"
+        class="track-lanes"
+        @scroll="onTrackLanesScroll"
+      >
+        <div class="track-lanes-inner">
           <div
             v-for="track in timeline.tracks"
             :key="track.id"
@@ -271,9 +345,9 @@ defineExpose({
               />
             </div>
           </div>
-          <!-- Playhead line -->
-          <div class="playhead-line" :style="{ left: `${playheadPercent}%` }" />
         </div>
+        <!-- Playhead line -->
+        <div class="playhead-line" :style="{ left: `${playheadPercent}%` }" />
       </div>
     </div>
   </div>
@@ -329,23 +403,15 @@ defineExpose({
   color: oklch(0.55 0.02 260);
 }
 
-/* Timeline Content Layout */
-.timeline-content {
-  flex: 1;
+/* Timeline Header (fixed) */
+.timeline-header {
   display: flex;
-  overflow: hidden;
-}
-
-/* Track List (Left Panel) */
-.track-list {
   flex-shrink: 0;
-  background: oklch(0.94 0.01 260);
-  border-right: 1px solid oklch(0.88 0.01 260);
-  display: flex;
-  flex-direction: column;
+  border-bottom: 1px solid oklch(0.88 0.01 260);
 }
 
 .track-list-header {
+  flex-shrink: 0;
   height: 1.75rem;
   padding: 0 0.75rem;
   display: flex;
@@ -354,11 +420,61 @@ defineExpose({
   font-weight: 600;
   text-transform: uppercase;
   color: oklch(0.55 0.02 260);
-  border-bottom: 1px solid oklch(0.88 0.01 260);
+  background: oklch(0.94 0.01 260);
+}
+
+.resize-handle-header {
+  width: 4px;
+  flex-shrink: 0;
+  background: oklch(0.88 0.01 260);
+}
+
+/* Timeline Body (scrollable) */
+.timeline-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Track List Body */
+.track-list-body {
+  flex-shrink: 0;
+  background: oklch(0.94 0.01 260);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Hide scrollbar for track list (synced with track lanes) */
+.track-list-body::-webkit-scrollbar {
+  display: none;
+}
+.track-list-body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.track-list-body-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.track-list-resize-handle {
+  width: 4px;
+  flex-shrink: 0;
+  background: oklch(0.88 0.01 260);
+  cursor: ew-resize;
+  transition: background 0.15s;
+}
+
+.track-list-resize-handle:hover,
+.track-list-resize-handle--active {
+  background: oklch(0.50 0.20 250);
 }
 
 .track-list-item {
   height: 2.5rem;
+  min-height: 2.5rem;
   padding: 0 0.75rem;
   display: flex;
   align-items: center;
@@ -387,21 +503,12 @@ defineExpose({
   white-space: nowrap;
 }
 
-/* Timeline Grid (Right Panel) */
-.timeline-grid {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-x: auto;
-  position: relative;
-}
-
 /* Ruler */
 .ruler {
+  flex: 1;
   height: 1.75rem;
   position: relative;
   background: oklch(0.92 0.01 260);
-  border-bottom: 1px solid oklch(0.88 0.01 260);
   cursor: pointer;
 }
 
@@ -469,6 +576,13 @@ defineExpose({
 .track-lanes {
   flex: 1;
   position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.track-lanes-inner {
+  display: flex;
+  flex-direction: column;
 }
 
 .track-lane {
