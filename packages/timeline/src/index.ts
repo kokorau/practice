@@ -27,10 +27,6 @@ export { createTimelinePlayer, type CreateTimelinePlayerOptions } from './create
 export type { RenderContext, TrackRenderer } from './render'
 export { createCanvasTrackRenderer } from './render'
 
-// ParamResolver
-export type { ParamResolver, ParamResolverWriter } from './ParamResolver'
-export { createParamResolver } from './ParamResolver'
-
 // IntensityProvider
 export type { IntensityProvider, IntensityProviderWriter } from './IntensityProvider'
 export { createIntensityProvider } from './IntensityProvider'

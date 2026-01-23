@@ -26,12 +26,12 @@ const VISIBLE_DURATION = 30000 as Ms // 30 seconds
 // ============================================================
 prepareTimeline(mockTimeline)
 
-// Extract periods from tracks (targetParam → period)
+// Extract periods from tracks (trackId → period)
 const trackPeriods = computed(() => {
   const periods: Record<string, number | undefined> = {}
   for (const track of mockTimeline.tracks) {
     if (track._cachedAst) {
-      periods[track.targetParam] = extractPeriod(track._cachedAst)
+      periods[track.id] = extractPeriod(track._cachedAst)
     }
   }
   return periods
@@ -40,7 +40,7 @@ const trackPeriods = computed(() => {
 // ============================================================
 // Timeline State (received from TimelinePanel)
 // ============================================================
-const frameState = ref<FrameState>({ time: 0, params: {}, intensities: {} })
+const frameState = ref<FrameState>({ time: 0, intensities: {} })
 const playhead = ref<Ms>(0 as Ms)
 
 function onFrameStateUpdate(state: FrameState) {
@@ -52,9 +52,10 @@ function onPlayheadUpdate(ms: Ms) {
 }
 
 // ============================================================
-// Parameter Getters
+// Intensity Getters (0-1 values from tracks)
 // ============================================================
-const p = (name: string, fallback = 0) => frameState.value.params[name] ?? fallback
+const p = (trackId: string, fallback = 0) =>
+  (frameState.value.intensities as Record<string, number>)[trackId] ?? fallback
 
 // Progress within period (0-1)
 const progress = (name: string) => {
