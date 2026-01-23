@@ -88,18 +88,23 @@ export const useHeroPresets = (
   // ============================================================
   const loadPresets = async (applyInitial = true) => {
     presets.value = await presetManager.getPresets()
-    if (applyInitial && selectedPresetId.value) {
-      const preset = await presetManager.applyPreset(selectedPresetId.value)
-      if (preset) {
-        // Skip fromHeroViewConfig for animated presets (they use $PropertyValue bindings)
-        // The config is already set by presetManager.applyPreset via getPresetConfig
-        if (!isAnimatedPreset(preset)) {
-          const config = getPresetConfig(preset)
-          if (config) {
-            await fromHeroViewConfig(config)
+    if (applyInitial) {
+      // Use selected preset or fall back to first preset
+      const presetIdToApply = selectedPresetId.value ?? presets.value[0]?.id
+      if (presetIdToApply) {
+        const preset = await presetManager.applyPreset(presetIdToApply)
+        if (preset) {
+          selectedPresetId.value = presetIdToApply
+          // Skip fromHeroViewConfig for animated presets (they use $PropertyValue bindings)
+          // The config is already set by presetManager.applyPreset via getPresetConfig
+          if (!isAnimatedPreset(preset)) {
+            const config = getPresetConfig(preset)
+            if (config) {
+              await fromHeroViewConfig(config)
+            }
           }
+          return preset.colorPreset ?? null
         }
-        return preset.colorPreset ?? null
       }
     }
     return null
