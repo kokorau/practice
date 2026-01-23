@@ -161,9 +161,15 @@ export {
   type ColorStop,
 } from './linearGradient'
 export {
-  gradientGrainShader,
+  gradientGrainLinearShader,
+  gradientGrainCircularShader,
+  gradientGrainRadialShader,
+  gradientGrainPerlinShader,
   createGradientGrainSpec,
-  GRADIENT_GRAIN_BUFFER_SIZE,
+  GRADIENT_GRAIN_LINEAR_BUFFER_SIZE,
+  GRADIENT_GRAIN_CIRCULAR_BUFFER_SIZE,
+  GRADIENT_GRAIN_RADIAL_BUFFER_SIZE,
+  GRADIENT_GRAIN_PERLIN_BUFFER_SIZE,
   type GradientGrainParams,
 } from './gradientGrain'
 export {
