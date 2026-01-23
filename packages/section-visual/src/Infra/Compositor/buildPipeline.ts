@@ -75,22 +75,11 @@ interface BuildContext {
 // ============================================================
 
 /**
- * Find base layer (background) from layers array
- * Note: Returns null if the base layer is not visible
+ * Find legacy base layer (background) from layers array
+ * Note: Only handles legacy 'base' type layers.
+ * Modern configs use background-group which is processed as a regular group.
  */
-function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | SurfaceLayerNodeConfig | null {
-  // First, check for background-group
-  const bgGroup = layers.find(
-    (l): l is GroupLayerNodeConfig => l.type === 'group' && l.id === 'background-group' && l.visible
-  )
-  if (bgGroup) {
-    const bgSurface = bgGroup.children.find(
-      (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'background' && c.visible
-    )
-    if (bgSurface) return bgSurface
-  }
-
-  // Fallback: legacy base layer
+function findLegacyBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | null {
   for (const layer of layers) {
     if (layer.type === 'base' && layer.visible) return layer
   }
@@ -98,13 +87,12 @@ function findBaseLayer(layers: LayerNodeConfig[]): BaseLayerNodeConfig | Surface
 }
 
 /**
- * Find all non-background groups at the specified level
+ * Find all groups at the specified level
  * Note: Does not recurse into nested groups (they are handled by buildGroupNode)
  */
-function findNonBackgroundGroups(layers: LayerNodeConfig[]): GroupLayerNodeConfig[] {
+function findGroups(layers: LayerNodeConfig[]): GroupLayerNodeConfig[] {
   return layers.filter(
-    (l): l is GroupLayerNodeConfig =>
-      l.type === 'group' && l.id !== 'background-group' && l.visible
+    (l): l is GroupLayerNodeConfig => l.type === 'group' && l.visible
   )
 }
 
@@ -441,16 +429,16 @@ export function buildPipeline(
   const nodes: Array<RenderNode | CompositorNode | OutputNode> = []
   const layerNodes: TextureProducingNode[] = []
 
-  // 1. Build background layer node (from background-group)
-  const baseLayer = findBaseLayer(config.layers)
-  if (baseLayer) {
-    const bgSurfaceNode = buildSurfaceNode('bg-surface', baseLayer, ctx)
+  // 1. Build legacy base layer (if present)
+  const legacyBaseLayer = findLegacyBaseLayer(config.layers)
+  if (legacyBaseLayer) {
+    const bgSurfaceNode = buildSurfaceNode('bg-surface', legacyBaseLayer, ctx)
     nodes.push(bgSurfaceNode)
     layerNodes.push(bgSurfaceNode)
   }
 
-  // 2. Build non-background groups using sequential processing
-  const groups = findNonBackgroundGroups(config.layers)
+  // 2. Build all groups (including background-group) as GroupCompositorNodes
+  const groups = findGroups(config.layers)
   for (const group of groups) {
     const groupNode = buildGroupNode(group, ctx, nodes)
     if (groupNode) {
@@ -466,7 +454,7 @@ export function buildPipeline(
 
     const layerId = layer.id || `root-layer-${i}`
 
-    if (layer.type === 'surface' && layer.id !== 'background') {
+    if (layer.type === 'surface') {
       const surfaceNode = buildSurfaceNode(layerId, layer, ctx)
       nodes.push(surfaceNode)
       layerNodes.push(surfaceNode)
