@@ -37,6 +37,7 @@ import {
   createMaskCompositorNode,
   createEffectChainCompositorNode,
   createOverlayCompositorNode,
+  createGroupCompositorNode,
   createCanvasOutputNode,
   createTextRenderNode,
   type EffectConfig,
@@ -310,6 +311,10 @@ function buildProcessorNode(
  * - A Processor applies to all preceding siblings (accumulated so far)
  * - Multiple Processors apply cumulatively
  *
+ * Returns a GroupCompositorNode that:
+ * - Contains processed child nodes
+ * - Applies group-level blendMode, opacity, and transform
+ *
  * Example:
  *   <group>
  *     <surface/>        [0]
@@ -380,13 +385,20 @@ function buildGroupNode(
     }
   }
 
-  // Combine remaining accumulated nodes
+  // No children to render
   if (accumulatedNodes.length === 0) return null
-  if (accumulatedNodes.length === 1) return accumulatedNodes[0]!
 
-  const finalNode = createOverlayCompositorNode(`${groupId}-final`, accumulatedNodes)
-  nodes.push(finalNode)
-  return finalNode
+  // Always wrap in GroupCompositorNode (even single child)
+  // This ensures group-level blendMode is applied
+  const groupNode = createGroupCompositorNode(
+    groupId,
+    accumulatedNodes,
+    {
+      blendMode: group.blendMode,
+    }
+  )
+  nodes.push(groupNode)
+  return groupNode
 }
 
 // ============================================================

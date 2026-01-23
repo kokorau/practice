@@ -63,6 +63,12 @@ export {
   type OverlayCompositorNodeConfig,
 } from './OverlayCompositorNode'
 
+export {
+  GroupCompositorNode,
+  createGroupCompositorNode,
+  type GroupCompositorNodeConfig,
+} from './GroupCompositorNode'
+
 // ============================================================
 // OutputNode implementations
 // ============================================================

@@ -10,6 +10,7 @@ import { executePipeline } from './executePipeline'
 import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
 import type { CompositorRenderer } from '../../Domain/Compositor'
+import { GroupCompositorNode } from './nodes/GroupCompositorNode'
 
 // Mock @practice/texture and @practice/color to prevent interference from other test files
 // Use importOriginal to get the real module implementation
@@ -822,5 +823,203 @@ describe('Text Layer Support', () => {
     const overlayNode = result.nodes.find(n => n.id === 'scene')
     expect(overlayNode).toBeDefined()
     expect(overlayNode?.type).toBe('compositor')
+  })
+})
+
+// ============================================================
+// GroupCompositorNode Tests
+// ============================================================
+
+describe('GroupCompositorNode Support', () => {
+  it('creates GroupCompositorNode for non-background groups', () => {
+    const config = createDefaultHeroViewConfig()
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    // Should have clip-group as GroupCompositorNode
+    const clipGroupNode = result.nodes.find(n => n.id === 'clip-group')
+    expect(clipGroupNode).toBeDefined()
+    expect(clipGroupNode).toBeInstanceOf(GroupCompositorNode)
+  })
+
+  it('sets blendMode on GroupCompositorNode', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { id: 'solid', params: {} },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'group',
+          id: 'clip-group',
+          name: 'Clip Group',
+          visible: true,
+          blendMode: 'multiply',
+          children: [
+            {
+              type: 'surface',
+              id: 'surface-mask',
+              name: 'Surface',
+              visible: true,
+              surface: { id: 'stripe', params: { width1: 10, width2: 10, angle: 45 } },
+              colors: { primary: 'auto', secondary: 'auto' },
+            },
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    const clipGroupNode = result.nodes.find(n => n.id === 'clip-group') as GroupCompositorNode
+    expect(clipGroupNode).toBeInstanceOf(GroupCompositorNode)
+    expect(clipGroupNode.getBlendMode()).toBe('multiply')
+  })
+
+  it('defaults blendMode to normal', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { id: 'solid', params: {} },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'group',
+          id: 'clip-group',
+          name: 'Clip Group',
+          visible: true,
+          // No blendMode specified
+          children: [
+            {
+              type: 'surface',
+              id: 'surface-mask',
+              name: 'Surface',
+              visible: true,
+              surface: { id: 'stripe', params: { width1: 10, width2: 10, angle: 45 } },
+              colors: { primary: 'auto', secondary: 'auto' },
+            },
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    const clipGroupNode = result.nodes.find(n => n.id === 'clip-group') as GroupCompositorNode
+    expect(clipGroupNode).toBeInstanceOf(GroupCompositorNode)
+    expect(clipGroupNode.getBlendMode()).toBe('normal')
+  })
+
+  it('creates nested GroupCompositorNodes', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: 1280, height: 720 },
+      colors: {
+        semanticContext: 'canvas',
+        brand: { hue: 198, saturation: 70, value: 65 },
+        accent: { hue: 30, saturation: 80, value: 60 },
+        foundation: { hue: 0, saturation: 0, value: 97 },
+      },
+      layers: [
+        {
+          type: 'group',
+          id: 'background-group',
+          name: 'Background',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'background',
+              name: 'Surface',
+              visible: true,
+              surface: { id: 'solid', params: {} },
+              colors: { primary: 'B', secondary: 'auto' },
+            },
+          ],
+        },
+        {
+          type: 'group',
+          id: 'outer-group',
+          name: 'Outer Group',
+          visible: true,
+          blendMode: 'overlay',
+          children: [
+            {
+              type: 'group',
+              id: 'inner-group',
+              name: 'Inner Group',
+              visible: true,
+              blendMode: 'screen',
+              children: [
+                {
+                  type: 'surface',
+                  id: 'inner-surface',
+                  name: 'Inner Surface',
+                  visible: true,
+                  surface: { id: 'solid', params: {} },
+                  colors: { primary: 'auto', secondary: 'auto' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+    const palette = createMockPalette()
+
+    const result = buildPipeline(config, palette)
+
+    // Should have both outer and inner group nodes
+    const outerGroupNode = result.nodes.find(n => n.id === 'outer-group') as GroupCompositorNode
+    const innerGroupNode = result.nodes.find(n => n.id === 'inner-group') as GroupCompositorNode
+
+    expect(outerGroupNode).toBeInstanceOf(GroupCompositorNode)
+    expect(innerGroupNode).toBeInstanceOf(GroupCompositorNode)
+
+    expect(outerGroupNode.getBlendMode()).toBe('overlay')
+    expect(innerGroupNode.getBlendMode()).toBe('screen')
   })
 })
