@@ -60,10 +60,11 @@ const selectedLabel = () => {
 
 // Items sorted with selected first
 const sortedItems = computed(() => {
-  if (props.selectedIndex === null) {
+  if (props.selectedIndex === null || props.selectedIndex >= props.items.length) {
     return props.items.map((item, i) => ({ item, originalIndex: i }))
   }
-  const selected = { item: props.items[props.selectedIndex], originalIndex: props.selectedIndex }
+  const selectedItem = props.items[props.selectedIndex]!
+  const selected = { item: selectedItem, originalIndex: props.selectedIndex }
   const rest = props.items
     .map((item, i) => ({ item, originalIndex: i }))
     .filter((_, i) => i !== props.selectedIndex)

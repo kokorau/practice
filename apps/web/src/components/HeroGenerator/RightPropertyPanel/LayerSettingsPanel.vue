@@ -95,7 +95,7 @@ const shouldShowSurfaceParams = (): boolean => {
         <template #null>
           <span class="solid-preview">Solid</span>
         </template>
-        <template #item="{ item }">
+        <template #item="{ item }: { item: PatternItem }">
           <PatternThumbnail :create-spec="item.createSpec" />
         </template>
       </PresetSelector>
