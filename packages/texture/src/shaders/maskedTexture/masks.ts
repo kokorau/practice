@@ -32,22 +32,21 @@ fn smoothBlob(angle: f32, seed: f32, waves: u32) -> f32 {
   var value = 0.0;
   var totalWeight = 0.0;
 
-  // Normalize angle from [-π, π] to [0, 2π]
-  // This ensures continuity at the loop closure point (x=-1, y=0)
-  // since sin(freq * 0 + phase) = sin(freq * 2π + phase) for integer freq
-  let normalizedAngle = angle + 3.14159265359;
-
   for (var i = 0u; i < waves; i++) {
     let fi = f32(i);
+    // Use integer frequencies for closed-loop continuity
+    // cos(n * π) = cos(n * (-π)) for any integer n (cos is even function)
     let freq = fi + 2.0;
-    let phase = hash11(seed + fi * 17.3) * 6.283;
+    // Use seed-based amplitude instead of phase to maintain boundary continuity
+    let amp = hash11(seed + fi * 17.3) * 2.0 - 1.0;
     let weight = 1.0 / (fi + 1.0);
 
-    value += sin(normalizedAngle * freq + phase) * weight;
-    totalWeight += weight;
+    // Pure cos without phase shift ensures cos(n*π) = cos(-n*π)
+    value += cos(angle * freq) * amp * weight;
+    totalWeight += weight * abs(amp);
   }
 
-  return value / totalWeight;
+  return value / max(totalWeight, 0.001);
 }
 `
 
