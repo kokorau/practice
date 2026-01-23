@@ -13,6 +13,7 @@ import {
   type EffectType,
   type FilterType,
   type HeroViewRepository,
+  findProcessorForLayer,
 } from '@practice/section-visual'
 import { useEffectManager, type UseEffectManagerReturn } from '../useEffectManager'
 
@@ -117,17 +118,12 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
 
   /**
    * Find processor ID for a given layer ID
-   * Maps surface layer IDs to their corresponding processor
+   * Dynamically searches the layer tree for the processor associated with the layer
    */
   const findProcessorIdForLayer = (layerId: string): string | null => {
-    // Map layer IDs to their processor IDs
-    if (layerId === layerIds.BASE) {
-      return 'bg-processor'
-    }
-    if (layerId === layerIds.MASK) {
-      return 'processor-mask'
-    }
-    return null
+    const config = heroViewRepository.get()
+    if (!config) return null
+    return findProcessorForLayer(config.layers, layerId) ?? null
   }
 
   /**
