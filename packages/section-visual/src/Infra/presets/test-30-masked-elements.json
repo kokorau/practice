@@ -1,0 +1,747 @@
+{
+  "id": "test-30-masked-elements",
+  "name": "Test: 30 Masked Elements Grid",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "id": "solid",
+              "params": {}
+            },
+            "colors": {
+              "primary": "F1",
+              "secondary": "F0"
+            }
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-01",
+        "name": "Element 01",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-01",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "stripe", "params": { "width1": { "type": "static", "value": 8 }, "width2": { "type": "static", "value": 8 }, "angle": { "type": "static", "value": 45 } } },
+            "colors": { "primary": "B", "secondary": "Bt" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-01",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.15 }, "radius": { "type": "static", "value": 0.08 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-02",
+        "name": "Element 02",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-02",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "polkaDot", "params": { "dotRadius": { "type": "static", "value": 6 }, "spacing": { "type": "static", "value": 20 }, "rowOffset": { "type": "static", "value": 0.5 } } },
+            "colors": { "primary": "A", "secondary": "At" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-02",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.05 }, "bottom": { "type": "static", "value": 0.25 }, "radiusTopLeft": { "type": "static", "value": 0.01 }, "radiusTopRight": { "type": "static", "value": 0.01 }, "radiusBottomLeft": { "type": "static", "value": 0.01 }, "radiusBottomRight": { "type": "static", "value": 0.01 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-03",
+        "name": "Element 03",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-03",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "grid", "params": { "lineWidth": { "type": "static", "value": 2 }, "cellSize": { "type": "static", "value": 30 } } },
+            "colors": { "primary": "Bs", "secondary": "F2" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-03",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.15 }, "radius": { "type": "static", "value": 0.1 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-04",
+        "name": "Element 04",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-04",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "checker", "params": { "cellSize": { "type": "static", "value": 20 }, "angle": { "type": "static", "value": 0 } } },
+            "colors": { "primary": "BN3", "secondary": "BN7" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-04",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.05 }, "bottom": { "type": "static", "value": 0.25 }, "radiusTopLeft": { "type": "static", "value": 0.02 }, "radiusTopRight": { "type": "static", "value": 0.02 }, "radiusBottomLeft": { "type": "static", "value": 0.02 }, "radiusBottomRight": { "type": "static", "value": 0.02 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-05",
+        "name": "Element 05",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-05",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "triangle", "params": { "size": { "type": "static", "value": 25 }, "angle": { "type": "static", "value": 0 } } },
+            "colors": { "primary": "AN2", "secondary": "AN6" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-05",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.15 }, "radius": { "type": "static", "value": 0.08 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-06",
+        "name": "Element 06",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-06",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "hexagon", "params": { "size": { "type": "static", "value": 20 }, "angle": { "type": "static", "value": 0 } } },
+            "colors": { "primary": "B", "secondary": "F3" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-06",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.38 }, "baseRadius": { "type": "static", "value": 0.08 }, "amplitude": { "type": "static", "value": 0.02 }, "octaves": { "type": "static", "value": 3 }, "seed": { "type": "static", "value": 42 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-07",
+        "name": "Element 07",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-07",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "asanoha", "params": { "size": { "type": "static", "value": 30 }, "lineWidth": { "type": "static", "value": 1 } } },
+            "colors": { "primary": "A", "secondary": "F4" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-07",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.28 }, "bottom": { "type": "static", "value": 0.48 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": 5 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-08",
+        "name": "Element 08",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-08",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "seigaiha", "params": { "radius": { "type": "static", "value": 20 }, "rings": { "type": "static", "value": 3 }, "lineWidth": { "type": "static", "value": 1 } } },
+            "colors": { "primary": "Bt", "secondary": "BN5" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-08",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.38 }, "radius": { "type": "static", "value": 0.1 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-09",
+        "name": "Element 09",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-09",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "wave", "params": { "amplitude": { "type": "static", "value": 10 }, "wavelength": { "type": "static", "value": 40 }, "thickness": { "type": "static", "value": 4 }, "angle": { "type": "static", "value": 0 } } },
+            "colors": { "primary": "At", "secondary": "AN4" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-09",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.28 }, "bottom": { "type": "static", "value": 0.48 }, "radiusTopLeft": { "type": "static", "value": 0.03 }, "radiusTopRight": { "type": "static", "value": 0.03 }, "radiusBottomLeft": { "type": "static", "value": 0.03 }, "radiusBottomRight": { "type": "static", "value": 0.03 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-10",
+        "name": "Element 10",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-10",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "scales", "params": { "size": { "type": "static", "value": 15 }, "overlap": { "type": "static", "value": 0.3 }, "angle": { "type": "static", "value": 0 } } },
+            "colors": { "primary": "Bs", "secondary": "BN2" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-10",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.38 }, "baseRadius": { "type": "static", "value": 0.09 }, "amplitude": { "type": "static", "value": 0.025 }, "octaves": { "type": "static", "value": 4 }, "seed": { "type": "static", "value": 123 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-11",
+        "name": "Element 11",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-11",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "ogee", "params": { "width": { "type": "static", "value": 40 }, "height": { "type": "static", "value": 60 }, "lineWidth": { "type": "static", "value": 2 } } },
+            "colors": { "primary": "As", "secondary": "F5" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-11",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.62 }, "radius": { "type": "static", "value": 0.1 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-12",
+        "name": "Element 12",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-12",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "sunburst", "params": { "rays": { "type": "static", "value": 16 }, "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.5 }, "twist": { "type": "static", "value": 0 } } },
+            "colors": { "primary": "B", "secondary": "Bf" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-12",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.52 }, "bottom": { "type": "static", "value": 0.72 }, "radiusTopLeft": { "type": "static", "value": 0.05 }, "radiusTopRight": { "type": "static", "value": 0.05 }, "radiusBottomLeft": { "type": "static", "value": 0.05 }, "radiusBottomRight": { "type": "static", "value": 0.05 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-13",
+        "name": "Element 13",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-13",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "stripe", "params": { "width1": { "type": "static", "value": 5 }, "width2": { "type": "static", "value": 10 }, "angle": { "type": "static", "value": 90 } } },
+            "colors": { "primary": "A", "secondary": "Af" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-13",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.62 }, "baseRadius": { "type": "static", "value": 0.1 }, "amplitude": { "type": "static", "value": 0.03 }, "octaves": { "type": "static", "value": 5 }, "seed": { "type": "static", "value": 777 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-14",
+        "name": "Element 14",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-14",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "polkaDot", "params": { "dotRadius": { "type": "static", "value": 4 }, "spacing": { "type": "static", "value": 15 }, "rowOffset": { "type": "static", "value": 0 } } },
+            "colors": { "primary": "BN4", "secondary": "BN8" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-14",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.52 }, "bottom": { "type": "static", "value": 0.72 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": -5 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-15",
+        "name": "Element 15",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-15",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "grid", "params": { "lineWidth": { "type": "static", "value": 1 }, "cellSize": { "type": "static", "value": 20 } } },
+            "colors": { "primary": "AN3", "secondary": "AN7" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-15",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.62 }, "radius": { "type": "static", "value": 0.08 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-16",
+        "name": "Element 16",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-16",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "checker", "params": { "cellSize": { "type": "static", "value": 15 }, "angle": { "type": "static", "value": 45 } } },
+            "colors": { "primary": "Bt", "secondary": "F6" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-16",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.85 }, "baseRadius": { "type": "static", "value": 0.07 }, "amplitude": { "type": "static", "value": 0.015 }, "octaves": { "type": "static", "value": 3 }, "seed": { "type": "static", "value": 999 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-17",
+        "name": "Element 17",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-17",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "triangle", "params": { "size": { "type": "static", "value": 18 }, "angle": { "type": "static", "value": 30 } } },
+            "colors": { "primary": "At", "secondary": "F7" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-17",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.75 }, "bottom": { "type": "static", "value": 0.95 }, "radiusTopLeft": { "type": "static", "value": 0.01 }, "radiusTopRight": { "type": "static", "value": 0.01 }, "radiusBottomLeft": { "type": "static", "value": 0.01 }, "radiusBottomRight": { "type": "static", "value": 0.01 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-18",
+        "name": "Element 18",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-18",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "hexagon", "params": { "size": { "type": "static", "value": 15 }, "angle": { "type": "static", "value": 30 } } },
+            "colors": { "primary": "Bs", "secondary": "BN6" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-18",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.85 }, "radius": { "type": "static", "value": 0.09 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-19",
+        "name": "Element 19",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-19",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "asanoha", "params": { "size": { "type": "static", "value": 25 }, "lineWidth": { "type": "static", "value": 2 } } },
+            "colors": { "primary": "As", "secondary": "AN5" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-19",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.75 }, "bottom": { "type": "static", "value": 0.95 }, "radiusTopLeft": { "type": "static", "value": 0.02 }, "radiusTopRight": { "type": "static", "value": 0.02 }, "radiusBottomLeft": { "type": "static", "value": 0.02 }, "radiusBottomRight": { "type": "static", "value": 0.02 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-20",
+        "name": "Element 20",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-20",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "seigaiha", "params": { "radius": { "type": "static", "value": 15 }, "rings": { "type": "static", "value": 4 }, "lineWidth": { "type": "static", "value": 1 } } },
+            "colors": { "primary": "B", "secondary": "BN1" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-20",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.85 }, "baseRadius": { "type": "static", "value": 0.08 }, "amplitude": { "type": "static", "value": 0.02 }, "octaves": { "type": "static", "value": 4 }, "seed": { "type": "static", "value": 456 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-21",
+        "name": "Element 21",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-21",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "wave", "params": { "amplitude": { "type": "static", "value": 8 }, "wavelength": { "type": "static", "value": 30 }, "thickness": { "type": "static", "value": 3 }, "angle": { "type": "static", "value": 45 } } },
+            "colors": { "primary": "A", "secondary": "AN1" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-21",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.15 }, "centerY": { "type": "static", "value": 0.5 }, "radius": { "type": "static", "value": 0.06 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-22",
+        "name": "Element 22",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-22",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "scales", "params": { "size": { "type": "static", "value": 12 }, "overlap": { "type": "static", "value": 0.4 }, "angle": { "type": "static", "value": 180 } } },
+            "colors": { "primary": "Bt", "secondary": "F8" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-22",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.02 }, "right": { "type": "static", "value": 0.18 }, "top": { "type": "static", "value": 0.52 }, "bottom": { "type": "static", "value": 0.58 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-23",
+        "name": "Element 23",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-23",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "ogee", "params": { "width": { "type": "static", "value": 30 }, "height": { "type": "static", "value": 45 }, "lineWidth": { "type": "static", "value": 1 } } },
+            "colors": { "primary": "At", "secondary": "F9" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-23",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.85 }, "centerY": { "type": "static", "value": 0.5 }, "baseRadius": { "type": "static", "value": 0.06 }, "amplitude": { "type": "static", "value": 0.015 }, "octaves": { "type": "static", "value": 3 }, "seed": { "type": "static", "value": 321 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-24",
+        "name": "Element 24",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-24",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "sunburst", "params": { "rays": { "type": "static", "value": 24 }, "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.5 }, "twist": { "type": "static", "value": 15 } } },
+            "colors": { "primary": "Bs", "secondary": "BN9" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-24",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.82 }, "right": { "type": "static", "value": 0.98 }, "top": { "type": "static", "value": 0.42 }, "bottom": { "type": "static", "value": 0.58 }, "radiusTopLeft": { "type": "static", "value": 0.04 }, "radiusTopRight": { "type": "static", "value": 0.04 }, "radiusBottomLeft": { "type": "static", "value": 0.04 }, "radiusBottomRight": { "type": "static", "value": 0.04 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-25",
+        "name": "Element 25",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-25",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "stripe", "params": { "width1": { "type": "static", "value": 3 }, "width2": { "type": "static", "value": 12 }, "angle": { "type": "static", "value": -45 } } },
+            "colors": { "primary": "As", "secondary": "AN8" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-25",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.3 }, "centerY": { "type": "static", "value": 0.5 }, "radius": { "type": "static", "value": 0.05 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-26",
+        "name": "Element 26",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-26",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "polkaDot", "params": { "dotRadius": { "type": "static", "value": 8 }, "spacing": { "type": "static", "value": 25 }, "rowOffset": { "type": "static", "value": 0.5 } } },
+            "colors": { "primary": "B", "secondary": "BN0" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-26",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.7 }, "centerY": { "type": "static", "value": 0.5 }, "baseRadius": { "type": "static", "value": 0.05 }, "amplitude": { "type": "static", "value": 0.01 }, "octaves": { "type": "static", "value": 2 }, "seed": { "type": "static", "value": 654 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-27",
+        "name": "Element 27",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-27",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "grid", "params": { "lineWidth": { "type": "static", "value": 3 }, "cellSize": { "type": "static", "value": 40 } } },
+            "colors": { "primary": "A", "secondary": "AN0" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-27",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.4 }, "right": { "type": "static", "value": 0.46 }, "top": { "type": "static", "value": 0.3 }, "bottom": { "type": "static", "value": 0.7 }, "radiusTopLeft": { "type": "static", "value": 0.01 }, "radiusTopRight": { "type": "static", "value": 0.01 }, "radiusBottomLeft": { "type": "static", "value": 0.01 }, "radiusBottomRight": { "type": "static", "value": 0.01 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-28",
+        "name": "Element 28",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-28",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "checker", "params": { "cellSize": { "type": "static", "value": 10 }, "angle": { "type": "static", "value": 0 } } },
+            "colors": { "primary": "Bt", "secondary": "BN4" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-28",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.54 }, "right": { "type": "static", "value": 0.6 }, "top": { "type": "static", "value": 0.3 }, "bottom": { "type": "static", "value": 0.7 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-29",
+        "name": "Element 29",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-29",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "triangle", "params": { "size": { "type": "static", "value": 20 }, "angle": { "type": "static", "value": 60 } } },
+            "colors": { "primary": "At", "secondary": "AN9" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-29",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.5 }, "radius": { "type": "static", "value": 0.04 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "clip-group-30",
+        "name": "Element 30",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "surface-30",
+            "name": "Surface",
+            "visible": true,
+            "surface": { "id": "hexagon", "params": { "size": { "type": "static", "value": 25 }, "angle": { "type": "static", "value": 0 } } },
+            "colors": { "primary": "Bs", "secondary": "F0" }
+          },
+          {
+            "type": "processor",
+            "id": "processor-30",
+            "name": "Mask",
+            "visible": true,
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.5 }, "baseRadius": { "type": "static", "value": 0.15 }, "amplitude": { "type": "static", "value": 0.04 }, "octaves": { "type": "static", "value": 5 }, "seed": { "type": "static", "value": 888 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 240,
+      "saturation": 65,
+      "value": 55
+    },
+    "accent": {
+      "hue": 35,
+      "saturation": 85,
+      "value": 65
+    },
+    "foundation": {
+      "hue": 220,
+      "saturation": 5,
+      "value": 95
+    }
+  }
+}

@@ -20,6 +20,10 @@ export type { RenderHeroConfigOptions, TextureRendererLike } from './renderHeroC
 export { createEffectSpecsForPreview } from './createEffectSpecsForPreview'
 export { createMaskPreviewConfig } from './createMaskPreviewConfig'
 export type { CreateMaskPreviewConfigOptions } from './createMaskPreviewConfig'
+export { createEffectPreviewConfig } from './createEffectPreviewConfig'
+export type { CreateEffectPreviewConfigOptions } from './createEffectPreviewConfig'
+export { createSurfacePreviewConfig } from './createSurfacePreviewConfig'
+export type { CreateSurfacePreviewConfigOptions } from './createSurfacePreviewConfig'
 
 export { createBrowserPresetExporter } from './Preset'
 

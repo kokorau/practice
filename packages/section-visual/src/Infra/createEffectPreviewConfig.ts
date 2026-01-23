@@ -1,21 +1,18 @@
 /**
- * createMaskPreviewConfig
+ * createEffectPreviewConfig
  *
- * Creates a mini HeroViewConfig for mask preset thumbnail preview.
- * Uses the actual Surface and Processor from the selected Clip Group,
- * with the mask shape replaced for each preset preview.
+ * Creates a mini HeroViewConfig for effect preset thumbnail preview.
+ * Uses the actual Surface from the selected Clip Group with the preview effect applied.
+ * Does not include mask (shows effect preview on full surface).
  */
 
 import type {
   HeroViewConfig,
   SurfaceLayerNodeConfig,
   ProcessorNodeConfig,
-  MaskProcessorConfig,
   SingleEffectConfig,
-  NormalizedMaskConfig,
   NormalizedSurfaceConfig,
 } from '../Domain/HeroViewConfig'
-import { getEffectsBeforeMask } from '../Domain/HeroViewConfig'
 import type { PropertyValue } from '../Domain/SectionVisual'
 import { $PropertyValue } from '../Domain/SectionVisual'
 
@@ -66,17 +63,14 @@ function staticizeEffect(effect: SingleEffectConfig): SingleEffectConfig {
 }
 
 /**
- * Options for creating mask preview config
+ * Options for creating effect preview config
  */
-export interface CreateMaskPreviewConfigOptions {
+export interface CreateEffectPreviewConfigOptions {
   /** The Surface layer from the selected Clip Group */
   surface: SurfaceLayerNodeConfig
 
-  /** The Processor node (to extract preceding effects) */
-  processor: ProcessorNodeConfig
-
-  /** The mask shape config to preview */
-  previewMask: NormalizedMaskConfig
+  /** The effect config to preview */
+  previewEffect: SingleEffectConfig
 
   /** Viewport dimensions for the thumbnail */
   viewport?: { width: number; height: number }
@@ -86,69 +80,43 @@ export interface CreateMaskPreviewConfigOptions {
 }
 
 /**
- * Creates a mini HeroViewConfig for mask preset thumbnail preview.
+ * Creates a mini HeroViewConfig for effect preset thumbnail preview.
  *
  * The generated config contains:
  * - A group with:
  *   - The actual Surface from the Clip Group (with its colors)
- *   - A Processor with:
- *     - Preceding effects (effects before the mask in the original Processor)
- *     - The preview mask shape
+ *   - A Processor with the preview effect (no mask)
  *
  * @example
  * ```ts
- * const previewConfig = createMaskPreviewConfig({
+ * const previewConfig = createEffectPreviewConfig({
  *   surface: clipGroupSurface,
- *   processor: selectedProcessor,
- *   previewMask: { id: 'circle', params: { centerX: 0.5, centerY: 0.5, radius: 0.3 } },
+ *   previewEffect: { type: 'effect', id: 'blur', params: { radius: 8 } },
  * })
  *
  * await renderWithPipeline(previewConfig, renderer, palette, { scale: 0.3 })
  * ```
  */
-export function createMaskPreviewConfig(
-  options: CreateMaskPreviewConfigOptions
+export function createEffectPreviewConfig(
+  options: CreateEffectPreviewConfigOptions
 ): HeroViewConfig {
   const {
     surface,
-    processor,
-    previewMask,
+    previewEffect,
     viewport = { width: 256, height: 144 },
     semanticContext = 'canvas',
   } = options
 
-  // Extract effects that come before the mask in the original processor
-  // and convert any RangeExpr to static values
-  const precedingEffects = getEffectsBeforeMask(processor.modifiers).map(staticizeEffect)
+  // Staticize the effect to convert any RangeExpr to static values
+  const staticizedEffect = staticizeEffect(previewEffect)
 
-  // Create the mask modifier with the preview shape
-  // Staticize mask params to convert any RangeExpr to static values
-  const staticizedMask: NormalizedMaskConfig = {
-    id: previewMask.id,
-    params: staticizeParams(previewMask.params),
-  }
-
-  const maskModifier: MaskProcessorConfig = {
-    type: 'mask',
-    enabled: true,
-    shape: staticizedMask,
-    invert: false,
-    feather: 0,
-  }
-
-  // Build modifiers array: preceding effects + preview mask
-  const modifiers: (SingleEffectConfig | MaskProcessorConfig)[] = [
-    ...precedingEffects,
-    maskModifier,
-  ]
-
-  // Create the processor node for preview
+  // Create the processor node with only the preview effect (no mask)
   const previewProcessor: ProcessorNodeConfig = {
     type: 'processor',
     id: 'preview-processor',
     name: 'Preview Processor',
     visible: true,
-    modifiers,
+    modifiers: [staticizedEffect],
   }
 
   // Create a copy of the surface with a unique ID
