@@ -112,15 +112,21 @@ describe('buildPipeline', () => {
     expect(result.nodes.length).toBeGreaterThan(0)
   })
 
-  it('creates background surface node', () => {
+  it('creates background-group as GroupCompositorNode', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
 
     const result = buildPipeline(config, palette)
 
-    const bgNode = result.nodes.find(n => n.id === 'bg-surface')
-    expect(bgNode).toBeDefined()
-    expect(bgNode?.type).toBe('render')
+    // background-group is now a GroupCompositorNode (not special-cased)
+    const bgGroupNode = result.nodes.find(n => n.id === 'background-group')
+    expect(bgGroupNode).toBeDefined()
+    expect(bgGroupNode).toBeInstanceOf(GroupCompositorNode)
+
+    // background surface is a child of background-group
+    const bgSurfaceNode = result.nodes.find(n => n.id === 'background')
+    expect(bgSurfaceNode).toBeDefined()
+    expect(bgSurfaceNode?.type).toBe('render')
   })
 
   it('creates clip-group nodes with mask', () => {
