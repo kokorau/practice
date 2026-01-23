@@ -1,4 +1,4 @@
-import { fullscreenVertex } from './common'
+import { fullscreenVertex, hash22 } from './common'
 import type { Viewport } from '../Domain'
 
 /**
@@ -7,6 +7,8 @@ import type { Viewport } from '../Domain'
 export interface PixelateParams {
   /** ブロックサイズ（ピクセル単位、4-64） */
   blockSize: number
+  /** ノイズスケール（0-100） */
+  noiseScale: number
 }
 
 /**
@@ -16,9 +18,9 @@ export interface PixelateParams {
 export const pixelateShader = /* wgsl */ `
 struct Uniforms {
   blockSize: f32,          // 0
-  viewportWidth: f32,      // 4
-  viewportHeight: f32,     // 8
-  _padding: f32,           // 12 (total 16 bytes, 16-byte aligned)
+  noiseScale: f32,         // 4
+  viewportWidth: f32,      // 8
+  viewportHeight: f32,     // 12 (total 16 bytes, 16-byte aligned)
 }
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -26,6 +28,8 @@ struct Uniforms {
 @group(0) @binding(2) var inputTexture: texture_2d<f32>;
 
 ${fullscreenVertex}
+
+${hash22}
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -36,10 +40,19 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let blockSizeNorm = vec2f(u.blockSize / texSize.x, u.blockSize / texSize.y);
 
   // ブロックの中心座標を計算
-  let blockUV = floor(uv / blockSizeNorm) * blockSizeNorm + blockSizeNorm * 0.5;
+  let blockIndex = floor(uv / blockSizeNorm);
+  var blockUV = blockIndex * blockSizeNorm + blockSizeNorm * 0.5;
+
+  // ノイズを適用（noiseScale > 0 の場合）
+  if (u.noiseScale > 0.0) {
+    let noise = hash22(blockIndex) * 2.0 - 1.0; // -1 to 1
+    let noiseOffset = noise * blockSizeNorm * u.noiseScale * 0.01;
+    blockUV = blockUV + noiseOffset;
+  }
 
   // ブロック中心の色をサンプリング
-  let color = textureSample(inputTexture, inputSampler, blockUV);
+  let clampedUV = clamp(blockUV, vec2f(0.0), vec2f(1.0));
+  let color = textureSample(inputTexture, inputSampler, clampedUV);
 
   return color;
 }
@@ -58,9 +71,9 @@ export const createPixelateUniforms = (
   const view = new DataView(uniforms)
 
   view.setFloat32(0, params.blockSize, true)
-  view.setFloat32(4, viewport.width, true)
-  view.setFloat32(8, viewport.height, true)
-  view.setFloat32(12, 0, true) // padding
+  view.setFloat32(4, params.noiseScale ?? 0, true)
+  view.setFloat32(8, viewport.width, true)
+  view.setFloat32(12, viewport.height, true)
 
   return uniforms
 }

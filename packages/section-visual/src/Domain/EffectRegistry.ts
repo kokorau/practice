@@ -287,7 +287,10 @@ function createPixelateShaderSpec(
   return {
     shader: pixelateShader,
     uniforms: createPixelateUniforms(
-      { blockSize: scaleValue(config.blockSize, scale) },
+      {
+        blockSize: scaleValue(config.blockSize, scale),
+        noiseScale: config.noiseScale,
+      },
       viewport
     ),
     bufferSize: PIXELATE_BUFFER_SIZE,
@@ -302,7 +305,10 @@ function createHexagonMosaicShaderSpec(
   return {
     shader: hexagonMosaicShader,
     uniforms: createHexagonMosaicUniforms(
-      { cellSize: scaleValue(config.cellSize, scale) },
+      {
+        cellSize: scaleValue(config.cellSize, scale),
+        noiseScale: config.noiseScale,
+      },
       viewport
     ),
     bufferSize: HEXAGON_MOSAIC_BUFFER_SIZE,
@@ -322,6 +328,7 @@ function createVoronoiMosaicShaderSpec(
         seed: config.seed,
         showEdges: config.showEdges ? 1 : 0,
         edgeWidth: config.edgeWidth,
+        noiseScale: config.noiseScale,
       },
       viewport
     ),

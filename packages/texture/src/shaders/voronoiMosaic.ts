@@ -13,6 +13,8 @@ export interface VoronoiMosaicParams {
   showEdges: number
   /** エッジの太さ（1-8） */
   edgeWidth: number
+  /** ノイズスケール（0-100） */
+  noiseScale: number
 }
 
 /**
@@ -25,10 +27,10 @@ struct Uniforms {
   seed: f32,               // 4
   showEdges: f32,          // 8
   edgeWidth: f32,          // 12
-  viewportWidth: f32,      // 16
-  viewportHeight: f32,     // 20
-  _padding1: f32,          // 24
-  _padding2: f32,          // 28 (total 32 bytes, 16-byte aligned)
+  noiseScale: f32,         // 16
+  viewportWidth: f32,      // 20
+  viewportHeight: f32,     // 24
+  _padding: f32,           // 28 (total 32 bytes, 16-byte aligned)
 }
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -85,8 +87,16 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   // ボロノイセル情報を取得
   let voronoiInfo = voronoi(uv, u.cellCount, u.seed);
-  let cellCenterUV = voronoiInfo.xy;
+  var cellCenterUV = voronoiInfo.xy;
   let edgeDist = voronoiInfo.z;
+
+  // ノイズを適用（noiseScale > 0 の場合）
+  if (u.noiseScale > 0.0) {
+    let cellIndex = floor(uv * u.cellCount);
+    let noise = hash22(cellIndex + u.seed * 0.01) * 2.0 - 1.0; // -1 to 1
+    let noiseOffset = noise / u.cellCount * u.noiseScale * 0.01;
+    cellCenterUV = cellCenterUV + noiseOffset;
+  }
 
   // セル中心の色をサンプリング
   let clampedUV = clamp(cellCenterUV, vec2f(0.0), vec2f(1.0));
@@ -119,9 +129,9 @@ export const createVoronoiMosaicUniforms = (
   view.setFloat32(4, params.seed, true)
   view.setFloat32(8, params.showEdges, true)
   view.setFloat32(12, params.edgeWidth, true)
-  view.setFloat32(16, viewport.width, true)
-  view.setFloat32(20, viewport.height, true)
-  view.setFloat32(24, 0, true) // padding
+  view.setFloat32(16, params.noiseScale ?? 0, true)
+  view.setFloat32(20, viewport.width, true)
+  view.setFloat32(24, viewport.height, true)
   view.setFloat32(28, 0, true) // padding
 
   return uniforms

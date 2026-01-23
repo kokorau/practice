@@ -1,4 +1,4 @@
-import { fullscreenVertex } from './common'
+import { fullscreenVertex, hash22 } from './common'
 import type { Viewport } from '../Domain'
 
 /**
@@ -7,6 +7,8 @@ import type { Viewport } from '../Domain'
 export interface HexagonMosaicParams {
   /** セルサイズ（ピクセル単位、8-80） */
   cellSize: number
+  /** ノイズスケール（0-100） */
+  noiseScale: number
 }
 
 /**
@@ -16,9 +18,9 @@ export interface HexagonMosaicParams {
 export const hexagonMosaicShader = /* wgsl */ `
 struct Uniforms {
   cellSize: f32,           // 0
-  viewportWidth: f32,      // 4
-  viewportHeight: f32,     // 8
-  _padding: f32,           // 12 (total 16 bytes, 16-byte aligned)
+  noiseScale: f32,         // 4
+  viewportWidth: f32,      // 8
+  viewportHeight: f32,     // 12 (total 16 bytes, 16-byte aligned)
 }
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -26,6 +28,8 @@ struct Uniforms {
 @group(0) @binding(2) var inputTexture: texture_2d<f32>;
 
 ${fullscreenVertex}
+
+${hash22}
 
 // 六角形の中心座標を計算
 fn hexCenter(q: f32, r: f32, size: f32) -> vec2f {
@@ -69,7 +73,14 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let hex = pixelToHex(centeredPos, u.cellSize);
 
   // 六角形の中心座標を計算
-  let center = hexCenter(hex.x, hex.y, u.cellSize);
+  var center = hexCenter(hex.x, hex.y, u.cellSize);
+
+  // ノイズを適用（noiseScale > 0 の場合）
+  if (u.noiseScale > 0.0) {
+    let noise = hash22(hex) * 2.0 - 1.0; // -1 to 1
+    let noiseOffset = noise * u.cellSize * u.noiseScale * 0.01;
+    center = center + noiseOffset;
+  }
 
   // 画面座標に戻してUVを計算
   let samplePos = center + texSize * 0.5;
@@ -98,9 +109,9 @@ export const createHexagonMosaicUniforms = (
   const view = new DataView(uniforms)
 
   view.setFloat32(0, params.cellSize, true)
-  view.setFloat32(4, viewport.width, true)
-  view.setFloat32(8, viewport.height, true)
-  view.setFloat32(12, 0, true) // padding
+  view.setFloat32(4, params.noiseScale ?? 0, true)
+  view.setFloat32(8, viewport.width, true)
+  view.setFloat32(12, viewport.height, true)
 
   return uniforms
 }
