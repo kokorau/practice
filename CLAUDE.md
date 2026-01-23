@@ -87,3 +87,10 @@ Playwright MCP is configured in `.mcp.json` for AI-assisted visual inspection:
 ### PR作成ルール
 - PRはmasterブランチから新しいブランチを作成して作業すること
 - Issueの解決に必要な変更のみをcommitする
+
+## Development Guidelines
+
+### 構造変更のルール
+- データ構造や構成の変更を行う際は、既存構造への後方互換性を維持しない
+- アプリケーション全体を通じて新構造への更新を行う
+- 旧構造は完全に削除する（deprecatedコードやマイグレーション用のコードを残さない）
