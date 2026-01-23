@@ -9,7 +9,7 @@ export type { PhaseLayout } from './PhaseLayout'
 export { calculatePhaseLayouts } from './PhaseLayout'
 
 // Track (DSL-based)
-export type { TrackId, ClockType, DslTrack, Track } from './Track'
+export type { TrackId, ClockType, DslTrack, Track, BezierPath, BezierAnchor } from './Track'
 
 // Timeline
 export type { Timeline } from './Timeline'
@@ -17,8 +17,17 @@ export type { Timeline } from './Timeline'
 // Player
 export type { FrameState, TimelinePlayer } from './Player'
 
-// Timeline Preparation (AST caching)
-export { prepareTimeline, prepareTrack } from './prepareTimeline'
+// Timeline Preparation (AST caching, Bezier LUT)
+export { prepareTimeline, prepareTrack, invalidateBezierLut } from './prepareTimeline'
+
+// Bezier utilities (re-exported from @practice/bezier)
+export {
+  evaluate as evaluateBezierPath,
+  toLut as bezierPathToLut,
+  evaluateLut,
+  identity as createLinearBezierPath,
+  easeInOut as createEaseInOutBezierPath,
+} from '@practice/bezier'
 
 // Player Implementation
 export { createTimelinePlayer, type CreateTimelinePlayerOptions } from './createTimelinePlayer'

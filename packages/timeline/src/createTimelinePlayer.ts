@@ -4,6 +4,7 @@ import type { TrackId } from './Track'
 import type { Ms } from './Unit'
 import type { PhaseId } from './Phase'
 import { evaluate, parse } from '@practice/dsl'
+import { evaluateLut } from '@practice/bezier'
 
 export interface CreateTimelinePlayerOptions {
   timeline: Timeline
@@ -105,12 +106,24 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
         trackTime = playhead - boundary.startMs
       }
 
-      // Get or parse AST
-      const ast = track._cachedAst ?? parse(track.expression)
+      let value: number
 
-      // Evaluate the DSL expression with time context
-      // Expression should output 0-1 intensity value
-      const value = evaluate(ast, { t: trackTime })
+      // Check if track uses bezier path (takes precedence over DSL expression)
+      if (track._bezierLut) {
+        // Normalize trackTime to 0-1 based on phase duration
+        const normalizedTime = boundary.duration === Infinity
+          ? 0 // Can't normalize infinite duration
+          : trackTime / boundary.duration
+        value = evaluateLut(track._bezierLut, normalizedTime)
+      } else {
+        // Get or parse AST
+        const ast = track._cachedAst ?? parse(track.expression)
+
+        // Evaluate the DSL expression with time context
+        // Expression should output 0-1 intensity value
+        value = evaluate(ast, { t: trackTime })
+      }
+
       intensities[track.id] = value
     }
 

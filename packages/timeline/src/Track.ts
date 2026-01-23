@@ -1,5 +1,8 @@
 import type { PhaseId } from './Phase'
 import type { AstNode } from '@practice/dsl'
+import type { BezierPath } from '@practice/bezier'
+
+export type { BezierPath, BezierAnchor } from '@practice/bezier'
 
 export type TrackId = string & { readonly __brand: unique symbol }
 
@@ -18,6 +21,9 @@ export type ClockType = 'Global' | 'Phase' | 'Loop'
  *
  * // Linear interpolation 0-1 over 3 seconds
  * { id: 'track-mask-radius', expression: 'smoothstep(0, 3000, t)' }
+ *
+ * // Custom bezier easing (when bezierPath is set, expression is ignored)
+ * { id: 'track-custom', bezierPath: { anchors: [...] }, expression: '' }
  */
 export interface DslTrack {
   id: TrackId
@@ -29,6 +35,10 @@ export interface DslTrack {
   expression: string
   /** Internal: cached AST for the expression (populated by prepareTimeline) */
   _cachedAst?: AstNode
+  /** Optional: Custom bezier easing curve. When set, overrides expression evaluation. */
+  bezierPath?: BezierPath
+  /** Internal: cached LUT for bezier evaluation (256 samples) */
+  _bezierLut?: Float32Array
 }
 
 export type Track = DslTrack

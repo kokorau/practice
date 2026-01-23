@@ -23,6 +23,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@practice/bezier": "workspace:*",
     "@practice/dsl": "workspace:*"
   },
   "devDependencies": {
