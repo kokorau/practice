@@ -973,9 +973,29 @@ export interface ImageLayerNodeConfig extends LayerNodeConfigBase {
   position?: ImagePositionConfig
 }
 
+/**
+ * Blend modes for group composition.
+ * Standard Porter-Duff and blend modes.
+ */
+export type GroupBlendMode =
+  | 'normal'
+  | 'multiply'
+  | 'screen'
+  | 'overlay'
+  | 'darken'
+  | 'lighten'
+  | 'color-dodge'
+  | 'color-burn'
+  | 'hard-light'
+  | 'soft-light'
+  | 'difference'
+  | 'exclusion'
+
 export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
+  /** Blend mode for compositing this group onto layers below */
+  blendMode?: GroupBlendMode
 }
 
 /**
