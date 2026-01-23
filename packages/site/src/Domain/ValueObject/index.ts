@@ -22,7 +22,7 @@ export { $FilterConfig, $AdjustmentConfig, $CurveConfig } from './FilterConfig'
 // SectionVisual (re-export from @practice/section-visual)
 export type {
   StaticValue,
-  BindingValue,
+  RangeExpr,
   PropertyValue,
   VisualProperties,
 } from '@practice/section-visual'

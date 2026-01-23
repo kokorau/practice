@@ -154,7 +154,6 @@ export type {
   HeroEditorState,
   // SectionVisual types
   StaticValue,
-  BindingValue,
   RangeExpr,
   PropertyValue,
   VisualProperties,
@@ -305,7 +304,6 @@ export {
   $PropertyValue,
   // PropertyResolver
   createPropertyResolver,
-  createPropertyResolverWithIntensities,
   resolveHeroViewConfig,
 } from './Domain'
 

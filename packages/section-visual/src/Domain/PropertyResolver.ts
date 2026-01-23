@@ -1,4 +1,4 @@
-import type { ParamResolver as TimelineParamResolver, IntensityProvider } from '@practice/timeline'
+import type { IntensityProvider } from '@practice/timeline'
 import type { PropertyValue, RangeExpr } from './SectionVisual'
 import { $PropertyValue } from './SectionVisual'
 import type {
@@ -21,7 +21,7 @@ import {
 /**
  * PropertyResolver - PropertyValue を実際の値に解決する
  *
- * ParamResolver から取得した解決済みの値を使用して
+ * IntensityProvider から取得した intensity (0-1) を使用して
  * PropertyValue を実際の値に変換する。
  */
 export interface PropertyResolver {
@@ -31,7 +31,7 @@ export interface PropertyResolver {
   /** params 一括解決 */
   resolveAll(params: Record<string, PropertyValue>): Record<string, number | string | boolean>
 
-  /** この params が依存する paramId 一覧 */
+  /** この params が依存する trackId 一覧 */
   getDependencies(params: Record<string, PropertyValue>): Set<string>
 }
 
@@ -50,71 +50,14 @@ function resolveRangeExpr(expr: RangeExpr, intensityProvider: IntensityProvider)
 }
 
 /**
- * PropertyResolver を作成 (ParamResolver ベース)
+ * PropertyResolver を作成
  *
- * @param paramResolver - ParamResolver from @practice/timeline (contains resolved values)
- */
-export function createPropertyResolver(paramResolver: TimelineParamResolver): PropertyResolver {
-  return {
-    resolve(prop: PropertyValue): number | string | boolean {
-      if ($PropertyValue.isStatic(prop)) {
-        return prop.value
-      }
-
-      // BindingValue: ParamResolver から解決済みの値を取得
-      if ($PropertyValue.isBinding(prop)) {
-        const resolvedValue = paramResolver.get(prop.paramId)
-        if (resolvedValue !== undefined) {
-          return resolvedValue
-        }
-        return 0
-      }
-
-      // RangeExpr は ParamResolver ベースでは解決できない (IntensityProvider が必要)
-      // Fallback: 未解決の場合は min を返す
-      if ($PropertyValue.isRange(prop)) {
-        return prop.min
-      }
-
-      // Fallback: 未解決の場合は 0 を返す
-      return 0
-    },
-
-    resolveAll(params: Record<string, PropertyValue>): Record<string, number | string | boolean> {
-      const result: Record<string, number | string | boolean> = {}
-      for (const [key, prop] of Object.entries(params)) {
-        result[key] = this.resolve(prop)
-      }
-      return result
-    },
-
-    getDependencies(params: Record<string, PropertyValue>): Set<string> {
-      const deps = new Set<string>()
-      for (const prop of Object.values(params)) {
-        if ($PropertyValue.isBinding(prop)) {
-          deps.add(prop.paramId)
-        }
-        // RangeExpr は trackId を依存として登録
-        if ($PropertyValue.isRange(prop)) {
-          deps.add(prop.trackId)
-        }
-      }
-      return deps
-    },
-  }
-}
-
-/**
- * PropertyResolver を作成 (IntensityProvider ベース)
- *
- * IntensityProvider から直接 intensity (0-1) を取得し、
- * RangeExpr を解決する新しい方式。
+ * IntensityProvider から intensity (0-1) を取得し、
+ * RangeExpr を解決する。
  *
  * @param intensityProvider - IntensityProvider from @practice/timeline
  */
-export function createPropertyResolverWithIntensities(
-  intensityProvider: IntensityProvider
-): PropertyResolver {
+export function createPropertyResolver(intensityProvider: IntensityProvider): PropertyResolver {
   return {
     resolve(prop: PropertyValue): number | string | boolean {
       if ($PropertyValue.isStatic(prop)) {
@@ -124,14 +67,6 @@ export function createPropertyResolverWithIntensities(
       // RangeExpr: IntensityProvider から intensity を取得してマッピング
       if ($PropertyValue.isRange(prop)) {
         return resolveRangeExpr(prop, intensityProvider)
-      }
-
-      // Legacy BindingValue はサポートしない
-      if ($PropertyValue.isBinding(prop)) {
-        console.warn(
-          `[PropertyResolver] BindingValue is not supported with IntensityProvider. Use RangeExpr instead. paramId=${prop.paramId}`
-        )
-        return 0
       }
 
       return 0
@@ -169,7 +104,7 @@ function isPropertyValue(value: unknown): value is PropertyValue {
     typeof value === 'object' &&
     value !== null &&
     'type' in value &&
-    (value.type === 'static' || value.type === 'binding' || value.type === 'range')
+    (value.type === 'static' || value.type === 'range')
   )
 }
 

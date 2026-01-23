@@ -27,7 +27,7 @@ const {
   isPlaying,
   frameState,
   phaseLayouts,
-  paramResolver,
+  intensityProvider,
   toggle,
   stop,
   seek,
@@ -178,14 +178,14 @@ onMounted(() => {
   nextTick(() => redrawAllCanvases())
 })
 
-// Expose methods and paramResolver for parent component
+// Expose methods and intensityProvider for parent component
 defineExpose({
   play: () => { if (!isPlaying.value) toggle() },
   pause: () => { if (isPlaying.value) toggle() },
   stop,
   seek,
   toggle,
-  paramResolver,
+  intensityProvider,
 })
 </script>
 
@@ -211,7 +211,7 @@ defineExpose({
           class="track-list-item"
         >
           <span class="track-name">{{ track.name }}</span>
-          <span class="track-param">{{ track.targetParam }}</span>
+          <span class="track-param">{{ track.id }}</span>
         </div>
       </div>
 

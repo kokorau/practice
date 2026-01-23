@@ -46,10 +46,11 @@ import type {
 } from './useHeroScene'
 
 /**
- * Check if a normalized mask config has any binding values
+ * Check if a normalized mask config has any RangeExpr values
+ * (timeline-driven params can't be synced to UI)
  */
-function hasMaskBindingValues(config: NormalizedMaskConfig): boolean {
-  return Object.values(config.params).some((prop) => $PropertyValue.isBinding(prop))
+function hasMaskRangeValues(config: NormalizedMaskConfig): boolean {
+  return Object.values(config.params).some((prop) => $PropertyValue.isRange(prop))
 }
 
 // Layer ID for background
@@ -125,8 +126,8 @@ export const useHeroSurfaceParams = (
       if (!maskModifier) return null
       // Normalize first (ensures consistent format), then extract static values for UI params
       const normalizedMask = getMaskAsNormalized(maskModifier.shape)
-      // Skip if config has binding values (timeline-driven params can't be synced to UI)
-      if (hasMaskBindingValues(normalizedMask)) {
+      // Skip if config has RangeExpr values (timeline-driven params can't be synced to UI)
+      if (hasMaskRangeValues(normalizedMask)) {
         return null
       }
       const staticMask = denormalizeMaskConfig(normalizedMask)

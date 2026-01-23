@@ -328,7 +328,7 @@ export function normalizeSurfaceConfig(config: SurfaceConfig): NormalizedSurface
 
 /**
  * Convert NormalizedSurfaceConfig to legacy SurfaceConfig
- * Only StaticValue params are extracted; BindingValue throws error
+ * Only StaticValue params are extracted; RangeExpr throws error
  */
 export function denormalizeSurfaceConfig(config: NormalizedSurfaceConfig): SurfaceConfig {
   const rawParams: Record<string, unknown> = {}
@@ -336,7 +336,7 @@ export function denormalizeSurfaceConfig(config: NormalizedSurfaceConfig): Surfa
     if ($PropertyValue.isStatic(prop)) {
       rawParams[key] = prop.value
     } else {
-      throw new Error(`Cannot denormalize BindingValue for key "${key}". Use resolveParams() instead.`)
+      throw new Error(`Cannot denormalize RangeExpr for key "${key}". Use resolveParams() instead.`)
     }
   }
   return { type: config.id, ...rawParams } as SurfaceConfig
@@ -617,7 +617,7 @@ export function normalizeMaskConfig(config: MaskShapeConfig): NormalizedMaskConf
 
 /**
  * Convert NormalizedMaskConfig to legacy MaskShapeConfig
- * Only StaticValue params are extracted; BindingValue throws error
+ * Only StaticValue params are extracted; RangeExpr throws error
  */
 export function denormalizeMaskConfig(config: NormalizedMaskConfig): MaskShapeConfig {
   const rawParams: Record<string, unknown> = {}
@@ -625,7 +625,7 @@ export function denormalizeMaskConfig(config: NormalizedMaskConfig): MaskShapeCo
     if ($PropertyValue.isStatic(prop)) {
       rawParams[key] = prop.value
     } else {
-      throw new Error(`Cannot denormalize BindingValue for key "${key}". Use resolveParams() instead.`)
+      throw new Error(`Cannot denormalize RangeExpr for key "${key}". Use resolveParams() instead.`)
     }
   }
   return { type: config.id, ...rawParams } as MaskShapeConfig
@@ -845,7 +845,7 @@ export function extractEnabledEffects(config: LayerEffectConfig): SingleEffectCo
 
 /**
  * Convert SingleEffectConfig[] to LayerEffectConfig for UI display
- * Only StaticValue params are extracted; BindingValue throws error
+ * Only StaticValue params are extracted; RangeExpr throws error
  */
 export function denormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): LayerEffectConfig {
   const config = createDefaultEffectConfig()
@@ -860,7 +860,7 @@ export function denormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): L
         if ($PropertyValue.isStatic(prop)) {
           rawParams[key] = prop.value
         } else {
-          throw new Error(`Cannot denormalize BindingValue for effect "${effect.id}" key "${key}". Use resolveParams() instead.`)
+          throw new Error(`Cannot denormalize RangeExpr for effect "${effect.id}" key "${key}". Use resolveParams() instead.`)
         }
       }
 

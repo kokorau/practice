@@ -183,7 +183,7 @@ function extractRawValue(value: unknown): unknown {
     if ($PropertyValue.isStatic(value)) {
       return value.value
     }
-    // BindingValue - return 0 as fallback (should be resolved before this point)
+    // RangeExpr - return 0 as fallback (should be resolved before this point)
     return 0
   }
   // Already a raw value

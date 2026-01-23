@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createTimelineInMemoryRepository } from './TimelineInMemoryRepository'
 import type { Timeline } from '../Timeline'
-import type { Track, TrackId, ParamId } from '../Track'
+import type { Track, TrackId } from '../Track'
 import type { Phase, PhaseId } from '../Phase'
 
 const createMockTrack = (id: string): Track => ({
@@ -9,7 +9,6 @@ const createMockTrack = (id: string): Track => ({
   name: `Track ${id}`,
   clock: 'Global',
   phaseId: 'phase-1' as PhaseId,
-  targetParam: `param-${id}` as ParamId,
   expression: 'div(t, 1000)',
 })
 

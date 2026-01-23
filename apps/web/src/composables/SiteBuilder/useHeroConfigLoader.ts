@@ -32,14 +32,14 @@ import {
 } from '@practice/section-visual'
 
 /**
- * Extract value from PropertyValue (returns undefined for BindingValue)
+ * Extract value from PropertyValue (returns undefined for RangeExpr)
  */
 function getStaticValue(prop: PropertyValue | undefined): string | number | boolean | undefined {
   if (!prop) return undefined
   if ($PropertyValue.isStatic(prop)) {
     return prop.value
   }
-  // BindingValue - return undefined (shouldn't happen for imageId)
+  // RangeExpr - return undefined (shouldn't happen for imageId)
   return undefined
 }
 // Internal imports for normalization/denormalization functions

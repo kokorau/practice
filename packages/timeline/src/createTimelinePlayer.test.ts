@@ -16,7 +16,6 @@ describe('createTimelinePlayer', () => {
         name: 'Opacity',
         clock: 'Global',
         phaseId: 'phase-1' as PhaseId,
-        targetParam: 'opacity',
         // Linear interpolation: 0 at t=0, 1 at t=4000
         expression: 'div(t, 4000)',
       },
@@ -25,9 +24,8 @@ describe('createTimelinePlayer', () => {
         name: 'Pulse',
         clock: 'Global',
         phaseId: 'phase-1' as PhaseId,
-        targetParam: 'scale',
-        // Oscillates between 0.5 and 1.5 with period 1000ms
-        expression: 'range(osc(t, 1000), 0.5, 1.5)',
+        // Oscillates 0-1 with period 1000ms
+        expression: 'osc(t, 1000)',
       },
     ],
   })
@@ -39,8 +37,8 @@ describe('createTimelinePlayer', () => {
 
     const state = player.update(0)
     expect(state.time).toBe(0)
-    expect(state.params).toHaveProperty('opacity')
-    expect(state.params).toHaveProperty('scale')
+    expect(state.intensities).toHaveProperty('track-opacity')
+    expect(state.intensities).toHaveProperty('track-pulse')
   })
 
   it('seek updates playhead', () => {
@@ -126,9 +124,8 @@ describe('createTimelinePlayer', () => {
           name: 'Test',
           clock: 'Global',
           phaseId: 'phase-1' as PhaseId,
-          targetParam: 'test',
-          // Maps t=0 -> 10, t=4000 -> 20
-          expression: 'range(div(t, 4000), 10, 20)',
+          // Linear interpolation: 0 at t=0, 1 at t=4000
+          expression: 'div(t, 4000)',
         },
       ],
     }
@@ -136,13 +133,13 @@ describe('createTimelinePlayer', () => {
     const player = createTimelinePlayer({ timeline })
 
     player.seek(0)
-    expect(player.update(0).params.test).toBe(10)
+    expect(player.update(0).intensities['track-test']).toBe(0)
 
     player.seek(2000)
-    expect(player.update(0).params.test).toBe(15)
+    expect(player.update(0).intensities['track-test']).toBe(0.5)
 
     player.seek(4000)
-    expect(player.update(0).params.test).toBe(20)
+    expect(player.update(0).intensities['track-test']).toBe(1)
   })
 
   it('evaluates oscillator DSL expression', () => {
@@ -155,7 +152,6 @@ describe('createTimelinePlayer', () => {
           name: 'Pulse',
           clock: 'Global',
           phaseId: 'phase-1' as PhaseId,
-          targetParam: 'pulse',
           // osc outputs 0-1 sine wave
           expression: 'osc(t, 1000)',
         },
@@ -166,11 +162,11 @@ describe('createTimelinePlayer', () => {
 
     // osc at time 0 should be 0.5 (sine starts at 0, normalized to 0-1)
     player.seek(0)
-    expect(player.update(0).params.pulse).toBeCloseTo(0.5, 5)
+    expect(player.update(0).intensities['track-pulse']).toBeCloseTo(0.5, 5)
 
     // osc at time 250 (quarter period) should be 1 (sine peak)
     player.seek(250)
-    expect(player.update(0).params.pulse).toBeCloseTo(1, 5)
+    expect(player.update(0).intensities['track-pulse']).toBeCloseTo(1, 5)
   })
 
   it('handles Phase clock type', () => {
@@ -186,7 +182,6 @@ describe('createTimelinePlayer', () => {
           name: 'Opening Track',
           clock: 'Phase',
           phaseId: 'phase-opening' as PhaseId,
-          targetParam: 'opening',
           // Linear interpolation over 1000ms phase
           expression: 'div(t, 1000)',
         },
@@ -195,7 +190,6 @@ describe('createTimelinePlayer', () => {
           name: 'Loop Track',
           clock: 'Phase',
           phaseId: 'phase-loop' as PhaseId,
-          targetParam: 'loop',
           // Linear interpolation over 2000ms phase
           expression: 'div(t, 2000)',
         },
@@ -206,17 +200,17 @@ describe('createTimelinePlayer', () => {
 
     // In Opening phase (0-1000ms)
     player.seek(500)
-    expect(player.update(0).params.opening).toBeCloseTo(0.5, 5) // midway through Opening
-    expect(player.update(0).params.loop).toBeCloseTo(0, 5) // Loop hasn't started, initial value
+    expect(player.update(0).intensities['track-opening']).toBeCloseTo(0.5, 5) // midway through Opening
+    expect(player.update(0).intensities['track-loop']).toBeCloseTo(0, 5) // Loop hasn't started, initial value
 
     // At end of Opening phase
     player.seek(1000)
-    expect(player.update(0).params.opening).toBeCloseTo(1, 5) // final value of Opening
-    expect(player.update(0).params.loop).toBeCloseTo(0, 5) // Loop just started
+    expect(player.update(0).intensities['track-opening']).toBeCloseTo(1, 5) // final value of Opening
+    expect(player.update(0).intensities['track-loop']).toBeCloseTo(0, 5) // Loop just started
 
     // In Loop phase (1000-3000ms)
     player.seek(2000)
-    expect(player.update(0).params.opening).toBeCloseTo(1, 5) // Opening ended, stays at final value
-    expect(player.update(0).params.loop).toBeCloseTo(0.5, 5) // 1000ms into Loop phase
+    expect(player.update(0).intensities['track-opening']).toBeCloseTo(1, 5) // Opening ended, stays at final value
+    expect(player.update(0).intensities['track-loop']).toBeCloseTo(0.5, 5) // 1000ms into Loop phase
   })
 })

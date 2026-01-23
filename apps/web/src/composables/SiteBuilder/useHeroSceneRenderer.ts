@@ -9,7 +9,7 @@
 import { type ComputedRef, type ShallowRef } from 'vue'
 import type { TextureRenderer } from '@practice/texture'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import type { ParamResolver } from '@practice/timeline'
+import type { IntensityProvider } from '@practice/timeline'
 import {
   type HeroViewRepository,
   renderHeroConfig,
@@ -31,8 +31,8 @@ export interface UseHeroSceneRendererOptions {
   onDestroyPreview?: () => void
   /** Lazy getter for imageRegistry (to handle circular initialization order) */
   getImageRegistry?: () => Map<string, ImageBitmap>
-  /** Lazy getter for ParamResolver (to handle async mount order) */
-  getParamResolver?: () => ParamResolver | undefined
+  /** Lazy getter for IntensityProvider (to handle async mount order) */
+  getIntensityProvider?: () => IntensityProvider | undefined
 }
 
 export interface UseHeroSceneRendererReturn {
@@ -52,23 +52,23 @@ export const useHeroSceneRenderer = (
     editorConfig,
     onDestroyPreview,
     getImageRegistry,
-    getParamResolver,
+    getIntensityProvider,
   } = options
 
   let previewRenderer: TextureRenderer | null = null
 
-  // Unsubscribe function for param change listener
-  let unsubscribeParamChange: (() => void) | null = null
+  // Unsubscribe function for intensity change listener
+  let unsubscribeIntensityChange: (() => void) | null = null
 
   const renderSceneFromConfig = async () => {
     if (!previewRenderer) return
     let config = heroViewRepository.get()
     const imageRegistry = getImageRegistry?.()
 
-    // Resolve PropertyValue bindings if ParamResolver is available
-    const paramResolver = getParamResolver?.()
-    if (paramResolver) {
-      const propertyResolver = createPropertyResolver(paramResolver)
+    // Resolve PropertyValue RangeExpr if IntensityProvider is available
+    const intensityProvider = getIntensityProvider?.()
+    if (intensityProvider) {
+      const propertyResolver = createPropertyResolver(intensityProvider)
       config = resolveHeroViewConfig(config, propertyResolver)
     }
 
@@ -96,12 +96,12 @@ export const useHeroSceneRenderer = (
       previewRenderer = await TextureRenderer.create(canvas)
       await render()
 
-      // Subscribe to ParamResolver for automatic re-rendering on param changes
-      // Use getter to get the resolver at subscription time
-      const paramResolver = getParamResolver?.()
-      if (paramResolver) {
-        unsubscribeParamChange = paramResolver.onParamChange(() => {
-          // Re-render when timeline params change
+      // Subscribe to IntensityProvider for automatic re-rendering on intensity changes
+      // Use getter to get the provider at subscription time
+      const intensityProvider = getIntensityProvider?.()
+      if (intensityProvider) {
+        unsubscribeIntensityChange = intensityProvider.onIntensityChange(() => {
+          // Re-render when timeline intensities change
           render()
         })
       }
@@ -111,10 +111,10 @@ export const useHeroSceneRenderer = (
   }
 
   const destroyPreview = () => {
-    // Unsubscribe from ParamResolver
-    if (unsubscribeParamChange) {
-      unsubscribeParamChange()
-      unsubscribeParamChange = null
+    // Unsubscribe from IntensityProvider
+    if (unsubscribeIntensityChange) {
+      unsubscribeIntensityChange()
+      unsubscribeIntensityChange = null
     }
 
     previewRenderer?.destroy()

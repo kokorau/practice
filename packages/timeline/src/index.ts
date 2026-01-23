@@ -9,7 +9,7 @@ export type { PhaseLayout } from './PhaseLayout'
 export { calculatePhaseLayouts } from './PhaseLayout'
 
 // Track (DSL-based)
-export type { TrackId, ParamId, ClockType, DslTrack, Track } from './Track'
+export type { TrackId, ClockType, DslTrack, Track } from './Track'
 
 // Timeline
 export type { Timeline } from './Timeline'
@@ -26,10 +26,6 @@ export { createTimelinePlayer, type CreateTimelinePlayerOptions } from './create
 // Render (Port interfaces + implementation)
 export type { RenderContext, TrackRenderer } from './render'
 export { createCanvasTrackRenderer } from './render'
-
-// ParamResolver
-export type { ParamResolver, ParamResolverWriter } from './ParamResolver'
-export { createParamResolver } from './ParamResolver'
 
 // IntensityProvider
 export type { IntensityProvider, IntensityProviderWriter } from './IntensityProvider'
