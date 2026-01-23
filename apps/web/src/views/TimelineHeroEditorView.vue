@@ -515,7 +515,7 @@ function stopResize() {
     >
       <TimelinePanel
         v-if="selectedTimeline"
-        :key="heroScene.preset.selectedPresetId.value"
+        :key="heroScene.preset.selectedPresetId.value ?? 'default'"
         ref="timelinePanelRef"
         :timeline="selectedTimeline"
         :visible-duration="VISIBLE_DURATION"

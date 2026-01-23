@@ -9,6 +9,7 @@
 
 import type { HeroViewRepository } from '../../Domain/repository/HeroViewRepository'
 import type { HeroViewPreset } from '../../Domain/HeroViewPreset'
+import { getPresetConfig } from '../../Domain/HeroViewPreset'
 import { migrateToNormalizedFormat, validateHeroViewConfig } from '../../Domain/HeroViewConfig'
 
 /**
@@ -27,8 +28,15 @@ export function applyPreset(
   preset: HeroViewPreset,
   repository: HeroViewRepository
 ): void {
+  // Get config from preset (supports both static and animated presets)
+  const config = getPresetConfig(preset)
+  if (!config) {
+    console.warn('Preset has no config:', preset.id)
+    return
+  }
+
   // Migrate legacy format to normalized format
-  const normalizedConfig = migrateToNormalizedFormat(preset.config)
+  const normalizedConfig = migrateToNormalizedFormat(config)
 
   // Validate at I/O boundary
   const validationResult = validateHeroViewConfig(normalizedConfig)
