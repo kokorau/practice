@@ -89,8 +89,10 @@ export const useHeroPresets = (
   const loadPresets = async (applyInitial = true) => {
     presets.value = await presetManager.getPresets()
     if (applyInitial) {
-      // Use selected preset or fall back to first preset
-      const presetIdToApply = selectedPresetId.value ?? presets.value[0]?.id
+      // Use selected preset if it exists in loaded presets, otherwise fall back to first preset
+      const currentId = selectedPresetId.value
+      const existsInPresets = currentId && presets.value.some(p => p.id === currentId)
+      const presetIdToApply = existsInPresets ? currentId : presets.value[0]?.id
       if (presetIdToApply) {
         const preset = await presetManager.applyPreset(presetIdToApply)
         if (preset) {

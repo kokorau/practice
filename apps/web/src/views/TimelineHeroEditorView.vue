@@ -16,6 +16,7 @@ import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
   isAnimatedPreset,
+  getPresetConfig,
   findLayerInTree,
   createInMemoryHeroViewPresetRepository,
 } from '@practice/section-visual'
@@ -346,7 +347,12 @@ watch(() => heroScene.preset.selectedPresetId.value, async (newPresetId) => {
 
   // Animated preset: set config directly (bypasses fromHeroViewConfig which can't handle $PropertyValue bindings)
   if (isAnimatedPreset(preset)) {
-    heroScene.usecase.heroViewRepository.set(preset.createConfig())
+    const config = getPresetConfig(preset)
+    if (config) {
+      heroScene.usecase.heroViewRepository.set(config)
+      // Sync foreground config (fromHeroViewConfig is skipped for animated presets)
+      heroScene.foreground.foregroundConfig.value = config.foreground
+    }
   }
 
   // Re-render scene
