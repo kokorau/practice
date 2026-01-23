@@ -275,6 +275,9 @@ const {
   },
   onSelectProcessor: (layerId, type) => {
     selectProcessor(layerId, type)
+    if (type === 'effect') {
+      heroScene.filter.effectManager.selectLayer(layerId)
+    }
   },
   onClearSelection: () => selectCanvasLayer(''),
 })
