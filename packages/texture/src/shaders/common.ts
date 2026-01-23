@@ -38,10 +38,10 @@ fn safeModulo2(v: vec2f, period: f32) -> vec2f {
 }
 `
 
-/** マスク用ブレンドステート（アルファブレンド） */
+/** マスク用ブレンドステート（Premultiplied alpha用） */
 export const maskBlendState: GPUBlendState = {
   color: {
-    srcFactor: 'src-alpha',
+    srcFactor: 'one', // Premultiplied alpha: RGBは既にアルファで乗算済み
     dstFactor: 'one-minus-src-alpha',
     operation: 'add',
   },
