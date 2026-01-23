@@ -158,6 +158,9 @@ const createDefaultSite = (): Site => {
     contents: {},
     templates: createEmptyTemplateRegistry(),
     schemas: createEmptySectionSchemas(),
+    configs: {
+      hero: {},
+    },
   }
 }
 

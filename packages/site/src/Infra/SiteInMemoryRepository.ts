@@ -7,7 +7,7 @@ import type {
   SiteSubscriber,
   SiteUnsubscribe,
 } from '../Application/ports/SiteRepository'
-import type { Site, Page, PageUuid, Section } from '../Domain/ValueObject/Site'
+import type { Site, Page, PageUuid, Section, HeroViewConfig } from '../Domain/ValueObject/Site'
 import type { Palette, SeedColors } from '@practice/semantic-color-palette/Domain'
 import type { DesignTokens } from '@practice/design-tokens/Domain'
 import type { Contents, ContentValue } from '@practice/contents'
@@ -298,6 +298,71 @@ export const createSiteInMemoryRepository = (
         filter: {
           ...site.filter,
           [channel]: curve,
+        },
+      }
+      notifySubscribers()
+    },
+
+    // ========================================================================
+    // Hero Config Operations
+    // ========================================================================
+
+    getHeroConfig: (configId: string): HeroViewConfig | undefined => {
+      return site.configs.hero[configId]
+    },
+
+    updateHeroConfig: (configId: string, updates: Partial<HeroViewConfig>) => {
+      const config = site.configs.hero[configId]
+      if (!config) return
+
+      site = {
+        ...site,
+        configs: {
+          ...site.configs,
+          hero: {
+            ...site.configs.hero,
+            [configId]: { ...config, ...updates },
+          },
+        },
+      }
+      notifySubscribers()
+    },
+
+    addHeroConfig: (configId: string, config: HeroViewConfig) => {
+      site = {
+        ...site,
+        configs: {
+          ...site.configs,
+          hero: {
+            ...site.configs.hero,
+            [configId]: config,
+          },
+        },
+      }
+      notifySubscribers()
+    },
+
+    removeHeroConfig: (configId: string) => {
+      const { [configId]: _, ...remainingConfigs } = site.configs.hero
+      site = {
+        ...site,
+        configs: {
+          ...site.configs,
+          hero: remainingConfigs,
+        },
+      }
+      notifySubscribers()
+    },
+
+    setHeroConfig: (configId: string, config: HeroViewConfig) => {
+      site = {
+        ...site,
+        configs: {
+          ...site.configs,
+          hero: {
+            ...site.configs.hero,
+            [configId]: config,
+          },
         },
       }
       notifySubscribers()

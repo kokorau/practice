@@ -1,6 +1,6 @@
 export { useSiteBuilderAssets } from './useSiteBuilderAssets'
 export { useSiteState, type UseSiteStateOptions, type UseSiteStateReturn } from './useSiteState'
-export { useSiteColors, type BrandColor, type FoundationColor, type UseSiteColorsOptions, type UseSiteColorsReturn } from './useSiteColors'
+export { useSiteColorsBridge, type BrandColor, type FoundationColor, type UseSiteColorsBridgeOptions, type UseSiteColorsBridgeReturn } from './useSiteColorsBridge'
 export { useTexturePreview, type UseTexturePreviewOptions } from './useTexturePreview'
 export { useHeroScene, type UseHeroSceneOptions, type SectionType, type MidgroundSurfacePreset } from './useHeroScene'
 export { useHeroSceneRenderer, type UseHeroSceneRendererOptions, type UseHeroSceneRendererReturn, type HeroSceneEditorConfig } from './useHeroSceneRenderer'

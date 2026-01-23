@@ -9,8 +9,12 @@ export type {
   SectionTemplates,
   SectionSchemas,
   SectionVisual,
+  HeroViewConfig,
+  HeroConfigRef,
+  ConfigRef,
   Section,
   Page,
+  SiteConfigs,
   Site,
 } from './Site'
 export { PageUuid as createPageUuid, $Site } from './Site'

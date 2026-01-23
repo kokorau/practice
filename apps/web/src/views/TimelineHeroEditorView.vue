@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
-import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type { Ms, IntensityProvider } from '@practice/timeline'
-import {
-  createPrimitivePalette,
-} from '@practice/semantic-color-palette/Infra'
+import { createHeroConfigSlice } from '@practice/site/Infra'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
 import { ANIMATED_PRESETS, type AnimatedPreset } from '../modules/Timeline/Infra/animatedHeroData'
 import {
-  useSiteColors,
+  useSiteState,
+  useSiteColorsBridge,
   useHeroScene,
   createSurfacePatterns,
 } from '../composables/SiteBuilder'
@@ -75,7 +73,21 @@ const {
 } = layerSelection
 
 // ============================================================
-// Brand, Accent & Foundation Color State
+// Site State (Source of Truth)
+// ============================================================
+const siteState = useSiteState()
+
+// ============================================================
+// Hero Config Repository (Slice Adapter)
+// ============================================================
+const heroConfigSlice = createHeroConfigSlice({
+  siteRepository: siteState.repository,
+  configId: 'timeline-hero-editor',
+  createIfNotExists: true,
+})
+
+// ============================================================
+// Brand, Accent & Foundation Color State (Bridge to Site)
 // ============================================================
 const {
   hue,
@@ -93,7 +105,7 @@ const {
   foundationValue,
   foundationHex,
   foundationColor,
-} = useSiteColors()
+} = useSiteColorsBridge({ siteState })
 
 // ============================================================
 // Color State Update Handler
@@ -105,15 +117,9 @@ const { handleColorStateUpdate } = useHeroGeneratorColorHandlers({
 })
 
 // ============================================================
-// Primitive Palette Generation
+// Primitive Palette (from Site State)
 // ============================================================
-const primitivePalette = computed((): PrimitivePalette => {
-  return createPrimitivePalette({
-    brand: brandColor.value.oklch,
-    foundation: foundationColor.value.oklch,
-    accent: accentColor.value.oklch,
-  })
-})
+const primitivePalette = siteState.primitivePalette
 
 // ============================================================
 // Timeline Panel Ref (for intensityProvider access)
@@ -137,8 +143,9 @@ const handleFrameStateUpdate = () => {
 // Uses lazy getter so intensityProvider is available after TimelinePanel mounts
 const heroScene = useHeroScene({
   primitivePalette,
-  isDark: uiDarkMode,
+  isDark: siteState.isDark,
   layerSelection,
+  repository: heroConfigSlice,
   getIntensityProvider,
 })
 

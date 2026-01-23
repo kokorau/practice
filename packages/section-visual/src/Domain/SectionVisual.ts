@@ -43,14 +43,33 @@ export interface VisualProperties {
 }
 
 // ============================================================================
+// Config Reference Types
+// ============================================================================
+
+/**
+ * Reference to a HeroViewConfig stored in Site.configs.hero
+ */
+export interface HeroConfigRef {
+  readonly type: 'hero'
+  readonly id: string
+}
+
+/**
+ * Config reference union type (extensible for future config types)
+ */
+export type ConfigRef = HeroConfigRef
+
+// ============================================================================
 // SectionVisual
 // ============================================================================
 
 export interface SectionVisual {
   readonly kind: 'visual'
   readonly id: string
-  /** プロパティ (RangeExpr を含む) */
-  readonly properties: VisualProperties
+  /** 設定データへの参照（データ本体は Site.configs に格納） */
+  readonly configRef?: ConfigRef
+  /** プロパティ (RangeExpr を含む) - configRef使用時は通常不要 */
+  readonly properties?: VisualProperties
 }
 
 // ============================================================================

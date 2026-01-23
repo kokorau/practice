@@ -5,7 +5,7 @@
  * 各関心事（Palette, Token, Contents, Timeline）へのアクセスを提供する。
  */
 
-import type { Site, Page, PageUuid, Section } from '../../Domain/ValueObject/Site'
+import type { Site, Page, PageUuid, Section, HeroViewConfig } from '../../Domain/ValueObject/Site'
 import type { Palette, SeedColors } from '@practice/semantic-color-palette/Domain'
 import type { DesignTokens } from '@practice/design-tokens/Domain'
 import type { Contents, ContentValue } from '@practice/contents'
@@ -111,4 +111,23 @@ export interface SiteRepository {
 
   /** 個別チャンネルカーブを更新 */
   updateChannelCurve(channel: 'r' | 'g' | 'b', curve: CurveConfig | null): void
+
+  // ============================================================================
+  // Hero Config Operations
+  // ============================================================================
+
+  /** HeroViewConfigを取得 */
+  getHeroConfig(configId: string): HeroViewConfig | undefined
+
+  /** HeroViewConfigを更新（部分更新） */
+  updateHeroConfig(configId: string, updates: Partial<HeroViewConfig>): void
+
+  /** HeroViewConfigを追加（新規作成） */
+  addHeroConfig(configId: string, config: HeroViewConfig): void
+
+  /** HeroViewConfigを削除 */
+  removeHeroConfig(configId: string): void
+
+  /** HeroViewConfigを完全に設定（置換） */
+  setHeroConfig(configId: string, config: HeroViewConfig): void
 }
