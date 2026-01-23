@@ -109,3 +109,14 @@ export class Parser {
 export function parse(input: string): AstNode {
   return new Parser(input).parse()
 }
+
+export type ParseResult = { ok: true; ast: AstNode } | { ok: false; error: string }
+
+export function tryParse(expression: string): ParseResult {
+  try {
+    const ast = parse(expression)
+    return { ok: true, ast }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evaluate, parse } from './index'
+import { evaluate, parse, tryParse } from './index'
 
 describe('DSL Parser', () => {
   describe('parse', () => {
@@ -51,6 +51,68 @@ describe('DSL Parser', () => {
 
     it('ignores whitespace', () => {
       expect(parse('add( t , 3 )')).toEqual(parse('add(t,3)'))
+    })
+  })
+
+  describe('tryParse', () => {
+    it('returns ok: true with ast for valid expression', () => {
+      const result = tryParse('range(osc(t, 4000), 0, 100)')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.ast).toEqual({
+          type: 'call',
+          name: 'range',
+          args: [
+            {
+              type: 'call',
+              name: 'osc',
+              args: [
+                { type: 'identifier', name: 't' },
+                { type: 'number', value: 4000 },
+              ],
+            },
+            { type: 'number', value: 0 },
+            { type: 'number', value: 100 },
+          ],
+        })
+      }
+    })
+
+    it('returns ok: false with error for invalid expression', () => {
+      const result = tryParse('add(t,')
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toContain('Unexpected')
+      }
+    })
+
+    it('returns ok: false for empty input', () => {
+      const result = tryParse('')
+      expect(result.ok).toBe(false)
+    })
+
+    it('returns ok: false for invalid token', () => {
+      const result = tryParse('foo @@ bar')
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toBeTruthy()
+      }
+    })
+
+    it('returns ok: true for simple number', () => {
+      const result = tryParse('42')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.ast).toEqual({ type: 'number', value: 42 })
+      }
+    })
+
+    it('returns ok: true for identifier', () => {
+      const result = tryParse('t')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.ast).toEqual({ type: 'identifier', name: 't' })
+      }
     })
   })
 })
