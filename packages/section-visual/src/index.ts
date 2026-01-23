@@ -443,14 +443,16 @@ export {
   createEffectSpecsForPreview,
   // Mask preview utilities
   createMaskPreviewConfig,
+  // Surface preview utilities
+  createSurfacePreviewConfig,
   // Compositor pipeline
   buildPipeline,
   executePipeline,
   renderWithPipeline,
 } from './Infra'
 
-// Mask preview types
-export type { CreateMaskPreviewConfigOptions } from './Infra'
+// Preview config types
+export type { CreateMaskPreviewConfigOptions, CreateSurfacePreviewConfigOptions } from './Infra'
 
 // Types (grouped state definitions for useHeroScene)
 export type {

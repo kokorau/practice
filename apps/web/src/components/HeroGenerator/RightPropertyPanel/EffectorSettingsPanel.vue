@@ -5,6 +5,7 @@
  * Combines Effect and Mask editing into a single component.
  * Displays different UI based on effectorType prop.
  */
+import { computed } from 'vue'
 import {
   VignetteBaseSchema,
   ChromaticAberrationEffectSchema,
@@ -65,6 +66,30 @@ const {
 const handleFilterTypeChange = (type: FilterType) => {
   props.filterProps.selectedType.value = type
 }
+
+// ============================================================
+// Mask Preview (for pipeline-based mini preview)
+// ============================================================
+
+/**
+ * Get the current mask config for preview
+ */
+const currentMaskConfig = computed(() => {
+  if (props.maskProps.selectedShapeIndex === null) return null
+  return props.maskProps.shapePatternsWithConfig?.[props.maskProps.selectedShapeIndex]?.maskConfig ?? null
+})
+
+/**
+ * Check if pipeline preview is available
+ */
+const canUsePipelinePreview = computed(() => {
+  return !!(
+    props.maskProps.surface &&
+    props.maskProps.processor &&
+    props.maskProps.palette &&
+    currentMaskConfig.value
+  )
+})
 </script>
 
 <template>
@@ -195,6 +220,20 @@ const handleFilterTypeChange = (type: FilterType) => {
     <!-- Mask Settings (when effectorType === 'mask') -->
     <!-- ============================================== -->
     <template v-else-if="effectorType === 'mask'">
+      <!-- Mini Preview (shows current mask result) -->
+      <div v-if="canUsePipelinePreview" class="mini-preview-section">
+        <MaskPatternThumbnail
+          :surface="maskProps.surface"
+          :processor="maskProps.processor"
+          :preview-mask="currentMaskConfig"
+          :palette="maskProps.palette"
+          :create-background-spec="maskProps.createBackgroundThumbnailSpec"
+          :create-mask-spec="maskProps.shapePatterns[maskProps.selectedShapeIndex!]?.createSpec"
+          :mask-color1="maskProps.outerColor"
+          :mask-color2="maskProps.innerColor"
+          :preceding-effect-specs="maskProps.precedingEffectSpecs"
+        />
+      </div>
       <!-- Shape params (shown when mask is selected) -->
       <div v-if="maskProps.shapeSchema && maskProps.shapeParams" class="shape-params">
         <SchemaFields
@@ -346,6 +385,24 @@ const handleFilterTypeChange = (type: FilterType) => {
 /* ============================================== */
 /* Mask Styles */
 /* ============================================== */
+
+.mini-preview-section {
+  width: 100%;
+  height: 4rem;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background: oklch(0.95 0.01 260);
+}
+
+:global(.dark) .mini-preview-section {
+  background: oklch(0.18 0.02 260);
+}
+
+.mini-preview-section :deep(canvas) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
 .shape-params {
   padding: 0.5rem 0;

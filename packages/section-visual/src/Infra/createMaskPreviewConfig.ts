@@ -122,10 +122,16 @@ export function createMaskPreviewConfig(
   const precedingEffects = getEffectsBeforeMask(processor.modifiers).map(staticizeEffect)
 
   // Create the mask modifier with the preview shape
+  // Staticize mask params to convert any RangeExpr to static values
+  const staticizedMask: NormalizedMaskConfig = {
+    id: previewMask.id,
+    params: staticizeParams(previewMask.params),
+  }
+
   const maskModifier: MaskProcessorConfig = {
     type: 'mask',
     enabled: true,
-    shape: previewMask,
+    shape: staticizedMask,
     invert: false,
     feather: 0,
   }
