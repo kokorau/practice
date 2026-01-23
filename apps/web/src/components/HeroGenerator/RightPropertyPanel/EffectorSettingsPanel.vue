@@ -13,6 +13,9 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  PixelateEffectSchema,
+  HexagonMosaicEffectSchema,
+  VoronoiMosaicEffectSchema,
   createSingleEffectConfig,
   type FilterType,
   type SingleEffectConfig,
@@ -109,6 +112,21 @@ const effectPatterns = computed<EffectPatternItem[]>(() => [
     label: 'Blur',
     effectType: 'blur' as FilterType,
     effectConfig: createSingleEffectConfig('blur'),
+  },
+  {
+    label: 'Pixelate',
+    effectType: 'pixelate' as FilterType,
+    effectConfig: createSingleEffectConfig('pixelate'),
+  },
+  {
+    label: 'Hexagon Mosaic',
+    effectType: 'hexagonMosaic' as FilterType,
+    effectConfig: createSingleEffectConfig('hexagonMosaic'),
+  },
+  {
+    label: 'Voronoi Mosaic',
+    effectType: 'voronoiMosaic' as FilterType,
+    effectConfig: createSingleEffectConfig('voronoiMosaic'),
   },
 ])
 
@@ -243,6 +261,30 @@ const canUsePipelinePreview = computed(() => {
           :model-value="filterProps.blurConfig.value as Record<string, unknown>"
           :exclude="['enabled']"
           @update:model-value="(v) => filterProps.blurConfig.value = v as BlurConfigParams"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'pixelate'" class="filter-params">
+        <SchemaFields
+          :schema="PixelateEffectSchema"
+          :model-value="filterProps.pixelateConfig?.value as Record<string, unknown>"
+          :exclude="['enabled']"
+          @update:model-value="(v) => { if (filterProps.pixelateConfig) filterProps.pixelateConfig.value = v as Record<string, unknown> }"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'hexagonMosaic'" class="filter-params">
+        <SchemaFields
+          :schema="HexagonMosaicEffectSchema"
+          :model-value="filterProps.hexagonMosaicConfig?.value as Record<string, unknown>"
+          :exclude="['enabled']"
+          @update:model-value="(v) => { if (filterProps.hexagonMosaicConfig) filterProps.hexagonMosaicConfig.value = v as Record<string, unknown> }"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'voronoiMosaic'" class="filter-params">
+        <SchemaFields
+          :schema="VoronoiMosaicEffectSchema"
+          :model-value="filterProps.voronoiMosaicConfig?.value as Record<string, unknown>"
+          :exclude="['enabled']"
+          @update:model-value="(v) => { if (filterProps.voronoiMosaicConfig) filterProps.voronoiMosaicConfig.value = v as Record<string, unknown> }"
         />
       </div>
 
