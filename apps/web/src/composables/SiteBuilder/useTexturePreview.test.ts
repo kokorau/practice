@@ -28,32 +28,34 @@ const mockRendererInstance = {
   getViewport: mockGetViewport,
 }
 
-vi.mock('@practice/texture', () => ({
-  TextureRenderer: {
-    create: vi.fn(() => Promise.resolve(mockRendererInstance)),
-  },
-  getDefaultTexturePatterns: vi.fn(() => [
-    { label: 'Pattern1', createSpec: vi.fn(() => ({})) },
-    { label: 'Pattern2', createSpec: vi.fn(() => ({})) },
-    { label: 'Pattern3', createSpec: vi.fn(() => ({})) },
-    { label: 'Pattern4', createSpec: vi.fn(() => ({})) },
-  ]),
-  getDefaultMaskPatterns: vi.fn(() => [
-    { label: 'Mask1', maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.4 }, createSpec: vi.fn(() => ({})) },
-    { label: 'Mask2', maskConfig: { type: 'rect', left: 0.1, right: 0.9, top: 0.1, bottom: 0.9 }, createSpec: vi.fn(() => ({})) },
-  ]),
-  createCircleStripeSpec: vi.fn(() => ({})),
-  createCircleGridSpec: vi.fn(() => ({})),
-  createCirclePolkaDotSpec: vi.fn(() => ({})),
-  createRectStripeSpec: vi.fn(() => ({})),
-  createRectGridSpec: vi.fn(() => ({})),
-  createRectPolkaDotSpec: vi.fn(() => ({})),
-  createBlobStripeSpec: vi.fn(() => ({})),
-  createBlobGridSpec: vi.fn(() => ({})),
-  createBlobPolkaDotSpec: vi.fn(() => ({})),
-  // Export DEFAULT_GRADIENT_GRAIN_CURVE_POINTS to prevent mock leakage
-  DEFAULT_GRADIENT_GRAIN_CURVE_POINTS: [0.0, 0.0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1.0, 1.0],
-}))
+vi.mock('@practice/texture', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@practice/texture')>()
+  return {
+    ...actual,
+    TextureRenderer: {
+      create: vi.fn(() => Promise.resolve(mockRendererInstance)),
+    },
+    getDefaultTexturePatterns: vi.fn(() => [
+      { label: 'Pattern1', createSpec: vi.fn(() => ({})) },
+      { label: 'Pattern2', createSpec: vi.fn(() => ({})) },
+      { label: 'Pattern3', createSpec: vi.fn(() => ({})) },
+      { label: 'Pattern4', createSpec: vi.fn(() => ({})) },
+    ]),
+    getDefaultMaskPatterns: vi.fn(() => [
+      { label: 'Mask1', maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.4 }, createSpec: vi.fn(() => ({})) },
+      { label: 'Mask2', maskConfig: { type: 'rect', left: 0.1, right: 0.9, top: 0.1, bottom: 0.9 }, createSpec: vi.fn(() => ({})) },
+    ]),
+    createCircleStripeSpec: vi.fn(() => ({})),
+    createCircleGridSpec: vi.fn(() => ({})),
+    createCirclePolkaDotSpec: vi.fn(() => ({})),
+    createRectStripeSpec: vi.fn(() => ({})),
+    createRectGridSpec: vi.fn(() => ({})),
+    createRectPolkaDotSpec: vi.fn(() => ({})),
+    createBlobStripeSpec: vi.fn(() => ({})),
+    createBlobGridSpec: vi.fn(() => ({})),
+    createBlobPolkaDotSpec: vi.fn(() => ({})),
+  }
+})
 
 vi.mock('@practice/color', () => ({
   $Oklch: {

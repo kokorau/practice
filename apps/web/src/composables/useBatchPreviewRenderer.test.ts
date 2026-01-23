@@ -17,13 +17,15 @@ const mockRendererInstance = {
   getViewport: vi.fn(() => ({ width: 256, height: 144 })),
 }
 
-vi.mock('@practice/texture', () => ({
-  TextureRenderer: {
-    create: vi.fn(() => Promise.resolve(mockRendererInstance)),
-  },
-  // Export DEFAULT_GRADIENT_GRAIN_CURVE_POINTS to prevent mock leakage
-  DEFAULT_GRADIENT_GRAIN_CURVE_POINTS: [0.0, 0.0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1.0, 1.0],
-}))
+vi.mock('@practice/texture', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@practice/texture')>()
+  return {
+    ...actual,
+    TextureRenderer: {
+      create: vi.fn(() => Promise.resolve(mockRendererInstance)),
+    },
+  }
+})
 
 // Mock renderHeroConfig
 vi.mock('@practice/section-visual', async (importOriginal) => {
