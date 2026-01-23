@@ -12,17 +12,17 @@ import { createHeroConfigSlice } from '@practice/site/Infra'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { ImageLayerNodeConfig, ProcessorNodeConfig, SurfaceLayerNodeConfig, NormalizedMaskConfig } from '@practice/section-visual'
+import type { ImageLayerNodeConfig, ProcessorNodeConfig, SurfaceLayerNodeConfig, MaskShapeConfig } from '@practice/section-visual'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
   isProcessorLayerConfig,
   getEffectsBeforeMask,
   createEffectSpecsForPreview,
+  findLayerInTree,
   findProcessorTargetSurface,
   normalizeMaskConfig,
 } from '@practice/section-visual'
-import type { MaskShapeConfig } from '@practice/texture'
 
 // Type guard for ImageLayerNodeConfig
 function isImageLayerConfig(layer: unknown): layer is ImageLayerNodeConfig {
@@ -495,7 +495,7 @@ const precedingEffectSpecs = computed(() => {
 const selectedProcessor = computed<ProcessorNodeConfig | undefined>(() => {
   // Use processorLayerId which is set when a mask/effect is selected
   if (!processorLayerId.value) return undefined
-  const layers = heroScene.config.heroViewConfig.value?.layers
+  const layers = heroScene.editor.heroViewConfig.value?.layers
   if (!layers) return undefined
   const layer = findLayerInTree(layers, processorLayerId.value)
   if (!layer || !isProcessorLayerConfig(layer)) return undefined
@@ -507,7 +507,7 @@ const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() =
   const processor = selectedProcessor.value
   if (!processor) return undefined
 
-  const layers = heroScene.config.heroViewConfig.value?.layers
+  const layers = heroScene.editor.heroViewConfig.value?.layers
   if (!layers) return undefined
 
   return findProcessorTargetSurface(layers, processor.id) ?? undefined

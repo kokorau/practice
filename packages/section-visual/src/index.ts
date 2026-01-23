@@ -94,6 +94,7 @@ export type {
   NormalizedSurfaceConfig,
   AnySurfaceConfig,
   MaskShapeTypeId,
+  MaskShapeConfig,
   NormalizedMaskConfig,
   AnyMaskConfig,
   // Processor config types (JSON serialization)

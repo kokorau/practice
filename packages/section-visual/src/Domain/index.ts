@@ -659,6 +659,7 @@ export type {
   AnySurfaceConfig,
   // Normalized Mask config
   MaskShapeTypeId,
+  MaskShapeConfig,
   NormalizedMaskConfig,
   AnyMaskConfig,
   // Filter config types (for JSON serialization)

@@ -14,9 +14,9 @@ import type {
   SingleEffectConfig,
   NormalizedMaskConfig,
   NormalizedSurfaceConfig,
-  PropertyValue,
 } from '../Domain/HeroViewConfig'
 import { getEffectsBeforeMask } from '../Domain/HeroViewConfig'
+import type { PropertyValue } from '../Domain/SectionVisual'
 import { $PropertyValue } from '../Domain/SectionVisual'
 
 /**

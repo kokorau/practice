@@ -26,7 +26,7 @@ import {
   createInMemoryHeroViewPresetRepository,
 } from '@practice/section-visual'
 import type { ImageLayerNodeConfig } from '@practice/section-visual'
-import type { MaskShapeConfig } from '@practice/texture'
+import type { MaskShapeConfig } from '@practice/section-visual'
 import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useFilterEditor } from '../composables/useFilterEditor'
