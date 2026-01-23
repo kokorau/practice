@@ -26,18 +26,12 @@ export interface ForegroundElementRefs {
 export interface BackgroundState {
   backgroundColorKey1: WritableRef<PrimitiveKey>
   backgroundColorKey2: WritableRef<PrimitiveKey | 'auto'>
-  setBackgroundImage: (file: File) => void
-  clearBackgroundImage: () => void
-  loadRandomBackgroundImage: () => void
   updateBackgroundSurfaceParams: (params: Record<string, unknown>) => void
 }
 
 export interface MaskState {
   maskColorKey1: WritableRef<PrimitiveKey | 'auto'>
   maskColorKey2: WritableRef<PrimitiveKey | 'auto'>
-  setMaskImage: (file: File) => void
-  clearMaskImage: () => void
-  loadRandomMaskImage: () => void
   updateSurfaceParams: (params: Record<string, unknown>) => void
   updateMaskShapeParams: (params: Record<string, unknown>) => void
 }
@@ -100,17 +94,8 @@ export const useHeroGeneratorPanelHandlers = (
       case 'colorKey2':
         background.backgroundColorKey2.value = value as typeof background.backgroundColorKey2.value
         break
-      case 'uploadImage':
-        background.setBackgroundImage(value as File)
-        break
-      case 'clearImage':
-        background.clearBackgroundImage()
-        break
       case 'selectPattern':
         if (value !== null) pattern.selectedBackgroundIndex.value = value as number
-        break
-      case 'loadRandom':
-        background.loadRandomBackgroundImage()
         break
       case 'surfaceParams':
         background.updateBackgroundSurfaceParams(value as Record<string, unknown>)
@@ -126,17 +111,8 @@ export const useHeroGeneratorPanelHandlers = (
       case 'colorKey2':
         mask.maskColorKey2.value = value as typeof mask.maskColorKey2.value
         break
-      case 'uploadImage':
-        mask.setMaskImage(value as File)
-        break
-      case 'clearImage':
-        mask.clearMaskImage()
-        break
       case 'selectPattern':
         if (value !== null) pattern.selectedMidgroundTextureIndex.value = value as number
-        break
-      case 'loadRandom':
-        mask.loadRandomMaskImage()
         break
       case 'surfaceParams':
         mask.updateSurfaceParams(value as Record<string, unknown>)

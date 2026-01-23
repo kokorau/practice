@@ -539,18 +539,12 @@ const handleImageUpdate = (key: string, value: unknown) => {
           :surface-params="backgroundSurfaceParamsForUI"
           :patterns="backgroundPatterns"
           :selected-index="heroScene.pattern.selectedBackgroundIndex.value"
-          :custom-image="heroScene.background.customBackgroundImage.value"
-          :custom-file-name="heroScene.background.customBackgroundFile.value?.name ?? null"
-          :is-loading-random="heroScene.background.isLoadingRandomBackground.value"
           preview-mode="hero"
           :base-config="currentHeroConfig"
           @update:color-key1="(v) => { if (v !== 'auto') heroScene.background.backgroundColorKey1.value = v }"
           @update:color-key2="heroScene.background.backgroundColorKey2.value = $event"
           @update:surface-params="heroScene.background.updateBackgroundSurfaceParams($event)"
-          @upload-image="heroScene.background.setBackgroundImage"
-          @clear-image="heroScene.background.clearBackgroundImage"
           @select-pattern="(i) => { if (i !== null) heroScene.pattern.selectedBackgroundIndex.value = i }"
-          @load-random="heroScene.background.loadRandomBackgroundImage()"
         />
 
         <!-- クリップグループ形状選択 -->
@@ -580,18 +574,12 @@ const handleImageUpdate = (key: string, value: unknown) => {
           :surface-params="maskSurfaceParamsForUI"
           :patterns="maskSurfacePatterns"
           :selected-index="heroScene.pattern.selectedMidgroundTextureIndex.value"
-          :custom-image="heroScene.mask.customMaskImage.value"
-          :custom-file-name="heroScene.mask.customMaskFile.value?.name ?? null"
-          :is-loading-random="heroScene.mask.isLoadingRandomMask.value"
           preview-mode="hero"
           :base-config="currentHeroConfig"
           @update:color-key1="heroScene.mask.maskColorKey1.value = $event"
           @update:color-key2="heroScene.mask.maskColorKey2.value = $event"
           @update:surface-params="heroScene.mask.updateSurfaceParams($event)"
-          @upload-image="heroScene.mask.setMaskImage"
-          @clear-image="heroScene.mask.clearMaskImage"
           @select-pattern="(i) => { if (i !== null) heroScene.pattern.selectedMidgroundTextureIndex.value = i }"
-          @load-random="heroScene.mask.loadRandomMaskImage()"
         />
 
         <!-- エフェクト設定 (排他選択) -->
@@ -704,22 +692,16 @@ const handleImageUpdate = (key: string, value: unknown) => {
       :background="{
         colorKey1: heroScene.background.backgroundColorKey1.value,
         colorKey2: heroScene.background.backgroundColorKey2.value,
-        customImage: heroScene.background.customBackgroundImage.value,
-        customFileName: heroScene.background.customBackgroundFile.value?.name ?? null,
         patterns: backgroundPatterns,
         selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
-        isLoadingRandom: heroScene.background.isLoadingRandomBackground.value,
         surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
         surfaceParams: backgroundSurfaceParamsForUI,
       }"
       :mask="{
         colorKey1: heroScene.mask.maskColorKey1.value,
         colorKey2: heroScene.mask.maskColorKey2.value,
-        customImage: heroScene.mask.customMaskImage.value,
-        customFileName: heroScene.mask.customMaskFile.value?.name ?? null,
         surfacePatterns: maskSurfacePatterns,
         selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
-        isLoadingRandom: heroScene.mask.isLoadingRandomMask.value,
         surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
         surfaceParams: maskSurfaceParamsForUI,
         shapePatterns: heroScene.pattern.maskPatterns,

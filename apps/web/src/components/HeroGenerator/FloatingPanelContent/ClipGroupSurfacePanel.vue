@@ -23,11 +23,6 @@ defineProps<{
   // Patterns
   patterns: PatternItem[]
   selectedIndex: number | null
-  // Custom image
-  customImage: string | null
-  customFileName: string | null
-  // Random loading
-  isLoadingRandom: boolean
   // Hero preview mode
   previewMode?: 'pattern' | 'hero'
   baseConfig?: HeroViewConfig
@@ -37,10 +32,7 @@ const emit = defineEmits<{
   (e: 'update:colorKey1', value: PrimitiveKey | 'auto'): void
   (e: 'update:colorKey2', value: PrimitiveKey | 'auto'): void
   (e: 'update:surfaceParams', value: Record<string, unknown>): void
-  (e: 'upload-image', file: File): void
-  (e: 'clear-image'): void
   (e: 'select-pattern', index: number | null): void
-  (e: 'load-random'): void
 }>()
 </script>
 
@@ -71,20 +63,13 @@ const emit = defineEmits<{
     />
   </div>
   <SurfaceSelector
-    :custom-image="customImage"
-    :custom-file-name="customFileName"
     :patterns="patterns"
     :selected-index="selectedIndex"
-    :show-random-button="true"
-    :is-loading-random="isLoadingRandom"
     :preview-mode="previewMode"
     :base-config="baseConfig"
     :palette="palette"
     target-layer-type="surface"
-    @upload-image="emit('upload-image', $event)"
-    @clear-image="emit('clear-image')"
     @select-pattern="emit('select-pattern', $event)"
-    @load-random="emit('load-random')"
   />
 </template>
 

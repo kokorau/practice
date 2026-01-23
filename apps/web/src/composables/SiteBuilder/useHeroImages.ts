@@ -4,38 +4,18 @@
  * Image handling for HeroScene layers
  * Handles:
  * - Generic image layer management via imageRegistry
- * - Background image upload and management (legacy)
  * - Random image loading from Unsplash
  * - Image restoration from URLs
  */
 
-import { ref, computed, onUnmounted, type Ref, type ComputedRef } from 'vue'
+import { ref, onUnmounted, type Ref } from 'vue'
 import {
   type HeroViewConfig,
   type HeroViewRepository,
-  type NormalizedSurfaceConfig,
-  type BaseLayerNodeConfig,
-  type SurfaceLayerNodeConfig,
-  type GroupLayerNodeConfig,
   type ImageLayerNodeConfig,
-  type PropertyValue,
-  $PropertyValue,
 } from '@practice/section-visual'
 
-/**
- * Extract value from PropertyValue (returns undefined for RangeExpr)
- */
-function getStaticValue(prop: PropertyValue | undefined): string | number | boolean | undefined {
-  if (!prop) return undefined
-  if ($PropertyValue.isStatic(prop)) {
-    return prop.value
-  }
-  return undefined
-}
 import { createUnsplashImageUploadAdapter } from '../../adapters/UnsplashImageUploadAdapter'
-
-// Layer IDs for template layers
-const BASE_LAYER_ID = 'background'
 
 // ============================================================
 // Types
@@ -58,7 +38,7 @@ export interface UseHeroImagesOptions {
  */
 export interface UseHeroImagesReturn {
   // ============================================================
-  // New ImageLayer API (layer-agnostic)
+  // ImageLayer API (layer-agnostic)
   // ============================================================
 
   /** Image registry mapping layerId/imageId to ImageBitmap */
@@ -79,42 +59,6 @@ export interface UseHeroImagesReturn {
   /** Loading state per layer */
   isLayerLoading: Ref<Map<string, boolean>>
 
-  // ============================================================
-  // Legacy Background Image API (for backward compatibility)
-  // ============================================================
-
-  /** Custom background image URL (derived from Repository) */
-  customBackgroundImage: ComputedRef<string | null>
-  /** Custom background image file */
-  customBackgroundFile: Ref<File | null>
-  /** Set background image from file */
-  setBackgroundImage: (file: File) => Promise<void>
-  /** Clear background image */
-  clearBackgroundImage: () => void
-  /** Load random background image from Unsplash */
-  loadRandomBackgroundImage: (query?: string) => Promise<void>
-  /** Loading state for random background */
-  isLoadingRandomBackground: Ref<boolean>
-
-  // Legacy Mask image (deprecated - use ImageLayer instead)
-  /** Custom mask image URL (derived from Repository) */
-  customMaskImage: ComputedRef<string | null>
-  /** Custom mask image file */
-  customMaskFile: Ref<File | null>
-  /** Set mask image from file */
-  setMaskImage: (file: File) => Promise<void>
-  /** Clear mask image */
-  clearMaskImage: () => void
-  /** Load random mask image from Unsplash */
-  loadRandomMaskImage: (query?: string) => Promise<void>
-  /** Loading state for random mask */
-  isLoadingRandomMask: Ref<boolean>
-
-  // Image restoration
-  /** Restore background image from URL */
-  restoreBackgroundImage: (imageId: string) => Promise<void>
-  /** Restore mask image from URL */
-  restoreMaskImage: (imageId: string) => Promise<void>
   /** Restore image for a layer from URL */
   restoreLayerImage: (layerId: string, imageId: string) => Promise<void>
 }
@@ -127,7 +71,7 @@ export interface UseHeroImagesReturn {
  * Composable for image handling in HeroScene
  */
 export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesReturn {
-  const { repoConfig, heroViewRepository, render } = options
+  const { heroViewRepository, render } = options
 
   // ============================================================
   // Image Upload Adapter
@@ -135,7 +79,7 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
   const imageUploadAdapter = createUnsplashImageUploadAdapter()
 
   // ============================================================
-  // Image Registry (New API)
+  // Image Registry
   // ============================================================
 
   /** Registry mapping imageId to ImageBitmap */
@@ -228,217 +172,9 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
   }
 
   // ============================================================
-  // Legacy Background Image State
-  // ============================================================
-  const customBackgroundFile = ref<File | null>(null)
-  let customBackgroundBitmap: ImageBitmap | null = null
-
-  const customBackgroundImage = computed({
-    get: (): string | null => {
-      const config = repoConfig.value
-      if (!config) return null
-
-      // New structure: look inside background-group
-      const backgroundGroup = config.layers.find(
-        (l): l is GroupLayerNodeConfig => l.type === 'group' && l.id === 'background-group'
-      )
-      if (backgroundGroup) {
-        const surfaceLayer = backgroundGroup.children.find(
-          (c): c is SurfaceLayerNodeConfig => c.type === 'surface' && c.id === 'background'
-        )
-        if (surfaceLayer?.surface.id === 'image') {
-          const imageId = getStaticValue(surfaceLayer.surface.params.imageId)
-          return typeof imageId === 'string' ? imageId : null
-        }
-      }
-
-      // Fallback: legacy base layer
-      const baseLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
-      if (baseLayer?.surface.id === 'image') {
-        const imageId = getStaticValue(baseLayer.surface.params.imageId)
-        return typeof imageId === 'string' ? imageId : null
-      }
-      return null
-    },
-    set: (_val: string | null) => {
-      console.warn('customBackgroundImage setter: use setBackgroundImage instead')
-    },
-  })
-
-  // ============================================================
-  // Legacy Mask Image State (deprecated)
-  // ============================================================
-  const customMaskFile = ref<File | null>(null)
-  let customMaskBitmap: ImageBitmap | null = null
-
-  const customMaskImage = computed({
-    get: (): string | null => {
-      const config = repoConfig.value
-      if (!config) return null
-      for (const layer of config.layers) {
-        if (layer.type === 'surface' && layer.surface.id === 'image') {
-          const imageId = getStaticValue(layer.surface.params.imageId)
-          return typeof imageId === 'string' ? imageId : null
-        }
-        if (layer.type === 'group' && layer.children) {
-          const surfaceLayer = layer.children.find((c): c is SurfaceLayerNodeConfig => c.type === 'surface')
-          if (surfaceLayer?.surface.id === 'image') {
-            const imageId = getStaticValue(surfaceLayer.surface.params.imageId)
-            return typeof imageId === 'string' ? imageId : null
-          }
-        }
-      }
-      return null
-    },
-    set: (_val: string | null) => {
-      console.warn('customMaskImage setter: use setMaskImage instead')
-    },
-  })
-
-  // ============================================================
-  // Loading State
-  // ============================================================
-  const isLoadingRandomBackground = ref(false)
-  const isLoadingRandomMask = ref(false)
-
-  // ============================================================
-  // Helper Functions
-  // ============================================================
-
-  /**
-   * Update base layer surface in repository
-   */
-  const setBaseSurface = (surface: NormalizedSurfaceConfig) => {
-    heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
-  }
-
-  // ============================================================
-  // Legacy Background Image Functions
-  // ============================================================
-
-  const setBackgroundImage = async (file: File) => {
-    // Cleanup existing
-    if (customBackgroundImage.value) {
-      URL.revokeObjectURL(customBackgroundImage.value)
-    }
-    if (customBackgroundBitmap) {
-      customBackgroundBitmap.close()
-      customBackgroundBitmap = null
-    }
-
-    // Update state
-    customBackgroundFile.value = file
-    const imageId = URL.createObjectURL(file)
-    customBackgroundBitmap = await createImageBitmap(file)
-
-    // Update Repository
-    setBaseSurface({ id: 'image', params: { imageId: $PropertyValue.static(imageId) } })
-
-    await render()
-  }
-
-  const clearBackgroundImage = () => {
-    if (customBackgroundImage.value) {
-      URL.revokeObjectURL(customBackgroundImage.value)
-    }
-    if (customBackgroundBitmap) {
-      customBackgroundBitmap.close()
-      customBackgroundBitmap = null
-    }
-    customBackgroundFile.value = null
-
-    // Update Repository
-    setBaseSurface({ id: 'solid', params: {} })
-
-    render()
-  }
-
-  const loadRandomBackgroundImage = async (query?: string) => {
-    isLoadingRandomBackground.value = true
-    try {
-      const file = await imageUploadAdapter.fetchRandom(query)
-      await setBackgroundImage(file)
-    } finally {
-      isLoadingRandomBackground.value = false
-    }
-  }
-
-  // ============================================================
-  // Legacy Mask Image Functions (deprecated)
-  // ============================================================
-
-  const setMaskImage = async (file: File) => {
-    if (customMaskImage.value) {
-      URL.revokeObjectURL(customMaskImage.value)
-    }
-    if (customMaskBitmap) {
-      customMaskBitmap.close()
-      customMaskBitmap = null
-    }
-
-    customMaskFile.value = file
-    customMaskBitmap = await createImageBitmap(file)
-
-    await render()
-  }
-
-  const clearMaskImage = () => {
-    if (customMaskImage.value) {
-      URL.revokeObjectURL(customMaskImage.value)
-    }
-    if (customMaskBitmap) {
-      customMaskBitmap.close()
-      customMaskBitmap = null
-    }
-    customMaskFile.value = null
-
-    render()
-  }
-
-  const loadRandomMaskImage = async (query?: string) => {
-    isLoadingRandomMask.value = true
-    try {
-      const file = await imageUploadAdapter.fetchRandom(query)
-      await setMaskImage(file)
-    } finally {
-      isLoadingRandomMask.value = false
-    }
-  }
-
-  // ============================================================
-  // Image Restoration
-  // ============================================================
-
-  const restoreBackgroundImage = async (imageId: string) => {
-    try {
-      const response = await fetch(imageId)
-      const blob = await response.blob()
-      const file = new File([blob], `restored-bg-${Date.now()}.jpg`, { type: blob.type })
-      await setBackgroundImage(file)
-    } catch (e) {
-      console.error('Failed to restore background image:', e)
-    }
-  }
-
-  const restoreMaskImage = async (imageId: string) => {
-    try {
-      const response = await fetch(imageId)
-      const blob = await response.blob()
-      const file = new File([blob], `restored-mask-${Date.now()}.jpg`, { type: blob.type })
-      await setMaskImage(file)
-    } catch (e) {
-      console.error('Failed to restore mask image:', e)
-    }
-  }
-
-  // ============================================================
   // Cleanup
   // ============================================================
   onUnmounted(() => {
-    // Cleanup legacy images
-    clearBackgroundImage()
-    clearMaskImage()
-
     // Cleanup image registry
     for (const [imageId, bitmap] of imageRegistry.value) {
       URL.revokeObjectURL(imageId)
@@ -452,7 +188,7 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
   // Return
   // ============================================================
   return {
-    // New ImageLayer API
+    // ImageLayer API
     imageRegistry,
     setLayerImage,
     clearLayerImage,
@@ -460,25 +196,7 @@ export function useHeroImages(options: UseHeroImagesOptions): UseHeroImagesRetur
     getImageUrl,
     isLayerLoading,
 
-    // Legacy Background image
-    customBackgroundImage,
-    customBackgroundFile,
-    setBackgroundImage,
-    clearBackgroundImage,
-    loadRandomBackgroundImage,
-    isLoadingRandomBackground,
-
-    // Legacy Mask image
-    customMaskImage,
-    customMaskFile,
-    setMaskImage,
-    clearMaskImage,
-    loadRandomMaskImage,
-    isLoadingRandomMask,
-
     // Image restoration
-    restoreBackgroundImage,
-    restoreMaskImage,
     restoreLayerImage,
   }
 }

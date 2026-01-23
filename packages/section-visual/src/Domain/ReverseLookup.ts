@@ -100,8 +100,6 @@ export const findSurfacePresetIndex = (
   surfaceConfig: BackgroundSurfaceConfig | MaskSurfaceConfig,
   presets: { params: SurfacePresetParams }[]
 ): number | null => {
-  if (surfaceConfig.type === 'image') return null
-
   for (let i = 0; i < presets.length; i++) {
     const preset = presets[i]
     if (!preset || preset.params.type !== surfaceConfig.type) continue

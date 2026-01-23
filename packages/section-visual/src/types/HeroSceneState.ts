@@ -308,19 +308,6 @@ export interface BackgroundState {
   /** Secondary color key for background ('auto' = canvas surface) */
   readonly backgroundColorKey2: Ref<PrimitiveKey | 'auto'>
 
-  /** Custom background image URL (data URL or blob URL) */
-  readonly customBackgroundImage: Ref<string | null>
-  /** Custom background image file */
-  readonly customBackgroundFile: Ref<File | null>
-  /** Set background image from file */
-  readonly setBackgroundImage: (file: File) => Promise<void>
-  /** Clear background image */
-  readonly clearBackgroundImage: () => void
-  /** Load random background image from Unsplash */
-  readonly loadRandomBackgroundImage: () => Promise<void>
-  /** Loading state for random background */
-  readonly isLoadingRandomBackground: Ref<boolean>
-
   /** Custom background surface params */
   readonly customBackgroundSurfaceParams: Ref<CustomBackgroundSurfaceParams | null>
   /** Current background surface schema for UI */
@@ -344,19 +331,6 @@ export interface MaskState {
 
   /** Semantic context for mask layer (for surface color derivation) */
   readonly maskSemanticContext: Ref<HeroContextName>
-
-  /** Custom mask image URL */
-  readonly customMaskImage: Ref<string | null>
-  /** Custom mask image file */
-  readonly customMaskFile: Ref<File | null>
-  /** Set mask image from file */
-  readonly setMaskImage: (file: File) => Promise<void>
-  /** Clear mask image */
-  readonly clearMaskImage: () => void
-  /** Load random mask image */
-  readonly loadRandomMaskImage: () => Promise<void>
-  /** Loading state for random mask */
-  readonly isLoadingRandomMask: Ref<boolean>
 
   /** Custom mask shape params */
   readonly customMaskShapeParams: Ref<CustomMaskShapeParams | null>

@@ -463,22 +463,16 @@ function stopResize() {
         :background="{
           colorKey1: heroScene.background.backgroundColorKey1.value,
           colorKey2: heroScene.background.backgroundColorKey2.value,
-          customImage: heroScene.background.customBackgroundImage.value,
-          customFileName: heroScene.background.customBackgroundFile.value?.name ?? null,
           patterns: backgroundPatterns,
           selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
-          isLoadingRandom: heroScene.background.isLoadingRandomBackground.value,
           surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
           surfaceParams: backgroundSurfaceParamsForUI,
         }"
         :mask="{
           colorKey1: heroScene.mask.maskColorKey1.value,
           colorKey2: heroScene.mask.maskColorKey2.value,
-          customImage: heroScene.mask.customMaskImage.value,
-          customFileName: heroScene.mask.customMaskFile.value?.name ?? null,
           surfacePatterns: maskSurfacePatterns,
           selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
-          isLoadingRandom: heroScene.mask.isLoadingRandomMask.value,
           surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
           surfaceParams: maskSurfaceParamsForUI,
           shapePatterns: heroScene.pattern.maskPatterns,

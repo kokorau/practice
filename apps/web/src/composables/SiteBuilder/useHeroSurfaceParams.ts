@@ -176,10 +176,6 @@ export const useHeroSurfaceParams = (
         const selectedLayer = findLayerInTree(config.layers, selectedLayerId.value)
         if (selectedLayer && isSurfaceLayerConfig(selectedLayer)) {
           const surfaceLayer = selectedLayer as SurfaceLayerNodeConfig
-          // Image type is handled separately
-          if (surfaceLayer.surface.id === 'image') {
-            return null
-          }
           // Normalize and extract params
           const normalizedSurface = getSurfaceAsNormalized(surfaceLayer.surface)
           // Skip if config has binding values (timeline-driven params can't be synced to UI)
