@@ -30,6 +30,7 @@ import type {
   RectMaskShapeParams,
   BlobMaskShapeParams,
   PerlinMaskShapeParams,
+  CurlMaskShapeParams,
   LinearGradientMaskShapeParams,
   RadialGradientMaskShapeParams,
   BoxGradientMaskShapeParams,
@@ -41,7 +42,6 @@ import type {
   TriangleSurfaceParams,
   HexagonSurfaceParams,
   Viewport,
-  DepthMapType,
 } from '@practice/texture'
 import type { Oklch } from '@practice/color'
 import type { PrimitiveKey, InkRole } from '@practice/semantic-color-palette'
@@ -132,30 +132,57 @@ export type CustomMaskShapeParams =
   | ({ id: 'rect' } & RectMaskShapeParams)
   | ({ id: 'blob' } & BlobMaskShapeParams)
   | ({ id: 'perlin' } & PerlinMaskShapeParams)
+  | ({ id: 'curl' } & CurlMaskShapeParams)
   | ({ id: 'linearGradient' } & LinearGradientMaskShapeParams)
   | ({ id: 'radialGradient' } & RadialGradientMaskShapeParams)
   | ({ id: 'boxGradient' } & BoxGradientMaskShapeParams)
   | ({ id: 'wavyLine' } & WavyLineMaskShapeParams)
 
 /**
- * Gradient grain surface params
+ * Gradient grain surface params (5 separate types)
  */
-export interface GradientGrainSurfaceParams {
-  depthMapType: DepthMapType
+export interface GradientGrainLinearSurfaceParams {
   angle: number
+  centerX: number
+  centerY: number
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainCircularSurfaceParams {
+  centerX: number
+  centerY: number
+  circularInvert?: boolean
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainRadialSurfaceParams {
   centerX: number
   centerY: number
   radialStartAngle: number
   radialSweepAngle: number
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainPerlinSurfaceParams {
   perlinScale: number
   perlinOctaves: number
   perlinContrast: number
   perlinOffset: number
-  colorA: RGBA
-  colorB: RGBA
   seed: number
   sparsity: number
-  curvePoints: number[]
+}
+
+export interface GradientGrainCurlSurfaceParams {
+  perlinScale: number
+  perlinOctaves: number
+  perlinContrast: number
+  perlinOffset: number
+  curlIntensity: number
+  seed: number
+  sparsity: number
 }
 
 /**
@@ -199,7 +226,7 @@ export interface SunburstSurfaceParams {
 }
 
 /**
- * Custom surface params union type (for midground - includes solid, checker, and gradientGrain)
+ * Custom surface params union type (for midground - includes solid, checker, and gradientGrain variants)
  * Uses 'id' field for consistency with NormalizedSurfaceConfig
  */
 export type CustomSurfaceParams =
@@ -210,7 +237,11 @@ export type CustomSurfaceParams =
   | ({ id: 'checker' } & CheckerSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
+  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
+  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
+  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
+  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
   | ({ id: 'asanoha' } & AsanohaSurfaceParams)
   | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
   | ({ id: 'wave' } & WaveSurfaceParams)
@@ -230,7 +261,11 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'checker' } & CheckerSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
+  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
+  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
+  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
+  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
   | ({ id: 'asanoha' } & AsanohaSurfaceParams)
   | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
   | ({ id: 'wave' } & WaveSurfaceParams)

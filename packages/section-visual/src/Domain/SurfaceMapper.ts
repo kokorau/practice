@@ -4,7 +4,6 @@
  * SurfaceConfig と CustomSurfaceParams/CustomBackgroundSurfaceParams の相互変換を行うドメインロジック
  */
 
-import { DEFAULT_GRADIENT_GRAIN_CURVE_POINTS, type RGBA } from '@practice/texture'
 import type { SurfaceConfig } from './HeroViewConfig'
 import type { CustomSurfaceParams, CustomBackgroundSurfaceParams } from '../types/HeroSceneState'
 
@@ -12,15 +11,9 @@ import type { CustomSurfaceParams, CustomBackgroundSurfaceParams } from '../type
  * SurfaceConfig を CustomSurfaceParams に変換する
  *
  * @param config - SurfaceConfig (JSON serializable)
- * @param colorA - Color A for gradientGrain (optional)
- * @param colorB - Color B for gradientGrain (optional)
  * @returns CustomSurfaceParams (UI state)
  */
-export function toCustomSurfaceParams(
-  config: SurfaceConfig,
-  colorA?: RGBA,
-  colorB?: RGBA,
-): CustomSurfaceParams {
+export function toCustomSurfaceParams(config: SurfaceConfig): CustomSurfaceParams {
   if (config.type === 'solid') {
     return { id: 'solid' }
   }
@@ -33,24 +26,58 @@ export function toCustomSurfaceParams(
   if (config.type === 'polkaDot') {
     return { id: 'polkaDot', dotRadius: config.dotRadius, spacing: config.spacing, rowOffset: config.rowOffset }
   }
-  if (config.type === 'gradientGrain') {
+  if (config.type === 'gradientGrainLinear') {
     return {
-      id: 'gradientGrain',
-      depthMapType: config.depthMapType,
+      id: 'gradientGrainLinear',
       angle: config.angle,
+      centerX: config.centerX,
+      centerY: config.centerY,
+      seed: config.seed,
+      sparsity: config.sparsity,
+    }
+  }
+  if (config.type === 'gradientGrainCircular') {
+    return {
+      id: 'gradientGrainCircular',
+      centerX: config.centerX,
+      centerY: config.centerY,
+      circularInvert: config.circularInvert,
+      seed: config.seed,
+      sparsity: config.sparsity,
+    }
+  }
+  if (config.type === 'gradientGrainRadial') {
+    return {
+      id: 'gradientGrainRadial',
       centerX: config.centerX,
       centerY: config.centerY,
       radialStartAngle: config.radialStartAngle,
       radialSweepAngle: config.radialSweepAngle,
+      seed: config.seed,
+      sparsity: config.sparsity,
+    }
+  }
+  if (config.type === 'gradientGrainPerlin') {
+    return {
+      id: 'gradientGrainPerlin',
       perlinScale: config.perlinScale,
       perlinOctaves: config.perlinOctaves,
       perlinContrast: config.perlinContrast,
       perlinOffset: config.perlinOffset,
       seed: config.seed,
       sparsity: config.sparsity,
-      colorA: colorA ?? [0, 0, 0, 1],
-      colorB: colorB ?? [1, 1, 1, 1],
-      curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+    }
+  }
+  if (config.type === 'gradientGrainCurl') {
+    return {
+      id: 'gradientGrainCurl',
+      perlinScale: config.perlinScale,
+      perlinOctaves: config.perlinOctaves,
+      perlinContrast: config.perlinContrast,
+      perlinOffset: config.perlinOffset,
+      curlIntensity: config.curlIntensity,
+      seed: config.seed,
+      sparsity: config.sparsity,
     }
   }
   if (config.type === 'checker') {
@@ -112,19 +139,56 @@ export function fromCustomSurfaceParams(params: CustomSurfaceParams): SurfaceCon
   if (params.id === 'hexagon') {
     return { type: 'hexagon', size: params.size, angle: params.angle }
   }
-  if (params.id === 'gradientGrain') {
+  if (params.id === 'gradientGrainLinear') {
     return {
-      type: 'gradientGrain',
-      depthMapType: params.depthMapType,
+      type: 'gradientGrainLinear',
       angle: params.angle,
+      centerX: params.centerX,
+      centerY: params.centerY,
+      seed: params.seed,
+      sparsity: params.sparsity,
+    }
+  }
+  if (params.id === 'gradientGrainCircular') {
+    return {
+      type: 'gradientGrainCircular',
+      centerX: params.centerX,
+      centerY: params.centerY,
+      circularInvert: params.circularInvert,
+      seed: params.seed,
+      sparsity: params.sparsity,
+    }
+  }
+  if (params.id === 'gradientGrainRadial') {
+    return {
+      type: 'gradientGrainRadial',
       centerX: params.centerX,
       centerY: params.centerY,
       radialStartAngle: params.radialStartAngle,
       radialSweepAngle: params.radialSweepAngle,
+      seed: params.seed,
+      sparsity: params.sparsity,
+    }
+  }
+  if (params.id === 'gradientGrainPerlin') {
+    return {
+      type: 'gradientGrainPerlin',
       perlinScale: params.perlinScale,
       perlinOctaves: params.perlinOctaves,
       perlinContrast: params.perlinContrast,
       perlinOffset: params.perlinOffset,
+      seed: params.seed,
+      sparsity: params.sparsity,
+    }
+  }
+  if (params.id === 'gradientGrainCurl') {
+    return {
+      type: 'gradientGrainCurl',
+      perlinScale: params.perlinScale,
+      perlinOctaves: params.perlinOctaves,
+      perlinContrast: params.perlinContrast,
+      perlinOffset: params.perlinOffset,
+      curlIntensity: params.curlIntensity,
       seed: params.seed,
       sparsity: params.sparsity,
     }
@@ -155,15 +219,9 @@ export function fromCustomSurfaceParams(params: CustomSurfaceParams): SurfaceCon
  * SurfaceConfig を CustomBackgroundSurfaceParams に変換する
  *
  * @param config - SurfaceConfig (JSON serializable)
- * @param colorA - Color A for gradientGrain (optional)
- * @param colorB - Color B for gradientGrain (optional)
  * @returns CustomBackgroundSurfaceParams (UI state)
  */
-export function toCustomBackgroundSurfaceParams(
-  config: SurfaceConfig,
-  colorA?: RGBA,
-  colorB?: RGBA,
-): CustomBackgroundSurfaceParams {
+export function toCustomBackgroundSurfaceParams(config: SurfaceConfig): CustomBackgroundSurfaceParams {
   // CustomBackgroundSurfaceParams has the same structure as CustomSurfaceParams
-  return toCustomSurfaceParams(config, colorA, colorB) as CustomBackgroundSurfaceParams
+  return toCustomSurfaceParams(config) as CustomBackgroundSurfaceParams
 }

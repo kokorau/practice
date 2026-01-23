@@ -8,7 +8,11 @@ export type SurfacePresetType =
   | 'grid'
   | 'polkaDot'
   | 'checker'
-  | 'gradientGrain'
+  | 'gradientGrainLinear'
+  | 'gradientGrainCircular'
+  | 'gradientGrainRadial'
+  | 'gradientGrainPerlin'
+  | 'gradientGrainCurl'
   | 'triangle'
   | 'hexagon'
   | 'asanoha'
@@ -17,11 +21,6 @@ export type SurfacePresetType =
   | 'scales'
   | 'ogee'
   | 'sunburst'
-
-/**
- * Depth Map Type for Gradient Grain
- */
-export type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin'
 
 /**
  * Solid surface params (no additional params needed)
@@ -69,20 +68,65 @@ export interface CheckerPresetParams {
 }
 
 /**
- * Gradient Grain surface params
+ * Gradient Grain Linear surface params
  */
-export interface GradientGrainPresetParams {
-  type: 'gradientGrain'
-  depthMapType: DepthMapType
+export interface GradientGrainLinearPresetParams {
+  type: 'gradientGrainLinear'
   angle: number
+  centerX: number
+  centerY: number
+  seed: number
+  sparsity: number
+}
+
+/**
+ * Gradient Grain Circular surface params
+ */
+export interface GradientGrainCircularPresetParams {
+  type: 'gradientGrainCircular'
+  centerX: number
+  centerY: number
+  circularInvert?: boolean
+  seed: number
+  sparsity: number
+}
+
+/**
+ * Gradient Grain Radial surface params
+ */
+export interface GradientGrainRadialPresetParams {
+  type: 'gradientGrainRadial'
   centerX: number
   centerY: number
   radialStartAngle: number
   radialSweepAngle: number
+  seed: number
+  sparsity: number
+}
+
+/**
+ * Gradient Grain Perlin surface params
+ */
+export interface GradientGrainPerlinPresetParams {
+  type: 'gradientGrainPerlin'
   perlinScale: number
   perlinOctaves: number
   perlinContrast: number
   perlinOffset: number
+  seed: number
+  sparsity: number
+}
+
+/**
+ * Gradient Grain Curl surface params
+ */
+export interface GradientGrainCurlPresetParams {
+  type: 'gradientGrainCurl'
+  perlinScale: number
+  perlinOctaves: number
+  perlinContrast: number
+  perlinOffset: number
+  curlIntensity: number
   seed: number
   sparsity: number
 }
@@ -179,7 +223,11 @@ export type SurfacePresetParams =
   | GridPresetParams
   | PolkaDotPresetParams
   | CheckerPresetParams
-  | GradientGrainPresetParams
+  | GradientGrainLinearPresetParams
+  | GradientGrainCircularPresetParams
+  | GradientGrainRadialPresetParams
+  | GradientGrainPerlinPresetParams
+  | GradientGrainCurlPresetParams
   | TrianglePresetParams
   | HexagonPresetParams
   | AsanohaPresetParams

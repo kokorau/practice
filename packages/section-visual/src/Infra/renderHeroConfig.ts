@@ -14,13 +14,19 @@ import {
   // Textile pattern specs
   createTriangleSpec,
   createHexagonSpec,
-  createGradientGrainSpec,
   createAsanohaSpec,
   createSeigaihaSpec,
   createWaveSpec,
   createScalesSpec,
   createOgeeSpec,
   createSunburstSpec,
+  // Gradient grain specs (one per depth map type)
+  createGradientGrainLinearSpec,
+  createGradientGrainCircularSpec,
+  createGradientGrainRadialSpec,
+  createGradientGrainPerlinSpec,
+  createGradientGrainCurlSpec,
+  DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
   // Greymap mask shaders (new 2-stage pipeline)
   createCircleGreymapMaskSpec,
   createRectGreymapMaskSpec,
@@ -235,17 +241,55 @@ export function createBackgroundSpecFromSurface(
       angle: surface.angle,
     })
   }
-  if (surface.type === 'gradientGrain') {
-    // GradientGrain uses default curve points for config-based rendering
-    const defaultCurvePoints = [0, 0.2, 0.4, 0.5, 0.6, 0.8, 1]
-    return createGradientGrainSpec(
+  if (surface.type === 'gradientGrainLinear') {
+    return createGradientGrainLinearSpec(
       {
-        depthMapType: surface.depthMapType,
         angle: surface.angle,
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        colorA: color1,
+        colorB: color2,
+        seed: surface.seed,
+        sparsity: surface.sparsity,
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+      },
+      viewport
+    )
+  }
+  if (surface.type === 'gradientGrainCircular') {
+    return createGradientGrainCircularSpec(
+      {
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        circularInvert: surface.circularInvert,
+        colorA: color1,
+        colorB: color2,
+        seed: surface.seed,
+        sparsity: surface.sparsity,
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+      },
+      viewport
+    )
+  }
+  if (surface.type === 'gradientGrainRadial') {
+    return createGradientGrainRadialSpec(
+      {
         centerX: surface.centerX,
         centerY: surface.centerY,
         radialStartAngle: surface.radialStartAngle,
         radialSweepAngle: surface.radialSweepAngle,
+        colorA: color1,
+        colorB: color2,
+        seed: surface.seed,
+        sparsity: surface.sparsity,
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+      },
+      viewport
+    )
+  }
+  if (surface.type === 'gradientGrainPerlin') {
+    return createGradientGrainPerlinSpec(
+      {
         perlinScale: surface.perlinScale,
         perlinOctaves: surface.perlinOctaves,
         perlinContrast: surface.perlinContrast,
@@ -254,7 +298,24 @@ export function createBackgroundSpecFromSurface(
         colorB: color2,
         seed: surface.seed,
         sparsity: surface.sparsity,
-        curvePoints: defaultCurvePoints,
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+      },
+      viewport
+    )
+  }
+  if (surface.type === 'gradientGrainCurl') {
+    return createGradientGrainCurlSpec(
+      {
+        perlinScale: surface.perlinScale,
+        perlinOctaves: surface.perlinOctaves,
+        perlinContrast: surface.perlinContrast,
+        perlinOffset: surface.perlinOffset,
+        curlIntensity: surface.curlIntensity,
+        colorA: color1,
+        colorB: color2,
+        seed: surface.seed,
+        sparsity: surface.sparsity,
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
       },
       viewport
     )

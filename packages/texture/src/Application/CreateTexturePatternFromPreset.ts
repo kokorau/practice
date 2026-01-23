@@ -6,7 +6,11 @@ import {
   createGridSpec,
   createPolkaDotSpec,
   createCheckerSpec,
-  createGradientGrainSpec,
+  createGradientGrainLinearSpec,
+  createGradientGrainCircularSpec,
+  createGradientGrainRadialSpec,
+  createGradientGrainPerlinSpec,
+  createGradientGrainCurlSpec,
   createTriangleSpec,
   createHexagonSpec,
   createAsanohaSpec,
@@ -81,21 +85,86 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
           }),
         params,
       }
-    case 'gradientGrain': {
+    case 'gradientGrainLinear': {
       return {
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
-          createGradientGrainSpec({
-            depthMapType: params.depthMapType,
+          createGradientGrainLinearSpec({
             angle: params.angle,
+            centerX: params.centerX,
+            centerY: params.centerY,
+            colorA: c1,
+            colorB: c2,
+            seed: params.seed,
+            sparsity: params.sparsity,
+            curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+          }, viewport ?? { width: 1920, height: 1080 }),
+        params,
+      }
+    }
+    case 'gradientGrainCircular': {
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
+          createGradientGrainCircularSpec({
+            centerX: params.centerX,
+            centerY: params.centerY,
+            circularInvert: params.circularInvert,
+            colorA: c1,
+            colorB: c2,
+            seed: params.seed,
+            sparsity: params.sparsity,
+            curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+          }, viewport ?? { width: 1920, height: 1080 }),
+        params,
+      }
+    }
+    case 'gradientGrainRadial': {
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
+          createGradientGrainRadialSpec({
             centerX: params.centerX,
             centerY: params.centerY,
             radialStartAngle: params.radialStartAngle,
             radialSweepAngle: params.radialSweepAngle,
+            colorA: c1,
+            colorB: c2,
+            seed: params.seed,
+            sparsity: params.sparsity,
+            curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+          }, viewport ?? { width: 1920, height: 1080 }),
+        params,
+      }
+    }
+    case 'gradientGrainPerlin': {
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
+          createGradientGrainPerlinSpec({
             perlinScale: params.perlinScale,
             perlinOctaves: params.perlinOctaves,
             perlinContrast: params.perlinContrast,
             perlinOffset: params.perlinOffset,
+            colorA: c1,
+            colorB: c2,
+            seed: params.seed,
+            sparsity: params.sparsity,
+            curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+          }, viewport ?? { width: 1920, height: 1080 }),
+        params,
+      }
+    }
+    case 'gradientGrainCurl': {
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
+          createGradientGrainCurlSpec({
+            perlinScale: params.perlinScale,
+            perlinOctaves: params.perlinOctaves,
+            perlinContrast: params.perlinContrast,
+            perlinOffset: params.perlinOffset,
+            curlIntensity: params.curlIntensity,
             colorA: c1,
             colorB: c2,
             seed: params.seed,

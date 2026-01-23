@@ -58,6 +58,17 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
       cutout: maskConfig.cutout ?? true,
     }
   }
+  if (maskConfig.type === 'curl') {
+    return {
+      id: 'curl',
+      seed: maskConfig.seed,
+      threshold: maskConfig.threshold,
+      scale: maskConfig.scale,
+      octaves: maskConfig.octaves,
+      intensity: maskConfig.intensity,
+      cutout: maskConfig.cutout ?? true,
+    }
+  }
   if (maskConfig.type === 'linearGradient') {
     return {
       id: 'linearGradient',
@@ -155,6 +166,17 @@ export function fromCustomMaskShapeParams(params: CustomMaskShapeParams): HeroMa
       threshold: params.threshold,
       scale: params.scale,
       octaves: params.octaves,
+      cutout: params.cutout,
+    }
+  }
+  if (params.id === 'curl') {
+    return {
+      type: 'curl',
+      seed: params.seed,
+      threshold: params.threshold,
+      scale: params.scale,
+      octaves: params.octaves,
+      intensity: params.intensity,
       cutout: params.cutout,
     }
   }

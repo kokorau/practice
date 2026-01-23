@@ -1,29 +1,58 @@
-import { fullscreenVertex, hash21, oklabUtils, type DepthMapType } from './common'
+import { fullscreenVertex, hash21, oklabUtils } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 // ============================================================
-// Parameter Types
+// Parameter Types (per DepthType)
 // ============================================================
 
-export interface GradientGrainParams {
-  depthMapType?: DepthMapType  // 'linear' | 'circular' | 'radial' | 'perlin'
-  angle: number  // degrees (0-360) for linear
-  centerX?: number    // 0-1, default 0.5
-  centerY?: number    // 0-1, default 0.5
-  circularInvert?: boolean
-  radialStartAngle?: number  // degrees
-  radialSweepAngle?: number  // degrees
-  // Perlin noise params
-  perlinScale?: number     // noise scale (1-20), default 4
-  perlinOctaves?: number   // fBm octaves (1-8), default 4
-  perlinSeed?: number      // random seed for perlin, default 42
-  perlinContrast?: number  // contrast (0-3), default 1
-  perlinOffset?: number    // offset (-0.5 to 0.5), default 0
+/** Common params shared by all gradient grain types */
+interface GradientGrainBaseParams {
   colorA: [number, number, number, number]  // RGBA start color
   colorB: [number, number, number, number]  // RGBA end color
   seed: number  // noise seed for grain
   sparsity: number  // sparsity factor (0=dense, 1=very sparse)
   curvePoints: number[]  // 7 Y values (0-1) for intensity curve
+}
+
+/** Linear gradient grain params */
+export interface GradientGrainLinearParams extends GradientGrainBaseParams {
+  angle: number  // degrees (0-360)
+  centerX?: number    // 0-1, default 0.5
+  centerY?: number    // 0-1, default 0.5
+}
+
+/** Circular gradient grain params */
+export interface GradientGrainCircularParams extends GradientGrainBaseParams {
+  centerX?: number    // 0-1, default 0.5
+  centerY?: number    // 0-1, default 0.5
+  circularInvert?: boolean
+}
+
+/** Radial gradient grain params */
+export interface GradientGrainRadialParams extends GradientGrainBaseParams {
+  centerX?: number    // 0-1, default 0.5
+  centerY?: number    // 0-1, default 0.5
+  radialStartAngle?: number  // degrees
+  radialSweepAngle?: number  // degrees
+}
+
+/** Perlin noise gradient grain params */
+export interface GradientGrainPerlinParams extends GradientGrainBaseParams {
+  perlinScale?: number     // noise scale (1-20), default 4
+  perlinOctaves?: number   // fBm octaves (1-8), default 4
+  perlinSeed?: number      // random seed for perlin, default 42
+  perlinContrast?: number  // contrast (0-3), default 1
+  perlinOffset?: number    // offset (-0.5 to 0.5), default 0
+}
+
+/** Curl noise gradient grain params */
+export interface GradientGrainCurlParams extends GradientGrainBaseParams {
+  perlinScale?: number     // noise scale (1-20), default 4
+  perlinOctaves?: number   // fBm octaves (1-8), default 4
+  perlinSeed?: number      // random seed for perlin, default 42
+  perlinContrast?: number  // contrast (0-3), default 1
+  perlinOffset?: number    // offset (-0.5 to 0.5), default 0
+  curlIntensity?: number   // curl intensity (0.5-3), default 1
 }
 
 // ============================================================
@@ -78,6 +107,19 @@ export const GRADIENT_GRAIN_RADIAL_BUFFER_SIZE = 96
  *   Total: 112 bytes
  */
 export const GRADIENT_GRAIN_PERLIN_BUFFER_SIZE = 112
+
+/**
+ * Curl depth buffer layout (112 bytes):
+ *   viewport: vec2f (8) + seed: f32 (4) + sparsity: f32 (4) = 16 bytes
+ *   curlScale: f32 (4) + curlOctaves: f32 (4) + curlSeed: f32 (4) + curlContrast: f32 (4) = 16 bytes
+ *   curlOffset: f32 (4) + curlIntensity: f32 (4) + _pad: vec2f (8) = 16 bytes
+ *   colorA: vec4f = 16 bytes
+ *   colorB: vec4f = 16 bytes
+ *   curvePoints[0..3]: vec4f = 16 bytes
+ *   curvePoints[4..6] + _pad: vec4f = 16 bytes
+ *   Total: 112 bytes
+ */
+export const GRADIENT_GRAIN_CURL_BUFFER_SIZE = 112
 
 
 // ============================================================
@@ -391,11 +433,109 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 `
 
 // ============================================================
-// Spec Creation (per DepthType)
+// Curl Depth Shader
 // ============================================================
 
-function createLinearSpec(
-  params: GradientGrainParams,
+export const gradientGrainCurlShader = /* wgsl */ `
+struct Params {
+  viewport: vec2f,         // 8 bytes @ offset 0
+  seed: f32,               // 4 bytes @ offset 8
+  sparsity: f32,           // 4 bytes @ offset 12
+  curlScale: f32,          // 4 bytes @ offset 16
+  curlOctaves: f32,        // 4 bytes @ offset 20
+  curlSeed: f32,           // 4 bytes @ offset 24
+  curlContrast: f32,       // 4 bytes @ offset 28
+  curlOffset: f32,         // 4 bytes @ offset 32
+  curlIntensity: f32,      // 4 bytes @ offset 36
+  _pad0: f32,              // 4 bytes @ offset 40
+  _pad1: f32,              // 4 bytes @ offset 44
+  colorA: vec4f,           // 16 bytes @ offset 48
+  colorB: vec4f,           // 16 bytes @ offset 64
+  curvePoints0: vec4f,     // 16 bytes @ offset 80
+  curvePoints1: vec4f,     // 16 bytes @ offset 96
+}                          // Total: 112 bytes
+
+@group(0) @binding(0) var<uniform> params: Params;
+
+${fullscreenVertex}
+
+${gradientGrainCommon}
+
+fn curlHash21(p: vec2f) -> f32 {
+  var p3 = fract(vec3f(p.x, p.y, p.x) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+fn curlValueNoise(p: vec2f) -> f32 {
+  let i = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+
+  let a = curlHash21(i);
+  let b = curlHash21(i + vec2f(1.0, 0.0));
+  let c = curlHash21(i + vec2f(0.0, 1.0));
+  let d = curlHash21(i + vec2f(1.0, 1.0));
+
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+fn curlFbm(p: vec2f, octaves: i32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = p;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * curlValueNoise(pos);
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+// Compute 2D curl of a scalar noise field
+fn computeCurl(p: vec2f, octaves: i32) -> vec2f {
+  let eps = 0.01;
+
+  let dx = curlFbm(p + vec2f(eps, 0.0), octaves) - curlFbm(p - vec2f(eps, 0.0), octaves);
+  let dy = curlFbm(p + vec2f(0.0, eps), octaves) - curlFbm(p - vec2f(0.0, eps), octaves);
+
+  return vec2f(dy, -dx) / (2.0 * eps);
+}
+
+fn curlDepth(uv: vec2f, scale: f32, octaves: i32, seed: f32, contrast: f32, offset: f32, intensity: f32) -> f32 {
+  let noisePos = uv * scale + vec2f(seed * 0.1, seed * 0.073);
+  let curl = computeCurl(noisePos, octaves);
+
+  // Use curl magnitude as depth value
+  var depth = length(curl) * intensity;
+
+  // Normalize to 0-1 range (curl magnitude is typically 0-0.5)
+  depth = clamp(depth * 2.0, 0.0, 1.0);
+
+  // Apply contrast and offset
+  depth = (depth - 0.5) * contrast + 0.5 + offset;
+  return clamp(depth, 0.0, 1.0);
+}
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = pos.xy / params.viewport;
+  let t = curlDepth(uv, params.curlScale, i32(params.curlOctaves), params.curlSeed, params.curlContrast, params.curlOffset, params.curlIntensity);
+  let baseColor = mixOklabVec4(params.colorA, params.colorB, t);
+  let noiseA = hash21(pos.xy + params.seed);
+  let noiseB = hash21(pos.xy + params.seed + 1000.0);
+  return gradientGrainComposite(baseColor, params.colorA, params.colorB, t, noiseA, noiseB, params.sparsity, params.curvePoints0, params.curvePoints1);
+}
+`
+
+// ============================================================
+// Spec Creation (per DepthType - each is independent)
+// ============================================================
+
+/** Create spec for Linear GradientGrain texture */
+export function createGradientGrainLinearSpec(
+  params: GradientGrainLinearParams,
   viewport: { width: number; height: number }
 ): TextureRenderSpec {
   const data = new Float32Array(GRADIENT_GRAIN_LINEAR_BUFFER_SIZE / 4)
@@ -443,8 +583,9 @@ function createLinearSpec(
   }
 }
 
-function createCircularSpec(
-  params: GradientGrainParams,
+/** Create spec for Circular GradientGrain texture */
+export function createGradientGrainCircularSpec(
+  params: GradientGrainCircularParams,
   viewport: { width: number; height: number }
 ): TextureRenderSpec {
   const data = new Float32Array(GRADIENT_GRAIN_CIRCULAR_BUFFER_SIZE / 4)
@@ -492,8 +633,9 @@ function createCircularSpec(
   }
 }
 
-function createRadialSpec(
-  params: GradientGrainParams,
+/** Create spec for Radial GradientGrain texture */
+export function createGradientGrainRadialSpec(
+  params: GradientGrainRadialParams,
   viewport: { width: number; height: number }
 ): TextureRenderSpec {
   const data = new Float32Array(GRADIENT_GRAIN_RADIAL_BUFFER_SIZE / 4)
@@ -541,8 +683,9 @@ function createRadialSpec(
   }
 }
 
-function createPerlinSpec(
-  params: GradientGrainParams,
+/** Create spec for Perlin GradientGrain texture */
+export function createGradientGrainPerlinSpec(
+  params: GradientGrainPerlinParams,
   viewport: { width: number; height: number }
 ): TextureRenderSpec {
   const data = new Float32Array(GRADIENT_GRAIN_PERLIN_BUFFER_SIZE / 4)
@@ -596,22 +739,58 @@ function createPerlinSpec(
   }
 }
 
-/** Create spec for GradientGrain texture (dispatches to type-specific implementation) */
-export function createGradientGrainSpec(
-  params: GradientGrainParams,
+/** Create spec for Curl GradientGrain texture */
+export function createGradientGrainCurlSpec(
+  params: GradientGrainCurlParams,
   viewport: { width: number; height: number }
 ): TextureRenderSpec {
-  const depthType = params.depthMapType ?? 'linear'
+  const data = new Float32Array(GRADIENT_GRAIN_CURL_BUFFER_SIZE / 4)
 
-  switch (depthType) {
-    case 'circular':
-      return createCircularSpec(params, viewport)
-    case 'radial':
-      return createRadialSpec(params, viewport)
-    case 'perlin':
-      return createPerlinSpec(params, viewport)
-    case 'linear':
-    default:
-      return createLinearSpec(params, viewport)
+  // viewport + seed + sparsity
+  data[0] = viewport.width
+  data[1] = viewport.height
+  data[2] = params.seed
+  data[3] = params.sparsity
+
+  // curl params
+  data[4] = params.perlinScale ?? 4
+  data[5] = params.perlinOctaves ?? 4
+  data[6] = params.perlinSeed ?? 42
+  data[7] = params.perlinContrast ?? 1
+
+  // curlOffset + curlIntensity + padding
+  data[8] = params.perlinOffset ?? 0
+  data[9] = params.curlIntensity ?? 1
+  data[10] = 0 // padding
+  data[11] = 0 // padding
+
+  // colorA (vec4f)
+  data[12] = params.colorA[0]
+  data[13] = params.colorA[1]
+  data[14] = params.colorA[2]
+  data[15] = params.colorA[3]
+
+  // colorB (vec4f)
+  data[16] = params.colorB[0]
+  data[17] = params.colorB[1]
+  data[18] = params.colorB[2]
+  data[19] = params.colorB[3]
+
+  // curvePoints[0..3]
+  data[20] = params.curvePoints[0] ?? 0
+  data[21] = params.curvePoints[1] ?? 1/6
+  data[22] = params.curvePoints[2] ?? 2/6
+  data[23] = params.curvePoints[3] ?? 3/6
+
+  // curvePoints[4..6] + padding
+  data[24] = params.curvePoints[4] ?? 4/6
+  data[25] = params.curvePoints[5] ?? 5/6
+  data[26] = params.curvePoints[6] ?? 1
+  data[27] = 0 // padding
+
+  return {
+    shader: gradientGrainCurlShader,
+    uniforms: data.buffer,
+    bufferSize: GRADIENT_GRAIN_CURL_BUFFER_SIZE,
   }
 }

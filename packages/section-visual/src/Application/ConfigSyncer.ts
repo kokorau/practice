@@ -42,8 +42,8 @@ export interface SyncBackgroundSurfaceResult {
  */
 export function syncBackgroundSurfaceParams(
   config: HeroViewConfig,
-  colorA: RGBA,
-  colorB: RGBA,
+  _colorA: RGBA,
+  _colorB: RGBA,
 ): SyncBackgroundSurfaceResult {
   // Find background surface layer (new structure: inside background-group)
   let bgSurface: SurfaceLayerNodeConfig['surface'] | undefined
@@ -84,7 +84,7 @@ export function syncBackgroundSurfaceParams(
   }
 
   const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
-  const surfaceParams = toCustomBackgroundSurfaceParams(staticSurface, colorA, colorB)
+  const surfaceParams = toCustomBackgroundSurfaceParams(staticSurface)
 
   return { surfaceParams }
 }
@@ -103,14 +103,14 @@ export interface SyncMaskSurfaceResult {
  * Surface Layer の surface を CustomSurfaceParams に変換する。
  *
  * @param config - HeroViewConfig
- * @param colorA - GradientGrain用のColor A
- * @param colorB - GradientGrain用のColor B
+ * @param _colorA - (unused) GradientGrain用のColor A
+ * @param _colorB - (unused) GradientGrain用のColor B
  * @returns 同期結果
  */
 export function syncMaskSurfaceParams(
   config: HeroViewConfig,
-  colorA: RGBA,
-  colorB: RGBA,
+  _colorA: RGBA,
+  _colorB: RGBA,
 ): SyncMaskSurfaceResult {
   // Find mask surface layer (new structure: inside clip-group)
   let maskSurface: SurfaceLayerNodeConfig['surface'] | undefined
@@ -151,7 +151,7 @@ export function syncMaskSurfaceParams(
   }
 
   const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
-  const surfaceParams = toCustomSurfaceParams(staticSurface, colorA, colorB)
+  const surfaceParams = toCustomSurfaceParams(staticSurface)
 
   return { surfaceParams }
 }

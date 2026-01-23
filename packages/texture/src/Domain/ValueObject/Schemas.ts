@@ -79,6 +79,21 @@ export const PerlinMaskShapeSchema = defineSchema({
 export type PerlinMaskShapeParams = Infer<typeof PerlinMaskShapeSchema>
 
 /**
+ * Curl Noise Mask Shape Schema
+ * Uses curl of perlin noise for flow-like mask patterns
+ */
+export const CurlMaskShapeSchema = defineSchema({
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  threshold: number({ label: 'Threshold', min: 0, max: 1, step: 0.01, default: 0.3 }),
+  scale: number({ label: 'Scale', min: 0.5, max: 20, step: 0.5, default: 4 }),
+  octaves: number({ label: 'Octaves', min: 1, max: 8, step: 1, default: 4 }),
+  intensity: number({ label: 'Intensity', min: 0.1, max: 3, step: 0.1, default: 1 }),
+  cutout: boolean({ label: 'Cutout', default: true }),
+})
+
+export type CurlMaskShapeParams = Infer<typeof CurlMaskShapeSchema>
+
+/**
  * Linear Gradient Mask Shape Schema
  * Smooth gradient fade along a direction
  */
@@ -241,26 +256,50 @@ export const DEFAULT_GRADIENT_GRAIN_CURVE_POINTS: readonly number[] = [
 ] as const
 
 /**
- * Depth Map Type options for select field
+ * Gradient Grain Linear Surface Schema
  */
-const depthMapTypeOptions = [
-  { value: 'linear' as const, label: 'Linear' },
-  { value: 'circular' as const, label: 'Circular' },
-  { value: 'radial' as const, label: 'Radial' },
-  { value: 'perlin' as const, label: 'Perlin Noise' },
-] as const
+export const GradientGrainLinearSurfaceSchema = defineSchema({
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 90 }),
+  centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+})
+
+export type GradientGrainLinearSurfaceParams = Infer<typeof GradientGrainLinearSurfaceSchema>
 
 /**
- * Gradient Grain Surface Schema
+ * Gradient Grain Circular Surface Schema
  */
-export const GradientGrainSurfaceSchema = defineSchema({
-  depthMapType: select({ label: 'Depth Type', options: depthMapTypeOptions, default: 'linear' }),
-  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 90 }),
+export const GradientGrainCircularSurfaceSchema = defineSchema({
+  centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  circularInvert: boolean({ label: 'Invert', default: false }),
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+})
+
+export type GradientGrainCircularSurfaceParams = Infer<typeof GradientGrainCircularSurfaceSchema>
+
+/**
+ * Gradient Grain Radial Surface Schema
+ */
+export const GradientGrainRadialSurfaceSchema = defineSchema({
   centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
   centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
   radialStartAngle: number({ label: 'Start Angle', min: 0, max: 360, step: 1, default: 0 }),
   radialSweepAngle: number({ label: 'Sweep Angle', min: 1, max: 360, step: 1, default: 360 }),
-  perlinScale: number({ label: 'Perlin Scale', min: 1, max: 20, step: 0.5, default: 4 }),
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+})
+
+export type GradientGrainRadialSurfaceParams = Infer<typeof GradientGrainRadialSurfaceSchema>
+
+/**
+ * Gradient Grain Perlin Surface Schema
+ */
+export const GradientGrainPerlinSurfaceSchema = defineSchema({
+  perlinScale: number({ label: 'Scale', min: 1, max: 20, step: 0.5, default: 4 }),
   perlinOctaves: number({ label: 'Octaves', min: 1, max: 8, step: 1, default: 4 }),
   perlinContrast: number({ label: 'Contrast', min: 0.1, max: 3, step: 0.05, default: 1 }),
   perlinOffset: number({ label: 'Offset', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
@@ -268,7 +307,22 @@ export const GradientGrainSurfaceSchema = defineSchema({
   sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
 })
 
-export type GradientGrainSurfaceParams = Infer<typeof GradientGrainSurfaceSchema>
+export type GradientGrainPerlinSurfaceParams = Infer<typeof GradientGrainPerlinSurfaceSchema>
+
+/**
+ * Gradient Grain Curl Surface Schema
+ */
+export const GradientGrainCurlSurfaceSchema = defineSchema({
+  perlinScale: number({ label: 'Scale', min: 1, max: 20, step: 0.5, default: 4 }),
+  perlinOctaves: number({ label: 'Octaves', min: 1, max: 8, step: 1, default: 4 }),
+  perlinContrast: number({ label: 'Contrast', min: 0.1, max: 3, step: 0.05, default: 1 }),
+  perlinOffset: number({ label: 'Offset', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
+  curlIntensity: number({ label: 'Curl Intensity', min: 0.5, max: 3, step: 0.1, default: 1 }),
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+})
+
+export type GradientGrainCurlSurfaceParams = Infer<typeof GradientGrainCurlSurfaceSchema>
 
 /**
  * Triangle Surface Schema
@@ -373,6 +427,9 @@ export const createDefaultBlobMaskParams = (): BlobMaskShapeParams =>
 export const createDefaultPerlinMaskParams = (): PerlinMaskShapeParams =>
   getDefaults(PerlinMaskShapeSchema)
 
+export const createDefaultCurlMaskParams = (): CurlMaskShapeParams =>
+  getDefaults(CurlMaskShapeSchema)
+
 export const createDefaultLinearGradientMaskParams = (): LinearGradientMaskShapeParams =>
   getDefaults(LinearGradientMaskShapeSchema)
 
@@ -400,8 +457,20 @@ export const createDefaultPolkaDotParams = (): PolkaDotSurfaceParams =>
 export const createDefaultCheckerParams = (): CheckerSurfaceParams =>
   getDefaults(CheckerSurfaceSchema)
 
-export const createDefaultGradientGrainParams = (): GradientGrainSurfaceParams =>
-  getDefaults(GradientGrainSurfaceSchema)
+export const createDefaultGradientGrainLinearParams = (): GradientGrainLinearSurfaceParams =>
+  getDefaults(GradientGrainLinearSurfaceSchema)
+
+export const createDefaultGradientGrainCircularParams = (): GradientGrainCircularSurfaceParams =>
+  getDefaults(GradientGrainCircularSurfaceSchema)
+
+export const createDefaultGradientGrainRadialParams = (): GradientGrainRadialSurfaceParams =>
+  getDefaults(GradientGrainRadialSurfaceSchema)
+
+export const createDefaultGradientGrainPerlinParams = (): GradientGrainPerlinSurfaceParams =>
+  getDefaults(GradientGrainPerlinSurfaceSchema)
+
+export const createDefaultGradientGrainCurlParams = (): GradientGrainCurlSurfaceParams =>
+  getDefaults(GradientGrainCurlSurfaceSchema)
 
 export const createDefaultTriangleParams = (): TriangleSurfaceParams =>
   getDefaults(TriangleSurfaceSchema)
@@ -436,6 +505,7 @@ export const MaskShapeSchemas = {
   rect: RectMaskShapeSchema,
   blob: BlobMaskShapeSchema,
   perlin: PerlinMaskShapeSchema,
+  curl: CurlMaskShapeSchema,
   linearGradient: LinearGradientMaskShapeSchema,
   radialGradient: RadialGradientMaskShapeSchema,
   boxGradient: BoxGradientMaskShapeSchema,
@@ -448,7 +518,11 @@ export const SurfaceSchemas = {
   grid: GridSurfaceSchema,
   polkaDot: PolkaDotSurfaceSchema,
   checker: CheckerSurfaceSchema,
-  gradientGrain: GradientGrainSurfaceSchema,
+  gradientGrainLinear: GradientGrainLinearSurfaceSchema,
+  gradientGrainCircular: GradientGrainCircularSurfaceSchema,
+  gradientGrainRadial: GradientGrainRadialSurfaceSchema,
+  gradientGrainPerlin: GradientGrainPerlinSurfaceSchema,
+  gradientGrainCurl: GradientGrainCurlSurfaceSchema,
   triangle: TriangleSurfaceSchema,
   hexagon: HexagonSurfaceSchema,
   asanoha: AsanohaSurfaceSchema,
