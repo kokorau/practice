@@ -32,9 +32,9 @@ import {
 // Internal imports for normalization/denormalization functions
 import {
   getSurfaceAsNormalized,
-  denormalizeSurfaceConfig,
+  safeDenormalizeSurfaceConfig,
   getMaskAsNormalized,
-  denormalizeMaskConfig,
+  safeDenormalizeMaskConfig,
 } from '@practice/section-visual'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroFiltersReturn } from './useHeroFilters'
@@ -154,7 +154,7 @@ export const useHeroConfigLoader = (
       if (backgroundSurfaceLayer) {
         const bgSurface = backgroundSurfaceLayer.surface
         const normalizedBgSurface = getSurfaceAsNormalized(bgSurface)
-        const bgPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(normalizedBgSurface), surfacePresets)
+        const bgPresetIndex = findSurfacePresetIndex(safeDenormalizeSurfaceConfig(normalizedBgSurface), surfacePresets)
         selectedBackgroundIndex.value = bgPresetIndex ?? 0
       }
 
@@ -200,7 +200,7 @@ export const useHeroConfigLoader = (
 
       if (maskShape) {
         const normalizedMaskShape = getMaskAsNormalized(maskShape)
-        selectedMaskIndex.value = findMaskPatternIndex(denormalizeMaskConfig(normalizedMaskShape), heroThumbnails.maskPatterns)
+        selectedMaskIndex.value = findMaskPatternIndex(safeDenormalizeMaskConfig(normalizedMaskShape), heroThumbnails.maskPatterns)
       } else {
         selectedMaskIndex.value = null
       }
@@ -208,7 +208,7 @@ export const useHeroConfigLoader = (
       if (maskSurfaceLayer) {
         const maskSurface = maskSurfaceLayer.surface
         const normalizedMaskSurface = getSurfaceAsNormalized(maskSurface)
-        const midgroundPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(normalizedMaskSurface), heroThumbnails.midgroundTexturePatterns)
+        const midgroundPresetIndex = findSurfacePresetIndex(safeDenormalizeSurfaceConfig(normalizedMaskSurface), heroThumbnails.midgroundTexturePatterns)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
       }
 
