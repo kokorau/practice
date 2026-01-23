@@ -94,6 +94,42 @@ export const BlurEffectSchema = defineSchema({
 export type BlurEffectConfig = Infer<typeof BlurEffectSchema>
 
 // ============================================================
+// Pixelate Effect Schema
+// ============================================================
+
+export const PixelateEffectSchema = defineSchema({
+  enabled: boolean({ label: 'Enabled', default: false }),
+  blockSize: number({ label: 'Block Size', min: 4, max: 64, default: 16 }),
+})
+
+export type PixelateEffectConfig = Infer<typeof PixelateEffectSchema>
+
+// ============================================================
+// Hexagon Mosaic Effect Schema
+// ============================================================
+
+export const HexagonMosaicEffectSchema = defineSchema({
+  enabled: boolean({ label: 'Enabled', default: false }),
+  cellSize: number({ label: 'Cell Size', min: 8, max: 80, default: 24 }),
+})
+
+export type HexagonMosaicEffectConfig = Infer<typeof HexagonMosaicEffectSchema>
+
+// ============================================================
+// Voronoi Mosaic Effect Schema
+// ============================================================
+
+export const VoronoiMosaicEffectSchema = defineSchema({
+  enabled: boolean({ label: 'Enabled', default: false }),
+  cellCount: number({ label: 'Cell Count', min: 4, max: 32, default: 12 }),
+  seed: number({ label: 'Seed', min: 0, max: 1000, default: 0 }),
+  showEdges: boolean({ label: 'Show Edges', default: false }),
+  edgeWidth: number({ label: 'Edge Width', min: 1, max: 8, default: 2 }),
+})
+
+export type VoronoiMosaicEffectConfig = Infer<typeof VoronoiMosaicEffectSchema>
+
+// ============================================================
 // Layer Effect Schema (composite)
 // ============================================================
 
@@ -107,6 +143,9 @@ export const LayerEffectSchemas = {
   dotHalftone: DotHalftoneEffectSchema,
   lineHalftone: LineHalftoneEffectSchema,
   blur: BlurEffectSchema,
+  pixelate: PixelateEffectSchema,
+  hexagonMosaic: HexagonMosaicEffectSchema,
+  voronoiMosaic: VoronoiMosaicEffectSchema,
 } as const
 
 export type LayerEffectSchemaMap = typeof LayerEffectSchemas
@@ -118,6 +157,9 @@ export interface LayerEffectConfig {
   dotHalftone: DotHalftoneEffectConfig
   lineHalftone: LineHalftoneEffectConfig
   blur: BlurEffectConfig
+  pixelate: PixelateEffectConfig
+  hexagonMosaic: HexagonMosaicEffectConfig
+  voronoiMosaic: VoronoiMosaicEffectConfig
 }
 
 // ============================================================
@@ -144,6 +186,18 @@ export const createDefaultLineHalftoneConfig = (): LineHalftoneEffectConfig =>
 export const createDefaultBlurConfig = (): BlurEffectConfig =>
   getDefaults(BlurEffectSchema)
 
+/** Create default pixelate effect config */
+export const createDefaultPixelateConfig = (): PixelateEffectConfig =>
+  getDefaults(PixelateEffectSchema)
+
+/** Create default hexagon mosaic effect config */
+export const createDefaultHexagonMosaicConfig = (): HexagonMosaicEffectConfig =>
+  getDefaults(HexagonMosaicEffectSchema)
+
+/** Create default voronoi mosaic effect config */
+export const createDefaultVoronoiMosaicConfig = (): VoronoiMosaicEffectConfig =>
+  getDefaults(VoronoiMosaicEffectSchema)
+
 /** Create default layer effect config */
 export const createDefaultEffectConfig = (): LayerEffectConfig => ({
   vignette: createDefaultVignetteShapeConfigInternal(),
@@ -151,5 +205,8 @@ export const createDefaultEffectConfig = (): LayerEffectConfig => ({
   dotHalftone: createDefaultDotHalftoneConfig(),
   lineHalftone: createDefaultLineHalftoneConfig(),
   blur: createDefaultBlurConfig(),
+  pixelate: createDefaultPixelateConfig(),
+  hexagonMosaic: createDefaultHexagonMosaicConfig(),
+  voronoiMosaic: createDefaultVoronoiMosaicConfig(),
 })
 

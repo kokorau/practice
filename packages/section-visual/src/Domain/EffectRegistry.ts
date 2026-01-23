@@ -36,6 +36,16 @@ import {
   blurShader,
   createBlurUniforms,
   BLUR_BUFFER_SIZE,
+  // Mosaic effects
+  pixelateShader,
+  createPixelateUniforms,
+  PIXELATE_BUFFER_SIZE,
+  hexagonMosaicShader,
+  createHexagonMosaicUniforms,
+  HEXAGON_MOSAIC_BUFFER_SIZE,
+  voronoiMosaicShader,
+  createVoronoiMosaicUniforms,
+  VORONOI_MOSAIC_BUFFER_SIZE,
 } from '@practice/texture/filters'
 
 import {
@@ -43,14 +53,23 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  PixelateEffectSchema,
+  HexagonMosaicEffectSchema,
+  VoronoiMosaicEffectSchema,
   createDefaultChromaticAberrationConfig,
   createDefaultDotHalftoneConfig,
   createDefaultLineHalftoneConfig,
   createDefaultBlurConfig,
+  createDefaultPixelateConfig,
+  createDefaultHexagonMosaicConfig,
+  createDefaultVoronoiMosaicConfig,
   type ChromaticAberrationEffectConfig,
   type DotHalftoneEffectConfig,
   type LineHalftoneEffectConfig,
   type BlurEffectConfig,
+  type PixelateEffectConfig,
+  type HexagonMosaicEffectConfig,
+  type VoronoiMosaicEffectConfig,
 } from './EffectSchema'
 
 import {
@@ -260,6 +279,56 @@ function createBlurShaderSpec(
   }
 }
 
+function createPixelateShaderSpec(
+  config: PixelateEffectConfig,
+  viewport: Viewport,
+  scale: number
+): EffectShaderSpec {
+  return {
+    shader: pixelateShader,
+    uniforms: createPixelateUniforms(
+      { blockSize: scaleValue(config.blockSize, scale) },
+      viewport
+    ),
+    bufferSize: PIXELATE_BUFFER_SIZE,
+  }
+}
+
+function createHexagonMosaicShaderSpec(
+  config: HexagonMosaicEffectConfig,
+  viewport: Viewport,
+  scale: number
+): EffectShaderSpec {
+  return {
+    shader: hexagonMosaicShader,
+    uniforms: createHexagonMosaicUniforms(
+      { cellSize: scaleValue(config.cellSize, scale) },
+      viewport
+    ),
+    bufferSize: HEXAGON_MOSAIC_BUFFER_SIZE,
+  }
+}
+
+function createVoronoiMosaicShaderSpec(
+  config: VoronoiMosaicEffectConfig,
+  viewport: Viewport,
+  _scale: number
+): EffectShaderSpec {
+  return {
+    shader: voronoiMosaicShader,
+    uniforms: createVoronoiMosaicUniforms(
+      {
+        cellCount: config.cellCount,
+        seed: config.seed,
+        showEdges: config.showEdges ? 1 : 0,
+        edgeWidth: config.edgeWidth,
+      },
+      viewport
+    ),
+    bufferSize: VORONOI_MOSAIC_BUFFER_SIZE,
+  }
+}
+
 // ============================================================
 // Effect Registry
 // ============================================================
@@ -318,6 +387,30 @@ export const EFFECT_REGISTRY = {
     createDefaultConfig: createDefaultBlurConfig,
     createShaderSpec: createBlurShaderSpec,
   } satisfies EffectDefinition<BlurEffectConfig>,
+
+  pixelate: {
+    id: 'pixelate',
+    displayName: 'Pixelate',
+    schema: PixelateEffectSchema,
+    createDefaultConfig: createDefaultPixelateConfig,
+    createShaderSpec: createPixelateShaderSpec,
+  } satisfies EffectDefinition<PixelateEffectConfig>,
+
+  hexagonMosaic: {
+    id: 'hexagonMosaic',
+    displayName: 'Hexagon Mosaic',
+    schema: HexagonMosaicEffectSchema,
+    createDefaultConfig: createDefaultHexagonMosaicConfig,
+    createShaderSpec: createHexagonMosaicShaderSpec,
+  } satisfies EffectDefinition<HexagonMosaicEffectConfig>,
+
+  voronoiMosaic: {
+    id: 'voronoiMosaic',
+    displayName: 'Voronoi Mosaic',
+    schema: VoronoiMosaicEffectSchema,
+    createDefaultConfig: createDefaultVoronoiMosaicConfig,
+    createShaderSpec: createVoronoiMosaicShaderSpec,
+  } satisfies EffectDefinition<VoronoiMosaicEffectConfig>,
 } as const
 
 // ============================================================

@@ -14,6 +14,9 @@ import type {
   DotHalftoneConfigParams,
   LineHalftoneConfigParams,
   BlurConfigParams,
+  PixelateConfigParams,
+  HexagonMosaicConfigParams,
+  VoronoiMosaicConfigParams,
 } from './useFilterEditor'
 import type { MaskPatternItem } from '../components/HeroGenerator/RightPropertyPanel/MaskSettingsPanel.vue'
 import type { BackgroundSpecCreator, EffectSpec } from '../components/HeroGenerator/MaskPatternThumbnail.vue'
@@ -37,6 +40,9 @@ export interface FilterProps {
   dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
   lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
   blurConfig: WritableComputedRef<BlurConfigParams>
+  pixelateConfig?: WritableComputedRef<PixelateConfigParams>
+  hexagonMosaicConfig?: WritableComputedRef<HexagonMosaicConfigParams>
+  voronoiMosaicConfig?: WritableComputedRef<VoronoiMosaicConfigParams>
 }
 
 /**
