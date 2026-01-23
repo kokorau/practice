@@ -77,3 +77,13 @@ Playwright MCP is configured in `.mcp.json` for AI-assisted visual inspection:
 - Use `browser_navigate` to open pages
 - Use `browser_screenshot` to capture Canvas rendering
 - Requires Claude Code restart after modifying `.mcp.json`
+
+## Issue & PR Workflow
+
+### Issue起票ルール
+- Issueを起票する前に、必ずコードベースを調査してあたりをつけること
+- 問題の原因や修正箇所の見当がついた状態で起票する
+
+### PR作成ルール
+- PRはmasterブランチから新しいブランチを作成して作業すること
+- Issueの解決に必要な変更のみをcommitする
