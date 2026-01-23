@@ -336,6 +336,26 @@ export function denormalizeSurfaceConfig(config: NormalizedSurfaceConfig): Surfa
 }
 
 /**
+ * Safely convert NormalizedSurfaceConfig to legacy SurfaceConfig
+ * For RangeExpr params, uses the `min` value (base value when intensity=0)
+ *
+ * Use this for preset matching where approximate values are acceptable.
+ * For accurate rendering, use resolveParams() with an IntensityProvider instead.
+ */
+export function safeDenormalizeSurfaceConfig(config: NormalizedSurfaceConfig): SurfaceConfig {
+  const rawParams: Record<string, unknown> = {}
+  for (const [key, prop] of Object.entries(config.params)) {
+    if ($PropertyValue.isStatic(prop)) {
+      rawParams[key] = prop.value
+    } else if ($PropertyValue.isRange(prop)) {
+      // Use min value as the base/default value for preset matching
+      rawParams[key] = prop.min
+    }
+  }
+  return { type: config.id, ...rawParams } as SurfaceConfig
+}
+
+/**
  * Union type for both surface config formats
  */
 export type AnySurfaceConfig = SurfaceConfig | NormalizedSurfaceConfig
@@ -619,6 +639,26 @@ export function denormalizeMaskConfig(config: NormalizedMaskConfig): MaskShapeCo
       rawParams[key] = prop.value
     } else {
       throw new Error(`Cannot denormalize RangeExpr for key "${key}". Use resolveParams() instead.`)
+    }
+  }
+  return { type: config.id, ...rawParams } as MaskShapeConfig
+}
+
+/**
+ * Safely convert NormalizedMaskConfig to legacy MaskShapeConfig
+ * For RangeExpr params, uses the `min` value (base value when intensity=0)
+ *
+ * Use this for preset matching where approximate values are acceptable.
+ * For accurate rendering, use resolveParams() with an IntensityProvider instead.
+ */
+export function safeDenormalizeMaskConfig(config: NormalizedMaskConfig): MaskShapeConfig {
+  const rawParams: Record<string, unknown> = {}
+  for (const [key, prop] of Object.entries(config.params)) {
+    if ($PropertyValue.isStatic(prop)) {
+      rawParams[key] = prop.value
+    } else if ($PropertyValue.isRange(prop)) {
+      // Use min value as the base/default value for preset matching
+      rawParams[key] = prop.min
     }
   }
   return { type: config.id, ...rawParams } as MaskShapeConfig

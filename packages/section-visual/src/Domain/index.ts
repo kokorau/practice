@@ -712,12 +712,14 @@ export {
   isNormalizedSurfaceConfig,
   normalizeSurfaceConfig,
   denormalizeSurfaceConfig,
+  safeDenormalizeSurfaceConfig,
   getSurfaceAsNormalized,
   // Mask config normalization
   MASK_SHAPE_TYPE_IDS,
   isNormalizedMaskConfig,
   normalizeMaskConfig,
   denormalizeMaskConfig,
+  safeDenormalizeMaskConfig,
   getMaskAsNormalized,
   // Migration and validation functions
   migrateToNormalizedFormat,

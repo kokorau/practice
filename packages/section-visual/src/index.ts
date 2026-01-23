@@ -284,12 +284,14 @@ export {
   isNormalizedSurfaceConfig,
   normalizeSurfaceConfig,
   denormalizeSurfaceConfig,
+  safeDenormalizeSurfaceConfig,
   getSurfaceAsNormalized,
   // Mask config normalization
   MASK_SHAPE_TYPE_IDS,
   isNormalizedMaskConfig,
   normalizeMaskConfig,
   denormalizeMaskConfig,
+  safeDenormalizeMaskConfig,
   getMaskAsNormalized,
   // Default colors for surface layers (palette keys for layer config)
   DEFAULT_LAYER_BACKGROUND_COLORS,
