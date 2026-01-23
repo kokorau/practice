@@ -151,14 +151,18 @@ fn smoothBlob(angle: f32, seed: f32, waves: u32) -> f32 {
 
   for (var i = 0u; i < waves; i++) {
     let fi = f32(i);
+    // Use integer frequencies for closed-loop continuity
+    // cos(n * π) = cos(n * (-π)) for any integer n (cos is even function)
     let freq = fi + 2.0;
-    let phase = hash11(seed + fi * 17.3) * 6.283;
+    // Use seed-based amplitude instead of phase to maintain boundary continuity
+    let amp = hash11(seed + fi * 17.3) * 2.0 - 1.0;
     let weight = 1.0 / (fi + 1.0);
-    value += sin(angle * freq + phase) * weight;
-    totalWeight += weight;
+    // Pure cos without phase shift ensures cos(n*π) = cos(-n*π)
+    value += cos(angle * freq) * amp * weight;
+    totalWeight += weight * abs(amp);
   }
 
-  return value / totalWeight;
+  return value / max(totalWeight, 0.001);
 }
 
 // Perlin noise functions
