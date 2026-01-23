@@ -14,6 +14,6 @@
 
 export type { AstNode, NumberNode, IdentifierNode, CallNode } from './ast'
 export { $Ast } from './ast'
-export { parse } from './parser'
+export { parse, tryParse, type ParseResult } from './parser'
 export { evaluate, Evaluator, type Context, type BuiltinFunction } from './evaluator'
 export { extractPeriod, extractAllPeriods, analyzeAmplitude, type AmplitudeInfo } from './analyze'
