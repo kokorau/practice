@@ -93,6 +93,15 @@ export const $PropertyValue = {
     ...(clamp !== undefined ? { clamp } : {}),
   }),
 
+  /**
+   * Type guard to check if unknown value is a PropertyValue
+   */
+  isPropertyValue: (value: unknown): value is PropertyValue =>
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    (value.type === 'static' || value.type === 'range'),
+
   isStatic: (value: PropertyValue): value is StaticValue =>
     value.type === 'static',
 

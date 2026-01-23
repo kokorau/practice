@@ -1,7 +1,13 @@
 import { ref, computed, type Ref, type ComputedRef, type WritableComputedRef } from 'vue'
 import type { ObjectSchema } from '@practice/schema'
 import type { RGBA } from '@practice/texture'
-import type { FilterType } from '@practice/section-visual'
+import type { PrimitivePalette } from '@practice/semantic-color-palette'
+import type {
+  FilterType,
+  SurfaceLayerNodeConfig,
+  ProcessorNodeConfig,
+  NormalizedMaskConfig,
+} from '@practice/section-visual'
 import type {
   VignetteConfigParams,
   ChromaticConfigParams,
@@ -10,7 +16,7 @@ import type {
   BlurConfigParams,
 } from './useFilterEditor'
 import type { MaskPatternItem } from '../components/HeroGenerator/RightPropertyPanel/MaskSettingsPanel.vue'
-import type { BackgroundSpecCreator } from '../components/HeroGenerator/MaskPatternThumbnail.vue'
+import type { BackgroundSpecCreator, EffectSpec } from '../components/HeroGenerator/MaskPatternThumbnail.vue'
 
 // ============================================================
 // Types
@@ -34,10 +40,20 @@ export interface FilterProps {
 }
 
 /**
+ * Extended mask pattern item with normalized mask config
+ */
+export interface MaskPatternItemWithConfig extends MaskPatternItem {
+  /** Normalized mask config for pipeline-based rendering */
+  maskConfig: NormalizedMaskConfig
+}
+
+/**
  * Mask/shape state for UI binding
  */
 export interface MaskProps {
   shapePatterns: MaskPatternItem[]
+  /** Shape patterns with normalized mask config (for pipeline rendering) */
+  shapePatternsWithConfig?: MaskPatternItemWithConfig[]
   selectedShapeIndex: number | null
   shapeSchema: ObjectSchema | null
   shapeParams: Record<string, unknown> | null
@@ -46,6 +62,16 @@ export interface MaskProps {
   outerColor: RGBA
   innerColor: RGBA
   createBackgroundThumbnailSpec: BackgroundSpecCreator
+  /** Preceding effect specs to apply before mask preview (from Processor.modifiers) - legacy */
+  precedingEffectSpecs?: EffectSpec[]
+
+  // Pipeline-based rendering props (new)
+  /** Surface layer config from the selected Clip Group */
+  surface?: SurfaceLayerNodeConfig
+  /** Processor config (to extract preceding effects) */
+  processor?: ProcessorNodeConfig
+  /** Palette for color resolution */
+  palette?: PrimitivePalette
 }
 
 /**

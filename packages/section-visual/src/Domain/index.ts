@@ -347,6 +347,7 @@ export {
   updateLayerInTree,
   removeLayerFromTree,
   findParentLayerInTree,
+  findProcessorTargetSurface,
   moveLayerInTree,
   canMoveLayerInTree,
   wrapLayerInGroupInTree,
@@ -658,6 +659,7 @@ export type {
   AnySurfaceConfig,
   // Normalized Mask config
   MaskShapeTypeId,
+  MaskShapeConfig,
   NormalizedMaskConfig,
   AnyMaskConfig,
   // Filter config types (for JSON serialization)
@@ -694,6 +696,11 @@ export {
   getLayerFilters,
   getLayerMaskProcessor,
   hasLayerMaskProcessor,
+  // Processor modifier helpers
+  findMaskModifierIndex,
+  findModifierIndex,
+  getPrecedingEffects,
+  getEffectsBeforeMask,
   // Effect config type guard
   isSingleEffectConfig,
   // Effect utilities
