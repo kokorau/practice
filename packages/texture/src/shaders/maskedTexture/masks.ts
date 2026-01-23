@@ -24,29 +24,65 @@ fn circleMaskSDF(uv: vec2f, centerX: f32, centerY: f32, radius: f32, aspectRatio
 
 /** Wave utilities for blob deformation */
 export const waveUtils = /* wgsl */ `
-fn hash11(p: f32) -> f32 {
-  return fract(sin(p * 127.1) * 43758.5453);
+// 2D hash function for noise generation
+fn blobHash21(p: vec2f) -> f32 {
+  var p3 = fract(vec3f(p.x, p.y, p.x) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
 }
 
+// 2D value noise with smooth interpolation
+fn blobValueNoise2D(p: vec2f) -> f32 {
+  let i = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+
+  let a = blobHash21(i);
+  let b = blobHash21(i + vec2f(1.0, 0.0));
+  let c = blobHash21(i + vec2f(0.0, 1.0));
+  let d = blobHash21(i + vec2f(1.0, 1.0));
+
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+// Get Fourier coefficient for frequency n, varying smoothly with seed
+// Seed is sampled on a circle for seamless 0-100 looping
+fn getFourierCoeff(seed: f32, n: u32) -> f32 {
+  let tau = 6.283185307;
+  let theta = seed * tau / 100.0;
+
+  // Sample on circle in noise space (guarantees seed loop)
+  let radius = 2.0;
+  let x = cos(theta) * radius + f32(n) * 7.0;  // Offset per frequency
+  let y = sin(theta) * radius;
+
+  return blobValueNoise2D(vec2f(x, y)) * 2.0 - 1.0;
+}
+
+// Continuous blob deformation using circular noise sampling
+// Samples noise on a circular path to ensure seamless wrapping at ±π
 fn smoothBlob(angle: f32, seed: f32, waves: u32) -> f32 {
+  let noiseRadius = 3.0;
+  let seedOffset = seed * 0.1;
+  let noiseCoord = vec2f(
+    cos(angle) * noiseRadius + seedOffset,
+    sin(angle) * noiseRadius + seedOffset * 0.7
+  );
+
+  // Use layered noise for more organic shapes
   var value = 0.0;
-  var totalWeight = 0.0;
+  var amplitude = 0.5;
+  var pos = noiseCoord;
+  let octaves = clamp(i32(waves), 1, 4);
 
-  for (var i = 0u; i < waves; i++) {
-    let fi = f32(i);
-    // Use integer frequencies for closed-loop continuity
-    // cos(n * π) = cos(n * (-π)) for any integer n (cos is even function)
-    let freq = fi + 2.0;
-    // Use seed-based amplitude instead of phase to maintain boundary continuity
-    let amp = hash11(seed + fi * 17.3) * 2.0 - 1.0;
-    let weight = 1.0 / (fi + 1.0);
-
-    // Pure cos without phase shift ensures cos(n*π) = cos(-n*π)
-    value += cos(angle * freq) * amp * weight;
-    totalWeight += weight * abs(amp);
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * blobValueNoise2D(pos);
+    pos *= 2.0;
+    amplitude *= 0.5;
   }
 
-  return value / max(totalWeight, 0.001);
+  // Center around 0 for symmetric deformation
+  return (value - 0.5) * 2.0;
 }
 `
 
