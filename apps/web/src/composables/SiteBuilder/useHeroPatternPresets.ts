@@ -8,7 +8,7 @@
  * - updateMaskShapeParams, updateSurfaceParams, updateBackgroundSurfaceParams: パラメータ更新
  */
 
-import type { ComputedRef } from 'vue'
+import type { ComputedRef, Ref } from 'vue'
 import {
   getSurfacePresets,
   type RGBA,
@@ -48,8 +48,6 @@ function toPropertyValueParams(
   return result
 }
 import type {
-  CustomMaskShapeParams,
-  CustomSurfaceParams,
   GradientGrainSurfaceParams,
   MidgroundSurfacePreset,
 } from './useHeroScene'
@@ -67,7 +65,7 @@ export interface UseHeroPatternPresetsOptions {
   selectedBackgroundIndex: ComputedRef<number> & { value: number }
   selectedMaskIndex: ComputedRef<number | null> & { value: number | null }
   selectedMidgroundTextureIndex: ComputedRef<number> & { value: number }
-  selectedLayerId: ComputedRef<string>
+  selectedLayerId: ComputedRef<string | null> | Ref<string | null>
   textureColor1: ComputedRef<RGBA>
   textureColor2: ComputedRef<RGBA>
   midgroundTextureColor1: ComputedRef<RGBA>
