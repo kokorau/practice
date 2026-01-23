@@ -37,7 +37,7 @@ export interface TexturePattern {
 /**
  * Mask type enumeration
  */
-export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient' | 'radialGradient' | 'boxGradient' | 'wavyLine'
+export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'curl' | 'linearGradient' | 'radialGradient' | 'boxGradient' | 'wavyLine'
 
 /**
  * Circle mask configuration
@@ -100,6 +100,22 @@ export interface PerlinMaskShapeConfig {
   scale: number
   octaves: number
   /** If true (default), noise > threshold is opaque. If false, noise <= threshold is opaque. */
+  cutout?: boolean
+}
+
+/**
+ * Curl noise mask configuration
+ * Uses curl of perlin noise for flow-like mask patterns
+ */
+export interface CurlMaskShapeConfig {
+  type: 'curl'
+  seed: number
+  threshold: number
+  scale: number
+  octaves: number
+  /** Curl intensity - strength of the curl effect (0.1-3.0) */
+  intensity: number
+  /** If true (default), curl magnitude > threshold is opaque. If false, reversed. */
   cutout?: boolean
 }
 
@@ -183,7 +199,7 @@ export interface WavyLineMaskShapeConfig {
   cutout?: boolean
 }
 
-export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig | BoxGradientMaskShapeConfig | WavyLineMaskShapeConfig
+export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | CurlMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig | BoxGradientMaskShapeConfig | WavyLineMaskShapeConfig
 
 /**
  * Mask pattern definition with shape configuration

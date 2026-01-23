@@ -27,7 +27,11 @@ import {
   createScalesSpec,
   createOgeeSpec,
   createSunburstSpec,
-  createGradientGrainSpec,
+  createGradientGrainLinearSpec,
+  createGradientGrainCircularSpec,
+  createGradientGrainRadialSpec,
+  createGradientGrainPerlinSpec,
+  createGradientGrainCurlSpec,
   DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
   type TexturePattern,
   type MaskPattern,
@@ -162,18 +166,59 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
           cellSize: params.cellSize,
           angle: params.angle,
         })
-      case 'gradientGrain':
-        return createGradientGrainSpec({
-          depthMapType: params.depthMapType,
+      case 'gradientGrainLinear':
+        return createGradientGrainLinearSpec({
           angle: params.angle,
+          centerX: params.centerX,
+          centerY: params.centerY,
+          colorA: color1,
+          colorB: color2,
+          seed: params.seed,
+          sparsity: params.sparsity,
+          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+        }, viewport)
+      case 'gradientGrainCircular':
+        return createGradientGrainCircularSpec({
+          centerX: params.centerX,
+          centerY: params.centerY,
+          circularInvert: params.circularInvert,
+          colorA: color1,
+          colorB: color2,
+          seed: params.seed,
+          sparsity: params.sparsity,
+          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+        }, viewport)
+      case 'gradientGrainRadial':
+        return createGradientGrainRadialSpec({
           centerX: params.centerX,
           centerY: params.centerY,
           radialStartAngle: params.radialStartAngle,
           radialSweepAngle: params.radialSweepAngle,
+          colorA: color1,
+          colorB: color2,
+          seed: params.seed,
+          sparsity: params.sparsity,
+          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+        }, viewport)
+      case 'gradientGrainPerlin':
+        return createGradientGrainPerlinSpec({
           perlinScale: params.perlinScale,
           perlinOctaves: params.perlinOctaves,
           perlinContrast: params.perlinContrast,
           perlinOffset: params.perlinOffset,
+          colorA: color1,
+          colorB: color2,
+          seed: params.seed,
+          sparsity: params.sparsity,
+          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+        }, viewport)
+      case 'gradientGrainCurl':
+        return createGradientGrainCurlSpec({
+          perlinScale: params.perlinScale,
+          perlinOctaves: params.perlinOctaves,
+          perlinContrast: params.perlinContrast,
+          perlinOffset: params.perlinOffset,
+          curlIntensity: params.curlIntensity,
           colorA: color1,
           colorB: color2,
           seed: params.seed,

@@ -49,6 +49,11 @@ export {
   type BoxGradientMaskParams,
   type WavyLineMaskParams,
 } from './mask'
+export {
+  curlMaskShader,
+  createCurlMaskSpec,
+  type CurlMaskParams,
+} from './curlMask'
 export { blobMaskShader, createBlobMaskSpec, type BlobMaskParams } from './blob'
 export {
   // Clip mask shaders
@@ -165,12 +170,22 @@ export {
   gradientGrainCircularShader,
   gradientGrainRadialShader,
   gradientGrainPerlinShader,
-  createGradientGrainSpec,
+  gradientGrainCurlShader,
+  createGradientGrainLinearSpec,
+  createGradientGrainCircularSpec,
+  createGradientGrainRadialSpec,
+  createGradientGrainPerlinSpec,
+  createGradientGrainCurlSpec,
   GRADIENT_GRAIN_LINEAR_BUFFER_SIZE,
   GRADIENT_GRAIN_CIRCULAR_BUFFER_SIZE,
   GRADIENT_GRAIN_RADIAL_BUFFER_SIZE,
   GRADIENT_GRAIN_PERLIN_BUFFER_SIZE,
-  type GradientGrainParams,
+  GRADIENT_GRAIN_CURL_BUFFER_SIZE,
+  type GradientGrainLinearParams,
+  type GradientGrainCircularParams,
+  type GradientGrainRadialParams,
+  type GradientGrainPerlinParams,
+  type GradientGrainCurlParams,
 } from './gradientGrain'
 export {
   linearDepthMapShader,
@@ -214,6 +229,12 @@ export {
   PERLIN_DEPTH_MAP_BUFFER_SIZE,
   type PerlinDepthMapParams,
 } from './perlinDepthMap'
+export {
+  curlDepthMapShader,
+  createCurlDepthMapSpec,
+  CURL_DEPTH_MAP_BUFFER_SIZE,
+  type CurlDepthMapParams,
+} from './curlDepthMap'
 export { asanohaShader, createAsanohaSpec, type AsanohaTextureParams } from './asanoha'
 export { seigaihaShader, createSeigaihaSpec, type SeigaihaTextureParams } from './seigaiha'
 export { waveShader, createWaveSpec, type WaveTextureParams } from './wave'

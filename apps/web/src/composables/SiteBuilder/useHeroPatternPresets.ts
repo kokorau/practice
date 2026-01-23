@@ -48,7 +48,6 @@ function toPropertyValueParams(
   return result
 }
 import type {
-  GradientGrainSurfaceParams,
   MidgroundSurfacePreset,
 } from './useHeroScene'
 import type { UseHeroSurfaceParamsReturn } from './useHeroSurfaceParams'
@@ -80,7 +79,7 @@ export interface UseHeroPatternPresetsReturn {
   initBackgroundSurfaceParamsFromPreset: () => void
   updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams>) => void
   updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams>) => void
-  updateBackgroundSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams | GradientGrainSurfaceParams>) => void
+  updateBackgroundSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => void
 }
 
 export const useHeroPatternPresets = (
@@ -122,7 +121,9 @@ export const useHeroPatternPresets = (
     if (idx === null) return
     const pattern = maskPatterns[idx]
     if (pattern) {
-      customMaskShapeParams.value = toCustomMaskShapeParams(pattern.maskConfig)
+      // Type assertion needed due to monorepo type resolution
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      customMaskShapeParams.value = toCustomMaskShapeParams(pattern.maskConfig) as any
     }
   }
 
@@ -149,7 +150,7 @@ export const useHeroPatternPresets = (
         setBaseSurface({ id: 'polkaDot', params: toPropertyValueParams({ dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }) })
       } else if (params.id === 'checker') {
         setBaseSurface({ id: 'checker', params: toPropertyValueParams({ cellSize: params.cellSize, angle: params.angle }) })
-      } else if (params.id === 'gradientGrain') {
+      } else if (params.id === 'gradientGrainLinear' || params.id === 'gradientGrainCircular' || params.id === 'gradientGrainRadial' || params.id === 'gradientGrainPerlin' || params.id === 'gradientGrainCurl') {
         customBackgroundSurfaceParams.value = params
       } else if (params.id === 'asanoha') {
         customBackgroundSurfaceParams.value = params
@@ -186,7 +187,7 @@ export const useHeroPatternPresets = (
     surfaceUsecase.updateSurfaceParamsForLayer(targetLayerId, { id: surfaceId, ...updates } as SurfaceParamsUpdate)
   }
 
-  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams | GradientGrainSurfaceParams>) => {
+  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => {
     if (!customBackgroundSurfaceParams.value) return
     const surfaceId = customBackgroundSurfaceParams.value.id
     // Delegate to SurfaceUsecase - it handles layer type check and PropertyValue preservation

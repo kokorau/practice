@@ -141,20 +141,51 @@ export interface SolidSurfaceConfig {
 }
 
 
-export type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin'
-
-export interface GradientGrainSurfaceConfig {
-  type: 'gradientGrain'
-  depthMapType: DepthMapType
+export interface GradientGrainLinearSurfaceConfig {
+  type: 'gradientGrainLinear'
   angle: number
+  centerX: number
+  centerY: number
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainCircularSurfaceConfig {
+  type: 'gradientGrainCircular'
+  centerX: number
+  centerY: number
+  circularInvert?: boolean
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainRadialSurfaceConfig {
+  type: 'gradientGrainRadial'
   centerX: number
   centerY: number
   radialStartAngle: number
   radialSweepAngle: number
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainPerlinSurfaceConfig {
+  type: 'gradientGrainPerlin'
   perlinScale: number
   perlinOctaves: number
   perlinContrast: number
   perlinOffset: number
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainCurlSurfaceConfig {
+  type: 'gradientGrainCurl'
+  perlinScale: number
+  perlinOctaves: number
+  perlinContrast: number
+  perlinOffset: number
+  curlIntensity: number
   seed: number
   sparsity: number
 }
@@ -221,7 +252,11 @@ export type SurfaceConfig =
   | GridSurfaceConfig
   | PolkaDotSurfaceConfig
   | CheckerSurfaceConfig
-  | GradientGrainSurfaceConfig
+  | GradientGrainLinearSurfaceConfig
+  | GradientGrainCircularSurfaceConfig
+  | GradientGrainRadialSurfaceConfig
+  | GradientGrainPerlinSurfaceConfig
+  | GradientGrainCurlSurfaceConfig
   | TriangleSurfaceConfig
   | HexagonSurfaceConfig
   | AsanohaSurfaceConfig
@@ -254,7 +289,11 @@ export const SURFACE_TYPES: SurfaceType[] = [
   'grid',
   'polkaDot',
   'checker',
-  'gradientGrain',
+  'gradientGrainLinear',
+  'gradientGrainCircular',
+  'gradientGrainRadial',
+  'gradientGrainPerlin',
+  'gradientGrainCurl',
   'triangle',
   'hexagon',
   'asanoha',
@@ -481,6 +520,16 @@ export interface PerlinMaskShapeConfig {
   cutout: boolean
 }
 
+export interface CurlMaskShapeConfig {
+  type: 'curl'
+  seed: number
+  threshold: number
+  scale: number
+  octaves: number
+  intensity: number
+  cutout: boolean
+}
+
 export interface LinearGradientMaskShapeConfig {
   type: 'linearGradient'
   /** グラデーション方向 (0-360度) */
@@ -546,6 +595,7 @@ export type MaskShapeConfig =
   | RectMaskShapeConfig
   | BlobMaskShapeConfig
   | PerlinMaskShapeConfig
+  | CurlMaskShapeConfig
   | LinearGradientMaskShapeConfig
   | RadialGradientMaskShapeConfig
   | BoxGradientMaskShapeConfig
@@ -568,6 +618,7 @@ export const MASK_SHAPE_TYPE_IDS: MaskShapeTypeId[] = [
   'rect',
   'blob',
   'perlin',
+  'curl',
   'linearGradient',
   'radialGradient',
   'boxGradient',

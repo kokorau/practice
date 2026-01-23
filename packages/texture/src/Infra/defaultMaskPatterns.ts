@@ -5,6 +5,7 @@ import {
   createRectMaskSpec,
   createBlobMaskSpec,
   createPerlinMaskSpec,
+  createCurlMaskSpec,
   createLinearGradientMaskSpec,
   createRadialGradientMaskSpec,
   createBoxGradientMaskSpec,
@@ -340,6 +341,54 @@ const defaultMaskPatterns: MaskPattern[] = [
     createSpec: (c1, c2, viewport) =>
       createPerlinMaskSpec(
         { seed: 42, threshold: 0.6, scale: 3, octaves: 3, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  // ============================================================
+  // Curl Noise patterns (flow-like boundaries)
+  // ============================================================
+  {
+    label: 'Curl Flow',
+    maskConfig: { type: 'curl', seed: 12345, threshold: 0.3, scale: 4, octaves: 4, intensity: 1 },
+    createSpec: (c1, c2, viewport) =>
+      createCurlMaskSpec(
+        { seed: 12345, threshold: 0.3, scale: 4, octaves: 4, intensity: 1, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Curl Vortex',
+    maskConfig: { type: 'curl', seed: 777, threshold: 0.25, scale: 3, octaves: 5, intensity: 1.5 },
+    createSpec: (c1, c2, viewport) =>
+      createCurlMaskSpec(
+        { seed: 777, threshold: 0.25, scale: 3, octaves: 5, intensity: 1.5, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Curl Stream',
+    maskConfig: { type: 'curl', seed: 999, threshold: 0.35, scale: 6, octaves: 4, intensity: 1.2 },
+    createSpec: (c1, c2, viewport) =>
+      createCurlMaskSpec(
+        { seed: 999, threshold: 0.35, scale: 6, octaves: 4, intensity: 1.2, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Curl Gentle',
+    maskConfig: { type: 'curl', seed: 42, threshold: 0.4, scale: 2, octaves: 3, intensity: 0.8 },
+    createSpec: (c1, c2, viewport) =>
+      createCurlMaskSpec(
+        { seed: 42, threshold: 0.4, scale: 2, octaves: 3, intensity: 0.8, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Curl Dense',
+    maskConfig: { type: 'curl', seed: 555, threshold: 0.2, scale: 8, octaves: 6, intensity: 1.8 },
+    createSpec: (c1, c2, viewport) =>
+      createCurlMaskSpec(
+        { seed: 555, threshold: 0.2, scale: 8, octaves: 6, intensity: 1.8, innerColor: c1, outerColor: c2 },
         viewport!
       ),
   },

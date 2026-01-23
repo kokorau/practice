@@ -8,7 +8,10 @@ import {
   createNoiseMapSpec,
   createIntensityCurveSpec,
   createGradientNoiseMapSpec,
-  createGradientGrainSpec,
+  createGradientGrainLinearSpec,
+  createGradientGrainCircularSpec,
+  createGradientGrainRadialSpec,
+  createGradientGrainPerlinSpec,
   createLinearGradientSpec,
 } from '@practice/texture'
 
@@ -227,14 +230,45 @@ export const LinearGradientGrain: SampleDefinition = {
     const depthNoiseParams = params.depthNoise!
     const curveParams = params.curve!
 
-    return createGradientGrainSpec({
-      ...depthParams,
-      colorA: hexToRgba(gradientParams.colorA as string),
-      colorB: hexToRgba(gradientParams.colorB as string),
-      seed: noiseParams.seed as number,
-      sparsity: depthNoiseParams.sparsity as number,
-      curvePoints: curveParams.points as number[],
-    }, viewport)
+    const colorA = hexToRgba(gradientParams.colorA as string)
+    const colorB = hexToRgba(gradientParams.colorB as string)
+    const seed = noiseParams.seed as number
+    const sparsity = depthNoiseParams.sparsity as number
+    const curvePoints = curveParams.points as number[]
+
+    switch (depthParams.depthMapType) {
+      case 'circular':
+        return createGradientGrainCircularSpec({
+          centerX: depthParams.centerX,
+          centerY: depthParams.centerY,
+          circularInvert: depthParams.circularInvert,
+          colorA, colorB, seed, sparsity, curvePoints,
+        }, viewport)
+      case 'radial':
+        return createGradientGrainRadialSpec({
+          centerX: depthParams.centerX,
+          centerY: depthParams.centerY,
+          radialStartAngle: depthParams.radialStartAngle,
+          radialSweepAngle: depthParams.radialSweepAngle,
+          colorA, colorB, seed, sparsity, curvePoints,
+        }, viewport)
+      case 'perlin':
+        return createGradientGrainPerlinSpec({
+          perlinScale: depthParams.perlinScale,
+          perlinOctaves: depthParams.perlinOctaves,
+          perlinContrast: depthParams.perlinContrast,
+          perlinOffset: depthParams.perlinOffset,
+          colorA, colorB, seed, sparsity, curvePoints,
+        }, viewport)
+      case 'linear':
+      default:
+        return createGradientGrainLinearSpec({
+          angle: depthParams.angle,
+          centerX: depthParams.centerX,
+          centerY: depthParams.centerY,
+          colorA, colorB, seed, sparsity, curvePoints,
+        }, viewport)
+    }
   },
 }
 

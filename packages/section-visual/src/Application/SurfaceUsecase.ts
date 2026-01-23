@@ -10,7 +10,6 @@ import type {
   HeroPrimitiveKey,
   NormalizedSurfaceConfig,
   LayerNodeConfig,
-  DepthMapType,
   SurfaceColorsConfig,
   ProcessorNodeConfig,
   MaskProcessorConfig,
@@ -73,21 +72,11 @@ export type SurfaceParamsUpdate =
   | { id: 'grid'; lineWidth?: number; cellSize?: number }
   | { id: 'polkaDot'; dotRadius?: number; spacing?: number; rowOffset?: number }
   | { id: 'checker'; cellSize?: number; angle?: number }
-  | {
-      id: 'gradientGrain'
-      depthMapType?: DepthMapType
-      angle?: number
-      centerX?: number
-      centerY?: number
-      radialStartAngle?: number
-      radialSweepAngle?: number
-      perlinScale?: number
-      perlinOctaves?: number
-      perlinContrast?: number
-      perlinOffset?: number
-      seed?: number
-      sparsity?: number
-    }
+  | { id: 'gradientGrainLinear'; angle?: number; centerX?: number; centerY?: number; seed?: number; sparsity?: number }
+  | { id: 'gradientGrainCircular'; centerX?: number; centerY?: number; circularInvert?: boolean; seed?: number; sparsity?: number }
+  | { id: 'gradientGrainRadial'; centerX?: number; centerY?: number; radialStartAngle?: number; radialSweepAngle?: number; seed?: number; sparsity?: number }
+  | { id: 'gradientGrainPerlin'; perlinScale?: number; perlinOctaves?: number; perlinContrast?: number; perlinOffset?: number; seed?: number; sparsity?: number }
+  | { id: 'gradientGrainCurl'; perlinScale?: number; perlinOctaves?: number; perlinContrast?: number; perlinOffset?: number; curlIntensity?: number; seed?: number; sparsity?: number }
 
 /**
  * マスク形状パラメータの更新型

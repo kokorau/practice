@@ -15,7 +15,6 @@
 import { ref, shallowRef, computed, watch, onUnmounted, type ComputedRef, type Ref } from 'vue'
 import type { IntensityProvider } from '@practice/timeline'
 import {
-  type RGBA,
   type SurfacePreset,
   type SurfacePresetParams,
   type StripePresetParams,
@@ -36,7 +35,6 @@ import {
   type CheckerSurfaceParams,
   type TriangleSurfaceParams,
   type HexagonSurfaceParams,
-  type DepthMapType,
 } from '@practice/texture'
 import type { HeroViewPresetRepository } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -168,7 +166,8 @@ export type PatternPresetParams = StripePresetParams | GridPresetParams | PolkaD
 export const isPatternPresetParams = (
   params: SurfacePresetParams
 ): params is PatternPresetParams => {
-  return params.type !== 'solid' && params.type !== 'gradientGrain'
+  const t = params.type
+  return t !== 'solid' && !t.startsWith('gradientGrain')
 }
 
 /**
@@ -225,6 +224,53 @@ export interface SunburstSurfaceParams {
 }
 
 /**
+ * Gradient grain surface params (5 separate types)
+ */
+export interface GradientGrainLinearSurfaceParams {
+  angle: number
+  centerX: number
+  centerY: number
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainCircularSurfaceParams {
+  centerX: number
+  centerY: number
+  circularInvert?: boolean
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainRadialSurfaceParams {
+  centerX: number
+  centerY: number
+  radialStartAngle: number
+  radialSweepAngle: number
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainPerlinSurfaceParams {
+  perlinScale: number
+  perlinOctaves: number
+  perlinContrast: number
+  perlinOffset: number
+  seed: number
+  sparsity: number
+}
+
+export interface GradientGrainCurlSurfaceParams {
+  perlinScale: number
+  perlinOctaves: number
+  perlinContrast: number
+  perlinOffset: number
+  curlIntensity: number
+  seed: number
+  sparsity: number
+}
+
+/**
  * Custom surface params union type
  * Uses 'id' field for consistency with NormalizedSurfaceConfig
  */
@@ -234,7 +280,11 @@ export type CustomSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
+  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
+  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
+  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
+  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'asanoha' } & AsanohaSurfaceParams)
@@ -245,27 +295,6 @@ export type CustomSurfaceParams =
   | ({ id: 'sunburst' } & SunburstSurfaceParams)
 
 /**
- * Gradient grain surface params
- */
-export interface GradientGrainSurfaceParams {
-  depthMapType: DepthMapType
-  angle: number
-  centerX: number
-  centerY: number
-  radialStartAngle: number
-  radialSweepAngle: number
-  perlinScale: number
-  perlinOctaves: number
-  perlinContrast: number
-  perlinOffset: number
-  colorA: RGBA
-  colorB: RGBA
-  seed: number
-  sparsity: number
-  curvePoints: number[]
-}
-
-/**
  * Custom background surface params union type
  * Uses 'id' field for consistency with NormalizedSurfaceConfig
  */
@@ -274,7 +303,11 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'gradientGrain' } & GradientGrainSurfaceParams)
+  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
+  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
+  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
+  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
+  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'asanoha' } & AsanohaSurfaceParams)

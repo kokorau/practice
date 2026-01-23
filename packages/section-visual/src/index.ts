@@ -438,7 +438,11 @@ export {
 export type {
   // Custom params types
   CustomMaskShapeParams,
-  GradientGrainSurfaceParams,
+  GradientGrainLinearSurfaceParams,
+  GradientGrainCircularSurfaceParams,
+  GradientGrainRadialSurfaceParams,
+  GradientGrainPerlinSurfaceParams,
+  GradientGrainCurlSurfaceParams,
   CustomSurfaceParams,
   CustomBackgroundSurfaceParams,
   SectionType,

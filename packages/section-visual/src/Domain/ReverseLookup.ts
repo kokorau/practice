@@ -17,7 +17,7 @@ export const approxEqual = (a: number, b: number, epsilon = 0.0001): boolean =>
  * Surface preset params type (for matching)
  */
 export interface SurfacePresetParams {
-  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrain' | 'triangle' | 'hexagon' | 'asanoha' | 'seigaiha' | 'wave' | 'scales' | 'ogee' | 'sunburst'
+  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrainLinear' | 'gradientGrainCircular' | 'gradientGrainRadial' | 'gradientGrainPerlin' | 'gradientGrainCurl' | 'triangle' | 'hexagon' | 'asanoha' | 'seigaiha' | 'wave' | 'scales' | 'ogee' | 'sunburst'
   width1?: number
   width2?: number
   angle?: number
@@ -26,18 +26,23 @@ export interface SurfacePresetParams {
   dotRadius?: number
   spacing?: number
   rowOffset?: number
-  // GradientGrain params
-  depthMapType?: string
+  // GradientGrain common params
   centerX?: number
   centerY?: number
+  seed?: number
+  sparsity?: number
+  // GradientGrain Circular params
+  circularInvert?: boolean
+  // GradientGrain Radial params
   radialStartAngle?: number
   radialSweepAngle?: number
+  // GradientGrain Perlin/Curl params
   perlinScale?: number
   perlinOctaves?: number
   perlinContrast?: number
   perlinOffset?: number
-  seed?: number
-  sparsity?: number
+  // GradientGrain Curl params
+  curlIntensity?: number
   // Triangle/Hexagon/Textile pattern params
   size?: number
   radius?: number
@@ -56,7 +61,7 @@ export interface SurfacePresetParams {
  * Mask pattern config type (for matching)
  */
 export interface MaskPatternConfig {
-  type: 'circle' | 'rect' | 'blob' | 'perlin' | 'linearGradient' | 'radialGradient' | 'boxGradient' | 'wavyLine'
+  type: 'circle' | 'rect' | 'blob' | 'perlin' | 'curl' | 'linearGradient' | 'radialGradient' | 'boxGradient' | 'wavyLine'
   centerX?: number
   centerY?: number
   radius?: number
@@ -75,6 +80,8 @@ export interface MaskPatternConfig {
   threshold?: number
   scale?: number
   cutout?: boolean
+  // Curl params
+  intensity?: number
   // LinearGradient params
   angle?: number
   startOffset?: number
@@ -141,13 +148,60 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrain' && preset.params.type === 'gradientGrain') {
+    if (surfaceConfig.type === 'gradientGrainLinear' && preset.params.type === 'gradientGrainLinear') {
       if (
-        surfaceConfig.depthMapType === preset.params.depthMapType &&
-        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0) &&
+        approxEqual(surfaceConfig.angle, preset.params.angle ?? 90) &&
         approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
         approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
-        approxEqual(surfaceConfig.seed, preset.params.seed ?? 0) &&
+        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
+        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'gradientGrainCircular' && preset.params.type === 'gradientGrainCircular') {
+      if (
+        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
+        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
+        (surfaceConfig.circularInvert ?? false) === (preset.params.circularInvert ?? false) &&
+        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
+        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'gradientGrainRadial' && preset.params.type === 'gradientGrainRadial') {
+      if (
+        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
+        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
+        approxEqual(surfaceConfig.radialStartAngle, preset.params.radialStartAngle ?? 0) &&
+        approxEqual(surfaceConfig.radialSweepAngle, preset.params.radialSweepAngle ?? 360) &&
+        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
+        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'gradientGrainPerlin' && preset.params.type === 'gradientGrainPerlin') {
+      if (
+        approxEqual(surfaceConfig.perlinScale, preset.params.perlinScale ?? 4) &&
+        approxEqual(surfaceConfig.perlinOctaves, preset.params.perlinOctaves ?? 4) &&
+        approxEqual(surfaceConfig.perlinContrast, preset.params.perlinContrast ?? 1) &&
+        approxEqual(surfaceConfig.perlinOffset, preset.params.perlinOffset ?? 0) &&
+        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
+        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'gradientGrainCurl' && preset.params.type === 'gradientGrainCurl') {
+      if (
+        approxEqual(surfaceConfig.perlinScale, preset.params.perlinScale ?? 4) &&
+        approxEqual(surfaceConfig.perlinOctaves, preset.params.perlinOctaves ?? 4) &&
+        approxEqual(surfaceConfig.perlinContrast, preset.params.perlinContrast ?? 1) &&
+        approxEqual(surfaceConfig.perlinOffset, preset.params.perlinOffset ?? 0) &&
+        approxEqual(surfaceConfig.curlIntensity, preset.params.curlIntensity ?? 1) &&
+        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
         approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
       ) {
         return i
@@ -287,6 +341,17 @@ export const findMaskPatternIndex = (
         approxEqual(shapeConfig.threshold, maskConfig.threshold ?? 0.5) &&
         approxEqual(shapeConfig.scale, maskConfig.scale ?? 4) &&
         shapeConfig.octaves === maskConfig.octaves
+      ) {
+        return i
+      }
+    }
+    if (shapeConfig.type === 'curl' && maskConfig.type === 'curl') {
+      if (
+        shapeConfig.seed === maskConfig.seed &&
+        approxEqual(shapeConfig.threshold, maskConfig.threshold ?? 0.3) &&
+        approxEqual(shapeConfig.scale, maskConfig.scale ?? 4) &&
+        shapeConfig.octaves === maskConfig.octaves &&
+        approxEqual(shapeConfig.intensity, maskConfig.intensity ?? 1)
       ) {
         return i
       }

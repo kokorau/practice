@@ -162,12 +162,12 @@ export const useHeroSurfaceParams = (
     midgroundTextureColor2,
   } = options
 
-  const extractSurfaceParams = (preset: MidgroundSurfacePreset, colorA: RGBA, colorB: RGBA): CustomSurfaceParams => {
-    return toCustomSurfaceParams(preset.params, colorA, colorB)
+  const extractSurfaceParams = (preset: MidgroundSurfacePreset, _colorA: RGBA, _colorB: RGBA): CustomSurfaceParams => {
+    return toCustomSurfaceParams(preset.params)
   }
 
-  const extractBackgroundSurfaceParams = (params: SurfacePresetParams, colorA: RGBA, colorB: RGBA): CustomBackgroundSurfaceParams => {
-    return toCustomBackgroundSurfaceParams(params, colorA, colorB)
+  const extractBackgroundSurfaceParams = (params: SurfacePresetParams, _colorA: RGBA, _colorB: RGBA): CustomBackgroundSurfaceParams => {
+    return toCustomBackgroundSurfaceParams(params)
   }
 
   // Current custom params (derived from Repository via repoConfig)
@@ -185,7 +185,9 @@ export const useHeroSurfaceParams = (
       const { staticParams } = toStaticParams<Record<string, unknown>>(normalizedMask.params)
       // Build static mask config for conversion (toCustomMaskShapeParams expects { type, ...params })
       const staticMaskConfig = { type: normalizedMask.id, ...staticParams }
-      return toCustomMaskShapeParams(staticMaskConfig as ReturnType<typeof denormalizeMaskConfig>)
+      // Type assertion needed due to monorepo type resolution
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return toCustomMaskShapeParams(staticMaskConfig as ReturnType<typeof denormalizeMaskConfig>) as any
     },
     set: (val: CustomMaskShapeParams | null) => {
       if (val === null) return
@@ -223,9 +225,7 @@ export const useHeroSurfaceParams = (
           // Build static surface config for conversion (toCustomSurfaceParams expects { type, ...params })
           const staticSurfaceConfig = { type: normalizedSurface.id, ...staticParams }
           return toCustomSurfaceParams(
-            staticSurfaceConfig as ReturnType<typeof denormalizeSurfaceConfig>,
-            midgroundTextureColor1.value,
-            midgroundTextureColor2.value
+            staticSurfaceConfig as ReturnType<typeof denormalizeSurfaceConfig>
           )
         }
       }

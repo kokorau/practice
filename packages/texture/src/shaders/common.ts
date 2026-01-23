@@ -229,7 +229,7 @@ fn mixOklabVec4(colorA: vec4f, colorB: vec4f, t: f32) -> vec4f {
 // ============================================================
 
 /** 深度マップタイプ */
-export type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin'
+export type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin' | 'curl'
 
 /** 深度マップタイプをシェーダー用の数値に変換 */
 export function depthMapTypeToNumber(type: DepthMapType): number {
@@ -238,6 +238,7 @@ export function depthMapTypeToNumber(type: DepthMapType): number {
     case 'circular': return 1
     case 'radial': return 2
     case 'perlin': return 3
+    case 'curl': return 4
     default: return 0
   }
 }
