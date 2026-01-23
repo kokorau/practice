@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
 } from '@practice/semantic-color-palette/Domain'
 import {
-  createPrimitivePalette,
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
 } from '@practice/semantic-color-palette/Infra'
+import { createHeroConfigSlice } from '@practice/site/Infra'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
@@ -33,7 +32,8 @@ import {
   TextLayerSectionPanel,
 } from '../components/HeroGenerator/FloatingPanelContent'
 import {
-  useSiteColors,
+  useSiteState,
+  useSiteColorsBridge,
   useHeroScene,
   createSurfacePatterns,
 } from '../composables/SiteBuilder'
@@ -69,25 +69,36 @@ const {
 } = layerSelection
 
 // ============================================================
-// Brand, Accent & Foundation Color State
+// Site State (Source of Truth)
+// ============================================================
+const siteState = useSiteState()
+
+// ============================================================
+// Hero Config Repository (Slice Adapter)
+// ============================================================
+const heroConfigSlice = createHeroConfigSlice({
+  siteRepository: siteState.repository,
+  configId: 'hero-generator',
+  createIfNotExists: true,
+})
+
+// ============================================================
+// Brand, Accent & Foundation Color State (Bridge to Site)
 // ============================================================
 const {
   hue,
   saturation,
   value,
   selectedHex,
-  brandColor,
   accentHue,
   accentSaturation,
   accentValue,
   accentHex,
-  accentColor,
   foundationHue,
   foundationSaturation,
   foundationValue,
   foundationHex,
-  foundationColor,
-} = useSiteColors()
+} = useSiteColorsBridge({ siteState })
 
 // ============================================================
 // Color State Update Handler
@@ -99,15 +110,9 @@ const { handleColorStateUpdate } = useHeroGeneratorColorHandlers({
 })
 
 // ============================================================
-// Primitive & Semantic Palette Generation
+// Primitive & Semantic Palette (from Site State)
 // ============================================================
-const primitivePalette = computed((): PrimitivePalette => {
-  return createPrimitivePalette({
-    brand: brandColor.value.oklch,
-    foundation: foundationColor.value.oklch,
-    accent: accentColor.value.oklch,
-  })
-})
+const primitivePalette = siteState.primitivePalette
 
 const semanticPalette = computed(() => createSemanticFromPrimitive(primitivePalette.value))
 const primitiveRefMap = computed(() => createPrimitiveRefMap(primitivePalette.value))
@@ -135,7 +140,12 @@ const actions = computed(() => [
 // ============================================================
 // Hero Scene (WebGPU rendering with layer system)
 // ============================================================
-const heroScene = useHeroScene({ primitivePalette, isDark: uiDarkMode, layerSelection })
+const heroScene = useHeroScene({
+  primitivePalette,
+  isDark: siteState.isDark,
+  layerSelection,
+  repository: heroConfigSlice,
+})
 
 // ============================================================
 // Filter Editor (Composable)

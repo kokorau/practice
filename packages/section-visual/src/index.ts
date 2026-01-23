@@ -157,6 +157,8 @@ export type {
   RangeExpr,
   PropertyValue,
   VisualProperties,
+  HeroConfigRef,
+  ConfigRef,
   SectionVisual,
   // PropertyResolver
   PropertyResolver,

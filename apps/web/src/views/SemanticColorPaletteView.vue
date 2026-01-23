@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { $Oklch } from '@practice/color'
-import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   CONTEXT_CLASS_NAMES,
   COMPONENT_CLASS_NAMES,
@@ -10,13 +9,12 @@ import {
   ACCENT_RAMP_KEYS,
 } from '@practice/semantic-color-palette/Domain'
 import {
-  createPrimitivePalette,
   createSemanticFromPrimitive,
   createPrimitiveRefMap,
   toCSSText,
   toCSSRuleSetsText,
 } from '@practice/semantic-color-palette/Infra'
-import { useSiteColors } from '../composables/SiteBuilder'
+import { useSiteState, useSiteColorsBridge } from '../composables/SiteBuilder'
 import BrandColorPicker from '../components/SiteBuilder/BrandColorPicker.vue'
 import ColorPresets from '../components/SiteBuilder/ColorPresets.vue'
 import type { ColorPreset } from '@practice/semantic-color-palette/Domain'
@@ -31,7 +29,12 @@ type TabId = 'primitive' | 'palette' | 'contrast'
 const activeTab = ref<TabId>('primitive')
 
 // ============================================================
-// Brand, Accent & Foundation Color State
+// Site State (Source of Truth)
+// ============================================================
+const siteState = useSiteState()
+
+// ============================================================
+// Brand, Accent & Foundation Color State (Bridge to Site)
 // ============================================================
 const {
   hue,
@@ -49,7 +52,7 @@ const {
   foundationValue,
   foundationColor,
   isDark,
-} = useSiteColors()
+} = useSiteColorsBridge({ siteState })
 
 // Color popup state
 type ColorPopup = 'presets' | 'brand' | 'accent' | 'foundation' | null
@@ -76,15 +79,9 @@ const handleApplyColorPreset = (preset: ColorPreset) => {
 }
 
 // ============================================================
-// Primitive & Semantic Palette Generation
+// Primitive & Semantic Palette (from Site State)
 // ============================================================
-const primitivePalette = computed((): PrimitivePalette => {
-  return createPrimitivePalette({
-    brand: brandColor.value.oklch,
-    foundation: foundationColor.value.oklch,
-    accent: accentColor.value.oklch,
-  })
-})
+const primitivePalette = siteState.primitivePalette
 
 const semanticPalette = computed(() => createSemanticFromPrimitive(primitivePalette.value))
 const primitiveRefMap = computed(() => createPrimitiveRefMap(primitivePalette.value))

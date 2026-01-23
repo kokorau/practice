@@ -10,7 +10,7 @@
 import type { Contents } from '@practice/contents'
 import type { DesignTokens } from '@practice/design-tokens/Domain'
 import type { SectionSemantic, TemplateRegistry, SectionSchemas } from '@practice/section-semantic'
-import type { SectionVisual } from '@practice/section-visual'
+import type { SectionVisual, HeroViewConfig } from '@practice/section-visual'
 import type { Palette } from '@practice/semantic-color-palette/Domain'
 import type { SiteMeta } from '@practice/site-meta/Domain'
 import type { Timeline } from '@practice/timeline'
@@ -21,7 +21,7 @@ export type { Contents } from '@practice/contents'
 export type { SiteMeta } from '@practice/site-meta/Domain'
 export type { Palette, SeedColors } from '@practice/semantic-color-palette/Domain'
 export type { SectionSemantic, TemplateRegistry as SectionTemplates, SectionSchemas } from '@practice/section-semantic'
-export type { SectionVisual } from '@practice/section-visual'
+export type { SectionVisual, HeroViewConfig, HeroConfigRef, ConfigRef } from '@practice/section-visual'
 
 // ============================================================================
 // Branded Types
@@ -41,6 +41,19 @@ export interface Page {
   readonly id: PageUuid
   readonly sections: readonly Section[]
   readonly timeline: Timeline
+}
+
+// ============================================================================
+// Site Configs (normalized data storage)
+// ============================================================================
+
+/**
+ * 設定データの正規化ストレージ
+ * Section は configRef で参照し、実データはここに格納
+ */
+export interface SiteConfigs {
+  /** HeroViewConfig (section-visual) */
+  readonly hero: Record<string, HeroViewConfig>
 }
 
 // ============================================================================
@@ -66,6 +79,9 @@ export interface Site {
   /** セクション定義への参照 */
   readonly templates: TemplateRegistry
   readonly schemas: SectionSchemas
+
+  /** 正規化された設定データ */
+  readonly configs: SiteConfigs
 }
 
 // ============================================================================
@@ -82,4 +98,10 @@ export const $Site = {
   },
 
   getPageIds: (site: Site): PageUuid[] => Object.keys(site.pages) as PageUuid[],
+
+  // Hero Config helpers
+  getHeroConfig: (site: Site, configId: string): HeroViewConfig | undefined =>
+    site.configs.hero[configId],
+
+  getHeroConfigIds: (site: Site): string[] => Object.keys(site.configs.hero),
 } as const

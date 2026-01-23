@@ -12,7 +12,7 @@ export interface ColorPresetColors {
 }
 
 /**
- * Color state refs from useSiteColors
+ * Color state refs from useSiteColorsBridge
  */
 export interface ColorStateRefs {
   hue: Ref<number>
