@@ -4,6 +4,7 @@
  *
  * Combines Effect and Mask editing into a single component.
  * Displays different UI based on effectorType prop.
+ * Uses PresetSelector for both Effect and Mask type selection with thumbnail previews.
  */
 import { computed } from 'vue'
 import {
@@ -12,7 +13,9 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  createSingleEffectConfig,
   type FilterType,
+  type SingleEffectConfig,
 } from '@practice/section-visual'
 import type {
   ChromaticConfigParams,
@@ -25,6 +28,7 @@ import { useVignetteEditor } from '../../../composables/useVignetteEditor'
 import SchemaFields from '../../SchemaFields.vue'
 import PresetSelector from '../PresetSelector.vue'
 import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
+import EffectPatternThumbnail from '../EffectPatternThumbnail.vue'
 
 // ============================================================
 // Props
@@ -66,6 +70,93 @@ const {
 const handleFilterTypeChange = (type: FilterType) => {
   props.filterProps.selectedType.value = type
 }
+
+// ============================================================
+// Effect Patterns for PresetSelector
+// ============================================================
+
+interface EffectPatternItem {
+  label: string
+  effectType: FilterType
+  /** Pre-built SingleEffectConfig for preview */
+  effectConfig: SingleEffectConfig
+}
+
+/**
+ * Effect patterns with preview configs
+ * Each item contains the effect type and a default config for thumbnail preview
+ */
+const effectPatterns = computed<EffectPatternItem[]>(() => [
+  {
+    label: 'Vignette',
+    effectType: 'vignette' as FilterType,
+    effectConfig: createSingleEffectConfig('vignette'),
+  },
+  {
+    label: 'Chromatic Aberration',
+    effectType: 'chromaticAberration' as FilterType,
+    effectConfig: createSingleEffectConfig('chromaticAberration'),
+  },
+  {
+    label: 'Dot Halftone',
+    effectType: 'dotHalftone' as FilterType,
+    effectConfig: createSingleEffectConfig('dotHalftone'),
+  },
+  {
+    label: 'Line Halftone',
+    effectType: 'lineHalftone' as FilterType,
+    effectConfig: createSingleEffectConfig('lineHalftone'),
+  },
+  {
+    label: 'Blur',
+    effectType: 'blur' as FilterType,
+    effectConfig: createSingleEffectConfig('blur'),
+  },
+])
+
+/**
+ * Selected effect index for PresetSelector
+ * Returns null when 'void' (None) is selected
+ */
+const selectedEffectIndex = computed(() => {
+  const type = props.filterProps.selectedType.value
+  if (type === 'void') return null
+  return effectPatterns.value.findIndex(p => p.effectType === type)
+})
+
+/**
+ * Handle effect selection from PresetSelector
+ */
+const handleEffectSelect = (index: number | null) => {
+  if (index === null) {
+    props.filterProps.selectedType.value = 'void'
+  } else {
+    const pattern = effectPatterns.value[index]
+    if (pattern) {
+      props.filterProps.selectedType.value = pattern.effectType
+    }
+  }
+}
+
+/**
+ * Get the current effect config for the selected effect preview
+ */
+const currentEffectConfig = computed<SingleEffectConfig | null>(() => {
+  const index = selectedEffectIndex.value
+  if (index === null || index < 0) return null
+  return effectPatterns.value[index]?.effectConfig ?? null
+})
+
+/**
+ * Check if pipeline preview is available for effect
+ */
+const canUseEffectPipelinePreview = computed(() => {
+  return !!(
+    props.maskProps.surface &&
+    props.maskProps.palette &&
+    currentEffectConfig.value
+  )
+})
 
 // ============================================================
 // Mask Preview (for pipeline-based mini preview)
@@ -157,63 +248,37 @@ const canUsePipelinePreview = computed(() => {
         />
       </div>
 
-      <!-- Filter type selection -->
-      <div class="filter-options">
-        <label class="filter-option" :class="{ active: filterProps.selectedType.value === 'void' }">
-          <input
-            type="radio"
-            name="filter-type"
-            :checked="filterProps.selectedType.value === 'void'"
-            @change="handleFilterTypeChange('void')"
+      <!-- Effect type selection with PresetSelector -->
+      <PresetSelector
+        label="Effect"
+        :items="effectPatterns"
+        :selected-index="selectedEffectIndex"
+        :show-null-option="true"
+        null-label="None"
+        @select="handleEffectSelect"
+      >
+        <template #selected>
+          <EffectPatternThumbnail
+            v-if="canUseEffectPipelinePreview && currentEffectConfig"
+            :surface="maskProps.surface"
+            :preview-effect="currentEffectConfig"
+            :palette="maskProps.palette"
           />
-          <span class="filter-name">None</span>
-        </label>
-        <label class="filter-option" :class="{ active: filterProps.selectedType.value === 'vignette' }">
-          <input
-            type="radio"
-            name="filter-type"
-            :checked="filterProps.selectedType.value === 'vignette'"
-            @change="handleFilterTypeChange('vignette')"
+        </template>
+        <template #item="{ item, index }">
+          <EffectPatternThumbnail
+            v-if="maskProps.surface && maskProps.palette"
+            :surface="maskProps.surface"
+            :preview-effect="effectPatterns[index]?.effectConfig"
+            :palette="maskProps.palette"
           />
-          <span class="filter-name">Vignette</span>
-        </label>
-        <label class="filter-option" :class="{ active: filterProps.selectedType.value === 'chromaticAberration' }">
-          <input
-            type="radio"
-            name="filter-type"
-            :checked="filterProps.selectedType.value === 'chromaticAberration'"
-            @change="handleFilterTypeChange('chromaticAberration')"
-          />
-          <span class="filter-name">Chromatic Aberration</span>
-        </label>
-        <label class="filter-option" :class="{ active: filterProps.selectedType.value === 'dotHalftone' }">
-          <input
-            type="radio"
-            name="filter-type"
-            :checked="filterProps.selectedType.value === 'dotHalftone'"
-            @change="handleFilterTypeChange('dotHalftone')"
-          />
-          <span class="filter-name">Dot Halftone</span>
-        </label>
-        <label class="filter-option" :class="{ active: filterProps.selectedType.value === 'lineHalftone' }">
-          <input
-            type="radio"
-            name="filter-type"
-            :checked="filterProps.selectedType.value === 'lineHalftone'"
-            @change="handleFilterTypeChange('lineHalftone')"
-          />
-          <span class="filter-name">Line Halftone</span>
-        </label>
-        <label class="filter-option" :class="{ active: filterProps.selectedType.value === 'blur' }">
-          <input
-            type="radio"
-            name="filter-type"
-            :checked="filterProps.selectedType.value === 'blur'"
-            @change="handleFilterTypeChange('blur')"
-          />
-          <span class="filter-name">Blur</span>
-        </label>
-      </div>
+        </template>
+        <template #null>
+          <div class="effect-none-preview">
+            <span class="effect-none-text">No Effect</span>
+          </div>
+        </template>
+      </PresetSelector>
     </template>
 
     <!-- ============================================== -->
@@ -306,51 +371,29 @@ const canUsePipelinePreview = computed(() => {
   border-bottom-color: oklch(0.22 0.02 260);
 }
 
-.filter-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.filter-option {
+/* Effect none preview (for PresetSelector null option) */
+.effect-none-preview {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.625rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.filter-option:hover {
+  justify-content: center;
   background: oklch(0.94 0.01 260);
 }
 
-:global(.dark) .filter-option:hover {
-  background: oklch(0.20 0.02 260);
+:global(.dark) .effect-none-preview {
+  background: oklch(0.18 0.02 260);
 }
 
-.filter-option.active {
-  background: oklch(0.55 0.15 250 / 0.15);
+.effect-none-text {
+  font-size: 0.625rem;
+  color: oklch(0.50 0.02 260);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
-:global(.dark) .filter-option.active {
-  background: oklch(0.55 0.15 250 / 0.25);
-}
-
-.filter-option input[type="radio"] {
-  width: 1rem;
-  height: 1rem;
-  accent-color: oklch(0.55 0.20 250);
-}
-
-.filter-name {
-  font-size: 0.8125rem;
-  color: oklch(0.30 0.02 260);
-}
-
-:global(.dark) .filter-name {
-  color: oklch(0.85 0.02 260);
+:global(.dark) .effect-none-text {
+  color: oklch(0.55 0.02 260);
 }
 
 .color-picker-group {
