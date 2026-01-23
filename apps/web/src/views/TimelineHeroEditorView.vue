@@ -102,7 +102,6 @@ const {
   foundationSaturation,
   foundationValue,
   foundationHex,
-  foundationColor,
 } = useSiteColorsBridge({ siteState })
 
 // ============================================================
