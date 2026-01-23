@@ -38,6 +38,7 @@ import {
   type HexagonSurfaceParams,
   type DepthMapType,
 } from '@practice/texture'
+import type { HeroViewPresetRepository } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import {
   type HeroSceneConfig,
@@ -291,6 +292,8 @@ export interface UseHeroSceneOptions {
   layerSelection?: LayerSelectionReturn
   /** Lazy getter for IntensityProvider (to handle async mount order) */
   getIntensityProvider?: () => IntensityProvider | undefined
+  /** カスタムプリセットリポジトリ（省略時はデフォルトプリセット） */
+  presetRepository?: HeroViewPresetRepository
 }
 
 // ============================================================
@@ -298,7 +301,7 @@ export interface UseHeroSceneOptions {
 // ============================================================
 
 export const useHeroScene = (options: UseHeroSceneOptions) => {
-  const { primitivePalette, isDark, repository, layerSelection = createLayerSelection(), getIntensityProvider } = options
+  const { primitivePalette, isDark, repository, layerSelection = createLayerSelection(), getIntensityProvider, presetRepository } = options
 
   // ============================================================
   // Editor State (unified UI state management)
@@ -860,6 +863,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     heroViewRepository,
     editorUIState,
     fromHeroViewConfig,
+    presetRepository,
   })
 
   // Destructure for backward compatibility

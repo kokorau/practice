@@ -40,7 +40,7 @@ import testSurfaceTextMask from './presets/test-surface-text-mask.json'
 // Preset Data
 // ============================================================
 
-const PRESETS: HeroViewPreset[] = [
+const DEFAULT_PRESETS: HeroViewPreset[] = [
   // Surface + Text + Mask combined test (first for debugging)
   testSurfaceTextMask as unknown as HeroViewPreset,
   // Effect test presets (first for easy access during debugging)
@@ -75,8 +75,16 @@ const PRESETS: HeroViewPreset[] = [
 
 /**
  * インメモリプリセットリポジトリを作成
+ * @param presets - プリセット配列（デフォルトは組み込みプリセット）
  */
-export const createInMemoryHeroViewPresetRepository = (): HeroViewPresetRepository => ({
-  findAll: async () => PRESETS,
-  findById: async (id: string) => PRESETS.find((p) => p.id === id) ?? null,
+export const createInMemoryHeroViewPresetRepository = (
+  presets: HeroViewPreset[] = DEFAULT_PRESETS
+): HeroViewPresetRepository => ({
+  findAll: async () => presets,
+  findById: async (id: string) => presets.find((p) => p.id === id) ?? null,
 })
+
+/**
+ * デフォルトのプリセット配列をエクスポート（カスタムリポジトリ作成用）
+ */
+export { DEFAULT_PRESETS }
