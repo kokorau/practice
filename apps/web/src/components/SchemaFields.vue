@@ -12,12 +12,15 @@ import RangeInput from './RangeInput.vue'
 const props = defineProps<{
   schema: ObjectSchema
   modelValue: Record<string, unknown>
+  /** Raw params with PropertyValue preserved (for DSL display) */
+  rawParams?: Record<string, unknown> | null
   /** Fields to exclude from rendering (e.g., 'enabled') */
   exclude?: string[]
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: Record<string, unknown>]
+  'update:rawValue': [key: string, value: unknown]
 }>()
 
 const fields = computed<FieldMeta[]>(() => {
@@ -27,7 +30,8 @@ const fields = computed<FieldMeta[]>(() => {
 })
 
 const updateField = (key: string, value: unknown) => {
-  emit('update:modelValue', { ...props.modelValue, [key]: value })
+  // Only emit the changed field to avoid overwriting other fields' PropertyValue (DSL expressions)
+  emit('update:modelValue', { [key]: value })
 }
 </script>
 
@@ -42,7 +46,9 @@ const updateField = (key: string, value: unknown) => {
         :max="field.schema.max"
         :step="field.schema.step"
         :model-value="(modelValue[field.key] as number) ?? field.schema.default"
+        :raw-value="rawParams?.[field.key]"
         @update:model-value="updateField(field.key, $event)"
+        @update:raw-value="emit('update:rawValue', field.key, $event)"
       />
 
       <!-- Boolean field: checkbox -->

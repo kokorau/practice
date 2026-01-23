@@ -332,6 +332,7 @@ export type {
   // Usecase types
   ImageUploadPort,
   SurfaceParamsUpdate,
+  MaskShapeParamsUpdate,
   LayerUpdate,
   // Unified Surface Usecase types
   SurfaceUsecase,

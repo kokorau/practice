@@ -475,6 +475,7 @@ function stopResize() {
           selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
           surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
           surfaceParams: backgroundSurfaceParamsForUI,
+          rawSurfaceParams: heroScene.background.rawBackgroundSurfaceParams.value,
         }"
         :mask="{
           colorKey1: heroScene.mask.maskColorKey1.value,
@@ -483,10 +484,12 @@ function stopResize() {
           selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
           surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
           surfaceParams: maskSurfaceParamsForUI,
+          rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
           shapePatterns: heroScene.pattern.maskPatterns,
           selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
           shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
           shapeParams: maskShapeParamsForUI,
+          rawShapeParams: heroScene.mask.rawMaskShapeParams.value,
           outerColor: heroScene.pattern.maskOuterColor.value,
           innerColor: heroScene.pattern.maskInnerColor.value,
           createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,

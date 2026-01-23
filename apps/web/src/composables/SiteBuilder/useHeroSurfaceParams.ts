@@ -23,9 +23,8 @@ import {
   type GroupLayerNodeConfig,
   type MaskProcessorConfig,
   type ProcessorNodeConfig,
-  type NormalizedMaskConfig,
-  type NormalizedSurfaceConfig,
   type SurfaceLayerNodeConfig,
+  type BaseLayerNodeConfig,
   toCustomMaskShapeParams,
   fromCustomMaskShapeParams,
   toCustomSurfaceParams,
@@ -38,6 +37,7 @@ import {
   $PropertyValue,
   findLayerInTree,
   isSurfaceLayerConfig,
+  isBaseLayerConfig,
   getSurfaceAsNormalized,
   denormalizeSurfaceConfig,
 } from '@practice/section-visual'
@@ -52,19 +52,51 @@ import type {
 } from './useHeroScene'
 
 /**
- * Check if a normalized mask config has any RangeExpr values
- * (timeline-driven params can't be synced to UI)
+ * Type guard to check if a value is a PropertyValue object (has type field)
  */
-function hasMaskRangeValues(config: NormalizedMaskConfig): boolean {
-  return Object.values(config.params).some((prop) => $PropertyValue.isRange(prop))
+function isPropertyValueObject(value: unknown): value is { type: string } {
+  return value !== null && typeof value === 'object' && 'type' in value
 }
 
 /**
- * Check if a normalized surface config has any RangeExpr values
- * (timeline-driven params can't be synced to UI)
+ * Extract static values from normalized config params.
+ * For PropertyValue types (static/range), extract the static value or current evaluated value.
+ * For primitive values, return as-is.
  */
-function hasSurfaceRangeValues(config: NormalizedSurfaceConfig): boolean {
-  return Object.values(config.params).some((prop) => $PropertyValue.isRange(prop))
+function extractStaticValue(prop: unknown): unknown {
+  if (!isPropertyValueObject(prop)) {
+    // Primitive value (number, string, etc.)
+    return prop
+  }
+  if ($PropertyValue.isStatic(prop as unknown as Parameters<typeof $PropertyValue.isStatic>[0])) {
+    return (prop as unknown as { value: unknown }).value
+  }
+  if ($PropertyValue.isRange(prop as unknown as Parameters<typeof $PropertyValue.isRange>[0])) {
+    // For range expressions, return the 'min' value as the current static representation
+    return (prop as unknown as { min: number }).min
+  }
+  // Unknown type, return null
+  return null
+}
+
+/**
+ * Convert normalized params to static params for UI display.
+ * Returns both the static values and a flag indicating if any params have DSL expressions.
+ */
+function toStaticParams<T extends Record<string, unknown>>(
+  params: Record<string, unknown>
+): { staticParams: T; hasDSL: boolean } {
+  const staticParams: Record<string, unknown> = {}
+  let hasDSL = false
+
+  for (const [key, value] of Object.entries(params)) {
+    if (isPropertyValueObject(value) && $PropertyValue.isRange(value as Parameters<typeof $PropertyValue.isRange>[0])) {
+      hasDSL = true
+    }
+    staticParams[key] = extractStaticValue(value)
+  }
+
+  return { staticParams: staticParams as T, hasDSL }
 }
 
 // Layer ID for background
@@ -80,10 +112,19 @@ export interface UseHeroSurfaceParamsOptions {
   midgroundTextureColor2: ComputedRef<RGBA>
 }
 
+/** Raw params containing PropertyValue (static or range) - for DSL display/edit */
+export type RawParams = Record<string, unknown> | null
+
 export interface UseHeroSurfaceParamsReturn {
   customMaskShapeParams: ComputedRef<CustomMaskShapeParams | null> & { value: CustomMaskShapeParams | null }
   customSurfaceParams: ComputedRef<CustomSurfaceParams | null> & { value: CustomSurfaceParams | null }
   customBackgroundSurfaceParams: ComputedRef<CustomBackgroundSurfaceParams | null> & { value: CustomBackgroundSurfaceParams | null }
+  /** Raw params with PropertyValue preserved (for DSL display) */
+  rawMaskShapeParams: ComputedRef<RawParams>
+  rawSurfaceParams: ComputedRef<RawParams>
+  rawBackgroundSurfaceParams: ComputedRef<RawParams>
+  /** ID of the processor layer containing the mask modifier */
+  processorLayerId: ComputedRef<string | null>
   currentMaskShapeSchema: ComputedRef<ObjectSchema | null>
   currentSurfaceSchema: ComputedRef<ObjectSchema | null>
   currentBackgroundSurfaceSchema: ComputedRef<ObjectSchema | null>
@@ -140,12 +181,11 @@ export const useHeroSurfaceParams = (
       if (!maskModifier) return null
       // Normalize first (ensures consistent format), then extract static values for UI params
       const normalizedMask = getMaskAsNormalized(maskModifier.shape)
-      // Skip if config has RangeExpr values (timeline-driven params can't be synced to UI)
-      if (hasMaskRangeValues(normalizedMask)) {
-        return null
-      }
-      const staticMask = denormalizeMaskConfig(normalizedMask)
-      return toCustomMaskShapeParams(staticMask)
+      // Extract static values from params (handles RangeExpr by using 'min' value)
+      const { staticParams } = toStaticParams<Record<string, unknown>>(normalizedMask.params)
+      // Build static mask config for conversion (toCustomMaskShapeParams expects { type, ...params })
+      const staticMaskConfig = { type: normalizedMask.id, ...staticParams }
+      return toCustomMaskShapeParams(staticMaskConfig as ReturnType<typeof denormalizeMaskConfig>)
     },
     set: (val: CustomMaskShapeParams | null) => {
       if (val === null) return
@@ -178,12 +218,15 @@ export const useHeroSurfaceParams = (
           const surfaceLayer = selectedLayer as SurfaceLayerNodeConfig
           // Normalize and extract params
           const normalizedSurface = getSurfaceAsNormalized(surfaceLayer.surface)
-          // Skip if config has binding values (timeline-driven params can't be synced to UI)
-          if (hasSurfaceRangeValues(normalizedSurface)) {
-            return null
-          }
-          const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
-          return toCustomSurfaceParams(staticSurface, midgroundTextureColor1.value, midgroundTextureColor2.value)
+          // Extract static values from params (handles RangeExpr by using 'min' value)
+          const { staticParams } = toStaticParams<Record<string, unknown>>(normalizedSurface.params)
+          // Build static surface config for conversion (toCustomSurfaceParams expects { type, ...params })
+          const staticSurfaceConfig = { type: normalizedSurface.id, ...staticParams }
+          return toCustomSurfaceParams(
+            staticSurfaceConfig as ReturnType<typeof denormalizeSurfaceConfig>,
+            midgroundTextureColor1.value,
+            midgroundTextureColor2.value
+          )
         }
       }
 
@@ -227,10 +270,58 @@ export const useHeroSurfaceParams = (
     return SurfaceSchemas[customBackgroundSurfaceParams.value.id] as ObjectSchema
   })
 
+  // Processor layer ID (for mask shape updates)
+  const processorLayerId = computed((): string | null => {
+    const config = repoConfig.value
+    if (!config) return null
+    const processor = findProcessorWithMask(config.layers)
+    return processor?.id ?? null
+  })
+
+  // Raw params with PropertyValue preserved (for DSL display/edit)
+  const rawMaskShapeParams = computed((): RawParams => {
+    const config = repoConfig.value
+    if (!config) return null
+    const processor = findProcessorWithMask(config.layers)
+    if (!processor) return null
+    const maskModifier = processor.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
+    if (!maskModifier) return null
+    const normalizedMask = getMaskAsNormalized(maskModifier.shape)
+    return normalizedMask.params as RawParams
+  })
+
+  const rawSurfaceParams = computed((): RawParams => {
+    const config = repoConfig.value
+    if (!config) return null
+
+    if (selectedLayerId.value) {
+      const selectedLayer = findLayerInTree(config.layers, selectedLayerId.value)
+      if (selectedLayer && isSurfaceLayerConfig(selectedLayer)) {
+        const surfaceLayer = selectedLayer as SurfaceLayerNodeConfig
+        const normalizedSurface = getSurfaceAsNormalized(surfaceLayer.surface)
+        return normalizedSurface.params as RawParams
+      }
+    }
+    return null
+  })
+
+  const rawBackgroundSurfaceParams = computed((): RawParams => {
+    const config = repoConfig.value
+    if (!config) return null
+    const baseLayer = config.layers.find((l) => l.id === BASE_LAYER_ID)
+    if (!baseLayer || !isBaseLayerConfig(baseLayer)) return null
+    const normalizedSurface = getSurfaceAsNormalized((baseLayer as BaseLayerNodeConfig).surface)
+    return normalizedSurface.params as RawParams
+  })
+
   return {
     customMaskShapeParams,
     customSurfaceParams,
     customBackgroundSurfaceParams,
+    rawMaskShapeParams,
+    rawSurfaceParams,
+    rawBackgroundSurfaceParams,
+    processorLayerId,
     currentMaskShapeSchema,
     currentSurfaceSchema,
     currentBackgroundSurfaceSchema,

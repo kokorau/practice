@@ -18,6 +18,8 @@ const props = withDefaults(defineProps<{
   selectedIndex: number | null
   surfaceSchema: ObjectSchema | null
   surfaceParams: Record<string, unknown> | null
+  /** Raw params with PropertyValue preserved (for DSL display) */
+  rawSurfaceParams?: Record<string, unknown> | null
 }>(), {
   showAuto1: false,
   showAuto2: true,
@@ -71,6 +73,7 @@ const shouldShowSurfaceParams = (): boolean => {
       <SchemaFields
         :schema="surfaceSchema!"
         :model-value="surfaceParams!"
+        :raw-params="rawSurfaceParams"
         @update:model-value="emit('update:surfaceParams', $event)"
       />
     </div>

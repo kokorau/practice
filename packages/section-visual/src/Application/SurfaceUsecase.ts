@@ -12,6 +12,9 @@ import type {
   LayerNodeConfig,
   DepthMapType,
   SurfaceColorsConfig,
+  ProcessorNodeConfig,
+  MaskProcessorConfig,
+  MaskShapeTypeId,
 } from '../Domain/HeroViewConfig'
 import { DEFAULT_LAYER_BACKGROUND_COLORS, DEFAULT_LAYER_MASK_COLORS } from '../Domain/HeroViewConfig'
 import type { PropertyValue } from '../Domain/SectionVisual'
@@ -86,6 +89,15 @@ export type SurfaceParamsUpdate =
       sparsity?: number
     }
 
+/**
+ * マスク形状パラメータの更新型
+ * id はマスク形状タイプの識別子
+ */
+export type MaskShapeParamsUpdate = {
+  id: MaskShapeTypeId
+  [key: string]: string | number | boolean | undefined
+}
+
 // ============================================================
 // Interface
 // ============================================================
@@ -116,6 +128,20 @@ export interface SurfaceUsecase {
    * @param params 更新するパラメータ
    */
   updateSurfaceParams(params: SurfaceParamsUpdate): void
+
+  /**
+   * 指定レイヤーのサーフェスパラメータを更新
+   * @param layerId レイヤーID
+   * @param params 更新するパラメータ
+   */
+  updateSurfaceParamsForLayer(layerId: string, params: SurfaceParamsUpdate): void
+
+  /**
+   * 指定プロセッサーレイヤーのマスク形状パラメータを更新
+   * @param processorId プロセッサーレイヤーID
+   * @param params 更新するパラメータ
+   */
+  updateMaskShapeParams(processorId: string, params: MaskShapeParamsUpdate): void
 
   /**
    * カラーキーを更新
@@ -200,7 +226,10 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
     updateSurfaceParams(params: SurfaceParamsUpdate): void {
       const layerId = getSelectedLayerId()
       if (!layerId) return
+      this.updateSurfaceParamsForLayer(layerId, params)
+    },
 
+    updateSurfaceParamsForLayer(layerId: string, params: SurfaceParamsUpdate): void {
       const layer = repository.findLayer(layerId)
       if (!layer) return
 
@@ -217,6 +246,40 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
         params: { ...currentSurface.params, ...toPropertyValueParams(updateParams) },
       }
       repository.updateLayer(layerId, { surface: newSurface })
+    },
+
+    updateMaskShapeParams(processorId: string, params: MaskShapeParamsUpdate): void {
+      const layer = repository.findLayer(processorId)
+      if (!layer) return
+
+      // processor layer のみ対応
+      if (layer.type !== 'processor') return
+
+      const processorLayer = layer as ProcessorNodeConfig
+      const maskModifierIndex = processorLayer.modifiers.findIndex(
+        (m): m is MaskProcessorConfig => m.type === 'mask'
+      )
+      if (maskModifierIndex === -1) return
+
+      const maskModifier = processorLayer.modifiers[maskModifierIndex] as MaskProcessorConfig
+      const currentShape = maskModifier.shape
+      if (currentShape.id !== params.id) return
+
+      // Extract params without 'id' field and convert to PropertyValue
+      const { id: _id, ...updateParams } = params
+      const newShape = {
+        id: currentShape.id,
+        params: { ...currentShape.params, ...toPropertyValueParams(updateParams) },
+      }
+
+      // Update modifiers array
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[maskModifierIndex] = {
+        ...maskModifier,
+        shape: newShape,
+      }
+
+      repository.updateLayer(processorId, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
     },
 
     updateColorKey(key: 'primary' | 'secondary', value: HeroPrimitiveKey | 'auto'): void {
