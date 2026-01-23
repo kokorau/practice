@@ -24,6 +24,8 @@ import {
   type MaskProcessorConfig,
   type ProcessorNodeConfig,
   type NormalizedMaskConfig,
+  type NormalizedSurfaceConfig,
+  type SurfaceLayerNodeConfig,
   toCustomMaskShapeParams,
   fromCustomMaskShapeParams,
   toCustomSurfaceParams,
@@ -34,6 +36,10 @@ import {
   normalizeMaskConfig,
   normalizeSurfaceConfig,
   $PropertyValue,
+  findLayerInTree,
+  isSurfaceLayerConfig,
+  getSurfaceAsNormalized,
+  denormalizeSurfaceConfig,
 } from '@practice/section-visual'
 // Internal import for denormalize function (not part of public API)
 import { getMaskAsNormalized, denormalizeMaskConfig } from '@practice/section-visual'
@@ -51,6 +57,13 @@ import type {
  */
 function hasMaskRangeValues(config: NormalizedMaskConfig): boolean {
   return Object.values(config.params).some((prop) => $PropertyValue.isRange(prop))
+}
+
+/**
+ * Check if a normalized surface config has any binding values
+ */
+function hasSurfaceBindingValues(config: NormalizedSurfaceConfig): boolean {
+  return Object.values(config.params).some((prop) => $PropertyValue.isBinding(prop))
 }
 
 // Layer ID for background
@@ -154,7 +167,31 @@ export const useHeroSurfaceParams = (
 
   const customSurfaceParams = computed({
     get: (): CustomSurfaceParams | null => {
-      const result = syncMaskSurfaceParams(repoConfig.value, midgroundTextureColor1.value, midgroundTextureColor2.value)
+      const config = repoConfig.value
+      if (!config) return null
+
+      // If a layer is selected, try to get surface params from that layer
+      if (selectedLayerId.value) {
+        const selectedLayer = findLayerInTree(config.layers, selectedLayerId.value)
+        if (selectedLayer && isSurfaceLayerConfig(selectedLayer)) {
+          const surfaceLayer = selectedLayer as SurfaceLayerNodeConfig
+          // Image type is handled separately
+          if (surfaceLayer.surface.id === 'image') {
+            return null
+          }
+          // Normalize and extract params
+          const normalizedSurface = getSurfaceAsNormalized(surfaceLayer.surface)
+          // Skip if config has binding values (timeline-driven params can't be synced to UI)
+          if (hasSurfaceBindingValues(normalizedSurface)) {
+            return null
+          }
+          const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
+          return toCustomSurfaceParams(staticSurface, midgroundTextureColor1.value, midgroundTextureColor2.value)
+        }
+      }
+
+      // Fallback: use syncMaskSurfaceParams for default behavior
+      const result = syncMaskSurfaceParams(config, midgroundTextureColor1.value, midgroundTextureColor2.value)
       return result.surfaceParams
     },
     set: (val: CustomSurfaceParams | null) => {
