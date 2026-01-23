@@ -67,9 +67,7 @@ const {
   handleColorChange,
 } = useVignetteEditor({ vignetteConfig: props.filterProps.vignetteConfig })
 
-const handleFilterTypeChange = (type: FilterType) => {
-  props.filterProps.selectedType.value = type
-}
+// Note: handleFilterTypeChange removed - using handleEffectSelect with PresetSelector instead
 
 // ============================================================
 // Effect Patterns for PresetSelector
@@ -265,11 +263,11 @@ const canUsePipelinePreview = computed(() => {
             :palette="maskProps.palette"
           />
         </template>
-        <template #item="{ item, index }">
+        <template #item="{ item }">
           <EffectPatternThumbnail
             v-if="maskProps.surface && maskProps.palette"
             :surface="maskProps.surface"
-            :preview-effect="effectPatterns[index]?.effectConfig"
+            :preview-effect="(item as EffectPatternItem).effectConfig"
             :palette="maskProps.palette"
           />
         </template>
@@ -290,7 +288,7 @@ const canUsePipelinePreview = computed(() => {
         <MaskPatternThumbnail
           :surface="maskProps.surface"
           :processor="maskProps.processor"
-          :preview-mask="currentMaskConfig"
+          :preview-mask="currentMaskConfig ?? undefined"
           :palette="maskProps.palette"
           :create-background-spec="maskProps.createBackgroundThumbnailSpec"
           :create-mask-spec="maskProps.shapePatterns[maskProps.selectedShapeIndex!]?.createSpec"
