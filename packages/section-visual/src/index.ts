@@ -309,6 +309,10 @@ export {
   // PropertyResolver
   createPropertyResolver,
   resolveHeroViewConfig,
+  // HeroViewPreset helpers
+  isStaticPreset,
+  isAnimatedPreset,
+  getPresetConfig,
 } from './Domain'
 
 // Application
@@ -420,6 +424,7 @@ export type { RenderHeroConfigOptions, TextureRendererLike } from './Infra'
 export {
   // Preset Repository
   createInMemoryHeroViewPresetRepository,
+  DEFAULT_PRESETS,
   // Preset Export
   createBrowserPresetExporter,
   // 3D Object Renderer

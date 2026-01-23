@@ -4,7 +4,7 @@
  * WebGPU実装とリポジトリ実装
  */
 
-export { createInMemoryHeroViewPresetRepository } from './InMemoryHeroViewPresetRepository'
+export { createInMemoryHeroViewPresetRepository, DEFAULT_PRESETS } from './InMemoryHeroViewPresetRepository'
 export { createHeroViewInMemoryRepository } from './HeroViewInMemoryRepository'
 export { createHeroEditorInMemoryRepository } from './HeroEditorInMemoryRepository'
 export type { CreateHeroEditorRepositoryOptions } from './HeroEditorInMemoryRepository'

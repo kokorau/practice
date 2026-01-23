@@ -738,6 +738,12 @@ export type {
   HeroViewPreset,
 } from './HeroViewPreset'
 
+export {
+  isStaticPreset,
+  isAnimatedPreset,
+  getPresetConfig,
+} from './HeroViewPreset'
+
 // ============================================================
 // Reverse Lookup Utilities
 // ============================================================

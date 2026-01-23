@@ -11,7 +11,7 @@ import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import { TextureRenderer } from '@practice/texture'
 import type { HeroViewPreset } from '@practice/section-visual'
-import { renderHeroConfig } from '@practice/section-visual'
+import { renderHeroConfig, getPresetConfig, isAnimatedPreset } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
 import { hsvToRgb } from '../SiteBuilder/utils/colorConversion'
@@ -86,7 +86,8 @@ const getOklchFromPalette = (palette: PrimitivePalette, key: string): Oklch => {
  * Compile foreground layout for a preset
  */
 const getPresetForeground = (preset: HeroViewPreset) => {
-  const fg = preset.config.foreground ?? DEFAULT_FOREGROUND_CONFIG
+  const config = getPresetConfig(preset)
+  const fg = config?.foreground ?? DEFAULT_FOREGROUND_CONFIG
   return compileForegroundLayout(fg as ForegroundConfig)
 }
 
@@ -94,7 +95,8 @@ const getPresetForeground = (preset: HeroViewPreset) => {
  * Get ink color for foreground text based on semantic context
  */
 const getPresetInkColor = (preset: HeroViewPreset, palette: PrimitivePalette): string => {
-  const context = preset.config.colors?.semanticContext ?? 'canvas'
+  const config = getPresetConfig(preset)
+  const context = config?.colors?.semanticContext ?? 'canvas'
   // Simple heuristic: use dark ink for light contexts, light ink for dark contexts
   const foundationL = getOklchFromPalette(palette, 'F0').L
   const isLight = foundationL > 0.5
@@ -133,17 +135,25 @@ const setCanvasRef = (presetId: string, el: HTMLCanvasElement | null) => {
 
 /**
  * Render preset using shared renderHeroConfig function
+ * Note: Animated presets use $PropertyValue bindings that can't be rendered statically,
+ * so we skip canvas rendering for them (foreground text preview is still shown)
  */
 const renderPreset = async (presetId: string) => {
   const renderer = renderers.value.get(presetId)
   const preset = props.presets.find(p => p.id === presetId)
   if (!renderer || !preset) return
 
+  // Skip canvas rendering for animated presets (they use $PropertyValue bindings)
+  if (isAnimatedPreset(preset)) return
+
   const palette = createPaletteFromPreset(preset)
   if (!palette) return
 
+  const config = getPresetConfig(preset)
+  if (!config) return
+
   // Use shared renderHeroConfig with scale for preview size
-  await renderHeroConfig(renderer, preset.config, palette, {
+  await renderHeroConfig(renderer, config, palette, {
     scale: TEXTURE_SCALE,
   })
 }
@@ -188,6 +198,19 @@ const presetLayouts = computed(() => {
   return result
 })
 
+// Computed background colors for animated presets (using foundation color)
+const presetBackgroundColors = computed(() => {
+  const result = new Map<string, string>()
+  for (const preset of props.presets) {
+    if (isAnimatedPreset(preset) && preset.colorPreset) {
+      const { foundation } = preset.colorPreset
+      const [r, g, b] = hsvToRgb(foundation.hue, foundation.saturation, foundation.value)
+      result.set(preset.id, `rgb(${r}, ${g}, ${b})`)
+    }
+  }
+  return result
+})
+
 onMounted(() => {
   setTimeout(initRenderers, 50)
 })
@@ -217,6 +240,7 @@ watch(() => props.presets, async () => {
           <canvas
             :ref="(el) => setCanvasRef(preset.id, el as HTMLCanvasElement)"
             class="preset-canvas"
+            :style="presetBackgroundColors.get(preset.id) ? { background: presetBackgroundColors.get(preset.id) } : undefined"
           />
           <!-- HTML overlay for foreground text -->
           <div class="preset-foreground foreground-grid">

@@ -12,6 +12,7 @@
 import type { HeroViewPresetRepository } from './ports/HeroViewPresetRepository'
 import type { HeroViewRepository } from '../Domain/repository/HeroViewRepository'
 import type { HeroViewPreset } from '../Domain/HeroViewPreset'
+import { getPresetConfig } from '../Domain/HeroViewPreset'
 import type { LayerNodeConfig } from '../Domain/HeroViewConfig'
 import type { PresetExportPort } from '../usecase/Preset/PresetExportPort'
 import type { ExportPresetOptions } from '../usecase/Preset/exportPreset'
@@ -158,10 +159,15 @@ export class PresetManager {
    *
    * Note: colorPreset is returned to the caller for UI state updates.
    * Brand/accent/foundation are no longer stored in config.colors.
+   *
+   * Supports both static presets (config) and animated presets (createConfig).
    */
   private applyPresetReplace(preset: HeroViewPreset): void {
+    const config = getPresetConfig(preset)
+    if (!config) return
+
     // Set the complete config
-    this.heroViewRepository.set(preset.config)
+    this.heroViewRepository.set(config)
   }
 
   /**
@@ -169,15 +175,20 @@ export class PresetManager {
    *
    * Note: colorPreset is returned to the caller for UI state updates.
    * Brand/accent/foundation are no longer stored in config.colors.
+   *
+   * Supports both static presets (config) and animated presets (createConfig).
    */
   private applyPresetMerge(preset: HeroViewPreset): void {
+    const presetConfig = getPresetConfig(preset)
+    if (!presetConfig) return
+
     const currentConfig = this.heroViewRepository.get()
 
     // Extract custom layers from current config
     const customLayers = currentConfig.layers.filter(isCustomLayer)
 
     // Get template layers from preset
-    const presetTemplateLayers = preset.config.layers.filter(isTemplateLayer)
+    const presetTemplateLayers = presetConfig.layers.filter(isTemplateLayer)
 
     // Merge: preset template layers + current custom layers
     const mergedLayers: LayerNodeConfig[] = [
@@ -187,7 +198,7 @@ export class PresetManager {
 
     // Apply merged config
     this.heroViewRepository.set({
-      ...preset.config,
+      ...presetConfig,
       layers: mergedLayers,
     })
   }

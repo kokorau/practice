@@ -12,6 +12,7 @@ import {
   type HeroViewConfig,
   type HeroViewPreset,
   type HeroViewRepository,
+  type HeroViewPresetRepository,
   type ExportPresetOptions,
   type MergeMode,
   type HeroEditorUIState,
@@ -19,12 +20,16 @@ import {
   createInMemoryHeroViewPresetRepository,
   createBrowserPresetExporter,
   createPresetManager,
+  getPresetConfig,
+  isAnimatedPreset,
 } from '@practice/section-visual'
 
 export interface UseHeroPresetsOptions {
   heroViewRepository: HeroViewRepository
   editorUIState: Ref<HeroEditorUIState>
   fromHeroViewConfig: (config: HeroViewConfig) => Promise<void>
+  /** カスタムプリセットリポジトリ（省略時はデフォルトプリセット） */
+  presetRepository?: HeroViewPresetRepository
 }
 
 export interface UseHeroPresetsReturn {
@@ -46,12 +51,13 @@ export const useHeroPresets = (
     heroViewRepository,
     editorUIState,
     fromHeroViewConfig,
+    presetRepository: customPresetRepository,
   } = options
 
   // ============================================================
   // Preset Manager Initialization
   // ============================================================
-  const presetRepository = createInMemoryHeroViewPresetRepository()
+  const presetRepository = customPresetRepository ?? createInMemoryHeroViewPresetRepository()
   const presetExportAdapter = createBrowserPresetExporter()
   const presetManager = createPresetManager({
     presetRepository,
@@ -82,11 +88,25 @@ export const useHeroPresets = (
   // ============================================================
   const loadPresets = async (applyInitial = true) => {
     presets.value = await presetManager.getPresets()
-    if (applyInitial && selectedPresetId.value) {
-      const preset = await presetManager.applyPreset(selectedPresetId.value)
-      if (preset) {
-        await fromHeroViewConfig(preset.config)
-        return preset.colorPreset ?? null
+    if (applyInitial) {
+      // Use selected preset if it exists in loaded presets, otherwise fall back to first preset
+      const currentId = selectedPresetId.value
+      const existsInPresets = currentId && presets.value.some(p => p.id === currentId)
+      const presetIdToApply = existsInPresets ? currentId : presets.value[0]?.id
+      if (presetIdToApply) {
+        const preset = await presetManager.applyPreset(presetIdToApply)
+        if (preset) {
+          selectedPresetId.value = presetIdToApply
+          // Skip fromHeroViewConfig for animated presets (they use $PropertyValue bindings)
+          // The config is already set by presetManager.applyPreset via getPresetConfig
+          if (!isAnimatedPreset(preset)) {
+            const config = getPresetConfig(preset)
+            if (config) {
+              await fromHeroViewConfig(config)
+            }
+          }
+          return preset.colorPreset ?? null
+        }
       }
     }
     return null
@@ -96,7 +116,14 @@ export const useHeroPresets = (
     const preset = await presetManager.applyPreset(presetId, mergeMode)
     if (preset) {
       selectedPresetId.value = presetId
-      await fromHeroViewConfig(preset.config)
+      // Skip fromHeroViewConfig for animated presets (they use $PropertyValue bindings)
+      // The config is already set by presetManager.applyPreset via getPresetConfig
+      if (!isAnimatedPreset(preset)) {
+        const config = getPresetConfig(preset)
+        if (config) {
+          await fromHeroViewConfig(config)
+        }
+      }
       return preset.colorPreset ?? null
     }
     return null
