@@ -93,9 +93,9 @@ export class SurfaceRenderNode extends BaseTextureOwner implements RenderNode, T
       return this.createTextureHandle(viewport)
     }
 
-    // Resolve colors from palette
-    const color1 = getColorFromPalette(palette, this.colors.primary)
-    const color2 = getColorFromPalette(palette, this.colors.secondary)
+    // Resolve colors: use pre-resolved color if available, otherwise lookup from palette
+    const color1 = this.colors.primaryColor ?? getColorFromPalette(palette, this.colors.primary)
+    const color2 = this.colors.secondaryColor ?? getColorFromPalette(palette, this.colors.secondary)
 
     // Create the texture render spec
     const spec = createBackgroundSpecFromSurface(

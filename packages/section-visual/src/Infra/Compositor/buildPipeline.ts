@@ -46,7 +46,10 @@ import { createImageRenderNode } from './nodes/ImageRenderNode'
 import {
   isDarkTheme,
   getMaskSurfaceKey,
+  getOklchFromPalette,
 } from '../../Domain/ColorHelpers'
+import { $Oklch } from '@practice/color'
+import type { ResolvedRGBA } from '../../Domain/Compositor'
 
 // ============================================================
 // Pipeline Build Context
@@ -207,6 +210,40 @@ function extractEffectParams(params: Record<string, unknown>): Record<string, un
 // ============================================================
 
 /**
+ * Luminance delta for auto color calculation.
+ * Creates visible contrast for patterns on mask/midground surfaces.
+ */
+const AUTO_COLOR_DELTA_L = 0.12
+
+/**
+ * Convert Oklch to ResolvedRGBA
+ */
+function oklchToRgba(oklch: { L: number; C: number; H: number }, alpha = 1): ResolvedRGBA {
+  const srgb = $Oklch.toSrgb(oklch)
+  return [
+    Math.max(0, Math.min(1, srgb.r)),
+    Math.max(0, Math.min(1, srgb.g)),
+    Math.max(0, Math.min(1, srgb.b)),
+    alpha,
+  ]
+}
+
+/**
+ * Calculate auto color with luminance shift for mask/midground surfaces.
+ * Applies the same logic as useHeroColors.midgroundTextureColor1.
+ */
+function calculateAutoColor(
+  palette: PrimitivePalette,
+  maskSurfaceKey: string,
+  isDark: boolean
+): ResolvedRGBA {
+  const surface = getOklchFromPalette(palette, maskSurfaceKey)
+  const deltaL = isDark ? AUTO_COLOR_DELTA_L : -AUTO_COLOR_DELTA_L
+  const shifted = { L: surface.L + deltaL, C: surface.C, H: surface.H }
+  return oklchToRgba(shifted)
+}
+
+/**
  * Build a surface render node from layer config
  */
 function buildSurfaceNode(
@@ -225,10 +262,16 @@ function buildSurfaceNode(
     : colors.primary
   const secondary = resolveAutoColor(colors.secondary, ctx.maskSurfaceKey)
 
+  // Calculate pre-resolved color for 'auto' primary on mask/midground surfaces
+  // This applies luminance shift to match useHeroColors.midgroundTextureColor1
+  const primaryColor = layer.type === 'surface' && colors.primary === 'auto'
+    ? calculateAutoColor(ctx.palette, ctx.maskSurfaceKey, ctx.isDark)
+    : undefined
+
   return createSurfaceRenderNode(
     id,
     layer.surface,
-    { primary, secondary }
+    { primary, secondary, primaryColor }
   )
 }
 

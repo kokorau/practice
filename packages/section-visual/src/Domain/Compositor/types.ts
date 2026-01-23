@@ -237,9 +237,21 @@ export interface RGBA {
 }
 
 /**
+ * Pre-resolved RGBA color value (values in 0-1 range).
+ * Used when color cannot be resolved from a palette key alone (e.g., 'auto' with luminance shift).
+ */
+export type ResolvedRGBA = [number, number, number, number]
+
+/**
  * Color key pair for surface rendering.
+ * Keys are resolved from the palette at render time.
+ * Optional pre-resolved colors take precedence over key lookup.
  */
 export interface ColorKeyPair {
   primary: string
   secondary: string
+  /** Pre-resolved color for primary (bypasses palette lookup when set) */
+  primaryColor?: ResolvedRGBA
+  /** Pre-resolved color for secondary (bypasses palette lookup when set) */
+  secondaryColor?: ResolvedRGBA
 }
