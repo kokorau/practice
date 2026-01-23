@@ -60,10 +60,11 @@ function hasMaskRangeValues(config: NormalizedMaskConfig): boolean {
 }
 
 /**
- * Check if a normalized surface config has any binding values
+ * Check if a normalized surface config has any RangeExpr values
+ * (timeline-driven params can't be synced to UI)
  */
-function hasSurfaceBindingValues(config: NormalizedSurfaceConfig): boolean {
-  return Object.values(config.params).some((prop) => $PropertyValue.isBinding(prop))
+function hasSurfaceRangeValues(config: NormalizedSurfaceConfig): boolean {
+  return Object.values(config.params).some((prop) => $PropertyValue.isRange(prop))
 }
 
 // Layer ID for background
@@ -182,7 +183,7 @@ export const useHeroSurfaceParams = (
           // Normalize and extract params
           const normalizedSurface = getSurfaceAsNormalized(surfaceLayer.surface)
           // Skip if config has binding values (timeline-driven params can't be synced to UI)
-          if (hasSurfaceBindingValues(normalizedSurface)) {
+          if (hasSurfaceRangeValues(normalizedSurface)) {
             return null
           }
           const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
