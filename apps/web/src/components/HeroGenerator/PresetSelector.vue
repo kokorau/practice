@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends PresetItem">
 /**
  * PresetSelector
  *
@@ -17,7 +17,7 @@ const props = defineProps<{
   /** Section label */
   label: string
   /** All preset items */
-  items: PresetItem[]
+  items: T[]
   /** Currently selected index (null for solid/none) */
   selectedIndex: number | null
   /** Label for the null/none option */

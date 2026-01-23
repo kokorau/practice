@@ -88,14 +88,14 @@ const shouldShowSurfaceParams = (): boolean => {
         <template #selected>
           <PatternThumbnail
             v-if="selectedIndex !== null && patterns[selectedIndex]"
-            :create-spec="patterns[selectedIndex].createSpec"
+            :create-spec="patterns[selectedIndex]!.createSpec"
           />
           <span v-else class="solid-preview">Solid</span>
         </template>
         <template #null>
           <span class="solid-preview">Solid</span>
         </template>
-        <template #item="{ item }: { item: PatternItem }">
+        <template #item="{ item }">
           <PatternThumbnail :create-spec="item.createSpec" />
         </template>
       </PresetSelector>

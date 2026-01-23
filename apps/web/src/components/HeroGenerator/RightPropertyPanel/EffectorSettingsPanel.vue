@@ -24,7 +24,6 @@ import { useVignetteEditor } from '../../../composables/useVignetteEditor'
 import SchemaFields from '../../SchemaFields.vue'
 import PresetSelector from '../PresetSelector.vue'
 import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
-import type { MaskPatternItem } from './MaskSettingsPanel.vue'
 
 // ============================================================
 // Props
@@ -219,7 +218,7 @@ const handleFilterTypeChange = (type: FilterType) => {
             :mask-color2="maskProps.innerColor"
           />
         </template>
-        <template #item="{ item }: { item: MaskPatternItem }">
+        <template #item="{ item }">
           <MaskPatternThumbnail
             :create-background-spec="maskProps.createBackgroundThumbnailSpec"
             :create-mask-spec="item.createSpec"
