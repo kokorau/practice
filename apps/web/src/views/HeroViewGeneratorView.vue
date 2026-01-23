@@ -345,6 +345,7 @@ const {
     addMaskLayer: heroScene.layer.addMaskLayer,
     addTextLayer: heroScene.layer.addTextLayer,
     addObjectLayer: heroScene.layer.addObjectLayer,
+    addImageLayer: heroScene.layer.addImageLayer,
     addGroupLayer: heroScene.layer.addGroupLayer,
     removeLayer: heroScene.layer.removeLayer,
     toggleLayerVisibility: heroScene.layer.toggleLayerVisibility,
