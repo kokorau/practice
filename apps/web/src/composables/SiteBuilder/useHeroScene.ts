@@ -45,6 +45,7 @@ import {
   type HeroViewConfig,
   type LayerNodeConfig,
   type GroupLayerNodeConfig,
+  type SurfaceLayerNodeConfig,
   type TextLayerNodeConfigType,
   type Model3DLayerNodeConfig,
   type ImageLayerNodeConfig,
@@ -539,8 +540,19 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
 
   const addMaskLayer = (): string | null => {
-    console.warn('addMaskLayer: Multiple clip groups are not yet supported')
-    return null
+    const id = `surface-${Date.now()}`
+    const surfaceLayerConfig: SurfaceLayerNodeConfig = {
+      type: 'surface',
+      id,
+      name: 'Surface',
+      visible: true,
+      surface: { id: 'solid', params: {} },
+      colors: { primary: 'B', secondary: 'auto' },
+    }
+    layerUsecase.addLayer(surfaceLayerConfig)
+    heroFilters.effectManager.setEffectConfig(id, createDefaultEffectConfig())
+    render()
+    return id
   }
 
   const addTextLayer = (options?: Partial<{
