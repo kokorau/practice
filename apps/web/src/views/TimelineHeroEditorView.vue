@@ -14,6 +14,11 @@ import {
   useHeroScene,
   createSurfacePatterns,
 } from '../composables/SiteBuilder'
+import {
+  isBaseLayerConfig,
+  isSurfaceLayerConfig,
+  findLayerInTree,
+} from '@practice/section-visual'
 import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useFilterEditor } from '../composables/useFilterEditor'
@@ -276,7 +281,12 @@ const {
   onSelectProcessor: (layerId, type) => {
     selectProcessor(layerId, type)
     if (type === 'effect') {
-      heroScene.filter.effectManager.selectLayer(layerId)
+      // Find layer directly from layerId (selectedLayer.value may not be updated yet)
+      const layer = findLayerInTree(layers.value, layerId)
+      // Only Base and Surface layers support effects
+      if (layer && (isBaseLayerConfig(layer) || isSurfaceLayerConfig(layer))) {
+        heroScene.filter.effectManager.selectLayer(layer.id)
+      }
     }
   },
   onClearSelection: () => selectCanvasLayer(''),
