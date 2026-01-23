@@ -1,6 +1,6 @@
 import type { Timeline } from './Timeline'
 import type { TimelinePlayer, FrameState } from './Player'
-import type { ParamId } from './Track'
+import type { ParamId, TrackId } from './Track'
 import type { Ms } from './Unit'
 import type { PhaseId } from './Phase'
 import { evaluate, parse } from '@practice/dsl'
@@ -85,6 +85,7 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
 
     // Evaluate all tracks
     const params: Record<ParamId, number> = {}
+    const intensities: Record<TrackId, number> = {}
 
     for (const track of timeline.tracks) {
       // Get phase boundary for this track
@@ -111,11 +112,14 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
       // Evaluate the DSL expression with time context
       const value = evaluate(ast, { t: trackTime })
       params[track.targetParam] = value
+      // Store the evaluated value as intensity for this track
+      intensities[track.id] = value
     }
 
     return {
       time: playhead,
       params,
+      intensities,
     }
   }
 

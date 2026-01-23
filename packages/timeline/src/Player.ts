@@ -1,9 +1,11 @@
 import type { Ms } from './Unit'
-import type { ParamId } from './Track'
+import type { ParamId, TrackId } from './Track'
 
 export interface FrameState {
   time: Ms
   params: Record<ParamId, number>
+  /** Raw intensity values (0-1) for each track */
+  intensities: Record<TrackId, number>
 }
 
 export interface TimelinePlayer {

@@ -16,7 +16,7 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
   // State
   const playhead = ref<Ms>(0 as Ms)
   const isPlaying = ref(false)
-  const frameState = ref<FrameState>({ time: 0, params: {} })
+  const frameState = ref<FrameState>({ time: 0, params: {}, intensities: {} })
 
   // Player instance
   const player = createTimelinePlayer({ timeline })

@@ -1,5 +1,5 @@
-import type { ParamResolver as TimelineParamResolver } from '@practice/timeline'
-import type { PropertyValue } from './SectionVisual'
+import type { ParamResolver as TimelineParamResolver, IntensityProvider } from '@practice/timeline'
+import type { PropertyValue, RangeExpr } from './SectionVisual'
 import { $PropertyValue } from './SectionVisual'
 import type {
   HeroViewConfig,
@@ -36,7 +36,21 @@ export interface PropertyResolver {
 }
 
 /**
- * PropertyResolver を作成
+ * Resolve a RangeExpr using an IntensityProvider
+ */
+function resolveRangeExpr(expr: RangeExpr, intensityProvider: IntensityProvider): number {
+  const intensity = intensityProvider.get(expr.trackId) ?? 0
+  let value = expr.min + intensity * (expr.max - expr.min)
+
+  if (expr.clamp) {
+    value = Math.max(expr.min, Math.min(expr.max, value))
+  }
+
+  return value
+}
+
+/**
+ * PropertyResolver を作成 (ParamResolver ベース)
  *
  * @param paramResolver - ParamResolver from @practice/timeline (contains resolved values)
  */
@@ -48,9 +62,18 @@ export function createPropertyResolver(paramResolver: TimelineParamResolver): Pr
       }
 
       // BindingValue: ParamResolver から解決済みの値を取得
-      const resolvedValue = paramResolver.get(prop.paramId)
-      if (resolvedValue !== undefined) {
-        return resolvedValue
+      if ($PropertyValue.isBinding(prop)) {
+        const resolvedValue = paramResolver.get(prop.paramId)
+        if (resolvedValue !== undefined) {
+          return resolvedValue
+        }
+        return 0
+      }
+
+      // RangeExpr は ParamResolver ベースでは解決できない (IntensityProvider が必要)
+      // Fallback: 未解決の場合は min を返す
+      if ($PropertyValue.isRange(prop)) {
+        return prop.min
       }
 
       // Fallback: 未解決の場合は 0 を返す
@@ -71,6 +94,63 @@ export function createPropertyResolver(paramResolver: TimelineParamResolver): Pr
         if ($PropertyValue.isBinding(prop)) {
           deps.add(prop.paramId)
         }
+        // RangeExpr は trackId を依存として登録
+        if ($PropertyValue.isRange(prop)) {
+          deps.add(prop.trackId)
+        }
+      }
+      return deps
+    },
+  }
+}
+
+/**
+ * PropertyResolver を作成 (IntensityProvider ベース)
+ *
+ * IntensityProvider から直接 intensity (0-1) を取得し、
+ * RangeExpr を解決する新しい方式。
+ *
+ * @param intensityProvider - IntensityProvider from @practice/timeline
+ */
+export function createPropertyResolverWithIntensities(
+  intensityProvider: IntensityProvider
+): PropertyResolver {
+  return {
+    resolve(prop: PropertyValue): number | string | boolean {
+      if ($PropertyValue.isStatic(prop)) {
+        return prop.value
+      }
+
+      // RangeExpr: IntensityProvider から intensity を取得してマッピング
+      if ($PropertyValue.isRange(prop)) {
+        return resolveRangeExpr(prop, intensityProvider)
+      }
+
+      // Legacy BindingValue はサポートしない
+      if ($PropertyValue.isBinding(prop)) {
+        console.warn(
+          `[PropertyResolver] BindingValue is not supported with IntensityProvider. Use RangeExpr instead. paramId=${prop.paramId}`
+        )
+        return 0
+      }
+
+      return 0
+    },
+
+    resolveAll(params: Record<string, PropertyValue>): Record<string, number | string | boolean> {
+      const result: Record<string, number | string | boolean> = {}
+      for (const [key, prop] of Object.entries(params)) {
+        result[key] = this.resolve(prop)
+      }
+      return result
+    },
+
+    getDependencies(params: Record<string, PropertyValue>): Set<string> {
+      const deps = new Set<string>()
+      for (const prop of Object.values(params)) {
+        if ($PropertyValue.isRange(prop)) {
+          deps.add(prop.trackId)
+        }
       }
       return deps
     },
@@ -89,7 +169,7 @@ function isPropertyValue(value: unknown): value is PropertyValue {
     typeof value === 'object' &&
     value !== null &&
     'type' in value &&
-    (value.type === 'static' || value.type === 'binding')
+    (value.type === 'static' || value.type === 'binding' || value.type === 'range')
   )
 }
 

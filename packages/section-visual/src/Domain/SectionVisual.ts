@@ -21,7 +21,25 @@ export interface BindingValue {
   readonly paramId: string
 }
 
-export type PropertyValue = StaticValue | BindingValue
+/**
+ * RangeExpr - Timeline トラックの intensity (0-1) を任意の範囲にマッピングする式
+ *
+ * 例: { type: 'range', trackId: 'track-mask-radius', min: 0.1, max: 0.45 }
+ * → intensity 0 → 0.1, intensity 1 → 0.45
+ */
+export interface RangeExpr {
+  readonly type: 'range'
+  /** Timeline トラックID */
+  readonly trackId: string
+  /** intensity=0 のときの値 */
+  readonly min: number
+  /** intensity=1 のときの値 */
+  readonly max: number
+  /** min/max の範囲外の値をクランプするか (default: false) */
+  readonly clamp?: boolean
+}
+
+export type PropertyValue = StaticValue | BindingValue | RangeExpr
 
 // ============================================================================
 // Visual Properties
@@ -57,9 +75,23 @@ export const $PropertyValue = {
     paramId,
   }),
 
+  /**
+   * Create a RangeExpr that maps timeline track intensity (0-1) to a value range
+   */
+  range: (trackId: string, min: number, max: number, clamp?: boolean): RangeExpr => ({
+    type: 'range',
+    trackId,
+    min,
+    max,
+    ...(clamp !== undefined ? { clamp } : {}),
+  }),
+
   isBinding: (value: PropertyValue): value is BindingValue =>
     value.type === 'binding',
 
   isStatic: (value: PropertyValue): value is StaticValue =>
     value.type === 'static',
+
+  isRange: (value: PropertyValue): value is RangeExpr =>
+    value.type === 'range',
 } as const
