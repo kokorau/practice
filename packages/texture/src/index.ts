@@ -284,6 +284,9 @@ export {
   createDefaultGradientGrainCurlParams,
 } from './Domain'
 
+// Re-export getDefaults from @practice/schema for dynamic schema mapping
+export { getDefaults } from '@practice/schema'
+
 // Application
 export type { GetDefaultTexturePatterns, GetDefaultMaskPatterns, GetSurfacePresets } from './Application'
 export {
