@@ -22,6 +22,7 @@ import type {
 import type { EffectorType, FilterProps, MaskProps } from '../../../composables/useEffectorManager'
 import { useVignetteEditor } from '../../../composables/useVignetteEditor'
 import SchemaFields from '../../SchemaFields.vue'
+import PresetSelector from '../PresetSelector.vue'
 import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
 
 // ============================================================
@@ -202,23 +203,30 @@ const handleFilterTypeChange = (type: FilterType) => {
           @update:model-value="emit('update:maskShapeParams', $event)"
         />
       </div>
-      <div class="pattern-grid">
-        <button
-          v-for="(pattern, i) in maskProps.shapePatterns"
-          :key="i"
-          class="pattern-button"
-          :class="{ active: maskProps.selectedShapeIndex === i }"
-          @click="emit('update:selectedMaskIndex', i)"
-        >
+      <PresetSelector
+        label="Shape"
+        :items="maskProps.shapePatterns"
+        :selected-index="maskProps.selectedShapeIndex"
+        @select="(index) => index !== null && emit('update:selectedMaskIndex', index)"
+      >
+        <template #selected>
           <MaskPatternThumbnail
+            v-if="maskProps.selectedShapeIndex !== null && maskProps.shapePatterns[maskProps.selectedShapeIndex]"
             :create-background-spec="maskProps.createBackgroundThumbnailSpec"
-            :create-mask-spec="pattern.createSpec"
+            :create-mask-spec="maskProps.shapePatterns[maskProps.selectedShapeIndex]!.createSpec"
             :mask-color1="maskProps.outerColor"
             :mask-color2="maskProps.innerColor"
           />
-          <span class="pattern-label">{{ pattern.label }}</span>
-        </button>
-      </div>
+        </template>
+        <template #item="{ item }">
+          <MaskPatternThumbnail
+            :create-background-spec="maskProps.createBackgroundThumbnailSpec"
+            :create-mask-spec="item.createSpec"
+            :mask-color1="maskProps.outerColor"
+            :mask-color2="maskProps.innerColor"
+          />
+        </template>
+      </PresetSelector>
     </template>
   </div>
 </template>
@@ -333,51 +341,5 @@ const handleFilterTypeChange = (type: FilterType) => {
 
 :global(.dark) .shape-params {
   border-bottom-color: oklch(0.22 0.02 260);
-}
-
-.pattern-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.pattern-button {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  border: 2px solid oklch(0.85 0.01 260);
-  border-radius: 0.5rem;
-  background: transparent;
-  overflow: hidden;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-:global(.dark) .pattern-button {
-  border-color: oklch(0.30 0.02 260);
-}
-
-.pattern-button:hover {
-  border-color: oklch(0.75 0.01 260);
-}
-
-:global(.dark) .pattern-button:hover {
-  border-color: oklch(0.40 0.02 260);
-}
-
-.pattern-button.active {
-  border-color: oklch(0.55 0.20 250);
-  background: oklch(0.55 0.20 250 / 0.1);
-}
-
-.pattern-label {
-  padding: 0.375rem 0.5rem;
-  font-size: 0.75rem;
-  color: oklch(0.40 0.02 260);
-  text-align: left;
-}
-
-:global(.dark) .pattern-label {
-  color: oklch(0.70 0.02 260);
 }
 </style>

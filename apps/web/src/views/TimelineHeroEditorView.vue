@@ -435,6 +435,9 @@ function stopResize() {
         />
       </main>
 
+      <!-- Popup Portal Container (for PresetSelector popups) -->
+      <div id="preset-popup-portal" class="preset-popup-portal" />
+
       <!-- Right: Property Panel -->
       <RightPropertyPanel
         ref="rightPanelRef"
@@ -548,6 +551,7 @@ function stopResize() {
 }
 
 .hero-editor-area {
+  position: relative;
   flex: 1;
   display: flex;
   overflow: hidden;
@@ -559,6 +563,21 @@ function stopResize() {
   flex-direction: column;
   overflow: hidden;
   background: oklch(0.94 0.01 260);
+}
+
+/* Portal container for PresetSelector popups */
+.preset-popup-portal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.preset-popup-portal > * {
+  pointer-events: auto;
 }
 
 .dark .hero-main {

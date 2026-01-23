@@ -664,6 +664,9 @@ const handleImageUpdate = (key: string, value: unknown) => {
       />
     </main>
 
+    <!-- Popup Portal Container (for PresetSelector popups) -->
+    <div id="preset-popup-portal" class="preset-popup-portal" />
+
     <!-- 右パネル: 選択要素のプロパティ -->
     <RightPropertyPanel
       ref="rightPanelRef"
@@ -737,6 +740,7 @@ const handleImageUpdate = (key: string, value: unknown) => {
 
 <style scoped>
 .hero-generator {
+  position: relative;
   display: flex;
   height: 100vh;
   box-sizing: border-box;
@@ -744,6 +748,21 @@ const handleImageUpdate = (key: string, value: unknown) => {
   background: oklch(0.97 0.005 260);
   color: oklch(0.25 0.02 260);
   transition: background 0.3s;
+}
+
+/* Portal container for PresetSelector popups */
+.preset-popup-portal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.preset-popup-portal > * {
+  pointer-events: auto;
 }
 
 .hero-generator.dark {

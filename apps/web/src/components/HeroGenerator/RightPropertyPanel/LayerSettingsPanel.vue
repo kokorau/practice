@@ -2,7 +2,9 @@
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import type { ObjectSchema } from '@practice/schema'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
-import SurfaceSelector, { type PatternItem } from '../SurfaceSelector.vue'
+import PresetSelector from '../PresetSelector.vue'
+import PatternThumbnail from '../PatternThumbnail.vue'
+import { type PatternItem } from '../SurfaceSelector.vue'
 import SchemaFields from '../../SchemaFields.vue'
 
 const props = withDefaults(defineProps<{
@@ -75,12 +77,28 @@ const shouldShowSurfaceParams = (): boolean => {
 
     <!-- Texture selection -->
     <div class="settings-section">
-      <p class="settings-label">Texture</p>
-      <SurfaceSelector
-        :patterns="patterns"
+      <PresetSelector
+        label="Texture"
+        :items="patterns"
         :selected-index="selectedIndex"
-        @select-pattern="emit('select-pattern', $event)"
-      />
+        :show-null-option="layerType === 'base'"
+        null-label="べた塗り"
+        @select="emit('select-pattern', $event)"
+      >
+        <template #selected>
+          <PatternThumbnail
+            v-if="selectedIndex !== null && patterns[selectedIndex]"
+            :create-spec="patterns[selectedIndex]!.createSpec"
+          />
+          <span v-else class="solid-preview">Solid</span>
+        </template>
+        <template #null>
+          <span class="solid-preview">Solid</span>
+        </template>
+        <template #item="{ item }">
+          <PatternThumbnail :create-spec="item.createSpec" />
+        </template>
+      </PresetSelector>
     </div>
   </div>
 </template>
@@ -124,5 +142,22 @@ const shouldShowSurfaceParams = (): boolean => {
 
 :global(.dark) .settings-label {
   color: oklch(0.70 0.02 260);
+}
+
+.solid-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: oklch(0.92 0.01 260);
+  color: oklch(0.50 0.02 260);
+  font-size: 0.625rem;
+  font-weight: 500;
+}
+
+:global(.dark) .solid-preview {
+  background: oklch(0.22 0.02 260);
+  color: oklch(0.60 0.02 260);
 }
 </style>
