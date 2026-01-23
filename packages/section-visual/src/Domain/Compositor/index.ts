@@ -35,6 +35,7 @@ export type {
   NodeType,
   BaseNode,
   RGBA,
+  ResolvedRGBA,
   ColorKeyPair,
 } from './types'
 
