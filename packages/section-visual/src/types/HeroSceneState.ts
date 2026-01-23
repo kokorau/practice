@@ -310,6 +310,8 @@ export interface BackgroundState {
 
   /** Custom background surface params */
   readonly customBackgroundSurfaceParams: Ref<CustomBackgroundSurfaceParams | null>
+  /** Raw background surface params with PropertyValue preserved (for DSL display) */
+  readonly rawBackgroundSurfaceParams: ComputedRef<Record<string, unknown> | null>
   /** Current background surface schema for UI */
   readonly currentBackgroundSurfaceSchema: ComputedRef<ObjectSchema | null>
   /** Update background surface params */
@@ -334,8 +336,12 @@ export interface MaskState {
 
   /** Custom mask shape params */
   readonly customMaskShapeParams: Ref<CustomMaskShapeParams | null>
+  /** Raw mask shape params with PropertyValue preserved (for DSL display) */
+  readonly rawMaskShapeParams: ComputedRef<Record<string, unknown> | null>
   /** Custom surface params for midground */
   readonly customSurfaceParams: Ref<CustomSurfaceParams | null>
+  /** Raw surface params with PropertyValue preserved (for DSL display) */
+  readonly rawSurfaceParams: ComputedRef<Record<string, unknown> | null>
   /** Current mask shape schema for UI */
   readonly currentMaskShapeSchema: ComputedRef<ObjectSchema | null>
   /** Current surface schema for UI */

@@ -26,6 +26,9 @@ import {
   type HeroViewRepository,
   type NormalizedSurfaceConfig,
   type PropertyValue,
+  type SurfaceUsecase,
+  type SurfaceParamsUpdate,
+  type MaskShapeParamsUpdate,
   toCustomMaskShapeParams,
   $PropertyValue,
 } from '@practice/section-visual'
@@ -57,12 +60,14 @@ const BASE_LAYER_ID = 'background'
 
 export interface UseHeroPatternPresetsOptions {
   heroViewRepository: HeroViewRepository
+  surfaceUsecase: SurfaceUsecase
   midgroundTexturePatterns: MidgroundSurfacePreset[]
   maskPatterns: MaskPattern[]
   surfaceParams: UseHeroSurfaceParamsReturn
   selectedBackgroundIndex: ComputedRef<number> & { value: number }
   selectedMaskIndex: ComputedRef<number | null> & { value: number | null }
   selectedMidgroundTextureIndex: ComputedRef<number> & { value: number }
+  selectedLayerId: ComputedRef<string>
   textureColor1: ComputedRef<RGBA>
   textureColor2: ComputedRef<RGBA>
   midgroundTextureColor1: ComputedRef<RGBA>
@@ -85,12 +90,14 @@ export const useHeroPatternPresets = (
 ): UseHeroPatternPresetsReturn => {
   const {
     heroViewRepository,
+    surfaceUsecase,
     midgroundTexturePatterns,
     maskPatterns,
     surfaceParams,
     selectedBackgroundIndex,
     selectedMaskIndex,
     selectedMidgroundTextureIndex,
+    selectedLayerId,
     textureColor1,
     textureColor2,
     midgroundTextureColor1,
@@ -101,6 +108,7 @@ export const useHeroPatternPresets = (
     customMaskShapeParams,
     customSurfaceParams,
     customBackgroundSurfaceParams,
+    processorLayerId,
     extractSurfaceParams,
     extractBackgroundSurfaceParams,
   } = surfaceParams
@@ -165,26 +173,26 @@ export const useHeroPatternPresets = (
 
   const updateMaskShapeParams = (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams>) => {
     if (!customMaskShapeParams.value) return
-    customMaskShapeParams.value = { ...customMaskShapeParams.value, ...updates } as CustomMaskShapeParams
+    const maskShapeId = customMaskShapeParams.value.id
+    const procId = processorLayerId.value
+    if (!procId) return
+    // Delegate to SurfaceUsecase - it handles PropertyValue preservation
+    surfaceUsecase.updateMaskShapeParams(procId, { id: maskShapeId, ...updates } as MaskShapeParamsUpdate)
   }
 
   const updateSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams>) => {
     if (!customSurfaceParams.value) return
-    customSurfaceParams.value = { ...customSurfaceParams.value, ...updates } as CustomSurfaceParams
+    const surfaceId = customSurfaceParams.value.id
+    const targetLayerId = selectedLayerId.value || 'surface-mask'
+    // Delegate to SurfaceUsecase - it handles layer type check and PropertyValue preservation
+    surfaceUsecase.updateSurfaceParamsForLayer(targetLayerId, { id: surfaceId, ...updates } as SurfaceParamsUpdate)
   }
 
   const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams | GradientGrainSurfaceParams>) => {
     if (!customBackgroundSurfaceParams.value) return
     const surfaceId = customBackgroundSurfaceParams.value.id
-    const layer = heroViewRepository.findLayer(BASE_LAYER_ID)
-    if (!layer || layer.type !== 'surface') return
-    const currentSurface = layer.surface
-    if (currentSurface.id !== surfaceId) return
-    const newSurface: NormalizedSurfaceConfig = {
-      id: currentSurface.id,
-      params: { ...currentSurface.params, ...toPropertyValueParams(updates as Record<string, string | number | boolean | undefined>) },
-    }
-    heroViewRepository.updateLayer(BASE_LAYER_ID, { surface: newSurface })
+    // Delegate to SurfaceUsecase - it handles layer type check and PropertyValue preservation
+    surfaceUsecase.updateSurfaceParamsForLayer(BASE_LAYER_ID, { id: surfaceId, ...updates } as SurfaceParamsUpdate)
   }
 
   return {

@@ -45,6 +45,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:selectedMaskIndex': [value: number]
   'update:maskShapeParams': [value: Record<string, unknown>]
+  'update:maskShapeRawValue': [key: string, value: unknown]
 }>()
 
 // ============================================================
@@ -199,8 +200,10 @@ const handleFilterTypeChange = (type: FilterType) => {
         <SchemaFields
           :schema="maskProps.shapeSchema"
           :model-value="maskProps.shapeParams"
+          :raw-params="maskProps.rawShapeParams"
           :exclude="['cutout']"
           @update:model-value="emit('update:maskShapeParams', $event)"
+          @update:raw-value="(key, value) => emit('update:maskShapeRawValue', key, value)"
         />
       </div>
       <PresetSelector

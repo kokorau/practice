@@ -88,6 +88,8 @@ interface BackgroundProps {
   selectedIndex: number | null
   surfaceSchema: ObjectSchema | null
   surfaceParams: Record<string, unknown> | null
+  /** Raw params with PropertyValue preserved (for DSL display) */
+  rawSurfaceParams?: Record<string, unknown> | null
 }
 
 /** Mask/surface layer state */
@@ -98,10 +100,14 @@ interface MaskProps {
   selectedSurfaceIndex: number | null
   surfaceSchema: ObjectSchema | null
   surfaceParams: Record<string, unknown> | null
+  /** Raw params with PropertyValue preserved (for DSL display) */
+  rawSurfaceParams?: Record<string, unknown> | null
   shapePatterns: MaskPatternItem[]
   selectedShapeIndex: number | null
   shapeSchema: ObjectSchema | null
   shapeParams: Record<string, unknown> | null
+  /** Raw shape params with PropertyValue preserved (for DSL display) */
+  rawShapeParams?: Record<string, unknown> | null
   outerColor: RGBA
   innerColor: RGBA
   createBackgroundThumbnailSpec: BackgroundSpecCreator
@@ -174,6 +180,7 @@ const emit = defineEmits<{
 
   // Mask updates
   'update:mask': [key: keyof MaskProps | 'selectPattern', value: unknown]
+  'update:maskShapeRawValue': [key: string, value: unknown]
 
   // Image layer updates
   'update:image': [key: 'uploadImage' | 'clearImage' | 'loadRandom' | 'mode' | 'position', value: unknown]
@@ -366,6 +373,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         :selected-index="background.selectedIndex"
         :surface-schema="background.surfaceSchema"
         :surface-params="background.surfaceParams"
+        :raw-surface-params="background.rawSurfaceParams"
         @update:color-key1="emit('update:background', 'colorKey1', $event)"
         @update:color-key2="emit('update:background', 'colorKey2', $event)"
         @select-pattern="emit('update:background', 'selectPattern', $event)"
@@ -386,6 +394,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         :selected-index="mask.selectedSurfaceIndex"
         :surface-schema="mask.surfaceSchema"
         :surface-params="mask.surfaceParams"
+        :raw-surface-params="mask.rawSurfaceParams"
         @update:color-key1="emit('update:mask', 'colorKey1', $event)"
         @update:color-key2="emit('update:mask', 'colorKey2', $event)"
         @select-pattern="emit('update:mask', 'selectPattern', $event)"
@@ -419,12 +428,14 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
           selectedShapeIndex: mask.selectedShapeIndex,
           shapeSchema: mask.shapeSchema,
           shapeParams: mask.shapeParams,
+          rawShapeParams: mask.rawShapeParams ?? null,
           outerColor: mask.outerColor,
           innerColor: mask.innerColor,
           createBackgroundThumbnailSpec: mask.createBackgroundThumbnailSpec,
         }"
         @update:selected-mask-index="emit('update:mask', 'selectedShapeIndex', $event)"
         @update:mask-shape-params="emit('update:mask', 'shapeParams', $event)"
+        @update:mask-shape-raw-value="(key, value) => emit('update:maskShapeRawValue', key, value)"
       />
 
       <!-- Processor placeholder -->

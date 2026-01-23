@@ -41,6 +41,8 @@ export interface MaskProps {
   selectedShapeIndex: number | null
   shapeSchema: ObjectSchema | null
   shapeParams: Record<string, unknown> | null
+  /** Raw shape params with PropertyValue preserved (for DSL display) */
+  rawShapeParams?: Record<string, unknown> | null
   outerColor: RGBA
   innerColor: RGBA
   createBackgroundThumbnailSpec: BackgroundSpecCreator
