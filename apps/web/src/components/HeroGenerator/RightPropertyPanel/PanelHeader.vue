@@ -1,6 +1,10 @@
 <script setup lang="ts">
+export interface BreadcrumbItem {
+  label: string
+}
+
 defineProps<{
-  title: string
+  breadcrumbs: BreadcrumbItem[]
 }>()
 
 const emit = defineEmits<{
@@ -10,7 +14,14 @@ const emit = defineEmits<{
 
 <template>
   <div class="right-panel-header">
-    <span class="right-panel-title">{{ title }}</span>
+    <div class="breadcrumb-nav">
+      <template v-for="(item, index) in breadcrumbs" :key="index">
+        <span class="breadcrumb-item">{{ item.label }}</span>
+        <span v-if="index < breadcrumbs.length - 1" class="breadcrumb-separator">
+          <span class="material-icons">chevron_right</span>
+        </span>
+      </template>
+    </div>
     <button class="export-button" @click="emit('export')" title="Export Preset">
       <span class="material-icons">download</span>
     </button>
@@ -31,14 +42,48 @@ const emit = defineEmits<{
   border-bottom-color: oklch(0.25 0.02 260);
 }
 
-.right-panel-title {
-  font-size: 0.875rem;
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.breadcrumb-item {
+  font-size: 0.75rem;
+  color: oklch(0.50 0.02 260);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumb-item:last-of-type {
   font-weight: 600;
   color: oklch(0.30 0.02 260);
 }
 
-:global(.dark) .right-panel-title {
+:global(.dark) .breadcrumb-item {
+  color: oklch(0.60 0.02 260);
+}
+
+:global(.dark) .breadcrumb-item:last-of-type {
   color: oklch(0.85 0.02 260);
+}
+
+.breadcrumb-separator {
+  display: flex;
+  align-items: center;
+  color: oklch(0.65 0.01 260);
+  flex-shrink: 0;
+}
+
+.breadcrumb-separator .material-icons {
+  font-size: 0.875rem;
+}
+
+:global(.dark) .breadcrumb-separator {
+  color: oklch(0.45 0.02 260);
 }
 
 .export-button {

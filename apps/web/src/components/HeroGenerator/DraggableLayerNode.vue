@@ -10,7 +10,7 @@
  */
 
 import { computed, ref, inject } from 'vue'
-import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig, MaskProcessorConfig, ModifierDropPosition, LayerDropPosition } from '@practice/section-visual'
+import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig, MaskProcessorConfig, ModifierDropPosition, LayerDropPosition, SingleEffectConfig, SurfaceLayerNodeConfig, BaseLayerNodeConfig } from '@practice/section-visual'
 import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
 import { LAYER_DRAG_KEY, type DropTarget } from '../../composables/useLayerDragAndDrop'
 import { MODIFIER_DRAG_KEY, type ModifierDropTarget } from '../../composables/useModifierDragAndDrop'
@@ -119,6 +119,18 @@ const nodeVariant = computed((): LayerVariant => {
   return 'surface' // fallback
 })
 
+// Get surface type for surface/base layers (e.g., 'stripe', 'solid')
+const surfaceTypeLabel = computed((): string | null => {
+  const node = props.node
+  if (isSurfaceLayerConfig(node)) {
+    return (node as SurfaceLayerNodeConfig).surface.id
+  }
+  if (isBaseLayerConfig(node)) {
+    return (node as BaseLayerNodeConfig).surface.id
+  }
+  return null
+})
+
 // Modifier info with index for DnD
 // Note: Effect details are managed by useEffectManager and shown in property panel
 // Layer tree only shows whether effect/mask modifiers exist
@@ -131,10 +143,11 @@ const modifiers = computed(() => {
   const processor = props.node as ProcessorNodeConfig
   processor.modifiers.forEach((mod: ProcessorConfig, index: number) => {
     if (isEffectModifier(mod)) {
+      const effectMod = mod as SingleEffectConfig
       result.push({
         type: 'effect',
         label: 'Effect',
-        value: '', // Details shown in property panel
+        value: effectMod.id, // Show effect type (e.g., 'vignette', 'blur')
         icon: 'auto_fix_high',
         enabled: isEffectEnabled(mod),
         index,
@@ -349,9 +362,9 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
       <!-- Type Icon -->
       <span class="material-icons layer-icon">{{ getLayerIcon(nodeVariant) }}</span>
 
-      <!-- Layer Name -->
+      <!-- Layer Name (show surface type for surface/base layers) -->
       <div class="layer-info">
-        <span class="layer-name">{{ node.name }}</span>
+        <span class="layer-name">{{ surfaceTypeLabel || node.name }}</span>
       </div>
 
       <!-- Add Processor Button (only for non-processor, non-group layers) -->
@@ -463,9 +476,8 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
           <span class="expand-spacer" />
           <span class="material-icons layer-icon">{{ mod.icon }}</span>
           <div class="layer-info">
-            <span class="layer-name">{{ mod.label }}</span>
+            <span class="layer-name">{{ mod.value }}</span>
           </div>
-          <span class="processor-value">{{ mod.value }}</span>
           <span class="material-icons processor-arrow">chevron_right</span>
         </div>
       </template>
@@ -775,18 +787,6 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
 
 :global(.dark) .processor-child-node:hover {
   background: oklch(0.24 0.02 260);
-}
-
-.processor-value {
-  flex: 1;
-  font-size: 0.6875rem;
-  color: oklch(0.55 0.02 260);
-  text-align: right;
-  margin-right: 0.25rem;
-}
-
-:global(.dark) .processor-value {
-  color: oklch(0.55 0.02 260);
 }
 
 .processor-arrow {
