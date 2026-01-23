@@ -1,6 +1,6 @@
 import type { Timeline } from './Timeline'
 import type { TimelinePlayer, FrameState } from './Player'
-import type { ParamId, TrackId } from './Track'
+import type { TrackId } from './Track'
 import type { Ms } from './Unit'
 import type { PhaseId } from './Phase'
 import { evaluate, parse } from '@practice/dsl'
@@ -83,8 +83,7 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
       lastEngineTime = engineTime
     }
 
-    // Evaluate all tracks
-    const params: Record<ParamId, number> = {}
+    // Evaluate all tracks - outputs intensities (0-1 normalized values)
     const intensities: Record<TrackId, number> = {}
 
     for (const track of timeline.tracks) {
@@ -110,15 +109,13 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
       const ast = track._cachedAst ?? parse(track.expression)
 
       // Evaluate the DSL expression with time context
+      // Expression should output 0-1 intensity value
       const value = evaluate(ast, { t: trackTime })
-      params[track.targetParam] = value
-      // Store the evaluated value as intensity for this track
       intensities[track.id] = value
     }
 
     return {
       time: playhead,
-      params,
       intensities,
     }
   }

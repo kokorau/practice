@@ -23,7 +23,7 @@ import {
 } from '@practice/section-visual'
 
 /**
- * Extract value from PropertyValue (returns undefined for BindingValue)
+ * Extract value from PropertyValue (returns undefined for RangeExpr)
  */
 function getStaticValue(prop: PropertyValue | undefined): string | number | boolean | undefined {
   if (!prop) return undefined

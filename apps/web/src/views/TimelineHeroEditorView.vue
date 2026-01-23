@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import type { Ms, ParamResolver } from '@practice/timeline'
+import type { Ms, IntensityProvider } from '@practice/timeline'
 import {
   createPrimitivePalette,
 } from '@practice/semantic-color-palette/Infra'
@@ -116,30 +116,30 @@ const primitivePalette = computed((): PrimitivePalette => {
 })
 
 // ============================================================
-// Timeline Panel Ref (for paramResolver access)
+// Timeline Panel Ref (for intensityProvider access)
 // ============================================================
 const timelinePanelRef = ref<InstanceType<typeof TimelinePanel> | null>(null)
 
-// Lazy getter for ParamResolver - evaluated at render time
-const getParamResolver = (): ParamResolver | undefined => {
-  return timelinePanelRef.value?.paramResolver
+// Lazy getter for IntensityProvider - evaluated at render time
+const getIntensityProvider = (): IntensityProvider | undefined => {
+  return timelinePanelRef.value?.intensityProvider
 }
 
-// Handler for frameState changes - triggers re-render when timeline params change
+// Handler for frameState changes - triggers re-render when timeline intensities change
 const handleFrameStateUpdate = () => {
-  // Re-render when timeline updates params
+  // Re-render when timeline updates intensities
   heroScene.renderer.renderSceneFromConfig?.()
 }
 
 // ============================================================
-// Hero Scene (WebGPU rendering with layer system + ParamResolver)
+// Hero Scene (WebGPU rendering with layer system + IntensityProvider)
 // ============================================================
-// Uses lazy getter so paramResolver is available after TimelinePanel mounts
+// Uses lazy getter so intensityProvider is available after TimelinePanel mounts
 const heroScene = useHeroScene({
   primitivePalette,
   isDark: uiDarkMode,
   layerSelection,
-  getParamResolver,
+  getIntensityProvider,
 })
 
 // ============================================================

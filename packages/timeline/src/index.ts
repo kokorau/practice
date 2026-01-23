@@ -9,7 +9,7 @@ export type { PhaseLayout } from './PhaseLayout'
 export { calculatePhaseLayouts } from './PhaseLayout'
 
 // Track (DSL-based)
-export type { TrackId, ParamId, ClockType, DslTrack, Track } from './Track'
+export type { TrackId, ClockType, DslTrack, Track } from './Track'
 
 // Timeline
 export type { Timeline } from './Timeline'

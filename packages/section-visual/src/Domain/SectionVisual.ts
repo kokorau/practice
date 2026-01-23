@@ -1,7 +1,7 @@
 /**
  * SectionVisual - Canvas/WebGPU ベースのビジュアルセクション
  *
- * CSS vars を消費 + binding 式で timeline を参照する。
+ * CSS vars を消費 + RangeExpr で timeline を参照する。
  */
 
 // ============================================================================
@@ -12,13 +12,6 @@
 export interface StaticValue {
   readonly type: 'static'
   readonly value: string | number | boolean
-}
-
-/** ParamResolver の解決済み値への参照 */
-export interface BindingValue {
-  readonly type: 'binding'
-  /** ParamResolver のパラメータID */
-  readonly paramId: string
 }
 
 /**
@@ -39,7 +32,7 @@ export interface RangeExpr {
   readonly clamp?: boolean
 }
 
-export type PropertyValue = StaticValue | BindingValue | RangeExpr
+export type PropertyValue = StaticValue | RangeExpr
 
 // ============================================================================
 // Visual Properties
@@ -56,7 +49,7 @@ export interface VisualProperties {
 export interface SectionVisual {
   readonly kind: 'visual'
   readonly id: string
-  /** プロパティ (binding 式を含む) */
+  /** プロパティ (RangeExpr を含む) */
   readonly properties: VisualProperties
 }
 
@@ -70,11 +63,6 @@ export const $PropertyValue = {
     value,
   }),
 
-  binding: (paramId: string): BindingValue => ({
-    type: 'binding',
-    paramId,
-  }),
-
   /**
    * Create a RangeExpr that maps timeline track intensity (0-1) to a value range
    */
@@ -85,9 +73,6 @@ export const $PropertyValue = {
     max,
     ...(clamp !== undefined ? { clamp } : {}),
   }),
-
-  isBinding: (value: PropertyValue): value is BindingValue =>
-    value.type === 'binding',
 
   isStatic: (value: PropertyValue): value is StaticValue =>
     value.type === 'static',

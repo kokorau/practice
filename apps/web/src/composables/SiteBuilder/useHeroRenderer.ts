@@ -13,7 +13,7 @@ import {
   TextureRenderer,
 } from '@practice/texture'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import type { ParamResolver } from '@practice/timeline'
+import type { IntensityProvider } from '@practice/timeline'
 import {
   type HeroViewConfig,
   type HeroSceneConfig,
@@ -44,8 +44,8 @@ export interface UseHeroRendererOptions {
   editorState: Ref<HeroSceneEditorState>
   /** Function to build HeroViewConfig from current state */
   toHeroViewConfig: () => HeroViewConfig
-  /** ParamResolver for timeline-driven animations (optional) */
-  paramResolver?: ParamResolver
+  /** IntensityProvider for timeline-driven animations (optional) */
+  intensityProvider?: IntensityProvider
 }
 
 /**
@@ -78,7 +78,7 @@ export interface UseHeroRendererReturn {
  * Composable for scene rendering in HeroScene
  */
 export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendererReturn {
-  const { primitivePalette, editorState, toHeroViewConfig, paramResolver } = options
+  const { primitivePalette, editorState, toHeroViewConfig, intensityProvider } = options
 
   // ============================================================
   // Renderer State
@@ -92,10 +92,10 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
   const loadedModelUrls = new Map<string, string>()
 
   // PropertyResolver for timeline-driven params
-  const propertyResolver = paramResolver ? createPropertyResolver(paramResolver) : null
+  const propertyResolver = intensityProvider ? createPropertyResolver(intensityProvider) : null
 
-  // Unsubscribe function for param change listener
-  let unsubscribeParamChange: (() => void) | null = null
+  // Unsubscribe function for intensity change listener
+  let unsubscribeIntensityChange: (() => void) | null = null
 
   // ============================================================
   // Rendering Functions
@@ -109,7 +109,7 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
 
     let config = toHeroViewConfig()
 
-    // Resolve PropertyValue bindings if PropertyResolver is available
+    // Resolve PropertyValue RangeExpr if PropertyResolver is available
     if (propertyResolver) {
       config = resolveHeroViewConfig(config, propertyResolver)
     }
@@ -148,10 +148,10 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
       previewRenderer.value = await TextureRenderer.create(canvas)
       await render()
 
-      // Subscribe to ParamResolver for automatic re-rendering on param changes
-      if (paramResolver) {
-        unsubscribeParamChange = paramResolver.onParamChange(() => {
-          // Re-render when timeline params change
+      // Subscribe to IntensityProvider for automatic re-rendering on intensity changes
+      if (intensityProvider) {
+        unsubscribeIntensityChange = intensityProvider.onIntensityChange(() => {
+          // Re-render when timeline intensities change
           render()
         })
       }
@@ -164,10 +164,10 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
    * Destroy preview renderer and cleanup
    */
   const destroyPreview = () => {
-    // Unsubscribe from ParamResolver
-    if (unsubscribeParamChange) {
-      unsubscribeParamChange()
-      unsubscribeParamChange = null
+    // Unsubscribe from IntensityProvider
+    if (unsubscribeIntensityChange) {
+      unsubscribeIntensityChange()
+      unsubscribeIntensityChange = null
     }
 
     previewRenderer.value?.destroy()

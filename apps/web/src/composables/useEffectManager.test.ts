@@ -7,7 +7,7 @@ import { EFFECT_TYPES, type PropertyValue } from '@practice/section-visual'
  */
 function getValue(prop: PropertyValue): string | number | boolean {
   if (prop.type === 'static') return prop.value
-  throw new Error('Cannot get value from BindingValue in tests')
+  throw new Error('Cannot get value from RangeExpr in tests')
 }
 
 // ============================================================

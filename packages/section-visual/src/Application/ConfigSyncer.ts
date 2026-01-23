@@ -13,11 +13,12 @@ import { toCustomBackgroundSurfaceParams, toCustomSurfaceParams } from '../Domai
 import { $PropertyValue } from '../Domain/SectionVisual'
 
 /**
- * Check if a normalized surface config has any binding values
- * If bindings are present, the config cannot be denormalized for UI sync
+ * Check if a normalized surface config has any RangeExpr values
+ * If RangeExpr are present, the config cannot be denormalized for UI sync
+ * (timeline-driven params are resolved at render time, not sync time)
  */
-function hasBindingValues(config: NormalizedSurfaceConfig): boolean {
-  return Object.values(config.params).some((prop) => $PropertyValue.isBinding(prop))
+function hasRangeValues(config: NormalizedSurfaceConfig): boolean {
+  return Object.values(config.params).some((prop) => $PropertyValue.isRange(prop))
 }
 
 /**
@@ -82,8 +83,8 @@ export function syncBackgroundSurfaceParams(
   // Normalize first (ensures consistent format), then extract static values for UI params
   const normalizedSurface = getSurfaceAsNormalized(bgSurface)
 
-  // Skip if config has binding values (timeline-driven params can't be synced to UI)
-  if (hasBindingValues(normalizedSurface)) {
+  // Skip if config has RangeExpr values (timeline-driven params can't be synced to UI)
+  if (hasRangeValues(normalizedSurface)) {
     return { surfaceParams: null }
   }
 
@@ -155,8 +156,8 @@ export function syncMaskSurfaceParams(
   // Normalize first (ensures consistent format), then extract static values for UI params
   const normalizedSurface = getSurfaceAsNormalized(maskSurface)
 
-  // Skip if config has binding values (timeline-driven params can't be synced to UI)
-  if (hasBindingValues(normalizedSurface)) {
+  // Skip if config has RangeExpr values (timeline-driven params can't be synced to UI)
+  if (hasRangeValues(normalizedSurface)) {
     return { surfaceParams: null }
   }
 

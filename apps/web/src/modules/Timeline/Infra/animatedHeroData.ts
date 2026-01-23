@@ -6,16 +6,16 @@
  *
  * ## Expression Convention
  *
- * All track expressions follow a normalized pattern:
- * 1. Base functions output 0-1 range: osc(), smoothstep(), phase(), etc.
- * 2. range() converts the 0-1 value to the final parameter value
+ * All track expressions output normalized 0-1 intensity values.
+ * The config uses RangeExpr to map these intensities to actual parameter ranges.
  *
- * Pattern: `range(<0-1 function>, min, max)`
+ * Track expression examples:
+ * - `osc(t, 4000)` → oscillates 0-1
+ * - `smoothstep(0, 3000, t)` → eases 0-1
+ * - `phase(t, 12000)` → linear 0-1 over 12 seconds
  *
- * Examples:
- * - `range(osc(t, 4000), 30, 60)` → oscillates between 30° and 60°
- * - `range(smoothstep(0, 3000, t), 0.1, 0.45)` → eases from 0.1 to 0.45
- * - `range(phase(t, 12000), 0, 360)` → linear 0° to 360° rotation
+ * Config RangeExpr example:
+ * - `$PropertyValue.range('track-id', 30, 60)` → maps 0-1 to 30-60
  */
 
 import type { Timeline, PhaseId, TrackId } from '@practice/timeline'
@@ -57,8 +57,7 @@ const breathingCircleTimeline: Timeline = {
       name: 'Mask Radius',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      targetParam: 'mask-radius',
-      expression: 'range(smoothstep(0, 4000, t), 0.2, 0.4)',
+      expression: 'smoothstep(0, 4000, t)',
     },
     // Loop: very gentle angle oscillation
     {
@@ -66,8 +65,7 @@ const breathingCircleTimeline: Timeline = {
       name: 'Stripe Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'stripe-angle',
-      expression: 'range(osc(t, 12000), 40, 50)',
+      expression: 'osc(t, 12000)',
     },
     // Loop: subtle width breathing
     {
@@ -75,8 +73,7 @@ const breathingCircleTimeline: Timeline = {
       name: 'Stripe Width',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'stripe-width',
-      expression: 'range(osc(t, 8000, 2000), 20, 28)',
+      expression: 'osc(t, 8000, 2000)',
     },
     // Loop: slow horizontal drift
     {
@@ -84,8 +81,7 @@ const breathingCircleTimeline: Timeline = {
       name: 'Mask Center X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'mask-center-x',
-      expression: 'range(osc(t, 16000), 0.42, 0.58)',
+      expression: 'osc(t, 16000)',
     },
   ],
 }
@@ -108,9 +104,9 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
           surface: {
             id: 'stripe',
             params: {
-              width1: $PropertyValue.binding('stripe-width'),
+              width1: $PropertyValue.range('track-stripe-width', 20, 28),
               width2: $PropertyValue.static(20),
-              angle: $PropertyValue.binding('stripe-angle'),
+              angle: $PropertyValue.range('track-stripe-angle', 40, 50),
             },
           },
           colors: { primary: 'B', secondary: 'Bt' },
@@ -159,9 +155,9 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
               shape: {
                 id: 'circle',
                 params: {
-                  centerX: $PropertyValue.binding('mask-center-x'),
+                  centerX: $PropertyValue.range('track-mask-center-x', 0.42, 0.58),
                   centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.binding('mask-radius'),
+                  radius: $PropertyValue.range('track-mask-radius', 0.2, 0.4),
                   cutout: $PropertyValue.static(false),
                 },
               },
@@ -207,8 +203,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Rays Count',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      targetParam: 'sunburst-rays',
-      expression: 'range(smoothstep(0, 3500, t), 12, 16)',
+      expression: 'smoothstep(0, 3500, t)',
     },
     // Loop: slow continuous rotation (30 seconds for full rotation)
     {
@@ -216,8 +211,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Twist',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'sunburst-twist',
-      expression: 'range(phase(t, 30000), 0, 360)',
+      expression: 'phase(t, 30000)',
     },
     // Loop: subtle rays breathing
     {
@@ -225,8 +219,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Rays',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'sunburst-rays',
-      expression: 'range(osc(t, 15000), 14, 18)',
+      expression: 'osc(t, 15000)',
     },
     // Loop: very slow center drift
     {
@@ -234,8 +227,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Center X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'sunburst-center-x',
-      expression: 'range(osc(t, 20000), 0.45, 0.55)',
+      expression: 'osc(t, 20000)',
     },
     // Loop: very slow vertical drift
     {
@@ -243,8 +235,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Center Y',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'sunburst-center-y',
-      expression: 'range(osc(t, 25000, 6000), 0.45, 0.55)',
+      expression: 'osc(t, 25000, 6000)',
     },
   ],
 }
@@ -267,10 +258,10 @@ const createRotatingSunburstConfig = (): HeroViewConfig => ({
           surface: {
             id: 'sunburst',
             params: {
-              rays: $PropertyValue.binding('sunburst-rays'),
-              centerX: $PropertyValue.binding('sunburst-center-x'),
-              centerY: $PropertyValue.binding('sunburst-center-y'),
-              twist: $PropertyValue.binding('sunburst-twist'),
+              rays: $PropertyValue.range('track-rays-loop', 14, 18),
+              centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
+              centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
+              twist: $PropertyValue.range('track-twist', 0, 360),
             },
           },
           colors: { primary: 'A', secondary: 'At' },
@@ -303,8 +294,8 @@ const createRotatingSunburstConfig = (): HeroViewConfig => ({
               shape: {
                 id: 'circle',
                 params: {
-                  centerX: $PropertyValue.binding('sunburst-center-x'),
-                  centerY: $PropertyValue.binding('sunburst-center-y'),
+                  centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
+                  centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
                   radius: $PropertyValue.static(0.15),
                   cutout: $PropertyValue.static(false),
                 },
@@ -351,8 +342,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Amplitude Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      targetParam: 'wave-amplitude',
-      expression: 'range(smoothstep(0, 3000, t), 15, 25)',
+      expression: 'smoothstep(0, 3000, t)',
     },
     // Loop: subtle amplitude breathing
     {
@@ -360,8 +350,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Amplitude',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'wave-amplitude',
-      expression: 'range(osc(t, 12000), 22, 30)',
+      expression: 'osc(t, 12000)',
     },
     // Loop: slow wavelength variation
     {
@@ -369,8 +358,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Wavelength',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'wave-wavelength',
-      expression: 'range(osc(t, 18000, 4500), 80, 100)',
+      expression: 'osc(t, 18000, 4500)',
     },
     // Loop: very gentle angle sway
     {
@@ -378,8 +366,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Wave Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'wave-angle',
-      expression: 'range(osc(t, 20000), -5, 5)',
+      expression: 'osc(t, 20000)',
     },
     // Loop: slow thickness breathing
     {
@@ -387,8 +374,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Thickness',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'wave-thickness',
-      expression: 'range(osc(t, 10000, 2500), 4, 6)',
+      expression: 'osc(t, 10000, 2500)',
     },
   ],
 }
@@ -411,10 +397,10 @@ const createFlowingWavesConfig = (): HeroViewConfig => ({
           surface: {
             id: 'wave',
             params: {
-              amplitude: $PropertyValue.binding('wave-amplitude'),
-              wavelength: $PropertyValue.binding('wave-wavelength'),
-              thickness: $PropertyValue.binding('wave-thickness'),
-              angle: $PropertyValue.binding('wave-angle'),
+              amplitude: $PropertyValue.range('track-amplitude', 22, 30),
+              wavelength: $PropertyValue.range('track-wavelength', 80, 100),
+              thickness: $PropertyValue.range('track-thickness', 4, 6),
+              angle: $PropertyValue.range('track-wave-angle', -5, 5),
             },
           },
           colors: { primary: 'B', secondary: 'Bt' },
@@ -520,8 +506,7 @@ const pulsingGridTimeline: Timeline = {
       name: 'Cell Size Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      targetParam: 'grid-cell',
-      expression: 'range(smoothstep(0, 2500, t), 50, 40)',
+      expression: 'smoothstep(0, 2500, t)',
     },
     // Loop: subtle cell size breathing
     {
@@ -529,8 +514,7 @@ const pulsingGridTimeline: Timeline = {
       name: 'Cell Size',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'grid-cell',
-      expression: 'range(osc(t, 10000), 36, 44)',
+      expression: 'osc(t, 10000)',
     },
     // Loop: very subtle line width change
     {
@@ -538,8 +522,7 @@ const pulsingGridTimeline: Timeline = {
       name: 'Line Width',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'grid-line',
-      expression: 'range(osc(t, 8000, 2000), 1.5, 2.5)',
+      expression: 'osc(t, 8000, 2000)',
     },
     // Loop: slow mask size breathing
     {
@@ -547,8 +530,7 @@ const pulsingGridTimeline: Timeline = {
       name: 'Mask Radius',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'mask-radius',
-      expression: 'range(osc(t, 14000), 0.35, 0.45)',
+      expression: 'osc(t, 14000)',
     },
   ],
 }
@@ -571,8 +553,8 @@ const createPulsingGridConfig = (): HeroViewConfig => ({
           surface: {
             id: 'grid',
             params: {
-              lineWidth: $PropertyValue.binding('grid-line'),
-              cellSize: $PropertyValue.binding('grid-cell'),
+              lineWidth: $PropertyValue.range('track-line-width', 1.5, 2.5),
+              cellSize: $PropertyValue.range('track-cell', 36, 44),
             },
           },
           colors: { primary: 'F1', secondary: 'B' },
@@ -607,7 +589,7 @@ const createPulsingGridConfig = (): HeroViewConfig => ({
                 params: {
                   centerX: $PropertyValue.static(0.5),
                   centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.binding('mask-radius'),
+                  radius: $PropertyValue.range('track-mask-radius', 0.35, 0.45),
                   cutout: $PropertyValue.static(false),
                 },
               },
@@ -654,8 +636,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Scale Size Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      targetParam: 'scales-size',
-      expression: 'range(smoothstep(0, 3500, t), 40, 32)',
+      expression: 'smoothstep(0, 3500, t)',
     },
     // Loop: subtle scale size breathing
     {
@@ -663,8 +644,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Scale Size',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'scales-size',
-      expression: 'range(osc(t, 14000), 30, 36)',
+      expression: 'osc(t, 14000)',
     },
     // Loop: slow overlap variation
     {
@@ -672,8 +652,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Overlap',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'scales-overlap',
-      expression: 'range(osc(t, 16000, 4000), 0.4, 0.5)',
+      expression: 'osc(t, 16000, 4000)',
     },
     // Loop: very gentle angle sway
     {
@@ -681,8 +660,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'scales-angle',
-      expression: 'range(osc(t, 18000), -5, 5)',
+      expression: 'osc(t, 18000)',
     },
     // Loop: slow mask drift
     {
@@ -690,8 +668,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Mask X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      targetParam: 'mask-center-x',
-      expression: 'range(osc(t, 20000), 0.6, 0.7)',
+      expression: 'osc(t, 20000)',
     },
   ],
 }
@@ -730,9 +707,9 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
           surface: {
             id: 'scales',
             params: {
-              size: $PropertyValue.binding('scales-size'),
-              overlap: $PropertyValue.binding('scales-overlap'),
-              angle: $PropertyValue.binding('scales-angle'),
+              size: $PropertyValue.range('track-size', 30, 36),
+              overlap: $PropertyValue.range('track-overlap', 0.4, 0.5),
+              angle: $PropertyValue.range('track-angle', -5, 5),
             },
           },
           colors: { primary: 'B', secondary: 'Bt' },
@@ -749,7 +726,7 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
               shape: {
                 id: 'circle',
                 params: {
-                  centerX: $PropertyValue.binding('mask-center-x'),
+                  centerX: $PropertyValue.range('track-mask-x', 0.6, 0.7),
                   centerY: $PropertyValue.static(0.5),
                   radius: $PropertyValue.static(0.4),
                   cutout: $PropertyValue.static(false),

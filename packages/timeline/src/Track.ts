@@ -2,22 +2,22 @@ import type { PhaseId } from './Phase'
 import type { AstNode } from '@practice/dsl'
 
 export type TrackId = string & { readonly __brand: unique symbol }
-export type ParamId = string
 
 export type ClockType = 'Global' | 'Phase' | 'Loop'
 
 /**
  * DSL-based Track definition
  *
- * Each track directly outputs a final parameter value via DSL expression.
+ * Each track outputs a normalized intensity (0-1) via DSL expression.
  * The expression should use `t` as the time variable (in milliseconds).
+ * The config's RangeExpr references the trackId to map the intensity to a value range.
  *
  * @example
- * // Oscillating value between 30 and 60
- * { targetParam: 'stripe-angle', expression: 'range(osc(t, 4000), 30, 60)' }
+ * // Oscillating intensity 0-1
+ * { id: 'track-stripe-angle', expression: 'osc(t, 4000)' }
  *
- * // Linear interpolation from 0.1 to 0.45 over 3 seconds
- * { targetParam: 'mask-radius', expression: 'range(smoothstep(0, 3000, t), 0.1, 0.45)' }
+ * // Linear interpolation 0-1 over 3 seconds
+ * { id: 'track-mask-radius', expression: 'smoothstep(0, 3000, t)' }
  */
 export interface DslTrack {
   id: TrackId
@@ -25,9 +25,7 @@ export interface DslTrack {
   clock: ClockType
   /** Phase this track belongs to. Times are relative to phase start. */
   phaseId: PhaseId
-  /** Target parameter to bind the track output to */
-  targetParam: ParamId
-  /** DSL expression that outputs the final parameter value. Use `t` for time in ms. */
+  /** DSL expression that outputs a normalized intensity (0-1). Use `t` for time in ms. */
   expression: string
   /** Internal: cached AST for the expression (populated by prepareTimeline) */
   _cachedAst?: AstNode

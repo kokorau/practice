@@ -1,6 +1,6 @@
 import { ref, computed, onUnmounted, watch } from 'vue'
-import type { Timeline, FrameState, Ms, PhaseLayout, ParamResolver } from '@practice/timeline'
-import { createTimelinePlayer, calculatePhaseLayouts, createParamResolver, prepareTimeline } from '@practice/timeline'
+import type { Timeline, FrameState, Ms, PhaseLayout, IntensityProvider } from '@practice/timeline'
+import { createTimelinePlayer, calculatePhaseLayouts, createIntensityProvider, prepareTimeline } from '@practice/timeline'
 
 export interface UseTimelinePlayerOptions {
   timeline: Timeline
@@ -16,14 +16,14 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
   // State
   const playhead = ref<Ms>(0 as Ms)
   const isPlaying = ref(false)
-  const frameState = ref<FrameState>({ time: 0, params: {}, intensities: {} })
+  const frameState = ref<FrameState>({ time: 0, intensities: {} })
 
   // Player instance
   const player = createTimelinePlayer({ timeline })
 
-  // ParamResolver for param change notifications
-  const paramResolverWriter = createParamResolver()
-  const paramResolver: ParamResolver = paramResolverWriter
+  // IntensityProvider for intensity change notifications
+  const intensityProviderWriter = createIntensityProvider()
+  const intensityProvider: IntensityProvider = intensityProviderWriter
 
   // Animation frame
   let animationFrameId: number | null = null
@@ -93,9 +93,9 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     frameState.value = player.update(engineTime)
     playhead.value = frameState.value.time as Ms
 
-    // Update ParamResolver and notify subscribers
-    paramResolverWriter.setParams(frameState.value.params)
-    paramResolverWriter.flush()
+    // Update IntensityProvider and notify subscribers
+    intensityProviderWriter.setIntensities(frameState.value.intensities)
+    intensityProviderWriter.flush()
 
     animationFrameId = requestAnimationFrame(tick)
   }
@@ -105,16 +105,16 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     if (!isPlaying.value) {
       player.seek(newVal)
       frameState.value = player.update(0)
-      // Update ParamResolver for non-playing seek
-      paramResolverWriter.setParams(frameState.value.params)
-      paramResolverWriter.flush()
+      // Update IntensityProvider for non-playing seek
+      intensityProviderWriter.setIntensities(frameState.value.intensities)
+      intensityProviderWriter.flush()
     }
   })
 
   // Initialize
   frameState.value = player.update(0)
-  paramResolverWriter.setParams(frameState.value.params)
-  paramResolverWriter.flush()
+  intensityProviderWriter.setIntensities(frameState.value.intensities)
+  intensityProviderWriter.flush()
 
   // Cleanup
   onUnmounted(() => {
@@ -128,8 +128,8 @@ export function useTimelinePlayer(options: UseTimelinePlayerOptions) {
     frameState: computed(() => frameState.value),
     phaseLayouts,
 
-    // ParamResolver for reactive param subscriptions
-    paramResolver,
+    // IntensityProvider for reactive intensity subscriptions
+    intensityProvider,
 
     // Actions
     play,

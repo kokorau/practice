@@ -13,7 +13,7 @@
  */
 
 import { ref, shallowRef, computed, watch, onUnmounted, type ComputedRef, type Ref } from 'vue'
-import type { ParamResolver } from '@practice/timeline'
+import type { IntensityProvider } from '@practice/timeline'
 import {
   type RGBA,
   type SurfacePreset,
@@ -288,8 +288,8 @@ export interface UseHeroSceneOptions {
   isDark: Ref<boolean> | ComputedRef<boolean>
   repository?: HeroViewRepository
   layerSelection?: LayerSelectionReturn
-  /** Lazy getter for ParamResolver (to handle async mount order) */
-  getParamResolver?: () => ParamResolver | undefined
+  /** Lazy getter for IntensityProvider (to handle async mount order) */
+  getIntensityProvider?: () => IntensityProvider | undefined
 }
 
 // ============================================================
@@ -297,7 +297,7 @@ export interface UseHeroSceneOptions {
 // ============================================================
 
 export const useHeroScene = (options: UseHeroSceneOptions) => {
-  const { primitivePalette, isDark, repository, layerSelection = createLayerSelection(), getParamResolver } = options
+  const { primitivePalette, isDark, repository, layerSelection = createLayerSelection(), getIntensityProvider } = options
 
   // ============================================================
   // Editor State (unified UI state management)
@@ -397,7 +397,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     editorConfig,
     onDestroyPreview: () => heroThumbnails.destroyThumbnailRenderers(),
     getImageRegistry: () => _imageRegistryGetter?.() ?? new Map(),
-    getParamResolver,
+    getIntensityProvider,
   })
 
   // Alias for backward compatibility and shorter access
