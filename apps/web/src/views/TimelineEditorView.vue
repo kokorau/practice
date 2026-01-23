@@ -40,7 +40,7 @@ const trackPeriods = computed(() => {
 // ============================================================
 // Timeline State (received from TimelinePanel)
 // ============================================================
-const frameState = ref<FrameState>({ time: 0, params: {} })
+const frameState = ref<FrameState>({ time: 0, params: {}, intensities: {} })
 const playhead = ref<Ms>(0 as Ms)
 
 function onFrameStateUpdate(state: FrameState) {

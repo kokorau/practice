@@ -1022,6 +1022,7 @@ export {
 export type {
   StaticValue,
   BindingValue,
+  RangeExpr,
   PropertyValue,
   VisualProperties,
   SectionVisual,
@@ -1034,4 +1035,8 @@ export { $PropertyValue } from './SectionVisual'
 // ============================================================
 
 export type { PropertyResolver } from './PropertyResolver'
-export { createPropertyResolver, resolveHeroViewConfig } from './PropertyResolver'
+export {
+  createPropertyResolver,
+  createPropertyResolverWithIntensities,
+  resolveHeroViewConfig,
+} from './PropertyResolver'

@@ -155,6 +155,7 @@ export type {
   // SectionVisual types
   StaticValue,
   BindingValue,
+  RangeExpr,
   PropertyValue,
   VisualProperties,
   SectionVisual,
@@ -304,6 +305,7 @@ export {
   $PropertyValue,
   // PropertyResolver
   createPropertyResolver,
+  createPropertyResolverWithIntensities,
   resolveHeroViewConfig,
 } from './Domain'
 
