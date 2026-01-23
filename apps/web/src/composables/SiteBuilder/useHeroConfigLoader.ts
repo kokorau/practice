@@ -21,27 +21,14 @@ import {
   type NormalizedMaskConfig as HeroMaskShapeConfig,
   type ForegroundLayerConfig,
   type HeroViewRepository,
-  type PropertyValue,
   createDefaultColorsConfig,
   DEFAULT_LAYER_BACKGROUND_COLORS,
   DEFAULT_LAYER_MASK_COLORS,
   findSurfacePresetIndex,
   findMaskPatternIndex,
   isSingleEffectConfig,
-  $PropertyValue,
 } from '@practice/section-visual'
 
-/**
- * Extract value from PropertyValue (returns undefined for RangeExpr)
- */
-function getStaticValue(prop: PropertyValue | undefined): string | number | boolean | undefined {
-  if (!prop) return undefined
-  if ($PropertyValue.isStatic(prop)) {
-    return prop.value
-  }
-  // RangeExpr - return undefined (shouldn't happen for imageId)
-  return undefined
-}
 // Internal imports for normalization/denormalization functions
 import {
   getSurfaceAsNormalized,
@@ -51,7 +38,6 @@ import {
 } from '@practice/section-visual'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroFiltersReturn } from './useHeroFilters'
-import type { UseHeroImagesReturn } from './useHeroImages'
 import type { UseHeroThumbnailsReturn } from './useHeroThumbnails'
 
 // Layer IDs constant
@@ -71,7 +57,6 @@ export interface UseHeroConfigLoaderOptions {
   editorState: ShallowRef<HeroSceneEditorState>
   heroColors: UseHeroColorsReturn
   heroFilters: UseHeroFiltersReturn
-  heroImages: UseHeroImagesReturn
   heroThumbnails: UseHeroThumbnailsReturn
   selectedBackgroundIndex: Ref<number>
   selectedMaskIndex: Ref<number | null>
@@ -94,7 +79,6 @@ export const useHeroConfigLoader = (
     editorState,
     heroColors,
     heroFilters,
-    heroImages,
     heroThumbnails,
     selectedBackgroundIndex,
     selectedMaskIndex,
@@ -169,12 +153,6 @@ export const useHeroConfigLoader = (
 
       if (backgroundSurfaceLayer) {
         const bgSurface = backgroundSurfaceLayer.surface
-        if (bgSurface.id === 'image') {
-          const imageId = getStaticValue(bgSurface.params.imageId)
-          if (typeof imageId === 'string') {
-            await heroImages.restoreBackgroundImage(imageId)
-          }
-        }
         const normalizedBgSurface = getSurfaceAsNormalized(bgSurface)
         const bgPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(normalizedBgSurface), surfacePresets)
         selectedBackgroundIndex.value = bgPresetIndex ?? 0
@@ -229,12 +207,6 @@ export const useHeroConfigLoader = (
 
       if (maskSurfaceLayer) {
         const maskSurface = maskSurfaceLayer.surface
-        if (maskSurface.id === 'image') {
-          const imageId = getStaticValue(maskSurface.params.imageId)
-          if (typeof imageId === 'string') {
-            await heroImages.restoreMaskImage(imageId)
-          }
-        }
         const normalizedMaskSurface = getSurfaceAsNormalized(maskSurface)
         const midgroundPresetIndex = findSurfacePresetIndex(denormalizeSurfaceConfig(normalizedMaskSurface), heroThumbnails.midgroundTexturePatterns)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0

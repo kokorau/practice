@@ -140,11 +140,6 @@ export interface SolidSurfaceConfig {
   type: 'solid'
 }
 
-export interface ImageSurfaceConfig {
-  type: 'image'
-  /** 画像の識別子（URL or asset ID） */
-  imageId: string
-}
 
 export type DepthMapType = 'linear' | 'circular' | 'radial' | 'perlin'
 
@@ -226,7 +221,6 @@ export type SurfaceConfig =
   | GridSurfaceConfig
   | PolkaDotSurfaceConfig
   | CheckerSurfaceConfig
-  | ImageSurfaceConfig
   | GradientGrainSurfaceConfig
   | TriangleSurfaceConfig
   | HexagonSurfaceConfig
@@ -260,7 +254,6 @@ export const SURFACE_TYPES: SurfaceType[] = [
   'grid',
   'polkaDot',
   'checker',
-  'image',
   'gradientGrain',
   'triangle',
   'hexagon',

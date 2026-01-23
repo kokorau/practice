@@ -125,23 +125,6 @@ export interface SurfaceUsecase {
    */
   updateColorKey(key: 'primary' | 'secondary', value: HeroPrimitiveKey | 'auto'): void
 
-  /**
-   * 画像をアップロードしてサーフェスに設定
-   * @param file アップロードする画像ファイル
-   */
-  uploadImage(file: File): Promise<void>
-
-  /**
-   * 画像をクリア
-   */
-  clearImage(): void
-
-  /**
-   * ランダム画像を読み込んでサーフェスに設定
-   * @param query 検索クエリ（省略可）
-   */
-  loadRandomImage(query?: string): Promise<void>
-
   // ----------------------------------------
   // Query Methods
   // ----------------------------------------
@@ -174,7 +157,7 @@ export interface SurfaceUsecaseDeps {
  * SurfaceUsecaseを作成
  */
 export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase => {
-  const { repository, selection, imageUpload } = deps
+  const { repository, selection } = deps
 
   /**
    * 選択中のレイヤーIDを取得するヘルパー
@@ -255,44 +238,6 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
           ...currentColors,
           [key]: value,
         },
-      })
-    },
-
-    async uploadImage(file: File): Promise<void> {
-      if (!imageUpload) {
-        throw new Error('ImageUploadPort is not configured')
-      }
-
-      const layerId = getSelectedLayerId()
-      if (!layerId) return
-
-      const imageId = await imageUpload.upload(file)
-      repository.updateLayer(layerId, {
-        surface: { id: 'image', params: { imageId: $PropertyValue.static(imageId) } },
-      })
-    },
-
-    clearImage(): void {
-      const layerId = getSelectedLayerId()
-      if (!layerId) return
-
-      repository.updateLayer(layerId, {
-        surface: { id: 'solid', params: {} },
-      })
-    },
-
-    async loadRandomImage(query?: string): Promise<void> {
-      if (!imageUpload) {
-        throw new Error('ImageUploadPort is not configured')
-      }
-
-      const layerId = getSelectedLayerId()
-      if (!layerId) return
-
-      const file = await imageUpload.fetchRandom(query)
-      const imageId = await imageUpload.upload(file)
-      repository.updateLayer(layerId, {
-        surface: { id: 'image', params: { imageId: $PropertyValue.static(imageId) } },
       })
     },
 

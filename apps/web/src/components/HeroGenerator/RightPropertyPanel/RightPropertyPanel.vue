@@ -84,11 +84,8 @@ interface ContrastProps {
 interface BackgroundProps {
   colorKey1: PrimitiveKey
   colorKey2: PrimitiveKey | 'auto'
-  customImage: string | null
-  customFileName: string | null
   patterns: PatternItem[]
   selectedIndex: number | null
-  isLoadingRandom: boolean
   surfaceSchema: ObjectSchema | null
   surfaceParams: Record<string, unknown> | null
 }
@@ -97,11 +94,8 @@ interface BackgroundProps {
 interface MaskProps {
   colorKey1: PrimitiveKey | 'auto'
   colorKey2: PrimitiveKey | 'auto'
-  customImage: string | null
-  customFileName: string | null
   surfacePatterns: PatternItem[]
   selectedSurfaceIndex: number | null
-  isLoadingRandom: boolean
   surfaceSchema: ObjectSchema | null
   surfaceParams: Record<string, unknown> | null
   shapePatterns: MaskPatternItem[]
@@ -176,10 +170,10 @@ const emit = defineEmits<{
   'open-font-panel': []
 
   // Background updates
-  'update:background': [key: keyof BackgroundProps | 'uploadImage' | 'clearImage' | 'selectPattern' | 'loadRandom', value: unknown]
+  'update:background': [key: keyof BackgroundProps | 'selectPattern', value: unknown]
 
   // Mask updates
-  'update:mask': [key: keyof MaskProps | 'uploadImage' | 'clearImage' | 'selectPattern' | 'loadRandom', value: unknown]
+  'update:mask': [key: keyof MaskProps | 'selectPattern', value: unknown]
 
   // Image layer updates
   'update:image': [key: 'uploadImage' | 'clearImage' | 'loadRandom' | 'mode' | 'position', value: unknown]
@@ -368,19 +362,13 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         :color-key2="background.colorKey2"
         :show-auto1="false"
         :show-auto2="true"
-        :custom-image="background.customImage"
-        :custom-file-name="background.customFileName"
         :patterns="background.patterns"
         :selected-index="background.selectedIndex"
-        :is-loading-random="background.isLoadingRandom"
         :surface-schema="background.surfaceSchema"
         :surface-params="background.surfaceParams"
         @update:color-key1="emit('update:background', 'colorKey1', $event)"
         @update:color-key2="emit('update:background', 'colorKey2', $event)"
-        @upload-image="emit('update:background', 'uploadImage', $event)"
-        @clear-image="emit('update:background', 'clearImage', null)"
         @select-pattern="emit('update:background', 'selectPattern', $event)"
-        @load-random="emit('update:background', 'loadRandom', null)"
         @update:surface-params="handleSurfaceParamsUpdate"
       />
 
@@ -394,19 +382,13 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         :color-key2="mask.colorKey2"
         :show-auto1="true"
         :show-auto2="true"
-        :custom-image="mask.customImage"
-        :custom-file-name="mask.customFileName"
         :patterns="mask.surfacePatterns"
         :selected-index="mask.selectedSurfaceIndex"
-        :is-loading-random="mask.isLoadingRandom"
         :surface-schema="mask.surfaceSchema"
         :surface-params="mask.surfaceParams"
         @update:color-key1="emit('update:mask', 'colorKey1', $event)"
         @update:color-key2="emit('update:mask', 'colorKey2', $event)"
-        @upload-image="emit('update:mask', 'uploadImage', $event)"
-        @clear-image="emit('update:mask', 'clearImage', null)"
         @select-pattern="emit('update:mask', 'selectPattern', $event)"
-        @load-random="emit('update:mask', 'loadRandom', null)"
         @update:surface-params="handleSurfaceParamsUpdate"
       />
 

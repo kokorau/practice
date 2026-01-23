@@ -12,11 +12,8 @@ const props = withDefaults(defineProps<{
   colorKey2: PrimitiveKey | 'auto'
   showAuto1?: boolean
   showAuto2?: boolean
-  customImage: string | null
-  customFileName: string | null
   patterns: PatternItem[]
   selectedIndex: number | null
-  isLoadingRandom: boolean
   surfaceSchema: ObjectSchema | null
   surfaceParams: Record<string, unknown> | null
 }>(), {
@@ -27,10 +24,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   (e: 'update:colorKey1', value: PrimitiveKey | 'auto'): void
   (e: 'update:colorKey2', value: PrimitiveKey | 'auto'): void
-  (e: 'upload-image', file: File): void
-  (e: 'clear-image'): void
   (e: 'select-pattern', index: number | null): void
-  (e: 'load-random'): void
   (e: 'update:surfaceParams', value: Record<string, unknown>): void
 }>()
 
@@ -83,16 +77,9 @@ const shouldShowSurfaceParams = (): boolean => {
     <div class="settings-section">
       <p class="settings-label">Texture</p>
       <SurfaceSelector
-        :custom-image="customImage"
-        :custom-file-name="customFileName"
         :patterns="patterns"
         :selected-index="selectedIndex"
-        :show-random-button="true"
-        :is-loading-random="isLoadingRandom"
-        @upload-image="emit('upload-image', $event)"
-        @clear-image="emit('clear-image')"
         @select-pattern="emit('select-pattern', $event)"
-        @load-random="emit('load-random')"
       />
     </div>
   </div>

@@ -75,11 +75,6 @@ export function syncBackgroundSurfaceParams(
     return { surfaceParams: null }
   }
 
-  // Image type is handled separately via customBackgroundImage
-  if (bgSurface.id === 'image') {
-    return { surfaceParams: null }
-  }
-
   // Normalize first (ensures consistent format), then extract static values for UI params
   const normalizedSurface = getSurfaceAsNormalized(bgSurface)
 
@@ -106,7 +101,6 @@ export interface SyncMaskSurfaceResult {
  * HeroViewConfig から Mask Surface パラメータを同期する
  *
  * Surface Layer の surface を CustomSurfaceParams に変換する。
- * image タイプは null を返す（別途 customMaskImage で処理）。
  *
  * @param config - HeroViewConfig
  * @param colorA - GradientGrain用のColor A
@@ -145,11 +139,6 @@ export function syncMaskSurfaceParams(
   }
 
   if (!maskSurface) {
-    return { surfaceParams: null }
-  }
-
-  // Image type is handled separately via customMaskImage
-  if (maskSurface.id === 'image') {
     return { surfaceParams: null }
   }
 
