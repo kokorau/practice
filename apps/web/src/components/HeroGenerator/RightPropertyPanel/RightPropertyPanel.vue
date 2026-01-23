@@ -3,7 +3,8 @@ import type { WritableComputedRef } from 'vue'
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
-import type { LayerNodeConfig, GridPosition, FilterType } from '@practice/section-visual'
+import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig } from '@practice/section-visual'
+import { isSurfaceLayerConfig, isBaseLayerConfig, isProcessorLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import type { BackgroundSpecCreator } from '../MaskPatternThumbnail.vue'
@@ -15,7 +16,8 @@ import type {
   LineHalftoneConfigParams,
   BlurConfigParams,
 } from '../../../composables/useFilterEditor'
-import PanelHeader from './PanelHeader.vue'
+import { computed } from 'vue'
+import PanelHeader, { type BreadcrumbItem } from './PanelHeader.vue'
 import TextElementPanel from './TextElementPanel.vue'
 import LayerSettingsPanel from './LayerSettingsPanel.vue'
 import ImageLayerSettingsPanel from './ImageLayerSettingsPanel.vue'
@@ -201,24 +203,105 @@ const handleSurfaceParamsUpdate = (value: Record<string, unknown>) => {
   }
 }
 
-// Compute panel title based on selection state
-const panelTitle = (): string => {
-  if (props.selection.foregroundElement?.type === 'title') return 'Title'
-  if (props.selection.foregroundElement?.type === 'description') return 'Description'
-  if (props.selection.processorType === 'processor') return 'Processor'
-  if (props.selection.processorType === 'effect') return 'Effect Settings'
-  if (props.selection.processorType === 'mask') return 'Mask Settings'
-  if (isBackgroundLayer()) return 'Background'
-  if (props.selection.layerVariant === 'surface') return 'Surface'
-  if (props.selection.layerVariant === 'image') return 'Image'
-  return 'Properties'
+// Helper to get surface type from layer
+const getSurfaceType = (layer: LayerNodeConfig | null | undefined): string | null => {
+  if (!layer) return null
+  if (isSurfaceLayerConfig(layer)) {
+    return (layer as SurfaceLayerNodeConfig).surface.id
+  }
+  if (isBaseLayerConfig(layer)) {
+    return (layer as BaseLayerNodeConfig).surface.id
+  }
+  return null
 }
+
+// Helper to get effect type from processor layer
+const getEffectType = (layer: LayerNodeConfig | null | undefined): string | null => {
+  if (!layer || !isProcessorLayerConfig(layer)) return null
+  const processor = layer as ProcessorNodeConfig
+  const effectMod = processor.modifiers.find((m) => isSingleEffectConfig(m))
+  if (effectMod && isSingleEffectConfig(effectMod)) {
+    return effectMod.id
+  }
+  return null
+}
+
+// Helper to get mask shape type from processor layer
+const getMaskShapeType = (layer: LayerNodeConfig | null | undefined): string | null => {
+  if (!layer || !isProcessorLayerConfig(layer)) return null
+  const processor = layer as ProcessorNodeConfig
+  const maskMod = processor.modifiers.find((m) => m.type === 'mask')
+  if (maskMod && maskMod.type === 'mask') {
+    return maskMod.shape.id
+  }
+  return null
+}
+
+// Compute breadcrumbs based on selection state
+const breadcrumbs = computed((): BreadcrumbItem[] => {
+  const items: BreadcrumbItem[] = []
+
+  // Foreground elements
+  if (props.selection.foregroundElement?.type === 'title') {
+    items.push({ label: 'Title' })
+    return items
+  }
+  if (props.selection.foregroundElement?.type === 'description') {
+    items.push({ label: 'Description' })
+    return items
+  }
+
+  // Layer-based selections
+  const layer = props.selection.layer
+  if (!layer) {
+    items.push({ label: 'Properties' })
+    return items
+  }
+
+  // Add layer name as first item
+  items.push({ label: layer.name })
+
+  // Processor type selected (effect or mask)
+  if (props.selection.processorType === 'effect') {
+    const effectType = getEffectType(layer)
+    if (effectType) {
+      items.push({ label: effectType })
+    }
+    return items
+  }
+
+  if (props.selection.processorType === 'mask') {
+    const shapeType = getMaskShapeType(layer)
+    if (shapeType) {
+      items.push({ label: shapeType })
+    }
+    return items
+  }
+
+  if (props.selection.processorType === 'processor') {
+    items.push({ label: 'Processor' })
+    return items
+  }
+
+  // Surface or base layer
+  const surfaceType = getSurfaceType(layer)
+  if (surfaceType) {
+    items.push({ label: surfaceType })
+  }
+
+  // Image layer
+  if (props.selection.layerVariant === 'image') {
+    items.push({ label: 'Image' })
+  }
+
+  return items
+})
 </script>
 
 <template>
   <aside class="hero-right-panel">
     <PanelHeader
-      :title="panelTitle()"
+      :breadcrumbs="breadcrumbs"
       @export="emit('export-preset')"
     />
 
