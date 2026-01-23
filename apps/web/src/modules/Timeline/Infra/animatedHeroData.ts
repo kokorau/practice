@@ -806,6 +806,189 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
 })
 
 // ============================================================
+// Preset 6: Morphing Blob
+// Organic blob shape with continuous seed-based morphing
+// ============================================================
+
+const morphingBlobTimeline: Timeline = {
+  loopType: 'forward',
+  phases: [
+    { id: 'phase-opening' as PhaseId, type: 'Opening', duration: 3000 },
+    { id: 'phase-loop' as PhaseId, type: 'Loop', duration: 20000 },
+  ],
+  tracks: [
+    // Opening: blob fades in with growing radius
+    {
+      id: 'track-radius-open' as TrackId,
+      name: 'Radius Intro',
+      clock: 'Phase',
+      phaseId: 'phase-opening' as PhaseId,
+      expression: 'smoothstep(0, 3000, t)',
+    },
+    // Loop: continuous seed morphing (key animation - uses continuous seed function)
+    {
+      id: 'track-seed' as TrackId,
+      name: 'Blob Seed',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: 'phase(t, 20000)',
+    },
+    // Loop: subtle radius breathing
+    {
+      id: 'track-radius' as TrackId,
+      name: 'Blob Radius',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: 'osc(t, 12000)',
+    },
+    // Loop: amplitude variation
+    {
+      id: 'track-amplitude' as TrackId,
+      name: 'Blob Amplitude',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: 'osc(t, 8000, 2000)',
+    },
+    // Loop: slow center drift X
+    {
+      id: 'track-center-x' as TrackId,
+      name: 'Center X',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: 'osc(t, 16000)',
+    },
+    // Loop: slow center drift Y
+    {
+      id: 'track-center-y' as TrackId,
+      name: 'Center Y',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: 'osc(t, 14000, 3500)',
+    },
+  ],
+}
+
+const createMorphingBlobConfig = (): HeroViewConfig => ({
+  viewport: { width: 1280, height: 720 },
+  colors: { semanticContext: 'canvas' },
+  layers: [
+    {
+      type: 'group',
+      id: 'background-group',
+      name: 'Background',
+      visible: true,
+      children: [
+        {
+          type: 'surface',
+          id: 'background',
+          name: 'Gradient Background',
+          visible: true,
+          surface: {
+            id: 'gradientGrain',
+            params: {
+              depthMapType: $PropertyValue.static('radial'),
+              angle: $PropertyValue.static(0),
+              centerX: $PropertyValue.static(0.5),
+              centerY: $PropertyValue.static(0.5),
+              radialStartAngle: $PropertyValue.static(0),
+              radialSweepAngle: $PropertyValue.static(360),
+              perlinScale: $PropertyValue.static(3),
+              perlinOctaves: $PropertyValue.static(3),
+              perlinContrast: $PropertyValue.static(0.6),
+              perlinOffset: $PropertyValue.static(0),
+              seed: $PropertyValue.static(77),
+              sparsity: $PropertyValue.static(0.3),
+            },
+          },
+          colors: { primary: 'F1', secondary: 'F2' },
+        },
+      ],
+    },
+    {
+      type: 'group',
+      id: 'blob-group',
+      name: 'Morphing Blob',
+      visible: true,
+      children: [
+        {
+          type: 'surface',
+          id: 'blob-surface',
+          name: 'Blob Fill',
+          visible: true,
+          surface: {
+            id: 'gradientGrain',
+            params: {
+              depthMapType: $PropertyValue.static('radial'),
+              angle: $PropertyValue.static(0),
+              centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
+              centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
+              radialStartAngle: $PropertyValue.static(0),
+              radialSweepAngle: $PropertyValue.static(360),
+              perlinScale: $PropertyValue.static(4),
+              perlinOctaves: $PropertyValue.static(4),
+              perlinContrast: $PropertyValue.static(1),
+              perlinOffset: $PropertyValue.static(0),
+              seed: $PropertyValue.static(42),
+              sparsity: $PropertyValue.static(0.5),
+            },
+          },
+          colors: { primary: 'A', secondary: 'B' },
+        },
+        {
+          type: 'processor',
+          id: 'processor-blob-mask',
+          name: 'Blob Mask',
+          visible: true,
+          modifiers: [
+            {
+              type: 'mask',
+              enabled: true,
+              shape: {
+                id: 'blob',
+                params: {
+                  centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
+                  centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
+                  baseRadius: $PropertyValue.range('track-radius', 0.35, 0.42),
+                  amplitude: $PropertyValue.range('track-amplitude', 0.12, 0.18),
+                  octaves: $PropertyValue.static(4),
+                  seed: $PropertyValue.range('track-seed', 0, 100),
+                },
+              },
+              invert: false,
+              feather: 0.01,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  foreground: {
+    elements: [
+      {
+        id: 'title-1',
+        type: 'title',
+        visible: true,
+        position: 'middle-center',
+        content: 'Morph',
+        colorKey: 'auto',
+        fontSize: 4.5,
+        fontId: 'space-grotesk',
+      },
+      {
+        id: 'description-1',
+        type: 'description',
+        visible: true,
+        position: 'middle-center',
+        content: 'Continuous transformation',
+        colorKey: 'auto',
+        fontSize: 1.1,
+        fontId: 'quicksand',
+      },
+    ],
+  },
+})
+
+// ============================================================
 // Preset Collection
 // ============================================================
 
@@ -868,6 +1051,18 @@ export const ANIMATED_PRESETS: AnimatedPreset[] = [
       brand: { hue: 145, saturation: 55, value: 50 },
       accent: { hue: 25, saturation: 70, value: 60 },
       foundation: { hue: 80, saturation: 8, value: 94 },
+    },
+  },
+  {
+    id: 'morphing-blob',
+    name: 'Morphing Blob',
+    description: 'Organic blob with continuous seed-based morphing',
+    timeline: morphingBlobTimeline,
+    createConfig: createMorphingBlobConfig,
+    colorPreset: {
+      brand: { hue: 280, saturation: 60, value: 55 },
+      accent: { hue: 320, saturation: 70, value: 60 },
+      foundation: { hue: 260, saturation: 10, value: 96 },
     },
   },
 ]

@@ -332,7 +332,15 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   // Calculate angle for noise lookup
   let angle = atan2(delta.y, delta.x);
-  let noiseCoord = vec2f(angle * 2.0 + params.seed, params.seed * 0.5);
+
+  // Sample noise on a circular path to ensure seamless wrapping at ±π
+  // This avoids discontinuity at angle boundaries
+  let noiseRadius = 3.0;
+  let seedOffset = params.seed * 0.1;
+  let noiseCoord = vec2f(
+    cos(angle) * noiseRadius + seedOffset,
+    sin(angle) * noiseRadius + seedOffset * 0.7
+  );
 
   let octaves = clamp(i32(params.octaves), 1, 8);
   let noise = blobFbm(noiseCoord, octaves);
