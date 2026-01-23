@@ -157,6 +157,93 @@ const canUseEffectPipelinePreview = computed(() => {
 })
 
 // ============================================================
+// Effect Patterns for PresetSelector
+// ============================================================
+
+interface EffectPatternItem {
+  label: string
+  effectType: FilterType
+  /** Pre-built SingleEffectConfig for preview */
+  effectConfig: SingleEffectConfig
+}
+
+/**
+ * Effect patterns with preview configs
+ * Each item contains the effect type and a default config for thumbnail preview
+ */
+const effectPatterns = computed<EffectPatternItem[]>(() => [
+  {
+    label: 'Vignette',
+    effectType: 'vignette' as FilterType,
+    effectConfig: createSingleEffectConfig('vignette'),
+  },
+  {
+    label: 'Chromatic Aberration',
+    effectType: 'chromaticAberration' as FilterType,
+    effectConfig: createSingleEffectConfig('chromaticAberration'),
+  },
+  {
+    label: 'Dot Halftone',
+    effectType: 'dotHalftone' as FilterType,
+    effectConfig: createSingleEffectConfig('dotHalftone'),
+  },
+  {
+    label: 'Line Halftone',
+    effectType: 'lineHalftone' as FilterType,
+    effectConfig: createSingleEffectConfig('lineHalftone'),
+  },
+  {
+    label: 'Blur',
+    effectType: 'blur' as FilterType,
+    effectConfig: createSingleEffectConfig('blur'),
+  },
+])
+
+/**
+ * Selected effect index for PresetSelector
+ * Returns null when 'void' (None) is selected
+ */
+const selectedEffectIndex = computed(() => {
+  const type = props.filterProps.selectedType.value
+  if (type === 'void') return null
+  return effectPatterns.value.findIndex(p => p.effectType === type)
+})
+
+/**
+ * Handle effect selection from PresetSelector
+ */
+const handleEffectSelect = (index: number | null) => {
+  if (index === null) {
+    props.filterProps.selectedType.value = 'void'
+  } else {
+    const pattern = effectPatterns.value[index]
+    if (pattern) {
+      props.filterProps.selectedType.value = pattern.effectType
+    }
+  }
+}
+
+/**
+ * Get the current effect config for the selected effect preview
+ */
+const currentEffectConfig = computed<SingleEffectConfig | null>(() => {
+  const index = selectedEffectIndex.value
+  if (index === null || index < 0) return null
+  return effectPatterns.value[index]?.effectConfig ?? null
+})
+
+/**
+ * Check if pipeline preview is available for effect
+ */
+const canUseEffectPipelinePreview = computed(() => {
+  return !!(
+    props.maskProps.surface &&
+    props.maskProps.palette &&
+    currentEffectConfig.value
+  )
+})
+
+// ============================================================
 // Mask Preview (for pipeline-based mini preview)
 // ============================================================
 
