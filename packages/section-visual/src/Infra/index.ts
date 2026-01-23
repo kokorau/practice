@@ -17,7 +17,18 @@ export {
 export { renderHeroConfig } from './renderHeroConfig'
 export type { RenderHeroConfigOptions, TextureRendererLike } from './renderHeroConfig'
 
+export { createEffectSpecsForPreview } from './createEffectSpecsForPreview'
+export { createMaskPreviewConfig } from './createMaskPreviewConfig'
+export type { CreateMaskPreviewConfigOptions } from './createMaskPreviewConfig'
+
 export { createBrowserPresetExporter } from './Preset'
+
+// ============================================================
+// Compositor Pipeline (for thumbnail/preview rendering)
+// ============================================================
+
+export { buildPipeline, type PipelineResult } from './Compositor/buildPipeline'
+export { executePipeline, renderWithPipeline, type ExecutePipelineOptions } from './Compositor/executePipeline'
 
 // ============================================================
 // Shader Registry (UUID-based shader system)

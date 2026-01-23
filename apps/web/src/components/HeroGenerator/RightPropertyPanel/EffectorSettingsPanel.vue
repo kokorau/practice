@@ -208,25 +208,35 @@ const handleFilterTypeChange = (type: FilterType) => {
       </div>
       <PresetSelector
         label="Shape"
-        :items="maskProps.shapePatterns"
+        :items="maskProps.shapePatternsWithConfig ?? maskProps.shapePatterns"
         :selected-index="maskProps.selectedShapeIndex"
         @select="(index) => index !== null && emit('update:selectedMaskIndex', index)"
       >
         <template #selected>
           <MaskPatternThumbnail
-            v-if="maskProps.selectedShapeIndex !== null && maskProps.shapePatterns[maskProps.selectedShapeIndex]"
+            v-if="maskProps.selectedShapeIndex !== null && (maskProps.shapePatternsWithConfig ?? maskProps.shapePatterns)[maskProps.selectedShapeIndex]"
+            :surface="maskProps.surface"
+            :processor="maskProps.processor"
+            :preview-mask="maskProps.shapePatternsWithConfig?.[maskProps.selectedShapeIndex]?.maskConfig"
+            :palette="maskProps.palette"
             :create-background-spec="maskProps.createBackgroundThumbnailSpec"
             :create-mask-spec="maskProps.shapePatterns[maskProps.selectedShapeIndex]!.createSpec"
             :mask-color1="maskProps.outerColor"
             :mask-color2="maskProps.innerColor"
+            :preceding-effect-specs="maskProps.precedingEffectSpecs"
           />
         </template>
-        <template #item="{ item }">
+        <template #item="{ item, index }">
           <MaskPatternThumbnail
+            :surface="maskProps.surface"
+            :processor="maskProps.processor"
+            :preview-mask="maskProps.shapePatternsWithConfig?.[index]?.maskConfig"
+            :palette="maskProps.palette"
             :create-background-spec="maskProps.createBackgroundThumbnailSpec"
             :create-mask-spec="item.createSpec"
             :mask-color1="maskProps.outerColor"
             :mask-color2="maskProps.innerColor"
+            :preceding-effect-specs="maskProps.precedingEffectSpecs"
           />
         </template>
       </PresetSelector>

@@ -3,11 +3,11 @@ import type { WritableComputedRef } from 'vue'
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
-import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig } from '@practice/section-visual'
+import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig, NormalizedMaskConfig } from '@practice/section-visual'
 import { isSurfaceLayerConfig, isBaseLayerConfig, isProcessorLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
-import type { BackgroundSpecCreator } from '../MaskPatternThumbnail.vue'
+import type { BackgroundSpecCreator, EffectSpec } from '../MaskPatternThumbnail.vue'
 import type { MaskPatternItem } from './MaskSettingsPanel.vue'
 import type {
   VignetteConfigParams,
@@ -92,6 +92,11 @@ interface BackgroundProps {
   rawSurfaceParams?: Record<string, unknown> | null
 }
 
+/** Extended mask pattern item with normalized mask config */
+interface MaskPatternItemWithConfig extends MaskPatternItem {
+  maskConfig: NormalizedMaskConfig
+}
+
 /** Mask/surface layer state */
 interface MaskProps {
   colorKey1: PrimitiveKey | 'auto'
@@ -103,6 +108,8 @@ interface MaskProps {
   /** Raw params with PropertyValue preserved (for DSL display) */
   rawSurfaceParams?: Record<string, unknown> | null
   shapePatterns: MaskPatternItem[]
+  /** Shape patterns with normalized mask config (for pipeline rendering) */
+  shapePatternsWithConfig?: MaskPatternItemWithConfig[]
   selectedShapeIndex: number | null
   shapeSchema: ObjectSchema | null
   shapeParams: Record<string, unknown> | null
@@ -111,6 +118,15 @@ interface MaskProps {
   outerColor: RGBA
   innerColor: RGBA
   createBackgroundThumbnailSpec: BackgroundSpecCreator
+  /** Preceding effect specs for mask preview (effects before mask in Processor.modifiers) - legacy */
+  precedingEffectSpecs?: EffectSpec[]
+
+  // Pipeline-based rendering props (new)
+  /** Surface layer config from the selected Clip Group */
+  surface?: SurfaceLayerNodeConfig
+  /** Processor config (to extract preceding effects) */
+  processor?: ProcessorNodeConfig
+  /** Palette is passed as separate prop */
 }
 
 /** Filter/effect state - WritableComputedRef for direct binding */
@@ -425,6 +441,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         :filter-props="filter"
         :mask-props="{
           shapePatterns: mask.shapePatterns,
+          shapePatternsWithConfig: mask.shapePatternsWithConfig,
           selectedShapeIndex: mask.selectedShapeIndex,
           shapeSchema: mask.shapeSchema,
           shapeParams: mask.shapeParams,
@@ -432,6 +449,10 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
           outerColor: mask.outerColor,
           innerColor: mask.innerColor,
           createBackgroundThumbnailSpec: mask.createBackgroundThumbnailSpec,
+          precedingEffectSpecs: mask.precedingEffectSpecs,
+          surface: mask.surface,
+          processor: mask.processor,
+          palette: palette,
         }"
         @update:selected-mask-index="emit('update:mask', 'selectedShapeIndex', $event)"
         @update:mask-shape-params="emit('update:mask', 'shapeParams', $event)"

@@ -12,11 +12,17 @@ import { createHeroConfigSlice } from '@practice/site/Infra'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { ImageLayerNodeConfig } from '@practice/section-visual'
+import type { ImageLayerNodeConfig, ProcessorNodeConfig, SurfaceLayerNodeConfig, NormalizedMaskConfig } from '@practice/section-visual'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
+  isProcessorLayerConfig,
+  getEffectsBeforeMask,
+  createEffectSpecsForPreview,
+  findProcessorTargetSurface,
+  normalizeMaskConfig,
 } from '@practice/section-visual'
+import type { MaskShapeConfig } from '@practice/texture'
 
 // Type guard for ImageLayerNodeConfig
 function isImageLayerConfig(layer: unknown): layer is ImageLayerNodeConfig {
@@ -63,6 +69,7 @@ const layerSelection = provideLayerSelection()
 const {
   layerId: selectedLayerId,
   processorType: selectedProcessorType,
+  processorLayerId,
   selectCanvasLayer,
   selectProcessor,
   clearSelection,
@@ -465,6 +472,55 @@ const imageLayerProps = computed(() => {
   }
 })
 
+// Computed property for preceding effect specs (for mask preview)
+// When a mask is selected in a processor, get all effects that come before it
+const precedingEffectSpecs = computed(() => {
+  const layer = selectedLayer.value
+  if (!layer || !isProcessorLayerConfig(layer)) return undefined
+
+  const processor = layer as ProcessorNodeConfig
+  const precedingEffects = getEffectsBeforeMask(processor.modifiers)
+
+  if (precedingEffects.length === 0) return undefined
+
+  // Convert to shader specs for thumbnail preview (256x144 is the thumbnail size)
+  return createEffectSpecsForPreview(
+    precedingEffects,
+    { width: 256, height: 144 },
+    1 // scale factor
+  )
+})
+
+// Selected processor for mask preview pipeline
+const selectedProcessor = computed<ProcessorNodeConfig | undefined>(() => {
+  // Use processorLayerId which is set when a mask/effect is selected
+  if (!processorLayerId.value) return undefined
+  const layers = heroScene.config.heroViewConfig.value?.layers
+  if (!layers) return undefined
+  const layer = findLayerInTree(layers, processorLayerId.value)
+  if (!layer || !isProcessorLayerConfig(layer)) return undefined
+  return layer as ProcessorNodeConfig
+})
+
+// Target surface that the selected processor applies to
+const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() => {
+  const processor = selectedProcessor.value
+  if (!processor) return undefined
+
+  const layers = heroScene.config.heroViewConfig.value?.layers
+  if (!layers) return undefined
+
+  return findProcessorTargetSurface(layers, processor.id) ?? undefined
+})
+
+// Mask patterns with normalized config for pipeline-based preview
+const shapePatternsWithConfig = computed(() => {
+  return heroScene.pattern.maskPatterns.map((pattern) => ({
+    ...pattern,
+    maskConfig: normalizeMaskConfig(pattern.maskConfig as MaskShapeConfig),
+  }))
+})
+
 const handleImageUpdate = (key: string, value: unknown) => {
   const layer = selectedLayer.value
   if (!layer || !isImageLayerConfig(layer)) return
@@ -721,6 +777,7 @@ const handleImageUpdate = (key: string, value: unknown) => {
         surfaceParams: maskSurfaceParamsForUI,
         rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
         shapePatterns: heroScene.pattern.maskPatterns,
+        shapePatternsWithConfig: shapePatternsWithConfig,
         selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
         shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
         shapeParams: maskShapeParamsForUI,
@@ -728,6 +785,9 @@ const handleImageUpdate = (key: string, value: unknown) => {
         outerColor: heroScene.pattern.maskOuterColor.value,
         innerColor: heroScene.pattern.maskInnerColor.value,
         createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
+        precedingEffectSpecs: precedingEffectSpecs,
+        surface: processorTargetSurface,
+        processor: selectedProcessor,
       }"
       :filter="filterProps"
       :image="imageLayerProps"

@@ -12,16 +12,21 @@ import {
   useHeroScene,
   createSurfacePatterns,
 } from '../composables/SiteBuilder'
+import type { ProcessorNodeConfig, SurfaceLayerNodeConfig } from '@practice/section-visual'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
   isImageLayerConfig,
+  isProcessorLayerConfig,
   isAnimatedPreset,
   getPresetConfig,
   findLayerInTree,
+  findProcessorTargetSurface,
+  normalizeMaskConfig,
   createInMemoryHeroViewPresetRepository,
 } from '@practice/section-visual'
 import type { ImageLayerNodeConfig } from '@practice/section-visual'
+import type { MaskShapeConfig } from '@practice/texture'
 import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useFilterEditor } from '../composables/useFilterEditor'
@@ -52,6 +57,7 @@ const layerSelection = provideLayerSelection()
 const {
   layerId: selectedLayerId,
   processorType: selectedProcessorType,
+  processorLayerId,
   selectCanvasLayer,
   selectProcessor,
   clearSelection,
@@ -436,6 +442,39 @@ function stopResize() {
   document.removeEventListener('mousemove', onResize)
   document.removeEventListener('mouseup', stopResize)
 }
+
+// ============================================================
+// Mask Preview Pipeline Support
+// ============================================================
+// Selected processor for mask preview pipeline
+const selectedProcessor = computed<ProcessorNodeConfig | undefined>(() => {
+  // Use processorLayerId which is set when a mask/effect is selected
+  if (!processorLayerId.value) return undefined
+  const layers = heroScene.editor.heroViewConfig.value?.layers
+  if (!layers) return undefined
+  const layer = findLayerInTree(layers, processorLayerId.value)
+  if (!layer || !isProcessorLayerConfig(layer)) return undefined
+  return layer as ProcessorNodeConfig
+})
+
+// Target surface that the selected processor applies to
+const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() => {
+  const processor = selectedProcessor.value
+  if (!processor) return undefined
+
+  const layers = heroScene.editor.heroViewConfig.value?.layers
+  if (!layers) return undefined
+
+  return findProcessorTargetSurface(layers, processor.id) ?? undefined
+})
+
+// Mask patterns with normalized config for pipeline-based preview
+const shapePatternsWithConfig = computed(() => {
+  return heroScene.pattern.maskPatterns.map((pattern) => ({
+    ...pattern,
+    maskConfig: normalizeMaskConfig(pattern.maskConfig as MaskShapeConfig),
+  }))
+})
 </script>
 
 <template>
@@ -537,6 +576,7 @@ function stopResize() {
           surfaceParams: maskSurfaceParamsForUI,
           rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
           shapePatterns: heroScene.pattern.maskPatterns,
+          shapePatternsWithConfig: shapePatternsWithConfig,
           selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
           shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
           shapeParams: maskShapeParamsForUI,
@@ -544,6 +584,8 @@ function stopResize() {
           outerColor: heroScene.pattern.maskOuterColor.value,
           innerColor: heroScene.pattern.maskInnerColor.value,
           createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
+          surface: processorTargetSurface,
+          processor: selectedProcessor,
         }"
         :filter="filterProps"
         :image="imageLayerProps"

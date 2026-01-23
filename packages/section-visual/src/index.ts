@@ -203,6 +203,7 @@ export {
   updateLayerInTree,
   removeLayerFromTree,
   findParentLayerInTree,
+  findProcessorTargetSurface,
   moveLayerInTree,
   canMoveLayerInTree,
   wrapLayerInGroupInTree,
@@ -266,6 +267,11 @@ export {
   fromCustomSurfaceParams,
   // Layer helpers
   getLayerFilters,
+  // Processor modifier helpers
+  findMaskModifierIndex,
+  findModifierIndex,
+  getPrecedingEffects,
+  getEffectsBeforeMask,
   // Effect config type guard
   isSingleEffectConfig,
   // Effect utilities
@@ -432,7 +438,18 @@ export {
   createObject3DRenderer,
   // Config-based rendering
   renderHeroConfig,
+  // Effect preview utilities
+  createEffectSpecsForPreview,
+  // Mask preview utilities
+  createMaskPreviewConfig,
+  // Compositor pipeline
+  buildPipeline,
+  executePipeline,
+  renderWithPipeline,
 } from './Infra'
+
+// Mask preview types
+export type { CreateMaskPreviewConfigOptions } from './Infra'
 
 // Types (grouped state definitions for useHeroScene)
 export type {

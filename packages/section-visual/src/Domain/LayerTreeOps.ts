@@ -181,6 +181,38 @@ export const findParentLayerInTree = (
 }
 
 /**
+ * Find the target Surface layer that a Processor applies to.
+ * A Processor applies to accumulated siblings that come before it in the parent Group.
+ * This returns the first Surface among those preceding siblings.
+ *
+ * @param layers - Root layers array
+ * @param processorId - ID of the processor to find target for
+ * @returns The first Surface layer that the processor applies to, or null if not found
+ */
+export const findProcessorTargetSurface = (
+  layers: LayerNodeConfig[],
+  processorId: string
+): SurfaceLayerNodeConfig | null => {
+  // Find the parent Group of the Processor
+  const parent = findParentLayerInTree(layers, processorId)
+  if (!parent) return null // Processor is at root level or not found
+
+  // Find the processor's index in the parent's children
+  const processorIndex = parent.children.findIndex((c) => c.id === processorId)
+  if (processorIndex === -1) return null
+
+  // Find the first Surface among preceding siblings
+  for (let i = processorIndex - 1; i >= 0; i--) {
+    const sibling = parent.children[i]
+    if (sibling && isSurfaceLayerConfig(sibling)) {
+      return sibling
+    }
+  }
+
+  return null
+}
+
+/**
  * Flatten layers to a list (for iteration, depth-first order)
  */
 export const flattenLayersInTree = (layers: LayerNodeConfig[]): LayerNodeConfig[] => {

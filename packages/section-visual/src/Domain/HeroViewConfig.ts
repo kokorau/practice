@@ -740,6 +740,81 @@ export interface MaskProcessorConfig {
  */
 export type ProcessorConfig = SingleEffectConfig | MaskProcessorConfig
 
+/**
+ * Type guard for MaskProcessorConfig
+ */
+export function isMaskProcessorConfig(config: ProcessorConfig): config is MaskProcessorConfig {
+  return config.type === 'mask'
+}
+
+// ============================================================
+// Processor Modifier Helpers
+// ============================================================
+
+/**
+ * Find the index of the first mask modifier in a processor's modifiers array
+ * @returns Index of first mask, or -1 if no mask exists
+ */
+export function findMaskModifierIndex(modifiers: ProcessorConfig[]): number {
+  return modifiers.findIndex((m) => m.type === 'mask')
+}
+
+/**
+ * Find the index of a specific modifier in a processor's modifiers array
+ * @param modifiers - Array of processor modifiers
+ * @param predicate - Predicate function to match the modifier
+ * @returns Index of matching modifier, or -1 if not found
+ */
+export function findModifierIndex(
+  modifiers: ProcessorConfig[],
+  predicate: (m: ProcessorConfig, index: number) => boolean
+): number {
+  return modifiers.findIndex(predicate)
+}
+
+/**
+ * Get all effect modifiers that come before a given index in the modifiers array.
+ * Useful for generating preview with preceding effects applied.
+ *
+ * @param modifiers - Array of processor modifiers
+ * @param beforeIndex - Index to get effects before (exclusive)
+ * @returns Array of SingleEffectConfig that come before the given index
+ *
+ * @example
+ * ```typescript
+ * // Processor with [blur, vignette, mask]
+ * const maskIndex = findMaskModifierIndex(processor.modifiers) // 2
+ * const precedingEffects = getPrecedingEffects(processor.modifiers, maskIndex)
+ * // Returns [blur, vignette]
+ * ```
+ */
+export function getPrecedingEffects(
+  modifiers: ProcessorConfig[],
+  beforeIndex: number
+): SingleEffectConfig[] {
+  if (beforeIndex <= 0) return []
+
+  return modifiers
+    .slice(0, beforeIndex)
+    .filter((m): m is SingleEffectConfig => m.type === 'effect')
+}
+
+/**
+ * Get all effect modifiers that come before the first mask in the modifiers array.
+ * Convenience function combining findMaskModifierIndex and getPrecedingEffects.
+ *
+ * @param modifiers - Array of processor modifiers
+ * @returns Array of SingleEffectConfig that come before the first mask
+ */
+export function getEffectsBeforeMask(modifiers: ProcessorConfig[]): SingleEffectConfig[] {
+  const maskIndex = findMaskModifierIndex(modifiers)
+  if (maskIndex === -1) {
+    // No mask found, return all effects
+    return modifiers.filter((m): m is SingleEffectConfig => m.type === 'effect')
+  }
+  return getPrecedingEffects(modifiers, maskIndex)
+}
+
 // ============================================================
 // Effect Normalization Utilities
 // ============================================================
