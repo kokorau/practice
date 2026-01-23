@@ -391,6 +391,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const editorConfig = computed(() => editorState.value.config)
   // Mutable reference for lazy imageRegistry access (heroImages initialized later)
   let _imageRegistryGetter: (() => Map<string, ImageBitmap>) | null = null
+  // Mutable reference for lazy image cleanup (heroImages initialized later)
+  let _clearLayerImage: ((layerId: string) => void) | null = null
   const heroRenderer = useHeroSceneRenderer({
     primitivePalette,
     heroViewRepository,
@@ -673,7 +675,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     const layer = findLayerInTree(existingConfig.layers, id)
     if (!layer) return false
 
-    // Collect all descendant IDs to clean up effects
+    // Collect all descendant IDs to clean up effects and image resources
     const collectDescendantIds = (node: LayerNodeConfig): string[] => {
       const ids: string[] = [node.id]
       if (isGroupLayerConfig(node)) {
@@ -684,10 +686,30 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       return ids
     }
 
+    // Collect image layer IDs for resource cleanup
+    const collectImageLayerIds = (node: LayerNodeConfig): string[] => {
+      const ids: string[] = []
+      if (node.type === 'image') {
+        ids.push(node.id)
+      }
+      if (isGroupLayerConfig(node)) {
+        for (const child of node.children) {
+          ids.push(...collectImageLayerIds(child))
+        }
+      }
+      return ids
+    }
+
     // Delete effect configs for all descendants
     const idsToCleanup = collectDescendantIds(layer)
     for (const descendantId of idsToCleanup) {
       heroFilters.effectManager.deleteEffectConfig(descendantId)
+    }
+
+    // Cleanup image resources for image layers
+    const imageLayerIds = collectImageLayerIds(layer)
+    for (const imageLayerId of imageLayerIds) {
+      _clearLayerImage?.(imageLayerId)
     }
 
     // Remove layer from tree via usecase
@@ -809,8 +831,9 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     render,
   })
 
-  // Set the imageRegistry getter now that heroImages is initialized
+  // Set the imageRegistry getter and clearLayerImage now that heroImages is initialized
   _imageRegistryGetter = () => heroImages.imageRegistry.value
+  _clearLayerImage = heroImages.clearLayerImage
 
   // ============================================================
   // Initialize Config Loader Composable

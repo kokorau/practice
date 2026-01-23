@@ -221,7 +221,7 @@ const allLayerTypes: { type: LayerType; label: string; icon: string; disabled?: 
   { type: 'surface', label: 'Surface', icon: 'texture' },
   { type: 'group', label: 'Group', icon: 'folder_open' },
   { type: 'model3d', label: '3D Model', icon: 'view_in_ar' },
-  { type: 'image', label: 'Image (WIP)', icon: 'image', disabled: true },
+  { type: 'image', label: 'Image', icon: 'image' },
   { type: 'text', label: 'Text', icon: 'text_fields' },
 ]
 

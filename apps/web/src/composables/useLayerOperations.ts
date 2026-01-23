@@ -39,6 +39,19 @@ export type AddProcessorType = 'effect' | 'mask'
 /**
  * Scene operation callbacks from useHeroScene
  */
+export interface ImageLayerOptions {
+  imageId: string
+  mode: 'cover' | 'positioned'
+  position?: {
+    x: number
+    y: number
+    width: number
+    height: number
+    rotation?: number
+    opacity?: number
+  }
+}
+
 export interface SceneOperationCallbacks {
   /** Add mask layer to scene. Returns layer ID or null if limit reached */
   addMaskLayer: () => string | null
@@ -46,6 +59,8 @@ export interface SceneOperationCallbacks {
   addTextLayer: (options?: Partial<TextLayerOptions>) => string
   /** Add object layer to scene. Returns layer ID */
   addObjectLayer: (options?: Partial<ObjectLayerOptions>) => string
+  /** Add image layer to scene. Returns layer ID */
+  addImageLayer: (options?: Partial<ImageLayerOptions>) => string
   /** Add group layer to scene. Returns layer ID */
   addGroupLayer: () => string
   /** Remove layer from scene */
@@ -273,9 +288,10 @@ export function useLayerOperations(
         sceneCallbacks.addObjectLayer({ modelUrl: '' })
         break
       }
-      case 'image':
-        // Image is WIP
-        return
+      case 'image': {
+        sceneCallbacks.addImageLayer()
+        break
+      }
       default:
         return
     }
