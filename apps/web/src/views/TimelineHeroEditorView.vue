@@ -11,6 +11,7 @@ import {
   useSiteColorsBridge,
   useHeroScene,
   createSurfacePatterns,
+  LAYER_IDS,
 } from '../composables/SiteBuilder'
 import type { ProcessorNodeConfig, SurfaceLayerNodeConfig } from '@practice/section-visual'
 import {
@@ -413,6 +414,10 @@ watch(() => heroScene.preset.selectedPresetId.value, async (newPresetId) => {
       heroScene.foreground.foregroundConfig.value = config.foreground
     }
   }
+
+  // Reset effect manager selection to default layer (BASE)
+  // This ensures effect changes apply to the correct layer after preset switch
+  heroScene.filter.effectManager.selectLayer(LAYER_IDS.BASE)
 
   // Re-render scene
   await nextTick()
