@@ -1,0 +1,99 @@
+{
+  "id": "test-effect-dot-halftone-aberration",
+  "name": "Test Effect: Dot Halftone + RGB Aberration",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "stripe",
+              "width1": 20,
+              "width2": 20,
+              "angle": 0.7853981633974483
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "Bt"
+            }
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "halftone-group",
+        "name": "Halftone Layer",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "halftone-surface",
+            "name": "Halftone Surface",
+            "visible": true,
+            "surface": {
+              "type": "solid"
+            },
+            "colors": {
+              "primary": "F1",
+              "secondary": "auto"
+            }
+          },
+          {
+            "type": "processor",
+            "id": "processor-halftone",
+            "name": "Dot Halftone with RGB Aberration",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "effect",
+                "id": "dotHalftone",
+                "params": {
+                  "enabled": true,
+                  "dotSize": 12,
+                  "spacing": 24,
+                  "angle": 45,
+                  "aberration": 8
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 220,
+      "saturation": 80,
+      "value": 50
+    },
+    "accent": {
+      "hue": 340,
+      "saturation": 75,
+      "value": 55
+    },
+    "foundation": {
+      "hue": 45,
+      "saturation": 15,
+      "value": 95
+    }
+  }
+}

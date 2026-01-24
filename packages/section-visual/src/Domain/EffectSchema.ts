@@ -65,6 +65,7 @@ export const DotHalftoneEffectSchema = defineSchema({
   dotSize: number({ label: 'Dot Size', min: 2, max: 30, default: 8 }),
   spacing: number({ label: 'Spacing', min: 4, max: 60, default: 16 }),
   angle: number({ label: 'Angle', min: 0, max: 90, default: 45 }),
+  aberration: number({ label: 'Aberration', min: 0, max: 20, default: 2 }),
 })
 
 export type DotHalftoneEffectConfig = Infer<typeof DotHalftoneEffectSchema>
@@ -78,6 +79,7 @@ export const LineHalftoneEffectSchema = defineSchema({
   lineWidth: number({ label: 'Line Width', min: 1, max: 20, default: 4 }),
   spacing: number({ label: 'Spacing', min: 4, max: 40, default: 12 }),
   angle: number({ label: 'Angle', min: 0, max: 180, default: 45 }),
+  aberration: number({ label: 'Aberration', min: 0, max: 20, default: 2 }),
 })
 
 export type LineHalftoneEffectConfig = Infer<typeof LineHalftoneEffectSchema>

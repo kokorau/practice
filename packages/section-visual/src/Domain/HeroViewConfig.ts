@@ -1641,6 +1641,29 @@ function migrateLayerConfig(layer: LayerNodeConfig): LayerNodeConfig {
             }
           }
         }
+        if (modifier.type === 'effect') {
+          const effectModifier = modifier as SingleEffectConfig
+          // Convert raw values to PropertyValue format if needed
+          const params = effectModifier.params as Record<string, unknown>
+          const needsMigration = Object.values(params).some(
+            (value) => typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean'
+          )
+          if (needsMigration) {
+            const migratedParams: Record<string, PropertyValue> = {}
+            for (const [key, value] of Object.entries(params)) {
+              if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+                migratedParams[key] = $PropertyValue.static(value)
+              } else {
+                // Already PropertyValue format
+                migratedParams[key] = value as PropertyValue
+              }
+            }
+            return {
+              ...effectModifier,
+              params: migratedParams,
+            }
+          }
+        }
         return modifier
       })
       return {

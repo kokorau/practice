@@ -11,22 +11,26 @@ export interface LineHalftoneParams {
   spacing: number
   /** 線の角度（度） */
   angle: number
+  /** RGB収差の強度（ピクセル単位） */
+  aberration: number
 }
 
 /**
  * ラインハーフトーンシェーダー
  * 入力テクスチャの輝度に基づいて線の太さを変化させる
+ * RGB収差機能付き：R/G/Bチャンネルを少しずらして描画
+ * 背景は透過
  */
 export const lineHalftoneShader = /* wgsl */ `
 struct Uniforms {
   lineWidth: f32,        // 4 bytes
   spacing: f32,          // 4 bytes
   angle: f32,            // 4 bytes
+  aberration: f32,       // 4 bytes - RGB収差の強度
   viewportWidth: f32,    // 4 bytes
   viewportHeight: f32,   // 4 bytes
   _padding1: f32,        // 4 bytes
   _padding2: f32,        // 4 bytes
-  _padding3: f32,        // 4 bytes
 }
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -36,6 +40,14 @@ struct Uniforms {
 ${fullscreenVertex}
 
 ${moduloUtils}
+
+// 線マスクを計算する関数
+fn calcLineMask(rotatedY: f32, spacing: f32, lineWidth: f32, luminance: f32) -> f32 {
+  let linePos = safeModulo(rotatedY, spacing);
+  let centerDist = abs(linePos - spacing * 0.5);
+  let halftoneLineWidth = lineWidth * 0.5 * (1.0 - luminance);
+  return smoothstep(halftoneLineWidth + 0.5, halftoneLineWidth - 0.5, centerDist);
+}
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -63,20 +75,26 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let centered = pos.xy - center;
   let rotatedY = centered.x * sinA + centered.y * cosA;
 
-  // 線のパターン内での位置を計算（共通ユーティリティ使用）
-  let linePos = safeModulo(rotatedY, u.spacing);
+  // RGB収差のオフセット（線に垂直な方向に適用）
+  // 中心からの距離に応じてオフセット量を調整
+  let distFromCenter = length(centered) / length(texSize * 0.5);
+  let aberrationAmount = u.aberration * distFromCenter;
 
-  // 線の中心からの距離
-  let centerDist = abs(linePos - u.spacing * 0.5);
+  // R/G/Bそれぞれの位置で線マスクを計算
+  let lineMaskR = calcLineMask(rotatedY + aberrationAmount, u.spacing, u.lineWidth, luminance);
+  let lineMaskG = calcLineMask(rotatedY, u.spacing, u.lineWidth, luminance);
+  let lineMaskB = calcLineMask(rotatedY - aberrationAmount, u.spacing, u.lineWidth, luminance);
 
-  // 輝度に応じた線幅（暗いほど線が太い）
-  let halftoneLineWidth = u.lineWidth * 0.5 * (1.0 - luminance);
+  // 透過背景にRGB収差付き線
+  // 線部分は暗く（減算）、ずれた部分は色が付く
+  let r = 1.0 - lineMaskR;
+  let g = 1.0 - lineMaskG;
+  let b = 1.0 - lineMaskB;
+  let maxMask = max(max(lineMaskR, lineMaskG), lineMaskB);
+  let alpha = maxMask * originalColor.a;
 
-  // 線マスク（アンチエイリアス付き）
-  let lineMask = smoothstep(halftoneLineWidth + 0.5, halftoneLineWidth - 0.5, centerDist);
-
-  // 白背景に黒線
-  let halftoneColor = vec4f(vec3f(1.0 - lineMask), originalColor.a);
+  // Premultiplied alpha: RGB を alpha で乗算（透過部分の RGB は 0 に）
+  let halftoneColor = vec4f(r * alpha, g * alpha, b * alpha, alpha);
 
   return halftoneColor;
 }
@@ -97,9 +115,9 @@ export const createLineHalftoneUniforms = (
   view.setFloat32(0, params.lineWidth, true)
   view.setFloat32(4, params.spacing, true)
   view.setFloat32(8, params.angle, true)
-  view.setFloat32(12, viewport.width, true)
-  view.setFloat32(16, viewport.height, true)
-  view.setFloat32(20, 0, true) // padding
+  view.setFloat32(12, params.aberration, true)
+  view.setFloat32(16, viewport.width, true)
+  view.setFloat32(20, viewport.height, true)
   view.setFloat32(24, 0, true) // padding
   view.setFloat32(28, 0, true) // padding
 
