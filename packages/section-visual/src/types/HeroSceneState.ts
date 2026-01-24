@@ -102,6 +102,10 @@ export interface EffectManagerInterface {
   /** Delete effect pipeline for a layer */
   readonly deleteEffectPipeline: (layerId: string) => void
 
+  // === Raw Params for DSL Display ===
+  /** Raw effect params for the selected layer (preserves PropertyValue for DSL display) */
+  readonly selectedRawEffectParams: ComputedRef<Map<EffectType, Record<string, unknown>>>
+
   // === Legacy API (deprecated, for backward compatibility) ===
   /** All layer effect configs (reactive Map) @deprecated Use effectPipelines instead */
   readonly effects: ComputedRef<Map<string, LayerEffectConfig>>

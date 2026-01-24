@@ -174,29 +174,6 @@ const canUseEffectPipelinePreview = computed(() => {
   )
 })
 
-// ============================================================
-// Mask Preview (for pipeline-based mini preview)
-// ============================================================
-
-/**
- * Get the current mask config for preview
- */
-const currentMaskConfig = computed(() => {
-  if (props.maskProps.selectedShapeIndex === null) return null
-  return props.maskProps.shapePatternsWithConfig?.[props.maskProps.selectedShapeIndex]?.maskConfig ?? null
-})
-
-/**
- * Check if pipeline preview is available
- */
-const canUsePipelinePreview = computed(() => {
-  return !!(
-    props.maskProps.surface &&
-    props.maskProps.processor &&
-    props.maskProps.palette &&
-    currentMaskConfig.value
-  )
-})
 </script>
 
 <template>

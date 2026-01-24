@@ -15,8 +15,6 @@ import {
 } from '../composables/SiteBuilder'
 import type { ProcessorNodeConfig, SurfaceLayerNodeConfig } from '@practice/section-visual'
 import {
-  isBaseLayerConfig,
-  isSurfaceLayerConfig,
   isImageLayerConfig,
   isProcessorLayerConfig,
   isAnimatedPreset,
