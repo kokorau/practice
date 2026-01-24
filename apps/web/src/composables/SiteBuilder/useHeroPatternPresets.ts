@@ -30,6 +30,8 @@ import {
   type SurfaceParamsUpdate,
   type MaskShapeParamsUpdate,
   toCustomMaskShapeParams,
+  toCustomSurfaceParams,
+  toCustomBackgroundSurfaceParams,
   $PropertyValue,
 } from '@practice/section-visual'
 
@@ -106,8 +108,6 @@ export const useHeroPatternPresets = (
     customSurfaceParams,
     customBackgroundSurfaceParams,
     processorLayerId,
-    extractSurfaceParams,
-    extractBackgroundSurfaceParams,
   } = surfaceParams
 
   const surfacePresets = getSurfacePresets()
@@ -131,7 +131,7 @@ export const useHeroPatternPresets = (
     const idx = selectedMidgroundTextureIndex.value
     const preset = midgroundTexturePatterns[idx]
     if (preset) {
-      customSurfaceParams.value = extractSurfaceParams(preset, midgroundTextureColor1.value, midgroundTextureColor2.value)
+      customSurfaceParams.value = toCustomSurfaceParams(preset.params)
     }
   }
 
@@ -139,7 +139,7 @@ export const useHeroPatternPresets = (
     const idx = selectedBackgroundIndex.value
     const preset = surfacePresets[idx]
     if (preset) {
-      const params = extractBackgroundSurfaceParams(preset.params, textureColor1.value, textureColor2.value)
+      const params = toCustomBackgroundSurfaceParams(preset.params)
       if (params.id === 'solid') {
         setBaseSurface({ id: 'solid', params: {} })
       } else if (params.id === 'stripe') {

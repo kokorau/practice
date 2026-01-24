@@ -241,6 +241,7 @@ export {
   updateLayerInTree,
   removeLayerFromTree,
   findParentLayerInTree,
+  findProcessorWithMask,
   findProcessorTargetSurface,
   moveLayerInTree,
   canMoveLayerInTree,
@@ -413,6 +414,9 @@ export {
   // ConfigSyncer
   syncBackgroundSurfaceParams,
   syncMaskSurfaceParams,
+  syncMaskShapeParams,
+  syncSurfaceParamsForLayer,
+  syncRawParams,
   // compileHeroView
   compileHeroView,
   DEFAULT_INTENSITY_PROVIDER,
@@ -436,7 +440,13 @@ export {
 } from './Application'
 
 // Re-export ConfigSyncer types
-export type { SyncBackgroundSurfaceResult, SyncMaskSurfaceResult } from './Application'
+export type {
+  SyncBackgroundSurfaceResult,
+  SyncMaskSurfaceResult,
+  SyncMaskShapeResult,
+  SyncSurfaceParamsForLayerResult,
+  SyncRawParamsResult,
+} from './Application'
 
 // HeroView Repository types (from Domain)
 export type {

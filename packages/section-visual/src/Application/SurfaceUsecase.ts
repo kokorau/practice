@@ -15,7 +15,11 @@ import type {
   MaskProcessorConfig,
   MaskShapeTypeId,
 } from '../Domain/HeroViewConfig'
-import { DEFAULT_LAYER_BACKGROUND_COLORS, DEFAULT_LAYER_MASK_COLORS } from '../Domain/HeroViewConfig'
+import { DEFAULT_LAYER_BACKGROUND_COLORS, DEFAULT_LAYER_MASK_COLORS, normalizeSurfaceConfig, normalizeMaskConfig } from '../Domain/HeroViewConfig'
+import { findProcessorWithMask, isMaskProcessorConfig } from '../Domain/LayerTreeOps'
+import { fromCustomSurfaceParams } from '../Domain/SurfaceMapper'
+import { fromCustomMaskShapeParams } from '../Domain/MaskShapeMapper'
+import type { CustomSurfaceParams, CustomMaskShapeParams } from '../types/HeroSceneState'
 import type { PropertyValue } from '../Domain/SectionVisual'
 import { $PropertyValue } from '../Domain/SectionVisual'
 
@@ -132,6 +136,24 @@ export interface SurfaceUsecase {
    * @param params 更新するパラメータ
    */
   updateMaskShapeParams(processorId: string, params: MaskShapeParamsUpdate): void
+
+  // ----------------------------------------
+  // CustomParams-based Operations (for UI binding)
+  // ----------------------------------------
+
+  /**
+   * CustomSurfaceParams からサーフェスを設定
+   * @param layerId レイヤーID
+   * @param params カスタムサーフェスパラメータ
+   */
+  setSurfaceFromCustomParams(layerId: string, params: CustomSurfaceParams): void
+
+  /**
+   * CustomMaskShapeParams からマスク形状を設定
+   * 自動的にマスクを持つProcessorを検索して更新
+   * @param params カスタムマスク形状パラメータ
+   */
+  setMaskShapeFromCustomParams(params: CustomMaskShapeParams): void
 
   /**
    * カラーキーを更新
@@ -270,6 +292,31 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       }
 
       repository.updateLayer(processorId, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
+    },
+
+    setSurfaceFromCustomParams(layerId: string, params: CustomSurfaceParams): void {
+      const surface = normalizeSurfaceConfig(fromCustomSurfaceParams(params))
+      repository.updateLayer(layerId, { surface })
+    },
+
+    setMaskShapeFromCustomParams(params: CustomMaskShapeParams): void {
+      const config = repository.get()
+      if (!config) return
+
+      const processor = findProcessorWithMask(config.layers)
+      if (!processor) return
+
+      const maskModifierIndex = processor.modifiers.findIndex(isMaskProcessorConfig)
+      if (maskModifierIndex === -1) return
+
+      const existingMask = processor.modifiers[maskModifierIndex] as MaskProcessorConfig
+      const newModifiers = [...processor.modifiers]
+      newModifiers[maskModifierIndex] = {
+        ...existingMask,
+        shape: normalizeMaskConfig(fromCustomMaskShapeParams(params)),
+      }
+
+      repository.updateLayer(processor.id, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
     },
 
     updateColorKey(key: 'primary' | 'secondary', value: HeroPrimitiveKey | 'auto'): void {
