@@ -263,3 +263,227 @@ export const TopLevelProcessor: Story = {
     expandedLayerIds: new Set(['background-group']),
   },
 }
+
+// Test: Group with 2 surfaces and processor - arrow should extend to both surfaces
+const mockLayersWithTwoSurfacesAndProcessor: LayerNodeConfig[] = [
+  {
+    type: 'group',
+    id: 'test-group',
+    name: 'Test Group',
+    visible: true,
+    children: [
+      {
+        type: 'surface',
+        id: 'surface-1',
+        name: 'Surface 1',
+        visible: true,
+        surface: createMockSurface('solid'),
+        colors: { primary: 'B', secondary: 'auto' },
+      },
+      {
+        type: 'surface',
+        id: 'surface-2',
+        name: 'Surface 2',
+        visible: true,
+        surface: createMockSurface('stripe', { width1: 10, width2: 10 }),
+        colors: { primary: 'F1', secondary: 'auto' },
+      },
+      {
+        type: 'processor',
+        id: 'processor-effect',
+        name: 'Effect Processor',
+        visible: true,
+        modifiers: [
+          {
+            type: 'effect',
+            id: 'vignette',
+            params: {
+              enabled: $PropertyValue.static(true),
+              radius: $PropertyValue.static(0.5),
+            },
+          },
+        ],
+      },
+    ],
+  },
+]
+
+export const TwoSurfacesWithProcessor: Story = {
+  args: {
+    layers: mockLayersWithTwoSurfacesAndProcessor,
+    foregroundElements: [],
+    selectedForegroundElementId: null,
+    expandedLayerIds: new Set(['test-group']),
+  },
+}
+
+// Test 1: Nested group with processor
+// Expected: surface-1 ↑, nested-group │, surface-3 │, processor └
+const mockLayersNestedGroup: LayerNodeConfig[] = [
+  {
+    type: 'group',
+    id: 'outer-group',
+    name: 'Outer Group',
+    visible: true,
+    children: [
+      {
+        type: 'surface',
+        id: 'surface-1',
+        name: 'Surface 1',
+        visible: true,
+        surface: createMockSurface('solid'),
+        colors: { primary: 'B', secondary: 'auto' },
+      },
+      {
+        type: 'group',
+        id: 'nested-group',
+        name: 'Nested Group',
+        visible: true,
+        children: [
+          {
+            type: 'surface',
+            id: 'nested-surface',
+            name: 'Nested Surface',
+            visible: true,
+            surface: createMockSurface('grid'),
+            colors: { primary: 'F1', secondary: 'auto' },
+          },
+        ],
+      },
+      {
+        type: 'surface',
+        id: 'surface-3',
+        name: 'Surface 3',
+        visible: true,
+        surface: createMockSurface('stripe'),
+        colors: { primary: 'F2', secondary: 'auto' },
+      },
+      {
+        type: 'processor',
+        id: 'processor-1',
+        name: 'Processor',
+        visible: true,
+        modifiers: [
+          {
+            type: 'effect',
+            id: 'blur',
+            params: { enabled: $PropertyValue.static(true), radius: $PropertyValue.static(10) },
+          },
+        ],
+      },
+    ],
+  },
+]
+
+export const NestedGroupWithProcessor: Story = {
+  args: {
+    layers: mockLayersNestedGroup,
+    foregroundElements: [],
+    selectedForegroundElementId: null,
+    expandedLayerIds: new Set(['outer-group', 'nested-group']),
+  },
+}
+
+// Test 2: Root level - processor applies to all surfaces before it
+// Expected: surface-1 ↑, surface-2 │, processor └
+const mockLayersRootMultipleSurfaces: LayerNodeConfig[] = [
+  {
+    type: 'surface',
+    id: 'surface-1',
+    name: 'Surface 1',
+    visible: true,
+    surface: createMockSurface('solid'),
+    colors: { primary: 'B', secondary: 'auto' },
+  },
+  {
+    type: 'surface',
+    id: 'surface-2',
+    name: 'Surface 2',
+    visible: true,
+    surface: createMockSurface('stripe'),
+    colors: { primary: 'F1', secondary: 'auto' },
+  },
+  {
+    type: 'processor',
+    id: 'processor-1',
+    name: 'Processor',
+    visible: true,
+    modifiers: [
+      {
+        type: 'mask',
+        enabled: true,
+        shape: createMockMask('circle', { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false }),
+        invert: false,
+        feather: 0,
+      },
+    ],
+  },
+]
+
+export const RootProcessorMultipleSurfaces: Story = {
+  args: {
+    layers: mockLayersRootMultipleSurfaces,
+    foregroundElements: [],
+    selectedForegroundElementId: null,
+    expandedLayerIds: new Set(),
+  },
+}
+
+// Test 3: Root level - processor applies to group and surfaces before it
+// Expected: surface-1 ↑, group │, processor └
+const mockLayersRootWithGroup: LayerNodeConfig[] = [
+  {
+    type: 'surface',
+    id: 'surface-1',
+    name: 'Surface 1',
+    visible: true,
+    surface: createMockSurface('solid'),
+    colors: { primary: 'B', secondary: 'auto' },
+  },
+  {
+    type: 'group',
+    id: 'middle-group',
+    name: 'Middle Group',
+    visible: true,
+    children: [
+      {
+        type: 'surface',
+        id: 'group-surface-1',
+        name: 'Group Surface 1',
+        visible: true,
+        surface: createMockSurface('grid'),
+        colors: { primary: 'F1', secondary: 'auto' },
+      },
+      {
+        type: 'surface',
+        id: 'group-surface-2',
+        name: 'Group Surface 2',
+        visible: true,
+        surface: createMockSurface('stripe'),
+        colors: { primary: 'F2', secondary: 'auto' },
+      },
+    ],
+  },
+  {
+    type: 'processor',
+    id: 'processor-1',
+    name: 'Processor',
+    visible: true,
+    modifiers: [
+      {
+        type: 'effect',
+        id: 'vignette',
+        params: { enabled: $PropertyValue.static(true), radius: $PropertyValue.static(0.5) },
+      },
+    ],
+  },
+]
+
+export const RootProcessorWithGroup: Story = {
+  args: {
+    layers: mockLayersRootWithGroup,
+    foregroundElements: [],
+    selectedForegroundElementId: null,
+    expandedLayerIds: new Set(['middle-group']),
+  },
+}
