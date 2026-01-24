@@ -16,7 +16,7 @@ export const mockTimeline: Timeline = {
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
       // smoothstep: smooth ease-in-out from 0 to 1
-      expression: 'smoothstep(0, 5000, t)',
+      expression: '=smoothstep(0, 5000, @t)',
     },
     {
       id: 'scale' as TrackId,
@@ -24,7 +24,7 @@ export const mockTimeline: Timeline = {
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
       // smoothstep: 0 → 1 (config maps via range to actual scale values)
-      expression: 'smoothstep(0, 5000, t)',
+      expression: '=smoothstep(0, 5000, @t)',
     },
 
     // ============================================================
@@ -38,7 +38,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // osc(t, period) → 0~1 sine wave
-      expression: 'osc(t, 2000)',
+      expression: '=osc(@t, 2000)',
     },
 
     // --- saw: Sawtooth wave (0~1) ---
@@ -48,7 +48,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // phase gives 0~1 linear ramp, same as saw(phase(...))
-      expression: 'phase(t, 2000)',
+      expression: '=phase(@t, 2000)',
     },
 
     // --- tri: Triangle wave (0~1) ---
@@ -58,7 +58,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // tri(phase(t, period)) → triangle wave
-      expression: 'tri(phase(t, 2000))',
+      expression: '=tri(phase(@t, 2000))',
     },
 
     // --- oscPulse: Pulse/Square wave (0 or 1) ---
@@ -68,7 +68,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // oscPulse(t, period, duty) → 0 or 1
-      expression: 'oscPulse(t, 2000, 0.5)',
+      expression: '=oscPulse(@t, 2000, 0.5)',
     },
 
     // --- oscStep: Stepped/Quantized wave ---
@@ -78,7 +78,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // oscStep(t, period, steps) → quantized 0~1
-      expression: 'oscStep(t, 2000, 4)',
+      expression: '=oscStep(@t, 2000, 4)',
     },
 
     // --- noise: Deterministic noise ---
@@ -88,7 +88,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // noise(t / scale, seed) → pseudo-random 0~1
-      expression: 'noise(div(t, 100), 42)',
+      expression: '=noise(@t / 100, 42)',
     },
 
     // ============================================================
@@ -102,7 +102,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // osc 0~1, config maps via range to -30~30 degrees
-      expression: 'osc(t, 3000)',
+      expression: '=osc(@t, 3000)',
     },
 
     // --- Layered: Two oscillations combined ---
@@ -112,7 +112,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // Combine slow and fast oscillations: 0.7 * slow + 0.3 * fast
-      expression: 'add(mul(osc(t, 4000), 0.7), mul(osc(t, 500), 0.3))',
+      expression: '=osc(@t, 4000) * 0.7 + osc(@t, 500) * 0.3',
     },
 
     // --- Noise modulated: Noise affecting amplitude ---
@@ -122,7 +122,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // osc * (0.5 + 0.5 * noise) → amplitude varies with noise
-      expression: 'mul(osc(t, 1500), add(0.5, mul(0.5, noise(div(t, 200)))))',
+      expression: '=osc(@t, 1500) * (0.5 + 0.5 * noise(@t / 200))',
     },
 
     // --- Bounce: Using abs(sin) for bouncing effect ---
@@ -132,7 +132,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // abs(sin) creates bounce effect (0-1)
-      expression: 'abs(sin(mul(div(t, 1000), PI)))',
+      expression: '=abs(sin(@t / 1000 * PI))',
     },
 
     // --- Elastic: Damped oscillation simulation ---
@@ -143,7 +143,7 @@ export const mockTimeline: Timeline = {
       phaseId: 'phase-loop' as PhaseId,
       // Simulates elastic/damped motion using exp decay * sin
       // Repeats every 3000ms, phase gives 0~1, mul by 3 for ~3 oscillations
-      expression: 'add(0.5, mul(0.5, mul(exp(mul(-3, phase(t, 3000))), sin(mul(phase(t, 3000), mul(PI, 6))))))',
+      expression: '=0.5 + 0.5 * exp(-3 * phase(@t, 3000)) * sin(phase(@t, 3000) * PI * 6)',
     },
 
     // --- Heartbeat: Two quick pulses then pause ---
@@ -154,7 +154,7 @@ export const mockTimeline: Timeline = {
       phaseId: 'phase-loop' as PhaseId,
       // Two pulses in first 40% of period, then rest
       // pulse1 at 0-15%, pulse2 at 20-35%
-      expression: 'max(oscPulse(t, 2000, 0.15), oscPulse(t, 2000, 200, 0.15))',
+      expression: '=max(oscPulse(@t, 2000, 0.15), oscPulse(@t, 2000, 200, 0.15))',
     },
 
     // --- Wobble: Triangle + noise for organic movement ---
@@ -164,7 +164,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // 80% triangle + 20% noise for organic feel
-      expression: 'add(mul(tri(phase(t, 2500)), 0.8), mul(noise(div(t, 80)), 0.2))',
+      expression: '=tri(phase(@t, 2500)) * 0.8 + noise(@t / 80) * 0.2',
     },
 
     // --- Breathing: Smooth slow oscillation ---
@@ -175,7 +175,7 @@ export const mockTimeline: Timeline = {
       phaseId: 'phase-loop' as PhaseId,
       // Very slow smoothed oscillation for breathing effect
       // Uses pow to make the curve more organic (steeper at edges)
-      expression: 'pow(osc(t, 4000), 1.5)',
+      expression: '=osc(@t, 4000) ** 1.5',
     },
 
     // --- Clamped noise: Noise with min/max bounds ---
@@ -185,7 +185,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // Noise scaled up then clamped to 0.2~0.8
-      expression: 'clamp(noise(div(t, 150)), 0.2, 0.8)',
+      expression: '=clamp(noise(@t / 150), 0.2, 0.8)',
     },
 
     // --- Quantized sine: Sine wave with step quantization ---
@@ -195,7 +195,7 @@ export const mockTimeline: Timeline = {
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // floor(osc * 8) / 8 → 8-level quantization
-      expression: 'div(floor(mul(osc(t, 2000), 8)), 8)',
+      expression: '=floor(osc(@t, 2000) * 8) / 8',
     },
   ],
 }

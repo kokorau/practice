@@ -27,25 +27,38 @@ const PERIODIC_FUNCTIONS = ['osc', 'phase', 'oscPulse', 'oscStep']
  * extractPeriod(ast) // → 3000
  */
 export function extractPeriod(ast: AstNode): number | undefined {
-  if (ast.type === 'call') {
-    // Check if this is a periodic function
-    if (PERIODIC_FUNCTIONS.includes(ast.name)) {
-      const periodArg = ast.args[1]
-      if (periodArg?.type === 'number') {
-        return periodArg.value
+  switch (ast.type) {
+    case 'call':
+      // Check if this is a periodic function
+      if (PERIODIC_FUNCTIONS.includes(ast.name)) {
+        const periodArg = ast.args[1]
+        if (periodArg?.type === 'number') {
+          return periodArg.value
+        }
       }
+      // Recursively search in arguments
+      for (const arg of ast.args) {
+        const period = extractPeriod(arg)
+        if (period !== undefined) {
+          return period
+        }
+      }
+      return undefined
+
+    case 'binary': {
+      const leftPeriod = extractPeriod(ast.left)
+      if (leftPeriod !== undefined) return leftPeriod
+      return extractPeriod(ast.right)
     }
 
-    // Recursively search in arguments
-    for (const arg of ast.args) {
-      const period = extractPeriod(arg)
-      if (period !== undefined) {
-        return period
-      }
-    }
+    case 'unary':
+      return extractPeriod(ast.operand)
+
+    case 'number':
+    case 'identifier':
+    case 'reference':
+      return undefined
   }
-
-  return undefined
 }
 
 /**
@@ -65,19 +78,35 @@ export function extractAllPeriods(ast: AstNode): number[] {
   const periods: number[] = []
 
   function traverse(node: AstNode): void {
-    if (node.type === 'call') {
-      // Check if this is a periodic function
-      if (PERIODIC_FUNCTIONS.includes(node.name)) {
-        const periodArg = node.args[1]
-        if (periodArg?.type === 'number') {
-          periods.push(periodArg.value)
+    switch (node.type) {
+      case 'call':
+        // Check if this is a periodic function
+        if (PERIODIC_FUNCTIONS.includes(node.name)) {
+          const periodArg = node.args[1]
+          if (periodArg?.type === 'number') {
+            periods.push(periodArg.value)
+          }
         }
-      }
+        // Continue traversing arguments
+        for (const arg of node.args) {
+          traverse(arg)
+        }
+        break
 
-      // Continue traversing arguments
-      for (const arg of node.args) {
-        traverse(arg)
-      }
+      case 'binary':
+        traverse(node.left)
+        traverse(node.right)
+        break
+
+      case 'unary':
+        traverse(node.operand)
+        break
+
+      case 'number':
+      case 'identifier':
+      case 'reference':
+        // No periods in these nodes
+        break
     }
   }
 

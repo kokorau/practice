@@ -57,7 +57,7 @@ const breathingCircleTimeline: Timeline = {
       name: 'Mask Radius',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      expression: 'smoothstep(0, 4000, t)',
+      expression: '=smoothstep(0, 4000, @t)',
     },
     // Loop: very gentle angle oscillation
     {
@@ -65,7 +65,7 @@ const breathingCircleTimeline: Timeline = {
       name: 'Stripe Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 12000)',
+      expression: '=osc(@t, 12000)',
     },
     // Loop: subtle width breathing
     {
@@ -73,7 +73,7 @@ const breathingCircleTimeline: Timeline = {
       name: 'Stripe Width',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 8000, 2000)',
+      expression: '=osc(@t, 8000, 2000)',
     },
     // Loop: slow horizontal drift
     {
@@ -81,7 +81,7 @@ const breathingCircleTimeline: Timeline = {
       name: 'Mask Center X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 16000)',
+      expression: '=osc(@t, 16000)',
     },
   ],
 }
@@ -197,7 +197,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Rays Count',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      expression: 'smoothstep(0, 3500, t)',
+      expression: '=smoothstep(0, 3500, @t)',
     },
     // Loop: slow continuous rotation (30 seconds for full rotation)
     {
@@ -205,7 +205,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Twist',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'phase(t, 30000)',
+      expression: '=phase(@t, 30000)',
     },
     // Loop: subtle rays breathing
     {
@@ -213,7 +213,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Rays',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 15000)',
+      expression: '=osc(@t, 15000)',
     },
     // Loop: very slow center drift
     {
@@ -221,7 +221,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Center X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 20000)',
+      expression: '=osc(@t, 20000)',
     },
     // Loop: very slow vertical drift
     {
@@ -229,7 +229,7 @@ const rotatingSunburstTimeline: Timeline = {
       name: 'Center Y',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 25000, 6000)',
+      expression: '=osc(@t, 25000, 6000)',
     },
   ],
 }
@@ -336,7 +336,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Amplitude Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      expression: 'smoothstep(0, 3000, t)',
+      expression: '=smoothstep(0, 3000, @t)',
     },
     // Loop: subtle amplitude breathing
     {
@@ -344,7 +344,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Amplitude',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 12000)',
+      expression: '=osc(@t, 12000)',
     },
     // Loop: slow wavelength variation
     {
@@ -352,7 +352,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Wavelength',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 18000, 4500)',
+      expression: '=osc(@t, 18000, 4500)',
     },
     // Loop: very gentle angle sway
     {
@@ -360,7 +360,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Wave Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 20000)',
+      expression: '=osc(@t, 20000)',
     },
     // Loop: slow thickness breathing
     {
@@ -368,7 +368,7 @@ const flowingWavesTimeline: Timeline = {
       name: 'Thickness',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 10000, 2500)',
+      expression: '=osc(@t, 10000, 2500)',
     },
   ],
 }
@@ -493,7 +493,7 @@ const pulsingGridTimeline: Timeline = {
       name: 'Cell Size Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      expression: 'smoothstep(0, 2500, t)',
+      expression: '=smoothstep(0, 2500, @t)',
     },
     // Loop: subtle cell size breathing
     {
@@ -501,7 +501,7 @@ const pulsingGridTimeline: Timeline = {
       name: 'Cell Size',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 10000)',
+      expression: '=osc(@t, 10000)',
     },
     // Loop: very subtle line width change
     {
@@ -509,7 +509,7 @@ const pulsingGridTimeline: Timeline = {
       name: 'Line Width',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 8000, 2000)',
+      expression: '=osc(@t, 8000, 2000)',
     },
     // Loop: slow mask size breathing
     {
@@ -517,7 +517,7 @@ const pulsingGridTimeline: Timeline = {
       name: 'Mask Radius',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 14000)',
+      expression: '=osc(@t, 14000)',
     },
   ],
 }
@@ -623,7 +623,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Scale Size Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      expression: 'smoothstep(0, 3500, t)',
+      expression: '=smoothstep(0, 3500, @t)',
     },
     // Loop: subtle scale size breathing
     {
@@ -631,7 +631,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Scale Size',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 14000)',
+      expression: '=osc(@t, 14000)',
     },
     // Loop: slow overlap variation
     {
@@ -639,7 +639,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Overlap',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 16000, 4000)',
+      expression: '=osc(@t, 16000, 4000)',
     },
     // Loop: very gentle angle sway
     {
@@ -647,7 +647,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 18000)',
+      expression: '=osc(@t, 18000)',
     },
     // Loop: slow mask drift
     {
@@ -655,7 +655,7 @@ const organicScalesTimeline: Timeline = {
       name: 'Mask X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 20000)',
+      expression: '=osc(@t, 20000)',
     },
   ],
 }
@@ -810,7 +810,7 @@ const morphingBlobTimeline: Timeline = {
       name: 'Radius Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
-      expression: 'smoothstep(0, 3000, t)',
+      expression: '=smoothstep(0, 3000, @t)',
     },
     // Loop: continuous seed morphing (key animation - uses continuous seed function)
     {
@@ -818,7 +818,7 @@ const morphingBlobTimeline: Timeline = {
       name: 'Blob Seed',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'phase(t, 20000)',
+      expression: '=phase(@t, 20000)',
     },
     // Loop: subtle radius breathing
     {
@@ -826,7 +826,7 @@ const morphingBlobTimeline: Timeline = {
       name: 'Blob Radius',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 12000)',
+      expression: '=osc(@t, 12000)',
     },
     // Loop: amplitude variation
     {
@@ -834,7 +834,7 @@ const morphingBlobTimeline: Timeline = {
       name: 'Blob Amplitude',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 8000, 2000)',
+      expression: '=osc(@t, 8000, 2000)',
     },
     // Loop: slow center drift X
     {
@@ -842,7 +842,7 @@ const morphingBlobTimeline: Timeline = {
       name: 'Center X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 16000)',
+      expression: '=osc(@t, 16000)',
     },
     // Loop: slow center drift Y
     {
@@ -850,7 +850,7 @@ const morphingBlobTimeline: Timeline = {
       name: 'Center Y',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
-      expression: 'osc(t, 14000, 3500)',
+      expression: '=osc(@t, 14000, 3500)',
     },
   ],
 }
