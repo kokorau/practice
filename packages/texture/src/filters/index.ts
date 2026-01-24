@@ -69,3 +69,24 @@ export {
   BLUR_BUFFER_SIZE,
   type BlurParams,
 } from '../shaders/blur'
+
+export {
+  pixelateShader,
+  createPixelateUniforms,
+  PIXELATE_BUFFER_SIZE,
+  type PixelateParams,
+} from '../shaders/pixelate'
+
+export {
+  hexagonMosaicShader,
+  createHexagonMosaicUniforms,
+  HEXAGON_MOSAIC_BUFFER_SIZE,
+  type HexagonMosaicParams,
+} from '../shaders/hexagonMosaic'
+
+export {
+  voronoiMosaicShader,
+  createVoronoiMosaicUniforms,
+  VORONOI_MOSAIC_BUFFER_SIZE,
+  type VoronoiMosaicParams,
+} from '../shaders/voronoiMosaic'

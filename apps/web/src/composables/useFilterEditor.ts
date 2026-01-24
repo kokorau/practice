@@ -8,6 +8,9 @@ import type {
   DotHalftoneEffectConfig,
   LineHalftoneEffectConfig,
   BlurEffectConfig,
+  PixelateEffectConfig,
+  HexagonMosaicEffectConfig,
+  VoronoiMosaicEffectConfig,
 } from '@practice/section-visual'
 import type { UseEffectManagerReturn } from './useEffectManager'
 
@@ -32,6 +35,9 @@ export type ChromaticConfigParams = Partial<Omit<ChromaticAberrationEffectConfig
 export type DotHalftoneConfigParams = Partial<Omit<DotHalftoneEffectConfig, 'enabled'>>
 export type LineHalftoneConfigParams = Partial<Omit<LineHalftoneEffectConfig, 'enabled'>>
 export type BlurConfigParams = Partial<Omit<BlurEffectConfig, 'enabled'>>
+export type PixelateConfigParams = Partial<Omit<PixelateEffectConfig, 'enabled'>>
+export type HexagonMosaicConfigParams = Partial<Omit<HexagonMosaicEffectConfig, 'enabled'>>
+export type VoronoiMosaicConfigParams = Partial<Omit<VoronoiMosaicEffectConfig, 'enabled'>>
 
 /**
  * Dynamic effect configs map type
@@ -65,6 +71,9 @@ function getFilterTypeFromConfig(config: LayerEffectConfig | null): FilterType {
   if (config.dotHalftone?.enabled) return 'dotHalftone'
   if (config.lineHalftone?.enabled) return 'lineHalftone'
   if (config.blur?.enabled) return 'blur'
+  if (config.pixelate?.enabled) return 'pixelate'
+  if (config.hexagonMosaic?.enabled) return 'hexagonMosaic'
+  if (config.voronoiMosaic?.enabled) return 'voronoiMosaic'
   return 'void'
 }
 
@@ -143,6 +152,9 @@ export function useFilterEditor(
   const dotHalftoneConfig = createEffectConfig('dotHalftone')
   const lineHalftoneConfig = createEffectConfig('lineHalftone')
   const blurConfig = createEffectConfig('blur')
+  const pixelateConfig = createEffectConfig('pixelate')
+  const hexagonMosaicConfig = createEffectConfig('hexagonMosaic')
+  const voronoiMosaicConfig = createEffectConfig('voronoiMosaic')
 
   const effectConfigs: EffectConfigsMap = {
     vignette: vignetteConfig,
@@ -150,6 +162,9 @@ export function useFilterEditor(
     dotHalftone: dotHalftoneConfig,
     lineHalftone: lineHalftoneConfig,
     blur: blurConfig,
+    pixelate: pixelateConfig,
+    hexagonMosaic: hexagonMosaicConfig,
+    voronoiMosaic: voronoiMosaicConfig,
   }
 
   // ============================================================

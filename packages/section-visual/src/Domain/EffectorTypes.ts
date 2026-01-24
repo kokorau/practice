@@ -248,6 +248,9 @@ export function getEffectorDisplayName(type: EffectorType): string {
     dotHalftone: 'Dot Halftone',
     lineHalftone: 'Line Halftone',
     blur: 'Blur',
+    pixelate: 'Pixelate',
+    hexagonMosaic: 'Hexagon Mosaic',
+    voronoiMosaic: 'Voronoi Mosaic',
     mask: 'Mask',
   }
   return displayNames[type]

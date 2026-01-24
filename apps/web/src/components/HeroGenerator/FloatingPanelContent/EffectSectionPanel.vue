@@ -31,6 +31,9 @@ import type {
   DotHalftoneConfigParams,
   LineHalftoneConfigParams,
   BlurConfigParams,
+  PixelateConfigParams,
+  HexagonMosaicConfigParams,
+  VoronoiMosaicConfigParams,
 } from '../../../composables/useFilterEditor'
 import { useVignetteEditor } from '../../../composables/useVignetteEditor'
 
@@ -42,6 +45,9 @@ interface FilterProps {
   dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
   lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
   blurConfig: WritableComputedRef<BlurConfigParams>
+  pixelateConfig?: WritableComputedRef<PixelateConfigParams>
+  hexagonMosaicConfig?: WritableComputedRef<HexagonMosaicConfigParams>
+  voronoiMosaicConfig?: WritableComputedRef<VoronoiMosaicConfigParams>
 }
 
 const props = defineProps<{
@@ -122,6 +128,9 @@ const createEffectPreviewConfig = (
     dotHalftone: { ...defaultEffects.dotHalftone, enabled: effectType === 'dotHalftone' },
     lineHalftone: { ...defaultEffects.lineHalftone, enabled: effectType === 'lineHalftone' },
     blur: { ...defaultEffects.blur, enabled: effectType === 'blur' },
+    pixelate: { ...defaultEffects.pixelate, enabled: effectType === 'pixelate' },
+    hexagonMosaic: { ...defaultEffects.hexagonMosaic, enabled: effectType === 'hexagonMosaic' },
+    voronoiMosaic: { ...defaultEffects.voronoiMosaic, enabled: effectType === 'voronoiMosaic' },
   }
 
   // Apply current config values if provided
@@ -136,6 +145,12 @@ const createEffectPreviewConfig = (
       effects.lineHalftone = { ...effectConfig.lineHalftone, enabled: true }
     } else if (effectType === 'blur') {
       effects.blur = { ...effectConfig.blur, enabled: true }
+    } else if (effectType === 'pixelate') {
+      effects.pixelate = { ...effectConfig.pixelate, enabled: true }
+    } else if (effectType === 'hexagonMosaic') {
+      effects.hexagonMosaic = { ...effectConfig.hexagonMosaic, enabled: true }
+    } else if (effectType === 'voronoiMosaic') {
+      effects.voronoiMosaic = { ...effectConfig.voronoiMosaic, enabled: true }
     }
   }
 
@@ -145,6 +160,8 @@ const createEffectPreviewConfig = (
   }
 }
 
+const defaultEffectsForCurrent = createDefaultEffectConfig()
+
 // Current effect config for preview
 const currentEffectConfig = computed((): LayerEffectConfig => ({
   vignette: migratedVignetteConfig.value,
@@ -152,6 +169,9 @@ const currentEffectConfig = computed((): LayerEffectConfig => ({
   dotHalftone: props.filter.dotHalftoneConfig.value as LayerEffectConfig['dotHalftone'],
   lineHalftone: props.filter.lineHalftoneConfig.value as LayerEffectConfig['lineHalftone'],
   blur: props.filter.blurConfig.value as LayerEffectConfig['blur'],
+  pixelate: props.filter.pixelateConfig?.value as LayerEffectConfig['pixelate'] ?? defaultEffectsForCurrent.pixelate,
+  hexagonMosaic: props.filter.hexagonMosaicConfig?.value as LayerEffectConfig['hexagonMosaic'] ?? defaultEffectsForCurrent.hexagonMosaic,
+  voronoiMosaic: props.filter.voronoiMosaicConfig?.value as LayerEffectConfig['voronoiMosaic'] ?? defaultEffectsForCurrent.voronoiMosaic,
 }))
 
 // Preview configs for each effect type

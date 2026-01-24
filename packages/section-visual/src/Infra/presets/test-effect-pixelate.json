@@ -1,0 +1,77 @@
+{
+  "id": "test-effect-pixelate",
+  "name": "Test Effect: Pixelate",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "gradientGrainRadial",
+              "grainScale": 1.5,
+              "grainIntensity": 0.3,
+              "centerX": 0.5,
+              "centerY": 0.5
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            }
+          },
+          {
+            "type": "processor",
+            "id": "processor-pixelate",
+            "name": "Pixelate Effect",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "effect",
+                "id": "pixelate",
+                "params": {
+                  "enabled": true,
+                  "blockSize": 16,
+                  "noiseScale": 0
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 220,
+      "saturation": 70,
+      "value": 60
+    },
+    "accent": {
+      "hue": 30,
+      "saturation": 80,
+      "value": 60
+    },
+    "foundation": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 97
+    }
+  }
+}

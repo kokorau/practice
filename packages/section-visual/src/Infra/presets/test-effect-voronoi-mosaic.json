@@ -1,0 +1,80 @@
+{
+  "id": "test-effect-voronoi-mosaic",
+  "name": "Test Effect: Voronoi Mosaic",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "gradientGrainRadial",
+              "grainScale": 1.5,
+              "grainIntensity": 0.3,
+              "centerX": 0.5,
+              "centerY": 0.5
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            }
+          },
+          {
+            "type": "processor",
+            "id": "processor-voronoi-mosaic",
+            "name": "Voronoi Mosaic Effect",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "effect",
+                "id": "voronoiMosaic",
+                "params": {
+                  "enabled": true,
+                  "cellCount": 12,
+                  "seed": 42,
+                  "showEdges": false,
+                  "edgeWidth": 2,
+                  "noiseScale": 0
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 260,
+      "saturation": 65,
+      "value": 55
+    },
+    "accent": {
+      "hue": 40,
+      "saturation": 75,
+      "value": 65
+    },
+    "foundation": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 98
+    }
+  }
+}

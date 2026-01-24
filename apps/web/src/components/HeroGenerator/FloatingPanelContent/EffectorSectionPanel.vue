@@ -16,6 +16,9 @@ import {
   DotHalftoneEffectSchema,
   LineHalftoneEffectSchema,
   BlurEffectSchema,
+  PixelateEffectSchema,
+  HexagonMosaicEffectSchema,
+  VoronoiMosaicEffectSchema,
   createDefaultEffectConfig,
   extractEnabledEffects,
   normalizeMaskConfig,
@@ -34,6 +37,9 @@ import type {
   DotHalftoneConfigParams,
   LineHalftoneConfigParams,
   BlurConfigParams,
+  PixelateConfigParams,
+  HexagonMosaicConfigParams,
+  VoronoiMosaicConfigParams,
 } from '../../../composables/useFilterEditor'
 import type { EffectorType, FilterProps, MaskProps } from '../../../composables/useEffectorManager'
 import { useVignetteEditor } from '../../../composables/useVignetteEditor'
@@ -139,6 +145,9 @@ const createEffectPreviewConfig = (
     dotHalftone: { ...defaultEffects.dotHalftone, enabled: effectType === 'dotHalftone' },
     lineHalftone: { ...defaultEffects.lineHalftone, enabled: effectType === 'lineHalftone' },
     blur: { ...defaultEffects.blur, enabled: effectType === 'blur' },
+    pixelate: { ...defaultEffects.pixelate, enabled: effectType === 'pixelate' },
+    hexagonMosaic: { ...defaultEffects.hexagonMosaic, enabled: effectType === 'hexagonMosaic' },
+    voronoiMosaic: { ...defaultEffects.voronoiMosaic, enabled: effectType === 'voronoiMosaic' },
   }
 
   if (effectConfig) {
@@ -152,6 +161,12 @@ const createEffectPreviewConfig = (
       effects.lineHalftone = { ...effectConfig.lineHalftone, enabled: true }
     } else if (effectType === 'blur') {
       effects.blur = { ...effectConfig.blur, enabled: true }
+    } else if (effectType === 'pixelate') {
+      effects.pixelate = { ...effectConfig.pixelate, enabled: true }
+    } else if (effectType === 'hexagonMosaic') {
+      effects.hexagonMosaic = { ...effectConfig.hexagonMosaic, enabled: true }
+    } else if (effectType === 'voronoiMosaic') {
+      effects.voronoiMosaic = { ...effectConfig.voronoiMosaic, enabled: true }
     }
   }
 
@@ -161,12 +176,17 @@ const createEffectPreviewConfig = (
   }
 }
 
+const defaultEffects = createDefaultEffectConfig()
+
 const currentEffectConfig = computed((): LayerEffectConfig => ({
   vignette: migratedVignetteConfig.value,
   chromaticAberration: props.filterProps.chromaticConfig.value as LayerEffectConfig['chromaticAberration'],
   dotHalftone: props.filterProps.dotHalftoneConfig.value as LayerEffectConfig['dotHalftone'],
   lineHalftone: props.filterProps.lineHalftoneConfig.value as LayerEffectConfig['lineHalftone'],
   blur: props.filterProps.blurConfig.value as LayerEffectConfig['blur'],
+  pixelate: props.filterProps.pixelateConfig?.value as LayerEffectConfig['pixelate'] ?? defaultEffects.pixelate,
+  hexagonMosaic: props.filterProps.hexagonMosaicConfig?.value as LayerEffectConfig['hexagonMosaic'] ?? defaultEffects.hexagonMosaic,
+  voronoiMosaic: props.filterProps.voronoiMosaicConfig?.value as LayerEffectConfig['voronoiMosaic'] ?? defaultEffects.voronoiMosaic,
 }))
 
 const effectPreviewConfigs = computed(() => {
@@ -179,6 +199,9 @@ const effectPreviewConfigs = computed(() => {
     dotHalftone: createEffectPreviewConfig(props.baseConfig, 'dotHalftone', currentEffectConfig.value),
     lineHalftone: createEffectPreviewConfig(props.baseConfig, 'lineHalftone', currentEffectConfig.value),
     blur: createEffectPreviewConfig(props.baseConfig, 'blur', currentEffectConfig.value),
+    pixelate: createEffectPreviewConfig(props.baseConfig, 'pixelate', currentEffectConfig.value),
+    hexagonMosaic: createEffectPreviewConfig(props.baseConfig, 'hexagonMosaic', currentEffectConfig.value),
+    voronoiMosaic: createEffectPreviewConfig(props.baseConfig, 'voronoiMosaic', currentEffectConfig.value),
   }
 })
 
@@ -309,6 +332,30 @@ const maskPreviewConfigs = computed(() => {
           @update:model-value="(v) => filterProps.blurConfig.value = v as BlurConfigParams"
         />
       </div>
+      <div v-else-if="filterProps.selectedType.value === 'pixelate'" class="filter-params">
+        <SchemaFields
+          :schema="PixelateEffectSchema"
+          :model-value="(filterProps.pixelateConfig?.value ?? defaultEffects.pixelate) as Record<string, unknown>"
+          :exclude="['enabled']"
+          @update:model-value="(v) => { if (filterProps.pixelateConfig) filterProps.pixelateConfig.value = v as PixelateConfigParams }"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'hexagonMosaic'" class="filter-params">
+        <SchemaFields
+          :schema="HexagonMosaicEffectSchema"
+          :model-value="(filterProps.hexagonMosaicConfig?.value ?? defaultEffects.hexagonMosaic) as Record<string, unknown>"
+          :exclude="['enabled']"
+          @update:model-value="(v) => { if (filterProps.hexagonMosaicConfig) filterProps.hexagonMosaicConfig.value = v as HexagonMosaicConfigParams }"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'voronoiMosaic'" class="filter-params">
+        <SchemaFields
+          :schema="VoronoiMosaicEffectSchema"
+          :model-value="(filterProps.voronoiMosaicConfig?.value ?? defaultEffects.voronoiMosaic) as Record<string, unknown>"
+          :exclude="['enabled']"
+          @update:model-value="(v) => { if (filterProps.voronoiMosaicConfig) filterProps.voronoiMosaicConfig.value = v as VoronoiMosaicConfigParams }"
+        />
+      </div>
 
       <!-- Effect type selection -->
       <div class="filter-options">
@@ -383,6 +430,42 @@ const maskPreviewConfigs = computed(() => {
             :palette="palette"
           />
           <span class="filter-name">Blur</span>
+        </button>
+        <button
+          class="filter-option"
+          :class="{ active: filterProps.selectedType.value === 'pixelate' }"
+          @click="filterProps.selectedType.value = 'pixelate'"
+        >
+          <HeroPreviewThumbnail
+            v-if="showPreview && effectPreviewConfigs && palette"
+            :config="effectPreviewConfigs.pixelate"
+            :palette="palette"
+          />
+          <span class="filter-name">Pixelate</span>
+        </button>
+        <button
+          class="filter-option"
+          :class="{ active: filterProps.selectedType.value === 'hexagonMosaic' }"
+          @click="filterProps.selectedType.value = 'hexagonMosaic'"
+        >
+          <HeroPreviewThumbnail
+            v-if="showPreview && effectPreviewConfigs && palette"
+            :config="effectPreviewConfigs.hexagonMosaic"
+            :palette="palette"
+          />
+          <span class="filter-name">Hexagon Mosaic</span>
+        </button>
+        <button
+          class="filter-option"
+          :class="{ active: filterProps.selectedType.value === 'voronoiMosaic' }"
+          @click="filterProps.selectedType.value = 'voronoiMosaic'"
+        >
+          <HeroPreviewThumbnail
+            v-if="showPreview && effectPreviewConfigs && palette"
+            :config="effectPreviewConfigs.voronoiMosaic"
+            :palette="palette"
+          />
+          <span class="filter-name">Voronoi Mosaic</span>
         </button>
       </div>
     </template>

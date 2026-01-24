@@ -173,6 +173,9 @@ const filterProps = {
   dotHalftoneConfig: effectConfigs.dotHalftone,
   lineHalftoneConfig: effectConfigs.lineHalftone,
   blurConfig: effectConfigs.blur,
+  pixelateConfig: effectConfigs.pixelate,
+  hexagonMosaicConfig: effectConfigs.hexagonMosaic,
+  voronoiMosaicConfig: effectConfigs.voronoiMosaic,
 }
 
 // ============================================================
