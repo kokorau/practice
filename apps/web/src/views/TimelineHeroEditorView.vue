@@ -15,8 +15,6 @@ import {
 } from '../composables/SiteBuilder'
 import type { ProcessorNodeConfig, SurfaceLayerNodeConfig } from '@practice/section-visual'
 import {
-  isBaseLayerConfig,
-  isSurfaceLayerConfig,
   isImageLayerConfig,
   isProcessorLayerConfig,
   isAnimatedPreset,
@@ -162,6 +160,7 @@ const selectedTimeline = computed((): Timeline | undefined => {
 const {
   selectedFilterType,
   effectConfigs,
+  rawEffectParams,
 } = useFilterEditor({
   effectManager: heroScene.filter.effectManager,
 })
@@ -177,6 +176,15 @@ const filterProps = {
   pixelateConfig: effectConfigs.pixelate,
   hexagonMosaicConfig: effectConfigs.hexagonMosaic,
   voronoiMosaicConfig: effectConfigs.voronoiMosaic,
+  // Raw params for DSL display
+  rawVignetteParams: rawEffectParams.vignette,
+  rawChromaticParams: rawEffectParams.chromaticAberration,
+  rawDotHalftoneParams: rawEffectParams.dotHalftone,
+  rawLineHalftoneParams: rawEffectParams.lineHalftone,
+  rawBlurParams: rawEffectParams.blur,
+  rawPixelateParams: rawEffectParams.pixelate,
+  rawHexagonMosaicParams: rawEffectParams.hexagonMosaic,
+  rawVoronoiMosaicParams: rawEffectParams.voronoiMosaic,
 }
 
 // ============================================================
@@ -299,11 +307,21 @@ const {
   onSelectProcessor: (layerId, type) => {
     selectProcessor(layerId, type)
     if (type === 'effect') {
-      // Find layer directly from layerId (selectedLayer.value may not be updated yet)
-      const layer = findLayerInTree(layers.value, layerId)
-      // Only Base and Surface layers support effects
-      if (layer && (isBaseLayerConfig(layer) || isSurfaceLayerConfig(layer))) {
-        heroScene.filter.effectManager.selectLayer(layer.id)
+      // layerId is the processor layer ID
+      // Find the processor and its target surface to sync effects
+      const processorLayer = findLayerInTree(layers.value, layerId)
+      if (processorLayer && isProcessorLayerConfig(processorLayer)) {
+        const processor = processorLayer as ProcessorNodeConfig
+        const targetSurface = findProcessorTargetSurface(layers.value, processor.id)
+        if (targetSurface) {
+          // Select the target surface layer in effectManager
+          heroScene.filter.effectManager.selectLayer(targetSurface.id)
+          // Sync effect from processor modifiers to effectManager
+          const effectModifier = processor.modifiers.find((m) => m.type === 'effect')
+          if (effectModifier && effectModifier.type === 'effect') {
+            heroScene.filter.effectManager.setEffectPipeline(targetSurface.id, [effectModifier])
+          }
+        }
       }
     }
   },

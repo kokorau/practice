@@ -174,29 +174,6 @@ const canUseEffectPipelinePreview = computed(() => {
   )
 })
 
-// ============================================================
-// Mask Preview (for pipeline-based mini preview)
-// ============================================================
-
-/**
- * Get the current mask config for preview
- */
-const currentMaskConfig = computed(() => {
-  if (props.maskProps.selectedShapeIndex === null) return null
-  return props.maskProps.shapePatternsWithConfig?.[props.maskProps.selectedShapeIndex]?.maskConfig ?? null
-})
-
-/**
- * Check if pipeline preview is available
- */
-const canUsePipelinePreview = computed(() => {
-  return !!(
-    props.maskProps.surface &&
-    props.maskProps.processor &&
-    props.maskProps.palette &&
-    currentMaskConfig.value
-  )
-})
 </script>
 
 <template>
@@ -205,90 +182,7 @@ const canUsePipelinePreview = computed(() => {
     <!-- Effect Settings (when effectorType === 'effect') -->
     <!-- ============================================== -->
     <template v-if="effectorType === 'effect'">
-      <!-- Effect params (shown when effect is active) -->
-      <div v-if="filterProps.selectedType.value === 'vignette'" class="filter-params">
-        <!-- Base vignette params (shape, intensity, softness) -->
-        <SchemaFields
-          :schema="VignetteBaseSchema"
-          :model-value="filterProps.vignetteConfig.value as Record<string, unknown>"
-          :exclude="['enabled']"
-          @update:model-value="handleVignetteBaseUpdate"
-        />
-        <!-- Shape-specific params -->
-        <SchemaFields
-          :schema="vignetteShapeSchema"
-          :model-value="vignetteShapeParams"
-          @update:model-value="handleVignetteShapeUpdate"
-        />
-        <!-- Color picker -->
-        <div class="color-picker-group">
-          <label class="color-picker-label">Color</label>
-          <input
-            type="color"
-            class="color-picker-input"
-            :value="vignetteColorHex"
-            @input="handleColorChange"
-          />
-        </div>
-      </div>
-      <div v-else-if="filterProps.selectedType.value === 'chromaticAberration'" class="filter-params">
-        <SchemaFields
-          :schema="ChromaticAberrationEffectSchema"
-          :model-value="filterProps.chromaticConfig.value as Record<string, unknown>"
-          :exclude="['enabled']"
-          @update:model-value="(v) => filterProps.chromaticConfig.value = v as ChromaticConfigParams"
-        />
-      </div>
-      <div v-else-if="filterProps.selectedType.value === 'dotHalftone'" class="filter-params">
-        <SchemaFields
-          :schema="DotHalftoneEffectSchema"
-          :model-value="filterProps.dotHalftoneConfig.value as Record<string, unknown>"
-          :exclude="['enabled']"
-          @update:model-value="(v) => filterProps.dotHalftoneConfig.value = v as DotHalftoneConfigParams"
-        />
-      </div>
-      <div v-else-if="filterProps.selectedType.value === 'lineHalftone'" class="filter-params">
-        <SchemaFields
-          :schema="LineHalftoneEffectSchema"
-          :model-value="filterProps.lineHalftoneConfig.value as Record<string, unknown>"
-          :exclude="['enabled']"
-          @update:model-value="(v) => filterProps.lineHalftoneConfig.value = v as LineHalftoneConfigParams"
-        />
-      </div>
-      <div v-else-if="filterProps.selectedType.value === 'blur'" class="filter-params">
-        <SchemaFields
-          :schema="BlurEffectSchema"
-          :model-value="filterProps.blurConfig.value as Record<string, unknown>"
-          :exclude="['enabled']"
-          @update:model-value="(v) => filterProps.blurConfig.value = v as BlurConfigParams"
-        />
-      </div>
-      <div v-else-if="filterProps.selectedType.value === 'pixelate'" class="filter-params">
-        <SchemaFields
-          :schema="PixelateEffectSchema"
-          :model-value="filterProps.pixelateConfig?.value as Record<string, unknown>"
-          :exclude="['enabled']"
-          @update:model-value="(v) => { if (filterProps.pixelateConfig) filterProps.pixelateConfig.value = v as Record<string, unknown> }"
-        />
-      </div>
-      <div v-else-if="filterProps.selectedType.value === 'hexagonMosaic'" class="filter-params">
-        <SchemaFields
-          :schema="HexagonMosaicEffectSchema"
-          :model-value="filterProps.hexagonMosaicConfig?.value as Record<string, unknown>"
-          :exclude="['enabled']"
-          @update:model-value="(v) => { if (filterProps.hexagonMosaicConfig) filterProps.hexagonMosaicConfig.value = v as Record<string, unknown> }"
-        />
-      </div>
-      <div v-else-if="filterProps.selectedType.value === 'voronoiMosaic'" class="filter-params">
-        <SchemaFields
-          :schema="VoronoiMosaicEffectSchema"
-          :model-value="filterProps.voronoiMosaicConfig?.value as Record<string, unknown>"
-          :exclude="['enabled']"
-          @update:model-value="(v) => { if (filterProps.voronoiMosaicConfig) filterProps.voronoiMosaicConfig.value = v as Record<string, unknown> }"
-        />
-      </div>
-
-      <!-- Effect type selection with PresetSelector -->
+      <!-- Effect type selection with PresetSelector (Preset) -->
       <PresetSelector
         label="Effect"
         :items="effectPatterns"
@@ -319,37 +213,105 @@ const canUsePipelinePreview = computed(() => {
           </div>
         </template>
       </PresetSelector>
+
+      <!-- Effect params (Parameters - shown when effect is active) -->
+      <div v-if="filterProps.selectedType.value === 'vignette'" class="filter-params">
+        <!-- Color picker -->
+        <div class="color-picker-group">
+          <label class="color-picker-label">Color</label>
+          <input
+            type="color"
+            class="color-picker-input"
+            :value="vignetteColorHex"
+            @input="handleColorChange"
+          />
+        </div>
+        <!-- Base vignette params (shape, intensity, softness) -->
+        <SchemaFields
+          :schema="VignetteBaseSchema"
+          :model-value="filterProps.vignetteConfig.value as Record<string, unknown>"
+          :raw-params="filterProps.rawVignetteParams?.value ?? null"
+          :exclude="['enabled']"
+          @update:model-value="handleVignetteBaseUpdate"
+        />
+        <!-- Shape-specific params -->
+        <SchemaFields
+          :schema="vignetteShapeSchema"
+          :model-value="vignetteShapeParams"
+          :raw-params="filterProps.rawVignetteParams?.value ?? null"
+          @update:model-value="handleVignetteShapeUpdate"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'chromaticAberration'" class="filter-params">
+        <SchemaFields
+          :schema="ChromaticAberrationEffectSchema"
+          :model-value="filterProps.chromaticConfig.value as Record<string, unknown>"
+          :raw-params="filterProps.rawChromaticParams?.value ?? null"
+          :exclude="['enabled']"
+          @update:model-value="(v) => filterProps.chromaticConfig.value = v as ChromaticConfigParams"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'dotHalftone'" class="filter-params">
+        <SchemaFields
+          :schema="DotHalftoneEffectSchema"
+          :model-value="filterProps.dotHalftoneConfig.value as Record<string, unknown>"
+          :raw-params="filterProps.rawDotHalftoneParams?.value ?? null"
+          :exclude="['enabled']"
+          @update:model-value="(v) => filterProps.dotHalftoneConfig.value = v as DotHalftoneConfigParams"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'lineHalftone'" class="filter-params">
+        <SchemaFields
+          :schema="LineHalftoneEffectSchema"
+          :model-value="filterProps.lineHalftoneConfig.value as Record<string, unknown>"
+          :raw-params="filterProps.rawLineHalftoneParams?.value ?? null"
+          :exclude="['enabled']"
+          @update:model-value="(v) => filterProps.lineHalftoneConfig.value = v as LineHalftoneConfigParams"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'blur'" class="filter-params">
+        <SchemaFields
+          :schema="BlurEffectSchema"
+          :model-value="filterProps.blurConfig.value as Record<string, unknown>"
+          :raw-params="filterProps.rawBlurParams?.value ?? null"
+          :exclude="['enabled']"
+          @update:model-value="(v) => filterProps.blurConfig.value = v as BlurConfigParams"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'pixelate'" class="filter-params">
+        <SchemaFields
+          :schema="PixelateEffectSchema"
+          :model-value="filterProps.pixelateConfig?.value as Record<string, unknown>"
+          :raw-params="filterProps.rawPixelateParams?.value ?? null"
+          :exclude="['enabled']"
+          @update:model-value="(v) => { if (filterProps.pixelateConfig) filterProps.pixelateConfig.value = v as Record<string, unknown> }"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'hexagonMosaic'" class="filter-params">
+        <SchemaFields
+          :schema="HexagonMosaicEffectSchema"
+          :model-value="filterProps.hexagonMosaicConfig?.value as Record<string, unknown>"
+          :raw-params="filterProps.rawHexagonMosaicParams?.value ?? null"
+          :exclude="['enabled']"
+          @update:model-value="(v) => { if (filterProps.hexagonMosaicConfig) filterProps.hexagonMosaicConfig.value = v as Record<string, unknown> }"
+        />
+      </div>
+      <div v-else-if="filterProps.selectedType.value === 'voronoiMosaic'" class="filter-params">
+        <SchemaFields
+          :schema="VoronoiMosaicEffectSchema"
+          :model-value="filterProps.voronoiMosaicConfig?.value as Record<string, unknown>"
+          :raw-params="filterProps.rawVoronoiMosaicParams?.value ?? null"
+          :exclude="['enabled']"
+          @update:model-value="(v) => { if (filterProps.voronoiMosaicConfig) filterProps.voronoiMosaicConfig.value = v as Record<string, unknown> }"
+        />
+      </div>
     </template>
 
     <!-- ============================================== -->
     <!-- Mask Settings (when effectorType === 'mask') -->
     <!-- ============================================== -->
     <template v-else-if="effectorType === 'mask'">
-      <!-- Mini Preview (shows current mask result) -->
-      <div v-if="canUsePipelinePreview" class="mini-preview-section">
-        <MaskPatternThumbnail
-          :surface="maskProps.surface"
-          :processor="maskProps.processor"
-          :preview-mask="currentMaskConfig ?? undefined"
-          :palette="maskProps.palette"
-          :create-background-spec="maskProps.createBackgroundThumbnailSpec"
-          :create-mask-spec="maskProps.shapePatterns[maskProps.selectedShapeIndex!]?.createSpec"
-          :mask-color1="maskProps.outerColor"
-          :mask-color2="maskProps.innerColor"
-          :preceding-effect-specs="maskProps.precedingEffectSpecs"
-        />
-      </div>
-      <!-- Shape params (shown when mask is selected) -->
-      <div v-if="maskProps.shapeSchema && maskProps.shapeParams" class="shape-params">
-        <SchemaFields
-          :schema="maskProps.shapeSchema"
-          :model-value="maskProps.shapeParams"
-          :raw-params="maskProps.rawShapeParams"
-          :exclude="['cutout']"
-          @update:model-value="emit('update:maskShapeParams', $event)"
-          @update:raw-value="(key, value) => emit('update:maskShapeRawValue', key, value)"
-        />
-      </div>
+      <!-- Shape PresetSelector (Preset) -->
       <PresetSelector
         label="Shape"
         :items="maskProps.shapePatternsWithConfig ?? maskProps.shapePatterns"
@@ -384,6 +346,18 @@ const canUsePipelinePreview = computed(() => {
           />
         </template>
       </PresetSelector>
+
+      <!-- Shape params (Parameters - shown when mask is selected) -->
+      <div v-if="maskProps.shapeSchema && maskProps.shapeParams" class="shape-params">
+        <SchemaFields
+          :schema="maskProps.shapeSchema"
+          :model-value="maskProps.shapeParams"
+          :raw-params="maskProps.rawShapeParams"
+          :exclude="['cutout']"
+                    @update:model-value="emit('update:maskShapeParams', $event)"
+          @update:raw-value="(key, value) => emit('update:maskShapeRawValue', key, value)"
+        />
+      </div>
     </template>
   </div>
 </template>
@@ -468,24 +442,6 @@ const canUsePipelinePreview = computed(() => {
 /* ============================================== */
 /* Mask Styles */
 /* ============================================== */
-
-.mini-preview-section {
-  width: 100%;
-  height: 4rem;
-  border-radius: 0.375rem;
-  overflow: hidden;
-  background: oklch(0.95 0.01 260);
-}
-
-:global(.dark) .mini-preview-section {
-  background: oklch(0.18 0.02 260);
-}
-
-.mini-preview-section :deep(canvas) {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 
 .shape-params {
   padding: 0.5rem 0;

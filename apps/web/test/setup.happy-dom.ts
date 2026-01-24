@@ -5,7 +5,13 @@
 
 // Polyfill URL for happy-dom in CI environment
 // happy-dom may not provide a functional URL constructor in some CI environments
-// Always polyfill from Node.js to ensure consistent behavior
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { URL: NodeURL } = require('node:url')
-globalThis.URL = NodeURL as typeof URL
+// Use Node.js URL as polyfill
+import { URL as NodeURL } from 'node:url'
+
+// Override globalThis.URL with Node.js implementation
+// This ensures URL constructor works in all environments
+Object.defineProperty(globalThis, 'URL', {
+  value: NodeURL,
+  writable: true,
+  configurable: true,
+})

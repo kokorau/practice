@@ -83,6 +83,14 @@ const breathingCircleTimeline: Timeline = {
       phaseId: 'phase-loop' as PhaseId,
       expression: '=osc(@t, 16000)',
     },
+    // Loop: blur radius breathing
+    {
+      id: 'track-blur-radius' as TrackId,
+      name: 'Blur Radius',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: '=osc(@t, 10000)',
+    },
   ],
 }
 
@@ -143,6 +151,13 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
           name: 'Mask',
           visible: true,
           modifiers: [
+            {
+              type: 'effect',
+              id: 'blur',
+              params: {
+                radius: $PropertyValue.range('track-blur-radius', 1, 8),
+              },
+            },
             {
               type: 'mask',
               enabled: true,

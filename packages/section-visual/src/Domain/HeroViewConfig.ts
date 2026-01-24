@@ -408,19 +408,8 @@ export function denormalizeSurfaceConfig(config: NormalizedSurfaceConfig): Surfa
  * For accurate rendering, use resolveParams() with an IntensityProvider instead.
  */
 export function safeDenormalizeSurfaceConfig(config: NormalizedSurfaceConfig): SurfaceConfig {
-  const rawParams: Record<string, unknown> = {}
-  for (const [key, prop] of Object.entries(config.params)) {
-    if ($PropertyValue.isStatic(prop)) {
-      rawParams[key] = prop.value
-    } else if ($PropertyValue.isRange(prop)) {
-      // Use min value as the base/default value for preset matching
-      rawParams[key] = prop.min
-    } else if (typeof prop === 'number' || typeof prop === 'string' || typeof prop === 'boolean') {
-      // Already resolved raw value (from CompiledSurface.params)
-      rawParams[key] = prop
-    }
-  }
-  return { type: config.id, ...rawParams } as SurfaceConfig
+  const { staticParams } = $PropertyValue.toStaticParams(config.params)
+  return { type: config.id, ...staticParams } as SurfaceConfig
 }
 
 /**
@@ -744,16 +733,8 @@ export function denormalizeMaskConfig(config: NormalizedMaskConfig): MaskShapeCo
  * For accurate rendering, use resolveParams() with an IntensityProvider instead.
  */
 export function safeDenormalizeMaskConfig(config: NormalizedMaskConfig): MaskShapeConfig {
-  const rawParams: Record<string, unknown> = {}
-  for (const [key, prop] of Object.entries(config.params)) {
-    if ($PropertyValue.isStatic(prop)) {
-      rawParams[key] = prop.value
-    } else if ($PropertyValue.isRange(prop)) {
-      // Use min value as the base/default value for preset matching
-      rawParams[key] = prop.min
-    }
-  }
-  return { type: config.id, ...rawParams } as MaskShapeConfig
+  const { staticParams } = $PropertyValue.toStaticParams(config.params)
+  return { type: config.id, ...staticParams } as MaskShapeConfig
 }
 
 /**
@@ -771,10 +752,11 @@ export function getMaskAsNormalized(config: AnyMaskConfig): NormalizedMaskConfig
 
 /**
  * Get mask config in legacy format (accepts both formats)
+ * For RangeExpr params, uses the `min` value (base value when intensity=0)
  */
 export function getMaskAsLegacy(config: AnyMaskConfig): MaskShapeConfig {
   if (isLegacyTypeMaskConfig(config)) return config
-  return denormalizeMaskConfig(config)
+  return safeDenormalizeMaskConfig(config)
 }
 
 // ============================================================
@@ -1068,6 +1050,33 @@ export function denormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): L
       ;(config[effectKey] as any) = {
         ...config[effectKey],
         ...rawParams,
+        enabled: true,
+      }
+    }
+  }
+
+  return config
+}
+
+/**
+ * Safely convert SingleEffectConfig[] to LayerEffectConfig for UI display
+ * For RangeExpr params, uses the `min` value (base value when intensity=0)
+ *
+ * Use this for UI display where approximate values are acceptable.
+ * For accurate rendering, use resolveParams() with an IntensityProvider instead.
+ */
+export function safeDenormalizeToLayerEffectConfig(effects: SingleEffectConfig[]): LayerEffectConfig {
+  const config = createDefaultEffectConfig()
+
+  for (const effect of effects) {
+    if (isValidEffectType(effect.id)) {
+      const effectKey = effect.id as keyof LayerEffectConfig
+      const { staticParams } = $PropertyValue.toStaticParams(effect.params)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(config[effectKey] as any) = {
+        ...config[effectKey],
+        ...staticParams,
         enabled: true,
       }
     }

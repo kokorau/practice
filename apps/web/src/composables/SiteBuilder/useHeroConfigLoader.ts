@@ -26,6 +26,7 @@ import {
   DEFAULT_LAYER_MASK_COLORS,
   findSurfacePresetIndex,
   findMaskPatternIndex,
+  findMaskPatternIndexByType,
   isSingleEffectConfig,
   migrateToNormalizedFormat,
 } from '@practice/section-visual'
@@ -203,7 +204,10 @@ export const useHeroConfigLoader = (
 
       if (maskShape) {
         const normalizedMaskShape = getMaskAsNormalized(maskShape)
-        selectedMaskIndex.value = findMaskPatternIndex(safeDenormalizeMaskConfig(normalizedMaskShape), heroThumbnails.maskPatterns)
+        const denormalizedShape = safeDenormalizeMaskConfig(normalizedMaskShape)
+        // First try exact match, then fallback to type-only match
+        const exactMatch = findMaskPatternIndex(denormalizedShape, heroThumbnails.maskPatterns)
+        selectedMaskIndex.value = exactMatch ?? findMaskPatternIndexByType(denormalizedShape, heroThumbnails.maskPatterns)
       } else {
         selectedMaskIndex.value = null
       }

@@ -357,6 +357,7 @@ export {
   removeLayerFromTree,
   findParentLayerInTree,
   findProcessorWithMask,
+  findAllProcessors,
   findProcessorTargetSurface,
   moveLayerInTree,
   canMoveLayerInTree,
@@ -723,6 +724,7 @@ export {
   createSingleEffectConfig,
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
+  safeDenormalizeToLayerEffectConfig,
   createDefaultMaskProcessorConfig,
   // Surface config normalization
   SURFACE_TYPES,
@@ -769,6 +771,7 @@ export {
   approxEqual,
   findSurfacePresetIndex,
   findMaskPatternIndex,
+  findMaskPatternIndexByType,
   type SurfacePresetParams,
   type MaskPatternConfig,
 } from './ReverseLookup'

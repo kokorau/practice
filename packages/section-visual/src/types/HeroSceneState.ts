@@ -102,6 +102,10 @@ export interface EffectManagerInterface {
   /** Delete effect pipeline for a layer */
   readonly deleteEffectPipeline: (layerId: string) => void
 
+  // === Raw Params for DSL Display ===
+  /** Raw effect params for the selected layer (preserves PropertyValue for DSL display) */
+  readonly selectedRawEffectParams: ComputedRef<Map<EffectType, Record<string, unknown>>>
+
   // === Legacy API (deprecated, for backward compatibility) ===
   /** All layer effect configs (reactive Map) @deprecated Use effectPipelines instead */
   readonly effects: ComputedRef<Map<string, LayerEffectConfig>>
@@ -835,6 +839,8 @@ export interface RightPanelBackgroundProps {
   readonly surfaceSchema: ObjectSchema | null
   /** Custom surface params */
   readonly surfaceParams: Record<string, unknown> | null
+  /** Raw surface params with PropertyValue preserved (for DSL display) */
+  readonly rawSurfaceParams?: Record<string, unknown> | null
 }
 
 /**
@@ -857,12 +863,16 @@ export interface RightPanelMaskProps {
   readonly surfaceSchema: ObjectSchema | null
   /** Custom surface params */
   readonly surfaceParams: Record<string, unknown> | null
+  /** Raw surface params with PropertyValue preserved (for DSL display) */
+  readonly rawSurfaceParams?: Record<string, unknown> | null
   /** Selected mask shape index */
   readonly selectedShapeIndex: number | null
   /** Mask shape schema for UI */
   readonly shapeSchema: ObjectSchema | null
   /** Custom mask shape params */
   readonly shapeParams: Record<string, unknown> | null
+  /** Raw mask shape params with PropertyValue preserved (for DSL display) */
+  readonly rawShapeParams?: Record<string, unknown> | null
   /** Outer color for mask */
   readonly outerColor: RGBA
   /** Inner color for mask */

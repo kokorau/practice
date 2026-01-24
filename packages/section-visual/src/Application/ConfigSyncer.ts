@@ -11,24 +11,13 @@ import type {
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
   GroupLayerNodeConfig,
-  NormalizedSurfaceConfig,
-  NormalizedMaskConfig,
+  SingleEffectConfig,
 } from '../Domain/HeroViewConfig'
-import { getSurfaceAsNormalized, denormalizeSurfaceConfig, getMaskAsNormalized, denormalizeMaskConfig } from '../Domain/HeroViewConfig'
-import { findProcessorWithMask, findLayerInTree, isMaskProcessorConfig, isSurfaceLayerConfig, isBaseLayerConfig } from '../Domain/LayerTreeOps'
+import { getSurfaceAsNormalized, safeDenormalizeSurfaceConfig, getMaskAsNormalized, safeDenormalizeMaskConfig, isSingleEffectConfig } from '../Domain/HeroViewConfig'
+import { findProcessorWithMask, findAllProcessors, findLayerInTree, isMaskProcessorConfig, isSurfaceLayerConfig, isBaseLayerConfig } from '../Domain/LayerTreeOps'
 import type { CustomBackgroundSurfaceParams, CustomSurfaceParams, CustomMaskShapeParams } from '../types/HeroSceneState'
 import { toCustomBackgroundSurfaceParams, toCustomSurfaceParams } from '../Domain/SurfaceMapper'
 import { toCustomMaskShapeParams } from '../Domain/MaskShapeMapper'
-import { $PropertyValue } from '../Domain/SectionVisual'
-
-/**
- * Check if a normalized config (surface or mask) has any RangeExpr values
- * If RangeExpr are present, the config cannot be denormalized for UI sync
- * (timeline-driven params are resolved at render time, not sync time)
- */
-function hasRangeValues(config: NormalizedSurfaceConfig | NormalizedMaskConfig): boolean {
-  return Object.values(config.params).some((prop) => $PropertyValue.isRange(prop))
-}
 
 /**
  * Background Surface 同期結果
@@ -87,12 +76,9 @@ export function syncBackgroundSurfaceParams(
   // Normalize first (ensures consistent format), then extract static values for UI params
   const normalizedSurface = getSurfaceAsNormalized(bgSurface)
 
-  // Skip if config has RangeExpr values (timeline-driven params can't be synced to UI)
-  if (hasRangeValues(normalizedSurface)) {
-    return { surfaceParams: null }
-  }
-
-  const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
+  // Use safe denormalize to handle RangeExpr values (uses min value as fallback)
+  // This allows the UI to show params even when timeline-driven
+  const staticSurface = safeDenormalizeSurfaceConfig(normalizedSurface)
   const surfaceParams = toCustomBackgroundSurfaceParams(staticSurface)
 
   return { surfaceParams }
@@ -154,12 +140,9 @@ export function syncMaskSurfaceParams(
   // Normalize first (ensures consistent format), then extract static values for UI params
   const normalizedSurface = getSurfaceAsNormalized(maskSurface)
 
-  // Skip if config has RangeExpr values (timeline-driven params can't be synced to UI)
-  if (hasRangeValues(normalizedSurface)) {
-    return { surfaceParams: null }
-  }
-
-  const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
+  // Use safe denormalize to handle RangeExpr values (uses min value as fallback)
+  // This allows the UI to show params even when timeline-driven
+  const staticSurface = safeDenormalizeSurfaceConfig(normalizedSurface)
   const surfaceParams = toCustomSurfaceParams(staticSurface)
 
   return { surfaceParams }
@@ -197,12 +180,9 @@ export function syncMaskShapeParams(config: HeroViewConfig): SyncMaskShapeResult
   // Normalize first (ensures consistent format), then extract static values for UI params
   const normalizedMask = getMaskAsNormalized(maskModifier.shape)
 
-  // Skip if config has RangeExpr values (timeline-driven params can't be synced to UI)
-  if (hasRangeValues(normalizedMask)) {
-    return { maskShapeParams: null, processorId: processor.id }
-  }
-
-  const staticMask = denormalizeMaskConfig(normalizedMask)
+  // Use safe denormalize to handle RangeExpr values (uses min value as fallback)
+  // This allows the UI to show params even when timeline-driven
+  const staticMask = safeDenormalizeMaskConfig(normalizedMask)
   const maskShapeParams = toCustomMaskShapeParams(staticMask)
 
   return { maskShapeParams, processorId: processor.id }
@@ -238,15 +218,22 @@ export function syncSurfaceParamsForLayer(
   const normalizedSurface = getSurfaceAsNormalized(surfaceLayer.surface)
   const rawParams = normalizedSurface.params as Record<string, unknown>
 
-  // Skip CustomParams extraction if config has RangeExpr values
-  if (hasRangeValues(normalizedSurface)) {
-    return { surfaceParams: null, rawParams }
-  }
-
-  const staticSurface = denormalizeSurfaceConfig(normalizedSurface)
+  // Use safe denormalize to handle RangeExpr values (uses min value as fallback)
+  // This allows the UI to show params even when timeline-driven
+  const staticSurface = safeDenormalizeSurfaceConfig(normalizedSurface)
   const surfaceParams = toCustomSurfaceParams(staticSurface)
 
   return { surfaceParams, rawParams }
+}
+
+/**
+ * Effect raw params entry (processor ID → effect configs)
+ */
+export interface EffectRawParams {
+  /** Processor layer ID */
+  processorId: string
+  /** Effect configs with raw PropertyValue params */
+  effects: SingleEffectConfig[]
 }
 
 /**
@@ -257,33 +244,66 @@ export interface SyncRawParamsResult {
   maskShape: Record<string, unknown> | null
   /** 背景サーフェスのrawParams */
   backgroundSurface: Record<string, unknown> | null
+  /** エフェクトのrawParams（全プロセッサから収集） */
+  effects: EffectRawParams[]
 }
 
 /**
  * Raw Params を同期する（DSL表示用）
  *
+ * Recursively searches all groups for processors and extracts raw params
+ * for masks, surfaces, and effects.
+ *
  * @param config - HeroViewConfig
  * @returns 同期結果
  */
 export function syncRawParams(config: HeroViewConfig): SyncRawParamsResult {
-  // Mask Shape raw params
+  // Mask Shape raw params (first processor with mask)
   let maskShape: Record<string, unknown> | null = null
-  const processor = findProcessorWithMask(config.layers)
-  if (processor) {
-    const maskModifier = processor.modifiers.find(isMaskProcessorConfig)
+  const processorWithMask = findProcessorWithMask(config.layers)
+  if (processorWithMask) {
+    const maskModifier = processorWithMask.modifiers.find(isMaskProcessorConfig)
     if (maskModifier) {
       const normalizedMask = getMaskAsNormalized(maskModifier.shape)
       maskShape = normalizedMask.params as Record<string, unknown>
     }
   }
 
-  // Background Surface raw params
+  // Background Surface raw params (search in background-group or fallback to base layer)
   let backgroundSurface: Record<string, unknown> | null = null
-  const baseLayer = config.layers.find((l) => l.id === 'background')
-  if (baseLayer && isBaseLayerConfig(baseLayer)) {
-    const normalizedSurface = getSurfaceAsNormalized(baseLayer.surface)
-    backgroundSurface = normalizedSurface.params as Record<string, unknown>
+  const backgroundGroup = config.layers.find(
+    (layer): layer is GroupLayerNodeConfig => layer.type === 'group' && layer.id === 'background-group'
+  )
+  if (backgroundGroup) {
+    const surfaceLayer = backgroundGroup.children.find(
+      (child): child is SurfaceLayerNodeConfig => child.type === 'surface' && child.id === 'background'
+    )
+    if (surfaceLayer) {
+      const normalizedSurface = getSurfaceAsNormalized(surfaceLayer.surface)
+      backgroundSurface = normalizedSurface.params as Record<string, unknown>
+    }
+  }
+  // Fallback: legacy base layer
+  if (!backgroundSurface) {
+    const baseLayer = config.layers.find((l) => l.id === 'background')
+    if (baseLayer && isBaseLayerConfig(baseLayer)) {
+      const normalizedSurface = getSurfaceAsNormalized(baseLayer.surface)
+      backgroundSurface = normalizedSurface.params as Record<string, unknown>
+    }
   }
 
-  return { maskShape, backgroundSurface }
+  // Effect raw params (from all processors, recursively)
+  const effects: EffectRawParams[] = []
+  const allProcessors = findAllProcessors(config.layers)
+  for (const processor of allProcessors) {
+    const effectModifiers = processor.modifiers.filter(isSingleEffectConfig)
+    if (effectModifiers.length > 0) {
+      effects.push({
+        processorId: processor.id,
+        effects: effectModifiers,
+      })
+    }
+  }
+
+  return { maskShape, backgroundSurface, effects }
 }

@@ -46,39 +46,7 @@ const shouldShowSurfaceParams = (): boolean => {
 
 <template>
   <div class="layer-settings">
-    <!-- Color selection -->
-    <div class="settings-section">
-      <p class="settings-label">Colors</p>
-      <div class="colors-row">
-        <PrimitiveColorPicker
-          :model-value="colorKey1"
-          :palette="primitivePalette"
-          label="Primary"
-          :show-auto="showAuto1"
-          @update:model-value="emit('update:colorKey1', $event)"
-        />
-        <PrimitiveColorPicker
-          :model-value="colorKey2"
-          :palette="primitivePalette"
-          label="Secondary"
-          :show-auto="showAuto2"
-          @update:model-value="emit('update:colorKey2', $event)"
-        />
-      </div>
-    </div>
-
-    <!-- Surface params -->
-    <div v-if="shouldShowSurfaceParams()" class="settings-section">
-      <p class="settings-label">Parameters</p>
-      <SchemaFields
-        :schema="surfaceSchema!"
-        :model-value="surfaceParams!"
-        :raw-params="rawSurfaceParams"
-        @update:model-value="emit('update:surfaceParams', $event)"
-      />
-    </div>
-
-    <!-- Texture selection -->
+    <!-- Texture selection (Preset) -->
     <div class="settings-section">
       <PresetSelector
         label="Texture"
@@ -102,6 +70,38 @@ const shouldShowSurfaceParams = (): boolean => {
           <PatternThumbnail :create-spec="item.createSpec" />
         </template>
       </PresetSelector>
+    </div>
+
+    <!-- Color selection -->
+    <div class="settings-section">
+      <p class="settings-label">Colors</p>
+      <div class="colors-row">
+        <PrimitiveColorPicker
+          :model-value="colorKey1"
+          :palette="primitivePalette"
+          label="Primary"
+          :show-auto="showAuto1"
+          @update:model-value="emit('update:colorKey1', $event)"
+        />
+        <PrimitiveColorPicker
+          :model-value="colorKey2"
+          :palette="primitivePalette"
+          label="Secondary"
+          :show-auto="showAuto2"
+          @update:model-value="emit('update:colorKey2', $event)"
+        />
+      </div>
+    </div>
+
+    <!-- Surface params (Parameters) -->
+    <div v-if="shouldShowSurfaceParams()" class="settings-section">
+      <p class="settings-label">Parameters</p>
+      <SchemaFields
+        :schema="surfaceSchema!"
+        :model-value="surfaceParams!"
+        :raw-params="rawSurfaceParams"
+        @update:model-value="emit('update:surfaceParams', $event)"
+      />
     </div>
   </div>
 </template>

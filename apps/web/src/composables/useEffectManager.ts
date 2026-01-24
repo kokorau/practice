@@ -6,7 +6,7 @@ import {
   type PropertyValue,
   createSingleEffectConfig,
   extractEnabledEffects,
-  denormalizeToLayerEffectConfig,
+  safeDenormalizeToLayerEffectConfig,
   $PropertyValue,
 } from '@practice/section-visual'
 
@@ -67,6 +67,10 @@ export interface UseEffectManagerReturn {
    * @deprecated Use selectedPipeline instead
    */
   selectedEffect: ComputedRef<LayerEffectConfig | null>
+  /**
+   * Raw effect params for the selected layer (preserves PropertyValue for DSL display)
+   */
+  selectedRawEffectParams: ComputedRef<Map<EffectType, Record<string, unknown>>>
   /**
    * Set effect type for a layer (exclusive selection, clears other effects)
    * @deprecated Use addEffect/removeEffect for multi-effect support
@@ -164,7 +168,7 @@ export function useEffectManager(): UseEffectManagerReturn {
   const effects = computed<Map<string, LayerEffectConfig>>(() => {
     const result = new Map<string, LayerEffectConfig>()
     for (const [layerId, pipeline] of pipelinesMap.value) {
-      result.set(layerId, denormalizeToLayerEffectConfig(pipeline))
+      result.set(layerId, safeDenormalizeToLayerEffectConfig(pipeline))
     }
     return result
   })
@@ -175,7 +179,20 @@ export function useEffectManager(): UseEffectManagerReturn {
     if (!layerId) return null
     const pipeline = pipelinesMap.value.get(layerId)
     if (!pipeline) return null
-    return denormalizeToLayerEffectConfig(pipeline)
+    return safeDenormalizeToLayerEffectConfig(pipeline)
+  })
+
+  /**
+   * Raw effect params for the selected layer (preserves PropertyValue for DSL display)
+   * Returns a map of effectType -> raw params with PropertyValue
+   */
+  const selectedRawEffectParams = computed<Map<EffectType, Record<string, unknown>>>(() => {
+    const result = new Map<EffectType, Record<string, unknown>>()
+    const pipeline = selectedPipeline.value
+    for (const effect of pipeline) {
+      result.set(effect.id, effect.params as Record<string, unknown>)
+    }
+    return result
   })
 
   // ============================================================
@@ -395,6 +412,7 @@ export function useEffectManager(): UseEffectManagerReturn {
     // Legacy API (deprecated)
     effects,
     selectedEffect,
+    selectedRawEffectParams,
     setEffectType,
     updateEffectParams,
     setEffectConfig,

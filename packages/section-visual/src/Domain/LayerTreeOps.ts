@@ -204,6 +204,26 @@ export const findProcessorWithMask = (layers: LayerNodeConfig[]): ProcessorNodeC
 }
 
 /**
+ * Find all Processor layers in the layer tree.
+ * Searches recursively through all Groups.
+ *
+ * @param layers - Layers to search through
+ * @returns Array of all ProcessorNodeConfig found
+ */
+export const findAllProcessors = (layers: LayerNodeConfig[]): ProcessorNodeConfig[] => {
+  const result: ProcessorNodeConfig[] = []
+  for (const layer of layers) {
+    if (isProcessorLayerConfig(layer)) {
+      result.push(layer)
+    }
+    if (isGroupLayerConfig(layer)) {
+      result.push(...findAllProcessors(layer.children))
+    }
+  }
+  return result
+}
+
+/**
  * Find the target Surface layer that a Processor applies to.
  * A Processor applies to accumulated siblings that come before it in the parent Group.
  * This returns the first Surface among those preceding siblings.

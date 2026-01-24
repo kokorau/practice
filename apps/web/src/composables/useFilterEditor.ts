@@ -1,4 +1,4 @@
-import { computed, type WritableComputedRef } from 'vue'
+import { computed, type WritableComputedRef, type ComputedRef } from 'vue'
 import type {
   FilterType,
   EffectType,
@@ -47,6 +47,13 @@ export type EffectConfigsMap = {
 }
 
 /**
+ * Raw effect params map type (preserves PropertyValue for DSL display)
+ */
+export type RawEffectParamsMap = {
+  [K in EffectType]: ComputedRef<Record<string, unknown> | null>
+}
+
+/**
  * Return type for useFilterEditor composable
  */
 export interface UseFilterEditorReturn {
@@ -54,6 +61,8 @@ export interface UseFilterEditorReturn {
   selectedFilterType: WritableComputedRef<FilterType>
   /** Dynamic effect configs map */
   effectConfigs: EffectConfigsMap
+  /** Raw effect params map (preserves PropertyValue for DSL display) */
+  rawEffectParams: RawEffectParamsMap
 }
 
 // ============================================================
@@ -168,11 +177,36 @@ export function useFilterEditor(
   }
 
   // ============================================================
+  // Raw Effect Params (for DSL display)
+  // ============================================================
+
+  /**
+   * Create computed for raw effect params (preserves PropertyValue)
+   */
+  function createRawEffectParams(effectType: EffectType) {
+    return computed<Record<string, unknown> | null>(() => {
+      return effectManager.selectedRawEffectParams.value.get(effectType) ?? null
+    })
+  }
+
+  const rawEffectParams: RawEffectParamsMap = {
+    vignette: createRawEffectParams('vignette'),
+    chromaticAberration: createRawEffectParams('chromaticAberration'),
+    dotHalftone: createRawEffectParams('dotHalftone'),
+    lineHalftone: createRawEffectParams('lineHalftone'),
+    blur: createRawEffectParams('blur'),
+    pixelate: createRawEffectParams('pixelate'),
+    hexagonMosaic: createRawEffectParams('hexagonMosaic'),
+    voronoiMosaic: createRawEffectParams('voronoiMosaic'),
+  }
+
+  // ============================================================
   // Return
   // ============================================================
 
   return {
     selectedFilterType,
     effectConfigs,
+    rawEffectParams,
   }
 }
