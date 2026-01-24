@@ -46,6 +46,8 @@ import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
 import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type { CompositorRenderer } from '../../Domain/Compositor'
+import { compileHeroView } from '../../Application/compileHeroView'
+import { isDarkTheme } from '../../Domain/ColorHelpers'
 
 // ============================================================
 // Test Helpers
@@ -103,6 +105,18 @@ interface MockRendererMetrics {
   applyDualTextureCount: number
   applyPostEffectCount: number
   compositeToCanvasCount: number
+}
+
+/**
+ * Helper to compile config and build pipeline options
+ */
+function compileAndGetOptions(config: HeroViewConfig, palette: PrimitivePalette) {
+  const isDark = isDarkTheme(palette)
+  const compiled = compileHeroView(config, palette, isDark)
+  return {
+    isDark,
+    compiledLayers: compiled.layers,
+  }
 }
 
 function createMockRenderer(): TextureRendererLike & CompositorRenderer & { metrics: MockRendererMetrics } {
@@ -213,8 +227,9 @@ describe('Pipeline Feature Parity', () => {
       }
 
       const renderer = createMockRenderer()
-      const { outputNode } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette)
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       expect(renderer.metrics.renderToOffscreenCount).toBeGreaterThan(0)
       expect(renderer.metrics.compositeToCanvasCount).toBe(1)
@@ -294,8 +309,9 @@ describe('Pipeline Feature Parity', () => {
       }
 
       const renderer = createMockRenderer()
-      const { outputNode } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette)
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       // Should render: background surface + clip surface + mask
       expect(renderer.metrics.renderToOffscreenCount).toBeGreaterThanOrEqual(3)
@@ -381,8 +397,9 @@ describe('Pipeline Feature Parity', () => {
       }
 
       const renderer = createMockRenderer()
-      const { outputNode } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette)
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       // Should apply the effect
       expect(renderer.metrics.applyPostEffectCount).toBeGreaterThan(0)
@@ -486,8 +503,9 @@ describe('Pipeline Feature Parity', () => {
       }
 
       const renderer = createMockRenderer()
-      const { outputNode, nodes } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette)
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode, nodes } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       // Should have nodes for both clip-groups (using child IDs directly)
       const surface1Node = nodes.find(n => n.id === 'surface-1')
@@ -515,8 +533,9 @@ describe('Pipeline Feature Parity', () => {
       const config = createDefaultHeroViewConfig()
       const renderer = createMockRenderer()
 
-      const { outputNode } = buildPipeline(config, darkPalette)
-      executePipeline(outputNode, renderer, darkPalette)
+      const options = compileAndGetOptions(config, darkPalette)
+      const { outputNode } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       expect(renderer.metrics.compositeToCanvasCount).toBe(1)
     })
@@ -525,8 +544,9 @@ describe('Pipeline Feature Parity', () => {
       const config = createDefaultHeroViewConfig()
       const renderer = createMockRenderer()
 
-      const { outputNode } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette)
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       expect(renderer.metrics.compositeToCanvasCount).toBe(1)
     })
@@ -547,8 +567,9 @@ describe('Pipeline Feature Parity', () => {
       }
 
       const renderer = createMockRenderer()
-      const { outputNode } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette)
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       expect(renderer.metrics.compositeToCanvasCount).toBe(1)
     })
@@ -618,8 +639,9 @@ describe('Pipeline Feature Parity', () => {
       }
 
       const renderer = createMockRenderer()
-      const { outputNode, nodes } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette)
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode, nodes } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       // Should have root processor mask node
       const rootMaskNode = nodes.find(n => n.id === 'root-processor-mask')
@@ -686,8 +708,9 @@ describe('Pipeline Feature Parity', () => {
       }
 
       const renderer = createMockRenderer()
-      const { outputNode, nodes } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette)
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode, nodes } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       // Should have root processor effects node
       const rootEffectsNode = nodes.find(n => n.id === 'root-processor-effects')
@@ -769,8 +792,9 @@ describe('Pipeline Feature Parity', () => {
       }
 
       const renderer = createMockRenderer()
-      const { outputNode } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette)
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer)
 
       expect(renderer.metrics.compositeToCanvasCount).toBe(1)
     })
@@ -781,8 +805,9 @@ describe('Pipeline Feature Parity', () => {
       const config = createDefaultHeroViewConfig()
       const renderer = createMockRenderer()
 
-      const { outputNode } = buildPipeline(config, palette)
-      executePipeline(outputNode, renderer, palette, { scale: 0.3 })
+      const options = compileAndGetOptions(config, palette)
+      const { outputNode } = buildPipeline(config, options)
+      executePipeline(outputNode, renderer, { scale: 0.3 })
 
       expect(renderer.metrics.compositeToCanvasCount).toBe(1)
     })

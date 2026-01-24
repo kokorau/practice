@@ -8,7 +8,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { MultiBufferTexturePool, TripleBufferTexturePool, createTexturePool } from './TexturePool'
 import {
   SurfaceRenderNode,
-  createSurfaceRenderNode,
+  createSurfaceRenderNodeFromCompiled,
 } from './nodes/SurfaceRenderNode'
 import {
   MaskRenderNode,
@@ -77,7 +77,6 @@ function createMockContext(): NodeContext {
       compositeToCanvas: vi.fn(),
     },
     viewport: { width: 1280, height: 720 },
-    palette: createMockPalette(),
     scale: 1,
     texturePool,
     device: mockDevice,
@@ -127,6 +126,23 @@ function createMockPalette() {
     As: { L: 0.70, C: 0.15, H: 30 },
     Af: { L: 0.40, C: 0.22, H: 30 },
   } as never
+}
+
+/**
+ * Helper to create SurfaceRenderNode for tests.
+ * Uses CompiledSurface format with pre-resolved colors.
+ */
+function createTestSurfaceNode(
+  id: string,
+  surfaceType: string = 'solid',
+  params: Record<string, unknown> = {}
+): SurfaceRenderNode {
+  return createSurfaceRenderNodeFromCompiled(id, {
+    id: surfaceType as 'solid',
+    params,
+    color1: [0.5, 0.5, 0.5, 1] as [number, number, number, number],
+    color2: [0.3, 0.3, 0.3, 1] as [number, number, number, number],
+  })
 }
 
 // ============================================================
@@ -208,7 +224,7 @@ describe('createTexturePool', () => {
 
 describe('SurfaceRenderNode', () => {
   it('creates a node with correct properties', () => {
-    const node = createSurfaceRenderNode(
+    const node = createTestSurfaceNode(
       'test-surface',
       { type: 'solid' },
       { primary: 'F1', secondary: 'F3' }
@@ -220,7 +236,7 @@ describe('SurfaceRenderNode', () => {
 
   it('renders solid surface and returns texture handle', () => {
     const ctx = createMockContext()
-    const node = createSurfaceRenderNode(
+    const node = createTestSurfaceNode(
       'bg',
       { type: 'solid' },
       { primary: 'F1', secondary: 'F3' }
@@ -235,7 +251,7 @@ describe('SurfaceRenderNode', () => {
 
   it('renders stripe surface', () => {
     const ctx = createMockContext()
-    const node = createSurfaceRenderNode(
+    const node = createTestSurfaceNode(
       'stripe-bg',
       { type: 'stripe', width1: 10, width2: 10, angle: 45 },
       { primary: 'F1', secondary: 'F3' }
@@ -591,7 +607,7 @@ describe('Texture Caching', () => {
   describe('RenderNode caching', () => {
     it('skips render when not dirty', () => {
       const ctx = createMockContext()
-      const node = createSurfaceRenderNode(
+      const node = createTestSurfaceNode(
         'cached-surface',
         { type: 'solid' },
         { primary: 'F1', secondary: 'F3' }
@@ -608,7 +624,7 @@ describe('Texture Caching', () => {
 
     it('re-renders after invalidation', () => {
       const ctx = createMockContext()
-      const node = createSurfaceRenderNode(
+      const node = createTestSurfaceNode(
         'invalidated-surface',
         { type: 'solid' },
         { primary: 'F1', secondary: 'F3' }
@@ -628,7 +644,7 @@ describe('Texture Caching', () => {
 
     it('re-renders after viewport resize', () => {
       const ctx1 = createMockContext()
-      const node = createSurfaceRenderNode(
+      const node = createTestSurfaceNode(
         'resized-surface',
         { type: 'solid' },
         { primary: 'F1', secondary: 'F3' }
@@ -651,7 +667,7 @@ describe('Texture Caching', () => {
   describe('CompositorNode dirty propagation', () => {
     it('propagates dirty from surface node in MaskCompositorNode', () => {
       const ctx = createMockContext()
-      const surfaceNode = createSurfaceRenderNode(
+      const surfaceNode = createTestSurfaceNode(
         'surface',
         { type: 'solid' },
         { primary: 'F1', secondary: 'F3' }
@@ -684,7 +700,7 @@ describe('Texture Caching', () => {
 
     it('propagates dirty from input node in EffectChainCompositorNode', () => {
       const ctx = createMockContext()
-      const inputNode = createSurfaceRenderNode(
+      const inputNode = createTestSurfaceNode(
         'input',
         { type: 'solid' },
         { primary: 'F1', secondary: 'F3' }
@@ -716,12 +732,12 @@ describe('Texture Caching', () => {
       const ctx = createMockContext()
 
       // Create a chain: surface -> effectChain -> overlay
-      const surfaceNode = createSurfaceRenderNode(
+      const surfaceNode = createTestSurfaceNode(
         'surface',
         { type: 'solid' },
         { primary: 'F1', secondary: 'F3' }
       )
-      const bgNode = createSurfaceRenderNode(
+      const bgNode = createTestSurfaceNode(
         'bg',
         { type: 'solid' },
         { primary: 'BN0', secondary: 'BN1' }
@@ -786,7 +802,7 @@ describe('Texture Caching', () => {
   describe('EffectRenderNode caching', () => {
     it('skips render when not dirty and input is clean', () => {
       const ctx = createMockContext()
-      const inputNode = createSurfaceRenderNode(
+      const inputNode = createTestSurfaceNode(
         'input',
         { type: 'solid' },
         { primary: 'F1', secondary: 'F3' }
@@ -807,7 +823,7 @@ describe('Texture Caching', () => {
 
     it('re-renders when input is invalidated', () => {
       const ctx = createMockContext()
-      const inputNode = createSurfaceRenderNode(
+      const inputNode = createTestSurfaceNode(
         'input',
         { type: 'solid' },
         { primary: 'F1', secondary: 'F3' }

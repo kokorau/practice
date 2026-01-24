@@ -583,13 +583,14 @@ export async function renderHeroConfig(
   })
 
   // 2. Build pipeline with pre-compiled layers (uses resolved colors)
-  const { outputNode } = buildPipeline(config, palette, {
+  const { outputNode } = buildPipeline(config, {
+    isDark,
     intensityProvider: options?.intensityProvider,
     compiledLayers: compiled.layers,
   })
 
-  // 3. Execute pipeline
-  executePipeline(outputNode, renderer, palette, {
+  // 3. Execute pipeline (palette no longer needed - colors already resolved)
+  executePipeline(outputNode, renderer, {
     scale,
     imageRegistry: options?.imageRegistry,
   })
