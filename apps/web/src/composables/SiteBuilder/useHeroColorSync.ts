@@ -13,6 +13,7 @@ import type {
   LayerNodeConfig,
   SurfaceColorsConfig,
   HeroPrimitiveKey,
+  SurfaceUsecase,
 } from '@practice/section-visual'
 import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroThumbnailsReturn } from './useHeroThumbnails'
@@ -23,6 +24,7 @@ export interface UseHeroColorSyncOptions {
   heroThumbnails: UseHeroThumbnailsReturn
   isLoadingFromConfig: Ref<boolean>
   selectCanvasLayer: (layerId: string) => void
+  surfaceUsecase: SurfaceUsecase
 }
 
 /**
@@ -65,6 +67,7 @@ export const useHeroColorSync = (options: UseHeroColorSyncOptions): void => {
     heroThumbnails,
     isLoadingFromConfig,
     selectCanvasLayer,
+    surfaceUsecase,
   } = options
 
   // Color watchers: per-surface colors (primary/secondary) are written to layer.colors.
@@ -85,16 +88,12 @@ export const useHeroColorSync = (options: UseHeroColorSyncOptions): void => {
 
   watch(heroColors.maskColorKey1, (newValue) => {
     if (isLoadingFromConfig.value) return
-    const config = heroViewRepository.get()
-    const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({ ...config, layers: updatedLayers })
+    surfaceUsecase.updateColorKey('primary', newValue as HeroPrimitiveKey | 'auto')
   })
 
   watch(heroColors.maskColorKey2, (newValue) => {
     if (isLoadingFromConfig.value) return
-    const config = heroViewRepository.get()
-    const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: newValue as HeroPrimitiveKey | 'auto' })
-    heroViewRepository.set({ ...config, layers: updatedLayers })
+    surfaceUsecase.updateColorKey('secondary', newValue as HeroPrimitiveKey | 'auto')
   })
 
   watch(heroColors.maskSemanticContext, (newValue) => {
