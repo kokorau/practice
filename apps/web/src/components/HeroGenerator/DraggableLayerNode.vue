@@ -350,7 +350,8 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <path d="M6 2 L9 7 L3 7 Z" fill="currentColor" />
       </svg>
       <!-- Processor Link: 縦線のみ (親がProcessor対象の場合、子要素に継続表示) -->
-      <svg v-else-if="showProcessorLinkLine" class="processor-link-icon" viewBox="0 0 12 24" fill="none">
+      <!-- margin-left: -0.75rem で親と同じ水平位置に揃える -->
+      <svg v-else-if="showProcessorLinkLine" class="processor-link-icon processor-link-line" viewBox="0 0 12 24" fill="none">
         <!-- 縦線 (上から下へ貫通) -->
         <line x1="6" y1="-12" x2="6" y2="36" stroke="currentColor" stroke-width="1" />
       </svg>
@@ -737,6 +738,11 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
 
 :global(.dark) .processor-link-icon {
   color: oklch(0.50 0.02 260);
+}
+
+/* 子要素の縦線を親と同じ水平位置に揃えるために左にシフト */
+.processor-link-line {
+  margin-left: -0.75rem;
 }
 
 /* Processor group node (parent of Effect/Mask) */
