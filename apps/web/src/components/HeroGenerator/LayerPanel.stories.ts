@@ -13,7 +13,7 @@ const createMockSurface = (type: string, params: Record<string, number | string>
   ),
 })
 
-const createMockMask = (type: string, params: Record<string, unknown>): NormalizedMaskConfig => ({
+const createMockMask = (type: string, params: Record<string, number | boolean>): NormalizedMaskConfig => ({
   id: type as NormalizedMaskConfig['id'],
   params: Object.fromEntries(
     Object.entries(params).map(([key, value]) => [key, $PropertyValue.static(value)])
@@ -132,12 +132,10 @@ const meta: Meta<typeof LayerPanel> = {
   component: LayerPanel,
   tags: ['autodocs'],
   decorators: [
-    (story, context) => {
+    (story) => {
       return {
         setup() {
-          const mockLayerSelection = createMockLayerSelection(
-            (context.args as { selectedLayerId?: string }).selectedLayerId ?? null
-          )
+          const mockLayerSelection = createMockLayerSelection()
           provide(LayerSelectionKey, mockLayerSelection)
           return () => h(story())
         },
@@ -189,8 +187,18 @@ export const WithSelectedLayer: Story = {
     foregroundElements: mockForegroundElements,
     selectedForegroundElementId: null,
     expandedLayerIds: new Set(['background-group', 'clip-group']),
-    selectedLayerId: 'background-surface',
   },
+  decorators: [
+    (story) => {
+      return {
+        setup() {
+          const mockLayerSelection = createMockLayerSelection('background-surface')
+          provide(LayerSelectionKey, mockLayerSelection)
+          return () => h(story())
+        },
+      }
+    },
+  ],
 }
 
 export const WithSelectedForegroundElement: Story = {
