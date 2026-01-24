@@ -30,8 +30,9 @@ const fields = computed<FieldMeta[]>(() => {
 })
 
 const updateField = (key: string, value: unknown) => {
-  // Only emit the changed field to avoid overwriting other fields' PropertyValue (DSL expressions)
-  emit('update:modelValue', { [key]: value })
+  // Merge the changed field with current modelValue to avoid losing other fields
+  // Note: This preserves existing values while updating only the changed field
+  emit('update:modelValue', { ...props.modelValue, [key]: value })
 }
 </script>
 
