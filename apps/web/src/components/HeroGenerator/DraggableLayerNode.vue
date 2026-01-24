@@ -44,6 +44,8 @@ const props = defineProps<{
   expandedLayerIds: Set<string>
   /** Whether this node is a target of a Processor (next sibling is Processor) */
   isProcessorTarget?: boolean
+  /** Whether to show the processor link vertical line (for children of processor target groups) */
+  showProcessorLinkLine?: boolean
 }>()
 
 /** Context menu target type */
@@ -347,6 +349,11 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <!-- 矢印ヘッド (上向き三角形) -->
         <path d="M6 2 L9 7 L3 7 Z" fill="currentColor" />
       </svg>
+      <!-- Processor Link: 縦線のみ (親がProcessor対象の場合、子要素に継続表示) -->
+      <svg v-else-if="showProcessorLinkLine" class="processor-link-icon" viewBox="0 0 12 24" fill="none">
+        <!-- 縦線 (上から下へ貫通) -->
+        <line x1="6" y1="-12" x2="6" y2="36" stroke="currentColor" stroke-width="1" />
+      </svg>
 
       <!-- Expand Toggle -->
       <button
@@ -357,7 +364,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
       >
         <span class="material-icons">chevron_right</span>
       </button>
-      <span v-else-if="!isProcessorTarget" class="expand-spacer" />
+      <span v-else-if="!isProcessorTarget && !showProcessorLinkLine" class="expand-spacer" />
 
       <!-- Type Icon -->
       <span class="material-icons layer-icon">{{ getLayerIcon(nodeVariant) }}</span>
@@ -495,6 +502,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         :layers="layers"
         :expanded-layer-ids="expandedLayerIds"
         :is-processor-target="isChildProcessorTarget(index)"
+        :show-processor-link-line="isProcessorTarget || showProcessorLinkLine"
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
