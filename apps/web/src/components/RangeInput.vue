@@ -177,17 +177,35 @@ const clampValue = (value: number): number => {
   return Math.max(props.min, Math.min(props.max, value))
 }
 
-// Handle input changes
+// Handle input changes - just update local text, no validation
 const handleInput = (e: Event) => {
   const text = (e.target as HTMLInputElement).value
   inputText.value = text
+  // Clear error state while typing
+  hasError.value = false
+  errorMessage.value = ''
+}
 
-  const { value, error } = parseDSL(text)
+// Handle focus
+const handleFocus = () => {
+  isFocused.value = true
+}
+
+// On blur, validate and commit the value
+const handleBlur = () => {
+  isFocused.value = false
+
+  const { value, error } = parseDSL(inputText.value)
 
   if (error) {
     hasError.value = true
     errorMessage.value = error
-    // Don't emit - keep last valid value
+    // Revert to last valid value after a brief moment to show error
+    setTimeout(() => {
+      hasError.value = false
+      errorMessage.value = ''
+      inputText.value = getDisplayText()
+    }, 1500)
     return
   }
 
@@ -199,6 +217,7 @@ const handleInput = (e: Event) => {
     emit('update:rawValue', value)
     // Also emit numeric value (min) for backward compatibility
     emit('update:modelValue', value.min)
+    inputText.value = getDisplayText()
     return
   }
 
@@ -208,23 +227,8 @@ const handleInput = (e: Event) => {
   emit('update:modelValue', clamped)
   emit('update:rawValue', clamped)
 
-  // If clamped, update display to show actual value
-  if (clamped !== numValue) {
-    inputText.value = String(clamped)
-  }
-}
-
-// Handle focus
-const handleFocus = () => {
-  isFocused.value = true
-}
-
-// On blur, if valid, normalize the display
-const handleBlur = () => {
-  isFocused.value = false
-  if (!hasError.value) {
-    inputText.value = getDisplayText()
-  }
+  // Update display to show actual value (may be clamped)
+  inputText.value = String(clamped)
 }
 
 // Formatted display value for min/max hint

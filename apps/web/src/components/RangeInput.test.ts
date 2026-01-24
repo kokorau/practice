@@ -27,82 +27,126 @@ describe('RangeInput', () => {
     expect(wrapper.find('.range-hint').text()).toBe('0 ~ 100')
   })
 
-  it('emits update:modelValue on valid input', async () => {
+  it('does not emit during input, only on blur', async () => {
     const wrapper = mount(RangeInput, { props: defaultProps })
 
     const input = wrapper.find('input')
+    await input.trigger('focus')
     await input.setValue('75')
+
+    // Should not emit yet (still focused)
+    expect(wrapper.emitted('update:modelValue')).toBeFalsy()
+
+    // Now blur to commit
+    await input.trigger('blur')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted).toBeTruthy()
     expect(emitted![0][0]).toBe(75)
   })
 
-  it('clamps value to min/max range', async () => {
+  it('clamps value to min/max range on blur', async () => {
     const wrapper = mount(RangeInput, { props: defaultProps })
 
     const input = wrapper.find('input')
+    await input.trigger('focus')
     await input.setValue('150')
+    await input.trigger('blur')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted).toBeTruthy()
     expect(emitted![0][0]).toBe(100) // Clamped to max
   })
 
-  it('shows error state for invalid input', async () => {
+  it('shows error state for invalid input on blur', async () => {
     const wrapper = mount(RangeInput, { props: defaultProps })
 
     const input = wrapper.find('input')
+    await input.trigger('focus')
     await input.setValue('abc')
 
+    // No error while typing
+    expect(wrapper.find('.input-error').exists()).toBe(false)
+
+    // Error shown after blur
+    await input.trigger('blur')
     expect(wrapper.find('.input-error').exists()).toBe(true)
     expect(wrapper.find('.error-message').exists()).toBe(true)
   })
 
-  it('parses math expressions', async () => {
+  it('allows free typing without validation errors', async () => {
+    const wrapper = mount(RangeInput, { props: defaultProps })
+
+    const input = wrapper.find('input')
+    await input.trigger('focus')
+
+    // Type invalid intermediate values - should not show error
+    await input.setValue('1')
+    expect(wrapper.find('.input-error').exists()).toBe(false)
+
+    await input.setValue('15')
+    expect(wrapper.find('.input-error').exists()).toBe(false)
+
+    await input.setValue('150')
+    expect(wrapper.find('.input-error').exists()).toBe(false)
+
+    // Even typing partial expressions should not show error
+    await input.setValue('range(')
+    expect(wrapper.find('.input-error').exists()).toBe(false)
+  })
+
+  it('parses math expressions on blur', async () => {
     const wrapper = mount(RangeInput, {
       props: { ...defaultProps, min: 0, max: 10 },
     })
 
     const input = wrapper.find('input')
+    await input.trigger('focus')
     await input.setValue('2 + 3')
+    await input.trigger('blur')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted).toBeTruthy()
     expect(emitted![0][0]).toBe(5)
   })
 
-  it('parses Math functions', async () => {
+  it('parses Math functions on blur', async () => {
     const wrapper = mount(RangeInput, {
       props: { ...defaultProps, min: 0, max: 10 },
     })
 
     const input = wrapper.find('input')
+    await input.trigger('focus')
     await input.setValue('sqrt(4)')
+    await input.trigger('blur')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted).toBeTruthy()
     expect(emitted![0][0]).toBe(2)
   })
 
-  it('parses PI constant', async () => {
+  it('parses PI constant on blur', async () => {
     const wrapper = mount(RangeInput, {
       props: { ...defaultProps, min: 0, max: 10 },
     })
 
     const input = wrapper.find('input')
+    await input.trigger('focus')
     await input.setValue('PI')
+    await input.trigger('blur')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted).toBeTruthy()
     expect(emitted![0][0]).toBeCloseTo(Math.PI, 5)
   })
 
-  it('parses range() DSL expression', async () => {
+  it('parses range() DSL expression on blur', async () => {
     const wrapper = mount(RangeInput, { props: defaultProps })
 
     const input = wrapper.find('input')
+    await input.trigger('focus')
     await input.setValue("range('intensity', 0, 1)")
+    await input.trigger('blur')
 
     const rawEmitted = wrapper.emitted('update:rawValue')
     expect(rawEmitted).toBeTruthy()
@@ -114,11 +158,13 @@ describe('RangeInput', () => {
     })
   })
 
-  it('parses range() with clamp argument', async () => {
+  it('parses range() with clamp argument on blur', async () => {
     const wrapper = mount(RangeInput, { props: defaultProps })
 
     const input = wrapper.find('input')
+    await input.trigger('focus')
     await input.setValue("range('intensity', 0, 1, true)")
+    await input.trigger('blur')
 
     const rawEmitted = wrapper.emitted('update:rawValue')
     expect(rawEmitted).toBeTruthy()
@@ -177,18 +223,20 @@ describe('RangeInput', () => {
     expect(input.element.value).toBe('7')
   })
 
-  it('updates display on blur when modelValue is updated', async () => {
+  it('commits value on blur and updates display', async () => {
     const wrapper = mount(RangeInput, { props: defaultProps })
 
     const input = wrapper.find('input')
     await input.trigger('focus')
     await input.setValue('75')
-
-    // Simulate parent updating modelValue after receiving emit
-    await wrapper.setProps({ modelValue: 75 })
     await input.trigger('blur')
 
-    // After blur with updated modelValue, display should show the new value
+    // After blur, display should show the committed value
     expect(input.element.value).toBe('75')
+
+    // And emit should have been called
+    const emitted = wrapper.emitted('update:modelValue')
+    expect(emitted).toBeTruthy()
+    expect(emitted![0][0]).toBe(75)
   })
 })

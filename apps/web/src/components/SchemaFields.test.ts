@@ -34,9 +34,11 @@ describe('SchemaFields', () => {
       },
     })
 
-    // Find and update value1 input
+    // Find and update value1 input (RangeInput emits on blur)
     const inputs = wrapper.findAll('input[type="text"]')
+    await inputs[0].trigger('focus')
     await inputs[0].setValue('75')
+    await inputs[0].trigger('blur')
 
     // Should emit complete object with merged value
     const emitted = wrapper.emitted('update:modelValue')
@@ -52,9 +54,11 @@ describe('SchemaFields', () => {
       },
     })
 
-    // Update value2
+    // Update value2 (RangeInput emits on blur)
     const inputs = wrapper.findAll('input[type="text"]')
+    await inputs[1].trigger('focus')
     await inputs[1].setValue('25')
+    await inputs[1].trigger('blur')
 
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted).toBeTruthy()
