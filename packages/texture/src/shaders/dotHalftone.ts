@@ -11,22 +11,26 @@ export interface DotHalftoneParams {
   spacing: number
   /** ドットの角度（度） */
   angle: number
+  /** RGB収差の強度（ピクセル単位） */
+  aberration: number
 }
 
 /**
  * ドットハーフトーンシェーダー
  * 入力テクスチャの輝度に基づいてドットサイズを変化させる
+ * RGB収差機能付き：R/G/Bチャンネルを少しずらして描画
+ * 背景は透過
  */
 export const dotHalftoneShader = /* wgsl */ `
 struct Uniforms {
   dotSize: f32,          // 4 bytes
   spacing: f32,          // 4 bytes
   angle: f32,            // 4 bytes
+  aberration: f32,       // 4 bytes - RGB収差の強度
   viewportWidth: f32,    // 4 bytes
   viewportHeight: f32,   // 4 bytes
   _padding1: f32,        // 4 bytes
   _padding2: f32,        // 4 bytes
-  _padding3: f32,        // 4 bytes
 }
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -36,6 +40,17 @@ struct Uniforms {
 ${fullscreenVertex}
 
 ${moduloUtils}
+
+// ドットマスクを計算する関数
+fn calcDotMask(rotatedPos: vec2f, spacing: f32, dotSize: f32, luminance: f32) -> f32 {
+  let cellPos = safeModulo2(rotatedPos, spacing);
+  let cellCenter = spacing * 0.5;
+  let dx = cellPos.x - cellCenter;
+  let dy = cellPos.y - cellCenter;
+  let dist = sqrt(dx * dx + dy * dy);
+  let halftoneDotRadius = dotSize * 0.5 * (1.0 - luminance);
+  return smoothstep(halftoneDotRadius + 0.5, halftoneDotRadius - 0.5, dist);
+}
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -66,23 +81,31 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     centered.x * sinA + centered.y * cosA
   );
 
-  // グリッド内の位置を計算（共通ユーティリティ使用）
-  let cellPos = safeModulo2(rotatedPos, u.spacing);
-  let cellCenter = u.spacing * 0.5;
+  // RGB収差のオフセット（中心から放射状に）
+  let toCenter = normalize(centered);
+  let aberrationOffset = toCenter * u.aberration;
+  // 回転座標系でのオフセット
+  let rotatedOffset = vec2f(
+    aberrationOffset.x * cosA - aberrationOffset.y * sinA,
+    aberrationOffset.x * sinA + aberrationOffset.y * cosA
+  );
 
-  // セルの中心からの距離
-  let dx = cellPos.x - cellCenter;
-  let dy = cellPos.y - cellCenter;
-  let dist = sqrt(dx * dx + dy * dy);
+  // R/G/Bそれぞれの位置でドットマスクを計算
+  let dotMaskR = calcDotMask(rotatedPos + rotatedOffset, u.spacing, u.dotSize, luminance);
+  let dotMaskG = calcDotMask(rotatedPos, u.spacing, u.dotSize, luminance);
+  let dotMaskB = calcDotMask(rotatedPos - rotatedOffset, u.spacing, u.dotSize, luminance);
 
-  // 輝度に応じたドットサイズ（明るいほどドットが小さい）
-  let halftoneDotRadius = u.dotSize * 0.5 * (1.0 - luminance);
+  // 透過背景にRGB収差付きドット
+  // ドット部分は暗く（減算）、ずれた部分は色が付く
+  // R=0はシアン的, G=0はマゼンタ的, B=0はイエロー的
+  let r = 1.0 - dotMaskR;
+  let g = 1.0 - dotMaskG;
+  let b = 1.0 - dotMaskB;
+  let maxMask = max(max(dotMaskR, dotMaskG), dotMaskB);
+  let alpha = maxMask * originalColor.a;
 
-  // ドットマスク（アンチエイリアス付き）
-  let dotMask = smoothstep(halftoneDotRadius + 0.5, halftoneDotRadius - 0.5, dist);
-
-  // 白背景に黒ドット（Issue要件: ColorA=白, ColorB=黒）
-  let halftoneColor = vec4f(vec3f(1.0 - dotMask), originalColor.a);
+  // Premultiplied alpha: RGB を alpha で乗算（透過部分の RGB は 0 に）
+  let halftoneColor = vec4f(r * alpha, g * alpha, b * alpha, alpha);
 
   return halftoneColor;
 }
@@ -103,9 +126,9 @@ export const createDotHalftoneUniforms = (
   view.setFloat32(0, params.dotSize, true)
   view.setFloat32(4, params.spacing, true)
   view.setFloat32(8, params.angle, true)
-  view.setFloat32(12, viewport.width, true)
-  view.setFloat32(16, viewport.height, true)
-  view.setFloat32(20, 0, true) // padding
+  view.setFloat32(12, params.aberration, true)
+  view.setFloat32(16, viewport.width, true)
+  view.setFloat32(20, viewport.height, true)
   view.setFloat32(24, 0, true) // padding
   view.setFloat32(28, 0, true) // padding
 

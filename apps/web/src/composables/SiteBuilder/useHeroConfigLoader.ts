@@ -27,6 +27,7 @@ import {
   findSurfacePresetIndex,
   findMaskPatternIndex,
   isSingleEffectConfig,
+  migrateToNormalizedFormat,
 } from '@practice/section-visual'
 
 // Internal imports for normalization/denormalization functions
@@ -93,37 +94,39 @@ export const useHeroConfigLoader = (
     isLoadingFromConfig.value = true
 
     try {
-      heroViewRepository.set(config)
+      // Migrate legacy format to normalized format (converts raw effect params to PropertyValue)
+      const migratedConfig = migrateToNormalizedFormat(config)
+      heroViewRepository.set(migratedConfig)
 
       editorState.value = {
         ...editorState.value,
         config: {
           ...editorState.value.config,
-          width: config.viewport.width,
-          height: config.viewport.height,
+          width: migratedConfig.viewport.width,
+          height: migratedConfig.viewport.height,
         },
       }
 
       // Find background surface layer (inside background-group or legacy base layer)
       let backgroundSurfaceLayer: SurfaceLayerNodeConfig | BaseLayerNodeConfig | undefined
-      const backgroundGroup = config.layers.find(l => l.id === 'background-group' && l.type === 'group')
+      const backgroundGroup = migratedConfig.layers.find(l => l.id === 'background-group' && l.type === 'group')
       if (backgroundGroup && backgroundGroup.type === 'group') {
         backgroundSurfaceLayer = backgroundGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'background' && c.type === 'surface')
       }
       // Fallback: check for legacy base layer
       if (!backgroundSurfaceLayer) {
-        backgroundSurfaceLayer = config.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
+        backgroundSurfaceLayer = migratedConfig.layers.find((l): l is BaseLayerNodeConfig => l.type === 'base')
       }
 
       // Find mask surface layer (inside clip-group)
       let maskSurfaceLayer: SurfaceLayerNodeConfig | undefined
-      const clipGroup = config.layers.find(l => l.id === 'clip-group' && l.type === 'group')
+      const clipGroup = migratedConfig.layers.find(l => l.id === 'clip-group' && l.type === 'group')
       if (clipGroup && clipGroup.type === 'group') {
         maskSurfaceLayer = clipGroup.children.find((c): c is SurfaceLayerNodeConfig => c.id === 'surface-mask' && c.type === 'surface')
       }
       // Fallback: find first surface layer not in background-group
       if (!maskSurfaceLayer) {
-        for (const layer of config.layers) {
+        for (const layer of migratedConfig.layers) {
           if (layer.type === 'surface' && layer.id !== 'background') {
             maskSurfaceLayer = layer
             break
@@ -139,7 +142,7 @@ export const useHeroConfigLoader = (
       }
 
       // Read colors from surface layers (migration ensures colors always exist)
-      const configColors = config.colors ?? createDefaultColorsConfig()
+      const configColors = migratedConfig.colors ?? createDefaultColorsConfig()
       // Background colors from layer (use defaults if missing - migration should prevent this)
       const bgColors = backgroundSurfaceLayer?.colors ?? DEFAULT_LAYER_BACKGROUND_COLORS
       heroColors.backgroundColorKey1.value = (bgColors.primary === 'auto' ? DEFAULT_LAYER_BACKGROUND_COLORS.primary : bgColors.primary) as PrimitiveKey
@@ -159,7 +162,7 @@ export const useHeroConfigLoader = (
       }
 
       // Load background effects from processor (background-group or root-level)
-      const bgGroup = config.layers.find((l) => l.type === 'group' && l.id === 'background-group') as GroupLayerNodeConfig | undefined
+      const bgGroup = migratedConfig.layers.find((l) => l.type === 'group' && l.id === 'background-group') as GroupLayerNodeConfig | undefined
       if (bgGroup) {
         for (const child of bgGroup.children) {
           if (child.type === 'processor') {
@@ -187,7 +190,7 @@ export const useHeroConfigLoader = (
       }
       // Fallback: check top-level processors
       if (!maskShape) {
-        for (const layer of config.layers) {
+        for (const layer of migratedConfig.layers) {
           if (layer.type === 'processor') {
             const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
             if (maskModifier) {
@@ -225,7 +228,7 @@ export const useHeroConfigLoader = (
         }
       }
 
-      foregroundConfig.value = config.foreground
+      foregroundConfig.value = migratedConfig.foreground
 
       await render()
     } finally {

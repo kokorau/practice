@@ -241,6 +241,7 @@ function createDotHalftoneShaderSpec(
         dotSize: scaleValue(config.dotSize, scale),
         spacing: scaleValue(config.spacing, scale),
         angle: config.angle,
+        aberration: scaleValue(config.aberration, scale),
       },
       viewport
     ),
@@ -260,6 +261,7 @@ function createLineHalftoneShaderSpec(
         lineWidth: scaleValue(config.lineWidth, scale),
         spacing: scaleValue(config.spacing, scale),
         angle: config.angle,
+        aberration: scaleValue(config.aberration, scale),
       },
       viewport
     ),
