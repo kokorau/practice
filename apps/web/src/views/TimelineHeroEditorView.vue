@@ -16,17 +16,13 @@ import {
 import type { ProcessorNodeConfig, SurfaceLayerNodeConfig } from '@practice/section-visual'
 import {
   isImageLayerConfig,
-  isProcessorLayerConfig,
   isAnimatedPreset,
-  getPresetConfig,
-  findLayerInTree,
-  findProcessorTargetSurface,
-  normalizeMaskConfig,
   createInMemoryHeroViewPresetRepository,
   createSelectProcessorUsecase,
+  createApplyAnimatedPresetUsecase,
+  getProcessorWithTargetUsecase,
 } from '@practice/section-visual'
 import type { ImageLayerNodeConfig } from '@practice/section-visual'
-import type { MaskShapeConfig } from '@practice/section-visual'
 import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useFilterEditor } from '../composables/useFilterEditor'
@@ -145,6 +141,19 @@ const selectProcessorUsecase = createSelectProcessorUsecase({
   effectManager: {
     selectLayer: (layerId) => heroScene.filter.effectManager.selectLayer(layerId),
     setEffectPipeline: (layerId, effects) => heroScene.filter.effectManager.setEffectPipeline(layerId, effects),
+  },
+})
+
+// ============================================================
+// ApplyAnimatedPreset Usecase (Preset change handling)
+// ============================================================
+const applyAnimatedPresetUsecase = createApplyAnimatedPresetUsecase({
+  repository: heroScene.usecase.heroViewRepository,
+  foregroundConfig: {
+    set: (config) => { heroScene.foreground.foregroundConfig.value = config },
+  },
+  effectManager: {
+    selectLayer: (layerId) => heroScene.filter.effectManager.selectLayer(layerId),
   },
 })
 
@@ -418,21 +427,10 @@ watch(() => heroScene.preset.selectedPresetId.value, async (newPresetId) => {
   const preset = heroScene.preset.presets.value.find((p) => p.id === newPresetId)
   if (!preset) return
 
-  // Animated preset: set config directly (bypasses fromHeroViewConfig which can't handle $PropertyValue bindings)
-  if (isAnimatedPreset(preset)) {
-    const config = getPresetConfig(preset)
-    if (config) {
-      heroScene.usecase.heroViewRepository.set(config)
-      // Sync foreground config (fromHeroViewConfig is skipped for animated presets)
-      heroScene.foreground.foregroundConfig.value = config.foreground
-    }
-  }
+  // Use ApplyAnimatedPresetUsecase for animated preset handling and effect manager reset
+  applyAnimatedPresetUsecase.execute(preset, LAYER_IDS.BASE)
 
-  // Reset effect manager selection to default layer (BASE)
-  // This ensures effect changes apply to the correct layer after preset switch
-  heroScene.filter.effectManager.selectLayer(LAYER_IDS.BASE)
-
-  // Re-render scene
+  // Re-render scene (View responsibility)
   await nextTick()
   heroScene.renderer.renderSceneFromConfig?.()
 })
@@ -467,35 +465,15 @@ function stopResize() {
 // ============================================================
 // Mask Preview Pipeline Support
 // ============================================================
-// Selected processor for mask preview pipeline
-const selectedProcessor = computed<ProcessorNodeConfig | undefined>(() => {
-  // Use processorLayerId which is set when a mask/effect is selected
-  if (!processorLayerId.value) return undefined
+// Use GetProcessorWithTargetUsecase for processor and target surface lookup
+const processorWithTarget = computed(() => {
   const layers = heroScene.editor.heroViewConfig.value?.layers
-  if (!layers) return undefined
-  const layer = findLayerInTree(layers, processorLayerId.value)
-  if (!layer || !isProcessorLayerConfig(layer)) return undefined
-  return layer as ProcessorNodeConfig
+  if (!layers) return { processor: undefined, targetSurface: undefined }
+  return getProcessorWithTargetUsecase.execute(layers, processorLayerId.value)
 })
 
-// Target surface that the selected processor applies to
-const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() => {
-  const processor = selectedProcessor.value
-  if (!processor) return undefined
-
-  const layers = heroScene.editor.heroViewConfig.value?.layers
-  if (!layers) return undefined
-
-  return findProcessorTargetSurface(layers, processor.id) ?? undefined
-})
-
-// Mask patterns with normalized config for pipeline-based preview
-const shapePatternsWithConfig = computed(() => {
-  return heroScene.pattern.maskPatterns.map((pattern) => ({
-    ...pattern,
-    maskConfig: normalizeMaskConfig(pattern.maskConfig as MaskShapeConfig),
-  }))
-})
+const selectedProcessor = computed<ProcessorNodeConfig | undefined>(() => processorWithTarget.value.processor)
+const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() => processorWithTarget.value.targetSurface)
 </script>
 
 <template>
@@ -594,7 +572,7 @@ const shapePatternsWithConfig = computed(() => {
           surfaceParams: maskSurfaceParamsForUI,
           rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
           shapePatterns: heroScene.pattern.maskPatterns,
-          shapePatternsWithConfig: shapePatternsWithConfig,
+          shapePatternsWithConfig: heroScene.pattern.maskPatternsWithNormalizedConfig.value,
           selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
           shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
           shapeParams: maskShapeParamsForUI,

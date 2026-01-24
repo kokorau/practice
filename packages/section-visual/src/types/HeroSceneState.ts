@@ -65,6 +65,7 @@ import type {
   LayerDropPosition,
   ModifierDropPosition,
   CompiledHeroView,
+  NormalizedMaskConfig,
 } from '../index'
 
 // ============================================================
@@ -321,6 +322,13 @@ export type SectionType =
 // ============================================================
 
 /**
+ * Mask pattern with normalized config for pipeline-based preview
+ */
+export interface MaskPatternWithNormalizedConfig extends MaskPattern {
+  maskConfig: NormalizedMaskConfig
+}
+
+/**
  * Pattern state for texture/mask selection and thumbnails
  */
 export interface PatternState {
@@ -328,6 +336,8 @@ export interface PatternState {
   readonly texturePatterns: TexturePattern[]
   /** Available mask patterns */
   readonly maskPatterns: MaskPattern[]
+  /** Mask patterns with normalized config for pipeline-based preview */
+  readonly maskPatternsWithNormalizedConfig: ComputedRef<MaskPatternWithNormalizedConfig[]>
   /** Available midground texture patterns (surface presets) */
   readonly midgroundTexturePatterns: SurfacePreset[]
 

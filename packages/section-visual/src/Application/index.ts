@@ -79,6 +79,26 @@ export type {
 } from './SelectProcessorUsecase'
 export { createSelectProcessorUsecase } from './SelectProcessorUsecase'
 
+// Re-export ApplyAnimatedPreset UseCase
+export type {
+  ForegroundConfigSyncPort,
+  EffectManagerResetPort,
+  ApplyAnimatedPresetResult,
+  ApplyAnimatedPresetUsecase,
+  ApplyAnimatedPresetUsecaseDeps,
+} from './ApplyAnimatedPresetUsecase'
+export { createApplyAnimatedPresetUsecase } from './ApplyAnimatedPresetUsecase'
+
+// Re-export GetProcessorWithTarget UseCase
+export type {
+  ProcessorWithTarget,
+  GetProcessorWithTargetUsecase,
+} from './GetProcessorWithTargetUsecase'
+export {
+  createGetProcessorWithTargetUsecase,
+  getProcessorWithTargetUsecase,
+} from './GetProcessorWithTargetUsecase'
+
 // Re-export compileHeroView
 export type {
   CompileContext,

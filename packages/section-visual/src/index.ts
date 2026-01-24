@@ -401,6 +401,15 @@ export type {
   SelectProcessorResult,
   SelectProcessorUsecase,
   SelectProcessorUsecaseDeps,
+  // ApplyAnimatedPreset Usecase types
+  ForegroundConfigSyncPort,
+  EffectManagerResetPort,
+  ApplyAnimatedPresetResult,
+  ApplyAnimatedPresetUsecase,
+  ApplyAnimatedPresetUsecaseDeps,
+  // GetProcessorWithTarget Usecase types
+  ProcessorWithTarget,
+  GetProcessorWithTargetUsecase,
   // compileHeroView types
   CompileContext,
   IntensityProvider,
@@ -420,6 +429,9 @@ export {
   createSurfaceUsecase,
   createProcessorUsecase,
   createSelectProcessorUsecase,
+  createApplyAnimatedPresetUsecase,
+  createGetProcessorWithTargetUsecase,
+  getProcessorWithTargetUsecase,
   // ConfigSyncer
   syncBackgroundSurfaceParams,
   syncMaskSurfaceParams,
@@ -552,6 +564,8 @@ export type {
   CustomSurfaceParams,
   CustomBackgroundSurfaceParams,
   SectionType,
+  // Mask pattern with normalized config
+  MaskPatternWithNormalizedConfig,
   // Grouped state types
   PatternState,
   BackgroundState,

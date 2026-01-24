@@ -15,6 +15,8 @@ export type {
   CustomSurfaceParams,
   CustomBackgroundSurfaceParams,
   SectionType,
+  // Mask pattern with normalized config
+  MaskPatternWithNormalizedConfig,
   // Grouped state types
   PatternState,
   BackgroundState,

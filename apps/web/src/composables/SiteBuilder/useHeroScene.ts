@@ -99,6 +99,8 @@ import {
   createProcessorUsecase,
   type ProcessorUsecase,
   compileHeroView,
+  normalizeMaskConfig,
+  type MaskShapeConfig,
 } from '@practice/section-visual'
 import { ensureFontLoaded } from '@practice/font'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
@@ -1088,9 +1090,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Grouped State Objects (Phase 2: #131)
   // ============================================================
 
+  // Mask patterns with normalized config for pipeline-based preview
+  const maskPatternsWithNormalizedConfig = computed(() => {
+    return heroThumbnails.maskPatterns.map((pattern) => ({
+      ...pattern,
+      maskConfig: normalizeMaskConfig(pattern.maskConfig as MaskShapeConfig),
+    }))
+  })
+
   const pattern: PatternState = {
     texturePatterns: heroThumbnails.texturePatterns,
     maskPatterns: heroThumbnails.maskPatterns,
+    maskPatternsWithNormalizedConfig,
     midgroundTexturePatterns: heroThumbnails.midgroundTexturePatterns,
     textureColor1: heroColors.textureColor1,
     textureColor2: heroColors.textureColor2,
