@@ -42,8 +42,10 @@ const props = defineProps<{
   layers: LayerNodeConfig[]
   /** Expanded layer IDs (UI state) */
   expandedLayerIds: Set<string>
-  /** Whether this node is a target of a Processor (next sibling is Processor) */
+  /** Whether this node is a target of a Processor (next sibling is Processor) - shows arrow head */
   isProcessorTarget?: boolean
+  /** Whether this node has a Processor below but not immediately next - shows vertical line only */
+  hasProcessorBelow?: boolean
   /** Whether to show the processor link vertical line (for children of processor target groups) */
   showProcessorLinkLine?: boolean
 }>()
@@ -102,10 +104,54 @@ const children = computed((): LayerNodeConfig[] => {
   return []
 })
 
-// Check if a child is a Processor target (next sibling is Processor)
+// Check if a child is the first Processor target (shows arrow head at top)
 const isChildProcessorTarget = (index: number): boolean => {
-  const nextSibling = children.value[index + 1]
-  return nextSibling ? isProcessorLayerConfig(nextSibling) : false
+  const child = children.value[index]
+  if (!child || isProcessorLayerConfig(child)) return false
+
+  // Check if there's a Processor after this element
+  let hasProcessorAfter = false
+  for (let i = index + 1; i < children.value.length; i++) {
+    const sibling = children.value[i]
+    if (sibling && isProcessorLayerConfig(sibling)) {
+      hasProcessorAfter = true
+      break
+    }
+  }
+  if (!hasProcessorAfter) return false
+
+  // Check if this is the first non-processor element before a Processor
+  // (no other non-processor elements before this that also have a Processor after them)
+  for (let i = 0; i < index; i++) {
+    const sibling = children.value[i]
+    if (sibling && !isProcessorLayerConfig(sibling)) {
+      // There's a non-processor element before this one, so this is not the first
+      return false
+    }
+  }
+  return true
+}
+
+// Check if a child has a Processor below but is not the first target (shows vertical line only)
+const hasChildProcessorBelow = (index: number): boolean => {
+  const child = children.value[index]
+  if (!child || isProcessorLayerConfig(child)) return false
+
+  // Check if there's a Processor after this element
+  let hasProcessorAfter = false
+  for (let i = index + 1; i < children.value.length; i++) {
+    const sibling = children.value[i]
+    if (sibling && isProcessorLayerConfig(sibling)) {
+      hasProcessorAfter = true
+      break
+    }
+  }
+  if (!hasProcessorAfter) return false
+
+  // If this is the first target, it gets the arrow head, not the line
+  if (isChildProcessorTarget(index)) return false
+
+  return true
 }
 
 // Get node variant for display
@@ -349,6 +395,11 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <!-- 矢印ヘッド (上向き三角形) -->
         <path d="M6 2 L9 7 L3 7 Z" fill="currentColor" />
       </svg>
+      <!-- Processor Link: 縦線のみ (以降にProcessorがあるが直後ではない場合) -->
+      <svg v-else-if="hasProcessorBelow" class="processor-link-icon processor-link-line-sibling" viewBox="0 0 12 24" fill="none">
+        <!-- 縦線 (上から下へ貫通) -->
+        <line x1="6" y1="-12" x2="6" y2="36" stroke="currentColor" stroke-width="1" />
+      </svg>
       <!-- Processor Link: 縦線のみ (親がProcessor対象の場合、子要素に継続表示) -->
       <!-- margin-left: -0.75rem で親と同じ水平位置に揃える -->
       <svg v-else-if="showProcessorLinkLine" class="processor-link-icon processor-link-line" viewBox="0 0 12 24" fill="none">
@@ -365,7 +416,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
       >
         <span class="material-icons">chevron_right</span>
       </button>
-      <span v-else-if="!isProcessorTarget && !showProcessorLinkLine" class="expand-spacer" />
+      <span v-else-if="!isProcessorTarget && !hasProcessorBelow && !showProcessorLinkLine" class="expand-spacer" />
 
       <!-- Type Icon -->
       <span class="material-icons layer-icon">{{ getLayerIcon(nodeVariant) }}</span>
@@ -503,7 +554,8 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         :layers="layers"
         :expanded-layer-ids="expandedLayerIds"
         :is-processor-target="isChildProcessorTarget(index)"
-        :show-processor-link-line="isProcessorTarget || showProcessorLinkLine"
+        :has-processor-below="hasChildProcessorBelow(index)"
+        :show-processor-link-line="isProcessorTarget || hasProcessorBelow || showProcessorLinkLine"
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"

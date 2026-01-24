@@ -60,10 +60,52 @@ const emit = defineEmits<{
 // Processor Target Helper
 // ============================================================
 
-/** Check if a layer at the given index is a Processor target (next sibling is Processor) */
+/** Check if a layer at the given index is the first Processor target (shows arrow head at top) */
 const isLayerProcessorTarget = (index: number): boolean => {
-  const nextSibling = props.layers[index + 1]
-  return nextSibling ? isProcessorLayerConfig(nextSibling) : false
+  const layer = props.layers[index]
+  if (!layer || isProcessorLayerConfig(layer)) return false
+
+  // Check if there's a Processor after this element
+  let hasProcessorAfter = false
+  for (let i = index + 1; i < props.layers.length; i++) {
+    const sibling = props.layers[i]
+    if (sibling && isProcessorLayerConfig(sibling)) {
+      hasProcessorAfter = true
+      break
+    }
+  }
+  if (!hasProcessorAfter) return false
+
+  // Check if this is the first non-processor element before a Processor
+  for (let i = 0; i < index; i++) {
+    const sibling = props.layers[i]
+    if (sibling && !isProcessorLayerConfig(sibling)) {
+      return false
+    }
+  }
+  return true
+}
+
+/** Check if a layer has a Processor below but is not the first target (shows vertical line only) */
+const hasLayerProcessorBelow = (index: number): boolean => {
+  const layer = props.layers[index]
+  if (!layer || isProcessorLayerConfig(layer)) return false
+
+  // Check if there's a Processor after this element
+  let hasProcessorAfter = false
+  for (let i = index + 1; i < props.layers.length; i++) {
+    const sibling = props.layers[i]
+    if (sibling && isProcessorLayerConfig(sibling)) {
+      hasProcessorAfter = true
+      break
+    }
+  }
+  if (!hasProcessorAfter) return false
+
+  // If this is the first target, it gets the arrow head, not the line
+  if (isLayerProcessorTarget(index)) return false
+
+  return true
 }
 
 // ============================================================
@@ -325,6 +367,7 @@ const handleForegroundContextMenu = (elementId: string, event: MouseEvent) => {
           :layers="layers"
           :expanded-layer-ids="expandedLayerIds"
           :is-processor-target="isLayerProcessorTarget(index)"
+          :has-processor-below="hasLayerProcessorBelow(index)"
           @select="(id: string) => emit('select-layer', id)"
           @toggle-expand="(id: string) => emit('toggle-expand', id)"
           @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
