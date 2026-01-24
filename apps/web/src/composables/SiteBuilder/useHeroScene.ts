@@ -57,7 +57,6 @@ import {
   type CompiledHeroView,
   type FontResolver,
   createDefaultEffectConfig,
-  createDefaultForegroundConfig,
   updateTextLayerText,
   updateTextLayerFont,
   updateTextLayerColor,
@@ -116,9 +115,12 @@ import { useHeroImages } from './useHeroImages'
 import { useHeroSceneRenderer } from './useHeroSceneRenderer'
 import { useHeroSurfaceParams } from './useHeroSurfaceParams'
 import { useHeroPatternPresets } from './useHeroPatternPresets'
-import { useHeroColorSync } from './useHeroColorSync'
 import { useHeroConfigLoader, LAYER_IDS } from './useHeroConfigLoader'
 import { useHeroPresets } from './useHeroPresets'
+
+// Note: useHeroLayerOperations and useHeroForeground are available as separate composables
+// for new implementations. They are not yet integrated into useHeroScene to maintain
+// backward compatibility. See Phase 4 of the refactoring plan.
 
 // Re-export types from extracted composables
 export type { SectionType } from './useHeroThumbnails'
@@ -415,9 +417,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const isLoadingFromConfig = ref(false)
 
   // ============================================================
-  // Foreground Config (HTML Layer)
+  // Foreground Config (HTML Layer) - SSOT from repository
   // ============================================================
-  const foregroundConfig = ref<ForegroundLayerConfig>(createDefaultForegroundConfig())
+  const foregroundConfig = computed({
+    get: () => heroViewRepository.get().foreground,
+    set: (val: ForegroundLayerConfig) => heroViewRepository.updateForeground(val),
+  })
 
   // ============================================================
   // Canvas ImageData for contrast analysis
@@ -428,6 +433,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Initialize Colors Composable
   // ============================================================
   const heroColors = useHeroColors({
+    heroViewRepository,
     primitivePalette,
     isDark,
     canvasImageData,
@@ -446,11 +452,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Compiled HeroView (source of truth for rendering)
   // ============================================================
   const compiledView = computed((): CompiledHeroView => {
-    // Get current config with foreground from local state
-    const config: HeroViewConfig = {
-      ...repoConfig.value,
-      foreground: foregroundConfig.value,
-    }
+    // Get current config (foreground is already in repoConfig via computed setter)
+    const config: HeroViewConfig = repoConfig.value
 
     // Create color context with font resolver
     const colorContext = {
@@ -563,19 +566,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     updateBackgroundSurfaceParams,
   } = heroPatternPresets
 
-  // ============================================================
-  // Initialize Color Sync Composable
-  // ============================================================
-  useHeroColorSync({
-    heroViewRepository,
-    heroColors,
-    heroThumbnails,
-    isLoadingFromConfig,
-    selectCanvasLayer,
-    surfaceUsecase,
-  })
-
-  // ============================================================
   // ============================================================
   // Layer Usecase wrappers
   // ============================================================
@@ -971,13 +961,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const { fromHeroViewConfig } = useHeroConfigLoader({
     heroViewRepository,
     editorState,
-    heroColors,
     heroFilters,
     heroThumbnails,
     selectedBackgroundIndex,
     selectedMaskIndex,
     selectedMidgroundTextureIndex,
-    foregroundConfig,
     surfacePresets,
     render,
     isLoadingFromConfig,
@@ -1008,6 +996,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // Watchers
   // ============================================================
+
+  // Preset index watchers: initialize params when preset selection changes
   watch(selectedBackgroundIndex, () => {
     if (isLoadingFromConfig.value) return
     initBackgroundSurfaceParamsFromPreset()
@@ -1023,45 +1013,33 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     initSurfaceParamsFromPreset()
   }, { immediate: true })
 
-  watch(
-    [selectedBackgroundIndex, selectedMaskIndex, selectedMidgroundTextureIndex],
-    () => {
-      render()
-    }
-  )
-
-  watch(
-    [heroColors.textureColor1, heroColors.textureColor2, heroColors.maskInnerColor, heroColors.maskOuterColor, heroColors.midgroundTextureColor1, heroColors.midgroundTextureColor2],
-    () => {
-      render()
-    }
-  )
-
+  // Thumbnail rendering watch (separate from main render cycle)
   watch([heroColors.textureColor1, heroColors.textureColor2], heroThumbnails.renderThumbnails)
 
+  // Filter config watch (filters are not yet in repository SSOT)
   watch(
     heroFilters.layerFilterConfigs,
     () => render(),
     { deep: true }
   )
 
-  watch(
-    customMaskShapeParams,
-    () => render(),
-    { deep: true }
-  )
+  // Note: The following watchers have been removed as redundant:
+  // - Color changes: Colors are now computed from repository, so repository.subscribe triggers render
+  // - customMaskShapeParams/customSurfaceParams/customBackgroundSurfaceParams: These are computed from
+  //   repoConfig and their setters update the repository, which triggers render via subscription
 
-  watch(
-    customSurfaceParams,
-    () => render(),
-    { deep: true }
-  )
-
-  watch(
-    customBackgroundSurfaceParams,
-    () => render(),
-    { deep: true }
-  )
+  // Sync activeSection to layer selection for proper surface targeting
+  watch(heroThumbnails.activeSection, (section) => {
+    if (!section) return
+    const sectionToLayerId: Record<string, string> = {
+      'background': 'background',
+      'clip-group-surface': 'surface-mask',
+    }
+    const layerId = sectionToLayerId[section]
+    if (layerId) {
+      selectCanvasLayer(layerId)
+    }
+  })
 
   onUnmounted(() => {
     destroyPreview()
@@ -1094,6 +1072,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   heroViewRepositoryUnsubscribe = heroViewRepository.subscribe((config: HeroViewConfig) => {
     repoConfig.value = config
+    // Trigger render when repository changes (single source of truth for render triggers)
+    if (!isLoadingFromConfig.value) {
+      renderSceneFromConfig()
+    }
   })
 
   if (repository) {

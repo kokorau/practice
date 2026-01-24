@@ -6,9 +6,10 @@ export { useHeroScene, type UseHeroSceneOptions, type SectionType, type Midgroun
 export { useHeroSceneRenderer, type UseHeroSceneRendererOptions, type UseHeroSceneRendererReturn, type HeroSceneEditorConfig } from './useHeroSceneRenderer'
 export { useHeroSurfaceParams, type UseHeroSurfaceParamsOptions, type UseHeroSurfaceParamsReturn } from './useHeroSurfaceParams'
 export { useHeroPatternPresets, type UseHeroPatternPresetsOptions, type UseHeroPatternPresetsReturn } from './useHeroPatternPresets'
-export { useHeroColorSync, type UseHeroColorSyncOptions } from './useHeroColorSync'
 export { useHeroConfigLoader, type UseHeroConfigLoaderOptions, type UseHeroConfigLoaderReturn, LAYER_IDS } from './useHeroConfigLoader'
 export { useHeroPresets, type UseHeroPresetsOptions, type UseHeroPresetsReturn } from './useHeroPresets'
+export { useHeroLayerOperations, type UseHeroLayerOperationsOptions, type UseHeroLayerOperationsReturn } from './useHeroLayerOperations'
+export { useHeroForeground, type UseHeroForegroundOptions, type UseHeroForegroundReturn } from './useHeroForeground'
 export { createSurfacePatterns, type CreateSurfacePatternsOptions, type SurfacePatternItem } from './createSurfacePatterns'
 export {
   compileForegroundLayout,
