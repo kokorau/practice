@@ -18,6 +18,8 @@ import type {
 } from '../../Domain/HeroViewConfig'
 import type { IntensityProvider } from '../../Application/resolvers/resolvePropertyValue'
 import { resolvePropertyValueToNumber, DEFAULT_INTENSITY_PROVIDER } from '../../Application/resolvers/resolvePropertyValue'
+import type { CompiledLayerNode, CompiledSurfaceLayerNode } from '../../Domain/CompiledHeroView'
+import { isCompiledSurfaceLayerNode, isCompiledGroupLayerNode } from '../../Domain/CompiledHeroView'
 import {
   getProcessorMask,
   DEFAULT_LAYER_BACKGROUND_COLORS,
@@ -35,6 +37,7 @@ import type {
 } from '../../Domain/Compositor'
 import {
   createSurfaceRenderNode,
+  createSurfaceRenderNodeFromCompiled,
   createMaskRenderNode,
   createMaskCompositorNode,
   createEffectChainCompositorNode,
@@ -73,6 +76,12 @@ interface BuildContext {
 
   /** Intensity provider for RangeExpr resolution */
   intensityProvider: IntensityProvider
+
+  /**
+   * Pre-compiled layers with resolved colors (from CompiledHeroView).
+   * When provided, buildSurfaceNode uses these instead of resolving colors from palette.
+   */
+  compiledLayers?: CompiledLayerNode[]
 }
 
 // ============================================================
@@ -219,6 +228,28 @@ function extractEffectParams(
 // ============================================================
 
 /**
+ * Find a compiled surface layer by ID in the compiled layer tree.
+ * Recursively searches through groups.
+ */
+function findCompiledSurfaceLayer(
+  layers: CompiledLayerNode[] | undefined,
+  targetId: string
+): CompiledSurfaceLayerNode | null {
+  if (!layers) return null
+
+  for (const layer of layers) {
+    if (layer.id === targetId && isCompiledSurfaceLayerNode(layer)) {
+      return layer
+    }
+    if (isCompiledGroupLayerNode(layer)) {
+      const found = findCompiledSurfaceLayer(layer.children, targetId)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+/**
  * Build a surface render node from layer config
  */
 function buildSurfaceNode(
@@ -226,6 +257,14 @@ function buildSurfaceNode(
   layer: BaseLayerNodeConfig | SurfaceLayerNodeConfig,
   ctx: BuildContext
 ): RenderNode {
+  // Check if we have pre-compiled data for this layer
+  const compiled = findCompiledSurfaceLayer(ctx.compiledLayers, layer.id)
+  if (compiled) {
+    // Use pre-resolved colors from CompiledHeroView
+    return createSurfaceRenderNodeFromCompiled(id, compiled.surface)
+  }
+
+  // Fallback: resolve colors from palette (legacy path)
   const colors = layer.type === 'base'
     ? getBackgroundColors(layer)
     : getMaskColors(layer)
@@ -426,6 +465,12 @@ export interface BuildPipelineOptions {
    * If not provided, all RangeExpr will use intensity=0 (min value)
    */
   intensityProvider?: IntensityProvider
+
+  /**
+   * Pre-compiled layers with resolved colors (from CompiledHeroView).
+   * When provided, buildSurfaceNode uses these instead of resolving colors from palette.
+   */
+  compiledLayers?: CompiledLayerNode[]
 }
 
 /**
@@ -452,6 +497,7 @@ export function buildPipeline(
     isDark,
     maskSurfaceKey,
     intensityProvider,
+    compiledLayers: options?.compiledLayers,
   }
 
   const nodes: Array<RenderNode | CompositorNode | OutputNode> = []

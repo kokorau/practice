@@ -13,6 +13,8 @@ import type {
 } from '../../../Domain/Compositor'
 import type { TextureOwner } from '../../../Domain/Compositor/TextureOwner'
 import type { AnySurfaceConfig } from '../../../Domain/HeroViewConfig'
+import type { CompiledSurface } from '../../../Domain/CompiledHeroView'
+import type { RGBA } from '@practice/texture'
 import {
   getColorFromPalette,
   createBackgroundSpecFromSurface,
@@ -35,6 +37,12 @@ export interface SurfaceRenderNodeConfig {
 
   /** Color keys to resolve from palette */
   colors: ColorKeyPair
+
+  /**
+   * Pre-resolved colors (from CompiledHeroView).
+   * When provided, palette resolution is skipped and these colors are used directly.
+   */
+  resolvedColors?: { color1: RGBA; color2: RGBA }
 }
 
 /**
@@ -69,12 +77,14 @@ export class SurfaceRenderNode extends BaseTextureOwner implements RenderNode, T
 
   private readonly surface: AnySurfaceConfig
   private readonly colors: ColorKeyPair
+  private readonly resolvedColors?: { color1: RGBA; color2: RGBA }
 
   constructor(config: SurfaceRenderNodeConfig) {
     super()
     this.id = config.id
     this.surface = config.surface
     this.colors = config.colors
+    this.resolvedColors = config.resolvedColors
   }
 
   /**
@@ -93,9 +103,9 @@ export class SurfaceRenderNode extends BaseTextureOwner implements RenderNode, T
       return this.createTextureHandle(viewport)
     }
 
-    // Resolve colors from palette
-    const color1 = getColorFromPalette(palette, this.colors.primary)
-    const color2 = getColorFromPalette(palette, this.colors.secondary)
+    // Use pre-resolved colors if available, otherwise resolve from palette
+    const color1 = this.resolvedColors?.color1 ?? getColorFromPalette(palette, this.colors.primary)
+    const color2 = this.resolvedColors?.color2 ?? getColorFromPalette(palette, this.colors.secondary)
 
     // Create the texture render spec
     const spec = createBackgroundSpecFromSurface(
@@ -142,4 +152,29 @@ export function createSurfaceRenderNode(
   colors: ColorKeyPair
 ): SurfaceRenderNode {
   return new SurfaceRenderNode({ id, surface, colors })
+}
+
+/**
+ * Factory function to create a SurfaceRenderNode from CompiledSurface.
+ * Uses pre-resolved colors, skipping palette resolution at render time.
+ */
+export function createSurfaceRenderNodeFromCompiled(
+  id: string,
+  compiled: CompiledSurface
+): SurfaceRenderNode {
+  // CompiledSurface.params are already resolved (number/string/boolean values)
+  // Cast to AnySurfaceConfig format - the params will be used as-is since
+  // resolvedColors bypasses palette resolution that would interpret PropertyValues
+  const surface = {
+    id: compiled.id,
+    params: compiled.params,
+  } as unknown as AnySurfaceConfig
+
+  return new SurfaceRenderNode({
+    id,
+    surface,
+    // Color keys are not used when resolvedColors is provided
+    colors: { primary: 'B', secondary: 'B' },
+    resolvedColors: { color1: compiled.color1, color2: compiled.color2 },
+  })
 }

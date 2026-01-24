@@ -23,6 +23,7 @@ export {
   // Surface
   SurfaceRenderNode,
   createSurfaceRenderNode,
+  createSurfaceRenderNodeFromCompiled,
   type SurfaceRenderNodeConfig,
   // Mask
   MaskRenderNode,

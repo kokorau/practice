@@ -55,8 +55,10 @@ import {
 } from '../Domain/HeroViewConfig'
 // Pipeline imports for node-based rendering
 import { buildPipeline, executePipeline } from './Compositor'
+// Compile HeroView for pre-resolved colors
+import { compileHeroView } from '../Application/compileHeroView'
 // Shared color helpers
-import { getOklchFromPalette } from '../Domain/ColorHelpers'
+import { getOklchFromPalette, isDarkTheme } from '../Domain/ColorHelpers'
 
 // ============================================================
 // Types
@@ -556,6 +558,11 @@ export function createGreymapMaskSpecFromShape(
  * Uses the node-based compositor pipeline for all rendering.
  * Supports IntensityProvider for RangeExpr resolution (animation).
  *
+ * Color resolution is unified through compileHeroView:
+ * 1. compileHeroView resolves all color keys to RGBA (single source of truth)
+ * 2. buildPipeline receives compiled layers and uses pre-resolved colors
+ * 3. executePipeline renders without palette-based color resolution
+ *
  * @param renderer - TextureRenderer instance or compatible object
  * @param config - HeroViewConfig to render
  * @param palette - PrimitivePalette for color resolution
@@ -568,9 +575,20 @@ export async function renderHeroConfig(
   options?: RenderHeroConfigOptions
 ): Promise<void> {
   const scale = options?.scale ?? 1
-  const { outputNode } = buildPipeline(config, palette, {
+
+  // 1. Compile HeroView to resolve all color keys to RGBA
+  const isDark = isDarkTheme(palette)
+  const compiled = compileHeroView(config, palette, isDark, {
     intensityProvider: options?.intensityProvider,
   })
+
+  // 2. Build pipeline with pre-compiled layers (uses resolved colors)
+  const { outputNode } = buildPipeline(config, palette, {
+    intensityProvider: options?.intensityProvider,
+    compiledLayers: compiled.layers,
+  })
+
+  // 3. Execute pipeline
   executePipeline(outputNode, renderer, palette, {
     scale,
     imageRegistry: options?.imageRegistry,
