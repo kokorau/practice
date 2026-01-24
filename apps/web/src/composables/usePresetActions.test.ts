@@ -7,7 +7,7 @@ import { usePresetActions, type ColorStateRefs, type ColorPresetColors } from '.
 import type { HeroViewConfig, PresetColorConfig } from '@practice/section-visual'
 
 describe('usePresetActions', () => {
-  const createColorState = (): ColorStateRefs => ({
+  const createColors = (): ColorStateRefs => ({
     hue: ref(0),
     saturation: ref(0),
     value: ref(0),
@@ -35,12 +35,12 @@ describe('usePresetActions', () => {
 
   describe('applyColorPreset', () => {
     it('should apply brand, accent, and foundation colors', () => {
-      const colorState = createColorState()
+      const colors = createColors()
       const toHeroViewConfig = vi.fn(() => createMockConfig())
       const applyPreset = vi.fn()
 
       const { applyColorPreset } = usePresetActions({
-        colorState,
+        colors,
         toHeroViewConfig,
         applyPreset,
       })
@@ -53,26 +53,26 @@ describe('usePresetActions', () => {
 
       applyColorPreset(preset)
 
-      expect(colorState.hue.value).toBe(200)
-      expect(colorState.saturation.value).toBe(70)
-      expect(colorState.value.value).toBe(65)
-      expect(colorState.accentHue.value).toBe(30)
-      expect(colorState.accentSaturation.value).toBe(80)
-      expect(colorState.accentValue.value).toBe(60)
-      expect(colorState.foundationHue.value).toBe(0)
-      expect(colorState.foundationSaturation.value).toBe(5)
-      expect(colorState.foundationValue.value).toBe(95)
+      expect(colors.hue.value).toBe(200)
+      expect(colors.saturation.value).toBe(70)
+      expect(colors.value.value).toBe(65)
+      expect(colors.accentHue.value).toBe(30)
+      expect(colors.accentSaturation.value).toBe(80)
+      expect(colors.accentValue.value).toBe(60)
+      expect(colors.foundationHue.value).toBe(0)
+      expect(colors.foundationSaturation.value).toBe(5)
+      expect(colors.foundationValue.value).toBe(95)
     })
   })
 
   describe('applyLayoutPreset', () => {
     it('should call applyPreset with presetId', async () => {
-      const colorState = createColorState()
+      const colors = createColors()
       const toHeroViewConfig = vi.fn(() => createMockConfig())
       const applyPreset = vi.fn().mockResolvedValue(null)
 
       const { applyLayoutPreset } = usePresetActions({
-        colorState,
+        colors,
         toHeroViewConfig,
         applyPreset,
       })
@@ -83,7 +83,7 @@ describe('usePresetActions', () => {
     })
 
     it('should apply color preset if returned by applyPreset', async () => {
-      const colorState = createColorState()
+      const colors = createColors()
       const toHeroViewConfig = vi.fn(() => createMockConfig())
       const colorPreset: PresetColorConfig = {
         brand: { hue: 180, saturation: 60, value: 50 },
@@ -93,44 +93,44 @@ describe('usePresetActions', () => {
       const applyPreset = vi.fn().mockResolvedValue(colorPreset)
 
       const { applyLayoutPreset } = usePresetActions({
-        colorState,
+        colors,
         toHeroViewConfig,
         applyPreset,
       })
 
       await applyLayoutPreset('test-preset-id')
 
-      expect(colorState.hue.value).toBe(180)
-      expect(colorState.saturation.value).toBe(60)
-      expect(colorState.value.value).toBe(50)
-      expect(colorState.accentHue.value).toBe(45)
-      expect(colorState.accentSaturation.value).toBe(90)
-      expect(colorState.accentValue.value).toBe(70)
-      expect(colorState.foundationHue.value).toBe(10)
-      expect(colorState.foundationSaturation.value).toBe(10)
-      expect(colorState.foundationValue.value).toBe(90)
+      expect(colors.hue.value).toBe(180)
+      expect(colors.saturation.value).toBe(60)
+      expect(colors.value.value).toBe(50)
+      expect(colors.accentHue.value).toBe(45)
+      expect(colors.accentSaturation.value).toBe(90)
+      expect(colors.accentValue.value).toBe(70)
+      expect(colors.foundationHue.value).toBe(10)
+      expect(colors.foundationSaturation.value).toBe(10)
+      expect(colors.foundationValue.value).toBe(90)
     })
 
     it('should not modify color state if applyPreset returns null', async () => {
-      const colorState = createColorState()
-      colorState.hue.value = 100
-      colorState.saturation.value = 50
-      colorState.value.value = 75
+      const colors = createColors()
+      colors.hue.value = 100
+      colors.saturation.value = 50
+      colors.value.value = 75
 
       const toHeroViewConfig = vi.fn(() => createMockConfig())
       const applyPreset = vi.fn().mockResolvedValue(null)
 
       const { applyLayoutPreset } = usePresetActions({
-        colorState,
+        colors,
         toHeroViewConfig,
         applyPreset,
       })
 
       await applyLayoutPreset('test-preset-id')
 
-      expect(colorState.hue.value).toBe(100)
-      expect(colorState.saturation.value).toBe(50)
-      expect(colorState.value.value).toBe(75)
+      expect(colors.hue.value).toBe(100)
+      expect(colors.saturation.value).toBe(50)
+      expect(colors.value.value).toBe(75)
     })
   })
 
@@ -162,23 +162,23 @@ describe('usePresetActions', () => {
     })
 
     it('should create and download a JSON file with current config and colors', () => {
-      const colorState = createColorState()
-      colorState.hue.value = 200
-      colorState.saturation.value = 70
-      colorState.value.value = 65
-      colorState.accentHue.value = 30
-      colorState.accentSaturation.value = 80
-      colorState.accentValue.value = 60
-      colorState.foundationHue.value = 0
-      colorState.foundationSaturation.value = 5
-      colorState.foundationValue.value = 95
+      const colors = createColors()
+      colors.hue.value = 200
+      colors.saturation.value = 70
+      colors.value.value = 65
+      colors.accentHue.value = 30
+      colors.accentSaturation.value = 80
+      colors.accentValue.value = 60
+      colors.foundationHue.value = 0
+      colors.foundationSaturation.value = 5
+      colors.foundationValue.value = 95
 
       const mockConfig = createMockConfig()
       const toHeroViewConfig = vi.fn(() => mockConfig)
       const applyPreset = vi.fn()
 
       const { exportPreset } = usePresetActions({
-        colorState,
+        colors,
         toHeroViewConfig,
         applyPreset,
       })
@@ -196,23 +196,23 @@ describe('usePresetActions', () => {
     })
 
     it('should include color preset in exported data', async () => {
-      const colorState = createColorState()
-      colorState.hue.value = 200
-      colorState.saturation.value = 70
-      colorState.value.value = 65
-      colorState.accentHue.value = 30
-      colorState.accentSaturation.value = 80
-      colorState.accentValue.value = 60
-      colorState.foundationHue.value = 0
-      colorState.foundationSaturation.value = 5
-      colorState.foundationValue.value = 95
+      const colors = createColors()
+      colors.hue.value = 200
+      colors.saturation.value = 70
+      colors.value.value = 65
+      colors.accentHue.value = 30
+      colors.accentSaturation.value = 80
+      colors.accentValue.value = 60
+      colors.foundationHue.value = 0
+      colors.foundationSaturation.value = 5
+      colors.foundationValue.value = 95
 
       const mockConfig = createMockConfig()
       const toHeroViewConfig = vi.fn(() => mockConfig)
       const applyPreset = vi.fn()
 
       const { exportPreset } = usePresetActions({
-        colorState,
+        colors,
         toHeroViewConfig,
         applyPreset,
       })

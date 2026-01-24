@@ -1,5 +1,5 @@
-import type { Ref } from 'vue'
 import type { HeroViewConfig, PresetColorConfig, PresetHsvColor } from '@practice/section-visual'
+import type { UseSiteColorsBridgeReturn } from './SiteBuilder/useSiteColorsBridge'
 
 /**
  * HSV color values for brand/accent/foundation
@@ -12,25 +12,26 @@ export interface ColorPresetColors {
 }
 
 /**
- * Color state refs from useSiteColorsBridge
+ * Pick only the writable HSV refs from UseSiteColorsBridgeReturn
  */
-export interface ColorStateRefs {
-  hue: Ref<number>
-  saturation: Ref<number>
-  value: Ref<number>
-  accentHue: Ref<number>
-  accentSaturation: Ref<number>
-  accentValue: Ref<number>
-  foundationHue: Ref<number>
-  foundationSaturation: Ref<number>
-  foundationValue: Ref<number>
-}
+export type ColorStateRefs = Pick<
+  UseSiteColorsBridgeReturn,
+  | 'hue'
+  | 'saturation'
+  | 'value'
+  | 'accentHue'
+  | 'accentSaturation'
+  | 'accentValue'
+  | 'foundationHue'
+  | 'foundationSaturation'
+  | 'foundationValue'
+>
 
 /**
  * Options for usePresetActions
  */
 export interface UsePresetActionsOptions {
-  colorState: ColorStateRefs
+  colors: ColorStateRefs
   toHeroViewConfig: () => HeroViewConfig
   applyPreset: (presetId: string) => Promise<PresetColorConfig | null>
 }
@@ -77,15 +78,15 @@ const extractHsvFromRefs = (
  * Extracts preset-related logic from HeroViewGeneratorView.vue
  */
 export const usePresetActions = (options: UsePresetActionsOptions): UsePresetActionsReturn => {
-  const { colorState, toHeroViewConfig, applyPreset } = options
+  const { colors, toHeroViewConfig, applyPreset } = options
 
   /**
    * Apply a color preset to the color state
    */
   const applyColorPreset = (preset: ColorPresetColors) => {
-    applyHsvToRefs(preset.brand, colorState.hue, colorState.saturation, colorState.value)
-    applyHsvToRefs(preset.accent, colorState.accentHue, colorState.accentSaturation, colorState.accentValue)
-    applyHsvToRefs(preset.foundation, colorState.foundationHue, colorState.foundationSaturation, colorState.foundationValue)
+    applyHsvToRefs(preset.brand, colors.hue, colors.saturation, colors.value)
+    applyHsvToRefs(preset.accent, colors.accentHue, colors.accentSaturation, colors.accentValue)
+    applyHsvToRefs(preset.foundation, colors.foundationHue, colors.foundationSaturation, colors.foundationValue)
   }
 
   /**
@@ -108,9 +109,9 @@ export const usePresetActions = (options: UsePresetActionsOptions): UsePresetAct
       name: 'Custom Preset',
       config: toHeroViewConfig(),
       colorPreset: {
-        brand: extractHsvFromRefs(colorState.hue, colorState.saturation, colorState.value),
-        accent: extractHsvFromRefs(colorState.accentHue, colorState.accentSaturation, colorState.accentValue),
-        foundation: extractHsvFromRefs(colorState.foundationHue, colorState.foundationSaturation, colorState.foundationValue),
+        brand: extractHsvFromRefs(colors.hue, colors.saturation, colors.value),
+        accent: extractHsvFromRefs(colors.accentHue, colors.accentSaturation, colors.accentValue),
+        foundation: extractHsvFromRefs(colors.foundationHue, colors.foundationSaturation, colors.foundationValue),
       },
     }
 

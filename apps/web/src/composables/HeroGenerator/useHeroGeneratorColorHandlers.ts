@@ -5,18 +5,26 @@
  * brand/accent/foundationの3つのカラータイプに対するhue/saturation/value更新を処理
  */
 
-type WritableRef<T> = { value: T }
+import type { UseSiteColorsBridgeReturn } from '../SiteBuilder/useSiteColorsBridge'
 
-export interface ColorRefs {
-  hue: WritableRef<number>
-  saturation: WritableRef<number>
-  value: WritableRef<number>
-}
+/**
+ * Pick only the writable HSV refs from UseSiteColorsBridgeReturn
+ */
+export type ColorStateRefs = Pick<
+  UseSiteColorsBridgeReturn,
+  | 'hue'
+  | 'saturation'
+  | 'value'
+  | 'accentHue'
+  | 'accentSaturation'
+  | 'accentValue'
+  | 'foundationHue'
+  | 'foundationSaturation'
+  | 'foundationValue'
+>
 
 export interface UseHeroGeneratorColorHandlersOptions {
-  brand: ColorRefs
-  accent: ColorRefs
-  foundation: ColorRefs
+  colors: ColorStateRefs
 }
 
 export interface UseHeroGeneratorColorHandlersReturn {
@@ -30,7 +38,7 @@ export interface UseHeroGeneratorColorHandlersReturn {
 export const useHeroGeneratorColorHandlers = (
   options: UseHeroGeneratorColorHandlersOptions
 ): UseHeroGeneratorColorHandlersReturn => {
-  const { brand, accent, foundation } = options
+  const { colors } = options
 
   const handleColorStateUpdate = (
     colorType: 'brand' | 'accent' | 'foundation',
@@ -42,19 +50,19 @@ export const useHeroGeneratorColorHandlers = (
 
     switch (colorType) {
       case 'brand':
-        if (key === 'hue') brand.hue.value = newValue
-        else if (key === 'saturation') brand.saturation.value = newValue
-        else if (key === 'value') brand.value.value = newValue
+        if (key === 'hue') colors.hue.value = newValue
+        else if (key === 'saturation') colors.saturation.value = newValue
+        else if (key === 'value') colors.value.value = newValue
         break
       case 'accent':
-        if (key === 'hue') accent.hue.value = newValue
-        else if (key === 'saturation') accent.saturation.value = newValue
-        else if (key === 'value') accent.value.value = newValue
+        if (key === 'hue') colors.accentHue.value = newValue
+        else if (key === 'saturation') colors.accentSaturation.value = newValue
+        else if (key === 'value') colors.accentValue.value = newValue
         break
       case 'foundation':
-        if (key === 'hue') foundation.hue.value = newValue
-        else if (key === 'saturation') foundation.saturation.value = newValue
-        else if (key === 'value') foundation.value.value = newValue
+        if (key === 'hue') colors.foundationHue.value = newValue
+        else if (key === 'saturation') colors.foundationSaturation.value = newValue
+        else if (key === 'value') colors.foundationValue.value = newValue
         break
     }
   }

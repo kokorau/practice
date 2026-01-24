@@ -19,6 +19,7 @@
  */
 
 import type { Ref, ComputedRef, ShallowRef } from 'vue'
+import type { Timeline } from '@practice/timeline'
 import type { ObjectSchema } from '@practice/schema'
 import type {
   TexturePattern,
@@ -525,6 +526,10 @@ export interface PresetState {
   readonly presets: Ref<HeroViewPreset[]>
   /** Currently selected preset ID */
   readonly selectedPresetId: Ref<string | null>
+  /** Currently selected preset (derived from selectedPresetId) */
+  readonly selectedPreset: ComputedRef<HeroViewPreset | undefined>
+  /** Timeline from selected preset (only if animated preset) */
+  readonly selectedTimeline: ComputedRef<Timeline | undefined>
 
   /** Load presets from repository (returns color preset if initial preset applied) */
   readonly loadPresets: (applyInitial?: boolean) => Promise<PresetColorConfig | null>
@@ -752,6 +757,14 @@ export interface UsecaseState {
   }
   /** Selected foreground element ID */
   readonly selectedForegroundElementId: Ref<string | null>
+  /** SelectProcessor usecase - syncs effect manager with processor selection */
+  readonly selectProcessorUsecase: {
+    execute: (layers: LayerNodeConfig[], layerId: string, processorType: 'effect' | 'mask') => void
+  }
+  /** ApplyAnimatedPreset usecase - handles animated preset application */
+  readonly applyAnimatedPresetUsecase: {
+    execute: (preset: HeroViewPreset, baseLayerId: string) => void
+  }
 }
 
 // ============================================================

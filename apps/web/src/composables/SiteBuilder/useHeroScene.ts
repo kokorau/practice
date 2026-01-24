@@ -101,6 +101,8 @@ import {
   compileHeroView,
   normalizeMaskConfig,
   type MaskShapeConfig,
+  createSelectProcessorUsecase,
+  createApplyAnimatedPresetUsecase,
 } from '@practice/section-visual'
 import { ensureFontLoaded } from '@practice/font'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
@@ -596,6 +598,29 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   // ============================================================
+  // SelectProcessor Usecase (EffectManager Port integration)
+  // ============================================================
+  const selectProcessorUsecase = createSelectProcessorUsecase({
+    effectManager: {
+      selectLayer: (layerId) => heroFilters.effectManager.selectLayer(layerId),
+      setEffectPipeline: (layerId, effects) => heroFilters.effectManager.setEffectPipeline(layerId, effects),
+    },
+  })
+
+  // ============================================================
+  // ApplyAnimatedPreset Usecase (Preset change handling)
+  // ============================================================
+  const applyAnimatedPresetUsecase = createApplyAnimatedPresetUsecase({
+    repository: heroViewRepository,
+    foregroundConfig: {
+      set: (config) => { foregroundConfig.value = config },
+    },
+    effectManager: {
+      selectLayer: (layerId) => heroFilters.effectManager.selectLayer(layerId),
+    },
+  })
+
+  // ============================================================
   // ForegroundElement Usecase
   // ============================================================
   const selectedForegroundElementId = computed({
@@ -971,6 +996,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const {
     presets,
     selectedPresetId,
+    selectedPreset,
+    selectedTimeline,
     loadPresets,
     applyPreset,
     exportPreset,
@@ -1168,6 +1195,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const preset: PresetState = {
     presets,
     selectedPresetId,
+    selectedPreset,
+    selectedTimeline,
     loadPresets,
     applyPreset,
     exportPreset,
@@ -1215,6 +1244,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foregroundElementUsecase,
     presetUsecase,
     selectedForegroundElementId,
+    selectProcessorUsecase,
+    applyAnimatedPresetUsecase,
   }
 
   // Use repository state directly as computed (reactive via repoConfig)
