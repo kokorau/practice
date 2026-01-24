@@ -20,6 +20,7 @@ import {
   createScalesSpec,
   createOgeeSpec,
   createSunburstSpec,
+  createPaperTextureSpec,
 } from '../shaders'
 
 /**
@@ -296,6 +297,23 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             viewportWidth: viewport?.width ?? 1920,
             viewportHeight: viewport?.height ?? 1080,
           }),
+        params,
+      }
+    case 'paperTexture':
+      return {
+        label,
+        createSpec: (c1: RGBA, _c2: RGBA, viewport?: Viewport) =>
+          createPaperTextureSpec({
+            color: c1,
+            fiberScale: params.fiberScale,
+            fiberStrength: params.fiberStrength,
+            fiberWarp: params.fiberWarp,
+            grainDensity: params.grainDensity,
+            grainSize: params.grainSize,
+            bumpStrength: params.bumpStrength,
+            lightAngle: params.lightAngle,
+            seed: params.seed,
+          }, viewport ?? { width: 1920, height: 1080 }),
         params,
       }
   }

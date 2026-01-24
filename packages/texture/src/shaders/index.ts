@@ -312,3 +312,10 @@ export {
   OVERLAY_BLEND_BUFFER_SIZE,
   type OverlayBlendSpec,
 } from './overlayBlend'
+// Paper texture shader (subtle paper-like surface)
+export {
+  paperTextureShader,
+  createPaperTextureSpec,
+  PAPER_TEXTURE_BUFFER_SIZE,
+  type PaperTextureParams,
+} from './paperTexture'

@@ -227,6 +227,17 @@ export interface SunburstSurfaceParams {
   twist: number
 }
 
+export interface PaperTextureSurfaceParams {
+  fiberScale: number
+  fiberStrength: number
+  fiberWarp: number
+  grainDensity: number
+  grainSize: number
+  bumpStrength: number
+  lightAngle: number
+  seed: number
+}
+
 /**
  * Gradient grain surface params (5 separate types)
  */
@@ -307,6 +318,7 @@ export type CustomSurfaceParams =
   | ({ id: 'scales' } & ScalesSurfaceParams)
   | ({ id: 'ogee' } & OgeeSurfaceParams)
   | ({ id: 'sunburst' } & SunburstSurfaceParams)
+  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
 
 /**
  * Custom background surface params union type
@@ -331,6 +343,7 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'scales' } & ScalesSurfaceParams)
   | ({ id: 'ogee' } & OgeeSurfaceParams)
   | ({ id: 'sunburst' } & SunburstSurfaceParams)
+  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
   | { id: 'solid' }
 
 export interface UseHeroSceneOptions {

@@ -27,6 +27,7 @@ import {
   createScalesSpec,
   createOgeeSpec,
   createSunburstSpec,
+  createPaperTextureSpec,
   createGradientGrainLinearSpec,
   createGradientGrainCircularSpec,
   createGradientGrainRadialSpec,
@@ -304,6 +305,18 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
           viewportWidth: viewport.width,
           viewportHeight: viewport.height,
         })
+      case 'paperTexture':
+        return createPaperTextureSpec({
+          color: color1,
+          fiberScale: params.fiberScale,
+          fiberStrength: params.fiberStrength,
+          fiberWarp: params.fiberWarp,
+          grainDensity: params.grainDensity,
+          grainSize: params.grainSize,
+          bumpStrength: params.bumpStrength,
+          lightAngle: params.lightAngle,
+          seed: params.seed,
+        }, viewport)
     }
   }
 

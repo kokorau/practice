@@ -22,6 +22,7 @@ export type SurfacePresetType =
   | 'scales'
   | 'ogee'
   | 'sunburst'
+  | 'paperTexture'
 
 /**
  * Solid surface params (no additional params needed)
@@ -229,6 +230,21 @@ export interface SunburstPresetParams {
 }
 
 /**
+ * Paper texture surface params
+ */
+export interface PaperTexturePresetParams {
+  type: 'paperTexture'
+  fiberScale: number
+  fiberStrength: number
+  fiberWarp: number
+  grainDensity: number
+  grainSize: number
+  bumpStrength: number
+  lightAngle: number
+  seed: number
+}
+
+/**
  * Union of all surface preset params
  */
 export type SurfacePresetParams =
@@ -251,6 +267,7 @@ export type SurfacePresetParams =
   | ScalesPresetParams
   | OgeePresetParams
   | SunburstPresetParams
+  | PaperTexturePresetParams
 
 /**
  * Surface Preset
