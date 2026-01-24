@@ -101,6 +101,9 @@ import {
   compileHeroView,
   normalizeMaskConfig,
   type MaskShapeConfig,
+  createSelectProcessorUsecase,
+  createApplyAnimatedPresetUsecase,
+  getProcessorWithTargetUsecase,
 } from '@practice/section-visual'
 import { ensureFontLoaded } from '@practice/font'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
@@ -596,6 +599,29 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   // ============================================================
+  // SelectProcessor Usecase (EffectManager Port integration)
+  // ============================================================
+  const selectProcessorUsecase = createSelectProcessorUsecase({
+    effectManager: {
+      selectLayer: (layerId) => heroFilters.effectManager.selectLayer(layerId),
+      setEffectPipeline: (layerId, effects) => heroFilters.effectManager.setEffectPipeline(layerId, effects),
+    },
+  })
+
+  // ============================================================
+  // ApplyAnimatedPreset Usecase (Preset change handling)
+  // ============================================================
+  const applyAnimatedPresetUsecase = createApplyAnimatedPresetUsecase({
+    repository: heroViewRepository,
+    foregroundConfig: {
+      set: (config) => { foregroundConfig.value = config },
+    },
+    effectManager: {
+      selectLayer: (layerId) => heroFilters.effectManager.selectLayer(layerId),
+    },
+  })
+
+  // ============================================================
   // ForegroundElement Usecase
   // ============================================================
   const selectedForegroundElementId = computed({
@@ -971,6 +997,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const {
     presets,
     selectedPresetId,
+    selectedPreset,
+    selectedTimeline,
     loadPresets,
     applyPreset,
     exportPreset,
@@ -1126,6 +1154,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     updateBackgroundSurfaceParams,
   }
 
+  // ProcessorTarget computed (for RightPropertyPanel mask section)
+  const { processorLayerId } = layerSelection
+  const processorTarget = computed(() => {
+    const layers = repoConfig.value?.layers
+    if (!layers) {
+      return { processor: undefined, targetSurface: undefined }
+    }
+    return getProcessorWithTargetUsecase.execute(layers, processorLayerId.value)
+  })
+
   const mask: MaskState = {
     maskColorKey1: heroColors.maskColorKey1,
     maskColorKey2: heroColors.maskColorKey2,
@@ -1138,6 +1176,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     currentSurfaceSchema,
     updateMaskShapeParams,
     updateSurfaceParams,
+    processorTarget,
   }
 
   const filter: FilterState = {
@@ -1168,6 +1207,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const preset: PresetState = {
     presets,
     selectedPresetId,
+    selectedPreset,
+    selectedTimeline,
     loadPresets,
     applyPreset,
     exportPreset,
@@ -1215,14 +1256,23 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foregroundElementUsecase,
     presetUsecase,
     selectedForegroundElementId,
+    selectProcessorUsecase,
+    applyAnimatedPresetUsecase,
   }
 
   // Use repository state directly as computed (reactive via repoConfig)
   const heroViewConfigComputed = computed(() => repoConfig.value)
 
+  // Writable computed for expandedLayerIds (syncs with editorUIState)
+  const expandedLayerIdsComputed = computed({
+    get: () => editorUIState.value.layerTree.expandedLayerIds,
+    set: (val: Set<string>) => { editorUIState.value.layerTree.expandedLayerIds = val },
+  })
+
   const editor: EditorStateRef = {
     heroViewConfig: heroViewConfigComputed,
     editorUIState,
+    expandedLayerIds: expandedLayerIdsComputed,
   }
 
   const renderer: RendererActions = {

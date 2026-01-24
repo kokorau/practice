@@ -46,6 +46,25 @@ export interface UseSiteColorsBridgeOptions {
   siteState: UseSiteStateReturn
 }
 
+/**
+ * HSV color values with hex for UI display
+ */
+export interface HSVColorWithHex {
+  hue: number
+  saturation: number
+  value: number
+  hex: string
+}
+
+/**
+ * Color state for UI components (brand, accent, foundation)
+ */
+export interface ColorState {
+  brand: HSVColorWithHex
+  accent: HSVColorWithHex
+  foundation: HSVColorWithHex
+}
+
 export interface UseSiteColorsBridgeReturn {
   // HSV state (Brand) - writable refs that sync with Site
   hue: Ref<number>
@@ -75,6 +94,8 @@ export interface UseSiteColorsBridgeReturn {
   foundationColor: ComputedRef<FoundationColor>
   // Helpers
   isDark: ComputedRef<boolean>
+  // Pre-built color state for UI components
+  colorState: ComputedRef<ColorState>
 }
 
 // ============================================================================
@@ -267,6 +288,31 @@ export const useSiteColorsBridge = (
   const isDark = computed(() => siteState.isDark.value)
 
   // ========================================================================
+  // Pre-built Color State for UI
+  // ========================================================================
+
+  const colorState = computed((): ColorState => ({
+    brand: {
+      hue: hue.value,
+      saturation: saturation.value,
+      value: value.value,
+      hex: selectedHex.value,
+    },
+    accent: {
+      hue: accentHue.value,
+      saturation: accentSaturation.value,
+      value: accentValue.value,
+      hex: accentHex.value,
+    },
+    foundation: {
+      hue: foundationHue.value,
+      saturation: foundationSaturation.value,
+      value: foundationValue.value,
+      hex: foundationHex.value,
+    },
+  }))
+
+  // ========================================================================
   // Return
   // ========================================================================
 
@@ -294,5 +340,6 @@ export const useSiteColorsBridge = (
     foundationColor,
     // Helpers
     isDark,
+    colorState,
   }
 }

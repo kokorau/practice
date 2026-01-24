@@ -9,19 +9,24 @@
 
 import type { HeroPrimitiveKey } from '@practice/section-visual'
 import type { PrimitiveKey } from '@practice/semantic-color-palette/Domain'
+import type { UseForegroundElementReturn } from '../useForegroundElement'
 
 // Generic writable ref type that accepts both Ref and WritableComputedRef
 type WritableRef<T> = { value: T }
 
-export interface ForegroundElementRefs {
-  selectedElementColorKey: WritableRef<HeroPrimitiveKey | 'auto'>
-  selectedElementContent: WritableRef<string>
-  selectedElementPosition: WritableRef<string | { x: number; y: number; anchor: string }>
-  selectedElementFontSize: WritableRef<number>
-  selectedElementFontWeight: WritableRef<number>
-  selectedElementLetterSpacing: WritableRef<number>
-  selectedElementLineHeight: WritableRef<number>
-}
+/**
+ * Pick only the selected element refs from UseForegroundElementReturn
+ */
+export type ForegroundElementRefs = Pick<
+  UseForegroundElementReturn,
+  | 'selectedElementColorKey'
+  | 'selectedElementContent'
+  | 'selectedElementPosition'
+  | 'selectedElementFontSize'
+  | 'selectedElementFontWeight'
+  | 'selectedElementLetterSpacing'
+  | 'selectedElementLineHeight'
+>
 
 export interface BackgroundState {
   backgroundColorKey1: WritableRef<PrimitiveKey>

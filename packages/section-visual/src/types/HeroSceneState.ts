@@ -19,6 +19,7 @@
  */
 
 import type { Ref, ComputedRef, ShallowRef } from 'vue'
+import type { Timeline } from '@practice/timeline'
 import type { ObjectSchema } from '@practice/schema'
 import type {
   TexturePattern,
@@ -66,6 +67,8 @@ import type {
   ModifierDropPosition,
   CompiledHeroView,
   NormalizedMaskConfig,
+  ProcessorNodeConfig,
+  SurfaceLayerNodeConfig,
 } from '../index'
 
 // ============================================================
@@ -398,6 +401,16 @@ export interface BackgroundState {
 // ============================================================
 
 /**
+ * Processor target info (processor node and its target surface)
+ */
+export interface ProcessorTarget {
+  /** The selected processor node */
+  readonly processor: ProcessorNodeConfig | undefined
+  /** The surface that the processor applies to */
+  readonly targetSurface: SurfaceLayerNodeConfig | undefined
+}
+
+/**
  * Mask (clip group) state and actions
  */
 export interface MaskState {
@@ -425,6 +438,9 @@ export interface MaskState {
   readonly updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams | PerlinMaskShapeParams | LinearGradientMaskShapeParams | RadialGradientMaskShapeParams | BoxGradientMaskShapeParams | WavyLineMaskShapeParams>) => void
   /** Update surface params */
   readonly updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => void
+
+  /** Processor target info (derived from current selection) */
+  readonly processorTarget: ComputedRef<ProcessorTarget>
 }
 
 // ============================================================
@@ -525,6 +541,10 @@ export interface PresetState {
   readonly presets: Ref<HeroViewPreset[]>
   /** Currently selected preset ID */
   readonly selectedPresetId: Ref<string | null>
+  /** Currently selected preset (derived from selectedPresetId) */
+  readonly selectedPreset: ComputedRef<HeroViewPreset | undefined>
+  /** Timeline from selected preset (only if animated preset) */
+  readonly selectedTimeline: ComputedRef<Timeline | undefined>
 
   /** Load presets from repository (returns color preset if initial preset applied) */
   readonly loadPresets: (applyInitial?: boolean) => Promise<PresetColorConfig | null>
@@ -752,6 +772,14 @@ export interface UsecaseState {
   }
   /** Selected foreground element ID */
   readonly selectedForegroundElementId: Ref<string | null>
+  /** SelectProcessor usecase - syncs effect manager with processor selection */
+  readonly selectProcessorUsecase: {
+    execute: (layers: LayerNodeConfig[], layerId: string, processorType: 'effect' | 'mask') => void
+  }
+  /** ApplyAnimatedPreset usecase - handles animated preset application */
+  readonly applyAnimatedPresetUsecase: {
+    execute: (preset: HeroViewPreset, baseLayerId: string) => void
+  }
 }
 
 // ============================================================
@@ -772,6 +800,11 @@ export interface EditorStateRef {
    * This consolidates all UI-related state in a single reactive object
    */
   readonly editorUIState: Ref<HeroEditorUIState>
+  /**
+   * Expanded layer IDs for layer tree UI
+   * Writable computed that syncs with editorUIState.layerTree.expandedLayerIds
+   */
+  readonly expandedLayerIds: Ref<Set<string>>
 }
 
 // ============================================================

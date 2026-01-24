@@ -92,6 +92,7 @@ const heroConfigSlice = createHeroConfigSlice({
 // ============================================================
 // Brand, Accent & Foundation Color State (Bridge to Site)
 // ============================================================
+const colors = useSiteColorsBridge({ siteState })
 const {
   hue,
   saturation,
@@ -105,16 +106,12 @@ const {
   foundationSaturation,
   foundationValue,
   foundationHex,
-} = useSiteColorsBridge({ siteState })
+} = colors
 
 // ============================================================
 // Color State Update Handler
 // ============================================================
-const { handleColorStateUpdate } = useHeroGeneratorColorHandlers({
-  brand: { hue, saturation, value },
-  accent: { hue: accentHue, saturation: accentSaturation, value: accentValue },
-  foundation: { hue: foundationHue, saturation: foundationSaturation, value: foundationValue },
-})
+const { handleColorStateUpdate } = useHeroGeneratorColorHandlers({ colors })
 
 // ============================================================
 // Primitive & Semantic Palette (from Site State)
@@ -186,17 +183,7 @@ const {
   applyLayoutPreset: handleApplyLayoutPreset,
   exportPreset,
 } = usePresetActions({
-  colorState: {
-    hue,
-    saturation,
-    value,
-    accentHue,
-    accentSaturation,
-    accentValue,
-    foundationHue,
-    foundationSaturation,
-    foundationValue,
-  },
+  colors,
   toHeroViewConfig: heroScene.serialization.toHeroViewConfig,
   applyPreset: heroScene.preset.applyPreset,
 })

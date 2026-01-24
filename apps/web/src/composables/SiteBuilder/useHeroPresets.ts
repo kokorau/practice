@@ -7,7 +7,8 @@
  * - selectedPresetIdの管理
  */
 
-import { ref, computed, type Ref } from 'vue'
+import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import type { Timeline } from '@practice/timeline'
 import {
   type HeroViewConfig,
   type HeroViewPreset,
@@ -35,6 +36,10 @@ export interface UseHeroPresetsOptions {
 export interface UseHeroPresetsReturn {
   presets: Ref<HeroViewPreset[]>
   selectedPresetId: Ref<string | null>
+  /** Currently selected preset (derived from selectedPresetId) */
+  selectedPreset: ComputedRef<HeroViewPreset | undefined>
+  /** Timeline from selected preset (only if animated preset) */
+  selectedTimeline: ComputedRef<Timeline | undefined>
   loadPresets: (applyInitial?: boolean) => Promise<PresetColorConfig | null>
   applyPreset: (presetId: string, mergeMode?: MergeMode) => Promise<PresetColorConfig | null>
   exportPreset: (exportOptions?: ExportPresetOptions) => ReturnType<ReturnType<typeof createPresetManager>['exportAsPreset']>
@@ -81,6 +86,20 @@ export const useHeroPresets = (
   const selectedPresetId = computed({
     get: () => editorUIState.value.preset.selectedPresetId,
     set: (val: string | null) => { editorUIState.value.preset.selectedPresetId = val },
+  })
+
+  // Derived computeds
+  const selectedPreset = computed(() => {
+    const presetId = selectedPresetId.value
+    return presets.value.find((p) => p.id === presetId)
+  })
+
+  const selectedTimeline = computed((): Timeline | undefined => {
+    const preset = selectedPreset.value
+    if (preset && isAnimatedPreset(preset)) {
+      return preset.timeline
+    }
+    return undefined
   })
 
   // ============================================================
@@ -136,6 +155,8 @@ export const useHeroPresets = (
   return {
     presets,
     selectedPresetId,
+    selectedPreset,
+    selectedTimeline,
     loadPresets,
     applyPreset,
     exportPreset,

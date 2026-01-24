@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
-import type { Ms, IntensityProvider, Timeline } from '@practice/timeline'
+import { computed, onMounted, nextTick, watch, ref } from 'vue'
+import type { Ms, IntensityProvider } from '@practice/timeline'
 import { createHeroConfigSlice } from '@practice/site/Infra'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
@@ -13,22 +13,15 @@ import {
   createSurfacePatterns,
   LAYER_IDS,
 } from '../composables/SiteBuilder'
-import type { ProcessorNodeConfig, SurfaceLayerNodeConfig } from '@practice/section-visual'
-import {
-  isImageLayerConfig,
-  isAnimatedPreset,
-  createInMemoryHeroViewPresetRepository,
-  createSelectProcessorUsecase,
-  createApplyAnimatedPresetUsecase,
-  getProcessorWithTargetUsecase,
-} from '@practice/section-visual'
-import type { ImageLayerNodeConfig } from '@practice/section-visual'
+import { createInMemoryHeroViewPresetRepository } from '@practice/section-visual'
 import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useFilterEditor } from '../composables/useFilterEditor'
 import { useHeroGeneratorColorHandlers, useHeroGeneratorPanelHandlers } from '../composables/HeroGenerator'
 import { useForegroundElement } from '../composables/useForegroundElement'
 import { usePresetActions } from '../composables/usePresetActions'
+import { useLayoutResize } from '../composables/useLayoutResize'
+import { useImageLayerEditor } from '../composables/useImageLayerEditor'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 
 // ============================================================
@@ -42,18 +35,12 @@ const VISIBLE_DURATION = 30000 as Ms // 30 seconds
 const timelinePresetRepository = createInMemoryHeroViewPresetRepository(TIMELINE_PRESETS)
 
 // ============================================================
-// UI Dark Mode (independent from palette)
-// ============================================================
-const uiDarkMode = ref(false)
-
-// ============================================================
 // Layer Selection (provide for child components)
 // ============================================================
 const layerSelection = provideLayerSelection()
 const {
   layerId: selectedLayerId,
   processorType: selectedProcessorType,
-  processorLayerId,
   selectCanvasLayer,
   selectProcessor,
   clearSelection,
@@ -76,29 +63,12 @@ const heroConfigSlice = createHeroConfigSlice({
 // ============================================================
 // Brand, Accent & Foundation Color State (Bridge to Site)
 // ============================================================
-const {
-  hue,
-  saturation,
-  value,
-  selectedHex,
-  accentHue,
-  accentSaturation,
-  accentValue,
-  accentHex,
-  foundationHue,
-  foundationSaturation,
-  foundationValue,
-  foundationHex,
-} = useSiteColorsBridge({ siteState })
+const colors = useSiteColorsBridge({ siteState })
 
 // ============================================================
 // Color State Update Handler
 // ============================================================
-const { handleColorStateUpdate } = useHeroGeneratorColorHandlers({
-  brand: { hue, saturation, value },
-  accent: { hue: accentHue, saturation: accentSaturation, value: accentValue },
-  foundation: { hue: foundationHue, saturation: foundationSaturation, value: foundationValue },
-})
+const { handleColorStateUpdate } = useHeroGeneratorColorHandlers({ colors })
 
 // ============================================================
 // Primitive Palette (from Site State)
@@ -135,77 +105,17 @@ const heroScene = useHeroScene({
 })
 
 // ============================================================
-// SelectProcessor Usecase (EffectManager Port integration)
+// Usecases & Preset (from heroScene)
 // ============================================================
-const selectProcessorUsecase = createSelectProcessorUsecase({
-  effectManager: {
-    selectLayer: (layerId) => heroScene.filter.effectManager.selectLayer(layerId),
-    setEffectPipeline: (layerId, effects) => heroScene.filter.effectManager.setEffectPipeline(layerId, effects),
-  },
-})
-
-// ============================================================
-// ApplyAnimatedPreset Usecase (Preset change handling)
-// ============================================================
-const applyAnimatedPresetUsecase = createApplyAnimatedPresetUsecase({
-  repository: heroScene.usecase.heroViewRepository,
-  foregroundConfig: {
-    set: (config) => { heroScene.foreground.foregroundConfig.value = config },
-  },
-  effectManager: {
-    selectLayer: (layerId) => heroScene.filter.effectManager.selectLayer(layerId),
-  },
-})
-
-// ============================================================
-// Selected Preset (from heroScene.preset)
-// ============================================================
-const selectedPreset = computed(() => {
-  const presetId = heroScene.preset.selectedPresetId.value
-  return heroScene.preset.presets.value.find((p) => p.id === presetId)
-})
-
-// Get timeline from selected preset (only if it's an animated preset)
-const selectedTimeline = computed((): Timeline | undefined => {
-  const preset = selectedPreset.value
-  if (preset && isAnimatedPreset(preset)) {
-    return preset.timeline
-  }
-  return undefined
-})
+const { selectProcessorUsecase, applyAnimatedPresetUsecase } = heroScene.usecase
+const { selectedPreset, selectedTimeline } = heroScene.preset
 
 // ============================================================
 // Filter Editor (Composable)
 // ============================================================
-const {
-  selectedFilterType,
-  effectConfigs,
-  rawEffectParams,
-} = useFilterEditor({
+const { filterProps } = useFilterEditor({
   effectManager: heroScene.filter.effectManager,
 })
-
-// Filter props object for passing to child components
-const filterProps = {
-  selectedType: selectedFilterType,
-  vignetteConfig: effectConfigs.vignette,
-  chromaticConfig: effectConfigs.chromaticAberration,
-  dotHalftoneConfig: effectConfigs.dotHalftone,
-  lineHalftoneConfig: effectConfigs.lineHalftone,
-  blurConfig: effectConfigs.blur,
-  pixelateConfig: effectConfigs.pixelate,
-  hexagonMosaicConfig: effectConfigs.hexagonMosaic,
-  voronoiMosaicConfig: effectConfigs.voronoiMosaic,
-  // Raw params for DSL display
-  rawVignetteParams: rawEffectParams.vignette,
-  rawChromaticParams: rawEffectParams.chromaticAberration,
-  rawDotHalftoneParams: rawEffectParams.dotHalftone,
-  rawLineHalftoneParams: rawEffectParams.lineHalftone,
-  rawBlurParams: rawEffectParams.blur,
-  rawPixelateParams: rawEffectParams.pixelate,
-  rawHexagonMosaicParams: rawEffectParams.hexagonMosaic,
-  rawVoronoiMosaicParams: rawEffectParams.voronoiMosaic,
-}
 
 // ============================================================
 // Preset Actions (Composable)
@@ -214,17 +124,7 @@ const {
   applyColorPreset: handleApplyColorPreset,
   applyLayoutPreset: handleApplyLayoutPreset,
 } = usePresetActions({
-  colorState: {
-    hue,
-    saturation,
-    value,
-    accentHue,
-    accentSaturation,
-    accentValue,
-    foundationHue,
-    foundationSaturation,
-    foundationValue,
-  },
+  colors,
   toHeroViewConfig: heroScene.serialization.toHeroViewConfig,
   applyPreset: heroScene.preset.applyPreset,
 })
@@ -232,23 +132,19 @@ const {
 // ============================================================
 // Foreground Element (Composable)
 // ============================================================
+const foregroundElement = useForegroundElement({
+  foregroundConfig: heroScene.foreground.foregroundConfig,
+  clearCanvasSelection: clearSelection,
+})
+
+// Destructure commonly used values
 const {
   selectedForegroundElementId,
   selectedForegroundElement,
   handleSelectForegroundElement,
-  selectedElementPosition,
-  selectedElementFontSize,
-  selectedElementFontWeight,
-  selectedElementLetterSpacing,
-  selectedElementLineHeight,
-  selectedElementContent,
-  selectedElementColorKey,
   selectedFontPreset,
   selectedFontDisplayName,
-} = useForegroundElement({
-  foregroundConfig: heroScene.foreground.foregroundConfig,
-  clearCanvasSelection: clearSelection,
-})
+} = foregroundElement
 
 // Convert texture patterns to SurfaceSelector format
 const backgroundPatterns = createSurfacePatterns({
@@ -266,27 +162,10 @@ const maskSurfacePatterns = createSurfacePatterns({
 })
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
-const rightPanelRef = ref<HTMLElement | null>(null)
-
-// Type helpers for props
-const backgroundSurfaceParamsForUI = computed(() =>
-  heroScene.background.customBackgroundSurfaceParams.value as Record<string, unknown> | null
-)
-const maskSurfaceParamsForUI = computed(() =>
-  heroScene.mask.customSurfaceParams.value as Record<string, unknown> | null
-)
-const maskShapeParamsForUI = computed(() =>
-  heroScene.mask.customMaskShapeParams.value as Record<string, unknown> | null
-)
 
 // ============================================================
 // Layer Operations (Composable)
 // ============================================================
-const expandedLayerIds = computed({
-  get: () => heroScene.editor.editorUIState.value.layerTree.expandedLayerIds,
-  set: (val: Set<string>) => { heroScene.editor.editorUIState.value.layerTree.expandedLayerIds = val },
-})
-
 const {
   layers,
   selectedLayer,
@@ -303,23 +182,8 @@ const {
 } = useLayerOperations({
   repository: heroScene.usecase.heroViewRepository,
   heroViewConfig: heroScene.editor.heroViewConfig,
-  expandedLayerIds,
-  sceneCallbacks: {
-    addMaskLayer: heroScene.layer.addMaskLayer,
-    addTextLayer: heroScene.layer.addTextLayer,
-    addObjectLayer: heroScene.layer.addObjectLayer,
-    addImageLayer: heroScene.layer.addImageLayer,
-    addGroupLayer: heroScene.layer.addGroupLayer,
-    removeLayer: heroScene.layer.removeLayer,
-    toggleLayerVisibility: heroScene.layer.toggleLayerVisibility,
-    groupLayer: heroScene.layer.groupLayer,
-    useAsMask: heroScene.layer.useAsMask,
-    moveLayer: heroScene.layer.moveLayer,
-    moveModifier: heroScene.layer.moveModifier,
-    addProcessorToLayer: heroScene.layer.addProcessorToLayer,
-    removeProcessorFromLayer: heroScene.layer.removeProcessorFromLayer,
-    removeProcessor: heroScene.layer.removeProcessor,
-  },
+  expandedLayerIds: heroScene.editor.expandedLayerIds,
+  sceneCallbacks: heroScene.layer,
   selectedLayerId,
   onSelectLayer: (id) => {
     selectCanvasLayer(id)
@@ -342,67 +206,24 @@ const {
   handleBackgroundUpdate,
   handleMaskUpdate,
 } = useHeroGeneratorPanelHandlers({
-  foregroundRefs: {
-    selectedElementColorKey,
-    selectedElementContent,
-    selectedElementPosition,
-    selectedElementFontSize,
-    selectedElementFontWeight,
-    selectedElementLetterSpacing,
-    selectedElementLineHeight,
-  },
+  foregroundRefs: foregroundElement,
   background: heroScene.background,
   mask: heroScene.mask,
   pattern: heroScene.pattern,
 })
 
 // ============================================================
-// Image Layer Handling
+// Image Layer Editor (Composable)
 // ============================================================
-
-// Computed property for image layer props (when an image layer is selected)
-const imageLayerProps = computed(() => {
-  const layer = selectedLayer.value
-  if (!layer || !isImageLayerConfig(layer)) return null
-
-  const layerId = layer.id
-  const isLoading = heroScene.images.isLayerLoading.value.get(layerId) ?? false
-  const imageUrl = heroScene.images.getImageUrl(layerId)
-
-  return {
-    layerId,
-    imageId: layer.imageId,
-    mode: layer.mode ?? 'cover',
-    position: layer.position,
-    imageUrl,
-    isLoading,
-  }
+const { imageLayerProps, handleImageUpdate } = useImageLayerEditor({
+  selectedLayer,
+  isLayerLoading: heroScene.images.isLayerLoading,
+  getImageUrl: heroScene.images.getImageUrl,
+  setLayerImage: heroScene.images.setLayerImage,
+  clearLayerImage: heroScene.images.clearLayerImage,
+  loadRandomImage: heroScene.images.loadRandomImage,
+  updateLayer: heroScene.usecase.layerUsecase.updateLayer,
 })
-
-const handleImageUpdate = (key: string, value: unknown) => {
-  const layer = selectedLayer.value
-  if (!layer || !isImageLayerConfig(layer)) return
-
-  const layerId = layer.id
-
-  switch (key) {
-    case 'uploadImage':
-      heroScene.images.setLayerImage(layerId, value as File)
-      break
-    case 'clearImage':
-      heroScene.images.clearLayerImage(layerId)
-      break
-    case 'loadRandom':
-      heroScene.images.loadRandomImage(layerId, value as string | undefined)
-      break
-    case 'mode':
-      heroScene.usecase.layerUsecase.updateLayer(layerId, { mode: value } as Partial<ImageLayerNodeConfig>)
-      break
-    case 'position':
-      heroScene.usecase.layerUsecase.updateLayer(layerId, { position: value } as Partial<ImageLayerNodeConfig>)
-      break
-  }
-}
 
 // ============================================================
 // Initialize on mount
@@ -423,10 +244,7 @@ onMounted(async () => {
 })
 
 // Watch for preset changes to update config
-watch(() => heroScene.preset.selectedPresetId.value, async (newPresetId) => {
-  if (!newPresetId) return
-
-  const preset = heroScene.preset.presets.value.find((p) => p.id === newPresetId)
+watch(selectedPreset, async (preset) => {
   if (!preset) return
 
   // Use ApplyAnimatedPresetUsecase for animated preset handling and effect manager reset
@@ -438,48 +256,88 @@ watch(() => heroScene.preset.selectedPresetId.value, async (newPresetId) => {
 })
 
 // ============================================================
-// Layout Resize
+// Layout Resize (Composable)
 // ============================================================
-const timelineHeightPercent = ref(35)
-const isResizing = ref(false)
-
-function startResize(e: MouseEvent) {
-  isResizing.value = true
-  document.addEventListener('mousemove', onResize)
-  document.addEventListener('mouseup', stopResize)
-  e.preventDefault()
-}
-
-function onResize(e: MouseEvent) {
-  if (!isResizing.value) return
-  const vh = window.innerHeight
-  const fromBottom = vh - e.clientY
-  const percent = Math.min(Math.max((fromBottom / vh) * 100, 15), 60)
-  timelineHeightPercent.value = percent
-}
-
-function stopResize() {
-  isResizing.value = false
-  document.removeEventListener('mousemove', onResize)
-  document.removeEventListener('mouseup', stopResize)
-}
+const {
+  heightPercent: timelineHeightPercent,
+  isResizing,
+  startResize,
+} = useLayoutResize({ initialPercent: 35, minPercent: 15, maxPercent: 60 })
 
 // ============================================================
-// Mask Preview Pipeline Support
+// Component Props (Computed for reactivity and template clarity)
 // ============================================================
-// Use GetProcessorWithTargetUsecase for processor and target surface lookup
-const processorWithTarget = computed(() => {
-  const layers = heroScene.editor.heroViewConfig.value?.layers
-  if (!layers) return { processor: undefined, targetSurface: undefined }
-  return getProcessorWithTargetUsecase.execute(layers, processorLayerId.value)
-})
 
-const selectedProcessor = computed<ProcessorNodeConfig | undefined>(() => processorWithTarget.value.processor)
-const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() => processorWithTarget.value.targetSurface)
+// HeroSidebar props (use pre-built colorState from useSiteColorsBridge)
+
+const sidebarLayoutPresets = computed(() => ({
+  presets: heroScene.preset.presets.value,
+  selectedId: heroScene.preset.selectedPresetId.value,
+}))
+
+const sidebarLayers = computed(() => ({
+  items: layers.value,
+  foregroundElements: heroScene.foreground.foregroundConfig.value.elements,
+  selectedForegroundElementId: selectedForegroundElementId.value,
+  expandedLayerIds: heroScene.editor.expandedLayerIds.value,
+}))
+
+// RightPropertyPanel props
+const panelSelection = computed(() => ({
+  foregroundElement: selectedForegroundElement.value,
+  layer: selectedLayer.value,
+  layerVariant: selectedLayerVariant.value,
+  processorType: selectedProcessorType.value,
+}))
+
+const panelForeground = computed(() => ({
+  titleAutoKey: heroScene.foreground.foregroundTitleAutoKey.value,
+  bodyAutoKey: heroScene.foreground.foregroundBodyAutoKey.value,
+  elementColorKey: foregroundElement.selectedElementColorKey.value,
+  elementContent: foregroundElement.selectedElementContent.value,
+  elementPosition: foregroundElement.selectedElementPosition.value,
+  elementFontSize: foregroundElement.selectedElementFontSize.value,
+  elementFontWeight: foregroundElement.selectedElementFontWeight.value,
+  elementLetterSpacing: foregroundElement.selectedElementLetterSpacing.value,
+  elementLineHeight: foregroundElement.selectedElementLineHeight.value,
+  fontPreset: selectedFontPreset.value,
+  fontDisplayName: selectedFontDisplayName.value,
+}))
+
+const panelBackground = computed(() => ({
+  colorKey1: heroScene.background.backgroundColorKey1.value,
+  colorKey2: heroScene.background.backgroundColorKey2.value,
+  patterns: backgroundPatterns.value,
+  selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
+  surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
+  surfaceParams: heroScene.background.customBackgroundSurfaceParams.value as Record<string, unknown> | null,
+  rawSurfaceParams: heroScene.background.rawBackgroundSurfaceParams.value,
+}))
+
+const panelMask = computed(() => ({
+  colorKey1: heroScene.mask.maskColorKey1.value,
+  colorKey2: heroScene.mask.maskColorKey2.value,
+  surfacePatterns: maskSurfacePatterns.value,
+  selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
+  surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
+  surfaceParams: heroScene.mask.customSurfaceParams.value as Record<string, unknown> | null,
+  rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
+  shapePatterns: heroScene.pattern.maskPatterns,
+  shapePatternsWithConfig: heroScene.pattern.maskPatternsWithNormalizedConfig.value,
+  selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
+  shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
+  shapeParams: heroScene.mask.customMaskShapeParams.value as Record<string, unknown> | null,
+  rawShapeParams: heroScene.mask.rawMaskShapeParams.value,
+  outerColor: heroScene.pattern.maskOuterColor.value,
+  innerColor: heroScene.pattern.maskInnerColor.value,
+  createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
+  surface: heroScene.mask.processorTarget.value.targetSurface,
+  processor: heroScene.mask.processorTarget.value.processor,
+}))
 </script>
 
 <template>
-  <div class="timeline-hero-editor" :class="{ dark: uiDarkMode }">
+  <div class="timeline-hero-editor">
     <!-- Top Section: Hero Editor Layout -->
     <div
       class="hero-editor-area"
@@ -488,21 +346,9 @@ const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() =
       <!-- Left: Sidebar -->
       <HeroSidebar
         :active-tab="'generator'"
-        :color-state="{
-          brand: { hue, saturation, value, hex: selectedHex },
-          accent: { hue: accentHue, saturation: accentSaturation, value: accentValue, hex: accentHex },
-          foundation: { hue: foundationHue, saturation: foundationSaturation, value: foundationValue, hex: foundationHex },
-        }"
-        :layout-presets="{
-          presets: heroScene.preset.presets.value,
-          selectedId: heroScene.preset.selectedPresetId.value,
-        }"
-        :layers="{
-          items: layers,
-          foregroundElements: heroScene.foreground.foregroundConfig.value.elements,
-          selectedForegroundElementId: selectedForegroundElementId,
-          expandedLayerIds: expandedLayerIds,
-        }"
+        :color-state="colors.colorState.value"
+        :layout-presets="sidebarLayoutPresets"
+        :layers="sidebarLayers"
         @update:color-state="handleColorStateUpdate"
         @apply-color-preset="handleApplyColorPreset"
         @apply-layout-preset="handleApplyLayoutPreset"
@@ -532,59 +378,11 @@ const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() =
 
       <!-- Right: Property Panel -->
       <RightPropertyPanel
-        ref="rightPanelRef"
-        :selection="{
-          foregroundElement: selectedForegroundElement,
-          layer: selectedLayer,
-          layerVariant: selectedLayerVariant,
-          processorType: selectedProcessorType,
-        }"
-        :foreground="{
-          titleAutoKey: heroScene.foreground.foregroundTitleAutoKey.value,
-          bodyAutoKey: heroScene.foreground.foregroundBodyAutoKey.value,
-          elementColorKey: selectedElementColorKey,
-          elementContent: selectedElementContent,
-          elementPosition: selectedElementPosition,
-          elementFontSize: selectedElementFontSize,
-          elementFontWeight: selectedElementFontWeight,
-          elementLetterSpacing: selectedElementLetterSpacing,
-          elementLineHeight: selectedElementLineHeight,
-          fontPreset: selectedFontPreset,
-          fontDisplayName: selectedFontDisplayName,
-        }"
-        :contrast="{
-          title: null,
-          description: null,
-        }"
-        :background="{
-          colorKey1: heroScene.background.backgroundColorKey1.value,
-          colorKey2: heroScene.background.backgroundColorKey2.value,
-          patterns: backgroundPatterns,
-          selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
-          surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
-          surfaceParams: backgroundSurfaceParamsForUI,
-          rawSurfaceParams: heroScene.background.rawBackgroundSurfaceParams.value,
-        }"
-        :mask="{
-          colorKey1: heroScene.mask.maskColorKey1.value,
-          colorKey2: heroScene.mask.maskColorKey2.value,
-          surfacePatterns: maskSurfacePatterns,
-          selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
-          surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
-          surfaceParams: maskSurfaceParamsForUI,
-          rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
-          shapePatterns: heroScene.pattern.maskPatterns,
-          shapePatternsWithConfig: heroScene.pattern.maskPatternsWithNormalizedConfig.value,
-          selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
-          shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
-          shapeParams: maskShapeParamsForUI,
-          rawShapeParams: heroScene.mask.rawMaskShapeParams.value,
-          outerColor: heroScene.pattern.maskOuterColor.value,
-          innerColor: heroScene.pattern.maskInnerColor.value,
-          createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
-          surface: processorTargetSurface,
-          processor: selectedProcessor,
-        }"
+        :selection="panelSelection"
+        :foreground="panelForeground"
+        :contrast="{ title: null, description: null }"
+        :background="panelBackground"
+        :mask="panelMask"
         :filter="filterProps"
         :image="imageLayerProps"
         :palette="primitivePalette"
@@ -632,11 +430,6 @@ const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() =
   color: oklch(0.25 0.02 260);
 }
 
-.timeline-hero-editor.dark {
-  background: oklch(0.12 0.02 260);
-  color: oklch(0.90 0.01 260);
-}
-
 .hero-editor-area {
   position: relative;
   flex: 1;
@@ -665,10 +458,6 @@ const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() =
 
 .preset-popup-portal > * {
   pointer-events: auto;
-}
-
-.dark .hero-main {
-  background: oklch(0.08 0.02 260);
 }
 
 .hero-preview {
@@ -704,9 +493,5 @@ const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() =
   flex: 1;
   font-size: 14px;
   color: oklch(0.50 0.02 260);
-}
-
-.dark .no-timeline-message {
-  color: oklch(0.60 0.02 260);
 }
 </style>

@@ -54,6 +54,29 @@ export type RawEffectParamsMap = {
 }
 
 /**
+ * Filter panel props type for RightPropertyPanel
+ */
+export interface FilterPanelProps {
+  selectedType: WritableComputedRef<FilterType>
+  vignetteConfig: WritableComputedRef<VignetteConfigParams>
+  chromaticConfig: WritableComputedRef<ChromaticConfigParams>
+  dotHalftoneConfig: WritableComputedRef<DotHalftoneConfigParams>
+  lineHalftoneConfig: WritableComputedRef<LineHalftoneConfigParams>
+  blurConfig: WritableComputedRef<BlurConfigParams>
+  pixelateConfig: WritableComputedRef<PixelateConfigParams>
+  hexagonMosaicConfig: WritableComputedRef<HexagonMosaicConfigParams>
+  voronoiMosaicConfig: WritableComputedRef<VoronoiMosaicConfigParams>
+  rawVignetteParams: ComputedRef<Record<string, unknown> | null>
+  rawChromaticParams: ComputedRef<Record<string, unknown> | null>
+  rawDotHalftoneParams: ComputedRef<Record<string, unknown> | null>
+  rawLineHalftoneParams: ComputedRef<Record<string, unknown> | null>
+  rawBlurParams: ComputedRef<Record<string, unknown> | null>
+  rawPixelateParams: ComputedRef<Record<string, unknown> | null>
+  rawHexagonMosaicParams: ComputedRef<Record<string, unknown> | null>
+  rawVoronoiMosaicParams: ComputedRef<Record<string, unknown> | null>
+}
+
+/**
  * Return type for useFilterEditor composable
  */
 export interface UseFilterEditorReturn {
@@ -63,6 +86,8 @@ export interface UseFilterEditorReturn {
   effectConfigs: EffectConfigsMap
   /** Raw effect params map (preserves PropertyValue for DSL display) */
   rawEffectParams: RawEffectParamsMap
+  /** Pre-built props object for filter panel */
+  filterProps: FilterPanelProps
 }
 
 // ============================================================
@@ -201,6 +226,30 @@ export function useFilterEditor(
   }
 
   // ============================================================
+  // Filter Props (for panel)
+  // ============================================================
+
+  const filterProps: FilterPanelProps = {
+    selectedType: selectedFilterType,
+    vignetteConfig: vignetteConfig,
+    chromaticConfig: chromaticAberrationConfig,
+    dotHalftoneConfig: dotHalftoneConfig,
+    lineHalftoneConfig: lineHalftoneConfig,
+    blurConfig: blurConfig,
+    pixelateConfig: pixelateConfig,
+    hexagonMosaicConfig: hexagonMosaicConfig,
+    voronoiMosaicConfig: voronoiMosaicConfig,
+    rawVignetteParams: rawEffectParams.vignette,
+    rawChromaticParams: rawEffectParams.chromaticAberration,
+    rawDotHalftoneParams: rawEffectParams.dotHalftone,
+    rawLineHalftoneParams: rawEffectParams.lineHalftone,
+    rawBlurParams: rawEffectParams.blur,
+    rawPixelateParams: rawEffectParams.pixelate,
+    rawHexagonMosaicParams: rawEffectParams.hexagonMosaic,
+    rawVoronoiMosaicParams: rawEffectParams.voronoiMosaic,
+  }
+
+  // ============================================================
   // Return
   // ============================================================
 
@@ -208,5 +257,6 @@ export function useFilterEditor(
     selectedFilterType,
     effectConfigs,
     rawEffectParams,
+    filterProps,
   }
 }
