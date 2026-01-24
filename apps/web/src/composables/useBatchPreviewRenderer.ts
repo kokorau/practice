@@ -8,7 +8,7 @@
  */
 
 import { ref, watch, onUnmounted, type Ref } from 'vue'
-import { TextureRenderer } from '@practice/texture'
+import type { TextureRenderer } from '@practice/texture'
 import type { HeroViewConfig } from '@practice/section-visual'
 import { renderHeroConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -17,6 +17,7 @@ import {
   PREVIEW_THUMBNAIL_WIDTH,
   PREVIEW_THUMBNAIL_HEIGHT,
 } from '../constants/preview'
+import { createSharedRenderer } from '../services/createSharedRenderer'
 
 export interface BatchPreviewRendererOptions {
   /** Preview width (default: PREVIEW_THUMBNAIL_WIDTH) */
@@ -57,7 +58,8 @@ export function useBatchPreviewRenderer(
 
     try {
       canvas = new OffscreenCanvas(width, height)
-      renderer = await TextureRenderer.create(canvas as unknown as HTMLCanvasElement)
+      // Use shared GPUDevice via createSharedRenderer
+      renderer = await createSharedRenderer(canvas)
       return renderer
     } catch (e) {
       initFailed = true // Mark as failed to prevent repeated attempts
@@ -147,6 +149,7 @@ export function useBatchPreviewRenderer(
       if (url) URL.revokeObjectURL(url)
     }
     previews.value = []
+
     renderer?.destroy()
     renderer = null
     canvas = null

@@ -149,6 +149,34 @@ export class TextureRenderer {
   }
 
   /**
+   * Create renderer with externally provided device (for shared device pattern)
+   * Use GPUDeviceManager to get shared device
+   *
+   * @param canvas - The canvas element to render to
+   * @param device - Shared GPUDevice instance
+   * @param format - Texture format for the canvas
+   */
+  static createWithSharedDevice(
+    canvas: HTMLCanvasElement | OffscreenCanvas,
+    device: GPUDevice,
+    format: GPUTextureFormat
+  ): TextureRenderer {
+    const context = canvas.getContext('webgpu') as GPUCanvasContext | null
+    if (!context) {
+      throw new Error('Could not get WebGPU context')
+    }
+
+    context.configure({
+      device,
+      format,
+      alphaMode: 'premultiplied',
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+    })
+
+    return new TextureRenderer(device, context, format)
+  }
+
+  /**
    * Get viewport information from canvas
    */
   getViewport(): { width: number; height: number } {

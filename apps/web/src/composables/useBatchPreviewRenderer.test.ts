@@ -8,24 +8,23 @@ import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 // Mocks
 // ============================================================
 
-// Mock TextureRenderer
-const mockRender = vi.fn()
-const mockDestroy = vi.fn()
-const mockRendererInstance = {
-  render: mockRender,
-  destroy: mockDestroy,
-  getViewport: vi.fn(() => ({ width: 256, height: 144 })),
-}
-
-vi.mock('@practice/texture', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@practice/texture')>()
-  return {
-    ...actual,
-    TextureRenderer: {
-      create: vi.fn(() => Promise.resolve(mockRendererInstance)),
-    },
+// Mock TextureRenderer instance (hoisted to avoid reference errors)
+const { mockCreateSharedRenderer, mockRendererInstance, mockDestroy } = vi.hoisted(() => {
+  const mockRender = vi.fn()
+  const mockDestroy = vi.fn()
+  const mockRendererInstance = {
+    render: mockRender,
+    destroy: mockDestroy,
+    getViewport: vi.fn(() => ({ width: 256, height: 144 })),
   }
+  const mockCreateSharedRenderer = vi.fn(() => Promise.resolve(mockRendererInstance))
+  return { mockCreateSharedRenderer, mockRendererInstance, mockDestroy }
 })
+
+// Mock createSharedRenderer
+vi.mock('../services/createSharedRenderer', () => ({
+  createSharedRenderer: mockCreateSharedRenderer,
+}))
 
 // Mock renderHeroConfig
 vi.mock('@practice/section-visual', async (importOriginal) => {
@@ -313,8 +312,7 @@ describe('useBatchPreviewRenderer', () => {
 
   describe('error handling', () => {
     it('sets error when WebGPU initialization fails', async () => {
-      const { TextureRenderer } = await import('@practice/texture')
-      vi.mocked(TextureRenderer.create).mockRejectedValueOnce(new Error('WebGPU not available'))
+      mockCreateSharedRenderer.mockRejectedValueOnce(new Error('WebGPU not available'))
 
       const configs = ref<(HeroViewConfig | null)[]>([createMockHeroConfig()])
       const palette = ref<PrimitivePalette | undefined>(createMockPalette())
@@ -329,8 +327,7 @@ describe('useBatchPreviewRenderer', () => {
     })
 
     it('does not retry after WebGPU initialization fails', async () => {
-      const { TextureRenderer } = await import('@practice/texture')
-      vi.mocked(TextureRenderer.create).mockRejectedValueOnce(new Error('WebGPU not available'))
+      mockCreateSharedRenderer.mockRejectedValueOnce(new Error('WebGPU not available'))
 
       const configs = ref<(HeroViewConfig | null)[]>([createMockHeroConfig()])
       const palette = ref<PrimitivePalette | undefined>(createMockPalette())
@@ -342,13 +339,13 @@ describe('useBatchPreviewRenderer', () => {
       })
 
       // Reset mock to succeed
-      vi.mocked(TextureRenderer.create).mockResolvedValue(mockRendererInstance)
+      mockCreateSharedRenderer.mockResolvedValue(mockRendererInstance)
 
       // Try to refresh - should not retry due to initFailed flag
       await refresh()
 
       // Should only have been called once (the failed attempt)
-      expect(TextureRenderer.create).toHaveBeenCalledTimes(1)
+      expect(mockCreateSharedRenderer).toHaveBeenCalledTimes(1)
     })
   })
 })

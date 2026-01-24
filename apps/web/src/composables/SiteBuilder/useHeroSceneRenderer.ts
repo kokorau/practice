@@ -16,6 +16,7 @@ import {
   createPropertyResolver,
   resolveHeroViewConfig,
 } from '@practice/section-visual'
+import { createSharedRenderer } from '../../services/createSharedRenderer'
 
 export interface HeroSceneEditorConfig {
   width: number
@@ -92,8 +93,9 @@ export const useHeroSceneRenderer = (
     canvas.height = editorConfig.value.height
 
     try {
-      const { TextureRenderer } = await import('@practice/texture')
-      previewRenderer = await TextureRenderer.create(canvas)
+      // Use shared GPUDevice via createSharedRenderer
+      previewRenderer = await createSharedRenderer(canvas)
+
       await render()
 
       // Subscribe to IntensityProvider for automatic re-rendering on intensity changes

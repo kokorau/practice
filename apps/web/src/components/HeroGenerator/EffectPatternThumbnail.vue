@@ -11,7 +11,7 @@
  */
 
 import { ref, onMounted, onUnmounted, watch, useId } from 'vue'
-import { TextureRenderer } from '@practice/texture'
+import type { TextureRenderer } from '@practice/texture'
 import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type {
   SurfaceLayerNodeConfig,
@@ -21,6 +21,7 @@ import {
   createEffectPreviewConfig,
   renderWithPipeline,
 } from '@practice/section-visual'
+import { createSharedRenderer } from '../../services/createSharedRenderer'
 
 // ============================================================
 // Props
@@ -94,7 +95,7 @@ onMounted(async () => {
   canvas.height = 144
 
   try {
-    renderer = await TextureRenderer.create(canvas)
+    renderer = await createSharedRenderer(canvas)
     await render()
   } catch (e) {
     console.error('WebGPU not available:', e)

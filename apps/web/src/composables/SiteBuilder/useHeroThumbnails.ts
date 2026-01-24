@@ -9,8 +9,8 @@
  */
 
 import { ref, nextTick, type ComputedRef, type Ref } from 'vue'
+import type { TextureRenderer } from '@practice/texture'
 import {
-  TextureRenderer,
   getDefaultTexturePatterns,
   getDefaultMaskPatterns,
   getSurfacePresets,
@@ -41,6 +41,7 @@ import {
   type TextureRenderSpec,
   type SurfacePreset,
 } from '@practice/texture'
+import { createSharedRenderer } from '../../services/createSharedRenderer'
 
 // ============================================================
 // Types
@@ -403,7 +404,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
           canvas.width = 256
           canvas.height = 144
           try {
-            const renderer = await TextureRenderer.create(canvas)
+            const renderer = await createSharedRenderer(canvas)
             thumbnailRenderers.push(renderer)
             const pattern = midgroundTexturePatterns[i]
             if (pattern) {
@@ -433,7 +434,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
         canvas.width = 256
         canvas.height = 144
         try {
-          const renderer = await TextureRenderer.create(canvas)
+          const renderer = await createSharedRenderer(canvas)
           thumbnailRenderers.push(renderer)
           const pattern = patterns[i]
           if (pattern) {
