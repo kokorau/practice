@@ -181,6 +181,66 @@ export interface BoxGradientGreymapMaskParams extends GreymapMaskParams {
 }
 
 // ============================================================
+// Wavy Line Greymap Mask
+// ============================================================
+
+/** Wavy line greymap mask parameters */
+export interface WavyLineGreymapMaskParams extends GreymapMaskParams {
+  /** Line position (0.0-1.0, where the dividing line is) */
+  position: number
+  /** Direction: 'vertical'=left/right split, 'horizontal'=top/bottom split */
+  direction: 'vertical' | 'horizontal'
+  /** Wave amplitude (0.0-0.5) */
+  amplitude: number
+  /** Wave frequency (1-20) */
+  frequency: number
+  /** fBm octaves for smoother/rougher waves (1-5) */
+  octaves: number
+  /** Random seed for variation */
+  seed: number
+  /** If true (default), inside is on the left/top. If false, reversed. */
+  cutout?: boolean
+}
+
+// ============================================================
+// Simplex Greymap Mask
+// ============================================================
+
+/** Simplex noise greymap mask parameters */
+export interface SimplexGreymapMaskParams extends GreymapMaskParams {
+  /** Random seed */
+  seed: number
+  /** Threshold for binarization (0.0-1.0) */
+  threshold: number
+  /** Noise scale */
+  scale: number
+  /** fBm octaves (1-8) */
+  octaves: number
+  /** If true (default), noise > threshold is opaque. If false, reversed. */
+  cutout?: boolean
+}
+
+// ============================================================
+// Curl Greymap Mask
+// ============================================================
+
+/** Curl noise greymap mask parameters */
+export interface CurlGreymapMaskParams extends GreymapMaskParams {
+  /** Random seed */
+  seed: number
+  /** Threshold for binarization (0.0-1.0) */
+  threshold: number
+  /** Noise scale */
+  scale: number
+  /** fBm octaves (1-8) */
+  octaves: number
+  /** Curl intensity (0.1-2.0) */
+  intensity: number
+  /** If true (default), curl > threshold is opaque. If false, reversed. */
+  cutout?: boolean
+}
+
+// ============================================================
 // Pattern Greymap Types
 // ============================================================
 

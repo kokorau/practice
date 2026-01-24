@@ -105,6 +105,9 @@ export {
   createLinearGradientGreymapMaskSpec,
   createRadialGradientGreymapMaskSpec,
   createBoxGradientGreymapMaskSpec,
+  createWavyLineGreymapMaskSpec,
+  createSimplexGreymapMaskSpec,
+  createCurlGreymapMaskSpec,
   // Colorize spec
   createColorizeSpec,
   createMaskColorizeParams,

@@ -271,6 +271,15 @@ export {
   // Box gradient greymap mask
   boxGradientGreymapMaskShader,
   createBoxGradientGreymapMaskSpec,
+  // Wavy line greymap mask
+  wavyLineGreymapMaskShader,
+  createWavyLineGreymapMaskSpec,
+  // Simplex greymap mask
+  simplexGreymapMaskShader,
+  createSimplexGreymapMaskSpec,
+  // Curl greymap mask
+  curlGreymapMaskShader,
+  createCurlGreymapMaskSpec,
 } from './greymapMask'
 // Greymap pattern shaders
 export {
