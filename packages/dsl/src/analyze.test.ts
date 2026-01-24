@@ -312,3 +312,27 @@ describe('analyzeAmplitude', () => {
     })
   })
 })
+
+describe('new syntax support', () => {
+  it('extracts period from =osc(@t, 2000)', () => {
+    const ast = parse('=osc(@t, 2000)')
+    expect(extractPeriod(ast)).toBe(2000)
+  })
+
+  it('extracts period from =osc(@t, 2000) * 0.7', () => {
+    const ast = parse('=osc(@t, 2000) * 0.7')
+    expect(extractPeriod(ast)).toBe(2000)
+  })
+
+  it('extracts all periods from =osc(@t, 4000) * 0.7 + osc(@t, 500) * 0.3', () => {
+    const ast = parse('=osc(@t, 4000) * 0.7 + osc(@t, 500) * 0.3')
+    expect(extractAllPeriods(ast)).toEqual([4000, 500])
+  })
+
+  it('analyzes amplitude with new syntax', () => {
+    const result = analyzeAmplitude('=osc(@t, 2000)')
+    expect(result.min).toBeCloseTo(0, 5)
+    expect(result.max).toBeCloseTo(1, 5)
+    expect(result.period).toBe(2000)
+  })
+})
