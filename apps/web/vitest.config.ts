@@ -11,8 +11,8 @@ export default defineConfig({
       ['src/components/**/*.test.ts', 'happy-dom'],
     ],
     setupFiles: ['./test/setup.happy-dom.ts'],
-    isolate: false,
-    pool: 'threads',
+    isolate: true,
+    pool: 'forks',
     // Browser tests (*.browser.test.ts) are excluded from default run
     exclude: ['**/node_modules/**', '**/*.browser.test.ts'],
     // Ensure workspace packages are inlined for proper module resolution
