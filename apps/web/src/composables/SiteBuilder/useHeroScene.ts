@@ -270,6 +270,15 @@ export interface GradientGrainCurlSurfaceParams {
   sparsity: number
 }
 
+export interface GradientGrainSimplexSurfaceParams {
+  simplexScale: number
+  simplexOctaves: number
+  simplexContrast: number
+  simplexOffset: number
+  seed: number
+  sparsity: number
+}
+
 /**
  * Custom surface params union type
  * Uses 'id' field for consistency with NormalizedSurfaceConfig
@@ -285,6 +294,7 @@ export type CustomSurfaceParams =
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
   | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
   | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
+  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'asanoha' } & AsanohaSurfaceParams)
@@ -308,6 +318,7 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
   | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
   | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
+  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'asanoha' } & AsanohaSurfaceParams)

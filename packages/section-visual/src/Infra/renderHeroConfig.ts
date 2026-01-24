@@ -26,6 +26,7 @@ import {
   createGradientGrainRadialSpec,
   createGradientGrainPerlinSpec,
   createGradientGrainCurlSpec,
+  createGradientGrainSimplexSpec,
   DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
   // Greymap mask shaders (new 2-stage pipeline)
   createCircleGreymapMaskSpec,
@@ -311,6 +312,22 @@ export function createBackgroundSpecFromSurface(
         perlinContrast: surface.perlinContrast,
         perlinOffset: surface.perlinOffset,
         curlIntensity: surface.curlIntensity,
+        colorA: color1,
+        colorB: color2,
+        seed: surface.seed,
+        sparsity: surface.sparsity,
+        curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+      },
+      viewport
+    )
+  }
+  if (surface.type === 'gradientGrainSimplex') {
+    return createGradientGrainSimplexSpec(
+      {
+        simplexScale: surface.simplexScale,
+        simplexOctaves: surface.simplexOctaves,
+        simplexContrast: surface.simplexContrast,
+        simplexOffset: surface.simplexOffset,
         colorA: color1,
         colorB: color2,
         seed: surface.seed,
