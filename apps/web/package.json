@@ -12,7 +12,9 @@
     "test:browser": "vitest --config vitest.browser.config.ts",
     "test:browser:run": "vitest run --config vitest.browser.config.ts",
     "typecheck": "vue-tsc -b",
-    "fetch:fonts": "update-googlefonts-list -o ../../packages/font/src/Infra/GoogleFontPresets.ts -l 100"
+    "fetch:fonts": "update-googlefonts-list -o ../../packages/font/src/Infra/GoogleFontPresets.ts -l 100",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "0.10.22-rc.20250304",
@@ -58,7 +60,15 @@
     "typescript": "~5.9.3",
     "vite": "npm:rolldown-vite@7.1.14",
     "vitest": "^4.0.15",
-    "vue-tsc": "^3.1.0"
+    "vue-tsc": "^3.1.0",
+    "storybook": "^10.2.0",
+    "@storybook/vue3-vite": "^10.2.0",
+    "@chromatic-com/storybook": "^5.0.0",
+    "@storybook/addon-vitest": "^10.2.0",
+    "@storybook/addon-a11y": "^10.2.0",
+    "@storybook/addon-docs": "^10.2.0",
+    "@storybook/addon-onboarding": "^10.2.0",
+    "@vitest/coverage-v8": "4.0.15"
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.1.14"
