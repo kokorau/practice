@@ -784,3 +784,389 @@ export function createBoxGradientGreymapMaskSpec(
     bufferSize: 48, // 12 floats = 48 bytes
   }
 }
+
+// ============================================================
+// Wavy Line Greymap Mask
+// ============================================================
+
+import type {
+  WavyLineGreymapMaskParams,
+  SimplexGreymapMaskParams,
+  CurlGreymapMaskParams,
+} from '../Domain/ValueObject/GreymapSpec'
+
+/** Wavy line greymap mask shader - uses 1D value noise for organic dividing line */
+export const wavyLineGreymapMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+// 1D hash function
+fn hash11(p: f32) -> f32 {
+  var p3 = fract(p * 0.1031);
+  p3 += p3 * (p3 + 33.33);
+  return fract(p3 * p3);
+}
+
+// 1D value noise
+fn valueNoise1D(x: f32) -> f32 {
+  let i = floor(x);
+  let f = fract(x);
+  let u = f * f * (3.0 - 2.0 * f); // smoothstep
+
+  let a = hash11(i);
+  let b = hash11(i + 1.0);
+
+  return mix(a, b, u);
+}
+
+// 1D fBm (fractional Brownian motion)
+fn fbm1D(x: f32, octaves: i32, seed: f32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = x + seed * 100.0;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * (valueNoise1D(pos) * 2.0 - 1.0);
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+struct WavyLineGreymapParams {
+  position: f32,
+  direction: f32,
+  amplitude: f32,
+  frequency: f32,
+  octaves: f32,
+  seed: f32,
+  innerValue: f32,
+  outerValue: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+  _padding1: f32,
+  _padding2: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: WavyLineGreymapParams;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+
+  let octaves = clamp(i32(params.octaves), 1, 5);
+
+  // Calculate wavy offset based on direction
+  var sampleCoord: f32;
+  var compareCoord: f32;
+
+  if (params.direction < 0.5) {
+    // Vertical line (left/right split): sample noise along Y, compare X
+    sampleCoord = uv.y * params.frequency;
+    compareCoord = uv.x;
+  } else {
+    // Horizontal line (top/bottom split): sample noise along X, compare Y
+    sampleCoord = uv.x * params.frequency;
+    compareCoord = uv.y;
+  }
+
+  // Get wavy offset from 1D noise
+  let wavyOffset = fbm1D(sampleCoord, octaves, params.seed) * params.amplitude;
+
+  // Calculate the wavy boundary position
+  let boundary = params.position + wavyOffset;
+
+  // Anti-aliased edge
+  let pixelSize = 1.0 / min(params.viewportWidth, params.viewportHeight);
+  let inside = smoothstep(boundary - pixelSize, boundary + pixelSize, compareCoord);
+
+  let value = mix(params.innerValue, params.outerValue, inside);
+  return vec4f(value, value, value, 1.0);
+}
+`
+
+/** Convert direction string to number for shader */
+function wavyLineDirectionToNumber(direction: 'vertical' | 'horizontal'): number {
+  return direction === 'vertical' ? 0 : 1
+}
+
+/**
+ * Create greymap spec for wavy line mask
+ */
+export function createWavyLineGreymapMaskSpec(
+  params: WavyLineGreymapMaskParams,
+  viewport: Viewport
+): GreymapMaskSpec {
+  // Use innerValue/outerValue directly - cutout logic is handled by the caller
+
+  const data = new Float32Array([
+    params.position,
+    wavyLineDirectionToNumber(params.direction),
+    params.amplitude,
+    params.frequency,
+    params.octaves,
+    params.seed,
+    params.innerValue,
+    params.outerValue,
+    viewport.width,
+    viewport.height,
+    0, // padding
+    0, // padding
+  ])
+  return {
+    shader: wavyLineGreymapMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 48, // 12 floats = 48 bytes
+  }
+}
+
+// ============================================================
+// Simplex Greymap Mask
+// ============================================================
+
+/** Simplex noise greymap mask shader */
+export const simplexGreymapMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+// 2D Simplex noise implementation
+fn mod289v2(x: vec2f) -> vec2f {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+fn mod289v3(x: vec3f) -> vec3f {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+fn permute(x: vec3f) -> vec3f {
+  return mod289v3(((x * 34.0) + 1.0) * x);
+}
+
+fn simplexNoise2D(v: vec2f) -> f32 {
+  let C = vec4f(
+    0.211324865405187,   // (3.0 - sqrt(3.0)) / 6.0
+    0.366025403784439,   // 0.5 * (sqrt(3.0) - 1.0)
+    -0.577350269189626,  // -1.0 + 2.0 * C.x
+    0.024390243902439    // 1.0 / 41.0
+  );
+
+  // First corner
+  var i = floor(v + dot(v, C.yy));
+  let x0 = v - i + dot(i, C.xx);
+
+  // Other corners
+  var i1: vec2f;
+  if (x0.x > x0.y) {
+    i1 = vec2f(1.0, 0.0);
+  } else {
+    i1 = vec2f(0.0, 1.0);
+  }
+  var x12 = x0.xyxy + C.xxzz;
+  x12 = vec4f(x12.xy - i1, x12.zw);
+
+  // Permutations
+  i = mod289v2(i);
+  let p = permute(permute(i.y + vec3f(0.0, i1.y, 1.0)) + i.x + vec3f(0.0, i1.x, 1.0));
+
+  var m = max(vec3f(0.5) - vec3f(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), vec3f(0.0));
+  m = m * m;
+  m = m * m;
+
+  // Gradients
+  let x = 2.0 * fract(p * C.www) - 1.0;
+  let h = abs(x) - 0.5;
+  let ox = floor(x + 0.5);
+  let a0 = x - ox;
+
+  m = m * (1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h));
+
+  let g = vec3f(
+    a0.x * x0.x + h.x * x0.y,
+    a0.y * x12.x + h.y * x12.y,
+    a0.z * x12.z + h.z * x12.w
+  );
+  return 130.0 * dot(m, g);
+}
+
+fn simplexFbm(p: vec2f, octaves: i32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = p;
+  var totalAmp = 0.0;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * simplexNoise2D(pos);
+    totalAmp += amplitude;
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  return (value / totalAmp) * 0.5 + 0.5;
+}
+
+struct SimplexGreymapParams {
+  seed: f32,
+  threshold: f32,
+  scale: f32,
+  octaves: f32,
+  innerValue: f32,
+  outerValue: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: SimplexGreymapParams;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+  let noisePos = uv * params.scale + vec2f(params.seed * 0.1, params.seed * 0.073);
+
+  let octaves = clamp(i32(params.octaves), 1, 8);
+  let noise = simplexFbm(noisePos, octaves);
+
+  // Binarize: noise > threshold -> inner, else -> outer
+  let mask = select(0.0, 1.0, noise > params.threshold);
+  let value = mix(params.outerValue, params.innerValue, mask);
+
+  return vec4f(value, value, value, 1.0);
+}
+`
+
+/**
+ * Create greymap spec for simplex noise mask
+ */
+export function createSimplexGreymapMaskSpec(
+  params: SimplexGreymapMaskParams,
+  viewport: Viewport
+): GreymapMaskSpec {
+  const data = new Float32Array([
+    params.seed,
+    params.threshold,
+    params.scale,
+    params.octaves,
+    params.innerValue,
+    params.outerValue,
+    viewport.width,
+    viewport.height,
+  ])
+  return {
+    shader: simplexGreymapMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 32, // 8 floats = 32 bytes
+  }
+}
+
+// ============================================================
+// Curl Greymap Mask
+// ============================================================
+
+/** Curl noise greymap mask shader */
+export const curlGreymapMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+// Hash function for noise
+fn curlHash21(p: vec2f) -> f32 {
+  var p3 = fract(vec3f(p.x, p.y, p.x) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+// Value noise
+fn curlValueNoise(p: vec2f) -> f32 {
+  let i = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+
+  let a = curlHash21(i);
+  let b = curlHash21(i + vec2f(1.0, 0.0));
+  let c = curlHash21(i + vec2f(0.0, 1.0));
+  let d = curlHash21(i + vec2f(1.0, 1.0));
+
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+// fBm with configurable octaves
+fn curlFbm(p: vec2f, octaves: i32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = p;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * curlValueNoise(pos);
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+// Compute 2D curl of a scalar noise field
+fn computeCurl(p: vec2f, octaves: i32) -> vec2f {
+  let eps = 0.01;
+
+  let dx = curlFbm(p + vec2f(eps, 0.0), octaves) - curlFbm(p - vec2f(eps, 0.0), octaves);
+  let dy = curlFbm(p + vec2f(0.0, eps), octaves) - curlFbm(p - vec2f(0.0, eps), octaves);
+
+  return vec2f(dy, -dx) / (2.0 * eps);
+}
+
+struct CurlGreymapParams {
+  seed: f32,
+  threshold: f32,
+  scale: f32,
+  octaves: f32,
+  intensity: f32,
+  innerValue: f32,
+  outerValue: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+  _padding1: f32,
+  _padding2: f32,
+  _padding3: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: CurlGreymapParams;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+  let noisePos = uv * params.scale + vec2f(params.seed * 0.1, params.seed * 0.073);
+
+  let octaves = clamp(i32(params.octaves), 1, 8);
+  let curl = computeCurl(noisePos, octaves);
+
+  // Use curl magnitude as the mask value
+  let magnitude = length(curl) * params.intensity;
+
+  // Binarize: magnitude > threshold -> inner, else -> outer
+  let mask = select(0.0, 1.0, magnitude > params.threshold);
+  let value = mix(params.outerValue, params.innerValue, mask);
+
+  return vec4f(value, value, value, 1.0);
+}
+`
+
+/**
+ * Create greymap spec for curl noise mask
+ */
+export function createCurlGreymapMaskSpec(
+  params: CurlGreymapMaskParams,
+  viewport: Viewport
+): GreymapMaskSpec {
+  const data = new Float32Array([
+    params.seed,
+    params.threshold,
+    params.scale,
+    params.octaves,
+    params.intensity,
+    params.innerValue,
+    params.outerValue,
+    viewport.width,
+    viewport.height,
+    0, // padding
+    0, // padding
+    0, // padding
+  ])
+  return {
+    shader: curlGreymapMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 48, // 12 floats = 48 bytes
+  }
+}

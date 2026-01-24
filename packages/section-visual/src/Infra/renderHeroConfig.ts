@@ -36,6 +36,9 @@ import {
   createLinearGradientGreymapMaskSpec,
   createRadialGradientGreymapMaskSpec,
   createBoxGradientGreymapMaskSpec,
+  createWavyLineGreymapMaskSpec,
+  createSimplexGreymapMaskSpec,
+  createCurlGreymapMaskSpec,
   type TextureRenderSpec,
   type Viewport,
   type RGBA,
@@ -538,6 +541,51 @@ export function createGreymapMaskSpecFromShape(
         bottom: shape.bottom,
         cornerRadius: shape.cornerRadius,
         curve: shape.curve,
+        innerValue,
+        outerValue,
+        cutout,
+      },
+      viewport
+    )
+  }
+  if (shape.type === 'wavyLine') {
+    return createWavyLineGreymapMaskSpec(
+      {
+        position: shape.position,
+        direction: shape.direction,
+        amplitude: shape.amplitude,
+        frequency: shape.frequency,
+        octaves: shape.octaves,
+        seed: shape.seed,
+        innerValue,
+        outerValue,
+        cutout,
+      },
+      viewport
+    )
+  }
+  if (shape.type === 'simplex') {
+    return createSimplexGreymapMaskSpec(
+      {
+        seed: shape.seed,
+        threshold: shape.threshold,
+        scale: shape.scale,
+        octaves: shape.octaves,
+        innerValue,
+        outerValue,
+        cutout,
+      },
+      viewport
+    )
+  }
+  if (shape.type === 'curl') {
+    return createCurlGreymapMaskSpec(
+      {
+        seed: shape.seed,
+        threshold: shape.threshold,
+        scale: shape.scale,
+        octaves: shape.octaves,
+        intensity: shape.intensity,
         innerValue,
         outerValue,
         cutout,
