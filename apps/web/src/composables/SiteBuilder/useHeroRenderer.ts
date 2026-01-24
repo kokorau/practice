@@ -9,9 +9,7 @@
  */
 
 import { shallowRef, onUnmounted, type Ref, type ComputedRef, type ShallowRef } from 'vue'
-import {
-  TextureRenderer,
-} from '@practice/texture'
+import type { TextureRenderer } from '@practice/texture'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type { IntensityProvider } from '@practice/timeline'
 import {
@@ -22,6 +20,7 @@ import {
   createPropertyResolver,
   resolveHeroViewConfig,
 } from '@practice/section-visual'
+import { createSharedRenderer } from '../../services/createSharedRenderer'
 
 // ============================================================
 // Types
@@ -145,7 +144,9 @@ export function useHeroRenderer(options: UseHeroRendererOptions): UseHeroRendere
     canvas.height = editorState.value.config.height
 
     try {
-      previewRenderer.value = await TextureRenderer.create(canvas)
+      // Use shared GPUDevice via createSharedRenderer
+      previewRenderer.value = await createSharedRenderer(canvas)
+
       await render()
 
       // Subscribe to IntensityProvider for automatic re-rendering on intensity changes

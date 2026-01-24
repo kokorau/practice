@@ -7,7 +7,7 @@
  */
 
 import { ref, onMounted, onUnmounted, watch, useId, computed } from 'vue'
-import { TextureRenderer } from '@practice/texture'
+import type { TextureRenderer } from '@practice/texture'
 import type { HeroViewConfig } from '@practice/section-visual'
 import { renderHeroConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -16,6 +16,7 @@ import {
   PREVIEW_THUMBNAIL_WIDTH,
   PREVIEW_THUMBNAIL_HEIGHT,
 } from '../../constants/preview'
+import { createSharedRenderer } from '../../services/createSharedRenderer'
 
 const props = defineProps<{
   config: HeroViewConfig
@@ -60,7 +61,7 @@ const updateCanvasSize = () => {
     renderer = null
   }
 
-  TextureRenderer.create(canvas).then(r => {
+  createSharedRenderer(canvas).then(r => {
     renderer = r
     render()
   }).catch(e => {
@@ -97,7 +98,7 @@ onMounted(async () => {
   canvas.height = canvasHeight.value
 
   try {
-    renderer = await TextureRenderer.create(canvas)
+    renderer = await createSharedRenderer(canvas)
     await render()
   } catch (e) {
     console.error('WebGPU not available:', e)

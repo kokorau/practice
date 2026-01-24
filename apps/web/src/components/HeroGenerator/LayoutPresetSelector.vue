@@ -9,7 +9,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
-import { TextureRenderer } from '@practice/texture'
+import type { TextureRenderer } from '@practice/texture'
 import type { HeroViewPreset } from '@practice/section-visual'
 import { renderHeroConfig, getPresetConfig, isAnimatedPreset } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -22,6 +22,7 @@ import {
   type PositionedElement,
 } from '../../composables/SiteBuilder'
 import { ensureFontLoaded } from '@practice/font'
+import { createSharedRenderer } from '../../services/createSharedRenderer'
 
 // Preview dimensions (smaller than full HeroPreview)
 const PREVIEW_WIDTH = 384
@@ -167,7 +168,8 @@ const initRenderers = async () => {
     canvas.height = PREVIEW_HEIGHT
 
     try {
-      const renderer = await TextureRenderer.create(canvas)
+      // Use shared GPUDevice via createSharedRenderer
+      const renderer = await createSharedRenderer(canvas)
       renderers.value.set(preset.id, renderer)
       await renderPreset(preset.id)
     } catch (e) {

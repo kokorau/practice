@@ -9,24 +9,23 @@ import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 // Mocks
 // ============================================================
 
-const mockRender = vi.fn()
-const mockDestroy = vi.fn()
-const mockGetViewport = vi.fn(() => ({ width: 256, height: 144 }))
-const mockRendererInstance = {
-  render: mockRender,
-  destroy: mockDestroy,
-  getViewport: mockGetViewport,
-}
-
-vi.mock('@practice/texture', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@practice/texture')>()
-  return {
-    ...actual,
-    TextureRenderer: {
-      create: vi.fn(() => Promise.resolve(mockRendererInstance)),
-    },
+const { mockCreateSharedRenderer, mockRendererInstance, mockDestroy } = vi.hoisted(() => {
+  const mockRender = vi.fn()
+  const mockDestroy = vi.fn()
+  const mockGetViewport = vi.fn(() => ({ width: 256, height: 144 }))
+  const mockRendererInstance = {
+    render: mockRender,
+    destroy: mockDestroy,
+    getViewport: mockGetViewport,
   }
+  const mockCreateSharedRenderer = vi.fn(() => Promise.resolve(mockRendererInstance))
+  return { mockCreateSharedRenderer, mockRendererInstance, mockDestroy }
 })
+
+// Mock createSharedRenderer
+vi.mock('../../services/createSharedRenderer', () => ({
+  createSharedRenderer: mockCreateSharedRenderer,
+}))
 
 vi.mock('@practice/section-visual', async (importOriginal) => {
   const original = await importOriginal<typeof import('@practice/section-visual')>()
@@ -186,9 +185,7 @@ describe('HeroPreviewThumbnail', () => {
   })
 
   describe('rendering', () => {
-    it('initializes TextureRenderer on mount', async () => {
-      const { TextureRenderer } = await import('@practice/texture')
-
+    it('initializes renderer using createSharedRenderer on mount', async () => {
       mount(HeroPreviewThumbnail, {
         props: {
           config: createMockHeroConfig(),
@@ -198,7 +195,7 @@ describe('HeroPreviewThumbnail', () => {
 
       await flushPromises()
 
-      expect(TextureRenderer.create).toHaveBeenCalled()
+      expect(mockCreateSharedRenderer).toHaveBeenCalled()
     })
 
     it('calls renderHeroConfig with correct parameters', async () => {
@@ -307,8 +304,7 @@ describe('HeroPreviewThumbnail', () => {
 
   describe('error handling', () => {
     it('handles WebGPU initialization failure gracefully', async () => {
-      const { TextureRenderer } = await import('@practice/texture')
-      vi.mocked(TextureRenderer.create).mockRejectedValueOnce(new Error('WebGPU not available'))
+      mockCreateSharedRenderer.mockRejectedValueOnce(new Error('WebGPU not available'))
 
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
 
