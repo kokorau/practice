@@ -13,6 +13,7 @@ export type SurfacePresetType =
   | 'gradientGrainRadial'
   | 'gradientGrainPerlin'
   | 'gradientGrainCurl'
+  | 'gradientGrainSimplex'
   | 'triangle'
   | 'hexagon'
   | 'asanoha'
@@ -132,6 +133,19 @@ export interface GradientGrainCurlPresetParams {
 }
 
 /**
+ * Gradient Grain Simplex surface params
+ */
+export interface GradientGrainSimplexPresetParams {
+  type: 'gradientGrainSimplex'
+  simplexScale: number
+  simplexOctaves: number
+  simplexContrast: number
+  simplexOffset: number
+  seed: number
+  sparsity: number
+}
+
+/**
  * Triangle tessellation surface params
  */
 export interface TrianglePresetParams {
@@ -228,6 +242,7 @@ export type SurfacePresetParams =
   | GradientGrainRadialPresetParams
   | GradientGrainPerlinPresetParams
   | GradientGrainCurlPresetParams
+  | GradientGrainSimplexPresetParams
   | TrianglePresetParams
   | HexagonPresetParams
   | AsanohaPresetParams

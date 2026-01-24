@@ -55,6 +55,15 @@ export interface GradientGrainCurlParams extends GradientGrainBaseParams {
   curlIntensity?: number   // curl intensity (0.5-3), default 1
 }
 
+/** Simplex noise gradient grain params */
+export interface GradientGrainSimplexParams extends GradientGrainBaseParams {
+  simplexScale?: number     // noise scale (1-20), default 4
+  simplexOctaves?: number   // fBm octaves (1-8), default 4
+  simplexSeed?: number      // random seed for simplex, default 42
+  simplexContrast?: number  // contrast (0-3), default 1
+  simplexOffset?: number    // offset (-0.5 to 0.5), default 0
+}
+
 // ============================================================
 // Buffer Sizes (per DepthType)
 // ============================================================
@@ -120,6 +129,19 @@ export const GRADIENT_GRAIN_PERLIN_BUFFER_SIZE = 112
  *   Total: 112 bytes
  */
 export const GRADIENT_GRAIN_CURL_BUFFER_SIZE = 112
+
+/**
+ * Simplex depth buffer layout (112 bytes):
+ *   viewport: vec2f (8) + seed: f32 (4) + sparsity: f32 (4) = 16 bytes
+ *   simplexScale: f32 (4) + simplexOctaves: f32 (4) + simplexSeed: f32 (4) + simplexContrast: f32 (4) = 16 bytes
+ *   simplexOffset: f32 (4) + _pad: vec3f (12) = 16 bytes
+ *   colorA: vec4f = 16 bytes
+ *   colorB: vec4f = 16 bytes
+ *   curvePoints[0..3]: vec4f = 16 bytes
+ *   curvePoints[4..6] + _pad: vec4f = 16 bytes
+ *   Total: 112 bytes
+ */
+export const GRADIENT_GRAIN_SIMPLEX_BUFFER_SIZE = 112
 
 
 // ============================================================
@@ -530,6 +552,123 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 `
 
 // ============================================================
+// Simplex Depth Shader
+// ============================================================
+
+export const gradientGrainSimplexShader = /* wgsl */ `
+struct Params {
+  viewport: vec2f,         // 8 bytes @ offset 0
+  seed: f32,               // 4 bytes @ offset 8
+  sparsity: f32,           // 4 bytes @ offset 12
+  simplexScale: f32,       // 4 bytes @ offset 16
+  simplexOctaves: f32,     // 4 bytes @ offset 20
+  simplexSeed: f32,        // 4 bytes @ offset 24
+  simplexContrast: f32,    // 4 bytes @ offset 28
+  simplexOffset: f32,      // 4 bytes @ offset 32
+  _pad0: f32,              // 4 bytes @ offset 36
+  _pad1: f32,              // 4 bytes @ offset 40
+  _pad2: f32,              // 4 bytes @ offset 44
+  colorA: vec4f,           // 16 bytes @ offset 48
+  colorB: vec4f,           // 16 bytes @ offset 64
+  curvePoints0: vec4f,     // 16 bytes @ offset 80
+  curvePoints1: vec4f,     // 16 bytes @ offset 96
+}                          // Total: 112 bytes
+
+@group(0) @binding(0) var<uniform> params: Params;
+
+${fullscreenVertex}
+
+${gradientGrainCommon}
+
+// 2D Simplex noise implementation
+fn mod289v2(x: vec2f) -> vec2f {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+fn mod289v3(x: vec3f) -> vec3f {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+fn permute(x: vec3f) -> vec3f {
+  return mod289v3(((x * 34.0) + 1.0) * x);
+}
+
+fn simplexNoise2D(v: vec2f) -> f32 {
+  let C = vec4f(
+    0.211324865405187,   // (3.0 - sqrt(3.0)) / 6.0
+    0.366025403784439,   // 0.5 * (sqrt(3.0) - 1.0)
+    -0.577350269189626,  // -1.0 + 2.0 * C.x
+    0.024390243902439    // 1.0 / 41.0
+  );
+
+  var i = floor(v + dot(v, C.yy));
+  let x0 = v - i + dot(i, C.xx);
+
+  var i1: vec2f;
+  if (x0.x > x0.y) {
+    i1 = vec2f(1.0, 0.0);
+  } else {
+    i1 = vec2f(0.0, 1.0);
+  }
+  var x12 = x0.xyxy + C.xxzz;
+  x12 = vec4f(x12.xy - i1, x12.zw);
+
+  i = mod289v2(i);
+  let p = permute(permute(i.y + vec3f(0.0, i1.y, 1.0)) + i.x + vec3f(0.0, i1.x, 1.0));
+
+  var m = max(vec3f(0.5) - vec3f(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), vec3f(0.0));
+  m = m * m;
+  m = m * m;
+
+  let x = 2.0 * fract(p * C.www) - 1.0;
+  let h = abs(x) - 0.5;
+  let ox = floor(x + 0.5);
+  let a0 = x - ox;
+
+  m = m * (1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h));
+
+  let g = vec3f(
+    a0.x * x0.x + h.x * x0.y,
+    a0.y * x12.x + h.y * x12.y,
+    a0.z * x12.z + h.z * x12.w
+  );
+  return 130.0 * dot(m, g);
+}
+
+fn simplexFbm(p: vec2f, octaves: i32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = p;
+  var totalAmp = 0.0;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * simplexNoise2D(pos);
+    totalAmp += amplitude;
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  return (value / totalAmp) * 0.5 + 0.5;
+}
+
+fn simplexDepth(uv: vec2f, scale: f32, octaves: i32, seed: f32, contrast: f32, offset: f32) -> f32 {
+  let noisePos = uv * scale + vec2f(seed * 0.1, seed * 0.073);
+  var noise = simplexFbm(noisePos, octaves);
+  noise = (noise - 0.5) * contrast + 0.5 + offset;
+  return clamp(noise, 0.0, 1.0);
+}
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = pos.xy / params.viewport;
+  let t = simplexDepth(uv, params.simplexScale, i32(params.simplexOctaves), params.simplexSeed, params.simplexContrast, params.simplexOffset);
+  let baseColor = mixOklabVec4(params.colorA, params.colorB, t);
+  let noiseA = hash21(pos.xy + params.seed);
+  let noiseB = hash21(pos.xy + params.seed + 1000.0);
+  return gradientGrainComposite(baseColor, params.colorA, params.colorB, t, noiseA, noiseB, params.sparsity, params.curvePoints0, params.curvePoints1);
+}
+`
+
+// ============================================================
 // Spec Creation (per DepthType - each is independent)
 // ============================================================
 
@@ -792,5 +931,61 @@ export function createGradientGrainCurlSpec(
     shader: gradientGrainCurlShader,
     uniforms: data.buffer,
     bufferSize: GRADIENT_GRAIN_CURL_BUFFER_SIZE,
+  }
+}
+
+/** Create spec for Simplex GradientGrain texture */
+export function createGradientGrainSimplexSpec(
+  params: GradientGrainSimplexParams,
+  viewport: { width: number; height: number }
+): TextureRenderSpec {
+  const data = new Float32Array(GRADIENT_GRAIN_SIMPLEX_BUFFER_SIZE / 4)
+
+  // viewport + seed + sparsity
+  data[0] = viewport.width
+  data[1] = viewport.height
+  data[2] = params.seed
+  data[3] = params.sparsity
+
+  // simplex params
+  data[4] = params.simplexScale ?? 4
+  data[5] = params.simplexOctaves ?? 4
+  data[6] = params.simplexSeed ?? 42
+  data[7] = params.simplexContrast ?? 1
+
+  // simplexOffset + padding
+  data[8] = params.simplexOffset ?? 0
+  data[9] = 0 // padding
+  data[10] = 0 // padding
+  data[11] = 0 // padding
+
+  // colorA (vec4f)
+  data[12] = params.colorA[0]
+  data[13] = params.colorA[1]
+  data[14] = params.colorA[2]
+  data[15] = params.colorA[3]
+
+  // colorB (vec4f)
+  data[16] = params.colorB[0]
+  data[17] = params.colorB[1]
+  data[18] = params.colorB[2]
+  data[19] = params.colorB[3]
+
+  // curvePoints[0..3]
+  data[20] = params.curvePoints[0] ?? 0
+  data[21] = params.curvePoints[1] ?? 1/6
+  data[22] = params.curvePoints[2] ?? 2/6
+  data[23] = params.curvePoints[3] ?? 3/6
+
+  // curvePoints[4..6] + padding
+  data[24] = params.curvePoints[4] ?? 4/6
+  data[25] = params.curvePoints[5] ?? 5/6
+  data[26] = params.curvePoints[6] ?? 1
+  data[27] = 0 // padding
+
+  return {
+    shader: gradientGrainSimplexShader,
+    uniforms: data.buffer,
+    bufferSize: GRADIENT_GRAIN_SIMPLEX_BUFFER_SIZE,
   }
 }

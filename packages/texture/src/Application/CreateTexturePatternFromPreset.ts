@@ -11,6 +11,7 @@ import {
   createGradientGrainRadialSpec,
   createGradientGrainPerlinSpec,
   createGradientGrainCurlSpec,
+  createGradientGrainSimplexSpec,
   createTriangleSpec,
   createHexagonSpec,
   createAsanohaSpec,
@@ -165,6 +166,24 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
             perlinContrast: params.perlinContrast,
             perlinOffset: params.perlinOffset,
             curlIntensity: params.curlIntensity,
+            colorA: c1,
+            colorB: c2,
+            seed: params.seed,
+            sparsity: params.sparsity,
+            curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+          }, viewport ?? { width: 1920, height: 1080 }),
+        params,
+      }
+    }
+    case 'gradientGrainSimplex': {
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
+          createGradientGrainSimplexSpec({
+            simplexScale: params.simplexScale,
+            simplexOctaves: params.simplexOctaves,
+            simplexContrast: params.simplexContrast,
+            simplexOffset: params.simplexOffset,
             colorA: c1,
             colorB: c2,
             seed: params.seed,
