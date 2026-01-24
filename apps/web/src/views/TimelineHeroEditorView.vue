@@ -279,7 +279,7 @@ const sidebarLayers = computed(() => ({
   items: layers.value,
   foregroundElements: heroScene.foreground.foregroundConfig.value.elements,
   selectedForegroundElementId: selectedForegroundElementId.value,
-  expandedLayerIds: expandedLayerIds.value,
+  expandedLayerIds: heroScene.editor.expandedLayerIds.value,
 }))
 
 // RightPropertyPanel props

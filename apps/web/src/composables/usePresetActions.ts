@@ -1,3 +1,4 @@
+import type { Ref } from 'vue'
 import type { HeroViewConfig, PresetColorConfig, PresetHsvColor } from '@practice/section-visual'
 import type { UseSiteColorsBridgeReturn } from './SiteBuilder/useSiteColorsBridge'
 

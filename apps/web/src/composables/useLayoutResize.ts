@@ -1,4 +1,4 @@
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, type Ref } from 'vue'
 
 // ============================================================
 // Types
@@ -15,9 +15,9 @@ export interface UseLayoutResizeOptions {
 
 export interface UseLayoutResizeReturn {
   /** Current height percentage */
-  heightPercent: ReturnType<typeof ref<number>>
+  heightPercent: Ref<number>
   /** Whether resize is in progress */
-  isResizing: ReturnType<typeof ref<boolean>>
+  isResizing: Ref<boolean>
   /** Start resize operation (attach to mousedown) */
   startResize: (e: MouseEvent) => void
 }

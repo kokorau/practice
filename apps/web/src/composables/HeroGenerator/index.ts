@@ -11,5 +11,5 @@ export {
   useHeroGeneratorColorHandlers,
   type UseHeroGeneratorColorHandlersOptions,
   type UseHeroGeneratorColorHandlersReturn,
-  type ColorRefs,
+  type ColorStateRefs,
 } from './useHeroGeneratorColorHandlers'
