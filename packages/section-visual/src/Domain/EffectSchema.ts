@@ -99,7 +99,7 @@ export type BlurEffectConfig = Infer<typeof BlurEffectSchema>
 
 export const PixelateEffectSchema = defineSchema({
   enabled: boolean({ label: 'Enabled', default: false }),
-  blockSize: number({ label: 'Block Size', min: 4, max: 64, default: 16 }),
+  blockSize: number({ label: 'Block Size', min: 0.1, max: 64, default: 16 }),
   noiseScale: number({ label: 'Noise Scale', min: 0, max: 100, default: 0 }),
 })
 
@@ -111,7 +111,7 @@ export type PixelateEffectConfig = Infer<typeof PixelateEffectSchema>
 
 export const HexagonMosaicEffectSchema = defineSchema({
   enabled: boolean({ label: 'Enabled', default: false }),
-  cellSize: number({ label: 'Cell Size', min: 8, max: 80, default: 24 }),
+  cellSize: number({ label: 'Cell Size', min: 0.1, max: 80, default: 24 }),
   noiseScale: number({ label: 'Noise Scale', min: 0, max: 100, default: 0 }),
 })
 
