@@ -1,20 +1,8 @@
 import { ref, computed, readonly, inject, provide, type InjectionKey, type Ref, type DeepReadonly } from 'vue'
+import type { HtmlLayerId, ProcessorType, LayerSelection } from '@practice/section-visual'
 
-// ============================================================
-// Types
-// ============================================================
-
-export type HtmlLayerId = 'title' | 'description'
-export type ProcessorType = 'effect' | 'mask' | 'processor'
-
-export interface LayerSelection {
-  // Canvas layer selection
-  layerId: string | null
-  processorType: ProcessorType | null
-  processorLayerId: string | null
-  // HTML layer selection
-  htmlLayerId: HtmlLayerId | null
-}
+// Re-export types for backward compatibility
+export type { HtmlLayerId, ProcessorType, LayerSelection } from '@practice/section-visual'
 
 export interface LayerSelectionReturn {
   // State (readonly)

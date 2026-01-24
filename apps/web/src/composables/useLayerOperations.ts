@@ -5,52 +5,28 @@ import type {
   ModifierDropPosition,
   HeroViewRepository,
   HeroViewConfig,
+  ProcessorType,
+  AddProcessorType,
+  TextLayerOptions,
+  ObjectLayerOptions,
+  ImageLayerOptions,
+  UILayerType,
+  LayerVariant,
 } from '@practice/section-visual'
 import {
   findLayerInTree,
+  getLayerVariant,
 } from '@practice/section-visual'
-import type { ProcessorType } from './useLayerSelection'
 
-// ============================================================
-// Types
-// ============================================================
-
-export interface TextLayerOptions {
-  text: string
-  fontFamily: string
-  fontSize: number
-  fontWeight: number
-  letterSpacing: number
-  lineHeight: number
-  color: string
-  x: number
-  y: number
-  anchor: 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right'
-  rotation: number
-}
-
-export interface ObjectLayerOptions {
-  modelUrl: string
-}
-
-/** Processor type for add-processor operation */
-export type AddProcessorType = 'effect' | 'mask'
-
-/**
- * Scene operation callbacks from useHeroScene
- */
-export interface ImageLayerOptions {
-  imageId: string
-  mode: 'cover' | 'positioned'
-  position?: {
-    x: number
-    y: number
-    width: number
-    height: number
-    rotation?: number
-    opacity?: number
-  }
-}
+// Re-export types for backward compatibility
+export type {
+  TextLayerOptions,
+  ObjectLayerOptions,
+  ImageLayerOptions,
+  AddProcessorType,
+  UILayerType,
+  LayerVariant,
+} from '@practice/section-visual'
 
 export interface SceneOperationCallbacks {
   /** Add mask layer to scene. Returns layer ID or null if limit reached */
@@ -82,17 +58,6 @@ export interface SceneOperationCallbacks {
   /** Remove an entire processor node */
   removeProcessor: (processorNodeId: string) => void
 }
-
-/**
- * Layer type for UI
- * Note: 'base' is included for type compatibility but cannot be added through UI
- */
-export type UILayerType = 'base' | 'surface' | 'text' | 'model3d' | 'image' | 'group'
-
-/**
- * Layer variant (non-group layer types)
- */
-export type LayerVariant = 'surface' | 'text' | 'model3d' | 'image' | 'base' | 'processor'
 
 /**
  * Composable options
@@ -149,34 +114,6 @@ export interface UseLayerOperationsReturn {
   // DnD Move
   handleMoveNode: (nodeId: string, position: LayerDropPosition) => void
   handleMoveModifier: (sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => void
-}
-
-// ============================================================
-// Helper functions
-// ============================================================
-
-/**
- * Get layer variant from LayerNodeConfig
- */
-const getLayerVariant = (layer: LayerNodeConfig): LayerVariant | null => {
-  switch (layer.type) {
-    case 'surface':
-      return 'surface'
-    case 'text':
-      return 'text'
-    case 'model3d':
-      return 'model3d'
-    case 'image':
-      return 'image'
-    case 'base':
-      return 'base'
-    case 'processor':
-      return 'processor'
-    case 'group':
-      return null // Groups don't have a variant
-    default:
-      return null
-  }
 }
 
 // ============================================================

@@ -373,6 +373,11 @@ export {
   findProcessorForLayer,
   createProcessorNodeConfig,
   ensureProcessorForLayer,
+  // Processor target detection (for UI rendering)
+  isProcessorTarget,
+  hasProcessorBelow,
+  // Layer variant detection
+  getLayerVariant,
 } from './LayerTreeOps'
 
 
@@ -920,6 +925,41 @@ export type {
 } from './repository/HeroEditorRepository'
 
 // ============================================================
+// EditorTypes (Selection and Layer Types)
+// ============================================================
+
+export type {
+  HtmlLayerId,
+  ProcessorType,
+  AddProcessorType,
+  SelectableProcessorType,
+  LayerSelection,
+  UILayerType,
+  LayerVariant,
+  TextAnchorPosition,
+  TextLayerOptions,
+  ObjectLayerOptions,
+  ImageLayerOptions,
+} from './EditorTypes'
+
+// ============================================================
+// ForegroundLayout
+// ============================================================
+
+export type {
+  PositionedElement,
+  PositionedGroup,
+  CompiledPositionedElement,
+  CompiledPositionedGroup,
+} from './ForegroundLayout'
+export {
+  GRID_POSITIONS,
+  ELEMENT_TAG,
+  compileForegroundLayout,
+  layoutCompiledForeground,
+} from './ForegroundLayout'
+
+// ============================================================
 // Mappers
 // ============================================================
 
@@ -1063,11 +1103,42 @@ export { $PropertyValue } from './SectionVisual'
 // PropertyResolver
 // ============================================================
 
-export type { PropertyResolver } from './PropertyResolver'
+export type { PropertyResolver, IntensityProvider } from './PropertyResolver'
 export {
+  // Simple function-based resolution
+  DEFAULT_INTENSITY_PROVIDER,
+  resolvePropertyValueToNumber,
+  resolvePropertyValueToString,
+  resolvePropertyValueToBoolean,
+  resolvePropertyValueSimple,
+  resolveParamsSimple,
+  // Factory-based resolution (uses Timeline's IntensityProvider)
   createPropertyResolver,
   resolveHeroViewConfig,
 } from './PropertyResolver'
+
+// ============================================================
+// ColorHelpers
+// ============================================================
+
+export type { Oklch, SemanticContextName } from './ColorHelpers'
+export {
+  CONTEXT_SURFACE_KEYS,
+  getOklchFromPalette,
+  isDarkTheme,
+  getMaskSurfaceKey,
+  // Oklch ↔ RGBA/CSS conversion
+  oklchToRgba,
+  oklchToCss,
+  // Palette key resolution
+  getCanvasSurfaceKey,
+  getSurfaceKeyForContext,
+  resolveKeyToOklch,
+  resolveKeyToRgba,
+  resolveKeyToCss,
+  resolveAutoMaskPrimaryColor,
+  resolveSurfaceColorKey,
+} from './ColorHelpers'
 
 // ============================================================
 // CompiledHeroView

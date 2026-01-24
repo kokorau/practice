@@ -184,6 +184,18 @@ export type {
   PresetUIState,
   HeroEditorUIState,
   HeroEditorState,
+  // EditorTypes (selection and layer types)
+  HtmlLayerId,
+  ProcessorType,
+  AddProcessorType,
+  // SelectableProcessorType exported from Application below
+  LayerSelection,
+  UILayerType,
+  LayerVariant,
+  // TextAnchorPosition exported from ./types below
+  TextLayerOptions,
+  ObjectLayerOptions,
+  ImageLayerOptions,
   // SectionVisual types
   StaticValue,
   RangeExpr,
@@ -257,6 +269,11 @@ export {
   findProcessorForLayer,
   createProcessorNodeConfig,
   ensureProcessorForLayer,
+  // LayerTreeOps - Processor target detection (for UI rendering)
+  isProcessorTarget,
+  hasProcessorBelow,
+  // LayerTreeOps - Layer variant detection
+  getLayerVariant,
   // Layer factories (deprecated - use HeroViewConfig instead)
   createCanvasLayer,
   createTextureLayer,
@@ -305,6 +322,15 @@ export {
   toCustomSurfaceParams,
   toCustomBackgroundSurfaceParams,
   fromCustomSurfaceParams,
+  // ForegroundLayout
+  type PositionedElement,
+  type PositionedGroup,
+  type CompiledPositionedElement,
+  type CompiledPositionedGroup,
+  GRID_POSITIONS,
+  ELEMENT_TAG,
+  compileForegroundLayout,
+  layoutCompiledForeground,
   // Layer helpers
   getLayerFilters,
   // Processor modifier helpers

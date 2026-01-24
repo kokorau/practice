@@ -8,18 +8,19 @@
  */
 
 import type { LayerNodeConfig, ProcessorNodeConfig, SurfaceLayerNodeConfig, SingleEffectConfig } from '../Domain/HeroViewConfig'
+import type { SelectableProcessorType } from '../Domain/EditorTypes'
 import {
   findLayerInTree,
   isProcessorLayerConfig,
   findProcessorTargetSurface,
 } from '../Domain/LayerTreeOps'
 
+// Re-export for backward compatibility
+export type { SelectableProcessorType } from '../Domain/EditorTypes'
+
 // ============================================================
 // Types
 // ============================================================
-
-/** Processor type for selection */
-export type SelectableProcessorType = 'effect' | 'mask'
 
 /**
  * EffectManager操作のためのPort
