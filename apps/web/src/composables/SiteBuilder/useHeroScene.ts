@@ -554,6 +554,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     heroThumbnails,
     isLoadingFromConfig,
     selectCanvasLayer,
+    surfaceUsecase,
   })
 
   // ============================================================
