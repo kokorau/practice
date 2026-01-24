@@ -12,7 +12,17 @@
  * evaluate('mul(sin(t), range(t, 0, 10))', { t: 0.5 })
  */
 
-export type { AstNode, NumberNode, IdentifierNode, CallNode } from './ast'
+export type {
+  AstNode,
+  NumberNode,
+  IdentifierNode,
+  CallNode,
+  ReferenceNode,
+  BinaryNode,
+  UnaryNode,
+  BinaryOperator,
+  UnaryOperator,
+} from './ast'
 export { $Ast } from './ast'
 export { parse, tryParse, type ParseResult } from './parser'
 export { evaluate, Evaluator, type Context, type BuiltinFunction } from './evaluator'

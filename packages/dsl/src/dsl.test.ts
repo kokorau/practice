@@ -13,9 +13,9 @@ describe('DSL Parser', () => {
 
     it('parses negative number', () => {
       expect(parse('-5')).toEqual({
-        type: 'call',
-        name: 'neg',
-        args: [{ type: 'number', value: 5 }],
+        type: 'unary',
+        operator: '-',
+        operand: { type: 'number', value: 5 },
       })
     })
 

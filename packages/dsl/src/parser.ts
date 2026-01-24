@@ -1,17 +1,21 @@
 /**
- * Parser for DSL
+ * Parser for DSL (Pratt Parser)
  *
  * Grammar:
- *   expression := unary | primary
- *   unary := '-' expression
- *   primary := number | identifier | functionCall
- *   functionCall := identifier '(' argList? ')'
+ *   expression := equality
+ *   additive := multiplicative (('+' | '-') multiplicative)*
+ *   multiplicative := power (('*' | '/' | '%') power)*
+ *   power := unary ('**' unary)* (right-associative)
+ *   unary := '-' unary | postfix
+ *   postfix := primary ('(' argList? ')')?
+ *   primary := number | identifier | reference | '(' expression ')'
+ *   reference := '@' identifier (':' identifier)?
  *   argList := expression (',' expression)*
  */
 
-import type { AstNode } from './ast'
+import type { AstNode, BinaryOperator } from './ast'
 import { $Ast } from './ast'
-import type { Token } from './tokenizer'
+import type { Token, TokenType } from './tokenizer'
 import { tokenize } from './tokenizer'
 
 export class Parser {
@@ -26,6 +30,12 @@ export class Parser {
   parse(): AstNode {
     this.tokens = tokenize(this.input)
     this.pos = 0
+
+    // Skip leading '=' marker if present
+    if (this.current().type === 'EQUALS') {
+      this.advance()
+    }
+
     const result = this.parseExpression()
 
     if (this.current().type !== 'EOF') {
@@ -43,7 +53,7 @@ export class Parser {
     return this.tokens[this.pos++]!
   }
 
-  private expect(type: Token['type']): Token {
+  private expect(type: TokenType): Token {
     const token = this.current()
     if (token.type !== type) {
       throw new Error(`Expected ${type} but got ${token.type} at position ${token.pos}`)
@@ -52,37 +62,111 @@ export class Parser {
   }
 
   private parseExpression(): AstNode {
-    // Handle unary minus
-    if (this.current().type === 'MINUS') {
-      this.advance()
-      const expr = this.parseExpression()
-      return $Ast.call('neg', [expr])
+    return this.parseAdditive()
+  }
+
+  private parseAdditive(): AstNode {
+    let left = this.parseMultiplicative()
+
+    while (this.current().type === 'PLUS' || this.current().type === 'MINUS') {
+      const op = this.advance().value as BinaryOperator
+      const right = this.parseMultiplicative()
+      left = $Ast.binary(op, left, right)
     }
 
-    return this.parsePrimary()
+    return left
+  }
+
+  private parseMultiplicative(): AstNode {
+    let left = this.parsePower()
+
+    while (this.current().type === 'STAR' || this.current().type === 'SLASH' || this.current().type === 'PERCENT') {
+      const op = this.advance().value as BinaryOperator
+      const right = this.parsePower()
+      left = $Ast.binary(op, left, right)
+    }
+
+    return left
+  }
+
+  private parsePower(): AstNode {
+    const left = this.parseUnary()
+
+    // Right-associative: 2 ** 3 ** 2 = 2 ** (3 ** 2)
+    if (this.current().type === 'STARSTAR') {
+      this.advance()
+      const right = this.parsePower() // recursive for right-associativity
+      return $Ast.binary('**', left, right)
+    }
+
+    return left
+  }
+
+  private parseUnary(): AstNode {
+    if (this.current().type === 'MINUS') {
+      this.advance()
+      const operand = this.parseUnary()
+      return $Ast.unary('-', operand)
+    }
+
+    return this.parsePostfix()
+  }
+
+  private parsePostfix(): AstNode {
+    const primary = this.parsePrimary()
+
+    // Check if it's a function call
+    if (primary.type === 'identifier' && this.current().type === 'LPAREN') {
+      return this.parseFunctionCall(primary.name)
+    }
+
+    return primary
   }
 
   private parsePrimary(): AstNode {
     const token = this.current()
 
+    // Number
     if (token.type === 'NUMBER') {
       this.advance()
       return $Ast.number(parseFloat(token.value))
     }
 
+    // Identifier (could be variable or function name)
     if (token.type === 'IDENTIFIER') {
       this.advance()
-
-      // Check if it's a function call
-      if (this.current().type === 'LPAREN') {
-        return this.parseFunctionCall(token.value)
-      }
-
-      // Otherwise it's a variable reference
       return $Ast.identifier(token.value)
     }
 
+    // Reference (@t or @namespace:path)
+    if (token.type === 'AT') {
+      return this.parseReference()
+    }
+
+    // Grouping: (expression)
+    if (token.type === 'LPAREN') {
+      this.advance()
+      const expr = this.parseExpression()
+      this.expect('RPAREN')
+      return expr
+    }
+
     throw new Error(`Unexpected token '${token.value}' at position ${token.pos}`)
+  }
+
+  private parseReference(): AstNode {
+    this.expect('AT')
+    const first = this.expect('IDENTIFIER')
+
+    // Check for namespace:path format
+    if (this.current().type === 'COLON') {
+      this.advance()
+      const path = this.expect('IDENTIFIER')
+      return $Ast.reference(first.value, path.value)
+    }
+
+    // Short form: @t
+    return $Ast.reference(null, first.value)
   }
 
   private parseFunctionCall(name: string): AstNode {

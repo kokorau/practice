@@ -293,13 +293,50 @@ export class Evaluator {
         }
         return this.context[node.name]!
 
-      case 'call':
+      case 'call': {
         const fn = this.customFunctions[node.name] ?? BUILTIN_FUNCTIONS[node.name]
         if (!fn) {
           throw new Error(`Unknown function '${node.name}'`)
         }
         const args = node.args.map((arg) => this.evaluate(arg))
         return fn(args)
+      }
+
+      case 'reference': {
+        // Build the context key
+        const key = node.namespace ? `${node.namespace}:${node.path}` : node.path
+        if (!(key in this.context)) {
+          throw new Error(`Unknown reference '@${key}'`)
+        }
+        return this.context[key]!
+      }
+
+      case 'binary': {
+        const left = this.evaluate(node.left)
+        const right = this.evaluate(node.right)
+        switch (node.operator) {
+          case '+':
+            return left + right
+          case '-':
+            return left - right
+          case '*':
+            return left * right
+          case '/':
+            return left / right
+          case '%':
+            return left % right
+          case '**':
+            return Math.pow(left, right)
+        }
+      }
+
+      case 'unary': {
+        const operand = this.evaluate(node.operand)
+        switch (node.operator) {
+          case '-':
+            return -operand
+        }
+      }
     }
   }
 }
