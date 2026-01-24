@@ -9,31 +9,29 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import HeroPreview from './HeroPreview.vue'
 import {
   type HeroViewConfig,
-  type SurfaceConfig,
   normalizeSurfaceConfig,
   HERO_CANVAS_WIDTH,
   HERO_CANVAS_HEIGHT,
 } from '@practice/section-visual'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import { getSurfacePresets, type SurfacePreset } from '@practice/texture'
+import { getSurfacePresets, type SurfacePreset, type SurfacePresetParams } from '@practice/texture'
 import { hsvToOklch } from '../../components/SiteBuilder/utils/colorConversion'
 
 // ============================================================
 // Helper: Create HeroViewConfig with a single surface
 // ============================================================
 
-const createSurfaceOnlyConfig = (surface: SurfaceConfig): HeroViewConfig => ({
+const createSurfaceOnlyConfig = (surface: SurfacePresetParams): HeroViewConfig => ({
   viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
   colors: { semanticContext: 'canvas' },
   layers: [
     {
       id: 'bg-surface',
+      name: 'Background Surface',
       type: 'surface',
       visible: true,
-      opacity: 1,
-      blendMode: 'normal',
-      surface: normalizeSurfaceConfig(surface),
+      surface: normalizeSurfaceConfig(surface as Parameters<typeof normalizeSurfaceConfig>[0]),
       colors: { primary: 'BN3', secondary: 'BN7' },
     },
   ],
