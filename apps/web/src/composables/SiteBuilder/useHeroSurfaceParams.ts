@@ -81,7 +81,9 @@ export const useHeroSurfaceParams = (
       const config = repoConfig.value
       if (!config) return null
       const result = syncMaskShapeParams(config)
-      return result.maskShapeParams
+      // Type assertion needed due to monorepo type resolution
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return result.maskShapeParams as any
     },
     set: (val: CustomMaskShapeParams | null) => {
       if (val === null) return

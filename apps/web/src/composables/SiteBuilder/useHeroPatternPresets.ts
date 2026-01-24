@@ -97,10 +97,6 @@ export const useHeroPatternPresets = (
     selectedMaskIndex,
     selectedMidgroundTextureIndex,
     selectedLayerId,
-    textureColor1,
-    textureColor2,
-    midgroundTextureColor1,
-    midgroundTextureColor2,
   } = options
 
   const {
