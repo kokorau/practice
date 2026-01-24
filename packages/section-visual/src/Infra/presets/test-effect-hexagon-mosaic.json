@@ -1,0 +1,77 @@
+{
+  "id": "test-effect-hexagon-mosaic",
+  "name": "Test Effect: Hexagon Mosaic",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "background",
+            "name": "Background Surface",
+            "visible": true,
+            "surface": {
+              "type": "gradientGrainRadial",
+              "grainScale": 1.5,
+              "grainIntensity": 0.3,
+              "centerX": 0.5,
+              "centerY": 0.5
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "F1"
+            }
+          },
+          {
+            "type": "processor",
+            "id": "processor-hexagon-mosaic",
+            "name": "Hexagon Mosaic Effect",
+            "visible": true,
+            "modifiers": [
+              {
+                "type": "effect",
+                "id": "hexagonMosaic",
+                "params": {
+                  "enabled": true,
+                  "cellSize": 24,
+                  "noiseScale": 0
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 180,
+      "saturation": 60,
+      "value": 50
+    },
+    "accent": {
+      "hue": 300,
+      "saturation": 70,
+      "value": 60
+    },
+    "foundation": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 95
+    }
+  }
+}

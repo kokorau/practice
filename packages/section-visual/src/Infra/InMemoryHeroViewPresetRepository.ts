@@ -33,6 +33,9 @@ import testEffectVignette from './presets/test-effect-vignette.json'
 import testEffectChromatic from './presets/test-effect-chromatic.json'
 import testEffectDotHalftone from './presets/test-effect-dot-halftone.json'
 import testEffectLineHalftone from './presets/test-effect-line-halftone.json'
+import testEffectPixelate from './presets/test-effect-pixelate.json'
+import testEffectHexagonMosaic from './presets/test-effect-hexagon-mosaic.json'
+import testEffectVoronoiMosaic from './presets/test-effect-voronoi-mosaic.json'
 // Surface + Text + Mask combined test
 import testSurfaceTextMask from './presets/test-surface-text-mask.json'
 
@@ -44,6 +47,9 @@ const DEFAULT_PRESETS: HeroViewPreset[] = [
   // Surface + Text + Mask combined test (first for debugging)
   testSurfaceTextMask as unknown as HeroViewPreset,
   // Effect test presets (first for easy access during debugging)
+  testEffectPixelate as unknown as HeroViewPreset,
+  testEffectHexagonMosaic as unknown as HeroViewPreset,
+  testEffectVoronoiMosaic as unknown as HeroViewPreset,
   testEffectBlur as unknown as HeroViewPreset,
   testEffectVignette as unknown as HeroViewPreset,
   testEffectChromatic as unknown as HeroViewPreset,
