@@ -103,6 +103,7 @@ import {
   type MaskShapeConfig,
   createSelectProcessorUsecase,
   createApplyAnimatedPresetUsecase,
+  getProcessorWithTargetUsecase,
 } from '@practice/section-visual'
 import { ensureFontLoaded } from '@practice/font'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
@@ -1153,6 +1154,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     updateBackgroundSurfaceParams,
   }
 
+  // ProcessorTarget computed (for RightPropertyPanel mask section)
+  const { processorLayerId } = layerSelection
+  const processorTarget = computed(() => {
+    const layers = repoConfig.value?.layers
+    if (!layers) {
+      return { processor: undefined, targetSurface: undefined }
+    }
+    return getProcessorWithTargetUsecase.execute(layers, processorLayerId.value)
+  })
+
   const mask: MaskState = {
     maskColorKey1: heroColors.maskColorKey1,
     maskColorKey2: heroColors.maskColorKey2,
@@ -1165,6 +1176,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     currentSurfaceSchema,
     updateMaskShapeParams,
     updateSurfaceParams,
+    processorTarget,
   }
 
   const filter: FilterState = {
@@ -1251,9 +1263,16 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Use repository state directly as computed (reactive via repoConfig)
   const heroViewConfigComputed = computed(() => repoConfig.value)
 
+  // Writable computed for expandedLayerIds (syncs with editorUIState)
+  const expandedLayerIdsComputed = computed({
+    get: () => editorUIState.value.layerTree.expandedLayerIds,
+    set: (val: Set<string>) => { editorUIState.value.layerTree.expandedLayerIds = val },
+  })
+
   const editor: EditorStateRef = {
     heroViewConfig: heroViewConfigComputed,
     editorUIState,
+    expandedLayerIds: expandedLayerIdsComputed,
   }
 
   const renderer: RendererActions = {

@@ -67,6 +67,8 @@ import type {
   ModifierDropPosition,
   CompiledHeroView,
   NormalizedMaskConfig,
+  ProcessorNodeConfig,
+  SurfaceLayerNodeConfig,
 } from '../index'
 
 // ============================================================
@@ -399,6 +401,16 @@ export interface BackgroundState {
 // ============================================================
 
 /**
+ * Processor target info (processor node and its target surface)
+ */
+export interface ProcessorTarget {
+  /** The selected processor node */
+  readonly processor: ProcessorNodeConfig | undefined
+  /** The surface that the processor applies to */
+  readonly targetSurface: SurfaceLayerNodeConfig | undefined
+}
+
+/**
  * Mask (clip group) state and actions
  */
 export interface MaskState {
@@ -426,6 +438,9 @@ export interface MaskState {
   readonly updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams | PerlinMaskShapeParams | LinearGradientMaskShapeParams | RadialGradientMaskShapeParams | BoxGradientMaskShapeParams | WavyLineMaskShapeParams>) => void
   /** Update surface params */
   readonly updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => void
+
+  /** Processor target info (derived from current selection) */
+  readonly processorTarget: ComputedRef<ProcessorTarget>
 }
 
 // ============================================================
@@ -785,6 +800,11 @@ export interface EditorStateRef {
    * This consolidates all UI-related state in a single reactive object
    */
   readonly editorUIState: Ref<HeroEditorUIState>
+  /**
+   * Expanded layer IDs for layer tree UI
+   * Writable computed that syncs with editorUIState.layerTree.expandedLayerIds
+   */
+  readonly expandedLayerIds: Ref<Set<string>>
 }
 
 // ============================================================
