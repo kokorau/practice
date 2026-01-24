@@ -8,7 +8,6 @@
 
 import { type Ref, type ShallowRef } from 'vue'
 import type { SurfacePreset } from '@practice/texture'
-import type { ContextName, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import {
   type HeroViewConfig,
   type HeroSceneConfig,
@@ -19,11 +18,7 @@ import {
   type GroupLayerNodeConfig,
   type MaskProcessorConfig,
   type NormalizedMaskConfig as HeroMaskShapeConfig,
-  type ForegroundLayerConfig,
   type HeroViewRepository,
-  createDefaultColorsConfig,
-  DEFAULT_LAYER_BACKGROUND_COLORS,
-  DEFAULT_LAYER_MASK_COLORS,
   findSurfacePresetIndex,
   findMaskPatternIndex,
   findMaskPatternIndexByType,
@@ -38,7 +33,6 @@ import {
   getMaskAsNormalized,
   safeDenormalizeMaskConfig,
 } from '@practice/section-visual'
-import type { UseHeroColorsReturn } from './useHeroColors'
 import type { UseHeroFiltersReturn } from './useHeroFilters'
 import type { UseHeroThumbnailsReturn } from './useHeroThumbnails'
 
@@ -57,13 +51,11 @@ interface HeroSceneEditorState {
 export interface UseHeroConfigLoaderOptions {
   heroViewRepository: HeroViewRepository
   editorState: ShallowRef<HeroSceneEditorState>
-  heroColors: UseHeroColorsReturn
   heroFilters: UseHeroFiltersReturn
   heroThumbnails: UseHeroThumbnailsReturn
   selectedBackgroundIndex: Ref<number>
   selectedMaskIndex: Ref<number | null>
   selectedMidgroundTextureIndex: Ref<number>
-  foregroundConfig: Ref<ForegroundLayerConfig>
   surfacePresets: SurfacePreset[]
   render: () => Promise<void>
   isLoadingFromConfig: Ref<boolean>
@@ -79,13 +71,11 @@ export const useHeroConfigLoader = (
   const {
     heroViewRepository,
     editorState,
-    heroColors,
     heroFilters,
     heroThumbnails,
     selectedBackgroundIndex,
     selectedMaskIndex,
     selectedMidgroundTextureIndex,
-    foregroundConfig,
     surfacePresets,
     render,
     isLoadingFromConfig,
@@ -142,18 +132,9 @@ export const useHeroConfigLoader = (
         }
       }
 
-      // Read colors from surface layers (migration ensures colors always exist)
-      const configColors = migratedConfig.colors ?? createDefaultColorsConfig()
-      // Background colors from layer (use defaults if missing - migration should prevent this)
-      const bgColors = backgroundSurfaceLayer?.colors ?? DEFAULT_LAYER_BACKGROUND_COLORS
-      heroColors.backgroundColorKey1.value = (bgColors.primary === 'auto' ? DEFAULT_LAYER_BACKGROUND_COLORS.primary : bgColors.primary) as PrimitiveKey
-      heroColors.backgroundColorKey2.value = bgColors.secondary as PrimitiveKey | 'auto'
-      // Mask colors from layer (use defaults if missing - migration should prevent this)
-      const maskColors = maskSurfaceLayer?.colors ?? DEFAULT_LAYER_MASK_COLORS
-      heroColors.maskColorKey1.value = maskColors.primary as PrimitiveKey | 'auto'
-      heroColors.maskColorKey2.value = maskColors.secondary as PrimitiveKey | 'auto'
-      // Semantic context from config.colors (kept at top level)
-      heroColors.maskSemanticContext.value = configColors.semanticContext as ContextName
+      // Note: Color refs are now computed from repository (SSOT), so we don't need to manually sync them.
+      // heroColors.backgroundColorKey1, backgroundColorKey2, maskColorKey1, maskColorKey2, maskSemanticContext
+      // are all derived from heroViewRepository.get() via computed getters.
 
       if (backgroundSurfaceLayer) {
         const bgSurface = backgroundSurfaceLayer.surface
@@ -232,7 +213,8 @@ export const useHeroConfigLoader = (
         }
       }
 
-      foregroundConfig.value = migratedConfig.foreground
+      // Note: foregroundConfig is now computed from repository (SSOT), so we don't need to manually sync it.
+      // foregroundConfig is derived from heroViewRepository.get().foreground via computed getter.
 
       await render()
     } finally {

@@ -9,7 +9,7 @@
  * - Foreground element color resolution
  */
 
-import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import { ref, computed, type Ref, type ComputedRef, type WritableComputedRef } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { RGBA } from '@practice/texture'
@@ -32,6 +32,12 @@ import type {
   HeroPrimitiveKey,
   ForegroundLayerConfig,
   ForegroundColorContext,
+  HeroViewRepository,
+  LayerNodeConfig,
+  SurfaceLayerNodeConfig,
+  BaseLayerNodeConfig,
+  SurfaceColorsConfig,
+  HeroContextName,
 } from '@practice/section-visual'
 
 // ============================================================
@@ -70,6 +76,8 @@ export interface ElementBounds {
  * Options for useHeroColors composable
  */
 export interface UseHeroColorsOptions {
+  /** HeroViewRepository for SSOT color state */
+  heroViewRepository: HeroViewRepository
   /** Primitive palette from parent */
   primitivePalette: ComputedRef<PrimitivePalette>
   /** Dark mode flag from parent */
@@ -78,6 +86,71 @@ export interface UseHeroColorsOptions {
   canvasImageData: Ref<ImageData | null>
   /** Foreground config for element color resolution */
   foregroundConfig: Ref<ForegroundLayerConfig>
+}
+
+// ============================================================
+// Layer Finder Helpers
+// ============================================================
+
+/**
+ * Find the background surface layer in the layer tree
+ */
+const findBackgroundSurfaceLayer = (layers: LayerNodeConfig[]): (SurfaceLayerNodeConfig | BaseLayerNodeConfig) | undefined => {
+  for (const layer of layers) {
+    // Direct surface/base layer with id 'background'
+    if ((layer.type === 'surface' || layer.type === 'base') && layer.id === 'background') {
+      return layer
+    }
+    // Search in groups
+    if (layer.type === 'group') {
+      const found = findBackgroundSurfaceLayer(layer.children)
+      if (found) return found
+    }
+  }
+  return undefined
+}
+
+/**
+ * Find the mask surface layer in the layer tree (id: 'surface-mask')
+ */
+const findMaskSurfaceLayer = (layers: LayerNodeConfig[]): (SurfaceLayerNodeConfig | BaseLayerNodeConfig) | undefined => {
+  for (const layer of layers) {
+    // Direct surface/base layer with id 'surface-mask'
+    if ((layer.type === 'surface' || layer.type === 'base') && layer.id === 'surface-mask') {
+      return layer
+    }
+    // Search in groups
+    if (layer.type === 'group') {
+      const found = findMaskSurfaceLayer(layer.children)
+      if (found) return found
+    }
+  }
+  return undefined
+}
+
+/**
+ * Update colors on a surface layer by ID
+ */
+const updateSurfaceLayerColors = (
+  layers: LayerNodeConfig[],
+  layerId: string,
+  colorUpdate: Partial<SurfaceColorsConfig>
+): LayerNodeConfig[] => {
+  return layers.map((layer): LayerNodeConfig => {
+    if (layer.type === 'group') {
+      return {
+        ...layer,
+        children: updateSurfaceLayerColors(layer.children, layerId, colorUpdate),
+      }
+    }
+    if ((layer.type === 'surface' || layer.type === 'base') && layer.id === layerId) {
+      return {
+        ...layer,
+        colors: { ...(layer.colors ?? { primary: 'B', secondary: 'auto' }), ...colorUpdate },
+      }
+    }
+    return layer
+  })
 }
 
 /**
@@ -89,10 +162,10 @@ export interface UseHeroColorsReturn {
   themeMode: ComputedRef<'light' | 'dark'>
 
   // Background layer colors
-  /** Primary background color key */
-  backgroundColorKey1: Ref<PrimitiveKey>
-  /** Secondary background color key ('auto' = canvas surface) */
-  backgroundColorKey2: Ref<PrimitiveKey | 'auto'>
+  /** Primary background color key (writable computed from repository) */
+  backgroundColorKey1: WritableComputedRef<PrimitiveKey>
+  /** Secondary background color key ('auto' = canvas surface) (writable computed from repository) */
+  backgroundColorKey2: WritableComputedRef<PrimitiveKey | 'auto'>
   /** Background color 1 as RGBA */
   textureColor1: ComputedRef<RGBA>
   /** Background color 2 as RGBA */
@@ -101,12 +174,12 @@ export interface UseHeroColorsReturn {
   canvasSurfaceKey: ComputedRef<PrimitiveKey>
 
   // Mask layer colors
-  /** Primary mask color key ('auto' = surface - deltaL) */
-  maskColorKey1: Ref<PrimitiveKey | 'auto'>
-  /** Secondary mask color key ('auto' = mask surface) */
-  maskColorKey2: Ref<PrimitiveKey | 'auto'>
-  /** Semantic context for mask layer */
-  maskSemanticContext: Ref<ContextName>
+  /** Primary mask color key ('auto' = surface - deltaL) (writable computed from repository) */
+  maskColorKey1: WritableComputedRef<PrimitiveKey | 'auto'>
+  /** Secondary mask color key ('auto' = mask surface) (writable computed from repository) */
+  maskColorKey2: WritableComputedRef<PrimitiveKey | 'auto'>
+  /** Semantic context for mask layer (writable computed from repository) */
+  maskSemanticContext: WritableComputedRef<ContextName>
   /** Mask surface key (derived from semantic context) */
   maskSurfaceKey: ComputedRef<PrimitiveKey>
   /** Mask inner color (transparent) as RGBA */
@@ -170,7 +243,7 @@ const paletteToRgba = (oklch: Oklch, alpha: number = 1.0): RGBA => {
  * Composable for color and theme management in HeroScene
  */
 export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsReturn {
-  const { primitivePalette, isDark, canvasImageData, foregroundConfig } = options
+  const { heroViewRepository, primitivePalette, isDark, canvasImageData, foregroundConfig } = options
 
   // ============================================================
   // Theme Mode
@@ -178,10 +251,31 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   const themeMode = computed((): 'light' | 'dark' => (isDark.value ? 'dark' : 'light'))
 
   // ============================================================
-  // Background Layer Colors
+  // Background Layer Colors (SSOT from repository)
   // ============================================================
-  const backgroundColorKey1 = ref<PrimitiveKey>('B')
-  const backgroundColorKey2 = ref<PrimitiveKey | 'auto'>('auto')
+  const backgroundColorKey1 = computed({
+    get: (): PrimitiveKey => {
+      const layer = findBackgroundSurfaceLayer(heroViewRepository.get().layers)
+      return (layer?.colors?.primary ?? 'B') as PrimitiveKey
+    },
+    set: (val: PrimitiveKey) => {
+      const config = heroViewRepository.get()
+      const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { primary: val as HeroPrimitiveKey | 'auto' })
+      heroViewRepository.set({ ...config, layers: updatedLayers })
+    },
+  })
+
+  const backgroundColorKey2 = computed({
+    get: (): PrimitiveKey | 'auto' => {
+      const layer = findBackgroundSurfaceLayer(heroViewRepository.get().layers)
+      return (layer?.colors?.secondary ?? 'auto') as PrimitiveKey | 'auto'
+    },
+    set: (val: PrimitiveKey | 'auto') => {
+      const config = heroViewRepository.get()
+      const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { secondary: val as HeroPrimitiveKey | 'auto' })
+      heroViewRepository.set({ ...config, layers: updatedLayers })
+    },
+  })
 
   const canvasSurfaceKey = computed((): PrimitiveKey => CONTEXT_SURFACE_KEYS[themeMode.value].canvas)
 
@@ -193,11 +287,40 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedBackgroundColorKey2.value]))
 
   // ============================================================
-  // Mask Layer Colors
+  // Mask Layer Colors (SSOT from repository)
   // ============================================================
-  const maskColorKey1 = ref<PrimitiveKey | 'auto'>('auto')
-  const maskColorKey2 = ref<PrimitiveKey | 'auto'>('auto')
-  const maskSemanticContext = ref<ContextName>('canvas')
+  const maskColorKey1 = computed({
+    get: (): PrimitiveKey | 'auto' => {
+      const layer = findMaskSurfaceLayer(heroViewRepository.get().layers)
+      return (layer?.colors?.primary ?? 'auto') as PrimitiveKey | 'auto'
+    },
+    set: (val: PrimitiveKey | 'auto') => {
+      const config = heroViewRepository.get()
+      const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: val as HeroPrimitiveKey | 'auto' })
+      heroViewRepository.set({ ...config, layers: updatedLayers })
+    },
+  })
+
+  const maskColorKey2 = computed({
+    get: (): PrimitiveKey | 'auto' => {
+      const layer = findMaskSurfaceLayer(heroViewRepository.get().layers)
+      return (layer?.colors?.secondary ?? 'auto') as PrimitiveKey | 'auto'
+    },
+    set: (val: PrimitiveKey | 'auto') => {
+      const config = heroViewRepository.get()
+      const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: val as HeroPrimitiveKey | 'auto' })
+      heroViewRepository.set({ ...config, layers: updatedLayers })
+    },
+  })
+
+  const maskSemanticContext = computed({
+    get: (): ContextName => {
+      return heroViewRepository.get().colors.semanticContext
+    },
+    set: (val: ContextName) => {
+      heroViewRepository.updateColors({ semanticContext: val as HeroContextName })
+    },
+  })
 
   const maskSurfaceKey = computed((): PrimitiveKey => CONTEXT_SURFACE_KEYS[themeMode.value][maskSemanticContext.value])
 
