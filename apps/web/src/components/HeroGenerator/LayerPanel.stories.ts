@@ -1,0 +1,212 @@
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { ref, provide, h, computed, readonly } from 'vue'
+import LayerPanel from './LayerPanel.vue'
+import { LayerSelectionKey, type LayerSelectionReturn } from '../../composables/useLayerSelection'
+import type { LayerNodeConfig, ForegroundElementConfig, NormalizedSurfaceConfig, NormalizedMaskConfig } from '@practice/section-visual'
+import { $PropertyValue } from '@practice/section-visual'
+
+// Mock data for stories
+const createMockSurface = (type: string, params: Record<string, number | string> = {}): NormalizedSurfaceConfig => ({
+  id: type as NormalizedSurfaceConfig['id'],
+  params: Object.fromEntries(
+    Object.entries(params).map(([key, value]) => [key, $PropertyValue.static(value)])
+  ),
+})
+
+const createMockMask = (type: string, params: Record<string, unknown>): NormalizedMaskConfig => ({
+  id: type as NormalizedMaskConfig['id'],
+  params: Object.fromEntries(
+    Object.entries(params).map(([key, value]) => [key, $PropertyValue.static(value)])
+  ),
+})
+
+const mockLayers: LayerNodeConfig[] = [
+  {
+    type: 'group',
+    id: 'background-group',
+    name: 'Background',
+    visible: true,
+    children: [
+      {
+        type: 'surface',
+        id: 'background-surface',
+        name: 'Surface',
+        visible: true,
+        surface: createMockSurface('stripe', { width1: 20, width2: 20, angle: 45 }),
+        colors: { primary: 'B', secondary: 'auto' },
+      },
+    ],
+  },
+  {
+    type: 'group',
+    id: 'clip-group',
+    name: 'Clip Group',
+    visible: true,
+    children: [
+      {
+        type: 'surface',
+        id: 'mask-surface',
+        name: 'Surface',
+        visible: true,
+        surface: createMockSurface('solid'),
+        colors: { primary: 'auto', secondary: 'auto' },
+      },
+      {
+        type: 'processor',
+        id: 'processor-mask',
+        name: 'Mask',
+        visible: true,
+        modifiers: [
+          {
+            type: 'mask',
+            enabled: true,
+            shape: createMockMask('circle', { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false }),
+            invert: false,
+            feather: 0,
+          },
+        ],
+      },
+    ],
+  },
+]
+
+const mockForegroundElements: ForegroundElementConfig[] = [
+  {
+    id: 'title-1',
+    type: 'title',
+    visible: true,
+    position: 'middle-center',
+    content: 'Build Amazing',
+  },
+  {
+    id: 'description-1',
+    type: 'description',
+    visible: true,
+    position: 'middle-center',
+    content: 'Create beautiful, responsive websites.',
+  },
+]
+
+// Helper to create mock layer selection
+function createMockLayerSelection(selectedLayerId: string | null = null): LayerSelectionReturn {
+  const layerId = ref<string | null>(selectedLayerId)
+  const processorType = ref<'effect' | 'mask' | 'processor' | null>(null)
+  const processorLayerId = ref<string | null>(null)
+  const htmlLayerId = ref<'title' | 'description' | null>(null)
+
+  return {
+    layerId: readonly(layerId),
+    processorType: readonly(processorType),
+    processorLayerId: readonly(processorLayerId),
+    htmlLayerId: readonly(htmlLayerId),
+    selection: computed(() => ({
+      layerId: layerId.value,
+      processorType: processorType.value,
+      processorLayerId: processorLayerId.value,
+      htmlLayerId: htmlLayerId.value,
+    })),
+    isCanvasLayerSelected: computed(() => layerId.value !== null),
+    isHtmlLayerSelected: computed(() => htmlLayerId.value !== null),
+    isProcessorSelected: computed(() => processorType.value !== null),
+    selectCanvasLayer: (id: string) => { layerId.value = id },
+    selectProcessor: (id: string, type: 'effect' | 'mask' | 'processor') => {
+      processorType.value = type
+      processorLayerId.value = id
+    },
+    selectHtmlLayer: (id: 'title' | 'description') => { htmlLayerId.value = id },
+    clearSelection: () => {
+      layerId.value = null
+      processorType.value = null
+      processorLayerId.value = null
+      htmlLayerId.value = null
+    },
+    clearProcessorSelection: () => {
+      processorType.value = null
+      processorLayerId.value = null
+    },
+  }
+}
+
+const meta: Meta<typeof LayerPanel> = {
+  title: 'Components/HeroGenerator/LayerPanel',
+  component: LayerPanel,
+  tags: ['autodocs'],
+  decorators: [
+    (story, context) => {
+      return {
+        setup() {
+          const mockLayerSelection = createMockLayerSelection(
+            (context.args as { selectedLayerId?: string }).selectedLayerId ?? null
+          )
+          provide(LayerSelectionKey, mockLayerSelection)
+          return () => h(story())
+        },
+      }
+    },
+  ],
+  argTypes: {
+    layers: { control: 'object' },
+    foregroundElements: { control: 'object' },
+    selectedForegroundElementId: { control: 'text' },
+    expandedLayerIds: { control: 'object' },
+  },
+  parameters: {
+    layout: 'padded',
+    backgrounds: {
+      default: 'light',
+      values: [
+        { name: 'light', value: '#f5f5f5' },
+        { name: 'dark', value: '#1a1a1a' },
+      ],
+    },
+  },
+}
+
+export default meta
+type Story = StoryObj<typeof LayerPanel>
+
+export const Default: Story = {
+  args: {
+    layers: mockLayers,
+    foregroundElements: mockForegroundElements,
+    selectedForegroundElementId: null,
+    expandedLayerIds: new Set(['background-group', 'clip-group']),
+  },
+}
+
+export const Collapsed: Story = {
+  args: {
+    layers: mockLayers,
+    foregroundElements: mockForegroundElements,
+    selectedForegroundElementId: null,
+    expandedLayerIds: new Set(),
+  },
+}
+
+export const WithSelectedLayer: Story = {
+  args: {
+    layers: mockLayers,
+    foregroundElements: mockForegroundElements,
+    selectedForegroundElementId: null,
+    expandedLayerIds: new Set(['background-group', 'clip-group']),
+    selectedLayerId: 'background-surface',
+  },
+}
+
+export const WithSelectedForegroundElement: Story = {
+  args: {
+    layers: mockLayers,
+    foregroundElements: mockForegroundElements,
+    selectedForegroundElementId: 'title-1',
+    expandedLayerIds: new Set(['background-group', 'clip-group']),
+  },
+}
+
+export const EmptyLayers: Story = {
+  args: {
+    layers: [],
+    foregroundElements: [],
+    selectedForegroundElementId: null,
+    expandedLayerIds: new Set(),
+  },
+}
