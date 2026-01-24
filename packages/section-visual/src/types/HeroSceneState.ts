@@ -185,6 +185,15 @@ export interface GradientGrainCurlSurfaceParams {
   sparsity: number
 }
 
+export interface GradientGrainSimplexSurfaceParams {
+  simplexScale: number
+  simplexOctaves: number
+  simplexContrast: number
+  simplexOffset: number
+  seed: number
+  sparsity: number
+}
+
 /**
  * Textile pattern surface params
  */
@@ -242,6 +251,7 @@ export type CustomSurfaceParams =
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
   | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
   | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
+  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
   | ({ id: 'asanoha' } & AsanohaSurfaceParams)
   | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
   | ({ id: 'wave' } & WaveSurfaceParams)
@@ -266,6 +276,7 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
   | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
   | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
+  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
   | ({ id: 'asanoha' } & AsanohaSurfaceParams)
   | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
   | ({ id: 'wave' } & WaveSurfaceParams)

@@ -77,6 +77,7 @@ export type SurfaceParamsUpdate =
   | { id: 'gradientGrainRadial'; centerX?: number; centerY?: number; radialStartAngle?: number; radialSweepAngle?: number; seed?: number; sparsity?: number }
   | { id: 'gradientGrainPerlin'; perlinScale?: number; perlinOctaves?: number; perlinContrast?: number; perlinOffset?: number; seed?: number; sparsity?: number }
   | { id: 'gradientGrainCurl'; perlinScale?: number; perlinOctaves?: number; perlinContrast?: number; perlinOffset?: number; curlIntensity?: number; seed?: number; sparsity?: number }
+  | { id: 'gradientGrainSimplex'; simplexScale?: number; simplexOctaves?: number; simplexContrast?: number; simplexOffset?: number; seed?: number; sparsity?: number }
 
 /**
  * マスク形状パラメータの更新型
