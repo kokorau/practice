@@ -15,5 +15,9 @@ export default defineConfig({
     pool: 'threads',
     // Browser tests (*.browser.test.ts) are excluded from default run
     exclude: ['**/node_modules/**', '**/*.browser.test.ts'],
+    // Ensure workspace packages are inlined for proper module resolution
+    deps: {
+      inline: [/@practice\/.*/],
+    },
   },
 })
