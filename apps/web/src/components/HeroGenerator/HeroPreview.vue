@@ -22,6 +22,7 @@ import type { CompiledHeroView, IntensityProvider, HeroViewConfig } from '@pract
 import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT, renderHeroConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import { useResponsiveScale } from '../../composables/useResponsiveScale'
+import { GPUDeviceManager } from '../../services/GPUDeviceManager'
 import {
   PREVIEW_CONTAINER_PADDING,
   BASE_FONT_SIZE_PX,
@@ -110,7 +111,7 @@ const renderThumbnail = async () => {
 }
 
 // Update canvas size for thumbnail mode
-const updateThumbnailCanvasSize = () => {
+const updateThumbnailCanvasSize = async () => {
   if (!isThumbnail.value) return
 
   const canvas = canvasRef.value
@@ -125,12 +126,16 @@ const updateThumbnailCanvasSize = () => {
     renderer = null
   }
 
-  TextureRenderer.create(canvas).then(r => {
-    renderer = r
+  try {
+    // Use shared GPU device for efficient resource management
+    await GPUDeviceManager.ensureInitialized()
+    const device = GPUDeviceManager.getDeviceSync()
+    const format = GPUDeviceManager.getFormat()
+    renderer = TextureRenderer.createWithSharedDevice(canvas, device, format)
     renderThumbnail()
-  }).catch(e => {
+  } catch (e) {
     console.error('WebGPU not available:', e)
-  })
+  }
 }
 
 // ============================================================
@@ -251,7 +256,11 @@ onMounted(async () => {
   canvas.height = thumbnailCanvasHeight.value
 
   try {
-    renderer = await TextureRenderer.create(canvas)
+    // Use shared GPU device for efficient resource management
+    await GPUDeviceManager.ensureInitialized()
+    const device = GPUDeviceManager.getDeviceSync()
+    const format = GPUDeviceManager.getFormat()
+    renderer = TextureRenderer.createWithSharedDevice(canvas, device, format)
     await renderThumbnail()
   } catch (e) {
     console.error('WebGPU not available:', e)
