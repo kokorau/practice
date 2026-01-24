@@ -52,6 +52,8 @@ export type {
   GradientGrainPerlinParams,
   GradientGrainCurlParams,
   GradientGrainSimplexParams,
+  // Paper texture type
+  PaperTextureParams,
   LinearDepthMapParams,
   CircularDepthMapParams,
   RadialDepthMapParams,
@@ -87,6 +89,7 @@ export {
   createScalesSpec,
   createOgeeSpec,
   createSunburstSpec,
+  createPaperTextureSpec,
   createCircleMaskSpec,
   createRectMaskSpec,
   createBlobMaskSpec,

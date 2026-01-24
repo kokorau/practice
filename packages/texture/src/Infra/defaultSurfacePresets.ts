@@ -151,6 +151,49 @@ const defaultSurfacePresets: SurfacePreset[] = [
   { label: 'Ogee', params: { type: 'ogee', width: 40, height: 60, lineWidth: 2 } },
   { label: 'Sunburst', params: { type: 'sunburst', rays: 12, centerX: 0.5, centerY: 0.5, twist: 0 } },
   { label: 'Spiral', params: { type: 'sunburst', rays: 8, centerX: 0.5, centerY: 0.5, twist: 0.5 } },
+  // Paper textures
+  {
+    label: 'Paper Smooth',
+    params: {
+      type: 'paperTexture',
+      fiberScale: 25,
+      fiberStrength: 0.4,
+      fiberWarp: 0.08,
+      grainDensity: 0.2,
+      grainSize: 1.2,
+      bumpStrength: 0.02,
+      lightAngle: 135,
+      seed: 12345,
+    },
+  },
+  {
+    label: 'Paper Rough',
+    params: {
+      type: 'paperTexture',
+      fiberScale: 15,
+      fiberStrength: 0.7,
+      fiberWarp: 0.15,
+      grainDensity: 0.5,
+      grainSize: 2.0,
+      bumpStrength: 0.05,
+      lightAngle: 135,
+      seed: 54321,
+    },
+  },
+  {
+    label: 'Paper Kraft',
+    params: {
+      type: 'paperTexture',
+      fiberScale: 12,
+      fiberStrength: 0.3,
+      fiberWarp: 0.12,
+      grainDensity: 0.7,
+      grainSize: 2.5,
+      bumpStrength: 0.04,
+      lightAngle: 120,
+      seed: 99999,
+    },
+  },
 ]
 
 /**

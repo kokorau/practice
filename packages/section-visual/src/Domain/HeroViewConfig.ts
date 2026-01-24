@@ -255,6 +255,18 @@ export interface SunburstSurfaceConfig {
   twist: number
 }
 
+export interface PaperTextureSurfaceConfig {
+  type: 'paperTexture'
+  fiberScale: number
+  fiberStrength: number
+  fiberWarp: number
+  grainDensity: number
+  grainSize: number
+  bumpStrength: number
+  lightAngle: number
+  seed: number
+}
+
 
 export type SurfaceConfig =
   | SolidSurfaceConfig
@@ -276,6 +288,7 @@ export type SurfaceConfig =
   | ScalesSurfaceConfig
   | OgeeSurfaceConfig
   | SunburstSurfaceConfig
+  | PaperTextureSurfaceConfig
 
 /** @deprecated Use SurfaceConfig instead */
 export type BackgroundSurfaceConfig = SurfaceConfig
@@ -314,6 +327,7 @@ export const SURFACE_TYPES: SurfaceType[] = [
   'scales',
   'ogee',
   'sunburst',
+  'paperTexture',
 ]
 
 /**

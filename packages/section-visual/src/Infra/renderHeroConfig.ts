@@ -20,6 +20,7 @@ import {
   createScalesSpec,
   createOgeeSpec,
   createSunburstSpec,
+  createPaperTextureSpec,
   // Gradient grain specs (one per depth map type)
   createGradientGrainLinearSpec,
   createGradientGrainCircularSpec,
@@ -410,6 +411,19 @@ export function createBackgroundSpecFromSurface(
       viewportWidth: viewport.width,
       viewportHeight: viewport.height,
     })
+  }
+  if (surface.type === 'paperTexture') {
+    return createPaperTextureSpec({
+      color: color1,
+      fiberScale: surface.fiberScale,
+      fiberStrength: surface.fiberStrength,
+      fiberWarp: surface.fiberWarp,
+      grainDensity: surface.grainDensity,
+      grainSize: surface.grainSize,
+      bumpStrength: surface.bumpStrength,
+      lightAngle: surface.lightAngle,
+      seed: surface.seed,
+    }, viewport)
   }
   // image type is not supported in config-based rendering
   return createSolidSpec({ color: color1 })

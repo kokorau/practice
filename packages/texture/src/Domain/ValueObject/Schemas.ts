@@ -439,6 +439,23 @@ export const SunburstSurfaceSchema = defineSchema({
 
 export type SunburstSurfaceParams = Infer<typeof SunburstSurfaceSchema>
 
+/**
+ * Paper Texture Surface Schema
+ * Subtle paper-like texture with fiber strands and grain particles
+ */
+export const PaperTextureSurfaceSchema = defineSchema({
+  fiberScale: number({ label: 'Fiber Scale', min: 5, max: 50, step: 1, default: 20 }),
+  fiberStrength: number({ label: 'Fiber Strength', min: 0, max: 1, step: 0.05, default: 0.5 }),
+  fiberWarp: number({ label: 'Fiber Warp', min: 0, max: 0.5, step: 0.02, default: 0.1 }),
+  grainDensity: number({ label: 'Grain Density', min: 0, max: 1, step: 0.05, default: 0.3 }),
+  grainSize: number({ label: 'Grain Size', min: 0.5, max: 3, step: 0.1, default: 1.5 }),
+  bumpStrength: number({ label: 'Bump Strength', min: 0, max: 0.1, step: 0.005, default: 0.03 }),
+  lightAngle: number({ label: 'Light Angle', min: 0, max: 360, step: 5, default: 135 }),
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+})
+
+export type PaperTextureSurfaceParams = Infer<typeof PaperTextureSurfaceSchema>
+
 // ============================================================
 // Factory Functions
 // ============================================================
@@ -530,6 +547,9 @@ export const createDefaultOgeeParams = (): OgeeSurfaceParams =>
 export const createDefaultSunburstParams = (): SunburstSurfaceParams =>
   getDefaults(SunburstSurfaceSchema)
 
+export const createDefaultPaperTextureParams = (): PaperTextureSurfaceParams =>
+  getDefaults(PaperTextureSurfaceSchema)
+
 // ============================================================
 // Schema Maps (for dynamic access by type)
 // ============================================================
@@ -567,4 +587,5 @@ export const SurfaceSchemas = {
   scales: ScalesSurfaceSchema,
   ogee: OgeeSurfaceSchema,
   sunburst: SunburstSurfaceSchema,
+  paperTexture: PaperTextureSurfaceSchema,
 } as const

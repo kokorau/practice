@@ -235,6 +235,17 @@ export interface SunburstSurfaceParams {
   twist: number
 }
 
+export interface PaperTextureSurfaceParams {
+  fiberScale: number
+  fiberStrength: number
+  fiberWarp: number
+  grainDensity: number
+  grainSize: number
+  bumpStrength: number
+  lightAngle: number
+  seed: number
+}
+
 /**
  * Custom surface params union type (for midground - includes solid, checker, and gradientGrain variants)
  * Uses 'id' field for consistency with NormalizedSurfaceConfig
@@ -259,6 +270,7 @@ export type CustomSurfaceParams =
   | ({ id: 'scales' } & ScalesSurfaceParams)
   | ({ id: 'ogee' } & OgeeSurfaceParams)
   | ({ id: 'sunburst' } & SunburstSurfaceParams)
+  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
 
 /**
  * Custom background surface params union type
@@ -284,6 +296,7 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'scales' } & ScalesSurfaceParams)
   | ({ id: 'ogee' } & OgeeSurfaceParams)
   | ({ id: 'sunburst' } & SunburstSurfaceParams)
+  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
 
 // ============================================================
 // Section Type
