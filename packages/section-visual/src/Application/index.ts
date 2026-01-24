@@ -69,6 +69,16 @@ export type {
 } from './ProcessorUsecase'
 export { createProcessorUsecase } from './ProcessorUsecase'
 
+// Re-export SelectProcessor UseCase
+export type {
+  SelectableProcessorType,
+  EffectManagerPort,
+  SelectProcessorResult,
+  SelectProcessorUsecase,
+  SelectProcessorUsecaseDeps,
+} from './SelectProcessorUsecase'
+export { createSelectProcessorUsecase } from './SelectProcessorUsecase'
+
 // Re-export compileHeroView
 export type {
   CompileContext,

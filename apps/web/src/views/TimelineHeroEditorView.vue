@@ -23,6 +23,7 @@ import {
   findProcessorTargetSurface,
   normalizeMaskConfig,
   createInMemoryHeroViewPresetRepository,
+  createSelectProcessorUsecase,
 } from '@practice/section-visual'
 import type { ImageLayerNodeConfig } from '@practice/section-visual'
 import type { MaskShapeConfig } from '@practice/section-visual'
@@ -135,6 +136,16 @@ const heroScene = useHeroScene({
   repository: heroConfigSlice,
   getIntensityProvider,
   presetRepository: timelinePresetRepository,
+})
+
+// ============================================================
+// SelectProcessor Usecase (EffectManager Port integration)
+// ============================================================
+const selectProcessorUsecase = createSelectProcessorUsecase({
+  effectManager: {
+    selectLayer: (layerId) => heroScene.filter.effectManager.selectLayer(layerId),
+    setEffectPipeline: (layerId, effects) => heroScene.filter.effectManager.setEffectPipeline(layerId, effects),
+  },
 })
 
 // ============================================================
@@ -306,24 +317,8 @@ const {
   },
   onSelectProcessor: (layerId, type) => {
     selectProcessor(layerId, type)
-    if (type === 'effect') {
-      // layerId is the processor layer ID
-      // Find the processor and its target surface to sync effects
-      const processorLayer = findLayerInTree(layers.value, layerId)
-      if (processorLayer && isProcessorLayerConfig(processorLayer)) {
-        const processor = processorLayer as ProcessorNodeConfig
-        const targetSurface = findProcessorTargetSurface(layers.value, processor.id)
-        if (targetSurface) {
-          // Select the target surface layer in effectManager
-          heroScene.filter.effectManager.selectLayer(targetSurface.id)
-          // Sync effect from processor modifiers to effectManager
-          const effectModifier = processor.modifiers.find((m) => m.type === 'effect')
-          if (effectModifier && effectModifier.type === 'effect') {
-            heroScene.filter.effectManager.setEffectPipeline(targetSurface.id, [effectModifier])
-          }
-        }
-      }
-    }
+    // Use SelectProcessorUsecase for effect sync
+    selectProcessorUsecase.execute(layers.value, layerId, type)
   },
   onClearSelection: () => selectCanvasLayer(''),
 })

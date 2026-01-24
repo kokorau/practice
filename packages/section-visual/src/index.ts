@@ -395,6 +395,12 @@ export type {
   ProcessorModifierType,
   ProcessorUsecase,
   ProcessorUsecaseDeps,
+  // SelectProcessor Usecase types
+  SelectableProcessorType,
+  EffectManagerPort,
+  SelectProcessorResult,
+  SelectProcessorUsecase,
+  SelectProcessorUsecaseDeps,
   // compileHeroView types
   CompileContext,
   IntensityProvider,
@@ -413,6 +419,7 @@ export {
   // Usecases
   createSurfaceUsecase,
   createProcessorUsecase,
+  createSelectProcessorUsecase,
   // ConfigSyncer
   syncBackgroundSurfaceParams,
   syncMaskSurfaceParams,
