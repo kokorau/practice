@@ -401,6 +401,9 @@ export function safeDenormalizeSurfaceConfig(config: NormalizedSurfaceConfig): S
     } else if ($PropertyValue.isRange(prop)) {
       // Use min value as the base/default value for preset matching
       rawParams[key] = prop.min
+    } else if (typeof prop === 'number' || typeof prop === 'string' || typeof prop === 'boolean') {
+      // Already resolved raw value (from CompiledSurface.params)
+      rawParams[key] = prop
     }
   }
   return { type: config.id, ...rawParams } as SurfaceConfig
@@ -421,10 +424,11 @@ export function getSurfaceAsNormalized(config: AnySurfaceConfig): NormalizedSurf
 
 /**
  * Get surface config in legacy format (accepts both formats)
+ * For RangeExpr params, uses the `min` value (base value when intensity=0)
  */
 export function getSurfaceAsLegacy(config: AnySurfaceConfig): SurfaceConfig {
   if (isLegacyTypeSurfaceConfig(config)) return config
-  return denormalizeSurfaceConfig(config)
+  return safeDenormalizeSurfaceConfig(config)
 }
 
 // ============================================================
