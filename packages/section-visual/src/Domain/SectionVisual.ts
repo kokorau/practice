@@ -107,4 +107,51 @@ export const $PropertyValue = {
 
   isRange: (value: PropertyValue): value is RangeExpr =>
     value.type === 'range',
+
+  /**
+   * Extract the static value from a property.
+   * - For primitive values, return as-is.
+   * - For StaticValue, return the inner value.
+   * - For RangeExpr, return the 'min' value as the default static representation.
+   */
+  extractStatic: (prop: unknown): unknown => {
+    if (prop === null || typeof prop !== 'object' || !('type' in prop)) {
+      // Primitive value (number, string, etc.)
+      return prop
+    }
+    const typed = prop as { type: string; value?: unknown; min?: number }
+    if (typed.type === 'static') {
+      return typed.value
+    }
+    if (typed.type === 'range') {
+      return typed.min
+    }
+    // Unknown type
+    return null
+  },
+
+  /**
+   * Convert a record of params (which may contain PropertyValue) to static values.
+   * Returns both the static values and a flag indicating if any params have DSL expressions.
+   */
+  toStaticParams: <T extends Record<string, unknown>>(
+    params: Record<string, unknown>
+  ): { staticParams: T; hasDSL: boolean } => {
+    const staticParams: Record<string, unknown> = {}
+    let hasDSL = false
+
+    for (const [key, value] of Object.entries(params)) {
+      if (
+        value !== null &&
+        typeof value === 'object' &&
+        'type' in value &&
+        (value as { type: string }).type === 'range'
+      ) {
+        hasDSL = true
+      }
+      staticParams[key] = $PropertyValue.extractStatic(value)
+    }
+
+    return { staticParams: staticParams as T, hasDSL }
+  },
 } as const

@@ -181,6 +181,29 @@ export const findParentLayerInTree = (
 }
 
 /**
+ * Find the first Processor layer that contains a Mask modifier.
+ * Searches recursively through the layer tree (including Group children).
+ *
+ * @param layers - Layers to search through
+ * @returns The ProcessorNode containing a mask modifier, or null if not found
+ */
+export const findProcessorWithMask = (layers: LayerNodeConfig[]): ProcessorNodeConfig | null => {
+  for (const layer of layers) {
+    if (isProcessorLayerConfig(layer)) {
+      const hasMask = layer.modifiers.some(isMaskProcessorConfig)
+      if (hasMask) {
+        return layer
+      }
+    }
+    if (isGroupLayerConfig(layer)) {
+      const found = findProcessorWithMask(layer.children)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+/**
  * Find the target Surface layer that a Processor applies to.
  * A Processor applies to accumulated siblings that come before it in the parent Group.
  * This returns the first Surface among those preceding siblings.

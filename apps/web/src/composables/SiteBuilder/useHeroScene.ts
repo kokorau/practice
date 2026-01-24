@@ -494,7 +494,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   const heroSurfaceParams = useHeroSurfaceParams({
     repoConfig,
-    heroViewRepository,
+    surfaceUsecase,
     selectedLayerId,
     textureColor1: heroColors.textureColor1,
     textureColor2: heroColors.textureColor2,

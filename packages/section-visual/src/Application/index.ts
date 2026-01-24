@@ -45,8 +45,20 @@ export type {
 export { createForegroundElementUsecase } from './ForegroundElementUsecase'
 
 // Re-export ConfigSyncer
-export type { SyncBackgroundSurfaceResult, SyncMaskSurfaceResult } from './ConfigSyncer'
-export { syncBackgroundSurfaceParams, syncMaskSurfaceParams } from './ConfigSyncer'
+export type {
+  SyncBackgroundSurfaceResult,
+  SyncMaskSurfaceResult,
+  SyncMaskShapeResult,
+  SyncSurfaceParamsForLayerResult,
+  SyncRawParamsResult,
+} from './ConfigSyncer'
+export {
+  syncBackgroundSurfaceParams,
+  syncMaskSurfaceParams,
+  syncMaskShapeParams,
+  syncSurfaceParamsForLayer,
+  syncRawParams,
+} from './ConfigSyncer'
 
 // Re-export Processor UseCase
 export type {

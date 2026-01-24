@@ -356,6 +356,7 @@ export {
   updateLayerInTree,
   removeLayerFromTree,
   findParentLayerInTree,
+  findProcessorWithMask,
   findProcessorTargetSurface,
   moveLayerInTree,
   canMoveLayerInTree,
