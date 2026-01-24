@@ -326,8 +326,10 @@ const {
   },
   onSelectProcessor: (layerId, type) => {
     selectProcessor(layerId, type)
-    // Use SelectProcessorUsecase for effect sync
-    selectProcessorUsecase.execute(layers.value, layerId, type)
+    // Use SelectProcessorUsecase for effect sync (only for effect/mask types)
+    if (type === 'effect' || type === 'mask') {
+      selectProcessorUsecase.execute(layers.value, layerId, type)
+    }
   },
   onClearSelection: () => selectCanvasLayer(''),
 })

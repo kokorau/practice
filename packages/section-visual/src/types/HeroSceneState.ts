@@ -323,8 +323,9 @@ export type SectionType =
 
 /**
  * Mask pattern with normalized config for pipeline-based preview
+ * Uses Omit to replace maskConfig type (MaskShapeConfig -> NormalizedMaskConfig)
  */
-export interface MaskPatternWithNormalizedConfig extends MaskPattern {
+export interface MaskPatternWithNormalizedConfig extends Omit<MaskPattern, 'maskConfig'> {
   maskConfig: NormalizedMaskConfig
 }
 
