@@ -218,3 +218,48 @@ export const EmptyLayers: Story = {
     expandedLayerIds: new Set(),
   },
 }
+
+// Test Effect: Blur preset structure - processor at top level
+const mockLayersWithTopLevelProcessor: LayerNodeConfig[] = [
+  {
+    type: 'group',
+    id: 'background-group',
+    name: 'Background',
+    visible: true,
+    children: [
+      {
+        type: 'surface',
+        id: 'background',
+        name: 'Background Surface',
+        visible: true,
+        surface: createMockSurface('grid', { lineWidth: 2, cellSize: 32 }),
+        colors: { primary: 'B', secondary: 'F1' },
+      },
+    ],
+  },
+  {
+    type: 'processor',
+    id: 'processor-blur',
+    name: 'Blur Effect',
+    visible: true,
+    modifiers: [
+      {
+        type: 'effect',
+        id: 'blur',
+        params: {
+          enabled: $PropertyValue.static(true),
+          radius: $PropertyValue.static(15),
+        },
+      },
+    ],
+  },
+]
+
+export const TopLevelProcessor: Story = {
+  args: {
+    layers: mockLayersWithTopLevelProcessor,
+    foregroundElements: [],
+    selectedForegroundElementId: null,
+    expandedLayerIds: new Set(['background-group']),
+  },
+}
