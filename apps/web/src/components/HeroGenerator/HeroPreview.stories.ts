@@ -75,7 +75,7 @@ const meta: Meta<typeof HeroPreview> = {
     },
   },
   decorators: [
-    (story) => ({
+    () => ({
       template: '<div style="width: 640px; max-width: 100%;"><story /></div>',
     }),
   ],
