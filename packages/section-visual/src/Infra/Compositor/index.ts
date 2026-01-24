@@ -75,6 +75,7 @@ export {
 export {
   buildPipeline,
   type PipelineResult,
+  type BuildPipelineOptions,
 } from './buildPipeline'
 
 // Pipeline Execution

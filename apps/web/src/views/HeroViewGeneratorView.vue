@@ -709,10 +709,7 @@ const handleImageUpdate = (key: string, value: unknown) => {
       <HeroPreview
         v-show="activeTab === 'generator'"
         ref="heroPreviewRef"
-        :foreground-config="heroScene.foreground.foregroundConfig.value"
-        :title-color="heroScene.foreground.foregroundTitleColor.value"
-        :body-color="heroScene.foreground.foregroundBodyColor.value"
-        :element-colors="heroScene.foreground.foregroundElementColors.value"
+        :compiled-view="heroScene.foreground.compiledView.value"
         class="hero-tab-content"
       />
 

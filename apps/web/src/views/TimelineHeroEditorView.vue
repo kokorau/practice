@@ -529,10 +529,7 @@ const shapePatternsWithConfig = computed(() => {
       <main class="hero-main">
         <HeroPreview
           ref="heroPreviewRef"
-          :foreground-config="heroScene.foreground.foregroundConfig.value"
-          :title-color="heroScene.foreground.foregroundTitleColor.value"
-          :body-color="heroScene.foreground.foregroundBodyColor.value"
-          :element-colors="heroScene.foreground.foregroundElementColors.value"
+          :compiled-view="heroScene.foreground.compiledView.value"
           class="hero-preview"
         />
       </main>

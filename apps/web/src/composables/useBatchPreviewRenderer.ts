@@ -4,7 +4,7 @@
  * 複数のHeroViewConfigを単一のオフスクリーンレンダラーで順次レンダリングし、
  * 結果をdata URLとしてキャッシュするcomposable
  *
- * これにより、複数のHeroPreviewThumbnailが同時にWebGPUコンテキストを作成する問題を回避
+ * これにより、複数のHeroPreview (thumbnail variant) が同時にWebGPUコンテキストを作成する問題を回避
  */
 
 import { ref, watch, onUnmounted, type Ref } from 'vue'

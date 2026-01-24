@@ -50,9 +50,7 @@ onUnmounted(() => {
   <section class="hero-canvas-section context-canvas">
     <HeroPreview
       ref="heroPreviewRef"
-      :foreground-config="heroScene.foreground.foregroundConfig.value"
-      :title-color="heroScene.foreground.foregroundTitleColor.value"
-      :body-color="heroScene.foreground.foregroundBodyColor.value"
+      :compiled-view="heroScene.foreground.compiledView.value"
     />
   </section>
 </template>

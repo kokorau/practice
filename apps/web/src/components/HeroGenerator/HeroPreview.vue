@@ -1,16 +1,34 @@
 <script setup lang="ts">
-import { ref, computed, type ComponentPublicInstance } from 'vue'
+/**
+ * HeroPreview
+ *
+ * Unified preview component for HeroView rendering.
+ *
+ * Variants:
+ * - 'main': Full preview with external canvas control (exposes canvasRef)
+ * - 'thumbnail': Self-contained WebGPU rendering for selection UI
+ *
+ * Both variants render the complete CompiledHeroView including foreground elements.
+ */
+
+import { ref, computed, onMounted, onUnmounted, watch, useId, type ComponentPublicInstance } from 'vue'
+import { TextureRenderer } from '@practice/texture'
 import {
-  compileForegroundLayout,
-  DEFAULT_FOREGROUND_CONFIG,
-  type ForegroundConfig,
-  type PositionedElement,
+  layoutCompiledForeground,
+  type CompiledPositionedElement,
   type ForegroundElementType,
 } from '../../composables/SiteBuilder'
-import { ensureFontLoaded } from '@practice/font'
-import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '@practice/section-visual'
+import type { CompiledHeroView, IntensityProvider, HeroViewConfig } from '@practice/section-visual'
+import { HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT, renderHeroConfig } from '@practice/section-visual'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import { useResponsiveScale } from '../../composables/useResponsiveScale'
-import { PREVIEW_CONTAINER_PADDING, BASE_FONT_SIZE_PX } from '../../constants/preview'
+import {
+  PREVIEW_CONTAINER_PADDING,
+  BASE_FONT_SIZE_PX,
+  PREVIEW_ORIGINAL_WIDTH,
+  PREVIEW_THUMBNAIL_WIDTH,
+  PREVIEW_THUMBNAIL_HEIGHT,
+} from '../../constants/preview'
 
 /**
  * Element bounds in canvas coordinate system
@@ -22,63 +40,130 @@ export type ElementBounds = {
   height: number
 }
 
-const props = withDefaults(defineProps<{
-  foregroundConfig?: ForegroundConfig
-  titleColor?: string
-  bodyColor?: string
-  elementColors?: Map<string, string>
-}>(), {
-  foregroundConfig: () => DEFAULT_FOREGROUND_CONFIG,
-  titleColor: undefined,
-  bodyColor: undefined,
-  elementColors: undefined,
-})
+const props = defineProps<{
+  /**
+   * Pre-compiled view data (required for main variant, optional for thumbnail)
+   */
+  compiledView?: CompiledHeroView
+  /**
+   * Variant mode:
+   * - 'main': Exposes canvasRef for external rendering control, requires compiledView
+   * - 'thumbnail': Self-contained WebGPU rendering, requires config + palette
+   */
+  variant?: 'main' | 'thumbnail'
+  /**
+   * HeroViewConfig for WebGPU rendering (required for thumbnail mode)
+   */
+  config?: HeroViewConfig
+  /**
+   * PrimitivePalette for WebGPU rendering (required for thumbnail mode)
+   */
+  palette?: PrimitivePalette
+  /**
+   * Optional intensity provider for RangeExpr resolution (thumbnail only)
+   */
+  intensityProvider?: IntensityProvider
+}>()
 
+// ============================================================
+// Variant Detection
+// ============================================================
+
+const isThumbnail = computed(() => props.variant === 'thumbnail')
+
+// ============================================================
+// DOM Refs
+// ============================================================
+
+const canvasId = useId()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLElement | null>(null)
 const frameRef = ref<HTMLElement | null>(null)
 const titleRef = ref<HTMLElement | null>(null)
 const descriptionRef = ref<HTMLElement | null>(null)
 
+// ============================================================
+// Thumbnail Mode: Self-contained WebGPU Rendering
+// ============================================================
+
+let renderer: TextureRenderer | null = null
+let resizeObserver: ResizeObserver | null = null
+
+// Thumbnail canvas dimensions (updated by ResizeObserver)
+const thumbnailCanvasWidth = ref(PREVIEW_THUMBNAIL_WIDTH)
+const thumbnailCanvasHeight = ref(PREVIEW_THUMBNAIL_HEIGHT)
+
+// Calculate texture scale for thumbnail mode
+const thumbnailTextureScale = computed(() => {
+  return thumbnailCanvasWidth.value / PREVIEW_ORIGINAL_WIDTH
+})
+
+// Render for thumbnail mode
+const renderThumbnail = async () => {
+  if (!renderer || !isThumbnail.value) return
+  if (!props.config || !props.palette) return
+
+  await renderHeroConfig(renderer, props.config, props.palette, {
+    scale: thumbnailTextureScale.value,
+    intensityProvider: props.intensityProvider,
+  })
+}
+
+// Update canvas size for thumbnail mode
+const updateThumbnailCanvasSize = () => {
+  if (!isThumbnail.value) return
+
+  const canvas = canvasRef.value
+  if (!canvas) return
+
+  canvas.width = thumbnailCanvasWidth.value
+  canvas.height = thumbnailCanvasHeight.value
+
+  // Re-initialize renderer with new size
+  if (renderer) {
+    renderer.destroy()
+    renderer = null
+  }
+
+  TextureRenderer.create(canvas).then(r => {
+    renderer = r
+    renderThumbnail()
+  }).catch(e => {
+    console.error('WebGPU not available:', e)
+  })
+}
+
+// ============================================================
+// Main Mode: Responsive Scale
+// ============================================================
+
 const scale = useResponsiveScale(containerRef, {
   originalWidth: HERO_CANVAS_WIDTH,
   originalHeight: HERO_CANVAS_HEIGHT,
-  padding: PREVIEW_CONTAINER_PADDING,
+  padding: isThumbnail.value ? 0 : PREVIEW_CONTAINER_PADDING,
 })
 
-const positionedGroups = computed(() => compileForegroundLayout(props.foregroundConfig))
+const positionedGroups = computed(() => {
+  if (!props.compiledView) return []
+  return layoutCompiledForeground(props.compiledView.foreground)
+})
 
 /**
- * Get inline style for an element, including font-family, fontSize, fontWeight, letterSpacing, lineHeight, and color
+ * Get inline style for an element.
+ * All values are pre-resolved in CompiledPositionedElement.
  */
-const getElementStyle = (el: PositionedElement): Record<string, string> => {
+const getElementStyle = (el: CompiledPositionedElement): Record<string, string> => {
   const style: Record<string, string> = {}
-  const fontFamily = ensureFontLoaded(el.fontId)
-  if (fontFamily) {
-    style.fontFamily = fontFamily
-  }
-  if (el.fontSize !== undefined) {
-    // Convert rem to px for consistent rendering at base size
-    style.fontSize = `${el.fontSize * BASE_FONT_SIZE_PX}px`
-  }
-  if (el.fontWeight !== undefined) {
-    style.fontWeight = String(el.fontWeight)
-  }
-  if (el.letterSpacing !== undefined) {
-    style.letterSpacing = `${el.letterSpacing}em`
-  }
-  if (el.lineHeight !== undefined) {
-    style.lineHeight = String(el.lineHeight)
-  }
-  // Apply color: first check element-specific color from elementColors map
-  if (props.elementColors?.has(el.id)) {
-    style.color = props.elementColors.get(el.id)!
-  } else if (el.type === 'title' && props.titleColor) {
-    // Fallback to type-based color
-    style.color = props.titleColor
-  } else if (el.type === 'description' && props.bodyColor) {
-    style.color = props.bodyColor
-  }
+
+  // All values are pre-resolved in compiledView
+  style.fontFamily = el.fontFamily
+  // Convert rem to px for consistent rendering at base size
+  style.fontSize = `${el.fontSize * BASE_FONT_SIZE_PX}px`
+  style.fontWeight = String(el.fontWeight)
+  style.letterSpacing = `${el.letterSpacing}em`
+  style.lineHeight = String(el.lineHeight)
+  style.color = el.color
+
   return style
 }
 
@@ -131,6 +216,70 @@ const setElementRef = (el: HTMLElement | null, type: ForegroundElementType) => {
   }
 }
 
+// ============================================================
+// Lifecycle: Thumbnail Mode Initialization
+// ============================================================
+
+onMounted(async () => {
+  if (!isThumbnail.value) return
+
+  const canvas = canvasRef.value
+  const container = containerRef.value
+  if (!canvas || !container) return
+
+  // Set up ResizeObserver for responsive sizing
+  resizeObserver = new ResizeObserver(entries => {
+    const entry = entries[0]
+    if (!entry) return
+    const { width } = entry.contentRect
+    if (width > 0) {
+      thumbnailCanvasWidth.value = Math.round(width)
+      thumbnailCanvasHeight.value = Math.round(width * 9 / 16)
+      updateThumbnailCanvasSize()
+    }
+  })
+  resizeObserver.observe(container)
+
+  // Initial size
+  const rect = container.getBoundingClientRect()
+  if (rect.width > 0) {
+    thumbnailCanvasWidth.value = Math.round(rect.width)
+    thumbnailCanvasHeight.value = Math.round(rect.width * 9 / 16)
+  }
+
+  canvas.width = thumbnailCanvasWidth.value
+  canvas.height = thumbnailCanvasHeight.value
+
+  try {
+    renderer = await TextureRenderer.create(canvas)
+    await renderThumbnail()
+  } catch (e) {
+    console.error('WebGPU not available:', e)
+  }
+})
+
+onUnmounted(() => {
+  if (!isThumbnail.value) return
+  resizeObserver?.disconnect()
+  renderer?.destroy()
+  renderer = null
+})
+
+// Re-render when config, palette, or intensityProvider changes (thumbnail mode only)
+watch(
+  () => [props.config, props.palette, props.intensityProvider],
+  () => {
+    if (isThumbnail.value) {
+      renderThumbnail()
+    }
+  },
+  { deep: true }
+)
+
+// ============================================================
+// Expose (main mode only needs canvasRef and getElementBounds)
+// ============================================================
+
 defineExpose({
   canvasRef,
   getElementBounds,
@@ -138,7 +287,21 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="containerRef" class="hero-preview-container">
+  <!-- Thumbnail variant: simpler structure with responsive canvas -->
+  <div
+    v-if="isThumbnail"
+    ref="containerRef"
+    class="hero-preview-container thumbnail"
+  >
+    <canvas :id="canvasId" ref="canvasRef" class="hero-preview-canvas" />
+  </div>
+
+  <!-- Main variant: full preview with scaled frame -->
+  <div
+    v-else
+    ref="containerRef"
+    class="hero-preview-container"
+  >
     <div class="hero-preview-wrapper" :style="wrapperStyle">
       <div ref="frameRef" class="hero-preview-frame hero-palette-preview context-canvas" :style="frameStyle">
         <!-- 後景: テクスチャ or カスタム画像 (Canvas に描画) -->
@@ -173,6 +336,10 @@ defineExpose({
 </template>
 
 <style scoped>
+/* ============================================================
+   Main Variant Styles
+   ============================================================ */
+
 /* Generator Preview */
 .hero-preview-container {
   flex: 1;
@@ -182,6 +349,30 @@ defineExpose({
   padding: 2rem;
   overflow: hidden;
 }
+
+/* ============================================================
+   Thumbnail Variant Styles
+   ============================================================ */
+
+.hero-preview-container.thumbnail {
+  padding: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.hero-preview-canvas {
+  width: 100%;
+  height: 100%;
+  background: oklch(0.92 0.01 260);
+}
+
+:global(.dark) .hero-preview-canvas {
+  background: oklch(0.22 0.02 260);
+}
+
+/* ============================================================
+   Shared Styles
+   ============================================================ */
 
 .hero-preview-wrapper {
   position: relative;

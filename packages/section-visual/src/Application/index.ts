@@ -55,3 +55,44 @@ export type {
   ProcessorUsecaseDeps,
 } from './ProcessorUsecase'
 export { createProcessorUsecase } from './ProcessorUsecase'
+
+// Re-export compileHeroView
+export type {
+  CompileContext,
+  IntensityProvider,
+  ForegroundColorContext,
+} from './compileHeroView'
+export {
+  compileHeroView,
+  DEFAULT_INTENSITY_PROVIDER,
+  createDefaultColorContext,
+} from './compileHeroView'
+
+// Re-export resolvers
+export {
+  resolveKeyToRgba,
+  resolveKeyToCss,
+  resolveKeyToOklch,
+  resolveSurfaceColorKey,
+  getCanvasSurfaceKey,
+  getSurfaceKeyForContext,
+  oklchToRgba,
+  oklchToCss,
+} from './resolvers/resolveColors'
+
+export {
+  resolveParams,
+  resolvePropertyValue,
+  resolvePropertyValueToNumber,
+  resolvePropertyValueToString,
+  resolvePropertyValueToBoolean,
+} from './resolvers/resolvePropertyValue'
+
+export type { FontResolver } from './resolvers/resolveForeground'
+export {
+  compileForegroundLayer,
+  compileForegroundElement,
+  resolveFontFamily,
+  resolveElementColor,
+  DEFAULT_FONT_RESOLVER,
+} from './resolvers/resolveForeground'

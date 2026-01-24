@@ -6,7 +6,7 @@
  *
  * previewMode:
  * - 'mask': 従来のMaskPatternThumbnailを使用
- * - 'hero': HeroPreviewThumbnailで完全なHeroViewプレビューを表示
+ * - 'hero': HeroPreview (thumbnail variant) で完全なHeroViewプレビューを表示
  *
  * @deprecated Use EffectorSectionPanel instead
  * This component is kept for backward compatibility
@@ -16,7 +16,7 @@ import type { ObjectSchema } from '@practice/schema'
 import type { MaskPattern, TextureRenderSpec, RGBA } from '@practice/texture'
 import SchemaFields from '../../SchemaFields.vue'
 import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
-import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
+import HeroPreview from '../HeroPreview.vue'
 import type { HeroViewConfig, MaskProcessorConfig, NormalizedMaskConfig } from '@practice/section-visual'
 import { normalizeMaskConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -114,8 +114,9 @@ const previewConfigs = computed(() => {
       :class="{ active: selectedIndex === i }"
       @click="emit('update:selectedIndex', i)"
     >
-      <HeroPreviewThumbnail
+      <HeroPreview
         v-if="isHeroMode && previewConfigs && previewConfigs[i] && palette"
+        variant="thumbnail"
         :config="previewConfigs[i]!"
         :palette="palette"
       />

@@ -12,6 +12,7 @@ export { useHeroPresets, type UseHeroPresetsOptions, type UseHeroPresetsReturn }
 export { createSurfacePatterns, type CreateSurfacePatternsOptions, type SurfacePatternItem } from './createSurfacePatterns'
 export {
   compileForegroundLayout,
+  layoutCompiledForeground,
   DEFAULT_FOREGROUND_CONFIG,
   GRID_POSITIONS,
   ELEMENT_TAG,
@@ -21,4 +22,6 @@ export {
   type ForegroundElementConfig,
   type PositionedGroup,
   type PositionedElement,
+  type CompiledPositionedGroup,
+  type CompiledPositionedElement,
 } from './foregroundLayout'

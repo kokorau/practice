@@ -16,6 +16,8 @@ import type {
   HeroPrimitiveKey,
   SingleEffectConfig,
 } from '../../Domain/HeroViewConfig'
+import type { IntensityProvider } from '../../Application/resolvers/resolvePropertyValue'
+import { resolvePropertyValueToNumber, DEFAULT_INTENSITY_PROVIDER } from '../../Application/resolvers/resolvePropertyValue'
 import {
   getProcessorMask,
   DEFAULT_LAYER_BACKGROUND_COLORS,
@@ -68,6 +70,9 @@ interface BuildContext {
 
   /** Mask surface key based on semantic context */
   maskSurfaceKey: string
+
+  /** Intensity provider for RangeExpr resolution */
+  intensityProvider: IntensityProvider
 }
 
 // ============================================================
@@ -177,13 +182,17 @@ function isPropertyValue(value: unknown): value is PropertyValue {
 /**
  * Extract raw value from a potential PropertyValue
  * Handles: PropertyValue objects, raw values (number, string, boolean)
+ * Uses intensityProvider to resolve RangeExpr bindings
  */
-function extractRawValue(value: unknown): unknown {
+function extractRawValue(value: unknown, intensityProvider: IntensityProvider): unknown {
   if (isPropertyValue(value)) {
     if ($PropertyValue.isStatic(value)) {
       return value.value
     }
-    // RangeExpr - return 0 as fallback (should be resolved before this point)
+    // RangeExpr - resolve using intensityProvider
+    if ($PropertyValue.isRange(value)) {
+      return resolvePropertyValueToNumber(value, intensityProvider)
+    }
     return 0
   }
   // Already a raw value
@@ -194,10 +203,13 @@ function extractRawValue(value: unknown): unknown {
  * Extract raw values from effect params
  * Converts PropertyValue objects to their underlying values
  */
-function extractEffectParams(params: Record<string, unknown>): Record<string, unknown> {
+function extractEffectParams(
+  params: Record<string, unknown>,
+  intensityProvider: IntensityProvider
+): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(params)) {
-    result[key] = extractRawValue(value)
+    result[key] = extractRawValue(value, intensityProvider)
   }
   return result
 }
@@ -251,7 +263,8 @@ function buildProcessorNode(
   id: string,
   inputNode: TextureProducingNode,
   processor: ProcessorNodeConfig,
-  nodes: Array<RenderNode | CompositorNode | OutputNode>
+  nodes: Array<RenderNode | CompositorNode | OutputNode>,
+  intensityProvider: IntensityProvider
 ): TextureProducingNode {
   let currentNode: TextureProducingNode = inputNode
 
@@ -277,8 +290,8 @@ function buildProcessorNode(
   if (effectConfigs.length > 0) {
     const effects: EffectConfig[] = effectConfigs.map((e) => ({
       id: e.id,
-      // Extract raw values from PropertyValue objects
-      params: extractEffectParams(e.params as Record<string, unknown>),
+      // Extract raw values from PropertyValue objects using intensityProvider
+      params: extractEffectParams(e.params as Record<string, unknown>, intensityProvider),
     }))
     const effectsNode = createEffectChainCompositorNode(`${id}-effects`, currentNode, effects)
     nodes.push(effectsNode)
@@ -360,7 +373,7 @@ function buildGroupNode(
       }
 
       // Apply processor (mask and/or effects)
-      const processed = buildProcessorNode(childId, accumulated, child, nodes)
+      const processed = buildProcessorNode(childId, accumulated, child, nodes, ctx.intensityProvider)
 
       // Reset accumulation with processed result
       accumulatedNodes = [processed]
@@ -405,25 +418,40 @@ export interface PipelineResult {
 }
 
 /**
+ * Options for pipeline building
+ */
+export interface BuildPipelineOptions {
+  /**
+   * Intensity provider for RangeExpr resolution (animation support)
+   * If not provided, all RangeExpr will use intensity=0 (min value)
+   */
+  intensityProvider?: IntensityProvider
+}
+
+/**
  * Build a compositor pipeline from HeroViewConfig
  *
  * @param config - HeroViewConfig to convert
  * @param palette - PrimitivePalette for color resolution
+ * @param options - Optional build options
  * @returns Pipeline result with output node
  */
 export function buildPipeline(
   config: HeroViewConfig,
-  palette: PrimitivePalette
+  palette: PrimitivePalette,
+  options?: BuildPipelineOptions
 ): PipelineResult {
   const isDark = isDarkTheme(palette)
   const semanticContext = config.colors.semanticContext ?? 'canvas'
   const maskSurfaceKey = getMaskSurfaceKey(semanticContext, isDark)
+  const intensityProvider = options?.intensityProvider ?? DEFAULT_INTENSITY_PROVIDER
 
   const ctx: BuildContext = {
     config,
     palette,
     isDark,
     maskSurfaceKey,
+    intensityProvider,
   }
 
   const nodes: Array<RenderNode | CompositorNode | OutputNode> = []
@@ -493,7 +521,7 @@ export function buildPipeline(
   for (let i = 0; i < rootProcessors.length; i++) {
     const processor = rootProcessors[i]!
     const processorId = processor.id || `root-processor-${i}`
-    finalNode = buildProcessorNode(processorId, finalNode, processor, nodes)
+    finalNode = buildProcessorNode(processorId, finalNode, processor, nodes, ctx.intensityProvider)
   }
 
   // 6. Build canvas output node

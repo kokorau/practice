@@ -54,6 +54,8 @@ import {
   type HeroViewRepository,
   type LayerDropPosition,
   type ModifierDropPosition,
+  type CompiledHeroView,
+  type FontResolver,
   createDefaultEffectConfig,
   createDefaultForegroundConfig,
   updateTextLayerText,
@@ -96,7 +98,9 @@ import {
   isGroupLayerConfig,
   createProcessorUsecase,
   type ProcessorUsecase,
+  compileHeroView,
 } from '@practice/section-visual'
+import { ensureFontLoaded } from '@practice/font'
 import { createLayerSelection, type LayerSelectionReturn } from '../useLayerSelection'
 
 // Import extracted composables
@@ -410,6 +414,38 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     isDark,
     canvasImageData,
     foregroundConfig,
+  })
+
+  // ============================================================
+  // Font Resolver for compileHeroView
+  // ============================================================
+  const fontResolver: FontResolver = (fontId) => {
+    if (!fontId) return 'system-ui, sans-serif'
+    return ensureFontLoaded(fontId) ?? 'system-ui, sans-serif'
+  }
+
+  // ============================================================
+  // Compiled HeroView (source of truth for rendering)
+  // ============================================================
+  const compiledView = computed((): CompiledHeroView => {
+    // Get current config with foreground from local state
+    const config: HeroViewConfig = {
+      ...repoConfig.value,
+      foreground: foregroundConfig.value,
+    }
+
+    // Create color context with font resolver
+    const colorContext = {
+      ...heroColors.foregroundColorContext.value,
+      fontResolver,
+    }
+
+    return compileHeroView(
+      config,
+      primitivePalette.value,
+      isDark.value,
+      { foregroundColorContext: colorContext }
+    )
   })
 
   // ============================================================
@@ -1101,6 +1137,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     foregroundElementColors: heroColors.foregroundElementColors,
     foregroundTitleAutoKey: heroColors.foregroundTitleAutoKey,
     foregroundBodyAutoKey: heroColors.foregroundBodyAutoKey,
+    compiledView,
   }
 
   const preset: PresetState = {
