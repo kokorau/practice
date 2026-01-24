@@ -7,6 +7,7 @@ import type {
   ForegroundLayerConfig,
   ForegroundElementType,
   HeroPrimitiveKey,
+  CompiledForegroundLayer,
 } from '@practice/section-visual'
 import { createDefaultForegroundConfig } from '@practice/section-visual'
 
@@ -107,3 +108,73 @@ export function compileForegroundLayout(config: ForegroundConfig): PositionedGro
 // Default Config
 // ============================================================
 export const DEFAULT_FOREGROUND_CONFIG: ForegroundConfig = createDefaultForegroundConfig()
+
+// ============================================================
+// Compiled Layout Types (for CompiledHeroView)
+// ============================================================
+
+/**
+ * Positioned element from CompiledForegroundElement
+ * All values are pre-resolved (fontFamily, color as CSS)
+ */
+export interface CompiledPositionedElement {
+  id: string
+  type: ForegroundElementType
+  content: string
+  className: string
+  tag: 'h1' | 'p'
+  fontFamily: string
+  fontSize: number
+  fontWeight: number
+  letterSpacing: number
+  lineHeight: number
+  color: string
+}
+
+export interface CompiledPositionedGroup {
+  position: GridPosition
+  elements: CompiledPositionedElement[]
+}
+
+/**
+ * Layout compiled foreground elements into positioned groups
+ * Works with pre-resolved CompiledForegroundLayer
+ */
+export function layoutCompiledForeground(foreground: CompiledForegroundLayer): CompiledPositionedGroup[] {
+  // Filter visible elements
+  const visibleElements = foreground.elements.filter(el => el.visible)
+
+  // Group by position
+  const groupMap = new Map<GridPosition, CompiledPositionedElement[]>()
+
+  for (const el of visibleElements) {
+    const existing = groupMap.get(el.position) ?? []
+    existing.push({
+      id: el.id,
+      type: el.type,
+      content: el.content,
+      className: ELEMENT_CLASS[el.type],
+      tag: ELEMENT_TAG[el.type],
+      fontFamily: el.fontFamily,
+      fontSize: el.fontSize,
+      fontWeight: el.fontWeight,
+      letterSpacing: el.letterSpacing,
+      lineHeight: el.lineHeight,
+      color: el.color,
+    })
+    groupMap.set(el.position, existing)
+  }
+
+  // Sort elements within each group by order
+  for (const elements of groupMap.values()) {
+    elements.sort((a, b) => ELEMENT_ORDER[a.type] - ELEMENT_ORDER[b.type])
+  }
+
+  // Convert to array
+  const result: CompiledPositionedGroup[] = []
+  for (const [position, elements] of groupMap) {
+    result.push({ position, elements })
+  }
+
+  return result
+}

@@ -22,7 +22,7 @@ export {
 export {
   // Surface
   SurfaceRenderNode,
-  createSurfaceRenderNode,
+  createSurfaceRenderNodeFromCompiled,
   type SurfaceRenderNodeConfig,
   // Mask
   MaskRenderNode,
@@ -75,6 +75,7 @@ export {
 export {
   buildPipeline,
   type PipelineResult,
+  type BuildPipelineOptions,
 } from './buildPipeline'
 
 // Pipeline Execution

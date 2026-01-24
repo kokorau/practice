@@ -1064,3 +1064,34 @@ export {
   createPropertyResolver,
   resolveHeroViewConfig,
 } from './PropertyResolver'
+
+// ============================================================
+// CompiledHeroView
+// ============================================================
+
+export type {
+  CompiledHeroView,
+  CompiledLayerNode,
+  CompiledSurfaceLayerNode,
+  CompiledTextLayerNode,
+  CompiledImageLayerNode,
+  CompiledGroupLayerNode,
+  CompiledProcessorLayerNode,
+  CompiledSurface,
+  CompiledMaskShape,
+  CompiledMaskProcessor,
+  CompiledEffect,
+  CompiledProcessorConfig,
+  CompiledForegroundLayer,
+  CompiledForegroundElement,
+} from './CompiledHeroView'
+
+export {
+  isCompiledSurfaceLayerNode,
+  isCompiledTextLayerNode,
+  isCompiledImageLayerNode,
+  isCompiledGroupLayerNode,
+  isCompiledProcessorLayerNode,
+  isCompiledEffect,
+  isCompiledMaskProcessor,
+} from './CompiledHeroView'

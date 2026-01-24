@@ -36,6 +36,34 @@
  * ```
  */
 
+// Domain - CompiledHeroView
+export type {
+  CompiledHeroView,
+  CompiledLayerNode,
+  CompiledSurfaceLayerNode,
+  CompiledTextLayerNode,
+  CompiledImageLayerNode,
+  CompiledGroupLayerNode,
+  CompiledProcessorLayerNode,
+  CompiledSurface,
+  CompiledMaskShape,
+  CompiledMaskProcessor,
+  CompiledEffect,
+  CompiledProcessorConfig,
+  CompiledForegroundLayer,
+  CompiledForegroundElement,
+} from './Domain'
+
+export {
+  isCompiledSurfaceLayerNode,
+  isCompiledTextLayerNode,
+  isCompiledImageLayerNode,
+  isCompiledGroupLayerNode,
+  isCompiledProcessorLayerNode,
+  isCompiledEffect,
+  isCompiledMaskProcessor,
+} from './Domain'
+
 // Domain
 export type {
   LayerBase,
@@ -364,6 +392,11 @@ export type {
   ProcessorModifierType,
   ProcessorUsecase,
   ProcessorUsecaseDeps,
+  // compileHeroView types
+  CompileContext,
+  IntensityProvider,
+  ForegroundColorContext,
+  FontResolver,
 } from './Application'
 
 export {
@@ -380,6 +413,26 @@ export {
   // ConfigSyncer
   syncBackgroundSurfaceParams,
   syncMaskSurfaceParams,
+  // compileHeroView
+  compileHeroView,
+  DEFAULT_INTENSITY_PROVIDER,
+  createDefaultColorContext,
+  // resolvers
+  resolveKeyToRgba,
+  resolveKeyToCss,
+  resolveKeyToOklch,
+  resolveSurfaceColorKey,
+  getCanvasSurfaceKey,
+  getSurfaceKeyForContext,
+  oklchToRgba,
+  oklchToCss,
+  resolveParams,
+  resolvePropertyValue,
+  compileForegroundLayer,
+  compileForegroundElement,
+  resolveFontFamily,
+  resolveElementColor,
+  DEFAULT_FONT_RESOLVER,
 } from './Application'
 
 // Re-export ConfigSyncer types

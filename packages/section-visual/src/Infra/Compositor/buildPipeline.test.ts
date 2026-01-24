@@ -11,6 +11,8 @@ import type { HeroViewConfig } from '../../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig } from '../../Domain/HeroViewConfig'
 import type { CompositorRenderer } from '../../Domain/Compositor'
 import { GroupCompositorNode } from './nodes/GroupCompositorNode'
+import { compileHeroView } from '../../Application/compileHeroView'
+import { isDarkTheme } from '../../Domain/ColorHelpers'
 
 // Mock @practice/texture and @practice/color to prevent interference from other test files
 // Use importOriginal to get the real module implementation
@@ -95,6 +97,18 @@ function createMockRenderer(): CompositorRenderer {
   }
 }
 
+/**
+ * Helper to compile config and build pipeline options
+ */
+function compileAndGetOptions(config: HeroViewConfig, palette: ReturnType<typeof createMockPalette>) {
+  const isDark = isDarkTheme(palette as never)
+  const compiled = compileHeroView(config, palette as never, isDark)
+  return {
+    isDark,
+    compiledLayers: compiled.layers,
+  }
+}
+
 // ============================================================
 // buildPipeline Tests
 // ============================================================
@@ -103,8 +117,9 @@ describe('buildPipeline', () => {
   it('builds pipeline from default config', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     expect(result).toBeDefined()
     expect(result.outputNode).toBeDefined()
@@ -115,8 +130,9 @@ describe('buildPipeline', () => {
   it('creates background-group as GroupCompositorNode', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // background-group is now a GroupCompositorNode (not special-cased)
     const bgGroupNode = result.nodes.find(n => n.id === 'background-group')
@@ -132,8 +148,9 @@ describe('buildPipeline', () => {
   it('creates clip-group nodes with mask', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should have surface node for clip-group (uses child's ID directly)
     const clipSurfaceNode = result.nodes.find(n => n.id === 'surface-mask')
@@ -147,8 +164,9 @@ describe('buildPipeline', () => {
   it('creates output node', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     expect(result.outputNode.id).toBe('output')
     expect(result.outputNode.type).toBe('output')
@@ -157,8 +175,9 @@ describe('buildPipeline', () => {
   it('creates overlay node for multiple layers', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should have overlay node combining layers
     const overlayNode = result.nodes.find(n => n.id === 'scene')
@@ -213,8 +232,9 @@ describe('buildPipeline', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should still work without mask
     expect(result.outputNode).toBeDefined()
@@ -235,10 +255,11 @@ describe('executePipeline', () => {
   it('executes pipeline and outputs to canvas', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
     const renderer = createMockRenderer()
 
-    const { outputNode } = buildPipeline(config, palette)
-    executePipeline(outputNode, renderer, palette)
+    const { outputNode } = buildPipeline(config, options)
+    executePipeline(outputNode, renderer)
 
     // Should call compositeToCanvas at the end
     expect(renderer.compositeToCanvas).toHaveBeenCalled()
@@ -247,10 +268,11 @@ describe('executePipeline', () => {
   it('uses scale option', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
     const renderer = createMockRenderer()
 
-    const { outputNode } = buildPipeline(config, palette)
-    executePipeline(outputNode, renderer, palette, { scale: 0.5 })
+    const { outputNode } = buildPipeline(config, options)
+    executePipeline(outputNode, renderer, { scale: 0.5 })
 
     // Pipeline should execute with scale
     expect(renderer.compositeToCanvas).toHaveBeenCalled()
@@ -259,10 +281,11 @@ describe('executePipeline', () => {
   it('renders with renderToTexture for surfaces', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
     const renderer = createMockRenderer()
 
-    const { outputNode } = buildPipeline(config, palette)
-    executePipeline(outputNode, renderer, palette)
+    const { outputNode } = buildPipeline(config, options)
+    executePipeline(outputNode, renderer)
 
     // Should call renderToTexture for surface rendering (TextureOwner pattern)
     expect(renderer.renderToTexture).toHaveBeenCalled()
@@ -271,10 +294,11 @@ describe('executePipeline', () => {
   it('uses dual texture effect for masked layers', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
     const renderer = createMockRenderer()
 
-    const { outputNode } = buildPipeline(config, palette)
-    executePipeline(outputNode, renderer, palette)
+    const { outputNode } = buildPipeline(config, options)
+    executePipeline(outputNode, renderer)
 
     // Should call applyDualTextureEffectToOffscreen for mask composition
     expect(renderer.applyDualTextureEffectToOffscreen).toHaveBeenCalled()
@@ -289,17 +313,18 @@ describe('Pipeline Integration', () => {
   it('builds and executes full pipeline', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
     const renderer = createMockRenderer()
 
     // Build
-    const { outputNode, nodes } = buildPipeline(config, palette)
+    const { outputNode, nodes } = buildPipeline(config, options)
 
     // Verify structure
     expect(nodes.length).toBeGreaterThan(0)
     expect(outputNode.type).toBe('output')
 
     // Execute
-    executePipeline(outputNode, renderer, palette)
+    executePipeline(outputNode, renderer)
 
     // Verify execution (TextureOwner pattern uses renderToTexture)
     expect(renderer.renderToTexture).toHaveBeenCalled()
@@ -313,8 +338,9 @@ describe('Pipeline Integration', () => {
       ...createMockPalette(),
       F0: { L: 0.10, C: 0.00, H: 0 },  // Dark theme indicator
     } as never
+    const options = compileAndGetOptions(config, darkPalette as ReturnType<typeof createMockPalette>)
 
-    const { outputNode } = buildPipeline(config, darkPalette)
+    const { outputNode } = buildPipeline(config, options)
 
     expect(outputNode).toBeDefined()
   })
@@ -381,8 +407,9 @@ describe('Root-Level Processor Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should have effect node for root processor
     const effectNode = result.nodes.find(n => n.id === 'root-processor-effects')
@@ -452,8 +479,9 @@ describe('Root-Level Processor Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should have mask node for root processor
     const maskNode = result.nodes.find(n => n.id === 'root-processor-mask')
@@ -506,8 +534,9 @@ describe('Root-Level Processor Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should NOT have nodes for invalid processor
     const processorNode = result.nodes.find(n => n.id.includes('invalid-processor'))
@@ -577,10 +606,11 @@ describe('Root-Level Processor Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
     const renderer = createMockRenderer()
 
-    const { outputNode } = buildPipeline(config, palette)
-    executePipeline(outputNode, renderer, palette)
+    const { outputNode } = buildPipeline(config, options)
+    executePipeline(outputNode, renderer)
 
     // TextureOwner pattern: single effect goes directly to owned texture
     expect(renderer.applyPostEffectToTexture).toHaveBeenCalled()
@@ -644,8 +674,9 @@ describe('Text Layer Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should have text render node
     const textNode = result.nodes.find(n => n.id === 'text-layer-1')
@@ -713,8 +744,9 @@ describe('Text Layer Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should have both text nodes
     const titleNode = result.nodes.find(n => n.id === 'text-title')
@@ -769,8 +801,9 @@ describe('Text Layer Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should NOT have text node for hidden layer
     const textNode = result.nodes.find(n => n.id === 'text-hidden')
@@ -822,8 +855,9 @@ describe('Text Layer Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should have overlay node (multiple layers: background + text)
     const overlayNode = result.nodes.find(n => n.id === 'scene')
@@ -840,8 +874,9 @@ describe('GroupCompositorNode Support', () => {
   it('creates GroupCompositorNode for non-background groups', () => {
     const config = createDefaultHeroViewConfig()
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should have clip-group as GroupCompositorNode
     const clipGroupNode = result.nodes.find(n => n.id === 'clip-group')
@@ -896,8 +931,9 @@ describe('GroupCompositorNode Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     const clipGroupNode = result.nodes.find(n => n.id === 'clip-group') as GroupCompositorNode
     expect(clipGroupNode).toBeInstanceOf(GroupCompositorNode)
@@ -951,8 +987,9 @@ describe('GroupCompositorNode Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     const clipGroupNode = result.nodes.find(n => n.id === 'clip-group') as GroupCompositorNode
     expect(clipGroupNode).toBeInstanceOf(GroupCompositorNode)
@@ -1015,8 +1052,9 @@ describe('GroupCompositorNode Support', () => {
       foreground: { elements: [] },
     }
     const palette = createMockPalette()
+    const options = compileAndGetOptions(config, palette)
 
-    const result = buildPipeline(config, palette)
+    const result = buildPipeline(config, options)
 
     // Should have both outer and inner group nodes
     const outerGroupNode = result.nodes.find(n => n.id === 'outer-group') as GroupCompositorNode

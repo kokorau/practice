@@ -64,6 +64,7 @@ import type {
   HeroEditorUIState,
   LayerDropPosition,
   ModifierDropPosition,
+  CompiledHeroView,
 } from '../index'
 
 // ============================================================
@@ -475,6 +476,13 @@ export interface ForegroundState {
   readonly foregroundTitleAutoKey: ComputedRef<PrimitiveKey | null>
   /** Auto-selected body color key */
   readonly foregroundBodyAutoKey: ComputedRef<PrimitiveKey | null>
+
+  /**
+   * Compiled HeroView with all values resolved
+   * This is the source of truth for rendering.
+   * All palette keys, PropertyValues, and font IDs are resolved to concrete values.
+   */
+  readonly compiledView: ComputedRef<CompiledHeroView>
 }
 
 // ============================================================

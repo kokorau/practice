@@ -9,7 +9,7 @@ import { computed } from 'vue'
 import type { MaskPattern } from '@practice/texture'
 import SchemaFields from '../../SchemaFields.vue'
 import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
-import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
+import HeroPreview from '../HeroPreview.vue'
 import {
   VignetteBaseSchema,
   ChromaticAberrationEffectSchema,
@@ -364,8 +364,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: filterProps.selectedType.value === 'void' }"
           @click="filterProps.selectedType.value = 'void'"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="showPreview && effectPreviewConfigs && palette"
+            variant="thumbnail"
             :config="effectPreviewConfigs.void"
             :palette="palette"
           />
@@ -376,8 +377,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: filterProps.selectedType.value === 'vignette' }"
           @click="filterProps.selectedType.value = 'vignette'"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="showPreview && effectPreviewConfigs && palette"
+            variant="thumbnail"
             :config="effectPreviewConfigs.vignette"
             :palette="palette"
           />
@@ -388,8 +390,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: filterProps.selectedType.value === 'chromaticAberration' }"
           @click="filterProps.selectedType.value = 'chromaticAberration'"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="showPreview && effectPreviewConfigs && palette"
+            variant="thumbnail"
             :config="effectPreviewConfigs.chromaticAberration"
             :palette="palette"
           />
@@ -400,8 +403,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: filterProps.selectedType.value === 'dotHalftone' }"
           @click="filterProps.selectedType.value = 'dotHalftone'"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="showPreview && effectPreviewConfigs && palette"
+            variant="thumbnail"
             :config="effectPreviewConfigs.dotHalftone"
             :palette="palette"
           />
@@ -412,8 +416,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: filterProps.selectedType.value === 'lineHalftone' }"
           @click="filterProps.selectedType.value = 'lineHalftone'"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="showPreview && effectPreviewConfigs && palette"
+            variant="thumbnail"
             :config="effectPreviewConfigs.lineHalftone"
             :palette="palette"
           />
@@ -424,8 +429,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: filterProps.selectedType.value === 'blur' }"
           @click="filterProps.selectedType.value = 'blur'"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="showPreview && effectPreviewConfigs && palette"
+            variant="thumbnail"
             :config="effectPreviewConfigs.blur"
             :palette="palette"
           />
@@ -436,8 +442,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: filterProps.selectedType.value === 'pixelate' }"
           @click="filterProps.selectedType.value = 'pixelate'"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="showPreview && effectPreviewConfigs && palette"
+            variant="thumbnail"
             :config="effectPreviewConfigs.pixelate"
             :palette="palette"
           />
@@ -448,8 +455,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: filterProps.selectedType.value === 'hexagonMosaic' }"
           @click="filterProps.selectedType.value = 'hexagonMosaic'"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="showPreview && effectPreviewConfigs && palette"
+            variant="thumbnail"
             :config="effectPreviewConfigs.hexagonMosaic"
             :palette="palette"
           />
@@ -460,8 +468,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: filterProps.selectedType.value === 'voronoiMosaic' }"
           @click="filterProps.selectedType.value = 'voronoiMosaic'"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="showPreview && effectPreviewConfigs && palette"
+            variant="thumbnail"
             :config="effectPreviewConfigs.voronoiMosaic"
             :palette="palette"
           />
@@ -489,8 +498,9 @@ const maskPreviewConfigs = computed(() => {
           :class="{ active: maskProps.selectedShapeIndex === i }"
           @click="emit('update:selectedMaskIndex', i)"
         >
-          <HeroPreviewThumbnail
+          <HeroPreview
             v-if="isHeroMode && maskPreviewConfigs && maskPreviewConfigs[i] && palette"
+            variant="thumbnail"
             :config="maskPreviewConfigs[i]!"
             :palette="palette"
           />

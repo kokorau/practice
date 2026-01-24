@@ -55,8 +55,10 @@ import {
 } from '../Domain/HeroViewConfig'
 // Pipeline imports for node-based rendering
 import { buildPipeline, executePipeline } from './Compositor'
+// Compile HeroView for pre-resolved colors
+import { compileHeroView } from '../Application/compileHeroView'
 // Shared color helpers
-import { getOklchFromPalette } from '../Domain/ColorHelpers'
+import { getOklchFromPalette, isDarkTheme } from '../Domain/ColorHelpers'
 
 // ============================================================
 // Types
@@ -118,6 +120,12 @@ export interface TextureRendererLike {
   compositeToCanvas(inputTexture: GPUTexture, options?: { clear?: boolean }): void
 }
 
+/**
+ * Intensity provider function type for animation support
+ * Returns intensity value (0-1) for a given track ID
+ */
+export type { IntensityProvider } from '../Application/resolvers/resolvePropertyValue'
+
 export interface RenderHeroConfigOptions {
   /**
    * Parameter scale for preview rendering (default: 1)
@@ -130,6 +138,12 @@ export interface RenderHeroConfigOptions {
    * Maps imageId (layerId) to ImageBitmap.
    */
   imageRegistry?: Map<string, ImageBitmap>
+
+  /**
+   * Intensity provider for RangeExpr resolution (animation support)
+   * If not provided, all RangeExpr will use intensity=0 (min value)
+   */
+  intensityProvider?: import('../Application/resolvers/resolvePropertyValue').IntensityProvider
 }
 
 // ============================================================
@@ -542,11 +556,17 @@ export function createGreymapMaskSpecFromShape(
  * Render HeroViewConfig to canvas using provided renderer and palette
  *
  * Uses the node-based compositor pipeline for all rendering.
+ * Supports IntensityProvider for RangeExpr resolution (animation).
+ *
+ * Color resolution is unified through compileHeroView:
+ * 1. compileHeroView resolves all color keys to RGBA (single source of truth)
+ * 2. buildPipeline receives compiled layers and uses pre-resolved colors
+ * 3. executePipeline renders without palette-based color resolution
  *
  * @param renderer - TextureRenderer instance or compatible object
  * @param config - HeroViewConfig to render
  * @param palette - PrimitivePalette for color resolution
- * @param options - Rendering options (scale for preview)
+ * @param options - Rendering options (scale, intensityProvider for preview)
  */
 export async function renderHeroConfig(
   renderer: TextureRendererLike,
@@ -555,8 +575,22 @@ export async function renderHeroConfig(
   options?: RenderHeroConfigOptions
 ): Promise<void> {
   const scale = options?.scale ?? 1
-  const { outputNode } = buildPipeline(config, palette)
-  executePipeline(outputNode, renderer, palette, {
+
+  // 1. Compile HeroView to resolve all color keys to RGBA
+  const isDark = isDarkTheme(palette)
+  const compiled = compileHeroView(config, palette, isDark, {
+    intensityProvider: options?.intensityProvider,
+  })
+
+  // 2. Build pipeline with pre-compiled layers (uses resolved colors)
+  const { outputNode } = buildPipeline(config, {
+    isDark,
+    intensityProvider: options?.intensityProvider,
+    compiledLayers: compiled.layers,
+  })
+
+  // 3. Execute pipeline (palette no longer needed - colors already resolved)
+  executePipeline(outputNode, renderer, {
     scale,
     imageRegistry: options?.imageRegistry,
   })

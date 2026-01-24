@@ -7,12 +7,12 @@
  *
  * previewMode:
  * - 'pattern': 従来のPatternThumbnailを使用
- * - 'hero': HeroPreviewThumbnailで完全なHeroViewプレビューを表示
+ * - 'hero': HeroPreview (thumbnail variant) で完全なHeroViewプレビューを表示
  */
 
 import { computed } from 'vue'
 import PatternThumbnail, { type SpecCreator } from './PatternThumbnail.vue'
-import HeroPreviewThumbnail from './HeroPreviewThumbnail.vue'
+import HeroPreview from './HeroPreview.vue'
 import type { HeroViewConfig, AnySurfaceConfig, NormalizedSurfaceConfig, LayerNodeConfig } from '@practice/section-visual'
 import { normalizeSurfaceConfig, isNormalizedSurfaceConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -101,8 +101,9 @@ const solidPreviewConfig = computed(() => {
         :class="{ active: selectedIndex === null }"
         @click="handleSelectPattern(null)"
       >
-        <HeroPreviewThumbnail
+        <HeroPreview
           v-if="isHeroMode && solidPreviewConfig && palette"
+          variant="thumbnail"
           :config="solidPreviewConfig"
           :palette="palette"
         />
@@ -118,8 +119,9 @@ const solidPreviewConfig = computed(() => {
         :class="{ active: selectedIndex === i }"
         @click="handleSelectPattern(i)"
       >
-        <HeroPreviewThumbnail
+        <HeroPreview
           v-if="isHeroMode && previewConfigs && previewConfigs[i] && palette"
+          variant="thumbnail"
           :config="previewConfigs[i]!"
           :palette="palette"
         />

@@ -5,7 +5,6 @@
  * This enables decoupled rendering with clear node responsibilities.
  */
 
-import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type {
   HeroViewConfig,
   LayerNodeConfig,
@@ -13,13 +12,14 @@ import type {
   SurfaceLayerNodeConfig,
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
-  HeroPrimitiveKey,
   SingleEffectConfig,
 } from '../../Domain/HeroViewConfig'
+import type { IntensityProvider } from '../../Application/resolvers/resolvePropertyValue'
+import { resolvePropertyValueToNumber, DEFAULT_INTENSITY_PROVIDER } from '../../Application/resolvers/resolvePropertyValue'
+import type { CompiledLayerNode, CompiledSurfaceLayerNode } from '../../Domain/CompiledHeroView'
+import { isCompiledSurfaceLayerNode, isCompiledGroupLayerNode } from '../../Domain/CompiledHeroView'
 import {
   getProcessorMask,
-  DEFAULT_LAYER_BACKGROUND_COLORS,
-  DEFAULT_LAYER_MASK_COLORS,
   getProcessorTargetPairsFromConfig,
   isSingleEffectConfig,
 } from '../../Domain/HeroViewConfig'
@@ -32,7 +32,7 @@ import type {
   TextureProducingNode,
 } from '../../Domain/Compositor'
 import {
-  createSurfaceRenderNode,
+  createSurfaceRenderNodeFromCompiled,
   createMaskRenderNode,
   createMaskCompositorNode,
   createEffectChainCompositorNode,
@@ -43,10 +43,7 @@ import {
   type EffectConfig,
 } from './index'
 import { createImageRenderNode } from './nodes/ImageRenderNode'
-import {
-  isDarkTheme,
-  getMaskSurfaceKey,
-} from '../../Domain/ColorHelpers'
+import { getMaskSurfaceKey } from '../../Domain/ColorHelpers'
 
 // ============================================================
 // Pipeline Build Context
@@ -60,14 +57,20 @@ interface BuildContext {
   /** HeroViewConfig being processed */
   config: HeroViewConfig
 
-  /** Primitive palette for color resolution */
-  palette: PrimitivePalette
-
   /** Whether dark theme is active */
   isDark: boolean
 
   /** Mask surface key based on semantic context */
   maskSurfaceKey: string
+
+  /** Intensity provider for RangeExpr resolution */
+  intensityProvider: IntensityProvider
+
+  /**
+   * Pre-compiled layers with resolved colors (from CompiledHeroView).
+   * Required for color resolution - no fallback to palette.
+   */
+  compiledLayers: CompiledLayerNode[]
 }
 
 // ============================================================
@@ -97,68 +100,6 @@ function findGroups(layers: LayerNodeConfig[]): GroupLayerNodeConfig[] {
 }
 
 // ============================================================
-// Color Resolution Helpers
-// ============================================================
-
-/**
- * Get background colors from surface layer
- */
-function getBackgroundColors(
-  layer: BaseLayerNodeConfig | SurfaceLayerNodeConfig | null
-): { primary: HeroPrimitiveKey; secondary: HeroPrimitiveKey | 'auto' } {
-  const defaultPrimary = DEFAULT_LAYER_BACKGROUND_COLORS.primary as HeroPrimitiveKey
-  const defaultSecondary = DEFAULT_LAYER_BACKGROUND_COLORS.secondary
-
-  if (layer?.colors) {
-    const primary = layer.colors.primary
-    const secondary = layer.colors.secondary
-
-    return {
-      primary: (primary == null || primary === 'auto') ? defaultPrimary : primary,
-      secondary: secondary ?? defaultSecondary,
-    }
-  }
-  return {
-    primary: defaultPrimary,
-    secondary: defaultSecondary,
-  }
-}
-
-/**
- * Get mask colors from surface layer
- */
-function getMaskColors(
-  layer: SurfaceLayerNodeConfig | null
-): { primary: HeroPrimitiveKey | 'auto'; secondary: HeroPrimitiveKey | 'auto' } {
-  const defaultPrimary = DEFAULT_LAYER_MASK_COLORS.primary
-  const defaultSecondary = DEFAULT_LAYER_MASK_COLORS.secondary
-
-  if (layer?.colors) {
-    return {
-      primary: layer.colors.primary ?? defaultPrimary,
-      secondary: layer.colors.secondary ?? defaultSecondary,
-    }
-  }
-  return {
-    primary: defaultPrimary,
-    secondary: defaultSecondary,
-  }
-}
-
-/**
- * Resolve 'auto' color key to actual key based on theme and mask surface
- */
-function resolveAutoColor(
-  key: HeroPrimitiveKey | 'auto',
-  maskSurfaceKey: string
-): HeroPrimitiveKey {
-  if (key === 'auto') {
-    return maskSurfaceKey as HeroPrimitiveKey
-  }
-  return key
-}
-
-// ============================================================
 // Effect Params Helpers
 // ============================================================
 
@@ -177,13 +118,17 @@ function isPropertyValue(value: unknown): value is PropertyValue {
 /**
  * Extract raw value from a potential PropertyValue
  * Handles: PropertyValue objects, raw values (number, string, boolean)
+ * Uses intensityProvider to resolve RangeExpr bindings
  */
-function extractRawValue(value: unknown): unknown {
+function extractRawValue(value: unknown, intensityProvider: IntensityProvider): unknown {
   if (isPropertyValue(value)) {
     if ($PropertyValue.isStatic(value)) {
       return value.value
     }
-    // RangeExpr - return 0 as fallback (should be resolved before this point)
+    // RangeExpr - resolve using intensityProvider
+    if ($PropertyValue.isRange(value)) {
+      return resolvePropertyValueToNumber(value, intensityProvider)
+    }
     return 0
   }
   // Already a raw value
@@ -194,10 +139,13 @@ function extractRawValue(value: unknown): unknown {
  * Extract raw values from effect params
  * Converts PropertyValue objects to their underlying values
  */
-function extractEffectParams(params: Record<string, unknown>): Record<string, unknown> {
+function extractEffectParams(
+  params: Record<string, unknown>,
+  intensityProvider: IntensityProvider
+): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(params)) {
-    result[key] = extractRawValue(value)
+    result[key] = extractRawValue(value, intensityProvider)
   }
   return result
 }
@@ -207,29 +155,46 @@ function extractEffectParams(params: Record<string, unknown>): Record<string, un
 // ============================================================
 
 /**
+ * Find a compiled surface layer by ID in the compiled layer tree.
+ * Recursively searches through groups.
+ */
+function findCompiledSurfaceLayer(
+  layers: CompiledLayerNode[] | undefined,
+  targetId: string
+): CompiledSurfaceLayerNode | null {
+  if (!layers) return null
+
+  for (const layer of layers) {
+    if (layer.id === targetId && isCompiledSurfaceLayerNode(layer)) {
+      return layer
+    }
+    if (isCompiledGroupLayerNode(layer)) {
+      const found = findCompiledSurfaceLayer(layer.children, targetId)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+/**
  * Build a surface render node from layer config
+ *
+ * Requires compiled layer data from CompiledHeroView.
+ * Color resolution is handled at compile time, not at build time.
  */
 function buildSurfaceNode(
   id: string,
   layer: BaseLayerNodeConfig | SurfaceLayerNodeConfig,
   ctx: BuildContext
 ): RenderNode {
-  const colors = layer.type === 'base'
-    ? getBackgroundColors(layer)
-    : getMaskColors(layer)
+  // Get pre-compiled data for this layer (required)
+  const compiled = findCompiledSurfaceLayer(ctx.compiledLayers, layer.id)
+  if (!compiled) {
+    throw new Error(`[buildSurfaceNode] Compiled layer not found: ${layer.id}`)
+  }
 
-  // For background, resolve auto to canvas surface key
-  const canvasSurfaceKey = ctx.isDark ? 'F8' : 'F1'
-  const primary = colors.primary === 'auto'
-    ? canvasSurfaceKey as HeroPrimitiveKey
-    : colors.primary
-  const secondary = resolveAutoColor(colors.secondary, ctx.maskSurfaceKey)
-
-  return createSurfaceRenderNode(
-    id,
-    layer.surface,
-    { primary, secondary }
-  )
+  // Use pre-resolved colors from CompiledHeroView
+  return createSurfaceRenderNodeFromCompiled(id, compiled.surface)
 }
 
 /**
@@ -251,7 +216,8 @@ function buildProcessorNode(
   id: string,
   inputNode: TextureProducingNode,
   processor: ProcessorNodeConfig,
-  nodes: Array<RenderNode | CompositorNode | OutputNode>
+  nodes: Array<RenderNode | CompositorNode | OutputNode>,
+  intensityProvider: IntensityProvider
 ): TextureProducingNode {
   let currentNode: TextureProducingNode = inputNode
 
@@ -277,8 +243,8 @@ function buildProcessorNode(
   if (effectConfigs.length > 0) {
     const effects: EffectConfig[] = effectConfigs.map((e) => ({
       id: e.id,
-      // Extract raw values from PropertyValue objects
-      params: extractEffectParams(e.params as Record<string, unknown>),
+      // Extract raw values from PropertyValue objects using intensityProvider
+      params: extractEffectParams(e.params as Record<string, unknown>, intensityProvider),
     }))
     const effectsNode = createEffectChainCompositorNode(`${id}-effects`, currentNode, effects)
     nodes.push(effectsNode)
@@ -360,7 +326,7 @@ function buildGroupNode(
       }
 
       // Apply processor (mask and/or effects)
-      const processed = buildProcessorNode(childId, accumulated, child, nodes)
+      const processed = buildProcessorNode(childId, accumulated, child, nodes, ctx.intensityProvider)
 
       // Reset accumulation with processed result
       accumulatedNodes = [processed]
@@ -405,25 +371,53 @@ export interface PipelineResult {
 }
 
 /**
+ * Options for pipeline building
+ */
+export interface BuildPipelineOptions {
+  /**
+   * Whether dark theme is active.
+   * Used for resolving 'auto' color keys to appropriate surface colors.
+   */
+  isDark: boolean
+
+  /**
+   * Intensity provider for RangeExpr resolution (animation support)
+   * If not provided, all RangeExpr will use intensity=0 (min value)
+   */
+  intensityProvider?: IntensityProvider
+
+  /**
+   * Pre-compiled layers with resolved colors (from CompiledHeroView).
+   * Required for all surface rendering - color resolution happens at compile time.
+   */
+  compiledLayers: CompiledLayerNode[]
+}
+
+/**
  * Build a compositor pipeline from HeroViewConfig
  *
+ * Requires pre-compiled layers from compileHeroView for color resolution.
+ * All color keys are resolved at compile time, not at build time.
+ *
  * @param config - HeroViewConfig to convert
- * @param palette - PrimitivePalette for color resolution
+ * @param options - Build options including required compiledLayers
  * @returns Pipeline result with output node
  */
 export function buildPipeline(
   config: HeroViewConfig,
-  palette: PrimitivePalette
+  options: BuildPipelineOptions
 ): PipelineResult {
-  const isDark = isDarkTheme(palette)
+  const { isDark, compiledLayers } = options
   const semanticContext = config.colors.semanticContext ?? 'canvas'
   const maskSurfaceKey = getMaskSurfaceKey(semanticContext, isDark)
+  const intensityProvider = options.intensityProvider ?? DEFAULT_INTENSITY_PROVIDER
 
   const ctx: BuildContext = {
     config,
-    palette,
     isDark,
     maskSurfaceKey,
+    intensityProvider,
+    compiledLayers,
   }
 
   const nodes: Array<RenderNode | CompositorNode | OutputNode> = []
@@ -493,7 +487,7 @@ export function buildPipeline(
   for (let i = 0; i < rootProcessors.length; i++) {
     const processor = rootProcessors[i]!
     const processorId = processor.id || `root-processor-${i}`
-    finalNode = buildProcessorNode(processorId, finalNode, processor, nodes)
+    finalNode = buildProcessorNode(processorId, finalNode, processor, nodes, ctx.intensityProvider)
   }
 
   // 6. Build canvas output node

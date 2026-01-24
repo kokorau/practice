@@ -9,14 +9,12 @@ import type {
   RenderNode,
   NodeContext,
   TextureHandle,
-  ColorKeyPair,
 } from '../../../Domain/Compositor'
 import type { TextureOwner } from '../../../Domain/Compositor/TextureOwner'
 import type { AnySurfaceConfig } from '../../../Domain/HeroViewConfig'
-import {
-  getColorFromPalette,
-  createBackgroundSpecFromSurface,
-} from '../../renderHeroConfig'
+import type { CompiledSurface } from '../../../Domain/CompiledHeroView'
+import type { RGBA } from '@practice/texture'
+import { createBackgroundSpecFromSurface } from '../../renderHeroConfig'
 import { BaseTextureOwner } from '../BaseTextureOwner'
 
 // ============================================================
@@ -25,6 +23,9 @@ import { BaseTextureOwner } from '../BaseTextureOwner'
 
 /**
  * Configuration for SurfaceRenderNode.
+ *
+ * Requires pre-resolved colors from CompiledHeroView.
+ * All color resolution happens at compile time.
  */
 export interface SurfaceRenderNodeConfig {
   /** Unique node identifier */
@@ -33,8 +34,11 @@ export interface SurfaceRenderNodeConfig {
   /** Surface configuration (pattern type and params) */
   surface: AnySurfaceConfig
 
-  /** Color keys to resolve from palette */
-  colors: ColorKeyPair
+  /**
+   * Pre-resolved colors (from CompiledHeroView).
+   * Required - color resolution happens at compile time.
+   */
+  resolvedColors: { color1: RGBA; color2: RGBA }
 }
 
 /**
@@ -68,22 +72,25 @@ export class SurfaceRenderNode extends BaseTextureOwner implements RenderNode, T
   readonly id: string
 
   private readonly surface: AnySurfaceConfig
-  private readonly colors: ColorKeyPair
+  private readonly resolvedColors: { color1: RGBA; color2: RGBA }
 
   constructor(config: SurfaceRenderNodeConfig) {
     super()
     this.id = config.id
     this.surface = config.surface
-    this.colors = config.colors
+    this.resolvedColors = config.resolvedColors
   }
 
   /**
    * Render the surface pattern to the owned texture.
    *
    * Uses TextureOwner caching: skips rendering if not dirty and texture exists.
+   *
+   * Requires resolvedColors to be set (from CompiledHeroView).
+   * Color resolution is handled at compile time, not at render time.
    */
   render(ctx: NodeContext): TextureHandle {
-    const { renderer, viewport, palette, scale, device, format } = ctx
+    const { renderer, viewport, scale, device, format } = ctx
 
     // Ensure texture exists (handles viewport resize and format)
     const texture = this.ensureTexture(device, viewport, format)
@@ -93,9 +100,8 @@ export class SurfaceRenderNode extends BaseTextureOwner implements RenderNode, T
       return this.createTextureHandle(viewport)
     }
 
-    // Resolve colors from palette
-    const color1 = getColorFromPalette(palette, this.colors.primary)
-    const color2 = getColorFromPalette(palette, this.colors.secondary)
+    // Use pre-resolved colors (from CompiledHeroView)
+    const { color1, color2 } = this.resolvedColors
 
     // Create the texture render spec
     const spec = createBackgroundSpecFromSurface(
@@ -134,12 +140,26 @@ export class SurfaceRenderNode extends BaseTextureOwner implements RenderNode, T
 }
 
 /**
- * Factory function to create a SurfaceRenderNode.
+ * Factory function to create a SurfaceRenderNode from CompiledSurface.
+ *
+ * Uses pre-resolved colors from CompiledHeroView.
+ * This is the only way to create SurfaceRenderNode - all color resolution
+ * must happen at compile time via compileHeroView.
  */
-export function createSurfaceRenderNode(
+export function createSurfaceRenderNodeFromCompiled(
   id: string,
-  surface: AnySurfaceConfig,
-  colors: ColorKeyPair
+  compiled: CompiledSurface
 ): SurfaceRenderNode {
-  return new SurfaceRenderNode({ id, surface, colors })
+  // CompiledSurface.params are already resolved (number/string/boolean values)
+  // Cast to AnySurfaceConfig format - the params will be used as-is
+  const surface = {
+    id: compiled.id,
+    params: compiled.params,
+  } as unknown as AnySurfaceConfig
+
+  return new SurfaceRenderNode({
+    id,
+    surface,
+    resolvedColors: { color1: compiled.color1, color2: compiled.color2 },
+  })
 }

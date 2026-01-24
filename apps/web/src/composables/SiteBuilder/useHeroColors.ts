@@ -31,6 +31,7 @@ import { generateLuminanceMap } from '../../modules/ContrastChecker'
 import type {
   HeroPrimitiveKey,
   ForegroundLayerConfig,
+  ForegroundColorContext,
 } from '@practice/section-visual'
 
 // ============================================================
@@ -138,6 +139,10 @@ export interface UseHeroColorsReturn {
   // Element bounds for ink color calculation
   /** Set element bounds for background analysis */
   setElementBounds: (elementType: 'title' | 'description', bounds: ElementBounds | null) => void
+
+  // Foreground color context for compileHeroView
+  /** Color context for foreground element resolution (for compileHeroView) */
+  foregroundColorContext: ComputedRef<ForegroundColorContext>
 }
 
 // ============================================================
@@ -353,6 +358,16 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
     return colorMap
   })
 
+  /**
+   * Foreground color context for compileHeroView
+   * Provides auto-resolved colors and element-specific overrides
+   */
+  const foregroundColorContext = computed((): ForegroundColorContext => ({
+    titleAutoColor: foregroundTitleColor.value,
+    bodyAutoColor: foregroundBodyColor.value,
+    elementColors: foregroundElementColors.value,
+  }))
+
   // ============================================================
   // Return
   // ============================================================
@@ -390,5 +405,8 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
 
     // Element bounds
     setElementBounds,
+
+    // Foreground color context
+    foregroundColorContext,
   }
 }

@@ -11,7 +11,7 @@
 
 export {
   SurfaceRenderNode,
-  createSurfaceRenderNode,
+  createSurfaceRenderNodeFromCompiled,
   type SurfaceRenderNodeConfig,
 } from './SurfaceRenderNode'
 

@@ -5,7 +5,6 @@
  */
 
 import type { Viewport } from '@practice/texture'
-import type { PrimitivePalette } from '@practice/semantic-color-palette'
 
 // ============================================================
 // Texture Handle
@@ -170,11 +169,13 @@ export interface CompositorRenderer {
  * Contains all dependencies needed for rendering:
  * - renderer: WebGPU renderer instance
  * - viewport: Canvas dimensions
- * - palette: Color palette for resolving color keys
  * - scale: Preview scale factor
  * - texturePool: Texture allocation manager (legacy, will be removed)
- * - device: WebGPU device for texture creation (new)
- * - format: Texture format (new)
+ * - device: WebGPU device for texture creation
+ * - format: Texture format
+ *
+ * Note: Color resolution is handled at compile time (via compileHeroView),
+ * so palette is no longer needed at execution time.
  */
 export interface NodeContext {
   /** Renderer for WebGPU operations */
@@ -182,9 +183,6 @@ export interface NodeContext {
 
   /** Canvas viewport dimensions */
   readonly viewport: Viewport
-
-  /** Color palette for resolving primitive keys */
-  readonly palette: PrimitivePalette
 
   /** Scale factor for preview rendering (1.0 = full size) */
   readonly scale: number

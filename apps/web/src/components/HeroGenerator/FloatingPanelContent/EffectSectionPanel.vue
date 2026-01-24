@@ -9,7 +9,7 @@
  */
 import { computed, type WritableComputedRef } from 'vue'
 import SchemaFields from '../../SchemaFields.vue'
-import HeroPreviewThumbnail from '../HeroPreviewThumbnail.vue'
+import HeroPreview from '../HeroPreview.vue'
 import {
   VignetteBaseSchema,
   ChromaticAberrationEffectSchema,
@@ -257,8 +257,9 @@ const previewConfigs = computed(() => {
         :class="{ active: filter.selectedType.value === 'void' }"
         @click="filter.selectedType.value = 'void'"
       >
-        <HeroPreviewThumbnail
+        <HeroPreview
           v-if="showPreview && previewConfigs && palette"
+          variant="thumbnail"
           :config="previewConfigs.void"
           :palette="palette"
         />
@@ -269,8 +270,9 @@ const previewConfigs = computed(() => {
         :class="{ active: filter.selectedType.value === 'vignette' }"
         @click="filter.selectedType.value = 'vignette'"
       >
-        <HeroPreviewThumbnail
+        <HeroPreview
           v-if="showPreview && previewConfigs && palette"
+          variant="thumbnail"
           :config="previewConfigs.vignette"
           :palette="palette"
         />
@@ -281,8 +283,9 @@ const previewConfigs = computed(() => {
         :class="{ active: filter.selectedType.value === 'chromaticAberration' }"
         @click="filter.selectedType.value = 'chromaticAberration'"
       >
-        <HeroPreviewThumbnail
+        <HeroPreview
           v-if="showPreview && previewConfigs && palette"
+          variant="thumbnail"
           :config="previewConfigs.chromaticAberration"
           :palette="palette"
         />
@@ -293,8 +296,9 @@ const previewConfigs = computed(() => {
         :class="{ active: filter.selectedType.value === 'dotHalftone' }"
         @click="filter.selectedType.value = 'dotHalftone'"
       >
-        <HeroPreviewThumbnail
+        <HeroPreview
           v-if="showPreview && previewConfigs && palette"
+          variant="thumbnail"
           :config="previewConfigs.dotHalftone"
           :palette="palette"
         />
@@ -305,8 +309,9 @@ const previewConfigs = computed(() => {
         :class="{ active: filter.selectedType.value === 'lineHalftone' }"
         @click="filter.selectedType.value = 'lineHalftone'"
       >
-        <HeroPreviewThumbnail
+        <HeroPreview
           v-if="showPreview && previewConfigs && palette"
+          variant="thumbnail"
           :config="previewConfigs.lineHalftone"
           :palette="palette"
         />
@@ -317,8 +322,9 @@ const previewConfigs = computed(() => {
         :class="{ active: filter.selectedType.value === 'blur' }"
         @click="filter.selectedType.value = 'blur'"
       >
-        <HeroPreviewThumbnail
+        <HeroPreview
           v-if="showPreview && previewConfigs && palette"
+          variant="thumbnail"
           :config="previewConfigs.blur"
           :palette="palette"
         />
