@@ -278,6 +278,7 @@ export {
   approxEqual,
   findSurfacePresetIndex,
   findMaskPatternIndex,
+  findMaskPatternIndexByType,
   // Constants
   HERO_CANVAS_WIDTH,
   HERO_CANVAS_HEIGHT,
@@ -323,6 +324,7 @@ export {
   createSingleEffectConfig,
   extractEnabledEffects,
   denormalizeToLayerEffectConfig,
+  safeDenormalizeToLayerEffectConfig,
   createDefaultMaskProcessorConfig,
   // Surface config normalization
   SURFACE_TYPES,
@@ -446,6 +448,7 @@ export type {
   SyncMaskShapeResult,
   SyncSurfaceParamsForLayerResult,
   SyncRawParamsResult,
+  EffectRawParams,
 } from './Application'
 
 // HeroView Repository types (from Domain)

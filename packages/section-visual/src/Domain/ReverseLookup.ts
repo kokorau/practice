@@ -438,3 +438,27 @@ export const findMaskPatternIndex = (
   }
   return null
 }
+
+/**
+ * Find mask pattern index by matching shape type only (ignoring params)
+ * Returns the first pattern that matches the shape type
+ * Use this when exact parameter matching fails but you need a baseline pattern
+ */
+export const findMaskPatternIndexByType = (
+  shapeConfig: MaskShapeConfig,
+  patterns: { maskConfig: MaskPatternConfig }[]
+): number | null => {
+  for (let i = 0; i < patterns.length; i++) {
+    const pattern = patterns[i]
+    const maskConfig = pattern?.maskConfig
+    if (maskConfig && maskConfig.type === shapeConfig.type) {
+      // Check cutout (default to true if undefined)
+      const shapeCutout = shapeConfig.cutout ?? true
+      const maskCutout = maskConfig.cutout ?? true
+      if (shapeCutout === maskCutout) {
+        return i
+      }
+    }
+  }
+  return null
+}

@@ -835,6 +835,8 @@ export interface RightPanelBackgroundProps {
   readonly surfaceSchema: ObjectSchema | null
   /** Custom surface params */
   readonly surfaceParams: Record<string, unknown> | null
+  /** Raw surface params with PropertyValue preserved (for DSL display) */
+  readonly rawSurfaceParams?: Record<string, unknown> | null
 }
 
 /**
@@ -857,12 +859,16 @@ export interface RightPanelMaskProps {
   readonly surfaceSchema: ObjectSchema | null
   /** Custom surface params */
   readonly surfaceParams: Record<string, unknown> | null
+  /** Raw surface params with PropertyValue preserved (for DSL display) */
+  readonly rawSurfaceParams?: Record<string, unknown> | null
   /** Selected mask shape index */
   readonly selectedShapeIndex: number | null
   /** Mask shape schema for UI */
   readonly shapeSchema: ObjectSchema | null
   /** Custom mask shape params */
   readonly shapeParams: Record<string, unknown> | null
+  /** Raw mask shape params with PropertyValue preserved (for DSL display) */
+  readonly rawShapeParams?: Record<string, unknown> | null
   /** Outer color for mask */
   readonly outerColor: RGBA
   /** Inner color for mask */

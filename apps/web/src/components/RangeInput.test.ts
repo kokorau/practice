@@ -95,86 +95,61 @@ describe('RangeInput', () => {
     expect(wrapper.find('.input-error').exists()).toBe(false)
   })
 
-  it('parses math expressions on blur', async () => {
-    const wrapper = mount(RangeInput, {
-      props: { ...defaultProps, min: 0, max: 10 },
-    })
-
-    const input = wrapper.find('input')
-    await input.trigger('focus')
-    await input.setValue('2 + 3')
-    await input.trigger('blur')
-
-    const emitted = wrapper.emitted('update:modelValue')
-    expect(emitted).toBeTruthy()
-    expect(emitted![0][0]).toBe(5)
-  })
-
-  it('parses Math functions on blur', async () => {
-    const wrapper = mount(RangeInput, {
-      props: { ...defaultProps, min: 0, max: 10 },
-    })
-
-    const input = wrapper.find('input')
-    await input.trigger('focus')
-    await input.setValue('sqrt(4)')
-    await input.trigger('blur')
-
-    const emitted = wrapper.emitted('update:modelValue')
-    expect(emitted).toBeTruthy()
-    expect(emitted![0][0]).toBe(2)
-  })
-
-  it('parses PI constant on blur', async () => {
-    const wrapper = mount(RangeInput, {
-      props: { ...defaultProps, min: 0, max: 10 },
-    })
-
-    const input = wrapper.find('input')
-    await input.trigger('focus')
-    await input.setValue('PI')
-    await input.trigger('blur')
-
-    const emitted = wrapper.emitted('update:modelValue')
-    expect(emitted).toBeTruthy()
-    expect(emitted![0][0]).toBeCloseTo(Math.PI, 5)
-  })
-
-  it('parses range() DSL expression on blur', async () => {
+  it('parses DSL expression with = prefix on blur', async () => {
     const wrapper = mount(RangeInput, { props: defaultProps })
 
     const input = wrapper.find('input')
     await input.trigger('focus')
-    await input.setValue("range('intensity', 0, 1)")
+    await input.setValue('=osc(@t, 2000)')
     await input.trigger('blur')
 
     const rawEmitted = wrapper.emitted('update:rawValue')
     expect(rawEmitted).toBeTruthy()
-    expect(rawEmitted![0][0]).toEqual({
-      type: 'range',
-      trackId: 'intensity',
-      min: 0,
-      max: 1,
+    expect(rawEmitted![0][0]).toMatchObject({
+      type: 'dsl',
+      expression: '=osc(@t, 2000)',
     })
   })
 
-  it('parses range() with clamp argument on blur', async () => {
+  it('parses simple DSL math expression on blur', async () => {
     const wrapper = mount(RangeInput, { props: defaultProps })
 
     const input = wrapper.find('input')
     await input.trigger('focus')
-    await input.setValue("range('intensity', 0, 1, true)")
+    await input.setValue('=@t * 0.5 + 0.25')
     await input.trigger('blur')
 
     const rawEmitted = wrapper.emitted('update:rawValue')
     expect(rawEmitted).toBeTruthy()
-    expect(rawEmitted![0][0]).toEqual({
-      type: 'range',
-      trackId: 'intensity',
-      min: 0,
-      max: 1,
-      clamp: true,
+    expect(rawEmitted![0][0]).toMatchObject({
+      type: 'dsl',
+      expression: '=@t * 0.5 + 0.25',
     })
+  })
+
+  it('shows error for invalid DSL expression', async () => {
+    const wrapper = mount(RangeInput, { props: defaultProps })
+
+    const input = wrapper.find('input')
+    await input.trigger('focus')
+    await input.setValue('=osc(@t')
+    await input.trigger('blur')
+
+    // Should show error state
+    expect(wrapper.find('.input-error').exists()).toBe(true)
+    expect(wrapper.find('.error-message').exists()).toBe(true)
+  })
+
+  it('treats non-numeric text without = prefix as error', async () => {
+    const wrapper = mount(RangeInput, { props: defaultProps })
+
+    const input = wrapper.find('input')
+    await input.trigger('focus')
+    await input.setValue('hello')
+    await input.trigger('blur')
+
+    // Should show error state for non-numeric string
+    expect(wrapper.find('.input-error').exists()).toBe(true)
   })
 
   it('displays DSL expression from rawValue prop', () => {
@@ -182,26 +157,24 @@ describe('RangeInput', () => {
       props: {
         ...defaultProps,
         rawValue: {
-          type: 'range',
-          trackId: 'pulse',
-          min: 0,
-          max: 1,
+          type: 'dsl',
+          expression: '=osc(@t, 2000)',
+          ast: { type: 'number', value: 0 }, // mock AST
         },
       },
     })
 
-    expect(wrapper.find('input').element.value).toBe("range('pulse', 0, 1)")
+    expect(wrapper.find('input').element.value).toBe('=osc(@t, 2000)')
   })
 
-  it('applies DSL styling when rawValue is RangeExpr', () => {
+  it('applies DSL styling when rawValue is DslExpr', () => {
     const wrapper = mount(RangeInput, {
       props: {
         ...defaultProps,
         rawValue: {
-          type: 'range',
-          trackId: 'pulse',
-          min: 0,
-          max: 1,
+          type: 'dsl',
+          expression: '=osc(@t, 2000)',
+          ast: { type: 'number', value: 0 }, // mock AST
         },
       },
     })
@@ -238,5 +211,37 @@ describe('RangeInput', () => {
     const emitted = wrapper.emitted('update:modelValue')
     expect(emitted).toBeTruthy()
     expect(emitted![0][0]).toBe(75)
+  })
+
+  it('displays RangeExpr from rawValue prop', () => {
+    const wrapper = mount(RangeInput, {
+      props: {
+        ...defaultProps,
+        rawValue: {
+          type: 'range',
+          trackId: 'track-mask-radius',
+          min: 0.1,
+          max: 0.45,
+        },
+      },
+    })
+
+    expect(wrapper.find('input').element.value).toBe('=range(@track-mask-radius, 0.1, 0.45)')
+  })
+
+  it('applies DSL styling when rawValue is RangeExpr', () => {
+    const wrapper = mount(RangeInput, {
+      props: {
+        ...defaultProps,
+        rawValue: {
+          type: 'range',
+          trackId: 'track-mask-radius',
+          min: 0.1,
+          max: 0.45,
+        },
+      },
+    })
+
+    expect(wrapper.find('.input-dsl').exists()).toBe(true)
   })
 })

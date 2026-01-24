@@ -43,6 +43,15 @@ export interface FilterProps {
   pixelateConfig?: WritableComputedRef<PixelateConfigParams>
   hexagonMosaicConfig?: WritableComputedRef<HexagonMosaicConfigParams>
   voronoiMosaicConfig?: WritableComputedRef<VoronoiMosaicConfigParams>
+  // Raw params for DSL display (preserves PropertyValue)
+  rawVignetteParams?: ComputedRef<Record<string, unknown> | null>
+  rawChromaticParams?: ComputedRef<Record<string, unknown> | null>
+  rawDotHalftoneParams?: ComputedRef<Record<string, unknown> | null>
+  rawLineHalftoneParams?: ComputedRef<Record<string, unknown> | null>
+  rawBlurParams?: ComputedRef<Record<string, unknown> | null>
+  rawPixelateParams?: ComputedRef<Record<string, unknown> | null>
+  rawHexagonMosaicParams?: ComputedRef<Record<string, unknown> | null>
+  rawVoronoiMosaicParams?: ComputedRef<Record<string, unknown> | null>
 }
 
 /**

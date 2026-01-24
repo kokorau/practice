@@ -35,12 +35,23 @@ watch(
   }
 )
 
+/**
+ * Parse the input value
+ * - If starts with '=': parse as DSL expression
+ * - Otherwise: treat as literal value (number or string)
+ */
 const parseResult = computed(() => {
   const value = inputValue.value.trim()
-  if (!value) return { ok: true as const, ast: null, empty: true }
+  if (!value) return { ok: true as const, ast: null, empty: true, literal: true }
 
-  const result = tryParse(value)
-  return { ...result, empty: false }
+  // DSL expression (starts with '=')
+  if (value.startsWith('=')) {
+    const result = tryParse(value)
+    return { ...result, empty: false, literal: false }
+  }
+
+  // Literal value (number or string)
+  return { ok: true as const, ast: null, empty: false, literal: true }
 })
 
 const analysisResult = computed((): AmplitudeInfo | null => {
@@ -67,17 +78,35 @@ const periods = computed((): number[] => {
 
 const statusInfo = computed(() => {
   if (parseResult.value.empty) {
-    return { status: 'empty' as const, color: 'gray', label: 'Empty' }
+    return { status: 'empty' as const, color: 'oklch(0.55 0.02 260)', label: 'Empty' }
+  }
+  if (parseResult.value.literal) {
+    // Check if it's a valid number
+    const value = inputValue.value.trim()
+    const isNumber = !isNaN(Number(value)) && value !== ''
+    return {
+      status: 'literal' as const,
+      color: 'oklch(0.55 0.15 200)',
+      label: isNumber ? 'Number' : 'String',
+    }
   }
   if (parseResult.value.ok) {
-    return { status: 'valid' as const, color: '#4ade80', label: 'Valid' }
+    return { status: 'valid' as const, color: 'oklch(0.55 0.15 150)', label: 'DSL' }
   }
-  return { status: 'error' as const, color: '#f87171', label: 'Error' }
+  return { status: 'error' as const, color: 'oklch(0.55 0.20 25)', label: 'Error' }
 })
 
 const hintMessage = computed(() => {
   if (parseResult.value.empty) {
-    return 'Enter a DSL expression (e.g., =osc(@t, 2000))'
+    return 'Enter a value or DSL expression (prefix with = for DSL)'
+  }
+  if (parseResult.value.literal) {
+    const value = inputValue.value.trim()
+    const numValue = Number(value)
+    if (!isNaN(numValue)) {
+      return `Literal number: ${numValue}`
+    }
+    return `Literal string: "${value}"`
   }
   if (!parseResult.value.ok) {
     return parseResult.value.error
@@ -89,7 +118,7 @@ const hintMessage = computed(() => {
     const { min, max, amplitude, center } = analysisResult.value
     return `Range: [${min.toFixed(2)}, ${max.toFixed(2)}] | Amp: ${amplitude.toFixed(2)} | Center: ${center.toFixed(2)}`
   }
-  return 'Syntax OK'
+  return 'DSL syntax OK'
 })
 
 function onInput(event: Event) {
@@ -174,7 +203,7 @@ const syntaxReference = {
       <span class="hint-text">{{ hintMessage }}</span>
       <div class="hint-actions">
         <button
-          v-if="showAnalysis && parseResult.ok && !parseResult.empty"
+          v-if="showAnalysis && parseResult.ok && !parseResult.empty && !parseResult.literal"
           class="mode-btn"
           :class="{ active: displayMode !== 'default' }"
           @click="toggleDisplayMode"
@@ -244,24 +273,24 @@ const syntaxReference = {
 .dsl-input-container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-  font-size: 12px;
+  gap: 0.25rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
 }
 
 .input-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .dsl-input {
   flex: 1;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid oklch(0.88 0.01 260);
+  border-radius: 0.375rem;
+  background: oklch(0.97 0.005 260);
+  color: oklch(0.25 0.02 260);
   font-family: inherit;
   font-size: inherit;
   outline: none;
@@ -269,17 +298,17 @@ const syntaxReference = {
 }
 
 .dsl-input:focus {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: oklch(0.50 0.20 250);
 }
 
 .dsl-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: oklch(0.60 0.02 260);
 }
 
 .status-indicator {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
-  min-width: 40px;
+  min-width: 2.5rem;
   text-align: right;
 }
 
@@ -287,19 +316,19 @@ const syntaxReference = {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-  min-height: 24px;
+  padding: 0.25rem 0.5rem;
+  background: oklch(0.94 0.01 260);
+  border-radius: 0.25rem;
+  min-height: 1.5rem;
 }
 
 .hint-row.error {
-  background: rgba(248, 113, 113, 0.15);
+  background: oklch(0.95 0.05 25);
 }
 
 .hint-text {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 10px;
+  color: oklch(0.55 0.02 260);
+  font-size: 0.625rem;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -307,22 +336,22 @@ const syntaxReference = {
 }
 
 .hint-row.error .hint-text {
-  color: #f87171;
+  color: oklch(0.50 0.20 25);
 }
 
 .hint-actions {
   display: flex;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .mode-btn,
 .ref-btn {
-  padding: 2px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
+  padding: 0.125rem 0.375rem;
+  border: 1px solid oklch(0.88 0.01 260);
+  border-radius: 0.1875rem;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 9px;
+  color: oklch(0.55 0.02 260);
+  font-size: 0.5625rem;
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
@@ -330,56 +359,57 @@ const syntaxReference = {
 
 .mode-btn:hover,
 .ref-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: oklch(0.90 0.01 260);
+  color: oklch(0.35 0.02 260);
 }
 
 .mode-btn.active,
 .ref-btn.active {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: oklch(0.50 0.20 250);
+  border-color: oklch(0.50 0.20 250);
   color: white;
 }
 
 .syntax-ref-panel {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 6px;
-  max-height: 300px;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: oklch(0.94 0.01 260);
+  border: 1px solid oklch(0.88 0.01 260);
+  border-radius: 0.375rem;
+  max-height: 18.75rem;
   overflow-y: auto;
 }
 
 .ref-section h5 {
-  margin: 0 0 6px 0;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 10px;
+  margin: 0 0 0.375rem 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+  color: oklch(0.35 0.02 260);
+  font-size: 0.625rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
 }
 
 .ref-item {
   display: flex;
-  gap: 8px;
-  padding: 2px 0;
-  font-size: 10px;
+  gap: 0.5rem;
+  padding: 0.125rem 0;
+  font-size: 0.625rem;
 }
 
 .ref-item code {
-  color: #93c5fd;
-  background: rgba(147, 197, 253, 0.1);
-  padding: 1px 4px;
-  border-radius: 2px;
+  color: oklch(0.45 0.15 250);
+  background: oklch(0.92 0.02 250);
+  padding: 0.0625rem 0.25rem;
+  border-radius: 0.125rem;
   white-space: nowrap;
 }
 
 .ref-item span {
-  color: rgba(255, 255, 255, 0.5);
+  color: oklch(0.55 0.02 260);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;

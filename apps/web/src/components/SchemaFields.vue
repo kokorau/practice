@@ -9,14 +9,18 @@ import { computed } from 'vue'
 import { getFields, type ObjectSchema, type FieldMeta } from '@practice/schema'
 import RangeInput from './RangeInput.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   schema: ObjectSchema
   modelValue: Record<string, unknown>
   /** Raw params with PropertyValue preserved (for DSL display) */
   rawParams?: Record<string, unknown> | null
   /** Fields to exclude from rendering (e.g., 'enabled') */
   exclude?: string[]
-}>()
+  /** Number of columns for the grid layout (1 or 2) */
+  columns?: 1 | 2
+}>(), {
+  columns: 1,
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: Record<string, unknown>]
@@ -37,7 +41,7 @@ const updateField = (key: string, value: unknown) => {
 </script>
 
 <template>
-  <div class="schema-fields">
+  <div class="schema-fields" :class="{ 'schema-fields--two-columns': columns === 2 }">
     <template v-for="field in fields" :key="field.key">
       <!-- Number field: slider -->
       <RangeInput
@@ -86,8 +90,12 @@ const updateField = (key: string, value: unknown) => {
 <style scoped>
 .schema-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 0.5rem;
+}
+
+.schema-fields--two-columns {
+  grid-template-columns: 1fr 1fr;
 }
 
 .schema-checkbox {
