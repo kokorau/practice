@@ -20,7 +20,7 @@ import { useFilterEditor } from '../composables/useFilterEditor'
 import { useHeroGeneratorColorHandlers, useHeroGeneratorPanelHandlers } from '../composables/HeroGenerator'
 import { useForegroundElement } from '../composables/useForegroundElement'
 import { usePresetActions } from '../composables/usePresetActions'
-import { useLayoutResize } from '../composables/useLayoutResize'
+import { useLayoutResize, usePanelResize } from '../composables/useLayoutResize'
 import { useImageLayerEditor } from '../composables/useImageLayerEditor'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 
@@ -260,9 +260,26 @@ watch(selectedPreset, async (preset) => {
 // ============================================================
 const {
   heightPercent: timelineHeightPercent,
-  isResizing,
-  startResize,
+  isResizing: isTimelineResizing,
+  startResize: startTimelineResize,
 } = useLayoutResize({ initialPercent: 35, minPercent: 15, maxPercent: 60 })
+
+// Left panel resize (16rem = 256px)
+const {
+  width: leftPanelWidth,
+  isResizing: isLeftPanelResizing,
+  startResize: startLeftPanelResize,
+} = usePanelResize({ initialWidth: 256, minWidth: 200, maxWidth: 600, direction: 'left' })
+
+// Right panel resize (16rem = 256px)
+const {
+  width: rightPanelWidth,
+  isResizing: isRightPanelResizing,
+  startResize: startRightPanelResize,
+} = usePanelResize({ initialWidth: 256, minWidth: 200, maxWidth: 600, direction: 'right' })
+
+// Combined resizing state for cursor styling
+const isResizing = computed(() => isTimelineResizing.value || isLeftPanelResizing.value || isRightPanelResizing.value)
 
 // ============================================================
 // Component Props (Computed for reactivity and template clarity)
@@ -337,7 +354,7 @@ const panelMask = computed(() => ({
 </script>
 
 <template>
-  <div class="timeline-hero-editor">
+  <div class="timeline-hero-editor" :class="{ 'is-resizing': isResizing }">
     <!-- Top Section: Hero Editor Layout -->
     <div
       class="hero-editor-area"
@@ -349,6 +366,7 @@ const panelMask = computed(() => ({
         :color-state="colors.colorState.value"
         :layout-presets="sidebarLayoutPresets"
         :layers="sidebarLayers"
+        :style="{ width: `${leftPanelWidth}px` }"
         @update:color-state="handleColorStateUpdate"
         @apply-color-preset="handleApplyColorPreset"
         @apply-layout-preset="handleApplyLayoutPreset"
@@ -364,6 +382,12 @@ const panelMask = computed(() => ({
         @move-modifier="handleMoveModifier"
       />
 
+      <!-- Left Panel Resize Handle -->
+      <div
+        class="resize-handle-horizontal"
+        @mousedown="startLeftPanelResize"
+      />
+
       <!-- Center: Preview -->
       <main class="hero-main">
         <HeroPreview
@@ -376,6 +400,12 @@ const panelMask = computed(() => ({
       <!-- Popup Portal Container (for PresetSelector popups) -->
       <div id="preset-popup-portal" class="preset-popup-portal" />
 
+      <!-- Right Panel Resize Handle -->
+      <div
+        class="resize-handle-horizontal"
+        @mousedown="startRightPanelResize"
+      />
+
       <!-- Right: Property Panel -->
       <RightPropertyPanel
         :selection="panelSelection"
@@ -386,6 +416,7 @@ const panelMask = computed(() => ({
         :filter="filterProps"
         :image="imageLayerProps"
         :palette="primitivePalette"
+        :style="{ width: `${rightPanelWidth}px` }"
         @update:foreground="handleForegroundUpdate"
         @update:background="handleBackgroundUpdate"
         @update:mask="handleMaskUpdate"
@@ -396,8 +427,7 @@ const panelMask = computed(() => ({
     <!-- Resize Handle -->
     <div
       class="resize-handle"
-      :class="{ 'resize-handle--active': isResizing }"
-      @mousedown="startResize"
+      @mousedown="startTimelineResize"
     />
 
     <!-- Bottom: Timeline Panel -->
@@ -428,6 +458,11 @@ const panelMask = computed(() => ({
   font-family: system-ui, -apple-system, sans-serif;
   background: oklch(0.97 0.005 260);
   color: oklch(0.25 0.02 260);
+}
+
+/* Prevent text selection during resize */
+.timeline-hero-editor.is-resizing {
+  user-select: none;
 }
 
 .hero-editor-area {
@@ -465,17 +500,40 @@ const panelMask = computed(() => ({
   overflow: hidden;
 }
 
+/* Vertical resize handle (timeline) */
 .resize-handle {
-  height: 4px;
-  background: oklch(0.85 0.01 260);
+  position: relative;
+  height: 3px;
   cursor: ns-resize;
-  transition: background 0.15s;
   flex-shrink: 0;
 }
 
-.resize-handle:hover,
-.resize-handle--active {
-  background: oklch(0.50 0.20 250);
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: oklch(0.85 0.01 260);
+}
+
+/* Horizontal resize handles (left/right panels) */
+.resize-handle-horizontal {
+  position: relative;
+  width: 3px;
+  cursor: ew-resize;
+  flex-shrink: 0;
+}
+
+.resize-handle-horizontal::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: oklch(0.85 0.01 260);
 }
 
 .timeline-area {
