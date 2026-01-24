@@ -5,6 +5,13 @@
 
 // Polyfill URL for happy-dom in CI environment
 // happy-dom may not provide a functional URL constructor in some CI environments
-// Always polyfill from Node.js to ensure consistent behavior
+// Use Node.js URL as polyfill
 import { URL as NodeURL } from 'node:url'
-globalThis.URL = NodeURL as unknown as typeof URL
+
+// Override globalThis.URL with Node.js implementation
+// This ensures URL constructor works in all environments
+Object.defineProperty(globalThis, 'URL', {
+  value: NodeURL,
+  writable: true,
+  configurable: true,
+})
