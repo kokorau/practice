@@ -79,6 +79,20 @@ export const PerlinMaskShapeSchema = defineSchema({
 export type PerlinMaskShapeParams = Infer<typeof PerlinMaskShapeSchema>
 
 /**
+ * Simplex Noise Mask Shape Schema
+ * Thresholded simplex noise for binary mask (smoother than Perlin)
+ */
+export const SimplexMaskShapeSchema = defineSchema({
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  threshold: number({ label: 'Threshold', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  scale: number({ label: 'Scale', min: 0.5, max: 20, step: 0.5, default: 4 }),
+  octaves: number({ label: 'Octaves', min: 1, max: 8, step: 1, default: 4 }),
+  cutout: boolean({ label: 'Cutout', default: true }),
+})
+
+export type SimplexMaskShapeParams = Infer<typeof SimplexMaskShapeSchema>
+
+/**
  * Curl Noise Mask Shape Schema
  * Uses curl of perlin noise for flow-like mask patterns
  */
@@ -325,6 +339,20 @@ export const GradientGrainCurlSurfaceSchema = defineSchema({
 export type GradientGrainCurlSurfaceParams = Infer<typeof GradientGrainCurlSurfaceSchema>
 
 /**
+ * Gradient Grain Simplex Surface Schema
+ */
+export const GradientGrainSimplexSurfaceSchema = defineSchema({
+  simplexScale: number({ label: 'Scale', min: 1, max: 20, step: 0.5, default: 4 }),
+  simplexOctaves: number({ label: 'Octaves', min: 1, max: 8, step: 1, default: 4 }),
+  simplexContrast: number({ label: 'Contrast', min: 0.1, max: 3, step: 0.05, default: 1 }),
+  simplexOffset: number({ label: 'Offset', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+})
+
+export type GradientGrainSimplexSurfaceParams = Infer<typeof GradientGrainSimplexSurfaceSchema>
+
+/**
  * Triangle Surface Schema
  */
 export const TriangleSurfaceSchema = defineSchema({
@@ -427,6 +455,9 @@ export const createDefaultBlobMaskParams = (): BlobMaskShapeParams =>
 export const createDefaultPerlinMaskParams = (): PerlinMaskShapeParams =>
   getDefaults(PerlinMaskShapeSchema)
 
+export const createDefaultSimplexMaskParams = (): SimplexMaskShapeParams =>
+  getDefaults(SimplexMaskShapeSchema)
+
 export const createDefaultCurlMaskParams = (): CurlMaskShapeParams =>
   getDefaults(CurlMaskShapeSchema)
 
@@ -472,6 +503,9 @@ export const createDefaultGradientGrainPerlinParams = (): GradientGrainPerlinSur
 export const createDefaultGradientGrainCurlParams = (): GradientGrainCurlSurfaceParams =>
   getDefaults(GradientGrainCurlSurfaceSchema)
 
+export const createDefaultGradientGrainSimplexParams = (): GradientGrainSimplexSurfaceParams =>
+  getDefaults(GradientGrainSimplexSurfaceSchema)
+
 export const createDefaultTriangleParams = (): TriangleSurfaceParams =>
   getDefaults(TriangleSurfaceSchema)
 
@@ -505,6 +539,7 @@ export const MaskShapeSchemas = {
   rect: RectMaskShapeSchema,
   blob: BlobMaskShapeSchema,
   perlin: PerlinMaskShapeSchema,
+  simplex: SimplexMaskShapeSchema,
   curl: CurlMaskShapeSchema,
   linearGradient: LinearGradientMaskShapeSchema,
   radialGradient: RadialGradientMaskShapeSchema,
@@ -523,6 +558,7 @@ export const SurfaceSchemas = {
   gradientGrainRadial: GradientGrainRadialSurfaceSchema,
   gradientGrainPerlin: GradientGrainPerlinSurfaceSchema,
   gradientGrainCurl: GradientGrainCurlSurfaceSchema,
+  gradientGrainSimplex: GradientGrainSimplexSurfaceSchema,
   triangle: TriangleSurfaceSchema,
   hexagon: HexagonSurfaceSchema,
   asanoha: AsanohaSurfaceSchema,

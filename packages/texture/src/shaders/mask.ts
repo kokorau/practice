@@ -423,6 +423,165 @@ export function createPerlinMaskSpec(
   }
 }
 
+/** Simplex noise mask parameters */
+export interface SimplexMaskParams {
+  /** Random seed */
+  seed: number
+  /** Threshold for binarization (0.0-1.0) */
+  threshold: number
+  /** Noise scale */
+  scale: number
+  /** fBm octaves (1-8) */
+  octaves: number
+  /** Inner color (where noise > threshold) */
+  innerColor: [number, number, number, number]
+  /** Outer color (where noise <= threshold) */
+  outerColor: [number, number, number, number]
+  /** If true (default), noise > threshold is opaque. If false, noise <= threshold is opaque. */
+  cutout?: boolean
+}
+
+/** Simplex noise mask shader */
+export const simplexMaskShader = /* wgsl */ `
+${fullscreenVertex}
+
+// 2D Simplex noise implementation
+// Based on: Stefan Gustavson's simplex noise algorithm
+
+fn mod289v2(x: vec2f) -> vec2f {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+fn mod289v3(x: vec3f) -> vec3f {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+fn permute(x: vec3f) -> vec3f {
+  return mod289v3(((x * 34.0) + 1.0) * x);
+}
+
+fn simplexNoise2D(v: vec2f) -> f32 {
+  let C = vec4f(
+    0.211324865405187,   // (3.0 - sqrt(3.0)) / 6.0
+    0.366025403784439,   // 0.5 * (sqrt(3.0) - 1.0)
+    -0.577350269189626,  // -1.0 + 2.0 * C.x
+    0.024390243902439    // 1.0 / 41.0
+  );
+
+  // First corner
+  var i = floor(v + dot(v, C.yy));
+  let x0 = v - i + dot(i, C.xx);
+
+  // Other corners
+  var i1: vec2f;
+  if (x0.x > x0.y) {
+    i1 = vec2f(1.0, 0.0);
+  } else {
+    i1 = vec2f(0.0, 1.0);
+  }
+  var x12 = x0.xyxy + C.xxzz;
+  x12 = vec4f(x12.xy - i1, x12.zw);
+
+  // Permutations
+  i = mod289v2(i);
+  let p = permute(permute(i.y + vec3f(0.0, i1.y, 1.0)) + i.x + vec3f(0.0, i1.x, 1.0));
+
+  var m = max(vec3f(0.5) - vec3f(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), vec3f(0.0));
+  m = m * m;
+  m = m * m;
+
+  // Gradients: 41 points uniformly over a line, mapped onto a diamond
+  let x = 2.0 * fract(p * C.www) - 1.0;
+  let h = abs(x) - 0.5;
+  let ox = floor(x + 0.5);
+  let a0 = x - ox;
+
+  // Normalise gradients implicitly by scaling m
+  m = m * (1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h));
+
+  // Compute final noise value at P
+  let g = vec3f(
+    a0.x * x0.x + h.x * x0.y,
+    a0.y * x12.x + h.y * x12.y,
+    a0.z * x12.z + h.z * x12.w
+  );
+  return 130.0 * dot(m, g);
+}
+
+fn simplexFbm(p: vec2f, octaves: i32) -> f32 {
+  var value = 0.0;
+  var amplitude = 0.5;
+  var pos = p;
+  var totalAmp = 0.0;
+
+  for (var i = 0; i < octaves; i++) {
+    value += amplitude * simplexNoise2D(pos);
+    totalAmp += amplitude;
+    pos *= 2.0;
+    amplitude *= 0.5;
+  }
+  // Normalize to 0-1 range (simplex noise returns -1 to 1)
+  return (value / totalAmp) * 0.5 + 0.5;
+}
+
+struct SimplexMaskParams {
+  innerColor: vec4f,
+  outerColor: vec4f,
+  seed: f32,
+  threshold: f32,
+  scale: f32,
+  octaves: f32,
+  viewportWidth: f32,
+  viewportHeight: f32,
+}
+
+@group(0) @binding(0) var<uniform> params: SimplexMaskParams;
+
+@fragment
+fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = vec2f(pos.x / params.viewportWidth, pos.y / params.viewportHeight);
+  let noisePos = uv * params.scale + vec2f(params.seed * 0.1, params.seed * 0.073);
+
+  let octaves = clamp(i32(params.octaves), 1, 8);
+  let noise = simplexFbm(noisePos, octaves);
+
+  // Binarize: noise > threshold -> inner, else -> outer
+  let mask = select(0.0, 1.0, noise > params.threshold);
+
+  return mix(params.outerColor, params.innerColor, mask);
+}
+`
+
+/**
+ * Create render spec for simplex noise mask
+ */
+export function createSimplexMaskSpec(
+  params: SimplexMaskParams,
+  viewport: Viewport
+): TextureRenderSpec {
+  const cutout = params.cutout ?? true
+  // When cutout=false, swap inner/outer colors
+  const innerColor = cutout ? params.innerColor : params.outerColor
+  const outerColor = cutout ? params.outerColor : params.innerColor
+
+  const data = new Float32Array([
+    ...innerColor,
+    ...outerColor,
+    params.seed,
+    params.threshold,
+    params.scale,
+    params.octaves,
+    viewport.width,
+    viewport.height,
+  ])
+  return {
+    shader: simplexMaskShader,
+    uniforms: data.buffer,
+    bufferSize: 64,
+    blend: maskBlendState,
+  }
+}
+
 /** Linear gradient mask parameters */
 export interface LinearGradientMaskParams {
   /** Gradient angle in degrees (0-360) */

@@ -5,6 +5,7 @@ import {
   createRectMaskSpec,
   createBlobMaskSpec,
   createPerlinMaskSpec,
+  createSimplexMaskSpec,
   createCurlMaskSpec,
   createLinearGradientMaskSpec,
   createRadialGradientMaskSpec,
@@ -340,6 +341,36 @@ const defaultMaskPatterns: MaskPattern[] = [
     maskConfig: { type: 'perlin', seed: 42, threshold: 0.6, scale: 3, octaves: 3 },
     createSpec: (c1, c2, viewport) =>
       createPerlinMaskSpec(
+        { seed: 42, threshold: 0.6, scale: 3, octaves: 3, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  // ============================================================
+  // Simplex Noise patterns (smoother than Perlin)
+  // ============================================================
+  {
+    label: 'Simplex Noise',
+    maskConfig: { type: 'simplex', seed: 12345, threshold: 0.5, scale: 4, octaves: 4 },
+    createSpec: (c1, c2, viewport) =>
+      createSimplexMaskSpec(
+        { seed: 12345, threshold: 0.5, scale: 4, octaves: 4, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Simplex Dense',
+    maskConfig: { type: 'simplex', seed: 99, threshold: 0.4, scale: 6, octaves: 5 },
+    createSpec: (c1, c2, viewport) =>
+      createSimplexMaskSpec(
+        { seed: 99, threshold: 0.4, scale: 6, octaves: 5, innerColor: c1, outerColor: c2 },
+        viewport!
+      ),
+  },
+  {
+    label: 'Simplex Sparse',
+    maskConfig: { type: 'simplex', seed: 42, threshold: 0.6, scale: 3, octaves: 3 },
+    createSpec: (c1, c2, viewport) =>
+      createSimplexMaskSpec(
         { seed: 42, threshold: 0.6, scale: 3, octaves: 3, innerColor: c1, outerColor: c2 },
         viewport!
       ),

@@ -190,6 +190,16 @@ export interface GradientGrainCurlSurfaceConfig {
   sparsity: number
 }
 
+export interface GradientGrainSimplexSurfaceConfig {
+  type: 'gradientGrainSimplex'
+  simplexScale: number
+  simplexOctaves: number
+  simplexContrast: number
+  simplexOffset: number
+  seed: number
+  sparsity: number
+}
+
 export interface TriangleSurfaceConfig {
   type: 'triangle'
   size: number
@@ -257,6 +267,7 @@ export type SurfaceConfig =
   | GradientGrainRadialSurfaceConfig
   | GradientGrainPerlinSurfaceConfig
   | GradientGrainCurlSurfaceConfig
+  | GradientGrainSimplexSurfaceConfig
   | TriangleSurfaceConfig
   | HexagonSurfaceConfig
   | AsanohaSurfaceConfig
@@ -294,6 +305,7 @@ export const SURFACE_TYPES: SurfaceType[] = [
   'gradientGrainRadial',
   'gradientGrainPerlin',
   'gradientGrainCurl',
+  'gradientGrainSimplex',
   'triangle',
   'hexagon',
   'asanoha',
@@ -520,6 +532,15 @@ export interface PerlinMaskShapeConfig {
   cutout: boolean
 }
 
+export interface SimplexMaskShapeConfig {
+  type: 'simplex'
+  seed: number
+  threshold: number
+  scale: number
+  octaves: number
+  cutout: boolean
+}
+
 export interface CurlMaskShapeConfig {
   type: 'curl'
   seed: number
@@ -595,6 +616,7 @@ export type MaskShapeConfig =
   | RectMaskShapeConfig
   | BlobMaskShapeConfig
   | PerlinMaskShapeConfig
+  | SimplexMaskShapeConfig
   | CurlMaskShapeConfig
   | LinearGradientMaskShapeConfig
   | RadialGradientMaskShapeConfig
@@ -618,6 +640,7 @@ export const MASK_SHAPE_TYPE_IDS: MaskShapeTypeId[] = [
   'rect',
   'blob',
   'perlin',
+  'simplex',
   'curl',
   'linearGradient',
   'radialGradient',

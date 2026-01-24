@@ -37,7 +37,7 @@ export interface TexturePattern {
 /**
  * Mask type enumeration
  */
-export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'curl' | 'linearGradient' | 'radialGradient' | 'boxGradient' | 'wavyLine'
+export type MaskShapeType = 'circle' | 'rect' | 'blob' | 'perlin' | 'simplex' | 'curl' | 'linearGradient' | 'radialGradient' | 'boxGradient' | 'wavyLine'
 
 /**
  * Circle mask configuration
@@ -95,6 +95,20 @@ export interface BlobMaskShapeConfig {
  */
 export interface PerlinMaskShapeConfig {
   type: 'perlin'
+  seed: number
+  threshold: number
+  scale: number
+  octaves: number
+  /** If true (default), noise > threshold is opaque. If false, noise <= threshold is opaque. */
+  cutout?: boolean
+}
+
+/**
+ * Simplex noise mask configuration
+ * Thresholded simplex noise for binary mask (smoother than Perlin)
+ */
+export interface SimplexMaskShapeConfig {
+  type: 'simplex'
   seed: number
   threshold: number
   scale: number
@@ -199,7 +213,7 @@ export interface WavyLineMaskShapeConfig {
   cutout?: boolean
 }
 
-export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | CurlMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig | BoxGradientMaskShapeConfig | WavyLineMaskShapeConfig
+export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | SimplexMaskShapeConfig | CurlMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig | BoxGradientMaskShapeConfig | WavyLineMaskShapeConfig
 
 /**
  * Mask pattern definition with shape configuration

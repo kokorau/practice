@@ -17,7 +17,7 @@ export const approxEqual = (a: number, b: number, epsilon = 0.0001): boolean =>
  * Surface preset params type (for matching)
  */
 export interface SurfacePresetParams {
-  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrainLinear' | 'gradientGrainCircular' | 'gradientGrainRadial' | 'gradientGrainPerlin' | 'gradientGrainCurl' | 'triangle' | 'hexagon' | 'asanoha' | 'seigaiha' | 'wave' | 'scales' | 'ogee' | 'sunburst'
+  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrainLinear' | 'gradientGrainCircular' | 'gradientGrainRadial' | 'gradientGrainPerlin' | 'gradientGrainCurl' | 'gradientGrainSimplex' | 'triangle' | 'hexagon' | 'asanoha' | 'seigaiha' | 'wave' | 'scales' | 'ogee' | 'sunburst'
   width1?: number
   width2?: number
   angle?: number
@@ -43,6 +43,11 @@ export interface SurfacePresetParams {
   perlinOffset?: number
   // GradientGrain Curl params
   curlIntensity?: number
+  // GradientGrain Simplex params
+  simplexScale?: number
+  simplexOctaves?: number
+  simplexContrast?: number
+  simplexOffset?: number
   // Triangle/Hexagon/Textile pattern params
   size?: number
   radius?: number
@@ -61,7 +66,7 @@ export interface SurfacePresetParams {
  * Mask pattern config type (for matching)
  */
 export interface MaskPatternConfig {
-  type: 'circle' | 'rect' | 'blob' | 'perlin' | 'curl' | 'linearGradient' | 'radialGradient' | 'boxGradient' | 'wavyLine'
+  type: 'circle' | 'rect' | 'blob' | 'perlin' | 'simplex' | 'curl' | 'linearGradient' | 'radialGradient' | 'boxGradient' | 'wavyLine'
   centerX?: number
   centerY?: number
   radius?: number
@@ -207,6 +212,18 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
+    if (surfaceConfig.type === 'gradientGrainSimplex' && preset.params.type === 'gradientGrainSimplex') {
+      if (
+        approxEqual(surfaceConfig.simplexScale, preset.params.simplexScale ?? 4) &&
+        approxEqual(surfaceConfig.simplexOctaves, preset.params.simplexOctaves ?? 4) &&
+        approxEqual(surfaceConfig.simplexContrast, preset.params.simplexContrast ?? 1) &&
+        approxEqual(surfaceConfig.simplexOffset, preset.params.simplexOffset ?? 0) &&
+        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
+        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+      ) {
+        return i
+      }
+    }
     if (surfaceConfig.type === 'triangle' && preset.params.type === 'triangle') {
       if (
         approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
@@ -336,6 +353,16 @@ export const findMaskPatternIndex = (
       }
     }
     if (shapeConfig.type === 'perlin' && maskConfig.type === 'perlin') {
+      if (
+        shapeConfig.seed === maskConfig.seed &&
+        approxEqual(shapeConfig.threshold, maskConfig.threshold ?? 0.5) &&
+        approxEqual(shapeConfig.scale, maskConfig.scale ?? 4) &&
+        shapeConfig.octaves === maskConfig.octaves
+      ) {
+        return i
+      }
+    }
+    if (shapeConfig.type === 'simplex' && maskConfig.type === 'simplex') {
       if (
         shapeConfig.seed === maskConfig.seed &&
         approxEqual(shapeConfig.threshold, maskConfig.threshold ?? 0.5) &&

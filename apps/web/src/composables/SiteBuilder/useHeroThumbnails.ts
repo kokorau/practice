@@ -32,6 +32,7 @@ import {
   createGradientGrainRadialSpec,
   createGradientGrainPerlinSpec,
   createGradientGrainCurlSpec,
+  createGradientGrainSimplexSpec,
   DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
   type TexturePattern,
   type MaskPattern,
@@ -219,6 +220,18 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
           perlinContrast: params.perlinContrast,
           perlinOffset: params.perlinOffset,
           curlIntensity: params.curlIntensity,
+          colorA: color1,
+          colorB: color2,
+          seed: params.seed,
+          sparsity: params.sparsity,
+          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
+        }, viewport)
+      case 'gradientGrainSimplex':
+        return createGradientGrainSimplexSpec({
+          simplexScale: params.simplexScale,
+          simplexOctaves: params.simplexOctaves,
+          simplexContrast: params.simplexContrast,
+          simplexOffset: params.simplexOffset,
           colorA: color1,
           colorB: color2,
           seed: params.seed,
