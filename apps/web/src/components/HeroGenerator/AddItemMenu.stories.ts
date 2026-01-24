@@ -1,29 +1,29 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import AddItemMenu from './AddItemMenu.vue'
+import AddItemMenu, { type MenuItemOption } from './AddItemMenu.vue'
 
-const layerItems = [
+const layerItems: MenuItemOption<string>[] = [
   { type: 'surface', label: 'Surface', icon: 'texture' },
   { type: 'group', label: 'Group', icon: 'folder_open' },
   { type: 'model3d', label: '3D Model', icon: 'view_in_ar' },
   { type: 'image', label: 'Image', icon: 'image' },
   { type: 'text', label: 'Text', icon: 'text_fields' },
-] as const
+]
 
-const htmlItems = [
+const htmlItems: MenuItemOption<string>[] = [
   { type: 'title', label: 'Title', icon: 'title' },
   { type: 'description', label: 'Description', icon: 'notes' },
-] as const
+]
 
-const itemsWithDisabled = [
+const itemsWithDisabled: MenuItemOption<string>[] = [
   { type: 'surface', label: 'Surface', icon: 'texture' },
   { type: 'group', label: 'Group', icon: 'folder_open' },
   { type: 'model3d', label: '3D Model', icon: 'view_in_ar', disabled: true },
   { type: 'text', label: 'Text', icon: 'text_fields', disabled: true },
-] as const
+]
 
-const meta: Meta<typeof AddItemMenu> = {
+const meta: Meta = {
   title: 'Components/HeroGenerator/AddItemMenu',
-  component: AddItemMenu,
+  component: AddItemMenu as never,
   tags: ['autodocs'],
   parameters: {
     layout: 'centered',
@@ -38,25 +38,25 @@ const meta: Meta<typeof AddItemMenu> = {
 }
 
 export default meta
-type Story = StoryObj<typeof AddItemMenu>
+type Story = StoryObj<typeof meta>
 
 export const LayerMenu: Story = {
   args: {
-    items: layerItems as unknown as typeof layerItems[number][],
+    items: layerItems,
     title: 'Add Layer',
   },
 }
 
 export const HtmlElementMenu: Story = {
   args: {
-    items: htmlItems as unknown as typeof htmlItems[number][],
+    items: htmlItems,
     title: 'Add HTML Element',
   },
 }
 
 export const WithDisabledItems: Story = {
   args: {
-    items: itemsWithDisabled as unknown as typeof itemsWithDisabled[number][],
+    items: itemsWithDisabled,
     title: 'Add Layer',
   },
 }

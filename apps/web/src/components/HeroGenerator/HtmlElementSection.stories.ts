@@ -2,22 +2,23 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import HtmlElementSection from './HtmlElementSection.vue'
 import type { ForegroundElementConfig } from '@practice/section-visual'
 
-const mockElements: ForegroundElementConfig[] = [
-  {
-    id: 'title-1',
-    type: 'title',
-    visible: true,
-    position: 'middle-center',
-    content: 'Build Amazing',
-  },
-  {
-    id: 'description-1',
-    type: 'description',
-    visible: true,
-    position: 'middle-center',
-    content: 'Create beautiful, responsive websites.',
-  },
-]
+const mockTitle: ForegroundElementConfig = {
+  id: 'title-1',
+  type: 'title',
+  visible: true,
+  position: 'middle-center',
+  content: 'Build Amazing',
+}
+
+const mockDescription: ForegroundElementConfig = {
+  id: 'description-1',
+  type: 'description',
+  visible: true,
+  position: 'middle-center',
+  content: 'Create beautiful, responsive websites.',
+}
+
+const mockElements: ForegroundElementConfig[] = [mockTitle, mockDescription]
 
 const meta: Meta<typeof HtmlElementSection> = {
   title: 'Components/HeroGenerator/HtmlElementSection',
@@ -65,14 +66,14 @@ export const Empty: Story = {
 
 export const OnlyTitle: Story = {
   args: {
-    foregroundElements: [mockElements[0]],
+    foregroundElements: [mockTitle],
     selectedElementId: null,
   },
 }
 
 export const OnlyDescription: Story = {
   args: {
-    foregroundElements: [mockElements[1]],
+    foregroundElements: [mockDescription],
     selectedElementId: null,
   },
 }
@@ -81,7 +82,7 @@ export const OnlyDescription: Story = {
 export const WithHiddenElement: Story = {
   args: {
     foregroundElements: [
-      mockElements[0],
+      mockTitle,
       {
         id: 'hidden-desc',
         type: 'description',
