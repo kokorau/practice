@@ -748,8 +748,6 @@ const handleImageUpdate = (key: string, value: unknown) => {
         description: descriptionContrastResult,
       }"
       :background="{
-        colorKey1: heroScene.background.backgroundColorKey1.value,
-        colorKey2: heroScene.background.backgroundColorKey2.value,
         patterns: backgroundPatterns,
         selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
         surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
@@ -757,8 +755,6 @@ const handleImageUpdate = (key: string, value: unknown) => {
         rawSurfaceParams: heroScene.background.rawBackgroundSurfaceParams.value,
       }"
       :mask="{
-        colorKey1: heroScene.mask.maskColorKey1.value,
-        colorKey2: heroScene.mask.maskColorKey2.value,
         surfacePatterns: maskSurfacePatterns,
         selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
         surfaceSchema: heroScene.mask.currentSurfaceSchema.value,

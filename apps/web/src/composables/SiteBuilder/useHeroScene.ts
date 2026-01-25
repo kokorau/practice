@@ -1152,8 +1152,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   const background: BackgroundState = {
-    backgroundColorKey1: heroColors.backgroundColorKey1,
-    backgroundColorKey2: heroColors.backgroundColorKey2,
     customBackgroundSurfaceParams,
     rawBackgroundSurfaceParams,
     currentBackgroundSurfaceSchema,
@@ -1171,8 +1169,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   const mask: MaskState = {
-    maskColorKey1: heroColors.maskColorKey1,
-    maskColorKey2: heroColors.maskColorKey2,
     maskSemanticContext: heroColors.maskSemanticContext,
     customMaskShapeParams,
     rawMaskShapeParams,

@@ -134,6 +134,7 @@ export type {
   ProcessorConfig,
   SingleEffectConfig,
   MaskProcessorConfig,
+  FilterProcessorConfig,
   // LayerNodeConfig types (JSON serialization)
   LayerNodeConfig,
   BaseLayerNodeConfig,
@@ -248,6 +249,7 @@ export {
   isImageLayerConfig,
   isModel3DLayerConfig,
   isMaskProcessorConfig,
+  isFilterProcessorConfig,
   // LayerTreeOps - Tree operations
   findLayerInTree,
   updateLayerInTree,
@@ -354,6 +356,7 @@ export {
   denormalizeToLayerEffectConfig,
   safeDenormalizeToLayerEffectConfig,
   createDefaultMaskProcessorConfig,
+  createDefaultFilterProcessorConfig,
   // Surface config normalization
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,

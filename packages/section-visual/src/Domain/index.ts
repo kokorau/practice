@@ -351,6 +351,7 @@ export {
   isImageLayerConfig,
   isModel3DLayerConfig,
   isMaskProcessorConfig,
+  isFilterProcessorConfig,
   // Tree operations
   findLayerInTree,
   updateLayerInTree,
@@ -694,6 +695,7 @@ export type {
   // Processor modifier config types
   ProcessorConfig,
   MaskProcessorConfig,
+  FilterProcessorConfig,
   // Foreground
   GridPosition,
   ForegroundElementType,
@@ -731,6 +733,7 @@ export {
   denormalizeToLayerEffectConfig,
   safeDenormalizeToLayerEffectConfig,
   createDefaultMaskProcessorConfig,
+  createDefaultFilterProcessorConfig,
   // Surface config normalization
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,

@@ -7,7 +7,7 @@
  * - handleMaskUpdate: マスクの更新
  */
 
-import type { HeroPrimitiveKey, ColorValue } from '@practice/section-visual'
+import type { HeroPrimitiveKey } from '@practice/section-visual'
 import type { UseForegroundElementReturn } from '../useForegroundElement'
 
 // Generic writable ref type that accepts both Ref and WritableComputedRef
@@ -28,14 +28,10 @@ export type ForegroundElementRefs = Pick<
 >
 
 export interface BackgroundState {
-  backgroundColorKey1: WritableRef<ColorValue>
-  backgroundColorKey2: WritableRef<ColorValue>
   updateBackgroundSurfaceParams: (params: Record<string, unknown>) => void
 }
 
 export interface MaskState {
-  maskColorKey1: WritableRef<ColorValue>
-  maskColorKey2: WritableRef<ColorValue>
   updateSurfaceParams: (params: Record<string, unknown>) => void
   updateMaskShapeParams: (params: Record<string, unknown>) => void
 }
@@ -92,12 +88,6 @@ export const useHeroGeneratorPanelHandlers = (
 
   const handleBackgroundUpdate = (key: string, value: unknown) => {
     switch (key) {
-      case 'colorKey1':
-        background.backgroundColorKey1.value = value as typeof background.backgroundColorKey1.value
-        break
-      case 'colorKey2':
-        background.backgroundColorKey2.value = value as typeof background.backgroundColorKey2.value
-        break
       case 'selectPattern':
         if (value !== null) pattern.selectedBackgroundIndex.value = value as number
         break
@@ -109,12 +99,6 @@ export const useHeroGeneratorPanelHandlers = (
 
   const handleMaskUpdate = (key: string, value: unknown) => {
     switch (key) {
-      case 'colorKey1':
-        mask.maskColorKey1.value = value as typeof mask.maskColorKey1.value
-        break
-      case 'colorKey2':
-        mask.maskColorKey2.value = value as typeof mask.maskColorKey2.value
-        break
       case 'selectPattern':
         if (value !== null) pattern.selectedMidgroundTextureIndex.value = value as number
         break
