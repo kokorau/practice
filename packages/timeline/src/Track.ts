@@ -6,6 +6,21 @@ export type { BezierPath, BezierAnchor } from '@practice/bezier'
 
 export type TrackId = string & { readonly __brand: unique symbol }
 
+/**
+ * Generate a new unique TrackId using crypto.randomUUID()
+ *
+ * Use this function when creating new tracks dynamically.
+ * For static/mock data, use fixed UUID strings as constants.
+ *
+ * @example
+ * const newTrack: Track = {
+ *   id: generateTrackId(),
+ *   name: 'My Track',
+ *   // ...
+ * }
+ */
+export const generateTrackId = (): TrackId => crypto.randomUUID() as TrackId
+
 export type ClockType = 'Global' | 'Phase' | 'Loop'
 
 /**

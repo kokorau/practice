@@ -6,19 +6,28 @@ import type { PhaseId } from '../../Phase'
 import type { TrackId } from '../../Track'
 
 describe('PlayerUsecase', () => {
+  // UUID constants for test tracks
+  const TEST_TRACK_IDS = {
+    OPACITY: '00000000-0000-0000-0000-000000000001' as TrackId,
+    PULSE: '00000000-0000-0000-0000-000000000002' as TrackId,
+    TEST: '00000000-0000-0000-0000-000000000003' as TrackId,
+    OPENING: '00000000-0000-0000-0000-000000000004' as TrackId,
+    LOOP: '00000000-0000-0000-0000-000000000005' as TrackId,
+  } as const
+
   const createTestTimeline = (): Timeline => ({
     loopType: 'forward',
     phases: [{ id: 'phase-1' as PhaseId, type: 'Opening', duration: 4000 }],
     tracks: [
       {
-        id: 'track-opacity' as TrackId,
+        id: TEST_TRACK_IDS.OPACITY,
         name: 'Opacity',
         clock: 'Global',
         phaseId: 'phase-1' as PhaseId,
         expression: 'div(t, 4000)',
       },
       {
-        id: 'track-pulse' as TrackId,
+        id: TEST_TRACK_IDS.PULSE,
         name: 'Pulse',
         clock: 'Global',
         phaseId: 'phase-1' as PhaseId,
@@ -38,8 +47,8 @@ describe('PlayerUsecase', () => {
 
       const state = player.update(0)
       expect(state.time).toBe(0)
-      expect(state.intensities).toHaveProperty('track-opacity')
-      expect(state.intensities).toHaveProperty('track-pulse')
+      expect(state.intensities).toHaveProperty(TEST_TRACK_IDS.OPACITY)
+      expect(state.intensities).toHaveProperty(TEST_TRACK_IDS.PULSE)
     })
 
     it('player reflects current repository state', () => {
@@ -49,7 +58,7 @@ describe('PlayerUsecase', () => {
       const usecase = createPlayerUsecase({ repository })
 
       const player = usecase.createPlayer()
-      expect(player.update(0).intensities['track-opacity']).toBeDefined()
+      expect(player.update(0).intensities[TEST_TRACK_IDS.OPACITY]).toBeDefined()
     })
   })
 
@@ -61,8 +70,8 @@ describe('PlayerUsecase', () => {
 
       const state = player.update(0)
       expect(state.time).toBe(0)
-      expect(state.intensities).toHaveProperty('track-opacity')
-      expect(state.intensities).toHaveProperty('track-pulse')
+      expect(state.intensities).toHaveProperty(TEST_TRACK_IDS.OPACITY)
+      expect(state.intensities).toHaveProperty(TEST_TRACK_IDS.PULSE)
     })
 
     it('seek updates playhead', () => {
@@ -170,7 +179,7 @@ describe('PlayerUsecase', () => {
         phases: [{ id: 'phase-1' as PhaseId, type: 'Opening', duration: 4000 }],
         tracks: [
           {
-            id: 'track-test' as TrackId,
+            id: TEST_TRACK_IDS.TEST,
             name: 'Test',
             clock: 'Global',
             phaseId: 'phase-1' as PhaseId,
@@ -182,13 +191,13 @@ describe('PlayerUsecase', () => {
       const player = createTimelinePlayer({ timeline })
 
       player.seek(0)
-      expect(player.update(0).intensities['track-test']).toBe(0)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.TEST]).toBe(0)
 
       player.seek(2000)
-      expect(player.update(0).intensities['track-test']).toBe(0.5)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.TEST]).toBe(0.5)
 
       player.seek(4000)
-      expect(player.update(0).intensities['track-test']).toBe(1)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.TEST]).toBe(1)
     })
 
     it('evaluates oscillator DSL expression', () => {
@@ -197,7 +206,7 @@ describe('PlayerUsecase', () => {
         phases: [{ id: 'phase-1' as PhaseId, type: 'Opening', duration: 4000 }],
         tracks: [
           {
-            id: 'track-pulse' as TrackId,
+            id: TEST_TRACK_IDS.PULSE,
             name: 'Pulse',
             clock: 'Global',
             phaseId: 'phase-1' as PhaseId,
@@ -209,10 +218,10 @@ describe('PlayerUsecase', () => {
       const player = createTimelinePlayer({ timeline })
 
       player.seek(0)
-      expect(player.update(0).intensities['track-pulse']).toBeCloseTo(0.5, 5)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.PULSE]).toBeCloseTo(0.5, 5)
 
       player.seek(250)
-      expect(player.update(0).intensities['track-pulse']).toBeCloseTo(1, 5)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.PULSE]).toBeCloseTo(1, 5)
     })
 
     it('handles Phase clock type', () => {
@@ -224,14 +233,14 @@ describe('PlayerUsecase', () => {
         ],
         tracks: [
           {
-            id: 'track-opening' as TrackId,
+            id: TEST_TRACK_IDS.OPENING,
             name: 'Opening Track',
             clock: 'Phase',
             phaseId: 'phase-opening' as PhaseId,
             expression: 'div(t, 1000)',
           },
           {
-            id: 'track-loop' as TrackId,
+            id: TEST_TRACK_IDS.LOOP,
             name: 'Loop Track',
             clock: 'Phase',
             phaseId: 'phase-loop' as PhaseId,
@@ -243,16 +252,16 @@ describe('PlayerUsecase', () => {
       const player = createTimelinePlayer({ timeline })
 
       player.seek(500)
-      expect(player.update(0).intensities['track-opening']).toBeCloseTo(0.5, 5)
-      expect(player.update(0).intensities['track-loop']).toBeCloseTo(0, 5)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.OPENING]).toBeCloseTo(0.5, 5)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.LOOP]).toBeCloseTo(0, 5)
 
       player.seek(1000)
-      expect(player.update(0).intensities['track-opening']).toBeCloseTo(1, 5)
-      expect(player.update(0).intensities['track-loop']).toBeCloseTo(0, 5)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.OPENING]).toBeCloseTo(1, 5)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.LOOP]).toBeCloseTo(0, 5)
 
       player.seek(2000)
-      expect(player.update(0).intensities['track-opening']).toBeCloseTo(1, 5)
-      expect(player.update(0).intensities['track-loop']).toBeCloseTo(0.5, 5)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.OPENING]).toBeCloseTo(1, 5)
+      expect(player.update(0).intensities[TEST_TRACK_IDS.LOOP]).toBeCloseTo(0.5, 5)
     })
   })
 })

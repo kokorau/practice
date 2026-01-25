@@ -1,5 +1,32 @@
 import type { Timeline, PhaseId, TrackId } from '@practice/timeline'
 
+// ============================================================
+// UUID Constants for Mock Track IDs
+// ============================================================
+export const MOCK_TRACK_IDS = {
+  // Opening Phase
+  OPACITY: '550e8400-e29b-41d4-a716-446655440001' as TrackId,
+  SCALE: '550e8400-e29b-41d4-a716-446655440002' as TrackId,
+  // Simple Waves
+  WAVE_OSC: '550e8400-e29b-41d4-a716-446655440003' as TrackId,
+  WAVE_SAW: '550e8400-e29b-41d4-a716-446655440004' as TrackId,
+  WAVE_TRI: '550e8400-e29b-41d4-a716-446655440005' as TrackId,
+  WAVE_PULSE: '550e8400-e29b-41d4-a716-446655440006' as TrackId,
+  WAVE_STEP: '550e8400-e29b-41d4-a716-446655440007' as TrackId,
+  WAVE_NOISE: '550e8400-e29b-41d4-a716-446655440008' as TrackId,
+  // Composite
+  ROTATION: '550e8400-e29b-41d4-a716-446655440009' as TrackId,
+  LAYERED: '550e8400-e29b-41d4-a716-44665544000a' as TrackId,
+  NOISE_MOD: '550e8400-e29b-41d4-a716-44665544000b' as TrackId,
+  BOUNCE: '550e8400-e29b-41d4-a716-44665544000c' as TrackId,
+  ELASTIC: '550e8400-e29b-41d4-a716-44665544000d' as TrackId,
+  HEARTBEAT: '550e8400-e29b-41d4-a716-44665544000e' as TrackId,
+  WOBBLE: '550e8400-e29b-41d4-a716-44665544000f' as TrackId,
+  BREATHING: '550e8400-e29b-41d4-a716-446655440010' as TrackId,
+  CLAMPED: '550e8400-e29b-41d4-a716-446655440011' as TrackId,
+  QUANTIZED: '550e8400-e29b-41d4-a716-446655440012' as TrackId,
+} as const
+
 export const mockTimeline: Timeline = {
   loopType: 'forward',
   phases: [
@@ -11,16 +38,16 @@ export const mockTimeline: Timeline = {
     // Opening Phase - Fade-in Effects
     // ============================================================
     {
-      id: 'opacity' as TrackId,
-      name: 'Opacity (smoothstep)',
+      id: MOCK_TRACK_IDS.OPACITY,
+      name: 'opacity',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
       // smoothstep: smooth ease-in-out from 0 to 1
       expression: '=smoothstep(0, 5000, @t)',
     },
     {
-      id: 'scale' as TrackId,
-      name: 'Scale (smoothstep)',
+      id: MOCK_TRACK_IDS.SCALE,
+      name: 'scale',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
       // smoothstep: 0 → 1 (config maps via range to actual scale values)
@@ -33,8 +60,8 @@ export const mockTimeline: Timeline = {
 
     // --- osc: Sine wave (0~1) ---
     {
-      id: 'wave_osc' as TrackId,
-      name: 'osc (sine)',
+      id: MOCK_TRACK_IDS.WAVE_OSC,
+      name: 'wave_osc',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // osc(t, period) → 0~1 sine wave
@@ -43,8 +70,8 @@ export const mockTimeline: Timeline = {
 
     // --- saw: Sawtooth wave (0~1) ---
     {
-      id: 'wave_saw' as TrackId,
-      name: 'saw (sawtooth)',
+      id: MOCK_TRACK_IDS.WAVE_SAW,
+      name: 'wave_saw',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // phase gives 0~1 linear ramp, same as saw(phase(...))
@@ -53,8 +80,8 @@ export const mockTimeline: Timeline = {
 
     // --- tri: Triangle wave (0~1) ---
     {
-      id: 'wave_tri' as TrackId,
-      name: 'tri (triangle)',
+      id: MOCK_TRACK_IDS.WAVE_TRI,
+      name: 'wave_tri',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // tri(phase(t, period)) → triangle wave
@@ -63,8 +90,8 @@ export const mockTimeline: Timeline = {
 
     // --- oscPulse: Pulse/Square wave (0 or 1) ---
     {
-      id: 'wave_pulse' as TrackId,
-      name: 'oscPulse (square)',
+      id: MOCK_TRACK_IDS.WAVE_PULSE,
+      name: 'wave_pulse',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // oscPulse(t, period, duty) → 0 or 1
@@ -73,8 +100,8 @@ export const mockTimeline: Timeline = {
 
     // --- oscStep: Stepped/Quantized wave ---
     {
-      id: 'wave_step' as TrackId,
-      name: 'oscStep (4 steps)',
+      id: MOCK_TRACK_IDS.WAVE_STEP,
+      name: 'wave_step',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // oscStep(t, period, steps) → quantized 0~1
@@ -83,8 +110,8 @@ export const mockTimeline: Timeline = {
 
     // --- noise: Deterministic noise ---
     {
-      id: 'wave_noise' as TrackId,
-      name: 'noise',
+      id: MOCK_TRACK_IDS.WAVE_NOISE,
+      name: 'wave_noise',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // noise(t / scale, seed) → pseudo-random 0~1
@@ -97,8 +124,8 @@ export const mockTimeline: Timeline = {
 
     // --- Rotation: Sine oscillation (0-1) ---
     {
-      id: 'rotation' as TrackId,
-      name: 'Rotation (osc)',
+      id: MOCK_TRACK_IDS.ROTATION,
+      name: 'rotation',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // osc 0~1, config maps via range to -30~30 degrees
@@ -107,8 +134,8 @@ export const mockTimeline: Timeline = {
 
     // --- Layered: Two oscillations combined ---
     {
-      id: 'layered' as TrackId,
-      name: 'Layered (osc + osc)',
+      id: MOCK_TRACK_IDS.LAYERED,
+      name: 'layered',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // Combine slow and fast oscillations: 0.7 * slow + 0.3 * fast
@@ -117,8 +144,8 @@ export const mockTimeline: Timeline = {
 
     // --- Noise modulated: Noise affecting amplitude ---
     {
-      id: 'noise_mod' as TrackId,
-      name: 'Noise Modulated',
+      id: MOCK_TRACK_IDS.NOISE_MOD,
+      name: 'noise_mod',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // osc * (0.5 + 0.5 * noise) → amplitude varies with noise
@@ -127,8 +154,8 @@ export const mockTimeline: Timeline = {
 
     // --- Bounce: Using abs(sin) for bouncing effect ---
     {
-      id: 'bounce' as TrackId,
-      name: 'Bounce (abs sin)',
+      id: MOCK_TRACK_IDS.BOUNCE,
+      name: 'bounce',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // abs(sin) creates bounce effect (0-1)
@@ -137,8 +164,8 @@ export const mockTimeline: Timeline = {
 
     // --- Elastic: Damped oscillation simulation ---
     {
-      id: 'elastic' as TrackId,
-      name: 'Elastic (damped)',
+      id: MOCK_TRACK_IDS.ELASTIC,
+      name: 'elastic',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // Simulates elastic/damped motion using exp decay * sin
@@ -148,8 +175,8 @@ export const mockTimeline: Timeline = {
 
     // --- Heartbeat: Two quick pulses then pause ---
     {
-      id: 'heartbeat' as TrackId,
-      name: 'Heartbeat',
+      id: MOCK_TRACK_IDS.HEARTBEAT,
+      name: 'heartbeat',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // Two pulses in first 40% of period, then rest
@@ -159,8 +186,8 @@ export const mockTimeline: Timeline = {
 
     // --- Wobble: Triangle + noise for organic movement ---
     {
-      id: 'wobble' as TrackId,
-      name: 'Wobble (tri + noise)',
+      id: MOCK_TRACK_IDS.WOBBLE,
+      name: 'wobble',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // 80% triangle + 20% noise for organic feel
@@ -169,8 +196,8 @@ export const mockTimeline: Timeline = {
 
     // --- Breathing: Smooth slow oscillation ---
     {
-      id: 'breathing' as TrackId,
-      name: 'Breathing',
+      id: MOCK_TRACK_IDS.BREATHING,
+      name: 'breathing',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // Very slow smoothed oscillation for breathing effect
@@ -180,8 +207,8 @@ export const mockTimeline: Timeline = {
 
     // --- Clamped noise: Noise with min/max bounds ---
     {
-      id: 'clamped' as TrackId,
-      name: 'Clamped Noise',
+      id: MOCK_TRACK_IDS.CLAMPED,
+      name: 'clamped',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // Noise scaled up then clamped to 0.2~0.8
@@ -190,8 +217,8 @@ export const mockTimeline: Timeline = {
 
     // --- Quantized sine: Sine wave with step quantization ---
     {
-      id: 'quantized' as TrackId,
-      name: 'Quantized Sine',
+      id: MOCK_TRACK_IDS.QUANTIZED,
+      name: 'quantized',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
       // floor(osc * 8) / 8 → 8-level quantization

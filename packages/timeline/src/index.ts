@@ -3,6 +3,7 @@ export type { Ms } from './Unit'
 
 // Phase
 export type { PhaseId, PhaseType, Phase, LoopType } from './Phase'
+export { generatePhaseId } from './Phase'
 
 // PhaseLayout
 export type { PhaseLayout } from './PhaseLayout'
@@ -10,6 +11,7 @@ export { calculatePhaseLayouts } from './PhaseLayout'
 
 // Track (DSL-based)
 export type { TrackId, ClockType, DslTrack, Track, BezierPath, BezierAnchor } from './Track'
+export { generateTrackId } from './Track'
 
 // Timeline
 export type { Timeline } from './Timeline'

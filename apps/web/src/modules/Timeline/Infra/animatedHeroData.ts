@@ -23,6 +23,64 @@ import type { HeroViewConfig } from '@practice/section-visual'
 import { $PropertyValue } from '@practice/section-visual'
 
 // ============================================================
+// UUID Constants for Preset Track IDs
+// ============================================================
+
+// Preset 1: Breathing Circle
+const BREATHING_CIRCLE_TRACK_IDS = {
+  MASK_RADIUS: '650e8400-e29b-41d4-a716-446655440001' as TrackId,
+  STRIPE_ANGLE: '650e8400-e29b-41d4-a716-446655440002' as TrackId,
+  STRIPE_WIDTH: '650e8400-e29b-41d4-a716-446655440003' as TrackId,
+  MASK_CENTER_X: '650e8400-e29b-41d4-a716-446655440004' as TrackId,
+  BLUR_RADIUS: '650e8400-e29b-41d4-a716-446655440005' as TrackId,
+} as const
+
+// Preset 2: Rotating Sunburst
+const ROTATING_SUNBURST_TRACK_IDS = {
+  RAYS_OPENING: '750e8400-e29b-41d4-a716-446655440001' as TrackId,
+  TWIST: '750e8400-e29b-41d4-a716-446655440002' as TrackId,
+  RAYS_LOOP: '750e8400-e29b-41d4-a716-446655440003' as TrackId,
+  CENTER_X: '750e8400-e29b-41d4-a716-446655440004' as TrackId,
+  CENTER_Y: '750e8400-e29b-41d4-a716-446655440005' as TrackId,
+} as const
+
+// Preset 3: Flowing Waves
+const FLOWING_WAVES_TRACK_IDS = {
+  AMPLITUDE_OPEN: '850e8400-e29b-41d4-a716-446655440001' as TrackId,
+  AMPLITUDE: '850e8400-e29b-41d4-a716-446655440002' as TrackId,
+  WAVELENGTH: '850e8400-e29b-41d4-a716-446655440003' as TrackId,
+  WAVE_ANGLE: '850e8400-e29b-41d4-a716-446655440004' as TrackId,
+  THICKNESS: '850e8400-e29b-41d4-a716-446655440005' as TrackId,
+} as const
+
+// Preset 4: Pulsing Grid
+const PULSING_GRID_TRACK_IDS = {
+  CELL_OPEN: '950e8400-e29b-41d4-a716-446655440001' as TrackId,
+  CELL: '950e8400-e29b-41d4-a716-446655440002' as TrackId,
+  LINE_WIDTH: '950e8400-e29b-41d4-a716-446655440003' as TrackId,
+  MASK_RADIUS: '950e8400-e29b-41d4-a716-446655440004' as TrackId,
+} as const
+
+// Preset 5: Organic Scales
+const ORGANIC_SCALES_TRACK_IDS = {
+  SIZE_OPEN: 'a50e8400-e29b-41d4-a716-446655440001' as TrackId,
+  SIZE: 'a50e8400-e29b-41d4-a716-446655440002' as TrackId,
+  OVERLAP: 'a50e8400-e29b-41d4-a716-446655440003' as TrackId,
+  ANGLE: 'a50e8400-e29b-41d4-a716-446655440004' as TrackId,
+  MASK_X: 'a50e8400-e29b-41d4-a716-446655440005' as TrackId,
+} as const
+
+// Preset 6: Morphing Blob
+const MORPHING_BLOB_TRACK_IDS = {
+  RADIUS_OPEN: 'b50e8400-e29b-41d4-a716-446655440001' as TrackId,
+  SEED: 'b50e8400-e29b-41d4-a716-446655440002' as TrackId,
+  RADIUS: 'b50e8400-e29b-41d4-a716-446655440003' as TrackId,
+  AMPLITUDE: 'b50e8400-e29b-41d4-a716-446655440004' as TrackId,
+  CENTER_X: 'b50e8400-e29b-41d4-a716-446655440005' as TrackId,
+  CENTER_Y: 'b50e8400-e29b-41d4-a716-446655440006' as TrackId,
+} as const
+
+// ============================================================
 // Preset Definition Type
 // ============================================================
 
@@ -53,7 +111,7 @@ const breathingCircleTimeline: Timeline = {
   tracks: [
     // Opening: smooth mask expansion (slow reveal)
     {
-      id: 'track-mask-radius' as TrackId,
+      id: BREATHING_CIRCLE_TRACK_IDS.MASK_RADIUS,
       name: 'Mask Radius',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
@@ -61,7 +119,7 @@ const breathingCircleTimeline: Timeline = {
     },
     // Loop: very gentle angle oscillation
     {
-      id: 'track-stripe-angle' as TrackId,
+      id: BREATHING_CIRCLE_TRACK_IDS.STRIPE_ANGLE,
       name: 'Stripe Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -69,7 +127,7 @@ const breathingCircleTimeline: Timeline = {
     },
     // Loop: subtle width breathing
     {
-      id: 'track-stripe-width' as TrackId,
+      id: BREATHING_CIRCLE_TRACK_IDS.STRIPE_WIDTH,
       name: 'Stripe Width',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -77,7 +135,7 @@ const breathingCircleTimeline: Timeline = {
     },
     // Loop: slow horizontal drift
     {
-      id: 'track-mask-center-x' as TrackId,
+      id: BREATHING_CIRCLE_TRACK_IDS.MASK_CENTER_X,
       name: 'Mask Center X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -85,7 +143,7 @@ const breathingCircleTimeline: Timeline = {
     },
     // Loop: blur radius breathing
     {
-      id: 'track-blur-radius' as TrackId,
+      id: BREATHING_CIRCLE_TRACK_IDS.BLUR_RADIUS,
       name: 'Blur Radius',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -112,9 +170,9 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
           surface: {
             id: 'stripe',
             params: {
-              width1: $PropertyValue.range('track-stripe-width', 20, 28),
+              width1: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.STRIPE_WIDTH, 20, 28),
               width2: $PropertyValue.static(20),
-              angle: $PropertyValue.range('track-stripe-angle', 40, 50),
+              angle: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.STRIPE_ANGLE, 40, 50),
               color1: $PropertyValue.static('B'),
               color2: $PropertyValue.static('auto'),
             },
@@ -157,7 +215,7 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
               type: 'effect',
               id: 'blur',
               params: {
-                radius: $PropertyValue.range('track-blur-radius', 1, 8),
+                radius: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.BLUR_RADIUS, 1, 8),
               },
             },
             {
@@ -166,9 +224,9 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
               shape: {
                 id: 'circle',
                 params: {
-                  centerX: $PropertyValue.range('track-mask-center-x', 0.42, 0.58),
+                  centerX: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.MASK_CENTER_X, 0.42, 0.58),
                   centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.range('track-mask-radius', 0.2, 0.4),
+                  radius: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.MASK_RADIUS, 0.2, 0.4),
                   cutout: $PropertyValue.static(false),
                 },
               },
@@ -210,7 +268,7 @@ const rotatingSunburstTimeline: Timeline = {
   tracks: [
     // Opening: rays fade in slowly
     {
-      id: 'track-rays-opening' as TrackId,
+      id: ROTATING_SUNBURST_TRACK_IDS.RAYS_OPENING,
       name: 'Rays Count',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
@@ -218,7 +276,7 @@ const rotatingSunburstTimeline: Timeline = {
     },
     // Loop: slow continuous rotation (30 seconds for full rotation)
     {
-      id: 'track-twist' as TrackId,
+      id: ROTATING_SUNBURST_TRACK_IDS.TWIST,
       name: 'Twist',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -226,7 +284,7 @@ const rotatingSunburstTimeline: Timeline = {
     },
     // Loop: subtle rays breathing
     {
-      id: 'track-rays-loop' as TrackId,
+      id: ROTATING_SUNBURST_TRACK_IDS.RAYS_LOOP,
       name: 'Rays',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -234,7 +292,7 @@ const rotatingSunburstTimeline: Timeline = {
     },
     // Loop: very slow center drift
     {
-      id: 'track-center-x' as TrackId,
+      id: ROTATING_SUNBURST_TRACK_IDS.CENTER_X,
       name: 'Center X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -242,7 +300,7 @@ const rotatingSunburstTimeline: Timeline = {
     },
     // Loop: very slow vertical drift
     {
-      id: 'track-center-y' as TrackId,
+      id: ROTATING_SUNBURST_TRACK_IDS.CENTER_Y,
       name: 'Center Y',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -269,10 +327,10 @@ const createRotatingSunburstConfig = (): HeroViewConfig => ({
           surface: {
             id: 'sunburst',
             params: {
-              rays: $PropertyValue.range('track-rays-loop', 14, 18),
-              centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
-              centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
-              twist: $PropertyValue.range('track-twist', 0, 360),
+              rays: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.RAYS_LOOP, 14, 18),
+              centerX: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.CENTER_X, 0.45, 0.55),
+              centerY: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.CENTER_Y, 0.45, 0.55),
+              twist: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.TWIST, 0, 360),
               color1: $PropertyValue.static('A'),
               color2: $PropertyValue.static('At'),
             },
@@ -310,8 +368,8 @@ const createRotatingSunburstConfig = (): HeroViewConfig => ({
               shape: {
                 id: 'circle',
                 params: {
-                  centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
-                  centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
+                  centerX: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.CENTER_X, 0.45, 0.55),
+                  centerY: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.CENTER_Y, 0.45, 0.55),
                   radius: $PropertyValue.static(0.15),
                   cutout: $PropertyValue.static(false),
                 },
@@ -354,7 +412,7 @@ const flowingWavesTimeline: Timeline = {
   tracks: [
     // Opening: amplitude builds up gently
     {
-      id: 'track-amplitude-open' as TrackId,
+      id: FLOWING_WAVES_TRACK_IDS.AMPLITUDE_OPEN,
       name: 'Amplitude Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
@@ -362,7 +420,7 @@ const flowingWavesTimeline: Timeline = {
     },
     // Loop: subtle amplitude breathing
     {
-      id: 'track-amplitude' as TrackId,
+      id: FLOWING_WAVES_TRACK_IDS.AMPLITUDE,
       name: 'Amplitude',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -370,7 +428,7 @@ const flowingWavesTimeline: Timeline = {
     },
     // Loop: slow wavelength variation
     {
-      id: 'track-wavelength' as TrackId,
+      id: FLOWING_WAVES_TRACK_IDS.WAVELENGTH,
       name: 'Wavelength',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -378,7 +436,7 @@ const flowingWavesTimeline: Timeline = {
     },
     // Loop: very gentle angle sway
     {
-      id: 'track-wave-angle' as TrackId,
+      id: FLOWING_WAVES_TRACK_IDS.WAVE_ANGLE,
       name: 'Wave Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -386,7 +444,7 @@ const flowingWavesTimeline: Timeline = {
     },
     // Loop: slow thickness breathing
     {
-      id: 'track-thickness' as TrackId,
+      id: FLOWING_WAVES_TRACK_IDS.THICKNESS,
       name: 'Thickness',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -413,10 +471,10 @@ const createFlowingWavesConfig = (): HeroViewConfig => ({
           surface: {
             id: 'wave',
             params: {
-              amplitude: $PropertyValue.range('track-amplitude', 22, 30),
-              wavelength: $PropertyValue.range('track-wavelength', 80, 100),
-              thickness: $PropertyValue.range('track-thickness', 4, 6),
-              angle: $PropertyValue.range('track-wave-angle', -5, 5),
+              amplitude: $PropertyValue.range(FLOWING_WAVES_TRACK_IDS.AMPLITUDE, 22, 30),
+              wavelength: $PropertyValue.range(FLOWING_WAVES_TRACK_IDS.WAVELENGTH, 80, 100),
+              thickness: $PropertyValue.range(FLOWING_WAVES_TRACK_IDS.THICKNESS, 4, 6),
+              angle: $PropertyValue.range(FLOWING_WAVES_TRACK_IDS.WAVE_ANGLE, -5, 5),
               color1: $PropertyValue.static('B'),
               color2: $PropertyValue.static('auto'),
             },
@@ -513,7 +571,7 @@ const pulsingGridTimeline: Timeline = {
   tracks: [
     // Opening: grid fades in slowly
     {
-      id: 'track-cell-open' as TrackId,
+      id: PULSING_GRID_TRACK_IDS.CELL_OPEN,
       name: 'Cell Size Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
@@ -521,7 +579,7 @@ const pulsingGridTimeline: Timeline = {
     },
     // Loop: subtle cell size breathing
     {
-      id: 'track-cell' as TrackId,
+      id: PULSING_GRID_TRACK_IDS.CELL,
       name: 'Cell Size',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -529,7 +587,7 @@ const pulsingGridTimeline: Timeline = {
     },
     // Loop: very subtle line width change
     {
-      id: 'track-line-width' as TrackId,
+      id: PULSING_GRID_TRACK_IDS.LINE_WIDTH,
       name: 'Line Width',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -537,7 +595,7 @@ const pulsingGridTimeline: Timeline = {
     },
     // Loop: slow mask size breathing
     {
-      id: 'track-mask-radius' as TrackId,
+      id: PULSING_GRID_TRACK_IDS.MASK_RADIUS,
       name: 'Mask Radius',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -564,8 +622,8 @@ const createPulsingGridConfig = (): HeroViewConfig => ({
           surface: {
             id: 'grid',
             params: {
-              lineWidth: $PropertyValue.range('track-line-width', 1.5, 2.5),
-              cellSize: $PropertyValue.range('track-cell', 36, 44),
+              lineWidth: $PropertyValue.range(PULSING_GRID_TRACK_IDS.LINE_WIDTH, 1.5, 2.5),
+              cellSize: $PropertyValue.range(PULSING_GRID_TRACK_IDS.CELL, 36, 44),
               color1: $PropertyValue.static('F1'),
               color2: $PropertyValue.static('B'),
             },
@@ -605,7 +663,7 @@ const createPulsingGridConfig = (): HeroViewConfig => ({
                 params: {
                   centerX: $PropertyValue.static(0.5),
                   centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.range('track-mask-radius', 0.35, 0.45),
+                  radius: $PropertyValue.range(PULSING_GRID_TRACK_IDS.MASK_RADIUS, 0.35, 0.45),
                   cutout: $PropertyValue.static(false),
                 },
               },
@@ -648,7 +706,7 @@ const organicScalesTimeline: Timeline = {
   tracks: [
     // Opening: scales emerge slowly
     {
-      id: 'track-size-open' as TrackId,
+      id: ORGANIC_SCALES_TRACK_IDS.SIZE_OPEN,
       name: 'Scale Size Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
@@ -656,7 +714,7 @@ const organicScalesTimeline: Timeline = {
     },
     // Loop: subtle scale size breathing
     {
-      id: 'track-size' as TrackId,
+      id: ORGANIC_SCALES_TRACK_IDS.SIZE,
       name: 'Scale Size',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -664,7 +722,7 @@ const organicScalesTimeline: Timeline = {
     },
     // Loop: slow overlap variation
     {
-      id: 'track-overlap' as TrackId,
+      id: ORGANIC_SCALES_TRACK_IDS.OVERLAP,
       name: 'Overlap',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -672,7 +730,7 @@ const organicScalesTimeline: Timeline = {
     },
     // Loop: very gentle angle sway
     {
-      id: 'track-angle' as TrackId,
+      id: ORGANIC_SCALES_TRACK_IDS.ANGLE,
       name: 'Angle',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -680,7 +738,7 @@ const organicScalesTimeline: Timeline = {
     },
     // Loop: slow mask drift
     {
-      id: 'track-mask-x' as TrackId,
+      id: ORGANIC_SCALES_TRACK_IDS.MASK_X,
       name: 'Mask X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -727,9 +785,9 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
           surface: {
             id: 'scales',
             params: {
-              size: $PropertyValue.range('track-size', 30, 36),
-              overlap: $PropertyValue.range('track-overlap', 0.4, 0.5),
-              angle: $PropertyValue.range('track-angle', -5, 5),
+              size: $PropertyValue.range(ORGANIC_SCALES_TRACK_IDS.SIZE, 30, 36),
+              overlap: $PropertyValue.range(ORGANIC_SCALES_TRACK_IDS.OVERLAP, 0.4, 0.5),
+              angle: $PropertyValue.range(ORGANIC_SCALES_TRACK_IDS.ANGLE, -5, 5),
               color1: $PropertyValue.static('B'),
               color2: $PropertyValue.static('auto'),
             },
@@ -747,7 +805,7 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
               shape: {
                 id: 'circle',
                 params: {
-                  centerX: $PropertyValue.range('track-mask-x', 0.6, 0.7),
+                  centerX: $PropertyValue.range(ORGANIC_SCALES_TRACK_IDS.MASK_X, 0.6, 0.7),
                   centerY: $PropertyValue.static(0.5),
                   radius: $PropertyValue.static(0.4),
                   cutout: $PropertyValue.static(false),
@@ -844,7 +902,7 @@ const morphingBlobTimeline: Timeline = {
   tracks: [
     // Opening: blob fades in with growing radius
     {
-      id: 'track-radius-open' as TrackId,
+      id: MORPHING_BLOB_TRACK_IDS.RADIUS_OPEN,
       name: 'Radius Intro',
       clock: 'Phase',
       phaseId: 'phase-opening' as PhaseId,
@@ -852,7 +910,7 @@ const morphingBlobTimeline: Timeline = {
     },
     // Loop: continuous seed morphing (key animation - uses continuous seed function)
     {
-      id: 'track-seed' as TrackId,
+      id: MORPHING_BLOB_TRACK_IDS.SEED,
       name: 'Blob Seed',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -860,7 +918,7 @@ const morphingBlobTimeline: Timeline = {
     },
     // Loop: subtle radius breathing
     {
-      id: 'track-radius' as TrackId,
+      id: MORPHING_BLOB_TRACK_IDS.RADIUS,
       name: 'Blob Radius',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -868,7 +926,7 @@ const morphingBlobTimeline: Timeline = {
     },
     // Loop: amplitude variation
     {
-      id: 'track-amplitude' as TrackId,
+      id: MORPHING_BLOB_TRACK_IDS.AMPLITUDE,
       name: 'Blob Amplitude',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -876,7 +934,7 @@ const morphingBlobTimeline: Timeline = {
     },
     // Loop: slow center drift X
     {
-      id: 'track-center-x' as TrackId,
+      id: MORPHING_BLOB_TRACK_IDS.CENTER_X,
       name: 'Center X',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -884,7 +942,7 @@ const morphingBlobTimeline: Timeline = {
     },
     // Loop: slow center drift Y
     {
-      id: 'track-center-y' as TrackId,
+      id: MORPHING_BLOB_TRACK_IDS.CENTER_Y,
       name: 'Center Y',
       clock: 'Loop',
       phaseId: 'phase-loop' as PhaseId,
@@ -938,8 +996,8 @@ const createMorphingBlobConfig = (): HeroViewConfig => ({
           surface: {
             id: 'gradientGrainRadial',
             params: {
-              centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
-              centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
+              centerX: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.CENTER_X, 0.45, 0.55),
+              centerY: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.CENTER_Y, 0.45, 0.55),
               radialStartAngle: $PropertyValue.static(0),
               radialSweepAngle: $PropertyValue.static(360),
               seed: $PropertyValue.static(42),
@@ -961,12 +1019,12 @@ const createMorphingBlobConfig = (): HeroViewConfig => ({
               shape: {
                 id: 'blob',
                 params: {
-                  centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
-                  centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
-                  baseRadius: $PropertyValue.range('track-radius', 0.35, 0.42),
-                  amplitude: $PropertyValue.range('track-amplitude', 0.12, 0.18),
+                  centerX: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.CENTER_X, 0.45, 0.55),
+                  centerY: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.CENTER_Y, 0.45, 0.55),
+                  baseRadius: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.RADIUS, 0.35, 0.42),
+                  amplitude: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.AMPLITUDE, 0.12, 0.18),
                   octaves: $PropertyValue.static(4),
-                  seed: $PropertyValue.range('track-seed', 0, 100),
+                  seed: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.SEED, 0, 100),
                 },
               },
               invert: false,
