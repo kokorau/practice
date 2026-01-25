@@ -169,8 +169,18 @@ export {
 export {
   linearGradientShader,
   createLinearGradientSpec,
+  createCircularGradientSpec,
+  createConicGradientSpec,
+  createRepeatLinearGradientSpec,
+  createPerlinGradientSpec,
+  createCurlGradientSpec,
   LINEAR_GRADIENT_BUFFER_SIZE,
   type LinearGradientParams,
+  type CircularGradientParams,
+  type ConicGradientParams,
+  type RepeatLinearGradientParams,
+  type PerlinGradientParams,
+  type CurlGradientParams,
 } from './linearGradient'
 export {
   gradientGrainLinearShader,

@@ -22,6 +22,11 @@ import {
   PolkaDotSurfaceSchema,
   CheckerSurfaceSchema,
   LinearGradientSurfaceSchema,
+  CircularGradientSurfaceSchema,
+  ConicGradientSurfaceSchema,
+  RepeatLinearGradientSurfaceSchema,
+  PerlinGradientSurfaceSchema,
+  CurlGradientSurfaceSchema,
   GradientGrainLinearSurfaceSchema,
   GradientGrainCircularSurfaceSchema,
   GradientGrainRadialSurfaceSchema,
@@ -82,6 +87,11 @@ export const SURFACE_REGISTRY: readonly SurfaceDefinition[] = [
 
   // Gradients
   { id: 'linearGradient', name: 'Linear Gradient', category: 'gradient', schema: LinearGradientSurfaceSchema },
+  { id: 'circularGradient', name: 'Circular Gradient', category: 'gradient', schema: CircularGradientSurfaceSchema },
+  { id: 'conicGradient', name: 'Conic Gradient', category: 'gradient', schema: ConicGradientSurfaceSchema },
+  { id: 'repeatLinearGradient', name: 'Repeat Linear', category: 'gradient', schema: RepeatLinearGradientSurfaceSchema },
+  { id: 'perlinGradient', name: 'Perlin Gradient', category: 'gradient', schema: PerlinGradientSurfaceSchema },
+  { id: 'curlGradient', name: 'Curl Gradient', category: 'gradient', schema: CurlGradientSurfaceSchema },
   { id: 'gradientGrainLinear', name: 'Grain Linear', category: 'gradient', schema: GradientGrainLinearSurfaceSchema },
   { id: 'gradientGrainCircular', name: 'Grain Circular', category: 'gradient', schema: GradientGrainCircularSurfaceSchema },
   { id: 'gradientGrainRadial', name: 'Grain Radial', category: 'gradient', schema: GradientGrainRadialSurfaceSchema },

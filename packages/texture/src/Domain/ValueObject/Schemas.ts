@@ -279,6 +279,78 @@ export const LinearGradientSurfaceSchema = defineSchema({
 export type LinearGradientSurfaceParams = Infer<typeof LinearGradientSurfaceSchema>
 
 /**
+ * Circular Gradient Surface Schema (center outward radial gradient)
+ */
+export const CircularGradientSurfaceSchema = defineSchema({
+  centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  circularInvert: boolean({ label: 'Invert', default: false }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
+})
+
+export type CircularGradientSurfaceParams = Infer<typeof CircularGradientSurfaceSchema>
+
+/**
+ * Conic Gradient Surface Schema (angle-based cone gradient)
+ */
+export const ConicGradientSurfaceSchema = defineSchema({
+  centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  startAngle: number({ label: 'Start Angle', min: 0, max: 360, step: 1, default: 0 }),
+  sweepAngle: number({ label: 'Sweep Angle', min: 1, max: 360, step: 1, default: 360 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
+})
+
+export type ConicGradientSurfaceParams = Infer<typeof ConicGradientSurfaceSchema>
+
+/**
+ * Repeat Linear Gradient Surface Schema
+ */
+export const RepeatLinearGradientSurfaceSchema = defineSchema({
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 90 }),
+  centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  repeat: number({ label: 'Repeat', min: 2, max: 20, step: 1, default: 3 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
+})
+
+export type RepeatLinearGradientSurfaceParams = Infer<typeof RepeatLinearGradientSurfaceSchema>
+
+/**
+ * Perlin Gradient Surface Schema (perlin noise-based gradient)
+ */
+export const PerlinGradientSurfaceSchema = defineSchema({
+  scale: number({ label: 'Scale', min: 1, max: 20, step: 0.5, default: 4 }),
+  octaves: number({ label: 'Octaves', min: 1, max: 8, step: 1, default: 4 }),
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  contrast: number({ label: 'Contrast', min: 0.1, max: 3, step: 0.05, default: 1 }),
+  offset: number({ label: 'Offset', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
+})
+
+export type PerlinGradientSurfaceParams = Infer<typeof PerlinGradientSurfaceSchema>
+
+/**
+ * Curl Gradient Surface Schema (curl noise-based gradient)
+ */
+export const CurlGradientSurfaceSchema = defineSchema({
+  scale: number({ label: 'Scale', min: 1, max: 20, step: 0.5, default: 4 }),
+  octaves: number({ label: 'Octaves', min: 1, max: 8, step: 1, default: 4 }),
+  seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  contrast: number({ label: 'Contrast', min: 0.1, max: 3, step: 0.05, default: 1 }),
+  offset: number({ label: 'Offset', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
+  intensity: number({ label: 'Intensity', min: 0.5, max: 3, step: 0.1, default: 1 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
+})
+
+export type CurlGradientSurfaceParams = Infer<typeof CurlGradientSurfaceSchema>
+
+/**
  * Default curve points for gradient grain (quadratic easing)
  * Values represent Y coordinates at equal X intervals: [0/6, 1/6, 2/6, 3/6, 4/6, 5/6, 6/6]
  * Pattern: (i/6)² where i = 0,1,2,3,4,5,6
@@ -631,6 +703,11 @@ export const SurfaceSchemas = {
   polkaDot: PolkaDotSurfaceSchema,
   checker: CheckerSurfaceSchema,
   linearGradient: LinearGradientSurfaceSchema,
+  circularGradient: CircularGradientSurfaceSchema,
+  conicGradient: ConicGradientSurfaceSchema,
+  repeatLinearGradient: RepeatLinearGradientSurfaceSchema,
+  perlinGradient: PerlinGradientSurfaceSchema,
+  curlGradient: CurlGradientSurfaceSchema,
   gradientGrainLinear: GradientGrainLinearSurfaceSchema,
   gradientGrainCircular: GradientGrainCircularSurfaceSchema,
   gradientGrainRadial: GradientGrainRadialSurfaceSchema,
