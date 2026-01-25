@@ -10,6 +10,7 @@
  */
 
 import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 
 // ============================================================
 // Props & Emits
@@ -106,11 +107,11 @@ const handleRemove = () => {
 }
 
 // Close on click outside
-const handleClickOutside = (e: MouseEvent) => {
-  if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
+onClickOutside(menuRef, () => {
+  if (props.isOpen) {
     emit('close')
   }
-}
+})
 
 // Close on Escape key
 const handleKeydown = (e: KeyboardEvent) => {
@@ -120,12 +121,10 @@ const handleKeydown = (e: KeyboardEvent) => {
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeydown)
 })
 </script>

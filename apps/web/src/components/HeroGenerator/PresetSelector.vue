@@ -8,6 +8,7 @@
  */
 
 import { ref, computed } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 
 export interface PresetItem {
   label: string
@@ -32,6 +33,7 @@ const emit = defineEmits<{
 
 const isOpen = ref(false)
 const triggerRef = ref<HTMLElement | null>(null)
+const popupRef = ref<HTMLElement | null>(null)
 
 const togglePopup = () => {
   isOpen.value = !isOpen.value
@@ -42,14 +44,12 @@ const handleSelect = (index: number | null) => {
   isOpen.value = false
 }
 
-const handleClickOutside = () => {
+// Use vueuse onClickOutside with ignore option
+onClickOutside(popupRef, () => {
   isOpen.value = false
-}
-
-const clickOutsideOptions = computed(() => ({
-  handler: handleClickOutside,
-  ignore: [triggerRef.value],
-}))
+}, {
+  ignore: [triggerRef],
+})
 
 const selectedLabel = () => {
   if (props.selectedIndex === null) {
@@ -95,7 +95,7 @@ const sortedItems = computed(() => {
       <Transition name="preset-popup">
         <div
           v-if="isOpen"
-          v-click-outside="clickOutsideOptions"
+          ref="popupRef"
           class="preset-popup"
         >
           <div class="preset-popup-header">

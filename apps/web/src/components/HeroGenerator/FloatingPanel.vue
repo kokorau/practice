@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 
 const props = withDefaults(
   defineProps<{
@@ -18,27 +19,29 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const panelRef = ref<HTMLElement | null>(null)
+
 const computedTransitionName = computed(() => {
   return props.position === 'left' ? 'popup' : 'subpanel-right'
 })
 
 const positionClass = computed(() => `position-${props.position}`)
 
-const handleClickOutside = () => {
-  emit('close')
-}
-
-const clickOutsideOptions = computed(() => ({
-  handler: handleClickOutside,
-  ignore: props.ignoreRefs,
-}))
+// Use vueuse onClickOutside with ignore option
+onClickOutside(panelRef, () => {
+  if (props.isOpen) {
+    emit('close')
+  }
+}, {
+  ignore: computed(() => props.ignoreRefs.filter((el): el is HTMLElement => el != null)),
+})
 </script>
 
 <template>
   <Transition :name="computedTransitionName">
     <aside
       v-if="isOpen"
-      v-click-outside="clickOutsideOptions"
+      ref="panelRef"
       class="floating-panel"
       :class="positionClass"
     >
