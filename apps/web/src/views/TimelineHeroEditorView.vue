@@ -48,6 +48,13 @@ function onSelectTrack(trackId: TrackId) {
   timelineEditor.selectTrack(trackId)
 }
 
+// Sync track keys when timeline changes
+watch(selectedTimeline, (timeline) => {
+  if (timeline) {
+    timelineEditor.syncTracks(timeline.tracks.map(t => t.id))
+  }
+}, { immediate: true })
+
 // ============================================================
 // Preset Repository (Timeline用プリセット)
 // ============================================================
@@ -461,6 +468,7 @@ const panelMask = computed(() => ({
         :timeline="selectedTimeline"
         :visible-duration="VISIBLE_DURATION"
         :selected-track-id="selectedTrackId"
+        :get-track-key="timelineEditor.getTrackKey"
         @update:frame-state="handleFrameStateUpdate"
         @select:track="onSelectTrack"
       />

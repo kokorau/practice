@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createTimelineEditor, type Selection } from './TimelineEditor'
+import { createTimelineEditor } from './TimelineEditor'
 import type { TrackId, PhaseId } from '@practice/timeline'
 
 describe('TimelineEditor', () => {
@@ -79,6 +79,68 @@ describe('TimelineEditor', () => {
 
       expect(listener1).toHaveBeenCalled()
       expect(listener2).toHaveBeenCalled()
+    })
+  })
+
+  describe('trackKeys', () => {
+    it('should assign keys A, B, C to tracks in order', () => {
+      const editor = createTimelineEditor()
+      const trackIds = ['t1', 't2', 't3'].map(id => id as TrackId)
+
+      editor.syncTracks(trackIds)
+
+      expect(editor.getTrackKey('t1' as TrackId)).toBe('A')
+      expect(editor.getTrackKey('t2' as TrackId)).toBe('B')
+      expect(editor.getTrackKey('t3' as TrackId)).toBe('C')
+    })
+
+    it('should preserve keys when tracks are removed', () => {
+      const editor = createTimelineEditor()
+      editor.syncTracks(['t1', 't2', 't3'].map(id => id as TrackId))
+
+      // Remove t2
+      editor.syncTracks(['t1', 't3'].map(id => id as TrackId))
+
+      expect(editor.getTrackKey('t1' as TrackId)).toBe('A')
+      expect(editor.getTrackKey('t2' as TrackId)).toBeUndefined()
+      expect(editor.getTrackKey('t3' as TrackId)).toBe('C')
+    })
+
+    it('should assign next key to new tracks', () => {
+      const editor = createTimelineEditor()
+      editor.syncTracks(['t1', 't2'].map(id => id as TrackId))
+
+      // Remove t2 and add t3
+      editor.syncTracks(['t1', 't3'].map(id => id as TrackId))
+
+      expect(editor.getTrackKey('t1' as TrackId)).toBe('A')
+      expect(editor.getTrackKey('t3' as TrackId)).toBe('C') // Not B, because B was used by t2
+    })
+
+    it('should handle AA, AB after Z', () => {
+      const editor = createTimelineEditor()
+      const trackIds: TrackId[] = []
+      for (let i = 0; i < 28; i++) {
+        trackIds.push(`t${i}` as TrackId)
+      }
+
+      editor.syncTracks(trackIds)
+
+      expect(editor.getTrackKey('t0' as TrackId)).toBe('A')
+      expect(editor.getTrackKey('t25' as TrackId)).toBe('Z')
+      expect(editor.getTrackKey('t26' as TrackId)).toBe('AA')
+      expect(editor.getTrackKey('t27' as TrackId)).toBe('AB')
+    })
+
+    it('should return all keys via getTrackKeys', () => {
+      const editor = createTimelineEditor()
+      editor.syncTracks(['t1', 't2'].map(id => id as TrackId))
+
+      const keys = editor.getTrackKeys()
+
+      expect(keys.size).toBe(2)
+      expect(keys.get('t1' as TrackId)).toBe('A')
+      expect(keys.get('t2' as TrackId)).toBe('B')
     })
   })
 })

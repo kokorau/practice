@@ -11,9 +11,11 @@ const props = withDefaults(defineProps<{
   timeline: Timeline
   visibleDuration?: Ms
   selectedTrackId?: TrackId | null
+  getTrackKey?: (trackId: TrackId) => string | undefined
 }>(), {
   visibleDuration: 30000 as Ms,
   selectedTrackId: null,
+  getTrackKey: undefined,
 })
 
 const emit = defineEmits<{
@@ -101,6 +103,17 @@ function formatTime(ms: number): string {
   const sec = totalSec % 60
   const millis = msInt % 1000
   return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(millis).padStart(3, '0')}`
+}
+
+// Convert index to letter (0 → A, 1 → B, ..., 25 → Z, 26 → AA, ...)
+function indexToLetter(index: number): string {
+  let result = ''
+  let n = index
+  do {
+    result = String.fromCharCode(65 + (n % 26)) + result
+    n = Math.floor(n / 26) - 1
+  } while (n >= 0)
+  return result
 }
 
 // Format seconds as display text (e.g., "30s")
@@ -398,14 +411,14 @@ defineExpose({
       >
         <div class="track-list-body-inner">
           <div
-            v-for="track in timeline.tracks"
+            v-for="(track, index) in timeline.tracks"
             :key="track.id"
             class="track-list-item"
             :class="{ 'track-list-item--selected': selectedTrackId === track.id }"
             @click="emit('select:track', track.id)"
           >
+            <span class="track-key">[{{ getTrackKey?.(track.id) ?? indexToLetter(index) }}]</span>
             <span class="track-name">{{ track.name }}</span>
-            <span class="track-param">{{ track.id }}</span>
           </div>
         </div>
       </div>
@@ -648,6 +661,14 @@ defineExpose({
 
 .track-list-item--selected:hover {
   background: oklch(0.82 0.10 250);
+}
+
+.track-key {
+  font-size: 0.625rem;
+  font-family: ui-monospace, monospace;
+  font-weight: 600;
+  color: oklch(0.50 0.02 260);
+  flex-shrink: 0;
 }
 
 .track-name {

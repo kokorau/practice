@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { FrameState, Ms, TrackId } from '@practice/timeline'
 import { prepareTimeline } from '@practice/timeline'
 import { extractPeriod } from '@practice/dsl'
@@ -31,6 +31,11 @@ const selectedTrackId = ref<TrackId | null>(null)
 
 const unsubscribe = timelineEditor.onSelectionChange((selection) => {
   selectedTrackId.value = selection.type === 'track' ? selection.id as TrackId : null
+})
+
+onMounted(() => {
+  // Sync tracks on mount to assign keys
+  timelineEditor.syncTracks(mockTimeline.tracks.map(t => t.id))
 })
 
 onUnmounted(() => {
@@ -301,6 +306,7 @@ function stopResize() {
         :timeline="mockTimeline"
         :visible-duration="visibleDuration"
         :selected-track-id="selectedTrackId"
+        :get-track-key="timelineEditor.getTrackKey"
         @update:frame-state="onFrameStateUpdate"
         @update:playhead="onPlayheadUpdate"
         @update:visible-duration="setVisibleDuration"
