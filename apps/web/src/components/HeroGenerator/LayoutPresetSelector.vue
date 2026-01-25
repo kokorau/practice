@@ -12,6 +12,7 @@ import type { Oklch } from '@practice/color'
 import type { TextureRenderer } from '@practice/texture'
 import type { HeroViewPreset } from '@practice/section-visual'
 import { renderHeroConfig, getPresetConfig, isAnimatedPreset } from '@practice/section-visual'
+import type { IntensityProvider } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
 import { hsvToRgb } from '../SiteBuilder/utils/colorConversion'
@@ -32,6 +33,12 @@ const PREVIEW_FONT_SCALE = 0.3 // Scale down fonts for preview
 // Original HeroPreview width for scaling textures
 const ORIGINAL_WIDTH = 1280
 const TEXTURE_SCALE = PREVIEW_WIDTH / ORIGINAL_WIDTH // ~0.3
+
+/**
+ * IntensityProvider that returns 0.5 for all tracks
+ * Used for animated preset preview (shows mid-range values)
+ */
+const PREVIEW_INTENSITY_PROVIDER: IntensityProvider = () => 0.5
 
 const props = defineProps<{
   presets: HeroViewPreset[]
@@ -136,16 +143,13 @@ const setCanvasRef = (presetId: string, el: HTMLCanvasElement | null) => {
 
 /**
  * Render preset using shared renderHeroConfig function
- * Note: Animated presets use $PropertyValue bindings that can't be rendered statically,
- * so we skip canvas rendering for them (foreground text preview is still shown)
+ * For animated presets, uses PREVIEW_INTENSITY_PROVIDER to resolve $PropertyValue bindings
+ * with mid-range values (0.5 intensity for all tracks)
  */
 const renderPreset = async (presetId: string) => {
   const renderer = renderers.value.get(presetId)
   const preset = props.presets.find(p => p.id === presetId)
   if (!renderer || !preset) return
-
-  // Skip canvas rendering for animated presets (they use $PropertyValue bindings)
-  if (isAnimatedPreset(preset)) return
 
   const palette = createPaletteFromPreset(preset)
   if (!palette) return
@@ -154,8 +158,10 @@ const renderPreset = async (presetId: string) => {
   if (!config) return
 
   // Use shared renderHeroConfig with scale for preview size
+  // For animated presets, use PREVIEW_INTENSITY_PROVIDER to resolve RangeExpr bindings
   await renderHeroConfig(renderer, config, palette, {
     scale: TEXTURE_SCALE,
+    intensityProvider: isAnimatedPreset(preset) ? PREVIEW_INTENSITY_PROVIDER : undefined,
   })
 }
 
@@ -200,18 +206,6 @@ const presetLayouts = computed(() => {
   return result
 })
 
-// Computed background colors for animated presets (using foundation color)
-const presetBackgroundColors = computed(() => {
-  const result = new Map<string, string>()
-  for (const preset of props.presets) {
-    if (isAnimatedPreset(preset) && preset.colorPreset) {
-      const { foundation } = preset.colorPreset
-      const [r, g, b] = hsvToRgb(foundation.hue, foundation.saturation, foundation.value)
-      result.set(preset.id, `rgb(${r}, ${g}, ${b})`)
-    }
-  }
-  return result
-})
 
 onMounted(() => {
   setTimeout(initRenderers, 50)
@@ -242,7 +236,6 @@ watch(() => props.presets, async () => {
           <canvas
             :ref="(el) => setCanvasRef(preset.id, el as HTMLCanvasElement)"
             class="preset-canvas"
-            :style="presetBackgroundColors.get(preset.id) ? { background: presetBackgroundColors.get(preset.id) } : undefined"
           />
           <!-- HTML overlay for foreground text -->
           <div class="preset-foreground foreground-grid">
