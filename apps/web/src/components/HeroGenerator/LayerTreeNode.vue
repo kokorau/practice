@@ -11,7 +11,7 @@
 
 import { computed } from 'vue'
 import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig, DisplayLayerVariant } from '@practice/section-visual'
-import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig, getLayerIcon, getLayerLabel } from '@practice/section-visual'
+import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig, getLayerIcon, getLayerLabel as getLayerTypeLabel } from '@practice/section-visual'
 
 // Helper for effect modifier check
 const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
@@ -51,7 +51,7 @@ const hasChildren = computed(() => isGroupNode.value && (props.node as GroupLaye
 const isExpanded = computed(() => props.expandedLayerIds.has(props.node.id))
 
 // Get node variant for display
-const nodeVariant = computed((): LayerVariant => {
+const nodeVariant = computed((): DisplayLayerVariant => {
   const node = props.node
   if (isBaseLayerConfig(node)) return 'base'
   if (isSurfaceLayerConfig(node)) return 'surface'
