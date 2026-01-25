@@ -23,6 +23,7 @@ import LayerSettingsPanel from './LayerSettingsPanel.vue'
 import ImageLayerSettingsPanel from './ImageLayerSettingsPanel.vue'
 import EffectorSettingsPanel from './EffectorSettingsPanel.vue'
 import PlaceholderPanel from './PlaceholderPanel.vue'
+import GroupSettingsPanel from './GroupSettingsPanel.vue'
 
 // ============================================================
 // Grouped Props Types
@@ -49,7 +50,7 @@ interface FontPreset {
 }
 
 type ProcessorType = 'effect' | 'mask' | 'processor' | null
-type LayerVariant = 'base' | 'surface' | 'text' | 'model3d' | 'image' | 'processor' | null
+type LayerVariant = 'base' | 'surface' | 'text' | 'model3d' | 'image' | 'processor' | 'group' | null
 
 /** Selection state */
 interface SelectionProps {
@@ -152,6 +153,14 @@ interface ImageProps {
   isLoading: boolean
 }
 
+/** Group layer state */
+interface GroupProps {
+  opacity: number
+  offsetX: number
+  offsetY: number
+  rotation: number
+}
+
 // ============================================================
 // Props (Grouped)
 // ============================================================
@@ -171,6 +180,8 @@ const props = defineProps<{
   filter: FilterProps
   /** Image layer state */
   image: ImageProps | null
+  /** Group layer state */
+  group: GroupProps | null
   /** Primitive color palette */
   palette: PrimitivePalette
 }>()
@@ -200,6 +211,9 @@ const emit = defineEmits<{
 
   // Image layer updates
   'update:image': [key: 'uploadImage' | 'clearImage' | 'loadRandom' | 'mode' | 'position', value: unknown]
+
+  // Group layer updates
+  'update:groupParam': [paramName: string, value: unknown]
 }>()
 
 // ============================================================
@@ -418,6 +432,17 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         @load-random="emit('update:image', 'loadRandom', $event)"
         @update:mode="emit('update:image', 'mode', $event)"
         @update:position="emit('update:image', 'position', $event)"
+      />
+
+      <!-- Group Layer Settings -->
+      <GroupSettingsPanel
+        v-else-if="!selection.processorType && selection.layerVariant === 'group' && group"
+        key="group-layer-settings"
+        :opacity="group.opacity"
+        :offset-x="group.offsetX"
+        :offset-y="group.offsetY"
+        :rotation="group.rotation"
+        @update:param="(key, value) => emit('update:groupParam', key, value)"
       />
 
       <!-- Effector (Effect/Mask) Settings -->

@@ -821,7 +821,7 @@ import type { LayerVariant } from './EditorTypes'
  * Get layer variant from LayerNodeConfig
  *
  * @param layer - Layer node config
- * @returns Layer variant or null for groups
+ * @returns Layer variant
  */
 export function getLayerVariant(layer: LayerNodeConfig): LayerVariant | null {
   switch (layer.type) {
@@ -838,7 +838,7 @@ export function getLayerVariant(layer: LayerNodeConfig): LayerVariant | null {
     case 'processor':
       return 'processor'
     case 'group':
-      return null // Groups don't have a variant
+      return 'group'
     default:
       return null
   }

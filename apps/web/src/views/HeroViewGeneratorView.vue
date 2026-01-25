@@ -12,11 +12,12 @@ import { createHeroConfigSlice } from '@practice/site/Infra'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { ImageLayerNodeConfig, ProcessorNodeConfig, SurfaceLayerNodeConfig, MaskShapeConfig } from '@practice/section-visual'
+import type { ImageLayerNodeConfig, ProcessorNodeConfig, SurfaceLayerNodeConfig, MaskShapeConfig, GroupLayerNodeConfig } from '@practice/section-visual'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
   isProcessorLayerConfig,
+  isGroupLayerConfig,
   getEffectsBeforeMask,
   createEffectSpecsForPreview,
   findLayerInTree,
@@ -470,6 +471,22 @@ const imageLayerProps = computed(() => {
   }
 })
 
+// Computed property for group layer props (when a group layer is selected)
+const panelGroup = computed(() => {
+  const layer = selectedLayer.value
+  if (!layer || !isGroupLayerConfig(layer)) return null
+
+  const groupLayer = layer as GroupLayerNodeConfig
+  const params = groupLayer.params ?? {}
+
+  return {
+    opacity: (params.opacity as number) ?? 1,
+    offsetX: (params.offsetX as number) ?? 0,
+    offsetY: (params.offsetY as number) ?? 0,
+    rotation: (params.rotation as number) ?? 0,
+  }
+})
+
 // Computed property for preceding effect specs (for mask preview)
 // When a mask is selected in a processor, get all effects that come before it
 const precedingEffectSpecs = computed(() => {
@@ -544,6 +561,18 @@ const handleImageUpdate = (key: string, value: unknown) => {
       heroScene.usecase.layerUsecase.updateLayer(layerId, { position: value } as Partial<ImageLayerNodeConfig>)
       break
   }
+}
+
+const handleGroupParamUpdate = (paramName: string, value: unknown) => {
+  const layer = selectedLayer.value
+  if (!layer || !isGroupLayerConfig(layer)) return
+
+  const groupLayer = layer as GroupLayerNodeConfig
+  const currentParams = groupLayer.params ?? {}
+
+  heroScene.usecase.layerUsecase.updateLayer(layer.id, {
+    params: { ...currentParams, [paramName]: value },
+  } as Partial<GroupLayerNodeConfig>)
 }
 
 // ============================================================
@@ -807,6 +836,7 @@ const handleAddLayerToMaskFromUI = (
       :filter="filterProps"
       :filter-processor="{ filterConfig: null }"
       :image="imageLayerProps"
+      :group="panelGroup"
       :palette="primitivePalette"
       @export-preset="exportPreset"
       @open-font-panel="openFontPanel"
@@ -816,6 +846,7 @@ const handleAddLayerToMaskFromUI = (
       @update:background-param="handleBackgroundParamUpdate"
       @update:mask-param="handleMaskParamUpdate"
       @update:image="handleImageUpdate"
+      @update:group-param="handleGroupParamUpdate"
     />
 
     <!-- Context Menu -->

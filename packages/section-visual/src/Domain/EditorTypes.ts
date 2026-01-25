@@ -52,9 +52,9 @@ export interface LayerSelection {
 export type UILayerType = 'base' | 'surface' | 'text' | 'model3d' | 'image' | 'group'
 
 /**
- * Layer variant (non-group layer types)
+ * Layer variant
  */
-export type LayerVariant = 'surface' | 'text' | 'model3d' | 'image' | 'base' | 'processor'
+export type LayerVariant = 'surface' | 'text' | 'model3d' | 'image' | 'base' | 'processor' | 'group'
 
 // ============================================================
 // Layer Options

@@ -73,6 +73,7 @@ export {
   GroupCompositorNode,
   createGroupCompositorNode,
   type GroupCompositorNodeConfig,
+  type GroupTransform,
 } from './GroupCompositorNode'
 
 // ============================================================

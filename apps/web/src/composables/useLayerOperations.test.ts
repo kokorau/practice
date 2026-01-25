@@ -184,13 +184,13 @@ describe('useLayerOperations', () => {
       expect(selectedLayerVariant.value).toBe('surface')
     })
 
-    it('should return null variant for group selection', () => {
+    it('should return group variant for group selection', () => {
       const selectedLayerId = ref<string | null>('main-group')
       const { selectedLayerVariant } = useLayerOperations(
         createOptions({ selectedLayerId }),
       )
 
-      expect(selectedLayerVariant.value).toBeNull()
+      expect(selectedLayerVariant.value).toBe('group')
     })
   })
 
