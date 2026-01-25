@@ -29,6 +29,11 @@ import {
   type SurfaceUsecase,
   type SurfaceParamsUpdate,
   type MaskShapeParamsUpdate,
+  type SurfaceLayerNodeConfig,
+  type ProcessorNodeConfig,
+  flattenLayersInTree,
+  isProcessorLayerConfig,
+  isMaskProcessorConfig,
   toCustomSurfaceParams,
   toCustomBackgroundSurfaceParams,
   $PropertyValue,
@@ -115,12 +120,59 @@ export const useHeroPatternPresets = (
     heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
   }
 
+  /**
+   * Find the first mask processor in the layer tree
+   */
+  const findFirstMaskProcessor = (): { processorId: string; modifierIndex: number } | null => {
+    const config = heroViewRepository.get()
+    for (const layer of flattenLayersInTree(config.layers)) {
+      if (isProcessorLayerConfig(layer)) {
+        const processorLayer = layer as ProcessorNodeConfig
+        const modifierIndex = processorLayer.modifiers.findIndex(isMaskProcessorConfig)
+        if (modifierIndex !== -1) {
+          return { processorId: layer.id, modifierIndex }
+        }
+      }
+    }
+    return null
+  }
+
+  /**
+   * Convert MaskPattern children to SurfaceLayerNodeConfig array
+   */
+  const convertPatternChildrenToLayers = (
+    children: MaskPattern['children']
+  ): SurfaceLayerNodeConfig[] => {
+    if (!children) return []
+    return children.map((child, index) => ({
+      type: 'surface' as const,
+      id: `mask-child-${Date.now()}-${index}`,
+      name: child.name,
+      visible: child.visible,
+      surface: {
+        id: child.surface.id as SurfaceLayerNodeConfig['surface']['id'],
+        params: child.surface.params as SurfaceLayerNodeConfig['surface']['params'],
+      },
+    }))
+  }
+
   const initMaskShapeParamsFromPreset = () => {
     const idx = selectedMaskIndex.value
     if (idx === null) return
     const pattern = maskPatterns[idx]
     if (pattern && pattern.children && pattern.children.length > 0) {
-      // Children-based mask pattern: use first child's surface config
+      // Find the processor with mask modifier and replace children
+      const maskProcessor = findFirstMaskProcessor()
+      if (maskProcessor) {
+        const newChildren = convertPatternChildrenToLayers(pattern.children)
+        heroViewRepository.replaceMaskChildren(
+          maskProcessor.processorId,
+          maskProcessor.modifierIndex,
+          newChildren
+        )
+      }
+
+      // Children-based mask pattern: use first child's surface config for UI params
       const firstChild = pattern.children[0]
       if (firstChild && firstChild.type === 'surface') {
         const surfaceId = firstChild.surface.id

@@ -151,10 +151,8 @@ export const useHeroConfigLoader = (
         }
       }
 
-      // NOTE: Shape-based masks are deprecated. New masks use children layers.
-      // Mask pattern selection is no longer supported.
-      // selectedMaskIndex is set to null as shape-based masks are no longer available.
-      selectedMaskIndex.value = null
+      // NOTE: selectedMaskIndex is UI state that is set when user selects a preset.
+      // We preserve it here - it should not be reset when loading config.
 
       if (maskSurfaceLayer) {
         const maskSurface = maskSurfaceLayer.surface
