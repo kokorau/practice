@@ -14,9 +14,6 @@ export type { TrackId, ClockType, DslTrack, Track, BezierPath, BezierAnchor } fr
 // Timeline
 export type { Timeline } from './Timeline'
 
-// Player
-export type { FrameState, TimelinePlayer } from './Player'
-
 // Timeline Preparation (AST caching, Bezier LUT)
 export { prepareTimeline, prepareTrack, invalidateBezierLut } from './prepareTimeline'
 
@@ -29,9 +26,6 @@ export {
   easeInOut as createEaseInOutBezierPath,
 } from '@practice/bezier'
 
-// Player Implementation
-export { createTimelinePlayer, type CreateTimelinePlayerOptions } from './createTimelinePlayer'
-
 // Render (Port interfaces + implementation)
 export type { RenderContext, TrackRenderer } from './render'
 export { createCanvasTrackRenderer } from './render'
@@ -39,3 +33,27 @@ export { createCanvasTrackRenderer } from './render'
 // IntensityProvider
 export type { IntensityProvider, IntensityProviderWriter } from './IntensityProvider'
 export { createIntensityProvider } from './IntensityProvider'
+
+// Application (Ports + Usecases)
+export type {
+  TimelineRepository,
+  TimelineSubscriber,
+  TimelineUnsubscribe,
+  TrackUsecaseDeps,
+  CreateTrackParams,
+  TrackUsecase,
+  PhaseUsecaseDeps,
+  CreatePhaseParams,
+  PhaseUsecase,
+  FrameState,
+  TimelinePlayer,
+  PlayerUsecaseDeps,
+  PlayerUsecase,
+  CreateTimelinePlayerOptions,
+} from './Application'
+export {
+  createTrackUsecase,
+  createPhaseUsecase,
+  createPlayerUsecase,
+  createTimelinePlayer,
+} from './Application'
