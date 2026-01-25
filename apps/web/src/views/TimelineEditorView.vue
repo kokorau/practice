@@ -15,11 +15,12 @@ import {
   NoiseIndicator,
   StepIndicator,
 } from '../components/Timeline/indicators'
+import { useTimelineDuration } from '../modules/Timeline/Application/useTimelineDuration'
 
 // ============================================================
-// Editor Config
+// Editor Config (via usecase)
 // ============================================================
-const VISIBLE_DURATION = 30000 as Ms // 30 seconds
+const { visibleDuration, setVisibleDuration } = useTimelineDuration(30000 as Ms)
 
 // ============================================================
 // Prepare timeline (parse AST and cache)
@@ -279,9 +280,10 @@ function stopResize() {
     >
       <TimelinePanel
         :timeline="mockTimeline"
-        :visible-duration="VISIBLE_DURATION"
+        :visible-duration="visibleDuration"
         @update:frame-state="onFrameStateUpdate"
         @update:playhead="onPlayheadUpdate"
+        @update:visible-duration="setVisibleDuration"
       />
     </section>
   </div>

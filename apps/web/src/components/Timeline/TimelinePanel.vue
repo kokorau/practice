@@ -17,6 +17,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:frameState': [frameState: FrameState]
   'update:playhead': [playhead: Ms]
+  'update:visibleDuration': [visibleDuration: Ms]
 }>()
 
 // ============================================================
@@ -86,6 +87,48 @@ function formatTime(ms: number): string {
   const sec = totalSec % 60
   const millis = msInt % 1000
   return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(millis).padStart(3, '0')}`
+}
+
+// Format seconds as display text (e.g., "30s")
+function formatDurationSeconds(ms: number): string {
+  return `${Math.round(ms / 1000)}s`
+}
+
+// ============================================================
+// Duration Editing
+// ============================================================
+const isEditingDuration = ref(false)
+const durationInputRef = ref<HTMLInputElement | null>(null)
+const durationInputValue = ref('')
+
+function startEditDuration() {
+  isEditingDuration.value = true
+  durationInputValue.value = String(Math.round(props.visibleDuration / 1000))
+  nextTick(() => {
+    durationInputRef.value?.focus()
+    durationInputRef.value?.select()
+  })
+}
+
+function confirmDuration() {
+  const seconds = parseInt(durationInputValue.value, 10)
+  if (!isNaN(seconds) && seconds >= 1 && seconds <= 600) {
+    const newDuration = (seconds * 1000) as Ms
+    emit('update:visibleDuration', newDuration)
+  }
+  isEditingDuration.value = false
+}
+
+function cancelEditDuration() {
+  isEditingDuration.value = false
+}
+
+function onDurationKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    confirmDuration()
+  } else if (e.key === 'Escape') {
+    cancelEditDuration()
+  }
 }
 
 // Generate ruler ticks
@@ -244,7 +287,24 @@ defineExpose({
         {{ isPlaying ? 'Pause' : 'Play' }}
       </button>
       <button class="control-button" @click="stop">Stop</button>
-      <div class="timecode">{{ formatTime(playhead) }} / {{ formatTime(visibleDuration) }}</div>
+      <div class="timecode">
+        {{ formatTime(playhead) }} /
+        <span v-if="!isEditingDuration" class="duration-display" @click="startEditDuration">
+          {{ formatDurationSeconds(visibleDuration) }}
+        </span>
+        <span v-else class="duration-edit">
+          <input
+            ref="durationInputRef"
+            v-model="durationInputValue"
+            type="number"
+            min="1"
+            max="600"
+            class="duration-input"
+            @keydown="onDurationKeydown"
+            @blur="confirmDuration"
+          />s
+        </span>
+      </div>
     </div>
 
     <!-- Timeline Header (fixed) -->
@@ -401,6 +461,53 @@ defineExpose({
   font-size: 0.75rem;
   font-family: ui-monospace, monospace;
   color: oklch(0.55 0.02 260);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.duration-display {
+  cursor: pointer;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.15s;
+}
+
+.duration-display:hover {
+  background: oklch(0.85 0.01 260);
+  color: oklch(0.35 0.02 260);
+}
+
+.duration-edit {
+  display: flex;
+  align-items: center;
+}
+
+.duration-input {
+  width: 3rem;
+  padding: 0.125rem 0.25rem;
+  border: 1px solid oklch(0.50 0.20 250);
+  border-radius: 0.25rem;
+  background: white;
+  font-size: 0.75rem;
+  font-family: ui-monospace, monospace;
+  color: oklch(0.25 0.02 260);
+  outline: none;
+}
+
+.duration-input:focus {
+  border-color: oklch(0.50 0.25 250);
+  box-shadow: 0 0 0 2px oklch(0.50 0.20 250 / 0.2);
+}
+
+/* Hide number input arrows */
+.duration-input::-webkit-outer-spin-button,
+.duration-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.duration-input[type='number'] {
+  -moz-appearance: textfield;
 }
 
 /* Timeline Header (fixed) */
