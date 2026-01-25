@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type { ObjectSchema } from '@practice/schema'
+import type { ColorValue } from '@practice/section-visual'
+import { resolveKeyToRgba, isCustomColor } from '@practice/section-visual'
+import type { RGBA } from '@practice/texture'
 import PresetSelector from '../PresetSelector.vue'
 import PatternThumbnail from '../PatternThumbnail.vue'
 import { type PatternItem } from '../SurfaceSelector.vue'
 import SchemaFields from '../../SchemaFields.vue'
+import GradientStopEditor, { type GradientStop } from '../GradientStopEditor.vue'
 
 const props = defineProps<{
   layerType: 'base' | 'surface'
@@ -21,11 +26,92 @@ const emit = defineEmits<{
   (e: 'select-pattern', index: number | null): void
   /** Single param update - preserves other PropertyValue types */
   (e: 'update:surfaceParam', key: string, value: unknown): void
+  /** Full params update - for gradient stops */
+  (e: 'update:surfaceParams', value: Record<string, unknown>): void
 }>()
 
 // Surface params should be shown when schema and params exist
 const shouldShowSurfaceParams = (): boolean => {
   return !!props.surfaceSchema && !!props.surfaceParams
+}
+
+// Check if current surface is linearGradient
+// Note: CustomSurfaceParams uses 'id' field (converted from 'type' in SurfaceMapper)
+const isLinearGradient = computed(() =>
+  props.surfaceParams?.id === 'linearGradient'
+)
+
+// Convert ColorValue to RGBA
+const colorValueToRgba = (color: ColorValue): RGBA => {
+  if (typeof color === 'string') {
+    if (color === 'auto') {
+      // Auto color - use brand color as default
+      return resolveKeyToRgba(props.primitivePalette, 'B')
+    }
+    return resolveKeyToRgba(props.primitivePalette, color)
+  }
+  if (isCustomColor(color)) {
+    // Convert HSV to RGB
+    const h = color.hue / 360
+    const s = color.saturation / 100
+    const v = color.value / 100
+    const c = v * s
+    const x = c * (1 - Math.abs((h * 6) % 2 - 1))
+    const m = v - c
+    let r = 0, g = 0, b = 0
+    const hh = h * 6
+    if (hh < 1) { r = c; g = x }
+    else if (hh < 2) { r = x; g = c }
+    else if (hh < 3) { g = c; b = x }
+    else if (hh < 4) { g = x; b = c }
+    else if (hh < 5) { r = x; b = c }
+    else { r = c; b = x }
+    return [r + m, g + m, b + m, 1]
+  }
+  return [0.5, 0.5, 0.5, 1]
+}
+
+// Get gradient stops from params or create default from colors
+const gradientStops = computed<GradientStop[]>(() => {
+  if (!isLinearGradient.value || !props.surfaceParams) return []
+
+  // Check for custom stops (with ColorValue)
+  const stopsData = props.surfaceParams.gradientStops as Array<{ id: string; color: ColorValue; position: number }> | undefined
+  if (stopsData && stopsData.length >= 2) {
+    return stopsData
+  }
+
+  // Fallback: create 2 stops from color1/color2
+  const color1 = (props.surfaceParams.color1 as ColorValue) ?? 'B'
+  const color2 = (props.surfaceParams.color2 as ColorValue) ?? 'auto'
+  return [
+    { id: 'stop-0', color: color1, position: 0 },
+    { id: 'stop-1', color: color2, position: 1 },
+  ]
+})
+
+// Update gradient stops and convert to RGBA for rendering
+const updateGradientStops = (stops: GradientStop[]) => {
+  if (!props.surfaceParams) return
+
+  // Store ColorValue stops for UI editing
+  const gradientStops = stops.map(s => ({
+    id: s.id,
+    color: s.color,
+    position: s.position,
+  }))
+
+  // Convert to RGBA stops for rendering
+  const rgbaStops = stops.map(s => ({
+    color: colorValueToRgba(s.color),
+    position: s.position,
+  }))
+
+  emit('update:surfaceParams', {
+    ...props.surfaceParams,
+    gradientStops,
+    stops: rgbaStops, // RGBA version for shader
+  })
 }
 </script>
 
@@ -66,7 +152,15 @@ const shouldShowSurfaceParams = (): boolean => {
         :raw-params="rawSurfaceParams"
         :palette="primitivePalette"
         :columns="1"
+        :exclude="isLinearGradient ? ['color1', 'color2'] : []"
         @update:field="(key, value) => emit('update:surfaceParam', key, value)"
+      />
+      <!-- Gradient Stop Editor for linearGradient -->
+      <GradientStopEditor
+        v-if="isLinearGradient"
+        :model-value="gradientStops"
+        :palette="primitivePalette"
+        @update:model-value="updateGradientStops"
       />
     </div>
   </div>

@@ -50,10 +50,10 @@ export function isCustomColor(value: ColorValue): value is CustomColor {
 // PropertyValue DSL
 // ============================================================================
 
-/** 静的な値 */
+/** 静的な値 (配列も含む - 例: gradient stops) */
 export interface StaticValue {
   readonly type: 'static'
-  readonly value: string | number | boolean | ColorValue
+  readonly value: string | number | boolean | ColorValue | unknown[]
 }
 
 /**
@@ -119,7 +119,7 @@ export interface SectionVisual {
 // ============================================================================
 
 export const $PropertyValue = {
-  static: (value: string | number | boolean | ColorValue): StaticValue => ({
+  static: (value: string | number | boolean | ColorValue | unknown[]): StaticValue => ({
     type: 'static',
     value,
   }),

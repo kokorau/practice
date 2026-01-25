@@ -264,15 +264,19 @@ export function createBackgroundSpecFromSurface(
   }
   // Smooth linear gradient (no grain)
   if (surface.type === 'linearGradient') {
+    // Use custom stops if provided, otherwise create 2 stops from color1/color2
+    const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
+      ? surface.stops as Array<{ color: RGBA; position: number }>
+      : [
+          { color: color1, position: 0 },
+          { color: color2, position: 1 },
+        ]
     return createLinearGradientSpec(
       {
         angle: surface.angle,
         centerX: surface.centerX,
         centerY: surface.centerY,
-        stops: [
-          { color: color1, position: 0 },
-          { color: color2, position: 1 },
-        ],
+        stops,
       },
       viewport
     )

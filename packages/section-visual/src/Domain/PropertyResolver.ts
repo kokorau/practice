@@ -2,8 +2,8 @@ import type { IntensityProvider as TimelineIntensityProvider } from '@practice/t
 import type { PropertyValue, RangeExpr, ColorValue } from './SectionVisual'
 import { $PropertyValue } from './SectionVisual'
 
-// Type alias for resolved values (includes ColorValue for color fields)
-export type ResolvedValue = number | string | boolean | ColorValue
+// Type alias for resolved values (includes ColorValue for color fields and arrays for gradient stops)
+export type ResolvedValue = number | string | boolean | ColorValue | unknown[]
 import type {
   HeroViewConfig,
   LayerNodeConfig,

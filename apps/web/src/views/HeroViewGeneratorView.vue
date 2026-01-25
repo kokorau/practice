@@ -513,10 +513,12 @@ const processorTargetSurface = computed<SurfaceLayerNodeConfig | undefined>(() =
 
 // Mask patterns with normalized config for pipeline-based preview
 const shapePatternsWithConfig = computed(() => {
-  return heroScene.pattern.maskPatterns.map((pattern) => ({
-    ...pattern,
-    maskConfig: normalizeMaskConfig(pattern.maskConfig as MaskShapeConfig),
-  }))
+  return heroScene.pattern.maskPatterns
+    .filter((pattern) => pattern.maskConfig != null)
+    .map((pattern) => ({
+      ...pattern,
+      maskConfig: normalizeMaskConfig(pattern.maskConfig as MaskShapeConfig),
+    }))
 })
 
 const handleImageUpdate = (key: string, value: unknown) => {
