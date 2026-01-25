@@ -21,6 +21,8 @@ import {
   createOgeeSpec,
   createSunburstSpec,
   createPaperTextureSpec,
+  // Linear gradient (smooth, no grain)
+  createLinearGradientSpec,
   // Gradient grain specs (one per depth map type)
   createGradientGrainLinearSpec,
   createGradientGrainCircularSpec,
@@ -259,6 +261,21 @@ export function createBackgroundSpecFromSurface(
       size: scaleValue(surface.size, scale),
       angle: surface.angle,
     })
+  }
+  // Smooth linear gradient (no grain)
+  if (surface.type === 'linearGradient') {
+    return createLinearGradientSpec(
+      {
+        angle: surface.angle,
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        stops: [
+          { color: color1, position: 0 },
+          { color: color2, position: 1 },
+        ],
+      },
+      viewport
+    )
   }
   if (surface.type === 'gradientGrainLinear') {
     return createGradientGrainLinearSpec(

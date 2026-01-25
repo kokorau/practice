@@ -302,6 +302,15 @@ export interface GradientGrainSimplexSurfaceParams {
 }
 
 /**
+ * Linear gradient surface params (smooth 2-color gradient without grain)
+ */
+export interface LinearGradientSurfaceParams {
+  angle: number
+  centerX: number
+  centerY: number
+}
+
+/**
  * Custom surface params union type
  * Uses 'id' field for consistency with NormalizedSurfaceConfig
  */
@@ -311,6 +320,7 @@ export type CustomSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
   | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
@@ -336,6 +346,7 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
   | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
@@ -434,6 +445,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   const heroColors = useHeroColors({
     heroViewRepository,
+    repoConfig,
     primitivePalette,
     isDark,
     canvasImageData,
@@ -1140,8 +1152,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   const background: BackgroundState = {
-    backgroundColorKey1: heroColors.backgroundColorKey1,
-    backgroundColorKey2: heroColors.backgroundColorKey2,
     customBackgroundSurfaceParams,
     rawBackgroundSurfaceParams,
     currentBackgroundSurfaceSchema,
@@ -1159,8 +1169,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   })
 
   const mask: MaskState = {
-    maskColorKey1: heroColors.maskColorKey1,
-    maskColorKey2: heroColors.maskColorKey2,
     maskSemanticContext: heroColors.maskSemanticContext,
     customMaskShapeParams,
     rawMaskShapeParams,

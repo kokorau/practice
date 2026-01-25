@@ -17,7 +17,7 @@ export const approxEqual = (a: number, b: number, epsilon = 0.0001): boolean =>
  * Surface preset params type (for matching)
  */
 export interface SurfacePresetParams {
-  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'gradientGrainLinear' | 'gradientGrainCircular' | 'gradientGrainRadial' | 'gradientGrainPerlin' | 'gradientGrainCurl' | 'gradientGrainSimplex' | 'triangle' | 'hexagon' | 'asanoha' | 'seigaiha' | 'wave' | 'scales' | 'ogee' | 'sunburst' | 'paperTexture'
+  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'linearGradient' | 'gradientGrainLinear' | 'gradientGrainCircular' | 'gradientGrainRadial' | 'gradientGrainPerlin' | 'gradientGrainCurl' | 'gradientGrainSimplex' | 'triangle' | 'hexagon' | 'asanoha' | 'seigaiha' | 'wave' | 'scales' | 'ogee' | 'sunburst' | 'paperTexture'
   width1?: number
   width2?: number
   angle?: number
@@ -157,6 +157,15 @@ export const findSurfacePresetIndex = (
       if (
         approxEqual(surfaceConfig.cellSize, preset.params.cellSize ?? 0) &&
         approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+      ) {
+        return i
+      }
+    }
+    if (surfaceConfig.type === 'linearGradient' && preset.params.type === 'linearGradient') {
+      if (
+        approxEqual(surfaceConfig.angle, preset.params.angle ?? 90) &&
+        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
+        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5)
       ) {
         return i
       }

@@ -146,6 +146,8 @@ export const useHeroPatternPresets = (
         setBaseSurface({ id: 'polkaDot', params: toPropertyValueParams({ dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }) })
       } else if (params.id === 'checker') {
         setBaseSurface({ id: 'checker', params: toPropertyValueParams({ cellSize: params.cellSize, angle: params.angle }) })
+      } else if (params.id === 'linearGradient') {
+        setBaseSurface({ id: 'linearGradient', params: toPropertyValueParams({ angle: params.angle, centerX: params.centerX, centerY: params.centerY }) })
       } else if (params.id === 'gradientGrainLinear' || params.id === 'gradientGrainCircular' || params.id === 'gradientGrainRadial' || params.id === 'gradientGrainPerlin' || params.id === 'gradientGrainCurl') {
         customBackgroundSurfaceParams.value = params
       } else if (params.id === 'asanoha') {

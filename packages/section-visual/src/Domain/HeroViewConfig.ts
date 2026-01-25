@@ -122,6 +122,12 @@ export interface SolidSurfaceConfig {
   type: 'solid'
 }
 
+export interface LinearGradientSurfaceConfig {
+  type: 'linearGradient'
+  angle: number
+  centerX: number
+  centerY: number
+}
 
 export interface GradientGrainLinearSurfaceConfig {
   type: 'gradientGrainLinear'
@@ -266,6 +272,7 @@ type SurfaceConfigBase =
   | GridSurfaceConfig
   | PolkaDotSurfaceConfig
   | CheckerSurfaceConfig
+  | LinearGradientSurfaceConfig
   | GradientGrainLinearSurfaceConfig
   | GradientGrainCircularSurfaceConfig
   | GradientGrainRadialSurfaceConfig
@@ -307,6 +314,7 @@ export const SURFACE_TYPES: SurfaceType[] = [
   'grid',
   'polkaDot',
   'checker',
+  'linearGradient',
   'gradientGrainLinear',
   'gradientGrainCircular',
   'gradientGrainRadial',

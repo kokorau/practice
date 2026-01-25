@@ -9,7 +9,7 @@
  * - Foreground element color resolution
  */
 
-import { ref, computed, type Ref, type ComputedRef, type WritableComputedRef } from 'vue'
+import { ref, computed, type Ref, type ComputedRef, type WritableComputedRef, type ShallowRef } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { RGBA } from '@practice/texture'
@@ -33,6 +33,7 @@ import type {
   ForegroundLayerConfig,
   ForegroundColorContext,
   HeroViewRepository,
+  HeroViewConfig,
   LayerNodeConfig,
   SurfaceLayerNodeConfig,
   BaseLayerNodeConfig,
@@ -81,6 +82,8 @@ export interface ElementBounds {
 export interface UseHeroColorsOptions {
   /** HeroViewRepository for SSOT color state */
   heroViewRepository: HeroViewRepository
+  /** Reactive config from repository (for dependency tracking) */
+  repoConfig: ShallowRef<HeroViewConfig>
   /** Primitive palette from parent */
   primitivePalette: ComputedRef<PrimitivePalette>
   /** Dark mode flag from parent */
@@ -287,7 +290,7 @@ const resolveColorValue = (
  * Composable for color and theme management in HeroScene
  */
 export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsReturn {
-  const { heroViewRepository, primitivePalette, isDark, canvasImageData, foregroundConfig } = options
+  const { heroViewRepository, repoConfig, primitivePalette, isDark, canvasImageData, foregroundConfig } = options
 
   // ============================================================
   // Theme Mode
@@ -299,7 +302,8 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   // ============================================================
   const backgroundColorKey1 = computed({
     get: (): ColorValue => {
-      const layer = findBackgroundSurfaceLayer(heroViewRepository.get().layers)
+      // Use repoConfig.value for reactive dependency tracking
+      const layer = findBackgroundSurfaceLayer(repoConfig.value.layers)
       if (!layer) return 'B'
       return extractColorFromParams(layer.surface.params, 'color1', 'B')
     },
@@ -312,7 +316,8 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
 
   const backgroundColorKey2 = computed({
     get: (): ColorValue => {
-      const layer = findBackgroundSurfaceLayer(heroViewRepository.get().layers)
+      // Use repoConfig.value for reactive dependency tracking
+      const layer = findBackgroundSurfaceLayer(repoConfig.value.layers)
       if (!layer) return 'auto'
       return extractColorFromParams(layer.surface.params, 'color2', 'auto')
     },
@@ -339,7 +344,8 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   // ============================================================
   const maskColorKey1 = computed({
     get: (): ColorValue => {
-      const layer = findMaskSurfaceLayer(heroViewRepository.get().layers)
+      // Use repoConfig.value for reactive dependency tracking
+      const layer = findMaskSurfaceLayer(repoConfig.value.layers)
       if (!layer) return 'auto'
       return extractColorFromParams(layer.surface.params, 'color1', 'auto')
     },
@@ -352,7 +358,8 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
 
   const maskColorKey2 = computed({
     get: (): ColorValue => {
-      const layer = findMaskSurfaceLayer(heroViewRepository.get().layers)
+      // Use repoConfig.value for reactive dependency tracking
+      const layer = findMaskSurfaceLayer(repoConfig.value.layers)
       if (!layer) return 'auto'
       return extractColorFromParams(layer.surface.params, 'color2', 'auto')
     },
@@ -365,7 +372,8 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
 
   const maskSemanticContext = computed({
     get: (): ContextName => {
-      return heroViewRepository.get().colors.semanticContext
+      // Use repoConfig.value for reactive dependency tracking
+      return repoConfig.value.colors.semanticContext
     },
     set: (val: ContextName) => {
       heroViewRepository.updateColors({ semanticContext: val as HeroContextName })

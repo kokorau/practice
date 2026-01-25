@@ -1,47 +1,30 @@
 <script setup lang="ts">
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type { ObjectSchema } from '@practice/schema'
-import type { ColorValue } from '@practice/section-visual'
-import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import PresetSelector from '../PresetSelector.vue'
 import PatternThumbnail from '../PatternThumbnail.vue'
 import { type PatternItem } from '../SurfaceSelector.vue'
 import SchemaFields from '../../SchemaFields.vue'
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   layerType: 'base' | 'surface'
   primitivePalette: PrimitivePalette
-  colorKey1: ColorValue
-  colorKey2: ColorValue
-  showAuto1?: boolean
-  showAuto2?: boolean
   patterns: PatternItem[]
   selectedIndex: number | null
   surfaceSchema: ObjectSchema | null
   surfaceParams: Record<string, unknown> | null
   /** Raw params with PropertyValue preserved (for DSL display) */
   rawSurfaceParams?: Record<string, unknown> | null
-}>(), {
-  showAuto1: false,
-  showAuto2: true,
-})
+}>()
 
 const emit = defineEmits<{
-  (e: 'update:colorKey1', value: ColorValue): void
-  (e: 'update:colorKey2', value: ColorValue): void
   (e: 'select-pattern', index: number | null): void
   (e: 'update:surfaceParams', value: Record<string, unknown>): void
 }>()
 
-// Surface params should be shown:
-// - For 'base': when schema exists, params exist, and type !== 'solid'
-// - For 'surface': when schema exists and params exist (no type check)
+// Surface params should be shown when schema and params exist
 const shouldShowSurfaceParams = (): boolean => {
-  if (!props.surfaceSchema || !props.surfaceParams) return false
-  if (props.layerType === 'base') {
-    return props.surfaceParams.type !== 'solid'
-  }
-  return true
+  return !!props.surfaceSchema && !!props.surfaceParams
 }
 </script>
 
@@ -73,34 +56,15 @@ const shouldShowSurfaceParams = (): boolean => {
       </PresetSelector>
     </div>
 
-    <!-- Color selection -->
-    <div class="settings-section">
-      <p class="settings-label">Colors</p>
-      <div class="colors-row">
-        <PrimitiveColorPicker
-          :model-value="colorKey1"
-          :palette="primitivePalette"
-          label="Primary"
-          :show-auto="showAuto1"
-          @update:model-value="emit('update:colorKey1', $event)"
-        />
-        <PrimitiveColorPicker
-          :model-value="colorKey2"
-          :palette="primitivePalette"
-          label="Secondary"
-          :show-auto="showAuto2"
-          @update:model-value="emit('update:colorKey2', $event)"
-        />
-      </div>
-    </div>
-
-    <!-- Surface params (Parameters) -->
+    <!-- Surface params (Parameters including colors) -->
     <div v-if="shouldShowSurfaceParams()" class="settings-section">
       <p class="settings-label">Parameters</p>
       <SchemaFields
         :schema="surfaceSchema!"
         :model-value="surfaceParams!"
         :raw-params="rawSurfaceParams"
+        :palette="primitivePalette"
+        :columns="1"
         @update:model-value="emit('update:surfaceParams', $event)"
       />
     </div>
@@ -131,17 +95,6 @@ const shouldShowSurfaceParams = (): boolean => {
   font-size: 0.75rem;
   font-weight: 600;
   color: oklch(0.40 0.02 260);
-}
-
-.colors-row {
-  display: flex;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-.colors-row > * {
-  flex: 1;
-  min-width: 0;
 }
 
 :global(.dark) .settings-label {

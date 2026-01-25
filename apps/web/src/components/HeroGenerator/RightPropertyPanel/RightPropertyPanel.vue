@@ -3,7 +3,7 @@ import type { WritableComputedRef } from 'vue'
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
-import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig, NormalizedMaskConfig, ColorValue } from '@practice/section-visual'
+import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig, NormalizedMaskConfig } from '@practice/section-visual'
 import { isSurfaceLayerConfig, isBaseLayerConfig, isProcessorLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
@@ -82,8 +82,6 @@ interface ContrastProps {
 
 /** Background layer state */
 interface BackgroundProps {
-  colorKey1: ColorValue
-  colorKey2: ColorValue
   patterns: PatternItem[]
   selectedIndex: number | null
   surfaceSchema: ObjectSchema | null
@@ -99,8 +97,6 @@ interface MaskPatternItemWithConfig extends MaskPatternItem {
 
 /** Mask/surface layer state */
 interface MaskProps {
-  colorKey1: ColorValue
-  colorKey2: ColorValue
   surfacePatterns: PatternItem[]
   selectedSurfaceIndex: number | null
   surfaceSchema: ObjectSchema | null
@@ -381,17 +377,11 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         key="base-layer-settings"
         layer-type="base"
         :primitive-palette="palette"
-        :color-key1="background.colorKey1"
-        :color-key2="background.colorKey2"
-        :show-auto1="false"
-        :show-auto2="true"
         :patterns="background.patterns"
         :selected-index="background.selectedIndex"
         :surface-schema="background.surfaceSchema"
         :surface-params="background.surfaceParams"
         :raw-surface-params="background.rawSurfaceParams"
-        @update:color-key1="emit('update:background', 'colorKey1', $event)"
-        @update:color-key2="emit('update:background', 'colorKey2', $event)"
         @select-pattern="emit('update:background', 'selectPattern', $event)"
         @update:surface-params="handleSurfaceParamsUpdate"
       />
@@ -402,17 +392,11 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         key="surface-layer-settings"
         layer-type="surface"
         :primitive-palette="palette"
-        :color-key1="mask.colorKey1"
-        :color-key2="mask.colorKey2"
-        :show-auto1="true"
-        :show-auto2="true"
         :patterns="mask.surfacePatterns"
         :selected-index="mask.selectedSurfaceIndex"
         :surface-schema="mask.surfaceSchema"
         :surface-params="mask.surfaceParams"
         :raw-surface-params="mask.rawSurfaceParams"
-        @update:color-key1="emit('update:mask', 'colorKey1', $event)"
-        @update:color-key2="emit('update:mask', 'colorKey2', $event)"
         @select-pattern="emit('update:mask', 'selectPattern', $event)"
         @update:surface-params="handleSurfaceParamsUpdate"
       />

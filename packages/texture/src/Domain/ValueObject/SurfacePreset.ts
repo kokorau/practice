@@ -8,6 +8,7 @@ export type SurfacePresetType =
   | 'grid'
   | 'polkaDot'
   | 'checker'
+  | 'linearGradient'
   | 'gradientGrainLinear'
   | 'gradientGrainCircular'
   | 'gradientGrainRadial'
@@ -67,6 +68,16 @@ export interface CheckerPresetParams {
   type: 'checker'
   cellSize: number
   angle: number
+}
+
+/**
+ * Linear Gradient surface params (smooth 2-color gradient)
+ */
+export interface LinearGradientPresetParams {
+  type: 'linearGradient'
+  angle: number
+  centerX: number
+  centerY: number
 }
 
 /**
@@ -253,6 +264,7 @@ export type SurfacePresetParams =
   | GridPresetParams
   | PolkaDotPresetParams
   | CheckerPresetParams
+  | LinearGradientPresetParams
   | GradientGrainLinearPresetParams
   | GradientGrainCircularPresetParams
   | GradientGrainRadialPresetParams

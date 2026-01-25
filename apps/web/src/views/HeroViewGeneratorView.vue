@@ -590,8 +590,6 @@ const handleImageUpdate = (key: string, value: unknown) => {
         <!-- 後景: テクスチャ選択 -->
         <BackgroundSectionPanel
           v-if="heroScene.pattern.activeSection.value === 'background'"
-          :color-key1="heroScene.background.backgroundColorKey1.value"
-          :color-key2="heroScene.background.backgroundColorKey2.value"
           :palette="primitivePalette"
           :surface-schema="heroScene.background.currentBackgroundSurfaceSchema.value"
           :surface-params="backgroundSurfaceParamsForUI"
@@ -599,8 +597,6 @@ const handleImageUpdate = (key: string, value: unknown) => {
           :selected-index="heroScene.pattern.selectedBackgroundIndex.value"
           preview-mode="hero"
           :base-config="currentHeroConfig"
-          @update:color-key1="(v) => { if (v !== 'auto') heroScene.background.backgroundColorKey1.value = v }"
-          @update:color-key2="heroScene.background.backgroundColorKey2.value = $event"
           @update:surface-params="heroScene.background.updateBackgroundSurfaceParams($event)"
           @select-pattern="(i) => { if (i !== null) heroScene.pattern.selectedBackgroundIndex.value = i }"
         />
@@ -625,8 +621,6 @@ const handleImageUpdate = (key: string, value: unknown) => {
         <!-- クリップグループテクスチャ選択 -->
         <ClipGroupSurfacePanel
           v-else-if="heroScene.pattern.activeSection.value === 'clip-group-surface'"
-          :color-key1="heroScene.mask.maskColorKey1.value"
-          :color-key2="heroScene.mask.maskColorKey2.value"
           :palette="primitivePalette"
           :surface-schema="heroScene.mask.currentSurfaceSchema.value"
           :surface-params="maskSurfaceParamsForUI"
@@ -634,8 +628,6 @@ const handleImageUpdate = (key: string, value: unknown) => {
           :selected-index="heroScene.pattern.selectedMidgroundTextureIndex.value"
           preview-mode="hero"
           :base-config="currentHeroConfig"
-          @update:color-key1="heroScene.mask.maskColorKey1.value = $event"
-          @update:color-key2="heroScene.mask.maskColorKey2.value = $event"
           @update:surface-params="heroScene.mask.updateSurfaceParams($event)"
           @select-pattern="(i) => { if (i !== null) heroScene.pattern.selectedMidgroundTextureIndex.value = i }"
         />
@@ -748,8 +740,6 @@ const handleImageUpdate = (key: string, value: unknown) => {
         description: descriptionContrastResult,
       }"
       :background="{
-        colorKey1: heroScene.background.backgroundColorKey1.value,
-        colorKey2: heroScene.background.backgroundColorKey2.value,
         patterns: backgroundPatterns,
         selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
         surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
@@ -757,8 +747,6 @@ const handleImageUpdate = (key: string, value: unknown) => {
         rawSurfaceParams: heroScene.background.rawBackgroundSurfaceParams.value,
       }"
       :mask="{
-        colorKey1: heroScene.mask.maskColorKey1.value,
-        colorKey2: heroScene.mask.maskColorKey2.value,
         surfacePatterns: maskSurfacePatterns,
         selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
         surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
@@ -778,6 +766,7 @@ const handleImageUpdate = (key: string, value: unknown) => {
         processor: selectedProcessor,
       }"
       :filter="filterProps"
+      :filter-processor="{ filterConfig: null }"
       :image="imageLayerProps"
       :palette="primitivePalette"
       @export-preset="exportPreset"

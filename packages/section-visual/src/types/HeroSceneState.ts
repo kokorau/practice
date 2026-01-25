@@ -256,6 +256,15 @@ export interface PaperTextureSurfaceParams {
 }
 
 /**
+ * Linear gradient surface params (smooth 2-color gradient without grain)
+ */
+export interface LinearGradientSurfaceParams {
+  angle: number
+  centerX: number
+  centerY: number
+}
+
+/**
  * Custom surface params union type (for midground - includes solid, checker, and gradientGrain variants)
  * Uses 'id' field for consistency with NormalizedSurfaceConfig
  */
@@ -265,6 +274,7 @@ export type CustomSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
@@ -291,6 +301,7 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
@@ -382,11 +393,6 @@ export interface PatternState {
  * Background layer state and actions
  */
 export interface BackgroundState {
-  /** Primary color value for background */
-  readonly backgroundColorKey1: Ref<ColorValue>
-  /** Secondary color value for background ('auto' = canvas surface) */
-  readonly backgroundColorKey2: Ref<ColorValue>
-
   /** Custom background surface params */
   readonly customBackgroundSurfaceParams: Ref<CustomBackgroundSurfaceParams | null>
   /** Raw background surface params with PropertyValue preserved (for DSL display) */
@@ -415,11 +421,6 @@ export interface ProcessorTarget {
  * Mask (clip group) state and actions
  */
 export interface MaskState {
-  /** Primary color value for mask */
-  readonly maskColorKey1: Ref<ColorValue>
-  /** Secondary color value for mask */
-  readonly maskColorKey2: Ref<ColorValue>
-
   /** Semantic context for mask layer (for surface color derivation) */
   readonly maskSemanticContext: Ref<HeroContextName>
 

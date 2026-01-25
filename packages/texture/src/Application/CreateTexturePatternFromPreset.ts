@@ -6,6 +6,7 @@ import {
   createGridSpec,
   createPolkaDotSpec,
   createCheckerSpec,
+  createLinearGradientSpec,
   createGradientGrainLinearSpec,
   createGradientGrainCircularSpec,
   createGradientGrainRadialSpec,
@@ -87,6 +88,22 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
           }),
         params,
       }
+    case 'linearGradient': {
+      return {
+        label,
+        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
+          createLinearGradientSpec({
+            angle: params.angle,
+            centerX: params.centerX,
+            centerY: params.centerY,
+            stops: [
+              { color: c1, position: 0 },
+              { color: c2, position: 1 },
+            ],
+          }, viewport ?? { width: 1920, height: 1080 }),
+        params,
+      }
+    }
     case 'gradientGrainLinear': {
       return {
         label,

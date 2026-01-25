@@ -266,6 +266,19 @@ export const CheckerSurfaceSchema = defineSchema({
 export type CheckerSurfaceParams = Infer<typeof CheckerSurfaceSchema>
 
 /**
+ * Linear Gradient Surface Schema (smooth 2-color gradient without grain)
+ */
+export const LinearGradientSurfaceSchema = defineSchema({
+  angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 90 }),
+  centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
+})
+
+export type LinearGradientSurfaceParams = Infer<typeof LinearGradientSurfaceSchema>
+
+/**
  * Default curve points for gradient grain (quadratic easing)
  * Values represent Y coordinates at equal X intervals: [0/6, 1/6, 2/6, 3/6, 4/6, 5/6, 6/6]
  * Pattern: (i/6)² where i = 0,1,2,3,4,5,6
@@ -546,6 +559,9 @@ export const createDefaultPolkaDotParams = (): PolkaDotSurfaceParams =>
 export const createDefaultCheckerParams = (): CheckerSurfaceParams =>
   getDefaults(CheckerSurfaceSchema)
 
+export const createDefaultLinearGradientParams = (): LinearGradientSurfaceParams =>
+  getDefaults(LinearGradientSurfaceSchema)
+
 export const createDefaultGradientGrainLinearParams = (): GradientGrainLinearSurfaceParams =>
   getDefaults(GradientGrainLinearSurfaceSchema)
 
@@ -614,6 +630,7 @@ export const SurfaceSchemas = {
   grid: GridSurfaceSchema,
   polkaDot: PolkaDotSurfaceSchema,
   checker: CheckerSurfaceSchema,
+  linearGradient: LinearGradientSurfaceSchema,
   gradientGrainLinear: GradientGrainLinearSurfaceSchema,
   gradientGrainCircular: GradientGrainCircularSurfaceSchema,
   gradientGrainRadial: GradientGrainRadialSurfaceSchema,
