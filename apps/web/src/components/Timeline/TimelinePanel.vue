@@ -74,7 +74,18 @@ function getPhasePositionForTrack(track: Track) {
   }
 }
 
-// Playhead position as percentage
+// ============================================================
+// Horizontal Scroll Support
+// ============================================================
+// Max duration that fits in viewport without scroll (30 seconds)
+const MAX_VIEWPORT_DURATION = 30000
+
+// Content width as percentage (100% = 30s, 200% = 60s, etc.)
+const contentWidthPercent = computed(() =>
+  Math.max(100, (props.visibleDuration / MAX_VIEWPORT_DURATION) * 100)
+)
+
+// Playhead position as percentage of content width
 const playheadPercent = computed(() =>
   (playhead.value / props.visibleDuration) * 100
 )
@@ -164,6 +175,7 @@ function onRulerClick(e: MouseEvent) {
 // ============================================================
 const trackListBodyRef = ref<HTMLElement | null>(null)
 const trackLanesRef = ref<HTMLElement | null>(null)
+const rulerContainerRef = ref<HTMLElement | null>(null)
 let isSyncingScroll = false
 
 function onTrackListScroll(e: Event) {
@@ -176,14 +188,30 @@ function onTrackListScroll(e: Event) {
   }
 }
 
+// Horizontal scroll sync between ruler and track lanes
+function onRulerContainerScroll(e: Event) {
+  if (isSyncingScroll) return
+  const target = e.target as HTMLElement
+  if (trackLanesRef.value) {
+    isSyncingScroll = true
+    trackLanesRef.value.scrollLeft = target.scrollLeft
+    isSyncingScroll = false
+  }
+}
+
 function onTrackLanesScroll(e: Event) {
   if (isSyncingScroll) return
   const target = e.target as HTMLElement
+  isSyncingScroll = true
+  // Sync vertical scroll with track list
   if (trackListBodyRef.value) {
-    isSyncingScroll = true
     trackListBodyRef.value.scrollTop = target.scrollTop
-    isSyncingScroll = false
   }
+  // Sync horizontal scroll with ruler
+  if (rulerContainerRef.value) {
+    rulerContainerRef.value.scrollLeft = target.scrollLeft
+  }
+  isSyncingScroll = false
 }
 
 // ============================================================
@@ -317,30 +345,42 @@ defineExpose({
       <!-- Resize Handle Header -->
       <div class="resize-handle-header" />
 
-      <!-- Ruler -->
-      <div ref="rulerRef" class="ruler" @click="onRulerClick">
-        <!-- Phase backgrounds -->
+      <!-- Ruler Container (horizontal scroll) -->
+      <div
+        ref="rulerContainerRef"
+        class="ruler-container"
+        @scroll="onRulerContainerScroll"
+      >
+        <!-- Ruler -->
         <div
-          v-for="pos in phasePositions"
-          :key="pos.phase.id"
-          class="phase-bg"
-          :class="`phase-${pos.phase.type.toLowerCase()}`"
-          :style="{ left: `${pos.startPercent}%`, width: `${pos.widthPercent}%` }"
+          ref="rulerRef"
+          class="ruler"
+          :style="{ minWidth: `${contentWidthPercent}%` }"
+          @click="onRulerClick"
         >
-          <span class="phase-label">{{ pos.phase.type }}</span>
+          <!-- Phase backgrounds -->
+          <div
+            v-for="pos in phasePositions"
+            :key="pos.phase.id"
+            class="phase-bg"
+            :class="`phase-${pos.phase.type.toLowerCase()}`"
+            :style="{ left: `${pos.startPercent}%`, width: `${pos.widthPercent}%` }"
+          >
+            <span class="phase-label">{{ pos.phase.type }}</span>
+          </div>
+          <!-- Ticks -->
+          <div
+            v-for="tick in rulerTicks"
+            :key="tick.ms"
+            class="ruler-tick"
+            :class="{ major: tick.major }"
+            :style="{ left: `${tick.percent}%` }"
+          >
+            <span v-if="tick.major" class="tick-label">{{ tick.label }}</span>
+          </div>
+          <!-- Playhead -->
+          <div class="playhead" :style="{ left: `${playheadPercent}%` }" />
         </div>
-        <!-- Ticks -->
-        <div
-          v-for="tick in rulerTicks"
-          :key="tick.ms"
-          class="ruler-tick"
-          :class="{ major: tick.major }"
-          :style="{ left: `${tick.percent}%` }"
-        >
-          <span v-if="tick.major" class="tick-label">{{ tick.label }}</span>
-        </div>
-        <!-- Playhead -->
-        <div class="playhead" :style="{ left: `${playheadPercent}%` }" />
       </div>
     </div>
 
@@ -378,7 +418,7 @@ defineExpose({
         class="track-lanes"
         @scroll="onTrackLanesScroll"
       >
-        <div class="track-lanes-inner">
+        <div class="track-lanes-inner" :style="{ minWidth: `${contentWidthPercent}%` }">
           <div
             v-for="track in timeline.tracks"
             :key="track.id"
@@ -610,10 +650,26 @@ defineExpose({
   white-space: nowrap;
 }
 
-/* Ruler */
-.ruler {
+/* Ruler Container (horizontal scroll) */
+.ruler-container {
   flex: 1;
   height: 1.75rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Hide scrollbar for ruler container (synced with track lanes) */
+.ruler-container::-webkit-scrollbar {
+  display: none;
+}
+.ruler-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ruler */
+.ruler {
+  height: 100%;
   position: relative;
   background: oklch(0.92 0.01 260);
   cursor: pointer;
@@ -683,13 +739,13 @@ defineExpose({
 .track-lanes {
   flex: 1;
   position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
 }
 
 .track-lanes-inner {
   display: flex;
   flex-direction: column;
+  /* min-width is set via inline style for horizontal scroll */
 }
 
 .track-lane {
