@@ -1,6 +1,6 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { ContextTargetType } from '../components/HeroGenerator/DraggableLayerNode.vue'
-import type { ContextMenuItem } from '../components/HeroGenerator/ContextMenu.vue'
+import type { ContextMenuItem } from '@practice/timeline-editor'
 import type { LayerNodeConfig } from '@practice/section-visual'
 import { findLayerInTree } from '@practice/section-visual'
 
