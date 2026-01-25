@@ -29,11 +29,13 @@ export type ForegroundElementRefs = Pick<
 
 export interface BackgroundState {
   updateBackgroundSurfaceParams: (params: Record<string, unknown>) => void
+  updateSingleBackgroundSurfaceParam: (paramName: string, value: string | number | boolean) => void
 }
 
 export interface MaskState {
   updateSurfaceParams: (params: Record<string, unknown>) => void
   updateMaskShapeParams: (params: Record<string, unknown>) => void
+  updateSingleSurfaceParam: (paramName: string, value: string | number | boolean) => void
 }
 
 export interface PatternState {
@@ -53,6 +55,10 @@ export interface UseHeroGeneratorPanelHandlersReturn {
   handleForegroundUpdate: (key: string, value: unknown) => void
   handleBackgroundUpdate: (key: string, value: unknown) => void
   handleMaskUpdate: (key: string, value: unknown) => void
+  /** Handle single background param update (preserves PropertyValue types) */
+  handleBackgroundParamUpdate: (paramName: string, value: unknown) => void
+  /** Handle single mask param update (preserves PropertyValue types) */
+  handleMaskParamUpdate: (paramName: string, value: unknown) => void
 }
 
 export const useHeroGeneratorPanelHandlers = (
@@ -114,9 +120,19 @@ export const useHeroGeneratorPanelHandlers = (
     }
   }
 
+  const handleBackgroundParamUpdate = (paramName: string, value: unknown) => {
+    background.updateSingleBackgroundSurfaceParam(paramName, value as string | number | boolean)
+  }
+
+  const handleMaskParamUpdate = (paramName: string, value: unknown) => {
+    mask.updateSingleSurfaceParam(paramName, value as string | number | boolean)
+  }
+
   return {
     handleForegroundUpdate,
     handleBackgroundUpdate,
     handleMaskUpdate,
+    handleBackgroundParamUpdate,
+    handleMaskParamUpdate,
   }
 }

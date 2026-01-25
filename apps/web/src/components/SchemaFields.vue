@@ -30,6 +30,8 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: Record<string, unknown>]
   'update:rawValue': [key: string, value: unknown]
+  /** Single field update - preserves other PropertyValue types */
+  'update:field': [key: string, value: unknown]
 }>()
 
 const fields = computed<FieldMeta[]>(() => {
@@ -39,8 +41,9 @@ const fields = computed<FieldMeta[]>(() => {
 })
 
 const updateField = (key: string, value: unknown) => {
-  // Merge the changed field with current modelValue to avoid losing other fields
-  // Note: This preserves existing values while updating only the changed field
+  // Emit single field update for PropertyValue preservation
+  emit('update:field', key, value)
+  // Also emit full modelValue for backward compatibility
   emit('update:modelValue', { ...props.modelValue, [key]: value })
 }
 

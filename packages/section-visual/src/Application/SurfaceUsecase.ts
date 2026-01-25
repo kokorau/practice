@@ -151,6 +151,15 @@ export interface SurfaceUsecase {
   updateSurfaceParamsForLayer(layerId: string, params: SurfaceParamsUpdate): void
 
   /**
+   * 指定レイヤーの単一サーフェスパラメータを更新
+   * 既存のPropertyValue型（range等）を保持しながら、指定されたパラメータのみを更新
+   * @param layerId レイヤーID
+   * @param paramName パラメータ名
+   * @param value 新しい値
+   */
+  updateSingleSurfaceParam(layerId: string, paramName: string, value: string | number | boolean | ColorValue): void
+
+  /**
    * 指定プロセッサーレイヤーのマスク形状パラメータを更新
    * @param processorId プロセッサーレイヤーID
    * @param params 更新するパラメータ
@@ -292,6 +301,26 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       const newSurface: NormalizedSurfaceConfig = {
         id: currentSurface.id,
         params: { ...currentSurface.params, ...toPropertyValueParams(updateParams) },
+      }
+      repository.updateLayer(layerId, { surface: newSurface })
+    },
+
+    updateSingleSurfaceParam(layerId: string, paramName: string, value: string | number | boolean | ColorValue): void {
+      const layer = repository.findLayer(layerId)
+      if (!layer) return
+
+      // base or surface layer のみ対応
+      if (layer.type !== 'base' && layer.type !== 'surface') return
+
+      const currentSurface = layer.surface
+
+      // 既存のパラメータを保持しつつ、指定されたパラメータのみを static 値で更新
+      const newSurface: NormalizedSurfaceConfig = {
+        id: currentSurface.id,
+        params: {
+          ...currentSurface.params,
+          [paramName]: $PropertyValue.static(value),
+        },
       }
       repository.updateLayer(layerId, { surface: newSurface })
     },

@@ -194,6 +194,10 @@ const emit = defineEmits<{
   'update:mask': [key: keyof MaskProps | 'selectPattern', value: unknown]
   'update:maskShapeRawValue': [key: string, value: unknown]
 
+  // Single param updates (preserves PropertyValue types)
+  'update:backgroundParam': [paramName: string, value: unknown]
+  'update:maskParam': [paramName: string, value: unknown]
+
   // Image layer updates
   'update:image': [key: 'uploadImage' | 'clearImage' | 'loadRandom' | 'mode' | 'position', value: unknown]
 }>()
@@ -207,12 +211,12 @@ const isBackgroundLayer = (): boolean => {
   return props.selection.layerVariant === 'base'
 }
 
-// Handle surface params update based on which layer is selected
-const handleSurfaceParamsUpdate = (value: Record<string, unknown>) => {
+// Handle single surface param update (preserves PropertyValue types)
+const handleSingleSurfaceParamUpdate = (key: string, value: unknown) => {
   if (isBackgroundLayer()) {
-    emit('update:background', 'surfaceParams', value)
+    emit('update:backgroundParam', key, value)
   } else {
-    emit('update:mask', 'surfaceParams', value)
+    emit('update:maskParam', key, value)
   }
 }
 
@@ -381,7 +385,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         :surface-params="background.surfaceParams"
         :raw-surface-params="background.rawSurfaceParams"
         @select-pattern="emit('update:background', 'selectPattern', $event)"
-        @update:surface-params="handleSurfaceParamsUpdate"
+        @update:surface-param="handleSingleSurfaceParamUpdate"
       />
 
       <!-- Surface Layer Settings -->
@@ -396,7 +400,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         :surface-params="mask.surfaceParams"
         :raw-surface-params="mask.rawSurfaceParams"
         @select-pattern="emit('update:mask', 'selectPattern', $event)"
-        @update:surface-params="handleSurfaceParamsUpdate"
+        @update:surface-param="handleSingleSurfaceParamUpdate"
       />
 
       <!-- Image Layer Settings -->

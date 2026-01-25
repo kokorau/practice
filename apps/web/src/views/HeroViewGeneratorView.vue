@@ -430,6 +430,8 @@ const {
   handleForegroundUpdate,
   handleBackgroundUpdate,
   handleMaskUpdate,
+  handleBackgroundParamUpdate,
+  handleMaskParamUpdate,
 } = useHeroGeneratorPanelHandlers({
   foregroundRefs: {
     selectedElementColorKey,
@@ -809,6 +811,8 @@ const handleAddLayerToMaskFromUI = (
       @update:foreground="handleForegroundUpdate"
       @update:background="handleBackgroundUpdate"
       @update:mask="handleMaskUpdate"
+      @update:background-param="handleBackgroundParamUpdate"
+      @update:mask-param="handleMaskParamUpdate"
       @update:image="handleImageUpdate"
     />
 
