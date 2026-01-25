@@ -194,7 +194,8 @@ function convertMaskPatternLayersToPreviewChildren(
     name: layer.name,
     visible: layer.visible,
     surface: {
-      id: layer.surface.id,
+      // Cast surface.id to the expected SurfaceTypeId union type
+      id: layer.surface.id as SurfaceLayerNodeConfig['surface']['id'],
       // MaskPatternStaticValue is compatible with PropertyValue (StaticValue)
       params: layer.surface.params as SurfaceLayerNodeConfig['surface']['params'],
     },
