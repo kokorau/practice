@@ -442,6 +442,145 @@ export function createBackgroundSpecFromSurface(
       seed: surface.seed,
     }, viewport)
   }
+
+  // ============================================================
+  // Mask Shape Surface Types (for children-based mask presets)
+  // These output greyscale values where white = visible, black = transparent
+  // ============================================================
+
+  if (surface.type === 'circle') {
+    // Circle mask: inner=white (visible), outer=black (transparent)
+    return createCircleGreymapMaskSpec(
+      {
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        radius: surface.radius,
+        innerValue: 1.0, // white inside (visible)
+        outerValue: 0.0, // black outside (transparent)
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
+  if (surface.type === 'rect') {
+    return createRectGreymapMaskSpec(
+      {
+        left: surface.left,
+        right: surface.right,
+        top: surface.top,
+        bottom: surface.bottom,
+        radiusTopLeft: surface.radiusTopLeft,
+        radiusTopRight: surface.radiusTopRight,
+        radiusBottomLeft: surface.radiusBottomLeft,
+        radiusBottomRight: surface.radiusBottomRight,
+        rotation: surface.rotation,
+        perspectiveX: surface.perspectiveX,
+        perspectiveY: surface.perspectiveY,
+        innerValue: 1.0,
+        outerValue: 0.0,
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
+  if (surface.type === 'blob') {
+    return createBlobGreymapMaskSpec(
+      {
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        baseRadius: surface.baseRadius,
+        amplitude: surface.amplitude,
+        octaves: surface.octaves,
+        seed: surface.seed,
+        innerValue: 1.0,
+        outerValue: 0.0,
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
+  if (surface.type === 'perlin') {
+    return createPerlinGreymapMaskSpec(
+      {
+        seed: surface.seed,
+        threshold: surface.threshold,
+        scale: surface.scale,
+        octaves: surface.octaves,
+        innerValue: 1.0,
+        outerValue: 0.0,
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
+  if (surface.type === 'simplex') {
+    return createSimplexGreymapMaskSpec(
+      {
+        seed: surface.seed,
+        threshold: surface.threshold,
+        scale: surface.scale,
+        octaves: surface.octaves,
+        innerValue: 1.0,
+        outerValue: 0.0,
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
+  if (surface.type === 'curl') {
+    return createCurlGreymapMaskSpec(
+      {
+        seed: surface.seed,
+        threshold: surface.threshold,
+        scale: surface.scale,
+        octaves: surface.octaves,
+        intensity: surface.intensity,
+        innerValue: 1.0,
+        outerValue: 0.0,
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
+  if (surface.type === 'radialGradient') {
+    return createRadialGradientGreymapMaskSpec(
+      {
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        innerRadius: surface.innerRadius,
+        outerRadius: surface.outerRadius,
+        aspectRatio: surface.aspectRatio,
+        innerValue: 1.0,
+        outerValue: 0.0,
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
+  if (surface.type === 'boxGradient') {
+    return createBoxGradientGreymapMaskSpec(
+      {
+        left: surface.left,
+        right: surface.right,
+        top: surface.top,
+        bottom: surface.bottom,
+        cornerRadius: surface.cornerRadius,
+        curve: surface.curve,
+        innerValue: 1.0,
+        outerValue: 0.0,
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
+  if (surface.type === 'wavyLine') {
+    return createWavyLineGreymapMaskSpec(
+      {
+        position: surface.position,
+        direction: surface.direction,
+        amplitude: surface.amplitude,
+        frequency: surface.frequency,
+        octaves: surface.octaves,
+        seed: surface.seed,
+        innerValue: 1.0,
+        outerValue: 0.0,
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
+
   // image type is not supported in config-based rendering
   return createSolidSpec({ color: color1 })
 }

@@ -95,6 +95,8 @@ import {
   compileHeroView,
   normalizeMaskConfig,
   type MaskShapeConfig,
+  type NormalizedMaskConfig,
+  $PropertyValue,
   createSelectProcessorUsecase,
   createApplyAnimatedPresetUsecase,
   getProcessorWithTargetUsecase,
@@ -1124,12 +1126,53 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Grouped State Objects (Phase 2: #131)
   // ============================================================
 
+  // Helper: Convert children-based pattern to NormalizedMaskConfig
+  const childrenToNormalizedMaskConfig = (
+    children: Array<{ surface: { id: string; params: Record<string, { type: string; value: unknown }> } }>
+  ): NormalizedMaskConfig | null => {
+    const firstChild = children[0]
+    if (!firstChild || !firstChild.surface) return null
+
+    const { id, params: childParams } = firstChild.surface
+    const normalizedParams: Record<string, ReturnType<typeof $PropertyValue.static>> = {}
+
+    for (const [key, val] of Object.entries(childParams)) {
+      if (val && typeof val === 'object' && 'value' in val) {
+        normalizedParams[key] = $PropertyValue.static(val.value as number | string | boolean)
+      }
+    }
+
+    // Cast id to MaskShapeTypeId (children use same shape types as mask)
+    return { id: id as NormalizedMaskConfig['id'], params: normalizedParams }
+  }
+
   // Mask patterns with normalized config for pipeline-based preview
   const maskPatternsWithNormalizedConfig = computed(() => {
-    return heroThumbnails.maskPatterns.map((pattern) => ({
-      ...pattern,
-      maskConfig: normalizeMaskConfig(pattern.maskConfig as MaskShapeConfig),
-    }))
+    return heroThumbnails.maskPatterns
+      .map((pattern) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const p = pattern as any
+
+        // Children-based pattern: convert first child to NormalizedMaskConfig
+        if (p.children && Array.isArray(p.children) && p.children.length > 0) {
+          const maskConfig = childrenToNormalizedMaskConfig(p.children)
+          if (maskConfig) {
+            return { ...pattern, maskConfig }
+          }
+        }
+
+        // Legacy pattern: use normalizeMaskConfig
+        if (p.maskConfig) {
+          return {
+            ...pattern,
+            maskConfig: normalizeMaskConfig(p.maskConfig as MaskShapeConfig),
+          }
+        }
+
+        // No config available - return null to filter out
+        return null
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null)
   })
 
   const pattern: PatternState = {

@@ -36,8 +36,19 @@ import {
   createGradientGrainCurlSpec,
   createGradientGrainSimplexSpec,
   DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
+  // Greymap mask specs for mask thumbnail rendering
+  createCircleGreymapMaskSpec,
+  createRectGreymapMaskSpec,
+  createBlobGreymapMaskSpec,
+  createPerlinGreymapMaskSpec,
+  createSimplexGreymapMaskSpec,
+  createCurlGreymapMaskSpec,
+  createRadialGradientGreymapMaskSpec,
+  createBoxGradientGreymapMaskSpec,
+  createWavyLineGreymapMaskSpec,
   type TexturePattern,
   type MaskPattern,
+  type MaskPatternStaticValue,
   type RGBA,
   type Viewport,
   type TextureRenderSpec,
@@ -91,6 +102,168 @@ export interface UseHeroThumbnailsReturn {
   destroyThumbnailRenderers: () => void
   /** Render thumbnails for current section */
   renderThumbnails: () => Promise<void>
+}
+
+// ============================================================
+// Mask Thumbnail Helpers
+// ============================================================
+
+/**
+ * Helper to extract static value from MaskPatternStaticValue
+ */
+function getStaticValue<T>(v: MaskPatternStaticValue<T> | undefined, defaultValue: T): T {
+  return v?.value ?? defaultValue
+}
+
+/**
+ * Create thumbnail spec for mask pattern (children-based).
+ * Uses the first child's surface config to render a greymap preview.
+ */
+function createMaskThumbnailSpec(
+  pattern: MaskPattern,
+  viewport: Viewport
+): TextureRenderSpec | null {
+  const firstChild = pattern.children[0]
+  if (!firstChild || firstChild.type !== 'surface') return null
+
+  const surfaceId = firstChild.surface.id
+  const params = firstChild.surface.params
+
+  switch (surfaceId) {
+    case 'circle':
+      return createCircleGreymapMaskSpec(
+        {
+          centerX: getStaticValue(params.centerX as MaskPatternStaticValue<number>, 0.5),
+          centerY: getStaticValue(params.centerY as MaskPatternStaticValue<number>, 0.5),
+          radius: getStaticValue(params.radius as MaskPatternStaticValue<number>, 0.3),
+          innerValue: 1.0,
+          outerValue: 0.0,
+        },
+        viewport
+      ) as unknown as TextureRenderSpec
+
+    case 'rect':
+      return createRectGreymapMaskSpec(
+        {
+          left: getStaticValue(params.left as MaskPatternStaticValue<number>, 0),
+          right: getStaticValue(params.right as MaskPatternStaticValue<number>, 1),
+          top: getStaticValue(params.top as MaskPatternStaticValue<number>, 0),
+          bottom: getStaticValue(params.bottom as MaskPatternStaticValue<number>, 1),
+          radiusTopLeft: getStaticValue(params.radiusTopLeft as MaskPatternStaticValue<number>, 0),
+          radiusTopRight: getStaticValue(params.radiusTopRight as MaskPatternStaticValue<number>, 0),
+          radiusBottomLeft: getStaticValue(params.radiusBottomLeft as MaskPatternStaticValue<number>, 0),
+          radiusBottomRight: getStaticValue(params.radiusBottomRight as MaskPatternStaticValue<number>, 0),
+          rotation: getStaticValue(params.rotation as MaskPatternStaticValue<number>, 0),
+          perspectiveX: getStaticValue(params.perspectiveX as MaskPatternStaticValue<number>, 0),
+          perspectiveY: getStaticValue(params.perspectiveY as MaskPatternStaticValue<number>, 0),
+          innerValue: 1.0,
+          outerValue: 0.0,
+        },
+        viewport
+      ) as unknown as TextureRenderSpec
+
+    case 'blob':
+      return createBlobGreymapMaskSpec(
+        {
+          centerX: getStaticValue(params.centerX as MaskPatternStaticValue<number>, 0.5),
+          centerY: getStaticValue(params.centerY as MaskPatternStaticValue<number>, 0.5),
+          baseRadius: getStaticValue(params.baseRadius as MaskPatternStaticValue<number>, 0.4),
+          amplitude: getStaticValue(params.amplitude as MaskPatternStaticValue<number>, 0.08),
+          octaves: getStaticValue(params.octaves as MaskPatternStaticValue<number>, 2),
+          seed: getStaticValue(params.seed as MaskPatternStaticValue<number>, 1),
+          innerValue: 1.0,
+          outerValue: 0.0,
+        },
+        viewport
+      ) as unknown as TextureRenderSpec
+
+    case 'perlin':
+      return createPerlinGreymapMaskSpec(
+        {
+          seed: getStaticValue(params.seed as MaskPatternStaticValue<number>, 12345),
+          threshold: getStaticValue(params.threshold as MaskPatternStaticValue<number>, 0.5),
+          scale: getStaticValue(params.scale as MaskPatternStaticValue<number>, 4),
+          octaves: getStaticValue(params.octaves as MaskPatternStaticValue<number>, 4),
+          innerValue: 1.0,
+          outerValue: 0.0,
+        },
+        viewport
+      ) as unknown as TextureRenderSpec
+
+    case 'simplex':
+      return createSimplexGreymapMaskSpec(
+        {
+          seed: getStaticValue(params.seed as MaskPatternStaticValue<number>, 12345),
+          threshold: getStaticValue(params.threshold as MaskPatternStaticValue<number>, 0.5),
+          scale: getStaticValue(params.scale as MaskPatternStaticValue<number>, 4),
+          octaves: getStaticValue(params.octaves as MaskPatternStaticValue<number>, 4),
+          innerValue: 1.0,
+          outerValue: 0.0,
+        },
+        viewport
+      ) as unknown as TextureRenderSpec
+
+    case 'curl':
+      return createCurlGreymapMaskSpec(
+        {
+          seed: getStaticValue(params.seed as MaskPatternStaticValue<number>, 12345),
+          threshold: getStaticValue(params.threshold as MaskPatternStaticValue<number>, 0.3),
+          scale: getStaticValue(params.scale as MaskPatternStaticValue<number>, 4),
+          octaves: getStaticValue(params.octaves as MaskPatternStaticValue<number>, 4),
+          intensity: getStaticValue(params.intensity as MaskPatternStaticValue<number>, 1),
+          innerValue: 1.0,
+          outerValue: 0.0,
+        },
+        viewport
+      ) as unknown as TextureRenderSpec
+
+    case 'radialGradient':
+      return createRadialGradientGreymapMaskSpec(
+        {
+          centerX: getStaticValue(params.centerX as MaskPatternStaticValue<number>, 0.5),
+          centerY: getStaticValue(params.centerY as MaskPatternStaticValue<number>, 0.5),
+          innerRadius: getStaticValue(params.innerRadius as MaskPatternStaticValue<number>, 0.2),
+          outerRadius: getStaticValue(params.outerRadius as MaskPatternStaticValue<number>, 0.6),
+          aspectRatio: getStaticValue(params.aspectRatio as MaskPatternStaticValue<number>, 1),
+          innerValue: 1.0,
+          outerValue: 0.0,
+        },
+        viewport
+      ) as unknown as TextureRenderSpec
+
+    case 'boxGradient':
+      return createBoxGradientGreymapMaskSpec(
+        {
+          left: getStaticValue(params.left as MaskPatternStaticValue<number>, 0.15),
+          right: getStaticValue(params.right as MaskPatternStaticValue<number>, 0.15),
+          top: getStaticValue(params.top as MaskPatternStaticValue<number>, 0.15),
+          bottom: getStaticValue(params.bottom as MaskPatternStaticValue<number>, 0.15),
+          cornerRadius: getStaticValue(params.cornerRadius as MaskPatternStaticValue<number>, 0),
+          curve: getStaticValue(params.curve as MaskPatternStaticValue<'linear' | 'smooth' | 'easeIn' | 'easeOut'>, 'smooth'),
+          innerValue: 1.0,
+          outerValue: 0.0,
+        },
+        viewport
+      ) as unknown as TextureRenderSpec
+
+    case 'wavyLine':
+      return createWavyLineGreymapMaskSpec(
+        {
+          position: getStaticValue(params.position as MaskPatternStaticValue<number>, 0.5),
+          direction: getStaticValue(params.direction as MaskPatternStaticValue<'vertical' | 'horizontal'>, 'vertical'),
+          amplitude: getStaticValue(params.amplitude as MaskPatternStaticValue<number>, 0.08),
+          frequency: getStaticValue(params.frequency as MaskPatternStaticValue<number>, 3),
+          octaves: getStaticValue(params.octaves as MaskPatternStaticValue<number>, 2),
+          seed: getStaticValue(params.seed as MaskPatternStaticValue<number>, 42),
+          innerValue: 1.0,
+          outerValue: 0.0,
+        },
+        viewport
+      ) as unknown as TextureRenderSpec
+
+    default:
+      return null
+  }
 }
 
 // ============================================================
@@ -393,16 +566,34 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
       return
     }
 
-    // Handle background and clip-group-shape sections
-    const patterns = getPatterns(section)
-    for (let i = 0; i < thumbnailRenderers.length; i++) {
-      const renderer = thumbnailRenderers[i]
-      const pattern = patterns[i]
-      if (renderer && pattern) {
-        const viewport = renderer.getViewport()
-        const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
-        renderer.render(spec)
+    // Handle background section
+    if (section === 'background') {
+      for (let i = 0; i < thumbnailRenderers.length; i++) {
+        const renderer = thumbnailRenderers[i]
+        const pattern = texturePatterns[i]
+        if (renderer && pattern) {
+          const viewport = renderer.getViewport()
+          const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
+          renderer.render(spec)
+        }
       }
+      return
+    }
+
+    // Handle clip-group-shape section (mask patterns with children-based format)
+    if (section === 'clip-group-shape') {
+      for (let i = 0; i < thumbnailRenderers.length; i++) {
+        const renderer = thumbnailRenderers[i]
+        const pattern = maskPatterns[i]
+        if (renderer && pattern) {
+          const viewport = renderer.getViewport()
+          const spec = createMaskThumbnailSpec(pattern, viewport)
+          if (spec) {
+            renderer.render(spec)
+          }
+        }
+      }
+      return
     }
   }
 
@@ -452,25 +643,52 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
         return
       }
 
-      // Handle background and clip-group-shape sections
-      const patterns = getPatterns(section)
-      for (let i = 0; i < canvases.length; i++) {
-        const canvas = canvases[i]
-        if (!canvas) continue
-        canvas.width = 256
-        canvas.height = 144
-        try {
-          const renderer = await createSharedRenderer(canvas)
-          thumbnailRenderers.push(renderer)
-          const pattern = patterns[i]
-          if (pattern) {
-            const viewport = renderer.getViewport()
-            const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
-            renderer.render(spec)
+      // Handle background section
+      if (section === 'background') {
+        for (let i = 0; i < canvases.length; i++) {
+          const canvas = canvases[i]
+          if (!canvas) continue
+          canvas.width = 256
+          canvas.height = 144
+          try {
+            const renderer = await createSharedRenderer(canvas)
+            thumbnailRenderers.push(renderer)
+            const pattern = texturePatterns[i]
+            if (pattern) {
+              const viewport = renderer.getViewport()
+              const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
+              renderer.render(spec)
+            }
+          } catch (e) {
+            console.error('WebGPU not available:', e)
           }
-        } catch (e) {
-          console.error('WebGPU not available:', e)
         }
+        return
+      }
+
+      // Handle clip-group-shape section (mask patterns with children-based format)
+      if (section === 'clip-group-shape') {
+        for (let i = 0; i < canvases.length; i++) {
+          const canvas = canvases[i]
+          if (!canvas) continue
+          canvas.width = 256
+          canvas.height = 144
+          try {
+            const renderer = await createSharedRenderer(canvas)
+            thumbnailRenderers.push(renderer)
+            const pattern = maskPatterns[i]
+            if (pattern) {
+              const viewport = renderer.getViewport()
+              const spec = createMaskThumbnailSpec(pattern, viewport)
+              if (spec) {
+                renderer.render(spec)
+              }
+            }
+          } catch (e) {
+            console.error('WebGPU not available:', e)
+          }
+        }
+        return
       }
     })
   }

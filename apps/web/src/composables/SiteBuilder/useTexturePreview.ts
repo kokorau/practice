@@ -134,7 +134,11 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   // Get patterns for a section
   const getPatterns = (section: SectionType): TexturePattern[] => {
     if (section === 'background') return texturePatterns
-    if (section === 'midground') return maskPatterns
+    // Note: maskPatterns are children-based and createSpec is optional
+    // For thumbnail rendering, return patterns with createSpec (cast to TexturePattern[])
+    if (section === 'midground') {
+      return maskPatterns.filter((p) => !!p.createSpec) as unknown as TexturePattern[]
+    }
     return []
   }
 
@@ -245,6 +249,8 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
     viewport: Viewport
   ): TextureRenderSpec | null => {
     const { maskConfig } = maskPattern
+    if (!maskConfig) return null
+
     const { type: textureType, config } = texturePattern
 
     // Circle mask
@@ -407,9 +413,11 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
             }
           }
         }
-        // Fallback to solid color mask
-        const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
-        previewRenderer.render(spec, { clear: false })
+        // Fallback to solid color mask (if createSpec is available)
+        if (maskPattern.createSpec) {
+          const spec = maskPattern.createSpec(maskInnerColor.value, maskOuterColor.value, viewport)
+          previewRenderer.render(spec, { clear: false })
+        }
       }
     }
   }

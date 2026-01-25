@@ -386,9 +386,10 @@ export const AllMasksGrid: Story = {
     components: { HeroPreview },
     setup() {
       const presetStories = maskPatterns
+        .filter((pattern: MaskPattern) => pattern.maskConfig)
         .map((pattern: MaskPattern) => ({
           label: pattern.label,
-          type: pattern.maskConfig.type,
+          type: pattern.maskConfig!.type,
           args: {
             variant: 'thumbnail' as const,
             config: createMaskConfig(pattern),
@@ -473,7 +474,7 @@ export const CircleMasksGrid: Story = {
     components: { HeroPreview },
     setup() {
       const circlePatterns = maskPatterns
-        .filter((p: MaskPattern) => p.maskConfig.type === 'circle')
+        .filter((p: MaskPattern) => p.maskConfig?.type === 'circle')
         .map((pattern: MaskPattern) => ({
           label: pattern.label,
           args: {
@@ -513,7 +514,7 @@ export const RectMasksGrid: Story = {
     components: { HeroPreview },
     setup() {
       const rectPatterns = maskPatterns
-        .filter((p: MaskPattern) => p.maskConfig.type === 'rect')
+        .filter((p: MaskPattern) => p.maskConfig?.type === 'rect')
         .map((pattern: MaskPattern) => ({
           label: pattern.label,
           args: {
@@ -554,10 +555,10 @@ export const GradientMasksGrid: Story = {
     setup() {
       const gradientTypes = ['linearGradient', 'radialGradient', 'boxGradient']
       const gradientPatterns = maskPatterns
-        .filter((p: MaskPattern) => gradientTypes.includes(p.maskConfig.type))
+        .filter((p: MaskPattern) => p.maskConfig && gradientTypes.includes(p.maskConfig.type))
         .map((pattern: MaskPattern) => ({
           label: pattern.label,
-          type: pattern.maskConfig.type,
+          type: pattern.maskConfig?.type,
           args: {
             variant: 'thumbnail' as const,
             config: createMaskConfig(pattern),
@@ -597,10 +598,10 @@ export const NoiseMasksGrid: Story = {
     setup() {
       const noiseTypes = ['perlin', 'simplex', 'curl']
       const noisePatterns = maskPatterns
-        .filter((p: MaskPattern) => noiseTypes.includes(p.maskConfig.type))
+        .filter((p: MaskPattern) => p.maskConfig && noiseTypes.includes(p.maskConfig.type))
         .map((pattern: MaskPattern) => ({
           label: pattern.label,
-          type: pattern.maskConfig.type,
+          type: pattern.maskConfig?.type,
           args: {
             variant: 'thumbnail' as const,
             config: createMaskConfig(pattern),
@@ -639,7 +640,7 @@ export const WavyLineMasksGrid: Story = {
     components: { HeroPreview },
     setup() {
       const wavyPatterns = maskPatterns
-        .filter((p: MaskPattern) => p.maskConfig.type === 'wavyLine')
+        .filter((p: MaskPattern) => p.maskConfig?.type === 'wavyLine')
         .map((pattern: MaskPattern) => ({
           label: pattern.label,
           args: {

@@ -29,7 +29,6 @@ import {
   type SurfaceUsecase,
   type SurfaceParamsUpdate,
   type MaskShapeParamsUpdate,
-  toCustomMaskShapeParams,
   toCustomSurfaceParams,
   toCustomBackgroundSurfaceParams,
   $PropertyValue,
@@ -116,10 +115,59 @@ export const useHeroPatternPresets = (
     const idx = selectedMaskIndex.value
     if (idx === null) return
     const pattern = maskPatterns[idx]
-    if (pattern) {
-      // Type assertion needed due to monorepo type resolution
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      customMaskShapeParams.value = toCustomMaskShapeParams(pattern.maskConfig) as any
+    if (pattern && pattern.children && pattern.children.length > 0) {
+      // Children-based mask pattern: use first child's surface config
+      const firstChild = pattern.children[0]
+      if (firstChild && firstChild.type === 'surface') {
+        const surfaceId = firstChild.surface.id
+        const params = firstChild.surface.params
+
+        // Extract static values from params
+        const extractValue = <T,>(v: { value: T } | undefined, def: T): T =>
+          v?.value ?? def
+
+        // Map surface type to mask shape params
+        switch (surfaceId) {
+          case 'circle':
+            customMaskShapeParams.value = {
+              id: 'circle',
+              centerX: extractValue(params.centerX as { value: number }, 0.5),
+              centerY: extractValue(params.centerY as { value: number }, 0.5),
+              radius: extractValue(params.radius as { value: number }, 0.3),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any
+            break
+          case 'rect':
+            customMaskShapeParams.value = {
+              id: 'rect',
+              left: extractValue(params.left as { value: number }, 0),
+              right: extractValue(params.right as { value: number }, 1),
+              top: extractValue(params.top as { value: number }, 0),
+              bottom: extractValue(params.bottom as { value: number }, 1),
+              radiusTopLeft: extractValue(params.radiusTopLeft as { value: number }, 0),
+              radiusTopRight: extractValue(params.radiusTopRight as { value: number }, 0),
+              radiusBottomLeft: extractValue(params.radiusBottomLeft as { value: number }, 0),
+              radiusBottomRight: extractValue(params.radiusBottomRight as { value: number }, 0),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any
+            break
+          case 'blob':
+            customMaskShapeParams.value = {
+              id: 'blob',
+              centerX: extractValue(params.centerX as { value: number }, 0.5),
+              centerY: extractValue(params.centerY as { value: number }, 0.5),
+              baseRadius: extractValue(params.baseRadius as { value: number }, 0.4),
+              amplitude: extractValue(params.amplitude as { value: number }, 0.08),
+              octaves: extractValue(params.octaves as { value: number }, 2),
+              seed: extractValue(params.seed as { value: number }, 1),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any
+            break
+          default:
+            // For other types, just clear the params
+            customMaskShapeParams.value = null
+        }
+      }
     }
   }
 

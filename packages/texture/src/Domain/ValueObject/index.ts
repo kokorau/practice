@@ -15,8 +15,14 @@ export type {
   BoxGradientMaskShapeConfig,
   WavyLineMaskShapeConfig,
   MaskShapeConfig,
+  // New children-based MaskPattern types
+  MaskPatternStaticValue,
+  MaskPatternSurface,
+  MaskPatternLayer,
   MaskPattern,
+  LegacyMaskPattern,
 } from './TexturePattern'
+export { $static } from './TexturePattern'
 export type {
   SurfaceType,
   GenericSurfaceParams,

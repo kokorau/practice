@@ -3,17 +3,27 @@
  * @deprecated Use EffectorSettingsPanel instead
  * This component is kept for backward compatibility
  */
-import type { RGBA } from '@practice/texture'
+import type { RGBA, MaskPatternLayer, Viewport } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
+import type { PrimitivePalette } from '@practice/semantic-color-palette'
+import type { SurfaceLayerNodeConfig, ProcessorNodeConfig } from '@practice/section-visual'
 import SchemaFields from '../../SchemaFields.vue'
-import MaskPatternThumbnail, {
-  type BackgroundSpecCreator,
-  type MaskSpecCreator,
-} from '../MaskPatternThumbnail.vue'
+import MaskPatternThumbnail from '../MaskPatternThumbnail.vue'
 
+/**
+ * Legacy mask spec creator type for backward compatibility.
+ */
+type MaskSpecCreator = (color1: RGBA, color2: RGBA, viewport: Viewport) => { shader: string; uniforms: ArrayBuffer; bufferSize: number }
+
+/**
+ * Mask pattern item for thumbnail list.
+ * Uses children-based format compatible with MaskPattern.
+ * Also supports legacy createSpec for backward compatibility.
+ */
 export interface MaskPatternItem {
   label: string
-  createSpec: MaskSpecCreator
+  children: MaskPatternLayer[]
+  createSpec?: MaskSpecCreator
 }
 
 defineProps<{
@@ -23,7 +33,11 @@ defineProps<{
   maskShapeParams: Record<string, unknown> | null
   maskOuterColor: RGBA
   maskInnerColor: RGBA
-  createBackgroundThumbnailSpec: BackgroundSpecCreator
+  createBackgroundThumbnailSpec?: (viewport: Viewport) => { shader: string; uniforms: ArrayBuffer; bufferSize: number } | null
+  // Pipeline-based rendering props
+  surface?: SurfaceLayerNodeConfig
+  processor?: ProcessorNodeConfig
+  palette?: PrimitivePalette
 }>()
 
 const emit = defineEmits<{
@@ -52,6 +66,7 @@ const emit = defineEmits<{
         @click="emit('update:selectedMaskIndex', i)"
       >
         <MaskPatternThumbnail
+          v-if="pattern.createSpec"
           :create-background-spec="createBackgroundThumbnailSpec"
           :create-mask-spec="pattern.createSpec"
           :mask-color1="maskOuterColor"

@@ -183,7 +183,12 @@ export type {
   BoxGradientMaskShapeConfig,
   WavyLineMaskShapeConfig,
   MaskShapeConfig,
+  // Children-based MaskPattern types
+  MaskPatternStaticValue,
+  MaskPatternSurface,
+  MaskPatternLayer,
   MaskPattern,
+  LegacyMaskPattern,
   // Greymap types (2-stage mask pipeline)
   GreymapMaskSpec,
   GreymapMaskParams,
@@ -245,6 +250,8 @@ export type {
 
 // Shape and Surface Schemas
 export {
+  // Children-based MaskPattern helper
+  $static,
   // Shape Schemas
   CircleMaskShapeSchema,
   RectMaskShapeSchema,

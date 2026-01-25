@@ -283,129 +283,151 @@ export const findSurfacePresetIndex = (
 }
 
 /**
- * Find mask pattern index by matching shape params
- * Returns null if no exact match found (custom params)
+ * Children-based mask pattern interface for matching
+ */
+export interface ChildrenBasedMaskPattern {
+  label: string
+  children: Array<{
+    type: 'surface'
+    surface: {
+      id: string
+      params: Record<string, { type: 'static'; value: unknown }>
+    }
+  }>
+}
+
+/**
+ * Helper to get static value from children-based pattern params
+ */
+function getChildValue<T>(params: Record<string, { type: 'static'; value: unknown }>, key: string, defaultValue: T): T {
+  const param = params[key]
+  if (param && param.type === 'static') {
+    return param.value as T
+  }
+  return defaultValue
+}
+
+/**
+ * Find mask pattern index by matching children (children-based patterns).
+ * Returns null if no exact match found (custom params).
+ *
+ * Note: This function matches the first child's surface configuration
+ * against the pattern's first child.
  */
 export const findMaskPatternIndex = (
   shapeConfig: MaskShapeConfig,
-  patterns: { maskConfig: MaskPatternConfig }[]
+  patterns: ChildrenBasedMaskPattern[]
 ): number | null => {
   for (let i = 0; i < patterns.length; i++) {
     const pattern = patterns[i]
-    const maskConfig = pattern?.maskConfig
-    if (!maskConfig || maskConfig.type !== shapeConfig.type) continue
+    if (!pattern?.children?.[0]) continue
 
-    // Check cutout first (default to true if undefined)
-    const shapeCutout = shapeConfig.cutout ?? true
-    const maskCutout = maskConfig.cutout ?? true
-    if (shapeCutout !== maskCutout) continue
+    const firstChild = pattern.children[0]
+    if (firstChild.type !== 'surface') continue
 
-    if (shapeConfig.type === 'circle' && maskConfig.type === 'circle') {
+    const surfaceId = firstChild.surface.id
+    const params = firstChild.surface.params
+
+    // Match surface type to shape type
+    if (surfaceId !== shapeConfig.type) continue
+
+    if (shapeConfig.type === 'circle' && surfaceId === 'circle') {
       if (
-        approxEqual(shapeConfig.centerX, maskConfig.centerX ?? 0) &&
-        approxEqual(shapeConfig.centerY, maskConfig.centerY ?? 0) &&
-        approxEqual(shapeConfig.radius, maskConfig.radius ?? 0)
+        approxEqual(shapeConfig.centerX, getChildValue(params, 'centerX', 0.5)) &&
+        approxEqual(shapeConfig.centerY, getChildValue(params, 'centerY', 0.5)) &&
+        approxEqual(shapeConfig.radius, getChildValue(params, 'radius', 0.3))
       ) {
         return i
       }
     }
-    if (shapeConfig.type === 'rect' && maskConfig.type === 'rect') {
+    if (shapeConfig.type === 'rect' && surfaceId === 'rect') {
       if (
-        approxEqual(shapeConfig.left, maskConfig.left ?? 0) &&
-        approxEqual(shapeConfig.right, maskConfig.right ?? 0) &&
-        approxEqual(shapeConfig.top, maskConfig.top ?? 0) &&
-        approxEqual(shapeConfig.bottom, maskConfig.bottom ?? 0) &&
-        approxEqual(shapeConfig.radiusTopLeft ?? 0, maskConfig.radiusTopLeft ?? 0) &&
-        approxEqual(shapeConfig.radiusTopRight ?? 0, maskConfig.radiusTopRight ?? 0) &&
-        approxEqual(shapeConfig.radiusBottomLeft ?? 0, maskConfig.radiusBottomLeft ?? 0) &&
-        approxEqual(shapeConfig.radiusBottomRight ?? 0, maskConfig.radiusBottomRight ?? 0)
+        approxEqual(shapeConfig.left, getChildValue(params, 'left', 0)) &&
+        approxEqual(shapeConfig.right, getChildValue(params, 'right', 1)) &&
+        approxEqual(shapeConfig.top, getChildValue(params, 'top', 0)) &&
+        approxEqual(shapeConfig.bottom, getChildValue(params, 'bottom', 1)) &&
+        approxEqual(shapeConfig.radiusTopLeft ?? 0, getChildValue(params, 'radiusTopLeft', 0)) &&
+        approxEqual(shapeConfig.radiusTopRight ?? 0, getChildValue(params, 'radiusTopRight', 0)) &&
+        approxEqual(shapeConfig.radiusBottomLeft ?? 0, getChildValue(params, 'radiusBottomLeft', 0)) &&
+        approxEqual(shapeConfig.radiusBottomRight ?? 0, getChildValue(params, 'radiusBottomRight', 0))
       ) {
         return i
       }
     }
-    if (shapeConfig.type === 'blob' && maskConfig.type === 'blob') {
+    if (shapeConfig.type === 'blob' && surfaceId === 'blob') {
       if (
-        approxEqual(shapeConfig.centerX, maskConfig.centerX ?? 0) &&
-        approxEqual(shapeConfig.centerY, maskConfig.centerY ?? 0) &&
-        approxEqual(shapeConfig.baseRadius, maskConfig.baseRadius ?? 0) &&
-        approxEqual(shapeConfig.amplitude, maskConfig.amplitude ?? 0) &&
-        shapeConfig.octaves === maskConfig.octaves &&
-        shapeConfig.seed === maskConfig.seed
+        approxEqual(shapeConfig.centerX, getChildValue(params, 'centerX', 0.5)) &&
+        approxEqual(shapeConfig.centerY, getChildValue(params, 'centerY', 0.5)) &&
+        approxEqual(shapeConfig.baseRadius, getChildValue(params, 'baseRadius', 0.4)) &&
+        approxEqual(shapeConfig.amplitude, getChildValue(params, 'amplitude', 0.08)) &&
+        shapeConfig.octaves === getChildValue(params, 'octaves', 2) &&
+        shapeConfig.seed === getChildValue(params, 'seed', 1)
       ) {
         return i
       }
     }
-    if (shapeConfig.type === 'perlin' && maskConfig.type === 'perlin') {
+    if (shapeConfig.type === 'perlin' && surfaceId === 'perlin') {
       if (
-        shapeConfig.seed === maskConfig.seed &&
-        approxEqual(shapeConfig.threshold, maskConfig.threshold ?? 0.5) &&
-        approxEqual(shapeConfig.scale, maskConfig.scale ?? 4) &&
-        shapeConfig.octaves === maskConfig.octaves
+        shapeConfig.seed === getChildValue(params, 'seed', 12345) &&
+        approxEqual(shapeConfig.threshold, getChildValue(params, 'threshold', 0.5)) &&
+        approxEqual(shapeConfig.scale, getChildValue(params, 'scale', 4)) &&
+        shapeConfig.octaves === getChildValue(params, 'octaves', 4)
       ) {
         return i
       }
     }
-    if (shapeConfig.type === 'simplex' && maskConfig.type === 'simplex') {
+    if (shapeConfig.type === 'simplex' && surfaceId === 'simplex') {
       if (
-        shapeConfig.seed === maskConfig.seed &&
-        approxEqual(shapeConfig.threshold, maskConfig.threshold ?? 0.5) &&
-        approxEqual(shapeConfig.scale, maskConfig.scale ?? 4) &&
-        shapeConfig.octaves === maskConfig.octaves
+        shapeConfig.seed === getChildValue(params, 'seed', 12345) &&
+        approxEqual(shapeConfig.threshold, getChildValue(params, 'threshold', 0.5)) &&
+        approxEqual(shapeConfig.scale, getChildValue(params, 'scale', 4)) &&
+        shapeConfig.octaves === getChildValue(params, 'octaves', 4)
       ) {
         return i
       }
     }
-    if (shapeConfig.type === 'curl' && maskConfig.type === 'curl') {
+    if (shapeConfig.type === 'curl' && surfaceId === 'curl') {
       if (
-        shapeConfig.seed === maskConfig.seed &&
-        approxEqual(shapeConfig.threshold, maskConfig.threshold ?? 0.3) &&
-        approxEqual(shapeConfig.scale, maskConfig.scale ?? 4) &&
-        shapeConfig.octaves === maskConfig.octaves &&
-        approxEqual(shapeConfig.intensity, maskConfig.intensity ?? 1)
+        shapeConfig.seed === getChildValue(params, 'seed', 12345) &&
+        approxEqual(shapeConfig.threshold, getChildValue(params, 'threshold', 0.3)) &&
+        approxEqual(shapeConfig.scale, getChildValue(params, 'scale', 4)) &&
+        shapeConfig.octaves === getChildValue(params, 'octaves', 4) &&
+        approxEqual(shapeConfig.intensity, getChildValue(params, 'intensity', 1))
       ) {
         return i
       }
     }
-    if (shapeConfig.type === 'linearGradient' && maskConfig.type === 'linearGradient') {
+    if (shapeConfig.type === 'radialGradient' && surfaceId === 'radialGradient') {
       if (
-        approxEqual(shapeConfig.angle, maskConfig.angle ?? 0) &&
-        approxEqual(shapeConfig.startOffset, maskConfig.startOffset ?? 0.3) &&
-        approxEqual(shapeConfig.endOffset, maskConfig.endOffset ?? 0.7)
+        approxEqual(shapeConfig.centerX, getChildValue(params, 'centerX', 0.5)) &&
+        approxEqual(shapeConfig.centerY, getChildValue(params, 'centerY', 0.5)) &&
+        approxEqual(shapeConfig.innerRadius, getChildValue(params, 'innerRadius', 0.2)) &&
+        approxEqual(shapeConfig.outerRadius, getChildValue(params, 'outerRadius', 0.6)) &&
+        approxEqual(shapeConfig.aspectRatio, getChildValue(params, 'aspectRatio', 1))
       ) {
         return i
       }
     }
-    if (shapeConfig.type === 'radialGradient' && maskConfig.type === 'radialGradient') {
+    if (shapeConfig.type === 'boxGradient' && surfaceId === 'boxGradient') {
       if (
-        approxEqual(shapeConfig.centerX, maskConfig.centerX ?? 0.5) &&
-        approxEqual(shapeConfig.centerY, maskConfig.centerY ?? 0.5) &&
-        approxEqual(shapeConfig.innerRadius, maskConfig.innerRadius ?? 0) &&
-        approxEqual(shapeConfig.outerRadius, maskConfig.outerRadius ?? 0.5) &&
-        approxEqual(shapeConfig.aspectRatio, maskConfig.aspectRatio ?? 1)
+        approxEqual(shapeConfig.left, getChildValue(params, 'left', 0.15)) &&
+        approxEqual(shapeConfig.right, getChildValue(params, 'right', 0.15)) &&
+        approxEqual(shapeConfig.top, getChildValue(params, 'top', 0.15)) &&
+        approxEqual(shapeConfig.bottom, getChildValue(params, 'bottom', 0.15)) &&
+        approxEqual(shapeConfig.cornerRadius, getChildValue(params, 'cornerRadius', 0)) &&
+        shapeConfig.curve === getChildValue(params, 'curve', 'smooth')
       ) {
         return i
       }
     }
-    if (shapeConfig.type === 'boxGradient' && maskConfig.type === 'boxGradient') {
+    if (shapeConfig.type === 'wavyLine' && surfaceId === 'wavyLine') {
       if (
-        approxEqual(shapeConfig.left, maskConfig.left ?? 0.15) &&
-        approxEqual(shapeConfig.right, maskConfig.right ?? 0.15) &&
-        approxEqual(shapeConfig.top, maskConfig.top ?? 0.15) &&
-        approxEqual(shapeConfig.bottom, maskConfig.bottom ?? 0.15) &&
-        approxEqual(shapeConfig.cornerRadius, maskConfig.cornerRadius ?? 0) &&
-        shapeConfig.curve === maskConfig.curve
-      ) {
-        return i
-      }
-    }
-    if (shapeConfig.type === 'wavyLine' && maskConfig.type === 'wavyLine') {
-      if (
-        approxEqual(shapeConfig.position, maskConfig.position ?? 0.5) &&
-        shapeConfig.direction === maskConfig.direction &&
-        approxEqual(shapeConfig.amplitude, maskConfig.amplitude ?? 0.08) &&
-        approxEqual(shapeConfig.frequency, maskConfig.frequency ?? 3) &&
-        shapeConfig.octaves === maskConfig.octaves &&
-        shapeConfig.seed === maskConfig.seed
+        approxEqual(shapeConfig.position, getChildValue(params, 'position', 0.5)) &&
+        shapeConfig.direction === getChildValue(params, 'direction', 'vertical') &&
+        approxEqual(shapeConfig.amplitude, getChildValue(params, 'amplitude', 0.08)) &&
+        approxEqual(shapeConfig.frequency, getChildValue(params, 'frequency', 3)) &&
+        shapeConfig.octaves === getChildValue(params, 'octaves', 2) &&
+        shapeConfig.seed === getChildValue(params, 'seed', 42)
       ) {
         return i
       }
@@ -415,24 +437,28 @@ export const findMaskPatternIndex = (
 }
 
 /**
- * Find mask pattern index by matching shape type only (ignoring params)
- * Returns the first pattern that matches the shape type
- * Use this when exact parameter matching fails but you need a baseline pattern
+ * Find mask pattern index by matching shape type only (ignoring params).
+ * Returns the first pattern that matches the shape type.
+ * Use this when exact parameter matching fails but you need a baseline pattern.
+ *
+ * Works with children-based mask patterns.
  */
 export const findMaskPatternIndexByType = (
   shapeConfig: MaskShapeConfig,
-  patterns: { maskConfig: MaskPatternConfig }[]
+  patterns: ChildrenBasedMaskPattern[]
 ): number | null => {
   for (let i = 0; i < patterns.length; i++) {
     const pattern = patterns[i]
-    const maskConfig = pattern?.maskConfig
-    if (maskConfig && maskConfig.type === shapeConfig.type) {
-      // Check cutout (default to true if undefined)
-      const shapeCutout = shapeConfig.cutout ?? true
-      const maskCutout = maskConfig.cutout ?? true
-      if (shapeCutout === maskCutout) {
-        return i
-      }
+    if (!pattern?.children?.[0]) continue
+
+    const firstChild = pattern.children[0]
+    if (firstChild.type !== 'surface') continue
+
+    const surfaceId = firstChild.surface.id
+
+    // Match surface type to shape type
+    if (surfaceId === shapeConfig.type) {
+      return i
     }
   }
   return null
