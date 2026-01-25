@@ -1042,6 +1042,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // Thumbnail rendering watch (separate from main render cycle)
   watch([heroColors.textureColor1, heroColors.textureColor2], heroThumbnails.renderThumbnails)
 
+  // Re-render when primitivePalette changes (color changes from site state)
+  watch(primitivePalette, () => {
+    if (isLoadingFromConfig.value) return
+    renderSceneFromConfig()
+  }, { deep: true })
+
   // Filter config watch (filters are not yet in repository SSOT)
   watch(
     heroFilters.layerFilterConfigs,
