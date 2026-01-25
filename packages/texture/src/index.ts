@@ -307,7 +307,20 @@ export {
 export { getDefaults } from '@practice/schema'
 
 // Application
-export type { GetDefaultTexturePatterns, GetDefaultMaskPatterns, GetSurfacePresets } from './Application'
+export type {
+  GetDefaultTexturePatterns,
+  GetDefaultMaskPatterns,
+  GetSurfacePresets,
+  PresetRepository,
+  SurfacePresetRepository,
+  TexturePatternRepository,
+  MaskPatternRepository,
+} from './Application'
+export {
+  createInMemorySurfacePresetRepository,
+  createInMemoryTexturePatternRepository,
+  createInMemoryMaskPatternRepository,
+} from './Application'
 export {
   createUniforms,
   createTexturePatternSpec,
@@ -316,7 +329,14 @@ export {
 } from './Application'
 
 // Infra
-export { getDefaultTexturePatterns, getDefaultMaskPatterns, getSurfacePresets } from './Infra'
+export {
+  getDefaultTexturePatterns,
+  getDefaultMaskPatterns,
+  getSurfacePresets,
+  texturePatternRepository,
+  maskPatternRepository,
+  surfacePresetRepository,
+} from './Infra'
 
 // Surface Registry (centralized surface pattern definitions)
 export {

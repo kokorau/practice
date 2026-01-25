@@ -17,6 +17,7 @@ import type { IntensityProvider } from '@practice/timeline'
 import {
   type SurfacePreset,
   type GenericParams,
+  type MaskPattern,
 } from '@practice/texture'
 import type { HeroViewPresetRepository } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -962,8 +963,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Mask patterns with normalized config for pipeline-based preview
   const maskPatternsWithNormalizedConfig = computed(() => {
-    return heroThumbnails.maskPatterns
-      .map((pattern) => {
+    return heroThumbnails.maskPatterns.value
+      .map((pattern: MaskPattern) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const p = pattern as any
 

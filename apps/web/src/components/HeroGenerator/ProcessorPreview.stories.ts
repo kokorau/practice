@@ -24,7 +24,7 @@ import {
 } from '@practice/section-visual'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import { getDefaultMaskPatterns, type MaskPattern } from '@practice/texture'
+import { maskPatternRepository, type MaskPattern } from '@practice/texture'
 import { hsvToOklch } from '../../components/SiteBuilder/utils/colorConversion'
 
 // ============================================================
@@ -192,7 +192,7 @@ type Story = StoryObj<typeof HeroPreview>
 // Mask Pattern Data
 // ============================================================
 
-const maskPatterns = getDefaultMaskPatterns()
+const maskPatterns = await maskPatternRepository.getAll()
 
 // ============================================================
 // Individual Mask Stories

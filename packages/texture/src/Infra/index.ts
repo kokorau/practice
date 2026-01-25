@@ -1,3 +1,3 @@
-export { getDefaultTexturePatterns } from './defaultTexturePatterns'
-export { getDefaultMaskPatterns } from './defaultMaskPatterns'
-export { getSurfacePresets } from './defaultSurfacePresets'
+export { getDefaultTexturePatterns, texturePatternRepository } from './defaultTexturePatterns'
+export { getDefaultMaskPatterns, maskPatternRepository } from './defaultMaskPatterns'
+export { getSurfacePresets, surfacePresetRepository } from './defaultSurfacePresets'

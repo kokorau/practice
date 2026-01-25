@@ -1,5 +1,6 @@
 import type { MaskPattern } from '../Domain'
-import type { GetDefaultMaskPatterns } from '../Application'
+import type { GetDefaultMaskPatterns, MaskPatternRepository } from '../Application'
+import { createInMemoryMaskPatternRepository } from '../Application'
 import { $static } from '../Domain'
 
 /**
@@ -564,6 +565,12 @@ const defaultMaskPatterns: MaskPattern[] = [
 ]
 
 /**
- * Get default mask patterns for midground layer
+ * Get default mask patterns for midground layer (async)
  */
-export const getDefaultMaskPatterns: GetDefaultMaskPatterns = () => defaultMaskPatterns
+export const getDefaultMaskPatterns: GetDefaultMaskPatterns = async () => defaultMaskPatterns
+
+/**
+ * Default mask pattern repository
+ */
+export const maskPatternRepository: MaskPatternRepository =
+  createInMemoryMaskPatternRepository(defaultMaskPatterns)

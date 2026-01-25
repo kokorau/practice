@@ -1,5 +1,6 @@
 import type { SurfacePreset } from '../Domain'
-import type { GetSurfacePresets } from '../Application'
+import type { GetSurfacePresets, SurfacePresetRepository } from '../Application'
+import { createInMemorySurfacePresetRepository } from '../Application'
 
 /**
  * Default surface presets
@@ -335,6 +336,12 @@ const defaultSurfacePresets: SurfacePreset[] = [
 ]
 
 /**
- * Get default surface presets
+ * Get default surface presets (async)
  */
-export const getSurfacePresets: GetSurfacePresets = () => defaultSurfacePresets
+export const getSurfacePresets: GetSurfacePresets = async () => defaultSurfacePresets
+
+/**
+ * Default surface preset repository
+ */
+export const surfacePresetRepository: SurfacePresetRepository =
+  createInMemorySurfacePresetRepository(defaultSurfacePresets)

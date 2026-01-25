@@ -11,9 +11,9 @@
 import { ref, nextTick, type ComputedRef, type Ref } from 'vue'
 import type { TextureRenderer } from '@practice/texture'
 import {
-  getDefaultTexturePatterns,
-  getDefaultMaskPatterns,
-  getSurfacePresets,
+  texturePatternRepository,
+  maskPatternRepository,
+  surfacePresetRepository,
   createSolidSpec,
   createStripeSpec,
   createGridSpec,
@@ -83,11 +83,11 @@ export interface UseHeroThumbnailsOptions {
  */
 export interface UseHeroThumbnailsReturn {
   /** Available texture patterns */
-  texturePatterns: TexturePattern[]
+  texturePatterns: Ref<TexturePattern[]>
   /** Available mask patterns */
-  maskPatterns: MaskPattern[]
+  maskPatterns: Ref<MaskPattern[]>
   /** Available midground texture patterns */
-  midgroundTexturePatterns: SurfacePreset[]
+  midgroundTexturePatterns: Ref<SurfacePreset[]>
   /** Currently active section */
   activeSection: Ref<SectionType | null>
   /** Get patterns for a section */
@@ -102,6 +102,8 @@ export interface UseHeroThumbnailsReturn {
   destroyThumbnailRenderers: () => void
   /** Render thumbnails for current section */
   renderThumbnails: () => Promise<void>
+  /** Initialize patterns asynchronously */
+  initPatterns: () => Promise<void>
 }
 
 // ============================================================
@@ -285,9 +287,21 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
   // ============================================================
   // Pattern Definitions
   // ============================================================
-  const texturePatterns = getDefaultTexturePatterns()
-  const maskPatterns = getDefaultMaskPatterns()
-  const midgroundTexturePatterns = getSurfacePresets()
+  const texturePatterns = ref<TexturePattern[]>([])
+  const maskPatterns = ref<MaskPattern[]>([])
+  const midgroundTexturePatterns = ref<SurfacePreset[]>([])
+
+  // Initialize patterns asynchronously
+  const initPatterns = async () => {
+    const [textures, masks, surfaces] = await Promise.all([
+      texturePatternRepository.getAll(),
+      maskPatternRepository.getAll(),
+      surfacePresetRepository.getAll(),
+    ])
+    texturePatterns.value = textures
+    maskPatterns.value = masks
+    midgroundTexturePatterns.value = surfaces
+  }
 
   // ============================================================
   // State
@@ -310,7 +324,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
   ): TextureRenderSpec | null => {
     const { params } = preset
 
-    switch (params.type) {
+    switch (params.id) {
       case 'solid':
         return createSolidSpec({ color: color1 })
       case 'stripe':
@@ -575,7 +589,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
    * Create background thumbnail spec
    */
   const createBackgroundThumbnailSpec = (viewport: { width: number; height: number }): TextureRenderSpec | null => {
-    const bgPattern = texturePatterns[selectedBackgroundIndex.value]
+    const bgPattern = texturePatterns.value[selectedBackgroundIndex.value]
     if (bgPattern) {
       return bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
     }
@@ -586,8 +600,8 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
    * Get patterns for a section
    */
   const getPatterns = (section: SectionType): (TexturePattern | MaskPattern)[] => {
-    if (section === 'background') return texturePatterns
-    if (section === 'clip-group-shape') return maskPatterns
+    if (section === 'background') return texturePatterns.value
+    if (section === 'clip-group-shape') return maskPatterns.value
     return []
   }
 
@@ -615,7 +629,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
         if (!renderer) continue
 
         const viewport = renderer.getViewport()
-        const pattern = midgroundTexturePatterns[i]
+        const pattern = midgroundTexturePatterns.value[i]
         if (pattern) {
           const spec = createMidgroundThumbnailSpec(
             pattern,
@@ -635,7 +649,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
     if (section === 'background') {
       for (let i = 0; i < thumbnailRenderers.length; i++) {
         const renderer = thumbnailRenderers[i]
-        const pattern = texturePatterns[i]
+        const pattern = texturePatterns.value[i]
         if (renderer && pattern) {
           const viewport = renderer.getViewport()
           const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
@@ -649,7 +663,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
     if (section === 'clip-group-shape') {
       for (let i = 0; i < thumbnailRenderers.length; i++) {
         const renderer = thumbnailRenderers[i]
-        const pattern = maskPatterns[i]
+        const pattern = maskPatterns.value[i]
         if (renderer && pattern) {
           const viewport = renderer.getViewport()
           const spec = createMaskThumbnailSpec(pattern, viewport)
@@ -688,7 +702,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
           try {
             const renderer = await createSharedRenderer(canvas)
             thumbnailRenderers.push(renderer)
-            const pattern = midgroundTexturePatterns[i]
+            const pattern = midgroundTexturePatterns.value[i]
             if (pattern) {
               const viewport = renderer.getViewport()
               const spec = createMidgroundThumbnailSpec(
@@ -718,7 +732,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
           try {
             const renderer = await createSharedRenderer(canvas)
             thumbnailRenderers.push(renderer)
-            const pattern = texturePatterns[i]
+            const pattern = texturePatterns.value[i]
             if (pattern) {
               const viewport = renderer.getViewport()
               const spec = pattern.createSpec(textureColor1.value, textureColor2.value, viewport)
@@ -741,7 +755,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
           try {
             const renderer = await createSharedRenderer(canvas)
             thumbnailRenderers.push(renderer)
-            const pattern = maskPatterns[i]
+            const pattern = maskPatterns.value[i]
             if (pattern) {
               const viewport = renderer.getViewport()
               const spec = createMaskThumbnailSpec(pattern, viewport)
@@ -772,5 +786,6 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
     openSection,
     destroyThumbnailRenderers,
     renderThumbnails,
+    initPatterns,
   }
 }

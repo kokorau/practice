@@ -8,9 +8,10 @@
  * - updateMaskShapeParams, updateSurfaceParams, updateBackgroundSurfaceParams: パラメータ更新
  */
 
-import type { ComputedRef, Ref } from 'vue'
+import { ref, type ComputedRef, type Ref } from 'vue'
 import {
-  getSurfacePresets,
+  surfacePresetRepository,
+  type SurfacePreset,
   type RGBA,
   type MaskPattern,
   type CircleMaskShapeParams,
@@ -64,8 +65,8 @@ const BASE_LAYER_ID = 'background'
 export interface UseHeroPatternPresetsOptions {
   heroViewRepository: HeroViewRepository
   surfaceUsecase: SurfaceUsecase
-  midgroundTexturePatterns: MidgroundSurfacePreset[]
-  maskPatterns: MaskPattern[]
+  midgroundTexturePatterns: Ref<MidgroundSurfacePreset[]>
+  maskPatterns: Ref<MaskPattern[]>
   surfaceParams: UseHeroSurfaceParamsReturn
   selectedBackgroundIndex: ComputedRef<number> & { value: number }
   selectedMaskIndex: ComputedRef<number | null> & { value: number | null }
@@ -78,7 +79,8 @@ export interface UseHeroPatternPresetsOptions {
 }
 
 export interface UseHeroPatternPresetsReturn {
-  surfacePresets: ReturnType<typeof getSurfacePresets>
+  surfacePresets: Ref<SurfacePreset[]>
+  initPresets: () => Promise<void>
   setBaseSurface: (surface: NormalizedSurfaceConfig) => void
   initMaskShapeParamsFromPreset: () => void
   initSurfaceParamsFromPreset: () => void
@@ -114,7 +116,12 @@ export const useHeroPatternPresets = (
     processorLayerId,
   } = surfaceParams
 
-  const surfacePresets = getSurfacePresets()
+  const surfacePresets = ref<SurfacePreset[]>([])
+
+  // Initialize presets asynchronously
+  const initPresets = async () => {
+    surfacePresets.value = await surfacePresetRepository.getAll()
+  }
 
   const setBaseSurface = (surface: NormalizedSurfaceConfig) => {
     heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
@@ -159,7 +166,7 @@ export const useHeroPatternPresets = (
   const initMaskShapeParamsFromPreset = () => {
     const idx = selectedMaskIndex.value
     if (idx === null) return
-    const pattern = maskPatterns[idx]
+    const pattern = maskPatterns.value[idx]
     if (pattern && pattern.children && pattern.children.length > 0) {
       // Find the processor with mask modifier and replace children
       const maskProcessor = findFirstMaskProcessor()
@@ -229,7 +236,7 @@ export const useHeroPatternPresets = (
 
   const initSurfaceParamsFromPreset = () => {
     const idx = selectedMidgroundTextureIndex.value
-    const preset = midgroundTexturePatterns[idx]
+    const preset = midgroundTexturePatterns.value[idx]
     if (preset) {
       // Type assertion needed - preset.params is GenericSurfaceParams, toCustomSurfaceParams expects SurfaceConfig
       // Both have { type: string; [key: string]: unknown } structure at runtime
@@ -239,7 +246,7 @@ export const useHeroPatternPresets = (
 
   const initBackgroundSurfaceParamsFromPreset = () => {
     const idx = selectedBackgroundIndex.value
-    const preset = surfacePresets[idx]
+    const preset = surfacePresets.value[idx]
     if (preset) {
       // Type assertion needed - preset.params is GenericSurfaceParams
       const params = toCustomBackgroundSurfaceParams(preset.params as Parameters<typeof toCustomBackgroundSurfaceParams>[0])
@@ -296,6 +303,7 @@ export const useHeroPatternPresets = (
 
   return {
     surfacePresets,
+    initPresets,
     setBaseSurface,
     initMaskShapeParamsFromPreset,
     initSurfaceParamsFromPreset,

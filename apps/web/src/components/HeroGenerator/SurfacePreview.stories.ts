@@ -15,7 +15,7 @@ import {
 } from '@practice/section-visual'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import { getSurfacePresets, type SurfacePreset, type GenericSurfaceParams } from '@practice/texture'
+import { surfacePresetRepository, type SurfacePreset, type GenericSurfaceParams } from '@practice/texture'
 import { hsvToOklch } from '../../components/SiteBuilder/utils/colorConversion'
 
 // ============================================================
@@ -76,16 +76,16 @@ export default meta
 type Story = StoryObj<typeof HeroPreview>
 
 // ============================================================
-// Surface Presets from @practice/texture
+// Surface Presets from @practice/texture (async loaded)
 // ============================================================
 
-const surfacePresets = getSurfacePresets()
+const surfacePresets = await surfacePresetRepository.getAll()
 
 // ============================================================
 // Paper Texture Stories
 // ============================================================
 
-const paperSmoothPreset = surfacePresets.find(p => p.params.type === 'paperTexture' && p.label === 'Paper Smooth')
+const paperSmoothPreset = surfacePresets.find(p => p.params.id === 'paperTexture' && p.label === 'Paper Smooth')
 export const PaperSmooth: Story = {
   args: paperSmoothPreset ? {
     variant: 'thumbnail' as const,
@@ -94,7 +94,7 @@ export const PaperSmooth: Story = {
   } : undefined,
 }
 
-const paperRoughPreset = surfacePresets.find(p => p.params.type === 'paperTexture' && p.label === 'Paper Rough')
+const paperRoughPreset = surfacePresets.find(p => p.params.id === 'paperTexture' && p.label === 'Paper Rough')
 export const PaperRough: Story = {
   args: paperRoughPreset ? {
     variant: 'thumbnail' as const,
@@ -103,7 +103,7 @@ export const PaperRough: Story = {
   } : undefined,
 }
 
-const paperKraftPreset = surfacePresets.find(p => p.params.type === 'paperTexture' && p.label === 'Paper Kraft')
+const paperKraftPreset = surfacePresets.find(p => p.params.id === 'paperTexture' && p.label === 'Paper Kraft')
 export const PaperKraft: Story = {
   args: paperKraftPreset ? {
     variant: 'thumbnail' as const,
@@ -116,7 +116,7 @@ export const PaperKraft: Story = {
 // Basic Pattern Stories
 // ============================================================
 
-const solidPreset = surfacePresets.find(p => p.params.type === 'solid')
+const solidPreset = surfacePresets.find(p => p.params.id === 'solid')
 export const Solid: Story = {
   args: solidPreset ? {
     variant: 'thumbnail' as const,
@@ -134,7 +134,7 @@ export const StripeDiagonal: Story = {
   } : undefined,
 }
 
-const gridPreset = surfacePresets.find(p => p.params.type === 'grid' && p.label === 'Grid')
+const gridPreset = surfacePresets.find(p => p.params.id === 'grid' && p.label === 'Grid')
 export const Grid: Story = {
   args: gridPreset ? {
     variant: 'thumbnail' as const,
@@ -143,7 +143,7 @@ export const Grid: Story = {
   } : undefined,
 }
 
-const polkaDotPreset = surfacePresets.find(p => p.params.type === 'polkaDot' && p.label === 'Polka Dot')
+const polkaDotPreset = surfacePresets.find(p => p.params.id === 'polkaDot' && p.label === 'Polka Dot')
 export const PolkaDot: Story = {
   args: polkaDotPreset ? {
     variant: 'thumbnail' as const,
@@ -165,7 +165,7 @@ export const Checker: Story = {
 // Gradient Grain Stories
 // ============================================================
 
-const grainLinearPreset = surfacePresets.find(p => p.params.type === 'gradientGrainLinear')
+const grainLinearPreset = surfacePresets.find(p => p.params.id === 'gradientGrainLinear')
 export const GrainLinear: Story = {
   args: grainLinearPreset ? {
     variant: 'thumbnail' as const,
@@ -174,7 +174,7 @@ export const GrainLinear: Story = {
   } : undefined,
 }
 
-const grainCircularPreset = surfacePresets.find(p => p.params.type === 'gradientGrainCircular')
+const grainCircularPreset = surfacePresets.find(p => p.params.id === 'gradientGrainCircular')
 export const GrainCircular: Story = {
   args: grainCircularPreset ? {
     variant: 'thumbnail' as const,
@@ -183,7 +183,7 @@ export const GrainCircular: Story = {
   } : undefined,
 }
 
-const grainPerlinPreset = surfacePresets.find(p => p.params.type === 'gradientGrainPerlin')
+const grainPerlinPreset = surfacePresets.find(p => p.params.id === 'gradientGrainPerlin')
 export const GrainPerlin: Story = {
   args: grainPerlinPreset ? {
     variant: 'thumbnail' as const,
@@ -236,7 +236,7 @@ export const Hexagon: Story = {
 // Textile Pattern Stories
 // ============================================================
 
-const asanohaPreset = surfacePresets.find(p => p.params.type === 'asanoha')
+const asanohaPreset = surfacePresets.find(p => p.params.id === 'asanoha')
 export const Asanoha: Story = {
   args: asanohaPreset ? {
     variant: 'thumbnail' as const,
@@ -245,7 +245,7 @@ export const Asanoha: Story = {
   } : undefined,
 }
 
-const seigaihaPreset = surfacePresets.find(p => p.params.type === 'seigaiha')
+const seigaihaPreset = surfacePresets.find(p => p.params.id === 'seigaiha')
 export const Seigaiha: Story = {
   args: seigaihaPreset ? {
     variant: 'thumbnail' as const,
@@ -263,7 +263,7 @@ export const Wave: Story = {
   } : undefined,
 }
 
-const scalesPreset = surfacePresets.find(p => p.params.type === 'scales')
+const scalesPreset = surfacePresets.find(p => p.params.id === 'scales')
 export const Scales: Story = {
   args: scalesPreset ? {
     variant: 'thumbnail' as const,
@@ -272,7 +272,7 @@ export const Scales: Story = {
   } : undefined,
 }
 
-const ogeePreset = surfacePresets.find(p => p.params.type === 'ogee')
+const ogeePreset = surfacePresets.find(p => p.params.id === 'ogee')
 export const Ogee: Story = {
   args: ogeePreset ? {
     variant: 'thumbnail' as const,
@@ -301,7 +301,7 @@ export const AllSurfacesGrid: Story = {
       const presetStories = surfacePresets
         .map((preset: SurfacePreset) => ({
           label: preset.label,
-          type: preset.params.type,
+          type: preset.params.id,
           args: {
             variant: 'thumbnail' as const,
             config: createSurfaceOnlyConfig(preset.params),
@@ -344,7 +344,7 @@ export const PaperTexturesGrid: Story = {
     components: { HeroPreview },
     setup() {
       const paperPresets = surfacePresets
-        .filter((preset: SurfacePreset) => preset.params.type === 'paperTexture')
+        .filter((preset: SurfacePreset) => preset.params.id === 'paperTexture')
         .map((preset: SurfacePreset) => ({
           label: preset.label,
           args: {

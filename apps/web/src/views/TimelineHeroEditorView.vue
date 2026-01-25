@@ -191,21 +191,6 @@ const {
   selectedFontDisplayName,
 } = foregroundElement
 
-// Convert texture patterns to SurfaceSelector format
-const backgroundPatterns = createSurfacePatterns({
-  patterns: heroScene.pattern.texturePatterns,
-  color1: heroScene.pattern.textureColor1,
-  color2: heroScene.pattern.textureColor2,
-  createSpec: (p, c1, c2, viewport) => p.createSpec(c1, c2, viewport),
-})
-
-const maskSurfacePatterns = createSurfacePatterns({
-  patterns: heroScene.pattern.midgroundTexturePatterns,
-  color1: heroScene.pattern.midgroundTextureColor1,
-  color2: heroScene.pattern.midgroundTextureColor2,
-  createSpec: heroScene.pattern.createMidgroundThumbnailSpec,
-})
-
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
 
 // ============================================================
@@ -396,32 +381,48 @@ const panelForeground = computed(() => ({
   fontDisplayName: selectedFontDisplayName.value,
 }))
 
-const panelBackground = computed(() => ({
-  patterns: backgroundPatterns.value,
-  selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
-  surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
-  surfaceParams: heroScene.background.customBackgroundSurfaceParams.value as Record<string, unknown> | null,
-  rawSurfaceParams: heroScene.background.rawBackgroundSurfaceParams.value,
-}))
+const panelBackground = computed(() => {
+  const patterns = createSurfacePatterns({
+    patterns: heroScene.pattern.texturePatterns.value,
+    color1: heroScene.pattern.textureColor1,
+    color2: heroScene.pattern.textureColor2,
+    createSpec: (p, c1, c2, viewport) => p.createSpec(c1, c2, viewport),
+  }).value
+  return {
+    patterns,
+    selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
+    surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
+    surfaceParams: heroScene.background.customBackgroundSurfaceParams.value as Record<string, unknown> | null,
+    rawSurfaceParams: heroScene.background.rawBackgroundSurfaceParams.value,
+  }
+})
 
-const panelMask = computed(() => ({
-  surfacePatterns: maskSurfacePatterns.value,
-  selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
-  surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
-  surfaceParams: heroScene.mask.customSurfaceParams.value as Record<string, unknown> | null,
-  rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
-  shapePatterns: heroScene.pattern.maskPatterns,
-  shapePatternsWithConfig: heroScene.pattern.maskPatternsWithNormalizedConfig.value,
-  selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
-  shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
-  shapeParams: heroScene.mask.customMaskShapeParams.value as Record<string, unknown> | null,
-  rawShapeParams: heroScene.mask.rawMaskShapeParams.value,
-  outerColor: heroScene.pattern.maskOuterColor.value,
-  innerColor: heroScene.pattern.maskInnerColor.value,
-  createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
-  surface: heroScene.mask.processorTarget.value.targetSurface,
-  processor: heroScene.mask.processorTarget.value.processor,
-}))
+const panelMask = computed(() => {
+  const surfacePatterns = createSurfacePatterns({
+    patterns: heroScene.pattern.midgroundTexturePatterns.value,
+    color1: heroScene.pattern.midgroundTextureColor1,
+    color2: heroScene.pattern.midgroundTextureColor2,
+    createSpec: heroScene.pattern.createMidgroundThumbnailSpec,
+  }).value
+  return {
+    surfacePatterns,
+    selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
+    surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
+    surfaceParams: heroScene.mask.customSurfaceParams.value as Record<string, unknown> | null,
+    rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
+    shapePatterns: heroScene.pattern.maskPatterns.value,
+    shapePatternsWithConfig: heroScene.pattern.maskPatternsWithNormalizedConfig.value,
+    selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
+    shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
+    shapeParams: heroScene.mask.customMaskShapeParams.value as Record<string, unknown> | null,
+    rawShapeParams: heroScene.mask.rawMaskShapeParams.value,
+    outerColor: heroScene.pattern.maskOuterColor.value,
+    innerColor: heroScene.pattern.maskInnerColor.value,
+    createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
+    surface: heroScene.mask.processorTarget.value.targetSurface,
+    processor: heroScene.mask.processorTarget.value.processor,
+  }
+})
 
 // Group layer props
 const panelGroup = computed(() => {

@@ -49,7 +49,7 @@ export interface UseHeroConfigLoaderOptions {
   heroThumbnails: UseHeroThumbnailsReturn
   selectedBackgroundIndex: Ref<number>
   selectedMidgroundTextureIndex: Ref<number>
-  surfacePresets: SurfacePreset[]
+  surfacePresets: Ref<SurfacePreset[]>
   render: () => Promise<void>
   isLoadingFromConfig: Ref<boolean>
 }
@@ -131,7 +131,7 @@ export const useHeroConfigLoader = (
       if (backgroundSurfaceLayer) {
         const bgSurface = backgroundSurfaceLayer.surface
         const normalizedBgSurface = getSurfaceAsNormalized(bgSurface)
-        const bgPresetIndex = findSurfacePresetIndex(safeDenormalizeSurfaceConfig(normalizedBgSurface), surfacePresets)
+        const bgPresetIndex = findSurfacePresetIndex(safeDenormalizeSurfaceConfig(normalizedBgSurface), surfacePresets.value)
         selectedBackgroundIndex.value = bgPresetIndex ?? 0
       }
 
@@ -155,7 +155,7 @@ export const useHeroConfigLoader = (
       if (maskSurfaceLayer) {
         const maskSurface = maskSurfaceLayer.surface
         const normalizedMaskSurface = getSurfaceAsNormalized(maskSurface)
-        const midgroundPresetIndex = findSurfacePresetIndex(safeDenormalizeSurfaceConfig(normalizedMaskSurface), heroThumbnails.midgroundTexturePatterns)
+        const midgroundPresetIndex = findSurfacePresetIndex(safeDenormalizeSurfaceConfig(normalizedMaskSurface), heroThumbnails.midgroundTexturePatterns.value)
         selectedMidgroundTextureIndex.value = midgroundPresetIndex ?? 0
       }
 

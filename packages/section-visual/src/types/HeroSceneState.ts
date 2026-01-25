@@ -165,14 +165,14 @@ export interface MaskPatternWithNormalizedConfig extends Omit<MaskPattern, 'mask
  * Pattern state for texture/mask selection and thumbnails
  */
 export interface PatternState {
-  /** Available texture patterns */
-  readonly texturePatterns: TexturePattern[]
-  /** Available mask patterns */
-  readonly maskPatterns: MaskPattern[]
+  /** Available texture patterns (reactive ref for async loading) */
+  readonly texturePatterns: Ref<TexturePattern[]>
+  /** Available mask patterns (reactive ref for async loading) */
+  readonly maskPatterns: Ref<MaskPattern[]>
   /** Mask patterns with normalized config for pipeline-based preview */
   readonly maskPatternsWithNormalizedConfig: ComputedRef<MaskPatternWithNormalizedConfig[]>
-  /** Available midground texture patterns (surface presets) */
-  readonly midgroundTexturePatterns: SurfacePreset[]
+  /** Available midground texture patterns (reactive ref for async loading) */
+  readonly midgroundTexturePatterns: Ref<SurfacePreset[]>
 
   /** Color 1 for texture patterns */
   readonly textureColor1: ComputedRef<RGBA>
