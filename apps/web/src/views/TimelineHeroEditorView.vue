@@ -48,13 +48,6 @@ function onSelectTrack(trackId: TrackId) {
   timelineEditor.selectTrack(trackId)
 }
 
-// Sync track keys when timeline changes
-watch(selectedTimeline, (timeline) => {
-  if (timeline) {
-    timelineEditor.syncTracks(timeline.tracks.map(t => t.id))
-  }
-}, { immediate: true })
-
 // ============================================================
 // Preset Repository (Timeline用プリセット)
 // ============================================================
@@ -135,6 +128,13 @@ const heroScene = useHeroScene({
 // ============================================================
 const { selectProcessorUsecase, applyAnimatedPresetUsecase } = heroScene.usecase
 const { selectedPreset, selectedTimeline } = heroScene.preset
+
+// Sync track keys when timeline changes
+watch(selectedTimeline, (timeline) => {
+  if (timeline) {
+    timelineEditor.syncTracks(timeline.tracks.map(t => t.id))
+  }
+}, { immediate: true })
 
 // ============================================================
 // Filter Editor (Composable)
