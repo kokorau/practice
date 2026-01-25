@@ -17,3 +17,5 @@ git fetch origin && git checkout -B "work/temp-$(date +%Y%m%d-%H%M%S)" origin/ma
 ```
 
 After completion, show the current branch with `git branch --show-current`.
+
+Finally, run `/clear` to reset the conversation.
