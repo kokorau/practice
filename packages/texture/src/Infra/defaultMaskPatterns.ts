@@ -1,709 +1,574 @@
 import type { MaskPattern } from '../Domain'
 import type { GetDefaultMaskPatterns } from '../Application'
-import {
-  createCircleMaskSpec,
-  createRectMaskSpec,
-  createBlobMaskSpec,
-  createPerlinMaskSpec,
-  createSimplexMaskSpec,
-  createCurlMaskSpec,
-  createLinearGradientMaskSpec,
-  createRadialGradientMaskSpec,
-  createBoxGradientMaskSpec,
-  createWavyLineMaskSpec,
-} from '../shaders'
+import { $static } from '../Domain'
 
 /**
- * Default mask patterns for midground layer
- * Ordered: Normal (cutout=false, shape filled) first, then Invert (cutout=true, shape cutout)
+ * Helper to create a circle surface layer for mask patterns.
+ */
+function circleSurface(
+  centerX: number,
+  centerY: number,
+  radius: number,
+  id = 'circle-1'
+): MaskPattern['children'][0] {
+  return {
+    type: 'surface',
+    id,
+    name: 'Circle',
+    visible: true,
+    surface: {
+      id: 'circle',
+      params: {
+        centerX: $static(centerX),
+        centerY: $static(centerY),
+        radius: $static(radius),
+      },
+    },
+  }
+}
+
+/**
+ * Helper to create a rect surface layer for mask patterns.
+ */
+function rectSurface(
+  left: number,
+  right: number,
+  top: number,
+  bottom: number,
+  radii: { tl?: number; tr?: number; bl?: number; br?: number } = {},
+  opts: { rotation?: number; perspectiveX?: number; perspectiveY?: number } = {},
+  id = 'rect-1'
+): MaskPattern['children'][0] {
+  return {
+    type: 'surface',
+    id,
+    name: 'Rect',
+    visible: true,
+    surface: {
+      id: 'rect',
+      params: {
+        left: $static(left),
+        right: $static(right),
+        top: $static(top),
+        bottom: $static(bottom),
+        radiusTopLeft: $static(radii.tl ?? 0),
+        radiusTopRight: $static(radii.tr ?? 0),
+        radiusBottomLeft: $static(radii.bl ?? 0),
+        radiusBottomRight: $static(radii.br ?? 0),
+        ...(opts.rotation !== undefined && { rotation: $static(opts.rotation) }),
+        ...(opts.perspectiveX !== undefined && { perspectiveX: $static(opts.perspectiveX) }),
+        ...(opts.perspectiveY !== undefined && { perspectiveY: $static(opts.perspectiveY) }),
+      },
+    },
+  }
+}
+
+/**
+ * Helper to create a blob surface layer for mask patterns.
+ */
+function blobSurface(
+  centerX: number,
+  centerY: number,
+  baseRadius: number,
+  amplitude: number,
+  octaves: number,
+  seed: number,
+  id = 'blob-1'
+): MaskPattern['children'][0] {
+  return {
+    type: 'surface',
+    id,
+    name: 'Blob',
+    visible: true,
+    surface: {
+      id: 'blob',
+      params: {
+        centerX: $static(centerX),
+        centerY: $static(centerY),
+        baseRadius: $static(baseRadius),
+        amplitude: $static(amplitude),
+        octaves: $static(octaves),
+        seed: $static(seed),
+      },
+    },
+  }
+}
+
+/**
+ * Helper to create a perlin noise surface layer for mask patterns.
+ */
+function perlinSurface(
+  seed: number,
+  threshold: number,
+  scale: number,
+  octaves: number,
+  id = 'perlin-1'
+): MaskPattern['children'][0] {
+  return {
+    type: 'surface',
+    id,
+    name: 'Perlin',
+    visible: true,
+    surface: {
+      id: 'perlin',
+      params: {
+        seed: $static(seed),
+        threshold: $static(threshold),
+        scale: $static(scale),
+        octaves: $static(octaves),
+      },
+    },
+  }
+}
+
+/**
+ * Helper to create a simplex noise surface layer for mask patterns.
+ */
+function simplexSurface(
+  seed: number,
+  threshold: number,
+  scale: number,
+  octaves: number,
+  id = 'simplex-1'
+): MaskPattern['children'][0] {
+  return {
+    type: 'surface',
+    id,
+    name: 'Simplex',
+    visible: true,
+    surface: {
+      id: 'simplex',
+      params: {
+        seed: $static(seed),
+        threshold: $static(threshold),
+        scale: $static(scale),
+        octaves: $static(octaves),
+      },
+    },
+  }
+}
+
+/**
+ * Helper to create a curl noise surface layer for mask patterns.
+ */
+function curlSurface(
+  seed: number,
+  threshold: number,
+  scale: number,
+  octaves: number,
+  intensity: number,
+  id = 'curl-1'
+): MaskPattern['children'][0] {
+  return {
+    type: 'surface',
+    id,
+    name: 'Curl',
+    visible: true,
+    surface: {
+      id: 'curl',
+      params: {
+        seed: $static(seed),
+        threshold: $static(threshold),
+        scale: $static(scale),
+        octaves: $static(octaves),
+        intensity: $static(intensity),
+      },
+    },
+  }
+}
+
+/**
+ * Helper to create a radial gradient surface layer for mask patterns.
+ */
+function radialGradientSurface(
+  centerX: number,
+  centerY: number,
+  innerRadius: number,
+  outerRadius: number,
+  aspectRatio: number,
+  id = 'radialGradient-1'
+): MaskPattern['children'][0] {
+  return {
+    type: 'surface',
+    id,
+    name: 'Radial Gradient',
+    visible: true,
+    surface: {
+      id: 'radialGradient',
+      params: {
+        centerX: $static(centerX),
+        centerY: $static(centerY),
+        innerRadius: $static(innerRadius),
+        outerRadius: $static(outerRadius),
+        aspectRatio: $static(aspectRatio),
+      },
+    },
+  }
+}
+
+/**
+ * Helper to create a box gradient surface layer for mask patterns.
+ */
+function boxGradientSurface(
+  left: number,
+  right: number,
+  top: number,
+  bottom: number,
+  cornerRadius: number,
+  curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut',
+  id = 'boxGradient-1'
+): MaskPattern['children'][0] {
+  return {
+    type: 'surface',
+    id,
+    name: 'Box Gradient',
+    visible: true,
+    surface: {
+      id: 'boxGradient',
+      params: {
+        left: $static(left),
+        right: $static(right),
+        top: $static(top),
+        bottom: $static(bottom),
+        cornerRadius: $static(cornerRadius),
+        curve: $static(curve),
+      },
+    },
+  }
+}
+
+/**
+ * Helper to create a wavy line surface layer for mask patterns.
+ */
+function wavyLineSurface(
+  position: number,
+  direction: 'vertical' | 'horizontal',
+  amplitude: number,
+  frequency: number,
+  octaves: number,
+  seed: number,
+  id = 'wavyLine-1'
+): MaskPattern['children'][0] {
+  return {
+    type: 'surface',
+    id,
+    name: 'Wavy Line',
+    visible: true,
+    surface: {
+      id: 'wavyLine',
+      params: {
+        position: $static(position),
+        direction: $static(direction),
+        amplitude: $static(amplitude),
+        frequency: $static(frequency),
+        octaves: $static(octaves),
+        seed: $static(seed),
+      },
+    },
+  }
+}
+
+/**
+ * Default mask patterns for midground layer.
+ * Uses children-based Surface layers for mask rendering.
+ *
+ * Each pattern contains an array of Surface layers that are rendered
+ * by MaskChildrenRenderNode and converted to luminance greymap.
+ *
+ * White areas (high luminance) = visible
+ * Black areas (low luminance) = transparent
  */
 const defaultMaskPatterns: MaskPattern[] = [
   // ============================================================
-  // Normal patterns (cutout=false) - shape is filled, outside is transparent
+  // Circle patterns
   // ============================================================
   {
     label: 'Solid Circle Center',
-    maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createCircleMaskSpec(
-        { centerX: 0.5, centerY: 0.5, radius: 0.3, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [circleSurface(0.5, 0.5, 0.3)],
   },
   {
     label: 'Solid Circle Large',
-    maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.5, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createCircleMaskSpec(
-        { centerX: 0.5, centerY: 0.5, radius: 0.5, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Solid Rounded Center',
-    maskConfig: { type: 'rect', left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radiusTopLeft: 0.05, radiusTopRight: 0.05, radiusBottomLeft: 0.05, radiusBottomRight: 0.05, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radius: 0.05, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Solid Pill',
-    maskConfig: { type: 'rect', left: 0.32, right: 0.68, top: 0.05, bottom: 0.95, radiusTopLeft: 0.18, radiusTopRight: 0.18, radiusBottomLeft: 0.18, radiusBottomRight: 0.18, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.32, right: 0.68, top: 0.05, bottom: 0.95, radius: 0.18, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Solid Blob',
-    maskConfig: { type: 'blob', centerX: 0.5, centerY: 0.5, baseRadius: 0.4, amplitude: 0.08, octaves: 2, seed: 1, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBlobMaskSpec(
-        {
-          centerX: 0.5,
-          centerY: 0.5,
-          baseRadius: 0.4,
-          amplitude: 0.08,
-          frequency: 0,
-          octaves: 2,
-          seed: 1,
-          innerColor: c1,
-          outerColor: c2,
-          cutout: false,
-        },
-        viewport!
-      ),
-  },
-  // ============================================================
-  // Invert patterns (cutout=true) - shape is cutout, outside is filled
-  // ============================================================
-  {
-    label: 'Circle Center',
-    maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3 },
-    createSpec: (c1, c2, viewport) =>
-      createCircleMaskSpec(
-        { centerX: 0.5, centerY: 0.5, radius: 0.3, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
-  },
-  {
-    label: 'Circle Large',
-    maskConfig: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.5 },
-    createSpec: (c1, c2, viewport) =>
-      createCircleMaskSpec(
-        { centerX: 0.5, centerY: 0.5, radius: 0.5, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [circleSurface(0.5, 0.5, 0.5)],
   },
   {
     label: 'Circle Top-Left',
-    maskConfig: { type: 'circle', centerX: 0.25, centerY: 0.25, radius: 0.35 },
-    createSpec: (c1, c2, viewport) =>
-      createCircleMaskSpec(
-        { centerX: 0.25, centerY: 0.25, radius: 0.35, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [circleSurface(0.25, 0.25, 0.35)],
   },
   {
     label: 'Circle Bottom-Right',
-    maskConfig: { type: 'circle', centerX: 0.75, centerY: 0.75, radius: 0.35 },
-    createSpec: (c1, c2, viewport) =>
-      createCircleMaskSpec(
-        { centerX: 0.75, centerY: 0.75, radius: 0.35, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [circleSurface(0.75, 0.75, 0.35)],
   },
   {
+    label: 'Circle Small',
+    children: [circleSurface(0.5, 0.5, 0.2)],
+  },
+
+  // ============================================================
+  // Rect patterns (halves)
+  // ============================================================
+  {
     label: 'Half Top',
-    maskConfig: { type: 'rect', left: 0, right: 1, top: 0, bottom: 0.5 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0, right: 1, top: 0, bottom: 0.5, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0, 1, 0, 0.5)],
   },
   {
     label: 'Half Bottom',
-    maskConfig: { type: 'rect', left: 0, right: 1, top: 0.5, bottom: 1 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0, right: 1, top: 0.5, bottom: 1, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0, 1, 0.5, 1)],
   },
   {
     label: 'Half Left',
-    maskConfig: { type: 'rect', left: 0, right: 0.5, top: 0, bottom: 1 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0, right: 0.5, top: 0, bottom: 1, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0, 0.5, 0, 1)],
   },
   {
     label: 'Half Right',
-    maskConfig: { type: 'rect', left: 0.5, right: 1, top: 0, bottom: 1 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.5, right: 1, top: 0, bottom: 1, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0.5, 1, 0, 1)],
   },
+
+  // ============================================================
+  // Rect patterns (centered)
+  // ============================================================
   {
     label: 'Rect Center',
-    maskConfig: { type: 'rect', left: 0.3, right: 0.7, top: 0.1, bottom: 0.9 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.3, right: 0.7, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0.3, 0.7, 0.1, 0.9)],
   },
   {
     label: 'Rect Center Narrow',
-    maskConfig: { type: 'rect', left: 0.35, right: 0.65, top: 0.1, bottom: 0.9 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.35, right: 0.65, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0.35, 0.65, 0.1, 0.9)],
   },
   {
     label: 'Rect Frame',
-    maskConfig: { type: 'rect', left: 0.1, right: 0.9, top: 0.1, bottom: 0.9 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.1, right: 0.9, top: 0.1, bottom: 0.9, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0.1, 0.9, 0.1, 0.9)],
   },
   {
     label: 'Rect Top',
-    maskConfig: { type: 'rect', left: 0.1, right: 0.9, top: 0.05, bottom: 0.5 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.1, right: 0.9, top: 0.05, bottom: 0.5, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0.1, 0.9, 0.05, 0.5)],
   },
   {
     label: 'Rect Bottom',
-    maskConfig: { type: 'rect', left: 0.1, right: 0.9, top: 0.5, bottom: 0.95 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.1, right: 0.9, top: 0.5, bottom: 0.95, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0.1, 0.9, 0.5, 0.95)],
   },
+
+  // ============================================================
+  // Rounded rect patterns
+  // ============================================================
   {
-    label: 'Rounded Center',
-    maskConfig: { type: 'rect', left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radiusTopLeft: 0.05, radiusTopRight: 0.05, radiusBottomLeft: 0.05, radiusBottomRight: 0.05 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.25, right: 0.75, top: 0.15, bottom: 0.85, radius: 0.05, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    label: 'Solid Rounded Center',
+    children: [rectSurface(0.25, 0.75, 0.15, 0.85, { tl: 0.05, tr: 0.05, bl: 0.05, br: 0.05 })],
   },
   {
     label: 'Rounded Frame',
-    maskConfig: { type: 'rect', left: 0.1, right: 0.9, top: 0.1, bottom: 0.9, radiusTopLeft: 0.03, radiusTopRight: 0.03, radiusBottomLeft: 0.03, radiusBottomRight: 0.03 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.1, right: 0.9, top: 0.1, bottom: 0.9, radius: 0.03, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [rectSurface(0.1, 0.9, 0.1, 0.9, { tl: 0.03, tr: 0.03, bl: 0.03, br: 0.03 })],
   },
   {
-    label: 'Pill Narrow',
-    maskConfig: { type: 'rect', left: 0.32, right: 0.68, top: 0.05, bottom: 0.95, radiusTopLeft: 0.18, radiusTopRight: 0.18, radiusBottomLeft: 0.18, radiusBottomRight: 0.18 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        { left: 0.32, right: 0.68, top: 0.05, bottom: 0.95, radius: 0.18, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    label: 'Solid Pill',
+    children: [rectSurface(0.32, 0.68, 0.05, 0.95, { tl: 0.18, tr: 0.18, bl: 0.18, br: 0.18 })],
   },
   {
     label: 'Arch Top',
-    maskConfig: { type: 'rect', left: 0.35, right: 0.65, top: 0, bottom: 0.9, radiusTopLeft: 0, radiusTopRight: 0, radiusBottomLeft: 0.15, radiusBottomRight: 0.15 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        {
-          left: 0.35, right: 0.65, top: 0, bottom: 0.9,
-          radiusTopLeft: 0, radiusTopRight: 0,
-          radiusBottomLeft: 0.15, radiusBottomRight: 0.15,
-          innerColor: c1, outerColor: c2,
-        },
-        viewport!
-      ),
+    children: [rectSurface(0.35, 0.65, 0, 0.9, { tl: 0, tr: 0, bl: 0.15, br: 0.15 })],
   },
   {
     label: 'Arch Bottom',
-    maskConfig: { type: 'rect', left: 0.35, right: 0.65, top: 0.1, bottom: 1, radiusTopLeft: 0.15, radiusTopRight: 0.15, radiusBottomLeft: 0, radiusBottomRight: 0 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        {
-          left: 0.35, right: 0.65, top: 0.1, bottom: 1,
-          radiusTopLeft: 0.15, radiusTopRight: 0.15,
-          radiusBottomLeft: 0, radiusBottomRight: 0,
-          innerColor: c1, outerColor: c2,
-        },
-        viewport!
-      ),
+    children: [rectSurface(0.35, 0.65, 0.1, 1, { tl: 0.15, tr: 0.15, bl: 0, br: 0 })],
   },
   {
     label: 'Rounded Left',
-    maskConfig: { type: 'rect', left: 0, right: 0.55, top: 0.1, bottom: 0.9, radiusTopLeft: 0, radiusBottomLeft: 0, radiusTopRight: 0.04, radiusBottomRight: 0.04 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        {
-          left: 0, right: 0.55, top: 0.1, bottom: 0.9,
-          radiusTopLeft: 0, radiusBottomLeft: 0,
-          radiusTopRight: 0.04, radiusBottomRight: 0.04,
-          innerColor: c1, outerColor: c2,
-        },
-        viewport!
-      ),
+    children: [rectSurface(0, 0.55, 0.1, 0.9, { tl: 0, tr: 0.04, bl: 0, br: 0.04 })],
   },
   {
     label: 'Rounded Right',
-    maskConfig: { type: 'rect', left: 0.45, right: 1, top: 0.1, bottom: 0.9, radiusTopLeft: 0.04, radiusBottomLeft: 0.04, radiusTopRight: 0, radiusBottomRight: 0 },
-    createSpec: (c1, c2, viewport) =>
-      createRectMaskSpec(
-        {
-          left: 0.45, right: 1, top: 0.1, bottom: 0.9,
-          radiusTopLeft: 0.04, radiusBottomLeft: 0.04,
-          radiusTopRight: 0, radiusBottomRight: 0,
-          innerColor: c1, outerColor: c2,
-        },
-        viewport!
-      ),
+    children: [rectSurface(0.45, 1, 0.1, 0.9, { tl: 0.04, tr: 0, bl: 0.04, br: 0 })],
   },
+
+  // ============================================================
+  // Blob patterns
+  // ============================================================
   {
-    label: 'Blob Soft',
-    maskConfig: { type: 'blob', centerX: 0.5, centerY: 0.5, baseRadius: 0.4, amplitude: 0.08, octaves: 2, seed: 1 },
-    createSpec: (c1, c2, viewport) =>
-      createBlobMaskSpec(
-        {
-          centerX: 0.5,
-          centerY: 0.5,
-          baseRadius: 0.4,
-          amplitude: 0.08,
-          frequency: 0,
-          octaves: 2,
-          seed: 1,
-          innerColor: c1,
-          outerColor: c2,
-        },
-        viewport!
-      ),
+    label: 'Solid Blob',
+    children: [blobSurface(0.5, 0.5, 0.4, 0.08, 2, 1)],
   },
   {
     label: 'Blob Organic',
-    maskConfig: { type: 'blob', centerX: 0.5, centerY: 0.5, baseRadius: 0.4, amplitude: 0.12, octaves: 3, seed: 42 },
-    createSpec: (c1, c2, viewport) =>
-      createBlobMaskSpec(
-        {
-          centerX: 0.5,
-          centerY: 0.5,
-          baseRadius: 0.4,
-          amplitude: 0.12,
-          frequency: 0,
-          octaves: 3,
-          seed: 42,
-          innerColor: c1,
-          outerColor: c2,
-        },
-        viewport!
-      ),
+    children: [blobSurface(0.5, 0.5, 0.4, 0.12, 3, 42)],
   },
   {
+    label: 'Blob Large',
+    children: [blobSurface(0.5, 0.5, 0.5, 0.1, 2, 77)],
+  },
+  {
+    label: 'Blob Rough',
+    children: [blobSurface(0.5, 0.5, 0.35, 0.15, 4, 123)],
+  },
+
+  // ============================================================
+  // Perlin noise patterns
+  // ============================================================
+  {
     label: 'Perlin Noise',
-    maskConfig: { type: 'perlin', seed: 12345, threshold: 0.5, scale: 4, octaves: 4 },
-    createSpec: (c1, c2, viewport) =>
-      createPerlinMaskSpec(
-        { seed: 12345, threshold: 0.5, scale: 4, octaves: 4, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [perlinSurface(12345, 0.5, 4, 4)],
   },
   {
     label: 'Perlin Dense',
-    maskConfig: { type: 'perlin', seed: 99, threshold: 0.4, scale: 6, octaves: 5 },
-    createSpec: (c1, c2, viewport) =>
-      createPerlinMaskSpec(
-        { seed: 99, threshold: 0.4, scale: 6, octaves: 5, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [perlinSurface(99, 0.4, 6, 5)],
   },
   {
     label: 'Perlin Sparse',
-    maskConfig: { type: 'perlin', seed: 42, threshold: 0.6, scale: 3, octaves: 3 },
-    createSpec: (c1, c2, viewport) =>
-      createPerlinMaskSpec(
-        { seed: 42, threshold: 0.6, scale: 3, octaves: 3, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [perlinSurface(42, 0.6, 3, 3)],
   },
+  {
+    label: 'Perlin Fine',
+    children: [perlinSurface(555, 0.5, 8, 6)],
+  },
+
   // ============================================================
-  // Simplex Noise patterns (smoother than Perlin)
+  // Simplex noise patterns (smoother than Perlin)
   // ============================================================
   {
     label: 'Simplex Noise',
-    maskConfig: { type: 'simplex', seed: 12345, threshold: 0.5, scale: 4, octaves: 4 },
-    createSpec: (c1, c2, viewport) =>
-      createSimplexMaskSpec(
-        { seed: 12345, threshold: 0.5, scale: 4, octaves: 4, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [simplexSurface(12345, 0.5, 4, 4)],
   },
   {
     label: 'Simplex Dense',
-    maskConfig: { type: 'simplex', seed: 99, threshold: 0.4, scale: 6, octaves: 5 },
-    createSpec: (c1, c2, viewport) =>
-      createSimplexMaskSpec(
-        { seed: 99, threshold: 0.4, scale: 6, octaves: 5, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [simplexSurface(99, 0.4, 6, 5)],
   },
   {
     label: 'Simplex Sparse',
-    maskConfig: { type: 'simplex', seed: 42, threshold: 0.6, scale: 3, octaves: 3 },
-    createSpec: (c1, c2, viewport) =>
-      createSimplexMaskSpec(
-        { seed: 42, threshold: 0.6, scale: 3, octaves: 3, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [simplexSurface(42, 0.6, 3, 3)],
   },
+  {
+    label: 'Simplex Organic',
+    children: [simplexSurface(777, 0.48, 5, 4)],
+  },
+
   // ============================================================
-  // Curl Noise patterns (flow-like boundaries)
+  // Curl noise patterns (flow-like boundaries)
   // ============================================================
   {
     label: 'Curl Flow',
-    maskConfig: { type: 'curl', seed: 12345, threshold: 0.3, scale: 4, octaves: 4, intensity: 1 },
-    createSpec: (c1, c2, viewport) =>
-      createCurlMaskSpec(
-        { seed: 12345, threshold: 0.3, scale: 4, octaves: 4, intensity: 1, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [curlSurface(12345, 0.3, 4, 4, 1)],
   },
   {
     label: 'Curl Vortex',
-    maskConfig: { type: 'curl', seed: 777, threshold: 0.25, scale: 3, octaves: 5, intensity: 1.5 },
-    createSpec: (c1, c2, viewport) =>
-      createCurlMaskSpec(
-        { seed: 777, threshold: 0.25, scale: 3, octaves: 5, intensity: 1.5, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [curlSurface(777, 0.25, 3, 5, 1.5)],
   },
   {
     label: 'Curl Stream',
-    maskConfig: { type: 'curl', seed: 999, threshold: 0.35, scale: 6, octaves: 4, intensity: 1.2 },
-    createSpec: (c1, c2, viewport) =>
-      createCurlMaskSpec(
-        { seed: 999, threshold: 0.35, scale: 6, octaves: 4, intensity: 1.2, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [curlSurface(999, 0.35, 6, 4, 1.2)],
   },
   {
     label: 'Curl Gentle',
-    maskConfig: { type: 'curl', seed: 42, threshold: 0.4, scale: 2, octaves: 3, intensity: 0.8 },
-    createSpec: (c1, c2, viewport) =>
-      createCurlMaskSpec(
-        { seed: 42, threshold: 0.4, scale: 2, octaves: 3, intensity: 0.8, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [curlSurface(42, 0.4, 2, 3, 0.8)],
   },
   {
     label: 'Curl Dense',
-    maskConfig: { type: 'curl', seed: 555, threshold: 0.2, scale: 8, octaves: 6, intensity: 1.8 },
-    createSpec: (c1, c2, viewport) =>
-      createCurlMaskSpec(
-        { seed: 555, threshold: 0.2, scale: 8, octaves: 6, intensity: 1.8, innerColor: c1, outerColor: c2 },
-        viewport!
-      ),
+    children: [curlSurface(555, 0.2, 8, 6, 1.8)],
   },
+
   // ============================================================
-  // Linear Gradient patterns
-  // ============================================================
-  {
-    label: 'Fade Right',
-    maskConfig: { type: 'linearGradient', angle: 0, startOffset: 0.3, endOffset: 0.7, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createLinearGradientMaskSpec(
-        { angle: 0, startOffset: 0.3, endOffset: 0.7, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Fade Left',
-    maskConfig: { type: 'linearGradient', angle: 180, startOffset: 0.3, endOffset: 0.7, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createLinearGradientMaskSpec(
-        { angle: 180, startOffset: 0.3, endOffset: 0.7, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Fade Down',
-    maskConfig: { type: 'linearGradient', angle: 90, startOffset: 0.3, endOffset: 0.7, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createLinearGradientMaskSpec(
-        { angle: 90, startOffset: 0.3, endOffset: 0.7, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Fade Up',
-    maskConfig: { type: 'linearGradient', angle: 270, startOffset: 0.3, endOffset: 0.7, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createLinearGradientMaskSpec(
-        { angle: 270, startOffset: 0.3, endOffset: 0.7, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Fade Diagonal',
-    maskConfig: { type: 'linearGradient', angle: 45, startOffset: 0.2, endOffset: 0.8, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createLinearGradientMaskSpec(
-        { angle: 45, startOffset: 0.2, endOffset: 0.8, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  {
-    label: 'Fade Sharp Right',
-    maskConfig: { type: 'linearGradient', angle: 0, startOffset: 0.45, endOffset: 0.55, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createLinearGradientMaskSpec(
-        { angle: 0, startOffset: 0.45, endOffset: 0.55, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
-  },
-  // ============================================================
-  // Radial Gradient patterns
+  // Radial gradient patterns (vignette)
   // ============================================================
   {
     label: 'Vignette Center',
-    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.2, outerRadius: 0.6, aspectRatio: 1, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRadialGradientMaskSpec(
-        { centerX: 0.5, centerY: 0.5, innerRadius: 0.2, outerRadius: 0.6, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [radialGradientSurface(0.5, 0.5, 0.2, 0.6, 1)],
   },
   {
     label: 'Vignette Large',
-    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.3, outerRadius: 0.8, aspectRatio: 1, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRadialGradientMaskSpec(
-        { centerX: 0.5, centerY: 0.5, innerRadius: 0.3, outerRadius: 0.8, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [radialGradientSurface(0.5, 0.5, 0.3, 0.8, 1)],
   },
   {
     label: 'Spotlight',
-    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0, outerRadius: 0.4, aspectRatio: 1, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRadialGradientMaskSpec(
-        { centerX: 0.5, centerY: 0.5, innerRadius: 0, outerRadius: 0.4, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [radialGradientSurface(0.5, 0.5, 0, 0.4, 1)],
   },
   {
     label: 'Spotlight Top-Left',
-    maskConfig: { type: 'radialGradient', centerX: 0.25, centerY: 0.25, innerRadius: 0, outerRadius: 0.5, aspectRatio: 1, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRadialGradientMaskSpec(
-        { centerX: 0.25, centerY: 0.25, innerRadius: 0, outerRadius: 0.5, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [radialGradientSurface(0.25, 0.25, 0, 0.5, 1)],
   },
   {
     label: 'Spotlight Bottom-Right',
-    maskConfig: { type: 'radialGradient', centerX: 0.75, centerY: 0.75, innerRadius: 0, outerRadius: 0.5, aspectRatio: 1, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRadialGradientMaskSpec(
-        { centerX: 0.75, centerY: 0.75, innerRadius: 0, outerRadius: 0.5, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [radialGradientSurface(0.75, 0.75, 0, 0.5, 1)],
   },
   {
     label: 'Ellipse Horizontal',
-    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.1, outerRadius: 0.5, aspectRatio: 0.5, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRadialGradientMaskSpec(
-        { centerX: 0.5, centerY: 0.5, innerRadius: 0.1, outerRadius: 0.5, aspectRatio: 0.5, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [radialGradientSurface(0.5, 0.5, 0.1, 0.5, 0.5)],
   },
   {
     label: 'Ellipse Vertical',
-    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.1, outerRadius: 0.5, aspectRatio: 2, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createRadialGradientMaskSpec(
-        { centerX: 0.5, centerY: 0.5, innerRadius: 0.1, outerRadius: 0.5, aspectRatio: 2, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [radialGradientSurface(0.5, 0.5, 0.1, 0.5, 2)],
   },
   {
-    label: 'Vignette Inverted',
-    maskConfig: { type: 'radialGradient', centerX: 0.5, centerY: 0.5, innerRadius: 0.2, outerRadius: 0.6, aspectRatio: 1, cutout: true },
-    createSpec: (c1, c2, viewport) =>
-      createRadialGradientMaskSpec(
-        { centerX: 0.5, centerY: 0.5, innerRadius: 0.2, outerRadius: 0.6, aspectRatio: 1, innerColor: c1, outerColor: c2, cutout: true },
-        viewport!
-      ),
+    label: 'Spotlight Soft',
+    children: [radialGradientSurface(0.5, 0.5, 0, 0.7, 1)],
   },
+
   // ============================================================
-  // Box Gradient patterns (rectangular vignette)
+  // Box gradient patterns (rectangular vignette)
   // ============================================================
   {
     label: 'Box Frame',
-    maskConfig: { type: 'boxGradient', left: 0.15, right: 0.15, top: 0.15, bottom: 0.15, cornerRadius: 0, curve: 'smooth', cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBoxGradientMaskSpec(
-        { left: 0.15, right: 0.15, top: 0.15, bottom: 0.15, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [boxGradientSurface(0.15, 0.15, 0.15, 0.15, 0, 'smooth')],
   },
   {
     label: 'Box Frame Narrow',
-    maskConfig: { type: 'boxGradient', left: 0.08, right: 0.08, top: 0.08, bottom: 0.08, cornerRadius: 0, curve: 'smooth', cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBoxGradientMaskSpec(
-        { left: 0.08, right: 0.08, top: 0.08, bottom: 0.08, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [boxGradientSurface(0.08, 0.08, 0.08, 0.08, 0, 'smooth')],
   },
   {
     label: 'Box Frame Wide',
-    maskConfig: { type: 'boxGradient', left: 0.25, right: 0.25, top: 0.25, bottom: 0.25, cornerRadius: 0, curve: 'smooth', cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBoxGradientMaskSpec(
-        { left: 0.25, right: 0.25, top: 0.25, bottom: 0.25, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [boxGradientSurface(0.25, 0.25, 0.25, 0.25, 0, 'smooth')],
   },
   {
     label: 'Box Rounded',
-    maskConfig: { type: 'boxGradient', left: 0.15, right: 0.15, top: 0.15, bottom: 0.15, cornerRadius: 0.5, curve: 'smooth', cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBoxGradientMaskSpec(
-        { left: 0.15, right: 0.15, top: 0.15, bottom: 0.15, cornerRadius: 0.5, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [boxGradientSurface(0.15, 0.15, 0.15, 0.15, 0.5, 'smooth')],
   },
   {
     label: 'Box Top-Bottom',
-    maskConfig: { type: 'boxGradient', left: 0, right: 0, top: 0.2, bottom: 0.2, cornerRadius: 0, curve: 'smooth', cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBoxGradientMaskSpec(
-        { left: 0, right: 0, top: 0.2, bottom: 0.2, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [boxGradientSurface(0, 0, 0.2, 0.2, 0, 'smooth')],
   },
   {
     label: 'Box Left-Right',
-    maskConfig: { type: 'boxGradient', left: 0.2, right: 0.2, top: 0, bottom: 0, cornerRadius: 0, curve: 'smooth', cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBoxGradientMaskSpec(
-        { left: 0.2, right: 0.2, top: 0, bottom: 0, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [boxGradientSurface(0.2, 0.2, 0, 0, 0, 'smooth')],
   },
   {
     label: 'Letterbox',
-    maskConfig: { type: 'boxGradient', left: 0, right: 0, top: 0.12, bottom: 0.12, cornerRadius: 0, curve: 'linear', cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBoxGradientMaskSpec(
-        { left: 0, right: 0, top: 0.12, bottom: 0.12, cornerRadius: 0, curve: 'linear', innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [boxGradientSurface(0, 0, 0.12, 0.12, 0, 'linear')],
   },
   {
     label: 'Box Asymmetric',
-    maskConfig: { type: 'boxGradient', left: 0.1, right: 0.2, top: 0.15, bottom: 0.25, cornerRadius: 0, curve: 'smooth', cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createBoxGradientMaskSpec(
-        { left: 0.1, right: 0.2, top: 0.15, bottom: 0.25, cornerRadius: 0, curve: 'smooth', innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [boxGradientSurface(0.1, 0.2, 0.15, 0.25, 0, 'smooth')],
   },
+
   // ============================================================
-  // Wavy Line patterns (organic dividing lines)
+  // Wavy line patterns (organic dividing lines)
   // ============================================================
   {
     label: 'Wavy Half Left',
-    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'vertical', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createWavyLineMaskSpec(
-        { position: 0.5, direction: 'vertical', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [wavyLineSurface(0.5, 'vertical', 0.08, 3, 2, 42)],
   },
   {
     label: 'Wavy Half Right',
-    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'vertical', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, cutout: true },
-    createSpec: (c1, c2, viewport) =>
-      createWavyLineMaskSpec(
-        { position: 0.5, direction: 'vertical', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, innerColor: c1, outerColor: c2, cutout: true },
-        viewport!
-      ),
+    children: [wavyLineSurface(0.5, 'vertical', 0.08, 3, 2, 43)],
   },
   {
     label: 'Wavy Half Top',
-    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'horizontal', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createWavyLineMaskSpec(
-        { position: 0.5, direction: 'horizontal', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [wavyLineSurface(0.5, 'horizontal', 0.08, 3, 2, 42)],
   },
   {
     label: 'Wavy Half Bottom',
-    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'horizontal', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, cutout: true },
-    createSpec: (c1, c2, viewport) =>
-      createWavyLineMaskSpec(
-        { position: 0.5, direction: 'horizontal', amplitude: 0.08, frequency: 3, octaves: 2, seed: 42, innerColor: c1, outerColor: c2, cutout: true },
-        viewport!
-      ),
+    children: [wavyLineSurface(0.5, 'horizontal', 0.08, 3, 2, 43)],
   },
   {
     label: 'Wavy Third Left',
-    maskConfig: { type: 'wavyLine', position: 0.33, direction: 'vertical', amplitude: 0.06, frequency: 4, octaves: 2, seed: 123, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createWavyLineMaskSpec(
-        { position: 0.33, direction: 'vertical', amplitude: 0.06, frequency: 4, octaves: 2, seed: 123, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [wavyLineSurface(0.33, 'vertical', 0.06, 4, 2, 123)],
   },
   {
     label: 'Wavy Third Right',
-    maskConfig: { type: 'wavyLine', position: 0.67, direction: 'vertical', amplitude: 0.06, frequency: 4, octaves: 2, seed: 123, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createWavyLineMaskSpec(
-        { position: 0.67, direction: 'vertical', amplitude: 0.06, frequency: 4, octaves: 2, seed: 123, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [wavyLineSurface(0.67, 'vertical', 0.06, 4, 2, 123)],
   },
   {
     label: 'Wavy Gentle',
-    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'vertical', amplitude: 0.04, frequency: 2, octaves: 1, seed: 77, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createWavyLineMaskSpec(
-        { position: 0.5, direction: 'vertical', amplitude: 0.04, frequency: 2, octaves: 1, seed: 77, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [wavyLineSurface(0.5, 'vertical', 0.04, 2, 1, 77)],
   },
   {
     label: 'Wavy Wild',
-    maskConfig: { type: 'wavyLine', position: 0.5, direction: 'vertical', amplitude: 0.15, frequency: 5, octaves: 3, seed: 999, cutout: false },
-    createSpec: (c1, c2, viewport) =>
-      createWavyLineMaskSpec(
-        { position: 0.5, direction: 'vertical', amplitude: 0.15, frequency: 5, octaves: 3, seed: 999, innerColor: c1, outerColor: c2, cutout: false },
-        viewport!
-      ),
+    children: [wavyLineSurface(0.5, 'vertical', 0.15, 5, 3, 999)],
   },
 ]
 

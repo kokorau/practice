@@ -255,6 +255,181 @@ export interface PaperTextureSurfaceConfig {
   seed: number
 }
 
+// ============================================================
+// Mask Shape Surface Configs (for children-based mask presets)
+// ============================================================
+
+/**
+ * Circle surface config for mask shapes.
+ * Renders a circle/ellipse as a greymap that can be used as mask layer.
+ */
+export interface CircleSurfaceConfig {
+  type: 'circle'
+  /** Center X coordinate (0.0-1.0, normalized) */
+  centerX: number
+  /** Center Y coordinate (0.0-1.0, normalized) */
+  centerY: number
+  /** Radius (0.0-1.0, relative to shorter edge) */
+  radius: number
+}
+
+/**
+ * Rect surface config for mask shapes.
+ * Renders a rectangle with optional corner radii as a greymap.
+ */
+export interface RectSurfaceConfig {
+  type: 'rect'
+  /** Left edge (0.0-1.0) */
+  left: number
+  /** Right edge (0.0-1.0) */
+  right: number
+  /** Top edge (0.0-1.0) */
+  top: number
+  /** Bottom edge (0.0-1.0) */
+  bottom: number
+  /** Top-left corner radius */
+  radiusTopLeft: number
+  /** Top-right corner radius */
+  radiusTopRight: number
+  /** Bottom-left corner radius */
+  radiusBottomLeft: number
+  /** Bottom-right corner radius */
+  radiusBottomRight: number
+  /** Z-axis rotation in degrees (0-360) */
+  rotation?: number
+  /** Horizontal perspective (-0.5 to 0.5) */
+  perspectiveX?: number
+  /** Vertical perspective (-0.5 to 0.5) */
+  perspectiveY?: number
+}
+
+/**
+ * Blob surface config for mask shapes.
+ * Renders an organic blob shape using noise-modulated radius.
+ */
+export interface BlobSurfaceConfig {
+  type: 'blob'
+  /** Center X coordinate (0.0-1.0) */
+  centerX: number
+  /** Center Y coordinate (0.0-1.0) */
+  centerY: number
+  /** Base radius (0.0-1.0) */
+  baseRadius: number
+  /** Noise amplitude (0.0-1.0) */
+  amplitude: number
+  /** Noise octaves (1-8) */
+  octaves: number
+  /** Random seed */
+  seed: number
+}
+
+/**
+ * Perlin noise surface config for mask shapes.
+ * Renders thresholded Perlin noise as a binary mask.
+ */
+export interface PerlinSurfaceConfig {
+  type: 'perlin'
+  /** Random seed */
+  seed: number
+  /** Threshold for binarization (0.0-1.0) */
+  threshold: number
+  /** Noise scale */
+  scale: number
+  /** fBm octaves (1-8) */
+  octaves: number
+}
+
+/**
+ * Simplex noise surface config for mask shapes.
+ * Renders thresholded Simplex noise as a binary mask (smoother than Perlin).
+ */
+export interface SimplexSurfaceConfig {
+  type: 'simplex'
+  /** Random seed */
+  seed: number
+  /** Threshold for binarization (0.0-1.0) */
+  threshold: number
+  /** Noise scale */
+  scale: number
+  /** fBm octaves (1-8) */
+  octaves: number
+}
+
+/**
+ * Curl noise surface config for mask shapes.
+ * Renders curl noise for flow-like mask patterns.
+ */
+export interface CurlSurfaceConfig {
+  type: 'curl'
+  /** Random seed */
+  seed: number
+  /** Threshold for binarization (0.0-1.0) */
+  threshold: number
+  /** Noise scale */
+  scale: number
+  /** fBm octaves (1-8) */
+  octaves: number
+  /** Curl intensity (0.1-2.0) */
+  intensity: number
+}
+
+/**
+ * Radial gradient surface config for mask shapes.
+ * Renders a circular/elliptical gradient (vignette effect).
+ */
+export interface RadialGradientSurfaceConfig {
+  type: 'radialGradient'
+  /** Center X coordinate (0.0-1.0) */
+  centerX: number
+  /** Center Y coordinate (0.0-1.0) */
+  centerY: number
+  /** Inner radius (fully opaque) */
+  innerRadius: number
+  /** Outer radius (fully transparent) */
+  outerRadius: number
+  /** Aspect ratio for ellipse (1.0 = circle) */
+  aspectRatio: number
+}
+
+/**
+ * Box gradient surface config for mask shapes.
+ * Renders a rectangular vignette with edge fading.
+ */
+export interface BoxGradientSurfaceConfig {
+  type: 'boxGradient'
+  /** Left edge fade width (0.0-1.0) */
+  left: number
+  /** Right edge fade width (0.0-1.0) */
+  right: number
+  /** Top edge fade width (0.0-1.0) */
+  top: number
+  /** Bottom edge fade width (0.0-1.0) */
+  bottom: number
+  /** Corner radius (0.0-1.0) */
+  cornerRadius: number
+  /** Fade curve type */
+  curve: 'linear' | 'smooth' | 'easeIn' | 'easeOut'
+}
+
+/**
+ * Wavy line surface config for mask shapes.
+ * Renders an organic dividing line using 1D noise.
+ */
+export interface WavyLineSurfaceConfig {
+  type: 'wavyLine'
+  /** Line position (0.0-1.0) */
+  position: number
+  /** Direction: 'vertical' = left/right split, 'horizontal' = top/bottom split */
+  direction: 'vertical' | 'horizontal'
+  /** Wave amplitude (0.0-0.5) */
+  amplitude: number
+  /** Wave frequency (1-20) */
+  frequency: number
+  /** fBm octaves (1-5) */
+  octaves: number
+  /** Random seed */
+  seed: number
+}
 
 /**
  * Color fields for surface configs.
@@ -288,6 +463,16 @@ type SurfaceConfigBase =
   | OgeeSurfaceConfig
   | SunburstSurfaceConfig
   | PaperTextureSurfaceConfig
+  // Mask shape surfaces (for children-based mask presets)
+  | CircleSurfaceConfig
+  | RectSurfaceConfig
+  | BlobSurfaceConfig
+  | PerlinSurfaceConfig
+  | SimplexSurfaceConfig
+  | CurlSurfaceConfig
+  | RadialGradientSurfaceConfig
+  | BoxGradientSurfaceConfig
+  | WavyLineSurfaceConfig
 
 export type SurfaceConfig = SurfaceConfigBase & SurfaceColorFields
 
@@ -330,6 +515,16 @@ export const SURFACE_TYPES: SurfaceType[] = [
   'ogee',
   'sunburst',
   'paperTexture',
+  // Mask shape surfaces
+  'circle',
+  'rect',
+  'blob',
+  'perlin',
+  'simplex',
+  'curl',
+  'radialGradient',
+  'boxGradient',
+  'wavyLine',
 ]
 
 /**

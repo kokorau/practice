@@ -215,10 +215,115 @@ export interface WavyLineMaskShapeConfig {
 
 export type MaskShapeConfig = CircleMaskShapeConfig | RectMaskShapeConfig | BlobMaskShapeConfig | PerlinMaskShapeConfig | SimplexMaskShapeConfig | CurlMaskShapeConfig | LinearGradientMaskShapeConfig | RadialGradientMaskShapeConfig | BoxGradientMaskShapeConfig | WavyLineMaskShapeConfig
 
+// ============================================================
+// MaskPattern Types (children-based)
+// ============================================================
+
 /**
- * Mask pattern definition with shape configuration
+ * Static value wrapper for MaskPattern surface parameters.
+ * Compatible with section-visual's PropertyValue.StaticValue.
  */
-export interface MaskPattern extends TexturePattern {
+export interface MaskPatternStaticValue<T = number | string | boolean> {
+  type: 'static'
+  value: T
+}
+
+/**
+ * Surface configuration for MaskPattern layers.
+ * Simplified version of NormalizedSurfaceConfig for mask presets.
+ */
+export interface MaskPatternSurface {
+  /** Surface type identifier (e.g., 'circle', 'rect', 'blob') */
+  id: string
+  /** Surface-specific parameters wrapped in StaticValue */
+  params: Record<string, MaskPatternStaticValue>
+}
+
+/**
+ * Layer configuration for MaskPattern children.
+ * Simplified version of SurfaceLayerNodeConfig for mask presets.
+ */
+export interface MaskPatternLayer {
+  type: 'surface'
+  /** Unique layer identifier */
+  id: string
+  /** Display name */
+  name: string
+  /** Visibility flag */
+  visible: boolean
+  /** Surface configuration */
+  surface: MaskPatternSurface
+}
+
+/**
+ * Helper to create a static value wrapper.
+ */
+export function $static<T extends number | string | boolean>(value: T): MaskPatternStaticValue<T> {
+  return { type: 'static', value }
+}
+
+/**
+ * Mask pattern definition with children-based layers.
+ *
+ * Each child is a SurfaceLayerNodeConfig that renders a shape
+ * (circle, rect, blob, etc.) to be used as mask source.
+ *
+ * The children are rendered by MaskChildrenRenderNode which:
+ * 1. Renders children on black background
+ * 2. Converts to luminance greymap
+ * 3. Uses as mask (white=visible, black=transparent)
+ *
+ * @example
+ * ```typescript
+ * const pattern: MaskPattern = {
+ *   label: 'Solid Circle Center',
+ *   children: [
+ *     {
+ *       type: 'surface',
+ *       id: 'mask-surface-circle',
+ *       name: 'Circle',
+ *       visible: true,
+ *       surface: {
+ *         id: 'circle',
+ *         params: {
+ *           centerX: $static(0.5),
+ *           centerY: $static(0.5),
+ *           radius: $static(0.3),
+ *         },
+ *       },
+ *     },
+ *   ],
+ * }
+ * ```
+ */
+export interface MaskPattern {
+  /** Display label for the pattern */
+  label: string
+  /** Children layers to render as mask source */
+  children: MaskPatternLayer[]
+
+  /**
+   * @deprecated Legacy property for backward compatibility.
+   * Will be removed in future versions.
+   */
+  maskConfig?: MaskShapeConfig
+
+  /**
+   * @deprecated Legacy property for backward compatibility.
+   * Will be removed in future versions.
+   */
+  createSpec?: (
+    color1: RGBA,
+    color2: RGBA,
+    viewport?: { width: number; height: number }
+  ) => { shader: string; uniforms: ArrayBuffer; bufferSize: number }
+}
+
+/**
+ * @deprecated Legacy MaskPattern type. Use MaskPattern with children instead.
+ * This type is kept for migration purposes only.
+ */
+export interface LegacyMaskPattern extends TexturePattern {
   /** Mask shape configuration for compositing with textures */
   maskConfig: MaskShapeConfig
 }
