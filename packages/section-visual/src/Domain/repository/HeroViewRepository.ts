@@ -12,6 +12,7 @@ import type {
   ViewportConfig,
   ForegroundLayerConfig,
   LayerNodeConfig,
+  NormalizedMaskConfig,
 } from '../HeroViewConfig'
 import type { LayerDropPosition, ModifierDropPosition } from '../LayerTreeOps'
 
@@ -138,8 +139,16 @@ export interface HeroViewRepository {
   moveModifier(sourceNodeId: string, sourceModifierIndex: number, position: ModifierDropPosition): void
 
   // ============================================================
-  // マスクchildren操作
+  // マスク操作
   // ============================================================
+
+  /**
+   * マスク形状を更新
+   * @param processorId プロセッサレイヤーのID
+   * @param modifierIndex マスク修飾子のインデックス
+   * @param shape 新しいマスク形状設定
+   */
+  updateMaskShape(processorId: string, modifierIndex: number, shape: NormalizedMaskConfig): void
 
   /**
    * マスクにレイヤーを追加
