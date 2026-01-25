@@ -21,6 +21,8 @@ import {
   createOgeeSpec,
   createSunburstSpec,
   createPaperTextureSpec,
+  // Linear gradient (smooth, no grain)
+  createLinearGradientSpec,
   // Gradient grain specs (one per depth map type)
   createGradientGrainLinearSpec,
   createGradientGrainCircularSpec,
@@ -148,6 +150,13 @@ export interface RenderHeroConfigOptions {
    * If not provided, all RangeExpr will use intensity=0 (min value)
    */
   intensityProvider?: import('../Application/resolvers/resolvePropertyValue').IntensityProvider
+
+  /**
+   * LUT provider for filter processors.
+   * If not provided, filter processors will be skipped.
+   * Must be provided by the application layer (e.g., apps/web).
+   */
+  lutProvider?: import('./Compositor/nodes/FilterRenderNode').LutProvider
 }
 
 // ============================================================
@@ -259,6 +268,21 @@ export function createBackgroundSpecFromSurface(
       size: scaleValue(surface.size, scale),
       angle: surface.angle,
     })
+  }
+  // Smooth linear gradient (no grain)
+  if (surface.type === 'linearGradient') {
+    return createLinearGradientSpec(
+      {
+        angle: surface.angle,
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        stops: [
+          { color: color1, position: 0 },
+          { color: color2, position: 1 },
+        ],
+      },
+      viewport
+    )
   }
   if (surface.type === 'gradientGrainLinear') {
     return createGradientGrainLinearSpec(
@@ -649,6 +673,7 @@ export async function renderHeroConfig(
     isDark,
     intensityProvider: options?.intensityProvider,
     compiledLayers: compiled.layers,
+    lutProvider: options?.lutProvider,
   })
 
   // 3. Execute pipeline (palette no longer needed - colors already resolved)

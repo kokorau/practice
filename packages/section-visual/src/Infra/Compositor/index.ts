@@ -32,6 +32,12 @@ export {
   EffectRenderNode,
   createEffectRenderNode,
   type EffectRenderNodeConfig,
+  // Filter
+  FilterRenderNode,
+  createFilterRenderNode,
+  type FilterRenderNodeConfig,
+  type FilterParams,
+  type LutProvider,
   // Image
   ImageRenderNode,
   createImageRenderNode,

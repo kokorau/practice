@@ -28,6 +28,14 @@ export {
 } from './EffectRenderNode'
 
 export {
+  FilterRenderNode,
+  createFilterRenderNode,
+  type FilterRenderNodeConfig,
+  type FilterParams,
+  type LutProvider,
+} from './FilterRenderNode'
+
+export {
   ImageRenderNode,
   createImageRenderNode,
   type ImageRenderNodeConfig,

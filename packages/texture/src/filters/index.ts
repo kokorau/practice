@@ -90,3 +90,11 @@ export {
   VORONOI_MOSAIC_BUFFER_SIZE,
   type VoronoiMosaicParams,
 } from '../shaders/voronoiMosaic'
+
+export {
+  lut1dShader,
+  createLut1dUniforms,
+  createIdentityLut,
+  LUT1D_BUFFER_SIZE,
+  type Lut1DParams,
+} from '../shaders/lut1d'
