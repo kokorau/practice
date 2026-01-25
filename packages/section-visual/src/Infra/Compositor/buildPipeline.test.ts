@@ -156,8 +156,8 @@ describe('buildPipeline', () => {
     const clipSurfaceNode = result.nodes.find(n => n.id === 'surface-mask')
     expect(clipSurfaceNode).toBeDefined()
 
-    // Should have mask node (processor ID + "-mask")
-    const maskNode = result.nodes.find(n => n.id === 'processor-mask-mask')
+    // Should have mask node (processor ID + "-mask-{index}")
+    const maskNode = result.nodes.find(n => n.id === 'processor-mask-mask-0')
     expect(maskNode).toBeDefined()
   })
 
@@ -407,8 +407,8 @@ describe('Root-Level Processor Support', () => {
 
     const result = buildPipeline(config, options)
 
-    // Should have effect node for root processor
-    const effectNode = result.nodes.find(n => n.id === 'root-processor-effects')
+    // Should have effect node for root processor (effects-{index})
+    const effectNode = result.nodes.find(n => n.id === 'root-processor-effects-0')
     expect(effectNode).toBeDefined()
     expect(effectNode?.type).toBe('compositor')
   })
@@ -477,13 +477,13 @@ describe('Root-Level Processor Support', () => {
 
     const result = buildPipeline(config, options)
 
-    // Should have mask node for root processor
-    const maskNode = result.nodes.find(n => n.id === 'root-processor-mask')
+    // Should have mask render node for root processor (mask-{index}-render)
+    const maskNode = result.nodes.find(n => n.id === 'root-processor-mask-0-render')
     expect(maskNode).toBeDefined()
     expect(maskNode?.type).toBe('render')
 
-    // Should have masked compositor node
-    const maskedNode = result.nodes.find(n => n.id === 'root-processor-masked')
+    // Should have masked compositor node (mask-{index})
+    const maskedNode = result.nodes.find(n => n.id === 'root-processor-mask-0')
     expect(maskedNode).toBeDefined()
     expect(maskedNode?.type).toBe('compositor')
   })

@@ -9,6 +9,7 @@ import type {
   HeroViewConfig,
   LayerNodeConfig,
   GroupLayerNodeConfig,
+  GroupTransformParams,
   SurfaceLayerNodeConfig,
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
@@ -20,9 +21,9 @@ import { resolvePropertyValueToNumber, DEFAULT_INTENSITY_PROVIDER } from '../../
 import type { CompiledLayerNode, CompiledSurfaceLayerNode } from '../../Domain/CompiledHeroView'
 import { isCompiledSurfaceLayerNode, isCompiledGroupLayerNode } from '../../Domain/CompiledHeroView'
 import {
-  getProcessorMask,
   getProcessorTargetPairsFromConfig,
   isSingleEffectConfig,
+  isMaskProcessorConfig,
 } from '../../Domain/HeroViewConfig'
 import type { PropertyValue } from '../../Domain/SectionVisual'
 import { $PropertyValue } from '../../Domain/SectionVisual'
@@ -43,6 +44,7 @@ import {
   createCanvasOutputNode,
   createTextRenderNode,
   type EffectConfig,
+  type GroupTransform,
 } from './index'
 import type { CompiledProcessorLayerNode } from '../../Domain/CompiledHeroView'
 import { isCompiledProcessorLayerNode, isCompiledMaskProcessor } from '../../Domain/CompiledHeroView'
@@ -263,6 +265,10 @@ function buildMaskChildrenNodes(
 /**
  * Build processor compositor node that applies to the final composite
  * Returns the new final node after applying processor effects
+ *
+ * Modifiers are processed in array order:
+ * - Consecutive effects are grouped and processed together via EffectChainCompositorNode
+ * - When a mask is encountered, pending effects are flushed first, then mask is applied
  */
 function buildProcessorNode(
   id: string,
@@ -273,89 +279,132 @@ function buildProcessorNode(
   ctx: BuildContext
 ): TextureProducingNode {
   let currentNode: TextureProducingNode = inputNode
+  let pendingEffects: SingleEffectConfig[] = []
+  let effectGroupCounter = 0
+  let maskCounter = 0
 
-  // 1. Apply mask if present
-  const maskProcessor = getProcessorMask(processor)
-  if (maskProcessor?.enabled) {
-    // Find the compiled processor to get compiled mask data
+  // Helper: flush pending effects as a single EffectChainCompositorNode
+  const flushEffects = () => {
+    if (pendingEffects.length === 0) return
+
+    const effects: EffectConfig[] = pendingEffects.map((e) => ({
+      id: e.id,
+      params: extractEffectParams(e.params as Record<string, unknown>, intensityProvider),
+    }))
+    const effectsNode = createEffectChainCompositorNode(
+      `${id}-effects-${effectGroupCounter++}`,
+      currentNode,
+      effects
+    )
+    nodes.push(effectsNode)
+    currentNode = effectsNode
+    pendingEffects = []
+  }
+
+  // Helper: apply a mask modifier
+  const applyMask = (maskIndex: number) => {
     const compiledProcessor = findCompiledProcessor(ctx.compiledLayers, processor.id)
-    if (compiledProcessor) {
-      const compiledMask = compiledProcessor.modifiers.find(isCompiledMaskProcessor)
-      if (compiledMask) {
-        // Priority: shape (legacy) > children (new)
-        // This ensures backwards compatibility with existing presets
-        if (compiledMask.shape) {
-          // Use legacy shape-based mask (MaskRenderNode)
-          // Convert CompiledMaskShape to AnyMaskConfig format
-          const maskConfig = {
-            type: compiledMask.shape.id,
-            ...compiledMask.shape.params,
-          } as AnyMaskConfig
+    if (!compiledProcessor) return
 
-          const maskRenderNode = createMaskRenderNode(
-            `${id}-mask-render`,
-            maskConfig
-          )
-          nodes.push(maskRenderNode)
+    // Find the mask at the corresponding index in compiled modifiers
+    const compiledMasks = compiledProcessor.modifiers.filter(isCompiledMaskProcessor)
+    const compiledMask = compiledMasks[maskIndex]
+    if (!compiledMask) return
 
-          // Apply mask to current node using MaskCompositorNode
-          const maskedNode = createMaskCompositorNode(
-            `${id}-masked`,
-            currentNode,
-            maskRenderNode
-          )
-          nodes.push(maskedNode)
-          currentNode = maskedNode
-        } else if (compiledMask.children.length > 0) {
-          // Use new children-based mask (MaskChildrenRenderNode)
-          // Build render nodes from compiled mask children
-          const maskChildNodes = buildMaskChildrenNodes(
-            `${id}-mask`,
-            compiledMask.children,
-            nodes
-          )
+    const maskId = `${id}-mask-${maskCounter++}`
 
-          if (maskChildNodes.length > 0) {
-            // Create MaskChildrenRenderNode to render children to luminance greymap
-            const maskChildrenRenderNode = createMaskChildrenRenderNode(
-              `${id}-mask-render`,
-              maskChildNodes,
-              compiledMask.invert
-            )
-            nodes.push(maskChildrenRenderNode)
+    // Priority: shape (legacy) > children (new)
+    // This ensures backwards compatibility with existing presets
+    if (compiledMask.shape) {
+      // Use legacy shape-based mask (MaskRenderNode)
+      const maskConfig = {
+        type: compiledMask.shape.id,
+        ...compiledMask.shape.params,
+      } as AnyMaskConfig
 
-            // Apply mask to current node using MaskCompositorNode
-            const maskedNode = createMaskCompositorNode(
-              `${id}-masked`,
-              currentNode,
-              maskChildrenRenderNode
-            )
-            nodes.push(maskedNode)
-            currentNode = maskedNode
-          }
-        }
-        // If neither shape nor children, mask is not applied
-        // (empty children = no clipping, handled by fallback)
+      const maskRenderNode = createMaskRenderNode(`${maskId}-render`, maskConfig)
+      nodes.push(maskRenderNode)
+
+      const maskedNode = createMaskCompositorNode(`${maskId}`, currentNode, maskRenderNode)
+      nodes.push(maskedNode)
+      currentNode = maskedNode
+    } else if (compiledMask.children.length > 0) {
+      // Use new children-based mask (MaskChildrenRenderNode)
+      const maskChildNodes = buildMaskChildrenNodes(`${maskId}`, compiledMask.children, nodes)
+
+      if (maskChildNodes.length > 0) {
+        const maskChildrenRenderNode = createMaskChildrenRenderNode(
+          `${maskId}-render`,
+          maskChildNodes,
+          compiledMask.invert
+        )
+        nodes.push(maskChildrenRenderNode)
+
+        const maskedNode = createMaskCompositorNode(`${maskId}`, currentNode, maskChildrenRenderNode)
+        nodes.push(maskedNode)
+        currentNode = maskedNode
       }
+    }
+    // If neither shape nor children, mask is not applied
+  }
+
+  // Process modifiers in array order
+  let maskIndex = 0
+  for (const modifier of processor.modifiers) {
+    if (isSingleEffectConfig(modifier)) {
+      // Accumulate effects for batch processing
+      pendingEffects.push(modifier)
+    } else if (isMaskProcessorConfig(modifier) && modifier.enabled) {
+      // Flush pending effects before applying mask
+      flushEffects()
+      // Apply this mask
+      applyMask(maskIndex)
+      maskIndex++
+    } else if (isMaskProcessorConfig(modifier)) {
+      // Disabled mask - still increment index to keep sync with compiled
+      maskIndex++
     }
   }
 
-  // 2. Apply effects if present
-  const effectConfigs = processor.modifiers.filter(
-    (m): m is SingleEffectConfig => isSingleEffectConfig(m)
-  )
-  if (effectConfigs.length > 0) {
-    const effects: EffectConfig[] = effectConfigs.map((e) => ({
-      id: e.id,
-      // Extract raw values from PropertyValue objects using intensityProvider
-      params: extractEffectParams(e.params as Record<string, unknown>, intensityProvider),
-    }))
-    const effectsNode = createEffectChainCompositorNode(`${id}-effects`, currentNode, effects)
-    nodes.push(effectsNode)
-    currentNode = effectsNode
-  }
+  // Flush any remaining effects
+  flushEffects()
 
   return currentNode
+}
+
+// ============================================================
+// Group Transform Resolution
+// ============================================================
+
+/**
+ * Resolve GroupTransformParams to GroupTransform (raw numbers).
+ * Handles both PropertyValue objects and raw numbers from UI.
+ * Returns undefined if no transform params are defined.
+ */
+function resolveGroupTransform(
+  params: GroupTransformParams | undefined,
+  intensityProvider: IntensityProvider
+): GroupTransform | undefined {
+  if (!params) return undefined
+
+  // Check if any transform param is defined
+  const hasOpacity = params.opacity !== undefined
+  const hasOffsetX = params.offsetX !== undefined
+  const hasOffsetY = params.offsetY !== undefined
+  const hasRotation = params.rotation !== undefined
+
+  // If no params defined, return undefined (use default)
+  if (!hasOpacity && !hasOffsetX && !hasOffsetY && !hasRotation) {
+    return undefined
+  }
+
+  // Resolve each param using extractRawValue (handles both PropertyValue and raw values)
+  return {
+    opacity: hasOpacity ? Number(extractRawValue(params.opacity, intensityProvider)) : 1,
+    offsetX: hasOffsetX ? Number(extractRawValue(params.offsetX, intensityProvider)) : 0,
+    offsetY: hasOffsetY ? Number(extractRawValue(params.offsetY, intensityProvider)) : 0,
+    rotation: hasRotation ? Number(extractRawValue(params.rotation, intensityProvider)) : 0,
+  }
 }
 
 // ============================================================
@@ -446,13 +495,17 @@ function buildGroupNode(
   // No children to render
   if (accumulatedNodes.length === 0) return null
 
+  // Resolve group transform params
+  const transform = resolveGroupTransform(group.params, ctx.intensityProvider)
+
   // Always wrap in GroupCompositorNode (even single child)
-  // This ensures group-level blendMode is applied
+  // This ensures group-level blendMode and transform are applied
   const groupNode = createGroupCompositorNode(
     groupId,
     accumulatedNodes,
     {
       blendMode: group.blendMode,
+      transform,
     }
   )
   nodes.push(groupNode)
