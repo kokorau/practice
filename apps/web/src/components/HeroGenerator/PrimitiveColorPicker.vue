@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import {
@@ -27,7 +28,6 @@ const emit = defineEmits<{
 
 const isOpen = ref(false)
 const isCustomMode = ref(false)
-const pickerRef = ref<HTMLElement | null>(null)
 const popupRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
 const popupStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0', left: '0' })
@@ -49,6 +49,14 @@ watch(
   },
   { immediate: true }
 )
+
+// Use vueuse onClickOutside with ignore option
+onClickOutside(popupRef, () => {
+  isOpen.value = false
+  isCustomMode.value = false
+}, {
+  ignore: [triggerRef],
+})
 
 // Group colors for display
 const colorGroups = computed(() => [
@@ -169,26 +177,10 @@ const cancelCustomMode = () => {
     customValue.value = props.modelValue.value
   }
 }
-
-// Close on outside click
-const handleClickOutside = (event: MouseEvent) => {
-  if (pickerRef.value && !pickerRef.value.contains(event.target as Node)) {
-    isOpen.value = false
-    isCustomMode.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
 </script>
 
 <template>
-  <div ref="pickerRef" class="primitive-color-picker">
+  <div class="primitive-color-picker">
     <!-- Trigger button -->
     <button
       ref="triggerRef"

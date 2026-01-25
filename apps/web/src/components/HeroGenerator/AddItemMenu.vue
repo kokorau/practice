@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="T extends string">
 import { ref } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 
 // ============================================================
 // Types
@@ -30,6 +31,18 @@ const emit = defineEmits<{
 // ============================================================
 
 const showMenu = ref(false)
+const triggerRef = ref<HTMLElement | null>(null)
+const menuRef = ref<HTMLElement | null>(null)
+
+// ============================================================
+// Click Outside
+// ============================================================
+
+onClickOutside(menuRef, () => {
+  showMenu.value = false
+}, {
+  ignore: [triggerRef],
+})
 
 // ============================================================
 // Handlers
@@ -54,6 +67,7 @@ defineExpose({
 <template>
   <div class="add-item-container">
     <button
+      ref="triggerRef"
       class="add-icon-button"
       :class="{ active: showMenu }"
       :title="title ?? 'Add item'"
@@ -63,7 +77,7 @@ defineExpose({
     </button>
 
     <Transition name="fade">
-      <div v-if="showMenu" class="add-menu">
+      <div v-if="showMenu" ref="menuRef" class="add-menu">
         <button
           v-for="item in items"
           :key="item.type"

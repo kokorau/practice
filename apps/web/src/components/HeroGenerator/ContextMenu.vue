@@ -10,6 +10,7 @@
  */
 
 import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 
 // ============================================================
 // Types
@@ -45,17 +46,19 @@ const emit = defineEmits<{
 const menuRef = ref<HTMLElement | null>(null)
 
 // ============================================================
-// Event Handlers
+// Click Outside
 // ============================================================
 
-const handleClickOutside = (e: MouseEvent) => {
+onClickOutside(menuRef, (e: PointerEvent) => {
   if (!props.isOpen) return
   // Ignore right-click (contextmenu will handle re-opening)
   if (e.button === 2) return
-  if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
-    emit('close')
-  }
-}
+  emit('close')
+})
+
+// ============================================================
+// Event Handlers
+// ============================================================
 
 const handleKeyDown = (e: KeyboardEvent) => {
   if (!props.isOpen) return
@@ -75,13 +78,10 @@ const handleItemClick = (item: ContextMenuItem) => {
 // ============================================================
 
 onMounted(() => {
-  // Use mousedown to close before contextmenu fires for consecutive right-clicks
-  document.addEventListener('mousedown', handleClickOutside)
   document.addEventListener('keydown', handleKeyDown)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('mousedown', handleClickOutside)
   document.removeEventListener('keydown', handleKeyDown)
 })
 

@@ -10,6 +10,7 @@
  */
 
 import { computed, ref, inject } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig, MaskProcessorConfig, ModifierDropPosition, LayerDropPosition, SingleEffectConfig, SurfaceLayerNodeConfig, BaseLayerNodeConfig } from '@practice/section-visual'
 import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
 import { LAYER_DRAG_KEY, type DropTarget } from '../../composables/useLayerDragAndDrop'
@@ -275,6 +276,15 @@ const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
 // ============================================================
 
 const showAddProcessorMenu = ref(false)
+const addProcessorTriggerRef = ref<HTMLElement | null>(null)
+const addProcessorMenuRef = ref<HTMLElement | null>(null)
+
+// Use vueuse onClickOutside with ignore option
+onClickOutside(addProcessorMenuRef, () => {
+  showAddProcessorMenu.value = false
+}, {
+  ignore: [addProcessorTriggerRef],
+})
 
 const handleToggleAddProcessorMenu = (e: Event) => {
   e.stopPropagation()
@@ -433,6 +443,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         @click.stop
       >
         <button
+          ref="addProcessorTriggerRef"
           class="add-processor-toggle"
           :class="{ active: showAddProcessorMenu }"
           title="Add Effect or Mask"
@@ -444,6 +455,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <Transition name="fade">
           <div
             v-if="showAddProcessorMenu"
+            ref="addProcessorMenuRef"
             class="add-processor-menu"
             @click.stop
           >
