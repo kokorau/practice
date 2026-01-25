@@ -7,6 +7,7 @@
  * Uses PresetSelector for both Effect and Mask type selection with thumbnail previews.
  */
 import { computed } from 'vue'
+import type { MaskPatternLayer } from '@practice/texture'
 import {
   VignetteBaseSchema,
   ChromaticAberrationEffectSchema,
@@ -19,6 +20,7 @@ import {
   createSingleEffectConfig,
   type FilterType,
   type SingleEffectConfig,
+  type SurfaceLayerNodeConfig,
 } from '@practice/section-visual'
 import type {
   ChromaticConfigParams,
@@ -174,6 +176,51 @@ const canUseEffectPipelinePreview = computed(() => {
   )
 })
 
+// ============================================================
+// Mask Preview Children Conversion
+// ============================================================
+
+/**
+ * Convert MaskPatternLayer[] to SurfaceLayerNodeConfig[]
+ * MaskPatternStaticValue ({ type: 'static', value }) is compatible with PropertyValue
+ */
+function convertMaskPatternLayersToPreviewChildren(
+  layers: MaskPatternLayer[] | undefined
+): SurfaceLayerNodeConfig[] | undefined {
+  if (!layers || layers.length === 0) return undefined
+  return layers.map((layer) => ({
+    type: 'surface' as const,
+    id: layer.id,
+    name: layer.name,
+    visible: layer.visible,
+    surface: {
+      id: layer.surface.id,
+      // MaskPatternStaticValue is compatible with PropertyValue (StaticValue)
+      params: layer.surface.params as SurfaceLayerNodeConfig['surface']['params'],
+    },
+  }))
+}
+
+/**
+ * Get preview children for the selected mask pattern
+ */
+const selectedMaskPreviewChildren = computed(() => {
+  const index = props.maskProps.selectedShapeIndex
+  if (index === null) return undefined
+  const patterns = props.maskProps.shapePatternsWithConfig ?? props.maskProps.shapePatterns
+  const pattern = patterns[index]
+  return convertMaskPatternLayersToPreviewChildren(pattern?.children)
+})
+
+/**
+ * Get preview children for a given mask pattern index
+ */
+function getMaskPreviewChildrenByIndex(index: number): SurfaceLayerNodeConfig[] | undefined {
+  const patterns = props.maskProps.shapePatternsWithConfig ?? props.maskProps.shapePatterns
+  const pattern = patterns[index]
+  return convertMaskPatternLayersToPreviewChildren(pattern?.children)
+}
+
 </script>
 
 <template>
@@ -323,7 +370,7 @@ const canUseEffectPipelinePreview = computed(() => {
             v-if="maskProps.selectedShapeIndex !== null && (maskProps.shapePatternsWithConfig ?? maskProps.shapePatterns)[maskProps.selectedShapeIndex]"
             :surface="maskProps.surface"
             :processor="maskProps.processor"
-            :preview-mask="maskProps.shapePatternsWithConfig?.[maskProps.selectedShapeIndex]?.maskConfig"
+            :preview-children="selectedMaskPreviewChildren"
             :palette="maskProps.palette"
             :create-background-spec="maskProps.createBackgroundThumbnailSpec"
             :create-mask-spec="maskProps.shapePatterns[maskProps.selectedShapeIndex]!.createSpec"
@@ -336,7 +383,7 @@ const canUseEffectPipelinePreview = computed(() => {
           <MaskPatternThumbnail
             :surface="maskProps.surface"
             :processor="maskProps.processor"
-            :preview-mask="maskProps.shapePatternsWithConfig?.[index]?.maskConfig"
+            :preview-children="getMaskPreviewChildrenByIndex(index)"
             :palette="maskProps.palette"
             :create-background-spec="maskProps.createBackgroundThumbnailSpec"
             :create-mask-spec="item.createSpec"
