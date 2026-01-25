@@ -8,13 +8,17 @@ import type {
   HeroViewConfig,
   LayerNodeConfig,
   NormalizedSurfaceConfig,
+  NormalizedMaskConfig,
   SingleEffectConfig,
   ProcessorConfig,
   AnySurfaceConfig,
+  AnyMaskConfig,
 } from './HeroViewConfig'
 import {
   isNormalizedSurfaceConfig,
   normalizeSurfaceConfig,
+  isNormalizedMaskConfig,
+  normalizeMaskConfig,
 } from './HeroViewConfig'
 
 // ============================================================
@@ -328,6 +332,21 @@ function resolveEffectConfig(
 }
 
 /**
+ * Resolve mask config params (handles both legacy and normalized formats)
+ */
+function resolveMaskConfig(
+  config: AnyMaskConfig,
+  resolver: PropertyResolver
+): NormalizedMaskConfig {
+  // Normalize first if legacy format
+  const normalized = isNormalizedMaskConfig(config) ? config : normalizeMaskConfig(config)
+  return {
+    id: normalized.id,
+    params: resolveParams(normalized.params, resolver),
+  }
+}
+
+/**
  * Resolve ProcessorConfig (effect or mask)
  */
 function resolveProcessorConfig(
@@ -338,9 +357,10 @@ function resolveProcessorConfig(
   if (config.type === 'effect') {
     return resolveEffectConfig(config, resolver)
   }
-  // Mask processor - resolve children layers recursively
+  // Mask processor - resolve shape (if present) and children layers recursively
   return {
     ...config,
+    shape: config.shape ? resolveMaskConfig(config.shape, resolver) : undefined,
     children: config.children.map((child) => resolveLayer(child, resolver)),
   }
 }
