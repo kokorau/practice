@@ -10,11 +10,8 @@
  */
 
 import { computed } from 'vue'
-import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig } from '@practice/section-visual'
-import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
-
-// Layer variant type for UI display
-type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' | 'processor'
+import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig, DisplayLayerVariant } from '@practice/section-visual'
+import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig, getLayerIcon, getLayerLabel } from '@practice/section-visual'
 
 // Helper for effect modifier check
 const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
@@ -97,35 +94,6 @@ const modifiers = computed(() => {
   return result
 })
 
-// ============================================================
-// Icon & Label Helpers
-// ============================================================
-
-const getLayerIcon = (variant: LayerVariant | 'group'): string => {
-  switch (variant) {
-    case 'base': return 'gradient'
-    case 'surface': return 'texture'
-    case 'group': return 'folder_open'
-    case 'model3d': return 'view_in_ar'
-    case 'image': return 'image'
-    case 'text': return 'text_fields'
-    case 'processor': return 'auto_fix_high'
-    default: return 'layers'
-  }
-}
-
-const getLayerTypeLabel = (variant: LayerVariant | 'group'): string => {
-  switch (variant) {
-    case 'base': return 'Base'
-    case 'surface': return 'Surface'
-    case 'group': return 'Group'
-    case 'model3d': return '3D Model'
-    case 'image': return 'Image'
-    case 'text': return 'Text'
-    case 'processor': return 'Processor'
-    default: return 'Layer'
-  }
-}
 
 // ============================================================
 // Event Handlers

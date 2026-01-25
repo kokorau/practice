@@ -638,3 +638,13 @@ export type {
   TrackDependency,
   DependencyGraph,
 } from './Domain'
+
+// Domain - Layer Display Helpers
+export {
+  getLayerIcon,
+  getLayerLabel,
+  getDependencySourceIcon,
+  getDependencySourceLabel,
+} from './Domain'
+
+export type { DisplayLayerVariant } from './Domain'

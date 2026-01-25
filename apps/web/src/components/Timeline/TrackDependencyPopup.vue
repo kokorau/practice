@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { DependencySource, DependencySourceType } from '@practice/section-visual'
+import type { DependencySource } from '@practice/section-visual'
+import { getDependencySourceIcon } from '@practice/section-visual'
 
 const props = defineProps<{
   trackId: string
@@ -11,16 +12,6 @@ const props = defineProps<{
 defineEmits<{
   close: []
 }>()
-
-// Get icon for source type
-const getSourceIcon = (type: DependencySourceType): string => {
-  switch (type) {
-    case 'surface': return 'texture'
-    case 'mask': return 'vignette'
-    case 'effect': return 'auto_fix_high'
-    default: return 'layers'
-  }
-}
 
 const hasAnySources = computed(() => props.sources.length > 0)
 </script>
@@ -44,7 +35,7 @@ const hasAnySources = computed(() => props.sources.length > 0)
           :key="`${source.layerId}-${source.paramName}`"
           class="dependency-item"
         >
-          <span class="material-icons source-icon">{{ getSourceIcon(source.type) }}</span>
+          <span class="material-icons source-icon">{{ getDependencySourceIcon(source.type) }}</span>
           <span class="layer-name">{{ source.layerName }}</span>
           <span class="param-name">{{ source.paramName }}</span>
         </div>
