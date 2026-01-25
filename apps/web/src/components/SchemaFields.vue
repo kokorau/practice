@@ -6,7 +6,7 @@
  * Supports number (slider), boolean (checkbox), select, and color fields.
  */
 import { computed } from 'vue'
-import { getFields, type ObjectSchema, type FieldMeta, isSchemaCustomColor } from '@practice/schema'
+import { getFields, type ObjectSchema, type FieldMeta } from '@practice/schema'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type { ColorValue } from '@practice/section-visual'
 import RangeInput from './RangeInput.vue'
