@@ -46,6 +46,115 @@ const defaultSurfacePresets: SurfacePreset[] = [
       centerY: 0.5,
     },
   },
+  // Circular gradient (center outward)
+  {
+    label: 'Circular',
+    params: {
+      type: 'circularGradient',
+      centerX: 0.5,
+      centerY: 0.5,
+      circularInvert: false,
+    },
+  },
+  {
+    label: 'Circular Invert',
+    params: {
+      type: 'circularGradient',
+      centerX: 0.5,
+      centerY: 0.5,
+      circularInvert: true,
+    },
+  },
+  // Conic gradient (angle-based)
+  {
+    label: 'Conic',
+    params: {
+      type: 'conicGradient',
+      centerX: 0.5,
+      centerY: 0.5,
+      startAngle: 0,
+      sweepAngle: 360,
+    },
+  },
+  {
+    label: 'Conic Half',
+    params: {
+      type: 'conicGradient',
+      centerX: 0.5,
+      centerY: 0.5,
+      startAngle: 0,
+      sweepAngle: 180,
+    },
+  },
+  // Repeat linear gradient
+  {
+    label: 'Repeat Linear',
+    params: {
+      type: 'repeatLinearGradient',
+      angle: 90,
+      centerX: 0.5,
+      centerY: 0.5,
+      repeat: 3,
+    },
+  },
+  {
+    label: 'Repeat Diagonal',
+    params: {
+      type: 'repeatLinearGradient',
+      angle: 45,
+      centerX: 0.5,
+      centerY: 0.5,
+      repeat: 5,
+    },
+  },
+  // Perlin gradient (smooth noise)
+  {
+    label: 'Perlin',
+    params: {
+      type: 'perlinGradient',
+      scale: 4,
+      octaves: 4,
+      seed: 12345,
+      contrast: 1,
+      offset: 0,
+    },
+  },
+  {
+    label: 'Perlin Fine',
+    params: {
+      type: 'perlinGradient',
+      scale: 8,
+      octaves: 6,
+      seed: 42,
+      contrast: 1.2,
+      offset: 0,
+    },
+  },
+  // Curl gradient (flow-like patterns)
+  {
+    label: 'Curl',
+    params: {
+      type: 'curlGradient',
+      scale: 4,
+      octaves: 4,
+      seed: 12345,
+      contrast: 1,
+      offset: 0,
+      intensity: 1,
+    },
+  },
+  {
+    label: 'Curl Flow',
+    params: {
+      type: 'curlGradient',
+      scale: 3,
+      octaves: 5,
+      seed: 777,
+      contrast: 1.2,
+      offset: 0,
+      intensity: 1.5,
+    },
+  },
   // Gradient grain patterns
   {
     label: 'Grain Linear',

@@ -353,6 +353,71 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
             { color: color2, position: 1 },
           ],
         }, viewport)
+      case 'circularGradient':
+        return createLinearGradientSpec({
+          depthMapType: 'circular',
+          angle: 0,
+          centerX: params.centerX as number | undefined,
+          centerY: params.centerY as number | undefined,
+          circularInvert: params.circularInvert as boolean | undefined,
+          stops: [
+            { color: color1, position: 0 },
+            { color: color2, position: 1 },
+          ],
+        }, viewport)
+      case 'conicGradient':
+        return createLinearGradientSpec({
+          depthMapType: 'radial',
+          angle: 0,
+          centerX: params.centerX as number | undefined,
+          centerY: params.centerY as number | undefined,
+          radialStartAngle: params.startAngle as number | undefined,
+          radialSweepAngle: params.sweepAngle as number | undefined,
+          stops: [
+            { color: color1, position: 0 },
+            { color: color2, position: 1 },
+          ],
+        }, viewport)
+      case 'repeatLinearGradient':
+        return createLinearGradientSpec({
+          angle: params.angle as number,
+          centerX: params.centerX as number | undefined,
+          centerY: params.centerY as number | undefined,
+          repeat: params.repeat as number | undefined,
+          stops: [
+            { color: color1, position: 0 },
+            { color: color2, position: 1 },
+          ],
+        }, viewport)
+      case 'perlinGradient':
+        return createLinearGradientSpec({
+          depthMapType: 'perlin',
+          angle: 0,
+          perlinScale: params.scale as number | undefined,
+          perlinOctaves: params.octaves as number | undefined,
+          perlinSeed: params.seed as number | undefined,
+          perlinContrast: params.contrast as number | undefined,
+          perlinOffset: params.offset as number | undefined,
+          stops: [
+            { color: color1, position: 0 },
+            { color: color2, position: 1 },
+          ],
+        }, viewport)
+      case 'curlGradient':
+        return createLinearGradientSpec({
+          depthMapType: 'curl',
+          angle: 0,
+          perlinScale: params.scale as number | undefined,
+          perlinOctaves: params.octaves as number | undefined,
+          perlinSeed: params.seed as number | undefined,
+          perlinContrast: params.contrast as number | undefined,
+          perlinOffset: params.offset as number | undefined,
+          curlIntensity: params.intensity as number | undefined,
+          stops: [
+            { color: color1, position: 0 },
+            { color: color2, position: 1 },
+          ],
+        }, viewport)
       case 'gradientGrainLinear':
         return createGradientGrainLinearSpec({
           angle: params.angle as number,

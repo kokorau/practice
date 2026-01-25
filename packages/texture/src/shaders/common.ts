@@ -335,6 +335,19 @@ fn perlinDepth(uv: vec2f, scale: f32, octaves: i32, seed: f32, contrast: f32, of
   return clamp(noise, 0.0, 1.0);
 }
 
+// Curl noise depth (uses curl of perlin noise for flow-like patterns)
+fn curlDepth(uv: vec2f, scale: f32, octaves: i32, seed: f32, contrast: f32, offset: f32, intensity: f32) -> f32 {
+  let eps = 0.01;
+  let noisePos = uv * scale + vec2f(seed * 0.1, seed * 0.073);
+
+  let dx = depthFbm(noisePos + vec2f(eps, 0.0), octaves) - depthFbm(noisePos - vec2f(eps, 0.0), octaves);
+  let dy = depthFbm(noisePos + vec2f(0.0, eps), octaves) - depthFbm(noisePos - vec2f(0.0, eps), octaves);
+
+  var depth = length(vec2f(dy, -dx)) / (2.0 * eps) * intensity * 2.0;
+  depth = (depth - 0.5) * contrast + 0.5 + offset;
+  return clamp(depth, 0.0, 1.0);
+}
+
 // Unified depth function based on type
 fn calculateDepth(
   uv: vec2f,
@@ -360,7 +373,7 @@ fn calculateDepth(
   }
 }
 
-// Extended depth function with perlin support
+// Extended depth function with perlin and curl support
 fn calculateDepthEx(
   uv: vec2f,
   depthType: f32,
@@ -374,7 +387,8 @@ fn calculateDepthEx(
   perlinOctaves: f32,
   perlinSeed: f32,
   perlinContrast: f32,
-  perlinOffset: f32
+  perlinOffset: f32,
+  curlIntensity: f32
 ) -> f32 {
   let typeInt = i32(depthType);
   switch(typeInt) {
@@ -386,6 +400,9 @@ fn calculateDepthEx(
     }
     case 3: {
       return perlinDepth(uv, perlinScale, i32(perlinOctaves), perlinSeed, perlinContrast, perlinOffset);
+    }
+    case 4: {
+      return curlDepth(uv, perlinScale, i32(perlinOctaves), perlinSeed, perlinContrast, perlinOffset, curlIntensity);
     }
     default: {
       return linearDepth(uv, linearAngle, center);

@@ -35,10 +35,20 @@ const shouldShowSurfaceParams = (): boolean => {
   return !!props.surfaceSchema && !!props.surfaceParams
 }
 
-// Check if current surface is linearGradient
+// Gradient surface types that use GradientStopEditor
+const GRADIENT_SURFACE_TYPES = [
+  'linearGradient',
+  'circularGradient',
+  'conicGradient',
+  'repeatLinearGradient',
+  'perlinGradient',
+  'curlGradient',
+] as const
+
+// Check if current surface is a gradient type (uses GradientStopEditor)
 // Note: CustomSurfaceParams uses 'id' field (converted from 'type' in SurfaceMapper)
-const isLinearGradient = computed(() =>
-  props.surfaceParams?.id === 'linearGradient'
+const isGradientSurface = computed(() =>
+  GRADIENT_SURFACE_TYPES.includes(props.surfaceParams?.id as typeof GRADIENT_SURFACE_TYPES[number])
 )
 
 // Convert ColorValue to RGBA
@@ -73,7 +83,7 @@ const colorValueToRgba = (color: ColorValue): RGBA => {
 
 // Get gradient stops from params or create default from colors
 const gradientStops = computed<GradientStop[]>(() => {
-  if (!isLinearGradient.value || !props.surfaceParams) return []
+  if (!isGradientSurface.value || !props.surfaceParams) return []
 
   // Check for custom stops (with ColorValue)
   const stopsData = props.surfaceParams.gradientStops as Array<{ id: string; color: ColorValue; position: number }> | undefined
@@ -152,12 +162,12 @@ const updateGradientStops = (stops: GradientStop[]) => {
         :raw-params="rawSurfaceParams"
         :palette="primitivePalette"
         :columns="1"
-        :exclude="isLinearGradient ? ['color1', 'color2'] : []"
+        :exclude="isGradientSurface ? ['color1', 'color2'] : []"
         @update:field="(key, value) => emit('update:surfaceParam', key, value)"
       />
-      <!-- Gradient Stop Editor for linearGradient -->
+      <!-- Gradient Stop Editor for gradient surfaces -->
       <GradientStopEditor
-        v-if="isLinearGradient"
+        v-if="isGradientSurface"
         :model-value="gradientStops"
         :palette="primitivePalette"
         @update:model-value="updateGradientStops"

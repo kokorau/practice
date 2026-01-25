@@ -255,6 +255,16 @@ export const useHeroPatternPresets = (
         setBaseSurface({ id: 'checker', params: toPropertyValueParams({ cellSize: params.cellSize, angle: params.angle }) })
       } else if (params.id === 'linearGradient') {
         setBaseSurface({ id: 'linearGradient', params: toPropertyValueParams({ angle: params.angle, centerX: params.centerX, centerY: params.centerY }) })
+      } else if (params.id === 'circularGradient') {
+        setBaseSurface({ id: 'circularGradient', params: toPropertyValueParams({ centerX: params.centerX, centerY: params.centerY, circularInvert: params.circularInvert }) })
+      } else if (params.id === 'conicGradient') {
+        setBaseSurface({ id: 'conicGradient', params: toPropertyValueParams({ centerX: params.centerX, centerY: params.centerY, startAngle: params.startAngle, sweepAngle: params.sweepAngle }) })
+      } else if (params.id === 'repeatLinearGradient') {
+        setBaseSurface({ id: 'repeatLinearGradient', params: toPropertyValueParams({ angle: params.angle, centerX: params.centerX, centerY: params.centerY, repeat: params.repeat }) })
+      } else if (params.id === 'perlinGradient') {
+        setBaseSurface({ id: 'perlinGradient', params: toPropertyValueParams({ scale: params.scale, octaves: params.octaves, seed: params.seed, contrast: params.contrast, offset: params.offset }) })
+      } else if (params.id === 'curlGradient') {
+        setBaseSurface({ id: 'curlGradient', params: toPropertyValueParams({ scale: params.scale, octaves: params.octaves, seed: params.seed, contrast: params.contrast, offset: params.offset, intensity: params.intensity }) })
       } else if (params.id === 'gradientGrainLinear' || params.id === 'gradientGrainCircular' || params.id === 'gradientGrainRadial' || params.id === 'gradientGrainPerlin' || params.id === 'gradientGrainCurl') {
         customBackgroundSurfaceParams.value = params
       } else if (params.id === 'asanoha') {

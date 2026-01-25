@@ -246,6 +246,11 @@ export type {
   CheckerSurfaceParams,
   TriangleSurfaceParams,
   HexagonSurfaceParams,
+  CircularGradientSurfaceParams,
+  ConicGradientSurfaceParams,
+  RepeatLinearGradientSurfaceParams,
+  PerlinGradientSurfaceParams,
+  CurlGradientSurfaceParams,
 } from './Domain'
 
 // Shape and Surface Schemas

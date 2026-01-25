@@ -281,6 +281,111 @@ export function createBackgroundSpecFromSurface(
       viewport
     )
   }
+  // Circular gradient (center outward)
+  if (surface.type === 'circularGradient') {
+    const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
+      ? surface.stops as Array<{ color: RGBA; position: number }>
+      : [
+          { color: color1, position: 0 },
+          { color: color2, position: 1 },
+        ]
+    return createLinearGradientSpec(
+      {
+        depthMapType: 'circular',
+        angle: 0,
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        circularInvert: surface.circularInvert,
+        stops,
+      },
+      viewport
+    )
+  }
+  // Conic gradient (angle-based)
+  if (surface.type === 'conicGradient') {
+    const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
+      ? surface.stops as Array<{ color: RGBA; position: number }>
+      : [
+          { color: color1, position: 0 },
+          { color: color2, position: 1 },
+        ]
+    return createLinearGradientSpec(
+      {
+        depthMapType: 'radial',
+        angle: 0,
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        radialStartAngle: surface.startAngle,
+        radialSweepAngle: surface.sweepAngle,
+        stops,
+      },
+      viewport
+    )
+  }
+  // Repeat linear gradient
+  if (surface.type === 'repeatLinearGradient') {
+    const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
+      ? surface.stops as Array<{ color: RGBA; position: number }>
+      : [
+          { color: color1, position: 0 },
+          { color: color2, position: 1 },
+        ]
+    return createLinearGradientSpec(
+      {
+        angle: surface.angle,
+        centerX: surface.centerX,
+        centerY: surface.centerY,
+        repeat: surface.repeat,
+        stops,
+      },
+      viewport
+    )
+  }
+  // Perlin gradient
+  if (surface.type === 'perlinGradient') {
+    const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
+      ? surface.stops as Array<{ color: RGBA; position: number }>
+      : [
+          { color: color1, position: 0 },
+          { color: color2, position: 1 },
+        ]
+    return createLinearGradientSpec(
+      {
+        depthMapType: 'perlin',
+        angle: 0,
+        perlinScale: surface.scale,
+        perlinOctaves: surface.octaves,
+        perlinSeed: surface.seed,
+        perlinContrast: surface.contrast,
+        perlinOffset: surface.offset,
+        stops,
+      },
+      viewport
+    )
+  }
+  // Curl gradient
+  if (surface.type === 'curlGradient') {
+    const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
+      ? surface.stops as Array<{ color: RGBA; position: number }>
+      : [
+          { color: color1, position: 0 },
+          { color: color2, position: 1 },
+        ]
+    return createLinearGradientSpec(
+      {
+        depthMapType: 'curl',
+        angle: 0,
+        perlinScale: surface.scale,
+        perlinOctaves: surface.octaves,
+        perlinSeed: surface.seed,
+        perlinContrast: surface.contrast,
+        perlinOffset: surface.offset,
+        curlIntensity: surface.intensity,
+        stops,
+      },
+      viewport
+    )
+  }
   if (surface.type === 'gradientGrainLinear') {
     return createGradientGrainLinearSpec(
       {
