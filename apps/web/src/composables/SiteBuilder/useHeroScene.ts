@@ -302,6 +302,15 @@ export interface GradientGrainSimplexSurfaceParams {
 }
 
 /**
+ * Linear gradient surface params (smooth 2-color gradient without grain)
+ */
+export interface LinearGradientSurfaceParams {
+  angle: number
+  centerX: number
+  centerY: number
+}
+
+/**
  * Custom surface params union type
  * Uses 'id' field for consistency with NormalizedSurfaceConfig
  */
@@ -311,6 +320,7 @@ export type CustomSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
   | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
@@ -336,6 +346,7 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
   | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)

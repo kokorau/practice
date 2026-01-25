@@ -256,6 +256,15 @@ export interface PaperTextureSurfaceParams {
 }
 
 /**
+ * Linear gradient surface params (smooth 2-color gradient without grain)
+ */
+export interface LinearGradientSurfaceParams {
+  angle: number
+  centerX: number
+  centerY: number
+}
+
+/**
  * Custom surface params union type (for midground - includes solid, checker, and gradientGrain variants)
  * Uses 'id' field for consistency with NormalizedSurfaceConfig
  */
@@ -265,6 +274,7 @@ export type CustomSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
@@ -291,6 +301,7 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'grid' } & GridSurfaceParams)
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
+  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)

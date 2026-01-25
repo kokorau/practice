@@ -19,6 +19,7 @@ import {
   createGridSpec,
   createPolkaDotSpec,
   createCheckerSpec,
+  createLinearGradientSpec,
   createTriangleSpec,
   createHexagonSpec,
   createAsanohaSpec,
@@ -169,6 +170,16 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
           cellSize: params.cellSize,
           angle: params.angle,
         })
+      case 'linearGradient':
+        return createLinearGradientSpec({
+          angle: params.angle,
+          centerX: params.centerX,
+          centerY: params.centerY,
+          stops: [
+            { color: color1, position: 0 },
+            { color: color2, position: 1 },
+          ],
+        }, viewport)
       case 'gradientGrainLinear':
         return createGradientGrainLinearSpec({
           angle: params.angle,
