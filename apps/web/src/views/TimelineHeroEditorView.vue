@@ -14,7 +14,7 @@ import {
   createSurfacePatterns,
   LAYER_IDS,
 } from '../composables/SiteBuilder'
-import { createInMemoryHeroViewPresetRepository } from '@practice/section-visual'
+import { createInMemoryHeroViewPresetRepository, buildDependencyGraph, type DependencyGraph } from '@practice/section-visual'
 import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useFilterEditor } from '../composables/useFilterEditor'
@@ -145,6 +145,15 @@ watch(selectedTimeline, (timeline) => {
     timelineEditor.syncTracks(timeline.tracks.map(t => t.id))
   }
 }, { immediate: true })
+
+// ============================================================
+// Dependency Graph (for Timeline Panel)
+// ============================================================
+const dependencyGraph = computed<DependencyGraph | null>(() => {
+  const config = heroScene.editor.heroViewConfig.value
+  if (!config) return null
+  return buildDependencyGraph(config)
+})
 
 // ============================================================
 // Filter Editor (Composable)
@@ -510,6 +519,7 @@ const panelMask = computed(() => ({
         :visible-duration="VISIBLE_DURATION"
         :selected-track-id="selectedTrackId"
         :get-track-key="timelineEditor.getTrackKey"
+        :dependency-graph="dependencyGraph"
         @update:frame-state="handleFrameStateUpdate"
         @select:track="onSelectTrack"
         @contextmenu:track="onTrackContextMenu"

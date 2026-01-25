@@ -616,3 +616,35 @@ export type {
   RightPanelMaskProps,
   RightPanelFilterProps,
 } from './types'
+
+// Domain - Dependency Extraction & Graph
+export {
+  extractTrackIdsFromParams,
+  extractTrackIdsFromHeroViewConfig,
+  extractTrackIdsFromLayers,
+  buildDependencyGraph,
+  buildDependencyGraphFromLayers,
+  getSourcesForTrack,
+  hasTrackDependency,
+  getAllTrackIds,
+  getTrackDependencyCounts,
+  groupSourcesByType,
+  getLayersWithDependencies,
+} from './Domain'
+
+export type {
+  DependencySourceType,
+  DependencySource,
+  TrackDependency,
+  DependencyGraph,
+} from './Domain'
+
+// Domain - Layer Display Helpers
+export {
+  getLayerIcon,
+  getLayerLabel,
+  getDependencySourceIcon,
+  getDependencySourceLabel,
+} from './Domain'
+
+export type { DisplayLayerVariant } from './Domain'

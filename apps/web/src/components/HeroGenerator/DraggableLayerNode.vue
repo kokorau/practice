@@ -11,14 +11,11 @@
 
 import { computed, ref, inject } from 'vue'
 import { onClickOutside } from '@vueuse/core'
-import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig, MaskProcessorConfig, ModifierDropPosition, LayerDropPosition, SingleEffectConfig, SurfaceLayerNodeConfig, BaseLayerNodeConfig } from '@practice/section-visual'
-import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
+import type { LayerNodeConfig, GroupLayerNodeConfig, ProcessorNodeConfig, ProcessorConfig, MaskProcessorConfig, ModifierDropPosition, LayerDropPosition, SingleEffectConfig, SurfaceLayerNodeConfig, BaseLayerNodeConfig, DisplayLayerVariant } from '@practice/section-visual'
+import { isGroupLayerConfig, isProcessorLayerConfig, isSurfaceLayerConfig, isBaseLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isSingleEffectConfig, getLayerIcon } from '@practice/section-visual'
 import { LAYER_DRAG_KEY, type DropTarget } from '../../composables/useLayerDragAndDrop'
 import { MODIFIER_DRAG_KEY, type ModifierDropTarget } from '../../composables/useModifierDragAndDrop'
 import DropIndicator from './DropIndicator.vue'
-
-// Layer variant type for UI display
-type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' | 'processor'
 
 // Helper functions for modifier type checking
 const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
@@ -157,7 +154,7 @@ const hasChildProcessorBelow = (index: number): boolean => {
 }
 
 // Get node variant for display
-const nodeVariant = computed((): LayerVariant => {
+const nodeVariant = computed((): DisplayLayerVariant => {
   const node = props.node
   if (isBaseLayerConfig(node)) return 'base'
   if (isSurfaceLayerConfig(node)) return 'surface'
@@ -217,23 +214,6 @@ const modifiers = computed(() => {
 
   return result
 })
-
-// ============================================================
-// Icon & Label Helpers
-// ============================================================
-
-const getLayerIcon = (variant: LayerVariant): string => {
-  switch (variant) {
-    case 'base': return 'gradient'
-    case 'surface': return 'texture'
-    case 'group': return 'folder_open'
-    case 'processor': return 'tune'
-    case 'model3d': return 'view_in_ar'
-    case 'image': return 'image'
-    case 'text': return 'text_fields'
-    default: return 'layers'
-  }
-}
 
 // ============================================================
 // Event Handlers

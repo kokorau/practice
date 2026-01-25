@@ -4,6 +4,8 @@ import type { Timeline, Track, TrackId, RenderContext, Ms, PhaseLayout, Phase, F
 import { createCanvasTrackRenderer } from '@practice/timeline'
 import { useTimelinePlayer } from '../../modules/Timeline/Application/useTimelinePlayer'
 import TrackKeyBadge from './TrackKeyBadge.vue'
+import TrackDependencyPopup from './TrackDependencyPopup.vue'
+import type { DependencyGraph, DependencySource } from '@practice/section-visual'
 
 // ============================================================
 // Props & Emits
@@ -13,10 +15,12 @@ const props = withDefaults(defineProps<{
   visibleDuration?: Ms
   selectedTrackId?: TrackId | null
   getTrackKey?: (trackId: TrackId) => string | undefined
+  dependencyGraph?: DependencyGraph | null
 }>(), {
   visibleDuration: 30000 as Ms,
   selectedTrackId: null,
   getTrackKey: undefined,
+  dependencyGraph: null,
 })
 
 const emit = defineEmits<{
@@ -314,6 +318,40 @@ onMounted(() => {
   nextTick(() => redrawAllCanvases())
 })
 
+// ============================================================
+// Dependency Popup
+// ============================================================
+const showDependencyPopup = ref(false)
+const dependencyPopupTrackId = ref<string | null>(null)
+const dependencyPopupPosition = ref({ x: 0, y: 0 })
+
+const dependencyPopupSources = computed<DependencySource[]>(() => {
+  if (!props.dependencyGraph || !dependencyPopupTrackId.value) return []
+  const dep = props.dependencyGraph.dependencies.get(dependencyPopupTrackId.value)
+  return dep?.sources ?? []
+})
+
+function getTrackDependencyCount(trackId: string): number {
+  if (!props.dependencyGraph) return 0
+  const dep = props.dependencyGraph.dependencies.get(trackId)
+  return dep?.sources.length ?? 0
+}
+
+function openDependencyPopup(trackId: string, event: MouseEvent) {
+  event.stopPropagation()
+  dependencyPopupTrackId.value = trackId
+  dependencyPopupPosition.value = {
+    x: event.clientX + 8,
+    y: event.clientY - 8,
+  }
+  showDependencyPopup.value = true
+}
+
+function closeDependencyPopup() {
+  showDependencyPopup.value = false
+  dependencyPopupTrackId.value = null
+}
+
 // Expose methods and intensityProvider for parent component
 defineExpose({
   play: () => { if (!isPlaying.value) toggle() },
@@ -422,6 +460,15 @@ defineExpose({
           >
             <TrackKeyBadge :track-key="getTrackKey?.(track.id) ?? indexToLetter(index)" />
             <span class="track-name">{{ track.name }}</span>
+            <button
+              v-if="dependencyGraph && getTrackDependencyCount(track.id) > 0"
+              class="dependency-button"
+              :title="`${getTrackDependencyCount(track.id)} dependencies`"
+              @click="openDependencyPopup(track.id, $event)"
+            >
+              <span class="material-icons">link</span>
+              <span class="dependency-count">{{ getTrackDependencyCount(track.id) }}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -472,6 +519,22 @@ defineExpose({
         <div class="playhead-line" :style="{ left: `${playheadPercent}%` }" />
       </div>
     </div>
+
+    <!-- Dependency Popup -->
+    <Teleport to="body">
+      <TrackDependencyPopup
+        v-if="showDependencyPopup && dependencyPopupTrackId"
+        :track-id="dependencyPopupTrackId"
+        :sources="dependencyPopupSources"
+        :position="dependencyPopupPosition"
+        @close="closeDependencyPopup"
+      />
+      <div
+        v-if="showDependencyPopup"
+        class="popup-backdrop"
+        @click="closeDependencyPopup"
+      />
+    </Teleport>
   </div>
 </template>
 
@@ -684,6 +747,46 @@ defineExpose({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Dependency Button */
+.dependency-button {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 4px;
+  background: oklch(0.90 0.03 250);
+  color: oklch(0.45 0.10 250);
+  cursor: pointer;
+  font-size: 0.625rem;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.dependency-button:hover {
+  background: oklch(0.85 0.08 250);
+  color: oklch(0.35 0.15 250);
+}
+
+.dependency-button .material-icons {
+  font-size: 14px;
+}
+
+.dependency-count {
+  font-weight: 500;
+  font-family: ui-monospace, 'SF Mono', monospace;
+}
+
+/* Popup Backdrop (global, not scoped) */
+.popup-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
 }
 
 /* Ruler Container (horizontal scroll) */

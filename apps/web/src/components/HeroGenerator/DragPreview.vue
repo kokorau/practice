@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { LayerNodeConfig } from '@practice/section-visual'
-import { findLayerInTree, isBaseLayerConfig, isSurfaceLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isGroupLayerConfig, isProcessorLayerConfig } from '@practice/section-visual'
-
-// Layer variant type for UI display
-type LayerVariant = 'base' | 'surface' | 'group' | 'model3d' | 'image' | 'text' | 'processor'
+import type { LayerNodeConfig, DisplayLayerVariant } from '@practice/section-visual'
+import { findLayerInTree, isBaseLayerConfig, isSurfaceLayerConfig, isTextLayerConfig, isModel3DLayerConfig, isImageLayerConfig, isGroupLayerConfig, isProcessorLayerConfig, getLayerIcon } from '@practice/section-visual'
 
 const props = defineProps<{
   /** All layers in the tree */
@@ -17,7 +14,7 @@ const props = defineProps<{
 
 const node = computed(() => findLayerInTree(props.layers, props.nodeId))
 
-const nodeVariant = computed((): LayerVariant | 'group' => {
+const nodeVariant = computed((): DisplayLayerVariant => {
   const n = node.value
   if (!n) return 'group'
   if (isBaseLayerConfig(n)) return 'base'
@@ -29,19 +26,6 @@ const nodeVariant = computed((): LayerVariant | 'group' => {
   if (isGroupLayerConfig(n)) return 'group'
   return 'surface' // fallback
 })
-
-const getLayerIcon = (variant: LayerVariant | 'group'): string => {
-  switch (variant) {
-    case 'base': return 'gradient'
-    case 'surface': return 'texture'
-    case 'group': return 'folder_open'
-    case 'model3d': return 'view_in_ar'
-    case 'image': return 'image'
-    case 'text': return 'text_fields'
-    case 'processor': return 'auto_fix_high'
-    default: return 'layers'
-  }
-}
 
 const style = computed(() => ({
   left: `${props.position.x + 12}px`,

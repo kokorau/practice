@@ -1198,3 +1198,15 @@ export {
   type TrackDependency,
   type DependencyGraph,
 } from './DependencyGraph'
+
+// ============================================================
+// Layer Display Helpers
+// ============================================================
+
+export {
+  getLayerIcon,
+  getLayerLabel,
+  getDependencySourceIcon,
+  getDependencySourceLabel,
+  type DisplayLayerVariant,
+} from './LayerDisplay'
