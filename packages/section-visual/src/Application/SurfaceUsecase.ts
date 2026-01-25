@@ -155,9 +155,9 @@ export interface SurfaceUsecase {
    * 既存のPropertyValue型（range等）を保持しながら、指定されたパラメータのみを更新
    * @param layerId レイヤーID
    * @param paramName パラメータ名
-   * @param value 新しい値
+   * @param value 新しい値（プリミティブ値またはPropertyValue）
    */
-  updateSingleSurfaceParam(layerId: string, paramName: string, value: string | number | boolean | ColorValue): void
+  updateSingleSurfaceParam(layerId: string, paramName: string, value: string | number | boolean | ColorValue | PropertyValue): void
 
   /**
    * 指定プロセッサーレイヤーのマスク形状パラメータを更新
@@ -305,7 +305,7 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       repository.updateLayer(layerId, { surface: newSurface })
     },
 
-    updateSingleSurfaceParam(layerId: string, paramName: string, value: string | number | boolean | ColorValue): void {
+    updateSingleSurfaceParam(layerId: string, paramName: string, value: string | number | boolean | ColorValue | PropertyValue): void {
       const layer = repository.findLayer(layerId)
       if (!layer) return
 
@@ -314,12 +314,20 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
 
       const currentSurface = layer.surface
 
-      // 既存のパラメータを保持しつつ、指定されたパラメータのみを static 値で更新
+      // Determine if value is already a PropertyValue or needs wrapping
+      const isPropertyValue = (v: unknown): v is PropertyValue =>
+        v !== null && typeof v === 'object' && 'type' in v && (v.type === 'static' || v.type === 'range')
+
+      const newParamValue: PropertyValue = isPropertyValue(value)
+        ? value
+        : $PropertyValue.static(value)
+
+      // 既存のパラメータを保持しつつ、指定されたパラメータのみを更新
       const newSurface: NormalizedSurfaceConfig = {
         id: currentSurface.id,
         params: {
           ...currentSurface.params,
-          [paramName]: $PropertyValue.static(value),
+          [paramName]: newParamValue,
         },
       }
       repository.updateLayer(layerId, { surface: newSurface })

@@ -83,7 +83,7 @@ const getColorValue = (key: string, defaultValue: unknown): ColorValue => {
         :model-value="(modelValue[field.key] as number) ?? field.schema.default"
         :raw-value="rawParams?.[field.key]"
         @update:model-value="updateField(field.key, $event)"
-        @update:raw-value="emit('update:rawValue', field.key, $event)"
+        @update:raw-value="(v) => { emit('update:rawValue', field.key, v); emit('update:field', field.key, v) }"
       />
 
       <!-- Boolean field: checkbox -->

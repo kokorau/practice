@@ -29,14 +29,9 @@ import {
   type SurfaceUsecase,
   type SurfaceParamsUpdate,
   type MaskShapeParamsUpdate,
-  type SurfaceLayerNodeConfig,
-  type ProcessorNodeConfig,
   toCustomSurfaceParams,
   toCustomBackgroundSurfaceParams,
   $PropertyValue,
-  flattenLayersInTree,
-  isProcessorLayerConfig,
-  isMaskProcessorConfig,
 } from '@practice/section-visual'
 
 /**
@@ -86,10 +81,10 @@ export interface UseHeroPatternPresetsReturn {
   updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams>) => void
   updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams>) => void
   updateBackgroundSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => void
-  /** 背景サーフェスの単一パラメータを更新（既存のPropertyValue型を保持） */
-  updateSingleBackgroundSurfaceParam: (paramName: string, value: string | number | boolean) => void
-  /** マスクサーフェスの単一パラメータを更新（既存のPropertyValue型を保持） */
-  updateSingleSurfaceParam: (paramName: string, value: string | number | boolean) => void
+  /** 背景サーフェスの単一パラメータを更新（既存のPropertyValue型を保持、DSL/range対応） */
+  updateSingleBackgroundSurfaceParam: (paramName: string, value: unknown) => void
+  /** マスクサーフェスの単一パラメータを更新（既存のPropertyValue型を保持、DSL/range対応） */
+  updateSingleSurfaceParam: (paramName: string, value: unknown) => void
 }
 
 export const useHeroPatternPresets = (
@@ -120,61 +115,12 @@ export const useHeroPatternPresets = (
     heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
   }
 
-  /**
-   * Find the first processor with a mask modifier
-   */
-  const findFirstMaskProcessor = (): { processorId: string; modifierIndex: number } | null => {
-    const config = heroViewRepository.get()
-    for (const layer of flattenLayersInTree(config.layers)) {
-      if (isProcessorLayerConfig(layer)) {
-        const processorLayer = layer as ProcessorNodeConfig
-        const modifierIndex = processorLayer.modifiers.findIndex(isMaskProcessorConfig)
-        if (modifierIndex !== -1) {
-          return { processorId: layer.id, modifierIndex }
-        }
-      }
-    }
-    return null
-  }
-
-  /**
-   * Convert MaskPatternLayer[] to SurfaceLayerNodeConfig[]
-   */
-  const convertPatternChildrenToLayers = (
-    children: MaskPattern['children']
-  ): SurfaceLayerNodeConfig[] => {
-    if (!children) return []
-    return children.map((child, index) => ({
-      type: 'surface' as const,
-      id: `mask-child-${Date.now()}-${index}`,
-      name: child.name,
-      visible: child.visible,
-      surface: {
-        id: child.surface.id as SurfaceLayerNodeConfig['surface']['id'],
-        params: child.surface.params as SurfaceLayerNodeConfig['surface']['params'],
-      },
-    }))
-  }
-
   const initMaskShapeParamsFromPreset = () => {
     const idx = selectedMaskIndex.value
     if (idx === null) return
     const pattern = maskPatterns[idx]
     if (pattern && pattern.children && pattern.children.length > 0) {
-      // Find the processor with mask modifier
-      const maskProcessor = findFirstMaskProcessor()
-      if (maskProcessor) {
-        // Convert pattern children to SurfaceLayerNodeConfig[]
-        const newChildren = convertPatternChildrenToLayers(pattern.children)
-        // Replace mask children in repository
-        heroViewRepository.replaceMaskChildren(
-          maskProcessor.processorId,
-          maskProcessor.modifierIndex,
-          newChildren
-        )
-      }
-
-      // Also update UI params for backward compatibility
+      // Children-based mask pattern: use first child's surface config
       const firstChild = pattern.children[0]
       if (firstChild && firstChild.type === 'surface') {
         const surfaceId = firstChild.surface.id
@@ -301,15 +247,17 @@ export const useHeroPatternPresets = (
     surfaceUsecase.updateSurfaceParamsForLayer(BASE_LAYER_ID, { id: surfaceId, ...updates } as SurfaceParamsUpdate)
   }
 
-  const updateSingleBackgroundSurfaceParam = (paramName: string, value: string | number | boolean) => {
+  const updateSingleBackgroundSurfaceParam = (paramName: string, value: unknown) => {
     // Delegate to SurfaceUsecase - preserves existing PropertyValue types for other params
-    surfaceUsecase.updateSingleSurfaceParam(BASE_LAYER_ID, paramName, value)
+    // Accepts PropertyValue (range, dsl) or primitive values
+    surfaceUsecase.updateSingleSurfaceParam(BASE_LAYER_ID, paramName, value as string | number | boolean)
   }
 
-  const updateSingleSurfaceParam = (paramName: string, value: string | number | boolean) => {
+  const updateSingleSurfaceParam = (paramName: string, value: unknown) => {
     const targetLayerId = selectedLayerId.value || 'surface-mask'
     // Delegate to SurfaceUsecase - preserves existing PropertyValue types for other params
-    surfaceUsecase.updateSingleSurfaceParam(targetLayerId, paramName, value)
+    // Accepts PropertyValue (range, dsl) or primitive values
+    surfaceUsecase.updateSingleSurfaceParam(targetLayerId, paramName, value as string | number | boolean)
   }
 
   return {

@@ -29,13 +29,13 @@ export type ForegroundElementRefs = Pick<
 
 export interface BackgroundState {
   updateBackgroundSurfaceParams: (params: Record<string, unknown>) => void
-  updateSingleBackgroundSurfaceParam: (paramName: string, value: string | number | boolean) => void
+  updateSingleBackgroundSurfaceParam: (paramName: string, value: unknown) => void
 }
 
 export interface MaskState {
   updateSurfaceParams: (params: Record<string, unknown>) => void
   updateMaskShapeParams: (params: Record<string, unknown>) => void
-  updateSingleSurfaceParam: (paramName: string, value: string | number | boolean) => void
+  updateSingleSurfaceParam: (paramName: string, value: unknown) => void
 }
 
 export interface PatternState {
@@ -121,11 +121,13 @@ export const useHeroGeneratorPanelHandlers = (
   }
 
   const handleBackgroundParamUpdate = (paramName: string, value: unknown) => {
-    background.updateSingleBackgroundSurfaceParam(paramName, value as string | number | boolean)
+    // Pass value directly - can be primitive or PropertyValue (range, dsl)
+    background.updateSingleBackgroundSurfaceParam(paramName, value)
   }
 
   const handleMaskParamUpdate = (paramName: string, value: unknown) => {
-    mask.updateSingleSurfaceParam(paramName, value as string | number | boolean)
+    // Pass value directly - can be primitive or PropertyValue (range, dsl)
+    mask.updateSingleSurfaceParam(paramName, value)
   }
 
   return {

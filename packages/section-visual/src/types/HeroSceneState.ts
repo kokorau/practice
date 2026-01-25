@@ -401,8 +401,8 @@ export interface BackgroundState {
   readonly currentBackgroundSurfaceSchema: ComputedRef<ObjectSchema | null>
   /** Update background surface params */
   readonly updateBackgroundSurfaceParams: (updates: Partial<SurfaceParamsUpdate>) => void
-  /** Update single background surface param (preserves existing PropertyValue types) */
-  readonly updateSingleBackgroundSurfaceParam: (paramName: string, value: string | number | boolean) => void
+  /** Update single background surface param (preserves existing PropertyValue types, accepts PropertyValue for DSL/range) */
+  readonly updateSingleBackgroundSurfaceParam: (paramName: string, value: unknown) => void
 }
 
 // ============================================================
@@ -442,8 +442,8 @@ export interface MaskState {
   readonly updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams | PerlinMaskShapeParams | LinearGradientMaskShapeParams | RadialGradientMaskShapeParams | BoxGradientMaskShapeParams | WavyLineMaskShapeParams>) => void
   /** Update surface params */
   readonly updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => void
-  /** Update single surface param (preserves existing PropertyValue types) */
-  readonly updateSingleSurfaceParam: (paramName: string, value: string | number | boolean) => void
+  /** Update single surface param (preserves existing PropertyValue types, accepts PropertyValue for DSL/range) */
+  readonly updateSingleSurfaceParam: (paramName: string, value: unknown) => void
 
   /** Processor target info (derived from current selection) */
   readonly processorTarget: ComputedRef<ProcessorTarget>
