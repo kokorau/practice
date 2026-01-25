@@ -255,6 +255,8 @@ const {
   handleForegroundUpdate,
   handleBackgroundUpdate,
   handleMaskUpdate,
+  handleBackgroundParamUpdate,
+  handleMaskParamUpdate,
 } = useHeroGeneratorPanelHandlers({
   foregroundRefs: foregroundElement,
   background: heroScene.background,
@@ -493,6 +495,8 @@ const panelMask = computed(() => ({
         @update:foreground="handleForegroundUpdate"
         @update:background="handleBackgroundUpdate"
         @update:mask="handleMaskUpdate"
+        @update:background-param="handleBackgroundParamUpdate"
+        @update:mask-param="handleMaskParamUpdate"
         @update:image="handleImageUpdate"
       />
     </div>

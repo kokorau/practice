@@ -81,6 +81,10 @@ export interface UseHeroPatternPresetsReturn {
   updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams>) => void
   updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams>) => void
   updateBackgroundSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => void
+  /** 背景サーフェスの単一パラメータを更新（既存のPropertyValue型を保持、DSL/range対応） */
+  updateSingleBackgroundSurfaceParam: (paramName: string, value: unknown) => void
+  /** マスクサーフェスの単一パラメータを更新（既存のPropertyValue型を保持、DSL/range対応） */
+  updateSingleSurfaceParam: (paramName: string, value: unknown) => void
 }
 
 export const useHeroPatternPresets = (
@@ -243,6 +247,19 @@ export const useHeroPatternPresets = (
     surfaceUsecase.updateSurfaceParamsForLayer(BASE_LAYER_ID, { id: surfaceId, ...updates } as SurfaceParamsUpdate)
   }
 
+  const updateSingleBackgroundSurfaceParam = (paramName: string, value: unknown) => {
+    // Delegate to SurfaceUsecase - preserves existing PropertyValue types for other params
+    // Accepts PropertyValue (range, dsl) or primitive values
+    surfaceUsecase.updateSingleSurfaceParam(BASE_LAYER_ID, paramName, value as string | number | boolean)
+  }
+
+  const updateSingleSurfaceParam = (paramName: string, value: unknown) => {
+    const targetLayerId = selectedLayerId.value || 'surface-mask'
+    // Delegate to SurfaceUsecase - preserves existing PropertyValue types for other params
+    // Accepts PropertyValue (range, dsl) or primitive values
+    surfaceUsecase.updateSingleSurfaceParam(targetLayerId, paramName, value as string | number | boolean)
+  }
+
   return {
     surfacePresets,
     setBaseSurface,
@@ -252,5 +269,7 @@ export const useHeroPatternPresets = (
     updateMaskShapeParams,
     updateSurfaceParams,
     updateBackgroundSurfaceParams,
+    updateSingleBackgroundSurfaceParam,
+    updateSingleSurfaceParam,
   }
 }

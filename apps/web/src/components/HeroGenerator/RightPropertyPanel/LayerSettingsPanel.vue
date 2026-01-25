@@ -19,7 +19,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'select-pattern', index: number | null): void
-  (e: 'update:surfaceParams', value: Record<string, unknown>): void
+  /** Single param update - preserves other PropertyValue types */
+  (e: 'update:surfaceParam', key: string, value: unknown): void
 }>()
 
 // Surface params should be shown when schema and params exist
@@ -65,7 +66,7 @@ const shouldShowSurfaceParams = (): boolean => {
         :raw-params="rawSurfaceParams"
         :palette="primitivePalette"
         :columns="1"
-        @update:model-value="emit('update:surfaceParams', $event)"
+        @update:field="(key, value) => emit('update:surfaceParam', key, value)"
       />
     </div>
   </div>

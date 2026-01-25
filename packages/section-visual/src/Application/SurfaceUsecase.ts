@@ -20,8 +20,68 @@ import type { ColorValue } from '../Domain/SectionVisual'
 import { fromCustomSurfaceParams } from '../Domain/SurfaceMapper'
 import { fromCustomMaskShapeParams } from '../Domain/MaskShapeMapper'
 import type { CustomSurfaceParams, CustomMaskShapeParams } from '../types/HeroSceneState'
-import type { PropertyValue } from '../Domain/SectionVisual'
+import type { PropertyValue, RangeExpr } from '../Domain/SectionVisual'
 import { $PropertyValue } from '../Domain/SectionVisual'
+
+/**
+ * DslExpr from UI layer - represents a parsed DSL expression
+ */
+interface DslExpr {
+  type: 'dsl'
+  expression: string
+  ast: {
+    type: string
+    name?: string
+    args?: Array<{ type: string; path?: string; value?: number }>
+  }
+}
+
+/**
+ * Check if value is a DslExpr
+ */
+function isDslExpr(value: unknown): value is DslExpr {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'type' in value &&
+    value.type === 'dsl' &&
+    'ast' in value
+  )
+}
+
+/**
+ * Convert DslExpr to PropertyValue (currently supports range() only)
+ * Throws error for unsupported DSL expressions
+ */
+function convertDslToPropertyValue(dsl: DslExpr): PropertyValue {
+  const ast = dsl.ast
+
+  // Handle range() function call: =range(@trackId, min, max)
+  if (ast.type === 'call' && ast.name === 'range' && ast.args && ast.args.length >= 3) {
+    const [trackRef, minArg, maxArg] = ast.args
+
+    // First arg should be a reference (@trackId)
+    if (trackRef?.type !== 'reference' || !trackRef.path) {
+      throw new Error(`Invalid range() first argument: expected @trackId reference`)
+    }
+
+    // Second and third args should be numbers
+    if (minArg?.type !== 'number' || maxArg?.type !== 'number') {
+      throw new Error(`Invalid range() arguments: expected numeric min and max`)
+    }
+
+    const rangeExpr: RangeExpr = {
+      type: 'range',
+      trackId: trackRef.path,
+      min: minArg.value ?? 0,
+      max: maxArg.value ?? 1,
+    }
+
+    return rangeExpr
+  }
+
+  throw new Error(`Unsupported DSL expression: ${dsl.expression}`)
+}
 
 /**
  * Convert raw param values to PropertyValue format
@@ -149,6 +209,15 @@ export interface SurfaceUsecase {
    * @param params 更新するパラメータ
    */
   updateSurfaceParamsForLayer(layerId: string, params: SurfaceParamsUpdate): void
+
+  /**
+   * 指定レイヤーの単一サーフェスパラメータを更新
+   * 既存のPropertyValue型（range等）を保持しながら、指定されたパラメータのみを更新
+   * @param layerId レイヤーID
+   * @param paramName パラメータ名
+   * @param value 新しい値（プリミティブ値またはPropertyValue）
+   */
+  updateSingleSurfaceParam(layerId: string, paramName: string, value: string | number | boolean | ColorValue | PropertyValue): void
 
   /**
    * 指定プロセッサーレイヤーのマスク形状パラメータを更新
@@ -292,6 +361,45 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       const newSurface: NormalizedSurfaceConfig = {
         id: currentSurface.id,
         params: { ...currentSurface.params, ...toPropertyValueParams(updateParams) },
+      }
+      repository.updateLayer(layerId, { surface: newSurface })
+    },
+
+    updateSingleSurfaceParam(layerId: string, paramName: string, value: string | number | boolean | ColorValue | PropertyValue): void {
+      const layer = repository.findLayer(layerId)
+      if (!layer) return
+
+      // base or surface layer のみ対応
+      if (layer.type !== 'base' && layer.type !== 'surface') return
+
+      const currentSurface = layer.surface
+
+      // Determine the PropertyValue to store
+      let newParamValue: PropertyValue
+
+      // Check if it's a DslExpr (from UI DSL input) - convert to PropertyValue
+      if (isDslExpr(value)) {
+        try {
+          newParamValue = convertDslToPropertyValue(value)
+        } catch (e) {
+          console.warn('[SurfaceUsecase] Failed to convert DSL expression:', e)
+          return // Don't update if conversion fails
+        }
+      } else if ($PropertyValue.isPropertyValue(value)) {
+        // Already a PropertyValue (static or range)
+        newParamValue = value
+      } else {
+        // Primitive value - wrap in static
+        newParamValue = $PropertyValue.static(value)
+      }
+
+      // 既存のパラメータを保持しつつ、指定されたパラメータのみを更新
+      const newSurface: NormalizedSurfaceConfig = {
+        id: currentSurface.id,
+        params: {
+          ...currentSurface.params,
+          [paramName]: newParamValue,
+        },
       }
       repository.updateLayer(layerId, { surface: newSurface })
     },

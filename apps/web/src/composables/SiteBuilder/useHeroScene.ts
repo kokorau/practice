@@ -1205,6 +1205,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     rawBackgroundSurfaceParams,
     currentBackgroundSurfaceSchema,
     updateBackgroundSurfaceParams,
+    updateSingleBackgroundSurfaceParam: heroPatternPresets.updateSingleBackgroundSurfaceParam,
   }
 
   // ProcessorTarget computed (for RightPropertyPanel mask section)
@@ -1227,6 +1228,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     currentSurfaceSchema,
     updateMaskShapeParams,
     updateSurfaceParams,
+    updateSingleSurfaceParam: heroPatternPresets.updateSingleSurfaceParam,
     processorTarget,
   }
 

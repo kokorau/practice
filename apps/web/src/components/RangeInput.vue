@@ -210,8 +210,8 @@ const handleBlur = () => {
       ast: result.ast,
     }
     emit('update:rawValue', dslValue)
-    // Emit 0 as numeric value (actual value will be computed at runtime)
-    emit('update:modelValue', 0)
+    // Don't emit update:modelValue for DSL - the actual value will be computed at runtime
+    // Emitting 0 would cause issues with single-param update flow
     inputText.value = result.expression
     return
   }
