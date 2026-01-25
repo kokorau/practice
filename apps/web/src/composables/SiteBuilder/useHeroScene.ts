@@ -16,11 +16,6 @@ import { ref, shallowRef, computed, watch, onUnmounted, type ComputedRef, type R
 import type { IntensityProvider } from '@practice/timeline'
 import {
   type SurfacePreset,
-  type SurfacePresetParams,
-  type StripePresetParams,
-  type GridPresetParams,
-  type PolkaDotPresetParams,
-  type CheckerPresetParams,
   type CircleMaskShapeParams,
   type RectMaskShapeParams,
   type BlobMaskShapeParams,
@@ -166,20 +161,6 @@ const createHeroSceneEditorState = (
  */
 export type MidgroundSurfacePreset = SurfacePreset
 
-/**
- * Pattern-based surface preset params (excludes solid and gradientGrain)
- */
-export type PatternPresetParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
-
-/**
- * Type guard to check if preset params is a pattern type
- */
-export const isPatternPresetParams = (
-  params: SurfacePresetParams
-): params is PatternPresetParams => {
-  const t = params.type
-  return t !== 'solid' && !t.startsWith('gradientGrain')
-}
 
 /**
  * Custom mask shape params union type

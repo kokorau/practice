@@ -196,21 +196,8 @@ export type {
   BoxGradientGreymapMaskParams,
   ColorizeParams,
   // Surface Presets
-  SurfacePresetType,
-  SolidPresetParams,
-  StripePresetParams,
-  GridPresetParams,
-  PolkaDotPresetParams,
-  CheckerPresetParams,
-  GradientGrainLinearPresetParams,
-  GradientGrainCircularPresetParams,
-  GradientGrainRadialPresetParams,
-  GradientGrainPerlinPresetParams,
-  GradientGrainCurlPresetParams,
-  GradientGrainSimplexPresetParams,
-  TrianglePresetParams,
-  HexagonPresetParams,
-  SurfacePresetParams,
+  SurfaceType,
+  GenericSurfaceParams,
   SurfacePreset,
   // TexturePatternSpec types
   TexturePatternSpec,
@@ -315,6 +302,19 @@ export {
 
 // Infra
 export { getDefaultTexturePatterns, getDefaultMaskPatterns, getSurfacePresets } from './Infra'
+
+// Surface Registry (centralized surface pattern definitions)
+export {
+  SURFACE_REGISTRY,
+  SURFACE_TYPES,
+  getSurfaceDefinition,
+  isValidSurfaceType,
+  getDefaultSurfaceParams,
+  getSurfacesByCategory,
+  getSurfaceCategories,
+  type SurfaceCategory,
+  type SurfaceDefinition,
+} from './Infra/SurfaceRegistry'
 
 // Text rendering
 export { renderTextToBitmap, type TextRenderOptions, type TextRenderResult } from './text/renderTextToCanvas'

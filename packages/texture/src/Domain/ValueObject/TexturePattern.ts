@@ -1,5 +1,5 @@
 import type { TextureRenderSpec } from './TextureRenderSpec'
-import type { SurfacePresetParams } from './SurfacePreset'
+import type { GenericSurfaceParams } from './SurfacePreset'
 
 /**
  * RGBA color tuple [r, g, b, a] where each value is 0-1
@@ -31,7 +31,7 @@ export interface TexturePattern {
   /** Create render specification from colors */
   createSpec: (color1: RGBA, color2: RGBA, viewport?: Viewport) => TextureRenderSpec
   /** Surface preset parameters for surfaceConfig mapping (optional for patterns without surface config) */
-  params?: SurfacePresetParams
+  params?: GenericSurfaceParams
 }
 
 /**
