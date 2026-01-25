@@ -20,8 +20,68 @@ import type { ColorValue } from '../Domain/SectionVisual'
 import { fromCustomSurfaceParams } from '../Domain/SurfaceMapper'
 import { fromCustomMaskShapeParams } from '../Domain/MaskShapeMapper'
 import type { CustomSurfaceParams, CustomMaskShapeParams } from '../types/HeroSceneState'
-import type { PropertyValue } from '../Domain/SectionVisual'
+import type { PropertyValue, RangeExpr } from '../Domain/SectionVisual'
 import { $PropertyValue } from '../Domain/SectionVisual'
+
+/**
+ * DslExpr from UI layer - represents a parsed DSL expression
+ */
+interface DslExpr {
+  type: 'dsl'
+  expression: string
+  ast: {
+    type: string
+    name?: string
+    args?: Array<{ type: string; path?: string; value?: number }>
+  }
+}
+
+/**
+ * Check if value is a DslExpr
+ */
+function isDslExpr(value: unknown): value is DslExpr {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'type' in value &&
+    value.type === 'dsl' &&
+    'ast' in value
+  )
+}
+
+/**
+ * Convert DslExpr to PropertyValue (currently supports range() only)
+ * Throws error for unsupported DSL expressions
+ */
+function convertDslToPropertyValue(dsl: DslExpr): PropertyValue {
+  const ast = dsl.ast
+
+  // Handle range() function call: =range(@trackId, min, max)
+  if (ast.type === 'call' && ast.name === 'range' && ast.args && ast.args.length >= 3) {
+    const [trackRef, minArg, maxArg] = ast.args
+
+    // First arg should be a reference (@trackId)
+    if (trackRef?.type !== 'reference' || !trackRef.path) {
+      throw new Error(`Invalid range() first argument: expected @trackId reference`)
+    }
+
+    // Second and third args should be numbers
+    if (minArg?.type !== 'number' || maxArg?.type !== 'number') {
+      throw new Error(`Invalid range() arguments: expected numeric min and max`)
+    }
+
+    const rangeExpr: RangeExpr = {
+      type: 'range',
+      trackId: trackRef.path,
+      min: minArg.value ?? 0,
+      max: maxArg.value ?? 1,
+    }
+
+    return rangeExpr
+  }
+
+  throw new Error(`Unsupported DSL expression: ${dsl.expression}`)
+}
 
 /**
  * Convert raw param values to PropertyValue format
@@ -314,13 +374,24 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
 
       const currentSurface = layer.surface
 
-      // Determine if value is already a PropertyValue or needs wrapping
-      const isPropertyValue = (v: unknown): v is PropertyValue =>
-        v !== null && typeof v === 'object' && 'type' in v && (v.type === 'static' || v.type === 'range')
+      // Determine the PropertyValue to store
+      let newParamValue: PropertyValue
 
-      const newParamValue: PropertyValue = isPropertyValue(value)
-        ? value
-        : $PropertyValue.static(value)
+      // Check if it's a DslExpr (from UI DSL input) - convert to PropertyValue
+      if (isDslExpr(value)) {
+        try {
+          newParamValue = convertDslToPropertyValue(value)
+        } catch (e) {
+          console.warn('[SurfaceUsecase] Failed to convert DSL expression:', e)
+          return // Don't update if conversion fails
+        }
+      } else if ($PropertyValue.isPropertyValue(value)) {
+        // Already a PropertyValue (static or range)
+        newParamValue = value
+      } else {
+        // Primitive value - wrap in static
+        newParamValue = $PropertyValue.static(value)
+      }
 
       // 既存のパラメータを保持しつつ、指定されたパラメータのみを更新
       const newSurface: NormalizedSurfaceConfig = {
