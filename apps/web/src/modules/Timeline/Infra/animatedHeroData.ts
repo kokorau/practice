@@ -221,16 +221,22 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.MASK_CENTER_X, 0.42, 0.58),
-                  centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.MASK_RADIUS, 0.2, 0.4),
-                  cutout: $PropertyValue.static(false),
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-circle',
+                  name: 'Circle',
+                  visible: true,
+                  surface: {
+                    id: 'circle',
+                    params: {
+                      centerX: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.MASK_CENTER_X, 0.42, 0.58),
+                      centerY: $PropertyValue.static(0.5),
+                      radius: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.MASK_RADIUS, 0.2, 0.4),
+                    },
+                  },
                 },
-              },
-              children: [],
+              ],
               invert: false,
               feather: 0.02,
             },
@@ -366,16 +372,22 @@ const createRotatingSunburstConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.CENTER_X, 0.45, 0.55),
-                  centerY: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.CENTER_Y, 0.45, 0.55),
-                  radius: $PropertyValue.static(0.15),
-                  cutout: $PropertyValue.static(false),
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-circle',
+                  name: 'Circle',
+                  visible: true,
+                  surface: {
+                    id: 'circle',
+                    params: {
+                      centerX: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.CENTER_X, 0.45, 0.55),
+                      centerY: $PropertyValue.range(ROTATING_SUNBURST_TRACK_IDS.CENTER_Y, 0.45, 0.55),
+                      radius: $PropertyValue.static(0.15),
+                    },
+                  },
                 },
-              },
-              children: [],
+              ],
               invert: false,
               feather: 0.05,
             },
@@ -517,15 +529,22 @@ const createFlowingWavesConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'linearGradient',
-                params: {
-                  angle: $PropertyValue.static(180),
-                  startPosition: $PropertyValue.static(0.3),
-                  endPosition: $PropertyValue.static(0.8),
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-linear-gradient',
+                  name: 'Linear Gradient',
+                  visible: true,
+                  surface: {
+                    id: 'linearGradientMask',
+                    params: {
+                      angle: $PropertyValue.static(180),
+                      startOffset: $PropertyValue.static(0.3),
+                      endOffset: $PropertyValue.static(0.8),
+                    },
+                  },
                 },
-              },
-              children: [],
+              ],
               invert: false,
               feather: 0,
             },
@@ -661,16 +680,22 @@ const createPulsingGridConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.static(0.5),
-                  centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.range(PULSING_GRID_TRACK_IDS.MASK_RADIUS, 0.35, 0.45),
-                  cutout: $PropertyValue.static(false),
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-circle',
+                  name: 'Circle',
+                  visible: true,
+                  surface: {
+                    id: 'circle',
+                    params: {
+                      centerX: $PropertyValue.static(0.5),
+                      centerY: $PropertyValue.static(0.5),
+                      radius: $PropertyValue.range(PULSING_GRID_TRACK_IDS.MASK_RADIUS, 0.35, 0.45),
+                    },
+                  },
                 },
-              },
-              children: [],
+              ],
               invert: false,
               feather: 0.08,
             },
@@ -806,16 +831,22 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.range(ORGANIC_SCALES_TRACK_IDS.MASK_X, 0.6, 0.7),
-                  centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.static(0.4),
-                  cutout: $PropertyValue.static(false),
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-circle',
+                  name: 'Circle',
+                  visible: true,
+                  surface: {
+                    id: 'circle',
+                    params: {
+                      centerX: $PropertyValue.range(ORGANIC_SCALES_TRACK_IDS.MASK_X, 0.6, 0.7),
+                      centerY: $PropertyValue.static(0.5),
+                      radius: $PropertyValue.static(0.4),
+                    },
+                  },
                 },
-              },
-              children: [],
+              ],
               invert: false,
               feather: 0.1,
             },
@@ -850,16 +881,22 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.static(0.25),
-                  centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.static(0.15),
-                  cutout: $PropertyValue.static(false),
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-circle',
+                  name: 'Circle',
+                  visible: true,
+                  surface: {
+                    id: 'circle',
+                    params: {
+                      centerX: $PropertyValue.static(0.25),
+                      centerY: $PropertyValue.static(0.5),
+                      radius: $PropertyValue.static(0.15),
+                    },
+                  },
                 },
-              },
-              children: [],
+              ],
               invert: false,
               feather: 0.05,
             },
@@ -1022,18 +1059,25 @@ const createMorphingBlobConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'blob',
-                params: {
-                  centerX: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.CENTER_X, 0.45, 0.55),
-                  centerY: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.CENTER_Y, 0.45, 0.55),
-                  baseRadius: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.RADIUS, 0.35, 0.42),
-                  amplitude: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.AMPLITUDE, 0.12, 0.18),
-                  octaves: $PropertyValue.static(4),
-                  seed: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.SEED, 0, 100),
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-blob',
+                  name: 'Blob',
+                  visible: true,
+                  surface: {
+                    id: 'blob',
+                    params: {
+                      centerX: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.CENTER_X, 0.45, 0.55),
+                      centerY: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.CENTER_Y, 0.45, 0.55),
+                      baseRadius: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.RADIUS, 0.35, 0.42),
+                      amplitude: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.AMPLITUDE, 0.12, 0.18),
+                      octaves: $PropertyValue.static(4),
+                      seed: $PropertyValue.range(MORPHING_BLOB_TRACK_IDS.SEED, 0, 100),
+                    },
+                  },
                 },
-              },
-              children: [],
+              ],
               invert: false,
               feather: 0.01,
             },
