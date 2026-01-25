@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import type { ObjectSchema } from '@practice/schema'
+import type { ColorValue } from '@practice/section-visual'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import PresetSelector from '../PresetSelector.vue'
 import PatternThumbnail from '../PatternThumbnail.vue'
@@ -10,8 +11,8 @@ import SchemaFields from '../../SchemaFields.vue'
 const props = withDefaults(defineProps<{
   layerType: 'base' | 'surface'
   primitivePalette: PrimitivePalette
-  colorKey1: PrimitiveKey | 'auto'
-  colorKey2: PrimitiveKey | 'auto'
+  colorKey1: ColorValue
+  colorKey2: ColorValue
   showAuto1?: boolean
   showAuto2?: boolean
   patterns: PatternItem[]
@@ -26,8 +27,8 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  (e: 'update:colorKey1', value: PrimitiveKey | 'auto'): void
-  (e: 'update:colorKey2', value: PrimitiveKey | 'auto'): void
+  (e: 'update:colorKey1', value: ColorValue): void
+  (e: 'update:colorKey2', value: ColorValue): void
   (e: 'select-pattern', index: number | null): void
   (e: 'update:surfaceParams', value: Record<string, unknown>): void
 }>()

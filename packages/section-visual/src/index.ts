@@ -119,6 +119,8 @@ export type {
   HeroPrimitiveKey,
   HeroContextName,
   HeroColorsConfig,
+  ColorValue,
+  CustomColor,
   ViewportConfig,
   // Normalized config types (Phase 12)
   SurfaceType,
@@ -291,6 +293,8 @@ export {
   createDefaultColorsConfig,
   createDefaultForegroundConfig,
   createDefaultHeroViewConfig,
+  // Custom color type guard
+  isCustomColor,
   // ReverseLookup utilities
   approxEqual,
   findSurfacePresetIndex,

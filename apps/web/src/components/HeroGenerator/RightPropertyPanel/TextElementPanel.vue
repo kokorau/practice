@@ -2,7 +2,7 @@
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import { NEUTRAL_KEYS } from '@practice/semantic-color-palette/Domain'
-import type { GridPosition } from '@practice/section-visual'
+import type { GridPosition, ColorValue } from '@practice/section-visual'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import GridPositionPicker from '../GridPositionPicker.vue'
@@ -18,7 +18,7 @@ defineProps<{
   contrastResult: ContrastAnalysisResult | null
   autoColorKey: PrimitiveKey | null
   primitivePalette: PrimitivePalette
-  colorKey: PrimitiveKey | 'auto'
+  colorKey: ColorValue
   content: string
   position: GridPosition
   fontSize: number
@@ -30,7 +30,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:colorKey', value: PrimitiveKey | 'auto'): void
+  (e: 'update:colorKey', value: ColorValue): void
   (e: 'update:content', value: string): void
   (e: 'update:position', value: GridPosition): void
   (e: 'update:fontSize', value: number): void

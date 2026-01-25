@@ -3,7 +3,7 @@ import type { WritableComputedRef } from 'vue'
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
-import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig, NormalizedMaskConfig } from '@practice/section-visual'
+import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig, NormalizedMaskConfig, ColorValue } from '@practice/section-visual'
 import { isSurfaceLayerConfig, isBaseLayerConfig, isProcessorLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
@@ -82,8 +82,8 @@ interface ContrastProps {
 
 /** Background layer state */
 interface BackgroundProps {
-  colorKey1: PrimitiveKey
-  colorKey2: PrimitiveKey | 'auto'
+  colorKey1: ColorValue
+  colorKey2: ColorValue
   patterns: PatternItem[]
   selectedIndex: number | null
   surfaceSchema: ObjectSchema | null
@@ -99,8 +99,8 @@ interface MaskPatternItemWithConfig extends MaskPatternItem {
 
 /** Mask/surface layer state */
 interface MaskProps {
-  colorKey1: PrimitiveKey | 'auto'
-  colorKey2: PrimitiveKey | 'auto'
+  colorKey1: ColorValue
+  colorKey2: ColorValue
   surfacePatterns: PatternItem[]
   selectedSurfaceIndex: number | null
   surfaceSchema: ObjectSchema | null

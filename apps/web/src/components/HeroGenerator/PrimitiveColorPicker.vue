@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { $Oklch } from '@practice/color'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import {
@@ -9,23 +9,46 @@ import {
   NEUTRAL_KEYS,
   ACCENT_RAMP_KEYS,
 } from '@practice/semantic-color-palette/Domain'
+import type { ColorValue, CustomColor } from '@practice/section-visual'
+import { isCustomColor } from '@practice/section-visual'
+import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
+import { hsvToRgb, rgbToHex } from '../SiteBuilder/utils/colorConversion'
 
 const props = defineProps<{
-  modelValue: PrimitiveKey | 'auto'
+  modelValue: ColorValue
   palette: PrimitivePalette
   label?: string
   showAuto?: boolean
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: PrimitiveKey | 'auto']
+  'update:modelValue': [value: ColorValue]
 }>()
 
 const isOpen = ref(false)
+const isCustomMode = ref(false)
 const pickerRef = ref<HTMLElement | null>(null)
 const popupRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
 const popupStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0', left: '0' })
+
+// Custom color state
+const customHue = ref(0)
+const customSaturation = ref(100)
+const customValue = ref(50)
+
+// Initialize custom color from modelValue if it's a CustomColor
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (isCustomColor(val)) {
+      customHue.value = val.hue
+      customSaturation.value = val.saturation
+      customValue.value = val.value
+    }
+  },
+  { immediate: true }
+)
 
 // Group colors for display
 const colorGroups = computed(() => [
@@ -40,22 +63,34 @@ const getColorStyle = (key: PrimitiveKey) => ({
   backgroundColor: $Oklch.toCss(props.palette[key]),
 })
 
+// Get hex color from HSV for custom color preview
+const customColorHex = computed(() => {
+  const [r, g, b] = hsvToRgb(customHue.value, customSaturation.value, customValue.value)
+  return rgbToHex(r, g, b)
+})
+
 // Current selected color preview style
 const selectedColorStyle = computed(() => {
   if (props.modelValue === 'auto') {
     return {} // Auto uses gradient background from CSS
+  }
+  if (isCustomColor(props.modelValue)) {
+    return { backgroundColor: customColorHex.value }
   }
   return getColorStyle(props.modelValue)
 })
 
 const selectedLabel = computed(() => {
   if (props.modelValue === 'auto') return 'Auto'
+  if (isCustomColor(props.modelValue)) return 'Custom'
   return props.modelValue
 })
 
 const togglePopup = async () => {
   isOpen.value = !isOpen.value
   if (isOpen.value) {
+    // Reset custom mode when opening
+    isCustomMode.value = isCustomColor(props.modelValue)
     await nextTick()
     updatePopupPosition()
   }
@@ -92,12 +127,50 @@ const updatePopupPosition = () => {
 const selectColor = (key: PrimitiveKey | 'auto') => {
   emit('update:modelValue', key)
   isOpen.value = false
+  isCustomMode.value = false
+}
+
+const toggleCustomMode = () => {
+  isCustomMode.value = !isCustomMode.value
+  if (isCustomMode.value) {
+    // Initialize from current color if it's a CustomColor
+    if (isCustomColor(props.modelValue)) {
+      customHue.value = props.modelValue.hue
+      customSaturation.value = props.modelValue.saturation
+      customValue.value = props.modelValue.value
+    }
+    // Re-calculate position after mode change
+    nextTick(() => updatePopupPosition())
+  }
+}
+
+const applyCustomColor = () => {
+  const customColor: CustomColor = {
+    type: 'custom',
+    hue: customHue.value,
+    saturation: customSaturation.value,
+    value: customValue.value,
+  }
+  emit('update:modelValue', customColor)
+  isOpen.value = false
+  isCustomMode.value = false
+}
+
+const cancelCustomMode = () => {
+  isCustomMode.value = false
+  // Restore values if current modelValue is a CustomColor
+  if (isCustomColor(props.modelValue)) {
+    customHue.value = props.modelValue.hue
+    customSaturation.value = props.modelValue.saturation
+    customValue.value = props.modelValue.value
+  }
 }
 
 // Close on outside click
 const handleClickOutside = (event: MouseEvent) => {
   if (pickerRef.value && !pickerRef.value.contains(event.target as Node)) {
     isOpen.value = false
+    isCustomMode.value = false
   }
 }
 
@@ -130,37 +203,70 @@ onUnmounted(() => {
     <!-- Popup panel -->
     <Transition name="popup">
       <div v-if="isOpen" ref="popupRef" class="picker-popup" :style="popupStyle">
-        <!-- Auto option -->
-        <div v-if="showAuto" class="color-group">
-          <button
-            class="color-chip auto-chip"
-            :class="{ active: modelValue === 'auto' }"
-            @click="selectColor('auto')"
-            title="Auto"
-          >
-            <span class="auto-icon">A</span>
-          </button>
-        </div>
-
-        <!-- Color groups -->
-        <div
-          v-for="group in colorGroups"
-          :key="group.name"
-          class="color-group"
-        >
-          <span class="group-label">{{ group.name }}</span>
-          <div class="color-row">
-            <button
-              v-for="key in group.keys"
-              :key="key"
-              class="color-chip"
-              :class="{ active: modelValue === key }"
-              :style="getColorStyle(key)"
-              :title="key"
-              @click="selectColor(key)"
-            />
+        <!-- Custom mode: HSV color picker -->
+        <template v-if="isCustomMode">
+          <div class="custom-picker-header">
+            <button class="back-button" @click="cancelCustomMode">
+              <span class="material-icons">arrow_back</span>
+            </button>
+            <span class="custom-picker-title">Custom Color</span>
           </div>
-        </div>
+          <BrandColorPicker
+            :hue="customHue"
+            :saturation="customSaturation"
+            :value="customValue"
+            @update:hue="customHue = $event"
+            @update:saturation="customSaturation = $event"
+            @update:value="customValue = $event"
+          />
+          <div class="custom-picker-actions">
+            <button class="action-button cancel" @click="cancelCustomMode">Cancel</button>
+            <button class="action-button apply" @click="applyCustomColor">Apply</button>
+          </div>
+        </template>
+
+        <!-- Normal mode: Palette selection -->
+        <template v-else>
+          <!-- Auto and Custom options -->
+          <div v-if="showAuto" class="color-group special-options">
+            <button
+              class="color-chip auto-chip"
+              :class="{ active: modelValue === 'auto' }"
+              @click="selectColor('auto')"
+              title="Auto"
+            >
+              <span class="auto-icon">A</span>
+            </button>
+            <button
+              class="color-chip custom-chip"
+              :class="{ active: isCustomColor(modelValue) }"
+              @click="toggleCustomMode"
+              title="Custom Color"
+            >
+              <span class="rainbow-icon">🌈</span>
+            </button>
+          </div>
+
+          <!-- Color groups -->
+          <div
+            v-for="group in colorGroups"
+            :key="group.name"
+            class="color-group"
+          >
+            <span class="group-label">{{ group.name }}</span>
+            <div class="color-row">
+              <button
+                v-for="key in group.keys"
+                :key="key"
+                class="color-chip"
+                :class="{ active: modelValue === key }"
+                :style="getColorStyle(key)"
+                :title="key"
+                @click="selectColor(key)"
+              />
+            </div>
+          </div>
+        </template>
       </div>
     </Transition>
   </div>
@@ -293,6 +399,18 @@ onUnmounted(() => {
   gap: 0.25rem;
 }
 
+.special-options {
+  flex-direction: row;
+  gap: 0.375rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid oklch(0.90 0.01 260);
+  margin-bottom: 0.25rem;
+}
+
+.dark .special-options {
+  border-bottom-color: oklch(0.25 0.02 260);
+}
+
 .group-label {
   font-size: 0.625rem;
   color: oklch(0.50 0.02 260);
@@ -355,5 +473,133 @@ onUnmounted(() => {
 
 .dark .auto-icon {
   color: oklch(0.90 0.02 260);
+}
+
+.custom-chip {
+  background: linear-gradient(135deg,
+    hsl(0, 100%, 50%) 0%,
+    hsl(60, 100%, 50%) 17%,
+    hsl(120, 100%, 50%) 33%,
+    hsl(180, 100%, 50%) 50%,
+    hsl(240, 100%, 50%) 67%,
+    hsl(300, 100%, 50%) 83%,
+    hsl(360, 100%, 50%) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rainbow-icon {
+  font-size: 0.75rem;
+  filter: drop-shadow(0 0 1px rgba(0,0,0,0.3));
+}
+
+/* Custom Picker Header */
+.custom-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid oklch(0.90 0.01 260);
+  margin-bottom: 0.25rem;
+}
+
+.dark .custom-picker-header {
+  border-bottom-color: oklch(0.25 0.02 260);
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  color: oklch(0.50 0.02 260);
+  transition: background 0.15s, color 0.15s;
+}
+
+.back-button:hover {
+  background: oklch(0.92 0.01 260);
+  color: oklch(0.30 0.02 260);
+}
+
+.dark .back-button:hover {
+  background: oklch(0.25 0.02 260);
+  color: oklch(0.85 0.02 260);
+}
+
+.back-button .material-icons {
+  font-size: 1rem;
+}
+
+.custom-picker-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.30 0.02 260);
+}
+
+.dark .custom-picker-title {
+  color: oklch(0.85 0.02 260);
+}
+
+/* Custom Picker Actions */
+.custom-picker-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid oklch(0.90 0.01 260);
+}
+
+.dark .custom-picker-actions {
+  border-top-color: oklch(0.25 0.02 260);
+}
+
+.action-button {
+  flex: 1;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.action-button.cancel {
+  background: transparent;
+  border: 1px solid oklch(0.80 0.01 260);
+  color: oklch(0.40 0.02 260);
+}
+
+.action-button.cancel:hover {
+  background: oklch(0.95 0.01 260);
+  border-color: oklch(0.70 0.01 260);
+}
+
+.dark .action-button.cancel {
+  border-color: oklch(0.35 0.02 260);
+  color: oklch(0.70 0.02 260);
+}
+
+.dark .action-button.cancel:hover {
+  background: oklch(0.22 0.02 260);
+  border-color: oklch(0.45 0.02 260);
+}
+
+.action-button.apply {
+  background: oklch(0.55 0.18 250);
+  border: 1px solid oklch(0.55 0.18 250);
+  color: white;
+}
+
+.action-button.apply:hover {
+  background: oklch(0.50 0.18 250);
+  border-color: oklch(0.50 0.18 250);
 }
 </style>
