@@ -22,7 +22,9 @@ import { useForegroundElement } from '../composables/useForegroundElement'
 import { usePresetActions } from '../composables/usePresetActions'
 import { useLayoutResize, usePanelResize } from '../composables/useLayoutResize'
 import { useImageLayerEditor } from '../composables/useImageLayerEditor'
+import { useContextMenu } from '../composables/useContextMenu'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
+import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
 
 // ============================================================
 // Editor Config
@@ -177,6 +179,11 @@ const {
   handleAddLayer,
   handleRemoveLayer,
   handleAddProcessor,
+  handleAddModifierToProcessor,
+  handleRemoveProcessor,
+  handleRemoveProcessorNode,
+  handleGroupSelection,
+  handleUseAsMask,
   handleMoveNode,
   handleMoveModifier,
 } = useLayerOperations({
@@ -223,6 +230,29 @@ const { imageLayerProps, handleImageUpdate } = useImageLayerEditor({
   clearLayerImage: heroScene.images.clearLayerImage,
   loadRandomImage: heroScene.images.loadRandomImage,
   updateLayer: heroScene.usecase.layerUsecase.updateLayer,
+})
+
+// ============================================================
+// Context Menu
+// ============================================================
+const {
+  contextMenuOpen,
+  contextMenuPosition,
+  contextMenuItems,
+  handleLayerContextMenu,
+  handleForegroundContextMenu,
+  handleContextMenuClose,
+  handleContextMenuSelect,
+  handleGlobalContextMenu,
+} = useContextMenu(layers, {
+  handleGroupSelection,
+  handleUseAsMask,
+  handleToggleVisibility,
+  handleRemoveLayer,
+  handleRemoveForegroundElement: foregroundElement.handleRemoveForegroundElement,
+  handleRemoveProcessor,
+  handleRemoveProcessorNode,
+  handleAddModifierToProcessor,
 })
 
 // ============================================================
@@ -354,7 +384,7 @@ const panelMask = computed(() => ({
 </script>
 
 <template>
-  <div class="timeline-hero-editor" :class="{ 'is-resizing': isResizing }">
+  <div class="timeline-hero-editor" :class="{ 'is-resizing': isResizing }" @contextmenu="handleGlobalContextMenu">
     <!-- Top Section: Hero Editor Layout -->
     <div
       class="hero-editor-area"
@@ -378,8 +408,11 @@ const panelMask = computed(() => ({
         @add-layer="handleAddLayer"
         @remove-layer="handleRemoveLayer"
         @add-processor="handleAddProcessor"
+        @add-modifier-to-processor="handleAddModifierToProcessor"
+        @layer-contextmenu="handleLayerContextMenu"
         @move-node="handleMoveNode"
         @move-modifier="handleMoveModifier"
+        @foreground-contextmenu="handleForegroundContextMenu"
       />
 
       <!-- Left Panel Resize Handle -->
@@ -447,6 +480,15 @@ const panelMask = computed(() => ({
         Select an animated preset to view the timeline
       </div>
     </section>
+
+    <!-- Context Menu -->
+    <ContextMenu
+      :items="contextMenuItems"
+      :position="contextMenuPosition"
+      :is-open="contextMenuOpen"
+      @close="handleContextMenuClose"
+      @select="handleContextMenuSelect"
+    />
   </div>
 </template>
 

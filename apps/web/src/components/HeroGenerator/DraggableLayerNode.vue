@@ -64,6 +64,7 @@ const emit = defineEmits<{
   'select-processor': [nodeId: string, processorType: 'effect' | 'mask' | 'processor']
   'remove-layer': [nodeId: string]
   'add-processor': [nodeId: string, processorType: AddProcessorType]
+  'add-modifier-to-processor': [processorNodeId: string, processorType: AddProcessorType]
   // Context menu event (with target type and optional modifier index)
   contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number]
   // DnD move events
@@ -293,6 +294,32 @@ const handleAddProcessor = (type: AddProcessorType, e: Event) => {
 }
 
 // ============================================================
+// Add Modifier Menu (for Processor node)
+// ============================================================
+
+const showAddModifierMenu = ref(false)
+const addModifierTriggerRef = ref<HTMLElement | null>(null)
+const addModifierMenuRef = ref<HTMLElement | null>(null)
+
+// Use vueuse onClickOutside with ignore option
+onClickOutside(addModifierMenuRef, () => {
+  showAddModifierMenu.value = false
+}, {
+  ignore: [addModifierTriggerRef],
+})
+
+const handleToggleAddModifierMenu = (e: Event) => {
+  e.stopPropagation()
+  showAddModifierMenu.value = !showAddModifierMenu.value
+}
+
+const handleAddModifier = (type: AddProcessorType, e: Event) => {
+  e.stopPropagation()
+  emit('add-modifier-to-processor', props.node.id, type)
+  showAddModifierMenu.value = false
+}
+
+// ============================================================
 // Drag & Drop (SceneNode)
 // ============================================================
 
@@ -512,6 +539,46 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <div class="layer-info">
           <span class="layer-name">Processor</span>
         </div>
+
+        <!-- Add Modifier Button -->
+        <div
+          class="add-processor-container"
+          @click.stop
+        >
+          <button
+            ref="addModifierTriggerRef"
+            class="add-processor-toggle"
+            :class="{ active: showAddModifierMenu }"
+            title="Add Effect or Mask"
+            @click="handleToggleAddModifierMenu"
+          >
+            <span class="material-icons">add</span>
+          </button>
+
+          <Transition name="fade">
+            <div
+              v-if="showAddModifierMenu"
+              ref="addModifierMenuRef"
+              class="add-processor-menu"
+              @click.stop
+            >
+              <button
+                class="add-processor-item"
+                @click="(e) => handleAddModifier('effect', e)"
+              >
+                <span class="material-icons">auto_fix_high</span>
+                <span>Effect</span>
+              </button>
+              <button
+                class="add-processor-item"
+                @click="(e) => handleAddModifier('mask', e)"
+              >
+                <span class="material-icons">content_cut</span>
+                <span>Mask</span>
+              </button>
+            </div>
+          </Transition>
+        </div>
       </div>
       <!-- Processor children (Effect, Mask) -->
       <template v-if="isProcessorExpanded">
@@ -562,6 +629,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
         @add-processor="(id: string, type: AddProcessorType) => emit('add-processor', id, type)"
+        @add-modifier-to-processor="(id: string, type: AddProcessorType) => emit('add-modifier-to-processor', id, type)"
         @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType, modifierIndex?: number) => emit('contextmenu', id, e, targetType, modifierIndex)"
         @move-node="(id: string, position: LayerDropPosition) => emit('move-node', id, position)"
         @move-modifier="(sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => emit('move-modifier', sourceNodeId, modifierIndex, position)"
@@ -793,6 +861,11 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
 /* Processor内のchevronは小さく */
 .processor-group-node .expand-toggle {
   width: 0.5rem;
+}
+
+/* Show add button on hover for processor group */
+.processor-group-node:hover .add-processor-toggle {
+  opacity: 1;
 }
 
 /* Processor child nodes (Effect, Mask) */

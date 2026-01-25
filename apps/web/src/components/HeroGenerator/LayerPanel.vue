@@ -34,6 +34,7 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'add-processor': [layerId: string, processorType: AddProcessorType]
+  'add-modifier-to-processor': [processorNodeId: string, processorType: AddProcessorType]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number]
   'move-node': [nodeId: string, position: LayerDropPosition]
   'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
@@ -57,6 +58,7 @@ const emit = defineEmits<{
       @add-layer="(type: LayerType) => emit('add-layer', type)"
       @remove-layer="(id: string) => emit('remove-layer', id)"
       @add-processor="(id: string, type: AddProcessorType) => emit('add-processor', id, type)"
+      @add-modifier-to-processor="(id: string, type: AddProcessorType) => emit('add-modifier-to-processor', id, type)"
       @contextmenu="(layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number) => emit('layer-contextmenu', layerId, event, targetType, modifierIndex)"
       @move-node="(nodeId: string, position: LayerDropPosition) => emit('move-node', nodeId, position)"
       @move-modifier="(sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => emit('move-modifier', sourceNodeId, modifierIndex, position)"

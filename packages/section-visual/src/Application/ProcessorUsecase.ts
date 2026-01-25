@@ -46,6 +46,14 @@ export interface ProcessorUsecase {
   addModifier(layerId: string, type: ProcessorModifierType): void
 
   /**
+   * 既存のProcessorノードにmodifierを追加
+   *
+   * @param processorNodeId ProcessorノードのID
+   * @param type 追加するmodifierのタイプ
+   */
+  addModifierToProcessor(processorNodeId: string, type: ProcessorModifierType): void
+
+  /**
    * Processorノードからmodifierを削除
    * modifiersが空になったらProcessorノードも削除
    *
@@ -107,6 +115,27 @@ export const createProcessorUsecase = (deps: ProcessorUsecaseDeps): ProcessorUse
 
       // Processorにmodifierを追加
       const newLayers = addModifierToProcessor(layersWithProcessor, processorId, modifier)
+
+      // リポジトリを更新
+      repository.set({
+        ...config,
+        layers: newLayers,
+      })
+    },
+
+    addModifierToProcessor(processorNodeId: string, type: ProcessorModifierType): void {
+      const config = repository.get()
+      if (!config) return
+
+      // Processorノードの存在確認
+      const processorNode = findLayerInTree(config.layers, processorNodeId)
+      if (!processorNode || !isProcessorLayerConfig(processorNode)) return
+
+      // modifierを作成
+      const modifier = createModifier(type)
+
+      // Processorにmodifierを追加
+      const newLayers = addModifierToProcessor(config.layers, processorNodeId, modifier)
 
       // リポジトリを更新
       repository.set({

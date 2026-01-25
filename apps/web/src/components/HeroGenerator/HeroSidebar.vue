@@ -77,6 +77,7 @@ const emit = defineEmits<{
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'add-processor': [layerId: string, processorType: AddProcessorType]
+  'add-modifier-to-processor': [processorNodeId: string, processorType: AddProcessorType]
   'group-selection': [layerId: string]
   'use-as-mask': [layerId: string]
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number]
@@ -285,6 +286,7 @@ const selectedPresetName = computed(() => {
           @add-layer="(type: LayerType) => emit('add-layer', type)"
           @remove-layer="(id: string) => emit('remove-layer', id)"
           @add-processor="(id: string, type: AddProcessorType) => emit('add-processor', id, type)"
+          @add-modifier-to-processor="(id: string, type: AddProcessorType) => emit('add-modifier-to-processor', id, type)"
           @layer-contextmenu="(id: string, e: MouseEvent, type: ContextTargetType, modifierIndex?: number) => emit('layer-contextmenu', id, e, type, modifierIndex)"
           @move-node="(id: string, pos: LayerDropPosition) => emit('move-node', id, pos)"
           @move-modifier="(srcId: string, idx: number, pos: ModifierDropPosition) => emit('move-modifier', srcId, idx, pos)"

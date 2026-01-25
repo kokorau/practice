@@ -338,6 +338,7 @@ const {
   handleAddLayer,
   handleRemoveLayer,
   handleAddProcessor,
+  handleAddModifierToProcessor,
   handleRemoveProcessor,
   handleRemoveProcessorNode,
   handleGroupSelection,
@@ -415,6 +416,7 @@ const {
   handleRemoveForegroundElement,
   handleRemoveProcessor,
   handleRemoveProcessorNode,
+  handleAddModifierToProcessor,
 })
 
 // ============================================================
@@ -568,6 +570,7 @@ const handleImageUpdate = (key: string, value: unknown) => {
       @add-layer="handleAddLayer"
       @remove-layer="handleRemoveLayer"
       @add-processor="handleAddProcessor"
+      @add-modifier-to-processor="handleAddModifierToProcessor"
       @layer-contextmenu="handleLayerContextMenu"
       @move-node="handleMoveNode"
       @move-modifier="handleMoveModifier"

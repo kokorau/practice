@@ -53,6 +53,8 @@ export interface SceneOperationCallbacks {
   moveModifier: (sourceNodeId: string, sourceModifierIndex: number, position: ModifierDropPosition) => void
   /** Add processor (effect or mask) to a layer */
   addProcessorToLayer: (layerId: string, processorType: AddProcessorType) => void
+  /** Add modifier (effect or mask) to an existing processor node */
+  addModifierToProcessor: (processorNodeId: string, processorType: AddProcessorType) => void
   /** Remove a processor modifier from a layer by index */
   removeProcessorFromLayer: (processorNodeId: string, modifierIndex: number) => void
   /** Remove an entire processor node */
@@ -104,6 +106,7 @@ export interface UseLayerOperationsReturn {
   handleAddLayer: (type: UILayerType) => void
   handleRemoveLayer: (layerId: string) => void
   handleAddProcessor: (layerId: string, processorType: AddProcessorType) => void
+  handleAddModifierToProcessor: (processorNodeId: string, processorType: AddProcessorType) => void
   handleRemoveProcessor: (processorNodeId: string, modifierIndex: number) => void
   handleRemoveProcessorNode: (processorNodeId: string) => void
 
@@ -250,6 +253,11 @@ export function useLayerOperations(
     sceneCallbacks.addProcessorToLayer(layerId, processorType)
   }
 
+  const handleAddModifierToProcessor = (processorNodeId: string, processorType: AddProcessorType) => {
+    // Delegate to sceneCallbacks - adds modifier to existing processor node
+    sceneCallbacks.addModifierToProcessor(processorNodeId, processorType)
+  }
+
   const handleRemoveProcessor = (processorNodeId: string, modifierIndex: number) => {
     // Delegate to sceneCallbacks - usecase handles modifier removal
     sceneCallbacks.removeProcessorFromLayer(processorNodeId, modifierIndex)
@@ -317,6 +325,7 @@ export function useLayerOperations(
     handleAddLayer,
     handleRemoveLayer,
     handleAddProcessor,
+    handleAddModifierToProcessor,
     handleRemoveProcessor,
     handleRemoveProcessorNode,
 
