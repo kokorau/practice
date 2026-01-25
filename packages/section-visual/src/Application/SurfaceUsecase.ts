@@ -27,9 +27,10 @@ import { $PropertyValue } from '../Domain/SectionVisual'
 
 /**
  * Convert raw param values to PropertyValue format
+ * Handles primitive values and ColorValue objects
  */
 function toPropertyValueParams(
-  params: Record<string, string | number | boolean | undefined>
+  params: Record<string, string | number | boolean | ColorValue | undefined>
 ): Record<string, PropertyValue> {
   const result: Record<string, PropertyValue> = {}
   for (const [key, value] of Object.entries(params)) {
@@ -70,20 +71,39 @@ export interface SelectionPort {
 }
 
 /**
+ * Common color fields for all surface types
+ */
+interface SurfaceColorParams {
+  color1?: ColorValue
+  color2?: ColorValue
+}
+
+/**
  * サーフェスパラメータの更新型（各パターンタイプに対応）
  * id はサーフェスタイプの識別子（NormalizedSurfaceConfig.id と対応）
+ * All surface types include optional color1/color2 fields
  */
 export type SurfaceParamsUpdate =
-  | { id: 'stripe'; width1?: number; width2?: number; angle?: number }
-  | { id: 'grid'; lineWidth?: number; cellSize?: number }
-  | { id: 'polkaDot'; dotRadius?: number; spacing?: number; rowOffset?: number }
-  | { id: 'checker'; cellSize?: number; angle?: number }
-  | { id: 'gradientGrainLinear'; angle?: number; centerX?: number; centerY?: number; seed?: number; sparsity?: number }
-  | { id: 'gradientGrainCircular'; centerX?: number; centerY?: number; circularInvert?: boolean; seed?: number; sparsity?: number }
-  | { id: 'gradientGrainRadial'; centerX?: number; centerY?: number; radialStartAngle?: number; radialSweepAngle?: number; seed?: number; sparsity?: number }
-  | { id: 'gradientGrainPerlin'; perlinScale?: number; perlinOctaves?: number; perlinContrast?: number; perlinOffset?: number; seed?: number; sparsity?: number }
-  | { id: 'gradientGrainCurl'; perlinScale?: number; perlinOctaves?: number; perlinContrast?: number; perlinOffset?: number; curlIntensity?: number; seed?: number; sparsity?: number }
-  | { id: 'gradientGrainSimplex'; simplexScale?: number; simplexOctaves?: number; simplexContrast?: number; simplexOffset?: number; seed?: number; sparsity?: number }
+  | ({ id: 'solid' } & SurfaceColorParams)
+  | ({ id: 'stripe'; width1?: number; width2?: number; angle?: number } & SurfaceColorParams)
+  | ({ id: 'grid'; lineWidth?: number; cellSize?: number } & SurfaceColorParams)
+  | ({ id: 'polkaDot'; dotRadius?: number; spacing?: number; rowOffset?: number } & SurfaceColorParams)
+  | ({ id: 'checker'; cellSize?: number; angle?: number } & SurfaceColorParams)
+  | ({ id: 'gradientGrainLinear'; angle?: number; centerX?: number; centerY?: number; seed?: number; sparsity?: number } & SurfaceColorParams)
+  | ({ id: 'gradientGrainCircular'; centerX?: number; centerY?: number; circularInvert?: boolean; seed?: number; sparsity?: number } & SurfaceColorParams)
+  | ({ id: 'gradientGrainRadial'; centerX?: number; centerY?: number; radialStartAngle?: number; radialSweepAngle?: number; seed?: number; sparsity?: number } & SurfaceColorParams)
+  | ({ id: 'gradientGrainPerlin'; perlinScale?: number; perlinOctaves?: number; perlinContrast?: number; perlinOffset?: number; seed?: number; sparsity?: number } & SurfaceColorParams)
+  | ({ id: 'gradientGrainCurl'; perlinScale?: number; perlinOctaves?: number; perlinContrast?: number; perlinOffset?: number; curlIntensity?: number; seed?: number; sparsity?: number } & SurfaceColorParams)
+  | ({ id: 'gradientGrainSimplex'; simplexScale?: number; simplexOctaves?: number; simplexContrast?: number; simplexOffset?: number; seed?: number; sparsity?: number } & SurfaceColorParams)
+  | ({ id: 'triangle'; size?: number; angle?: number } & SurfaceColorParams)
+  | ({ id: 'hexagon'; size?: number; angle?: number } & SurfaceColorParams)
+  | ({ id: 'asanoha'; size?: number; lineWidth?: number } & SurfaceColorParams)
+  | ({ id: 'seigaiha'; radius?: number; rings?: number; lineWidth?: number } & SurfaceColorParams)
+  | ({ id: 'wave'; amplitude?: number; wavelength?: number; thickness?: number; angle?: number } & SurfaceColorParams)
+  | ({ id: 'scales'; size?: number; overlap?: number; angle?: number } & SurfaceColorParams)
+  | ({ id: 'ogee'; width?: number; height?: number; lineWidth?: number } & SurfaceColorParams)
+  | ({ id: 'sunburst'; rays?: number; centerX?: number; centerY?: number; twist?: number } & SurfaceColorParams)
+  | ({ id: 'paperTexture'; fiberScale?: number; fiberStrength?: number; fiberWarp?: number; grainDensity?: number; grainSize?: number; bumpStrength?: number; lightAngle?: number; seed?: number } & SurfaceColorParams)
 
 /**
  * マスク形状パラメータの更新型

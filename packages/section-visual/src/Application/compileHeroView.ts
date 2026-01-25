@@ -166,9 +166,13 @@ function compileSurfaceLayer(
     false // isSecondary
   )
 
+  // Remove color fields from params (they are handled separately as color1/color2)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { color1: _c1, color2: _c2, ...paramsWithoutColors } = resolvedParams
+
   const compiledSurface: CompiledSurface = {
     id: layer.surface.id,
-    params: resolvedParams,
+    params: paramsWithoutColors as Record<string, number | string | boolean>,
     color1,
     color2,
   }
@@ -234,10 +238,12 @@ function compileEffect(
   effect: SingleEffectConfig,
   intensityProvider: IntensityProvider
 ): CompiledEffect {
+  // Effect params don't contain ColorValue, safe to cast
+  const params = resolveParams(effect.params, intensityProvider) as Record<string, number | string | boolean>
   return {
     type: 'effect',
     id: effect.id,
-    params: resolveParams(effect.params, intensityProvider),
+    params,
   }
 }
 
@@ -248,9 +254,11 @@ function compileMaskProcessor(
   mask: MaskProcessorConfig,
   intensityProvider: IntensityProvider
 ): CompiledMaskProcessor {
+  // Mask shape params don't contain ColorValue, safe to cast
+  const shapeParams = resolveParams(mask.shape.params, intensityProvider) as Record<string, number | string | boolean>
   const compiledShape: CompiledMaskShape = {
     id: mask.shape.id,
-    params: resolveParams(mask.shape.params, intensityProvider),
+    params: shapeParams,
   }
 
   return {

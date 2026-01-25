@@ -54,8 +54,12 @@ const getColorValue = (key: string, defaultValue: unknown): ColorValue => {
     if (typeof defaultValue === 'string') {
       return defaultValue as ColorValue
     }
-    if (isSchemaCustomColor(defaultValue)) {
-      return defaultValue as ColorValue
+    // Check if it's a CustomColor object
+    if (typeof defaultValue === 'object' && defaultValue !== null && 'type' in defaultValue) {
+      const obj = defaultValue as { type: unknown }
+      if (obj.type === 'custom') {
+        return defaultValue as ColorValue
+      }
     }
     return 'B' // Fallback
   }
