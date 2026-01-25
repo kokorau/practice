@@ -4,7 +4,7 @@ import type { FrameState, Ms, TrackId } from '@practice/timeline'
 import { prepareTimeline } from '@practice/timeline'
 import { extractPeriod } from '@practice/dsl'
 import { createTimelineEditor } from '@practice/timeline-editor'
-import { mockTimeline } from '../modules/Timeline/Infra/mockData'
+import { mockTimeline, MOCK_TRACK_IDS } from '../modules/Timeline/Infra/mockData'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
 import {
   CircleArcIndicator,
@@ -136,44 +136,44 @@ function stopResize() {
           <div class="indicator-grid">
             <div class="indicator-item">
               <CircleArcIndicator
-                :intensity="p('wave_osc')"
-                :progress="progress('wave_osc')"
-                :period="trackPeriods.wave_osc"
+                :intensity="p(MOCK_TRACK_IDS.WAVE_OSC)"
+                :progress="progress(MOCK_TRACK_IDS.WAVE_OSC)"
+                :period="trackPeriods[MOCK_TRACK_IDS.WAVE_OSC]"
               />
               <span class="indicator-label">osc</span>
             </div>
             <div class="indicator-item">
               <RotateIndicator
-                :intensity="p('wave_saw')"
-                :period="trackPeriods.wave_saw"
+                :intensity="p(MOCK_TRACK_IDS.WAVE_SAW)"
+                :period="trackPeriods[MOCK_TRACK_IDS.WAVE_SAW]"
               />
               <span class="indicator-label">saw</span>
             </div>
             <div class="indicator-item">
               <WaveIndicator
-                :intensity="p('wave_tri')"
-                :period="trackPeriods.wave_tri"
+                :intensity="p(MOCK_TRACK_IDS.WAVE_TRI)"
+                :period="trackPeriods[MOCK_TRACK_IDS.WAVE_TRI]"
               />
               <span class="indicator-label">tri</span>
             </div>
             <div class="indicator-item">
               <PulseIndicator
-                :intensity="p('wave_pulse')"
-                :period="trackPeriods.wave_pulse"
+                :intensity="p(MOCK_TRACK_IDS.WAVE_PULSE)"
+                :period="trackPeriods[MOCK_TRACK_IDS.WAVE_PULSE]"
               />
               <span class="indicator-label">pulse</span>
             </div>
             <div class="indicator-item">
               <StepIndicator
-                :intensity="p('wave_step')"
+                :intensity="p(MOCK_TRACK_IDS.WAVE_STEP)"
                 :steps="4"
-                :period="trackPeriods.wave_step"
+                :period="trackPeriods[MOCK_TRACK_IDS.WAVE_STEP]"
               />
               <span class="indicator-label">step</span>
             </div>
             <div class="indicator-item">
               <NoiseIndicator
-                :intensity="p('wave_noise')"
+                :intensity="p(MOCK_TRACK_IDS.WAVE_NOISE)"
               />
               <span class="indicator-label">noise</span>
             </div>
@@ -186,17 +186,17 @@ function stopResize() {
           <div class="indicator-grid">
             <div class="indicator-item">
               <ScaleIndicator
-                :intensity="p('opacity')"
+                :intensity="p(MOCK_TRACK_IDS.OPACITY)"
               />
               <span class="indicator-label">opacity</span>
-              <span class="indicator-value">{{ p('opacity').toFixed(2) }}</span>
+              <span class="indicator-value">{{ p(MOCK_TRACK_IDS.OPACITY).toFixed(2) }}</span>
             </div>
             <div class="indicator-item">
               <BarIndicator
-                :intensity="(p('scale', 0.5) - 0.5) * 2"
+                :intensity="(p(MOCK_TRACK_IDS.SCALE, 0.5) - 0.5) * 2"
               />
               <span class="indicator-label">scale</span>
-              <span class="indicator-value">{{ p('scale', 0.5).toFixed(2) }}</span>
+              <span class="indicator-value">{{ p(MOCK_TRACK_IDS.SCALE, 0.5).toFixed(2) }}</span>
             </div>
           </div>
         </div>
@@ -207,38 +207,38 @@ function stopResize() {
           <div class="indicator-grid">
             <div class="indicator-item">
               <RotateIndicator
-                :intensity="(p('rotation') + 30) / 60"
-                :period="trackPeriods.rotation"
+                :intensity="(p(MOCK_TRACK_IDS.ROTATION) + 30) / 60"
+                :period="trackPeriods[MOCK_TRACK_IDS.ROTATION]"
               />
               <span class="indicator-label">rotation</span>
-              <span class="indicator-value">{{ p('rotation').toFixed(0) }}°</span>
+              <span class="indicator-value">{{ p(MOCK_TRACK_IDS.ROTATION).toFixed(0) }}°</span>
             </div>
             <div class="indicator-item">
               <CircleArcIndicator
-                :intensity="p('layered')"
-                :progress="progress('layered')"
-                :period="trackPeriods.layered"
+                :intensity="p(MOCK_TRACK_IDS.LAYERED)"
+                :progress="progress(MOCK_TRACK_IDS.LAYERED)"
+                :period="trackPeriods[MOCK_TRACK_IDS.LAYERED]"
               />
               <span class="indicator-label">layered</span>
             </div>
             <div class="indicator-item">
               <WaveIndicator
-                :intensity="p('noise_mod')"
-                :period="trackPeriods.noise_mod"
+                :intensity="p(MOCK_TRACK_IDS.NOISE_MOD)"
+                :period="trackPeriods[MOCK_TRACK_IDS.NOISE_MOD]"
               />
               <span class="indicator-label">noise_mod</span>
             </div>
             <div class="indicator-item">
               <ScaleIndicator
-                :intensity="p('bounce', 0.3)"
-                :period="trackPeriods.bounce"
+                :intensity="p(MOCK_TRACK_IDS.BOUNCE, 0.3)"
+                :period="trackPeriods[MOCK_TRACK_IDS.BOUNCE]"
               />
               <span class="indicator-label">bounce</span>
             </div>
             <div class="indicator-item">
               <WaveIndicator
-                :intensity="p('elastic', 0.5)"
-                :period="trackPeriods.elastic"
+                :intensity="p(MOCK_TRACK_IDS.ELASTIC, 0.5)"
+                :period="trackPeriods[MOCK_TRACK_IDS.ELASTIC]"
               />
               <span class="indicator-label">elastic</span>
             </div>
@@ -251,37 +251,37 @@ function stopResize() {
           <div class="indicator-grid">
             <div class="indicator-item">
               <PulseIndicator
-                :intensity="p('heartbeat')"
-                :period="trackPeriods.heartbeat"
+                :intensity="p(MOCK_TRACK_IDS.HEARTBEAT)"
+                :period="trackPeriods[MOCK_TRACK_IDS.HEARTBEAT]"
               />
               <span class="indicator-label">heartbeat</span>
             </div>
             <div class="indicator-item">
               <NoiseIndicator
-                :intensity="p('wobble')"
-                :period="trackPeriods.wobble"
+                :intensity="p(MOCK_TRACK_IDS.WOBBLE)"
+                :period="trackPeriods[MOCK_TRACK_IDS.WOBBLE]"
               />
               <span class="indicator-label">wobble</span>
             </div>
             <div class="indicator-item">
               <ScaleIndicator
-                :intensity="p('breathing')"
-                :period="trackPeriods.breathing"
+                :intensity="p(MOCK_TRACK_IDS.BREATHING)"
+                :period="trackPeriods[MOCK_TRACK_IDS.BREATHING]"
               />
               <span class="indicator-label">breathing</span>
             </div>
             <div class="indicator-item">
               <BarIndicator
-                :intensity="(p('clamped', 0.2) - 0.2) / 0.6"
+                :intensity="(p(MOCK_TRACK_IDS.CLAMPED, 0.2) - 0.2) / 0.6"
               />
               <span class="indicator-label">clamped</span>
-              <span class="indicator-value">{{ p('clamped', 0.2).toFixed(2) }}</span>
+              <span class="indicator-value">{{ p(MOCK_TRACK_IDS.CLAMPED, 0.2).toFixed(2) }}</span>
             </div>
             <div class="indicator-item">
               <StepIndicator
-                :intensity="p('quantized')"
+                :intensity="p(MOCK_TRACK_IDS.QUANTIZED)"
                 :steps="8"
-                :period="trackPeriods.quantized"
+                :period="trackPeriods[MOCK_TRACK_IDS.QUANTIZED]"
               />
               <span class="indicator-label">quantized</span>
             </div>
