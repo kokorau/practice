@@ -933,7 +933,6 @@ export type {
 // ============================================================
 
 export type {
-  HtmlLayerId,
   ProcessorType,
   AddProcessorType,
   SelectableProcessorType,

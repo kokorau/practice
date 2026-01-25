@@ -187,7 +187,6 @@ export type {
   HeroEditorUIState,
   HeroEditorState,
   // EditorTypes (selection and layer types)
-  HtmlLayerId,
   ProcessorType,
   AddProcessorType,
   // SelectableProcessorType exported from Application below

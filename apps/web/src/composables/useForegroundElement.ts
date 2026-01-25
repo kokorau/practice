@@ -7,6 +7,7 @@ import {
   type GridPosition,
   type HeroPrimitiveKey,
 } from '@practice/section-visual'
+import type { LayerSelectionReturn } from './useLayerSelection'
 
 // ============================================================
 // Types
@@ -18,17 +19,17 @@ import {
 export interface UseForegroundElementOptions {
   /** Foreground config ref from useHeroScene */
   foregroundConfig: Ref<ForegroundLayerConfig>
-  /** Callback to clear canvas layer selection */
-  clearCanvasSelection: () => void
+  /** Layer selection state from useLayerSelection */
+  layerSelection: LayerSelectionReturn
 }
 
 /**
  * Return type for useForegroundElement composable
  */
 export interface UseForegroundElementReturn {
-  // Selection state
-  /** Currently selected foreground element ID */
-  selectedForegroundElementId: Ref<string | null>
+  // Selection state (from layerSelection)
+  /** Currently selected foreground element ID (readonly) */
+  selectedForegroundElementId: ComputedRef<string | null>
   /** Currently selected foreground element config */
   selectedForegroundElement: ComputedRef<ForegroundElementConfig | null>
 
@@ -89,13 +90,13 @@ export interface UseForegroundElementReturn {
 export function useForegroundElement(
   options: UseForegroundElementOptions
 ): UseForegroundElementReturn {
-  const { foregroundConfig, clearCanvasSelection } = options
+  const { foregroundConfig, layerSelection } = options
 
   // ============================================================
-  // Selection State
+  // Selection State (derived from layerSelection)
   // ============================================================
 
-  const selectedForegroundElementId = ref<string | null>(null)
+  const selectedForegroundElementId = computed(() => layerSelection.foregroundElementId.value)
 
   // ============================================================
   // Usecase Setup
@@ -107,9 +108,15 @@ export function useForegroundElement(
       set: (config) => { foregroundConfig.value = config },
     },
     selection: {
-      getSelectedId: () => selectedForegroundElementId.value,
-      setSelectedId: (id) => { selectedForegroundElementId.value = id },
-      clearCanvasSelection,
+      getSelectedId: () => layerSelection.foregroundElementId.value,
+      setSelectedId: (id) => {
+        if (id !== null) {
+          layerSelection.selectForegroundElement(id)
+        } else {
+          layerSelection.clearSelection()
+        }
+      },
+      clearCanvasSelection: () => { /* Not needed: selectForegroundElement already clears canvas selection */ },
     },
   })
 

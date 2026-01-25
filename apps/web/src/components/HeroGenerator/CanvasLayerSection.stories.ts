@@ -76,33 +76,33 @@ function createMockLayerSelection(selectedLayerId: string | null = null): LayerS
   const layerId = ref<string | null>(selectedLayerId)
   const processorType = ref<'effect' | 'mask' | 'processor' | null>(null)
   const processorLayerId = ref<string | null>(null)
-  const htmlLayerId = ref<'title' | 'description' | null>(null)
+  const foregroundElementId = ref<string | null>(null)
 
   return {
     layerId: readonly(layerId),
     processorType: readonly(processorType),
     processorLayerId: readonly(processorLayerId),
-    htmlLayerId: readonly(htmlLayerId),
+    foregroundElementId: readonly(foregroundElementId),
     selection: computed(() => ({
       layerId: layerId.value,
       processorType: processorType.value,
       processorLayerId: processorLayerId.value,
-      htmlLayerId: htmlLayerId.value,
+      foregroundElementId: foregroundElementId.value,
     })),
     isCanvasLayerSelected: computed(() => layerId.value !== null),
-    isHtmlLayerSelected: computed(() => htmlLayerId.value !== null),
+    isForegroundElementSelected: computed(() => foregroundElementId.value !== null),
     isProcessorSelected: computed(() => processorType.value !== null),
     selectCanvasLayer: (id: string) => { layerId.value = id },
     selectProcessor: (id: string, type: 'effect' | 'mask' | 'processor') => {
       processorType.value = type
       processorLayerId.value = id
     },
-    selectHtmlLayer: (id: 'title' | 'description') => { htmlLayerId.value = id },
+    selectForegroundElement: (id: string) => { foregroundElementId.value = id },
     clearSelection: () => {
       layerId.value = null
       processorType.value = null
       processorLayerId.value = null
-      htmlLayerId.value = null
+      foregroundElementId.value = null
     },
     clearProcessorSelection: () => {
       processorType.value = null

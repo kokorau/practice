@@ -1,26 +1,26 @@
 import { ref, computed, readonly, inject, provide, type InjectionKey, type Ref, type DeepReadonly } from 'vue'
-import type { HtmlLayerId, ProcessorType, LayerSelection } from '@practice/section-visual'
+import type { ProcessorType, LayerSelection } from '@practice/section-visual'
 
 // Re-export types for backward compatibility
-export type { HtmlLayerId, ProcessorType, LayerSelection } from '@practice/section-visual'
+export type { ProcessorType, LayerSelection } from '@practice/section-visual'
 
 export interface LayerSelectionReturn {
   // State (readonly)
   layerId: DeepReadonly<Ref<string | null>>
   processorType: DeepReadonly<Ref<ProcessorType | null>>
   processorLayerId: DeepReadonly<Ref<string | null>>
-  htmlLayerId: DeepReadonly<Ref<HtmlLayerId | null>>
+  foregroundElementId: DeepReadonly<Ref<string | null>>
 
   // Computed
   selection: Ref<LayerSelection>
   isCanvasLayerSelected: Ref<boolean>
-  isHtmlLayerSelected: Ref<boolean>
+  isForegroundElementSelected: Ref<boolean>
   isProcessorSelected: Ref<boolean>
 
   // Actions
   selectCanvasLayer: (id: string) => void
   selectProcessor: (layerIdValue: string, type: ProcessorType) => void
-  selectHtmlLayer: (id: HtmlLayerId) => void
+  selectForegroundElement: (id: string) => void
   clearSelection: () => void
   clearProcessorSelection: () => void
 }
@@ -39,21 +39,21 @@ export function createLayerSelection(): LayerSelectionReturn {
   const layerId = ref<string | null>(null)
   const processorType = ref<ProcessorType | null>(null)
   const processorLayerId = ref<string | null>(null)
-  const htmlLayerId = ref<HtmlLayerId | null>(null)
+  const foregroundElementId = ref<string | null>(null)
 
   // ============================================================
   // Computed
   // ============================================================
 
   const isCanvasLayerSelected = computed(() => layerId.value !== null)
-  const isHtmlLayerSelected = computed(() => htmlLayerId.value !== null)
+  const isForegroundElementSelected = computed(() => foregroundElementId.value !== null)
   const isProcessorSelected = computed(() => processorType.value !== null)
 
   const selection = computed<LayerSelection>(() => ({
     layerId: layerId.value,
     processorType: processorType.value,
     processorLayerId: processorLayerId.value,
-    htmlLayerId: htmlLayerId.value,
+    foregroundElementId: foregroundElementId.value,
   }))
 
   // ============================================================
@@ -64,20 +64,20 @@ export function createLayerSelection(): LayerSelectionReturn {
     layerId.value = id
     processorType.value = null
     processorLayerId.value = null
-    // Clear HTML selection when selecting canvas layer
-    htmlLayerId.value = null
+    // Clear foreground selection when selecting canvas layer
+    foregroundElementId.value = null
   }
 
   function selectProcessor(layerIdValue: string, type: ProcessorType) {
     processorType.value = type
     processorLayerId.value = layerIdValue
     // Keep layerId as is (processor belongs to the layer)
-    // Clear HTML selection
-    htmlLayerId.value = null
+    // Clear foreground selection
+    foregroundElementId.value = null
   }
 
-  function selectHtmlLayer(id: HtmlLayerId) {
-    htmlLayerId.value = id
+  function selectForegroundElement(id: string) {
+    foregroundElementId.value = id
     // Clear canvas layer selection
     layerId.value = null
     processorType.value = null
@@ -88,7 +88,7 @@ export function createLayerSelection(): LayerSelectionReturn {
     layerId.value = null
     processorType.value = null
     processorLayerId.value = null
-    htmlLayerId.value = null
+    foregroundElementId.value = null
   }
 
   function clearProcessorSelection() {
@@ -101,18 +101,18 @@ export function createLayerSelection(): LayerSelectionReturn {
     layerId: readonly(layerId),
     processorType: readonly(processorType),
     processorLayerId: readonly(processorLayerId),
-    htmlLayerId: readonly(htmlLayerId),
+    foregroundElementId: readonly(foregroundElementId),
 
     // Computed
     selection,
     isCanvasLayerSelected,
-    isHtmlLayerSelected,
+    isForegroundElementSelected,
     isProcessorSelected,
 
     // Actions
     selectCanvasLayer,
     selectProcessor,
-    selectHtmlLayer,
+    selectForegroundElement,
     clearSelection,
     clearProcessorSelection,
   }
