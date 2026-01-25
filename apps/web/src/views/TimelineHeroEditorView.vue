@@ -43,7 +43,6 @@ const {
   processorType: selectedProcessorType,
   selectCanvasLayer,
   selectProcessor,
-  clearSelection,
 } = layerSelection
 
 // ============================================================
@@ -134,7 +133,7 @@ const {
 // ============================================================
 const foregroundElement = useForegroundElement({
   foregroundConfig: heroScene.foreground.foregroundConfig,
-  clearCanvasSelection: clearSelection,
+  layerSelection,
 })
 
 // Destructure commonly used values

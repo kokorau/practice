@@ -72,7 +72,6 @@ const {
   processorLayerId,
   selectCanvasLayer,
   selectProcessor,
-  clearSelection,
 } = layerSelection
 
 // ============================================================
@@ -314,7 +313,7 @@ const {
   closeFontPanel,
 } = useForegroundElement({
   foregroundConfig: heroScene.foreground.foregroundConfig,
-  clearCanvasSelection: clearSelection,
+  layerSelection,
 })
 
 // ============================================================
@@ -367,11 +366,9 @@ const {
   selectedLayerId,
   onSelectLayer: (id) => {
     selectCanvasLayer(id)
-    selectedForegroundElementId.value = null
   },
   onSelectProcessor: (layerId, type) => {
     selectProcessor(layerId, type)
-    selectedForegroundElementId.value = null
     if (type === 'effect') {
       const layer = selectedLayer.value
       // Get scene layer ID from layer type

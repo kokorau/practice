@@ -10,11 +10,6 @@
 // ============================================================
 
 /**
- * HTML layer ID for foreground text elements
- */
-export type HtmlLayerId = 'title' | 'description'
-
-/**
  * Processor type for selection and operations
  * - 'effect': Effect processor (blur, vignette, etc.)
  * - 'mask': Mask processor (shape-based clipping)
@@ -42,8 +37,8 @@ export interface LayerSelection {
   processorType: ProcessorType | null
   /** Selected processor layer ID */
   processorLayerId: string | null
-  /** Selected HTML layer ID (foreground elements) */
-  htmlLayerId: HtmlLayerId | null
+  /** Selected foreground element ID */
+  foregroundElementId: string | null
 }
 
 // ============================================================

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
-import { ref } from 'vue'
+import { ref, readonly } from 'vue'
 import { useForegroundElement } from './useForegroundElement'
 import type { ForegroundLayerConfig } from '@practice/section-visual'
+import { createLayerSelection } from './useLayerSelection'
 
 // ============================================================
 // Test Helpers
@@ -32,11 +33,11 @@ const createMockForegroundConfig = (): ForegroundLayerConfig => ({
 
 const createMockOptions = () => {
   const foregroundConfig = ref<ForegroundLayerConfig>(createMockForegroundConfig())
-  const clearCanvasSelection = vi.fn()
+  const layerSelection = createLayerSelection()
 
   return {
     foregroundConfig,
-    clearCanvasSelection,
+    layerSelection,
   }
 }
 
@@ -57,6 +58,8 @@ describe('useForegroundElement', () => {
 
     it('selects element and clears canvas selection', () => {
       const options = createMockOptions()
+      // Simulate having a canvas layer selected
+      options.layerSelection.selectCanvasLayer('some-layer')
 
       const { handleSelectForegroundElement, selectedForegroundElementId, selectedForegroundElement } = useForegroundElement(options)
 
@@ -64,7 +67,8 @@ describe('useForegroundElement', () => {
 
       expect(selectedForegroundElementId.value).toBe('title-1')
       expect(selectedForegroundElement.value?.id).toBe('title-1')
-      expect(options.clearCanvasSelection).toHaveBeenCalled()
+      // Canvas selection should be cleared by selectForegroundElement
+      expect(options.layerSelection.layerId.value).toBeNull()
     })
   })
 
