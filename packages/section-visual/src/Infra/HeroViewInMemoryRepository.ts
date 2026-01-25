@@ -15,6 +15,7 @@ import type {
   HeroColorsConfig,
   ViewportConfig,
   ForegroundLayerConfig,
+  NormalizedMaskConfig,
 } from '../Domain/HeroViewConfig'
 import { createDefaultHeroViewConfig, createDefaultMaskProcessorConfig, isMaskProcessorConfig } from '../Domain/HeroViewConfig'
 import { isProcessorLayerConfig } from '../Domain/LayerTreeOps'
@@ -250,8 +251,31 @@ export const createHeroViewInMemoryRepository = (
     },
 
     // ============================================================
-    // マスクchildren操作
+    // マスク操作
     // ============================================================
+
+    updateMaskShape: (processorId: string, modifierIndex: number, shape: NormalizedMaskConfig) => {
+      const processor = findLayerInTree(config.layers, processorId)
+      if (!processor || !isProcessorLayerConfig(processor)) return
+
+      const processorLayer = processor as ProcessorNodeConfig
+      if (modifierIndex < 0 || modifierIndex >= processorLayer.modifiers.length) return
+
+      const modifier = processorLayer.modifiers[modifierIndex]
+      if (!modifier || !isMaskProcessorConfig(modifier)) return
+
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[modifierIndex] = {
+        ...modifier,
+        shape,
+      }
+
+      config = {
+        ...config,
+        layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
+      }
+      notifySubscribers()
+    },
 
     addLayerToMask: (processorId: string, modifierIndex: number, layer: LayerNodeConfig, index?: number) => {
       const processor = findLayerInTree(config.layers, processorId)

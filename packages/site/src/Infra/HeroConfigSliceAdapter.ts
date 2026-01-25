@@ -14,6 +14,7 @@ import type {
   LayerNodeConfig,
   GroupLayerNodeConfig,
   ProcessorNodeConfig,
+  NormalizedMaskConfig,
 } from '@practice/section-visual'
 import {
   createDefaultHeroViewConfig,
@@ -291,8 +292,31 @@ export const createHeroConfigSlice = (
     },
 
     // ============================================================
-    // マスクchildren操作
+    // マスク操作
     // ============================================================
+
+    updateMaskShape: (processorId: string, modifierIndex: number, shape: NormalizedMaskConfig) => {
+      const config = getConfig()
+      const processor = findLayerInTree(config.layers, processorId)
+      if (!processor || !isProcessorLayerConfig(processor)) return
+
+      const processorLayer = processor as ProcessorNodeConfig
+      if (modifierIndex < 0 || modifierIndex >= processorLayer.modifiers.length) return
+
+      const modifier = processorLayer.modifiers[modifierIndex]
+      if (!modifier || !isMaskProcessorConfig(modifier)) return
+
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[modifierIndex] = {
+        ...modifier,
+        shape,
+      }
+
+      setConfig({
+        ...config,
+        layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
+      })
+    },
 
     addLayerToMask: (processorId: string, modifierIndex: number, layer: LayerNodeConfig, index?: number) => {
       const config = getConfig()

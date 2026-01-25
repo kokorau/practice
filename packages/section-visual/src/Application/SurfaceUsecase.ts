@@ -12,11 +12,14 @@ import type {
   LayerNodeConfig,
   SurfaceLayerNodeConfig,
   BaseLayerNodeConfig,
+  ProcessorNodeConfig,
 } from '../Domain/HeroViewConfig'
-import { normalizeSurfaceConfig } from '../Domain/HeroViewConfig'
+import { normalizeSurfaceConfig, normalizeMaskConfig, isMaskProcessorConfig } from '../Domain/HeroViewConfig'
+import { flattenLayersInTree, isProcessorLayerConfig } from '../Domain/LayerTreeOps'
 import type { ColorValue } from '../Domain/SectionVisual'
 import { fromCustomSurfaceParams } from '../Domain/SurfaceMapper'
-import type { CustomSurfaceParams } from '../types/HeroSceneState'
+import { fromCustomMaskShapeParams } from '../Domain/MaskShapeMapper'
+import type { CustomSurfaceParams, CustomMaskShapeParams } from '../types/HeroSceneState'
 import type { PropertyValue } from '../Domain/SectionVisual'
 import { $PropertyValue } from '../Domain/SectionVisual'
 
@@ -166,10 +169,10 @@ export interface SurfaceUsecase {
   setSurfaceFromCustomParams(layerId: string, params: CustomSurfaceParams): void
 
   /**
-   * @deprecated Shape-based masks are no longer supported.
-   * Use children-based masks instead.
+   * CustomMaskShapeParams からマスク形状を設定
+   * @param params カスタムマスク形状パラメータ
    */
-  setMaskShapeFromCustomParams(params: unknown): void
+  setMaskShapeFromCustomParams(params: CustomMaskShapeParams): void
 
   /**
    * カラーキーを更新
@@ -197,6 +200,23 @@ export interface SurfaceUsecase {
 // ============================================================
 // Implementation
 // ============================================================
+
+/**
+ * 最初のMaskModifierを持つProcessorを検索
+ */
+function findFirstMaskModifier(repository: HeroViewRepository): { processorId: string | null; modifierIndex: number } {
+  const config = repository.get()
+  for (const layer of flattenLayersInTree(config.layers)) {
+    if (isProcessorLayerConfig(layer)) {
+      const processorLayer = layer as ProcessorNodeConfig
+      const modifierIndex = processorLayer.modifiers.findIndex(isMaskProcessorConfig)
+      if (modifierIndex !== -1) {
+        return { processorId: layer.id, modifierIndex }
+      }
+    }
+  }
+  return { processorId: null, modifierIndex: -1 }
+}
 
 /**
  * 依存性
@@ -290,13 +310,16 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       repository.updateLayer(layerId, { surface })
     },
 
-    /**
-     * @deprecated Shape-based masks are no longer supported.
-     * Use children-based masks instead.
-     */
-    setMaskShapeFromCustomParams(_params: unknown): void {
-      console.warn('[SurfaceUsecase] setMaskShapeFromCustomParams is deprecated. Shape-based masks are no longer supported.')
-      // No-op: Shape-based masks are replaced with children-based masks
+    setMaskShapeFromCustomParams(params: CustomMaskShapeParams): void {
+      // CustomMaskShapeParams → MaskShapeConfig → NormalizedMaskConfig
+      const maskShapeConfig = fromCustomMaskShapeParams(params)
+      const shape = normalizeMaskConfig(maskShapeConfig)
+
+      // プロセッサレイヤーとmodifierIndexを特定
+      const { processorId, modifierIndex } = findFirstMaskModifier(repository)
+      if (processorId === null || modifierIndex === -1) return
+
+      repository.updateMaskShape(processorId, modifierIndex, shape)
     },
 
     updateColorKey(key: 'primary' | 'secondary', value: ColorValue): void {
