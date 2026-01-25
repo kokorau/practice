@@ -11,8 +11,6 @@ import type {
   NormalizedMaskConfig,
   SingleEffectConfig,
   ProcessorConfig,
-  MaskProcessorConfig,
-  FilterProcessorConfig,
   AnySurfaceConfig,
   AnyMaskConfig,
 } from './HeroViewConfig'
@@ -349,25 +347,19 @@ function resolveEffectConfig(
 }
 
 /**
- * Resolve ProcessorConfig (effect, mask, or filter)
+ * Resolve ProcessorConfig (effect or mask)
  */
 function resolveProcessorConfig(
   config: ProcessorConfig,
   resolver: PropertyResolver
 ): ProcessorConfig {
-  switch (config.type) {
-    case 'effect':
-      return resolveEffectConfig(config, resolver)
-    case 'mask':
-      return {
-        ...config,
-        shape: resolveMaskConfig(config.shape, resolver),
-      } as MaskProcessorConfig
-    case 'filter':
-      return {
-        ...config,
-        params: resolveParams(config.params, resolver),
-      } as FilterProcessorConfig
+  if (config.type === 'effect') {
+    return resolveEffectConfig(config, resolver)
+  }
+  // Mask processor
+  return {
+    ...config,
+    shape: resolveMaskConfig(config.shape, resolver),
   }
 }
 

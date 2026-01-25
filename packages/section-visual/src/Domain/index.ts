@@ -694,7 +694,6 @@ export type {
   // Processor modifier config types
   ProcessorConfig,
   MaskProcessorConfig,
-  FilterProcessorConfig,
   // Foreground
   GridPosition,
   ForegroundElementType,
@@ -720,8 +719,6 @@ export {
   getEffectsBeforeMask,
   // Effect config type guard
   isSingleEffectConfig,
-  // Processor config type guards
-  isFilterProcessorConfig,
   // Effect utilities
   isEffectOfType,
   isVignetteEffect,
@@ -734,7 +731,6 @@ export {
   denormalizeToLayerEffectConfig,
   safeDenormalizeToLayerEffectConfig,
   createDefaultMaskProcessorConfig,
-  createDefaultFilterProcessorConfig,
   // Surface config normalization
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,
@@ -1159,7 +1155,6 @@ export type {
   CompiledMaskShape,
   CompiledMaskProcessor,
   CompiledEffect,
-  CompiledFilterProcessor,
   CompiledProcessorConfig,
   CompiledForegroundLayer,
   CompiledForegroundElement,

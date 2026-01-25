@@ -3,7 +3,7 @@ import type { WritableComputedRef } from 'vue'
 import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
-import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig, NormalizedMaskConfig, FilterProcessorConfig } from '@practice/section-visual'
+import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig, NormalizedMaskConfig } from '@practice/section-visual'
 import { isSurfaceLayerConfig, isBaseLayerConfig, isProcessorLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
@@ -16,13 +16,12 @@ import type {
   LineHalftoneConfigParams,
   BlurConfigParams,
 } from '../../../composables/useFilterEditor'
-import { computed, withDefaults } from 'vue'
+import { computed } from 'vue'
 import PanelHeader, { type BreadcrumbItem } from './PanelHeader.vue'
 import TextElementPanel from './TextElementPanel.vue'
 import LayerSettingsPanel from './LayerSettingsPanel.vue'
 import ImageLayerSettingsPanel from './ImageLayerSettingsPanel.vue'
 import EffectorSettingsPanel from './EffectorSettingsPanel.vue'
-import FilterSettingsPanel from './FilterSettingsPanel.vue'
 import PlaceholderPanel from './PlaceholderPanel.vue'
 
 // ============================================================
@@ -49,7 +48,7 @@ interface FontPreset {
   family: string
 }
 
-type ProcessorType = 'effect' | 'mask' | 'filter' | 'processor' | null
+type ProcessorType = 'effect' | 'mask' | 'processor' | null
 type LayerVariant = 'base' | 'surface' | 'text' | 'model3d' | 'image' | 'processor' | null
 
 /** Selection state */
@@ -136,12 +135,6 @@ interface FilterProps {
   blurConfig: WritableComputedRef<BlurConfigParams>
 }
 
-/** Filter processor state (color adjustments: exposure, contrast, etc.) */
-interface FilterProcessorProps {
-  /** Current filter processor config (null if no filter selected) */
-  filterConfig: FilterProcessorConfig | null
-}
-
 /** Image layer state */
 interface ImageProps {
   layerId: string
@@ -163,7 +156,7 @@ interface ImageProps {
 // Props (Grouped)
 // ============================================================
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   /** Selection state */
   selection: SelectionProps
   /** Foreground/text element state */
@@ -176,15 +169,11 @@ const props = withDefaults(defineProps<{
   mask: MaskProps
   /** Filter/effect state */
   filter: FilterProps
-  /** Filter processor state (optional for backward compatibility) */
-  filterProcessor?: FilterProcessorProps
   /** Image layer state */
   image: ImageProps | null
   /** Primitive color palette */
   palette: PrimitivePalette
-}>(), {
-  filterProcessor: () => ({ filterConfig: null }),
-})
+}>()
 
 // ============================================================
 // Emits (Grouped)
@@ -207,9 +196,6 @@ const emit = defineEmits<{
 
   // Image layer updates
   'update:image': [key: 'uploadImage' | 'clearImage' | 'loadRandom' | 'mode' | 'position', value: unknown]
-
-  // Filter processor updates
-  'update:filterProcessor': [key: keyof FilterProcessorConfig['params'], value: number]
 }>()
 
 // ============================================================
@@ -302,11 +288,6 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
     if (shapeType) {
       items.push({ label: shapeType })
     }
-    return items
-  }
-
-  if (props.selection.processorType === 'filter') {
-    items.push({ label: 'Filter' })
     return items
   }
 
@@ -460,13 +441,6 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         @update:selected-mask-index="emit('update:mask', 'selectedShapeIndex', $event)"
         @update:mask-shape-params="emit('update:mask', 'shapeParams', $event)"
         @update:mask-shape-raw-value="(key, value) => emit('update:maskShapeRawValue', key, value)"
-      />
-
-      <!-- Filter Processor Settings -->
-      <FilterSettingsPanel
-        v-else-if="selection.processorType === 'filter' && filterProcessor.filterConfig"
-        :filter-config="filterProcessor.filterConfig"
-        @update:param="(key, value) => emit('update:filterProcessor', key, value)"
       />
 
       <!-- Processor placeholder -->

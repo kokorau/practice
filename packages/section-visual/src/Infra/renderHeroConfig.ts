@@ -150,13 +150,6 @@ export interface RenderHeroConfigOptions {
    * If not provided, all RangeExpr will use intensity=0 (min value)
    */
   intensityProvider?: import('../Application/resolvers/resolvePropertyValue').IntensityProvider
-
-  /**
-   * LUT provider for filter processors.
-   * If not provided, filter processors will be skipped.
-   * Must be provided by the application layer (e.g., apps/web).
-   */
-  lutProvider?: import('./Compositor/nodes/FilterRenderNode').LutProvider
 }
 
 // ============================================================
@@ -673,7 +666,6 @@ export async function renderHeroConfig(
     isDark,
     intensityProvider: options?.intensityProvider,
     compiledLayers: compiled.layers,
-    lutProvider: options?.lutProvider,
   })
 
   // 3. Execute pipeline (palette no longer needed - colors already resolved)

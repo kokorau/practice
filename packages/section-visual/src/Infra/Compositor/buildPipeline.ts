@@ -13,7 +13,6 @@ import type {
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
   SingleEffectConfig,
-  FilterProcessorConfig,
 } from '../../Domain/HeroViewConfig'
 import type { IntensityProvider } from '../../Application/resolvers/resolvePropertyValue'
 import { resolvePropertyValueToNumber, DEFAULT_INTENSITY_PROVIDER } from '../../Application/resolvers/resolvePropertyValue'
@@ -23,7 +22,6 @@ import {
   getProcessorMask,
   getProcessorTargetPairsFromConfig,
   isSingleEffectConfig,
-  isFilterProcessorConfig,
 } from '../../Domain/HeroViewConfig'
 import type { PropertyValue } from '../../Domain/SectionVisual'
 import { $PropertyValue } from '../../Domain/SectionVisual'
@@ -42,10 +40,7 @@ import {
   createGroupCompositorNode,
   createCanvasOutputNode,
   createTextRenderNode,
-  createFilterRenderNode,
   type EffectConfig,
-  type FilterParams,
-  type LutProvider,
 } from './index'
 import { createImageRenderNode } from './nodes/ImageRenderNode'
 import { getMaskSurfaceKey } from '../../Domain/ColorHelpers'
@@ -76,12 +71,6 @@ interface BuildContext {
    * Required for color resolution - no fallback to palette.
    */
   compiledLayers: CompiledLayerNode[]
-
-  /**
-   * LUT provider for filter processors.
-   * Generates 1D LUT from filter parameters.
-   */
-  lutProvider?: LutProvider
 }
 
 // ============================================================
@@ -220,24 +209,6 @@ function findRootProcessors(layers: LayerNodeConfig[]): ProcessorNodeConfig[] {
 }
 
 /**
- * Extract filter params from FilterProcessorConfig, resolving PropertyValues.
- */
-function extractFilterParams(
-  config: FilterProcessorConfig,
-  intensityProvider: IntensityProvider
-): FilterParams {
-  return {
-    exposure: resolvePropertyValueToNumber(config.params.exposure, intensityProvider),
-    brightness: resolvePropertyValueToNumber(config.params.brightness, intensityProvider),
-    contrast: resolvePropertyValueToNumber(config.params.contrast, intensityProvider),
-    highlights: resolvePropertyValueToNumber(config.params.highlights, intensityProvider),
-    shadows: resolvePropertyValueToNumber(config.params.shadows, intensityProvider),
-    temperature: resolvePropertyValueToNumber(config.params.temperature, intensityProvider),
-    tint: resolvePropertyValueToNumber(config.params.tint, intensityProvider),
-  }
-}
-
-/**
  * Build processor compositor node that applies to the final composite
  * Returns the new final node after applying processor effects
  */
@@ -246,10 +217,9 @@ function buildProcessorNode(
   inputNode: TextureProducingNode,
   processor: ProcessorNodeConfig,
   nodes: Array<RenderNode | CompositorNode | OutputNode>,
-  ctx: BuildContext
+  intensityProvider: IntensityProvider
 ): TextureProducingNode {
   let currentNode: TextureProducingNode = inputNode
-  const { intensityProvider, lutProvider } = ctx
 
   // 1. Apply mask if present
   const maskProcessor = getProcessorMask(processor)
@@ -279,25 +249,6 @@ function buildProcessorNode(
     const effectsNode = createEffectChainCompositorNode(`${id}-effects`, currentNode, effects)
     nodes.push(effectsNode)
     currentNode = effectsNode
-  }
-
-  // 3. Apply filter if present and lutProvider is available
-  if (lutProvider) {
-    const filterConfigs = processor.modifiers.filter(
-      (m): m is FilterProcessorConfig => isFilterProcessorConfig(m)
-    )
-    for (let i = 0; i < filterConfigs.length; i++) {
-      const filterConfig = filterConfigs[i]!
-      const filterParams = extractFilterParams(filterConfig, intensityProvider)
-      const filterNode = createFilterRenderNode(
-        `${id}-filter-${i}`,
-        currentNode,
-        filterParams,
-        lutProvider
-      )
-      nodes.push(filterNode)
-      currentNode = filterNode
-    }
   }
 
   return currentNode
@@ -375,7 +326,7 @@ function buildGroupNode(
       }
 
       // Apply processor (mask and/or effects)
-      const processed = buildProcessorNode(childId, accumulated, child, nodes, ctx)
+      const processed = buildProcessorNode(childId, accumulated, child, nodes, ctx.intensityProvider)
 
       // Reset accumulation with processed result
       accumulatedNodes = [processed]
@@ -440,12 +391,6 @@ export interface BuildPipelineOptions {
    * Required for all surface rendering - color resolution happens at compile time.
    */
   compiledLayers: CompiledLayerNode[]
-
-  /**
-   * LUT provider for filter processors.
-   * If not provided, filter processors will be skipped.
-   */
-  lutProvider?: LutProvider
 }
 
 /**
@@ -473,7 +418,6 @@ export function buildPipeline(
     maskSurfaceKey,
     intensityProvider,
     compiledLayers,
-    lutProvider: options.lutProvider,
   }
 
   const nodes: Array<RenderNode | CompositorNode | OutputNode> = []
@@ -543,7 +487,7 @@ export function buildPipeline(
   for (let i = 0; i < rootProcessors.length; i++) {
     const processor = rootProcessors[i]!
     const processorId = processor.id || `root-processor-${i}`
-    finalNode = buildProcessorNode(processorId, finalNode, processor, nodes, ctx)
+    finalNode = buildProcessorNode(processorId, finalNode, processor, nodes, ctx.intensityProvider)
   }
 
   // 6. Build canvas output node

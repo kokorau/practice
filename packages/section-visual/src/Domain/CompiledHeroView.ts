@@ -104,25 +104,9 @@ export interface CompiledEffect {
 }
 
 /**
- * Compiled filter processor with all parameters resolved
+ * Compiled processor config (effect or mask)
  */
-export interface CompiledFilterProcessor {
-  type: 'filter'
-  params: {
-    exposure: number
-    brightness: number
-    contrast: number
-    highlights: number
-    shadows: number
-    temperature: number
-    tint: number
-  }
-}
-
-/**
- * Compiled processor config (effect, mask, or filter)
- */
-export type CompiledProcessorConfig = CompiledEffect | CompiledMaskProcessor | CompiledFilterProcessor
+export type CompiledProcessorConfig = CompiledEffect | CompiledMaskProcessor
 
 // ============================================================
 // Compiled Layer Node Types
