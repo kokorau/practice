@@ -4,6 +4,7 @@
 
 import type { TimelineRepository } from '../ports/TimelineRepository'
 import type { Phase, PhaseId, PhaseType } from '../../Phase'
+import { generatePhaseId } from '../../Phase'
 import type { Ms } from '../../Unit'
 
 export interface PhaseUsecaseDeps {
@@ -30,7 +31,7 @@ export const createPhaseUsecase = (deps: PhaseUsecaseDeps): PhaseUsecase => {
   return {
     createPhase(params: CreatePhaseParams): Phase {
       const phase: Phase = {
-        id: crypto.randomUUID() as PhaseId,
+        id: generatePhaseId(),
         type: params.type,
         duration: params.duration,
       }

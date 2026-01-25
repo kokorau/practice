@@ -4,6 +4,7 @@
 
 import type { TimelineRepository } from '../ports/TimelineRepository'
 import type { Track, TrackId, ClockType, BezierPath } from '../../Track'
+import { generateTrackId } from '../../Track'
 import type { PhaseId } from '../../Phase'
 
 export interface TrackUsecaseDeps {
@@ -33,7 +34,7 @@ export const createTrackUsecase = (deps: TrackUsecaseDeps): TrackUsecase => {
   return {
     createTrack(params: CreateTrackParams): Track {
       const track: Track = {
-        id: crypto.randomUUID() as TrackId,
+        id: generateTrackId(),
         name: params.name,
         phaseId: params.phaseId,
         clock: params.clock ?? 'Phase',
