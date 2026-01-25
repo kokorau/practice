@@ -10,18 +10,13 @@ import type {
   HeroPrimitiveKey,
   NormalizedSurfaceConfig,
   LayerNodeConfig,
-  ProcessorNodeConfig,
-  MaskProcessorConfig,
-  MaskShapeTypeId,
   SurfaceLayerNodeConfig,
   BaseLayerNodeConfig,
 } from '../Domain/HeroViewConfig'
-import { normalizeSurfaceConfig, normalizeMaskConfig } from '../Domain/HeroViewConfig'
+import { normalizeSurfaceConfig } from '../Domain/HeroViewConfig'
 import type { ColorValue } from '../Domain/SectionVisual'
-import { findProcessorWithMask, isMaskProcessorConfig } from '../Domain/LayerTreeOps'
 import { fromCustomSurfaceParams } from '../Domain/SurfaceMapper'
-import { fromCustomMaskShapeParams } from '../Domain/MaskShapeMapper'
-import type { CustomSurfaceParams, CustomMaskShapeParams } from '../types/HeroSceneState'
+import type { CustomSurfaceParams } from '../types/HeroSceneState'
 import type { PropertyValue } from '../Domain/SectionVisual'
 import { $PropertyValue } from '../Domain/SectionVisual'
 
@@ -106,11 +101,11 @@ export type SurfaceParamsUpdate =
   | ({ id: 'paperTexture'; fiberScale?: number; fiberStrength?: number; fiberWarp?: number; grainDensity?: number; grainSize?: number; bumpStrength?: number; lightAngle?: number; seed?: number } & SurfaceColorParams)
 
 /**
- * マスク形状パラメータの更新型
- * id はマスク形状タイプの識別子
+ * @deprecated Shape-based masks are no longer supported.
+ * Use children-based masks instead.
  */
 export type MaskShapeParamsUpdate = {
-  id: MaskShapeTypeId
+  id: string
   [key: string]: string | number | boolean | undefined
 }
 
@@ -171,11 +166,10 @@ export interface SurfaceUsecase {
   setSurfaceFromCustomParams(layerId: string, params: CustomSurfaceParams): void
 
   /**
-   * CustomMaskShapeParams からマスク形状を設定
-   * 自動的にマスクを持つProcessorを検索して更新
-   * @param params カスタムマスク形状パラメータ
+   * @deprecated Shape-based masks are no longer supported.
+   * Use children-based masks instead.
    */
-  setMaskShapeFromCustomParams(params: CustomMaskShapeParams): void
+  setMaskShapeFromCustomParams(params: unknown): void
 
   /**
    * カラーキーを更新
@@ -282,38 +276,13 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       repository.updateLayer(layerId, { surface: newSurface })
     },
 
-    updateMaskShapeParams(processorId: string, params: MaskShapeParamsUpdate): void {
-      const layer = repository.findLayer(processorId)
-      if (!layer) return
-
-      // processor layer のみ対応
-      if (layer.type !== 'processor') return
-
-      const processorLayer = layer as ProcessorNodeConfig
-      const maskModifierIndex = processorLayer.modifiers.findIndex(
-        (m): m is MaskProcessorConfig => m.type === 'mask'
-      )
-      if (maskModifierIndex === -1) return
-
-      const maskModifier = processorLayer.modifiers[maskModifierIndex] as MaskProcessorConfig
-      const currentShape = maskModifier.shape
-      if (currentShape.id !== params.id) return
-
-      // Extract params without 'id' field and convert to PropertyValue
-      const { id: _id, ...updateParams } = params
-      const newShape = {
-        id: currentShape.id,
-        params: { ...currentShape.params, ...toPropertyValueParams(updateParams) },
-      }
-
-      // Update modifiers array
-      const newModifiers = [...processorLayer.modifiers]
-      newModifiers[maskModifierIndex] = {
-        ...maskModifier,
-        shape: newShape,
-      }
-
-      repository.updateLayer(processorId, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
+    /**
+     * @deprecated Shape-based masks are no longer supported.
+     * Use children-based masks instead.
+     */
+    updateMaskShapeParams(_processorId: string, _params: MaskShapeParamsUpdate): void {
+      console.warn('[SurfaceUsecase] updateMaskShapeParams is deprecated. Shape-based masks are no longer supported.')
+      // No-op: Shape-based masks are replaced with children-based masks
     },
 
     setSurfaceFromCustomParams(layerId: string, params: CustomSurfaceParams): void {
@@ -321,24 +290,13 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       repository.updateLayer(layerId, { surface })
     },
 
-    setMaskShapeFromCustomParams(params: CustomMaskShapeParams): void {
-      const config = repository.get()
-      if (!config) return
-
-      const processor = findProcessorWithMask(config.layers)
-      if (!processor) return
-
-      const maskModifierIndex = processor.modifiers.findIndex(isMaskProcessorConfig)
-      if (maskModifierIndex === -1) return
-
-      const existingMask = processor.modifiers[maskModifierIndex] as MaskProcessorConfig
-      const newModifiers = [...processor.modifiers]
-      newModifiers[maskModifierIndex] = {
-        ...existingMask,
-        shape: normalizeMaskConfig(fromCustomMaskShapeParams(params)),
-      }
-
-      repository.updateLayer(processor.id, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
+    /**
+     * @deprecated Shape-based masks are no longer supported.
+     * Use children-based masks instead.
+     */
+    setMaskShapeFromCustomParams(_params: unknown): void {
+      console.warn('[SurfaceUsecase] setMaskShapeFromCustomParams is deprecated. Shape-based masks are no longer supported.')
+      // No-op: Shape-based masks are replaced with children-based masks
     },
 
     updateColorKey(key: 'primary' | 'secondary', value: ColorValue): void {

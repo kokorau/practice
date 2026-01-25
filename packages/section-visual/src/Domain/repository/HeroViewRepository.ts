@@ -136,4 +136,34 @@ export interface HeroViewRepository {
    * @param position 移動先の位置
    */
   moveModifier(sourceNodeId: string, sourceModifierIndex: number, position: ModifierDropPosition): void
+
+  // ============================================================
+  // マスクchildren操作
+  // ============================================================
+
+  /**
+   * マスクにレイヤーを追加
+   * @param processorId プロセッサレイヤーのID
+   * @param modifierIndex マスク修飾子のインデックス
+   * @param layer 追加するレイヤー
+   * @param index 挿入位置（省略時は末尾）
+   */
+  addLayerToMask(processorId: string, modifierIndex: number, layer: LayerNodeConfig, index?: number): void
+
+  /**
+   * マスクからレイヤーを削除
+   * @param processorId プロセッサレイヤーのID
+   * @param modifierIndex マスク修飾子のインデックス
+   * @param layerId 削除するレイヤーのID
+   */
+  removeLayerFromMask(processorId: string, modifierIndex: number, layerId: string): void
+
+  /**
+   * マスク内でレイヤーを移動
+   * @param processorId プロセッサレイヤーのID
+   * @param modifierIndex マスク修飾子のインデックス
+   * @param layerId 移動するレイヤーのID
+   * @param newIndex 新しい位置
+   */
+  moveLayerInMask(processorId: string, modifierIndex: number, layerId: string, newIndex: number): void
 }

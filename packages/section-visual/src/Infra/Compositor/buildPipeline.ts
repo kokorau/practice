@@ -13,6 +13,7 @@ import type {
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
   SingleEffectConfig,
+  AnyMaskConfig,
 } from '../../Domain/HeroViewConfig'
 import type { IntensityProvider } from '../../Application/resolvers/resolvePropertyValue'
 import { resolvePropertyValueToNumber, DEFAULT_INTENSITY_PROVIDER } from '../../Application/resolvers/resolvePropertyValue'
@@ -33,8 +34,9 @@ import type {
 } from '../../Domain/Compositor'
 import {
   createSurfaceRenderNodeFromCompiled,
-  createMaskRenderNode,
   createMaskCompositorNode,
+  createMaskChildrenRenderNode,
+  createMaskRenderNode,
   createEffectChainCompositorNode,
   createOverlayCompositorNode,
   createGroupCompositorNode,
@@ -42,6 +44,8 @@ import {
   createTextRenderNode,
   type EffectConfig,
 } from './index'
+import type { CompiledProcessorLayerNode } from '../../Domain/CompiledHeroView'
+import { isCompiledProcessorLayerNode, isCompiledMaskProcessor } from '../../Domain/CompiledHeroView'
 import { createImageRenderNode } from './nodes/ImageRenderNode'
 import { getMaskSurfaceKey } from '../../Domain/ColorHelpers'
 
@@ -209,6 +213,54 @@ function findRootProcessors(layers: LayerNodeConfig[]): ProcessorNodeConfig[] {
 }
 
 /**
+ * Find the compiled processor node by ID from compiled layers.
+ */
+function findCompiledProcessor(
+  compiledLayers: CompiledLayerNode[],
+  processorId: string
+): CompiledProcessorLayerNode | null {
+  for (const layer of compiledLayers) {
+    if (isCompiledProcessorLayerNode(layer) && layer.id === processorId) {
+      return layer
+    }
+    if (isCompiledGroupLayerNode(layer)) {
+      const found = findCompiledProcessor(layer.children, processorId)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+/**
+ * Build render nodes from compiled mask children.
+ * Returns an array of render/compositor nodes for the mask source.
+ */
+function buildMaskChildrenNodes(
+  maskId: string,
+  compiledChildren: CompiledLayerNode[],
+  allNodes: Array<RenderNode | CompositorNode | OutputNode>
+): Array<RenderNode | CompositorNode> {
+  const childNodes: Array<RenderNode | CompositorNode> = []
+
+  for (let i = 0; i < compiledChildren.length; i++) {
+    const child = compiledChildren[i]
+    if (!child || !child.visible) continue
+
+    const childId = `${maskId}-child-${i}`
+
+    if (isCompiledSurfaceLayerNode(child)) {
+      const surfaceNode = createSurfaceRenderNodeFromCompiled(childId, child.surface)
+      allNodes.push(surfaceNode)
+      childNodes.push(surfaceNode)
+    }
+    // Note: Could extend to support text, image, and group children in mask
+    // For now, only surface layers are supported as mask children
+  }
+
+  return childNodes
+}
+
+/**
  * Build processor compositor node that applies to the final composite
  * Returns the new final node after applying processor effects
  */
@@ -217,23 +269,75 @@ function buildProcessorNode(
   inputNode: TextureProducingNode,
   processor: ProcessorNodeConfig,
   nodes: Array<RenderNode | CompositorNode | OutputNode>,
-  intensityProvider: IntensityProvider
+  intensityProvider: IntensityProvider,
+  ctx: BuildContext
 ): TextureProducingNode {
   let currentNode: TextureProducingNode = inputNode
 
   // 1. Apply mask if present
   const maskProcessor = getProcessorMask(processor)
-  if (maskProcessor?.enabled && maskProcessor.shape) {
-    const maskNode = createMaskRenderNode(`${id}-mask`, maskProcessor.shape)
-    nodes.push(maskNode)
+  if (maskProcessor?.enabled) {
+    // Find the compiled processor to get compiled mask data
+    const compiledProcessor = findCompiledProcessor(ctx.compiledLayers, processor.id)
+    if (compiledProcessor) {
+      const compiledMask = compiledProcessor.modifiers.find(isCompiledMaskProcessor)
+      if (compiledMask) {
+        // Priority: shape (legacy) > children (new)
+        // This ensures backwards compatibility with existing presets
+        if (compiledMask.shape) {
+          // Use legacy shape-based mask (MaskRenderNode)
+          // Convert CompiledMaskShape to AnyMaskConfig format
+          const maskConfig = {
+            type: compiledMask.shape.id,
+            ...compiledMask.shape.params,
+          } as AnyMaskConfig
 
-    const maskedNode = createMaskCompositorNode(
-      `${id}-masked`,
-      currentNode,
-      maskNode
-    )
-    nodes.push(maskedNode)
-    currentNode = maskedNode
+          const maskRenderNode = createMaskRenderNode(
+            `${id}-mask-render`,
+            maskConfig
+          )
+          nodes.push(maskRenderNode)
+
+          // Apply mask to current node using MaskCompositorNode
+          const maskedNode = createMaskCompositorNode(
+            `${id}-masked`,
+            currentNode,
+            maskRenderNode
+          )
+          nodes.push(maskedNode)
+          currentNode = maskedNode
+        } else if (compiledMask.children.length > 0) {
+          // Use new children-based mask (MaskChildrenRenderNode)
+          // Build render nodes from compiled mask children
+          const maskChildNodes = buildMaskChildrenNodes(
+            `${id}-mask`,
+            compiledMask.children,
+            nodes
+          )
+
+          if (maskChildNodes.length > 0) {
+            // Create MaskChildrenRenderNode to render children to luminance greymap
+            const maskChildrenRenderNode = createMaskChildrenRenderNode(
+              `${id}-mask-render`,
+              maskChildNodes,
+              compiledMask.invert
+            )
+            nodes.push(maskChildrenRenderNode)
+
+            // Apply mask to current node using MaskCompositorNode
+            const maskedNode = createMaskCompositorNode(
+              `${id}-masked`,
+              currentNode,
+              maskChildrenRenderNode
+            )
+            nodes.push(maskedNode)
+            currentNode = maskedNode
+          }
+        }
+        // If neither shape nor children, mask is not applied
+        // (empty children = no clipping, handled by fallback)
+      }
+    }
   }
 
   // 2. Apply effects if present
@@ -326,7 +430,7 @@ function buildGroupNode(
       }
 
       // Apply processor (mask and/or effects)
-      const processed = buildProcessorNode(childId, accumulated, child, nodes, ctx.intensityProvider)
+      const processed = buildProcessorNode(childId, accumulated, child, nodes, ctx.intensityProvider, ctx)
 
       // Reset accumulation with processed result
       accumulatedNodes = [processed]
@@ -487,7 +591,7 @@ export function buildPipeline(
   for (let i = 0; i < rootProcessors.length; i++) {
     const processor = rootProcessors[i]!
     const processorId = processor.id || `root-processor-${i}`
-    finalNode = buildProcessorNode(processorId, finalNode, processor, nodes, ctx.intensityProvider)
+    finalNode = buildProcessorNode(processorId, finalNode, processor, nodes, ctx.intensityProvider, ctx)
   }
 
   // 6. Build canvas output node

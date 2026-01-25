@@ -23,6 +23,8 @@ import {
   removeLayerFromTree,
   wrapLayerInGroupInTree,
   isGroupLayerConfig,
+  isProcessorLayerConfig,
+  isMaskProcessorConfig,
   moveLayerInTree,
   moveModifierInTree,
   type LayerDropPosition,
@@ -285,6 +287,100 @@ export const createHeroConfigSlice = (
       setConfig({
         ...config,
         layers: moveModifierInTree(config.layers, sourceNodeId, sourceModifierIndex, position),
+      })
+    },
+
+    // ============================================================
+    // マスクchildren操作
+    // ============================================================
+
+    addLayerToMask: (processorId: string, modifierIndex: number, layer: LayerNodeConfig, index?: number) => {
+      const config = getConfig()
+      const processor = findLayerInTree(config.layers, processorId)
+      if (!processor || !isProcessorLayerConfig(processor)) return
+
+      const processorLayer = processor as ProcessorNodeConfig
+      if (modifierIndex < 0 || modifierIndex >= processorLayer.modifiers.length) return
+
+      const modifier = processorLayer.modifiers[modifierIndex]
+      if (!modifier || !isMaskProcessorConfig(modifier)) return
+
+      const maskModifier = modifier
+      const newChildren = [...maskModifier.children]
+
+      if (index !== undefined && index >= 0 && index <= newChildren.length) {
+        newChildren.splice(index, 0, layer)
+      } else {
+        newChildren.push(layer)
+      }
+
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[modifierIndex] = {
+        ...maskModifier,
+        children: newChildren,
+      }
+
+      setConfig({
+        ...config,
+        layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
+      })
+    },
+
+    removeLayerFromMask: (processorId: string, modifierIndex: number, layerId: string) => {
+      const config = getConfig()
+      const processor = findLayerInTree(config.layers, processorId)
+      if (!processor || !isProcessorLayerConfig(processor)) return
+
+      const processorLayer = processor as ProcessorNodeConfig
+      if (modifierIndex < 0 || modifierIndex >= processorLayer.modifiers.length) return
+
+      const modifier = processorLayer.modifiers[modifierIndex]
+      if (!modifier || !isMaskProcessorConfig(modifier)) return
+
+      const maskModifier = modifier
+      const newChildren = maskModifier.children.filter((child) => child.id !== layerId)
+
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[modifierIndex] = {
+        ...maskModifier,
+        children: newChildren,
+      }
+
+      setConfig({
+        ...config,
+        layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
+      })
+    },
+
+    moveLayerInMask: (processorId: string, modifierIndex: number, layerId: string, newIndex: number) => {
+      const config = getConfig()
+      const processor = findLayerInTree(config.layers, processorId)
+      if (!processor || !isProcessorLayerConfig(processor)) return
+
+      const processorLayer = processor as ProcessorNodeConfig
+      if (modifierIndex < 0 || modifierIndex >= processorLayer.modifiers.length) return
+
+      const modifier = processorLayer.modifiers[modifierIndex]
+      if (!modifier || !isMaskProcessorConfig(modifier)) return
+
+      const maskModifier = modifier
+      const currentIndex = maskModifier.children.findIndex((child) => child.id === layerId)
+      if (currentIndex === -1) return
+
+      const newChildren = [...maskModifier.children]
+      const [movedLayer] = newChildren.splice(currentIndex, 1)
+      if (!movedLayer) return
+      newChildren.splice(newIndex, 0, movedLayer)
+
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[modifierIndex] = {
+        ...maskModifier,
+        children: newChildren,
+      }
+
+      setConfig({
+        ...config,
+        layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
       })
     },
   }

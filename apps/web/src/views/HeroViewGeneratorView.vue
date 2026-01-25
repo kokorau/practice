@@ -344,6 +344,9 @@ const {
   handleUseAsMask,
   handleMoveNode,
   handleMoveModifier,
+  handleAddLayerToMask,
+  handleRemoveLayerFromMask,
+  handleMoveLayerInMask: _handleMoveLayerInMask,
 } = useLayerOperations({
   repository: heroScene.usecase.heroViewRepository,
   heroViewConfig: heroScene.editor.heroViewConfig,
@@ -364,6 +367,9 @@ const {
     addModifierToProcessor: heroScene.layer.addModifierToProcessor,
     removeProcessorFromLayer: heroScene.layer.removeProcessorFromLayer,
     removeProcessor: heroScene.layer.removeProcessor,
+    addLayerToMask: heroScene.layer.addLayerToMask,
+    removeLayerFromMask: heroScene.layer.removeLayerFromMask,
+    moveLayerInMask: heroScene.layer.moveLayerInMask,
   },
   selectedLayerId,
   onSelectLayer: (id) => {
@@ -536,6 +542,33 @@ const handleImageUpdate = (key: string, value: unknown) => {
   }
 }
 
+// ============================================================
+// Mask Children UI Handler
+// ============================================================
+const handleAddLayerToMaskFromUI = (
+  processorId: string,
+  modifierIndex: number,
+  layerType: 'surface' | 'text' | 'image'
+) => {
+  // Create a new layer config based on type
+  // For now, only support surface layers
+  if (layerType === 'surface') {
+    // Get default surface config (solid white)
+    const surfaceLayer: SurfaceLayerNodeConfig = {
+      type: 'surface',
+      id: `mask-surface-${Date.now()}`,
+      name: 'Mask Surface',
+      visible: true,
+      surface: {
+        id: 'solid',
+        params: { color: { type: 'static', value: '#ffffff' } },
+      },
+    }
+    handleAddLayerToMask(processorId, modifierIndex, surfaceLayer)
+  }
+  // TODO: Support text and image layers in mask children
+}
+
 </script>
 
 <template>
@@ -572,6 +605,8 @@ const handleImageUpdate = (key: string, value: unknown) => {
       @layer-contextmenu="handleLayerContextMenu"
       @move-node="handleMoveNode"
       @move-modifier="handleMoveModifier"
+      @add-layer-to-mask="handleAddLayerToMaskFromUI"
+      @remove-layer-from-mask="handleRemoveLayerFromMask"
       @select-foreground-element="handleSelectForegroundElement"
       @foreground-contextmenu="handleForegroundContextMenu"
       @add-foreground-element="handleAddForegroundElement"

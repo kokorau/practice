@@ -57,7 +57,10 @@ export function extractTrackIdsFromParams(
  * @param config - ProcessorConfig (SingleEffectConfig or MaskProcessorConfig)
  * @returns Array of unique track IDs
  */
-function extractTrackIdsFromProcessorConfig(config: ProcessorConfig): string[] {
+function extractTrackIdsFromProcessorConfig(
+  config: ProcessorConfig,
+  extractFromLayer: (layer: LayerNodeConfig) => string[]
+): string[] {
   const trackIds = new Set<string>()
 
   if (config.type === 'effect') {
@@ -67,8 +70,11 @@ function extractTrackIdsFromProcessorConfig(config: ProcessorConfig): string[] {
     }
   } else if (config.type === 'mask') {
     const maskConfig = config as MaskProcessorConfig
-    for (const trackId of extractTrackIdsFromParams(maskConfig.shape.params)) {
-      trackIds.add(trackId)
+    // Extract track IDs from mask children layers
+    for (const child of maskConfig.children) {
+      for (const trackId of extractFromLayer(child)) {
+        trackIds.add(trackId)
+      }
     }
   }
 
@@ -96,7 +102,7 @@ function extractTrackIdsFromLayer(layer: LayerNodeConfig): string[] {
     case 'processor': {
       const processorLayer = layer as ProcessorNodeConfig
       for (const modifier of processorLayer.modifiers) {
-        for (const trackId of extractTrackIdsFromProcessorConfig(modifier)) {
+        for (const trackId of extractTrackIdsFromProcessorConfig(modifier, extractTrackIdsFromLayer)) {
           trackIds.add(trackId)
         }
       }

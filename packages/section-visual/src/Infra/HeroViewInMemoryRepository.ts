@@ -16,7 +16,8 @@ import type {
   ViewportConfig,
   ForegroundLayerConfig,
 } from '../Domain/HeroViewConfig'
-import { createDefaultHeroViewConfig, createDefaultMaskProcessorConfig } from '../Domain/HeroViewConfig'
+import { createDefaultHeroViewConfig, createDefaultMaskProcessorConfig, isMaskProcessorConfig } from '../Domain/HeroViewConfig'
+import { isProcessorLayerConfig } from '../Domain/LayerTreeOps'
 import {
   findLayerInTree,
   updateLayerInTree,
@@ -244,6 +245,100 @@ export const createHeroViewInMemoryRepository = (
       config = {
         ...config,
         layers: moveModifierInTree(config.layers, sourceNodeId, sourceModifierIndex, position),
+      }
+      notifySubscribers()
+    },
+
+    // ============================================================
+    // マスクchildren操作
+    // ============================================================
+
+    addLayerToMask: (processorId: string, modifierIndex: number, layer: LayerNodeConfig, index?: number) => {
+      const processor = findLayerInTree(config.layers, processorId)
+      if (!processor || !isProcessorLayerConfig(processor)) return
+
+      const processorLayer = processor as ProcessorNodeConfig
+      if (modifierIndex < 0 || modifierIndex >= processorLayer.modifiers.length) return
+
+      const modifier = processorLayer.modifiers[modifierIndex]
+      if (!modifier || !isMaskProcessorConfig(modifier)) return
+
+      const maskModifier = modifier
+      const newChildren = [...maskModifier.children]
+
+      if (index !== undefined && index >= 0 && index <= newChildren.length) {
+        newChildren.splice(index, 0, layer)
+      } else {
+        newChildren.push(layer)
+      }
+
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[modifierIndex] = {
+        ...maskModifier,
+        children: newChildren,
+      }
+
+      config = {
+        ...config,
+        layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
+      }
+      notifySubscribers()
+    },
+
+    removeLayerFromMask: (processorId: string, modifierIndex: number, layerId: string) => {
+      const processor = findLayerInTree(config.layers, processorId)
+      if (!processor || !isProcessorLayerConfig(processor)) return
+
+      const processorLayer = processor as ProcessorNodeConfig
+      if (modifierIndex < 0 || modifierIndex >= processorLayer.modifiers.length) return
+
+      const modifier = processorLayer.modifiers[modifierIndex]
+      if (!modifier || !isMaskProcessorConfig(modifier)) return
+
+      const maskModifier = modifier
+      const newChildren = maskModifier.children.filter((child) => child.id !== layerId)
+
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[modifierIndex] = {
+        ...maskModifier,
+        children: newChildren,
+      }
+
+      config = {
+        ...config,
+        layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
+      }
+      notifySubscribers()
+    },
+
+    moveLayerInMask: (processorId: string, modifierIndex: number, layerId: string, newIndex: number) => {
+      const processor = findLayerInTree(config.layers, processorId)
+      if (!processor || !isProcessorLayerConfig(processor)) return
+
+      const processorLayer = processor as ProcessorNodeConfig
+      if (modifierIndex < 0 || modifierIndex >= processorLayer.modifiers.length) return
+
+      const modifier = processorLayer.modifiers[modifierIndex]
+      if (!modifier || !isMaskProcessorConfig(modifier)) return
+
+      const maskModifier = modifier
+      const currentIndex = maskModifier.children.findIndex((child) => child.id === layerId)
+      if (currentIndex === -1) return
+
+      const newChildren = [...maskModifier.children]
+      const [movedLayer] = newChildren.splice(currentIndex, 1)
+      if (!movedLayer) return
+      newChildren.splice(newIndex, 0, movedLayer)
+
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[modifierIndex] = {
+        ...maskModifier,
+        children: newChildren,
+      }
+
+      config = {
+        ...config,
+        layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
       }
       notifySubscribers()
     },

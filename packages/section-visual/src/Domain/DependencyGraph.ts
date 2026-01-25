@@ -96,24 +96,6 @@ function addDependenciesFromParams(
 }
 
 /**
- * Add dependencies from a ProcessorConfig (effect or mask).
- */
-function addDependenciesFromProcessorConfig(
-  graph: DependencyGraph,
-  config: ProcessorConfig,
-  layerId: string,
-  layerName: string
-): void {
-  if (config.type === 'effect') {
-    const effectConfig = config as SingleEffectConfig
-    addDependenciesFromParams(graph, effectConfig.params, 'effect', layerId, layerName)
-  } else if (config.type === 'mask') {
-    const maskConfig = config as MaskProcessorConfig
-    addDependenciesFromParams(graph, maskConfig.shape.params, 'mask', layerId, layerName)
-  }
-}
-
-/**
  * Add dependencies from a single LayerNodeConfig.
  */
 function addDependenciesFromLayer(
@@ -152,6 +134,27 @@ function addDependenciesFromLayer(
     case 'image':
     case 'model3d':
       break
+  }
+}
+
+/**
+ * Add dependencies from a ProcessorConfig (effect or mask).
+ */
+function addDependenciesFromProcessorConfig(
+  graph: DependencyGraph,
+  config: ProcessorConfig,
+  layerId: string,
+  layerName: string
+): void {
+  if (config.type === 'effect') {
+    const effectConfig = config as SingleEffectConfig
+    addDependenciesFromParams(graph, effectConfig.params, 'effect', layerId, layerName)
+  } else if (config.type === 'mask') {
+    const maskConfig = config as MaskProcessorConfig
+    // Extract dependencies from mask children layers
+    for (const child of maskConfig.children) {
+      addDependenciesFromLayer(graph, child)
+    }
   }
 }
 

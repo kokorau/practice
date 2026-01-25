@@ -239,15 +239,15 @@ const getEffectType = (layer: LayerNodeConfig | null | undefined): string | null
   return null
 }
 
-// Helper to get mask shape type from processor layer
-const getMaskShapeType = (layer: LayerNodeConfig | null | undefined): string | null => {
-  if (!layer || !isProcessorLayerConfig(layer)) return null
+// Helper to get mask children count from processor layer
+const getMaskChildrenCount = (layer: LayerNodeConfig | null | undefined): number => {
+  if (!layer || !isProcessorLayerConfig(layer)) return 0
   const processor = layer as ProcessorNodeConfig
   const maskMod = processor.modifiers.find((m) => m.type === 'mask')
   if (maskMod && maskMod.type === 'mask') {
-    return maskMod.shape.id
+    return maskMod.children?.length ?? 0
   }
-  return null
+  return 0
 }
 
 // Compute breadcrumbs based on selection state
@@ -284,10 +284,8 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
   }
 
   if (props.selection.processorType === 'mask') {
-    const shapeType = getMaskShapeType(layer)
-    if (shapeType) {
-      items.push({ label: shapeType })
-    }
+    const childrenCount = getMaskChildrenCount(layer)
+    items.push({ label: `${childrenCount} layers` })
     return items
   }
 

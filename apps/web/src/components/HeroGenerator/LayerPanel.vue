@@ -42,6 +42,9 @@ const emit = defineEmits<{
   'add-foreground-element': [type: ForegroundElementType]
   'remove-foreground-element': [elementId: string]
   'foreground-contextmenu': [elementId: string, event: MouseEvent]
+  // Mask children operations
+  'add-layer-to-mask': [processorNodeId: string, modifierIndex: number, layerType: 'surface' | 'text' | 'image']
+  'remove-layer-from-mask': [processorNodeId: string, modifierIndex: number, layerId: string]
 }>()
 </script>
 
@@ -62,6 +65,8 @@ const emit = defineEmits<{
       @contextmenu="(layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number) => emit('layer-contextmenu', layerId, event, targetType, modifierIndex)"
       @move-node="(nodeId: string, position: LayerDropPosition) => emit('move-node', nodeId, position)"
       @move-modifier="(sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => emit('move-modifier', sourceNodeId, modifierIndex, position)"
+      @add-layer-to-mask="(processorId: string, modIdx: number, layerType: 'surface' | 'text' | 'image') => emit('add-layer-to-mask', processorId, modIdx, layerType)"
+      @remove-layer-from-mask="(processorId: string, modIdx: number, layerId: string) => emit('remove-layer-from-mask', processorId, modIdx, layerId)"
     />
 
     <!-- HTML Section -->

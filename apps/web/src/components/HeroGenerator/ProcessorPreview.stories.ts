@@ -13,14 +13,14 @@ import {
   type MaskProcessorConfig,
   type SingleEffectConfig,
   type SurfaceLayerNodeConfig,
-  type MaskShapeConfig,
+  type LayerNodeConfig,
   normalizeSurfaceConfig,
-  normalizeMaskConfig,
   createSingleEffectConfig,
   HERO_CANVAS_WIDTH,
   HERO_CANVAS_HEIGHT,
   EFFECT_TYPES,
   type EffectType,
+  $PropertyValue,
 } from '@practice/section-visual'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -53,23 +53,27 @@ const createBaseSurfaceLayer = (): SurfaceLayerNodeConfig => ({
 // Helper: Convert MaskPattern's maskConfig to section-visual's MaskShapeConfig
 // ============================================================
 
-const toMaskShapeConfig = (maskConfig: MaskPattern['maskConfig']): MaskShapeConfig => {
-  // Ensure cutout has a default value (texture package has it optional, section-visual requires it)
-  return {
-    ...maskConfig,
-    cutout: maskConfig.cutout ?? true,
-  } as MaskShapeConfig
-}
+// Helper: Create a default mask child layer
+const createDefaultMaskChild = (): LayerNodeConfig => ({
+  type: 'surface',
+  id: `mask-child-${Date.now()}`,
+  name: 'Mask Surface',
+  visible: true,
+  surface: {
+    id: 'solid',
+    params: { color: $PropertyValue.static('#ffffff') },
+  },
+})
 
 // ============================================================
 // Helper: Create HeroViewConfig with Mask
 // ============================================================
 
-const createMaskConfig = (maskPattern: MaskPattern): HeroViewConfig => {
+const createMaskConfig = (_maskPattern: MaskPattern): HeroViewConfig => {
   const maskProcessor: MaskProcessorConfig = {
     type: 'mask',
     enabled: true,
-    shape: normalizeMaskConfig(toMaskShapeConfig(maskPattern.maskConfig)),
+    children: [createDefaultMaskChild()],
     invert: false,
     feather: 0,
   }
@@ -124,13 +128,13 @@ const createEffectConfig = (effectType: EffectType): HeroViewConfig => {
 // ============================================================
 
 const createMaskWithEffectConfig = (
-  maskPattern: MaskPattern,
+  _maskPattern: MaskPattern,
   effectType: EffectType
 ): HeroViewConfig => {
   const maskProcessor: MaskProcessorConfig = {
     type: 'mask',
     enabled: true,
-    shape: normalizeMaskConfig(toMaskShapeConfig(maskPattern.maskConfig)),
+    children: [createDefaultMaskChild()],
     invert: false,
     feather: 0,
   }

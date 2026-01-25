@@ -967,6 +967,25 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   // ============================================================
+  // Mask Children Operations
+  // ============================================================
+
+  const addLayerToMask = (processorId: string, modifierIndex: number, layer: LayerNodeConfig) => {
+    heroViewRepository.addLayerToMask(processorId, modifierIndex, layer)
+    render()
+  }
+
+  const removeLayerFromMask = (processorId: string, modifierIndex: number, layerId: string) => {
+    heroViewRepository.removeLayerFromMask(processorId, modifierIndex, layerId)
+    render()
+  }
+
+  const moveLayerInMask = (processorId: string, modifierIndex: number, layerId: string, newIndex: number) => {
+    heroViewRepository.moveLayerInMask(processorId, modifierIndex, layerId, newIndex)
+    render()
+  }
+
+  // ============================================================
   // Initialize Images Composable
   // ============================================================
   const heroImages = useHeroImages({
@@ -1234,6 +1253,10 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     updateTextLayerConfig,
     moveLayer,
     moveModifier,
+    // Mask Children Operations
+    addLayerToMask,
+    removeLayerFromMask,
+    moveLayerInMask,
   }
 
   const inkColor: InkColorHelpers = {

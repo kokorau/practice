@@ -59,6 +59,12 @@ export interface SceneOperationCallbacks {
   removeProcessorFromLayer: (processorNodeId: string, modifierIndex: number) => void
   /** Remove an entire processor node */
   removeProcessor: (processorNodeId: string) => void
+  /** Add layer to mask children */
+  addLayerToMask: (processorId: string, modifierIndex: number, layer: LayerNodeConfig) => void
+  /** Remove layer from mask children */
+  removeLayerFromMask: (processorId: string, modifierIndex: number, layerId: string) => void
+  /** Move layer within mask children */
+  moveLayerInMask: (processorId: string, modifierIndex: number, layerId: string, newIndex: number) => void
 }
 
 /**
@@ -117,6 +123,11 @@ export interface UseLayerOperationsReturn {
   // DnD Move
   handleMoveNode: (nodeId: string, position: LayerDropPosition) => void
   handleMoveModifier: (sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => void
+
+  // Mask Children Operations
+  handleAddLayerToMask: (processorId: string, modifierIndex: number, layer: LayerNodeConfig) => void
+  handleRemoveLayerFromMask: (processorId: string, modifierIndex: number, layerId: string) => void
+  handleMoveLayerInMask: (processorId: string, modifierIndex: number, layerId: string, newIndex: number) => void
 }
 
 // ============================================================
@@ -303,6 +314,21 @@ export function useLayerOperations(
   }
 
   // ============================================================
+  // Handlers - Mask Children Operations
+  // ============================================================
+  const handleAddLayerToMask = (processorId: string, modifierIndex: number, layer: LayerNodeConfig) => {
+    sceneCallbacks.addLayerToMask(processorId, modifierIndex, layer)
+  }
+
+  const handleRemoveLayerFromMask = (processorId: string, modifierIndex: number, layerId: string) => {
+    sceneCallbacks.removeLayerFromMask(processorId, modifierIndex, layerId)
+  }
+
+  const handleMoveLayerInMask = (processorId: string, modifierIndex: number, layerId: string, newIndex: number) => {
+    sceneCallbacks.moveLayerInMask(processorId, modifierIndex, layerId, newIndex)
+  }
+
+  // ============================================================
   // Return
   // ============================================================
   return {
@@ -336,5 +362,10 @@ export function useLayerOperations(
     // DnD Move
     handleMoveNode,
     handleMoveModifier,
+
+    // Mask Children Operations
+    handleAddLayerToMask,
+    handleRemoveLayerFromMask,
+    handleMoveLayerInMask,
   }
 }

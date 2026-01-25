@@ -494,9 +494,13 @@ export function isLegacySurfaceConfig(config: SurfaceRefConfig): config is Surfa
 }
 
 // ============================================================
-// Mask Shape Config
+// Mask Shape Config (Deprecated - will be removed)
 // ============================================================
 
+/**
+ * @deprecated Use children-based mask with SurfaceLayerNodeConfig instead.
+ * These types are kept for migration purposes only.
+ */
 export interface CircleMaskShapeConfig {
   type: 'circle'
   centerX: number
@@ -623,6 +627,9 @@ export interface WavyLineMaskShapeConfig {
   cutout: boolean
 }
 
+/**
+ * @deprecated Use children-based mask with SurfaceLayerNodeConfig instead.
+ */
 export type MaskShapeConfig =
   | CircleMaskShapeConfig
   | RectMaskShapeConfig
@@ -636,16 +643,18 @@ export type MaskShapeConfig =
   | WavyLineMaskShapeConfig
 
 // ============================================================
-// Normalized Mask Config Types (Phase 12: id + params pattern)
+// Normalized Mask Config Types (Deprecated - will be removed)
 // ============================================================
 
 /**
  * Mask shape type identifier (re-exported from MaskShapeConfig)
+ * @deprecated Use children-based mask instead.
  */
 export type MaskShapeTypeId = MaskShapeConfig['type']
 
 /**
  * Array of all mask shape types for iteration
+ * @deprecated Use children-based mask instead.
  */
 export const MASK_SHAPE_TYPE_IDS: MaskShapeTypeId[] = [
   'circle',
@@ -661,18 +670,10 @@ export const MASK_SHAPE_TYPE_IDS: MaskShapeTypeId[] = [
 ]
 
 /**
- * Normalized mask shape configuration (new format)
+ * Normalized mask shape configuration
  *
- * Separates the mask shape type identifier from its parameters.
- * This enables a uniform structure across all config types.
- *
- * @example
- * ```typescript
- * const mask: NormalizedMaskConfig = {
- *   id: 'circle',
- *   params: { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: true }
- * }
- * ```
+ * @deprecated Use children-based mask with LayerNodeConfig[] instead.
+ * This type is kept for migration purposes only.
  */
 export interface NormalizedMaskConfig {
   /** Mask shape type identifier */
@@ -804,11 +805,21 @@ export function isSingleEffectConfig(config: ProcessorConfig): config is SingleE
 
 /**
  * Mask processor configuration (used in ProcessorNodeConfig.modifiers)
+ *
+ * Supports two mask modes:
+ * 1. Shape-based (legacy): Uses `shape` property with predefined mask shapes
+ * 2. Children-based (new): Uses `children` layer tree rendered to luminance greymap
+ *
+ * If both are present, shape takes precedence (for backwards compatibility).
+ * If neither is present or children is empty, a white plane is used (no clipping).
  */
 export interface MaskProcessorConfig {
   type: 'mask'
   enabled: boolean
-  shape: NormalizedMaskConfig
+  /** @deprecated Use children instead. Legacy shape-based mask configuration. */
+  shape?: NormalizedMaskConfig
+  /** Layer tree used as mask source. Rendered to luminance greymap. */
+  children: LayerNodeConfig[]
   invert: boolean
   feather: number
 }
@@ -1359,15 +1370,7 @@ export const createDefaultColorsConfig = (): HeroColorsConfig => ({
 export const createDefaultMaskProcessorConfig = (): MaskProcessorConfig => ({
   type: 'mask',
   enabled: true,
-  shape: {
-    id: 'circle',
-    params: {
-      centerX: $PropertyValue.static(0.5),
-      centerY: $PropertyValue.static(0.5),
-      radius: $PropertyValue.static(0.3),
-      cutout: $PropertyValue.static(false),
-    },
-  },
+  children: [],
   invert: false,
   feather: 0,
 })
@@ -1678,14 +1681,29 @@ function migrateLayerConfig(layer: LayerNodeConfig): LayerNodeConfig {
       const processorLayer = layer as ProcessorNodeConfig
       const migratedModifiers = processorLayer.modifiers.map((modifier) => {
         if (modifier.type === 'mask') {
-          const maskModifier = modifier as MaskProcessorConfig
-          // Check if shape is in legacy format (cast to unknown first for type safety)
-          const shape = maskModifier.shape as unknown
-          if (isLegacyFlatMaskConfig(shape)) {
-            return {
-              ...maskModifier,
-              shape: normalizeMaskConfig(shape),
+          const maskMod = modifier as unknown as { shape?: unknown; children?: LayerNodeConfig[] }
+          // Normalize shape if present (legacy format to normalized format)
+          let normalizedShape: NormalizedMaskConfig | undefined
+          if ('shape' in maskMod && maskMod.shape !== undefined) {
+            const shape = maskMod.shape as unknown
+            if (isLegacyFlatMaskConfig(shape)) {
+              normalizedShape = normalizeMaskConfig(shape)
+            } else {
+              // Already in normalized format
+              normalizedShape = shape as NormalizedMaskConfig
             }
+          }
+          // Migrate children recursively if present
+          const migratedChildren = ('children' in maskMod && Array.isArray(maskMod.children))
+            ? maskMod.children.map(migrateLayerConfig)
+            : []
+          return {
+            type: 'mask' as const,
+            enabled: modifier.enabled,
+            shape: normalizedShape,
+            children: migratedChildren,
+            invert: modifier.invert,
+            feather: modifier.feather,
           }
         }
         if (modifier.type === 'effect') {
@@ -1797,30 +1815,22 @@ function validateNormalizedSurfaceConfig(
 }
 
 /**
- * Validate a NormalizedMaskConfig
+ * Validate mask children array
  */
-function validateNormalizedMaskConfig(
-  config: unknown,
-  path: string
+function validateMaskChildren(
+  children: unknown,
+  path: string,
+  validateLayer: (layers: LayerNodeConfig[], basePath: string) => ConfigValidationError[]
 ): ConfigValidationError[] {
   const errors: ConfigValidationError[] = []
 
-  if (typeof config !== 'object' || config === null) {
-    errors.push({ path, message: 'Mask config must be an object' })
+  if (!Array.isArray(children)) {
+    errors.push({ path, message: 'Mask children must be an array' })
     return errors
   }
 
-  const maskConfig = config as Record<string, unknown>
-
-  if (!('id' in maskConfig) || typeof maskConfig.id !== 'string') {
-    errors.push({ path: `${path}.id`, message: 'Mask config must have a string id' })
-  } else if (!MASK_SHAPE_TYPE_IDS.includes(maskConfig.id as MaskShapeTypeId)) {
-    errors.push({ path: `${path}.id`, message: `Invalid mask shape type: ${maskConfig.id}` })
-  }
-
-  if (!('params' in maskConfig) || typeof maskConfig.params !== 'object') {
-    errors.push({ path: `${path}.params`, message: 'Mask config must have params object' })
-  }
+  // Recursively validate children layers
+  errors.push(...validateLayer(children as LayerNodeConfig[], path))
 
   return errors
 }
@@ -1849,10 +1859,12 @@ function validateLayerConfigs(
         processorLayer.modifiers.forEach((modifier, modIndex) => {
           if (modifier.type === 'mask') {
             const maskModifier = modifier as MaskProcessorConfig
+            // Validate mask children (new format)
             errors.push(
-              ...validateNormalizedMaskConfig(
-                maskModifier.shape,
-                `${layerPath}.modifiers[${modIndex}].shape`
+              ...validateMaskChildren(
+                maskModifier.children,
+                `${layerPath}.modifiers[${modIndex}].children`,
+                validateLayerConfigs
               )
             )
           }

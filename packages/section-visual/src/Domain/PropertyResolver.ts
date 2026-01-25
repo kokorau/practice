@@ -318,6 +318,20 @@ function resolveSurfaceConfig(
 }
 
 /**
+ * Resolve SingleEffectConfig params
+ */
+function resolveEffectConfig(
+  config: SingleEffectConfig,
+  resolver: PropertyResolver
+): SingleEffectConfig {
+  return {
+    type: 'effect',
+    id: config.id,
+    params: resolveParams(config.params, resolver),
+  }
+}
+
+/**
  * Resolve mask config params (handles both legacy and normalized formats)
  */
 function resolveMaskConfig(
@@ -333,33 +347,21 @@ function resolveMaskConfig(
 }
 
 /**
- * Resolve SingleEffectConfig params
- */
-function resolveEffectConfig(
-  config: SingleEffectConfig,
-  resolver: PropertyResolver
-): SingleEffectConfig {
-  return {
-    type: 'effect',
-    id: config.id,
-    params: resolveParams(config.params, resolver),
-  }
-}
-
-/**
  * Resolve ProcessorConfig (effect or mask)
  */
 function resolveProcessorConfig(
   config: ProcessorConfig,
-  resolver: PropertyResolver
+  resolver: PropertyResolver,
+  resolveLayer: (layer: LayerNodeConfig, resolver: PropertyResolver) => LayerNodeConfig
 ): ProcessorConfig {
   if (config.type === 'effect') {
     return resolveEffectConfig(config, resolver)
   }
-  // Mask processor
+  // Mask processor - resolve shape (if present) and children layers recursively
   return {
     ...config,
-    shape: resolveMaskConfig(config.shape, resolver),
+    shape: config.shape ? resolveMaskConfig(config.shape, resolver) : undefined,
+    children: config.children.map((child) => resolveLayer(child, resolver)),
   }
 }
 
@@ -380,7 +382,7 @@ function resolveLayerConfig(
     case 'processor':
       return {
         ...layer,
-        modifiers: layer.modifiers.map((m) => resolveProcessorConfig(m, resolver)),
+        modifiers: layer.modifiers.map((m) => resolveProcessorConfig(m, resolver, resolveLayerConfig)),
       }
     case 'group':
       return {

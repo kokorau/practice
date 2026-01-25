@@ -24,10 +24,14 @@ export {
   SurfaceRenderNode,
   createSurfaceRenderNodeFromCompiled,
   type SurfaceRenderNodeConfig,
-  // Mask
+  // Mask (legacy shape-based)
   MaskRenderNode,
   createMaskRenderNode,
   type MaskRenderNodeConfig,
+  // Mask Children (new layer-based)
+  MaskChildrenRenderNode,
+  createMaskChildrenRenderNode,
+  type MaskChildrenRenderNodeConfig,
   // Effect
   EffectRenderNode,
   createEffectRenderNode,

@@ -16,12 +16,8 @@ import {
   type SurfaceLayerNodeConfig,
   type BaseLayerNodeConfig,
   type GroupLayerNodeConfig,
-  type MaskProcessorConfig,
-  type NormalizedMaskConfig as HeroMaskShapeConfig,
   type HeroViewRepository,
   findSurfacePresetIndex,
-  findMaskPatternIndex,
-  findMaskPatternIndexByType,
   isSingleEffectConfig,
   migrateToNormalizedFormat,
 } from '@practice/section-visual'
@@ -30,8 +26,6 @@ import {
 import {
   getSurfaceAsNormalized,
   safeDenormalizeSurfaceConfig,
-  getMaskAsNormalized,
-  safeDenormalizeMaskConfig,
 } from '@practice/section-visual'
 import type { UseHeroFiltersReturn } from './useHeroFilters'
 import type { UseHeroThumbnailsReturn } from './useHeroThumbnails'
@@ -157,41 +151,10 @@ export const useHeroConfigLoader = (
         }
       }
 
-      // Find mask shape from processor layer (inside clip-group or top-level)
-      let maskShape: HeroMaskShapeConfig | undefined
-      if (clipGroup && clipGroup.type === 'group') {
-        for (const child of clipGroup.children) {
-          if (child.type === 'processor') {
-            const maskModifier = child.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
-            if (maskModifier) {
-              maskShape = maskModifier.shape
-              break
-            }
-          }
-        }
-      }
-      // Fallback: check top-level processors
-      if (!maskShape) {
-        for (const layer of migratedConfig.layers) {
-          if (layer.type === 'processor') {
-            const maskModifier = layer.modifiers.find((m): m is MaskProcessorConfig => m.type === 'mask')
-            if (maskModifier) {
-              maskShape = maskModifier.shape
-              break
-            }
-          }
-        }
-      }
-
-      if (maskShape) {
-        const normalizedMaskShape = getMaskAsNormalized(maskShape)
-        const denormalizedShape = safeDenormalizeMaskConfig(normalizedMaskShape)
-        // First try exact match, then fallback to type-only match
-        const exactMatch = findMaskPatternIndex(denormalizedShape, heroThumbnails.maskPatterns)
-        selectedMaskIndex.value = exactMatch ?? findMaskPatternIndexByType(denormalizedShape, heroThumbnails.maskPatterns)
-      } else {
-        selectedMaskIndex.value = null
-      }
+      // NOTE: Shape-based masks are deprecated. New masks use children layers.
+      // Mask pattern selection is no longer supported.
+      // selectedMaskIndex is set to null as shape-based masks are no longer available.
+      selectedMaskIndex.value = null
 
       if (maskSurfaceLayer) {
         const maskSurface = maskSurfaceLayer.surface

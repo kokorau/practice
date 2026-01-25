@@ -16,7 +16,7 @@ import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type {
   SurfaceLayerNodeConfig,
   ProcessorNodeConfig,
-  NormalizedMaskConfig,
+  LayerNodeConfig,
 } from '@practice/section-visual'
 import {
   createMaskPreviewConfig,
@@ -47,8 +47,8 @@ const props = defineProps<{
   surface?: SurfaceLayerNodeConfig
   /** Processor config (to extract preceding effects) */
   processor?: ProcessorNodeConfig
-  /** Mask shape config to preview */
-  previewMask?: NormalizedMaskConfig
+  /** Mask children layers to preview */
+  previewChildren?: LayerNodeConfig[]
   /** Palette for color resolution */
   palette?: PrimitivePalette
 
@@ -69,7 +69,7 @@ let renderer: TextureRenderer | null = null
 // ============================================================
 
 const renderWithPipelineMode = async () => {
-  if (!renderer || !props.surface || !props.processor || !props.previewMask || !props.palette) {
+  if (!renderer || !props.surface || !props.processor || !props.previewChildren || !props.palette) {
     return false
   }
 
@@ -78,7 +78,7 @@ const renderWithPipelineMode = async () => {
     const previewConfig = createMaskPreviewConfig({
       surface: props.surface,
       processor: props.processor,
-      previewMask: props.previewMask,
+      previewChildren: props.previewChildren,
       viewport: { width: 256, height: 144 },
     })
 
@@ -184,7 +184,7 @@ watch(
     // Pipeline mode props
     props.surface,
     props.processor,
-    props.previewMask,
+    props.previewChildren,
     props.palette,
     // Legacy mode props
     props.createBackgroundSpec,
