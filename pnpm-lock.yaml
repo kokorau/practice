@@ -81,6 +81,9 @@ importers:
       '@practice/timeline':
         specifier: workspace:^
         version: link:../../packages/timeline
+      '@practice/timeline-editor':
+        specifier: workspace:^
+        version: link:../../packages/timeline-editor
       '@practice/vector':
         specifier: workspace:^
         version: link:../../packages/vector

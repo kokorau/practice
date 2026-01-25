@@ -10,14 +10,17 @@ import { useTimelinePlayer } from '../../modules/Timeline/Application/useTimelin
 const props = withDefaults(defineProps<{
   timeline: Timeline
   visibleDuration?: Ms
+  selectedTrackId?: TrackId | null
 }>(), {
   visibleDuration: 30000 as Ms,
+  selectedTrackId: null,
 })
 
 const emit = defineEmits<{
   'update:frameState': [frameState: FrameState]
   'update:playhead': [playhead: Ms]
   'update:visibleDuration': [visibleDuration: Ms]
+  'select:track': [trackId: TrackId]
 }>()
 
 // ============================================================
@@ -398,6 +401,8 @@ defineExpose({
             v-for="track in timeline.tracks"
             :key="track.id"
             class="track-list-item"
+            :class="{ 'track-list-item--selected': selectedTrackId === track.id }"
+            @click="emit('select:track', track.id)"
           >
             <span class="track-name">{{ track.name }}</span>
             <span class="track-param">{{ track.id }}</span>
@@ -423,6 +428,7 @@ defineExpose({
             v-for="track in timeline.tracks"
             :key="track.id"
             class="track-lane"
+            :class="{ 'track-lane--selected': selectedTrackId === track.id }"
           >
             <!-- Phase separators -->
             <div
@@ -628,6 +634,20 @@ defineExpose({
   gap: 0.5rem;
   border-bottom: 1px solid oklch(0.92 0.01 260);
   font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.track-list-item:hover {
+  background: oklch(0.90 0.01 260);
+}
+
+.track-list-item--selected {
+  background: oklch(0.85 0.08 250);
+}
+
+.track-list-item--selected:hover {
+  background: oklch(0.82 0.10 250);
 }
 
 .track-name {
@@ -755,6 +775,10 @@ defineExpose({
   position: relative;
   border-bottom: 1px solid oklch(0.92 0.01 260);
   overflow: hidden;
+}
+
+.track-lane--selected {
+  background: oklch(0.92 0.05 250);
 }
 
 .phase-separator {
