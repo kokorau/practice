@@ -431,11 +431,12 @@ const panelGroup = computed(() => {
   const groupLayer = layer as GroupLayerNodeConfig
   const params = groupLayer.params ?? {}
 
-  // Extract base value from PropertyValue (use min value for RangeExpr)
+  // Extract static value from PropertyValue (use min value for RangeExpr)
   const extractNumber = (pv: unknown, defaultVal: number): number => {
     if (pv === undefined || pv === null) return defaultVal
     if (typeof pv === 'number') return pv
-    return $PropertyValue.extractBaseValue(pv) ?? defaultVal
+    const extracted = $PropertyValue.extractStatic(pv)
+    return typeof extracted === 'number' ? extracted : defaultVal
   }
 
   return {
