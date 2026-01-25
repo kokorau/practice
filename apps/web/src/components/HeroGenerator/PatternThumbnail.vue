@@ -16,7 +16,7 @@ import type { PrimitivePalette } from '@practice/semantic-color-palette'
 import type {
   NormalizedSurfaceConfig,
   ProcessorNodeConfig,
-  SurfaceColorsConfig,
+  ColorValue,
 } from '@practice/section-visual'
 import {
   createSurfacePreviewConfig,
@@ -36,12 +36,14 @@ export type SpecCreator = (viewport: Viewport) => TextureRenderSpec | null
 
 const props = defineProps<{
   // Pipeline-based rendering (new)
-  /** Surface config to preview */
+  /** Surface config to preview (params should include color1/color2) */
   previewSurface?: NormalizedSurfaceConfig
   /** Processor config (to extract preceding effects, optional) */
   processor?: ProcessorNodeConfig
-  /** Per-surface color configuration */
-  colors?: SurfaceColorsConfig
+  /** Primary color override (optional) */
+  color1?: ColorValue
+  /** Secondary color override (optional) */
+  color2?: ColorValue
   /** Palette for color resolution */
   palette?: PrimitivePalette
 
@@ -68,7 +70,8 @@ const renderWithPipelineMode = async () => {
     const previewConfig = createSurfacePreviewConfig({
       previewSurface: props.previewSurface,
       processor: props.processor,
-      colors: props.colors,
+      color1: props.color1,
+      color2: props.color2,
       viewport: { width: 256, height: 144 },
     })
 
@@ -147,7 +150,8 @@ watch(
     // Pipeline mode props
     props.previewSurface,
     props.processor,
-    props.colors,
+    props.color1,
+    props.color2,
     props.palette,
     // Legacy mode props
     props.createSpec,

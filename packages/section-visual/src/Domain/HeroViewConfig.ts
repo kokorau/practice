@@ -10,11 +10,11 @@
 import type { LayerEffectConfig } from './EffectSchema'
 import { createDefaultEffectConfig } from './EffectSchema'
 import { type EffectType, EFFECT_TYPES, EFFECT_REGISTRY, isValidEffectType } from './EffectRegistry'
-import type { PropertyValue } from './SectionVisual'
+import type { PropertyValue, HeroPrimitiveKey, CustomColor, ColorValue } from './SectionVisual'
 import { $PropertyValue } from './SectionVisual'
 
 // Re-export color types from SectionVisual (single source of truth)
-export type { HeroPrimitiveKey, CustomColor, ColorValue } from './SectionVisual'
+export type { HeroPrimitiveKey, CustomColor, ColorValue }
 export { isCustomColor } from './SectionVisual'
 
 // ============================================================
@@ -250,7 +250,17 @@ export interface PaperTextureSurfaceConfig {
 }
 
 
-export type SurfaceConfig =
+/**
+ * Color fields for surface configs.
+ * These are optional in legacy SurfaceConfig format
+ * and will be normalized to params.color1/color2 in NormalizedSurfaceConfig.
+ */
+export interface SurfaceColorFields {
+  color1?: ColorValue
+  color2?: ColorValue
+}
+
+type SurfaceConfigBase =
   | SolidSurfaceConfig
   | StripeSurfaceConfig
   | GridSurfaceConfig
@@ -271,6 +281,8 @@ export type SurfaceConfig =
   | OgeeSurfaceConfig
   | SunburstSurfaceConfig
   | PaperTextureSurfaceConfig
+
+export type SurfaceConfig = SurfaceConfigBase & SurfaceColorFields
 
 /** @deprecated Use SurfaceConfig instead */
 export type BackgroundSurfaceConfig = SurfaceConfig
@@ -359,8 +371,11 @@ export function normalizeSurfaceConfig(config: SurfaceConfig): NormalizedSurface
   const { type, ...rawParams } = config
   const params: Record<string, PropertyValue> = {}
   for (const [key, value] of Object.entries(rawParams)) {
-    if (typeof value === 'number' || typeof value === 'string') {
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
       params[key] = $PropertyValue.static(value)
+    } else if (typeof value === 'object' && value !== null) {
+      // ColorValue (CustomColor) or other object values
+      params[key] = $PropertyValue.static(value as ColorValue)
     }
   }
   return { id: type, params }
