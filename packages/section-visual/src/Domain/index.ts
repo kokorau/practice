@@ -690,6 +690,7 @@ export type {
   ImageLayerNodeConfig,
   ImagePositionConfig,
   GroupLayerNodeConfig,
+  GroupTransformParams,
   ProcessorNodeConfig,
   // Processor modifier config types
   ProcessorConfig,

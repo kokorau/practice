@@ -145,6 +145,7 @@ export type {
   ImageLayerNodeConfig as ImageLayerNodeConfigType,
   ImagePositionConfig,
   GroupLayerNodeConfig,
+  GroupTransformParams,
   ProcessorNodeConfig,
   // Foreground
   GridPosition,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   opacity: number
   offsetX: number
   offsetY: number

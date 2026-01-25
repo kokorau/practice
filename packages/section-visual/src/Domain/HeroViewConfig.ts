@@ -1409,11 +1409,28 @@ export type GroupBlendMode =
   | 'difference'
   | 'exclusion'
 
+/**
+ * Transform parameters for group layers.
+ * All values support PropertyValue for timeline animation binding.
+ */
+export interface GroupTransformParams {
+  /** Opacity (0-1, default 1) */
+  opacity?: PropertyValue
+  /** X offset (-1 to 1, normalized, default 0) */
+  offsetX?: PropertyValue
+  /** Y offset (-1 to 1, normalized, default 0) */
+  offsetY?: PropertyValue
+  /** Rotation in degrees (default 0) */
+  rotation?: PropertyValue
+}
+
 export interface GroupLayerNodeConfig extends LayerNodeConfigBase {
   type: 'group'
   children: LayerNodeConfig[]
   /** Blend mode for compositing this group onto layers below */
   blendMode?: GroupBlendMode
+  /** Transform parameters for the group */
+  params?: GroupTransformParams
 }
 
 /**

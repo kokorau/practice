@@ -14,7 +14,7 @@ import {
   createSurfacePatterns,
   LAYER_IDS,
 } from '../composables/SiteBuilder'
-import { createInMemoryHeroViewPresetRepository, buildDependencyGraph, type DependencyGraph } from '@practice/section-visual'
+import { createInMemoryHeroViewPresetRepository, buildDependencyGraph, isGroupLayerConfig, type DependencyGraph, type GroupLayerNodeConfig } from '@practice/section-visual'
 import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useFilterEditor } from '../composables/useFilterEditor'
@@ -422,6 +422,34 @@ const panelMask = computed(() => ({
   surface: heroScene.mask.processorTarget.value.targetSurface,
   processor: heroScene.mask.processorTarget.value.processor,
 }))
+
+// Group layer props
+const panelGroup = computed(() => {
+  const layer = selectedLayer.value
+  if (!layer || !isGroupLayerConfig(layer)) return null
+
+  const groupLayer = layer as GroupLayerNodeConfig
+  const params = groupLayer.params ?? {}
+
+  return {
+    opacity: (params.opacity as number) ?? 1,
+    offsetX: (params.offsetX as number) ?? 0,
+    offsetY: (params.offsetY as number) ?? 0,
+    rotation: (params.rotation as number) ?? 0,
+  }
+})
+
+const handleGroupParamUpdate = (paramName: string, value: unknown) => {
+  const layer = selectedLayer.value
+  if (!layer || !isGroupLayerConfig(layer)) return
+
+  const groupLayer = layer as GroupLayerNodeConfig
+  const currentParams = groupLayer.params ?? {}
+
+  heroScene.usecase.layerUsecase.updateLayer(layer.id, {
+    params: { ...currentParams, [paramName]: value },
+  } as Partial<GroupLayerNodeConfig>)
+}
 </script>
 
 <template>
@@ -490,6 +518,7 @@ const panelMask = computed(() => ({
         :filter="filterProps"
         :filter-processor="{ filterConfig: null }"
         :image="imageLayerProps"
+        :group="panelGroup"
         :palette="primitivePalette"
         :style="{ width: `${rightPanelWidth}px` }"
         @update:foreground="handleForegroundUpdate"
@@ -498,6 +527,7 @@ const panelMask = computed(() => ({
         @update:background-param="handleBackgroundParamUpdate"
         @update:mask-param="handleMaskParamUpdate"
         @update:image="handleImageUpdate"
+        @update:group-param="handleGroupParamUpdate"
       />
     </div>
 
