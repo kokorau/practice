@@ -24,6 +24,7 @@ const emit = defineEmits<{
   'update:playhead': [playhead: Ms]
   'update:visibleDuration': [visibleDuration: Ms]
   'select:track': [trackId: TrackId]
+  'contextmenu:track': [trackId: TrackId, event: MouseEvent]
 }>()
 
 // ============================================================
@@ -417,6 +418,7 @@ defineExpose({
             class="track-list-item"
             :class="{ 'track-list-item--selected': selectedTrackId === track.id }"
             @click="emit('select:track', track.id)"
+            @contextmenu="emit('contextmenu:track', track.id, $event)"
           >
             <TrackKeyBadge :track-key="getTrackKey?.(track.id) ?? indexToLetter(index)" />
             <span class="track-name">{{ track.name }}</span>

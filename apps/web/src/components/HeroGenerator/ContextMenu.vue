@@ -11,18 +11,7 @@
 
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { onClickOutside } from '@vueuse/core'
-
-// ============================================================
-// Types
-// ============================================================
-
-export interface ContextMenuItem {
-  id: string
-  label: string
-  icon?: string
-  disabled?: boolean
-  separator?: boolean
-}
+import type { ContextMenuItem } from '@practice/timeline-editor'
 
 // ============================================================
 // Props & Emits

@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, nextTick, watch, ref } from 'vue'
 import type { Ms, IntensityProvider, TrackId } from '@practice/timeline'
 import { createHeroConfigSlice } from '@practice/site/Infra'
-import { createTimelineEditor } from '@practice/timeline-editor'
+import { createTimelineEditor, useTimelineContextMenu } from '@practice/timeline-editor'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
@@ -48,6 +48,15 @@ onUnmounted(() => {
 
 function onSelectTrack(trackId: TrackId) {
   timelineEditor.selectTrack(trackId)
+}
+
+// ============================================================
+// Timeline Context Menu
+// ============================================================
+const timelineContextMenu = useTimelineContextMenu()
+
+function onTrackContextMenu(trackId: TrackId, event: MouseEvent) {
+  timelineContextMenu.handleTrackContextMenu(trackId, event)
 }
 
 // ============================================================
@@ -503,19 +512,29 @@ const panelMask = computed(() => ({
         :get-track-key="timelineEditor.getTrackKey"
         @update:frame-state="handleFrameStateUpdate"
         @select:track="onSelectTrack"
+        @contextmenu:track="onTrackContextMenu"
       />
       <div v-else class="no-timeline-message">
         Select an animated preset to view the timeline
       </div>
     </section>
 
-    <!-- Context Menu -->
+    <!-- Context Menu (Layers) -->
     <ContextMenu
       :items="contextMenuItems"
       :position="contextMenuPosition"
       :is-open="contextMenuOpen"
       @close="handleContextMenuClose"
       @select="handleContextMenuSelect"
+    />
+
+    <!-- Context Menu (Timeline) -->
+    <ContextMenu
+      :items="timelineContextMenu.items.value"
+      :position="timelineContextMenu.position.value"
+      :is-open="timelineContextMenu.isOpen.value"
+      @close="timelineContextMenu.handleClose"
+      @select="timelineContextMenu.handleSelect"
     />
   </div>
 </template>
