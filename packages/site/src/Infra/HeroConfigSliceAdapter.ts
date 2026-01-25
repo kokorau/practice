@@ -407,5 +407,31 @@ export const createHeroConfigSlice = (
         layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
       })
     },
+
+    replaceMaskChildren: (processorId: string, modifierIndex: number, children: LayerNodeConfig[]) => {
+      const config = getConfig()
+      const processor = findLayerInTree(config.layers, processorId)
+      if (!processor || !isProcessorLayerConfig(processor)) return
+
+      const processorLayer = processor as ProcessorNodeConfig
+      if (modifierIndex < 0 || modifierIndex >= processorLayer.modifiers.length) return
+
+      const modifier = processorLayer.modifiers[modifierIndex]
+      if (!modifier || !isMaskProcessorConfig(modifier)) return
+
+      const newModifiers = [...processorLayer.modifiers]
+      newModifiers[modifierIndex] = {
+        ...modifier,
+        children,
+        // Clear legacy shape when using children-based mask
+        // This ensures the pipeline uses children instead of shape
+        shape: undefined,
+      }
+
+      setConfig({
+        ...config,
+        layers: updateLayerInTree(config.layers, processorId, { modifiers: newModifiers }),
+      })
+    },
   }
 }

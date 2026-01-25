@@ -175,4 +175,13 @@ export interface HeroViewRepository {
    * @param newIndex 新しい位置
    */
   moveLayerInMask(processorId: string, modifierIndex: number, layerId: string, newIndex: number): void
+
+  /**
+   * マスクの子レイヤーを置換（プリセット適用用）
+   * 子レイヤーを置換すると同時に、レガシーのshapeプロパティもクリアする
+   * @param processorId プロセッサレイヤーのID
+   * @param modifierIndex マスク修飾子のインデックス
+   * @param children 新しい子レイヤー配列
+   */
+  replaceMaskChildren(processorId: string, modifierIndex: number, children: LayerNodeConfig[]): void
 }
