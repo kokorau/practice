@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { FrameState, Ms, TrackId } from '@practice/timeline'
 import { prepareTimeline } from '@practice/timeline'
 import { extractPeriod } from '@practice/dsl'
