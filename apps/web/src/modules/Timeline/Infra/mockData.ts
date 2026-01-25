@@ -1,30 +1,30 @@
 import type { Timeline, PhaseId, TrackId } from '@practice/timeline'
 
 // ============================================================
-// UUID Constants for Mock Track IDs
+// Track ID Constants for Mock Data ([a-z]{5} format)
 // ============================================================
 export const MOCK_TRACK_IDS = {
   // Opening Phase
-  OPACITY: '550e8400-e29b-41d4-a716-446655440001' as TrackId,
-  SCALE: '550e8400-e29b-41d4-a716-446655440002' as TrackId,
+  OPACITY: 'mkopc' as TrackId,
+  SCALE: 'mkscl' as TrackId,
   // Simple Waves
-  WAVE_OSC: '550e8400-e29b-41d4-a716-446655440003' as TrackId,
-  WAVE_SAW: '550e8400-e29b-41d4-a716-446655440004' as TrackId,
-  WAVE_TRI: '550e8400-e29b-41d4-a716-446655440005' as TrackId,
-  WAVE_PULSE: '550e8400-e29b-41d4-a716-446655440006' as TrackId,
-  WAVE_STEP: '550e8400-e29b-41d4-a716-446655440007' as TrackId,
-  WAVE_NOISE: '550e8400-e29b-41d4-a716-446655440008' as TrackId,
+  WAVE_OSC: 'mkwoc' as TrackId,
+  WAVE_SAW: 'mkwsw' as TrackId,
+  WAVE_TRI: 'mkwtr' as TrackId,
+  WAVE_PULSE: 'mkwpl' as TrackId,
+  WAVE_STEP: 'mkwst' as TrackId,
+  WAVE_NOISE: 'mkwno' as TrackId,
   // Composite
-  ROTATION: '550e8400-e29b-41d4-a716-446655440009' as TrackId,
-  LAYERED: '550e8400-e29b-41d4-a716-44665544000a' as TrackId,
-  NOISE_MOD: '550e8400-e29b-41d4-a716-44665544000b' as TrackId,
-  BOUNCE: '550e8400-e29b-41d4-a716-44665544000c' as TrackId,
-  ELASTIC: '550e8400-e29b-41d4-a716-44665544000d' as TrackId,
-  HEARTBEAT: '550e8400-e29b-41d4-a716-44665544000e' as TrackId,
-  WOBBLE: '550e8400-e29b-41d4-a716-44665544000f' as TrackId,
-  BREATHING: '550e8400-e29b-41d4-a716-446655440010' as TrackId,
-  CLAMPED: '550e8400-e29b-41d4-a716-446655440011' as TrackId,
-  QUANTIZED: '550e8400-e29b-41d4-a716-446655440012' as TrackId,
+  ROTATION: 'mkrot' as TrackId,
+  LAYERED: 'mklay' as TrackId,
+  NOISE_MOD: 'mknmd' as TrackId,
+  BOUNCE: 'mkbnc' as TrackId,
+  ELASTIC: 'mkels' as TrackId,
+  HEARTBEAT: 'mkhbt' as TrackId,
+  WOBBLE: 'mkwob' as TrackId,
+  BREATHING: 'mkbth' as TrackId,
+  CLAMPED: 'mkclm' as TrackId,
+  QUANTIZED: 'mkqnt' as TrackId,
 } as const
 
 export const mockTimeline: Timeline = {

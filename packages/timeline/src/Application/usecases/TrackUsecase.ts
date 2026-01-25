@@ -33,8 +33,10 @@ export const createTrackUsecase = (deps: TrackUsecaseDeps): TrackUsecase => {
 
   return {
     createTrack(params: CreateTrackParams): Track {
+      // Collect existing track IDs to avoid collisions
+      const existingIds = new Set(repository.get().tracks.map((t) => t.id))
       const track: Track = {
-        id: generateTrackId(),
+        id: generateTrackId(existingIds),
         name: params.name,
         phaseId: params.phaseId,
         clock: params.clock ?? 'Phase',
