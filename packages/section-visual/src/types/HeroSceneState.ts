@@ -42,6 +42,11 @@ import type {
   CheckerSurfaceParams,
   TriangleSurfaceParams,
   HexagonSurfaceParams,
+  CircularGradientSurfaceParams,
+  ConicGradientSurfaceParams,
+  RepeatLinearGradientSurfaceParams,
+  PerlinGradientSurfaceParams,
+  CurlGradientSurfaceParams,
   Viewport,
 } from '@practice/texture'
 import type { Oklch } from '@practice/color'
@@ -275,6 +280,11 @@ export type CustomSurfaceParams =
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
   | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
+  | ({ id: 'circularGradient' } & CircularGradientSurfaceParams)
+  | ({ id: 'conicGradient' } & ConicGradientSurfaceParams)
+  | ({ id: 'repeatLinearGradient' } & RepeatLinearGradientSurfaceParams)
+  | ({ id: 'perlinGradient' } & PerlinGradientSurfaceParams)
+  | ({ id: 'curlGradient' } & CurlGradientSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
@@ -302,6 +312,11 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
   | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
+  | ({ id: 'circularGradient' } & CircularGradientSurfaceParams)
+  | ({ id: 'conicGradient' } & ConicGradientSurfaceParams)
+  | ({ id: 'repeatLinearGradient' } & RepeatLinearGradientSurfaceParams)
+  | ({ id: 'perlinGradient' } & PerlinGradientSurfaceParams)
+  | ({ id: 'curlGradient' } & CurlGradientSurfaceParams)
   | ({ id: 'triangle' } & TriangleSurfaceParams)
   | ({ id: 'hexagon' } & HexagonSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)

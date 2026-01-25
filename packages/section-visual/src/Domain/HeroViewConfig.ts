@@ -131,6 +131,58 @@ export interface LinearGradientSurfaceConfig {
   stops?: Array<{ color: [number, number, number, number]; position: number }>
 }
 
+export interface CircularGradientSurfaceConfig {
+  type: 'circularGradient'
+  centerX: number
+  centerY: number
+  circularInvert?: boolean
+  /** Optional custom color stops (RGBA + position) for multi-stop gradients */
+  stops?: Array<{ color: [number, number, number, number]; position: number }>
+}
+
+export interface ConicGradientSurfaceConfig {
+  type: 'conicGradient'
+  centerX: number
+  centerY: number
+  startAngle: number
+  sweepAngle: number
+  /** Optional custom color stops (RGBA + position) for multi-stop gradients */
+  stops?: Array<{ color: [number, number, number, number]; position: number }>
+}
+
+export interface RepeatLinearGradientSurfaceConfig {
+  type: 'repeatLinearGradient'
+  angle: number
+  centerX: number
+  centerY: number
+  repeat: number
+  /** Optional custom color stops (RGBA + position) for multi-stop gradients */
+  stops?: Array<{ color: [number, number, number, number]; position: number }>
+}
+
+export interface PerlinGradientSurfaceConfig {
+  type: 'perlinGradient'
+  scale: number
+  octaves: number
+  seed: number
+  contrast: number
+  offset: number
+  /** Optional custom color stops (RGBA + position) for multi-stop gradients */
+  stops?: Array<{ color: [number, number, number, number]; position: number }>
+}
+
+export interface CurlGradientSurfaceConfig {
+  type: 'curlGradient'
+  scale: number
+  octaves: number
+  seed: number
+  contrast: number
+  offset: number
+  intensity: number
+  /** Optional custom color stops (RGBA + position) for multi-stop gradients */
+  stops?: Array<{ color: [number, number, number, number]; position: number }>
+}
+
 export interface GradientGrainLinearSurfaceConfig {
   type: 'gradientGrainLinear'
   angle: number
@@ -466,6 +518,11 @@ type SurfaceConfigBase =
   | PolkaDotSurfaceConfig
   | CheckerSurfaceConfig
   | LinearGradientSurfaceConfig
+  | CircularGradientSurfaceConfig
+  | ConicGradientSurfaceConfig
+  | RepeatLinearGradientSurfaceConfig
+  | PerlinGradientSurfaceConfig
+  | CurlGradientSurfaceConfig
   | GradientGrainLinearSurfaceConfig
   | GradientGrainCircularSurfaceConfig
   | GradientGrainRadialSurfaceConfig
@@ -519,6 +576,11 @@ export const SURFACE_TYPES: SurfaceType[] = [
   'polkaDot',
   'checker',
   'linearGradient',
+  'circularGradient',
+  'conicGradient',
+  'repeatLinearGradient',
+  'perlinGradient',
+  'curlGradient',
   'gradientGrainLinear',
   'gradientGrainCircular',
   'gradientGrainRadial',
