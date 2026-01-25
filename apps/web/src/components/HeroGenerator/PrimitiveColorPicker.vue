@@ -130,7 +130,11 @@ const selectColor = (key: PrimitiveKey | 'auto') => {
   isCustomMode.value = false
 }
 
-const toggleCustomMode = () => {
+const toggleCustomMode = (event: MouseEvent) => {
+  // Stop propagation to prevent handleClickOutside from closing the popup
+  // because Vue will remove the clicked element from DOM during re-render
+  event.stopPropagation()
+
   isCustomMode.value = !isCustomMode.value
   if (isCustomMode.value) {
     // Initialize from current color if it's a CustomColor
@@ -240,7 +244,7 @@ onUnmounted(() => {
             <button
               class="color-chip custom-chip"
               :class="{ active: isCustomColor(modelValue) }"
-              @click="toggleCustomMode"
+              @click="toggleCustomMode($event)"
               title="Custom Color"
             >
               <span class="rainbow-icon">🌈</span>
