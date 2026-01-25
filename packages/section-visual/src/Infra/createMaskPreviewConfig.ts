@@ -3,7 +3,7 @@
  *
  * Creates a mini HeroViewConfig for mask preset thumbnail preview.
  * Uses the actual Surface and Processor from the selected Clip Group,
- * with the mask shape replaced for each preset preview.
+ * with the mask children layers for preview.
  */
 
 import type {
@@ -12,8 +12,8 @@ import type {
   ProcessorNodeConfig,
   MaskProcessorConfig,
   SingleEffectConfig,
-  NormalizedMaskConfig,
   NormalizedSurfaceConfig,
+  LayerNodeConfig,
 } from '../Domain/HeroViewConfig'
 import { getEffectsBeforeMask } from '../Domain/HeroViewConfig'
 import type { PropertyValue } from '../Domain/SectionVisual'
@@ -66,6 +66,38 @@ function staticizeEffect(effect: SingleEffectConfig): SingleEffectConfig {
 }
 
 /**
+ * Staticize a layer recursively
+ */
+function staticizeLayer(layer: LayerNodeConfig): LayerNodeConfig {
+  switch (layer.type) {
+    case 'base':
+    case 'surface':
+      return staticizeSurface(layer as SurfaceLayerNodeConfig)
+    case 'group':
+      return {
+        ...layer,
+        children: layer.children.map(staticizeLayer),
+      }
+    case 'processor':
+      return {
+        ...layer,
+        modifiers: layer.modifiers.map((m) => {
+          if (m.type === 'effect') {
+            return staticizeEffect(m)
+          }
+          // mask
+          return {
+            ...m,
+            children: m.children.map(staticizeLayer),
+          }
+        }),
+      }
+    default:
+      return layer
+  }
+}
+
+/**
  * Options for creating mask preview config
  */
 export interface CreateMaskPreviewConfigOptions {
@@ -75,8 +107,8 @@ export interface CreateMaskPreviewConfigOptions {
   /** The Processor node (to extract preceding effects) */
   processor: ProcessorNodeConfig
 
-  /** The mask shape config to preview */
-  previewMask: NormalizedMaskConfig
+  /** The mask children layers to preview */
+  previewChildren: LayerNodeConfig[]
 
   /** Viewport dimensions for the thumbnail */
   viewport?: { width: number; height: number }
@@ -93,14 +125,14 @@ export interface CreateMaskPreviewConfigOptions {
  *   - The actual Surface from the Clip Group (with its colors)
  *   - A Processor with:
  *     - Preceding effects (effects before the mask in the original Processor)
- *     - The preview mask shape
+ *     - The preview mask with children
  *
  * @example
  * ```ts
  * const previewConfig = createMaskPreviewConfig({
  *   surface: clipGroupSurface,
  *   processor: selectedProcessor,
- *   previewMask: { id: 'circle', params: { centerX: 0.5, centerY: 0.5, radius: 0.3 } },
+ *   previewChildren: [{ type: 'surface', id: 'mask-surface', ... }],
  * })
  *
  * await renderWithPipeline(previewConfig, renderer, palette, { scale: 0.3 })
@@ -112,7 +144,7 @@ export function createMaskPreviewConfig(
   const {
     surface,
     processor,
-    previewMask,
+    previewChildren,
     viewport = { width: 256, height: 144 },
     semanticContext = 'canvas',
   } = options
@@ -121,17 +153,13 @@ export function createMaskPreviewConfig(
   // and convert any RangeExpr to static values
   const precedingEffects = getEffectsBeforeMask(processor.modifiers).map(staticizeEffect)
 
-  // Create the mask modifier with the preview shape
-  // Staticize mask params to convert any RangeExpr to static values
-  const staticizedMask: NormalizedMaskConfig = {
-    id: previewMask.id,
-    params: staticizeParams(previewMask.params),
-  }
+  // Create the mask modifier with staticized children
+  const staticizedChildren = previewChildren.map(staticizeLayer)
 
   const maskModifier: MaskProcessorConfig = {
     type: 'mask',
     enabled: true,
-    shape: staticizedMask,
+    children: staticizedChildren,
     invert: false,
     feather: 0,
   }

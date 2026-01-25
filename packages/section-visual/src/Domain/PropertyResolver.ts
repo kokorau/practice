@@ -8,17 +8,13 @@ import type {
   HeroViewConfig,
   LayerNodeConfig,
   NormalizedSurfaceConfig,
-  NormalizedMaskConfig,
   SingleEffectConfig,
   ProcessorConfig,
   AnySurfaceConfig,
-  AnyMaskConfig,
 } from './HeroViewConfig'
 import {
   isNormalizedSurfaceConfig,
   normalizeSurfaceConfig,
-  isNormalizedMaskConfig,
-  normalizeMaskConfig,
 } from './HeroViewConfig'
 
 // ============================================================
@@ -318,21 +314,6 @@ function resolveSurfaceConfig(
 }
 
 /**
- * Resolve mask config params (handles both legacy and normalized formats)
- */
-function resolveMaskConfig(
-  config: AnyMaskConfig,
-  resolver: PropertyResolver
-): NormalizedMaskConfig {
-  // Normalize first if legacy format
-  const normalized = isNormalizedMaskConfig(config) ? config : normalizeMaskConfig(config)
-  return {
-    id: normalized.id,
-    params: resolveParams(normalized.params, resolver),
-  }
-}
-
-/**
  * Resolve SingleEffectConfig params
  */
 function resolveEffectConfig(
@@ -351,15 +332,16 @@ function resolveEffectConfig(
  */
 function resolveProcessorConfig(
   config: ProcessorConfig,
-  resolver: PropertyResolver
+  resolver: PropertyResolver,
+  resolveLayer: (layer: LayerNodeConfig, resolver: PropertyResolver) => LayerNodeConfig
 ): ProcessorConfig {
   if (config.type === 'effect') {
     return resolveEffectConfig(config, resolver)
   }
-  // Mask processor
+  // Mask processor - resolve children layers recursively
   return {
     ...config,
-    shape: resolveMaskConfig(config.shape, resolver),
+    children: config.children.map((child) => resolveLayer(child, resolver)),
   }
 }
 
@@ -380,7 +362,7 @@ function resolveLayerConfig(
     case 'processor':
       return {
         ...layer,
-        modifiers: layer.modifiers.map((m) => resolveProcessorConfig(m, resolver)),
+        modifiers: layer.modifiers.map((m) => resolveProcessorConfig(m, resolver, resolveLayerConfig)),
       }
     case 'group':
       return {

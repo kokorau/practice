@@ -13,11 +13,10 @@ import type {
   GroupLayerNodeConfig,
   SingleEffectConfig,
 } from '../Domain/HeroViewConfig'
-import { getSurfaceAsNormalized, safeDenormalizeSurfaceConfig, getMaskAsNormalized, safeDenormalizeMaskConfig, isSingleEffectConfig } from '../Domain/HeroViewConfig'
+import { getSurfaceAsNormalized, safeDenormalizeSurfaceConfig, isSingleEffectConfig } from '../Domain/HeroViewConfig'
 import { findProcessorWithMask, findAllProcessors, findLayerInTree, isMaskProcessorConfig, isSurfaceLayerConfig, isBaseLayerConfig } from '../Domain/LayerTreeOps'
-import type { CustomBackgroundSurfaceParams, CustomSurfaceParams, CustomMaskShapeParams } from '../types/HeroSceneState'
+import type { CustomBackgroundSurfaceParams, CustomSurfaceParams } from '../types/HeroSceneState'
 import { toCustomBackgroundSurfaceParams, toCustomSurfaceParams } from '../Domain/SurfaceMapper'
-import { toCustomMaskShapeParams } from '../Domain/MaskShapeMapper'
 
 /**
  * Background Surface 同期結果
@@ -150,10 +149,11 @@ export function syncMaskSurfaceParams(
 
 /**
  * Mask Shape 同期結果
+ * @deprecated Shape-based masks are deprecated. New masks use children layers.
  */
 export interface SyncMaskShapeResult {
-  /** 同期されたマスク形状パラメータ (nullの場合は更新なし) */
-  maskShapeParams: CustomMaskShapeParams | null
+  /** 同期されたマスク形状パラメータ (常にnull - 廃止) */
+  maskShapeParams: null
   /** Processorのレイヤー ID */
   processorId: string | null
 }
@@ -177,15 +177,10 @@ export function syncMaskShapeParams(config: HeroViewConfig): SyncMaskShapeResult
     return { maskShapeParams: null, processorId: processor.id }
   }
 
-  // Normalize first (ensures consistent format), then extract static values for UI params
-  const normalizedMask = getMaskAsNormalized(maskModifier.shape)
-
-  // Use safe denormalize to handle RangeExpr values (uses min value as fallback)
-  // This allows the UI to show params even when timeline-driven
-  const staticMask = safeDenormalizeMaskConfig(normalizedMask)
-  const maskShapeParams = toCustomMaskShapeParams(staticMask)
-
-  return { maskShapeParams, processorId: processor.id }
+  // NOTE: Shape-based masks are deprecated. New masks use children layers.
+  // Return null for maskShapeParams as shape is no longer available.
+  // The UI should use mask.children for displaying mask layers.
+  return { maskShapeParams: null, processorId: processor.id }
 }
 
 /**
@@ -258,16 +253,9 @@ export interface SyncRawParamsResult {
  * @returns 同期結果
  */
 export function syncRawParams(config: HeroViewConfig): SyncRawParamsResult {
-  // Mask Shape raw params (first processor with mask)
-  let maskShape: Record<string, unknown> | null = null
-  const processorWithMask = findProcessorWithMask(config.layers)
-  if (processorWithMask) {
-    const maskModifier = processorWithMask.modifiers.find(isMaskProcessorConfig)
-    if (maskModifier) {
-      const normalizedMask = getMaskAsNormalized(maskModifier.shape)
-      maskShape = normalizedMask.params as Record<string, unknown>
-    }
-  }
+  // NOTE: Shape-based masks are deprecated. New masks use children layers.
+  // maskShape is always null as shape is no longer available.
+  const maskShape: Record<string, unknown> | null = null
 
   // Background Surface raw params (search in background-group or fallback to base layer)
   let backgroundSurface: Record<string, unknown> | null = null

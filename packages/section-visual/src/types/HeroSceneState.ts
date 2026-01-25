@@ -637,6 +637,14 @@ export interface LayerOperations {
   readonly moveLayer: (layerId: string, position: LayerDropPosition) => void
   /** Move modifier to new position */
   readonly moveModifier: (sourceNodeId: string, sourceModifierIndex: number, position: ModifierDropPosition) => void
+
+  // Mask Children Operations
+  /** Add layer to mask children */
+  readonly addLayerToMask: (processorId: string, modifierIndex: number, layer: LayerNodeConfig) => void
+  /** Remove layer from mask children */
+  readonly removeLayerFromMask: (processorId: string, modifierIndex: number, layerId: string) => void
+  /** Move layer within mask children */
+  readonly moveLayerInMask: (processorId: string, modifierIndex: number, layerId: string, newIndex: number) => void
 }
 
 // ============================================================

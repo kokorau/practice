@@ -38,7 +38,6 @@ import type {
   CompiledProcessorConfig,
   CompiledEffect,
   CompiledMaskProcessor,
-  CompiledMaskShape,
 } from '../Domain/CompiledHeroView'
 import {
   resolveKeyToRgba,
@@ -249,22 +248,21 @@ function compileEffect(
 
 /**
  * Compile mask processor
+ *
+ * The mask children are compiled using the same layer compilation logic.
+ * The compileChildLayers function is passed in to avoid circular dependency.
  */
 function compileMaskProcessor(
   mask: MaskProcessorConfig,
-  intensityProvider: IntensityProvider
+  compileChildLayers: (layers: LayerNodeConfig[]) => CompiledLayerNode[]
 ): CompiledMaskProcessor {
-  // Mask shape params don't contain ColorValue, safe to cast
-  const shapeParams = resolveParams(mask.shape.params, intensityProvider) as Record<string, number | string | boolean>
-  const compiledShape: CompiledMaskShape = {
-    id: mask.shape.id,
-    params: shapeParams,
-  }
+  // Compile children layers as mask source
+  const compiledChildren = compileChildLayers(mask.children)
 
   return {
     type: 'mask',
     enabled: mask.enabled,
-    shape: compiledShape,
+    children: compiledChildren,
     invert: mask.invert,
     feather: mask.feather,
   }
@@ -272,23 +270,33 @@ function compileMaskProcessor(
 
 /**
  * Compile processor config (effect or mask)
+ *
+ * @param config - The processor config to compile
+ * @param intensityProvider - Provider for resolving PropertyValue ranges
+ * @param compileChildLayers - Function to compile mask children layers
  */
 function compileProcessorConfig(
   config: ProcessorConfig,
-  intensityProvider: IntensityProvider
+  intensityProvider: IntensityProvider,
+  compileChildLayers: (layers: LayerNodeConfig[]) => CompiledLayerNode[]
 ): CompiledProcessorConfig {
   if (config.type === 'effect') {
     return compileEffect(config, intensityProvider)
   }
-  return compileMaskProcessor(config, intensityProvider)
+  return compileMaskProcessor(config, compileChildLayers)
 }
 
 /**
  * Compile processor layer node
+ *
+ * @param layer - The processor layer to compile
+ * @param intensityProvider - Provider for resolving PropertyValue ranges
+ * @param compileChildLayers - Function to compile mask children layers
  */
 function compileProcessorLayer(
   layer: ProcessorNodeConfig,
-  intensityProvider: IntensityProvider
+  intensityProvider: IntensityProvider,
+  compileChildLayers: (layers: LayerNodeConfig[]) => CompiledLayerNode[]
 ): CompiledProcessorLayerNode {
   return {
     type: 'processor',
@@ -296,7 +304,7 @@ function compileProcessorLayer(
     name: layer.name,
     visible: layer.visible,
     modifiers: layer.modifiers.map((mod) =>
-      compileProcessorConfig(mod, intensityProvider)
+      compileProcessorConfig(mod, intensityProvider, compileChildLayers)
     ),
   }
 }
@@ -337,6 +345,17 @@ function compileLayerNodes(
   intensityProvider: IntensityProvider,
   rootLayers: LayerNodeConfig[]
 ): CompiledLayerNode[] {
+  // Create a closure for compiling child layers (used for mask children)
+  const compileChildLayers = (childLayers: LayerNodeConfig[]): CompiledLayerNode[] => {
+    return compileLayerNodes(
+      childLayers,
+      palette,
+      isDark,
+      intensityProvider,
+      rootLayers
+    )
+  }
+
   return layers.map((layer) => {
     switch (layer.type) {
       case 'base':
@@ -356,13 +375,7 @@ function compileLayerNodes(
         return compileImageLayer(layer as ImageLayerNodeConfig)
       case 'group': {
         const groupLayer = layer as GroupLayerNodeConfig
-        const compiledChildren = compileLayerNodes(
-          groupLayer.children,
-          palette,
-          isDark,
-          intensityProvider,
-          rootLayers
-        )
+        const compiledChildren = compileChildLayers(groupLayer.children)
         const compiledGroup: CompiledGroupLayerNode = {
           type: 'group',
           id: groupLayer.id,
@@ -374,7 +387,7 @@ function compileLayerNodes(
         return compiledGroup
       }
       case 'processor':
-        return compileProcessorLayer(layer as ProcessorNodeConfig, intensityProvider)
+        return compileProcessorLayer(layer as ProcessorNodeConfig, intensityProvider, compileChildLayers)
       default:
         // Unknown layer type - create a minimal compiled node
         return {

@@ -83,6 +83,9 @@ const emit = defineEmits<{
   'layer-contextmenu': [layerId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number]
   'move-node': [nodeId: string, position: LayerDropPosition]
   'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
+  // Mask children operations
+  'add-layer-to-mask': [processorNodeId: string, modifierIndex: number, layerType: 'surface' | 'text' | 'image']
+  'remove-layer-from-mask': [processorNodeId: string, modifierIndex: number, layerId: string]
   // Foreground events
   'select-foreground-element': [elementId: string]
   'foreground-contextmenu': [elementId: string, event: MouseEvent]
@@ -290,6 +293,8 @@ const selectedPresetName = computed(() => {
           @layer-contextmenu="(id: string, e: MouseEvent, type: ContextTargetType, modifierIndex?: number) => emit('layer-contextmenu', id, e, type, modifierIndex)"
           @move-node="(id: string, pos: LayerDropPosition) => emit('move-node', id, pos)"
           @move-modifier="(srcId: string, idx: number, pos: ModifierDropPosition) => emit('move-modifier', srcId, idx, pos)"
+          @add-layer-to-mask="(processorId: string, modIdx: number, layerType: 'surface' | 'text' | 'image') => emit('add-layer-to-mask', processorId, modIdx, layerType)"
+          @remove-layer-from-mask="(processorId: string, modIdx: number, layerId: string) => emit('remove-layer-from-mask', processorId, modIdx, layerId)"
           @select-foreground-element="(id: string) => emit('select-foreground-element', id)"
           @foreground-contextmenu="(id: string, e: MouseEvent) => emit('foreground-contextmenu', id, e)"
           @add-foreground-element="(type: ForegroundElementType) => emit('add-foreground-element', type)"

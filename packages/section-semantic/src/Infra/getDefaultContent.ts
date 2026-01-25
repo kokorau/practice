@@ -329,16 +329,18 @@ const corporateCleanConfig: HeroViewConfig = {
         {
           type: 'mask',
           enabled: true,
-          shape: {
-            id: 'rect',
-            params: {
-              left: sv(0.05), right: sv(0.55), top: sv(0.1), bottom: sv(0.9),
-              radiusTopLeft: sv(0.02), radiusTopRight: sv(0.02),
-              radiusBottomLeft: sv(0.02), radiusBottomRight: sv(0.02),
-              rotation: sv(0), perspectiveX: sv(0), perspectiveY: sv(0),
-              cutout: sv(true),
+          children: [
+            {
+              type: 'surface',
+              id: 'mask-surface-default',
+              name: 'Mask Surface',
+              visible: true,
+              surface: {
+                id: 'solid',
+                params: { color: sv('#ffffff') },
+              },
             },
-          },
+          ],
           invert: false,
           feather: 0,
         },

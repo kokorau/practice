@@ -22,6 +22,12 @@ export {
 } from './MaskRenderNode'
 
 export {
+  MaskChildrenRenderNode,
+  createMaskChildrenRenderNode,
+  type MaskChildrenRenderNodeConfig,
+} from './MaskChildrenRenderNode'
+
+export {
   EffectRenderNode,
   createEffectRenderNode,
   type EffectRenderNodeConfig,

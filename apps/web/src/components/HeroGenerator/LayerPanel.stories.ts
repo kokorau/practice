@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { ref, provide, h, computed, readonly } from 'vue'
 import LayerPanel from './LayerPanel.vue'
 import { LayerSelectionKey, type LayerSelectionReturn } from '../../composables/useLayerSelection'
-import type { LayerNodeConfig, ForegroundElementConfig, NormalizedSurfaceConfig, NormalizedMaskConfig } from '@practice/section-visual'
+import type { LayerNodeConfig, ForegroundElementConfig, NormalizedSurfaceConfig } from '@practice/section-visual'
 import { $PropertyValue } from '@practice/section-visual'
 
 // Mock data for stories
@@ -21,11 +21,13 @@ const createMockSurface = (
   },
 })
 
-const createMockMask = (type: string, params: Record<string, number | boolean>): NormalizedMaskConfig => ({
-  id: type as NormalizedMaskConfig['id'],
-  params: Object.fromEntries(
-    Object.entries(params).map(([key, value]) => [key, $PropertyValue.static(value)])
-  ),
+// Create a mock white surface layer for mask children
+const createMockMaskChild = (): LayerNodeConfig => ({
+  type: 'surface',
+  id: `mask-child-${Date.now()}`,
+  name: 'Mask Surface',
+  visible: true,
+  surface: createMockSurface('solid', {}, { color1: '#ffffff' }),
 })
 
 const mockLayers: LayerNodeConfig[] = [
@@ -66,7 +68,7 @@ const mockLayers: LayerNodeConfig[] = [
           {
             type: 'mask',
             enabled: true,
-            shape: createMockMask('circle', { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false }),
+            children: [createMockMaskChild()],
             invert: false,
             feather: 0,
           },
@@ -410,7 +412,7 @@ const mockLayersRootMultipleSurfaces: LayerNodeConfig[] = [
       {
         type: 'mask',
         enabled: true,
-        shape: createMockMask('circle', { centerX: 0.5, centerY: 0.5, radius: 0.3, cutout: false }),
+        children: [createMockMaskChild()],
         invert: false,
         feather: 0,
       },

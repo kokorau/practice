@@ -19,8 +19,20 @@
  */
 
 import type { Timeline, PhaseId, TrackId } from '@practice/timeline'
-import type { HeroViewConfig } from '@practice/section-visual'
+import type { HeroViewConfig, LayerNodeConfig } from '@practice/section-visual'
 import { $PropertyValue } from '@practice/section-visual'
+
+// Helper to create a simple white surface layer for mask children
+const createMaskSurface = (id: string): LayerNodeConfig => ({
+  type: 'surface',
+  id,
+  name: 'Mask Surface',
+  visible: true,
+  surface: {
+    id: 'solid',
+    params: { color: $PropertyValue.static('#ffffff') },
+  },
+})
 
 // ============================================================
 // Preset Definition Type
@@ -163,15 +175,7 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.range('track-mask-center-x', 0.42, 0.58),
-                  centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.range('track-mask-radius', 0.2, 0.4),
-                  cutout: $PropertyValue.static(false),
-                },
-              },
+              children: [createMaskSurface('mask-surface-1')],
               invert: false,
               feather: 0.02,
             },
@@ -307,15 +311,7 @@ const createRotatingSunburstConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
-                  centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
-                  radius: $PropertyValue.static(0.15),
-                  cutout: $PropertyValue.static(false),
-                },
-              },
+              children: [createMaskSurface('mask-surface-2')],
               invert: false,
               feather: 0.05,
             },
@@ -457,14 +453,7 @@ const createFlowingWavesConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'linearGradient',
-                params: {
-                  angle: $PropertyValue.static(180),
-                  startPosition: $PropertyValue.static(0.3),
-                  endPosition: $PropertyValue.static(0.8),
-                },
-              },
+              children: [createMaskSurface('mask-surface-3')],
               invert: false,
               feather: 0,
             },
@@ -600,15 +589,7 @@ const createPulsingGridConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.static(0.5),
-                  centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.range('track-mask-radius', 0.35, 0.45),
-                  cutout: $PropertyValue.static(false),
-                },
-              },
+              children: [createMaskSurface('mask-surface-4')],
               invert: false,
               feather: 0.08,
             },
@@ -744,15 +725,7 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.range('track-mask-x', 0.6, 0.7),
-                  centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.static(0.4),
-                  cutout: $PropertyValue.static(false),
-                },
-              },
+              children: [createMaskSurface('mask-surface-5')],
               invert: false,
               feather: 0.1,
             },
@@ -787,15 +760,7 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'circle',
-                params: {
-                  centerX: $PropertyValue.static(0.25),
-                  centerY: $PropertyValue.static(0.5),
-                  radius: $PropertyValue.static(0.15),
-                  cutout: $PropertyValue.static(false),
-                },
-              },
+              children: [createMaskSurface('mask-surface-6')],
               invert: false,
               feather: 0.05,
             },
@@ -958,17 +923,7 @@ const createMorphingBlobConfig = (): HeroViewConfig => ({
             {
               type: 'mask',
               enabled: true,
-              shape: {
-                id: 'blob',
-                params: {
-                  centerX: $PropertyValue.range('track-center-x', 0.45, 0.55),
-                  centerY: $PropertyValue.range('track-center-y', 0.45, 0.55),
-                  baseRadius: $PropertyValue.range('track-radius', 0.35, 0.42),
-                  amplitude: $PropertyValue.range('track-amplitude', 0.12, 0.18),
-                  octaves: $PropertyValue.static(4),
-                  seed: $PropertyValue.range('track-seed', 0, 100),
-                },
-              },
+              children: [createMaskSurface('mask-surface-7')],
               invert: false,
               feather: 0.01,
             },

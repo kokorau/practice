@@ -71,6 +71,7 @@ export interface CompiledSurface {
 
 /**
  * Compiled mask shape with all parameters resolved
+ * @deprecated Use children-based mask instead
  */
 export interface CompiledMaskShape {
   id: MaskShapeTypeId
@@ -78,13 +79,21 @@ export interface CompiledMaskShape {
   params: Record<string, number | string | boolean>
 }
 
+// CompiledMaskChildren is an array of compiled layer nodes used as mask source
+// Uses CompiledLayerNode type (defined below) - TypeScript handles circular references
+export type CompiledMaskChildren = CompiledLayerNode[]
+
 /**
  * Compiled mask processor
+ *
+ * Uses children-based mask source. The children layers are rendered
+ * to a black background, then converted to luminance-based greymap.
  */
 export interface CompiledMaskProcessor {
   type: 'mask'
   enabled: boolean
-  shape: CompiledMaskShape
+  /** Compiled layer tree used as mask source */
+  children: CompiledMaskChildren
   invert: boolean
   feather: number
 }

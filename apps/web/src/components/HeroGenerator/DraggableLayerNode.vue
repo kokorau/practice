@@ -70,6 +70,9 @@ const emit = defineEmits<{
   // DnD move events
   'move-node': [nodeId: string, position: LayerDropPosition]
   'move-modifier': [sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition]
+  // Mask children operations
+  'add-layer-to-mask': [processorNodeId: string, modifierIndex: number, layerType: 'surface' | 'text' | 'image']
+  'remove-layer-from-mask': [processorNodeId: string, modifierIndex: number, layerId: string]
 }>()
 
 // ============================================================
@@ -92,6 +95,9 @@ const isProcessorSelected = computed(() =>
 
 // Processor expand state (local, not persisted)
 const isProcessorExpanded = ref(true)
+
+// Expanded mask modifier indices (for showing mask children)
+const expandedMaskIndices = ref<Set<number>>(new Set())
 
 // Indent style based on depth
 const indentStyle = computed(() => ({
@@ -185,7 +191,16 @@ const surfaceTypeLabel = computed((): string | null => {
 // Note: Effect details are managed by useEffectManager and shown in property panel
 // Layer tree only shows whether effect/mask modifiers exist
 const modifiers = computed(() => {
-  const result: { type: 'effect' | 'mask'; label: string; value: string; icon: string; enabled: boolean; index: number }[] = []
+  const result: {
+    type: 'effect' | 'mask'
+    label: string
+    value: string
+    icon: string
+    enabled: boolean
+    index: number
+    expandable: boolean
+    children: LayerNodeConfig[]
+  }[] = []
 
   // Only ProcessorNodeConfig has modifiers
   if (!isProcessorLayerConfig(props.node)) return result
@@ -201,16 +216,21 @@ const modifiers = computed(() => {
         icon: 'auto_fix_high',
         enabled: isEffectEnabled(mod),
         index,
+        expandable: false,
+        children: [],
       })
     } else if (isMaskModifier(mod)) {
       const maskMod = mod as MaskProcessorConfig
+      const childCount = maskMod.children?.length ?? 0
       result.push({
         type: 'mask',
         label: 'Mask',
-        value: maskMod.shape.id,
+        value: childCount > 0 ? `${childCount} layers` : 'empty',
         icon: 'content_cut',
         enabled: maskMod.enabled,
         index,
+        expandable: true,
+        children: maskMod.children ?? [],
       })
     }
   })
@@ -265,6 +285,35 @@ const handleToggleVisibility = (e: Event) => {
 
 const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
   emit('select-processor', props.node.id, type)
+}
+
+// ============================================================
+// Mask Children Handlers
+// ============================================================
+
+const handleToggleMaskExpand = (modifierIndex: number, e: Event) => {
+  e.stopPropagation()
+  const newSet = new Set(expandedMaskIndices.value)
+  if (newSet.has(modifierIndex)) {
+    newSet.delete(modifierIndex)
+  } else {
+    newSet.add(modifierIndex)
+  }
+  expandedMaskIndices.value = newSet
+}
+
+const isMaskExpanded = (modifierIndex: number): boolean => {
+  return expandedMaskIndices.value.has(modifierIndex)
+}
+
+const handleAddLayerToMask = (modifierIndex: number, layerType: 'surface' | 'text' | 'image', e: Event) => {
+  e.stopPropagation()
+  emit('add-layer-to-mask', props.node.id, modifierIndex, layerType)
+}
+
+const handleRemoveLayerFromMask = (modifierIndex: number, layerId: string, e: Event) => {
+  e.stopPropagation()
+  emit('remove-layer-from-mask', props.node.id, modifierIndex, layerId)
 }
 
 // ============================================================
@@ -582,30 +631,70 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
       </div>
       <!-- Processor children (Effect, Mask) -->
       <template v-if="isProcessorExpanded">
-        <div
-          v-for="mod in modifiers"
-          :key="`${mod.type}-${mod.index}`"
-          class="processor-child-node"
-          :class="{ dragging: isModifierBeingDragged(mod.index) }"
-          :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
-          :data-modifier-node-id="node.id"
-          :data-modifier-index="mod.index"
-          @click="handleSelectProcessor(mod.type)"
-          @contextmenu="(e: MouseEvent) => handleContextMenu(e, mod.type, mod.index)"
-          @pointerdown="(e: PointerEvent) => handleModifierPointerDown(e, mod.index, mod.type)"
-        >
-          <!-- Drop Indicator for Modifier -->
-          <DropIndicator
-            v-if="getLocalModifierDropTarget(mod.index)"
-            :position="getLocalModifierDropTarget(mod.index)!.position"
-          />
-          <span class="expand-spacer" />
-          <span class="material-icons layer-icon">{{ mod.icon }}</span>
-          <div class="layer-info">
-            <span class="layer-name">{{ mod.value }}</span>
+        <template v-for="mod in modifiers" :key="`${mod.type}-${mod.index}`">
+          <div
+            class="processor-child-node"
+            :class="{ dragging: isModifierBeingDragged(mod.index) }"
+            :style="{ paddingLeft: `${(depth + 1) * 0.75}rem` }"
+            :data-modifier-node-id="node.id"
+            :data-modifier-index="mod.index"
+            @click="handleSelectProcessor(mod.type)"
+            @contextmenu="(e: MouseEvent) => handleContextMenu(e, mod.type, mod.index)"
+            @pointerdown="(e: PointerEvent) => handleModifierPointerDown(e, mod.index, mod.type)"
+          >
+            <!-- Drop Indicator for Modifier -->
+            <DropIndicator
+              v-if="getLocalModifierDropTarget(mod.index)"
+              :position="getLocalModifierDropTarget(mod.index)!.position"
+            />
+            <!-- Expand toggle for mask modifiers -->
+            <button
+              v-if="mod.expandable"
+              class="expand-toggle"
+              :class="{ expanded: isMaskExpanded(mod.index) }"
+              @click="(e) => handleToggleMaskExpand(mod.index, e)"
+            >
+              <span class="material-icons">chevron_right</span>
+            </button>
+            <span v-else class="expand-spacer" />
+            <span class="material-icons layer-icon">{{ mod.icon }}</span>
+            <div class="layer-info">
+              <span class="layer-name">{{ mod.value }}</span>
+            </div>
+            <!-- Add layer button for mask modifiers -->
+            <button
+              v-if="mod.type === 'mask'"
+              class="add-mask-layer-btn"
+              title="Add layer to mask"
+              @click="(e) => handleAddLayerToMask(mod.index, 'surface', e)"
+            >
+              <span class="material-icons">add</span>
+            </button>
+            <span class="material-icons processor-arrow">chevron_right</span>
           </div>
-          <span class="material-icons processor-arrow">chevron_right</span>
-        </div>
+          <!-- Mask children (shown when expanded) -->
+          <template v-if="mod.type === 'mask' && isMaskExpanded(mod.index) && mod.children.length > 0">
+            <div
+              v-for="childLayer in mod.children"
+              :key="childLayer.id"
+              class="mask-child-layer"
+              :style="{ paddingLeft: `${(depth + 2) * 0.75}rem` }"
+            >
+              <span class="expand-spacer" />
+              <span class="material-icons layer-icon">{{ getLayerIcon(childLayer.type === 'surface' ? 'surface' : childLayer.type === 'text' ? 'text' : 'image') }}</span>
+              <div class="layer-info">
+                <span class="layer-name">{{ childLayer.name }}</span>
+              </div>
+              <button
+                class="remove-mask-layer-btn"
+                title="Remove from mask"
+                @click="(e) => handleRemoveLayerFromMask(mod.index, childLayer.id, e)"
+              >
+                <span class="material-icons">close</span>
+              </button>
+            </div>
+          </template>
+        </template>
       </template>
     </template>
 
@@ -633,6 +722,8 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType, modifierIndex?: number) => emit('contextmenu', id, e, targetType, modifierIndex)"
         @move-node="(id: string, position: LayerDropPosition) => emit('move-node', id, position)"
         @move-modifier="(sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => emit('move-modifier', sourceNodeId, modifierIndex, position)"
+        @add-layer-to-mask="(processorId: string, modIdx: number, layerType: 'surface' | 'text' | 'image') => emit('add-layer-to-mask', processorId, modIdx, layerType)"
+        @remove-layer-from-mask="(processorId: string, modIdx: number, layerId: string) => emit('remove-layer-from-mask', processorId, modIdx, layerId)"
       />
     </template>
   </div>
@@ -1032,5 +1123,81 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* ============================================================
+   Mask Children Layer Styles
+   ============================================================ */
+
+.mask-child-layer {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  cursor: default;
+  transition: background 0.15s;
+  border-radius: 0.25rem;
+}
+
+.mask-child-layer:hover {
+  background: oklch(0.92 0.01 260);
+}
+
+:global(.dark) .mask-child-layer:hover {
+  background: oklch(0.22 0.02 260);
+}
+
+.mask-child-layer .layer-name {
+  font-size: 0.75rem;
+  color: oklch(0.40 0.02 260);
+}
+
+:global(.dark) .mask-child-layer .layer-name {
+  color: oklch(0.70 0.02 260);
+}
+
+.add-mask-layer-btn,
+.remove-mask-layer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: oklch(0.55 0.02 260);
+  cursor: pointer;
+  border-radius: 0.125rem;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.processor-child-node:hover .add-mask-layer-btn,
+.mask-child-layer:hover .remove-mask-layer-btn {
+  opacity: 1;
+}
+
+:global(.dark) .add-mask-layer-btn,
+:global(.dark) .remove-mask-layer-btn {
+  color: oklch(0.55 0.02 260);
+}
+
+.add-mask-layer-btn:hover,
+.remove-mask-layer-btn:hover {
+  color: oklch(0.30 0.02 260);
+  background: oklch(0.88 0.01 260);
+}
+
+:global(.dark) .add-mask-layer-btn:hover,
+:global(.dark) .remove-mask-layer-btn:hover {
+  color: oklch(0.80 0.02 260);
+  background: oklch(0.28 0.02 260);
+}
+
+.add-mask-layer-btn .material-icons,
+.remove-mask-layer-btn .material-icons {
+  font-size: 0.875rem;
 }
 </style>
