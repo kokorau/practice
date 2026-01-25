@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, nextTick, watch, ref } from 'vue'
-import type { Ms, IntensityProvider } from '@practice/timeline'
+import { computed, onMounted, onUnmounted, nextTick, watch, ref } from 'vue'
+import type { Ms, IntensityProvider, TrackId } from '@practice/timeline'
 import { createHeroConfigSlice } from '@practice/site/Infra'
+import { createTimelineEditor } from '@practice/timeline-editor'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
@@ -28,6 +29,24 @@ import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPan
 // Editor Config
 // ============================================================
 const VISIBLE_DURATION = 30000 as Ms // 30 seconds
+
+// ============================================================
+// Timeline Editor (selection state)
+// ============================================================
+const timelineEditor = createTimelineEditor()
+const selectedTrackId = ref<TrackId | null>(null)
+
+const unsubscribeSelection = timelineEditor.onSelectionChange((selection) => {
+  selectedTrackId.value = selection.type === 'track' ? selection.id as TrackId : null
+})
+
+onUnmounted(() => {
+  unsubscribeSelection()
+})
+
+function onSelectTrack(trackId: TrackId) {
+  timelineEditor.selectTrack(trackId)
+}
 
 // ============================================================
 // Preset Repository (Timeline用プリセット)
@@ -441,7 +460,9 @@ const panelMask = computed(() => ({
         ref="timelinePanelRef"
         :timeline="selectedTimeline"
         :visible-duration="VISIBLE_DURATION"
+        :selected-track-id="selectedTrackId"
         @update:frame-state="handleFrameStateUpdate"
+        @select:track="onSelectTrack"
       />
       <div v-else class="no-timeline-message">
         Select an animated preset to view the timeline
