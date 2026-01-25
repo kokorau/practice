@@ -40,12 +40,12 @@ const generateRandomId = (): string => {
  * const id = generateTrackId(existingIds)
  */
 export const generateTrackId = (
-  existingIds?: Set<TrackId> | Set<string>,
+  existingIds?: ReadonlySet<TrackId | string>,
   maxAttempts = 100,
 ): TrackId => {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const id = generateRandomId() as TrackId
-    if (!existingIds || !existingIds.has(id as string)) {
+    if (!existingIds || !existingIds.has(id)) {
       return id
     }
   }
