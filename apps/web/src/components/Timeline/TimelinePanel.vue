@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import type { Timeline, Track, TrackId, RenderContext, Ms, PhaseLayout, Phase, FrameState } from '@practice/timeline'
 import { createCanvasTrackRenderer } from '@practice/timeline'
 import { useTimelinePlayer } from '../../modules/Timeline/Application/useTimelinePlayer'
+import TrackKeyBadge from './TrackKeyBadge.vue'
 
 // ============================================================
 // Props & Emits
@@ -417,7 +418,7 @@ defineExpose({
             :class="{ 'track-list-item--selected': selectedTrackId === track.id }"
             @click="emit('select:track', track.id)"
           >
-            <span class="track-key">[{{ getTrackKey?.(track.id) ?? indexToLetter(index) }}]</span>
+            <TrackKeyBadge :track-key="getTrackKey?.(track.id) ?? indexToLetter(index)" />
             <span class="track-name">{{ track.name }}</span>
           </div>
         </div>
@@ -661,14 +662,6 @@ defineExpose({
 
 .track-list-item--selected:hover {
   background: oklch(0.82 0.10 250);
-}
-
-.track-key {
-  font-size: 0.625rem;
-  font-family: ui-monospace, monospace;
-  font-weight: 600;
-  color: oklch(0.50 0.02 260);
-  flex-shrink: 0;
 }
 
 .track-name {
