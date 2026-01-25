@@ -1,6 +1,9 @@
 import type { IntensityProvider as TimelineIntensityProvider } from '@practice/timeline'
-import type { PropertyValue, RangeExpr } from './SectionVisual'
+import type { PropertyValue, RangeExpr, ColorValue } from './SectionVisual'
 import { $PropertyValue } from './SectionVisual'
+
+// Type alias for resolved values (includes ColorValue for color fields)
+export type ResolvedValue = number | string | boolean | ColorValue
 import type {
   HeroViewConfig,
   LayerNodeConfig,
@@ -142,7 +145,7 @@ export function resolvePropertyValueToBoolean(
 export function resolvePropertyValueSimple(
   prop: PropertyValue,
   intensityProvider: IntensityProvider = DEFAULT_INTENSITY_PROVIDER
-): number | string | boolean {
+): ResolvedValue {
   if ($PropertyValue.isStatic(prop)) {
     return prop.value
   }
@@ -161,8 +164,8 @@ export function resolvePropertyValueSimple(
 export function resolveParamsSimple(
   params: Record<string, PropertyValue>,
   intensityProvider: IntensityProvider = DEFAULT_INTENSITY_PROVIDER
-): Record<string, number | string | boolean> {
-  const resolved: Record<string, number | string | boolean> = {}
+): Record<string, ResolvedValue> {
+  const resolved: Record<string, ResolvedValue> = {}
 
   for (const [key, prop] of Object.entries(params)) {
     resolved[key] = resolvePropertyValueSimple(prop, intensityProvider)
@@ -183,10 +186,10 @@ export function resolveParamsSimple(
  */
 export interface PropertyResolver {
   /** PropertyValue を実際の値に解決 */
-  resolve(prop: PropertyValue): number | string | boolean
+  resolve(prop: PropertyValue): ResolvedValue
 
   /** params 一括解決 */
-  resolveAll(params: Record<string, PropertyValue>): Record<string, number | string | boolean>
+  resolveAll(params: Record<string, PropertyValue>): Record<string, ResolvedValue>
 
   /** この params が依存する trackId 一覧 */
   getDependencies(params: Record<string, PropertyValue>): Set<string>
@@ -216,7 +219,7 @@ function resolveRangeExprWithTimeline(expr: RangeExpr, intensityProvider: Timeli
  */
 export function createPropertyResolver(intensityProvider: TimelineIntensityProvider): PropertyResolver {
   return {
-    resolve(prop: PropertyValue): number | string | boolean {
+    resolve(prop: PropertyValue): ResolvedValue {
       if ($PropertyValue.isStatic(prop)) {
         return prop.value
       }
@@ -229,8 +232,8 @@ export function createPropertyResolver(intensityProvider: TimelineIntensityProvi
       return 0
     },
 
-    resolveAll(params: Record<string, PropertyValue>): Record<string, number | string | boolean> {
-      const result: Record<string, number | string | boolean> = {}
+    resolveAll(params: Record<string, PropertyValue>): Record<string, ResolvedValue> {
+      const result: Record<string, ResolvedValue> = {}
       for (const [key, prop] of Object.entries(params)) {
         result[key] = this.resolve(prop)
       }

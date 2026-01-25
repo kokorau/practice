@@ -9,6 +9,7 @@ import {
   number,
   boolean,
   select,
+  color,
   getDefaults,
   type Infer,
 } from '@practice/schema'
@@ -206,9 +207,11 @@ export interface WavyLineMaskShapeParams {
 // ============================================================
 
 /**
- * Solid Surface Schema (empty - no configurable params)
+ * Solid Surface Schema (single color)
  */
-export const SolidSurfaceSchema = defineSchema({})
+export const SolidSurfaceSchema = defineSchema({
+  color1: color({ label: 'Color', default: 'B' }),
+})
 
 export type SolidSurfaceParams = Infer<typeof SolidSurfaceSchema>
 
@@ -219,6 +222,8 @@ export const StripeSurfaceSchema = defineSchema({
   width1: number({ label: 'Width 1', min: 1, max: 100, step: 1, default: 20 }),
   width2: number({ label: 'Width 2', min: 1, max: 100, step: 1, default: 20 }),
   angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 45 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type StripeSurfaceParams = Infer<typeof StripeSurfaceSchema>
@@ -229,6 +234,8 @@ export type StripeSurfaceParams = Infer<typeof StripeSurfaceSchema>
 export const GridSurfaceSchema = defineSchema({
   lineWidth: number({ label: 'Line Width', min: 1, max: 20, step: 1, default: 2 }),
   cellSize: number({ label: 'Cell Size', min: 10, max: 200, step: 1, default: 40 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type GridSurfaceParams = Infer<typeof GridSurfaceSchema>
@@ -240,6 +247,8 @@ export const PolkaDotSurfaceSchema = defineSchema({
   dotRadius: number({ label: 'Dot Radius', min: 2, max: 50, step: 1, default: 10 }),
   spacing: number({ label: 'Spacing', min: 10, max: 100, step: 1, default: 40 }),
   rowOffset: number({ label: 'Row Offset', min: 0, max: 1, step: 0.1, default: 0.5 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type PolkaDotSurfaceParams = Infer<typeof PolkaDotSurfaceSchema>
@@ -250,6 +259,8 @@ export type PolkaDotSurfaceParams = Infer<typeof PolkaDotSurfaceSchema>
 export const CheckerSurfaceSchema = defineSchema({
   cellSize: number({ label: 'Cell Size', min: 10, max: 100, step: 1, default: 30 }),
   angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type CheckerSurfaceParams = Infer<typeof CheckerSurfaceSchema>
@@ -278,6 +289,8 @@ export const GradientGrainLinearSurfaceSchema = defineSchema({
   centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
   seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
   sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type GradientGrainLinearSurfaceParams = Infer<typeof GradientGrainLinearSurfaceSchema>
@@ -291,6 +304,8 @@ export const GradientGrainCircularSurfaceSchema = defineSchema({
   circularInvert: boolean({ label: 'Invert', default: false }),
   seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
   sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type GradientGrainCircularSurfaceParams = Infer<typeof GradientGrainCircularSurfaceSchema>
@@ -305,6 +320,8 @@ export const GradientGrainRadialSurfaceSchema = defineSchema({
   radialSweepAngle: number({ label: 'Sweep Angle', min: 1, max: 360, step: 1, default: 360 }),
   seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
   sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type GradientGrainRadialSurfaceParams = Infer<typeof GradientGrainRadialSurfaceSchema>
@@ -319,6 +336,8 @@ export const GradientGrainPerlinSurfaceSchema = defineSchema({
   perlinOffset: number({ label: 'Offset', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
   seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
   sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type GradientGrainPerlinSurfaceParams = Infer<typeof GradientGrainPerlinSurfaceSchema>
@@ -334,6 +353,8 @@ export const GradientGrainCurlSurfaceSchema = defineSchema({
   curlIntensity: number({ label: 'Curl Intensity', min: 0.5, max: 3, step: 0.1, default: 1 }),
   seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
   sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type GradientGrainCurlSurfaceParams = Infer<typeof GradientGrainCurlSurfaceSchema>
@@ -348,6 +369,8 @@ export const GradientGrainSimplexSurfaceSchema = defineSchema({
   simplexOffset: number({ label: 'Offset', min: -0.5, max: 0.5, step: 0.01, default: 0 }),
   seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
   sparsity: number({ label: 'Sparsity', min: 0, max: 0.99, step: 0.01, default: 0.75 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type GradientGrainSimplexSurfaceParams = Infer<typeof GradientGrainSimplexSurfaceSchema>
@@ -358,6 +381,8 @@ export type GradientGrainSimplexSurfaceParams = Infer<typeof GradientGrainSimple
 export const TriangleSurfaceSchema = defineSchema({
   size: number({ label: 'Size', min: 10, max: 100, step: 1, default: 30 }),
   angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type TriangleSurfaceParams = Infer<typeof TriangleSurfaceSchema>
@@ -368,6 +393,8 @@ export type TriangleSurfaceParams = Infer<typeof TriangleSurfaceSchema>
 export const HexagonSurfaceSchema = defineSchema({
   size: number({ label: 'Size', min: 10, max: 100, step: 1, default: 20 }),
   angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type HexagonSurfaceParams = Infer<typeof HexagonSurfaceSchema>
@@ -378,6 +405,8 @@ export type HexagonSurfaceParams = Infer<typeof HexagonSurfaceSchema>
 export const AsanohaSurfaceSchema = defineSchema({
   size: number({ label: 'Size', min: 10, max: 100, step: 1, default: 40 }),
   lineWidth: number({ label: 'Line Width', min: 0.5, max: 5, step: 0.5, default: 1 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type AsanohaSurfaceParams = Infer<typeof AsanohaSurfaceSchema>
@@ -389,6 +418,8 @@ export const SeigaihaSurfaceSchema = defineSchema({
   radius: number({ label: 'Radius', min: 10, max: 80, step: 1, default: 30 }),
   rings: number({ label: 'Rings', min: 2, max: 5, step: 1, default: 3 }),
   lineWidth: number({ label: 'Line Width', min: 0.5, max: 5, step: 0.5, default: 1 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type SeigaihaSurfaceParams = Infer<typeof SeigaihaSurfaceSchema>
@@ -401,6 +432,8 @@ export const WaveSurfaceSchema = defineSchema({
   wavelength: number({ label: 'Wavelength', min: 10, max: 100, step: 1, default: 40 }),
   thickness: number({ label: 'Thickness', min: 1, max: 30, step: 1, default: 8 }),
   angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type WaveSurfaceParams = Infer<typeof WaveSurfaceSchema>
@@ -412,6 +445,8 @@ export const ScalesSurfaceSchema = defineSchema({
   size: number({ label: 'Size', min: 10, max: 60, step: 1, default: 24 }),
   overlap: number({ label: 'Overlap', min: 0, max: 1, step: 0.1, default: 0.5 }),
   angle: number({ label: 'Angle', min: 0, max: 360, step: 1, default: 0 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type ScalesSurfaceParams = Infer<typeof ScalesSurfaceSchema>
@@ -423,6 +458,8 @@ export const OgeeSurfaceSchema = defineSchema({
   width: number({ label: 'Width', min: 20, max: 100, step: 1, default: 40 }),
   height: number({ label: 'Height', min: 30, max: 120, step: 1, default: 60 }),
   lineWidth: number({ label: 'Line Width', min: 0.5, max: 5, step: 0.5, default: 2 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type OgeeSurfaceParams = Infer<typeof OgeeSurfaceSchema>
@@ -435,6 +472,8 @@ export const SunburstSurfaceSchema = defineSchema({
   centerX: number({ label: 'Center X', min: 0, max: 1, step: 0.01, default: 0.5 }),
   centerY: number({ label: 'Center Y', min: 0, max: 1, step: 0.01, default: 0.5 }),
   twist: number({ label: 'Twist', min: 0, max: 2, step: 0.1, default: 0 }),
+  color1: color({ label: 'Primary', default: 'B' }),
+  color2: color({ label: 'Secondary', default: 'auto' }),
 })
 
 export type SunburstSurfaceParams = Infer<typeof SunburstSurfaceSchema>
@@ -442,6 +481,7 @@ export type SunburstSurfaceParams = Infer<typeof SunburstSurfaceSchema>
 /**
  * Paper Texture Surface Schema
  * Subtle paper-like texture with fiber strands and grain particles
+ * Single color surface (uses color1 only)
  */
 export const PaperTextureSurfaceSchema = defineSchema({
   fiberScale: number({ label: 'Fiber Scale', min: 5, max: 50, step: 1, default: 20 }),
@@ -452,6 +492,7 @@ export const PaperTextureSurfaceSchema = defineSchema({
   bumpStrength: number({ label: 'Bump Strength', min: 0, max: 0.1, step: 0.005, default: 0.03 }),
   lightAngle: number({ label: 'Light Angle', min: 0, max: 360, step: 5, default: 135 }),
   seed: number({ label: 'Seed', min: 0, max: 99999, step: 1, default: 12345 }),
+  color1: color({ label: 'Color', default: 'B' }),
 })
 
 export type PaperTextureSurfaceParams = Infer<typeof PaperTextureSurfaceSchema>

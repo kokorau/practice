@@ -9,8 +9,12 @@ const createMockSurface = (id: string, name: string): LayerNodeConfig => ({
   id,
   name,
   visible: true,
-  surface: { id: 'solid', params: {} } as NormalizedSurfaceConfig,
-  colors: { primary: 'B', secondary: 'auto' },
+  surface: {
+    id: 'solid',
+    params: {
+      color1: $PropertyValue.static('B'),
+    },
+  } as NormalizedSurfaceConfig,
 })
 
 const createMockGroup = (id: string, name: string, children: LayerNodeConfig[]): LayerNodeConfig => ({

@@ -93,8 +93,12 @@ export function useHeroLayerOperations(options: UseHeroLayerOperationsOptions): 
       id,
       name: 'Surface',
       visible: true,
-      surface: { id: 'solid', params: {} },
-      colors: { primary: 'B', secondary: 'auto' },
+      surface: {
+        id: 'solid',
+        params: {
+          color1: { type: 'static', value: 'B' },
+        },
+      },
     }
     layerUsecase.addLayer(surfaceLayerConfig)
     effectManager.setEffectConfig(id, createDefaultEffectConfig())

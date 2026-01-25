@@ -10,24 +10,16 @@
 import type { LayerEffectConfig } from './EffectSchema'
 import { createDefaultEffectConfig } from './EffectSchema'
 import { type EffectType, EFFECT_TYPES, EFFECT_REGISTRY, isValidEffectType } from './EffectRegistry'
-import type { PropertyValue } from './SectionVisual'
+import type { PropertyValue, HeroPrimitiveKey, CustomColor, ColorValue } from './SectionVisual'
 import { $PropertyValue } from './SectionVisual'
+
+// Re-export color types from SectionVisual (single source of truth)
+export type { HeroPrimitiveKey, CustomColor, ColorValue }
+export { isCustomColor } from './SectionVisual'
 
 // ============================================================
 // Color Config Types (for serialization)
 // ============================================================
-
-/**
- * PrimitiveKey type (duplicated here for JSON serialization independence)
- * Original definition in SemanticColorPalette/Domain/ValueObject/PrimitivePalette.ts
- */
-export type HeroPrimitiveKey =
-  | 'BN0' | 'BN1' | 'BN2' | 'BN3' | 'BN4' | 'BN5' | 'BN6' | 'BN7' | 'BN8' | 'BN9'
-  | 'F0' | 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9'
-  | 'AN0' | 'AN1' | 'AN2' | 'AN3' | 'AN4' | 'AN5' | 'AN6' | 'AN7' | 'AN8' | 'AN9'
-  | 'B' | 'Bt' | 'Bs' | 'Bf'
-  | 'A' | 'At' | 'As' | 'Af'
-  | 'F' | 'Ft' | 'Fs' | 'Ff'
 
 /**
  * ContextName type (duplicated here for JSON serialization independence)
@@ -45,48 +37,11 @@ export interface HsvColor {
 }
 
 /**
- * Custom color specified directly in HSV format
- * Used when users want to specify an exact color outside of the primitive palette
- */
-export interface CustomColor {
-  type: 'custom'
-  /** Hue (0-360) */
-  hue: number
-  /** Saturation (0-100) */
-  saturation: number
-  /** Value/Brightness (0-100) */
-  value: number
-}
-
-/**
- * Color value that can be a primitive key, 'auto', or a custom HSV color
- */
-export type ColorValue = HeroPrimitiveKey | 'auto' | CustomColor
-
-/**
- * Type guard for CustomColor
- */
-export function isCustomColor(value: ColorValue): value is CustomColor {
-  return typeof value === 'object' && value !== null && value.type === 'custom'
-}
-
-/**
- * Per-surface color configuration
- * Each surface layer can have its own color settings
- */
-export interface SurfaceColorsConfig {
-  /** Primary color (palette key, 'auto', or custom HSV color) */
-  primary: ColorValue
-  /** Secondary color (palette key, 'auto', or custom HSV color) */
-  secondary: ColorValue
-}
-
-/**
  * Color configuration for HeroView
  * Contains global color state (semantic context only)
  *
- * Note: Per-surface colors (primary/secondary) are now stored on each
- * SurfaceLayerNodeConfig.colors field, not here.
+ * Note: Per-surface colors (color1/color2) are now stored in each
+ * SurfaceLayerNodeConfig.surface.params field.
  *
  * Note: Brand/accent/foundation HSV colors are stored in the preset's
  * colorPreset field, not in config.colors. UI manages these via useSiteColors.
@@ -295,7 +250,17 @@ export interface PaperTextureSurfaceConfig {
 }
 
 
-export type SurfaceConfig =
+/**
+ * Color fields for surface configs.
+ * These are optional in legacy SurfaceConfig format
+ * and will be normalized to params.color1/color2 in NormalizedSurfaceConfig.
+ */
+export interface SurfaceColorFields {
+  color1?: ColorValue
+  color2?: ColorValue
+}
+
+type SurfaceConfigBase =
   | SolidSurfaceConfig
   | StripeSurfaceConfig
   | GridSurfaceConfig
@@ -316,6 +281,8 @@ export type SurfaceConfig =
   | OgeeSurfaceConfig
   | SunburstSurfaceConfig
   | PaperTextureSurfaceConfig
+
+export type SurfaceConfig = SurfaceConfigBase & SurfaceColorFields
 
 /** @deprecated Use SurfaceConfig instead */
 export type BackgroundSurfaceConfig = SurfaceConfig
@@ -404,8 +371,11 @@ export function normalizeSurfaceConfig(config: SurfaceConfig): NormalizedSurface
   const { type, ...rawParams } = config
   const params: Record<string, PropertyValue> = {}
   for (const [key, value] of Object.entries(rawParams)) {
-    if (typeof value === 'number' || typeof value === 'string') {
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
       params[key] = $PropertyValue.static(value)
+    } else if (typeof value === 'object' && value !== null) {
+      // ColorValue (CustomColor) or other object values
+      params[key] = $PropertyValue.static(value as ColorValue)
     }
   }
   return { id: type, params }
@@ -1129,15 +1099,11 @@ interface LayerNodeConfigBase {
 export interface BaseLayerNodeConfig extends LayerNodeConfigBase {
   type: 'base'
   surface: NormalizedSurfaceConfig
-  /** Per-surface color configuration */
-  colors?: SurfaceColorsConfig
 }
 
 export interface SurfaceLayerNodeConfig extends LayerNodeConfigBase {
   type: 'surface'
   surface: NormalizedSurfaceConfig
-  /** Per-surface color configuration */
-  colors?: SurfaceColorsConfig
 }
 
 export interface TextLayerNodeConfig extends LayerNodeConfigBase {
@@ -1382,18 +1348,6 @@ export const createDefaultColorsConfig = (): HeroColorsConfig => ({
   semanticContext: 'canvas',
 })
 
-/** Default colors for background surface layer (palette keys) */
-export const DEFAULT_LAYER_BACKGROUND_COLORS: SurfaceColorsConfig = {
-  primary: 'B',
-  secondary: 'auto',
-}
-
-/** Default colors for mask surface layer (palette keys) */
-export const DEFAULT_LAYER_MASK_COLORS: SurfaceColorsConfig = {
-  primary: 'auto',
-  secondary: 'auto',
-}
-
 export const createDefaultMaskProcessorConfig = (): MaskProcessorConfig => ({
   type: 'mask',
   enabled: true,
@@ -1425,8 +1379,12 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           id: 'background',
           name: 'Surface',
           visible: true,
-          surface: { id: 'solid', params: {} },
-          colors: { primary: 'B', secondary: 'auto' },
+          surface: {
+            id: 'solid',
+            params: {
+              color1: $PropertyValue.static('B' as const),
+            },
+          },
         },
       ],
     },
@@ -1441,8 +1399,12 @@ export const createDefaultHeroViewConfig = (): HeroViewConfig => ({
           id: 'surface-mask',
           name: 'Surface',
           visible: true,
-          surface: { id: 'solid', params: {} },
-          colors: { primary: 'auto', secondary: 'auto' },
+          surface: {
+            id: 'solid',
+            params: {
+              color1: $PropertyValue.static('auto' as const),
+            },
+          },
         },
         {
           type: 'processor',

@@ -6,11 +6,19 @@ import type { LayerNodeConfig, NormalizedSurfaceConfig, NormalizedMaskConfig } f
 import { $PropertyValue } from '@practice/section-visual'
 
 // Mock data helpers
-const createMockSurface = (type: string, params: Record<string, number | string> = {}): NormalizedSurfaceConfig => ({
+const createMockSurface = (
+  type: string,
+  params: Record<string, number | string> = {},
+  colors: { color1?: string; color2?: string } = { color1: 'B', color2: 'auto' }
+): NormalizedSurfaceConfig => ({
   id: type as NormalizedSurfaceConfig['id'],
-  params: Object.fromEntries(
-    Object.entries(params).map(([key, value]) => [key, $PropertyValue.static(value)])
-  ),
+  params: {
+    ...Object.fromEntries(
+      Object.entries(params).map(([key, value]) => [key, $PropertyValue.static(value)])
+    ),
+    ...(colors.color1 !== undefined ? { color1: $PropertyValue.static(colors.color1) } : {}),
+    ...(colors.color2 !== undefined ? { color2: $PropertyValue.static(colors.color2) } : {}),
+  },
 })
 
 const createMockMask = (type: string, params: Record<string, number | boolean>): NormalizedMaskConfig => ({
@@ -34,8 +42,7 @@ const mockLayers: LayerNodeConfig[] = [
         name: 'Surface',
         visible: true,
         surface: createMockSurface('stripe', { width1: 20, width2: 20, angle: 45 }),
-        colors: { primary: 'B', secondary: 'auto' },
-      },
+              },
     ],
   },
   {
@@ -50,8 +57,7 @@ const mockLayers: LayerNodeConfig[] = [
         name: 'Surface',
         visible: true,
         surface: createMockSurface('solid'),
-        colors: { primary: 'auto', secondary: 'auto' },
-      },
+              },
       {
         type: 'processor',
         id: 'processor-mask',
@@ -192,15 +198,13 @@ const mockLayersWithProcessor: LayerNodeConfig[] = [
     name: 'Surface 1',
     visible: true,
     surface: createMockSurface('solid'),
-    colors: { primary: 'B', secondary: 'auto' },
-  },
+      },
   {
     type: 'surface',
     id: 'surface-2',
     name: 'Surface 2',
     visible: true,
-    surface: createMockSurface('stripe'),
-    colors: { primary: 'F1', secondary: 'auto' },
+    surface: createMockSurface('stripe', {}, { color1: 'F1', color2: 'auto' }),
   },
   {
     type: 'processor',

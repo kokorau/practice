@@ -138,7 +138,6 @@ export type {
   LayerNodeConfig,
   BaseLayerNodeConfig,
   SurfaceLayerNodeConfig,
-  SurfaceColorsConfig,
   TextLayerNodeConfig,
   TextLayerNodeConfig as TextLayerNodeConfigType,
   Model3DLayerNodeConfig,
@@ -371,9 +370,6 @@ export {
   getMaskAsNormalized,
   // Config migration (legacy format to normalized format)
   migrateToNormalizedFormat,
-  // Default colors for surface layers (palette keys for layer config)
-  DEFAULT_LAYER_BACKGROUND_COLORS,
-  DEFAULT_LAYER_MASK_COLORS,
   // HeroEditorState factories
   createDefaultBackgroundUIState,
   createDefaultMaskUIState,

@@ -21,11 +21,11 @@ import type {
   ImageLayerNodeConfig,
   GroupLayerNodeConfig,
   ProcessorNodeConfig,
-  SurfaceColorsConfig,
   ProcessorConfig,
   SingleEffectConfig,
   MaskProcessorConfig,
 } from '../Domain/HeroViewConfig'
+import type { ColorValue } from '../Domain/SectionVisual'
 import type {
   CompiledHeroView,
   CompiledLayerNode,
@@ -82,24 +82,45 @@ export interface CompileContext {
 // ============================================================
 
 /**
- * Default colors for background surface layer (palette keys)
+ * Default color for background surface layer color1 (palette key)
  */
-const DEFAULT_BACKGROUND_COLORS: SurfaceColorsConfig = {
-  primary: 'B',
-  secondary: 'auto',
-}
+const DEFAULT_BACKGROUND_COLOR1: ColorValue = 'B'
 
 /**
- * Default colors for mask surface layer (palette keys)
+ * Default color for background surface layer color2 (palette key)
  */
-const DEFAULT_MASK_COLORS: SurfaceColorsConfig = {
-  primary: 'auto',
-  secondary: 'auto',
-}
+const DEFAULT_BACKGROUND_COLOR2: ColorValue = 'auto'
+
+/**
+ * Default color for mask surface layer color1 (palette key)
+ */
+const DEFAULT_MASK_COLOR1: ColorValue = 'auto'
+
+/**
+ * Default color for mask surface layer color2 (palette key)
+ */
+const DEFAULT_MASK_COLOR2: ColorValue = 'auto'
 
 // ============================================================
 // Layer Compilation
 // ============================================================
+
+/**
+ * Extract color value from resolved params
+ * Color can be stored as PropertyValue (static) or already resolved
+ */
+function extractColorFromParams(
+  resolvedParams: Record<string, unknown>,
+  key: string,
+  defaultColor: ColorValue
+): ColorValue {
+  const value = resolvedParams[key]
+  if (value === undefined) {
+    return defaultColor
+  }
+  // Value is already resolved from PropertyValue to ColorValue
+  return value as ColorValue
+}
 
 /**
  * Compile surface layer node
@@ -111,32 +132,47 @@ function compileSurfaceLayer(
   intensityProvider: IntensityProvider,
   isBackground: boolean
 ): CompiledSurfaceLayerNode {
-  const colors = layer.colors ?? (isBackground ? DEFAULT_BACKGROUND_COLORS : DEFAULT_MASK_COLORS)
   const semanticContext: ContextName = 'canvas'
   const surfaceKey = getSurfaceKeyForContext(semanticContext, isDark)
 
-  // Resolve colors
+  // Resolve surface params (including color1/color2)
+  const resolvedParams = resolveParams(layer.surface.params, intensityProvider)
+
+  // Extract color values from resolved params with layer-type-aware defaults
+  const color1Key = extractColorFromParams(
+    resolvedParams,
+    'color1',
+    isBackground ? DEFAULT_BACKGROUND_COLOR1 : DEFAULT_MASK_COLOR1
+  )
+  const color2Key = extractColorFromParams(
+    resolvedParams,
+    'color2',
+    isBackground ? DEFAULT_BACKGROUND_COLOR2 : DEFAULT_MASK_COLOR2
+  )
+
+  // Resolve colors to RGBA
   const color1 = resolveSurfaceColorKey(
     palette,
-    colors.primary,
+    color1Key,
     surfaceKey,
     isDark,
     true // isPrimary
   )
   const color2 = resolveSurfaceColorKey(
     palette,
-    colors.secondary,
+    color2Key,
     surfaceKey,
     isDark,
     false // isSecondary
   )
 
-  // Resolve surface params
-  const resolvedParams = resolveParams(layer.surface.params, intensityProvider)
+  // Remove color fields from params (they are handled separately as color1/color2)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { color1: _c1, color2: _c2, ...paramsWithoutColors } = resolvedParams
 
   const compiledSurface: CompiledSurface = {
     id: layer.surface.id,
-    params: resolvedParams,
+    params: paramsWithoutColors as Record<string, number | string | boolean>,
     color1,
     color2,
   }
@@ -202,10 +238,12 @@ function compileEffect(
   effect: SingleEffectConfig,
   intensityProvider: IntensityProvider
 ): CompiledEffect {
+  // Effect params don't contain ColorValue, safe to cast
+  const params = resolveParams(effect.params, intensityProvider) as Record<string, number | string | boolean>
   return {
     type: 'effect',
     id: effect.id,
-    params: resolveParams(effect.params, intensityProvider),
+    params,
   }
 }
 
@@ -216,9 +254,11 @@ function compileMaskProcessor(
   mask: MaskProcessorConfig,
   intensityProvider: IntensityProvider
 ): CompiledMaskProcessor {
+  // Mask shape params don't contain ColorValue, safe to cast
+  const shapeParams = resolveParams(mask.shape.params, intensityProvider) as Record<string, number | string | boolean>
   const compiledShape: CompiledMaskShape = {
     id: mask.shape.id,
-    params: resolveParams(mask.shape.params, intensityProvider),
+    params: shapeParams,
   }
 
   return {

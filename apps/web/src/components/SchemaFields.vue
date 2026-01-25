@@ -3,11 +3,14 @@
  * SchemaFields
  *
  * Renders form fields automatically from a schema definition.
- * Supports number (slider) and boolean (checkbox) fields.
+ * Supports number (slider), boolean (checkbox), select, and color fields.
  */
 import { computed } from 'vue'
 import { getFields, type ObjectSchema, type FieldMeta } from '@practice/schema'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
+import type { ColorValue } from '@practice/section-visual'
 import RangeInput from './RangeInput.vue'
+import PrimitiveColorPicker from './HeroGenerator/PrimitiveColorPicker.vue'
 
 const props = withDefaults(defineProps<{
   schema: ObjectSchema
@@ -18,6 +21,8 @@ const props = withDefaults(defineProps<{
   exclude?: string[]
   /** Number of columns for the grid layout (1 or 2) */
   columns?: 1 | 2
+  /** Palette for color fields (required when schema contains color fields) */
+  palette?: PrimitivePalette
 }>(), {
   columns: 1,
 })
@@ -37,6 +42,28 @@ const updateField = (key: string, value: unknown) => {
   // Merge the changed field with current modelValue to avoid losing other fields
   // Note: This preserves existing values while updating only the changed field
   emit('update:modelValue', { ...props.modelValue, [key]: value })
+}
+
+/**
+ * Get color value from modelValue, converting SchemaColorValue to ColorValue format
+ */
+const getColorValue = (key: string, defaultValue: unknown): ColorValue => {
+  const value = props.modelValue[key]
+  if (value === undefined) {
+    // Use default from schema
+    if (typeof defaultValue === 'string') {
+      return defaultValue as ColorValue
+    }
+    // Check if it's a CustomColor object
+    if (typeof defaultValue === 'object' && defaultValue !== null && 'type' in defaultValue) {
+      const obj = defaultValue as { type: unknown }
+      if (obj.type === 'custom') {
+        return defaultValue as ColorValue
+      }
+    }
+    return 'B' // Fallback
+  }
+  return value as ColorValue
 }
 </script>
 
@@ -82,6 +109,17 @@ const updateField = (key: string, value: unknown) => {
             {{ opt.label }}
           </option>
         </select>
+      </div>
+
+      <!-- Color field: color picker -->
+      <div v-else-if="field.schema.type === 'color' && palette" class="schema-color-group">
+        <label class="schema-color-label">{{ field.schema.label }}</label>
+        <PrimitiveColorPicker
+          :model-value="getColorValue(field.key, field.schema.default)"
+          :palette="palette"
+          :show-auto="true"
+          @update:model-value="updateField(field.key, $event)"
+        />
       </div>
     </template>
   </div>
@@ -151,5 +189,20 @@ const updateField = (key: string, value: unknown) => {
 .schema-select:focus {
   outline: none;
   border-color: oklch(0.55 0.20 250);
+}
+
+.schema-color-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.schema-color-label {
+  font-size: 0.75rem;
+  color: oklch(0.40 0.02 260);
+}
+
+:global(.dark) .schema-color-label {
+  color: oklch(0.70 0.02 260);
 }
 </style>

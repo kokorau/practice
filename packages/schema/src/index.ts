@@ -68,12 +68,46 @@ export interface LiteralFieldSchema<T extends string | number | boolean> extends
   value: T
 }
 
+/**
+ * Custom HSV color structure for color fields
+ */
+export interface SchemaCustomColor {
+  type: 'custom'
+  /** Hue (0-360) */
+  hue: number
+  /** Saturation (0-100) */
+  saturation: number
+  /** Value/Brightness (0-100) */
+  value: number
+}
+
+/**
+ * Color value for schema fields
+ * Can be a palette key string, 'auto', or a custom HSV color
+ */
+export type SchemaColorValue = string | SchemaCustomColor
+
+/**
+ * Type guard for SchemaCustomColor
+ */
+export function isSchemaCustomColor(value: SchemaColorValue): value is SchemaCustomColor {
+  return typeof value === 'object' && value !== null && value.type === 'custom'
+}
+
+/** Color field schema (color picker with palette keys or custom HSV) */
+export interface ColorFieldSchema extends FieldSchemaBase {
+  type: 'color'
+  /** Default color value */
+  default: SchemaColorValue
+}
+
 /** Union of all field schemas */
 export type FieldSchema =
   | NumberFieldSchema
   | BooleanFieldSchema
   | SelectFieldSchema<string>
   | LiteralFieldSchema<string | number | boolean>
+  | ColorFieldSchema
 
 /** Object schema (collection of fields) */
 export type ObjectSchema = Record<string, FieldSchema>
@@ -88,6 +122,7 @@ type InferField<F extends FieldSchema> =
   F extends BooleanFieldSchema ? boolean :
   F extends SelectFieldSchema<infer T> ? T :
   F extends LiteralFieldSchema<infer V> ? V :
+  F extends ColorFieldSchema ? SchemaColorValue :
   never
 
 /** Infer TypeScript type from object schema */
@@ -126,6 +161,12 @@ export const literal = <T extends string | number | boolean>(
 ): LiteralFieldSchema<T> => ({
   type: 'literal',
   value,
+  ...opts,
+})
+
+/** Create a color field schema */
+export const color = (opts: Omit<ColorFieldSchema, 'type'>): ColorFieldSchema => ({
+  type: 'color',
   ...opts,
 })
 
@@ -218,6 +259,26 @@ export const validate = <S extends ObjectSchema>(
       case 'literal':
         if (v !== field.value) {
           errors.push({ field: key, message: `Expected ${JSON.stringify(field.value)}`, value: v })
+        }
+        break
+
+      case 'color':
+        // Color can be a string (palette key like 'B', 'auto') or a custom color object
+        if (typeof v === 'string') {
+          // Valid string color value
+        } else if (typeof v === 'object' && v !== null) {
+          const customColor = v as Record<string, unknown>
+          if (customColor.type !== 'custom') {
+            errors.push({ field: key, message: 'Custom color must have type "custom"', value: v })
+          } else if (typeof customColor.hue !== 'number' || customColor.hue < 0 || customColor.hue > 360) {
+            errors.push({ field: key, message: 'Hue must be a number between 0 and 360', value: v })
+          } else if (typeof customColor.saturation !== 'number' || customColor.saturation < 0 || customColor.saturation > 100) {
+            errors.push({ field: key, message: 'Saturation must be a number between 0 and 100', value: v })
+          } else if (typeof customColor.value !== 'number' || customColor.value < 0 || customColor.value > 100) {
+            errors.push({ field: key, message: 'Value must be a number between 0 and 100', value: v })
+          }
+        } else {
+          errors.push({ field: key, message: 'Expected string or custom color object', value: v })
         }
         break
     }

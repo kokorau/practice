@@ -12,8 +12,8 @@ import type {
   ProcessorNodeConfig,
   SingleEffectConfig,
   NormalizedSurfaceConfig,
-  SurfaceColorsConfig,
 } from '../Domain/HeroViewConfig'
+import type { ColorValue } from '../Domain/SectionVisual'
 import { getEffectsBeforeMask } from '../Domain/HeroViewConfig'
 import type { PropertyValue } from '../Domain/SectionVisual'
 import { $PropertyValue } from '../Domain/SectionVisual'
@@ -54,14 +54,17 @@ function staticizeEffect(effect: SingleEffectConfig): SingleEffectConfig {
  * Options for creating surface preview config
  */
 export interface CreateSurfacePreviewConfigOptions {
-  /** The Surface to preview */
+  /** The Surface to preview (params should include color1/color2) */
   previewSurface: NormalizedSurfaceConfig
 
   /** The Processor node (to extract preceding effects, optional) */
   processor?: ProcessorNodeConfig
 
-  /** Per-surface color configuration */
-  colors?: SurfaceColorsConfig
+  /** Primary color (palette key, 'auto', or custom HSV color) - overrides params.color1 */
+  color1?: ColorValue
+
+  /** Secondary color (palette key, 'auto', or custom HSV color) - overrides params.color2 */
+  color2?: ColorValue
 
   /** Viewport dimensions for the thumbnail */
   viewport?: { width: number; height: number }
@@ -83,9 +86,10 @@ export interface CreateSurfacePreviewConfigOptions {
  * @example
  * ```ts
  * const previewConfig = createSurfacePreviewConfig({
- *   previewSurface: { id: 'stripe', params: { width1: 20, width2: 20, angle: 45 } },
+ *   previewSurface: { id: 'stripe', params: { width1: 20, width2: 20, angle: 45, color1: 'B', color2: 'auto' } },
  *   processor: selectedProcessor,  // optional
- *   colors: { primary: 'B', secondary: 'auto' },
+ *   color1: 'B',  // optional override
+ *   color2: 'auto',  // optional override
  * })
  *
  * await renderWithPipeline(previewConfig, renderer, palette, { scale: 0.3 })
@@ -97,16 +101,27 @@ export function createSurfacePreviewConfig(
   const {
     previewSurface,
     processor,
-    colors,
+    color1,
+    color2,
     viewport = { width: 256, height: 144 },
     semanticContext = 'canvas',
   } = options
 
   // Create a copy of the surface with a unique ID
   // and convert any RangeExpr to static values
+  const staticParams = staticizeParams(previewSurface.params)
+
+  // Override color1/color2 if provided
+  if (color1 !== undefined) {
+    staticParams.color1 = $PropertyValue.static(color1)
+  }
+  if (color2 !== undefined) {
+    staticParams.color2 = $PropertyValue.static(color2)
+  }
+
   const staticSurface: NormalizedSurfaceConfig = {
     id: previewSurface.id,
-    params: staticizeParams(previewSurface.params),
+    params: staticParams,
   }
 
   const previewSurfaceLayer: SurfaceLayerNodeConfig = {
@@ -115,7 +130,6 @@ export function createSurfacePreviewConfig(
     name: 'Preview Surface',
     visible: true,
     surface: staticSurface,
-    colors,
   }
 
   // Build children array

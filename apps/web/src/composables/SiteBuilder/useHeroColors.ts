@@ -36,11 +36,11 @@ import type {
   LayerNodeConfig,
   SurfaceLayerNodeConfig,
   BaseLayerNodeConfig,
-  SurfaceColorsConfig,
   HeroContextName,
   ColorValue,
+  PropertyValue,
 } from '@practice/section-visual'
-import { isCustomColor } from '@practice/section-visual'
+import { isCustomColor, $PropertyValue } from '@practice/section-visual'
 import { hsvToOklch } from '../../components/SiteBuilder/utils/colorConversion'
 
 // ============================================================
@@ -132,24 +132,47 @@ const findMaskSurfaceLayer = (layers: LayerNodeConfig[]): (SurfaceLayerNodeConfi
 }
 
 /**
- * Update colors on a surface layer by ID
+ * Extract ColorValue from PropertyValue in params
  */
-const updateSurfaceLayerColors = (
+const extractColorFromParams = (
+  params: Record<string, PropertyValue>,
+  key: string,
+  defaultValue: ColorValue
+): ColorValue => {
+  const propValue = params[key]
+  if (!propValue || !$PropertyValue.isStatic(propValue)) {
+    return defaultValue
+  }
+  return propValue.value as ColorValue
+}
+
+/**
+ * Update color in surface layer params by ID
+ */
+const updateSurfaceLayerColorParam = (
   layers: LayerNodeConfig[],
   layerId: string,
-  colorUpdate: Partial<SurfaceColorsConfig>
+  paramKey: 'color1' | 'color2',
+  value: ColorValue
 ): LayerNodeConfig[] => {
   return layers.map((layer): LayerNodeConfig => {
     if (layer.type === 'group') {
       return {
         ...layer,
-        children: updateSurfaceLayerColors(layer.children, layerId, colorUpdate),
+        children: updateSurfaceLayerColorParam(layer.children, layerId, paramKey, value),
       }
     }
     if ((layer.type === 'surface' || layer.type === 'base') && layer.id === layerId) {
+      const surfaceLayer = layer as SurfaceLayerNodeConfig | BaseLayerNodeConfig
       return {
         ...layer,
-        colors: { ...(layer.colors ?? { primary: 'B', secondary: 'auto' }), ...colorUpdate },
+        surface: {
+          ...surfaceLayer.surface,
+          params: {
+            ...surfaceLayer.surface.params,
+            [paramKey]: $PropertyValue.static(value),
+          },
+        },
       }
     }
     return layer
@@ -272,16 +295,17 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   const themeMode = computed((): 'light' | 'dark' => (isDark.value ? 'dark' : 'light'))
 
   // ============================================================
-  // Background Layer Colors (SSOT from repository)
+  // Background Layer Colors (SSOT from repository via params.color1/color2)
   // ============================================================
   const backgroundColorKey1 = computed({
     get: (): ColorValue => {
       const layer = findBackgroundSurfaceLayer(heroViewRepository.get().layers)
-      return layer?.colors?.primary ?? 'B'
+      if (!layer) return 'B'
+      return extractColorFromParams(layer.surface.params, 'color1', 'B')
     },
     set: (val: ColorValue) => {
       const config = heroViewRepository.get()
-      const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { primary: val })
+      const updatedLayers = updateSurfaceLayerColorParam(config.layers, 'background', 'color1', val)
       heroViewRepository.set({ ...config, layers: updatedLayers })
     },
   })
@@ -289,11 +313,12 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   const backgroundColorKey2 = computed({
     get: (): ColorValue => {
       const layer = findBackgroundSurfaceLayer(heroViewRepository.get().layers)
-      return layer?.colors?.secondary ?? 'auto'
+      if (!layer) return 'auto'
+      return extractColorFromParams(layer.surface.params, 'color2', 'auto')
     },
     set: (val: ColorValue) => {
       const config = heroViewRepository.get()
-      const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { secondary: val })
+      const updatedLayers = updateSurfaceLayerColorParam(config.layers, 'background', 'color2', val)
       heroViewRepository.set({ ...config, layers: updatedLayers })
     },
   })
@@ -310,16 +335,17 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   })
 
   // ============================================================
-  // Mask Layer Colors (SSOT from repository)
+  // Mask Layer Colors (SSOT from repository via params.color1/color2)
   // ============================================================
   const maskColorKey1 = computed({
     get: (): ColorValue => {
       const layer = findMaskSurfaceLayer(heroViewRepository.get().layers)
-      return layer?.colors?.primary ?? 'auto'
+      if (!layer) return 'auto'
+      return extractColorFromParams(layer.surface.params, 'color1', 'auto')
     },
     set: (val: ColorValue) => {
       const config = heroViewRepository.get()
-      const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: val })
+      const updatedLayers = updateSurfaceLayerColorParam(config.layers, 'surface-mask', 'color1', val)
       heroViewRepository.set({ ...config, layers: updatedLayers })
     },
   })
@@ -327,11 +353,12 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   const maskColorKey2 = computed({
     get: (): ColorValue => {
       const layer = findMaskSurfaceLayer(heroViewRepository.get().layers)
-      return layer?.colors?.secondary ?? 'auto'
+      if (!layer) return 'auto'
+      return extractColorFromParams(layer.surface.params, 'color2', 'auto')
     },
     set: (val: ColorValue) => {
       const config = heroViewRepository.get()
-      const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: val })
+      const updatedLayers = updateSurfaceLayerColorParam(config.layers, 'surface-mask', 'color2', val)
       heroViewRepository.set({ ...config, layers: updatedLayers })
     },
   })

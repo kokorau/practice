@@ -59,8 +59,7 @@ export interface SurfaceRenderNodeConfig {
  * ```typescript
  * const node = new SurfaceRenderNode({
  *   id: 'background',
- *   surface: { type: 'stripe', width1: 10, width2: 10, angle: 45 },
- *   colors: { primary: 'F1', secondary: 'F3' }
+ *   surface: { type: 'stripe', width1: 10, width2: 10, angle: 45, color1: 'F1', color2: 'F3' }
  * })
  *
  * node.render(context) // Renders to owned texture

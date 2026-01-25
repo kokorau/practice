@@ -667,7 +667,6 @@ export type {
   HeroPrimitiveKey,
   HeroContextName,
   HeroColorsConfig,
-  SurfaceColorsConfig,
   ColorValue,
   CustomColor,
   ViewportConfig,
@@ -709,9 +708,6 @@ export {
   createDefaultHeroViewConfig,
   // Custom color type guard
   isCustomColor,
-  // Default colors for surface layers (palette keys)
-  DEFAULT_LAYER_BACKGROUND_COLORS,
-  DEFAULT_LAYER_MASK_COLORS,
   // Layer helpers
   getLayerFilters,
   getLayerMaskProcessor,
