@@ -14,34 +14,14 @@ import {
   getDefaultTexturePatterns,
   getDefaultMaskPatterns,
   getSurfacePresets,
-  createSolidSpec,
-  createStripeSpec,
-  createGridSpec,
-  createPolkaDotSpec,
-  createCheckerSpec,
-  createLinearGradientSpec,
-  createTriangleSpec,
-  createHexagonSpec,
-  createAsanohaSpec,
-  createSeigaihaSpec,
-  createWaveSpec,
-  createScalesSpec,
-  createOgeeSpec,
-  createSunburstSpec,
-  createPaperTextureSpec,
-  createGradientGrainLinearSpec,
-  createGradientGrainCircularSpec,
-  createGradientGrainRadialSpec,
-  createGradientGrainPerlinSpec,
-  createGradientGrainCurlSpec,
-  createGradientGrainSimplexSpec,
-  DEFAULT_GRADIENT_GRAIN_CURVE_POINTS,
+  getSurfaceDefinition,
   type TexturePattern,
   type MaskPattern,
   type RGBA,
   type Viewport,
   type TextureRenderSpec,
   type SurfacePreset,
+  type GenericSurfaceParams,
 } from '@practice/texture'
 import { createSharedRenderer } from '../../services/createSharedRenderer'
 
@@ -128,6 +108,7 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
 
   /**
    * Create a full-viewport spec for midground texture thumbnail
+   * Uses SurfaceRegistry for centralized pattern creation
    */
   const createMidgroundThumbnailSpec = (
     preset: SurfacePreset,
@@ -136,199 +117,14 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
     viewport: Viewport
   ): TextureRenderSpec | null => {
     const { params } = preset
-
-    switch (params.type) {
-      case 'solid':
-        return createSolidSpec({ color: color1 })
-      case 'stripe':
-        return createStripeSpec({
-          color1,
-          color2,
-          width1: params.width1,
-          width2: params.width2,
-          angle: params.angle,
-        })
-      case 'grid':
-        return createGridSpec({
-          lineColor: color1,
-          bgColor: color2,
-          lineWidth: params.lineWidth,
-          cellSize: params.cellSize,
-        })
-      case 'polkaDot':
-        return createPolkaDotSpec({
-          dotColor: color1,
-          bgColor: color2,
-          dotRadius: params.dotRadius,
-          spacing: params.spacing,
-          rowOffset: params.rowOffset,
-        })
-      case 'checker':
-        return createCheckerSpec({
-          color1,
-          color2,
-          cellSize: params.cellSize,
-          angle: params.angle,
-        })
-      case 'linearGradient':
-        return createLinearGradientSpec({
-          angle: params.angle,
-          centerX: params.centerX,
-          centerY: params.centerY,
-          stops: [
-            { color: color1, position: 0 },
-            { color: color2, position: 1 },
-          ],
-        }, viewport)
-      case 'gradientGrainLinear':
-        return createGradientGrainLinearSpec({
-          angle: params.angle,
-          centerX: params.centerX,
-          centerY: params.centerY,
-          colorA: color1,
-          colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
-          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
-        }, viewport)
-      case 'gradientGrainCircular':
-        return createGradientGrainCircularSpec({
-          centerX: params.centerX,
-          centerY: params.centerY,
-          circularInvert: params.circularInvert,
-          colorA: color1,
-          colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
-          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
-        }, viewport)
-      case 'gradientGrainRadial':
-        return createGradientGrainRadialSpec({
-          centerX: params.centerX,
-          centerY: params.centerY,
-          radialStartAngle: params.radialStartAngle,
-          radialSweepAngle: params.radialSweepAngle,
-          colorA: color1,
-          colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
-          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
-        }, viewport)
-      case 'gradientGrainPerlin':
-        return createGradientGrainPerlinSpec({
-          perlinScale: params.perlinScale,
-          perlinOctaves: params.perlinOctaves,
-          perlinContrast: params.perlinContrast,
-          perlinOffset: params.perlinOffset,
-          colorA: color1,
-          colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
-          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
-        }, viewport)
-      case 'gradientGrainCurl':
-        return createGradientGrainCurlSpec({
-          perlinScale: params.perlinScale,
-          perlinOctaves: params.perlinOctaves,
-          perlinContrast: params.perlinContrast,
-          perlinOffset: params.perlinOffset,
-          curlIntensity: params.curlIntensity,
-          colorA: color1,
-          colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
-          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
-        }, viewport)
-      case 'gradientGrainSimplex':
-        return createGradientGrainSimplexSpec({
-          simplexScale: params.simplexScale,
-          simplexOctaves: params.simplexOctaves,
-          simplexContrast: params.simplexContrast,
-          simplexOffset: params.simplexOffset,
-          colorA: color1,
-          colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
-          curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
-        }, viewport)
-      case 'triangle':
-        return createTriangleSpec({
-          color1,
-          color2,
-          size: params.size,
-          angle: params.angle,
-        })
-      case 'hexagon':
-        return createHexagonSpec({
-          color1,
-          color2,
-          size: params.size,
-          angle: params.angle,
-        })
-      case 'asanoha':
-        return createAsanohaSpec({
-          lineColor: color1,
-          bgColor: color2,
-          size: params.size,
-          lineWidth: params.lineWidth,
-        })
-      case 'seigaiha':
-        return createSeigaihaSpec({
-          lineColor: color1,
-          bgColor: color2,
-          radius: params.radius,
-          rings: params.rings,
-          lineWidth: params.lineWidth,
-        })
-      case 'wave':
-        return createWaveSpec({
-          color1,
-          color2,
-          amplitude: params.amplitude,
-          wavelength: params.wavelength,
-          thickness: params.thickness,
-          angle: params.angle,
-        })
-      case 'scales':
-        return createScalesSpec({
-          color1,
-          color2,
-          size: params.size,
-          overlap: params.overlap,
-          angle: params.angle,
-        })
-      case 'ogee':
-        return createOgeeSpec({
-          lineColor: color1,
-          bgColor: color2,
-          width: params.width,
-          height: params.height,
-          lineWidth: params.lineWidth,
-        })
-      case 'sunburst':
-        return createSunburstSpec({
-          color1,
-          color2,
-          rays: params.rays,
-          centerX: params.centerX,
-          centerY: params.centerY,
-          twist: params.twist,
-          viewportWidth: viewport.width,
-          viewportHeight: viewport.height,
-        })
-      case 'paperTexture':
-        return createPaperTextureSpec({
-          color: color1,
-          fiberScale: params.fiberScale,
-          fiberStrength: params.fiberStrength,
-          fiberWarp: params.fiberWarp,
-          grainDensity: params.grainDensity,
-          grainSize: params.grainSize,
-          bumpStrength: params.bumpStrength,
-          lightAngle: params.lightAngle,
-          seed: params.seed,
-        }, viewport)
+    const def = getSurfaceDefinition(params.type)
+    if (!def) {
+      console.warn(`Unknown surface type: ${params.type}`)
+      return null
     }
+    // Convert SurfacePresetParams to GenericSurfaceParams
+    const genericParams: GenericSurfaceParams = { ...params } as GenericSurfaceParams
+    return def.createSpec(genericParams, { c1: color1, c2: color2 }, viewport)
   }
 
   /**

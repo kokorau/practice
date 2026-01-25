@@ -28,6 +28,12 @@ export {
 } from './EffectRenderNode'
 
 export {
+  FilterRenderNode,
+  createFilterRenderNode,
+  type FilterRenderNodeConfig,
+} from './FilterRenderNode'
+
+export {
   ImageRenderNode,
   createImageRenderNode,
   type ImageRenderNodeConfig,

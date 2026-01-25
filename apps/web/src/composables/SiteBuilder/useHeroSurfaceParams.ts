@@ -129,17 +129,20 @@ export const useHeroSurfaceParams = (
   // Current schema for UI rendering
   const currentMaskShapeSchema = computed(() => {
     if (!customMaskShapeParams.value) return null
-    return MaskShapeSchemas[customMaskShapeParams.value.id] as ObjectSchema
+    const id = customMaskShapeParams.value.id
+    return (MaskShapeSchemas as Record<string, ObjectSchema>)[id] ?? null
   })
 
   const currentSurfaceSchema = computed(() => {
     if (!customSurfaceParams.value) return null
-    return SurfaceSchemas[customSurfaceParams.value.id] as ObjectSchema
+    const id = customSurfaceParams.value.id
+    return (SurfaceSchemas as Record<string, ObjectSchema>)[id] ?? null
   })
 
   const currentBackgroundSurfaceSchema = computed(() => {
     if (!customBackgroundSurfaceParams.value) return null
-    return SurfaceSchemas[customBackgroundSurfaceParams.value.id] as ObjectSchema
+    const id = customBackgroundSurfaceParams.value.id
+    return (SurfaceSchemas as Record<string, ObjectSchema>)[id] ?? null
   })
 
   // Processor layer ID (for mask shape updates)

@@ -49,6 +49,7 @@ export type {
   CompiledMaskShape,
   CompiledMaskProcessor,
   CompiledEffect,
+  CompiledFilterProcessor,
   CompiledProcessorConfig,
   CompiledForegroundLayer,
   CompiledForegroundElement,
@@ -62,6 +63,7 @@ export {
   isCompiledProcessorLayerNode,
   isCompiledEffect,
   isCompiledMaskProcessor,
+  isCompiledFilterProcessor,
 } from './Domain'
 
 // Domain
@@ -134,6 +136,7 @@ export type {
   ProcessorConfig,
   SingleEffectConfig,
   MaskProcessorConfig,
+  FilterProcessorConfig,
   // LayerNodeConfig types (JSON serialization)
   LayerNodeConfig,
   BaseLayerNodeConfig,
@@ -354,6 +357,9 @@ export {
   denormalizeToLayerEffectConfig,
   safeDenormalizeToLayerEffectConfig,
   createDefaultMaskProcessorConfig,
+  // Filter processor config
+  isFilterProcessorConfig,
+  createDefaultFilterProcessorConfig,
   // Surface config normalization
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,
@@ -579,13 +585,8 @@ export type { CreateMaskPreviewConfigOptions, CreateEffectPreviewConfigOptions, 
 
 // Types (grouped state definitions for useHeroScene)
 export type {
-  // Custom params types
+  // Custom params types (generic schema-based)
   CustomMaskShapeParams,
-  GradientGrainLinearSurfaceParams,
-  GradientGrainCircularSurfaceParams,
-  GradientGrainRadialSurfaceParams,
-  GradientGrainPerlinSurfaceParams,
-  GradientGrainCurlSurfaceParams,
   CustomSurfaceParams,
   CustomBackgroundSurfaceParams,
   SectionType,

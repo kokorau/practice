@@ -50,14 +50,14 @@ export function toCustomMaskShapeParams(maskConfig: MaskShapeConfigInput): Custo
   // スキーマに登録されていないタイプはblobにfallback
   if (!SCHEMA_MASK_TYPES.has(type)) {
     const blobDefaults = getDefaultsForType('blob')
-    return { id: 'blob', ...blobDefaults } as CustomMaskShapeParams
+    return { id: 'blob', ...blobDefaults }
   }
 
   // スキーマのデフォルト値を取得し、入力パラメータでオーバーライド
   const defaults = getDefaultsForType(type)
   const mergedParams = { ...defaults, ...params }
 
-  return { id: type, ...mergedParams } as CustomMaskShapeParams
+  return { id: type, ...mergedParams }
 }
 
 /**

@@ -103,10 +103,31 @@ export interface CompiledEffect {
   params: Record<string, number | string | boolean>
 }
 
+// ============================================================
+// Compiled Filter Types
+// ============================================================
+
 /**
- * Compiled processor config (effect or mask)
+ * Compiled filter with all parameters resolved to numbers.
+ * Used for color adjustment via 1D LUT.
  */
-export type CompiledProcessorConfig = CompiledEffect | CompiledMaskProcessor
+export interface CompiledFilterProcessor {
+  type: 'filter'
+  params: {
+    exposure: number
+    brightness: number
+    contrast: number
+    highlights: number
+    shadows: number
+    temperature: number
+    tint: number
+  }
+}
+
+/**
+ * Compiled processor config (effect, mask, or filter)
+ */
+export type CompiledProcessorConfig = CompiledEffect | CompiledMaskProcessor | CompiledFilterProcessor
 
 // ============================================================
 // Compiled Layer Node Types
@@ -266,4 +287,10 @@ export function isCompiledMaskProcessor(
   config: CompiledProcessorConfig
 ): config is CompiledMaskProcessor {
   return config.type === 'mask'
+}
+
+export function isCompiledFilterProcessor(
+  config: CompiledProcessorConfig
+): config is CompiledFilterProcessor {
+  return config.type === 'filter'
 }

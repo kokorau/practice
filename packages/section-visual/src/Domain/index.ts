@@ -694,6 +694,7 @@ export type {
   // Processor modifier config types
   ProcessorConfig,
   MaskProcessorConfig,
+  FilterProcessorConfig,
   // Foreground
   GridPosition,
   ForegroundElementType,
@@ -731,6 +732,9 @@ export {
   denormalizeToLayerEffectConfig,
   safeDenormalizeToLayerEffectConfig,
   createDefaultMaskProcessorConfig,
+  // Filter processor config
+  isFilterProcessorConfig,
+  createDefaultFilterProcessorConfig,
   // Surface config normalization
   SURFACE_TYPES,
   isNormalizedSurfaceConfig,
@@ -1155,6 +1159,7 @@ export type {
   CompiledMaskShape,
   CompiledMaskProcessor,
   CompiledEffect,
+  CompiledFilterProcessor,
   CompiledProcessorConfig,
   CompiledForegroundLayer,
   CompiledForegroundElement,
@@ -1168,6 +1173,7 @@ export {
   isCompiledProcessorLayerNode,
   isCompiledEffect,
   isCompiledMaskProcessor,
+  isCompiledFilterProcessor,
 } from './CompiledHeroView'
 
 // ============================================================
@@ -1210,3 +1216,19 @@ export {
   getDependencySourceLabel,
   type DisplayLayerVariant,
 } from './LayerDisplay'
+
+// ============================================================
+// Validation
+// ============================================================
+
+export {
+  validateSurfaceParams,
+  validateMaskConfig,
+  validateEffectParams,
+  validateParams,
+  coerceSurfaceParams,
+  coerceMaskConfig,
+  coerceEffectParams,
+  type ValidationResult,
+  type GenericEffectParams,
+} from './Validation'

@@ -15,14 +15,14 @@ import {
 } from '@practice/section-visual'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import { getSurfacePresets, type SurfacePreset, type SurfacePresetParams } from '@practice/texture'
+import { getSurfacePresets, type SurfacePreset, type GenericSurfaceParams } from '@practice/texture'
 import { hsvToOklch } from '../../components/SiteBuilder/utils/colorConversion'
 
 // ============================================================
 // Helper: Create HeroViewConfig with a single surface
 // ============================================================
 
-const createSurfaceOnlyConfig = (surface: SurfacePresetParams): HeroViewConfig => ({
+const createSurfaceOnlyConfig = (surface: GenericSurfaceParams): HeroViewConfig => ({
   viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
   colors: { semanticContext: 'canvas' },
   layers: [

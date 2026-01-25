@@ -16,25 +16,7 @@ import { ref, shallowRef, computed, watch, onUnmounted, type ComputedRef, type R
 import type { IntensityProvider } from '@practice/timeline'
 import {
   type SurfacePreset,
-  type SurfacePresetParams,
-  type StripePresetParams,
-  type GridPresetParams,
-  type PolkaDotPresetParams,
-  type CheckerPresetParams,
-  type CircleMaskShapeParams,
-  type RectMaskShapeParams,
-  type BlobMaskShapeParams,
-  type PerlinMaskShapeParams,
-  type LinearGradientMaskShapeParams,
-  type RadialGradientMaskShapeParams,
-  type BoxGradientMaskShapeParams,
-  type WavyLineMaskShapeParams,
-  type StripeSurfaceParams,
-  type GridSurfaceParams,
-  type PolkaDotSurfaceParams,
-  type CheckerSurfaceParams,
-  type TriangleSurfaceParams,
-  type HexagonSurfaceParams,
+  type GenericSurfaceParams,
 } from '@practice/texture'
 import type { HeroViewPresetRepository } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -167,202 +149,47 @@ const createHeroSceneEditorState = (
 export type MidgroundSurfacePreset = SurfacePreset
 
 /**
- * Pattern-based surface preset params (excludes solid and gradientGrain)
- */
-export type PatternPresetParams = StripePresetParams | GridPresetParams | PolkaDotPresetParams | CheckerPresetParams
-
-/**
  * Type guard to check if preset params is a pattern type
  */
 export const isPatternPresetParams = (
-  params: SurfacePresetParams
-): params is PatternPresetParams => {
+  params: GenericSurfaceParams
+): boolean => {
   const t = params.type
   return t !== 'solid' && !t.startsWith('gradientGrain')
 }
 
 /**
- * Custom mask shape params union type
+ * Custom mask shape params (generic interface)
+ *
+ * Dynamic schema-based type - params are validated at runtime via MaskRegistry.
+ * The `id` field corresponds to MaskRegistry keys.
  */
-export type CustomMaskShapeParams =
-  | ({ id: 'circle' } & CircleMaskShapeParams)
-  | ({ id: 'rect' } & RectMaskShapeParams)
-  | ({ id: 'blob' } & BlobMaskShapeParams)
-  | ({ id: 'perlin' } & PerlinMaskShapeParams)
-  | ({ id: 'linearGradient' } & LinearGradientMaskShapeParams)
-  | ({ id: 'radialGradient' } & RadialGradientMaskShapeParams)
-  | ({ id: 'boxGradient' } & BoxGradientMaskShapeParams)
-  | ({ id: 'wavyLine' } & WavyLineMaskShapeParams)
-
-/**
- * Textile pattern surface params
- */
-export interface AsanohaSurfaceParams {
-  size: number
-  lineWidth: number
-}
-
-export interface SeigaihaSurfaceParams {
-  radius: number
-  rings: number
-  lineWidth: number
-}
-
-export interface WaveSurfaceParams {
-  amplitude: number
-  wavelength: number
-  thickness: number
-  angle: number
-}
-
-export interface ScalesSurfaceParams {
-  size: number
-  overlap: number
-  angle: number
-}
-
-export interface OgeeSurfaceParams {
-  width: number
-  height: number
-  lineWidth: number
-}
-
-export interface SunburstSurfaceParams {
-  rays: number
-  centerX: number
-  centerY: number
-  twist: number
-}
-
-export interface PaperTextureSurfaceParams {
-  fiberScale: number
-  fiberStrength: number
-  fiberWarp: number
-  grainDensity: number
-  grainSize: number
-  bumpStrength: number
-  lightAngle: number
-  seed: number
+export interface CustomMaskShapeParams {
+  id: string
+  [key: string]: unknown
 }
 
 /**
- * Gradient grain surface params (5 separate types)
+ * Custom surface params (generic interface)
+ *
+ * Dynamic schema-based type - params are validated at runtime via SurfaceRegistry.
+ * The `id` field corresponds to SurfaceRegistry keys.
  */
-export interface GradientGrainLinearSurfaceParams {
-  angle: number
-  centerX: number
-  centerY: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainCircularSurfaceParams {
-  centerX: number
-  centerY: number
-  circularInvert?: boolean
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainRadialSurfaceParams {
-  centerX: number
-  centerY: number
-  radialStartAngle: number
-  radialSweepAngle: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainPerlinSurfaceParams {
-  perlinScale: number
-  perlinOctaves: number
-  perlinContrast: number
-  perlinOffset: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainCurlSurfaceParams {
-  perlinScale: number
-  perlinOctaves: number
-  perlinContrast: number
-  perlinOffset: number
-  curlIntensity: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainSimplexSurfaceParams {
-  simplexScale: number
-  simplexOctaves: number
-  simplexContrast: number
-  simplexOffset: number
-  seed: number
-  sparsity: number
+export interface CustomSurfaceParams {
+  id: string
+  [key: string]: unknown
 }
 
 /**
- * Linear gradient surface params (smooth 2-color gradient without grain)
+ * Custom background surface params (generic interface)
+ *
+ * Dynamic schema-based type - params are validated at runtime via SurfaceRegistry.
+ * The `id` field corresponds to SurfaceRegistry keys.
  */
-export interface LinearGradientSurfaceParams {
-  angle: number
-  centerX: number
-  centerY: number
+export interface CustomBackgroundSurfaceParams {
+  id: string
+  [key: string]: unknown
 }
-
-/**
- * Custom surface params union type
- * Uses 'id' field for consistency with NormalizedSurfaceConfig
- */
-export type CustomSurfaceParams =
-  | { id: 'solid' }
-  | ({ id: 'stripe' } & StripeSurfaceParams)
-  | ({ id: 'grid' } & GridSurfaceParams)
-  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
-  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
-  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
-  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
-  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
-  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
-  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
-  | ({ id: 'triangle' } & TriangleSurfaceParams)
-  | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ id: 'wave' } & WaveSurfaceParams)
-  | ({ id: 'scales' } & ScalesSurfaceParams)
-  | ({ id: 'ogee' } & OgeeSurfaceParams)
-  | ({ id: 'sunburst' } & SunburstSurfaceParams)
-  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
-
-/**
- * Custom background surface params union type
- * Uses 'id' field for consistency with NormalizedSurfaceConfig
- */
-export type CustomBackgroundSurfaceParams =
-  | ({ id: 'stripe' } & StripeSurfaceParams)
-  | ({ id: 'grid' } & GridSurfaceParams)
-  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
-  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
-  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
-  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
-  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
-  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
-  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
-  | ({ id: 'triangle' } & TriangleSurfaceParams)
-  | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ id: 'wave' } & WaveSurfaceParams)
-  | ({ id: 'scales' } & ScalesSurfaceParams)
-  | ({ id: 'ogee' } & OgeeSurfaceParams)
-  | ({ id: 'sunburst' } & SunburstSurfaceParams)
-  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
-  | { id: 'solid' }
 
 export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
@@ -855,18 +682,18 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
-   * Add a processor (effect or mask) to a layer
+   * Add a processor (effect, mask, or filter) to a layer
    * If the layer doesn't have a processor node, one will be created
    */
-  const addProcessorToLayer = (layerId: string, processorType: 'effect' | 'mask') => {
+  const addProcessorToLayer = (layerId: string, processorType: 'effect' | 'mask' | 'filter') => {
     processorUsecase.addModifier(layerId, processorType)
     render()
   }
 
   /**
-   * Add a modifier (effect or mask) to an existing processor node
+   * Add a modifier (effect, mask, or filter) to an existing processor node
    */
-  const addModifierToProcessor = (processorNodeId: string, processorType: 'effect' | 'mask') => {
+  const addModifierToProcessor = (processorNodeId: string, processorType: 'effect' | 'mask' | 'filter') => {
     processorUsecase.addModifierToProcessor(processorNodeId, processorType)
     render()
   }

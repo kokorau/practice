@@ -486,7 +486,7 @@ const panelMask = computed(() => ({
         :background="panelBackground"
         :mask="panelMask"
         :filter="filterProps"
-        :filter-processor="{ filterConfig: null }"
+        :filter-processor="null"
         :image="imageLayerProps"
         :palette="primitivePalette"
         :style="{ width: `${rightPanelWidth}px` }"

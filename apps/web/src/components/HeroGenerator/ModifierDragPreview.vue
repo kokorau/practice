@@ -3,23 +3,25 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   /** Type of the modifier being dragged */
-  modifierType: 'effect' | 'mask'
+  modifierType: 'effect' | 'mask' | 'filter'
   /** Current pointer position */
   position: { x: number; y: number }
 }>()
 
-const getModifierIcon = (type: 'effect' | 'mask'): string => {
+const getModifierIcon = (type: 'effect' | 'mask' | 'filter'): string => {
   switch (type) {
     case 'effect': return 'auto_fix_high'
     case 'mask': return 'content_cut'
+    case 'filter': return 'tune'
     default: return 'tune'
   }
 }
 
-const getModifierLabel = (type: 'effect' | 'mask'): string => {
+const getModifierLabel = (type: 'effect' | 'mask' | 'filter'): string => {
   switch (type) {
     case 'effect': return 'Effect'
     case 'mask': return 'Mask'
+    case 'filter': return 'Filter'
     default: return 'Modifier'
   }
 }

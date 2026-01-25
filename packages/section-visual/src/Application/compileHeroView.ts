@@ -24,6 +24,7 @@ import type {
   ProcessorConfig,
   SingleEffectConfig,
   MaskProcessorConfig,
+  FilterProcessorConfig,
 } from '../Domain/HeroViewConfig'
 import type { ColorValue } from '../Domain/SectionVisual'
 import type {
@@ -39,6 +40,7 @@ import type {
   CompiledEffect,
   CompiledMaskProcessor,
   CompiledMaskShape,
+  CompiledFilterProcessor,
 } from '../Domain/CompiledHeroView'
 import {
   resolveKeyToRgba,
@@ -271,7 +273,29 @@ function compileMaskProcessor(
 }
 
 /**
- * Compile processor config (effect or mask)
+ * Compile filter processor config
+ */
+function compileFilterProcessor(
+  filter: FilterProcessorConfig,
+  intensityProvider: IntensityProvider
+): CompiledFilterProcessor {
+  const params = resolveParams(filter.params, intensityProvider) as Record<string, number>
+  return {
+    type: 'filter',
+    params: {
+      exposure: params.exposure ?? 0,
+      brightness: params.brightness ?? 0,
+      contrast: params.contrast ?? 0,
+      highlights: params.highlights ?? 0,
+      shadows: params.shadows ?? 0,
+      temperature: params.temperature ?? 0,
+      tint: params.tint ?? 0,
+    },
+  }
+}
+
+/**
+ * Compile processor config (effect, mask, or filter)
  */
 function compileProcessorConfig(
   config: ProcessorConfig,
@@ -279,6 +303,9 @@ function compileProcessorConfig(
 ): CompiledProcessorConfig {
   if (config.type === 'effect') {
     return compileEffect(config, intensityProvider)
+  }
+  if (config.type === 'filter') {
+    return compileFilterProcessor(config, intensityProvider)
   }
   return compileMaskProcessor(config, intensityProvider)
 }

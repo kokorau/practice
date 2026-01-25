@@ -813,17 +813,54 @@ export interface MaskProcessorConfig {
   feather: number
 }
 
+// ============================================================
+// Filter Processor Config
+// ============================================================
+
+/**
+ * Filter processor configuration for color adjustment.
+ * Uses 1D LUT for GPU-accelerated rendering.
+ *
+ * All parameters use PropertyValue for timeline animation support.
+ */
+export interface FilterProcessorConfig {
+  type: 'filter'
+  params: {
+    /** Exposure: -2 (dark) to +2 (bright) in EV */
+    exposure: PropertyValue
+    /** Brightness: -1 (dark) to +1 (bright) */
+    brightness: PropertyValue
+    /** Contrast: -1 (low) to +1 (high) */
+    contrast: PropertyValue
+    /** Highlights: -1 (dark) to +1 (bright) */
+    highlights: PropertyValue
+    /** Shadows: -1 (dark) to +1 (bright) */
+    shadows: PropertyValue
+    /** Temperature: -1 (cool/blue) to +1 (warm/yellow) */
+    temperature: PropertyValue
+    /** Tint: -1 (green) to +1 (magenta) */
+    tint: PropertyValue
+  }
+}
+
 /**
  * Processor config for ProcessorNodeConfig.modifiers
- * Includes both effect filters and mask processors
+ * Includes effect filters, mask processors, and filter processors
  */
-export type ProcessorConfig = SingleEffectConfig | MaskProcessorConfig
+export type ProcessorConfig = SingleEffectConfig | MaskProcessorConfig | FilterProcessorConfig
 
 /**
  * Type guard for MaskProcessorConfig
  */
 export function isMaskProcessorConfig(config: ProcessorConfig): config is MaskProcessorConfig {
   return config.type === 'mask'
+}
+
+/**
+ * Type guard for FilterProcessorConfig
+ */
+export function isFilterProcessorConfig(config: ProcessorConfig): config is FilterProcessorConfig {
+  return config.type === 'filter'
 }
 
 // ============================================================
@@ -1370,6 +1407,19 @@ export const createDefaultMaskProcessorConfig = (): MaskProcessorConfig => ({
   },
   invert: false,
   feather: 0,
+})
+
+export const createDefaultFilterProcessorConfig = (): FilterProcessorConfig => ({
+  type: 'filter',
+  params: {
+    exposure: $PropertyValue.static(0),
+    brightness: $PropertyValue.static(0),
+    contrast: $PropertyValue.static(0),
+    highlights: $PropertyValue.static(0),
+    shadows: $PropertyValue.static(0),
+    temperature: $PropertyValue.static(0),
+    tint: $PropertyValue.static(0),
+  },
 })
 
 export const createDefaultHeroViewConfig = (): HeroViewConfig => ({

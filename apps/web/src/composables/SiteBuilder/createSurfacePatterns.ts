@@ -1,6 +1,6 @@
 import { computed, type Ref, type ComputedRef } from 'vue'
 import type { AnySurfaceConfig } from '@practice/section-visual'
-import type { RGBA, TextureRenderSpec, SurfacePresetParams } from '@practice/texture'
+import type { RGBA, TextureRenderSpec, GenericSurfaceParams } from '@practice/texture'
 
 type Viewport = { width: number; height: number }
 
@@ -45,7 +45,7 @@ export type SurfacePatternItem = {
  * })
  * ```
  */
-export function createSurfacePatterns<P extends { label: string; params?: SurfacePresetParams }>(
+export function createSurfacePatterns<P extends { label: string; params?: GenericSurfaceParams }>(
   options: CreateSurfacePatternsOptions<P>
 ): ComputedRef<SurfacePatternItem[]> {
   const { patterns, color1, color2, createSpec } = options

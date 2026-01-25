@@ -16,7 +16,7 @@ export interface ModifierDragItem {
   /** Index of the modifier within the node's modifiers array */
   modifierIndex: number
   /** Type of the modifier (for display) */
-  modifierType: 'effect' | 'mask'
+  modifierType: 'effect' | 'mask' | 'filter'
 }
 
 /**

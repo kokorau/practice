@@ -38,7 +38,7 @@ const emit = defineEmits<{
   'select-layer': [layerId: string]
   'toggle-expand': [layerId: string]
   'toggle-visibility': [layerId: string]
-  'select-processor': [layerId: string, processorType: 'effect' | 'mask' | 'processor']
+  'select-processor': [layerId: string, processorType: 'effect' | 'mask' | 'filter' | 'processor']
   'add-layer': [type: LayerType]
   'remove-layer': [layerId: string]
   'add-processor': [layerId: string, processorType: AddProcessorType]
@@ -229,7 +229,7 @@ const layerTypeItems: MenuItemOption<LayerType>[] = [
         @select="(id: string) => emit('select-layer', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
-        @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
+        @select-processor="(id: string, type: 'effect' | 'mask' | 'filter' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
         @add-processor="(id: string, type: AddProcessorType) => emit('add-processor', id, type)"
         @add-modifier-to-processor="(id: string, type: AddProcessorType) => emit('add-modifier-to-processor', id, type)"

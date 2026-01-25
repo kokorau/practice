@@ -12,16 +12,18 @@ import { createHeroConfigSlice } from '@practice/site/Infra'
 import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
-import type { ImageLayerNodeConfig, ProcessorNodeConfig, SurfaceLayerNodeConfig, MaskShapeConfig } from '@practice/section-visual'
+import type { ImageLayerNodeConfig, ProcessorNodeConfig, SurfaceLayerNodeConfig, MaskShapeConfig, FilterProcessorConfig } from '@practice/section-visual'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
   isProcessorLayerConfig,
+  isFilterProcessorConfig,
   getEffectsBeforeMask,
   createEffectSpecsForPreview,
   findLayerInTree,
   findProcessorTargetSurface,
   normalizeMaskConfig,
+  $PropertyValue,
 } from '@practice/section-visual'
 
 // Type guard for ImageLayerNodeConfig
@@ -48,6 +50,7 @@ import { provideLayerSelection } from '../composables/useLayerSelection'
 import { useLayerOperations } from '../composables/useLayerOperations'
 import { useTextLayerEditor } from '../composables/useTextLayerEditor'
 import { useFilterEditor } from '../composables/useFilterEditor'
+import type { FilterParamName, ResolvedFilterParams } from '../composables/useFilterProcessorEditor'
 import { useForegroundElement } from '../composables/useForegroundElement'
 import { useContextMenu } from '../composables/useContextMenu'
 import { usePresetActions } from '../composables/usePresetActions'
@@ -511,6 +514,100 @@ const shapePatternsWithConfig = computed(() => {
   }))
 })
 
+// ============================================================
+// Filter Processor (Color Adjustment)
+// ============================================================
+
+/**
+ * Find the first filter modifier in the selected processor
+ */
+const selectedFilterModifier = computed<{ config: FilterProcessorConfig; index: number } | null>(() => {
+  const processor = selectedProcessor.value
+  if (!processor) return null
+
+  const index = processor.modifiers.findIndex(isFilterProcessorConfig)
+  if (index === -1) return null
+
+  return {
+    config: processor.modifiers[index] as FilterProcessorConfig,
+    index,
+  }
+})
+
+/**
+ * Resolve filter params to numbers for UI binding
+ */
+const filterProcessorParams = computed<ResolvedFilterParams | null>(() => {
+  const filter = selectedFilterModifier.value
+  if (!filter) return null
+
+  const resolveValue = (pv: { type: string; value?: number }): number => {
+    if (pv.type === 'static' && typeof pv.value === 'number') return pv.value
+    return 0
+  }
+
+  return {
+    exposure: resolveValue(filter.config.params.exposure as { type: string; value?: number }),
+    brightness: resolveValue(filter.config.params.brightness as { type: string; value?: number }),
+    contrast: resolveValue(filter.config.params.contrast as { type: string; value?: number }),
+    highlights: resolveValue(filter.config.params.highlights as { type: string; value?: number }),
+    shadows: resolveValue(filter.config.params.shadows as { type: string; value?: number }),
+    temperature: resolveValue(filter.config.params.temperature as { type: string; value?: number }),
+    tint: resolveValue(filter.config.params.tint as { type: string; value?: number }),
+  }
+})
+
+/**
+ * Handle filter processor param update
+ */
+const handleFilterProcessorUpdate = (
+  key: 'param' | 'reset',
+  name: FilterParamName | null,
+  value: number | null
+) => {
+  const processor = selectedProcessor.value
+  const filter = selectedFilterModifier.value
+  if (!processor || !filter) return
+
+  if (key === 'reset') {
+    // Reset all params to default (0)
+    const updatedModifier: FilterProcessorConfig = {
+      type: 'filter',
+      params: {
+        exposure: $PropertyValue.static(0),
+        brightness: $PropertyValue.static(0),
+        contrast: $PropertyValue.static(0),
+        highlights: $PropertyValue.static(0),
+        shadows: $PropertyValue.static(0),
+        temperature: $PropertyValue.static(0),
+        tint: $PropertyValue.static(0),
+      },
+    }
+
+    const newModifiers = [...processor.modifiers]
+    newModifiers[filter.index] = updatedModifier
+    heroScene.usecase.layerUsecase.updateLayer(processor.id, { modifiers: newModifiers })
+    heroScene.renderer.renderSceneFromConfig?.()
+    return
+  }
+
+  if (key === 'param' && name !== null && value !== null) {
+    // Update single param
+    const updatedModifier: FilterProcessorConfig = {
+      ...filter.config,
+      params: {
+        ...filter.config.params,
+        [name]: $PropertyValue.static(value),
+      },
+    }
+
+    const newModifiers = [...processor.modifiers]
+    newModifiers[filter.index] = updatedModifier
+    heroScene.usecase.layerUsecase.updateLayer(processor.id, { modifiers: newModifiers })
+    heroScene.renderer.renderSceneFromConfig?.()
+  }
+}
+
 const handleImageUpdate = (key: string, value: unknown) => {
   const layer = selectedLayer.value
   if (!layer || !isImageLayerConfig(layer)) return
@@ -766,7 +863,7 @@ const handleImageUpdate = (key: string, value: unknown) => {
         processor: selectedProcessor,
       }"
       :filter="filterProps"
-      :filter-processor="{ filterConfig: null }"
+      :filter-processor="filterProcessorParams ? { params: filterProcessorParams } : null"
       :image="imageLayerProps"
       :palette="primitivePalette"
       @export-preset="exportPreset"
@@ -775,6 +872,7 @@ const handleImageUpdate = (key: string, value: unknown) => {
       @update:background="handleBackgroundUpdate"
       @update:mask="handleMaskUpdate"
       @update:image="handleImageUpdate"
+      @update:filter-processor="handleFilterProcessorUpdate"
     />
 
     <!-- Context Menu -->

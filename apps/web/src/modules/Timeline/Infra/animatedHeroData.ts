@@ -80,6 +80,15 @@ const MORPHING_BLOB_TRACK_IDS = {
   CENTER_Y: 'b50e8400-e29b-41d4-a716-446655440006' as TrackId,
 } as const
 
+// Preset 7: Color Graded Checker
+const COLOR_GRADED_CHECKER_TRACK_IDS = {
+  ANGLE: 'c50e8400-e29b-41d4-a716-446655440001' as TrackId,
+  CELL_SIZE: 'c50e8400-e29b-41d4-a716-446655440002' as TrackId,
+  EXPOSURE: 'c50e8400-e29b-41d4-a716-446655440003' as TrackId,
+  TEMPERATURE: 'c50e8400-e29b-41d4-a716-446655440004' as TrackId,
+  CONTRAST: 'c50e8400-e29b-41d4-a716-446655440005' as TrackId,
+} as const
+
 // ============================================================
 // Preset Definition Type
 // ============================================================
@@ -1062,6 +1071,135 @@ const createMorphingBlobConfig = (): HeroViewConfig => ({
 })
 
 // ============================================================
+// Preset 7: Color Graded Checker
+// Rotating checker pattern with animated color grading
+// ============================================================
+
+const colorGradedCheckerTimeline: Timeline = {
+  loopType: 'forward',
+  phases: [
+    { id: 'phase-opening' as PhaseId, type: 'Opening', duration: 3000 },
+    { id: 'phase-loop' as PhaseId, type: 'Loop', duration: 16000 },
+  ],
+  tracks: [
+    // Loop: slow rotation
+    {
+      id: COLOR_GRADED_CHECKER_TRACK_IDS.ANGLE,
+      name: 'Checker Angle',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: '=phase(@t, 16000)',
+    },
+    // Loop: cell size breathing
+    {
+      id: COLOR_GRADED_CHECKER_TRACK_IDS.CELL_SIZE,
+      name: 'Cell Size',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: '=osc(@t, 8000)',
+    },
+    // Loop: exposure oscillation (for dynamic lighting feel)
+    {
+      id: COLOR_GRADED_CHECKER_TRACK_IDS.EXPOSURE,
+      name: 'Exposure',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: '=osc(@t, 12000)',
+    },
+    // Loop: temperature shift (warm to cool)
+    {
+      id: COLOR_GRADED_CHECKER_TRACK_IDS.TEMPERATURE,
+      name: 'Temperature',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: '=osc(@t, 10000)',
+    },
+    // Loop: contrast variation
+    {
+      id: COLOR_GRADED_CHECKER_TRACK_IDS.CONTRAST,
+      name: 'Contrast',
+      clock: 'Loop',
+      phaseId: 'phase-loop' as PhaseId,
+      expression: '=osc(@t, 14000, 3500)',
+    },
+  ],
+}
+
+const createColorGradedCheckerConfig = (): HeroViewConfig => ({
+  viewport: { width: 1280, height: 720 },
+  colors: { semanticContext: 'canvas' },
+  layers: [
+    {
+      type: 'group',
+      id: 'background-group',
+      name: 'Background',
+      visible: true,
+      children: [
+        {
+          type: 'surface',
+          id: 'background',
+          name: 'Checker Surface',
+          visible: true,
+          surface: {
+            id: 'checker',
+            params: {
+              cellSize: $PropertyValue.range(COLOR_GRADED_CHECKER_TRACK_IDS.CELL_SIZE, 32, 64),
+              angle: $PropertyValue.range(COLOR_GRADED_CHECKER_TRACK_IDS.ANGLE, 0, 360),
+              color1: $PropertyValue.static('B'),
+              color2: $PropertyValue.static('F1'),
+            },
+          },
+        },
+        {
+          type: 'processor',
+          id: 'processor-filter',
+          name: 'Color Grade',
+          visible: true,
+          modifiers: [
+            {
+              type: 'filter',
+              params: {
+                exposure: $PropertyValue.range(COLOR_GRADED_CHECKER_TRACK_IDS.EXPOSURE, -0.3, 0.3),
+                brightness: $PropertyValue.static(0),
+                contrast: $PropertyValue.range(COLOR_GRADED_CHECKER_TRACK_IDS.CONTRAST, -0.2, 0.2),
+                highlights: $PropertyValue.static(0),
+                shadows: $PropertyValue.static(0),
+                temperature: $PropertyValue.range(COLOR_GRADED_CHECKER_TRACK_IDS.TEMPERATURE, -0.5, 0.5),
+                tint: $PropertyValue.static(0),
+              },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  foreground: {
+    elements: [
+      {
+        id: 'title-1',
+        type: 'title',
+        visible: true,
+        position: 'middle-center',
+        content: 'Color Grade',
+        colorKey: 'auto',
+        fontSize: 4.5,
+        fontId: 'space-grotesk',
+      },
+      {
+        id: 'description-1',
+        type: 'description',
+        visible: true,
+        position: 'middle-center',
+        content: 'Dynamic filter animation',
+        colorKey: 'auto',
+        fontSize: 1.1,
+        fontId: 'quicksand',
+      },
+    ],
+  },
+})
+
+// ============================================================
 // Preset Collection
 // ============================================================
 
@@ -1136,6 +1274,18 @@ export const ANIMATED_PRESETS: AnimatedPreset[] = [
       brand: { hue: 280, saturation: 60, value: 55 },
       accent: { hue: 320, saturation: 70, value: 60 },
       foundation: { hue: 260, saturation: 10, value: 96 },
+    },
+  },
+  {
+    id: 'color-graded-checker',
+    name: 'Color Graded Checker',
+    description: 'Rotating checker pattern with animated color grading',
+    timeline: colorGradedCheckerTimeline,
+    createConfig: createColorGradedCheckerConfig,
+    colorPreset: {
+      brand: { hue: 45, saturation: 70, value: 60 },
+      accent: { hue: 200, saturation: 65, value: 55 },
+      foundation: { hue: 30, saturation: 5, value: 96 },
     },
   },
 ]

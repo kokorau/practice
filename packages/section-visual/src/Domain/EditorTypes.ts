@@ -13,19 +13,20 @@
  * Processor type for selection and operations
  * - 'effect': Effect processor (blur, vignette, etc.)
  * - 'mask': Mask processor (shape-based clipping)
+ * - 'filter': Filter processor (color adjustments: exposure, contrast, etc.)
  * - 'processor': Generic processor (used for selection state)
  */
-export type ProcessorType = 'effect' | 'mask' | 'processor'
+export type ProcessorType = 'effect' | 'mask' | 'filter' | 'processor'
 
 /**
  * Processor type for add-processor operation (excludes 'processor')
  */
-export type AddProcessorType = 'effect' | 'mask'
+export type AddProcessorType = 'effect' | 'mask' | 'filter'
 
 /**
  * Selectable processor type (excludes generic 'processor')
  */
-export type SelectableProcessorType = 'effect' | 'mask'
+export type SelectableProcessorType = 'effect' | 'mask' | 'filter'
 
 /**
  * Layer selection state (pure data)

@@ -15,59 +15,13 @@ export const approxEqual = (a: number, b: number, epsilon = 0.0001): boolean =>
 
 /**
  * Surface preset params type (for matching)
+ *
+ * Dynamic schema-based type - uses string for type field.
+ * Specific params are validated at runtime via SurfaceRegistry schemas.
  */
 export interface SurfacePresetParams {
-  type: 'solid' | 'stripe' | 'grid' | 'polkaDot' | 'checker' | 'linearGradient' | 'gradientGrainLinear' | 'gradientGrainCircular' | 'gradientGrainRadial' | 'gradientGrainPerlin' | 'gradientGrainCurl' | 'gradientGrainSimplex' | 'triangle' | 'hexagon' | 'asanoha' | 'seigaiha' | 'wave' | 'scales' | 'ogee' | 'sunburst' | 'paperTexture'
-  width1?: number
-  width2?: number
-  angle?: number
-  lineWidth?: number
-  cellSize?: number
-  dotRadius?: number
-  spacing?: number
-  rowOffset?: number
-  // GradientGrain common params
-  centerX?: number
-  centerY?: number
-  seed?: number
-  sparsity?: number
-  // GradientGrain Circular params
-  circularInvert?: boolean
-  // GradientGrain Radial params
-  radialStartAngle?: number
-  radialSweepAngle?: number
-  // GradientGrain Perlin/Curl params
-  perlinScale?: number
-  perlinOctaves?: number
-  perlinContrast?: number
-  perlinOffset?: number
-  // GradientGrain Curl params
-  curlIntensity?: number
-  // GradientGrain Simplex params
-  simplexScale?: number
-  simplexOctaves?: number
-  simplexContrast?: number
-  simplexOffset?: number
-  // Triangle/Hexagon/Textile pattern params
-  size?: number
-  radius?: number
-  rings?: number
-  amplitude?: number
-  wavelength?: number
-  thickness?: number
-  overlap?: number
-  width?: number
-  height?: number
-  rays?: number
-  twist?: number
-  // Paper texture params
-  fiberScale?: number
-  fiberStrength?: number
-  fiberWarp?: number
-  grainDensity?: number
-  grainSize?: number
-  bumpStrength?: number
-  lightAngle?: number
+  type: string
+  [key: string]: unknown
 }
 
 /**
@@ -113,6 +67,18 @@ export interface MaskPatternConfig {
 }
 
 /**
+ * Helper to safely get a number from unknown value
+ */
+const asNumber = (val: unknown, defaultVal: number): number =>
+  typeof val === 'number' ? val : defaultVal
+
+/**
+ * Helper to safely get a boolean from unknown value
+ */
+const asBoolean = (val: unknown, defaultVal: boolean): boolean =>
+  typeof val === 'boolean' ? val : defaultVal
+
+/**
  * Find surface preset index by matching params
  * Returns null if no exact match found (custom params)
  */
@@ -122,192 +88,193 @@ export const findSurfacePresetIndex = (
 ): number | null => {
   for (let i = 0; i < presets.length; i++) {
     const preset = presets[i]
-    if (!preset || preset.params.type !== surfaceConfig.type) continue
+    const p = preset?.params
+    if (!p || p.type !== surfaceConfig.type) continue
 
-    if (surfaceConfig.type === 'solid' && preset.params.type === 'solid') {
+    if (surfaceConfig.type === 'solid' && p.type === 'solid') {
       return i
     }
-    if (surfaceConfig.type === 'stripe' && preset.params.type === 'stripe') {
+    if (surfaceConfig.type === 'stripe' && p.type === 'stripe') {
       if (
-        approxEqual(surfaceConfig.width1, preset.params.width1 ?? 0) &&
-        approxEqual(surfaceConfig.width2, preset.params.width2 ?? 0) &&
-        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+        approxEqual(surfaceConfig.width1, asNumber(p.width1, 0)) &&
+        approxEqual(surfaceConfig.width2, asNumber(p.width2, 0)) &&
+        approxEqual(surfaceConfig.angle, asNumber(p.angle, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'grid' && preset.params.type === 'grid') {
+    if (surfaceConfig.type === 'grid' && p.type === 'grid') {
       if (
-        approxEqual(surfaceConfig.lineWidth, preset.params.lineWidth ?? 0) &&
-        approxEqual(surfaceConfig.cellSize, preset.params.cellSize ?? 0)
+        approxEqual(surfaceConfig.lineWidth, asNumber(p.lineWidth, 0)) &&
+        approxEqual(surfaceConfig.cellSize, asNumber(p.cellSize, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'polkaDot' && preset.params.type === 'polkaDot') {
+    if (surfaceConfig.type === 'polkaDot' && p.type === 'polkaDot') {
       if (
-        approxEqual(surfaceConfig.dotRadius, preset.params.dotRadius ?? 0) &&
-        approxEqual(surfaceConfig.spacing, preset.params.spacing ?? 0) &&
-        approxEqual(surfaceConfig.rowOffset, preset.params.rowOffset ?? 0)
+        approxEqual(surfaceConfig.dotRadius, asNumber(p.dotRadius, 0)) &&
+        approxEqual(surfaceConfig.spacing, asNumber(p.spacing, 0)) &&
+        approxEqual(surfaceConfig.rowOffset, asNumber(p.rowOffset, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'checker' && preset.params.type === 'checker') {
+    if (surfaceConfig.type === 'checker' && p.type === 'checker') {
       if (
-        approxEqual(surfaceConfig.cellSize, preset.params.cellSize ?? 0) &&
-        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+        approxEqual(surfaceConfig.cellSize, asNumber(p.cellSize, 0)) &&
+        approxEqual(surfaceConfig.angle, asNumber(p.angle, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'linearGradient' && preset.params.type === 'linearGradient') {
+    if (surfaceConfig.type === 'linearGradient' && p.type === 'linearGradient') {
       if (
-        approxEqual(surfaceConfig.angle, preset.params.angle ?? 90) &&
-        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
-        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5)
+        approxEqual(surfaceConfig.angle, asNumber(p.angle, 90)) &&
+        approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
+        approxEqual(surfaceConfig.centerY, asNumber(p.centerY, 0.5))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainLinear' && preset.params.type === 'gradientGrainLinear') {
+    if (surfaceConfig.type === 'gradientGrainLinear' && p.type === 'gradientGrainLinear') {
       if (
-        approxEqual(surfaceConfig.angle, preset.params.angle ?? 90) &&
-        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
-        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
-        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
-        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+        approxEqual(surfaceConfig.angle, asNumber(p.angle, 90)) &&
+        approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
+        approxEqual(surfaceConfig.centerY, asNumber(p.centerY, 0.5)) &&
+        approxEqual(surfaceConfig.seed, asNumber(p.seed, 12345)) &&
+        approxEqual(surfaceConfig.sparsity, asNumber(p.sparsity, 0.75))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainCircular' && preset.params.type === 'gradientGrainCircular') {
+    if (surfaceConfig.type === 'gradientGrainCircular' && p.type === 'gradientGrainCircular') {
       if (
-        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
-        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
-        (surfaceConfig.circularInvert ?? false) === (preset.params.circularInvert ?? false) &&
-        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
-        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+        approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
+        approxEqual(surfaceConfig.centerY, asNumber(p.centerY, 0.5)) &&
+        (surfaceConfig.circularInvert ?? false) === asBoolean(p.circularInvert, false) &&
+        approxEqual(surfaceConfig.seed, asNumber(p.seed, 12345)) &&
+        approxEqual(surfaceConfig.sparsity, asNumber(p.sparsity, 0.75))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainRadial' && preset.params.type === 'gradientGrainRadial') {
+    if (surfaceConfig.type === 'gradientGrainRadial' && p.type === 'gradientGrainRadial') {
       if (
-        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
-        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
-        approxEqual(surfaceConfig.radialStartAngle, preset.params.radialStartAngle ?? 0) &&
-        approxEqual(surfaceConfig.radialSweepAngle, preset.params.radialSweepAngle ?? 360) &&
-        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
-        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+        approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
+        approxEqual(surfaceConfig.centerY, asNumber(p.centerY, 0.5)) &&
+        approxEqual(surfaceConfig.radialStartAngle, asNumber(p.radialStartAngle, 0)) &&
+        approxEqual(surfaceConfig.radialSweepAngle, asNumber(p.radialSweepAngle, 360)) &&
+        approxEqual(surfaceConfig.seed, asNumber(p.seed, 12345)) &&
+        approxEqual(surfaceConfig.sparsity, asNumber(p.sparsity, 0.75))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainPerlin' && preset.params.type === 'gradientGrainPerlin') {
+    if (surfaceConfig.type === 'gradientGrainPerlin' && p.type === 'gradientGrainPerlin') {
       if (
-        approxEqual(surfaceConfig.perlinScale, preset.params.perlinScale ?? 4) &&
-        approxEqual(surfaceConfig.perlinOctaves, preset.params.perlinOctaves ?? 4) &&
-        approxEqual(surfaceConfig.perlinContrast, preset.params.perlinContrast ?? 1) &&
-        approxEqual(surfaceConfig.perlinOffset, preset.params.perlinOffset ?? 0) &&
-        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
-        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+        approxEqual(surfaceConfig.perlinScale, asNumber(p.perlinScale, 4)) &&
+        approxEqual(surfaceConfig.perlinOctaves, asNumber(p.perlinOctaves, 4)) &&
+        approxEqual(surfaceConfig.perlinContrast, asNumber(p.perlinContrast, 1)) &&
+        approxEqual(surfaceConfig.perlinOffset, asNumber(p.perlinOffset, 0)) &&
+        approxEqual(surfaceConfig.seed, asNumber(p.seed, 12345)) &&
+        approxEqual(surfaceConfig.sparsity, asNumber(p.sparsity, 0.75))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainCurl' && preset.params.type === 'gradientGrainCurl') {
+    if (surfaceConfig.type === 'gradientGrainCurl' && p.type === 'gradientGrainCurl') {
       if (
-        approxEqual(surfaceConfig.perlinScale, preset.params.perlinScale ?? 4) &&
-        approxEqual(surfaceConfig.perlinOctaves, preset.params.perlinOctaves ?? 4) &&
-        approxEqual(surfaceConfig.perlinContrast, preset.params.perlinContrast ?? 1) &&
-        approxEqual(surfaceConfig.perlinOffset, preset.params.perlinOffset ?? 0) &&
-        approxEqual(surfaceConfig.curlIntensity, preset.params.curlIntensity ?? 1) &&
-        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
-        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+        approxEqual(surfaceConfig.perlinScale, asNumber(p.perlinScale, 4)) &&
+        approxEqual(surfaceConfig.perlinOctaves, asNumber(p.perlinOctaves, 4)) &&
+        approxEqual(surfaceConfig.perlinContrast, asNumber(p.perlinContrast, 1)) &&
+        approxEqual(surfaceConfig.perlinOffset, asNumber(p.perlinOffset, 0)) &&
+        approxEqual(surfaceConfig.curlIntensity, asNumber(p.curlIntensity, 1)) &&
+        approxEqual(surfaceConfig.seed, asNumber(p.seed, 12345)) &&
+        approxEqual(surfaceConfig.sparsity, asNumber(p.sparsity, 0.75))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainSimplex' && preset.params.type === 'gradientGrainSimplex') {
+    if (surfaceConfig.type === 'gradientGrainSimplex' && p.type === 'gradientGrainSimplex') {
       if (
-        approxEqual(surfaceConfig.simplexScale, preset.params.simplexScale ?? 4) &&
-        approxEqual(surfaceConfig.simplexOctaves, preset.params.simplexOctaves ?? 4) &&
-        approxEqual(surfaceConfig.simplexContrast, preset.params.simplexContrast ?? 1) &&
-        approxEqual(surfaceConfig.simplexOffset, preset.params.simplexOffset ?? 0) &&
-        approxEqual(surfaceConfig.seed, preset.params.seed ?? 12345) &&
-        approxEqual(surfaceConfig.sparsity, preset.params.sparsity ?? 0.75)
+        approxEqual(surfaceConfig.simplexScale, asNumber(p.simplexScale, 4)) &&
+        approxEqual(surfaceConfig.simplexOctaves, asNumber(p.simplexOctaves, 4)) &&
+        approxEqual(surfaceConfig.simplexContrast, asNumber(p.simplexContrast, 1)) &&
+        approxEqual(surfaceConfig.simplexOffset, asNumber(p.simplexOffset, 0)) &&
+        approxEqual(surfaceConfig.seed, asNumber(p.seed, 12345)) &&
+        approxEqual(surfaceConfig.sparsity, asNumber(p.sparsity, 0.75))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'triangle' && preset.params.type === 'triangle') {
+    if (surfaceConfig.type === 'triangle' && p.type === 'triangle') {
       if (
-        approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
-        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+        approxEqual(surfaceConfig.size, asNumber(p.size, 0)) &&
+        approxEqual(surfaceConfig.angle, asNumber(p.angle, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'hexagon' && preset.params.type === 'hexagon') {
+    if (surfaceConfig.type === 'hexagon' && p.type === 'hexagon') {
       if (
-        approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
-        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+        approxEqual(surfaceConfig.size, asNumber(p.size, 0)) &&
+        approxEqual(surfaceConfig.angle, asNumber(p.angle, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'asanoha' && preset.params.type === 'asanoha') {
+    if (surfaceConfig.type === 'asanoha' && p.type === 'asanoha') {
       if (
-        approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
-        approxEqual(surfaceConfig.lineWidth, preset.params.lineWidth ?? 0)
+        approxEqual(surfaceConfig.size, asNumber(p.size, 0)) &&
+        approxEqual(surfaceConfig.lineWidth, asNumber(p.lineWidth, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'seigaiha' && preset.params.type === 'seigaiha') {
+    if (surfaceConfig.type === 'seigaiha' && p.type === 'seigaiha') {
       if (
-        approxEqual(surfaceConfig.radius, preset.params.radius ?? 0) &&
-        approxEqual(surfaceConfig.rings, preset.params.rings ?? 0) &&
-        approxEqual(surfaceConfig.lineWidth, preset.params.lineWidth ?? 0)
+        approxEqual(surfaceConfig.radius, asNumber(p.radius, 0)) &&
+        approxEqual(surfaceConfig.rings, asNumber(p.rings, 0)) &&
+        approxEqual(surfaceConfig.lineWidth, asNumber(p.lineWidth, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'wave' && preset.params.type === 'wave') {
+    if (surfaceConfig.type === 'wave' && p.type === 'wave') {
       if (
-        approxEqual(surfaceConfig.amplitude, preset.params.amplitude ?? 0) &&
-        approxEqual(surfaceConfig.wavelength, preset.params.wavelength ?? 0) &&
-        approxEqual(surfaceConfig.thickness, preset.params.thickness ?? 0) &&
-        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+        approxEqual(surfaceConfig.amplitude, asNumber(p.amplitude, 0)) &&
+        approxEqual(surfaceConfig.wavelength, asNumber(p.wavelength, 0)) &&
+        approxEqual(surfaceConfig.thickness, asNumber(p.thickness, 0)) &&
+        approxEqual(surfaceConfig.angle, asNumber(p.angle, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'scales' && preset.params.type === 'scales') {
+    if (surfaceConfig.type === 'scales' && p.type === 'scales') {
       if (
-        approxEqual(surfaceConfig.size, preset.params.size ?? 0) &&
-        approxEqual(surfaceConfig.overlap, preset.params.overlap ?? 0) &&
-        approxEqual(surfaceConfig.angle, preset.params.angle ?? 0)
+        approxEqual(surfaceConfig.size, asNumber(p.size, 0)) &&
+        approxEqual(surfaceConfig.overlap, asNumber(p.overlap, 0)) &&
+        approxEqual(surfaceConfig.angle, asNumber(p.angle, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'ogee' && preset.params.type === 'ogee') {
+    if (surfaceConfig.type === 'ogee' && p.type === 'ogee') {
       if (
-        approxEqual(surfaceConfig.width, preset.params.width ?? 0) &&
-        approxEqual(surfaceConfig.height, preset.params.height ?? 0) &&
-        approxEqual(surfaceConfig.lineWidth, preset.params.lineWidth ?? 0)
+        approxEqual(surfaceConfig.width, asNumber(p.width, 0)) &&
+        approxEqual(surfaceConfig.height, asNumber(p.height, 0)) &&
+        approxEqual(surfaceConfig.lineWidth, asNumber(p.lineWidth, 0))
       ) {
         return i
       }
     }
-    if (surfaceConfig.type === 'sunburst' && preset.params.type === 'sunburst') {
+    if (surfaceConfig.type === 'sunburst' && p.type === 'sunburst') {
       if (
-        approxEqual(surfaceConfig.rays, preset.params.rays ?? 0) &&
-        approxEqual(surfaceConfig.centerX, preset.params.centerX ?? 0.5) &&
-        approxEqual(surfaceConfig.centerY, preset.params.centerY ?? 0.5) &&
-        approxEqual(surfaceConfig.twist, preset.params.twist ?? 0)
+        approxEqual(surfaceConfig.rays, asNumber(p.rays, 0)) &&
+        approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
+        approxEqual(surfaceConfig.centerY, asNumber(p.centerY, 0.5)) &&
+        approxEqual(surfaceConfig.twist, asNumber(p.twist, 0))
       ) {
         return i
       }

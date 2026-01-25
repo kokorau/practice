@@ -34,7 +34,7 @@ export function toCustomSurfaceParams(config: SurfaceConfig): CustomSurfaceParam
     return { id: 'solid' }
   }
 
-  return { id: type, ...params } as CustomSurfaceParams
+  return { id: type, ...params }
 }
 
 /**
@@ -66,5 +66,5 @@ export function fromCustomSurfaceParams(params: CustomSurfaceParams): SurfaceCon
  */
 export function toCustomBackgroundSurfaceParams(config: SurfaceConfig): CustomBackgroundSurfaceParams {
   // CustomBackgroundSurfaceParams has the same structure as CustomSurfaceParams
-  return toCustomSurfaceParams(config) as CustomBackgroundSurfaceParams
+  return toCustomSurfaceParams(config)
 }

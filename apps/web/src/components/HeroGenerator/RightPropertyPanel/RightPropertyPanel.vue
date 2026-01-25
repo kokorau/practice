@@ -22,7 +22,9 @@ import TextElementPanel from './TextElementPanel.vue'
 import LayerSettingsPanel from './LayerSettingsPanel.vue'
 import ImageLayerSettingsPanel from './ImageLayerSettingsPanel.vue'
 import EffectorSettingsPanel from './EffectorSettingsPanel.vue'
+import FilterSettingsPanel from './FilterSettingsPanel.vue'
 import PlaceholderPanel from './PlaceholderPanel.vue'
+import type { ResolvedFilterParams, FilterParamName } from '../../../composables/useFilterProcessorEditor'
 
 // ============================================================
 // Grouped Props Types
@@ -48,7 +50,7 @@ interface FontPreset {
   family: string
 }
 
-type ProcessorType = 'effect' | 'mask' | 'processor' | null
+type ProcessorType = 'effect' | 'mask' | 'filter' | 'processor' | null
 type LayerVariant = 'base' | 'surface' | 'text' | 'model3d' | 'image' | 'processor' | null
 
 /** Selection state */
@@ -152,6 +154,12 @@ interface ImageProps {
   isLoading: boolean
 }
 
+/** FilterProcessor state (color adjustment: exposure, brightness, contrast, etc.) */
+interface FilterProcessorProps {
+  /** Resolved filter params as numbers for UI binding */
+  params: ResolvedFilterParams
+}
+
 // ============================================================
 // Props (Grouped)
 // ============================================================
@@ -169,6 +177,8 @@ const props = defineProps<{
   mask: MaskProps
   /** Filter/effect state */
   filter: FilterProps
+  /** FilterProcessor state (color adjustment) */
+  filterProcessor: FilterProcessorProps | null
   /** Image layer state */
   image: ImageProps | null
   /** Primitive color palette */
@@ -196,6 +206,9 @@ const emit = defineEmits<{
 
   // Image layer updates
   'update:image': [key: 'uploadImage' | 'clearImage' | 'loadRandom' | 'mode' | 'position', value: unknown]
+
+  // FilterProcessor updates (color adjustment)
+  'update:filterProcessor': [key: 'param' | 'reset', name: FilterParamName | null, value: number | null]
 }>()
 
 // ============================================================
@@ -441,6 +454,14 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         @update:selected-mask-index="emit('update:mask', 'selectedShapeIndex', $event)"
         @update:mask-shape-params="emit('update:mask', 'shapeParams', $event)"
         @update:mask-shape-raw-value="(key, value) => emit('update:maskShapeRawValue', key, value)"
+      />
+
+      <!-- FilterProcessor Settings (color adjustment) -->
+      <FilterSettingsPanel
+        v-else-if="selection.processorType === 'filter' && filterProcessor"
+        :params="filterProcessor.params"
+        @update:param="(name, value) => emit('update:filterProcessor', 'param', name, value)"
+        @reset="emit('update:filterProcessor', 'reset', null, null)"
       />
 
       <!-- Processor placeholder -->

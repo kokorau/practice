@@ -9,6 +9,10 @@
  * - White (1.0) = fully opaque
  * - Black (0.0) = fully transparent
  * - Gray values = partial transparency
+ *
+ * NOTE: This file now delegates to the centralized MaskRegistry.
+ * The switch statement and per-shape creators are kept for backward compatibility.
+ * New code should use createMaskShaderSpecFromRegistry from '../Infra/MaskRegistry'.
  */
 
 import {
@@ -18,12 +22,14 @@ import {
   createLinearGradientMaskSpec,
   createRadialGradientMaskSpec,
   createBoxGradientMaskSpec,
+  createWavyLineMaskSpec,
   type CircleMaskParams,
   type RectMaskParams,
   type PerlinMaskParams,
   type LinearGradientMaskParams,
   type RadialGradientMaskParams,
   type BoxGradientMaskParams,
+  type WavyLineMaskParams,
   type Viewport,
 } from '@practice/texture'
 
@@ -207,6 +213,33 @@ export function createBoxGradientMaskShaderSpec(
   return createBoxGradientMaskSpec(params, viewport)
 }
 
+/**
+ * Create mask render spec for wavy line shape
+ */
+export function createWavyLineMaskShaderSpec(
+  config: MaskConfig,
+  viewport: Viewport,
+  colors: MaskColors = DEFAULT_MASK_COLORS
+) {
+  if (config.shape !== 'wavyLine') {
+    throw new Error(`Expected wavyLine shape, got ${config.shape}`)
+  }
+
+  const params: WavyLineMaskParams = {
+    position: config.position,
+    direction: config.direction,
+    amplitude: config.amplitude,
+    frequency: config.frequency,
+    octaves: config.octaves,
+    seed: config.seed,
+    innerColor: colors.innerColor,
+    outerColor: colors.outerColor,
+    cutout: config.cutout,
+  }
+
+  return createWavyLineMaskSpec(params, viewport)
+}
+
 // ============================================================
 // Unified Shader Spec Creator
 // ============================================================
@@ -238,6 +271,8 @@ export function createMaskShaderSpec(
       return createRadialGradientMaskShaderSpec(config, viewport, colors)
     case 'boxGradient':
       return createBoxGradientMaskShaderSpec(config, viewport, colors)
+    case 'wavyLine':
+      return createWavyLineMaskShaderSpec(config, viewport, colors)
     case 'blob':
       // Blob masks are handled separately in maskedTexture shaders
       // as they require both mask and texture parameters
@@ -268,6 +303,7 @@ export const MASK_SHADER_REGISTRY: Partial<
   linearGradient: createLinearGradientMaskShaderSpec,
   radialGradient: createRadialGradientMaskShaderSpec,
   boxGradient: createBoxGradientMaskShaderSpec,
+  wavyLine: createWavyLineMaskShaderSpec,
   // blob: Not available as standalone shader
 }
 
@@ -288,4 +324,5 @@ export const MASK_SHAPES_WITH_SHADER: MaskShape[] = [
   'linearGradient',
   'radialGradient',
   'boxGradient',
+  'wavyLine',
 ]

@@ -20,6 +20,7 @@ import DropIndicator from './DropIndicator.vue'
 // Helper functions for modifier type checking
 const isEffectModifier = (mod: ProcessorConfig): boolean => mod.type === 'effect'
 const isMaskModifier = (mod: ProcessorConfig): boolean => mod.type === 'mask'
+const isFilterModifier = (mod: ProcessorConfig): boolean => mod.type === 'filter'
 
 // Helper to check if an effect modifier is enabled
 // SingleEffectConfig: existence means enabled (no legacy format check needed)
@@ -35,7 +36,7 @@ const props = defineProps<{
   node: LayerNodeConfig
   depth: number
   selectedId: string | null
-  selectedProcessorType: 'effect' | 'mask' | 'processor' | null
+  selectedProcessorType: 'effect' | 'mask' | 'filter' | 'processor' | null
   /** All layers in the tree (for DnD validation) */
   layers: LayerNodeConfig[]
   /** Expanded layer IDs (UI state) */
@@ -49,16 +50,16 @@ const props = defineProps<{
 }>()
 
 /** Context menu target type */
-export type ContextTargetType = 'layer' | 'processor' | 'effect' | 'mask'
+export type ContextTargetType = 'layer' | 'processor' | 'effect' | 'mask' | 'filter'
 
 /** Processor type for add-processor event */
-export type AddProcessorType = 'effect' | 'mask'
+export type AddProcessorType = 'effect' | 'mask' | 'filter'
 
 const emit = defineEmits<{
   select: [nodeId: string]
   'toggle-expand': [nodeId: string]
   'toggle-visibility': [nodeId: string]
-  'select-processor': [nodeId: string, processorType: 'effect' | 'mask' | 'processor']
+  'select-processor': [nodeId: string, processorType: 'effect' | 'mask' | 'filter' | 'processor']
   'remove-layer': [nodeId: string]
   'add-processor': [nodeId: string, processorType: AddProcessorType]
   'add-modifier-to-processor': [processorNodeId: string, processorType: AddProcessorType]
@@ -180,9 +181,9 @@ const surfaceTypeLabel = computed((): string | null => {
 
 // Modifier info with index for DnD
 // Note: Effect details are managed by useEffectManager and shown in property panel
-// Layer tree only shows whether effect/mask modifiers exist
+// Layer tree only shows whether effect/mask/filter modifiers exist
 const modifiers = computed(() => {
-  const result: { type: 'effect' | 'mask'; label: string; value: string; icon: string; enabled: boolean; index: number }[] = []
+  const result: { type: 'effect' | 'mask' | 'filter'; label: string; value: string; icon: string; enabled: boolean; index: number }[] = []
 
   // Only ProcessorNodeConfig has modifiers
   if (!isProcessorLayerConfig(props.node)) return result
@@ -207,6 +208,15 @@ const modifiers = computed(() => {
         value: maskMod.shape.id,
         icon: 'content_cut',
         enabled: maskMod.enabled,
+        index,
+      })
+    } else if (isFilterModifier(mod)) {
+      result.push({
+        type: 'filter',
+        label: 'Filter',
+        value: 'Color Adjustment',
+        icon: 'tune',
+        enabled: true, // Filters are always enabled
         index,
       })
     }
@@ -243,7 +253,7 @@ const handleToggleVisibility = (e: Event) => {
   emit('toggle-visibility', props.node.id)
 }
 
-const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
+const handleSelectProcessor = (type: 'effect' | 'mask' | 'filter' | 'processor') => {
   emit('select-processor', props.node.id, type)
 }
 
@@ -359,7 +369,7 @@ const isModifierBeingDragged = (modifierIndex: number): boolean => {
 }
 
 // Handle pointer down on modifier to start drag
-const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modifierType: 'effect' | 'mask') => {
+const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modifierType: 'effect' | 'mask' | 'filter') => {
   if (!modifierDragContext) return
   // Only start drag on primary button
   if (e.button !== 0) return
@@ -475,6 +485,13 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
               <span class="material-icons">content_cut</span>
               <span>Mask</span>
             </button>
+            <button
+              class="add-processor-item"
+              @click="(e) => handleAddProcessor('filter', e)"
+            >
+              <span class="material-icons">tune</span>
+              <span>Filter</span>
+            </button>
           </div>
         </Transition>
       </div>
@@ -556,11 +573,18 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
                 <span class="material-icons">content_cut</span>
                 <span>Mask</span>
               </button>
+              <button
+                class="add-processor-item"
+                @click="(e) => handleAddModifier('filter', e)"
+              >
+                <span class="material-icons">tune</span>
+                <span>Filter</span>
+              </button>
             </div>
           </Transition>
         </div>
       </div>
-      <!-- Processor children (Effect, Mask) -->
+      <!-- Processor children (Effect, Mask, Filter) -->
       <template v-if="isProcessorExpanded">
         <div
           v-for="mod in modifiers"
@@ -606,7 +630,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         @select="(id: string) => emit('select', id)"
         @toggle-expand="(id: string) => emit('toggle-expand', id)"
         @toggle-visibility="(id: string) => emit('toggle-visibility', id)"
-        @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
+        @select-processor="(id: string, type: 'effect' | 'mask' | 'filter' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
         @add-processor="(id: string, type: AddProcessorType) => emit('add-processor', id, type)"
         @add-modifier-to-processor="(id: string, type: AddProcessorType) => emit('add-modifier-to-processor', id, type)"

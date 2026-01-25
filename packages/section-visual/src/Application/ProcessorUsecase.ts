@@ -11,6 +11,7 @@ import type { ProcessorConfig } from '../Domain/HeroViewConfig'
 import {
   createSingleEffectConfig,
   createDefaultMaskProcessorConfig,
+  createDefaultFilterProcessorConfig,
 } from '../Domain/HeroViewConfig'
 import {
   ensureProcessorForLayer,
@@ -26,7 +27,7 @@ import {
 // ============================================================
 
 /** Processor modifier type */
-export type ProcessorModifierType = 'effect' | 'mask'
+export type ProcessorModifierType = 'effect' | 'mask' | 'filter'
 
 // ============================================================
 // Interface
@@ -94,6 +95,9 @@ export const createProcessorUsecase = (deps: ProcessorUsecaseDeps): ProcessorUse
     if (type === 'effect') {
       // デフォルトでvignetteエフェクトを追加
       return createSingleEffectConfig('vignette')
+    }
+    if (type === 'filter') {
+      return createDefaultFilterProcessorConfig()
     }
     return createDefaultMaskProcessorConfig()
   }

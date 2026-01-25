@@ -13,6 +13,7 @@ import type {
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
   SingleEffectConfig,
+  FilterProcessorConfig,
 } from '../../Domain/HeroViewConfig'
 import type { IntensityProvider } from '../../Application/resolvers/resolvePropertyValue'
 import { resolvePropertyValueToNumber, DEFAULT_INTENSITY_PROVIDER } from '../../Application/resolvers/resolvePropertyValue'
@@ -22,6 +23,7 @@ import {
   getProcessorMask,
   getProcessorTargetPairsFromConfig,
   isSingleEffectConfig,
+  isFilterProcessorConfig,
 } from '../../Domain/HeroViewConfig'
 import type { PropertyValue } from '../../Domain/SectionVisual'
 import { $PropertyValue } from '../../Domain/SectionVisual'
@@ -40,6 +42,7 @@ import {
   createGroupCompositorNode,
   createCanvasOutputNode,
   createTextRenderNode,
+  createFilterRenderNode,
   type EffectConfig,
 } from './index'
 import { createImageRenderNode } from './nodes/ImageRenderNode'
@@ -249,6 +252,22 @@ function buildProcessorNode(
     const effectsNode = createEffectChainCompositorNode(`${id}-effects`, currentNode, effects)
     nodes.push(effectsNode)
     currentNode = effectsNode
+  }
+
+  // 3. Apply filters if present (color adjustment via 1D LUT)
+  const filterConfigs = processor.modifiers.filter(
+    (m): m is FilterProcessorConfig => isFilterProcessorConfig(m)
+  )
+  for (let i = 0; i < filterConfigs.length; i++) {
+    const filterConfig = filterConfigs[i]!
+    const filterNode = createFilterRenderNode(
+      `${id}-filter-${i}`,
+      currentNode,
+      filterConfig,
+      intensityProvider
+    )
+    nodes.push(filterNode)
+    currentNode = filterNode
   }
 
   return currentNode

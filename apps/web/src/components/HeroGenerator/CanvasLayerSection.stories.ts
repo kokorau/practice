@@ -80,7 +80,7 @@ const mockLayers: LayerNodeConfig[] = [
 // Helper to create mock layer selection
 function createMockLayerSelection(selectedLayerId: string | null = null): LayerSelectionReturn {
   const layerId = ref<string | null>(selectedLayerId)
-  const processorType = ref<'effect' | 'mask' | 'processor' | null>(null)
+  const processorType = ref<'effect' | 'mask' | 'filter' | 'processor' | null>(null)
   const processorLayerId = ref<string | null>(null)
   const foregroundElementId = ref<string | null>(null)
 
@@ -99,7 +99,7 @@ function createMockLayerSelection(selectedLayerId: string | null = null): LayerS
     isForegroundElementSelected: computed(() => foregroundElementId.value !== null),
     isProcessorSelected: computed(() => processorType.value !== null),
     selectCanvasLayer: (id: string) => { layerId.value = id },
-    selectProcessor: (id: string, type: 'effect' | 'mask' | 'processor') => {
+    selectProcessor: (id: string, type: 'effect' | 'mask' | 'filter' | 'processor') => {
       processorType.value = type
       processorLayerId.value = id
     },

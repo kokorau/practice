@@ -87,48 +87,27 @@ export interface BlurEffect {
 }
 
 // ============================================================
-// Discriminated Union
+// Effect Types (Generic)
 // ============================================================
 
 /**
- * Discriminated union of all effect types.
- * Each effect is a standalone unit with its own parameters (no enabled flag).
+ * Generic effect type using type field.
+ * Runtime validation is handled by EFFECT_REGISTRY schemas.
  */
-export type Effect =
-  | VignetteEffect
-  | ChromaticAberrationEffect
-  | DotHalftoneEffect
-  | LineHalftoneEffect
-  | BlurEffect
+export interface GenericEffect {
+  type: string
+  [key: string]: unknown
+}
 
 /**
- * Effect type identifier
+ * Effect type identifier (derived from known effect types)
  */
-export type EffectTypeId = Effect['type']
+export type EffectTypeId = 'vignette' | 'chromaticAberration' | 'dotHalftone' | 'lineHalftone' | 'blur'
 
 /**
  * Ordered array of effects - presence means enabled, order determines application sequence.
  */
-export type EffectPipeline = Effect[]
-
-// ============================================================
-// Type Guards
-// ============================================================
-
-export const isVignetteEffect = (e: Effect): e is VignetteEffect =>
-  e.type === 'vignette'
-
-export const isChromaticAberrationEffect = (e: Effect): e is ChromaticAberrationEffect =>
-  e.type === 'chromaticAberration'
-
-export const isDotHalftoneEffect = (e: Effect): e is DotHalftoneEffect =>
-  e.type === 'dotHalftone'
-
-export const isLineHalftoneEffect = (e: Effect): e is LineHalftoneEffect =>
-  e.type === 'lineHalftone'
-
-export const isBlurEffect = (e: Effect): e is BlurEffect =>
-  e.type === 'blur'
+export type EffectPipeline = GenericEffect[]
 
 // ============================================================
 // Factory Functions
@@ -200,7 +179,7 @@ export function legacyToEffects(config: LayerEffectConfig): EffectPipeline {
     pipeline.push({
       type: 'vignette',
       ...params,
-    } as VignetteEffect)
+    })
   }
 
   // Chromatic Aberration
@@ -271,30 +250,30 @@ export function effectsToLegacy(pipeline: EffectPipeline): LayerEffectConfig {
     switch (effect.type) {
       case 'vignette': {
         const { type: _, ...params } = effect
-        config.vignette = { enabled: true, ...params }
+        config.vignette = { enabled: true, ...params } as LayerEffectConfig['vignette']
         break
       }
       case 'chromaticAberration':
-        config.chromaticAberration = { enabled: true, intensity: effect.intensity }
+        config.chromaticAberration = { enabled: true, intensity: effect.intensity as number }
         break
       case 'dotHalftone':
         config.dotHalftone = {
           enabled: true,
-          dotSize: effect.dotSize,
-          spacing: effect.spacing,
-          angle: effect.angle,
+          dotSize: effect.dotSize as number,
+          spacing: effect.spacing as number,
+          angle: effect.angle as number,
         }
         break
       case 'lineHalftone':
         config.lineHalftone = {
           enabled: true,
-          lineWidth: effect.lineWidth,
-          spacing: effect.spacing,
-          angle: effect.angle,
+          lineWidth: effect.lineWidth as number,
+          spacing: effect.spacing as number,
+          angle: effect.angle as number,
         }
         break
       case 'blur':
-        config.blur = { enabled: true, radius: effect.radius }
+        config.blur = { enabled: true, radius: effect.radius as number }
         break
     }
   }

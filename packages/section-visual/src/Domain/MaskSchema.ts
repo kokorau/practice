@@ -3,6 +3,9 @@
  *
  * Schema definitions for mask shapes with UI metadata and validation.
  * Follows the same pattern as VignetteSchema for consistency.
+ *
+ * NOTE: MaskShape is now a string type. Runtime validation via MaskRegistry.
+ * @see packages/section-visual/src/Infra/MaskRegistry.ts
  */
 
 import { defineSchema, number, boolean, select, type Infer } from '@practice/schema'
@@ -11,6 +14,10 @@ import { defineSchema, number, boolean, select, type Infer } from '@practice/sch
 // Mask Shape Types
 // ============================================================
 
+/**
+ * @deprecated Use getMaskShapeOptions() from MaskRegistry instead
+ * Kept for backward compatibility during migration
+ */
 export const MaskShapeOptions = [
   { value: 'circle' as const, label: 'Circle' },
   { value: 'rect' as const, label: 'Rectangle' },
@@ -22,7 +29,16 @@ export const MaskShapeOptions = [
   { value: 'wavyLine' as const, label: 'Wavy Line' },
 ] as const
 
-export type MaskShape =
+/**
+ * Mask shape type - now a string for dynamic schema support
+ * Runtime validation via MaskRegistry.isValidMaskShape()
+ */
+export type MaskShape = string
+
+/**
+ * Known mask shapes (for type narrowing when needed)
+ */
+export type KnownMaskShape =
   | 'circle'
   | 'rect'
   | 'blob'
@@ -266,6 +282,10 @@ export interface WavyLineMaskConfig extends MaskConfigBase {
   cutout: boolean
 }
 
+/**
+ * @deprecated Use GenericMaskConfig for new code
+ * Discriminated union kept for backward compatibility
+ */
 export type MaskConfig =
   | CircleMaskConfig
   | RectMaskConfig
@@ -275,6 +295,18 @@ export type MaskConfig =
   | RadialGradientMaskConfig
   | BoxGradientMaskConfig
   | WavyLineMaskConfig
+
+/**
+ * Generic mask config for dynamic schema-based validation
+ * Used when the specific shape type is not known at compile time
+ */
+export interface GenericMaskConfig {
+  shape: string
+  enabled: boolean
+  feather: number
+  invert: boolean
+  [key: string]: unknown
+}
 
 // ============================================================
 // Default Factory
@@ -293,112 +325,34 @@ export const createDefaultMaskConfig = (): CircleMaskConfig => ({
 
 /**
  * Create mask config with proper defaults for a given shape
- * Preserves common properties (enabled, feather, invert) from existing config
+ * Uses MaskRegistry for centralized config creation
+ *
+ * @param shape - The mask shape type (string)
+ * @param existing - Optional existing config to preserve common properties
+ * @returns MaskConfig with proper defaults for the given shape
  */
 export function createMaskConfigForShape(
   shape: MaskShape,
   existing?: Partial<MaskConfig>
 ): MaskConfig {
-  const base: MaskConfigBase = {
-    enabled: existing?.enabled ?? true,
-    feather: existing?.feather ?? 0,
-    invert: existing?.invert ?? false,
+  // Import dynamically to avoid circular dependency
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { getDefaultMaskConfig } = require('../Infra/MaskRegistry')
+
+  const base = {
+    enabled: existing?.enabled,
+    feather: existing?.feather,
+    invert: existing?.invert,
   }
 
-  switch (shape) {
-    case 'circle':
-      return {
-        ...base,
-        shape: 'circle',
-        centerX: 0.5,
-        centerY: 0.5,
-        radius: 0.3,
-        cutout: false,
-      }
-    case 'rect':
-      return {
-        ...base,
-        shape: 'rect',
-        left: 0.2,
-        right: 0.8,
-        top: 0.2,
-        bottom: 0.8,
-        radiusTopLeft: 0,
-        radiusTopRight: 0,
-        radiusBottomLeft: 0,
-        radiusBottomRight: 0,
-        rotation: 0,
-        perspectiveX: 0,
-        perspectiveY: 0,
-        cutout: false,
-      }
-    case 'blob':
-      return {
-        ...base,
-        shape: 'blob',
-        centerX: 0.5,
-        centerY: 0.5,
-        baseRadius: 0.3,
-        amplitude: 0.1,
-        octaves: 3,
-        seed: 42,
-        cutout: false,
-      }
-    case 'perlin':
-      return {
-        ...base,
-        shape: 'perlin',
-        seed: 42,
-        threshold: 0.5,
-        scale: 4,
-        octaves: 4,
-        cutout: false,
-      }
-    case 'linearGradient':
-      return {
-        ...base,
-        shape: 'linearGradient',
-        angle: 0,
-        startOffset: 0.3,
-        endOffset: 0.7,
-        cutout: false,
-      }
-    case 'radialGradient':
-      return {
-        ...base,
-        shape: 'radialGradient',
-        centerX: 0.5,
-        centerY: 0.5,
-        innerRadius: 0.1,
-        outerRadius: 0.5,
-        aspectRatio: 1,
-        cutout: false,
-      }
-    case 'boxGradient':
-      return {
-        ...base,
-        shape: 'boxGradient',
-        left: 0.1,
-        right: 0.1,
-        top: 0.1,
-        bottom: 0.1,
-        cornerRadius: 0,
-        curve: 'linear',
-        cutout: false,
-      }
-    case 'wavyLine':
-      return {
-        ...base,
-        shape: 'wavyLine',
-        position: 0.5,
-        direction: 'vertical',
-        amplitude: 0.08,
-        frequency: 3,
-        octaves: 2,
-        seed: 42,
-        cutout: false,
-      }
+  const config = getDefaultMaskConfig(shape, base)
+  if (!config) {
+    // Fallback to circle for unknown shapes
+    console.warn(`Unknown mask shape: ${shape}, falling back to circle`)
+    return createDefaultMaskConfig()
   }
+
+  return config as MaskConfig
 }
 
 // ============================================================

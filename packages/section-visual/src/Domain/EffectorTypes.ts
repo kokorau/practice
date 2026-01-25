@@ -84,14 +84,10 @@ export type EffectorType = EffectType | 'mask'
 export type UnifiedFilterType = 'void' | EffectorType
 
 /**
- * Array of all effector types
+ * Array of all effector types (derived from EFFECT_REGISTRY + mask)
  */
 export const EFFECTOR_TYPES: EffectorType[] = [
-  'vignette',
-  'chromaticAberration',
-  'dotHalftone',
-  'lineHalftone',
-  'blur',
+  ...(Object.keys(EFFECT_REGISTRY) as EffectType[]),
   'mask',
 ]
 

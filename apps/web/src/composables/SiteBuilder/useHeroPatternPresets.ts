@@ -13,14 +13,6 @@ import {
   getSurfacePresets,
   type RGBA,
   type MaskPattern,
-  type CircleMaskShapeParams,
-  type RectMaskShapeParams,
-  type BlobMaskShapeParams,
-  type StripeSurfaceParams,
-  type GridSurfaceParams,
-  type PolkaDotSurfaceParams,
-  type CheckerSurfaceParams,
-  type SolidSurfaceParams,
 } from '@practice/texture'
 import {
   type HeroViewRepository,
@@ -79,9 +71,9 @@ export interface UseHeroPatternPresetsReturn {
   initMaskShapeParamsFromPreset: () => void
   initSurfaceParamsFromPreset: () => void
   initBackgroundSurfaceParamsFromPreset: () => void
-  updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams>) => void
-  updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams>) => void
-  updateBackgroundSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => void
+  updateMaskShapeParams: (updates: Record<string, unknown>) => void
+  updateSurfaceParams: (updates: Record<string, unknown>) => void
+  updateBackgroundSurfaceParams: (updates: Record<string, unknown>) => void
 }
 
 export const useHeroPatternPresets = (
@@ -127,7 +119,9 @@ export const useHeroPatternPresets = (
     const idx = selectedMidgroundTextureIndex.value
     const preset = midgroundTexturePatterns[idx]
     if (preset) {
-      customSurfaceParams.value = toCustomSurfaceParams(preset.params)
+      // Convert GenericSurfaceParams to SurfaceConfig format (type -> id mapping)
+      // Cast needed since preset.params is GenericSurfaceParams (string) but toCustomSurfaceParams expects SurfaceConfig union
+      customSurfaceParams.value = toCustomSurfaceParams(preset.params as Parameters<typeof toCustomSurfaceParams>[0])
     }
   }
 
@@ -135,32 +129,23 @@ export const useHeroPatternPresets = (
     const idx = selectedBackgroundIndex.value
     const preset = surfacePresets[idx]
     if (preset) {
-      const params = toCustomBackgroundSurfaceParams(preset.params)
+      // Convert GenericSurfaceParams to CustomBackgroundSurfaceParams format
+      // Cast needed since preset.params is GenericSurfaceParams (string) but toCustomBackgroundSurfaceParams expects SurfaceConfig union
+      const params = toCustomBackgroundSurfaceParams(preset.params as Parameters<typeof toCustomBackgroundSurfaceParams>[0])
       if (params.id === 'solid') {
         setBaseSurface({ id: 'solid', params: {} })
       } else if (params.id === 'stripe') {
-        setBaseSurface({ id: 'stripe', params: toPropertyValueParams({ width1: params.width1, width2: params.width2, angle: params.angle }) })
+        setBaseSurface({ id: 'stripe', params: toPropertyValueParams({ width1: params.width1 as number, width2: params.width2 as number, angle: params.angle as number }) })
       } else if (params.id === 'grid') {
-        setBaseSurface({ id: 'grid', params: toPropertyValueParams({ lineWidth: params.lineWidth, cellSize: params.cellSize }) })
+        setBaseSurface({ id: 'grid', params: toPropertyValueParams({ lineWidth: params.lineWidth as number, cellSize: params.cellSize as number }) })
       } else if (params.id === 'polkaDot') {
-        setBaseSurface({ id: 'polkaDot', params: toPropertyValueParams({ dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }) })
+        setBaseSurface({ id: 'polkaDot', params: toPropertyValueParams({ dotRadius: params.dotRadius as number, spacing: params.spacing as number, rowOffset: params.rowOffset as number }) })
       } else if (params.id === 'checker') {
-        setBaseSurface({ id: 'checker', params: toPropertyValueParams({ cellSize: params.cellSize, angle: params.angle }) })
+        setBaseSurface({ id: 'checker', params: toPropertyValueParams({ cellSize: params.cellSize as number, angle: params.angle as number }) })
       } else if (params.id === 'linearGradient') {
-        setBaseSurface({ id: 'linearGradient', params: toPropertyValueParams({ angle: params.angle, centerX: params.centerX, centerY: params.centerY }) })
-      } else if (params.id === 'gradientGrainLinear' || params.id === 'gradientGrainCircular' || params.id === 'gradientGrainRadial' || params.id === 'gradientGrainPerlin' || params.id === 'gradientGrainCurl') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'asanoha') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'seigaiha') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'wave') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'scales') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'ogee') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'sunburst') {
+        setBaseSurface({ id: 'linearGradient', params: toPropertyValueParams({ angle: params.angle as number, centerX: params.centerX as number, centerY: params.centerY as number }) })
+      } else {
+        // For all other surface types, use params directly
         customBackgroundSurfaceParams.value = params
       }
     } else {
@@ -168,7 +153,7 @@ export const useHeroPatternPresets = (
     }
   }
 
-  const updateMaskShapeParams = (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams>) => {
+  const updateMaskShapeParams = (updates: Record<string, unknown>) => {
     if (!customMaskShapeParams.value) return
     const maskShapeId = customMaskShapeParams.value.id
     const procId = processorLayerId.value
@@ -177,7 +162,7 @@ export const useHeroPatternPresets = (
     surfaceUsecase.updateMaskShapeParams(procId, { id: maskShapeId, ...updates } as MaskShapeParamsUpdate)
   }
 
-  const updateSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams>) => {
+  const updateSurfaceParams = (updates: Record<string, unknown>) => {
     if (!customSurfaceParams.value) return
     const surfaceId = customSurfaceParams.value.id
     const targetLayerId = selectedLayerId.value || 'surface-mask'
@@ -185,7 +170,7 @@ export const useHeroPatternPresets = (
     surfaceUsecase.updateSurfaceParamsForLayer(targetLayerId, { id: surfaceId, ...updates } as SurfaceParamsUpdate)
   }
 
-  const updateBackgroundSurfaceParams = (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams | SolidSurfaceParams>) => {
+  const updateBackgroundSurfaceParams = (updates: Record<string, unknown>) => {
     if (!customBackgroundSurfaceParams.value) return
     const surfaceId = customBackgroundSurfaceParams.value.id
     // Delegate to SurfaceUsecase - it handles layer type check and PropertyValue preservation

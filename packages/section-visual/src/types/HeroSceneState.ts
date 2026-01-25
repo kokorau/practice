@@ -27,21 +27,6 @@ import type {
   SurfacePreset,
   RGBA,
   TextureRenderSpec,
-  CircleMaskShapeParams,
-  RectMaskShapeParams,
-  BlobMaskShapeParams,
-  PerlinMaskShapeParams,
-  CurlMaskShapeParams,
-  LinearGradientMaskShapeParams,
-  RadialGradientMaskShapeParams,
-  BoxGradientMaskShapeParams,
-  WavyLineMaskShapeParams,
-  StripeSurfaceParams,
-  GridSurfaceParams,
-  PolkaDotSurfaceParams,
-  CheckerSurfaceParams,
-  TriangleSurfaceParams,
-  HexagonSurfaceParams,
   Viewport,
 } from '@practice/texture'
 import type { Oklch } from '@practice/color'
@@ -131,192 +116,41 @@ export interface EffectManagerInterface {
 }
 
 // ============================================================
-// Custom Params Types (re-exported from useHeroScene)
+// Custom Params Types (Generic Schema-based)
 // ============================================================
 
 /**
- * Custom mask shape params union type
+ * Custom mask shape params (generic interface)
+ *
+ * Dynamic schema-based type - params are validated at runtime via MaskRegistry.
+ * The `id` field corresponds to MaskRegistry keys.
  */
-export type CustomMaskShapeParams =
-  | ({ id: 'circle' } & CircleMaskShapeParams)
-  | ({ id: 'rect' } & RectMaskShapeParams)
-  | ({ id: 'blob' } & BlobMaskShapeParams)
-  | ({ id: 'perlin' } & PerlinMaskShapeParams)
-  | ({ id: 'curl' } & CurlMaskShapeParams)
-  | ({ id: 'linearGradient' } & LinearGradientMaskShapeParams)
-  | ({ id: 'radialGradient' } & RadialGradientMaskShapeParams)
-  | ({ id: 'boxGradient' } & BoxGradientMaskShapeParams)
-  | ({ id: 'wavyLine' } & WavyLineMaskShapeParams)
-
-/**
- * Gradient grain surface params (5 separate types)
- */
-export interface GradientGrainLinearSurfaceParams {
-  angle: number
-  centerX: number
-  centerY: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainCircularSurfaceParams {
-  centerX: number
-  centerY: number
-  circularInvert?: boolean
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainRadialSurfaceParams {
-  centerX: number
-  centerY: number
-  radialStartAngle: number
-  radialSweepAngle: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainPerlinSurfaceParams {
-  perlinScale: number
-  perlinOctaves: number
-  perlinContrast: number
-  perlinOffset: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainCurlSurfaceParams {
-  perlinScale: number
-  perlinOctaves: number
-  perlinContrast: number
-  perlinOffset: number
-  curlIntensity: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainSimplexSurfaceParams {
-  simplexScale: number
-  simplexOctaves: number
-  simplexContrast: number
-  simplexOffset: number
-  seed: number
-  sparsity: number
+export interface CustomMaskShapeParams {
+  id: string
+  [key: string]: unknown
 }
 
 /**
- * Textile pattern surface params
+ * Custom surface params (generic interface)
+ *
+ * Dynamic schema-based type - params are validated at runtime via SurfaceRegistry.
+ * The `id` field corresponds to SurfaceRegistry keys.
  */
-export interface AsanohaSurfaceParams {
-  size: number
-  lineWidth: number
-}
-
-export interface SeigaihaSurfaceParams {
-  radius: number
-  rings: number
-  lineWidth: number
-}
-
-export interface WaveSurfaceParams {
-  amplitude: number
-  wavelength: number
-  thickness: number
-  angle: number
-}
-
-export interface ScalesSurfaceParams {
-  size: number
-  overlap: number
-  angle: number
-}
-
-export interface OgeeSurfaceParams {
-  width: number
-  height: number
-  lineWidth: number
-}
-
-export interface SunburstSurfaceParams {
-  rays: number
-  centerX: number
-  centerY: number
-  twist: number
-}
-
-export interface PaperTextureSurfaceParams {
-  fiberScale: number
-  fiberStrength: number
-  fiberWarp: number
-  grainDensity: number
-  grainSize: number
-  bumpStrength: number
-  lightAngle: number
-  seed: number
+export interface CustomSurfaceParams {
+  id: string
+  [key: string]: unknown
 }
 
 /**
- * Linear gradient surface params (smooth 2-color gradient without grain)
+ * Custom background surface params (generic interface)
+ *
+ * Dynamic schema-based type - params are validated at runtime via SurfaceRegistry.
+ * The `id` field corresponds to SurfaceRegistry keys.
  */
-export interface LinearGradientSurfaceParams {
-  angle: number
-  centerX: number
-  centerY: number
+export interface CustomBackgroundSurfaceParams {
+  id: string
+  [key: string]: unknown
 }
-
-/**
- * Custom surface params union type (for midground - includes solid, checker, and gradientGrain variants)
- * Uses 'id' field for consistency with NormalizedSurfaceConfig
- */
-export type CustomSurfaceParams =
-  | { id: 'solid' }
-  | ({ id: 'stripe' } & StripeSurfaceParams)
-  | ({ id: 'grid' } & GridSurfaceParams)
-  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
-  | ({ id: 'triangle' } & TriangleSurfaceParams)
-  | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
-  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
-  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
-  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
-  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
-  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
-  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ id: 'wave' } & WaveSurfaceParams)
-  | ({ id: 'scales' } & ScalesSurfaceParams)
-  | ({ id: 'ogee' } & OgeeSurfaceParams)
-  | ({ id: 'sunburst' } & SunburstSurfaceParams)
-  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
-
-/**
- * Custom background surface params union type
- * Uses 'id' field for consistency with NormalizedSurfaceConfig
- */
-export type CustomBackgroundSurfaceParams =
-  | { id: 'solid' }
-  | ({ id: 'stripe' } & StripeSurfaceParams)
-  | ({ id: 'grid' } & GridSurfaceParams)
-  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
-  | ({ id: 'triangle' } & TriangleSurfaceParams)
-  | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
-  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
-  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
-  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
-  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
-  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
-  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ id: 'wave' } & WaveSurfaceParams)
-  | ({ id: 'scales' } & ScalesSurfaceParams)
-  | ({ id: 'ogee' } & OgeeSurfaceParams)
-  | ({ id: 'sunburst' } & SunburstSurfaceParams)
-  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
 
 // ============================================================
 // Section Type
@@ -437,9 +271,9 @@ export interface MaskState {
   /** Current surface schema for UI */
   readonly currentSurfaceSchema: ComputedRef<ObjectSchema | null>
   /** Update mask shape params */
-  readonly updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams | PerlinMaskShapeParams | LinearGradientMaskShapeParams | RadialGradientMaskShapeParams | BoxGradientMaskShapeParams | WavyLineMaskShapeParams>) => void
+  readonly updateMaskShapeParams: (updates: Record<string, unknown>) => void
   /** Update surface params */
-  readonly updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => void
+  readonly updateSurfaceParams: (updates: Record<string, unknown>) => void
 
   /** Processor target info (derived from current selection) */
   readonly processorTarget: ComputedRef<ProcessorTarget>
@@ -605,10 +439,10 @@ export interface LayerOperations {
   readonly addGroupLayer: () => string
   /** Remove a layer by ID (returns true if removed) */
   readonly removeLayer: (layerId: string) => boolean
-  /** Add a processor (effect or mask) to a layer */
-  readonly addProcessorToLayer: (layerId: string, processorType: 'effect' | 'mask') => void
-  /** Add a modifier (effect or mask) to an existing processor node */
-  readonly addModifierToProcessor: (processorNodeId: string, processorType: 'effect' | 'mask') => void
+  /** Add a processor (effect, mask, or filter) to a layer */
+  readonly addProcessorToLayer: (layerId: string, processorType: 'effect' | 'mask' | 'filter') => void
+  /** Add a modifier (effect, mask, or filter) to an existing processor node */
+  readonly addModifierToProcessor: (processorNodeId: string, processorType: 'effect' | 'mask' | 'filter') => void
   /** Remove a processor modifier from a layer by index (auto-removes processor if empty) */
   readonly removeProcessorFromLayer: (processorNodeId: string, modifierIndex: number) => void
   /** Remove an entire processor node (with all modifiers) */
