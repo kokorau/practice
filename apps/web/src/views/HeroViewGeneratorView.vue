@@ -337,6 +337,7 @@ const {
   handleAddLayer,
   handleRemoveLayer,
   handleAddProcessor,
+  handleAddModifierToProcessor,
   handleRemoveProcessor,
   handleRemoveProcessorNode,
   handleGroupSelection,
@@ -360,6 +361,7 @@ const {
     moveLayer: heroScene.layer.moveLayer,
     moveModifier: heroScene.layer.moveModifier,
     addProcessorToLayer: heroScene.layer.addProcessorToLayer,
+    addModifierToProcessor: heroScene.layer.addModifierToProcessor,
     removeProcessorFromLayer: heroScene.layer.removeProcessorFromLayer,
     removeProcessor: heroScene.layer.removeProcessor,
   },
@@ -412,6 +414,7 @@ const {
   handleRemoveForegroundElement,
   handleRemoveProcessor,
   handleRemoveProcessorNode,
+  handleAddModifierToProcessor,
 })
 
 // ============================================================
@@ -565,6 +568,7 @@ const handleImageUpdate = (key: string, value: unknown) => {
       @add-layer="handleAddLayer"
       @remove-layer="handleRemoveLayer"
       @add-processor="handleAddProcessor"
+      @add-modifier-to-processor="handleAddModifierToProcessor"
       @layer-contextmenu="handleLayerContextMenu"
       @move-node="handleMoveNode"
       @move-modifier="handleMoveModifier"

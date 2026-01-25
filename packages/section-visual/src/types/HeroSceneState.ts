@@ -606,6 +606,8 @@ export interface LayerOperations {
   readonly removeLayer: (layerId: string) => boolean
   /** Add a processor (effect or mask) to a layer */
   readonly addProcessorToLayer: (layerId: string, processorType: 'effect' | 'mask') => void
+  /** Add a modifier (effect or mask) to an existing processor node */
+  readonly addModifierToProcessor: (processorNodeId: string, processorType: 'effect' | 'mask') => void
   /** Remove a processor modifier from a layer by index (auto-removes processor if empty) */
   readonly removeProcessorFromLayer: (processorNodeId: string, modifierIndex: number) => void
   /** Remove an entire processor node (with all modifiers) */

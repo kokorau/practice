@@ -848,6 +848,14 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   }
 
   /**
+   * Add a modifier (effect or mask) to an existing processor node
+   */
+  const addModifierToProcessor = (processorNodeId: string, processorType: 'effect' | 'mask') => {
+    processorUsecase.addModifierToProcessor(processorNodeId, processorType)
+    render()
+  }
+
+  /**
    * Remove a processor modifier (effect or mask) from a layer by index
    * If modifiers becomes empty, the processor node is automatically removed
    */
@@ -1204,6 +1212,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     addGroupLayer,
     removeLayer,
     addProcessorToLayer,
+    addModifierToProcessor,
     removeProcessorFromLayer,
     removeProcessor,
     updateLayerVisibility,

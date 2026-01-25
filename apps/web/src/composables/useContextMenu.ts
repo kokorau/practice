@@ -16,6 +16,7 @@ export interface ContextMenuCallbacks {
   handleRemoveForegroundElement: (elementId: string) => void
   handleRemoveProcessor: (processorNodeId: string, modifierIndex: number) => void
   handleRemoveProcessorNode: (processorNodeId: string) => void
+  handleAddModifierToProcessor: (processorNodeId: string, processorType: 'effect' | 'mask') => void
 }
 
 export interface UseContextMenuReturn {
@@ -81,9 +82,12 @@ export function useContextMenu(
       ]
     }
 
-    // Processor group: Remove only
+    // Processor group: Add Effect/Mask, Remove
     if (targetType === 'processor') {
       return [
+        { id: 'add-effect', label: 'Add Effect', icon: 'auto_fix_high' },
+        { id: 'add-mask', label: 'Add Mask', icon: 'content_cut' },
+        { id: 'sep-1', label: '', separator: true },
         { id: 'remove-processor', label: 'Remove Processor', icon: 'delete' },
       ]
     }
@@ -160,6 +164,18 @@ export function useContextMenu(
         // Remove the entire processor node
         if (targetType === 'processor') {
           callbacks.handleRemoveProcessorNode(layerId)
+        }
+        break
+      case 'add-effect':
+        // Add effect modifier to processor
+        if (targetType === 'processor') {
+          callbacks.handleAddModifierToProcessor(layerId, 'effect')
+        }
+        break
+      case 'add-mask':
+        // Add mask modifier to processor
+        if (targetType === 'processor') {
+          callbacks.handleAddModifierToProcessor(layerId, 'mask')
         }
         break
     }

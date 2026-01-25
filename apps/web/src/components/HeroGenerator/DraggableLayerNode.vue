@@ -64,6 +64,7 @@ const emit = defineEmits<{
   'select-processor': [nodeId: string, processorType: 'effect' | 'mask' | 'processor']
   'remove-layer': [nodeId: string]
   'add-processor': [nodeId: string, processorType: AddProcessorType]
+  'add-modifier-to-processor': [processorNodeId: string, processorType: AddProcessorType]
   // Context menu event (with target type and optional modifier index)
   contextmenu: [nodeId: string, event: MouseEvent, targetType: ContextTargetType, modifierIndex?: number]
   // DnD move events
@@ -262,11 +263,6 @@ const handleToggleVisibility = (e: Event) => {
   emit('toggle-visibility', props.node.id)
 }
 
-const handleRemove = (e: Event) => {
-  e.stopPropagation()
-  emit('remove-layer', props.node.id)
-}
-
 const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
   emit('select-processor', props.node.id, type)
 }
@@ -295,6 +291,32 @@ const handleAddProcessor = (type: AddProcessorType, e: Event) => {
   e.stopPropagation()
   emit('add-processor', props.node.id, type)
   showAddProcessorMenu.value = false
+}
+
+// ============================================================
+// Add Modifier Menu (for Processor node)
+// ============================================================
+
+const showAddModifierMenu = ref(false)
+const addModifierTriggerRef = ref<HTMLElement | null>(null)
+const addModifierMenuRef = ref<HTMLElement | null>(null)
+
+// Use vueuse onClickOutside with ignore option
+onClickOutside(addModifierMenuRef, () => {
+  showAddModifierMenu.value = false
+}, {
+  ignore: [addModifierTriggerRef],
+})
+
+const handleToggleAddModifierMenu = (e: Event) => {
+  e.stopPropagation()
+  showAddModifierMenu.value = !showAddModifierMenu.value
+}
+
+const handleAddModifier = (type: AddProcessorType, e: Event) => {
+  e.stopPropagation()
+  emit('add-modifier-to-processor', props.node.id, type)
+  showAddModifierMenu.value = false
 }
 
 // ============================================================
@@ -436,9 +458,9 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <span class="layer-name">{{ surfaceTypeLabel || node.name }}</span>
       </div>
 
-      <!-- Add Processor Button (only for non-processor, non-group layers) -->
+      <!-- Add Processor Button (only for base layers) -->
       <div
-        v-if="!isProcessorNode && !isGroupNode"
+        v-if="nodeVariant === 'base'"
         class="add-processor-container"
         @click.stop
       >
@@ -486,13 +508,6 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <span class="material-icons">{{ node.visible ? 'visibility' : 'visibility_off' }}</span>
       </button>
 
-      <!-- Remove Button -->
-      <button
-        class="remove-toggle"
-        @click="handleRemove"
-      >
-        <span class="material-icons">close</span>
-      </button>
     </div>
 
     <!-- Processor group (contains Effect/Mask as children) -->
@@ -523,6 +538,46 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <span class="material-icons layer-icon">tune</span>
         <div class="layer-info">
           <span class="layer-name">Processor</span>
+        </div>
+
+        <!-- Add Modifier Button -->
+        <div
+          class="add-processor-container"
+          @click.stop
+        >
+          <button
+            ref="addModifierTriggerRef"
+            class="add-processor-toggle"
+            :class="{ active: showAddModifierMenu }"
+            title="Add Effect or Mask"
+            @click="handleToggleAddModifierMenu"
+          >
+            <span class="material-icons">add</span>
+          </button>
+
+          <Transition name="fade">
+            <div
+              v-if="showAddModifierMenu"
+              ref="addModifierMenuRef"
+              class="add-processor-menu"
+              @click.stop
+            >
+              <button
+                class="add-processor-item"
+                @click="(e) => handleAddModifier('effect', e)"
+              >
+                <span class="material-icons">auto_fix_high</span>
+                <span>Effect</span>
+              </button>
+              <button
+                class="add-processor-item"
+                @click="(e) => handleAddModifier('mask', e)"
+              >
+                <span class="material-icons">content_cut</span>
+                <span>Mask</span>
+              </button>
+            </div>
+          </Transition>
         </div>
       </div>
       <!-- Processor children (Effect, Mask) -->
@@ -574,6 +629,7 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         @select-processor="(id: string, type: 'effect' | 'mask' | 'processor') => emit('select-processor', id, type)"
         @remove-layer="(id: string) => emit('remove-layer', id)"
         @add-processor="(id: string, type: AddProcessorType) => emit('add-processor', id, type)"
+        @add-modifier-to-processor="(id: string, type: AddProcessorType) => emit('add-modifier-to-processor', id, type)"
         @contextmenu="(id: string, e: MouseEvent, targetType: ContextTargetType, modifierIndex?: number) => emit('contextmenu', id, e, targetType, modifierIndex)"
         @move-node="(id: string, position: LayerDropPosition) => emit('move-node', id, position)"
         @move-modifier="(sourceNodeId: string, modifierIndex: number, position: ModifierDropPosition) => emit('move-modifier', sourceNodeId, modifierIndex, position)"
@@ -753,40 +809,6 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
   flex-shrink: 0;
 }
 
-/* Remove Toggle */
-.remove-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  padding: 0;
-  background: none;
-  border: none;
-  color: oklch(0.55 0.02 260);
-  cursor: pointer;
-  border-radius: 0.125rem;
-  transition: color 0.15s;
-  flex-shrink: 0;
-  opacity: 0;
-}
-
-.node-header:hover .remove-toggle {
-  opacity: 1;
-}
-
-:global(.dark) .remove-toggle {
-  color: oklch(0.50 0.02 260);
-}
-
-.remove-toggle:hover {
-  color: oklch(0.60 0.15 25);
-}
-
-.remove-toggle .material-icons {
-  font-size: 1rem;
-}
-
 /* ============================================================
    Processor Link System (連結矢印) - SVG版
    ============================================================ */
@@ -839,6 +861,11 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
 /* Processor内のchevronは小さく */
 .processor-group-node .expand-toggle {
   width: 0.5rem;
+}
+
+/* Show add button on hover for processor group */
+.processor-group-node:hover .add-processor-toggle {
+  opacity: 1;
 }
 
 /* Processor child nodes (Effect, Mask) */
