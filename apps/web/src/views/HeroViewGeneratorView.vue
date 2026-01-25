@@ -362,6 +362,7 @@ const {
     moveLayer: heroScene.layer.moveLayer,
     moveModifier: heroScene.layer.moveModifier,
     addProcessorToLayer: heroScene.layer.addProcessorToLayer,
+    addModifierToProcessor: heroScene.layer.addModifierToProcessor,
     removeProcessorFromLayer: heroScene.layer.removeProcessorFromLayer,
     removeProcessor: heroScene.layer.removeProcessor,
   },
