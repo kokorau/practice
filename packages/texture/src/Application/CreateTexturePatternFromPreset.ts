@@ -27,8 +27,11 @@ import {
 /**
  * Create a TexturePattern from a SurfacePreset
  * Converts preset params into a createSpec function
+ *
+ * Note: Uses type assertions for dynamic schema-based params.
+ * Runtime validation is handled by SurfaceRegistry schemas.
  */
-export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePattern => {
+export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePattern | undefined => {
   const { label, params } = preset
 
   switch (params.type) {
@@ -43,9 +46,9 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createStripeSpec({
-            width1: params.width1,
-            width2: params.width2,
-            angle: params.angle,
+            width1: params.width1 as number,
+            width2: params.width2 as number,
+            angle: params.angle as number,
             color1: c1,
             color2: c2,
           }),
@@ -56,8 +59,8 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createGridSpec({
-            lineWidth: params.lineWidth,
-            cellSize: params.cellSize,
+            lineWidth: params.lineWidth as number,
+            cellSize: params.cellSize as number,
             lineColor: c1,
             bgColor: c2,
           }),
@@ -68,9 +71,9 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createPolkaDotSpec({
-            dotRadius: params.dotRadius,
-            spacing: params.spacing,
-            rowOffset: params.rowOffset,
+            dotRadius: params.dotRadius as number,
+            spacing: params.spacing as number,
+            rowOffset: params.rowOffset as number,
             dotColor: c1,
             bgColor: c2,
           }),
@@ -81,8 +84,8 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createCheckerSpec({
-            cellSize: params.cellSize,
-            angle: params.angle,
+            cellSize: params.cellSize as number,
+            angle: params.angle as number,
             color1: c1,
             color2: c2,
           }),
@@ -93,9 +96,9 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
           createLinearGradientSpec({
-            angle: params.angle,
-            centerX: params.centerX,
-            centerY: params.centerY,
+            angle: params.angle as number,
+            centerX: params.centerX as number,
+            centerY: params.centerY as number,
             stops: [
               { color: c1, position: 0 },
               { color: c2, position: 1 },
@@ -109,13 +112,13 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
           createGradientGrainLinearSpec({
-            angle: params.angle,
-            centerX: params.centerX,
-            centerY: params.centerY,
+            angle: params.angle as number,
+            centerX: params.centerX as number,
+            centerY: params.centerY as number,
             colorA: c1,
             colorB: c2,
-            seed: params.seed,
-            sparsity: params.sparsity,
+            seed: params.seed as number,
+            sparsity: params.sparsity as number,
             curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
           }, viewport ?? { width: 1920, height: 1080 }),
         params,
@@ -126,13 +129,13 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
           createGradientGrainCircularSpec({
-            centerX: params.centerX,
-            centerY: params.centerY,
-            circularInvert: params.circularInvert,
+            centerX: params.centerX as number,
+            centerY: params.centerY as number,
+            circularInvert: params.circularInvert as boolean | undefined,
             colorA: c1,
             colorB: c2,
-            seed: params.seed,
-            sparsity: params.sparsity,
+            seed: params.seed as number,
+            sparsity: params.sparsity as number,
             curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
           }, viewport ?? { width: 1920, height: 1080 }),
         params,
@@ -143,14 +146,14 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
           createGradientGrainRadialSpec({
-            centerX: params.centerX,
-            centerY: params.centerY,
-            radialStartAngle: params.radialStartAngle,
-            radialSweepAngle: params.radialSweepAngle,
+            centerX: params.centerX as number,
+            centerY: params.centerY as number,
+            radialStartAngle: params.radialStartAngle as number,
+            radialSweepAngle: params.radialSweepAngle as number,
             colorA: c1,
             colorB: c2,
-            seed: params.seed,
-            sparsity: params.sparsity,
+            seed: params.seed as number,
+            sparsity: params.sparsity as number,
             curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
           }, viewport ?? { width: 1920, height: 1080 }),
         params,
@@ -161,14 +164,14 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
           createGradientGrainPerlinSpec({
-            perlinScale: params.perlinScale,
-            perlinOctaves: params.perlinOctaves,
-            perlinContrast: params.perlinContrast,
-            perlinOffset: params.perlinOffset,
+            perlinScale: params.perlinScale as number,
+            perlinOctaves: params.perlinOctaves as number,
+            perlinContrast: params.perlinContrast as number,
+            perlinOffset: params.perlinOffset as number,
             colorA: c1,
             colorB: c2,
-            seed: params.seed,
-            sparsity: params.sparsity,
+            seed: params.seed as number,
+            sparsity: params.sparsity as number,
             curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
           }, viewport ?? { width: 1920, height: 1080 }),
         params,
@@ -179,15 +182,15 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
           createGradientGrainCurlSpec({
-            perlinScale: params.perlinScale,
-            perlinOctaves: params.perlinOctaves,
-            perlinContrast: params.perlinContrast,
-            perlinOffset: params.perlinOffset,
-            curlIntensity: params.curlIntensity,
+            perlinScale: params.perlinScale as number,
+            perlinOctaves: params.perlinOctaves as number,
+            perlinContrast: params.perlinContrast as number,
+            perlinOffset: params.perlinOffset as number,
+            curlIntensity: params.curlIntensity as number,
             colorA: c1,
             colorB: c2,
-            seed: params.seed,
-            sparsity: params.sparsity,
+            seed: params.seed as number,
+            sparsity: params.sparsity as number,
             curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
           }, viewport ?? { width: 1920, height: 1080 }),
         params,
@@ -198,14 +201,14 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
           createGradientGrainSimplexSpec({
-            simplexScale: params.simplexScale,
-            simplexOctaves: params.simplexOctaves,
-            simplexContrast: params.simplexContrast,
-            simplexOffset: params.simplexOffset,
+            simplexScale: params.simplexScale as number,
+            simplexOctaves: params.simplexOctaves as number,
+            simplexContrast: params.simplexContrast as number,
+            simplexOffset: params.simplexOffset as number,
             colorA: c1,
             colorB: c2,
-            seed: params.seed,
-            sparsity: params.sparsity,
+            seed: params.seed as number,
+            sparsity: params.sparsity as number,
             curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
           }, viewport ?? { width: 1920, height: 1080 }),
         params,
@@ -216,8 +219,8 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createTriangleSpec({
-            size: params.size,
-            angle: params.angle,
+            size: params.size as number,
+            angle: params.angle as number,
             color1: c1,
             color2: c2,
           }),
@@ -228,8 +231,8 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createHexagonSpec({
-            size: params.size,
-            angle: params.angle,
+            size: params.size as number,
+            angle: params.angle as number,
             color1: c1,
             color2: c2,
           }),
@@ -240,8 +243,8 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createAsanohaSpec({
-            size: params.size,
-            lineWidth: params.lineWidth,
+            size: params.size as number,
+            lineWidth: params.lineWidth as number,
             lineColor: c1,
             bgColor: c2,
           }),
@@ -252,9 +255,9 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createSeigaihaSpec({
-            radius: params.radius,
-            rings: params.rings,
-            lineWidth: params.lineWidth,
+            radius: params.radius as number,
+            rings: params.rings as number,
+            lineWidth: params.lineWidth as number,
             lineColor: c1,
             bgColor: c2,
           }),
@@ -265,10 +268,10 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createWaveSpec({
-            amplitude: params.amplitude,
-            wavelength: params.wavelength,
-            thickness: params.thickness,
-            angle: params.angle,
+            amplitude: params.amplitude as number,
+            wavelength: params.wavelength as number,
+            thickness: params.thickness as number,
+            angle: params.angle as number,
             color1: c1,
             color2: c2,
           }),
@@ -279,9 +282,9 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createScalesSpec({
-            size: params.size,
-            overlap: params.overlap,
-            angle: params.angle,
+            size: params.size as number,
+            overlap: params.overlap as number,
+            angle: params.angle as number,
             color1: c1,
             color2: c2,
           }),
@@ -292,9 +295,9 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA) =>
           createOgeeSpec({
-            width: params.width,
-            height: params.height,
-            lineWidth: params.lineWidth,
+            width: params.width as number,
+            height: params.height as number,
+            lineWidth: params.lineWidth as number,
             lineColor: c1,
             bgColor: c2,
           }),
@@ -305,10 +308,10 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         label,
         createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
           createSunburstSpec({
-            rays: params.rays,
-            centerX: params.centerX,
-            centerY: params.centerY,
-            twist: params.twist,
+            rays: params.rays as number,
+            centerX: params.centerX as number,
+            centerY: params.centerY as number,
+            twist: params.twist as number,
             color1: c1,
             color2: c2,
             viewportWidth: viewport?.width ?? 1920,
@@ -322,17 +325,19 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         createSpec: (c1: RGBA, _c2: RGBA, viewport?: Viewport) =>
           createPaperTextureSpec({
             color: c1,
-            fiberScale: params.fiberScale,
-            fiberStrength: params.fiberStrength,
-            fiberWarp: params.fiberWarp,
-            grainDensity: params.grainDensity,
-            grainSize: params.grainSize,
-            bumpStrength: params.bumpStrength,
-            lightAngle: params.lightAngle,
-            seed: params.seed,
+            fiberScale: params.fiberScale as number,
+            fiberStrength: params.fiberStrength as number,
+            fiberWarp: params.fiberWarp as number,
+            grainDensity: params.grainDensity as number,
+            grainSize: params.grainSize as number,
+            bumpStrength: params.bumpStrength as number,
+            lightAngle: params.lightAngle as number,
+            seed: params.seed as number,
           }, viewport ?? { width: 1920, height: 1080 }),
         params,
       }
+    default:
+      return undefined
   }
 }
 
@@ -340,4 +345,4 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
  * Create TexturePatterns from SurfacePresets
  */
 export const createTexturePatternsFromPresets = (presets: SurfacePreset[]): TexturePattern[] =>
-  presets.map(createTexturePatternFromPreset)
+  presets.map(createTexturePatternFromPreset).filter((p): p is TexturePattern => p !== undefined)

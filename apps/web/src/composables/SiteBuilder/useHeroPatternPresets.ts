@@ -127,7 +127,9 @@ export const useHeroPatternPresets = (
     const idx = selectedMidgroundTextureIndex.value
     const preset = midgroundTexturePatterns[idx]
     if (preset) {
-      customSurfaceParams.value = toCustomSurfaceParams(preset.params)
+      // Type assertion needed - preset.params is GenericSurfaceParams, toCustomSurfaceParams expects SurfaceConfig
+      // Both have { type: string; [key: string]: unknown } structure at runtime
+      customSurfaceParams.value = toCustomSurfaceParams(preset.params as Parameters<typeof toCustomSurfaceParams>[0])
     }
   }
 
@@ -135,7 +137,8 @@ export const useHeroPatternPresets = (
     const idx = selectedBackgroundIndex.value
     const preset = surfacePresets[idx]
     if (preset) {
-      const params = toCustomBackgroundSurfaceParams(preset.params)
+      // Type assertion needed - preset.params is GenericSurfaceParams, toCustomBackgroundSurfaceParams expects SurfaceConfig
+      const params = toCustomBackgroundSurfaceParams(preset.params as Parameters<typeof toCustomBackgroundSurfaceParams>[0])
       if (params.id === 'solid') {
         setBaseSurface({ id: 'solid', params: {} })
       } else if (params.id === 'stripe') {

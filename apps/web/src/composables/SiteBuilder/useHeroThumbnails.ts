@@ -144,37 +144,37 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
         return createStripeSpec({
           color1,
           color2,
-          width1: params.width1,
-          width2: params.width2,
-          angle: params.angle,
+          width1: params.width1 as number,
+          width2: params.width2 as number,
+          angle: params.angle as number,
         })
       case 'grid':
         return createGridSpec({
           lineColor: color1,
           bgColor: color2,
-          lineWidth: params.lineWidth,
-          cellSize: params.cellSize,
+          lineWidth: params.lineWidth as number,
+          cellSize: params.cellSize as number,
         })
       case 'polkaDot':
         return createPolkaDotSpec({
           dotColor: color1,
           bgColor: color2,
-          dotRadius: params.dotRadius,
-          spacing: params.spacing,
-          rowOffset: params.rowOffset,
+          dotRadius: params.dotRadius as number,
+          spacing: params.spacing as number,
+          rowOffset: params.rowOffset as number,
         })
       case 'checker':
         return createCheckerSpec({
           color1,
           color2,
-          cellSize: params.cellSize,
-          angle: params.angle,
+          cellSize: params.cellSize as number,
+          angle: params.angle as number,
         })
       case 'linearGradient':
         return createLinearGradientSpec({
-          angle: params.angle,
-          centerX: params.centerX,
-          centerY: params.centerY,
+          angle: params.angle as number,
+          centerX: params.centerX as number | undefined,
+          centerY: params.centerY as number | undefined,
           stops: [
             { color: color1, position: 0 },
             { color: color2, position: 1 },
@@ -182,152 +182,154 @@ export function useHeroThumbnails(options: UseHeroThumbnailsOptions): UseHeroThu
         }, viewport)
       case 'gradientGrainLinear':
         return createGradientGrainLinearSpec({
-          angle: params.angle,
-          centerX: params.centerX,
-          centerY: params.centerY,
+          angle: params.angle as number,
+          centerX: params.centerX as number | undefined,
+          centerY: params.centerY as number | undefined,
           colorA: color1,
           colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
+          seed: params.seed as number,
+          sparsity: params.sparsity as number,
           curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
         }, viewport)
       case 'gradientGrainCircular':
         return createGradientGrainCircularSpec({
-          centerX: params.centerX,
-          centerY: params.centerY,
-          circularInvert: params.circularInvert,
+          centerX: params.centerX as number | undefined,
+          centerY: params.centerY as number | undefined,
+          circularInvert: params.circularInvert as boolean | undefined,
           colorA: color1,
           colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
+          seed: params.seed as number,
+          sparsity: params.sparsity as number,
           curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
         }, viewport)
       case 'gradientGrainRadial':
         return createGradientGrainRadialSpec({
-          centerX: params.centerX,
-          centerY: params.centerY,
-          radialStartAngle: params.radialStartAngle,
-          radialSweepAngle: params.radialSweepAngle,
+          centerX: params.centerX as number | undefined,
+          centerY: params.centerY as number | undefined,
+          radialStartAngle: params.radialStartAngle as number | undefined,
+          radialSweepAngle: params.radialSweepAngle as number | undefined,
           colorA: color1,
           colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
+          seed: params.seed as number,
+          sparsity: params.sparsity as number,
           curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
         }, viewport)
       case 'gradientGrainPerlin':
         return createGradientGrainPerlinSpec({
-          perlinScale: params.perlinScale,
-          perlinOctaves: params.perlinOctaves,
-          perlinContrast: params.perlinContrast,
-          perlinOffset: params.perlinOffset,
+          perlinScale: params.perlinScale as number | undefined,
+          perlinOctaves: params.perlinOctaves as number | undefined,
+          perlinContrast: params.perlinContrast as number | undefined,
+          perlinOffset: params.perlinOffset as number | undefined,
           colorA: color1,
           colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
+          seed: params.seed as number,
+          sparsity: params.sparsity as number,
           curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
         }, viewport)
       case 'gradientGrainCurl':
         return createGradientGrainCurlSpec({
-          perlinScale: params.perlinScale,
-          perlinOctaves: params.perlinOctaves,
-          perlinContrast: params.perlinContrast,
-          perlinOffset: params.perlinOffset,
-          curlIntensity: params.curlIntensity,
+          perlinScale: params.perlinScale as number | undefined,
+          perlinOctaves: params.perlinOctaves as number | undefined,
+          perlinContrast: params.perlinContrast as number | undefined,
+          perlinOffset: params.perlinOffset as number | undefined,
+          curlIntensity: params.curlIntensity as number | undefined,
           colorA: color1,
           colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
+          seed: params.seed as number,
+          sparsity: params.sparsity as number,
           curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
         }, viewport)
       case 'gradientGrainSimplex':
         return createGradientGrainSimplexSpec({
-          simplexScale: params.simplexScale,
-          simplexOctaves: params.simplexOctaves,
-          simplexContrast: params.simplexContrast,
-          simplexOffset: params.simplexOffset,
+          simplexScale: params.simplexScale as number | undefined,
+          simplexOctaves: params.simplexOctaves as number | undefined,
+          simplexContrast: params.simplexContrast as number | undefined,
+          simplexOffset: params.simplexOffset as number | undefined,
           colorA: color1,
           colorB: color2,
-          seed: params.seed,
-          sparsity: params.sparsity,
+          seed: params.seed as number,
+          sparsity: params.sparsity as number,
           curvePoints: [...DEFAULT_GRADIENT_GRAIN_CURVE_POINTS],
         }, viewport)
       case 'triangle':
         return createTriangleSpec({
           color1,
           color2,
-          size: params.size,
-          angle: params.angle,
+          size: params.size as number,
+          angle: params.angle as number,
         })
       case 'hexagon':
         return createHexagonSpec({
           color1,
           color2,
-          size: params.size,
-          angle: params.angle,
+          size: params.size as number,
+          angle: params.angle as number,
         })
       case 'asanoha':
         return createAsanohaSpec({
           lineColor: color1,
           bgColor: color2,
-          size: params.size,
-          lineWidth: params.lineWidth,
+          size: params.size as number,
+          lineWidth: params.lineWidth as number,
         })
       case 'seigaiha':
         return createSeigaihaSpec({
           lineColor: color1,
           bgColor: color2,
-          radius: params.radius,
-          rings: params.rings,
-          lineWidth: params.lineWidth,
+          radius: params.radius as number,
+          rings: params.rings as number,
+          lineWidth: params.lineWidth as number,
         })
       case 'wave':
         return createWaveSpec({
           color1,
           color2,
-          amplitude: params.amplitude,
-          wavelength: params.wavelength,
-          thickness: params.thickness,
-          angle: params.angle,
+          amplitude: params.amplitude as number,
+          wavelength: params.wavelength as number,
+          thickness: params.thickness as number,
+          angle: params.angle as number,
         })
       case 'scales':
         return createScalesSpec({
           color1,
           color2,
-          size: params.size,
-          overlap: params.overlap,
-          angle: params.angle,
+          size: params.size as number,
+          overlap: params.overlap as number,
+          angle: params.angle as number,
         })
       case 'ogee':
         return createOgeeSpec({
           lineColor: color1,
           bgColor: color2,
-          width: params.width,
-          height: params.height,
-          lineWidth: params.lineWidth,
+          width: params.width as number,
+          height: params.height as number,
+          lineWidth: params.lineWidth as number,
         })
       case 'sunburst':
         return createSunburstSpec({
           color1,
           color2,
-          rays: params.rays,
-          centerX: params.centerX,
-          centerY: params.centerY,
-          twist: params.twist,
+          rays: params.rays as number,
+          centerX: params.centerX as number,
+          centerY: params.centerY as number,
+          twist: params.twist as number,
           viewportWidth: viewport.width,
           viewportHeight: viewport.height,
         })
       case 'paperTexture':
         return createPaperTextureSpec({
           color: color1,
-          fiberScale: params.fiberScale,
-          fiberStrength: params.fiberStrength,
-          fiberWarp: params.fiberWarp,
-          grainDensity: params.grainDensity,
-          grainSize: params.grainSize,
-          bumpStrength: params.bumpStrength,
-          lightAngle: params.lightAngle,
-          seed: params.seed,
+          fiberScale: params.fiberScale as number,
+          fiberStrength: params.fiberStrength as number,
+          fiberWarp: params.fiberWarp as number,
+          grainDensity: params.grainDensity as number,
+          grainSize: params.grainSize as number,
+          bumpStrength: params.bumpStrength as number,
+          lightAngle: params.lightAngle as number,
+          seed: params.seed as number,
         }, viewport)
+      default:
+        return null
     }
   }
 
