@@ -27,3 +27,10 @@ export { $Ast } from './ast'
 export { parse, tryParse, type ParseResult } from './parser'
 export { evaluate, Evaluator, type Context, type BuiltinFunction } from './evaluator'
 export { extractPeriod, extractAllPeriods, analyzeAmplitude, type AmplitudeInfo } from './analyze'
+export {
+  extractReferences,
+  extractReferencesFromExpression,
+  extractTimelineTrackIds,
+  extractTimelineTrackIdsFromExpression,
+  type DslReference,
+} from './references'

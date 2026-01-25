@@ -1169,3 +1169,32 @@ export {
   isCompiledEffect,
   isCompiledMaskProcessor,
 } from './CompiledHeroView'
+
+// ============================================================
+// Dependency Extraction
+// ============================================================
+
+export {
+  extractTrackIdsFromParams,
+  extractTrackIdsFromHeroViewConfig,
+  extractTrackIdsFromLayers,
+} from './DependencyExtractor'
+
+// ============================================================
+// Dependency Graph
+// ============================================================
+
+export {
+  buildDependencyGraph,
+  buildDependencyGraphFromLayers,
+  getSourcesForTrack,
+  hasTrackDependency,
+  getAllTrackIds,
+  getTrackDependencyCounts,
+  groupSourcesByType,
+  getLayersWithDependencies,
+  type DependencySourceType,
+  type DependencySource,
+  type TrackDependency,
+  type DependencyGraph,
+} from './DependencyGraph'
