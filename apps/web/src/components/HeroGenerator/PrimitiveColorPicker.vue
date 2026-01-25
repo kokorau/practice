@@ -246,9 +246,7 @@ onUnmounted(() => {
               :class="{ active: isCustomColor(modelValue) }"
               @click="toggleCustomMode($event)"
               title="Custom Color"
-            >
-              <span class="rainbow-icon">🌈</span>
-            </button>
+            />
           </div>
 
           <!-- Color groups -->
@@ -480,23 +478,17 @@ onUnmounted(() => {
 }
 
 .custom-chip {
-  background: linear-gradient(135deg,
-    hsl(0, 100%, 50%) 0%,
-    hsl(60, 100%, 50%) 17%,
-    hsl(120, 100%, 50%) 33%,
-    hsl(180, 100%, 50%) 50%,
-    hsl(240, 100%, 50%) 67%,
-    hsl(300, 100%, 50%) 83%,
-    hsl(360, 100%, 50%) 100%
+  background: conic-gradient(
+    from 0deg,
+    hsl(0, 85%, 55%),
+    hsl(45, 85%, 55%),
+    hsl(90, 85%, 45%),
+    hsl(180, 85%, 45%),
+    hsl(225, 85%, 55%),
+    hsl(270, 85%, 55%),
+    hsl(315, 85%, 55%),
+    hsl(360, 85%, 55%)
   );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.rainbow-icon {
-  font-size: 0.75rem;
-  filter: drop-shadow(0 0 1px rgba(0,0,0,0.3));
 }
 
 /* Custom Picker Header */
