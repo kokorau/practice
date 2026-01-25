@@ -7,10 +7,26 @@ export type { BezierPath, BezierAnchor } from '@practice/bezier'
 export type TrackId = string & { readonly __brand: unique symbol }
 
 /**
- * Generate a new unique TrackId using crypto.randomUUID()
+ * Generate a random 5-character lowercase alphabetic ID
+ * Format: [a-z]{5} (e.g., 'abcde', 'xyzab')
+ */
+const generateRandomId = (): string => {
+  const chars = 'abcdefghijklmnopqrstuvwxyz'
+  let result = ''
+  for (let i = 0; i < 5; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
+/**
+ * Generate a new unique TrackId using [a-z]{5} format
  *
  * Use this function when creating new tracks dynamically.
- * For static/mock data, use fixed UUID strings as constants.
+ * For static/mock data, use fixed ID strings as constants.
+ *
+ * @param existingIds - Optional set of existing track IDs to avoid collisions
+ * @param maxAttempts - Maximum number of generation attempts (default: 100)
  *
  * @example
  * const newTrack: Track = {
@@ -18,8 +34,23 @@ export type TrackId = string & { readonly __brand: unique symbol }
  *   name: 'My Track',
  *   // ...
  * }
+ *
+ * // With collision check
+ * const existingIds = new Set(tracks.map(t => t.id))
+ * const id = generateTrackId(existingIds)
  */
-export const generateTrackId = (): TrackId => crypto.randomUUID() as TrackId
+export const generateTrackId = (
+  existingIds?: Set<TrackId> | Set<string>,
+  maxAttempts = 100,
+): TrackId => {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const id = generateRandomId() as TrackId
+    if (!existingIds || !existingIds.has(id as string)) {
+      return id
+    }
+  }
+  throw new Error(`Failed to generate unique TrackId after ${maxAttempts} attempts`)
+}
 
 export type ClockType = 'Global' | 'Phase' | 'Loop'
 

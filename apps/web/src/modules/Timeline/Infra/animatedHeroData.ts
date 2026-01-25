@@ -23,61 +23,61 @@ import type { HeroViewConfig } from '@practice/section-visual'
 import { $PropertyValue } from '@practice/section-visual'
 
 // ============================================================
-// UUID Constants for Preset Track IDs
+// Track ID Constants for Presets ([a-z]{5} format)
 // ============================================================
 
 // Preset 1: Breathing Circle
 const BREATHING_CIRCLE_TRACK_IDS = {
-  MASK_RADIUS: '650e8400-e29b-41d4-a716-446655440001' as TrackId,
-  STRIPE_ANGLE: '650e8400-e29b-41d4-a716-446655440002' as TrackId,
-  STRIPE_WIDTH: '650e8400-e29b-41d4-a716-446655440003' as TrackId,
-  MASK_CENTER_X: '650e8400-e29b-41d4-a716-446655440004' as TrackId,
-  BLUR_RADIUS: '650e8400-e29b-41d4-a716-446655440005' as TrackId,
+  MASK_RADIUS: 'bcmrd' as TrackId,
+  STRIPE_ANGLE: 'bcsag' as TrackId,
+  STRIPE_WIDTH: 'bcswi' as TrackId,
+  MASK_CENTER_X: 'bcmcx' as TrackId,
+  BLUR_RADIUS: 'bcblr' as TrackId,
 } as const
 
 // Preset 2: Rotating Sunburst
 const ROTATING_SUNBURST_TRACK_IDS = {
-  RAYS_OPENING: '750e8400-e29b-41d4-a716-446655440001' as TrackId,
-  TWIST: '750e8400-e29b-41d4-a716-446655440002' as TrackId,
-  RAYS_LOOP: '750e8400-e29b-41d4-a716-446655440003' as TrackId,
-  CENTER_X: '750e8400-e29b-41d4-a716-446655440004' as TrackId,
-  CENTER_Y: '750e8400-e29b-41d4-a716-446655440005' as TrackId,
+  RAYS_OPENING: 'rsrao' as TrackId,
+  TWIST: 'rstwi' as TrackId,
+  RAYS_LOOP: 'rsrlo' as TrackId,
+  CENTER_X: 'rscex' as TrackId,
+  CENTER_Y: 'rscey' as TrackId,
 } as const
 
 // Preset 3: Flowing Waves
 const FLOWING_WAVES_TRACK_IDS = {
-  AMPLITUDE_OPEN: '850e8400-e29b-41d4-a716-446655440001' as TrackId,
-  AMPLITUDE: '850e8400-e29b-41d4-a716-446655440002' as TrackId,
-  WAVELENGTH: '850e8400-e29b-41d4-a716-446655440003' as TrackId,
-  WAVE_ANGLE: '850e8400-e29b-41d4-a716-446655440004' as TrackId,
-  THICKNESS: '850e8400-e29b-41d4-a716-446655440005' as TrackId,
+  AMPLITUDE_OPEN: 'fwaop' as TrackId,
+  AMPLITUDE: 'fwamp' as TrackId,
+  WAVELENGTH: 'fwwav' as TrackId,
+  WAVE_ANGLE: 'fwang' as TrackId,
+  THICKNESS: 'fwthi' as TrackId,
 } as const
 
 // Preset 4: Pulsing Grid
 const PULSING_GRID_TRACK_IDS = {
-  CELL_OPEN: '950e8400-e29b-41d4-a716-446655440001' as TrackId,
-  CELL: '950e8400-e29b-41d4-a716-446655440002' as TrackId,
-  LINE_WIDTH: '950e8400-e29b-41d4-a716-446655440003' as TrackId,
-  MASK_RADIUS: '950e8400-e29b-41d4-a716-446655440004' as TrackId,
+  CELL_OPEN: 'pgcop' as TrackId,
+  CELL: 'pgcel' as TrackId,
+  LINE_WIDTH: 'pglnw' as TrackId,
+  MASK_RADIUS: 'pgmrd' as TrackId,
 } as const
 
 // Preset 5: Organic Scales
 const ORGANIC_SCALES_TRACK_IDS = {
-  SIZE_OPEN: 'a50e8400-e29b-41d4-a716-446655440001' as TrackId,
-  SIZE: 'a50e8400-e29b-41d4-a716-446655440002' as TrackId,
-  OVERLAP: 'a50e8400-e29b-41d4-a716-446655440003' as TrackId,
-  ANGLE: 'a50e8400-e29b-41d4-a716-446655440004' as TrackId,
-  MASK_X: 'a50e8400-e29b-41d4-a716-446655440005' as TrackId,
+  SIZE_OPEN: 'osszp' as TrackId,
+  SIZE: 'ossiz' as TrackId,
+  OVERLAP: 'osovl' as TrackId,
+  ANGLE: 'osang' as TrackId,
+  MASK_X: 'osmkx' as TrackId,
 } as const
 
 // Preset 6: Morphing Blob
 const MORPHING_BLOB_TRACK_IDS = {
-  RADIUS_OPEN: 'b50e8400-e29b-41d4-a716-446655440001' as TrackId,
-  SEED: 'b50e8400-e29b-41d4-a716-446655440002' as TrackId,
-  RADIUS: 'b50e8400-e29b-41d4-a716-446655440003' as TrackId,
-  AMPLITUDE: 'b50e8400-e29b-41d4-a716-446655440004' as TrackId,
-  CENTER_X: 'b50e8400-e29b-41d4-a716-446655440005' as TrackId,
-  CENTER_Y: 'b50e8400-e29b-41d4-a716-446655440006' as TrackId,
+  RADIUS_OPEN: 'mbrdp' as TrackId,
+  SEED: 'mbsed' as TrackId,
+  RADIUS: 'mbrad' as TrackId,
+  AMPLITUDE: 'mbamp' as TrackId,
+  CENTER_X: 'mbcex' as TrackId,
+  CENTER_Y: 'mbcey' as TrackId,
 } as const
 
 // ============================================================
