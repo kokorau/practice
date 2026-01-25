@@ -38,7 +38,10 @@ import type {
   BaseLayerNodeConfig,
   SurfaceColorsConfig,
   HeroContextName,
+  ColorValue,
 } from '@practice/section-visual'
+import { isCustomColor } from '@practice/section-visual'
+import { hsvToOklch } from '../../components/SiteBuilder/utils/colorConversion'
 
 // ============================================================
 // Types
@@ -162,10 +165,10 @@ export interface UseHeroColorsReturn {
   themeMode: ComputedRef<'light' | 'dark'>
 
   // Background layer colors
-  /** Primary background color key (writable computed from repository) */
-  backgroundColorKey1: WritableComputedRef<PrimitiveKey>
-  /** Secondary background color key ('auto' = canvas surface) (writable computed from repository) */
-  backgroundColorKey2: WritableComputedRef<PrimitiveKey | 'auto'>
+  /** Primary background color value (writable computed from repository) */
+  backgroundColorKey1: WritableComputedRef<ColorValue>
+  /** Secondary background color value ('auto' = canvas surface) (writable computed from repository) */
+  backgroundColorKey2: WritableComputedRef<ColorValue>
   /** Background color 1 as RGBA */
   textureColor1: ComputedRef<RGBA>
   /** Background color 2 as RGBA */
@@ -174,10 +177,10 @@ export interface UseHeroColorsReturn {
   canvasSurfaceKey: ComputedRef<PrimitiveKey>
 
   // Mask layer colors
-  /** Primary mask color key ('auto' = surface - deltaL) (writable computed from repository) */
-  maskColorKey1: WritableComputedRef<PrimitiveKey | 'auto'>
-  /** Secondary mask color key ('auto' = mask surface) (writable computed from repository) */
-  maskColorKey2: WritableComputedRef<PrimitiveKey | 'auto'>
+  /** Primary mask color value ('auto' = surface - deltaL) (writable computed from repository) */
+  maskColorKey1: WritableComputedRef<ColorValue>
+  /** Secondary mask color value ('auto' = mask surface) (writable computed from repository) */
+  maskColorKey2: WritableComputedRef<ColorValue>
   /** Semantic context for mask layer (writable computed from repository) */
   maskSemanticContext: WritableComputedRef<ContextName>
   /** Mask surface key (derived from semantic context) */
@@ -235,6 +238,24 @@ const paletteToRgba = (oklch: Oklch, alpha: number = 1.0): RGBA => {
   ]
 }
 
+/**
+ * Resolve ColorValue to Oklch
+ * Handles 'auto', PrimitiveKey, and CustomColor
+ */
+const resolveColorValue = (
+  value: ColorValue,
+  palette: PrimitivePalette,
+  fallbackKey: PrimitiveKey
+): Oklch => {
+  if (value === 'auto') {
+    return palette[fallbackKey]
+  }
+  if (isCustomColor(value)) {
+    return hsvToOklch({ h: value.hue, s: value.saturation, v: value.value })
+  }
+  return palette[value]
+}
+
 // ============================================================
 // Composable
 // ============================================================
@@ -254,61 +275,63 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   // Background Layer Colors (SSOT from repository)
   // ============================================================
   const backgroundColorKey1 = computed({
-    get: (): PrimitiveKey => {
+    get: (): ColorValue => {
       const layer = findBackgroundSurfaceLayer(heroViewRepository.get().layers)
-      return (layer?.colors?.primary ?? 'B') as PrimitiveKey
+      return layer?.colors?.primary ?? 'B'
     },
-    set: (val: PrimitiveKey) => {
+    set: (val: ColorValue) => {
       const config = heroViewRepository.get()
-      const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { primary: val as HeroPrimitiveKey | 'auto' })
+      const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { primary: val })
       heroViewRepository.set({ ...config, layers: updatedLayers })
     },
   })
 
   const backgroundColorKey2 = computed({
-    get: (): PrimitiveKey | 'auto' => {
+    get: (): ColorValue => {
       const layer = findBackgroundSurfaceLayer(heroViewRepository.get().layers)
-      return (layer?.colors?.secondary ?? 'auto') as PrimitiveKey | 'auto'
+      return layer?.colors?.secondary ?? 'auto'
     },
-    set: (val: PrimitiveKey | 'auto') => {
+    set: (val: ColorValue) => {
       const config = heroViewRepository.get()
-      const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { secondary: val as HeroPrimitiveKey | 'auto' })
+      const updatedLayers = updateSurfaceLayerColors(config.layers, 'background', { secondary: val })
       heroViewRepository.set({ ...config, layers: updatedLayers })
     },
   })
 
   const canvasSurfaceKey = computed((): PrimitiveKey => CONTEXT_SURFACE_KEYS[themeMode.value].canvas)
 
-  const resolvedBackgroundColorKey2 = computed((): PrimitiveKey =>
-    backgroundColorKey2.value === 'auto' ? canvasSurfaceKey.value : backgroundColorKey2.value
-  )
-
-  const textureColor1 = computed((): RGBA => paletteToRgba(primitivePalette.value[backgroundColorKey1.value]))
-  const textureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedBackgroundColorKey2.value]))
+  const textureColor1 = computed((): RGBA => {
+    const color = resolveColorValue(backgroundColorKey1.value, primitivePalette.value, 'B')
+    return paletteToRgba(color)
+  })
+  const textureColor2 = computed((): RGBA => {
+    const color = resolveColorValue(backgroundColorKey2.value, primitivePalette.value, canvasSurfaceKey.value)
+    return paletteToRgba(color)
+  })
 
   // ============================================================
   // Mask Layer Colors (SSOT from repository)
   // ============================================================
   const maskColorKey1 = computed({
-    get: (): PrimitiveKey | 'auto' => {
+    get: (): ColorValue => {
       const layer = findMaskSurfaceLayer(heroViewRepository.get().layers)
-      return (layer?.colors?.primary ?? 'auto') as PrimitiveKey | 'auto'
+      return layer?.colors?.primary ?? 'auto'
     },
-    set: (val: PrimitiveKey | 'auto') => {
+    set: (val: ColorValue) => {
       const config = heroViewRepository.get()
-      const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: val as HeroPrimitiveKey | 'auto' })
+      const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { primary: val })
       heroViewRepository.set({ ...config, layers: updatedLayers })
     },
   })
 
   const maskColorKey2 = computed({
-    get: (): PrimitiveKey | 'auto' => {
+    get: (): ColorValue => {
       const layer = findMaskSurfaceLayer(heroViewRepository.get().layers)
-      return (layer?.colors?.secondary ?? 'auto') as PrimitiveKey | 'auto'
+      return layer?.colors?.secondary ?? 'auto'
     },
-    set: (val: PrimitiveKey | 'auto') => {
+    set: (val: ColorValue) => {
       const config = heroViewRepository.get()
-      const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: val as HeroPrimitiveKey | 'auto' })
+      const updatedLayers = updateSurfaceLayerColors(config.layers, 'surface-mask', { secondary: val })
       heroViewRepository.set({ ...config, layers: updatedLayers })
     },
   })
@@ -324,25 +347,28 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
 
   const maskSurfaceKey = computed((): PrimitiveKey => CONTEXT_SURFACE_KEYS[themeMode.value][maskSemanticContext.value])
 
-  const resolvedMaskColorKey2 = computed((): PrimitiveKey =>
-    maskColorKey2.value === 'auto' ? maskSurfaceKey.value : maskColorKey2.value
-  )
-
   const maskInnerColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value], 0))
   const maskOuterColor = computed((): RGBA => paletteToRgba(primitivePalette.value[maskSurfaceKey.value]))
 
   const midgroundTextureColor1 = computed((): RGBA => {
-    if (maskColorKey1.value !== 'auto') {
-      return paletteToRgba(primitivePalette.value[maskColorKey1.value])
+    const value = maskColorKey1.value
+    if (value === 'auto') {
+      // Use larger delta (0.12) to create visible contrast for patterns
+      const surface = primitivePalette.value[maskSurfaceKey.value]
+      const deltaL = isDark.value ? 0.12 : -0.12
+      const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
+      return paletteToRgba(shifted)
     }
-    // Use larger delta (0.12) to create visible contrast for patterns
-    const surface = primitivePalette.value[maskSurfaceKey.value]
-    const deltaL = isDark.value ? 0.12 : -0.12
-    const shifted: Oklch = { L: surface.L + deltaL, C: surface.C, H: surface.H }
-    return paletteToRgba(shifted)
+    if (isCustomColor(value)) {
+      return paletteToRgba(hsvToOklch({ h: value.hue, s: value.saturation, v: value.value }))
+    }
+    return paletteToRgba(primitivePalette.value[value])
   })
 
-  const midgroundTextureColor2 = computed((): RGBA => paletteToRgba(primitivePalette.value[resolvedMaskColorKey2.value]))
+  const midgroundTextureColor2 = computed((): RGBA => {
+    const color = resolveColorValue(maskColorKey2.value, primitivePalette.value, maskSurfaceKey.value)
+    return paletteToRgba(color)
+  })
 
   // ============================================================
   // Ink Color Selection
@@ -371,13 +397,17 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   }
 
   const resolvedMaskPrimaryColorOklch = computed((): Oklch => {
-    if (maskColorKey1.value !== 'auto') {
-      return primitivePalette.value[maskColorKey1.value]
+    const value = maskColorKey1.value
+    if (value === 'auto') {
+      // Use larger delta (0.12) to create visible contrast for patterns
+      const surface = primitivePalette.value[maskSurfaceKey.value]
+      const deltaL = isDark.value ? 0.12 : -0.12
+      return { L: surface.L + deltaL, C: surface.C, H: surface.H }
     }
-    // Use larger delta (0.12) to create visible contrast for patterns
-    const surface = primitivePalette.value[maskSurfaceKey.value]
-    const deltaL = isDark.value ? 0.12 : -0.12
-    return { L: surface.L + deltaL, C: surface.C, H: surface.H }
+    if (isCustomColor(value)) {
+      return hsvToOklch({ h: value.hue, s: value.saturation, v: value.value })
+    }
+    return primitivePalette.value[value]
   })
 
   const getNeutralEntries = (): NeutralEntry[] => {

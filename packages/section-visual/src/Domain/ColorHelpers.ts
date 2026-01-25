@@ -9,7 +9,8 @@ import { $Oklch } from '@practice/color'
 import type { Oklch } from '@practice/color'
 import type { RGBA } from '@practice/texture'
 import type { PrimitivePalette, PrimitiveKey, ContextName } from '@practice/semantic-color-palette'
-import type { HeroPrimitiveKey } from './HeroViewConfig'
+import type { HeroPrimitiveKey, ColorValue } from './HeroViewConfig'
+import { isCustomColor } from './HeroViewConfig'
 
 // Re-export for convenience
 export type { Oklch }
@@ -203,10 +204,38 @@ export function resolveAutoMaskPrimaryColor(
 }
 
 /**
+ * Convert HSV to Oklch color.
+ * @param h - Hue (0-360)
+ * @param s - Saturation (0-100)
+ * @param v - Value (0-100)
+ */
+function hsvToOklch(h: number, s: number, v: number): Oklch {
+  // Convert HSV to RGB first
+  const sNorm = s / 100
+  const vNorm = v / 100
+  const c = vNorm * sNorm
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+  const m = vNorm - c
+
+  let r = 0, g = 0, b = 0
+  if (h < 60) { r = c; g = x; b = 0 }
+  else if (h < 120) { r = x; g = c; b = 0 }
+  else if (h < 180) { r = 0; g = c; b = x }
+  else if (h < 240) { r = 0; g = x; b = c }
+  else if (h < 300) { r = x; g = 0; b = c }
+  else { r = c; g = 0; b = x }
+
+  r += m; g += m; b += m
+
+  // Convert sRGB to Oklch
+  return $Oklch.fromSrgb({ r, g, b })
+}
+
+/**
  * Resolve surface colors config to RGBA tuple
  *
  * @param palette - Primitive palette
- * @param colorKey - Color key which may be 'auto'
+ * @param colorKey - Color value which may be 'auto', primitive key, or custom HSV color
  * @param fallbackKey - Key to use when colorKey is 'auto'
  * @param isDark - Whether dark theme is active
  * @param isPrimary - Whether this is primary (for auto deltaL adjustment)
@@ -214,11 +243,17 @@ export function resolveAutoMaskPrimaryColor(
  */
 export function resolveSurfaceColorKey(
   palette: PrimitivePalette,
-  colorKey: HeroPrimitiveKey | 'auto',
+  colorKey: ColorValue,
   fallbackKey: PrimitiveKey,
   isDark: boolean,
   isPrimary: boolean = false
 ): RGBA {
+  // Handle custom color
+  if (isCustomColor(colorKey)) {
+    const oklch = hsvToOklch(colorKey.hue, colorKey.saturation, colorKey.value)
+    return oklchToRgba(oklch)
+  }
+
   if (colorKey === 'auto') {
     if (isPrimary) {
       // For primary auto, apply deltaL adjustment

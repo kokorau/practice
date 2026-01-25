@@ -5,8 +5,8 @@
  * 背景テクスチャ選択パネルのコンテンツ
  */
 import type { ObjectSchema } from '@practice/schema'
-import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
-import type { HeroViewConfig } from '@practice/section-visual'
+import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
+import type { HeroViewConfig, ColorValue } from '@practice/section-visual'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import PrimitiveColorPicker from '../PrimitiveColorPicker.vue'
 import SchemaFields from '../../SchemaFields.vue'
@@ -14,8 +14,8 @@ import SurfaceSelector from '../SurfaceSelector.vue'
 
 defineProps<{
   // Color keys
-  colorKey1: PrimitiveKey
-  colorKey2: PrimitiveKey | 'auto'
+  colorKey1: ColorValue
+  colorKey2: ColorValue
   palette: PrimitivePalette
   // Surface params
   surfaceSchema: ObjectSchema | null
@@ -29,8 +29,8 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:colorKey1', value: PrimitiveKey | 'auto'): void
-  (e: 'update:colorKey2', value: PrimitiveKey | 'auto'): void
+  (e: 'update:colorKey1', value: ColorValue): void
+  (e: 'update:colorKey2', value: ColorValue): void
   (e: 'update:surfaceParams', value: Record<string, unknown>): void
   (e: 'select-pattern', index: number | null): void
 }>()

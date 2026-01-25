@@ -69,6 +69,7 @@ import type {
   NormalizedMaskConfig,
   ProcessorNodeConfig,
   SurfaceLayerNodeConfig,
+  ColorValue,
 } from '../index'
 
 // ============================================================
@@ -381,10 +382,10 @@ export interface PatternState {
  * Background layer state and actions
  */
 export interface BackgroundState {
-  /** Primary color key for background */
-  readonly backgroundColorKey1: Ref<PrimitiveKey>
-  /** Secondary color key for background ('auto' = canvas surface) */
-  readonly backgroundColorKey2: Ref<PrimitiveKey | 'auto'>
+  /** Primary color value for background */
+  readonly backgroundColorKey1: Ref<ColorValue>
+  /** Secondary color value for background ('auto' = canvas surface) */
+  readonly backgroundColorKey2: Ref<ColorValue>
 
   /** Custom background surface params */
   readonly customBackgroundSurfaceParams: Ref<CustomBackgroundSurfaceParams | null>
@@ -414,10 +415,10 @@ export interface ProcessorTarget {
  * Mask (clip group) state and actions
  */
 export interface MaskState {
-  /** Primary color key for mask */
-  readonly maskColorKey1: Ref<PrimitiveKey | 'auto'>
-  /** Secondary color key for mask */
-  readonly maskColorKey2: Ref<PrimitiveKey | 'auto'>
+  /** Primary color value for mask */
+  readonly maskColorKey1: Ref<ColorValue>
+  /** Secondary color value for mask */
+  readonly maskColorKey2: Ref<ColorValue>
 
   /** Semantic context for mask layer (for surface color derivation) */
   readonly maskSemanticContext: Ref<HeroContextName>
@@ -867,10 +868,10 @@ export interface RightPanelForegroundProps {
  * Background layer props for RightPropertyPanel
  */
 export interface RightPanelBackgroundProps {
-  /** Primary color key for background */
-  readonly colorKey1: PrimitiveKey
-  /** Secondary color key for background */
-  readonly colorKey2: PrimitiveKey | 'auto'
+  /** Primary color value for background */
+  readonly colorKey1: ColorValue
+  /** Secondary color value for background */
+  readonly colorKey2: ColorValue
   /** Custom background image URL */
   readonly customImage: string | null
   /** Custom background file name */
@@ -891,10 +892,10 @@ export interface RightPanelBackgroundProps {
  * Mask (surface) layer props for RightPropertyPanel
  */
 export interface RightPanelMaskProps {
-  /** Primary color key for mask surface */
-  readonly colorKey1: PrimitiveKey | 'auto'
-  /** Secondary color key for mask surface */
-  readonly colorKey2: PrimitiveKey | 'auto'
+  /** Primary color value for mask surface */
+  readonly colorKey1: ColorValue
+  /** Secondary color value for mask surface */
+  readonly colorKey2: ColorValue
   /** Custom mask image URL */
   readonly customImage: string | null
   /** Custom mask file name */

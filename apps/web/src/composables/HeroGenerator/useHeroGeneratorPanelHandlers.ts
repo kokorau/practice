@@ -7,8 +7,7 @@
  * - handleMaskUpdate: マスクの更新
  */
 
-import type { HeroPrimitiveKey } from '@practice/section-visual'
-import type { PrimitiveKey } from '@practice/semantic-color-palette/Domain'
+import type { HeroPrimitiveKey, ColorValue } from '@practice/section-visual'
 import type { UseForegroundElementReturn } from '../useForegroundElement'
 
 // Generic writable ref type that accepts both Ref and WritableComputedRef
@@ -29,14 +28,14 @@ export type ForegroundElementRefs = Pick<
 >
 
 export interface BackgroundState {
-  backgroundColorKey1: WritableRef<PrimitiveKey>
-  backgroundColorKey2: WritableRef<PrimitiveKey | 'auto'>
+  backgroundColorKey1: WritableRef<ColorValue>
+  backgroundColorKey2: WritableRef<ColorValue>
   updateBackgroundSurfaceParams: (params: Record<string, unknown>) => void
 }
 
 export interface MaskState {
-  maskColorKey1: WritableRef<PrimitiveKey | 'auto'>
-  maskColorKey2: WritableRef<PrimitiveKey | 'auto'>
+  maskColorKey1: WritableRef<ColorValue>
+  maskColorKey2: WritableRef<ColorValue>
   updateSurfaceParams: (params: Record<string, unknown>) => void
   updateMaskShapeParams: (params: Record<string, unknown>) => void
 }

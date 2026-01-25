@@ -27,6 +27,7 @@ export type HeroPrimitiveKey =
   | 'AN0' | 'AN1' | 'AN2' | 'AN3' | 'AN4' | 'AN5' | 'AN6' | 'AN7' | 'AN8' | 'AN9'
   | 'B' | 'Bt' | 'Bs' | 'Bf'
   | 'A' | 'At' | 'As' | 'Af'
+  | 'F' | 'Ft' | 'Fs' | 'Ff'
 
 /**
  * ContextName type (duplicated here for JSON serialization independence)
@@ -44,14 +45,40 @@ export interface HsvColor {
 }
 
 /**
+ * Custom color specified directly in HSV format
+ * Used when users want to specify an exact color outside of the primitive palette
+ */
+export interface CustomColor {
+  type: 'custom'
+  /** Hue (0-360) */
+  hue: number
+  /** Saturation (0-100) */
+  saturation: number
+  /** Value/Brightness (0-100) */
+  value: number
+}
+
+/**
+ * Color value that can be a primitive key, 'auto', or a custom HSV color
+ */
+export type ColorValue = HeroPrimitiveKey | 'auto' | CustomColor
+
+/**
+ * Type guard for CustomColor
+ */
+export function isCustomColor(value: ColorValue): value is CustomColor {
+  return typeof value === 'object' && value !== null && value.type === 'custom'
+}
+
+/**
  * Per-surface color configuration
  * Each surface layer can have its own color settings
  */
 export interface SurfaceColorsConfig {
-  /** Primary color key from palette */
-  primary: HeroPrimitiveKey | 'auto'
-  /** Secondary color key from palette */
-  secondary: HeroPrimitiveKey | 'auto'
+  /** Primary color (palette key, 'auto', or custom HSV color) */
+  primary: ColorValue
+  /** Secondary color (palette key, 'auto', or custom HSV color) */
+  secondary: ColorValue
 }
 
 /**
