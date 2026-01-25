@@ -478,17 +478,22 @@ onUnmounted(() => {
 }
 
 .custom-chip {
+  border-radius: 50%;
+  border: none;
   background: conic-gradient(
     from 0deg,
-    hsl(0, 85%, 55%),
-    hsl(45, 85%, 55%),
-    hsl(90, 85%, 45%),
-    hsl(180, 85%, 45%),
-    hsl(225, 85%, 55%),
-    hsl(270, 85%, 55%),
-    hsl(315, 85%, 55%),
-    hsl(360, 85%, 55%)
+    hsl(0, 80%, 55%),
+    hsl(60, 80%, 50%),
+    hsl(120, 70%, 45%),
+    hsl(180, 80%, 45%),
+    hsl(240, 80%, 55%),
+    hsl(300, 70%, 55%),
+    hsl(360, 80%, 55%)
   );
+}
+
+.custom-chip.active {
+  box-shadow: 0 0 0 2px oklch(0.55 0.20 250);
 }
 
 /* Custom Picker Header */
