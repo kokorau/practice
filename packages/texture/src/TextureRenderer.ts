@@ -69,6 +69,13 @@ interface PassthroughPipelineCache {
   sampler: GPUSampler
 }
 
+interface ColorRampPipelineCache {
+  pipeline: GPURenderPipeline
+  uniformBuffer: GPUBuffer
+  sampler: GPUSampler
+  colorRampTexture: GPUTexture
+}
+
 /**
  * 2テクスチャエフェクト用のスペック
  */
@@ -104,6 +111,7 @@ export class TextureRenderer {
   private clipMaskCache: Map<string, ClipMaskPipelineCache> = new Map()
   private dualTextureCache: Map<string, DualTexturePipelineCache> = new Map()
   private passthroughPipelineCache: PassthroughPipelineCache | null = null
+  private colorRampCache: Map<string, ColorRampPipelineCache> = new Map()
 
   // オフスクリーンレンダリング用のテクスチャ（6スロット）
   // 複雑なパイプライン（背景 + マスク付きレイヤー等）で同時に必要なテクスチャ数に対応
@@ -200,8 +208,15 @@ export class TextureRenderer {
 
   /**
    * Render using a TextureRenderSpec
+   * Automatically uses color ramp pipeline if spec has colorRampData
    */
   render(spec: TextureRenderSpec, options?: { clear?: boolean }): void {
+    // Automatically route to color ramp pipeline if colorRampData is present
+    if (spec.colorRampData) {
+      this.renderWithColorRamp(spec, options)
+      return
+    }
+
     const cached = this.getOrCreatePipeline(spec)
 
     // Write uniform data
@@ -212,6 +227,211 @@ export class TextureRenderer {
     )
 
     this.executeRender(cached.pipeline, cached.bindGroup, options)
+  }
+
+  /**
+   * Render using a TextureRenderSpec with color ramp texture
+   * Used for gradients with arbitrary number of color stops
+   */
+  renderWithColorRamp(spec: TextureRenderSpec, options?: { clear?: boolean }): void {
+    if (!spec.colorRampData) {
+      throw new Error('renderWithColorRamp requires colorRampData in spec')
+    }
+
+    const cached = this.getOrCreateColorRampPipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Update color ramp texture
+    this.device.queue.writeTexture(
+      { texture: cached.colorRampTexture },
+      spec.colorRampData,
+      { bytesPerRow: 1024 * 4 },
+      { width: 1024, height: 1 }
+    )
+
+    // Create bind group for this render
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: cached.colorRampTexture.createView() },
+      ],
+    })
+
+    this.executeRender(cached.pipeline, bindGroup, options)
+  }
+
+  /**
+   * Render spec with color ramp to an offscreen texture
+   */
+  renderWithColorRampToOffscreen(
+    spec: TextureRenderSpec,
+    textureIndex: number = 0
+  ): GPUTexture {
+    if (!spec.colorRampData) {
+      throw new Error('renderWithColorRampToOffscreen requires colorRampData in spec')
+    }
+
+    const target = this.getOrCreateOffscreenTexture(textureIndex)
+    const cached = this.getOrCreateColorRampPipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Update color ramp texture
+    this.device.queue.writeTexture(
+      { texture: cached.colorRampTexture },
+      spec.colorRampData,
+      { bytesPerRow: 1024 * 4 },
+      { width: 1024, height: 1 }
+    )
+
+    // Create bind group for this render
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: cached.colorRampTexture.createView() },
+      ],
+    })
+
+    // Render to offscreen texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: target.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cached.pipeline)
+    renderPass.setBindGroup(0, bindGroup)
+    renderPass.draw(3)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+
+    return target
+  }
+
+  /**
+   * Render spec with color ramp to a provided texture (TextureOwner pattern)
+   */
+  renderWithColorRampToTexture(
+    spec: TextureRenderSpec,
+    outputTexture: GPUTexture
+  ): void {
+    if (!spec.colorRampData) {
+      throw new Error('renderWithColorRampToTexture requires colorRampData in spec')
+    }
+
+    const cached = this.getOrCreateColorRampPipeline(spec)
+
+    // Write uniform data
+    this.device.queue.writeBuffer(cached.uniformBuffer, 0, spec.uniforms)
+
+    // Update color ramp texture
+    this.device.queue.writeTexture(
+      { texture: cached.colorRampTexture },
+      spec.colorRampData,
+      { bytesPerRow: 1024 * 4 },
+      { width: 1024, height: 1 }
+    )
+
+    // Create bind group for this render
+    const bindGroup = this.device.createBindGroup({
+      layout: cached.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: cached.uniformBuffer } },
+        { binding: 1, resource: cached.sampler },
+        { binding: 2, resource: cached.colorRampTexture.createView() },
+      ],
+    })
+
+    // Render to the provided texture
+    const commandEncoder = this.device.createCommandEncoder()
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: outputTexture.createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 0 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    renderPass.setPipeline(cached.pipeline)
+    renderPass.setBindGroup(0, bindGroup)
+    renderPass.draw(3)
+    renderPass.end()
+
+    this.device.queue.submit([commandEncoder.finish()])
+  }
+
+  private getOrCreateColorRampPipeline(spec: TextureRenderSpec): ColorRampPipelineCache {
+    const existing = this.colorRampCache.get(spec.shader)
+    if (existing) {
+      return existing
+    }
+
+    const shaderModule = this.device.createShaderModule({
+      code: spec.shader,
+    })
+
+    const pipeline = this.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: shaderModule,
+        entryPoint: 'vertexMain',
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [
+          spec.blend
+            ? { format: this.format, blend: spec.blend }
+            : { format: this.format },
+        ],
+      },
+      primitive: {
+        topology: 'triangle-list',
+      },
+    })
+
+    const uniformBuffer = this.device.createBuffer({
+      size: spec.bufferSize,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+
+    const sampler = this.device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+      addressModeU: 'clamp-to-edge',
+    })
+
+    const colorRampTexture = this.device.createTexture({
+      size: [1024, 1],
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    })
+
+    const cached: ColorRampPipelineCache = {
+      pipeline,
+      uniformBuffer,
+      sampler,
+      colorRampTexture,
+    }
+    this.colorRampCache.set(spec.shader, cached)
+    return cached
   }
 
   /**
@@ -1139,11 +1359,17 @@ export class TextureRenderer {
   /**
    * Render a spec to an offscreen texture instead of canvas
    * Returns the offscreen texture for further processing
+   * Automatically uses color ramp pipeline if spec has colorRampData
    */
   renderToOffscreen(
     spec: TextureRenderSpec,
     textureIndex: number = 0
   ): GPUTexture {
+    // Automatically route to color ramp pipeline if colorRampData is present
+    if (spec.colorRampData) {
+      return this.renderWithColorRampToOffscreen(spec, textureIndex)
+    }
+
     const target = this.getOrCreateOffscreenTexture(textureIndex)
     const cached = this.getOrCreatePipeline(spec)
 
@@ -1176,11 +1402,18 @@ export class TextureRenderer {
   /**
    * Render a spec directly to a provided texture (TextureOwner pattern).
    * Unlike renderToOffscreen, this doesn't use the internal texture pool.
+   * Automatically uses color ramp pipeline if spec has colorRampData
    */
   renderToTexture(
     spec: TextureRenderSpec,
     outputTexture: GPUTexture
   ): void {
+    // Automatically route to color ramp pipeline if colorRampData is present
+    if (spec.colorRampData) {
+      this.renderWithColorRampToTexture(spec, outputTexture)
+      return
+    }
+
     const cached = this.getOrCreatePipeline(spec)
 
     // Write uniform data
@@ -1433,6 +1666,12 @@ export class TextureRenderer {
       this.passthroughPipelineCache.uniformBuffer.destroy()
       this.passthroughPipelineCache = null
     }
+
+    for (const cached of this.colorRampCache.values()) {
+      cached.uniformBuffer.destroy()
+      cached.colorRampTexture.destroy()
+    }
+    this.colorRampCache.clear()
 
     for (const tex of this.offscreenTextures) {
       tex?.destroy()

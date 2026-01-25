@@ -162,11 +162,15 @@ export {
   type GradientGrainTextureConfig,
 } from './maskedTexture'
 export {
+  generateColorRampData,
+  COLOR_RAMP_WIDTH,
+  type ColorStop,
+} from './colorRampTexture'
+export {
   linearGradientShader,
   createLinearGradientSpec,
   LINEAR_GRADIENT_BUFFER_SIZE,
   type LinearGradientParams,
-  type ColorStop,
 } from './linearGradient'
 export {
   gradientGrainLinearShader,

@@ -85,10 +85,10 @@ function convertDslToPropertyValue(dsl: DslExpr): PropertyValue {
 
 /**
  * Convert raw param values to PropertyValue format
- * Handles primitive values and ColorValue objects
+ * Handles primitive values, ColorValue objects, and arrays (e.g., gradient stops)
  */
 function toPropertyValueParams(
-  params: Record<string, string | number | boolean | ColorValue | undefined>
+  params: Record<string, string | number | boolean | ColorValue | unknown[] | undefined>
 ): Record<string, PropertyValue> {
   const result: Record<string, PropertyValue> = {}
   for (const [key, value] of Object.entries(params)) {
@@ -147,6 +147,7 @@ export type SurfaceParamsUpdate =
   | ({ id: 'grid'; lineWidth?: number; cellSize?: number } & SurfaceColorParams)
   | ({ id: 'polkaDot'; dotRadius?: number; spacing?: number; rowOffset?: number } & SurfaceColorParams)
   | ({ id: 'checker'; cellSize?: number; angle?: number } & SurfaceColorParams)
+  | ({ id: 'linearGradient'; angle?: number; centerX?: number; centerY?: number; stops?: Array<{ color: [number, number, number, number]; position: number }>; gradientStops?: Array<{ id: string; color: unknown; position: number }> } & SurfaceColorParams)
   | ({ id: 'gradientGrainLinear'; angle?: number; centerX?: number; centerY?: number; seed?: number; sparsity?: number } & SurfaceColorParams)
   | ({ id: 'gradientGrainCircular'; centerX?: number; centerY?: number; circularInvert?: boolean; seed?: number; sparsity?: number } & SurfaceColorParams)
   | ({ id: 'gradientGrainRadial'; centerX?: number; centerY?: number; radialStartAngle?: number; radialSweepAngle?: number; seed?: number; sparsity?: number } & SurfaceColorParams)

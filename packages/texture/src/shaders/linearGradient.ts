@@ -1,14 +1,13 @@
-import { fullscreenVertex, depthMapUtils, depthMapTypeToNumber, oklabUtils, type DepthMapType } from './common'
+import { fullscreenVertex, depthMapUtils, depthMapTypeToNumber, type DepthMapType } from './common'
+import { generateColorRampData, type ColorStop } from './colorRampTexture'
 import type { TextureRenderSpec } from '../Domain'
+
+// Re-export for backward compatibility
+export type { ColorStop }
 
 // ============================================================
 // Parameter Types
 // ============================================================
-
-export interface ColorStop {
-  color: [number, number, number, number]  // RGBA (0-1)
-  position: number  // 0-1
-}
 
 export interface LinearGradientParams {
   depthMapType?: DepthMapType  // 'linear' | 'circular' | 'radial' | 'perlin'
@@ -24,7 +23,7 @@ export interface LinearGradientParams {
   perlinSeed?: number      // random seed, default 42
   perlinContrast?: number  // contrast (0-3), default 1
   perlinOffset?: number    // offset (-0.5 to 0.5), default 0
-  stops: ColorStop[]  // max 8 stops
+  stops: ColorStop[]  // arbitrary number of stops (no limit)
 }
 
 // ============================================================
@@ -37,25 +36,16 @@ export interface LinearGradientParams {
  *   viewport: vec2f (8) + depthType: f32 (4) + angle: f32 (4) = 16 bytes
  *   center: vec2f (8) + circularInvert: f32 (4) + radialStartAngle: f32 (4) = 16 bytes
  *   radialSweepAngle: f32 (4) + perlinScale: f32 (4) + perlinOctaves: f32 (4) + perlinSeed: f32 (4) = 16 bytes
- *   perlinContrast: f32 (4) + perlinOffset: f32 (4) + stopCount: f32 (4) + _pad (4) = 16 bytes
- *   stops[8]: each { color: vec4f (16) + position: f32 (4) + padding: vec3f (12) } = 32 bytes
- *   Total: 64 + 32 * 8 = 320 bytes
+ *   perlinContrast: f32 (4) + perlinOffset: f32 (4) + _pad (8) = 16 bytes
+ *   Total: 64 bytes
  */
-export const LINEAR_GRADIENT_BUFFER_SIZE = 320
+export const LINEAR_GRADIENT_BUFFER_SIZE = 64
 
 // ============================================================
 // WGSL Shader
 // ============================================================
 
 export const linearGradientShader = /* wgsl */ `
-struct ColorStop {
-  color: vec4f,      // 16 bytes @ offset 0
-  position: f32,     // 4 bytes @ offset 16
-  _pad0: f32,        // 4 bytes @ offset 20
-  _pad1: f32,        // 4 bytes @ offset 24
-  _pad2: f32,        // 4 bytes @ offset 28
-}                    // Total: 32 bytes
-
 struct Params {
   viewport: vec2f,         // 8 bytes @ offset 0
   depthType: f32,          // 4 bytes @ offset 8
@@ -69,34 +59,17 @@ struct Params {
   perlinSeed: f32,         // 4 bytes @ offset 44
   perlinContrast: f32,     // 4 bytes @ offset 48
   perlinOffset: f32,       // 4 bytes @ offset 52
-  stopCount: f32,          // 4 bytes @ offset 56
-  _pad0: f32,              // 4 bytes @ offset 60
-  stops: array<ColorStop, 8>,  // 32 * 8 = 256 bytes @ offset 64
-}                          // Total: 320 bytes
+  _pad0: f32,              // 4 bytes @ offset 56
+  _pad1: f32,              // 4 bytes @ offset 60
+}                          // Total: 64 bytes
 
 @group(0) @binding(0) var<uniform> params: Params;
+@group(0) @binding(1) var colorRampSampler: sampler;
+@group(0) @binding(2) var colorRampTexture: texture_2d<f32>;
 
 ${fullscreenVertex}
 
 ${depthMapUtils}
-
-${oklabUtils}
-
-// Sample gradient (2 stop version, interpolated in OKLAB space for perceptually correct midtones)
-fn sampleGradient(t: f32) -> vec4f {
-  let color0 = params.stops[0].color;
-  let color1 = params.stops[1].color;
-  let pos0 = params.stops[0].position;
-  let pos1 = params.stops[1].position;
-
-  let clamped = clamp(t, pos0, pos1);
-  let range = pos1 - pos0;
-  if (range <= 0.0) {
-    return color0;
-  }
-  let localT = (clamped - pos0) / range;
-  return mixOklabVec4(color0, color1, localT);
-}
 
 @fragment
 fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -120,7 +93,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     params.perlinOffset
   );
 
-  return sampleGradient(t);
+  // Sample color from ramp texture
+  return textureSample(colorRampTexture, colorRampSampler, vec2f(t, 0.5));
 }
 `
 
@@ -132,11 +106,8 @@ export function createLinearGradientSpec(
   params: LinearGradientParams,
   viewport: { width: number; height: number }
 ): TextureRenderSpec {
-  const stops = params.stops.slice(0, 8)  // max 8 stops
-  const stopCount = stops.length
-
-  // Sort stops by position
-  const sortedStops = [...stops].sort((a, b) => a.position - b.position)
+  // Generate color ramp data from stops (using OKLAB interpolation)
+  const colorRampData = generateColorRampData(params.stops)
 
   // Create uniform buffer
   const data = new Float32Array(LINEAR_GRADIENT_BUFFER_SIZE / 4)
@@ -159,30 +130,16 @@ export function createLinearGradientSpec(
   data[10] = params.perlinOctaves ?? 4
   data[11] = params.perlinSeed ?? 42
 
-  // perlin params continued + stopCount + padding
+  // perlin params continued + padding
   data[12] = params.perlinContrast ?? 1
   data[13] = params.perlinOffset ?? 0
-  data[14] = stopCount
-  data[15] = 0  // _pad0
-
-  // stops array (each stop = 8 floats: color(4) + position(1) + padding(3))
-  for (let i = 0; i < 8; i++) {
-    const offset = 16 + i * 8  // 16 floats header + 8 floats per stop
-    const stop = sortedStops[i]
-    if (stop) {
-      data[offset] = stop.color[0]
-      data[offset + 1] = stop.color[1]
-      data[offset + 2] = stop.color[2]
-      data[offset + 3] = stop.color[3]
-      data[offset + 4] = stop.position
-      // padding (5, 6, 7) = 0
-    }
-    // Unused stops remain as 0
-  }
+  data[14] = 0  // _pad0
+  data[15] = 0  // _pad1
 
   return {
     shader: linearGradientShader,
     uniforms: data.buffer,
     bufferSize: LINEAR_GRADIENT_BUFFER_SIZE,
+    colorRampData,
   }
 }

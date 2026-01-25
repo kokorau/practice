@@ -127,6 +127,8 @@ export interface LinearGradientSurfaceConfig {
   angle: number
   centerX: number
   centerY: number
+  /** Optional custom color stops (RGBA + position) for multi-stop gradients */
+  stops?: Array<{ color: [number, number, number, number]; position: number }>
 }
 
 export interface GradientGrainLinearSurfaceConfig {

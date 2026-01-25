@@ -13,4 +13,6 @@ export interface TextureRenderSpec {
   blend?: GPUBlendState
   /** Indicates shader requires an input texture (for clip masks) */
   requiresTexture?: boolean
+  /** Color ramp texture data (1×1024 RGBA8) for gradient rendering */
+  colorRampData?: Uint8Array<ArrayBuffer>
 }

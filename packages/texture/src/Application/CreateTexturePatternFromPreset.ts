@@ -92,18 +92,25 @@ export const createTexturePatternFromPreset = (preset: SurfacePreset): TexturePa
         params,
       }
     case 'linearGradient': {
+      // Support for multi-stop gradients via params.stops (RGBA array)
+      // Falls back to c1/c2 if stops not provided
+      const hasCustomStops = Array.isArray(params.stops) && params.stops.length >= 2
       return {
         label,
-        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) =>
-          createLinearGradientSpec({
+        createSpec: (c1: RGBA, c2: RGBA, viewport?: Viewport) => {
+          const stops = hasCustomStops
+            ? (params.stops as Array<{ color: RGBA; position: number }>)
+            : [
+                { color: c1, position: 0 },
+                { color: c2, position: 1 },
+              ]
+          return createLinearGradientSpec({
             angle: params.angle as number,
             centerX: params.centerX as number,
             centerY: params.centerY as number,
-            stops: [
-              { color: c1, position: 0 },
-              { color: c2, position: 1 },
-            ],
-          }, viewport ?? { width: 1920, height: 1080 }),
+            stops,
+          }, viewport ?? { width: 1920, height: 1080 })
+        },
         params,
       }
     }
