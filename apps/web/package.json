@@ -32,6 +32,7 @@
     "@practice/site": "workspace:^",
     "@practice/texture": "workspace:^",
     "@practice/timeline": "workspace:^",
+    "@practice/timeline-editor": "workspace:^",
     "@practice/vector": "workspace:^",
     "@tailwindcss/vite": "^4.1.17",
     "@vueuse/core": "^14.0.0",

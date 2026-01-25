@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import type { Timeline, Track, TrackId, RenderContext, Ms, PhaseLayout, Phase, FrameState } from '@practice/timeline'
 import { createCanvasTrackRenderer } from '@practice/timeline'
 import { useTimelinePlayer } from '../../modules/Timeline/Application/useTimelinePlayer'
+import TrackKeyBadge from './TrackKeyBadge.vue'
 
 // ============================================================
 // Props & Emits
@@ -10,13 +11,19 @@ import { useTimelinePlayer } from '../../modules/Timeline/Application/useTimelin
 const props = withDefaults(defineProps<{
   timeline: Timeline
   visibleDuration?: Ms
+  selectedTrackId?: TrackId | null
+  getTrackKey?: (trackId: TrackId) => string | undefined
 }>(), {
   visibleDuration: 30000 as Ms,
+  selectedTrackId: null,
+  getTrackKey: undefined,
 })
 
 const emit = defineEmits<{
   'update:frameState': [frameState: FrameState]
   'update:playhead': [playhead: Ms]
+  'update:visibleDuration': [visibleDuration: Ms]
+  'select:track': [trackId: TrackId]
 }>()
 
 // ============================================================
@@ -73,7 +80,18 @@ function getPhasePositionForTrack(track: Track) {
   }
 }
 
-// Playhead position as percentage
+// ============================================================
+// Horizontal Scroll Support
+// ============================================================
+// Max duration that fits in viewport without scroll (30 seconds)
+const MAX_VIEWPORT_DURATION = 30000
+
+// Content width as percentage (100% = 30s, 200% = 60s, etc.)
+const contentWidthPercent = computed(() =>
+  Math.max(100, (props.visibleDuration / MAX_VIEWPORT_DURATION) * 100)
+)
+
+// Playhead position as percentage of content width
 const playheadPercent = computed(() =>
   (playhead.value / props.visibleDuration) * 100
 )
@@ -86,6 +104,59 @@ function formatTime(ms: number): string {
   const sec = totalSec % 60
   const millis = msInt % 1000
   return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(millis).padStart(3, '0')}`
+}
+
+// Convert index to letter (0 → A, 1 → B, ..., 25 → Z, 26 → AA, ...)
+function indexToLetter(index: number): string {
+  let result = ''
+  let n = index
+  do {
+    result = String.fromCharCode(65 + (n % 26)) + result
+    n = Math.floor(n / 26) - 1
+  } while (n >= 0)
+  return result
+}
+
+// Format seconds as display text (e.g., "30s")
+function formatDurationSeconds(ms: number): string {
+  return `${Math.round(ms / 1000)}s`
+}
+
+// ============================================================
+// Duration Editing
+// ============================================================
+const isEditingDuration = ref(false)
+const durationInputRef = ref<HTMLInputElement | null>(null)
+const durationInputValue = ref('')
+
+function startEditDuration() {
+  isEditingDuration.value = true
+  durationInputValue.value = String(Math.round(props.visibleDuration / 1000))
+  nextTick(() => {
+    durationInputRef.value?.focus()
+    durationInputRef.value?.select()
+  })
+}
+
+function confirmDuration() {
+  const seconds = parseInt(durationInputValue.value, 10)
+  if (!isNaN(seconds) && seconds >= 1 && seconds <= 600) {
+    const newDuration = (seconds * 1000) as Ms
+    emit('update:visibleDuration', newDuration)
+  }
+  isEditingDuration.value = false
+}
+
+function cancelEditDuration() {
+  isEditingDuration.value = false
+}
+
+function onDurationKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    confirmDuration()
+  } else if (e.key === 'Escape') {
+    cancelEditDuration()
+  }
 }
 
 // Generate ruler ticks
@@ -121,6 +192,7 @@ function onRulerClick(e: MouseEvent) {
 // ============================================================
 const trackListBodyRef = ref<HTMLElement | null>(null)
 const trackLanesRef = ref<HTMLElement | null>(null)
+const rulerContainerRef = ref<HTMLElement | null>(null)
 let isSyncingScroll = false
 
 function onTrackListScroll(e: Event) {
@@ -133,14 +205,30 @@ function onTrackListScroll(e: Event) {
   }
 }
 
+// Horizontal scroll sync between ruler and track lanes
+function onRulerContainerScroll(e: Event) {
+  if (isSyncingScroll) return
+  const target = e.target as HTMLElement
+  if (trackLanesRef.value) {
+    isSyncingScroll = true
+    trackLanesRef.value.scrollLeft = target.scrollLeft
+    isSyncingScroll = false
+  }
+}
+
 function onTrackLanesScroll(e: Event) {
   if (isSyncingScroll) return
   const target = e.target as HTMLElement
+  isSyncingScroll = true
+  // Sync vertical scroll with track list
   if (trackListBodyRef.value) {
-    isSyncingScroll = true
     trackListBodyRef.value.scrollTop = target.scrollTop
-    isSyncingScroll = false
   }
+  // Sync horizontal scroll with ruler
+  if (rulerContainerRef.value) {
+    rulerContainerRef.value.scrollLeft = target.scrollLeft
+  }
+  isSyncingScroll = false
 }
 
 // ============================================================
@@ -244,7 +332,24 @@ defineExpose({
         {{ isPlaying ? 'Pause' : 'Play' }}
       </button>
       <button class="control-button" @click="stop">Stop</button>
-      <div class="timecode">{{ formatTime(playhead) }} / {{ formatTime(visibleDuration) }}</div>
+      <div class="timecode">
+        {{ formatTime(playhead) }} /
+        <span v-if="!isEditingDuration" class="duration-display" @click="startEditDuration">
+          {{ formatDurationSeconds(visibleDuration) }}
+        </span>
+        <span v-else class="duration-edit">
+          <input
+            ref="durationInputRef"
+            v-model="durationInputValue"
+            type="number"
+            min="1"
+            max="600"
+            class="duration-input"
+            @keydown="onDurationKeydown"
+            @blur="confirmDuration"
+          />s
+        </span>
+      </div>
     </div>
 
     <!-- Timeline Header (fixed) -->
@@ -257,30 +362,42 @@ defineExpose({
       <!-- Resize Handle Header -->
       <div class="resize-handle-header" />
 
-      <!-- Ruler -->
-      <div ref="rulerRef" class="ruler" @click="onRulerClick">
-        <!-- Phase backgrounds -->
+      <!-- Ruler Container (horizontal scroll) -->
+      <div
+        ref="rulerContainerRef"
+        class="ruler-container"
+        @scroll="onRulerContainerScroll"
+      >
+        <!-- Ruler -->
         <div
-          v-for="pos in phasePositions"
-          :key="pos.phase.id"
-          class="phase-bg"
-          :class="`phase-${pos.phase.type.toLowerCase()}`"
-          :style="{ left: `${pos.startPercent}%`, width: `${pos.widthPercent}%` }"
+          ref="rulerRef"
+          class="ruler"
+          :style="{ minWidth: `${contentWidthPercent}%` }"
+          @click="onRulerClick"
         >
-          <span class="phase-label">{{ pos.phase.type }}</span>
+          <!-- Phase backgrounds -->
+          <div
+            v-for="pos in phasePositions"
+            :key="pos.phase.id"
+            class="phase-bg"
+            :class="`phase-${pos.phase.type.toLowerCase()}`"
+            :style="{ left: `${pos.startPercent}%`, width: `${pos.widthPercent}%` }"
+          >
+            <span class="phase-label">{{ pos.phase.type }}</span>
+          </div>
+          <!-- Ticks -->
+          <div
+            v-for="tick in rulerTicks"
+            :key="tick.ms"
+            class="ruler-tick"
+            :class="{ major: tick.major }"
+            :style="{ left: `${tick.percent}%` }"
+          >
+            <span v-if="tick.major" class="tick-label">{{ tick.label }}</span>
+          </div>
+          <!-- Playhead -->
+          <div class="playhead" :style="{ left: `${playheadPercent}%` }" />
         </div>
-        <!-- Ticks -->
-        <div
-          v-for="tick in rulerTicks"
-          :key="tick.ms"
-          class="ruler-tick"
-          :class="{ major: tick.major }"
-          :style="{ left: `${tick.percent}%` }"
-        >
-          <span v-if="tick.major" class="tick-label">{{ tick.label }}</span>
-        </div>
-        <!-- Playhead -->
-        <div class="playhead" :style="{ left: `${playheadPercent}%` }" />
       </div>
     </div>
 
@@ -295,12 +412,14 @@ defineExpose({
       >
         <div class="track-list-body-inner">
           <div
-            v-for="track in timeline.tracks"
+            v-for="(track, index) in timeline.tracks"
             :key="track.id"
             class="track-list-item"
+            :class="{ 'track-list-item--selected': selectedTrackId === track.id }"
+            @click="emit('select:track', track.id)"
           >
+            <TrackKeyBadge :track-key="getTrackKey?.(track.id) ?? indexToLetter(index)" />
             <span class="track-name">{{ track.name }}</span>
-            <span class="track-param">{{ track.id }}</span>
           </div>
         </div>
       </div>
@@ -318,11 +437,12 @@ defineExpose({
         class="track-lanes"
         @scroll="onTrackLanesScroll"
       >
-        <div class="track-lanes-inner">
+        <div class="track-lanes-inner" :style="{ minWidth: `${contentWidthPercent}%` }">
           <div
             v-for="track in timeline.tracks"
             :key="track.id"
             class="track-lane"
+            :class="{ 'track-lane--selected': selectedTrackId === track.id }"
           >
             <!-- Phase separators -->
             <div
@@ -401,6 +521,53 @@ defineExpose({
   font-size: 0.75rem;
   font-family: ui-monospace, monospace;
   color: oklch(0.55 0.02 260);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.duration-display {
+  cursor: pointer;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.15s;
+}
+
+.duration-display:hover {
+  background: oklch(0.85 0.01 260);
+  color: oklch(0.35 0.02 260);
+}
+
+.duration-edit {
+  display: flex;
+  align-items: center;
+}
+
+.duration-input {
+  width: 3rem;
+  padding: 0.125rem 0.25rem;
+  border: 1px solid oklch(0.50 0.20 250);
+  border-radius: 0.25rem;
+  background: white;
+  font-size: 0.75rem;
+  font-family: ui-monospace, monospace;
+  color: oklch(0.25 0.02 260);
+  outline: none;
+}
+
+.duration-input:focus {
+  border-color: oklch(0.50 0.25 250);
+  box-shadow: 0 0 0 2px oklch(0.50 0.20 250 / 0.2);
+}
+
+/* Hide number input arrows */
+.duration-input::-webkit-outer-spin-button,
+.duration-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.duration-input[type='number'] {
+  -moz-appearance: textfield;
 }
 
 /* Timeline Header (fixed) */
@@ -481,6 +648,20 @@ defineExpose({
   gap: 0.5rem;
   border-bottom: 1px solid oklch(0.92 0.01 260);
   font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.track-list-item:hover {
+  background: oklch(0.90 0.01 260);
+}
+
+.track-list-item--selected {
+  background: oklch(0.85 0.08 250);
+}
+
+.track-list-item--selected:hover {
+  background: oklch(0.82 0.10 250);
 }
 
 .track-name {
@@ -503,10 +684,26 @@ defineExpose({
   white-space: nowrap;
 }
 
-/* Ruler */
-.ruler {
+/* Ruler Container (horizontal scroll) */
+.ruler-container {
   flex: 1;
   height: 1.75rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Hide scrollbar for ruler container (synced with track lanes) */
+.ruler-container::-webkit-scrollbar {
+  display: none;
+}
+.ruler-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ruler */
+.ruler {
+  height: 100%;
   position: relative;
   background: oklch(0.92 0.01 260);
   cursor: pointer;
@@ -576,13 +773,13 @@ defineExpose({
 .track-lanes {
   flex: 1;
   position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
 }
 
 .track-lanes-inner {
   display: flex;
   flex-direction: column;
+  /* min-width is set via inline style for horizontal scroll */
 }
 
 .track-lane {
@@ -592,6 +789,10 @@ defineExpose({
   position: relative;
   border-bottom: 1px solid oklch(0.92 0.01 260);
   overflow: hidden;
+}
+
+.track-lane--selected {
+  background: oklch(0.92 0.05 250);
 }
 
 .phase-separator {

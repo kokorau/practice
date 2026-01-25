@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, nextTick, watch, ref } from 'vue'
-import type { Ms, IntensityProvider } from '@practice/timeline'
+import { computed, onMounted, onUnmounted, nextTick, watch, ref } from 'vue'
+import type { Ms, IntensityProvider, TrackId } from '@practice/timeline'
 import { createHeroConfigSlice } from '@practice/site/Infra'
+import { createTimelineEditor } from '@practice/timeline-editor'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
@@ -30,6 +31,24 @@ import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
 // Editor Config
 // ============================================================
 const VISIBLE_DURATION = 30000 as Ms // 30 seconds
+
+// ============================================================
+// Timeline Editor (selection state)
+// ============================================================
+const timelineEditor = createTimelineEditor()
+const selectedTrackId = ref<TrackId | null>(null)
+
+const unsubscribeSelection = timelineEditor.onSelectionChange((selection) => {
+  selectedTrackId.value = selection.type === 'track' ? selection.id as TrackId : null
+})
+
+onUnmounted(() => {
+  unsubscribeSelection()
+})
+
+function onSelectTrack(trackId: TrackId) {
+  timelineEditor.selectTrack(trackId)
+}
 
 // ============================================================
 // Preset Repository (Timeline用プリセット)
@@ -110,6 +129,13 @@ const heroScene = useHeroScene({
 // ============================================================
 const { selectProcessorUsecase, applyAnimatedPresetUsecase } = heroScene.usecase
 const { selectedPreset, selectedTimeline } = heroScene.preset
+
+// Sync track keys when timeline changes
+watch(selectedTimeline, (timeline) => {
+  if (timeline) {
+    timelineEditor.syncTracks(timeline.tracks.map(t => t.id))
+  }
+}, { immediate: true })
 
 // ============================================================
 // Filter Editor (Composable)
@@ -473,7 +499,10 @@ const panelMask = computed(() => ({
         ref="timelinePanelRef"
         :timeline="selectedTimeline"
         :visible-duration="VISIBLE_DURATION"
+        :selected-track-id="selectedTrackId"
+        :get-track-key="timelineEditor.getTrackKey"
         @update:frame-state="handleFrameStateUpdate"
+        @select:track="onSelectTrack"
       />
       <div v-else class="no-timeline-message">
         Select an animated preset to view the timeline

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { FrameState, Ms } from '@practice/timeline'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import type { FrameState, Ms, TrackId } from '@practice/timeline'
 import { prepareTimeline } from '@practice/timeline'
 import { extractPeriod } from '@practice/dsl'
+import { createTimelineEditor } from '@practice/timeline-editor'
 import { mockTimeline } from '../modules/Timeline/Infra/mockData'
 import TimelinePanel from '../components/Timeline/TimelinePanel.vue'
 import {
@@ -15,11 +16,35 @@ import {
   NoiseIndicator,
   StepIndicator,
 } from '../components/Timeline/indicators'
+import { useTimelineDuration } from '../modules/Timeline/Application/useTimelineDuration'
 
 // ============================================================
-// Editor Config
+// Editor Config (via usecase)
 // ============================================================
-const VISIBLE_DURATION = 30000 as Ms // 30 seconds
+const { visibleDuration, setVisibleDuration } = useTimelineDuration(30000 as Ms)
+
+// ============================================================
+// Timeline Editor (selection state)
+// ============================================================
+const timelineEditor = createTimelineEditor()
+const selectedTrackId = ref<TrackId | null>(null)
+
+const unsubscribe = timelineEditor.onSelectionChange((selection) => {
+  selectedTrackId.value = selection.type === 'track' ? selection.id as TrackId : null
+})
+
+onMounted(() => {
+  // Sync tracks on mount to assign keys
+  timelineEditor.syncTracks(mockTimeline.tracks.map(t => t.id))
+})
+
+onUnmounted(() => {
+  unsubscribe()
+})
+
+function onSelectTrack(trackId: TrackId) {
+  timelineEditor.selectTrack(trackId)
+}
 
 // ============================================================
 // Prepare timeline (parse AST and cache)
@@ -279,9 +304,13 @@ function stopResize() {
     >
       <TimelinePanel
         :timeline="mockTimeline"
-        :visible-duration="VISIBLE_DURATION"
+        :visible-duration="visibleDuration"
+        :selected-track-id="selectedTrackId"
+        :get-track-key="timelineEditor.getTrackKey"
         @update:frame-state="onFrameStateUpdate"
         @update:playhead="onPlayheadUpdate"
+        @update:visible-duration="setVisibleDuration"
+        @select:track="onSelectTrack"
       />
     </section>
   </div>
