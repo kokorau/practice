@@ -20,28 +20,28 @@ const SCHEMA_SURFACE_TYPES = new Set(Object.keys(SurfaceSchemas))
  * SurfaceConfig を CustomSurfaceParams に変換する
  *
  * スキーマベースの動的マッピング:
- * - `type` フィールドを `id` にリネーム
+ * - スキーマに登録されているタイプはそのまま通過
  * - 残りのパラメータはそのままコピー
  *
  * @param config - SurfaceConfig (JSON serializable)
  * @returns CustomSurfaceParams (UI state)
  */
 export function toCustomSurfaceParams(config: SurfaceConfig): CustomSurfaceParams {
-  const { type, ...params } = config
+  const { id, ...params } = config
 
   // スキーマに登録されていないタイプ（例: 'image'）はsolidにfallback
-  if (!SCHEMA_SURFACE_TYPES.has(type)) {
+  if (!SCHEMA_SURFACE_TYPES.has(id)) {
     return { id: 'solid' }
   }
 
-  return { id: type, ...params } as CustomSurfaceParams
+  return { id, ...params } as CustomSurfaceParams
 }
 
 /**
  * CustomSurfaceParams を SurfaceConfig に変換する (逆変換)
  *
  * スキーマベースの動的マッピング:
- * - `id` フィールドを `type` にリネーム
+ * - スキーマに登録されているタイプはそのまま通過
  * - 残りのパラメータはそのままコピー
  *
  * @param params - CustomSurfaceParams (UI state)
@@ -52,10 +52,10 @@ export function fromCustomSurfaceParams(params: CustomSurfaceParams): SurfaceCon
 
   // スキーマに登録されていないタイプはsolidにfallback
   if (!SCHEMA_SURFACE_TYPES.has(id)) {
-    return { type: 'solid' }
+    return { id: 'solid' }
   }
 
-  return { type: id, ...rest } as SurfaceConfig
+  return { id, ...rest } as SurfaceConfig
 }
 
 /**

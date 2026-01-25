@@ -62,13 +62,9 @@ export interface SurfaceDefinition {
   schema: ObjectSchema
 }
 
-/**
- * Generic surface parameters - runtime validated via schema
- */
-export interface GenericSurfaceParams {
-  type: string
-  [key: string]: unknown
-}
+// GenericSurfaceParams is now imported from Domain/ValueObject/GenericParams
+// Re-export for backwards compatibility
+export type { GenericSurfaceParams } from '../Domain/ValueObject/SurfacePreset'
 
 // ============================================================
 // Registry
@@ -152,7 +148,7 @@ export function getDefaultSurfaceParams(id: string): Record<string, unknown> | u
   if (!def) return undefined
 
   // Extract defaults from schema
-  const defaults: Record<string, unknown> = { type: id }
+  const defaults: Record<string, unknown> = { id }
   for (const [key, field] of Object.entries(def.schema)) {
     if (field && typeof field === 'object' && 'default' in field) {
       defaults[key] = field.default

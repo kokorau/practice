@@ -93,37 +93,37 @@ export interface ViewportConfig {
  */
 
 export interface StripeSurfaceConfig {
-  type: 'stripe'
+  id: 'stripe'
   width1: number
   width2: number
   angle: number
 }
 
 export interface GridSurfaceConfig {
-  type: 'grid'
+  id: 'grid'
   lineWidth: number
   cellSize: number
 }
 
 export interface PolkaDotSurfaceConfig {
-  type: 'polkaDot'
+  id: 'polkaDot'
   dotRadius: number
   spacing: number
   rowOffset: number
 }
 
 export interface CheckerSurfaceConfig {
-  type: 'checker'
+  id: 'checker'
   cellSize: number
   angle: number
 }
 
 export interface SolidSurfaceConfig {
-  type: 'solid'
+  id: 'solid'
 }
 
 export interface LinearGradientSurfaceConfig {
-  type: 'linearGradient'
+  id: 'linearGradient'
   angle: number
   centerX: number
   centerY: number
@@ -132,7 +132,7 @@ export interface LinearGradientSurfaceConfig {
 }
 
 export interface CircularGradientSurfaceConfig {
-  type: 'circularGradient'
+  id: 'circularGradient'
   centerX: number
   centerY: number
   circularInvert?: boolean
@@ -141,7 +141,7 @@ export interface CircularGradientSurfaceConfig {
 }
 
 export interface ConicGradientSurfaceConfig {
-  type: 'conicGradient'
+  id: 'conicGradient'
   centerX: number
   centerY: number
   startAngle: number
@@ -151,7 +151,7 @@ export interface ConicGradientSurfaceConfig {
 }
 
 export interface RepeatLinearGradientSurfaceConfig {
-  type: 'repeatLinearGradient'
+  id: 'repeatLinearGradient'
   angle: number
   centerX: number
   centerY: number
@@ -161,7 +161,7 @@ export interface RepeatLinearGradientSurfaceConfig {
 }
 
 export interface PerlinGradientSurfaceConfig {
-  type: 'perlinGradient'
+  id: 'perlinGradient'
   scale: number
   octaves: number
   seed: number
@@ -172,7 +172,7 @@ export interface PerlinGradientSurfaceConfig {
 }
 
 export interface CurlGradientSurfaceConfig {
-  type: 'curlGradient'
+  id: 'curlGradient'
   scale: number
   octaves: number
   seed: number
@@ -184,7 +184,7 @@ export interface CurlGradientSurfaceConfig {
 }
 
 export interface GradientGrainLinearSurfaceConfig {
-  type: 'gradientGrainLinear'
+  id: 'gradientGrainLinear'
   angle: number
   centerX: number
   centerY: number
@@ -193,7 +193,7 @@ export interface GradientGrainLinearSurfaceConfig {
 }
 
 export interface GradientGrainCircularSurfaceConfig {
-  type: 'gradientGrainCircular'
+  id: 'gradientGrainCircular'
   centerX: number
   centerY: number
   circularInvert?: boolean
@@ -202,7 +202,7 @@ export interface GradientGrainCircularSurfaceConfig {
 }
 
 export interface GradientGrainRadialSurfaceConfig {
-  type: 'gradientGrainRadial'
+  id: 'gradientGrainRadial'
   centerX: number
   centerY: number
   radialStartAngle: number
@@ -212,7 +212,7 @@ export interface GradientGrainRadialSurfaceConfig {
 }
 
 export interface GradientGrainPerlinSurfaceConfig {
-  type: 'gradientGrainPerlin'
+  id: 'gradientGrainPerlin'
   perlinScale: number
   perlinOctaves: number
   perlinContrast: number
@@ -222,7 +222,7 @@ export interface GradientGrainPerlinSurfaceConfig {
 }
 
 export interface GradientGrainCurlSurfaceConfig {
-  type: 'gradientGrainCurl'
+  id: 'gradientGrainCurl'
   perlinScale: number
   perlinOctaves: number
   perlinContrast: number
@@ -233,7 +233,7 @@ export interface GradientGrainCurlSurfaceConfig {
 }
 
 export interface GradientGrainSimplexSurfaceConfig {
-  type: 'gradientGrainSimplex'
+  id: 'gradientGrainSimplex'
   simplexScale: number
   simplexOctaves: number
   simplexContrast: number
@@ -243,32 +243,32 @@ export interface GradientGrainSimplexSurfaceConfig {
 }
 
 export interface TriangleSurfaceConfig {
-  type: 'triangle'
+  id: 'triangle'
   size: number
   angle: number
 }
 
 export interface HexagonSurfaceConfig {
-  type: 'hexagon'
+  id: 'hexagon'
   size: number
   angle: number
 }
 
 export interface AsanohaSurfaceConfig {
-  type: 'asanoha'
+  id: 'asanoha'
   size: number
   lineWidth: number
 }
 
 export interface SeigaihaSurfaceConfig {
-  type: 'seigaiha'
+  id: 'seigaiha'
   radius: number
   rings: number
   lineWidth: number
 }
 
 export interface WaveSurfaceConfig {
-  type: 'wave'
+  id: 'wave'
   amplitude: number
   wavelength: number
   thickness: number
@@ -276,21 +276,21 @@ export interface WaveSurfaceConfig {
 }
 
 export interface ScalesSurfaceConfig {
-  type: 'scales'
+  id: 'scales'
   size: number
   overlap: number
   angle: number
 }
 
 export interface OgeeSurfaceConfig {
-  type: 'ogee'
+  id: 'ogee'
   width: number
   height: number
   lineWidth: number
 }
 
 export interface SunburstSurfaceConfig {
-  type: 'sunburst'
+  id: 'sunburst'
   rays: number
   centerX: number
   centerY: number
@@ -298,7 +298,7 @@ export interface SunburstSurfaceConfig {
 }
 
 export interface PaperTextureSurfaceConfig {
-  type: 'paperTexture'
+  id: 'paperTexture'
   fiberScale: number
   fiberStrength: number
   fiberWarp: number
@@ -318,7 +318,7 @@ export interface PaperTextureSurfaceConfig {
  * Renders a circle/ellipse as a greymap that can be used as mask layer.
  */
 export interface CircleSurfaceConfig {
-  type: 'circle'
+  id: 'circle'
   /** Center X coordinate (0.0-1.0, normalized) */
   centerX: number
   /** Center Y coordinate (0.0-1.0, normalized) */
@@ -332,7 +332,7 @@ export interface CircleSurfaceConfig {
  * Renders a rectangle with optional corner radii as a greymap.
  */
 export interface RectSurfaceConfig {
-  type: 'rect'
+  id: 'rect'
   /** Left edge (0.0-1.0) */
   left: number
   /** Right edge (0.0-1.0) */
@@ -362,7 +362,7 @@ export interface RectSurfaceConfig {
  * Renders an organic blob shape using noise-modulated radius.
  */
 export interface BlobSurfaceConfig {
-  type: 'blob'
+  id: 'blob'
   /** Center X coordinate (0.0-1.0) */
   centerX: number
   /** Center Y coordinate (0.0-1.0) */
@@ -382,7 +382,7 @@ export interface BlobSurfaceConfig {
  * Renders thresholded Perlin noise as a binary mask.
  */
 export interface PerlinSurfaceConfig {
-  type: 'perlin'
+  id: 'perlin'
   /** Random seed */
   seed: number
   /** Threshold for binarization (0.0-1.0) */
@@ -398,7 +398,7 @@ export interface PerlinSurfaceConfig {
  * Renders thresholded Simplex noise as a binary mask (smoother than Perlin).
  */
 export interface SimplexSurfaceConfig {
-  type: 'simplex'
+  id: 'simplex'
   /** Random seed */
   seed: number
   /** Threshold for binarization (0.0-1.0) */
@@ -414,7 +414,7 @@ export interface SimplexSurfaceConfig {
  * Renders curl noise for flow-like mask patterns.
  */
 export interface CurlSurfaceConfig {
-  type: 'curl'
+  id: 'curl'
   /** Random seed */
   seed: number
   /** Threshold for binarization (0.0-1.0) */
@@ -432,7 +432,7 @@ export interface CurlSurfaceConfig {
  * Renders a circular/elliptical gradient (vignette effect).
  */
 export interface RadialGradientSurfaceConfig {
-  type: 'radialGradient'
+  id: 'radialGradient'
   /** Center X coordinate (0.0-1.0) */
   centerX: number
   /** Center Y coordinate (0.0-1.0) */
@@ -450,7 +450,7 @@ export interface RadialGradientSurfaceConfig {
  * Renders a rectangular vignette with edge fading.
  */
 export interface BoxGradientSurfaceConfig {
-  type: 'boxGradient'
+  id: 'boxGradient'
   /** Left edge fade width (0.0-1.0) */
   left: number
   /** Right edge fade width (0.0-1.0) */
@@ -470,7 +470,7 @@ export interface BoxGradientSurfaceConfig {
  * Renders an organic dividing line using 1D noise.
  */
 export interface WavyLineSurfaceConfig {
-  type: 'wavyLine'
+  id: 'wavyLine'
   /** Line position (0.0-1.0) */
   position: number
   /** Direction: 'vertical' = left/right split, 'horizontal' = top/bottom split */
@@ -492,7 +492,7 @@ export interface WavyLineSurfaceConfig {
  * Distinct from linearGradient surface which renders colored gradients.
  */
 export interface LinearGradientMaskSurfaceConfig {
-  type: 'linearGradientMask'
+  id: 'linearGradientMask'
   /** Gradient angle in degrees (0=right, 90=up, 180=left, 270=down) */
   angle: number
   /** Start offset (0.0-1.0) - where gradient begins */
@@ -564,7 +564,7 @@ export type MaskSurfaceConfig = SurfaceConfig
 /**
  * Surface type identifier (all supported surface pattern types)
  */
-export type SurfaceType = SurfaceConfig['type']
+export type SurfaceType = SurfaceConfig['id']
 
 /**
  * Array of all surface types for iteration
@@ -630,29 +630,35 @@ export interface NormalizedSurfaceConfig {
 }
 
 /**
- * Type guard for NormalizedSurfaceConfig (new format)
+ * Type guard for NormalizedSurfaceConfig (id + params format)
+ *
+ * NormalizedSurfaceConfig has `id` and `params` fields.
+ * SurfaceConfig has `id` and individual param fields (no `params` object).
  */
 export function isNormalizedSurfaceConfig(
   config: SurfaceConfig | NormalizedSurfaceConfig
 ): config is NormalizedSurfaceConfig {
-  return 'id' in config && 'params' in config && !('type' in config)
+  return 'id' in config && 'params' in config
 }
 
 /**
- * Type guard for legacy SurfaceConfig (type-spread format)
+ * Type guard for flat SurfaceConfig (id + individual fields format)
+ *
+ * SurfaceConfig has `id` and individual param fields spread at the top level.
+ * Returns true if config has `id` but no `params` object.
  */
-export function isLegacyTypeSurfaceConfig(
+export function isFlatSurfaceConfig(
   config: SurfaceConfig | NormalizedSurfaceConfig
 ): config is SurfaceConfig {
-  return 'type' in config && !('id' in config)
+  return 'id' in config && !('params' in config)
 }
 
 /**
- * Convert legacy SurfaceConfig to NormalizedSurfaceConfig
- * Legacy params (raw values) are wrapped in StaticValue
+ * Convert flat SurfaceConfig to NormalizedSurfaceConfig
+ * Raw params are wrapped in StaticValue
  */
 export function normalizeSurfaceConfig(config: SurfaceConfig): NormalizedSurfaceConfig {
-  const { type, ...rawParams } = config
+  const { id, ...rawParams } = config
   const params: Record<string, PropertyValue> = {}
   for (const [key, value] of Object.entries(rawParams)) {
     if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
@@ -662,11 +668,11 @@ export function normalizeSurfaceConfig(config: SurfaceConfig): NormalizedSurface
       params[key] = $PropertyValue.static(value as ColorValue)
     }
   }
-  return { id: type, params }
+  return { id, params }
 }
 
 /**
- * Convert NormalizedSurfaceConfig to legacy SurfaceConfig
+ * Convert NormalizedSurfaceConfig to flat SurfaceConfig
  * Only StaticValue params are extracted; RangeExpr throws error
  */
 export function denormalizeSurfaceConfig(config: NormalizedSurfaceConfig): SurfaceConfig {
@@ -678,11 +684,11 @@ export function denormalizeSurfaceConfig(config: NormalizedSurfaceConfig): Surfa
       throw new Error(`Cannot denormalize RangeExpr for key "${key}". Use resolveParams() instead.`)
     }
   }
-  return { type: config.id, ...rawParams } as SurfaceConfig
+  return { id: config.id, ...rawParams } as SurfaceConfig
 }
 
 /**
- * Safely convert NormalizedSurfaceConfig to legacy SurfaceConfig
+ * Safely convert NormalizedSurfaceConfig to flat SurfaceConfig
  * For RangeExpr params, uses the `min` value (base value when intensity=0)
  *
  * Use this for preset matching where approximate values are acceptable.
@@ -690,7 +696,7 @@ export function denormalizeSurfaceConfig(config: NormalizedSurfaceConfig): Surfa
  */
 export function safeDenormalizeSurfaceConfig(config: NormalizedSurfaceConfig): SurfaceConfig {
   const { staticParams } = $PropertyValue.toStaticParams(config.params)
-  return { type: config.id, ...staticParams } as SurfaceConfig
+  return { id: config.id, ...staticParams } as SurfaceConfig
 }
 
 /**
@@ -707,11 +713,11 @@ export function getSurfaceAsNormalized(config: AnySurfaceConfig): NormalizedSurf
 }
 
 /**
- * Get surface config in legacy format (accepts both formats)
+ * Get surface config in flat format (accepts both formats)
  * For RangeExpr params, uses the `min` value (base value when intensity=0)
  */
-export function getSurfaceAsLegacy(config: AnySurfaceConfig): SurfaceConfig {
-  if (isLegacyTypeSurfaceConfig(config)) return config
+export function getSurfaceAsFlat(config: AnySurfaceConfig): SurfaceConfig {
+  if (isFlatSurfaceConfig(config)) return config
   return safeDenormalizeSurfaceConfig(config)
 }
 
@@ -763,10 +769,10 @@ export function isShaderRefConfig(config: SurfaceRefConfig): config is ShaderRef
 }
 
 /**
- * Type guard to check if a surface config uses the legacy type-based format
+ * Type guard to check if a surface config uses the id-based format (not UUID)
  */
-export function isLegacySurfaceConfig(config: SurfaceRefConfig): config is SurfaceConfig {
-  return 'type' in config && !('shaderId' in config)
+export function isIdBasedSurfaceConfig(config: SurfaceRefConfig): config is SurfaceConfig {
+  return 'id' in config && !('shaderId' in config)
 }
 
 // ============================================================
@@ -1924,16 +1930,17 @@ export const migrateExpandedFromConfig = (layers: LayerNodeConfig[]): LayerNodeC
 // ============================================================
 
 /**
- * Type guard to check if a surface config is in legacy flat format
+ * Type guard to check if a surface config is in flat format (id + individual fields)
+ * Returns true for SurfaceConfig format: { id: 'stripe', width1: 20, ... }
+ * Returns false for NormalizedSurfaceConfig format: { id: 'stripe', params: { ... } }
  */
-export function isLegacyFlatSurfaceConfig(
+export function isFlatSurfaceConfigUnknown(
   config: unknown
 ): config is SurfaceConfig {
   return (
     typeof config === 'object' &&
     config !== null &&
-    'type' in config &&
-    !('id' in config) &&
+    'id' in config &&
     !('params' in config)
   )
 }
@@ -1961,8 +1968,8 @@ function migrateLayerConfig(layer: LayerNodeConfig): LayerNodeConfig {
     case 'base':
     case 'surface': {
       const surfaceLayer = layer as BaseLayerNodeConfig | SurfaceLayerNodeConfig
-      // Check if surface is in legacy format
-      if (isLegacyFlatSurfaceConfig(surfaceLayer.surface)) {
+      // Check if surface is in flat format (needs normalization)
+      if (isFlatSurfaceConfigUnknown(surfaceLayer.surface)) {
         return {
           ...surfaceLayer,
           surface: normalizeSurfaceConfig(surfaceLayer.surface),

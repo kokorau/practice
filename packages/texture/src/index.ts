@@ -200,6 +200,9 @@ export type {
   RadialGradientGreymapMaskParams,
   BoxGradientGreymapMaskParams,
   ColorizeParams,
+  // Generic params (for all parameterized items)
+  GenericParams,
+  Preset,
   // Surface Presets
   SurfaceType,
   GenericSurfaceParams,

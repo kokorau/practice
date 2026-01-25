@@ -174,7 +174,7 @@ export const useHeroPatternPresets = (
 
       // Children-based mask pattern: use first child's surface config for UI params
       const firstChild = pattern.children[0]
-      if (firstChild && firstChild.type === 'surface') {
+      if (firstChild) {
         const surfaceId = firstChild.surface.id
         const params = firstChild.surface.params
 
@@ -241,45 +241,17 @@ export const useHeroPatternPresets = (
     const idx = selectedBackgroundIndex.value
     const preset = surfacePresets[idx]
     if (preset) {
-      // Type assertion needed - preset.params is GenericSurfaceParams, toCustomBackgroundSurfaceParams expects SurfaceConfig
+      // Type assertion needed - preset.params is GenericSurfaceParams
       const params = toCustomBackgroundSurfaceParams(preset.params as Parameters<typeof toCustomBackgroundSurfaceParams>[0])
-      if (params.id === 'solid') {
-        setBaseSurface({ id: 'solid', params: {} })
-      } else if (params.id === 'stripe') {
-        setBaseSurface({ id: 'stripe', params: toPropertyValueParams({ width1: params.width1, width2: params.width2, angle: params.angle }) })
-      } else if (params.id === 'grid') {
-        setBaseSurface({ id: 'grid', params: toPropertyValueParams({ lineWidth: params.lineWidth, cellSize: params.cellSize }) })
-      } else if (params.id === 'polkaDot') {
-        setBaseSurface({ id: 'polkaDot', params: toPropertyValueParams({ dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }) })
-      } else if (params.id === 'checker') {
-        setBaseSurface({ id: 'checker', params: toPropertyValueParams({ cellSize: params.cellSize, angle: params.angle }) })
-      } else if (params.id === 'linearGradient') {
-        setBaseSurface({ id: 'linearGradient', params: toPropertyValueParams({ angle: params.angle, centerX: params.centerX, centerY: params.centerY }) })
-      } else if (params.id === 'circularGradient') {
-        setBaseSurface({ id: 'circularGradient', params: toPropertyValueParams({ centerX: params.centerX, centerY: params.centerY, circularInvert: params.circularInvert }) })
-      } else if (params.id === 'conicGradient') {
-        setBaseSurface({ id: 'conicGradient', params: toPropertyValueParams({ centerX: params.centerX, centerY: params.centerY, startAngle: params.startAngle, sweepAngle: params.sweepAngle }) })
-      } else if (params.id === 'repeatLinearGradient') {
-        setBaseSurface({ id: 'repeatLinearGradient', params: toPropertyValueParams({ angle: params.angle, centerX: params.centerX, centerY: params.centerY, repeat: params.repeat }) })
-      } else if (params.id === 'perlinGradient') {
-        setBaseSurface({ id: 'perlinGradient', params: toPropertyValueParams({ scale: params.scale, octaves: params.octaves, seed: params.seed, contrast: params.contrast, offset: params.offset }) })
-      } else if (params.id === 'curlGradient') {
-        setBaseSurface({ id: 'curlGradient', params: toPropertyValueParams({ scale: params.scale, octaves: params.octaves, seed: params.seed, contrast: params.contrast, offset: params.offset, intensity: params.intensity }) })
-      } else if (params.id === 'gradientGrainLinear' || params.id === 'gradientGrainCircular' || params.id === 'gradientGrainRadial' || params.id === 'gradientGrainPerlin' || params.id === 'gradientGrainCurl') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'asanoha') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'seigaiha') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'wave') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'scales') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'ogee') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'sunburst') {
-        customBackgroundSurfaceParams.value = params
-      }
+      // Extract id and remaining params for schema-based surface initialization
+      const { id, ...rest } = params
+      // Convert params to PropertyValue format and set base surface
+      // Filter out 'id' key and cast values to expected types
+      const surfaceParams = Object.fromEntries(
+        Object.entries(rest).map(([key, value]) => [key, value as string | number | boolean | undefined])
+      )
+      // Type assertion for id - GenericParams.id is string, but setBaseSurface expects SurfaceType
+      setBaseSurface({ id: id as Parameters<typeof setBaseSurface>[0]['id'], params: toPropertyValueParams(surfaceParams) })
     } else {
       customBackgroundSurfaceParams.value = null
     }

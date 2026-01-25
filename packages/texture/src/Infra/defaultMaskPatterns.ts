@@ -12,8 +12,7 @@ function circleSurface(
   id = 'circle-1'
 ): MaskPattern['children'][0] {
   return {
-    type: 'surface',
-    id,
+        id,
     name: 'Circle',
     visible: true,
     surface: {
@@ -40,8 +39,7 @@ function rectSurface(
   id = 'rect-1'
 ): MaskPattern['children'][0] {
   return {
-    type: 'surface',
-    id,
+        id,
     name: 'Rect',
     visible: true,
     surface: {
@@ -76,8 +74,7 @@ function blobSurface(
   id = 'blob-1'
 ): MaskPattern['children'][0] {
   return {
-    type: 'surface',
-    id,
+        id,
     name: 'Blob',
     visible: true,
     surface: {
@@ -105,8 +102,7 @@ function perlinSurface(
   id = 'perlin-1'
 ): MaskPattern['children'][0] {
   return {
-    type: 'surface',
-    id,
+        id,
     name: 'Perlin',
     visible: true,
     surface: {
@@ -132,8 +128,7 @@ function simplexSurface(
   id = 'simplex-1'
 ): MaskPattern['children'][0] {
   return {
-    type: 'surface',
-    id,
+        id,
     name: 'Simplex',
     visible: true,
     surface: {
@@ -160,8 +155,7 @@ function curlSurface(
   id = 'curl-1'
 ): MaskPattern['children'][0] {
   return {
-    type: 'surface',
-    id,
+        id,
     name: 'Curl',
     visible: true,
     surface: {
@@ -189,8 +183,7 @@ function radialGradientSurface(
   id = 'radialGradient-1'
 ): MaskPattern['children'][0] {
   return {
-    type: 'surface',
-    id,
+        id,
     name: 'Radial Gradient',
     visible: true,
     surface: {
@@ -219,8 +212,7 @@ function boxGradientSurface(
   id = 'boxGradient-1'
 ): MaskPattern['children'][0] {
   return {
-    type: 'surface',
-    id,
+        id,
     name: 'Box Gradient',
     visible: true,
     surface: {
@@ -250,8 +242,7 @@ function wavyLineSurface(
   id = 'wavyLine-1'
 ): MaskPattern['children'][0] {
   return {
-    type: 'surface',
-    id,
+        id,
     name: 'Wavy Line',
     visible: true,
     surface: {

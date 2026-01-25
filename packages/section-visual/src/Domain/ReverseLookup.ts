@@ -18,7 +18,7 @@ export const approxEqual = (a: number, b: number, epsilon = 0.0001): boolean =>
  * Uses generic string type to support dynamic schema-based surface types
  */
 export interface SurfacePresetParams {
-  type: string
+  id: string
   [key: string]: unknown
 }
 
@@ -86,14 +86,14 @@ export const findSurfacePresetIndex = (
 ): number | null => {
   for (let i = 0; i < presets.length; i++) {
     const preset = presets[i]
-    if (!preset || preset.params.type !== surfaceConfig.type) continue
+    if (!preset || preset.params.id !== surfaceConfig.id) continue
 
     const p = preset.params
 
-    if (surfaceConfig.type === 'solid' && p.type === 'solid') {
+    if (surfaceConfig.id === 'solid' && p.id === 'solid') {
       return i
     }
-    if (surfaceConfig.type === 'stripe' && p.type === 'stripe') {
+    if (surfaceConfig.id === 'stripe' && p.id === 'stripe') {
       if (
         approxEqual(surfaceConfig.width1, asNumber(p.width1, 0)) &&
         approxEqual(surfaceConfig.width2, asNumber(p.width2, 0)) &&
@@ -102,7 +102,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'grid' && p.type === 'grid') {
+    if (surfaceConfig.id === 'grid' && p.id === 'grid') {
       if (
         approxEqual(surfaceConfig.lineWidth, asNumber(p.lineWidth, 0)) &&
         approxEqual(surfaceConfig.cellSize, asNumber(p.cellSize, 0))
@@ -110,7 +110,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'polkaDot' && p.type === 'polkaDot') {
+    if (surfaceConfig.id === 'polkaDot' && p.id === 'polkaDot') {
       if (
         approxEqual(surfaceConfig.dotRadius, asNumber(p.dotRadius, 0)) &&
         approxEqual(surfaceConfig.spacing, asNumber(p.spacing, 0)) &&
@@ -119,7 +119,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'checker' && p.type === 'checker') {
+    if (surfaceConfig.id === 'checker' && p.id === 'checker') {
       if (
         approxEqual(surfaceConfig.cellSize, asNumber(p.cellSize, 0)) &&
         approxEqual(surfaceConfig.angle, asNumber(p.angle, 0))
@@ -127,7 +127,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'linearGradient' && p.type === 'linearGradient') {
+    if (surfaceConfig.id === 'linearGradient' && p.id === 'linearGradient') {
       if (
         approxEqual(surfaceConfig.angle, asNumber(p.angle, 90)) &&
         approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
@@ -136,7 +136,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainLinear' && p.type === 'gradientGrainLinear') {
+    if (surfaceConfig.id === 'gradientGrainLinear' && p.id === 'gradientGrainLinear') {
       if (
         approxEqual(surfaceConfig.angle, asNumber(p.angle, 90)) &&
         approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
@@ -147,7 +147,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainCircular' && p.type === 'gradientGrainCircular') {
+    if (surfaceConfig.id === 'gradientGrainCircular' && p.id === 'gradientGrainCircular') {
       if (
         approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
         approxEqual(surfaceConfig.centerY, asNumber(p.centerY, 0.5)) &&
@@ -158,7 +158,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainRadial' && p.type === 'gradientGrainRadial') {
+    if (surfaceConfig.id === 'gradientGrainRadial' && p.id === 'gradientGrainRadial') {
       if (
         approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
         approxEqual(surfaceConfig.centerY, asNumber(p.centerY, 0.5)) &&
@@ -170,7 +170,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainPerlin' && p.type === 'gradientGrainPerlin') {
+    if (surfaceConfig.id === 'gradientGrainPerlin' && p.id === 'gradientGrainPerlin') {
       if (
         approxEqual(surfaceConfig.perlinScale, asNumber(p.perlinScale, 4)) &&
         approxEqual(surfaceConfig.perlinOctaves, asNumber(p.perlinOctaves, 4)) &&
@@ -182,7 +182,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainCurl' && p.type === 'gradientGrainCurl') {
+    if (surfaceConfig.id === 'gradientGrainCurl' && p.id === 'gradientGrainCurl') {
       if (
         approxEqual(surfaceConfig.perlinScale, asNumber(p.perlinScale, 4)) &&
         approxEqual(surfaceConfig.perlinOctaves, asNumber(p.perlinOctaves, 4)) &&
@@ -195,7 +195,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'gradientGrainSimplex' && p.type === 'gradientGrainSimplex') {
+    if (surfaceConfig.id === 'gradientGrainSimplex' && p.id === 'gradientGrainSimplex') {
       if (
         approxEqual(surfaceConfig.simplexScale, asNumber(p.simplexScale, 4)) &&
         approxEqual(surfaceConfig.simplexOctaves, asNumber(p.simplexOctaves, 4)) &&
@@ -207,7 +207,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'triangle' && p.type === 'triangle') {
+    if (surfaceConfig.id === 'triangle' && p.id === 'triangle') {
       if (
         approxEqual(surfaceConfig.size, asNumber(p.size, 0)) &&
         approxEqual(surfaceConfig.angle, asNumber(p.angle, 0))
@@ -215,7 +215,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'hexagon' && p.type === 'hexagon') {
+    if (surfaceConfig.id === 'hexagon' && p.id === 'hexagon') {
       if (
         approxEqual(surfaceConfig.size, asNumber(p.size, 0)) &&
         approxEqual(surfaceConfig.angle, asNumber(p.angle, 0))
@@ -223,7 +223,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'asanoha' && p.type === 'asanoha') {
+    if (surfaceConfig.id === 'asanoha' && p.id === 'asanoha') {
       if (
         approxEqual(surfaceConfig.size, asNumber(p.size, 0)) &&
         approxEqual(surfaceConfig.lineWidth, asNumber(p.lineWidth, 0))
@@ -231,7 +231,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'seigaiha' && p.type === 'seigaiha') {
+    if (surfaceConfig.id === 'seigaiha' && p.id === 'seigaiha') {
       if (
         approxEqual(surfaceConfig.radius, asNumber(p.radius, 0)) &&
         approxEqual(surfaceConfig.rings, asNumber(p.rings, 0)) &&
@@ -240,7 +240,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'wave' && p.type === 'wave') {
+    if (surfaceConfig.id === 'wave' && p.id === 'wave') {
       if (
         approxEqual(surfaceConfig.amplitude, asNumber(p.amplitude, 0)) &&
         approxEqual(surfaceConfig.wavelength, asNumber(p.wavelength, 0)) &&
@@ -250,7 +250,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'scales' && p.type === 'scales') {
+    if (surfaceConfig.id === 'scales' && p.id === 'scales') {
       if (
         approxEqual(surfaceConfig.size, asNumber(p.size, 0)) &&
         approxEqual(surfaceConfig.overlap, asNumber(p.overlap, 0)) &&
@@ -259,7 +259,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'ogee' && p.type === 'ogee') {
+    if (surfaceConfig.id === 'ogee' && p.id === 'ogee') {
       if (
         approxEqual(surfaceConfig.width, asNumber(p.width, 0)) &&
         approxEqual(surfaceConfig.height, asNumber(p.height, 0)) &&
@@ -268,7 +268,7 @@ export const findSurfacePresetIndex = (
         return i
       }
     }
-    if (surfaceConfig.type === 'sunburst' && p.type === 'sunburst') {
+    if (surfaceConfig.id === 'sunburst' && p.id === 'sunburst') {
       if (
         approxEqual(surfaceConfig.rays, asNumber(p.rays, 0)) &&
         approxEqual(surfaceConfig.centerX, asNumber(p.centerX, 0.5)) &&
@@ -288,7 +288,6 @@ export const findSurfacePresetIndex = (
 export interface ChildrenBasedMaskPattern {
   label: string
   children: Array<{
-    type: 'surface'
     surface: {
       id: string
       params: Record<string, { type: 'static'; value: unknown }>
@@ -323,8 +322,6 @@ export const findMaskPatternIndex = (
     if (!pattern?.children?.[0]) continue
 
     const firstChild = pattern.children[0]
-    if (firstChild.type !== 'surface') continue
-
     const surfaceId = firstChild.surface.id
     const params = firstChild.surface.params
 
@@ -452,8 +449,6 @@ export const findMaskPatternIndexByType = (
     if (!pattern?.children?.[0]) continue
 
     const firstChild = pattern.children[0]
-    if (firstChild.type !== 'surface') continue
-
     const surfaceId = firstChild.surface.id
 
     // Match surface type to shape type

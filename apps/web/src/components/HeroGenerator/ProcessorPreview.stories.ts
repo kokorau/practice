@@ -46,7 +46,7 @@ const createBaseSurfaceLayer = (): SurfaceLayerNodeConfig => ({
   name: 'Base Surface',
   type: 'surface',
   visible: true,
-  surface: normalizeSurfaceConfig({ type: 'stripe', width1: 25, width2: 25, angle: Math.PI / 4, color1: 'BN3', color2: 'BN7' }),
+  surface: normalizeSurfaceConfig({ id: 'stripe', width1: 25, width2: 25, angle: Math.PI / 4, color1: 'BN3', color2: 'BN7' }),
 })
 
 // ============================================================

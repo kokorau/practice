@@ -24,6 +24,10 @@ export type {
 } from './TexturePattern'
 export { $static } from './TexturePattern'
 export type {
+  GenericParams,
+  Preset,
+} from './GenericParams'
+export type {
   SurfaceType,
   GenericSurfaceParams,
   SurfacePreset,

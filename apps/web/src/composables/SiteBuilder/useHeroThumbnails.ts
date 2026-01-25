@@ -124,7 +124,7 @@ function createMaskThumbnailSpec(
   viewport: Viewport
 ): TextureRenderSpec | null {
   const firstChild = pattern.children[0]
-  if (!firstChild || firstChild.type !== 'surface') return null
+  if (!firstChild) return null
 
   const surfaceId = firstChild.surface.id
   const params = firstChild.surface.params

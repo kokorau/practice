@@ -9,24 +9,19 @@
  */
 
 import type { SurfaceType } from '../../Infra/SurfaceRegistry'
+import type { GenericParams, Preset } from './GenericParams'
 
 // Re-export SurfaceType for convenience
 export type { SurfaceType }
 
 /**
- * Generic surface parameters
- * Used for all surface types - specific params are validated at runtime via schema
+ * Surface-specific generic parameters
+ * Alias for GenericParams with surface-specific documentation
  */
-export interface GenericSurfaceParams {
-  type: string
-  [key: string]: unknown
-}
+export type GenericSurfaceParams = GenericParams
 
 /**
  * Surface Preset
  * A reusable surface pattern definition with label and parameters
  */
-export interface SurfacePreset {
-  label: string
-  params: GenericSurfaceParams
-}
+export type SurfacePreset = Preset<GenericSurfaceParams>

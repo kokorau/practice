@@ -6,23 +6,23 @@ import type { GetSurfacePresets } from '../Application'
  * Shared pattern definitions for background and midground layers
  */
 const defaultSurfacePresets: SurfacePreset[] = [
-  { label: 'Solid', params: { type: 'solid' } },
-  { label: 'Diagonal 45°', params: { type: 'stripe', width1: 20, width2: 20, angle: Math.PI / 4 } },
-  { label: 'Horizontal', params: { type: 'stripe', width1: 15, width2: 15, angle: 0 } },
-  { label: 'Vertical', params: { type: 'stripe', width1: 10, width2: 10, angle: Math.PI / 2 } },
-  { label: 'Horizontal Thin', params: { type: 'stripe', width1: 2, width2: 40, angle: 0 } },
-  { label: 'Vertical Thin', params: { type: 'stripe', width1: 2, width2: 40, angle: Math.PI / 2 } },
-  { label: 'Grid', params: { type: 'grid', lineWidth: 2, cellSize: 30 } },
-  { label: 'Grid Wide', params: { type: 'grid', lineWidth: 2, cellSize: 60 } },
-  { label: 'Polka Dot', params: { type: 'polkaDot', dotRadius: 10, spacing: 40, rowOffset: 0.5 } },
-  { label: 'Dot Orthogonal', params: { type: 'polkaDot', dotRadius: 1.5, spacing: 12, rowOffset: 0 } },
-  { label: 'Checker', params: { type: 'checker', cellSize: 30, angle: 0 } },
-  { label: 'Diamond', params: { type: 'checker', cellSize: 30, angle: Math.PI / 4 } },
+  { label: 'Solid', params: { id: 'solid' } },
+  { label: 'Diagonal 45°', params: { id: 'stripe', width1: 20, width2: 20, angle: Math.PI / 4 } },
+  { label: 'Horizontal', params: { id: 'stripe', width1: 15, width2: 15, angle: 0 } },
+  { label: 'Vertical', params: { id: 'stripe', width1: 10, width2: 10, angle: Math.PI / 2 } },
+  { label: 'Horizontal Thin', params: { id: 'stripe', width1: 2, width2: 40, angle: 0 } },
+  { label: 'Vertical Thin', params: { id: 'stripe', width1: 2, width2: 40, angle: Math.PI / 2 } },
+  { label: 'Grid', params: { id: 'grid', lineWidth: 2, cellSize: 30 } },
+  { label: 'Grid Wide', params: { id: 'grid', lineWidth: 2, cellSize: 60 } },
+  { label: 'Polka Dot', params: { id: 'polkaDot', dotRadius: 10, spacing: 40, rowOffset: 0.5 } },
+  { label: 'Dot Orthogonal', params: { id: 'polkaDot', dotRadius: 1.5, spacing: 12, rowOffset: 0 } },
+  { label: 'Checker', params: { id: 'checker', cellSize: 30, angle: 0 } },
+  { label: 'Diamond', params: { id: 'checker', cellSize: 30, angle: Math.PI / 4 } },
   // Smooth gradients (no grain)
   {
     label: 'Gradient Linear',
     params: {
-      type: 'linearGradient',
+      id: 'linearGradient',
       angle: 90,
       centerX: 0.5,
       centerY: 0.5,
@@ -31,7 +31,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Gradient Diagonal',
     params: {
-      type: 'linearGradient',
+      id: 'linearGradient',
       angle: 45,
       centerX: 0.5,
       centerY: 0.5,
@@ -40,7 +40,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Gradient Horizontal',
     params: {
-      type: 'linearGradient',
+      id: 'linearGradient',
       angle: 0,
       centerX: 0.5,
       centerY: 0.5,
@@ -50,7 +50,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Circular',
     params: {
-      type: 'circularGradient',
+      id: 'circularGradient',
       centerX: 0.5,
       centerY: 0.5,
       circularInvert: false,
@@ -59,7 +59,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Circular Invert',
     params: {
-      type: 'circularGradient',
+      id: 'circularGradient',
       centerX: 0.5,
       centerY: 0.5,
       circularInvert: true,
@@ -69,7 +69,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Conic',
     params: {
-      type: 'conicGradient',
+      id: 'conicGradient',
       centerX: 0.5,
       centerY: 0.5,
       startAngle: 0,
@@ -79,7 +79,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Conic Half',
     params: {
-      type: 'conicGradient',
+      id: 'conicGradient',
       centerX: 0.5,
       centerY: 0.5,
       startAngle: 0,
@@ -90,7 +90,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Repeat Linear',
     params: {
-      type: 'repeatLinearGradient',
+      id: 'repeatLinearGradient',
       angle: 90,
       centerX: 0.5,
       centerY: 0.5,
@@ -100,7 +100,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Repeat Diagonal',
     params: {
-      type: 'repeatLinearGradient',
+      id: 'repeatLinearGradient',
       angle: 45,
       centerX: 0.5,
       centerY: 0.5,
@@ -111,7 +111,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Perlin',
     params: {
-      type: 'perlinGradient',
+      id: 'perlinGradient',
       scale: 4,
       octaves: 4,
       seed: 12345,
@@ -122,7 +122,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Perlin Fine',
     params: {
-      type: 'perlinGradient',
+      id: 'perlinGradient',
       scale: 8,
       octaves: 6,
       seed: 42,
@@ -134,7 +134,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Curl',
     params: {
-      type: 'curlGradient',
+      id: 'curlGradient',
       scale: 4,
       octaves: 4,
       seed: 12345,
@@ -146,7 +146,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Curl Flow',
     params: {
-      type: 'curlGradient',
+      id: 'curlGradient',
       scale: 3,
       octaves: 5,
       seed: 777,
@@ -159,7 +159,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Linear',
     params: {
-      type: 'gradientGrainLinear',
+      id: 'gradientGrainLinear',
       angle: 90,
       centerX: 0.5,
       centerY: 0.5,
@@ -170,7 +170,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Circular',
     params: {
-      type: 'gradientGrainCircular',
+      id: 'gradientGrainCircular',
       centerX: 0.5,
       centerY: 0.5,
       seed: 12345,
@@ -180,7 +180,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Radial',
     params: {
-      type: 'gradientGrainRadial',
+      id: 'gradientGrainRadial',
       centerX: 0.5,
       centerY: 0.5,
       radialStartAngle: 0,
@@ -192,7 +192,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Perlin',
     params: {
-      type: 'gradientGrainPerlin',
+      id: 'gradientGrainPerlin',
       perlinScale: 4,
       perlinOctaves: 4,
       perlinContrast: 1,
@@ -204,7 +204,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Curl',
     params: {
-      type: 'gradientGrainCurl',
+      id: 'gradientGrainCurl',
       perlinScale: 4,
       perlinOctaves: 4,
       perlinContrast: 1,
@@ -217,7 +217,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Curl Flow',
     params: {
-      type: 'gradientGrainCurl',
+      id: 'gradientGrainCurl',
       perlinScale: 3,
       perlinOctaves: 5,
       perlinContrast: 1.2,
@@ -230,7 +230,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Curl Soft',
     params: {
-      type: 'gradientGrainCurl',
+      id: 'gradientGrainCurl',
       perlinScale: 2,
       perlinOctaves: 3,
       perlinContrast: 0.8,
@@ -243,7 +243,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Simplex',
     params: {
-      type: 'gradientGrainSimplex',
+      id: 'gradientGrainSimplex',
       simplexScale: 4,
       simplexOctaves: 4,
       simplexContrast: 1,
@@ -255,7 +255,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Simplex Soft',
     params: {
-      type: 'gradientGrainSimplex',
+      id: 'gradientGrainSimplex',
       simplexScale: 3,
       simplexOctaves: 3,
       simplexContrast: 0.8,
@@ -267,7 +267,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Grain Simplex Dense',
     params: {
-      type: 'gradientGrainSimplex',
+      id: 'gradientGrainSimplex',
       simplexScale: 6,
       simplexOctaves: 5,
       simplexContrast: 1.2,
@@ -276,24 +276,24 @@ const defaultSurfacePresets: SurfacePreset[] = [
       sparsity: 0.7,
     },
   },
-  { label: 'Triangle', params: { type: 'triangle', size: 30, angle: 0 } },
-  { label: 'Triangle Rotated', params: { type: 'triangle', size: 30, angle: Math.PI / 6 } },
-  { label: 'Hexagon', params: { type: 'hexagon', size: 20, angle: 0 } },
-  { label: 'Hexagon Rotated', params: { type: 'hexagon', size: 20, angle: Math.PI / 6 } },
+  { label: 'Triangle', params: { id: 'triangle', size: 30, angle: 0 } },
+  { label: 'Triangle Rotated', params: { id: 'triangle', size: 30, angle: Math.PI / 6 } },
+  { label: 'Hexagon', params: { id: 'hexagon', size: 20, angle: 0 } },
+  { label: 'Hexagon Rotated', params: { id: 'hexagon', size: 20, angle: Math.PI / 6 } },
   // Textile patterns
-  { label: '麻の葉', params: { type: 'asanoha', size: 40, lineWidth: 1 } },
-  { label: '青海波', params: { type: 'seigaiha', radius: 30, rings: 3, lineWidth: 1 } },
-  { label: 'Wave', params: { type: 'wave', amplitude: 10, wavelength: 40, thickness: 8, angle: 0 } },
-  { label: 'Wave Vertical', params: { type: 'wave', amplitude: 10, wavelength: 40, thickness: 8, angle: Math.PI / 2 } },
-  { label: 'Scales', params: { type: 'scales', size: 24, overlap: 0.5, angle: 0 } },
-  { label: 'Ogee', params: { type: 'ogee', width: 40, height: 60, lineWidth: 2 } },
-  { label: 'Sunburst', params: { type: 'sunburst', rays: 12, centerX: 0.5, centerY: 0.5, twist: 0 } },
-  { label: 'Spiral', params: { type: 'sunburst', rays: 8, centerX: 0.5, centerY: 0.5, twist: 0.5 } },
+  { label: '麻の葉', params: { id: 'asanoha', size: 40, lineWidth: 1 } },
+  { label: '青海波', params: { id: 'seigaiha', radius: 30, rings: 3, lineWidth: 1 } },
+  { label: 'Wave', params: { id: 'wave', amplitude: 10, wavelength: 40, thickness: 8, angle: 0 } },
+  { label: 'Wave Vertical', params: { id: 'wave', amplitude: 10, wavelength: 40, thickness: 8, angle: Math.PI / 2 } },
+  { label: 'Scales', params: { id: 'scales', size: 24, overlap: 0.5, angle: 0 } },
+  { label: 'Ogee', params: { id: 'ogee', width: 40, height: 60, lineWidth: 2 } },
+  { label: 'Sunburst', params: { id: 'sunburst', rays: 12, centerX: 0.5, centerY: 0.5, twist: 0 } },
+  { label: 'Spiral', params: { id: 'sunburst', rays: 8, centerX: 0.5, centerY: 0.5, twist: 0.5 } },
   // Paper textures
   {
     label: 'Paper Smooth',
     params: {
-      type: 'paperTexture',
+      id: 'paperTexture',
       fiberScale: 25,
       fiberStrength: 0.4,
       fiberWarp: 0.08,
@@ -307,7 +307,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Paper Rough',
     params: {
-      type: 'paperTexture',
+      id: 'paperTexture',
       fiberScale: 15,
       fiberStrength: 0.7,
       fiberWarp: 0.15,
@@ -321,7 +321,7 @@ const defaultSurfacePresets: SurfacePreset[] = [
   {
     label: 'Paper Kraft',
     params: {
-      type: 'paperTexture',
+      id: 'paperTexture',
       fiberScale: 12,
       fiberStrength: 0.3,
       fiberWarp: 0.12,
