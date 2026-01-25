@@ -66,6 +66,7 @@ export {
   GroupCompositorNode,
   createGroupCompositorNode,
   type GroupCompositorNodeConfig,
+  type GroupTransform,
 } from './nodes'
 
 // OutputNode implementations

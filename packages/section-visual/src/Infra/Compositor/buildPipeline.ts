@@ -9,6 +9,7 @@ import type {
   HeroViewConfig,
   LayerNodeConfig,
   GroupLayerNodeConfig,
+  GroupTransformParams,
   SurfaceLayerNodeConfig,
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
@@ -43,6 +44,7 @@ import {
   createCanvasOutputNode,
   createTextRenderNode,
   type EffectConfig,
+  type GroupTransform,
 } from './index'
 import type { CompiledProcessorLayerNode } from '../../Domain/CompiledHeroView'
 import { isCompiledProcessorLayerNode, isCompiledMaskProcessor } from '../../Domain/CompiledHeroView'
@@ -152,6 +154,35 @@ function extractEffectParams(
     result[key] = extractRawValue(value, intensityProvider)
   }
   return result
+}
+
+/**
+ * Resolve GroupTransformParams to GroupTransform.
+ * Handles both PropertyValue objects and raw numbers from UI.
+ */
+function resolveGroupTransform(
+  params: GroupTransformParams | undefined,
+  intensityProvider: IntensityProvider
+): GroupTransform | undefined {
+  if (!params) return undefined
+
+  const hasOpacity = params.opacity !== undefined
+  const hasOffsetX = params.offsetX !== undefined
+  const hasOffsetY = params.offsetY !== undefined
+  const hasRotation = params.rotation !== undefined
+
+  // Return undefined if no params are set (use defaults)
+  if (!hasOpacity && !hasOffsetX && !hasOffsetY && !hasRotation) {
+    return undefined
+  }
+
+  // Resolve each param using extractRawValue (handles both PropertyValue and raw values)
+  return {
+    opacity: hasOpacity ? Number(extractRawValue(params.opacity, intensityProvider)) : 1,
+    offsetX: hasOffsetX ? Number(extractRawValue(params.offsetX, intensityProvider)) : 0,
+    offsetY: hasOffsetY ? Number(extractRawValue(params.offsetY, intensityProvider)) : 0,
+    rotation: hasRotation ? Number(extractRawValue(params.rotation, intensityProvider)) : 0,
+  }
 }
 
 // ============================================================
@@ -458,13 +489,17 @@ function buildGroupNode(
   // No children to render
   if (accumulatedNodes.length === 0) return null
 
+  // Resolve group transform params
+  const transform = resolveGroupTransform(group.params, ctx.intensityProvider)
+
   // Always wrap in GroupCompositorNode (even single child)
-  // This ensures group-level blendMode is applied
+  // This ensures group-level blendMode and transform are applied
   const groupNode = createGroupCompositorNode(
     groupId,
     accumulatedNodes,
     {
       blendMode: group.blendMode,
+      transform,
     }
   )
   nodes.push(groupNode)
