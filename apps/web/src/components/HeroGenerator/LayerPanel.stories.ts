@@ -6,11 +6,19 @@ import type { LayerNodeConfig, ForegroundElementConfig, NormalizedSurfaceConfig,
 import { $PropertyValue } from '@practice/section-visual'
 
 // Mock data for stories
-const createMockSurface = (type: string, params: Record<string, number | string> = {}): NormalizedSurfaceConfig => ({
+const createMockSurface = (
+  type: string,
+  params: Record<string, number | string> = {},
+  colors: { color1?: string; color2?: string } = { color1: 'B', color2: 'auto' }
+): NormalizedSurfaceConfig => ({
   id: type as NormalizedSurfaceConfig['id'],
-  params: Object.fromEntries(
-    Object.entries(params).map(([key, value]) => [key, $PropertyValue.static(value)])
-  ),
+  params: {
+    ...Object.fromEntries(
+      Object.entries(params).map(([key, value]) => [key, $PropertyValue.static(value)])
+    ),
+    ...(colors.color1 !== undefined ? { color1: $PropertyValue.static(colors.color1) } : {}),
+    ...(colors.color2 !== undefined ? { color2: $PropertyValue.static(colors.color2) } : {}),
+  },
 })
 
 const createMockMask = (type: string, params: Record<string, number | boolean>): NormalizedMaskConfig => ({
@@ -33,8 +41,7 @@ const mockLayers: LayerNodeConfig[] = [
         name: 'Surface',
         visible: true,
         surface: createMockSurface('stripe', { width1: 20, width2: 20, angle: 45 }),
-        colors: { primary: 'B', secondary: 'auto' },
-      },
+              },
     ],
   },
   {
@@ -49,8 +56,7 @@ const mockLayers: LayerNodeConfig[] = [
         name: 'Surface',
         visible: true,
         surface: createMockSurface('solid'),
-        colors: { primary: 'auto', secondary: 'auto' },
-      },
+              },
       {
         type: 'processor',
         id: 'processor-mask',
@@ -232,8 +238,7 @@ const mockLayersWithTopLevelProcessor: LayerNodeConfig[] = [
         id: 'background',
         name: 'Background Surface',
         visible: true,
-        surface: createMockSurface('grid', { lineWidth: 2, cellSize: 32 }),
-        colors: { primary: 'B', secondary: 'F1' },
+        surface: createMockSurface('grid', { lineWidth: 2, cellSize: 32 }, { color1: 'B', color2: 'F1' }),
       },
     ],
   },
@@ -278,15 +283,13 @@ const mockLayersWithTwoSurfacesAndProcessor: LayerNodeConfig[] = [
         name: 'Surface 1',
         visible: true,
         surface: createMockSurface('solid'),
-        colors: { primary: 'B', secondary: 'auto' },
-      },
+              },
       {
         type: 'surface',
         id: 'surface-2',
         name: 'Surface 2',
         visible: true,
-        surface: createMockSurface('stripe', { width1: 10, width2: 10 }),
-        colors: { primary: 'F1', secondary: 'auto' },
+        surface: createMockSurface('stripe', { width1: 10, width2: 10 }, { color1: 'F1', color2: 'auto' }),
       },
       {
         type: 'processor',
@@ -332,8 +335,7 @@ const mockLayersNestedGroup: LayerNodeConfig[] = [
         name: 'Surface 1',
         visible: true,
         surface: createMockSurface('solid'),
-        colors: { primary: 'B', secondary: 'auto' },
-      },
+              },
       {
         type: 'group',
         id: 'nested-group',
@@ -345,8 +347,7 @@ const mockLayersNestedGroup: LayerNodeConfig[] = [
             id: 'nested-surface',
             name: 'Nested Surface',
             visible: true,
-            surface: createMockSurface('grid'),
-            colors: { primary: 'F1', secondary: 'auto' },
+            surface: createMockSurface('grid', {}, { color1: 'F1', color2: 'auto' }),
           },
         ],
       },
@@ -355,8 +356,7 @@ const mockLayersNestedGroup: LayerNodeConfig[] = [
         id: 'surface-3',
         name: 'Surface 3',
         visible: true,
-        surface: createMockSurface('stripe'),
-        colors: { primary: 'F2', secondary: 'auto' },
+        surface: createMockSurface('stripe', {}, { color1: 'F2', color2: 'auto' }),
       },
       {
         type: 'processor',
@@ -393,15 +393,13 @@ const mockLayersRootMultipleSurfaces: LayerNodeConfig[] = [
     name: 'Surface 1',
     visible: true,
     surface: createMockSurface('solid'),
-    colors: { primary: 'B', secondary: 'auto' },
-  },
+      },
   {
     type: 'surface',
     id: 'surface-2',
     name: 'Surface 2',
     visible: true,
-    surface: createMockSurface('stripe'),
-    colors: { primary: 'F1', secondary: 'auto' },
+    surface: createMockSurface('stripe', {}, { color1: 'F1', color2: 'auto' }),
   },
   {
     type: 'processor',
@@ -438,8 +436,7 @@ const mockLayersRootWithGroup: LayerNodeConfig[] = [
     name: 'Surface 1',
     visible: true,
     surface: createMockSurface('solid'),
-    colors: { primary: 'B', secondary: 'auto' },
-  },
+      },
   {
     type: 'group',
     id: 'middle-group',
@@ -451,16 +448,14 @@ const mockLayersRootWithGroup: LayerNodeConfig[] = [
         id: 'group-surface-1',
         name: 'Group Surface 1',
         visible: true,
-        surface: createMockSurface('grid'),
-        colors: { primary: 'F1', secondary: 'auto' },
+        surface: createMockSurface('grid', {}, { color1: 'F1', color2: 'auto' }),
       },
       {
         type: 'surface',
         id: 'group-surface-2',
         name: 'Group Surface 2',
         visible: true,
-        surface: createMockSurface('stripe'),
-        colors: { primary: 'F2', secondary: 'auto' },
+        surface: createMockSurface('stripe', {}, { color1: 'F2', color2: 'auto' }),
       },
     ],
   },

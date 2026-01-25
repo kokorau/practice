@@ -1,4 +1,5 @@
-import type { HeroViewConfig, SurfaceLayerNodeConfig, GroupLayerNodeConfig } from '../../Domain'
+import type { HeroViewConfig, SurfaceLayerNodeConfig, GroupLayerNodeConfig, PropertyValue } from '../../Domain'
+import { $PropertyValue } from '../../Domain'
 
 /**
  * Create a minimal HeroViewConfig with solid background
@@ -21,8 +22,12 @@ export function createSolidBackgroundConfig(colorKey = 'B'): HeroViewConfig {
             id: 'background',
             name: 'Surface',
             visible: true,
-            surface: { id: 'solid', params: {} },
-            colors: { primary: colorKey, secondary: 'auto' },
+            surface: {
+              id: 'solid',
+              params: {
+                color1: $PropertyValue.static(colorKey),
+              } as Record<string, PropertyValue>,
+            },
           } as SurfaceLayerNodeConfig,
         ],
       } as GroupLayerNodeConfig,
@@ -55,12 +60,13 @@ export function createGradientBackgroundConfig(): HeroViewConfig {
             surface: {
               id: 'stripe',
               params: {
-                width1: 4,
-                width2: 4,
-                angle: 45,
-              },
+                width1: $PropertyValue.static(4),
+                width2: $PropertyValue.static(4),
+                angle: $PropertyValue.static(45),
+                color1: $PropertyValue.static('B'),
+                color2: $PropertyValue.static('A'),
+              } as Record<string, PropertyValue>,
             },
-            colors: { primary: 'B', secondary: 'A' },
           } as SurfaceLayerNodeConfig,
         ],
       } as GroupLayerNodeConfig,
@@ -93,11 +99,12 @@ export function createGridPatternConfig(): HeroViewConfig {
             surface: {
               id: 'grid',
               params: {
-                lineWidth: 2,
-                cellSize: 32,
-              },
+                lineWidth: $PropertyValue.static(2),
+                cellSize: $PropertyValue.static(32),
+                color1: $PropertyValue.static('B'),
+                color2: $PropertyValue.static('F1'),
+              } as Record<string, PropertyValue>,
             },
-            colors: { primary: 'B', secondary: 'F1' },
           } as SurfaceLayerNodeConfig,
         ],
       } as GroupLayerNodeConfig,
@@ -127,8 +134,12 @@ export function createTwoLayerConfig(): HeroViewConfig {
             id: 'background',
             name: 'Background',
             visible: true,
-            surface: { id: 'solid', params: {} },
-            colors: { primary: 'F0', secondary: 'auto' },
+            surface: {
+              id: 'solid',
+              params: {
+                color1: $PropertyValue.static('F0'),
+              } as Record<string, PropertyValue>,
+            },
           } as SurfaceLayerNodeConfig,
         ],
       } as GroupLayerNodeConfig,
@@ -146,12 +157,13 @@ export function createTwoLayerConfig(): HeroViewConfig {
             surface: {
               id: 'stripe',
               params: {
-                width1: 8,
-                width2: 8,
-                angle: 45,
-              },
+                width1: $PropertyValue.static(8),
+                width2: $PropertyValue.static(8),
+                angle: $PropertyValue.static(45),
+                color1: $PropertyValue.static('B'),
+                color2: $PropertyValue.static('Bt'),
+              } as Record<string, PropertyValue>,
             },
-            colors: { primary: 'B', secondary: 'Bt' },
           } as SurfaceLayerNodeConfig,
         ],
       } as GroupLayerNodeConfig,

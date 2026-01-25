@@ -53,8 +53,12 @@ function createMinimalConfig(): HeroViewConfig {
             id: 'background',
             name: 'Background Surface',
             visible: true,
-            surface: { id: 'solid', params: {} },
-            colors: { primary: 'B', secondary: 'auto' },
+            surface: {
+              id: 'solid',
+              params: {
+                color1: $PropertyValue.static('B'),
+              },
+            },
           } as SurfaceLayerNodeConfig,
         ],
       } as GroupLayerNodeConfig,
@@ -142,9 +146,10 @@ describe('compileHeroView', () => {
                 width1: $PropertyValue.static(20),
                 width2: $PropertyValue.static(20),
                 angle: $PropertyValue.static(45),
+                color1: $PropertyValue.static('B'),
+                color2: $PropertyValue.static('F1'),
               },
             },
-            colors: { primary: 'B', secondary: 'F1' },
           } as SurfaceLayerNodeConfig,
         ],
       }
@@ -176,9 +181,10 @@ describe('compileHeroView', () => {
                 width1: $PropertyValue.range('track-1', 10, 30),
                 width2: $PropertyValue.static(20),
                 angle: $PropertyValue.static(45),
+                color1: $PropertyValue.static('B'),
+                color2: $PropertyValue.static('F1'),
               },
             },
-            colors: { primary: 'B', secondary: 'F1' },
           } as SurfaceLayerNodeConfig,
         ],
       }

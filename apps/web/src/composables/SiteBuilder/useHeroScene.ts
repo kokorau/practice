@@ -668,8 +668,12 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
       id,
       name: 'Surface',
       visible: true,
-      surface: { id: 'solid', params: {} },
-      colors: { primary: 'B', secondary: 'auto' },
+      surface: {
+        id: 'solid',
+        params: {
+          color1: { type: 'static', value: 'B' },
+        },
+      },
     }
     layerUsecase.addLayer(surfaceLayerConfig)
     heroFilters.effectManager.setEffectConfig(id, createDefaultEffectConfig())

@@ -10,12 +10,14 @@ import type {
   HeroPrimitiveKey,
   NormalizedSurfaceConfig,
   LayerNodeConfig,
-  SurfaceColorsConfig,
   ProcessorNodeConfig,
   MaskProcessorConfig,
   MaskShapeTypeId,
+  SurfaceLayerNodeConfig,
+  BaseLayerNodeConfig,
 } from '../Domain/HeroViewConfig'
-import { DEFAULT_LAYER_BACKGROUND_COLORS, DEFAULT_LAYER_MASK_COLORS, normalizeSurfaceConfig, normalizeMaskConfig } from '../Domain/HeroViewConfig'
+import { normalizeSurfaceConfig, normalizeMaskConfig } from '../Domain/HeroViewConfig'
+import type { ColorValue } from '../Domain/SectionVisual'
 import { findProcessorWithMask, isMaskProcessorConfig } from '../Domain/LayerTreeOps'
 import { fromCustomSurfaceParams } from '../Domain/SurfaceMapper'
 import { fromCustomMaskShapeParams } from '../Domain/MaskShapeMapper'
@@ -319,24 +321,26 @@ export const createSurfaceUsecase = (deps: SurfaceUsecaseDeps): SurfaceUsecase =
       repository.updateLayer(processor.id, { modifiers: newModifiers } as Partial<ProcessorNodeConfig>)
     },
 
-    updateColorKey(key: 'primary' | 'secondary', value: HeroPrimitiveKey | 'auto'): void {
+    updateColorKey(key: 'primary' | 'secondary', value: ColorValue): void {
       const layer = getSelectedLayer()
       if (!layer) return
       if (layer.type !== 'surface' && layer.type !== 'base') return
 
-      // Get default colors based on layer type
-      const colorPath = getColorPath(layer)
-      const defaults = colorPath === 'background' ? DEFAULT_LAYER_BACKGROUND_COLORS : DEFAULT_LAYER_MASK_COLORS
-      const currentColors: SurfaceColorsConfig = layer.colors ?? defaults
+      // Map primary/secondary to color1/color2 in params
+      const paramKey = key === 'primary' ? 'color1' : 'color2'
 
-      // Update the layer's colors field
+      // Update the layer's surface.params with new color
       const layerId = selection.getSelectedLayerId()
       if (!layerId) return
 
+      const surfaceLayer = layer as SurfaceLayerNodeConfig | BaseLayerNodeConfig
       repository.updateLayer(layerId, {
-        colors: {
-          ...currentColors,
-          [key]: value,
+        surface: {
+          ...surfaceLayer.surface,
+          params: {
+            ...surfaceLayer.surface.params,
+            [paramKey]: $PropertyValue.static(value),
+          },
         },
       })
     },
