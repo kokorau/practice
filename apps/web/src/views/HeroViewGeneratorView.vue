@@ -13,6 +13,7 @@ import PalettePreviewTab from '../components/SiteBuilder/PalettePreviewTab.vue'
 import HeroSidebar from '../components/HeroGenerator/HeroSidebar.vue'
 import HeroPreview from '../components/HeroGenerator/HeroPreview.vue'
 import type { ImageLayerNodeConfig, ProcessorNodeConfig, SurfaceLayerNodeConfig, MaskShapeConfig, GroupLayerNodeConfig } from '@practice/section-visual'
+import { $PropertyValue } from '@practice/section-visual'
 import {
   isBaseLayerConfig,
   isSurfaceLayerConfig,
@@ -479,11 +480,18 @@ const panelGroup = computed(() => {
   const groupLayer = layer as GroupLayerNodeConfig
   const params = groupLayer.params ?? {}
 
+  // Extract base value from PropertyValue (use min value for RangeExpr)
+  const extractNumber = (pv: unknown, defaultVal: number): number => {
+    if (pv === undefined || pv === null) return defaultVal
+    if (typeof pv === 'number') return pv
+    return $PropertyValue.extractBaseValue(pv) ?? defaultVal
+  }
+
   return {
-    opacity: (params.opacity as number) ?? 1,
-    offsetX: (params.offsetX as number) ?? 0,
-    offsetY: (params.offsetY as number) ?? 0,
-    rotation: (params.rotation as number) ?? 0,
+    opacity: extractNumber(params.opacity, 1),
+    offsetX: extractNumber(params.offsetX, 0),
+    offsetY: extractNumber(params.offsetY, 0),
+    rotation: extractNumber(params.rotation, 0),
   }
 })
 
