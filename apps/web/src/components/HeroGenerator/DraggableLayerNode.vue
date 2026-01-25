@@ -262,11 +262,6 @@ const handleToggleVisibility = (e: Event) => {
   emit('toggle-visibility', props.node.id)
 }
 
-const handleRemove = (e: Event) => {
-  e.stopPropagation()
-  emit('remove-layer', props.node.id)
-}
-
 const handleSelectProcessor = (type: 'effect' | 'mask' | 'processor') => {
   emit('select-processor', props.node.id, type)
 }
@@ -436,9 +431,9 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <span class="layer-name">{{ surfaceTypeLabel || node.name }}</span>
       </div>
 
-      <!-- Add Processor Button (only for non-processor, non-group layers) -->
+      <!-- Add Processor Button (only for base layers) -->
       <div
-        v-if="!isProcessorNode && !isGroupNode"
+        v-if="nodeVariant === 'base'"
         class="add-processor-container"
         @click.stop
       >
@@ -486,13 +481,6 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
         <span class="material-icons">{{ node.visible ? 'visibility' : 'visibility_off' }}</span>
       </button>
 
-      <!-- Remove Button -->
-      <button
-        class="remove-toggle"
-        @click="handleRemove"
-      >
-        <span class="material-icons">close</span>
-      </button>
     </div>
 
     <!-- Processor group (contains Effect/Mask as children) -->
@@ -751,40 +739,6 @@ const handleModifierPointerDown = (e: PointerEvent, modifierIndex: number, modif
 .visibility-spacer {
   width: 1.25rem;
   flex-shrink: 0;
-}
-
-/* Remove Toggle */
-.remove-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  padding: 0;
-  background: none;
-  border: none;
-  color: oklch(0.55 0.02 260);
-  cursor: pointer;
-  border-radius: 0.125rem;
-  transition: color 0.15s;
-  flex-shrink: 0;
-  opacity: 0;
-}
-
-.node-header:hover .remove-toggle {
-  opacity: 1;
-}
-
-:global(.dark) .remove-toggle {
-  color: oklch(0.50 0.02 260);
-}
-
-.remove-toggle:hover {
-  color: oklch(0.60 0.15 25);
-}
-
-.remove-toggle .material-icons {
-  font-size: 1rem;
 }
 
 /* ============================================================
