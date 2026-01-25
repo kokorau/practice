@@ -445,6 +445,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   const heroColors = useHeroColors({
     heroViewRepository,
+    repoConfig,
     primitivePalette,
     isDark,
     canvasImageData,
