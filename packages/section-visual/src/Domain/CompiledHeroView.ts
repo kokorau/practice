@@ -92,6 +92,8 @@ export type CompiledMaskChildren = CompiledLayerNode[]
 export interface CompiledMaskProcessor {
   type: 'mask'
   enabled: boolean
+  /** @deprecated Use children instead. Legacy compiled mask shape. */
+  shape?: CompiledMaskShape
   /** Compiled layer tree used as mask source */
   children: CompiledMaskChildren
   invert: boolean

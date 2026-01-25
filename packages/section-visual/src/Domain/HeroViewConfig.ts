@@ -798,15 +798,18 @@ export function isSingleEffectConfig(config: ProcessorConfig): config is SingleE
 /**
  * Mask processor configuration (used in ProcessorNodeConfig.modifiers)
  *
- * Masks use a layer-based approach where `children` defines the mask source.
- * The children layers are rendered to a black background, then converted to
- * a luminance-based greymap (white = visible, black = transparent).
+ * Supports two mask modes:
+ * 1. Shape-based (legacy): Uses `shape` property with predefined mask shapes
+ * 2. Children-based (new): Uses `children` layer tree rendered to luminance greymap
  *
- * If children is empty, a white plane is used (no clipping).
+ * If both are present, shape takes precedence (for backwards compatibility).
+ * If neither is present or children is empty, a white plane is used (no clipping).
  */
 export interface MaskProcessorConfig {
   type: 'mask'
   enabled: boolean
+  /** @deprecated Use children instead. Legacy shape-based mask configuration. */
+  shape?: NormalizedMaskConfig
   /** Layer tree used as mask source. Rendered to luminance greymap. */
   children: LayerNodeConfig[]
   invert: boolean
@@ -1670,26 +1673,29 @@ function migrateLayerConfig(layer: LayerNodeConfig): LayerNodeConfig {
       const processorLayer = layer as ProcessorNodeConfig
       const migratedModifiers = processorLayer.modifiers.map((modifier) => {
         if (modifier.type === 'mask') {
-          // Check if this is a legacy shape-based mask (has 'shape' property)
-          const legacyMask = modifier as unknown as { shape?: unknown; children?: LayerNodeConfig[] }
-          if ('shape' in legacyMask && legacyMask.shape !== undefined) {
-            // Migrate shape-based mask to children-based mask
-            // For now, use empty children (no clipping) as the shape cannot be directly converted
-            // to layer children. The UI should allow users to add children manually.
-            return {
-              type: 'mask' as const,
-              enabled: modifier.enabled,
-              children: [] as LayerNodeConfig[],
-              invert: modifier.invert,
-              feather: modifier.feather,
+          const maskMod = modifier as unknown as { shape?: unknown; children?: LayerNodeConfig[] }
+          // Normalize shape if present (legacy format to normalized format)
+          let normalizedShape: NormalizedMaskConfig | undefined
+          if ('shape' in maskMod && maskMod.shape !== undefined) {
+            const shape = maskMod.shape as unknown
+            if (isLegacyFlatMaskConfig(shape)) {
+              normalizedShape = normalizeMaskConfig(shape)
+            } else {
+              // Already in normalized format
+              normalizedShape = shape as NormalizedMaskConfig
             }
           }
-          // Already in new format with children, migrate children recursively
-          if ('children' in legacyMask && Array.isArray(legacyMask.children)) {
-            return {
-              ...modifier,
-              children: legacyMask.children.map(migrateLayerConfig),
-            }
+          // Migrate children recursively if present
+          const migratedChildren = ('children' in maskMod && Array.isArray(maskMod.children))
+            ? maskMod.children.map(migrateLayerConfig)
+            : []
+          return {
+            type: 'mask' as const,
+            enabled: modifier.enabled,
+            shape: normalizedShape,
+            children: migratedChildren,
+            invert: modifier.invert,
+            feather: modifier.feather,
           }
         }
         if (modifier.type === 'effect') {

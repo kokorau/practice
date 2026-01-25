@@ -222,10 +222,13 @@ const modifiers = computed(() => {
     } else if (isMaskModifier(mod)) {
       const maskMod = mod as MaskProcessorConfig
       const childCount = maskMod.children?.length ?? 0
+      // Check for legacy shape-based mask (backwards compatibility with presets)
+      const hasShape = 'shape' in maskMod && maskMod.shape !== undefined
+      const shapeId = hasShape ? (maskMod.shape as { id: string }).id : null
       result.push({
         type: 'mask',
         label: 'Mask',
-        value: childCount > 0 ? `${childCount} layers` : 'empty',
+        value: shapeId ? shapeId : (childCount > 0 ? `${childCount} layers` : 'empty'),
         icon: 'content_cut',
         enabled: maskMod.enabled,
         index,

@@ -38,6 +38,7 @@ import type {
   CompiledProcessorConfig,
   CompiledEffect,
   CompiledMaskProcessor,
+  CompiledMaskShape,
 } from '../Domain/CompiledHeroView'
 import {
   resolveKeyToRgba,
@@ -251,17 +252,33 @@ function compileEffect(
  *
  * The mask children are compiled using the same layer compilation logic.
  * The compileChildLayers function is passed in to avoid circular dependency.
+ *
+ * Supports both legacy shape-based masks and new children-based masks:
+ * - If shape is present, compile it for backwards compatibility with presets
+ * - If children is present, compile them as layer tree mask source
  */
 function compileMaskProcessor(
   mask: MaskProcessorConfig,
+  intensityProvider: IntensityProvider,
   compileChildLayers: (layers: LayerNodeConfig[]) => CompiledLayerNode[]
 ): CompiledMaskProcessor {
+  // Compile legacy shape if present (for backwards compatibility with presets)
+  let compiledShape: CompiledMaskShape | undefined
+  if (mask.shape) {
+    const resolvedParams = resolveParams(mask.shape.params, intensityProvider)
+    compiledShape = {
+      id: mask.shape.id,
+      params: resolvedParams as Record<string, number | string | boolean>,
+    }
+  }
+
   // Compile children layers as mask source
   const compiledChildren = compileChildLayers(mask.children)
 
   return {
     type: 'mask',
     enabled: mask.enabled,
+    shape: compiledShape,
     children: compiledChildren,
     invert: mask.invert,
     feather: mask.feather,
@@ -283,7 +300,7 @@ function compileProcessorConfig(
   if (config.type === 'effect') {
     return compileEffect(config, intensityProvider)
   }
-  return compileMaskProcessor(config, compileChildLayers)
+  return compileMaskProcessor(config, intensityProvider, compileChildLayers)
 }
 
 /**

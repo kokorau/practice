@@ -13,6 +13,7 @@ import type {
   ProcessorNodeConfig,
   BaseLayerNodeConfig,
   SingleEffectConfig,
+  AnyMaskConfig,
 } from '../../Domain/HeroViewConfig'
 import type { IntensityProvider } from '../../Application/resolvers/resolvePropertyValue'
 import { resolvePropertyValueToNumber, DEFAULT_INTENSITY_PROVIDER } from '../../Application/resolvers/resolvePropertyValue'
@@ -35,6 +36,7 @@ import {
   createSurfaceRenderNodeFromCompiled,
   createMaskCompositorNode,
   createMaskChildrenRenderNode,
+  createMaskRenderNode,
   createEffectChainCompositorNode,
   createOverlayCompositorNode,
   createGroupCompositorNode,
@@ -272,27 +274,27 @@ function buildProcessorNode(
 ): TextureProducingNode {
   let currentNode: TextureProducingNode = inputNode
 
-  // 1. Apply mask if present (children-based)
+  // 1. Apply mask if present
   const maskProcessor = getProcessorMask(processor)
   if (maskProcessor?.enabled) {
-    // Find the compiled processor to get compiled mask children
+    // Find the compiled processor to get compiled mask data
     const compiledProcessor = findCompiledProcessor(ctx.compiledLayers, processor.id)
     if (compiledProcessor) {
       const compiledMask = compiledProcessor.modifiers.find(isCompiledMaskProcessor)
-      if (compiledMask && compiledMask.children.length > 0) {
-        // Build render nodes from compiled mask children
-        const maskChildNodes = buildMaskChildrenNodes(
-          `${id}-mask`,
-          compiledMask.children,
-          nodes
-        )
+      if (compiledMask) {
+        // Priority: shape (legacy) > children (new)
+        // This ensures backwards compatibility with existing presets
+        if (compiledMask.shape) {
+          // Use legacy shape-based mask (MaskRenderNode)
+          // Convert CompiledMaskShape to AnyMaskConfig format
+          const maskConfig = {
+            type: compiledMask.shape.id,
+            ...compiledMask.shape.params,
+          } as AnyMaskConfig
 
-        if (maskChildNodes.length > 0) {
-          // Create MaskChildrenRenderNode to render children to luminance greymap
-          const maskRenderNode = createMaskChildrenRenderNode(
+          const maskRenderNode = createMaskRenderNode(
             `${id}-mask-render`,
-            maskChildNodes,
-            compiledMask.invert
+            maskConfig
           )
           nodes.push(maskRenderNode)
 
@@ -304,11 +306,38 @@ function buildProcessorNode(
           )
           nodes.push(maskedNode)
           currentNode = maskedNode
+        } else if (compiledMask.children.length > 0) {
+          // Use new children-based mask (MaskChildrenRenderNode)
+          // Build render nodes from compiled mask children
+          const maskChildNodes = buildMaskChildrenNodes(
+            `${id}-mask`,
+            compiledMask.children,
+            nodes
+          )
+
+          if (maskChildNodes.length > 0) {
+            // Create MaskChildrenRenderNode to render children to luminance greymap
+            const maskChildrenRenderNode = createMaskChildrenRenderNode(
+              `${id}-mask-render`,
+              maskChildNodes,
+              compiledMask.invert
+            )
+            nodes.push(maskChildrenRenderNode)
+
+            // Apply mask to current node using MaskCompositorNode
+            const maskedNode = createMaskCompositorNode(
+              `${id}-masked`,
+              currentNode,
+              maskChildrenRenderNode
+            )
+            nodes.push(maskedNode)
+            currentNode = maskedNode
+          }
         }
+        // If neither shape nor children, mask is not applied
+        // (empty children = no clipping, handled by fallback)
       }
     }
-    // If no compiled processor found or no children, mask is not applied
-    // (empty children = no clipping, which is handled by MaskChildrenRenderNode returning white)
   }
 
   // 2. Apply effects if present
