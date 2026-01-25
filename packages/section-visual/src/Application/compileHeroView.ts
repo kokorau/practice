@@ -24,6 +24,7 @@ import type {
   ProcessorConfig,
   SingleEffectConfig,
   MaskProcessorConfig,
+  FilterProcessorConfig,
 } from '../Domain/HeroViewConfig'
 import type { ColorValue } from '../Domain/SectionVisual'
 import type {
@@ -38,6 +39,7 @@ import type {
   CompiledProcessorConfig,
   CompiledEffect,
   CompiledMaskProcessor,
+  CompiledFilterProcessor,
   CompiledMaskShape,
 } from '../Domain/CompiledHeroView'
 import {
@@ -271,16 +273,42 @@ function compileMaskProcessor(
 }
 
 /**
- * Compile processor config (effect or mask)
+ * Compile filter processor
+ */
+function compileFilterProcessor(
+  filter: FilterProcessorConfig,
+  intensityProvider: IntensityProvider
+): CompiledFilterProcessor {
+  const resolvedParams = resolveParams(filter.params, intensityProvider) as Record<string, number>
+  return {
+    type: 'filter',
+    params: {
+      exposure: resolvedParams.exposure ?? 0,
+      brightness: resolvedParams.brightness ?? 0,
+      contrast: resolvedParams.contrast ?? 0,
+      highlights: resolvedParams.highlights ?? 0,
+      shadows: resolvedParams.shadows ?? 0,
+      temperature: resolvedParams.temperature ?? 0,
+      tint: resolvedParams.tint ?? 0,
+    },
+  }
+}
+
+/**
+ * Compile processor config (effect, mask, or filter)
  */
 function compileProcessorConfig(
   config: ProcessorConfig,
   intensityProvider: IntensityProvider
 ): CompiledProcessorConfig {
-  if (config.type === 'effect') {
-    return compileEffect(config, intensityProvider)
+  switch (config.type) {
+    case 'effect':
+      return compileEffect(config, intensityProvider)
+    case 'mask':
+      return compileMaskProcessor(config, intensityProvider)
+    case 'filter':
+      return compileFilterProcessor(config, intensityProvider)
   }
-  return compileMaskProcessor(config, intensityProvider)
 }
 
 /**

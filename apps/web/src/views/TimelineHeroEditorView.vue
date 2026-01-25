@@ -395,8 +395,6 @@ const panelForeground = computed(() => ({
 }))
 
 const panelBackground = computed(() => ({
-  colorKey1: heroScene.background.backgroundColorKey1.value,
-  colorKey2: heroScene.background.backgroundColorKey2.value,
   patterns: backgroundPatterns.value,
   selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
   surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
@@ -405,8 +403,6 @@ const panelBackground = computed(() => ({
 }))
 
 const panelMask = computed(() => ({
-  colorKey1: heroScene.mask.maskColorKey1.value,
-  colorKey2: heroScene.mask.maskColorKey2.value,
   surfacePatterns: maskSurfacePatterns.value,
   selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
   surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
@@ -490,6 +486,7 @@ const panelMask = computed(() => ({
         :background="panelBackground"
         :mask="panelMask"
         :filter="filterProps"
+        :filter-processor="{ filterConfig: null }"
         :image="imageLayerProps"
         :palette="primitivePalette"
         :style="{ width: `${rightPanelWidth}px` }"

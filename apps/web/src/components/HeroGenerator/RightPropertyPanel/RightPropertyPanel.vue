@@ -4,7 +4,7 @@ import type { RGBA } from '@practice/texture'
 import type { ObjectSchema } from '@practice/schema'
 import type { PrimitivePalette, PrimitiveKey } from '@practice/semantic-color-palette/Domain'
 import type { LayerNodeConfig, GridPosition, FilterType, SurfaceLayerNodeConfig, BaseLayerNodeConfig, ProcessorNodeConfig, NormalizedMaskConfig, FilterProcessorConfig } from '@practice/section-visual'
-import { isSurfaceLayerConfig, isBaseLayerConfig, isProcessorLayerConfig, isSingleEffectConfig, isFilterProcessorConfig } from '@practice/section-visual'
+import { isSurfaceLayerConfig, isBaseLayerConfig, isProcessorLayerConfig, isSingleEffectConfig } from '@practice/section-visual'
 import type { ContrastAnalysisResult } from '../../../modules/ContrastChecker'
 import type { PatternItem } from '../SurfaceSelector.vue'
 import type { BackgroundSpecCreator, EffectSpec } from '../MaskPatternThumbnail.vue'
@@ -16,7 +16,7 @@ import type {
   LineHalftoneConfigParams,
   BlurConfigParams,
 } from '../../../composables/useFilterEditor'
-import { computed } from 'vue'
+import { computed, withDefaults } from 'vue'
 import PanelHeader, { type BreadcrumbItem } from './PanelHeader.vue'
 import TextElementPanel from './TextElementPanel.vue'
 import LayerSettingsPanel from './LayerSettingsPanel.vue'
@@ -163,7 +163,7 @@ interface ImageProps {
 // Props (Grouped)
 // ============================================================
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** Selection state */
   selection: SelectionProps
   /** Foreground/text element state */
@@ -176,13 +176,15 @@ const props = defineProps<{
   mask: MaskProps
   /** Filter/effect state */
   filter: FilterProps
-  /** Filter processor state */
-  filterProcessor: FilterProcessorProps
+  /** Filter processor state (optional for backward compatibility) */
+  filterProcessor?: FilterProcessorProps
   /** Image layer state */
   image: ImageProps | null
   /** Primitive color palette */
   palette: PrimitivePalette
-}>()
+}>(), {
+  filterProcessor: () => ({ filterConfig: null }),
+})
 
 // ============================================================
 // Emits (Grouped)

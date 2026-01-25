@@ -351,7 +351,6 @@ export {
   isImageLayerConfig,
   isModel3DLayerConfig,
   isMaskProcessorConfig,
-  isFilterProcessorConfig,
   // Tree operations
   findLayerInTree,
   updateLayerInTree,
@@ -721,6 +720,8 @@ export {
   getEffectsBeforeMask,
   // Effect config type guard
   isSingleEffectConfig,
+  // Processor config type guards
+  isFilterProcessorConfig,
   // Effect utilities
   isEffectOfType,
   isVignetteEffect,
@@ -1158,6 +1159,7 @@ export type {
   CompiledMaskShape,
   CompiledMaskProcessor,
   CompiledEffect,
+  CompiledFilterProcessor,
   CompiledProcessorConfig,
   CompiledForegroundLayer,
   CompiledForegroundElement,
