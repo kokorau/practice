@@ -1,13 +1,36 @@
-import type { Timeline } from './Timeline'
-import type { TimelinePlayer, FrameState } from './Player'
-import type { TrackId } from './Track'
-import type { Ms } from './Unit'
-import type { PhaseId } from './Phase'
+/**
+ * PlayerUsecase - タイムライン再生のユースケース
+ */
+
+import type { TimelineRepository } from '../ports/TimelineRepository'
+import type { Timeline } from '../../Timeline'
+import type { TrackId } from '../../Track'
+import type { PhaseId } from '../../Phase'
+import type { Ms } from '../../Unit'
 import { evaluate, parse } from '@practice/dsl'
 import { evaluateLut } from '@practice/bezier'
 
-export interface CreateTimelinePlayerOptions {
-  timeline: Timeline
+export interface FrameState {
+  time: Ms
+  /** Raw intensity values (0-1) for each track */
+  intensities: Record<TrackId, number>
+}
+
+export interface TimelinePlayer {
+  play(): void
+  pause(): void
+  stop(): void
+  seek(playhead: Ms): void
+  update(engineTime: Ms): FrameState
+  isPlaying(): boolean
+}
+
+export interface PlayerUsecaseDeps {
+  repository: TimelineRepository
+}
+
+export interface PlayerUsecase {
+  createPlayer(): TimelinePlayer
 }
 
 interface PhaseBoundary {
@@ -16,12 +39,7 @@ interface PhaseBoundary {
   duration: Ms
 }
 
-/**
- * Create a timeline player instance
- */
-export function createTimelinePlayer(options: CreateTimelinePlayerOptions): TimelinePlayer {
-  const { timeline } = options
-
+function createPlayerFromTimeline(timeline: Timeline): TimelinePlayer {
   // Calculate phase boundaries
   const phaseBoundaries = new Map<PhaseId, PhaseBoundary>()
   let accumulated: Ms = 0
@@ -40,16 +58,22 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
 
   // Internal state
   let playhead: Ms = 0
-  let isPlaying = false
+  let playing = false
   let lastEngineTime: Ms | null = null
 
   function play(): void {
-    isPlaying = true
+    playing = true
     lastEngineTime = null
   }
 
   function pause(): void {
-    isPlaying = false
+    playing = false
+    lastEngineTime = null
+  }
+
+  function stop(): void {
+    playing = false
+    playhead = 0
     lastEngineTime = null
   }
 
@@ -57,9 +81,13 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
     playhead = Math.max(0, Math.min(newPlayhead, totalDuration))
   }
 
+  function isPlaying(): boolean {
+    return playing
+  }
+
   function update(engineTime: Ms): FrameState {
     // Update playhead if playing
-    if (isPlaying) {
+    if (playing) {
       if (lastEngineTime !== null) {
         const delta = engineTime - lastEngineTime
         playhead += delta
@@ -72,7 +100,7 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
               break
             case 'once':
               playhead = totalDuration
-              isPlaying = false
+              playing = false
               break
             case 'pingpong':
               // TODO: implement pingpong
@@ -111,9 +139,10 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
       // Check if track uses bezier path (takes precedence over DSL expression)
       if (track._bezierLut) {
         // Normalize trackTime to 0-1 based on phase duration
-        const normalizedTime = boundary.duration === Infinity
-          ? 0 // Can't normalize infinite duration
-          : trackTime / boundary.duration
+        const normalizedTime =
+          boundary.duration === Infinity
+            ? 0 // Can't normalize infinite duration
+            : trackTime / boundary.duration
         value = evaluateLut(track._bezierLut, normalizedTime)
       } else {
         // Get or parse AST
@@ -133,5 +162,32 @@ export function createTimelinePlayer(options: CreateTimelinePlayerOptions): Time
     }
   }
 
-  return { play, pause, seek, update }
+  return { play, pause, stop, seek, update, isPlaying }
+}
+
+export const createPlayerUsecase = (deps: PlayerUsecaseDeps): PlayerUsecase => {
+  const { repository } = deps
+
+  return {
+    createPlayer(): TimelinePlayer {
+      const timeline = repository.get()
+      return createPlayerFromTimeline(timeline)
+    },
+  }
+}
+
+/**
+ * @deprecated Use createPlayerUsecase instead
+ */
+export interface CreateTimelinePlayerOptions {
+  timeline: Timeline
+}
+
+/**
+ * @deprecated Use createPlayerUsecase instead
+ */
+export function createTimelinePlayer(
+  options: CreateTimelinePlayerOptions
+): TimelinePlayer {
+  return createPlayerFromTimeline(options.timeline)
 }
