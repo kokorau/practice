@@ -48,7 +48,6 @@ export interface UseHeroConfigLoaderOptions {
   heroFilters: UseHeroFiltersReturn
   heroThumbnails: UseHeroThumbnailsReturn
   selectedBackgroundIndex: Ref<number>
-  selectedMaskIndex: Ref<number | null>
   selectedMidgroundTextureIndex: Ref<number>
   surfacePresets: SurfacePreset[]
   render: () => Promise<void>
@@ -68,7 +67,6 @@ export const useHeroConfigLoader = (
     heroFilters,
     heroThumbnails,
     selectedBackgroundIndex,
-    selectedMaskIndex,
     selectedMidgroundTextureIndex,
     surfacePresets,
     render,

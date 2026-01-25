@@ -990,7 +990,6 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     heroFilters,
     heroThumbnails,
     selectedBackgroundIndex,
-    selectedMaskIndex,
     selectedMidgroundTextureIndex,
     surfacePresets,
     render,
