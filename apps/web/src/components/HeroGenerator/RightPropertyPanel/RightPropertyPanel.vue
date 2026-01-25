@@ -234,6 +234,15 @@ const handleSingleSurfaceParamUpdate = (key: string, value: unknown) => {
   }
 }
 
+// Handle full surface params update (for gradient stops)
+const handleFullSurfaceParamsUpdate = (params: Record<string, unknown>) => {
+  if (isBackgroundLayer()) {
+    emit('update:background', 'surfaceParams', params)
+  } else {
+    emit('update:mask', 'surfaceParams', params)
+  }
+}
+
 // Helper to get surface type from layer
 const getSurfaceType = (layer: LayerNodeConfig | null | undefined): string | null => {
   if (!layer) return null
@@ -400,6 +409,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         :raw-surface-params="background.rawSurfaceParams"
         @select-pattern="emit('update:background', 'selectPattern', $event)"
         @update:surface-param="handleSingleSurfaceParamUpdate"
+        @update:surface-params="handleFullSurfaceParamsUpdate"
       />
 
       <!-- Surface Layer Settings -->
@@ -415,6 +425,7 @@ const breadcrumbs = computed((): BreadcrumbItem[] => {
         :raw-surface-params="mask.rawSurfaceParams"
         @select-pattern="emit('update:mask', 'selectPattern', $event)"
         @update:surface-param="handleSingleSurfaceParamUpdate"
+        @update:surface-params="handleFullSurfaceParamsUpdate"
       />
 
       <!-- Image Layer Settings -->

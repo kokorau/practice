@@ -30,6 +30,11 @@ import {
   type CheckerSurfaceParams,
   type TriangleSurfaceParams,
   type HexagonSurfaceParams,
+  type CircularGradientSurfaceParams,
+  type ConicGradientSurfaceParams,
+  type RepeatLinearGradientSurfaceParams,
+  type PerlinGradientSurfaceParams,
+  type CurlGradientSurfaceParams,
 } from '@practice/texture'
 import type { HeroViewPresetRepository } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -304,6 +309,11 @@ export type CustomSurfaceParams =
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
   | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
+  | ({ id: 'circularGradient' } & CircularGradientSurfaceParams)
+  | ({ id: 'conicGradient' } & ConicGradientSurfaceParams)
+  | ({ id: 'repeatLinearGradient' } & RepeatLinearGradientSurfaceParams)
+  | ({ id: 'perlinGradient' } & PerlinGradientSurfaceParams)
+  | ({ id: 'curlGradient' } & CurlGradientSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
   | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
@@ -330,6 +340,11 @@ export type CustomBackgroundSurfaceParams =
   | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
   | ({ id: 'checker' } & CheckerSurfaceParams)
   | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
+  | ({ id: 'circularGradient' } & CircularGradientSurfaceParams)
+  | ({ id: 'conicGradient' } & ConicGradientSurfaceParams)
+  | ({ id: 'repeatLinearGradient' } & RepeatLinearGradientSurfaceParams)
+  | ({ id: 'perlinGradient' } & PerlinGradientSurfaceParams)
+  | ({ id: 'curlGradient' } & CurlGradientSurfaceParams)
   | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
   | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
   | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
