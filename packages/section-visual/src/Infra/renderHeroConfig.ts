@@ -584,6 +584,19 @@ export function createBackgroundSpecFromSurface(
       viewport
     ) as unknown as TextureRenderSpec
   }
+  // Linear gradient mask surface for children-based masks
+  if (surface.type === 'linearGradientMask') {
+    return createLinearGradientGreymapMaskSpec(
+      {
+        angle: surface.angle,
+        startOffset: surface.startOffset,
+        endOffset: surface.endOffset,
+        innerValue: 1.0,
+        outerValue: 0.0,
+      },
+      viewport
+    ) as unknown as TextureRenderSpec
+  }
 
   // image type is not supported in config-based rendering
   return createSolidSpec({ color: color1 })

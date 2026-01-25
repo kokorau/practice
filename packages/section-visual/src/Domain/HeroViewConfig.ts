@@ -434,6 +434,22 @@ export interface WavyLineSurfaceConfig {
 }
 
 /**
+ * Linear Gradient Mask Surface Config
+ *
+ * Renders a linear gradient for masking (greyscale output).
+ * Distinct from linearGradient surface which renders colored gradients.
+ */
+export interface LinearGradientMaskSurfaceConfig {
+  type: 'linearGradientMask'
+  /** Gradient angle in degrees (0=right, 90=up, 180=left, 270=down) */
+  angle: number
+  /** Start offset (0.0-1.0) - where gradient begins */
+  startOffset: number
+  /** End offset (0.0-1.0) - where gradient ends */
+  endOffset: number
+}
+
+/**
  * Color fields for surface configs.
  * These are optional in legacy SurfaceConfig format
  * and will be normalized to params.color1/color2 in NormalizedSurfaceConfig.
@@ -475,6 +491,7 @@ type SurfaceConfigBase =
   | RadialGradientSurfaceConfig
   | BoxGradientSurfaceConfig
   | WavyLineSurfaceConfig
+  | LinearGradientMaskSurfaceConfig
 
 export type SurfaceConfig = SurfaceConfigBase & SurfaceColorFields
 
