@@ -27,27 +27,8 @@ import type {
   SurfacePreset,
   RGBA,
   TextureRenderSpec,
-  CircleMaskShapeParams,
-  RectMaskShapeParams,
-  BlobMaskShapeParams,
-  PerlinMaskShapeParams,
-  CurlMaskShapeParams,
-  LinearGradientMaskShapeParams,
-  RadialGradientMaskShapeParams,
-  BoxGradientMaskShapeParams,
-  WavyLineMaskShapeParams,
-  StripeSurfaceParams,
-  GridSurfaceParams,
-  PolkaDotSurfaceParams,
-  CheckerSurfaceParams,
-  TriangleSurfaceParams,
-  HexagonSurfaceParams,
-  CircularGradientSurfaceParams,
-  ConicGradientSurfaceParams,
-  RepeatLinearGradientSurfaceParams,
-  PerlinGradientSurfaceParams,
-  CurlGradientSurfaceParams,
   Viewport,
+  GenericParams,
 } from '@practice/texture'
 import type { Oklch } from '@practice/color'
 import type { PrimitiveKey, InkRole } from '@practice/semantic-color-palette'
@@ -136,202 +117,23 @@ export interface EffectManagerInterface {
 }
 
 // ============================================================
-// Custom Params Types (re-exported from useHeroScene)
+// Custom Params Types (GenericParams-based type aliases)
 // ============================================================
 
 /**
- * Custom mask shape params union type
+ * Custom mask shape params - GenericParams with id field for type identification
  */
-export type CustomMaskShapeParams =
-  | ({ id: 'circle' } & CircleMaskShapeParams)
-  | ({ id: 'rect' } & RectMaskShapeParams)
-  | ({ id: 'blob' } & BlobMaskShapeParams)
-  | ({ id: 'perlin' } & PerlinMaskShapeParams)
-  | ({ id: 'curl' } & CurlMaskShapeParams)
-  | ({ id: 'linearGradient' } & LinearGradientMaskShapeParams)
-  | ({ id: 'radialGradient' } & RadialGradientMaskShapeParams)
-  | ({ id: 'boxGradient' } & BoxGradientMaskShapeParams)
-  | ({ id: 'wavyLine' } & WavyLineMaskShapeParams)
+export type CustomMaskShapeParams = GenericParams
 
 /**
- * Gradient grain surface params (5 separate types)
+ * Custom surface params - GenericParams with id field for type identification
  */
-export interface GradientGrainLinearSurfaceParams {
-  angle: number
-  centerX: number
-  centerY: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainCircularSurfaceParams {
-  centerX: number
-  centerY: number
-  circularInvert?: boolean
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainRadialSurfaceParams {
-  centerX: number
-  centerY: number
-  radialStartAngle: number
-  radialSweepAngle: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainPerlinSurfaceParams {
-  perlinScale: number
-  perlinOctaves: number
-  perlinContrast: number
-  perlinOffset: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainCurlSurfaceParams {
-  perlinScale: number
-  perlinOctaves: number
-  perlinContrast: number
-  perlinOffset: number
-  curlIntensity: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainSimplexSurfaceParams {
-  simplexScale: number
-  simplexOctaves: number
-  simplexContrast: number
-  simplexOffset: number
-  seed: number
-  sparsity: number
-}
+export type CustomSurfaceParams = GenericParams
 
 /**
- * Textile pattern surface params
+ * Custom background surface params - GenericParams with id field for type identification
  */
-export interface AsanohaSurfaceParams {
-  size: number
-  lineWidth: number
-}
-
-export interface SeigaihaSurfaceParams {
-  radius: number
-  rings: number
-  lineWidth: number
-}
-
-export interface WaveSurfaceParams {
-  amplitude: number
-  wavelength: number
-  thickness: number
-  angle: number
-}
-
-export interface ScalesSurfaceParams {
-  size: number
-  overlap: number
-  angle: number
-}
-
-export interface OgeeSurfaceParams {
-  width: number
-  height: number
-  lineWidth: number
-}
-
-export interface SunburstSurfaceParams {
-  rays: number
-  centerX: number
-  centerY: number
-  twist: number
-}
-
-export interface PaperTextureSurfaceParams {
-  fiberScale: number
-  fiberStrength: number
-  fiberWarp: number
-  grainDensity: number
-  grainSize: number
-  bumpStrength: number
-  lightAngle: number
-  seed: number
-}
-
-/**
- * Linear gradient surface params (smooth 2-color gradient without grain)
- */
-export interface LinearGradientSurfaceParams {
-  angle: number
-  centerX: number
-  centerY: number
-}
-
-/**
- * Custom surface params union type (for midground - includes solid, checker, and gradientGrain variants)
- * Uses 'id' field for consistency with NormalizedSurfaceConfig
- */
-export type CustomSurfaceParams =
-  | { id: 'solid' }
-  | ({ id: 'stripe' } & StripeSurfaceParams)
-  | ({ id: 'grid' } & GridSurfaceParams)
-  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
-  | ({ id: 'circularGradient' } & CircularGradientSurfaceParams)
-  | ({ id: 'conicGradient' } & ConicGradientSurfaceParams)
-  | ({ id: 'repeatLinearGradient' } & RepeatLinearGradientSurfaceParams)
-  | ({ id: 'perlinGradient' } & PerlinGradientSurfaceParams)
-  | ({ id: 'curlGradient' } & CurlGradientSurfaceParams)
-  | ({ id: 'triangle' } & TriangleSurfaceParams)
-  | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
-  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
-  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
-  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
-  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
-  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
-  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ id: 'wave' } & WaveSurfaceParams)
-  | ({ id: 'scales' } & ScalesSurfaceParams)
-  | ({ id: 'ogee' } & OgeeSurfaceParams)
-  | ({ id: 'sunburst' } & SunburstSurfaceParams)
-  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
-
-/**
- * Custom background surface params union type
- * Uses 'id' field for consistency with NormalizedSurfaceConfig
- */
-export type CustomBackgroundSurfaceParams =
-  | { id: 'solid' }
-  | ({ id: 'stripe' } & StripeSurfaceParams)
-  | ({ id: 'grid' } & GridSurfaceParams)
-  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
-  | ({ id: 'circularGradient' } & CircularGradientSurfaceParams)
-  | ({ id: 'conicGradient' } & ConicGradientSurfaceParams)
-  | ({ id: 'repeatLinearGradient' } & RepeatLinearGradientSurfaceParams)
-  | ({ id: 'perlinGradient' } & PerlinGradientSurfaceParams)
-  | ({ id: 'curlGradient' } & CurlGradientSurfaceParams)
-  | ({ id: 'triangle' } & TriangleSurfaceParams)
-  | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
-  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
-  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
-  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
-  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
-  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
-  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ id: 'wave' } & WaveSurfaceParams)
-  | ({ id: 'scales' } & ScalesSurfaceParams)
-  | ({ id: 'ogee' } & OgeeSurfaceParams)
-  | ({ id: 'sunburst' } & SunburstSurfaceParams)
-  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
+export type CustomBackgroundSurfaceParams = GenericParams
 
 // ============================================================
 // Section Type
@@ -363,14 +165,14 @@ export interface MaskPatternWithNormalizedConfig extends Omit<MaskPattern, 'mask
  * Pattern state for texture/mask selection and thumbnails
  */
 export interface PatternState {
-  /** Available texture patterns */
-  readonly texturePatterns: TexturePattern[]
-  /** Available mask patterns */
-  readonly maskPatterns: MaskPattern[]
+  /** Available texture patterns (reactive ref for async loading) */
+  readonly texturePatterns: Ref<TexturePattern[]>
+  /** Available mask patterns (reactive ref for async loading) */
+  readonly maskPatterns: Ref<MaskPattern[]>
   /** Mask patterns with normalized config for pipeline-based preview */
   readonly maskPatternsWithNormalizedConfig: ComputedRef<MaskPatternWithNormalizedConfig[]>
-  /** Available midground texture patterns (surface presets) */
-  readonly midgroundTexturePatterns: SurfacePreset[]
+  /** Available midground texture patterns (reactive ref for async loading) */
+  readonly midgroundTexturePatterns: Ref<SurfacePreset[]>
 
   /** Color 1 for texture patterns */
   readonly textureColor1: ComputedRef<RGBA>
@@ -454,9 +256,9 @@ export interface MaskState {
   /** Current surface schema for UI */
   readonly currentSurfaceSchema: ComputedRef<ObjectSchema | null>
   /** Update mask shape params */
-  readonly updateMaskShapeParams: (updates: Partial<CircleMaskShapeParams | RectMaskShapeParams | BlobMaskShapeParams | PerlinMaskShapeParams | LinearGradientMaskShapeParams | RadialGradientMaskShapeParams | BoxGradientMaskShapeParams | WavyLineMaskShapeParams>) => void
+  readonly updateMaskShapeParams: (updates: Record<string, unknown>) => void
   /** Update surface params */
-  readonly updateSurfaceParams: (updates: Partial<StripeSurfaceParams | GridSurfaceParams | PolkaDotSurfaceParams | CheckerSurfaceParams>) => void
+  readonly updateSurfaceParams: (updates: Record<string, unknown>) => void
   /** Update single surface param (preserves existing PropertyValue types, accepts PropertyValue for DSL/range) */
   readonly updateSingleSurfaceParam: (paramName: string, value: unknown) => void
 
@@ -850,6 +652,8 @@ export interface RendererActions {
   readonly initPreview: (canvas?: HTMLCanvasElement | null) => Promise<void>
   /** Destroy preview renderer */
   readonly destroyPreview: () => void
+  /** Initialize pattern presets (loads from async repositories) */
+  readonly initPatterns: () => Promise<void>
   /** Open a UI section */
   readonly openSection: (section: SectionType) => void
   /**

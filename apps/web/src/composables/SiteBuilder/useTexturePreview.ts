@@ -1,8 +1,8 @@
 import { ref, computed, watch, nextTick, onUnmounted, type ComputedRef } from 'vue'
 import {
   TextureRenderer,
-  getDefaultTexturePatterns,
-  getDefaultMaskPatterns,
+  texturePatternRepository,
+  maskPatternRepository,
   createCircleStripeSpec,
   createCircleGridSpec,
   createCirclePolkaDotSpec,
@@ -90,10 +90,20 @@ const paletteToRgba = (oklch: Oklch, alpha: number = 1.0): RGBA => {
 export const useTexturePreview = (options: UseTexturePreviewOptions) => {
   const { primitivePalette, isDark } = options
 
-  // Pattern definitions
-  const texturePatterns = getDefaultTexturePatterns()
-  const maskPatterns = getDefaultMaskPatterns()
+  // Pattern definitions (async-loaded)
+  const texturePatterns = ref<TexturePattern[]>([])
+  const maskPatterns = ref<MaskPattern[]>([])
   const midgroundTexturePatterns = defaultMidgroundTexturePatterns
+
+  // Initialize patterns asynchronously
+  const initPatterns = async () => {
+    const [textures, masks] = await Promise.all([
+      texturePatternRepository.getAll(),
+      maskPatternRepository.getAll(),
+    ])
+    texturePatterns.value = textures
+    maskPatterns.value = masks
+  }
 
   // Selection state
   const selectedBackgroundIndex = ref(3) // Vertical
@@ -133,11 +143,11 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
 
   // Get patterns for a section
   const getPatterns = (section: SectionType): TexturePattern[] => {
-    if (section === 'background') return texturePatterns
+    if (section === 'background') return texturePatterns.value
     // Note: maskPatterns are children-based and createSpec is optional
     // For thumbnail rendering, return patterns with createSpec (cast to TexturePattern[])
     if (section === 'midground') {
-      return maskPatterns.filter((p) => !!p.createSpec) as unknown as TexturePattern[]
+      return maskPatterns.value.filter((p) => !!p.createSpec) as unknown as TexturePattern[]
     }
     return []
   }
@@ -385,7 +395,7 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
       await previewRenderer.renderImage(customBackgroundBitmap)
     } else {
       // Use texture pattern
-      const bgPattern = texturePatterns[selectedBackgroundIndex.value]
+      const bgPattern = texturePatterns.value[selectedBackgroundIndex.value]
       if (bgPattern) {
         const spec = bgPattern.createSpec(textureColor1.value, textureColor2.value, viewport)
         previewRenderer.render(spec)
@@ -394,7 +404,7 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
 
     // 2. Composite midground (mask + optional texture)
     if (selectedMaskIndex.value !== null) {
-      const maskPattern = maskPatterns[selectedMaskIndex.value]
+      const maskPattern = maskPatterns.value[selectedMaskIndex.value]
       if (maskPattern) {
         // If midground texture is selected, use masked texture shader
         if (selectedMidgroundTextureIndex.value !== null) {
@@ -526,5 +536,6 @@ export const useTexturePreview = (options: UseTexturePreviewOptions) => {
     openSection,
     initPreview,
     destroyPreview,
+    initPatterns,
   }
 }

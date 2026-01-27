@@ -54,5 +54,5 @@ export {
   resolveShader,
   resolveShaderWithParams,
   convertToShaderRef,
-  convertToLegacyRef,
+  convertToFlatRef,
 } from './ShaderRegistry'

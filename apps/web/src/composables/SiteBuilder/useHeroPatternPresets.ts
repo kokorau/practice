@@ -8,9 +8,10 @@
  * - updateMaskShapeParams, updateSurfaceParams, updateBackgroundSurfaceParams: パラメータ更新
  */
 
-import type { ComputedRef, Ref } from 'vue'
+import { ref, type ComputedRef, type Ref } from 'vue'
 import {
-  getSurfacePresets,
+  surfacePresetRepository,
+  type SurfacePreset,
   type RGBA,
   type MaskPattern,
   type CircleMaskShapeParams,
@@ -64,8 +65,8 @@ const BASE_LAYER_ID = 'background'
 export interface UseHeroPatternPresetsOptions {
   heroViewRepository: HeroViewRepository
   surfaceUsecase: SurfaceUsecase
-  midgroundTexturePatterns: MidgroundSurfacePreset[]
-  maskPatterns: MaskPattern[]
+  midgroundTexturePatterns: Ref<MidgroundSurfacePreset[]>
+  maskPatterns: Ref<MaskPattern[]>
   surfaceParams: UseHeroSurfaceParamsReturn
   selectedBackgroundIndex: ComputedRef<number> & { value: number }
   selectedMaskIndex: ComputedRef<number | null> & { value: number | null }
@@ -78,7 +79,8 @@ export interface UseHeroPatternPresetsOptions {
 }
 
 export interface UseHeroPatternPresetsReturn {
-  surfacePresets: ReturnType<typeof getSurfacePresets>
+  surfacePresets: Ref<SurfacePreset[]>
+  initPresets: () => Promise<void>
   setBaseSurface: (surface: NormalizedSurfaceConfig) => void
   initMaskShapeParamsFromPreset: () => void
   initSurfaceParamsFromPreset: () => void
@@ -114,7 +116,12 @@ export const useHeroPatternPresets = (
     processorLayerId,
   } = surfaceParams
 
-  const surfacePresets = getSurfacePresets()
+  const surfacePresets = ref<SurfacePreset[]>([])
+
+  // Initialize presets asynchronously
+  const initPresets = async () => {
+    surfacePresets.value = await surfacePresetRepository.getAll()
+  }
 
   const setBaseSurface = (surface: NormalizedSurfaceConfig) => {
     heroViewRepository.updateLayer(BASE_LAYER_ID, { surface })
@@ -159,7 +166,7 @@ export const useHeroPatternPresets = (
   const initMaskShapeParamsFromPreset = () => {
     const idx = selectedMaskIndex.value
     if (idx === null) return
-    const pattern = maskPatterns[idx]
+    const pattern = maskPatterns.value[idx]
     if (pattern && pattern.children && pattern.children.length > 0) {
       // Find the processor with mask modifier and replace children
       const maskProcessor = findFirstMaskProcessor()
@@ -174,7 +181,7 @@ export const useHeroPatternPresets = (
 
       // Children-based mask pattern: use first child's surface config for UI params
       const firstChild = pattern.children[0]
-      if (firstChild && firstChild.type === 'surface') {
+      if (firstChild) {
         const surfaceId = firstChild.surface.id
         const params = firstChild.surface.params
 
@@ -229,7 +236,7 @@ export const useHeroPatternPresets = (
 
   const initSurfaceParamsFromPreset = () => {
     const idx = selectedMidgroundTextureIndex.value
-    const preset = midgroundTexturePatterns[idx]
+    const preset = midgroundTexturePatterns.value[idx]
     if (preset) {
       // Type assertion needed - preset.params is GenericSurfaceParams, toCustomSurfaceParams expects SurfaceConfig
       // Both have { type: string; [key: string]: unknown } structure at runtime
@@ -239,47 +246,19 @@ export const useHeroPatternPresets = (
 
   const initBackgroundSurfaceParamsFromPreset = () => {
     const idx = selectedBackgroundIndex.value
-    const preset = surfacePresets[idx]
+    const preset = surfacePresets.value[idx]
     if (preset) {
-      // Type assertion needed - preset.params is GenericSurfaceParams, toCustomBackgroundSurfaceParams expects SurfaceConfig
+      // Type assertion needed - preset.params is GenericSurfaceParams
       const params = toCustomBackgroundSurfaceParams(preset.params as Parameters<typeof toCustomBackgroundSurfaceParams>[0])
-      if (params.id === 'solid') {
-        setBaseSurface({ id: 'solid', params: {} })
-      } else if (params.id === 'stripe') {
-        setBaseSurface({ id: 'stripe', params: toPropertyValueParams({ width1: params.width1, width2: params.width2, angle: params.angle }) })
-      } else if (params.id === 'grid') {
-        setBaseSurface({ id: 'grid', params: toPropertyValueParams({ lineWidth: params.lineWidth, cellSize: params.cellSize }) })
-      } else if (params.id === 'polkaDot') {
-        setBaseSurface({ id: 'polkaDot', params: toPropertyValueParams({ dotRadius: params.dotRadius, spacing: params.spacing, rowOffset: params.rowOffset }) })
-      } else if (params.id === 'checker') {
-        setBaseSurface({ id: 'checker', params: toPropertyValueParams({ cellSize: params.cellSize, angle: params.angle }) })
-      } else if (params.id === 'linearGradient') {
-        setBaseSurface({ id: 'linearGradient', params: toPropertyValueParams({ angle: params.angle, centerX: params.centerX, centerY: params.centerY }) })
-      } else if (params.id === 'circularGradient') {
-        setBaseSurface({ id: 'circularGradient', params: toPropertyValueParams({ centerX: params.centerX, centerY: params.centerY, circularInvert: params.circularInvert }) })
-      } else if (params.id === 'conicGradient') {
-        setBaseSurface({ id: 'conicGradient', params: toPropertyValueParams({ centerX: params.centerX, centerY: params.centerY, startAngle: params.startAngle, sweepAngle: params.sweepAngle }) })
-      } else if (params.id === 'repeatLinearGradient') {
-        setBaseSurface({ id: 'repeatLinearGradient', params: toPropertyValueParams({ angle: params.angle, centerX: params.centerX, centerY: params.centerY, repeat: params.repeat }) })
-      } else if (params.id === 'perlinGradient') {
-        setBaseSurface({ id: 'perlinGradient', params: toPropertyValueParams({ scale: params.scale, octaves: params.octaves, seed: params.seed, contrast: params.contrast, offset: params.offset }) })
-      } else if (params.id === 'curlGradient') {
-        setBaseSurface({ id: 'curlGradient', params: toPropertyValueParams({ scale: params.scale, octaves: params.octaves, seed: params.seed, contrast: params.contrast, offset: params.offset, intensity: params.intensity }) })
-      } else if (params.id === 'gradientGrainLinear' || params.id === 'gradientGrainCircular' || params.id === 'gradientGrainRadial' || params.id === 'gradientGrainPerlin' || params.id === 'gradientGrainCurl') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'asanoha') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'seigaiha') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'wave') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'scales') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'ogee') {
-        customBackgroundSurfaceParams.value = params
-      } else if (params.id === 'sunburst') {
-        customBackgroundSurfaceParams.value = params
-      }
+      // Extract id and remaining params for schema-based surface initialization
+      const { id, ...rest } = params
+      // Convert params to PropertyValue format and set base surface
+      // Filter out 'id' key and cast values to expected types
+      const surfaceParams = Object.fromEntries(
+        Object.entries(rest).map(([key, value]) => [key, value as string | number | boolean | undefined])
+      )
+      // Type assertion for id - GenericParams.id is string, but setBaseSurface expects SurfaceType
+      setBaseSurface({ id: id as Parameters<typeof setBaseSurface>[0]['id'], params: toPropertyValueParams(surfaceParams) })
     } else {
       customBackgroundSurfaceParams.value = null
     }
@@ -324,6 +303,7 @@ export const useHeroPatternPresets = (
 
   return {
     surfacePresets,
+    initPresets,
     setBaseSurface,
     initMaskShapeParamsFromPreset,
     initSurfaceParamsFromPreset,

@@ -14,10 +14,10 @@ import {
 } from '../Domain/ShaderDefinition'
 import {
   type ShaderRef,
-  type LegacyShaderRef,
+  type FlatShaderRef,
   type SurfaceRef,
   isShaderRef,
-  isLegacyShaderRef,
+  isFlatShaderRef,
 } from '../Domain/ShaderRef'
 
 // ============================================================
@@ -774,8 +774,8 @@ export function resolveShader(ref: SurfaceRef): ShaderDefinition | undefined {
   if (isShaderRef(ref)) {
     return shaderRegistry.getById(ref.shaderId)
   }
-  if (isLegacyShaderRef(ref)) {
-    return shaderRegistry.getByType(ref.type)
+  if (isFlatShaderRef(ref)) {
+    return shaderRegistry.getByType(ref.id)
   }
   return undefined
 }
@@ -805,7 +805,7 @@ export function resolveShaderWithParams(ref: SurfaceRef): {
     providedParams = ref.params ?? {}
   } else {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { type, ...rest } = ref
+    const { id, ...rest } = ref
     providedParams = rest
   }
 
@@ -816,17 +816,17 @@ export function resolveShaderWithParams(ref: SurfaceRef): {
 }
 
 /**
- * Convert a legacy reference to a UUID-based ShaderRef
+ * Convert a flat reference to a UUID-based ShaderRef
  *
- * @param legacyRef - Legacy type-based reference
- * @returns UUID-based ShaderRef or undefined if type not recognized
+ * @param flatRef - Flat id-based reference
+ * @returns UUID-based ShaderRef or undefined if id not recognized
  */
-export function convertToShaderRef(legacyRef: LegacyShaderRef): ShaderRef | undefined {
-  const shaderId = shaderRegistry.getIdByType(legacyRef.type)
+export function convertToShaderRef(flatRef: FlatShaderRef): ShaderRef | undefined {
+  const shaderId = shaderRegistry.getIdByType(flatRef.id)
   if (!shaderId) return undefined
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { type, ...params } = legacyRef
+  const { id, ...params } = flatRef
   return {
     shaderId,
     params: Object.keys(params).length > 0 ? params : undefined,
@@ -834,25 +834,25 @@ export function convertToShaderRef(legacyRef: LegacyShaderRef): ShaderRef | unde
 }
 
 /**
- * Convert a ShaderRef to legacy format
+ * Convert a ShaderRef to flat format
  *
  * @param ref - UUID-based ShaderRef
- * @returns Legacy format reference or undefined if shader not found
+ * @returns Flat format reference or undefined if shader not found
  */
-export function convertToLegacyRef(ref: ShaderRef): LegacyShaderRef | undefined {
+export function convertToFlatRef(ref: ShaderRef): FlatShaderRef | undefined {
   const shader = shaderRegistry.getById(ref.shaderId)
   if (!shader) return undefined
 
-  // Find the legacy type for this shader
-  let legacyType: string | undefined
-  for (const [type, id] of Object.entries(SURFACE_SHADER_IDS)) {
-    if (id === ref.shaderId) {
-      legacyType = type
+  // Find the flat id for this shader
+  let flatId: string | undefined
+  for (const [surfaceId, uuid] of Object.entries(SURFACE_SHADER_IDS)) {
+    if (uuid === ref.shaderId) {
+      flatId = surfaceId
       break
     }
   }
 
-  if (!legacyType) return undefined
+  if (!flatId) return undefined
 
   // Get default params
   const defaultParams: Record<string, unknown> = {}
@@ -863,5 +863,5 @@ export function convertToLegacyRef(ref: ShaderRef): LegacyShaderRef | undefined 
   // Merge with provided params
   const params = { ...defaultParams, ...(ref.params ?? {}) }
 
-  return { type: legacyType, ...params } as LegacyShaderRef
+  return { id: flatId, ...params } as FlatShaderRef
 }

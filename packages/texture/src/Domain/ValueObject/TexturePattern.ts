@@ -244,7 +244,6 @@ export interface MaskPatternSurface {
  * Simplified version of SurfaceLayerNodeConfig for mask presets.
  */
 export interface MaskPatternLayer {
-  type: 'surface'
   /** Unique layer identifier */
   id: string
   /** Display name */

@@ -24,7 +24,7 @@ import {
 } from '@practice/section-visual'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
-import { getDefaultMaskPatterns, type MaskPattern } from '@practice/texture'
+import { maskPatternRepository, type MaskPattern } from '@practice/texture'
 import { hsvToOklch } from '../../components/SiteBuilder/utils/colorConversion'
 
 // ============================================================
@@ -46,7 +46,7 @@ const createBaseSurfaceLayer = (): SurfaceLayerNodeConfig => ({
   name: 'Base Surface',
   type: 'surface',
   visible: true,
-  surface: normalizeSurfaceConfig({ type: 'stripe', width1: 25, width2: 25, angle: Math.PI / 4, color1: 'BN3', color2: 'BN7' }),
+  surface: normalizeSurfaceConfig({ id: 'stripe', width1: 25, width2: 25, angle: Math.PI / 4, color1: 'BN3', color2: 'BN7' }),
 })
 
 // ============================================================
@@ -192,7 +192,7 @@ type Story = StoryObj<typeof HeroPreview>
 // Mask Pattern Data
 // ============================================================
 
-const maskPatterns = getDefaultMaskPatterns()
+const maskPatterns = await maskPatternRepository.getAll()
 
 // ============================================================
 // Individual Mask Stories

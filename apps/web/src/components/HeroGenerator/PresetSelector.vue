@@ -52,7 +52,7 @@ onClickOutside(popupRef, () => {
 })
 
 const selectedLabel = () => {
-  if (props.selectedIndex === null) {
+  if (props.selectedIndex === null || !props.items) {
     return props.nullLabel ?? 'None'
   }
   return props.items[props.selectedIndex]?.label ?? 'Unknown'
@@ -60,6 +60,10 @@ const selectedLabel = () => {
 
 // Items sorted with selected first
 const sortedItems = computed(() => {
+  // Guard against undefined or empty items
+  if (!props.items || props.items.length === 0) {
+    return []
+  }
   if (props.selectedIndex === null || props.selectedIndex >= props.items.length) {
     return props.items.map((item, i) => ({ item, originalIndex: i }))
   }

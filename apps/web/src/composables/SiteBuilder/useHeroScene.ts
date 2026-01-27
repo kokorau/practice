@@ -16,25 +16,8 @@ import { ref, shallowRef, computed, watch, onUnmounted, type ComputedRef, type R
 import type { IntensityProvider } from '@practice/timeline'
 import {
   type SurfacePreset,
-  type CircleMaskShapeParams,
-  type RectMaskShapeParams,
-  type BlobMaskShapeParams,
-  type PerlinMaskShapeParams,
-  type LinearGradientMaskShapeParams,
-  type RadialGradientMaskShapeParams,
-  type BoxGradientMaskShapeParams,
-  type WavyLineMaskShapeParams,
-  type StripeSurfaceParams,
-  type GridSurfaceParams,
-  type PolkaDotSurfaceParams,
-  type CheckerSurfaceParams,
-  type TriangleSurfaceParams,
-  type HexagonSurfaceParams,
-  type CircularGradientSurfaceParams,
-  type ConicGradientSurfaceParams,
-  type RepeatLinearGradientSurfaceParams,
-  type PerlinGradientSurfaceParams,
-  type CurlGradientSurfaceParams,
+  type GenericParams,
+  type MaskPattern,
 } from '@practice/texture'
 import type { HeroViewPresetRepository } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -169,198 +152,10 @@ const createHeroSceneEditorState = (
 export type MidgroundSurfacePreset = SurfacePreset
 
 
-/**
- * Custom mask shape params union type
- */
-export type CustomMaskShapeParams =
-  | ({ id: 'circle' } & CircleMaskShapeParams)
-  | ({ id: 'rect' } & RectMaskShapeParams)
-  | ({ id: 'blob' } & BlobMaskShapeParams)
-  | ({ id: 'perlin' } & PerlinMaskShapeParams)
-  | ({ id: 'linearGradient' } & LinearGradientMaskShapeParams)
-  | ({ id: 'radialGradient' } & RadialGradientMaskShapeParams)
-  | ({ id: 'boxGradient' } & BoxGradientMaskShapeParams)
-  | ({ id: 'wavyLine' } & WavyLineMaskShapeParams)
-
-/**
- * Textile pattern surface params
- */
-export interface AsanohaSurfaceParams {
-  size: number
-  lineWidth: number
-}
-
-export interface SeigaihaSurfaceParams {
-  radius: number
-  rings: number
-  lineWidth: number
-}
-
-export interface WaveSurfaceParams {
-  amplitude: number
-  wavelength: number
-  thickness: number
-  angle: number
-}
-
-export interface ScalesSurfaceParams {
-  size: number
-  overlap: number
-  angle: number
-}
-
-export interface OgeeSurfaceParams {
-  width: number
-  height: number
-  lineWidth: number
-}
-
-export interface SunburstSurfaceParams {
-  rays: number
-  centerX: number
-  centerY: number
-  twist: number
-}
-
-export interface PaperTextureSurfaceParams {
-  fiberScale: number
-  fiberStrength: number
-  fiberWarp: number
-  grainDensity: number
-  grainSize: number
-  bumpStrength: number
-  lightAngle: number
-  seed: number
-}
-
-/**
- * Gradient grain surface params (5 separate types)
- */
-export interface GradientGrainLinearSurfaceParams {
-  angle: number
-  centerX: number
-  centerY: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainCircularSurfaceParams {
-  centerX: number
-  centerY: number
-  circularInvert?: boolean
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainRadialSurfaceParams {
-  centerX: number
-  centerY: number
-  radialStartAngle: number
-  radialSweepAngle: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainPerlinSurfaceParams {
-  perlinScale: number
-  perlinOctaves: number
-  perlinContrast: number
-  perlinOffset: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainCurlSurfaceParams {
-  perlinScale: number
-  perlinOctaves: number
-  perlinContrast: number
-  perlinOffset: number
-  curlIntensity: number
-  seed: number
-  sparsity: number
-}
-
-export interface GradientGrainSimplexSurfaceParams {
-  simplexScale: number
-  simplexOctaves: number
-  simplexContrast: number
-  simplexOffset: number
-  seed: number
-  sparsity: number
-}
-
-/**
- * Linear gradient surface params (smooth 2-color gradient without grain)
- */
-export interface LinearGradientSurfaceParams {
-  angle: number
-  centerX: number
-  centerY: number
-}
-
-/**
- * Custom surface params union type
- * Uses 'id' field for consistency with NormalizedSurfaceConfig
- */
-export type CustomSurfaceParams =
-  | { id: 'solid' }
-  | ({ id: 'stripe' } & StripeSurfaceParams)
-  | ({ id: 'grid' } & GridSurfaceParams)
-  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
-  | ({ id: 'circularGradient' } & CircularGradientSurfaceParams)
-  | ({ id: 'conicGradient' } & ConicGradientSurfaceParams)
-  | ({ id: 'repeatLinearGradient' } & RepeatLinearGradientSurfaceParams)
-  | ({ id: 'perlinGradient' } & PerlinGradientSurfaceParams)
-  | ({ id: 'curlGradient' } & CurlGradientSurfaceParams)
-  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
-  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
-  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
-  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
-  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
-  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
-  | ({ id: 'triangle' } & TriangleSurfaceParams)
-  | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ id: 'wave' } & WaveSurfaceParams)
-  | ({ id: 'scales' } & ScalesSurfaceParams)
-  | ({ id: 'ogee' } & OgeeSurfaceParams)
-  | ({ id: 'sunburst' } & SunburstSurfaceParams)
-  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
-
-/**
- * Custom background surface params union type
- * Uses 'id' field for consistency with NormalizedSurfaceConfig
- */
-export type CustomBackgroundSurfaceParams =
-  | ({ id: 'stripe' } & StripeSurfaceParams)
-  | ({ id: 'grid' } & GridSurfaceParams)
-  | ({ id: 'polkaDot' } & PolkaDotSurfaceParams)
-  | ({ id: 'checker' } & CheckerSurfaceParams)
-  | ({ id: 'linearGradient' } & LinearGradientSurfaceParams)
-  | ({ id: 'circularGradient' } & CircularGradientSurfaceParams)
-  | ({ id: 'conicGradient' } & ConicGradientSurfaceParams)
-  | ({ id: 'repeatLinearGradient' } & RepeatLinearGradientSurfaceParams)
-  | ({ id: 'perlinGradient' } & PerlinGradientSurfaceParams)
-  | ({ id: 'curlGradient' } & CurlGradientSurfaceParams)
-  | ({ id: 'gradientGrainLinear' } & GradientGrainLinearSurfaceParams)
-  | ({ id: 'gradientGrainCircular' } & GradientGrainCircularSurfaceParams)
-  | ({ id: 'gradientGrainRadial' } & GradientGrainRadialSurfaceParams)
-  | ({ id: 'gradientGrainPerlin' } & GradientGrainPerlinSurfaceParams)
-  | ({ id: 'gradientGrainCurl' } & GradientGrainCurlSurfaceParams)
-  | ({ id: 'gradientGrainSimplex' } & GradientGrainSimplexSurfaceParams)
-  | ({ id: 'triangle' } & TriangleSurfaceParams)
-  | ({ id: 'hexagon' } & HexagonSurfaceParams)
-  | ({ id: 'asanoha' } & AsanohaSurfaceParams)
-  | ({ id: 'seigaiha' } & SeigaihaSurfaceParams)
-  | ({ id: 'wave' } & WaveSurfaceParams)
-  | ({ id: 'scales' } & ScalesSurfaceParams)
-  | ({ id: 'ogee' } & OgeeSurfaceParams)
-  | ({ id: 'sunburst' } & SunburstSurfaceParams)
-  | ({ id: 'paperTexture' } & PaperTextureSurfaceParams)
-  | { id: 'solid' }
+// GenericParams ベースの型エイリアス（後方互換用）
+export type CustomMaskShapeParams = GenericParams
+export type CustomSurfaceParams = GenericParams
+export type CustomBackgroundSurfaceParams = GenericParams
 
 export interface UseHeroSceneOptions {
   primitivePalette: ComputedRef<PrimitivePalette>
@@ -1168,8 +963,8 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
 
   // Mask patterns with normalized config for pipeline-based preview
   const maskPatternsWithNormalizedConfig = computed(() => {
-    return heroThumbnails.maskPatterns
-      .map((pattern) => {
+    return heroThumbnails.maskPatterns.value
+      .map((pattern: MaskPattern) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const p = pattern as any
 
@@ -1350,6 +1145,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const renderer: RendererActions = {
     initPreview,
     destroyPreview,
+    initPatterns: heroThumbnails.initPatterns,
     openSection: heroThumbnails.openSection,
     renderSceneFromConfig,
   }

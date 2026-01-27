@@ -56,7 +56,7 @@ import type {
   AnyMaskConfig,
 } from '../Domain/HeroViewConfig'
 import {
-  getSurfaceAsLegacy,
+  getSurfaceAsFlat,
   getMaskAsLegacy,
 } from '../Domain/HeroViewConfig'
 // Pipeline imports for node-based rendering
@@ -206,12 +206,12 @@ export function createBackgroundSpecFromSurface(
   scale: number
 ): TextureRenderSpec | null {
   // Convert to legacy format if normalized
-  const surface = getSurfaceAsLegacy(surfaceInput)
+  const surface = getSurfaceAsFlat(surfaceInput)
 
-  if (surface.type === 'solid') {
+  if (surface.id === 'solid') {
     return createSolidSpec({ color: color1 })
   }
-  if (surface.type === 'stripe') {
+  if (surface.id === 'stripe') {
     return createStripeSpec({
       color1,
       color2,
@@ -220,7 +220,7 @@ export function createBackgroundSpecFromSurface(
       angle: surface.angle,
     })
   }
-  if (surface.type === 'grid') {
+  if (surface.id === 'grid') {
     return createGridSpec({
       lineColor: color1,
       bgColor: color2,
@@ -228,7 +228,7 @@ export function createBackgroundSpecFromSurface(
       cellSize: scaleValue(surface.cellSize, scale),
     })
   }
-  if (surface.type === 'polkaDot') {
+  if (surface.id === 'polkaDot') {
     return createPolkaDotSpec({
       dotColor: color1,
       bgColor: color2,
@@ -237,7 +237,7 @@ export function createBackgroundSpecFromSurface(
       rowOffset: surface.rowOffset,
     })
   }
-  if (surface.type === 'checker') {
+  if (surface.id === 'checker') {
     return createCheckerSpec({
       color1,
       color2,
@@ -246,7 +246,7 @@ export function createBackgroundSpecFromSurface(
     })
   }
   // Textile patterns
-  if (surface.type === 'triangle') {
+  if (surface.id === 'triangle') {
     return createTriangleSpec({
       color1,
       color2,
@@ -254,7 +254,7 @@ export function createBackgroundSpecFromSurface(
       angle: surface.angle,
     })
   }
-  if (surface.type === 'hexagon') {
+  if (surface.id === 'hexagon') {
     return createHexagonSpec({
       color1,
       color2,
@@ -263,7 +263,7 @@ export function createBackgroundSpecFromSurface(
     })
   }
   // Smooth linear gradient (no grain)
-  if (surface.type === 'linearGradient') {
+  if (surface.id === 'linearGradient') {
     // Use custom stops if provided, otherwise create 2 stops from color1/color2
     const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
       ? surface.stops as Array<{ color: RGBA; position: number }>
@@ -282,7 +282,7 @@ export function createBackgroundSpecFromSurface(
     )
   }
   // Circular gradient (center outward)
-  if (surface.type === 'circularGradient') {
+  if (surface.id === 'circularGradient') {
     const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
       ? surface.stops as Array<{ color: RGBA; position: number }>
       : [
@@ -302,7 +302,7 @@ export function createBackgroundSpecFromSurface(
     )
   }
   // Conic gradient (angle-based)
-  if (surface.type === 'conicGradient') {
+  if (surface.id === 'conicGradient') {
     const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
       ? surface.stops as Array<{ color: RGBA; position: number }>
       : [
@@ -323,7 +323,7 @@ export function createBackgroundSpecFromSurface(
     )
   }
   // Repeat linear gradient
-  if (surface.type === 'repeatLinearGradient') {
+  if (surface.id === 'repeatLinearGradient') {
     const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
       ? surface.stops as Array<{ color: RGBA; position: number }>
       : [
@@ -342,7 +342,7 @@ export function createBackgroundSpecFromSurface(
     )
   }
   // Perlin gradient
-  if (surface.type === 'perlinGradient') {
+  if (surface.id === 'perlinGradient') {
     const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
       ? surface.stops as Array<{ color: RGBA; position: number }>
       : [
@@ -364,7 +364,7 @@ export function createBackgroundSpecFromSurface(
     )
   }
   // Curl gradient
-  if (surface.type === 'curlGradient') {
+  if (surface.id === 'curlGradient') {
     const stops = Array.isArray(surface.stops) && surface.stops.length >= 2
       ? surface.stops as Array<{ color: RGBA; position: number }>
       : [
@@ -386,7 +386,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     )
   }
-  if (surface.type === 'gradientGrainLinear') {
+  if (surface.id === 'gradientGrainLinear') {
     return createGradientGrainLinearSpec(
       {
         angle: surface.angle,
@@ -401,7 +401,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     )
   }
-  if (surface.type === 'gradientGrainCircular') {
+  if (surface.id === 'gradientGrainCircular') {
     return createGradientGrainCircularSpec(
       {
         centerX: surface.centerX,
@@ -416,7 +416,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     )
   }
-  if (surface.type === 'gradientGrainRadial') {
+  if (surface.id === 'gradientGrainRadial') {
     return createGradientGrainRadialSpec(
       {
         centerX: surface.centerX,
@@ -432,7 +432,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     )
   }
-  if (surface.type === 'gradientGrainPerlin') {
+  if (surface.id === 'gradientGrainPerlin') {
     return createGradientGrainPerlinSpec(
       {
         perlinScale: surface.perlinScale,
@@ -448,7 +448,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     )
   }
-  if (surface.type === 'gradientGrainCurl') {
+  if (surface.id === 'gradientGrainCurl') {
     return createGradientGrainCurlSpec(
       {
         perlinScale: surface.perlinScale,
@@ -465,7 +465,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     )
   }
-  if (surface.type === 'gradientGrainSimplex') {
+  if (surface.id === 'gradientGrainSimplex') {
     return createGradientGrainSimplexSpec(
       {
         simplexScale: surface.simplexScale,
@@ -481,7 +481,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     )
   }
-  if (surface.type === 'asanoha') {
+  if (surface.id === 'asanoha') {
     return createAsanohaSpec({
       size: scaleValue(surface.size, scale),
       lineWidth: scaleValue(surface.lineWidth, scale),
@@ -489,7 +489,7 @@ export function createBackgroundSpecFromSurface(
       bgColor: color2,
     })
   }
-  if (surface.type === 'seigaiha') {
+  if (surface.id === 'seigaiha') {
     return createSeigaihaSpec({
       radius: scaleValue(surface.radius, scale),
       rings: surface.rings,
@@ -498,7 +498,7 @@ export function createBackgroundSpecFromSurface(
       bgColor: color2,
     })
   }
-  if (surface.type === 'wave') {
+  if (surface.id === 'wave') {
     return createWaveSpec({
       amplitude: scaleValue(surface.amplitude, scale),
       wavelength: scaleValue(surface.wavelength, scale),
@@ -508,7 +508,7 @@ export function createBackgroundSpecFromSurface(
       color2,
     })
   }
-  if (surface.type === 'scales') {
+  if (surface.id === 'scales') {
     return createScalesSpec({
       size: scaleValue(surface.size, scale),
       overlap: surface.overlap,
@@ -517,7 +517,7 @@ export function createBackgroundSpecFromSurface(
       color2,
     })
   }
-  if (surface.type === 'ogee') {
+  if (surface.id === 'ogee') {
     return createOgeeSpec({
       width: scaleValue(surface.width, scale),
       height: scaleValue(surface.height, scale),
@@ -526,7 +526,7 @@ export function createBackgroundSpecFromSurface(
       bgColor: color2,
     })
   }
-  if (surface.type === 'sunburst') {
+  if (surface.id === 'sunburst') {
     return createSunburstSpec({
       rays: surface.rays,
       centerX: surface.centerX,
@@ -538,7 +538,7 @@ export function createBackgroundSpecFromSurface(
       viewportHeight: viewport.height,
     })
   }
-  if (surface.type === 'paperTexture') {
+  if (surface.id === 'paperTexture') {
     return createPaperTextureSpec({
       color: color1,
       fiberScale: surface.fiberScale,
@@ -557,7 +557,7 @@ export function createBackgroundSpecFromSurface(
   // These output greyscale values where white = visible, black = transparent
   // ============================================================
 
-  if (surface.type === 'circle') {
+  if (surface.id === 'circle') {
     // Circle mask: inner=white (visible), outer=black (transparent)
     return createCircleGreymapMaskSpec(
       {
@@ -570,7 +570,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     ) as unknown as TextureRenderSpec
   }
-  if (surface.type === 'rect') {
+  if (surface.id === 'rect') {
     return createRectGreymapMaskSpec(
       {
         left: surface.left,
@@ -590,7 +590,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     ) as unknown as TextureRenderSpec
   }
-  if (surface.type === 'blob') {
+  if (surface.id === 'blob') {
     return createBlobGreymapMaskSpec(
       {
         centerX: surface.centerX,
@@ -605,7 +605,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     ) as unknown as TextureRenderSpec
   }
-  if (surface.type === 'perlin') {
+  if (surface.id === 'perlin') {
     return createPerlinGreymapMaskSpec(
       {
         seed: surface.seed,
@@ -618,7 +618,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     ) as unknown as TextureRenderSpec
   }
-  if (surface.type === 'simplex') {
+  if (surface.id === 'simplex') {
     return createSimplexGreymapMaskSpec(
       {
         seed: surface.seed,
@@ -631,7 +631,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     ) as unknown as TextureRenderSpec
   }
-  if (surface.type === 'curl') {
+  if (surface.id === 'curl') {
     return createCurlGreymapMaskSpec(
       {
         seed: surface.seed,
@@ -645,7 +645,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     ) as unknown as TextureRenderSpec
   }
-  if (surface.type === 'radialGradient') {
+  if (surface.id === 'radialGradient') {
     return createRadialGradientGreymapMaskSpec(
       {
         centerX: surface.centerX,
@@ -659,7 +659,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     ) as unknown as TextureRenderSpec
   }
-  if (surface.type === 'boxGradient') {
+  if (surface.id === 'boxGradient') {
     return createBoxGradientGreymapMaskSpec(
       {
         left: surface.left,
@@ -674,7 +674,7 @@ export function createBackgroundSpecFromSurface(
       viewport
     ) as unknown as TextureRenderSpec
   }
-  if (surface.type === 'wavyLine') {
+  if (surface.id === 'wavyLine') {
     return createWavyLineGreymapMaskSpec(
       {
         position: surface.position,
@@ -690,7 +690,7 @@ export function createBackgroundSpecFromSurface(
     ) as unknown as TextureRenderSpec
   }
   // Linear gradient mask surface for children-based masks
-  if (surface.type === 'linearGradientMask') {
+  if (surface.id === 'linearGradientMask') {
     return createLinearGradientGreymapMaskSpec(
       {
         angle: surface.angle,

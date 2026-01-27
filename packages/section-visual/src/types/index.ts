@@ -5,13 +5,8 @@
  */
 
 export type {
-  // Custom params types
+  // Custom params types (now aliased to GenericParams)
   CustomMaskShapeParams,
-  GradientGrainLinearSurfaceParams,
-  GradientGrainCircularSurfaceParams,
-  GradientGrainRadialSurfaceParams,
-  GradientGrainPerlinSurfaceParams,
-  GradientGrainCurlSurfaceParams,
   CustomSurfaceParams,
   CustomBackgroundSurfaceParams,
   SectionType,

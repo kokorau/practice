@@ -47,41 +47,41 @@ export interface ShaderRef {
 // ============================================================
 
 /**
- * Legacy surface type (type-based pattern identification)
+ * Surface type identifier (id-based pattern identification)
  *
- * This matches the existing SurfaceConfig.type values for backward compatibility.
+ * This matches the existing SurfaceConfig.id values.
  */
-export type LegacySurfaceType = SurfaceConfig['type']
+export type SurfaceTypeId = SurfaceConfig['id']
 
 /**
- * Legacy reference format using type discriminator
+ * Flat reference format using id discriminator
  *
  * This is the existing format used in SurfaceConfig:
  * ```typescript
- * { type: 'stripe', width1: 20, width2: 20, angle: 45 }
+ * { id: 'stripe', width1: 20, width2: 20, angle: 45 }
  * ```
  */
-export type LegacyShaderRef = SurfaceConfig
+export type FlatShaderRef = SurfaceConfig
 
 // ============================================================
 // Union Types for Backward Compatibility
 // ============================================================
 
 /**
- * Surface reference that supports both legacy and new formats
+ * Surface reference that supports both flat and UUID-based formats
  *
- * This allows gradual migration from type-based to UUID-based references.
+ * This allows gradual migration from id-based to UUID-based references.
  *
  * @example
  * ```typescript
- * // Legacy format (still supported)
- * const legacy: SurfaceRef = { type: 'stripe', width1: 20, width2: 20, angle: 45 }
+ * // Flat format (still supported)
+ * const flat: SurfaceRef = { id: 'stripe', width1: 20, width2: 20, angle: 45 }
  *
- * // New UUID format
+ * // UUID format
  * const modern: SurfaceRef = { shaderId: 'uuid-here', params: { width1: 30 } }
  * ```
  */
-export type SurfaceRef = LegacyShaderRef | ShaderRef
+export type SurfaceRef = FlatShaderRef | ShaderRef
 
 // ============================================================
 // Type Guards
@@ -97,19 +97,19 @@ export function isShaderRef(ref: unknown): ref is ShaderRef {
 }
 
 /**
- * Check if a reference is a legacy format (type-based)
+ * Check if a reference is a flat format (id-based)
  */
-export function isLegacyShaderRef(ref: unknown): ref is LegacyShaderRef {
+export function isFlatShaderRef(ref: unknown): ref is FlatShaderRef {
   if (typeof ref !== 'object' || ref === null) return false
   const obj = ref as Record<string, unknown>
-  return typeof obj.type === 'string' && !('shaderId' in obj)
+  return typeof obj.id === 'string' && !('shaderId' in obj)
 }
 
 /**
  * Check if a reference is a valid SurfaceRef (either format)
  */
 export function isSurfaceRef(ref: unknown): ref is SurfaceRef {
-  return isShaderRef(ref) || isLegacyShaderRef(ref)
+  return isShaderRef(ref) || isFlatShaderRef(ref)
 }
 
 // ============================================================
@@ -119,20 +119,20 @@ export function isSurfaceRef(ref: unknown): ref is SurfaceRef {
 /**
  * Get the shader identifier from either format
  *
- * For legacy refs, returns the type string.
+ * For flat refs, returns the id string.
  * For UUID refs, returns the shaderId.
  */
 export function getShaderIdentifier(ref: SurfaceRef): string {
   if (isShaderRef(ref)) {
     return ref.shaderId
   }
-  return ref.type
+  return ref.id
 }
 
 /**
  * Get parameters from either format
  *
- * For legacy refs, extracts all non-type properties.
+ * For flat refs, extracts all non-id properties.
  * For UUID refs, returns the params object.
  */
 export function getShaderParams(ref: SurfaceRef): Record<string, unknown> {
@@ -140,18 +140,18 @@ export function getShaderParams(ref: SurfaceRef): Record<string, unknown> {
     return ref.params ?? {}
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { type, ...params } = ref
+  const { id, ...params } = ref
   return params
 }
 
 /**
- * Create a ShaderRef from a legacy reference and shader ID
+ * Create a ShaderRef from a flat reference and shader ID
  *
- * This is useful when migrating from legacy format to UUID format.
+ * This is useful when migrating from flat format to UUID format.
  */
-export function toShaderRef(legacyRef: LegacyShaderRef, shaderId: string): ShaderRef {
+export function toShaderRef(flatRef: FlatShaderRef, shaderId: string): ShaderRef {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { type, ...params } = legacyRef
+  const { id, ...params } = flatRef
   return {
     shaderId,
     params: Object.keys(params).length > 0 ? params : undefined,
@@ -176,9 +176,9 @@ export function normalizeSurfaceRef(ref: SurfaceRef): {
     }
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { type, ...params } = ref
+  const { id, ...params } = ref
   return {
-    identifier: type,
+    identifier: id,
     params,
     isUUID: false,
   }

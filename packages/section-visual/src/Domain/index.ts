@@ -1017,12 +1017,12 @@ export {
 export {
   // Types
   type ShaderRef,
-  type LegacySurfaceType,
-  type LegacyShaderRef,
+  type SurfaceTypeId,
+  type FlatShaderRef,
   type SurfaceRef,
   // Type guards
   isShaderRef,
-  isLegacyShaderRef,
+  isFlatShaderRef,
   isSurfaceRef,
   // Utilities
   getShaderIdentifier,
@@ -1039,7 +1039,7 @@ export {
   type ShaderRefConfig,
   type SurfaceRefConfig,
   isShaderRefConfig,
-  isLegacySurfaceConfig,
+  isIdBasedSurfaceConfig,
 } from './HeroViewConfig'
 
 // ============================================================
