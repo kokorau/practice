@@ -1,4 +1,6 @@
 export { default as NodeGraph } from './NodeGraph.vue'
 export { default as NodeWrapper } from './NodeWrapper.vue'
+export { default as SurfaceNode } from './SurfaceNode.vue'
+export { default as RenderNode } from './RenderNode.vue'
 export { useNodeConnections } from './useNodeConnections'
 export * from './types'

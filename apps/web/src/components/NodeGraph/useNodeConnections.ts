@@ -13,19 +13,22 @@ function getNodeEdge(
 ): Point {
   if (!nodeRef || !container) return { x: 0, y: 0 }
 
-  const nodeRect = nodeRef.getBoundingClientRect()
+  // Find the actual node-body element for accurate port positioning
+  const nodeBody = nodeRef.querySelector('.node-body') as HTMLElement | null
+  const targetElement = nodeBody || nodeRef
+
+  const nodeRect = targetElement.getBoundingClientRect()
   const containerRect = container.getBoundingClientRect()
 
   const left = nodeRect.left - containerRect.left
   const top = nodeRect.top - containerRect.top
-  const centerX = left + nodeRect.width / 2
   const centerY = top + nodeRect.height / 2
 
   switch (position) {
     case 'top':
-      return { x: centerX, y: top }
+      return { x: left + nodeRect.width / 2, y: top }
     case 'bottom':
-      return { x: centerX, y: top + nodeRect.height }
+      return { x: left + nodeRect.width / 2, y: top + nodeRect.height }
     case 'left':
       return { x: left, y: centerY }
     case 'right':

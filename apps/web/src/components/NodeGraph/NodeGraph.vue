@@ -78,10 +78,10 @@ defineExpose({
 
 .connection-line {
   fill: none;
-  stroke: #4ecdc4;
+  stroke: #3b4d7a;
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.5;
+  opacity: 0.8;
 }
 </style>
