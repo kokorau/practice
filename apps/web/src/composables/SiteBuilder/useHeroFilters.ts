@@ -13,6 +13,7 @@ import {
   type EffectType,
   type FilterType,
   type HeroViewRepository,
+  type ProcessorConfig,
   findProcessorForLayer,
 } from '@practice/section-visual'
 import { useEffectManager, type UseEffectManagerReturn } from '../useEffectManager'
@@ -129,6 +130,7 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
   /**
    * Sync a single layer's effect pipeline to repository
    * Effects are stored in processor.modifiers
+   * Preserves existing modifier order (effects and masks stay in their original positions)
    */
   const syncLayerEffectToRepository = (layerId: string, pipeline: SingleEffectConfig[]) => {
     const processorId = findProcessorIdForLayer(layerId)
@@ -137,12 +139,28 @@ export function useHeroFilters(options: UseHeroFiltersOptions): UseHeroFiltersRe
     const processor = heroViewRepository.findLayer(processorId)
     if (!processor || processor.type !== 'processor') return
 
-    // Get existing modifiers, keeping non-effect modifiers (like masks)
-    const existingModifiers = processor.modifiers.filter(m => m.type !== 'effect')
+    // Build lookup map for new effect configs
+    const pipelineById = new Map(pipeline.map(e => [e.id, e]))
+    const existingEffectIds = new Set(
+      processor.modifiers.filter(m => m.type === 'effect').map(m => m.id)
+    )
 
-    // Merge effects with existing modifiers
-    const newModifiers = [...pipeline, ...existingModifiers]
-    heroViewRepository.updateLayer(processorId, { modifiers: newModifiers })
+    // Update existing modifiers in place (preserve order)
+    const updatedModifiers = processor.modifiers
+      .map(m => {
+        if (m.type === 'effect') {
+          // Update with new config if exists in pipeline, otherwise remove
+          return pipelineById.get(m.id)
+        }
+        return m
+      })
+      .filter((m): m is ProcessorConfig => m !== undefined)
+
+    // Add new effects that weren't in the original modifiers (append to end)
+    const newEffects = pipeline.filter(e => !existingEffectIds.has(e.id))
+    updatedModifiers.push(...newEffects)
+
+    heroViewRepository.updateLayer(processorId, { modifiers: updatedModifiers })
   }
 
   /**
