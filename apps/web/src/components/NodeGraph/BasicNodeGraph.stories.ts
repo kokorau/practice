@@ -9,6 +9,7 @@ import { ref } from 'vue'
 import NodeGraph from './NodeGraph.vue'
 import SurfaceNode from './SurfaceNode.vue'
 import CompositorNode from './CompositorNode.vue'
+import ProcessorNode from './ProcessorNode.vue'
 import RenderNode from './RenderNode.vue'
 import type { Connection } from './types'
 import {
@@ -319,7 +320,7 @@ export const MultipleSurfacesToRender: Story = {
 
 export const SurfacesToCompositorToRender: Story = {
   render: () => ({
-    components: { NodeGraph, SurfaceNode, CompositorNode, RenderNode },
+    components: { NodeGraph, SurfaceNode, CompositorNode, ProcessorNode, RenderNode },
     setup() {
       const surfaces = [
         createMockSurface('solid'),
@@ -385,6 +386,252 @@ export const SurfacesToCompositorToRender: Story = {
           </div>
 
           <!-- Column 3: Render -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('render-1', el)" style="width: fit-content;">
+              <RenderNode
+                :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'render-1'"
+                @click="handleSelectNode('render-1')"
+              />
+            </div>
+          </div>
+        </template>
+      </NodeGraph>
+    `,
+  }),
+}
+
+// ============================================================
+// Surface → Effect → Render
+// ============================================================
+
+export const SurfaceToEffectToRender: Story = {
+  render: () => ({
+    components: { NodeGraph, SurfaceNode, ProcessorNode, RenderNode },
+    setup() {
+      const surface = createMockSurface('stripe', { width1: 20, width2: 20, angle: 45 })
+      const renderConfig = createRenderConfig([surface])
+      const selectedNode = ref<string | null>(null)
+      const palette = DEFAULT_PALETTE
+
+      const connections: Connection[] = [
+        {
+          from: { nodeId: 'surface-1', position: 'right' },
+          to: { nodeId: 'effect-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'effect-1', position: 'right' },
+          to: { nodeId: 'render-1', position: 'left' },
+        },
+      ]
+
+      const handleSelectNode = (nodeId: string) => {
+        selectedNode.value = selectedNode.value === nodeId ? null : nodeId
+      }
+
+      return { surface, renderConfig, selectedNode, connections, handleSelectNode, palette }
+    },
+    template: `
+      <NodeGraph :connections="connections" :columns="3" gap="2rem">
+        <template #default="{ setNodeRef }">
+          <!-- Column 1: Surface -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('surface-1', el)" style="width: fit-content;">
+              <SurfaceNode
+                :surface="surface"
+                :palette="palette"
+                :selected="selectedNode === 'surface-1'"
+                @click="handleSelectNode('surface-1')"
+              />
+            </div>
+          </div>
+
+          <!-- Column 2: Effect -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('effect-1', el)" style="width: fit-content;">
+              <ProcessorNode
+                type="effect"
+                label="Blur"
+                :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'effect-1'"
+                @click="handleSelectNode('effect-1')"
+              />
+            </div>
+          </div>
+
+          <!-- Column 3: Render -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('render-1', el)" style="width: fit-content;">
+              <RenderNode
+                :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'render-1'"
+                @click="handleSelectNode('render-1')"
+              />
+            </div>
+          </div>
+        </template>
+      </NodeGraph>
+    `,
+  }),
+}
+
+// ============================================================
+// Surface → Mask → Render
+// ============================================================
+
+export const SurfaceToMaskToRender: Story = {
+  render: () => ({
+    components: { NodeGraph, SurfaceNode, ProcessorNode, RenderNode },
+    setup() {
+      const surface = createMockSurface('grid', { cellSize: 40, lineWidth: 2 })
+      const renderConfig = createRenderConfig([surface])
+      const selectedNode = ref<string | null>(null)
+      const palette = DEFAULT_PALETTE
+
+      const connections: Connection[] = [
+        {
+          from: { nodeId: 'surface-1', position: 'right' },
+          to: { nodeId: 'mask-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'mask-1', position: 'right' },
+          to: { nodeId: 'render-1', position: 'left' },
+        },
+      ]
+
+      const handleSelectNode = (nodeId: string) => {
+        selectedNode.value = selectedNode.value === nodeId ? null : nodeId
+      }
+
+      return { surface, renderConfig, selectedNode, connections, handleSelectNode, palette }
+    },
+    template: `
+      <NodeGraph :connections="connections" :columns="3" gap="2rem">
+        <template #default="{ setNodeRef }">
+          <!-- Column 1: Surface -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('surface-1', el)" style="width: fit-content;">
+              <SurfaceNode
+                :surface="surface"
+                :palette="palette"
+                :selected="selectedNode === 'surface-1'"
+                @click="handleSelectNode('surface-1')"
+              />
+            </div>
+          </div>
+
+          <!-- Column 2: Mask -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('mask-1', el)" style="width: fit-content;">
+              <ProcessorNode
+                type="mask"
+                label="Gradient Mask"
+                :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'mask-1'"
+                @click="handleSelectNode('mask-1')"
+              />
+            </div>
+          </div>
+
+          <!-- Column 3: Render -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('render-1', el)" style="width: fit-content;">
+              <RenderNode
+                :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'render-1'"
+                @click="handleSelectNode('render-1')"
+              />
+            </div>
+          </div>
+        </template>
+      </NodeGraph>
+    `,
+  }),
+}
+
+// ============================================================
+// Complex: Surface → Effect → Mask → Render
+// ============================================================
+
+export const SurfaceToEffectToMaskToRender: Story = {
+  render: () => ({
+    components: { NodeGraph, SurfaceNode, ProcessorNode, RenderNode },
+    setup() {
+      const surface = createMockSurface('stripe', { width1: 15, width2: 15, angle: 30 })
+      const renderConfig = createRenderConfig([surface])
+      const selectedNode = ref<string | null>(null)
+      const palette = DEFAULT_PALETTE
+
+      const connections: Connection[] = [
+        {
+          from: { nodeId: 'surface-1', position: 'right' },
+          to: { nodeId: 'effect-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'effect-1', position: 'right' },
+          to: { nodeId: 'mask-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'mask-1', position: 'right' },
+          to: { nodeId: 'render-1', position: 'left' },
+        },
+      ]
+
+      const handleSelectNode = (nodeId: string) => {
+        selectedNode.value = selectedNode.value === nodeId ? null : nodeId
+      }
+
+      return { surface, renderConfig, selectedNode, connections, handleSelectNode, palette }
+    },
+    template: `
+      <NodeGraph :connections="connections" :columns="4" gap="2rem">
+        <template #default="{ setNodeRef }">
+          <!-- Column 1: Surface -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('surface-1', el)" style="width: fit-content;">
+              <SurfaceNode
+                :surface="surface"
+                :palette="palette"
+                :selected="selectedNode === 'surface-1'"
+                @click="handleSelectNode('surface-1')"
+              />
+            </div>
+          </div>
+
+          <!-- Column 2: Effect -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('effect-1', el)" style="width: fit-content;">
+              <ProcessorNode
+                type="effect"
+                label="Blur"
+                :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'effect-1'"
+                @click="handleSelectNode('effect-1')"
+              />
+            </div>
+          </div>
+
+          <!-- Column 3: Mask -->
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('mask-1', el)" style="width: fit-content;">
+              <ProcessorNode
+                type="mask"
+                label="Gradient Mask"
+                :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'mask-1'"
+                @click="handleSelectNode('mask-1')"
+              />
+            </div>
+          </div>
+
+          <!-- Column 4: Render -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('render-1', el)" style="width: fit-content;">
               <RenderNode
