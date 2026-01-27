@@ -388,12 +388,16 @@ export const Simple: Story = {
                 :selected="selectedNode === processor.id"
                 @click="handleSelectNode(processor.id)"
               >
-                <FilterNode
+                <div
                   v-for="filter in getProcessorFilters(processor.id)"
                   :key="filter.id"
-                  :type="filter.type === 'effect' ? 'effect' : 'mask'"
-                  :label="filter.label"
-                />
+                  :ref="(el) => setNodeRef(filter.id, el)"
+                >
+                  <FilterNode
+                    :type="filter.type === 'effect' ? 'effect' : 'mask'"
+                    :label="filter.label"
+                  />
+                </div>
               </ProcessorPipeline>
             </div>
           </div>
@@ -488,12 +492,16 @@ export const MultiSurface: Story = {
                 :selected="selectedNode === processor.id"
                 @click="handleSelectNode(processor.id)"
               >
-                <FilterNode
+                <div
                   v-for="filter in getProcessorFilters(processor.id)"
                   :key="filter.id"
-                  :type="filter.type === 'effect' ? 'effect' : 'mask'"
-                  :label="filter.label"
-                />
+                  :ref="(el) => setNodeRef(filter.id, el)"
+                >
+                  <FilterNode
+                    :type="filter.type === 'effect' ? 'effect' : 'mask'"
+                    :label="filter.label"
+                  />
+                </div>
               </ProcessorPipeline>
             </div>
           </div>
@@ -606,22 +614,30 @@ export const WithMask: Story = {
                   <!-- If it's a mask with graymap, render them together -->
                   <template v-if="filter.type === 'mask'">
                     <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                      <FilterNode
-                        :type="'mask'"
-                        :label="filter.label"
-                      />
-                      <GraymapNode
+                      <div :ref="(el) => setNodeRef(filter.id, el)">
+                        <FilterNode
+                          :type="'mask'"
+                          :label="filter.label"
+                        />
+                      </div>
+                      <div
                         v-for="graymap in getProcessorGraymaps(processor.id).filter(g => g.id.includes(filter.id.replace('mask', 'graymap').split('-').pop()))"
                         :key="graymap.id"
-                        :label="graymap.label"
-                      />
+                        :ref="(el) => setNodeRef(graymap.id, el)"
+                      >
+                        <GraymapNode
+                          :label="graymap.label"
+                        />
+                      </div>
                     </div>
                   </template>
                   <template v-else>
-                    <FilterNode
-                      :type="'effect'"
-                      :label="filter.label"
-                    />
+                    <div :ref="(el) => setNodeRef(filter.id, el)">
+                      <FilterNode
+                        :type="'effect'"
+                        :label="filter.label"
+                      />
+                    </div>
                   </template>
                 </template>
               </ProcessorPipeline>
@@ -680,6 +696,11 @@ export const Complex: Story = {
         return layout.value.graymapNodes.filter(g => g.parentPipelineId === processorId)
       }
 
+      const getGraymapForMask = (maskId: string) => {
+        const maskIndex = maskId.split('-').pop()
+        return layout.value.graymapNodes.find(g => g.id.endsWith(`-graymap-${maskIndex}`))
+      }
+
       return {
         layout,
         selectedNode,
@@ -689,6 +710,7 @@ export const Complex: Story = {
         getSurfaceConfig,
         getProcessorFilters,
         getProcessorGraymaps,
+        getGraymapForMask,
       }
     },
     template: `
@@ -727,22 +749,29 @@ export const Complex: Story = {
                   <!-- If it's a mask with graymap, render them together -->
                   <template v-if="filter.type === 'mask'">
                     <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                      <FilterNode
-                        :type="'mask'"
-                        :label="filter.label"
-                      />
-                      <GraymapNode
-                        v-for="graymap in getProcessorGraymaps(processor.id)"
-                        :key="graymap.id"
-                        :label="graymap.label"
-                      />
+                      <div :ref="(el) => setNodeRef(filter.id, el)">
+                        <FilterNode
+                          :type="'mask'"
+                          :label="filter.label"
+                        />
+                      </div>
+                      <div
+                        v-if="getGraymapForMask(filter.id)"
+                        :ref="(el) => setNodeRef(getGraymapForMask(filter.id)?.id, el)"
+                      >
+                        <GraymapNode
+                          :label="getGraymapForMask(filter.id)?.label"
+                        />
+                      </div>
                     </div>
                   </template>
                   <template v-else>
-                    <FilterNode
-                      :type="'effect'"
-                      :label="filter.label"
-                    />
+                    <div :ref="(el) => setNodeRef(filter.id, el)">
+                      <FilterNode
+                        :type="'effect'"
+                        :label="filter.label"
+                      />
+                    </div>
                   </template>
                 </template>
               </ProcessorPipeline>

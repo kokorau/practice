@@ -162,7 +162,9 @@ describe('generateAutoLayout', () => {
     const config = createConfigWithProcessor()
     const result = generateAutoLayout(config)
 
-    expect(result.connections).toHaveLength(2)
+    // External: surface → processor, processor → render
+    // Internal: pipeline.left → effect, effect → pipeline.right
+    expect(result.connections).toHaveLength(4)
 
     // Surface → Processor
     const surfaceToProcessor = result.connections.find(
@@ -197,7 +199,7 @@ describe('generateAutoLayout', () => {
     expect(result.graymapNodes[0].parentPipelineId).toBe('processor-1')
   })
 
-  it('should calculate correct port offsets for multiple sources', () => {
+  it('should connect multiple sources to the same junction point', () => {
     const config: HeroViewConfig = {
       viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
       colors: { semanticContext: 'canvas' },
@@ -247,19 +249,20 @@ describe('generateAutoLayout', () => {
 
     const result = generateAutoLayout(config)
 
-    // Should have 3 connections: 2 sources → processor, processor → render
-    expect(result.connections).toHaveLength(3)
+    // External: 2 sources → processor, processor → render = 3
+    // Internal: pipeline.left → effect, effect → pipeline.right = 2
+    // Total: 5
+    expect(result.connections).toHaveLength(5)
 
-    const sourceConnections = result.connections.filter((c) => c.to.nodeId === 'processor-1')
+    const sourceConnections = result.connections.filter(
+      (c) => c.to.nodeId === 'processor-1' && c.from.nodeId.startsWith('surface')
+    )
     expect(sourceConnections).toHaveLength(2)
 
-    // First source should have offset 0.2
-    const firstSourceConn = sourceConnections.find((c) => c.from.nodeId === 'surface-1')
-    expect(firstSourceConn?.to.portOffset).toBe(0.2)
-
-    // Second source should have offset 0.8
-    const secondSourceConn = sourceConnections.find((c) => c.from.nodeId === 'surface-2')
-    expect(secondSourceConn?.to.portOffset).toBe(0.8)
+    // All sources connect to the same junction point (no portOffset)
+    sourceConnections.forEach((conn) => {
+      expect(conn.to.portOffset).toBeUndefined()
+    })
   })
 
   it('should skip invisible layers', () => {
@@ -337,6 +340,252 @@ describe('generateAutoLayout', () => {
   })
 })
 
+describe('internal pipeline connections', () => {
+  it('should create internal connections for single effect', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
+      colors: { semanticContext: 'canvas' },
+      layers: [
+        {
+          type: 'surface',
+          id: 'surface-1',
+          name: 'Surface',
+          visible: true,
+          surface: {
+            id: 'solid',
+            params: { color1: $PropertyValue.static('B') },
+          },
+        },
+        {
+          type: 'processor',
+          id: 'processor-1',
+          name: 'Effects',
+          visible: true,
+          modifiers: [
+            {
+              type: 'effect',
+              id: 'blur',
+              params: { radius: $PropertyValue.static(8) },
+            } satisfies SingleEffectConfig,
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+
+    const result = generateAutoLayout(config)
+
+    // External: surface → processor, processor → render
+    // Internal: processor.left → blur, blur → processor.right
+    const internalConnections = result.connections.filter(
+      (c) =>
+        c.from.nodeId.includes('processor-1') ||
+        c.to.nodeId.includes('processor-1') ||
+        c.from.nodeId.includes('effect') ||
+        c.to.nodeId.includes('effect')
+    )
+
+    // Should have: pipeline.left → effect, effect → pipeline.right
+    const pipelineToEffect = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1' && c.from.position === 'left'
+    )
+    expect(pipelineToEffect).toBeDefined()
+    expect(pipelineToEffect?.to.nodeId).toBe('processor-1-effect-0')
+
+    const effectToPipeline = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1-effect-0' && c.to.nodeId === 'processor-1' && c.to.position === 'right'
+    )
+    expect(effectToPipeline).toBeDefined()
+  })
+
+  it('should create chain connections for multiple effects', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
+      colors: { semanticContext: 'canvas' },
+      layers: [
+        {
+          type: 'surface',
+          id: 'surface-1',
+          name: 'Surface',
+          visible: true,
+          surface: {
+            id: 'solid',
+            params: { color1: $PropertyValue.static('B') },
+          },
+        },
+        {
+          type: 'processor',
+          id: 'processor-1',
+          name: 'Effects',
+          visible: true,
+          modifiers: [
+            {
+              type: 'effect',
+              id: 'blur',
+              params: { radius: $PropertyValue.static(8) },
+            } satisfies SingleEffectConfig,
+            {
+              type: 'effect',
+              id: 'contrast',
+              params: { amount: $PropertyValue.static(1.2) },
+            } satisfies SingleEffectConfig,
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+
+    const result = generateAutoLayout(config)
+
+    // pipeline.left → blur → contrast → pipeline.right
+    const blurToContrast = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1-effect-0' && c.to.nodeId === 'processor-1-effect-1'
+    )
+    expect(blurToContrast).toBeDefined()
+  })
+
+  it('should create graymap-to-mask connections', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
+      colors: { semanticContext: 'canvas' },
+      layers: [
+        {
+          type: 'surface',
+          id: 'surface-1',
+          name: 'Surface',
+          visible: true,
+          surface: {
+            id: 'solid',
+            params: { color1: $PropertyValue.static('B') },
+          },
+        },
+        {
+          type: 'processor',
+          id: 'processor-1',
+          name: 'Masked',
+          visible: true,
+          modifiers: [
+            {
+              type: 'mask',
+              enabled: true,
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-surface',
+                  name: 'Gradient',
+                  visible: true,
+                  surface: {
+                    id: 'radialGradient',
+                    params: {
+                      centerX: $PropertyValue.static(0.5),
+                      centerY: $PropertyValue.static(0.5),
+                      innerRadius: $PropertyValue.static(0.2),
+                      outerRadius: $PropertyValue.static(0.8),
+                      aspectRatio: $PropertyValue.static(1),
+                    },
+                  },
+                },
+              ],
+              invert: false,
+              feather: 0,
+            } satisfies MaskProcessorConfig,
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+
+    const result = generateAutoLayout(config)
+
+    // graymap → mask (with portOffset 0.7)
+    const graymapToMask = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1-graymap-0' && c.to.nodeId === 'processor-1-mask-0'
+    )
+    expect(graymapToMask).toBeDefined()
+    expect(graymapToMask?.to.portOffset).toBe(0.7)
+
+    // pipeline.left → mask (with portOffset 0.3 for main input)
+    const pipelineToMask = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1' && c.from.position === 'left' && c.to.nodeId === 'processor-1-mask-0'
+    )
+    expect(pipelineToMask).toBeDefined()
+    expect(pipelineToMask?.to.portOffset).toBe(0.3)
+  })
+
+  it('should create effect-then-mask connections', () => {
+    const config: HeroViewConfig = {
+      viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
+      colors: { semanticContext: 'canvas' },
+      layers: [
+        {
+          type: 'surface',
+          id: 'surface-1',
+          name: 'Surface',
+          visible: true,
+          surface: {
+            id: 'solid',
+            params: { color1: $PropertyValue.static('B') },
+          },
+        },
+        {
+          type: 'processor',
+          id: 'processor-1',
+          name: 'EffectThenMask',
+          visible: true,
+          modifiers: [
+            {
+              type: 'effect',
+              id: 'blur',
+              params: { radius: $PropertyValue.static(8) },
+            } satisfies SingleEffectConfig,
+            {
+              type: 'mask',
+              enabled: true,
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-surface',
+                  name: 'Gradient',
+                  visible: true,
+                  surface: {
+                    id: 'radialGradient',
+                    params: {
+                      centerX: $PropertyValue.static(0.5),
+                      centerY: $PropertyValue.static(0.5),
+                      innerRadius: $PropertyValue.static(0.2),
+                      outerRadius: $PropertyValue.static(0.8),
+                      aspectRatio: $PropertyValue.static(1),
+                    },
+                  },
+                },
+              ],
+              invert: false,
+              feather: 0,
+            } satisfies MaskProcessorConfig,
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+
+    const result = generateAutoLayout(config)
+
+    // blur → mask (main input, portOffset 0.3)
+    const blurToMask = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1-effect-0' && c.to.nodeId === 'processor-1-mask-1'
+    )
+    expect(blurToMask).toBeDefined()
+    expect(blurToMask?.to.portOffset).toBe(0.3)
+
+    // graymap → mask
+    const graymapToMask = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1-graymap-1' && c.to.nodeId === 'processor-1-mask-1'
+    )
+    expect(graymapToMask).toBeDefined()
+    expect(graymapToMask?.to.portOffset).toBe(0.7)
+  })
+})
+
 describe('useAutoLayout', () => {
   it('should return computed layout that updates with config', () => {
     const config = ref<HeroViewConfig>({
@@ -384,7 +633,9 @@ describe('useAutoLayout', () => {
     }
 
     // Layout should update
+    // External: surface → processor, processor → render = 2
+    // Internal: pipeline.left → effect, effect → pipeline.right = 2
     expect(layout.value.processorNodes).toHaveLength(1)
-    expect(layout.value.connections).toHaveLength(2)
+    expect(layout.value.connections).toHaveLength(4)
   })
 })
