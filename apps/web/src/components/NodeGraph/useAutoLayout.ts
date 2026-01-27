@@ -224,6 +224,14 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
     processorNodes.push(pipelineNode)
     nodes.push(pipelineNode)
 
+    // Track internal nodes for connection generation
+    interface InternalNode {
+      id: string
+      type: 'effect' | 'mask'
+      graymapId?: string
+    }
+    const internalNodes: InternalNode[] = []
+
     // Create filter nodes inside the processor
     let filterIndex = 0
     processor.modifiers.forEach((modifier, mIndex) => {
@@ -239,6 +247,7 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
         }
         filterNodes.push(effectNode)
         nodes.push(effectNode)
+        internalNodes.push({ id: effectNode.id, type: 'effect' })
         filterIndex++
       } else if (modifier.type === 'mask') {
         const maskNode: GraphNode = {
@@ -252,6 +261,8 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
         }
         filterNodes.push(maskNode)
         nodes.push(maskNode)
+
+        let graymapId: string | undefined
 
         // Create graymap node if mask has children
         if (modifier.children && modifier.children.length > 0) {
@@ -273,21 +284,84 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
           }
           graymapNodes.push(graymapNode)
           nodes.push(graymapNode)
+          graymapId = graymapNode.id
         }
+
+        internalNodes.push({ id: maskNode.id, type: 'mask', graymapId })
         filterIndex++
       }
     })
 
-    // Connections: Sources → Processor
-    const numSources = sourceNodes.length
-    sourceNodes.forEach((source, sIndex) => {
-      const portOffset = numSources > 1
-        ? 0.2 + (0.6 * sIndex) / (numSources - 1)
-        : 0.5
+    // Generate internal connections within the pipeline
+    internalNodes.forEach((node, index) => {
+      const isFirst = index === 0
+      const isLast = index === internalNodes.length - 1
+      const prevNode = isFirst ? null : internalNodes[index - 1]
 
+      if (node.type === 'effect') {
+        // Input connection
+        if (isFirst) {
+          // First effect: pipeline.left → effect
+          connections.push({
+            from: { nodeId: processor.id, position: 'left' },
+            to: { nodeId: node.id, position: 'left' },
+          })
+        } else if (prevNode) {
+          // Chain: prev → effect
+          connections.push({
+            from: { nodeId: prevNode.id, position: 'right' },
+            to: { nodeId: node.id, position: 'left' },
+          })
+        }
+
+        // Output connection (if last)
+        if (isLast) {
+          connections.push({
+            from: { nodeId: node.id, position: 'right' },
+            to: { nodeId: processor.id, position: 'right' },
+          })
+        }
+      } else if (node.type === 'mask') {
+        // Mask has two inputs: main (portOffset: 0.3) and graymap (portOffset: 0.7)
+
+        // Main input connection
+        if (isFirst) {
+          // First mask: pipeline.left → mask (main input)
+          connections.push({
+            from: { nodeId: processor.id, position: 'left' },
+            to: { nodeId: node.id, position: 'left', portOffset: 0.3 },
+          })
+        } else if (prevNode) {
+          // Chain: prev → mask (main input)
+          connections.push({
+            from: { nodeId: prevNode.id, position: 'right' },
+            to: { nodeId: node.id, position: 'left', portOffset: 0.3 },
+          })
+        }
+
+        // Graymap input connection
+        if (node.graymapId) {
+          connections.push({
+            from: { nodeId: node.graymapId, position: 'right' },
+            to: { nodeId: node.id, position: 'left', portOffset: 0.7 },
+          })
+        }
+
+        // Output connection (if last)
+        if (isLast) {
+          connections.push({
+            from: { nodeId: node.id, position: 'right' },
+            to: { nodeId: processor.id, position: 'right' },
+          })
+        }
+      }
+    })
+
+    // Connections: Sources → Processor (all connect to the same junction point)
+    sourceNodes.forEach((source) => {
       connections.push({
         from: { nodeId: source.id, position: 'right' },
-        to: { nodeId: processor.id, position: 'left', portOffset },
+        to: { nodeId: processor.id, position: 'left' },
       })
     })
   })
@@ -313,15 +387,11 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
         })
       })
     } else if (sourceNodes.length > 0) {
-      // Direct source to render connection
-      sourceNodes.forEach((source, sIndex) => {
-        const portOffset = sourceNodes.length > 1
-          ? 0.2 + (0.6 * sIndex) / (sourceNodes.length - 1)
-          : 0.5
-
+      // Direct source to render connection (all connect to the same point)
+      sourceNodes.forEach((source) => {
         connections.push({
           from: { nodeId: source.id, position: 'right' },
-          to: { nodeId: 'render', position: 'left', portOffset },
+          to: { nodeId: 'render', position: 'left' },
         })
       })
     }
