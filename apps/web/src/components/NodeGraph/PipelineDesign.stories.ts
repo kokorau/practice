@@ -331,18 +331,21 @@ export const SingleMask: Story = {
             </div>
           </div>
 
-          <!-- Column 2: Pipeline with Graymap (left) → Mask (right) -->
+          <!-- Column 2: Pipeline with Graymap (left-bottom) → Mask (right) -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('pipeline-1', el)" style="width: fit-content;">
               <ProcessorPipeline
                 :selected="selectedNode === 'pipeline-1'"
                 @click="handleSelectNode('pipeline-1')"
               >
-                <!-- Graymap on left, Mask on right -->
-                <div :ref="(el) => setNodeRef('graymap-1', el)" style="align-self: flex-end;">
-                  <GraymapNode label="Radial Gradient" />
+                <!-- Empty space + Graymap stacked, then Mask -->
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="width: 160px; height: 90px;"></div>
+                  <div :ref="(el) => setNodeRef('graymap-1', el)">
+                    <GraymapNode label="Radial Gradient" />
+                  </div>
                 </div>
-                <div :ref="(el) => setNodeRef('mask-1', el)">
+                <div :ref="(el) => setNodeRef('mask-1', el)" style="align-self: flex-start;">
                   <FilterNode type="mask" label="Vignette" />
                 </div>
               </ProcessorPipeline>
@@ -429,20 +432,23 @@ export const EffectThenMask: Story = {
             </div>
           </div>
 
-          <!-- Column 2: Pipeline with Blur → Graymap/Mask -->
+          <!-- Column 2: Pipeline with Blur+Graymap (stacked) → Mask -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('pipeline-1', el)" style="width: fit-content;">
               <ProcessorPipeline
                 :selected="selectedNode === 'pipeline-1'"
                 @click="handleSelectNode('pipeline-1')"
               >
-                <div :ref="(el) => setNodeRef('blur-1', el)">
-                  <FilterNode type="effect" label="Blur" />
+                <!-- Blur + Graymap stacked vertically -->
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div :ref="(el) => setNodeRef('blur-1', el)">
+                    <FilterNode type="effect" label="Blur" />
+                  </div>
+                  <div :ref="(el) => setNodeRef('graymap-1', el)">
+                    <GraymapNode label="Linear Gradient" />
+                  </div>
                 </div>
-                <div :ref="(el) => setNodeRef('graymap-1', el)" style="align-self: flex-end;">
-                  <GraymapNode label="Linear Gradient" />
-                </div>
-                <div :ref="(el) => setNodeRef('mask-1', el)">
+                <div :ref="(el) => setNodeRef('mask-1', el)" style="align-self: flex-start;">
                   <FilterNode type="mask" label="Fade" />
                 </div>
               </ProcessorPipeline>
@@ -666,7 +672,7 @@ export const ComplexPipeline: Story = {
             </div>
           </div>
 
-          <!-- Column 2: Pipeline with Blur → Contrast → Graymap/Mask -->
+          <!-- Column 2: Pipeline with Blur → Contrast+Graymap (stacked) → Mask -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('pipeline-1', el)" style="width: fit-content;">
               <ProcessorPipeline
@@ -676,13 +682,16 @@ export const ComplexPipeline: Story = {
                 <div :ref="(el) => setNodeRef('blur-1', el)">
                   <FilterNode type="effect" label="Blur" />
                 </div>
-                <div :ref="(el) => setNodeRef('contrast-1', el)">
-                  <FilterNode type="effect" label="Contrast" />
+                <!-- Contrast + Graymap stacked vertically -->
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div :ref="(el) => setNodeRef('contrast-1', el)">
+                    <FilterNode type="effect" label="Contrast" />
+                  </div>
+                  <div :ref="(el) => setNodeRef('graymap-1', el)">
+                    <GraymapNode label="Radial Fade" />
+                  </div>
                 </div>
-                <div :ref="(el) => setNodeRef('graymap-1', el)" style="align-self: flex-end;">
-                  <GraymapNode label="Radial Fade" />
-                </div>
-                <div :ref="(el) => setNodeRef('mask-1', el)">
+                <div :ref="(el) => setNodeRef('mask-1', el)" style="align-self: flex-start;">
                   <FilterNode type="mask" label="Vignette" />
                 </div>
               </ProcessorPipeline>
