@@ -57,9 +57,9 @@ const createRenderConfig = (surfaces: NormalizedSurfaceConfig[]): HeroViewConfig
 
 // Default palette
 const DEFAULT_PALETTE: PrimitivePalette = createPrimitivePalette({
-  brand: { l: 0.5, c: 0.15, h: 220 },
-  accent: { l: 0.7, c: 0.18, h: 30 },
-  foundation: { l: 0.95, c: 0.01, h: 220 },
+  brand: { L: 0.5, C: 0.15, H: 220 },
+  accent: { L: 0.7, C: 0.18, H: 30 },
+  foundation: { L: 0.95, C: 0.01, H: 220 },
 })
 
 // ============================================================

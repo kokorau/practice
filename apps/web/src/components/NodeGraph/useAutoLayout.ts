@@ -23,7 +23,6 @@ import type {
   ImageLayerNodeConfig,
   ProcessorConfig,
   SingleEffectConfig,
-  MaskProcessorConfig,
   NormalizedSurfaceConfig,
 } from '@practice/section-visual'
 
@@ -141,22 +140,6 @@ function extractSourceLayers(layers: LayerNodeConfig[]): LayerNodeConfig[] {
   }
 
   return sources
-}
-
-/**
- * Find the first processor in a layer array (shallow search)
- */
-function findProcessor(layers: LayerNodeConfig[]): ProcessorNodeConfig | null {
-  for (const layer of layers) {
-    if (isProcessor(layer) && layer.visible) {
-      return layer
-    }
-    if (isGroup(layer)) {
-      const found = findProcessor(layer.children)
-      if (found) return found
-    }
-  }
-  return null
 }
 
 /**
