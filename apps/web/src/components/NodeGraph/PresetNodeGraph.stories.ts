@@ -15,7 +15,8 @@ import FilterNode from './FilterNode.vue'
 import GraymapNode from './GraymapNode.vue'
 import CompositorNode from './CompositorNode.vue'
 import RenderNode from './RenderNode.vue'
-import { useAutoLayout, generateAutoLayout, type GraphNode } from './useAutoLayout'
+import { useAutoLayout, generateAutoLayout, type GraphNode, type ProcessorGroup } from './useAutoLayout'
+import type { GroupBox } from './NodeGraph.vue'
 import { extractPartialConfig } from './extractPartialConfig'
 import type { HeroViewPreset, SurfaceLayerNodeConfig, HeroViewConfig } from '@practice/section-visual'
 import { getPresetConfig, isAnimatedPreset } from '@practice/section-visual'
@@ -79,6 +80,17 @@ function groupNodesByColumn(nodes: GraphNode[]): Map<number, GraphNode[]> {
     nodes.sort((a, b) => a.row - b.row)
   }
   return columnMap
+}
+
+/**
+ * Convert ProcessorGroup to GroupBox for NodeGraph
+ */
+function processorGroupsToGroupBoxes(processorGroups: ProcessorGroup[]): GroupBox[] {
+  return processorGroups.map(pg => ({
+    id: pg.processorId,
+    nodeIds: pg.nodeIds,
+    label: 'Processor',
+  }))
 }
 
 // ============================================================
@@ -152,6 +164,13 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
         return groupNodesByColumn(pipelineNodes)
       })
 
+      // Convert processor groups to group boxes
+      const groupBoxes = computed(() => {
+        const l = layout.value
+        if (!l) return []
+        return processorGroupsToGroupBoxes(l.processorGroups)
+      })
+
       const presetName = preset.name
       const isAnimated = isAnimatedPreset(preset)
 
@@ -166,6 +185,7 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
         getNodePreviewConfig,
         getSurfaceConfig,
         nodesByColumn,
+        groupBoxes,
       }
     },
     template: `
@@ -175,7 +195,7 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
           <span v-if="isAnimated" style="background: #4a5a8a; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px;">Animated</span>
         </div>
         <div v-if="!layout" style="color: #666;">No config available</div>
-        <NodeGraph v-else :connections="layout.connections" :columns="layout.columnCount" gap="2rem">
+        <NodeGraph v-else :connections="layout.connections" :columns="layout.columnCount" :groups="groupBoxes" gap="2rem">
           <template #default="{ setNodeRef }">
             <!-- Render each column -->
             <template v-for="col in layout.columnCount" :key="col">
@@ -321,6 +341,13 @@ export const Interactive: Story = {
         return groupNodesByColumn(pipelineNodes)
       })
 
+      // Convert processor groups to group boxes
+      const groupBoxes = computed(() => {
+        const l = layout.value
+        if (!l) return []
+        return processorGroupsToGroupBoxes(l.processorGroups)
+      })
+
       const presetName = computed(() => preset.value?.name ?? 'Unknown')
       const presetDescription = computed(() => preset.value?.description ?? '')
       const isAnimated = computed(() => preset.value ? isAnimatedPreset(preset.value) : false)
@@ -344,6 +371,7 @@ export const Interactive: Story = {
         getNodePreviewConfig,
         getSurfaceConfig,
         nodesByColumn,
+        groupBoxes,
       }
     },
     template: `
@@ -365,7 +393,7 @@ export const Interactive: Story = {
         </div>
 
         <div v-if="!layout" style="color: #666;">No config available</div>
-        <NodeGraph v-else :connections="layout.connections" :columns="layout.columnCount" gap="2rem">
+        <NodeGraph v-else :connections="layout.connections" :columns="layout.columnCount" :groups="groupBoxes" gap="2rem">
           <template #default="{ setNodeRef }">
             <!-- Render each column -->
             <template v-for="col in layout.columnCount" :key="col">

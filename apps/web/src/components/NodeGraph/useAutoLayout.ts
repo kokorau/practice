@@ -87,6 +87,41 @@ interface GroupPipeline {
   groupRowCount: number
   /** The node ID that represents this group's output */
   outputNodeId: string
+  /** Processor group info (for visual grouping) */
+  processorGroup: ProcessorGroupInfo | null
+}
+
+/**
+ * Information about a processor's visual grouping box
+ */
+interface ProcessorGroupInfo {
+  processorId: string
+  /** Node IDs that belong to this processor (effects, masks, graymaps) */
+  nodeIds: string[]
+  /** Relative start column within the pipeline */
+  relativeStartColumn: number
+  /** Relative end column within the pipeline */
+  relativeEndColumn: number
+  /** Row offset start */
+  rowOffsetStart: number
+  /** Row offset end */
+  rowOffsetEnd: number
+}
+
+/**
+ * Exported processor group with absolute positions
+ */
+export interface ProcessorGroup {
+  processorId: string
+  nodeIds: string[]
+  /** Absolute start column */
+  startColumn: number
+  /** Absolute end column */
+  endColumn: number
+  /** Absolute start row */
+  startRow: number
+  /** Absolute end row */
+  endRow: number
 }
 
 export interface AutoLayoutResult {
@@ -96,7 +131,7 @@ export interface AutoLayoutResult {
   connections: Connection[]
   /** Number of columns in the layout */
   columnCount: number
-  /** Source nodes (surfaces, images) - column 0 */
+  /** Source nodes (surfaces, images) */
   sourceNodes: GraphNode[]
   /** Processor nodes */
   processorNodes: GraphNode[]
@@ -108,6 +143,8 @@ export interface AutoLayoutResult {
   compositeNode: GraphNode | null
   /** Render node - last column */
   renderNode: GraphNode | null
+  /** Processor groups for visual grouping (with absolute positions) */
+  processorGroups: ProcessorGroup[]
 }
 
 // ============================================================
@@ -184,6 +221,7 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
         groupRowStart: currentGroupRow,
         groupRowCount: 1,
         outputNodeId: sourceNode.id,
+        processorGroup: null,
       })
       currentGroupRow++
     }
@@ -284,6 +322,22 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
     }
   }
 
+  // Phase 4: Calculate processor groups with absolute positions
+  const processorGroups: ProcessorGroup[] = []
+  for (const pipeline of groupPipelines) {
+    if (pipeline.processorGroup) {
+      const columnOffset = maxPipelineLength - pipeline.pipelineLength
+      processorGroups.push({
+        processorId: pipeline.processorGroup.processorId,
+        nodeIds: pipeline.processorGroup.nodeIds,
+        startColumn: columnOffset + pipeline.processorGroup.relativeStartColumn,
+        endColumn: columnOffset + pipeline.processorGroup.relativeEndColumn,
+        startRow: pipeline.groupRowStart + pipeline.processorGroup.rowOffsetStart,
+        endRow: pipeline.groupRowStart + pipeline.processorGroup.rowOffsetEnd,
+      })
+    }
+  }
+
   return {
     nodes,
     connections,
@@ -294,6 +348,7 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
     graymapNodes: allGraymapNodes,
     compositeNode,
     renderNode,
+    processorGroups,
   }
 }
 
@@ -346,6 +401,13 @@ function buildGroupPipeline(
   }
 
   // Step 2: Extract processor and its modifiers
+  // Track processor group info
+  let processorGroup: ProcessorGroupInfo | null = null
+  let processorNodeIds: string[] = []
+  let processorStartColumn: number | null = null
+  let processorEndColumn: number = 0
+  let processorRowOffsetEnd: number = 0
+
   for (const child of group.children) {
     if (!child.visible) continue
 
@@ -368,6 +430,11 @@ function buildGroupPipeline(
             config: modifier,
           }
           pipelineNodes.push({ node: effectNode, relativeColumn, rowOffset: 0 })
+
+          // Track for processor group
+          processorNodeIds.push(effectNode.id)
+          if (processorStartColumn === null) processorStartColumn = relativeColumn
+          processorEndColumn = relativeColumn
 
           // Connect from sources or previous modifier
           if (prevModifierNodeId === null) {
@@ -401,6 +468,11 @@ function buildGroupPipeline(
             config: modifier,
           }
           pipelineNodes.push({ node: maskNode, relativeColumn, rowOffset: 0 })
+
+          // Track for processor group
+          processorNodeIds.push(maskNode.id)
+          if (processorStartColumn === null) processorStartColumn = relativeColumn
+          processorEndColumn = relativeColumn
 
           // Connect from sources or previous modifier (main input)
           if (prevModifierNodeId === null) {
@@ -441,6 +513,10 @@ function buildGroupPipeline(
             pipelineNodes.push({ node: graymapNode, relativeColumn: graymapColumn, rowOffset: 1 })
             maxRowOffset = Math.max(maxRowOffset, 1)
 
+            // Track for processor group (graymap extends row range)
+            processorNodeIds.push(graymapNode.id)
+            processorRowOffsetEnd = Math.max(processorRowOffsetEnd, 1)
+
             // Connect graymap to mask
             connections.push({
               from: { nodeId: graymapNode.id, position: 'right' },
@@ -453,6 +529,19 @@ function buildGroupPipeline(
           relativeColumn++
         }
       }
+
+      // Create processor group if we have any processor nodes
+      if (processorNodeIds.length > 0 && processorStartColumn !== null) {
+        processorGroup = {
+          processorId: child.id,
+          nodeIds: processorNodeIds,
+          relativeStartColumn: processorStartColumn,
+          relativeEndColumn: processorEndColumn,
+          rowOffsetStart: 0,
+          rowOffsetEnd: processorRowOffsetEnd,
+        }
+      }
+
       break // Only process first processor
     }
   }
@@ -465,6 +554,7 @@ function buildGroupPipeline(
     groupRowStart,
     groupRowCount: maxRowOffset + 1,
     outputNodeId,
+    processorGroup,
   }
 }
 
