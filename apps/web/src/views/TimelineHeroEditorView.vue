@@ -26,6 +26,7 @@ import { useImageLayerEditor } from '../composables/useImageLayerEditor'
 import { useContextMenu } from '../composables/useContextMenu'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
+import DebugPanel from '../components/HeroGenerator/DebugPanel.vue'
 
 // ============================================================
 // Editor Config
@@ -357,6 +358,19 @@ const {
 const isResizing = computed(() => isTimelineResizing.value || isLeftPanelResizing.value || isRightPanelResizing.value)
 
 // ============================================================
+// Debug Panel
+// ============================================================
+const isDebugOpen = ref(false)
+
+const debugSections = computed(() => [
+  {
+    id: 'heroViewConfig',
+    label: 'HeroViewConfig (Export)',
+    data: heroScene.editor.heroViewConfig.value,
+  },
+])
+
+// ============================================================
 // Component Props (Computed for reactivity and template clarity)
 // ============================================================
 
@@ -505,6 +519,34 @@ const handleGroupParamUpdate = (paramName: string, value: unknown) => {
           :compiled-view="heroScene.foreground.compiledView.value"
           class="hero-preview"
         />
+
+        <!-- Debug Button -->
+        <button
+          class="debug-toggle-button"
+          :class="{ active: isDebugOpen }"
+          title="Toggle Debug Panel"
+          @click="isDebugOpen = !isDebugOpen"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+        </button>
+
+        <!-- Debug Panel Overlay -->
+        <div v-if="isDebugOpen" class="debug-overlay">
+          <div class="debug-overlay-header">
+            <span class="debug-overlay-title">Debug</span>
+            <button class="debug-close-button" @click="isDebugOpen = false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <DebugPanel :sections="debugSections" :show-header="false" class="debug-overlay-content" />
+        </div>
       </main>
 
       <!-- Popup Portal Container (for PresetSelector popups) -->
@@ -611,11 +653,98 @@ const handleGroupParamUpdate = (paramName: string, value: unknown) => {
 }
 
 .hero-main {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: oklch(0.94 0.01 260);
+}
+
+/* Debug Toggle Button */
+.debug-toggle-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.375rem;
+  background: oklch(0.96 0.005 260 / 0.9);
+  color: oklch(0.45 0.02 260);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  z-index: 10;
+}
+
+.debug-toggle-button:hover {
+  background: oklch(0.92 0.01 260);
+  color: oklch(0.35 0.02 260);
+}
+
+.debug-toggle-button.active {
+  background: oklch(0.50 0.15 250);
+  color: white;
+}
+
+/* Debug Overlay */
+.debug-overlay {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 400px;
+  max-width: calc(100% - 1rem);
+  max-height: calc(100% - 1rem);
+  display: flex;
+  flex-direction: column;
+  background: oklch(0.98 0.005 260);
+  border: 1px solid oklch(0.88 0.01 260);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px oklch(0 0 0 / 0.15);
+  z-index: 20;
+  overflow: hidden;
+}
+
+.debug-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: oklch(0.96 0.005 260);
+  border-bottom: 1px solid oklch(0.88 0.01 260);
+}
+
+.debug-overlay-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.35 0.02 260);
+}
+
+.debug-close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: oklch(0.50 0.02 260);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.debug-close-button:hover {
+  background: oklch(0.90 0.01 260);
+  color: oklch(0.35 0.02 260);
+}
+
+.debug-overlay-content {
+  flex: 1;
+  overflow: hidden;
 }
 
 /* Portal container for PresetSelector popups */
