@@ -136,7 +136,10 @@ function compileSurfaceLayer(
   const surfaceKey = getSurfaceKeyForContext(semanticContext, isDark)
 
   // Resolve surface params (including color1/color2)
-  const resolvedParams = resolveParams(layer.surface.params, intensityProvider)
+  // Guard against undefined params (can happen with legacy flat config)
+  const resolvedParams = layer.surface.params
+    ? resolveParams(layer.surface.params, intensityProvider)
+    : {}
 
   // Extract color values from resolved params with layer-type-aware defaults
   const color1Key = extractColorFromParams(

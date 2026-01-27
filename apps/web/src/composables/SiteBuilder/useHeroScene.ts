@@ -1145,6 +1145,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   const renderer: RendererActions = {
     initPreview,
     destroyPreview,
+    initPatterns: heroThumbnails.initPatterns,
     openSection: heroThumbnails.openSection,
     renderSceneFromConfig,
   }

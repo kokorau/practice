@@ -192,19 +192,21 @@ const {
 
 // Convert texture patterns to SurfaceSelector format with createSpec and surfaceConfig
 // surfaceConfig is derived from pattern.params (no separate surfacePresets array needed)
+// Note: Wrap in computed and access .value to get the array, since createSurfacePatterns
+// returns a ComputedRef and we need to react to pattern changes
 const backgroundPatterns = computed(() => createSurfacePatterns({
   patterns: heroScene.pattern.texturePatterns.value,
   color1: heroScene.pattern.textureColor1,
   color2: heroScene.pattern.textureColor2,
   createSpec: (p, c1, c2, viewport) => p.createSpec(c1, c2, viewport),
-}))
+}).value)
 
 const maskSurfacePatterns = computed(() => createSurfacePatterns({
   patterns: heroScene.pattern.midgroundTexturePatterns.value,
   color1: heroScene.pattern.midgroundTextureColor1,
   color2: heroScene.pattern.midgroundTextureColor2,
   createSpec: heroScene.pattern.createMidgroundThumbnailSpec,
-}))
+}).value)
 
 const heroPreviewRef = ref<InstanceType<typeof HeroPreview> | null>(null)
 const rightPanelRef = ref<HTMLElement | null>(null)
@@ -263,6 +265,9 @@ const closeSection = () => {
 usePaletteStyles(semanticPalette)
 
 onMounted(async () => {
+  // Load pattern presets (async repository initialization)
+  await heroScene.renderer.initPatterns()
+
   // Load layout presets and apply initial preset (including colors)
   const initialColorPreset = await heroScene.preset.loadPresets()
   if (initialColorPreset) {
@@ -551,6 +556,27 @@ const shapePatternsWithConfig = computed(() => {
     }))
 })
 
+// Computed mask props for reactive updates (re-evaluates when maskPatterns changes)
+const maskPropsForPanel = computed(() => ({
+  surfacePatterns: maskSurfacePatterns.value,
+  selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
+  surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
+  surfaceParams: maskSurfaceParamsForUI.value,
+  rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
+  shapePatterns: maskPatternsForUI.value,
+  shapePatternsWithConfig: shapePatternsWithConfig.value,
+  selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
+  shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
+  shapeParams: maskShapeParamsForUI.value,
+  rawShapeParams: heroScene.mask.rawMaskShapeParams.value,
+  outerColor: heroScene.pattern.maskOuterColor.value,
+  innerColor: heroScene.pattern.maskInnerColor.value,
+  createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
+  precedingEffectSpecs: precedingEffectSpecs.value,
+  surface: processorTargetSurface.value,
+  processor: selectedProcessor.value,
+}))
+
 const handleImageUpdate = (key: string, value: unknown) => {
   const layer = selectedLayer.value
   if (!layer || !isImageLayerConfig(layer)) return
@@ -827,25 +853,7 @@ const handleAddLayerToMaskFromUI = (
         surfaceParams: backgroundSurfaceParamsForUI,
         rawSurfaceParams: heroScene.background.rawBackgroundSurfaceParams.value,
       }"
-      :mask="{
-        surfacePatterns: maskSurfacePatterns.value,
-        selectedSurfaceIndex: heroScene.pattern.selectedMidgroundTextureIndex.value,
-        surfaceSchema: heroScene.mask.currentSurfaceSchema.value,
-        surfaceParams: maskSurfaceParamsForUI,
-        rawSurfaceParams: heroScene.mask.rawSurfaceParams.value,
-        shapePatterns: maskPatternsForUI,
-        shapePatternsWithConfig: shapePatternsWithConfig,
-        selectedShapeIndex: heroScene.pattern.selectedMaskIndex.value,
-        shapeSchema: heroScene.mask.currentMaskShapeSchema.value,
-        shapeParams: maskShapeParamsForUI,
-        rawShapeParams: heroScene.mask.rawMaskShapeParams.value,
-        outerColor: heroScene.pattern.maskOuterColor.value,
-        innerColor: heroScene.pattern.maskInnerColor.value,
-        createBackgroundThumbnailSpec: heroScene.pattern.createBackgroundThumbnailSpec,
-        precedingEffectSpecs: precedingEffectSpecs,
-        surface: processorTargetSurface,
-        processor: selectedProcessor,
-      }"
+      :mask="maskPropsForPanel"
       :filter="filterProps"
       :filter-processor="{ filterConfig: null }"
       :image="imageLayerProps"

@@ -205,10 +205,16 @@ function convertMaskPatternLayersToPreviewChildren(
 /**
  * Get preview children for the selected mask pattern
  */
+// Helper to get patterns with fallback for empty arrays
+const getEffectivePatterns = () =>
+  props.maskProps.shapePatternsWithConfig?.length
+    ? props.maskProps.shapePatternsWithConfig
+    : props.maskProps.shapePatterns
+
 const selectedMaskPreviewChildren = computed(() => {
   const index = props.maskProps.selectedShapeIndex
   if (index === null) return undefined
-  const patterns = props.maskProps.shapePatternsWithConfig ?? props.maskProps.shapePatterns
+  const patterns = getEffectivePatterns()
   const pattern = patterns[index]
   return convertMaskPatternLayersToPreviewChildren(pattern?.children)
 })
@@ -217,7 +223,7 @@ const selectedMaskPreviewChildren = computed(() => {
  * Get preview children for a given mask pattern index
  */
 function getMaskPreviewChildrenByIndex(index: number): SurfaceLayerNodeConfig[] | undefined {
-  const patterns = props.maskProps.shapePatternsWithConfig ?? props.maskProps.shapePatterns
+  const patterns = getEffectivePatterns()
   const pattern = patterns[index]
   return convertMaskPatternLayersToPreviewChildren(pattern?.children)
 }
@@ -362,13 +368,13 @@ function getMaskPreviewChildrenByIndex(index: number): SurfaceLayerNodeConfig[] 
       <!-- Shape PresetSelector (Preset) -->
       <PresetSelector
         label="Shape"
-        :items="maskProps.shapePatternsWithConfig ?? maskProps.shapePatterns"
+        :items="maskProps.shapePatternsWithConfig?.length ? maskProps.shapePatternsWithConfig : maskProps.shapePatterns"
         :selected-index="maskProps.selectedShapeIndex"
         @select="(index) => index !== null && emit('update:selectedMaskIndex', index)"
       >
         <template #selected>
           <MaskPatternThumbnail
-            v-if="maskProps.selectedShapeIndex !== null && (maskProps.shapePatternsWithConfig ?? maskProps.shapePatterns)[maskProps.selectedShapeIndex]"
+            v-if="maskProps.selectedShapeIndex !== null && (maskProps.shapePatternsWithConfig?.length ? maskProps.shapePatternsWithConfig : maskProps.shapePatterns)[maskProps.selectedShapeIndex]"
             :surface="maskProps.surface"
             :processor="maskProps.processor"
             :preview-children="selectedMaskPreviewChildren"

@@ -652,6 +652,8 @@ export interface RendererActions {
   readonly initPreview: (canvas?: HTMLCanvasElement | null) => Promise<void>
   /** Destroy preview renderer */
   readonly destroyPreview: () => void
+  /** Initialize pattern presets (loads from async repositories) */
+  readonly initPatterns: () => Promise<void>
   /** Open a UI section */
   readonly openSection: (section: SectionType) => void
   /**

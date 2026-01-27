@@ -289,6 +289,9 @@ const {
 // Initialize on mount
 // ============================================================
 onMounted(async () => {
+  // Load pattern presets (async repository initialization)
+  await heroScene.renderer.initPatterns()
+
   // Load layout presets and apply initial preset (including colors)
   // loadPresets handles both static and animated presets via getPresetConfig
   const initialColorPreset = await heroScene.preset.loadPresets()

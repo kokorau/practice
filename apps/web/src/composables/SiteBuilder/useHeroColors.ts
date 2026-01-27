@@ -138,10 +138,11 @@ const findMaskSurfaceLayer = (layers: LayerNodeConfig[]): (SurfaceLayerNodeConfi
  * Extract ColorValue from PropertyValue in params
  */
 const extractColorFromParams = (
-  params: Record<string, PropertyValue>,
+  params: Record<string, PropertyValue> | undefined,
   key: string,
   defaultValue: ColorValue
 ): ColorValue => {
+  if (!params) return defaultValue
   const propValue = params[key]
   if (!propValue || !$PropertyValue.isStatic(propValue)) {
     return defaultValue
