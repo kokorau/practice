@@ -24,6 +24,7 @@ import { usePresetActions } from '../composables/usePresetActions'
 import { useLayoutResize, usePanelResize } from '../composables/useLayoutResize'
 import { useImageLayerEditor } from '../composables/useImageLayerEditor'
 import { useContextMenu } from '../composables/useContextMenu'
+import { useContrastChecker } from '../composables/useContrastChecker'
 import { RightPropertyPanel } from '../components/HeroGenerator/RightPropertyPanel'
 import ContextMenu from '../components/HeroGenerator/ContextMenu.vue'
 import DebugPanel from '../components/HeroGenerator/DebugPanel.vue'
@@ -263,6 +264,18 @@ const { imageLayerProps, handleImageUpdate } = useImageLayerEditor({
   clearLayerImage: heroScene.images.clearLayerImage,
   loadRandomImage: heroScene.images.loadRandomImage,
   updateLayer: heroScene.usecase.layerUsecase.updateLayer,
+})
+
+// ============================================================
+// APCA Contrast Check
+// ============================================================
+const { titleContrastResult, descriptionContrastResult } = useContrastChecker({
+  canvasImageData: heroScene.canvas.canvasImageData,
+  heroPreviewRef,
+  foregroundTitleColor: heroScene.foreground.foregroundTitleColor,
+  foregroundBodyColor: heroScene.foreground.foregroundBodyColor,
+  setElementBounds: heroScene.canvas.setElementBounds,
+  watchDependencies: [foregroundElement.selectedElementPosition, foregroundElement.selectedElementFontSize],
 })
 
 // ============================================================
@@ -568,7 +581,7 @@ const handleGroupParamUpdate = (paramName: string, value: unknown) => {
       <RightPropertyPanel
         :selection="panelSelection"
         :foreground="panelForeground"
-        :contrast="{ title: null, description: null }"
+        :contrast="{ title: titleContrastResult, description: descriptionContrastResult }"
         :background="panelBackground"
         :mask="panelMask"
         :filter="filterProps"
