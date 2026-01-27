@@ -1112,7 +1112,7 @@ export const FullPipeline: Story = {
           from: { nodeId: 'surface-1', position: 'right' },
           to: { nodeId: 'effect-1', position: 'left' },
         },
-        // Surface2 (direct to compositor)
+        // Surface2 (direct to compositor, skips Effect1)
         {
           from: { nodeId: 'surface-2', position: 'right' },
           to: { nodeId: 'compositor-1', position: 'left', portOffset: 0.65 },
@@ -1151,10 +1151,10 @@ export const FullPipeline: Story = {
       return { surfaces, renderConfig, selectedNode, connections, handleSelectNode, palette }
     },
     template: `
-      <NodeGraph :connections="connections" :columns="5" gap="1.5rem">
+      <NodeGraph :connections="connections" :columns="6" gap="1.25rem">
         <template #default="{ setNodeRef }">
           <!-- Column 1: Surfaces -->
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; flex-direction: column; gap: 1rem; justify-content: center;">
             <div :ref="(el) => setNodeRef('surface-1', el)" style="width: fit-content;">
               <SurfaceNode
                 :surface="surfaces[0]"
@@ -1173,8 +1173,8 @@ export const FullPipeline: Story = {
             </div>
           </div>
 
-          <!-- Column 2: Effect1 + Compositor -->
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Column 2: Effect1 (processes Surface1 only) -->
+          <div style="display: flex; align-items: flex-start; padding-top: 0;">
             <div :ref="(el) => setNodeRef('effect-1', el)" style="width: fit-content;">
               <ProcessorNode
                 type="effect"
@@ -1185,6 +1185,10 @@ export const FullPipeline: Story = {
                 @click="handleSelectNode('effect-1')"
               />
             </div>
+          </div>
+
+          <!-- Column 3: Compositor (merges Effect1 output + Surface2) -->
+          <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('compositor-1', el)" style="width: fit-content;">
               <CompositorNode
                 label="Overlay"
@@ -1196,7 +1200,7 @@ export const FullPipeline: Story = {
             </div>
           </div>
 
-          <!-- Column 3: Effect2 + Graymap -->
+          <!-- Column 4: Effect2 + Graymap -->
           <div style="display: flex; flex-direction: column; gap: 1rem;">
             <div :ref="(el) => setNodeRef('effect-2', el)" style="width: fit-content;">
               <ProcessorNode
@@ -1218,7 +1222,7 @@ export const FullPipeline: Story = {
             </div>
           </div>
 
-          <!-- Column 4: Mask -->
+          <!-- Column 5: Mask -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('mask-1', el)" style="width: fit-content;">
               <ProcessorNode
@@ -1232,7 +1236,7 @@ export const FullPipeline: Story = {
             </div>
           </div>
 
-          <!-- Column 5: Render -->
+          <!-- Column 6: Render -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('render-1', el)" style="width: fit-content;">
               <RenderNode
