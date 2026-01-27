@@ -12,6 +12,7 @@ import SurfaceNode from './SurfaceNode.vue'
 import ProcessorPipeline from './ProcessorPipeline.vue'
 import FilterNode from './FilterNode.vue'
 import GraymapNode from './GraymapNode.vue'
+import CompositorNode from './CompositorNode.vue'
 import RenderNode from './RenderNode.vue'
 import { useAutoLayout } from './useAutoLayout'
 import { extractPartialConfig } from './extractPartialConfig'
@@ -104,7 +105,7 @@ type Story = StoryObj<typeof NodeGraph>
 
 const createPresetStory = (preset: HeroViewPreset): Story => ({
   render: () => ({
-    components: { NodeGraph, SurfaceNode, ProcessorPipeline, FilterNode, GraymapNode, RenderNode },
+    components: { NodeGraph, SurfaceNode, ProcessorPipeline, FilterNode, GraymapNode, CompositorNode, RenderNode },
     setup() {
       const config = computed(() => getPresetConfig(preset))
       const layout = computed(() => {
@@ -238,7 +239,20 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
               </div>
             </div>
 
-            <!-- Column 3: Render -->
+            <!-- Column 3: Composite (if multiple groups) -->
+            <div v-if="layout.compositeNode" style="display: flex; align-items: center;">
+              <div :ref="(el) => setNodeRef('composite', el)" style="width: fit-content;">
+                <CompositorNode
+                  label="Composite"
+                  :config="config"
+                  :palette="palette"
+                  :selected="selectedNode === 'composite'"
+                  @click="handleSelectNode('composite')"
+                />
+              </div>
+            </div>
+
+            <!-- Column 4: Render -->
             <div v-if="layout.renderNode" style="display: flex; align-items: center;">
               <div :ref="(el) => setNodeRef('render', el)" style="width: fit-content;">
                 <RenderNode
@@ -262,7 +276,7 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
 
 export const Interactive: Story = {
   render: () => ({
-    components: { NodeGraph, SurfaceNode, ProcessorPipeline, FilterNode, GraymapNode, RenderNode },
+    components: { NodeGraph, SurfaceNode, ProcessorPipeline, FilterNode, GraymapNode, CompositorNode, RenderNode },
     setup() {
       const selectedPresetId = ref(TIMELINE_PRESETS[0]?.id ?? '')
       const preset = computed(() => TIMELINE_PRESETS.find(p => p.id === selectedPresetId.value))
@@ -420,7 +434,20 @@ export const Interactive: Story = {
               </div>
             </div>
 
-            <!-- Column 3: Render -->
+            <!-- Column 3: Composite (if multiple groups) -->
+            <div v-if="layout.compositeNode" style="display: flex; align-items: center;">
+              <div :ref="(el) => setNodeRef('composite', el)" style="width: fit-content;">
+                <CompositorNode
+                  label="Composite"
+                  :config="config"
+                  :palette="palette"
+                  :selected="selectedNode === 'composite'"
+                  @click="handleSelectNode('composite')"
+                />
+              </div>
+            </div>
+
+            <!-- Column 4: Render -->
             <div v-if="layout.renderNode" style="display: flex; align-items: center;">
               <div :ref="(el) => setNodeRef('render', el)" style="width: fit-content;">
                 <RenderNode
