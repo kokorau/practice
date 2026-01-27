@@ -9,27 +9,34 @@ interface Point {
 function getNodeEdge(
   nodeRef: HTMLElement | null,
   container: HTMLElement | null,
-  position: EdgePosition
+  position: EdgePosition,
+  portOffset?: number
 ): Point {
   if (!nodeRef || !container) return { x: 0, y: 0 }
 
-  const nodeRect = nodeRef.getBoundingClientRect()
+  // Find the actual node-body element for accurate port positioning
+  const nodeBody = nodeRef.querySelector('.node-body') as HTMLElement | null
+  const targetElement = nodeBody || nodeRef
+
+  const nodeRect = targetElement.getBoundingClientRect()
   const containerRect = container.getBoundingClientRect()
 
   const left = nodeRect.left - containerRect.left
   const top = nodeRect.top - containerRect.top
-  const centerX = left + nodeRect.width / 2
-  const centerY = top + nodeRect.height / 2
+
+  // Use portOffset if provided, otherwise default to center (0.5)
+  const yOffset = portOffset ?? 0.5
+  const yPos = top + nodeRect.height * yOffset
 
   switch (position) {
     case 'top':
-      return { x: centerX, y: top }
+      return { x: left + nodeRect.width / 2, y: top }
     case 'bottom':
-      return { x: centerX, y: top + nodeRect.height }
+      return { x: left + nodeRect.width / 2, y: top + nodeRect.height }
     case 'left':
-      return { x: left, y: centerY }
+      return { x: left, y: yPos }
     case 'right':
-      return { x: left + nodeRect.width, y: centerY }
+      return { x: left + nodeRect.width, y: yPos }
   }
 }
 
@@ -60,8 +67,8 @@ export function useNodeConnections(
       const fromNode = nodeRefs.value.get(conn.from.nodeId)
       const toNode = nodeRefs.value.get(conn.to.nodeId)
 
-      const fromPos = getNodeEdge(fromNode ?? null, container, conn.from.position)
-      const toPos = getNodeEdge(toNode ?? null, container, conn.to.position)
+      const fromPos = getNodeEdge(fromNode ?? null, container, conn.from.position, conn.from.portOffset)
+      const toPos = getNodeEdge(toNode ?? null, container, conn.to.position, conn.to.portOffset)
 
       const isHorizontal =
         conn.from.position === 'left' || conn.from.position === 'right'
