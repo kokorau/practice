@@ -136,7 +136,7 @@ const heroScene = useHeroScene({
 // ============================================================
 // Usecases & Preset (from heroScene)
 // ============================================================
-const { selectProcessorUsecase, applyAnimatedPresetUsecase } = heroScene.usecase
+const { selectProcessorUsecase, selectLayerUsecase, applyAnimatedPresetUsecase } = heroScene.usecase
 const { selectedPreset, selectedTimeline } = heroScene.preset
 
 // Sync track keys when timeline changes
@@ -222,6 +222,8 @@ const {
   selectedLayerId,
   onSelectLayer: (id) => {
     selectCanvasLayer(id)
+    // Use SelectLayerUsecase for effect manager sync
+    selectLayerUsecase.execute(layers.value, id)
   },
   onSelectProcessor: (layerId, type) => {
     selectProcessor(layerId, type)

@@ -86,6 +86,7 @@ import {
   type NormalizedMaskConfig,
   $PropertyValue,
   createSelectProcessorUsecase,
+  createSelectLayerUsecase,
   createApplyAnimatedPresetUsecase,
   getProcessorWithTargetUsecase,
 } from '@practice/section-visual'
@@ -400,6 +401,15 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     effectManager: {
       selectLayer: (layerId) => heroFilters.effectManager.selectLayer(layerId),
       setEffectPipeline: (layerId, effects) => heroFilters.effectManager.setEffectPipeline(layerId, effects),
+    },
+  })
+
+  // ============================================================
+  // SelectLayer Usecase (EffectManager Port integration)
+  // ============================================================
+  const selectLayerUsecase = createSelectLayerUsecase({
+    effectManager: {
+      selectLayer: (layerId) => heroFilters.effectManager.selectLayer(layerId),
     },
   })
 
@@ -1124,6 +1134,7 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
     presetUsecase,
     selectedForegroundElementId,
     selectProcessorUsecase,
+    selectLayerUsecase,
     applyAnimatedPresetUsecase,
   }
 
