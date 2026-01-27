@@ -6,6 +6,7 @@ import {
   type ForegroundElementConfig,
   type GridPosition,
   type HeroPrimitiveKey,
+  type HeroViewRepository,
 } from '@practice/section-visual'
 import type { LayerSelectionReturn } from './useLayerSelection'
 
@@ -21,6 +22,8 @@ export interface UseForegroundElementOptions {
   foregroundConfig: Ref<ForegroundLayerConfig>
   /** Layer selection state from useLayerSelection */
   layerSelection: LayerSelectionReturn
+  /** Optional: HeroViewRepository for direct access (ensures proper reactivity) */
+  heroViewRepository?: HeroViewRepository
 }
 
 /**
@@ -90,7 +93,29 @@ export interface UseForegroundElementReturn {
 export function useForegroundElement(
   options: UseForegroundElementOptions
 ): UseForegroundElementReturn {
-  const { foregroundConfig, layerSelection } = options
+  const { foregroundConfig, layerSelection, heroViewRepository } = options
+
+  // ============================================================
+  // Config Access (use repository if available for proper reactivity)
+  // ============================================================
+
+  // When heroViewRepository is provided, use it directly to ensure Vue's reactivity
+  // system properly tracks changes. The repository.get() call inside a computed
+  // triggers proper dependency tracking.
+  const getForegroundConfig = (): ForegroundLayerConfig => {
+    if (heroViewRepository) {
+      return heroViewRepository.get().foreground
+    }
+    return foregroundConfig.value
+  }
+
+  const setForegroundConfig = (config: ForegroundLayerConfig): void => {
+    if (heroViewRepository) {
+      heroViewRepository.updateForeground(config)
+    } else {
+      foregroundConfig.value = config
+    }
+  }
 
   // ============================================================
   // Selection State (derived from layerSelection)
@@ -104,8 +129,8 @@ export function useForegroundElement(
 
   const foregroundUsecase = createForegroundElementUsecase({
     foregroundConfig: {
-      get: () => foregroundConfig.value,
-      set: (config) => { foregroundConfig.value = config },
+      get: getForegroundConfig,
+      set: setForegroundConfig,
     },
     selection: {
       getSelectedId: () => layerSelection.foregroundElementId.value,
@@ -124,7 +149,14 @@ export function useForegroundElement(
   // Selected Element
   // ============================================================
 
-  const selectedForegroundElement = computed(() => foregroundUsecase.getSelectedElement())
+  // Direct computed access to ensure Vue's reactivity system properly tracks dependencies
+  // When repository is available, use it directly to get the latest foreground config
+  const selectedForegroundElement = computed(() => {
+    const selectedId = layerSelection.foregroundElementId.value
+    if (!selectedId) return null
+    const config = getForegroundConfig()
+    return config.elements.find((el) => el.id === selectedId) ?? null
+  })
 
   // ============================================================
   // Handler Functions

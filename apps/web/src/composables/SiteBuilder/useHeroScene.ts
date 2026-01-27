@@ -224,8 +224,11 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // Foreground Config (HTML Layer) - SSOT from repository
   // ============================================================
+  // Use repoConfig.value instead of heroViewRepository.get() to ensure Vue's
+  // reactivity system properly tracks changes. repoConfig is updated via
+  // repository.subscribe(), making it reactive.
   const foregroundConfig = computed({
-    get: () => heroViewRepository.get().foreground,
+    get: () => repoConfig.value.foreground,
     set: (val: ForegroundLayerConfig) => heroViewRepository.updateForeground(val),
   })
 
@@ -429,9 +432,17 @@ export const useHeroScene = (options: UseHeroSceneOptions) => {
   // ============================================================
   // ForegroundElement Usecase
   // ============================================================
+  // Use layerSelection.foregroundElementId as the source of truth
+  // This ensures sync between useHeroScene and useForegroundElement in the view
   const selectedForegroundElementId = computed({
-    get: () => editorUIState.value.foreground.selectedElementId,
-    set: (val: string | null) => { editorUIState.value.foreground.selectedElementId = val },
+    get: () => layerSelection.foregroundElementId.value,
+    set: (val: string | null) => {
+      if (val) {
+        layerSelection.selectForegroundElement(val)
+      } else {
+        layerSelection.clearSelection()
+      }
+    },
   })
 
   let _foregroundElementUsecase: ReturnType<typeof createForegroundElementUsecase> | null = null
