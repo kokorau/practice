@@ -10,6 +10,7 @@ import NodeGraph from './NodeGraph.vue'
 import SurfaceNode from './SurfaceNode.vue'
 import CompositorNode from './CompositorNode.vue'
 import ProcessorNode from './ProcessorNode.vue'
+import GraymapNode from './GraymapNode.vue'
 import RenderNode from './RenderNode.vue'
 import type { Connection } from './types'
 import {
@@ -479,12 +480,12 @@ export const SurfaceToEffectToRender: Story = {
 }
 
 // ============================================================
-// Surface → Mask → Render
+// Surface → Mask (with Graymap) → Render
 // ============================================================
 
 export const SurfaceToMaskToRender: Story = {
   render: () => ({
-    components: { NodeGraph, SurfaceNode, ProcessorNode, RenderNode },
+    components: { NodeGraph, SurfaceNode, ProcessorNode, GraymapNode, RenderNode },
     setup() {
       const surface = createMockSurface('grid', { cellSize: 40, lineWidth: 2 })
       const renderConfig = createRenderConfig([surface])
@@ -492,10 +493,17 @@ export const SurfaceToMaskToRender: Story = {
       const palette = DEFAULT_PALETTE
 
       const connections: Connection[] = [
+        // Surface → Mask (main input, top port at 30%)
         {
           from: { nodeId: 'surface-1', position: 'right' },
-          to: { nodeId: 'mask-1', position: 'left' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.3 },
         },
+        // Graymap → Mask (mask input, bottom port at 70%)
+        {
+          from: { nodeId: 'graymap-1', position: 'right' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.7 },
+        },
+        // Mask → Render
         {
           from: { nodeId: 'mask-1', position: 'right' },
           to: { nodeId: 'render-1', position: 'left' },
@@ -511,14 +519,22 @@ export const SurfaceToMaskToRender: Story = {
     template: `
       <NodeGraph :connections="connections" :columns="3" gap="2rem">
         <template #default="{ setNodeRef }">
-          <!-- Column 1: Surface -->
-          <div style="display: flex; align-items: center;">
+          <!-- Column 1: Surface + Graymap -->
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
             <div :ref="(el) => setNodeRef('surface-1', el)" style="width: fit-content;">
               <SurfaceNode
                 :surface="surface"
                 :palette="palette"
                 :selected="selectedNode === 'surface-1'"
                 @click="handleSelectNode('surface-1')"
+              />
+            </div>
+            <div :ref="(el) => setNodeRef('graymap-1', el)" style="width: fit-content;">
+              <GraymapNode
+                label="Linear Gradient"
+                :palette="palette"
+                :selected="selectedNode === 'graymap-1'"
+                @click="handleSelectNode('graymap-1')"
               />
             </div>
           </div>
@@ -555,12 +571,12 @@ export const SurfaceToMaskToRender: Story = {
 }
 
 // ============================================================
-// Complex: Surface → Effect → Mask → Render
+// Complex: Surface → Effect → Mask (with Graymap) → Render
 // ============================================================
 
 export const SurfaceToEffectToMaskToRender: Story = {
   render: () => ({
-    components: { NodeGraph, SurfaceNode, ProcessorNode, RenderNode },
+    components: { NodeGraph, SurfaceNode, ProcessorNode, GraymapNode, RenderNode },
     setup() {
       const surface = createMockSurface('stripe', { width1: 15, width2: 15, angle: 30 })
       const renderConfig = createRenderConfig([surface])
@@ -568,14 +584,22 @@ export const SurfaceToEffectToMaskToRender: Story = {
       const palette = DEFAULT_PALETTE
 
       const connections: Connection[] = [
+        // Surface → Effect
         {
           from: { nodeId: 'surface-1', position: 'right' },
           to: { nodeId: 'effect-1', position: 'left' },
         },
+        // Effect → Mask (main input at 30%)
         {
           from: { nodeId: 'effect-1', position: 'right' },
-          to: { nodeId: 'mask-1', position: 'left' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.3 },
         },
+        // Graymap → Mask (mask input at 70%)
+        {
+          from: { nodeId: 'graymap-1', position: 'right' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.7 },
+        },
+        // Mask → Render
         {
           from: { nodeId: 'mask-1', position: 'right' },
           to: { nodeId: 'render-1', position: 'left' },
@@ -603,8 +627,8 @@ export const SurfaceToEffectToMaskToRender: Story = {
             </div>
           </div>
 
-          <!-- Column 2: Effect -->
-          <div style="display: flex; align-items: center;">
+          <!-- Column 2: Effect + Graymap -->
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
             <div :ref="(el) => setNodeRef('effect-1', el)" style="width: fit-content;">
               <ProcessorNode
                 type="effect"
@@ -613,6 +637,14 @@ export const SurfaceToEffectToMaskToRender: Story = {
                 :palette="palette"
                 :selected="selectedNode === 'effect-1'"
                 @click="handleSelectNode('effect-1')"
+              />
+            </div>
+            <div :ref="(el) => setNodeRef('graymap-1', el)" style="width: fit-content;">
+              <GraymapNode
+                label="Radial Gradient"
+                :palette="palette"
+                :selected="selectedNode === 'graymap-1'"
+                @click="handleSelectNode('graymap-1')"
               />
             </div>
           </div>

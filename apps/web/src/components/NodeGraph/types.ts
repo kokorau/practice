@@ -3,6 +3,12 @@ export type EdgePosition = 'top' | 'bottom' | 'left' | 'right'
 export interface ConnectionEndpoint {
   nodeId: string
   position: EdgePosition
+  /**
+   * Vertical offset ratio (0-1) for multiple ports on the same edge.
+   * 0 = top, 0.5 = center (default), 1 = bottom.
+   * For mask nodes: main input = 0.3, mask input = 0.7
+   */
+  portOffset?: number
 }
 
 export interface Connection {

@@ -6,11 +6,7 @@ import HeroPreview from '../HeroGenerator/HeroPreview.vue'
 
 const props = defineProps<{
   /**
-   * Processor type: 'effect' or 'mask'
-   */
-  type: 'effect' | 'mask'
-  /**
-   * Display label (e.g., 'Blur', 'Gradient Mask')
+   * Display label (e.g., 'Linear Gradient', 'Radial Gradient')
    */
   label?: string
   config?: HeroViewConfig
@@ -24,37 +20,23 @@ const emit = defineEmits<{
 
 const hasPreview = computed(() => props.config && props.palette)
 
-// Icon based on processor type
-const icon = computed(() => {
-  return props.type === 'effect' ? 'auto_fix_high' : 'gradient'
-})
-
-// Default label based on type
-const displayLabel = computed(() => {
-  if (props.label) return props.label
-  return props.type === 'effect' ? 'Effect' : 'Mask'
-})
+const displayLabel = computed(() => props.label ?? 'Graymap')
 </script>
 
 <template>
   <div
-    class="processor-node"
-    :class="[`processor-${type}`, { 'is-selected': selected }]"
+    class="graymap-node"
+    :class="{ 'is-selected': selected }"
     @click="emit('click')"
   >
     <!-- Title (outside, above the box) -->
     <div class="node-title">
-      <span class="material-icons node-icon">{{ icon }}</span>
+      <span class="material-icons node-icon">tonality</span>
       <span class="node-name">{{ displayLabel }}</span>
     </div>
 
     <!-- Node body -->
     <div class="node-body">
-      <!-- Input ports (left side) -->
-      <div v-if="type === 'mask'" class="port port-input port-input-main" />
-      <div v-if="type === 'mask'" class="port port-input port-input-mask" />
-      <div v-else class="port port-input" />
-
       <div class="node-preview">
         <HeroPreview
           v-if="hasPreview"
@@ -63,7 +45,7 @@ const displayLabel = computed(() => {
           :palette="palette"
         />
         <div v-else class="preview-placeholder">
-          <span class="material-icons placeholder-icon">{{ icon }}</span>
+          <span class="material-icons placeholder-icon">tonality</span>
         </div>
         <!-- Fallback overlay -->
         <div class="preview-fallback">
@@ -78,7 +60,7 @@ const displayLabel = computed(() => {
 </template>
 
 <style scoped>
-.processor-node {
+.graymap-node {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -104,11 +86,11 @@ const displayLabel = computed(() => {
   color: #8a8a9a;
 }
 
-.processor-node.is-selected .node-name {
+.graymap-node.is-selected .node-name {
   color: #b0b0c0;
 }
 
-.processor-node.is-selected .node-icon {
+.graymap-node.is-selected .node-icon {
   color: #b0b0c0;
 }
 
@@ -121,11 +103,11 @@ const displayLabel = computed(() => {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.processor-node:hover .node-body {
+.graymap-node:hover .node-body {
   border-color: #6a6a7a;
 }
 
-.processor-node.is-selected .node-body {
+.graymap-node.is-selected .node-body {
   border-color: #8a8a9a;
   box-shadow: 0 0 0 2px rgba(138, 138, 154, 0.3);
 }
@@ -161,36 +143,17 @@ const displayLabel = computed(() => {
 .preview-pattern {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #4a4a6a 0%, #3a3a5a 100%);
-  opacity: 0.2;
+  background: linear-gradient(to right, #222 0%, #666 100%);
+  opacity: 0.3;
 }
 
-/* Ports */
+/* Port */
 .port {
   position: absolute;
   width: 12px;
   height: 12px;
   background: #3b4d7a;
   border-radius: 50%;
-}
-
-.port-input {
-  left: -6px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* Mask node has two input ports */
-.port-input-main {
-  left: -6px;
-  top: 30%;
-  transform: translateY(-50%);
-}
-
-.port-input-mask {
-  left: -6px;
-  top: 70%;
-  transform: translateY(-50%);
 }
 
 .port-output {
