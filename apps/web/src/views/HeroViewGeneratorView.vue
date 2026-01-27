@@ -700,7 +700,7 @@ const handleAddLayerToMaskFromUI = (
           :palette="primitivePalette"
           :surface-schema="heroScene.background.currentBackgroundSurfaceSchema.value"
           :surface-params="backgroundSurfaceParamsForUI"
-          :patterns="backgroundPatterns.value"
+          :patterns="backgroundPatterns"
           :selected-index="heroScene.pattern.selectedBackgroundIndex.value"
           preview-mode="hero"
           :base-config="currentHeroConfig"
@@ -731,7 +731,7 @@ const handleAddLayerToMaskFromUI = (
           :palette="primitivePalette"
           :surface-schema="heroScene.mask.currentSurfaceSchema.value"
           :surface-params="maskSurfaceParamsForUI"
-          :patterns="maskSurfacePatterns.value"
+          :patterns="maskSurfacePatterns"
           :selected-index="heroScene.pattern.selectedMidgroundTextureIndex.value"
           preview-mode="hero"
           :base-config="currentHeroConfig"
@@ -847,7 +847,7 @@ const handleAddLayerToMaskFromUI = (
         description: descriptionContrastResult,
       }"
       :background="{
-        patterns: backgroundPatterns.value,
+        patterns: backgroundPatterns,
         selectedIndex: heroScene.pattern.selectedBackgroundIndex.value,
         surfaceSchema: heroScene.background.currentBackgroundSurfaceSchema.value,
         surfaceParams: backgroundSurfaceParamsForUI,
