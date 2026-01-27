@@ -14,8 +14,10 @@ function getNodeEdge(
 ): Point {
   if (!nodeRef || !container) return { x: 0, y: 0 }
 
-  // Find the actual node-body element for accurate port positioning
-  const nodeBody = nodeRef.querySelector('.node-body') as HTMLElement | null
+  // Find the actual body element for accurate port positioning
+  // Check for .pipeline-body first (processor pipeline), then .node-body (regular nodes)
+  // Order matters: pipeline-body must be checked first to avoid matching inner node-body elements
+  const nodeBody = (nodeRef.querySelector('.pipeline-body') || nodeRef.querySelector('.node-body')) as HTMLElement | null
   const targetElement = nodeBody || nodeRef
 
   const nodeRect = targetElement.getBoundingClientRect()

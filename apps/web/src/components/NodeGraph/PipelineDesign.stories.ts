@@ -426,15 +426,15 @@ export const MultipleInputs: Story = {
       const palette = DEFAULT_PALETTE
 
       const connections: Connection[] = [
-        // Surface1 → Pipeline (upper)
+        // Surface1 → Pipeline
         {
           from: { nodeId: 'surface-1', position: 'right' },
-          to: { nodeId: 'pipeline-1', position: 'left', portOffset: 0.35 },
+          to: { nodeId: 'pipeline-1', position: 'left' },
         },
-        // Surface2 → Pipeline (lower)
+        // Surface2 → Pipeline
         {
           from: { nodeId: 'surface-2', position: 'right' },
-          to: { nodeId: 'pipeline-1', position: 'left', portOffset: 0.65 },
+          to: { nodeId: 'pipeline-1', position: 'left' },
         },
         // Pipeline → Render
         {
@@ -522,15 +522,15 @@ export const ComplexPipeline: Story = {
         // Surfaces → Pipeline
         {
           from: { nodeId: 'surface-1', position: 'right' },
-          to: { nodeId: 'pipeline-1', position: 'left', portOffset: 0.2 },
+          to: { nodeId: 'pipeline-1', position: 'left' },
         },
         {
           from: { nodeId: 'surface-2', position: 'right' },
-          to: { nodeId: 'pipeline-1', position: 'left', portOffset: 0.5 },
+          to: { nodeId: 'pipeline-1', position: 'left' },
         },
         {
           from: { nodeId: 'surface-3', position: 'right' },
-          to: { nodeId: 'pipeline-1', position: 'left', portOffset: 0.8 },
+          to: { nodeId: 'pipeline-1', position: 'left' },
         },
         // Pipeline → Render
         {
