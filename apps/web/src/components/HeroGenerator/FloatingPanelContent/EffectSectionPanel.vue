@@ -22,6 +22,7 @@ import {
   type LayerNodeConfig,
   type GroupLayerNodeConfig,
   type ProcessorNodeConfig,
+  type ProcessorConfig,
 } from '@practice/section-visual'
 import type { HeroViewConfig, LayerEffectConfig } from '@practice/section-visual'
 import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
@@ -82,17 +83,35 @@ const updateProcessorWithEffects = (
     // Find processor in background-group or at root level
     if (layer.type === 'group' && layer.id === 'background-group') {
       const group = layer as GroupLayerNodeConfig
+      // Helper to update processor modifiers while preserving order
+      const updateProcessorModifiers = (processor: ProcessorNodeConfig): ProcessorNodeConfig => {
+        const effectConfigsById = new Map(effectConfigs.map(e => [e.id, e]))
+        const existingEffectIds = new Set(
+          processor.modifiers.filter(m => m.type === 'effect').map(m => m.id)
+        )
+
+        // Update existing modifiers in place (preserve order)
+        const updatedModifiers = processor.modifiers
+          .map(m => {
+            if (m.type === 'effect') {
+              return effectConfigsById.get(m.id)
+            }
+            return m
+          })
+          .filter((m): m is ProcessorConfig => m !== undefined)
+
+        // Add new effects that weren't in the original modifiers (append to end)
+        const newEffects = effectConfigs.filter(e => !existingEffectIds.has(e.id))
+        updatedModifiers.push(...newEffects)
+
+        return { ...processor, modifiers: updatedModifiers }
+      }
+
       return {
         ...group,
         children: group.children.map(child => {
           if (child.type === 'processor') {
-            const processor = child as ProcessorNodeConfig
-            // Keep non-effect modifiers (like masks), replace effects
-            const nonEffectModifiers = processor.modifiers.filter(m => m.type !== 'effect')
-            return {
-              ...processor,
-              modifiers: [...effectConfigs, ...nonEffectModifiers],
-            }
+            return updateProcessorModifiers(child as ProcessorNodeConfig)
           }
           return child
         }),
@@ -101,11 +120,24 @@ const updateProcessorWithEffects = (
     // Handle root-level processors (like bg-processor)
     if (layer.type === 'processor' && layer.id === 'bg-processor') {
       const processor = layer as ProcessorNodeConfig
-      const nonEffectModifiers = processor.modifiers.filter(m => m.type !== 'effect')
-      return {
-        ...processor,
-        modifiers: [...effectConfigs, ...nonEffectModifiers],
-      }
+      const effectConfigsById = new Map(effectConfigs.map(e => [e.id, e]))
+      const existingEffectIds = new Set(
+        processor.modifiers.filter(m => m.type === 'effect').map(m => m.id)
+      )
+
+      const updatedModifiers = processor.modifiers
+        .map(m => {
+          if (m.type === 'effect') {
+            return effectConfigsById.get(m.id)
+          }
+          return m
+        })
+        .filter((m): m is ProcessorConfig => m !== undefined)
+
+      const newEffects = effectConfigs.filter(e => !existingEffectIds.has(e.id))
+      updatedModifiers.push(...newEffects)
+
+      return { ...processor, modifiers: updatedModifiers }
     }
     return layer
   })
