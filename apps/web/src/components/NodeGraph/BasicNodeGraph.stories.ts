@@ -8,6 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { ref } from 'vue'
 import NodeGraph from './NodeGraph.vue'
 import SurfaceNode from './SurfaceNode.vue'
+import CompositorNode from './CompositorNode.vue'
 import RenderNode from './RenderNode.vue'
 import type { Connection } from './types'
 import {
@@ -296,6 +297,94 @@ export const MultipleSurfacesToRender: Story = {
               />
             </div>
           </div>
+          <div style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('render-1', el)" style="width: fit-content;">
+              <RenderNode
+                :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'render-1'"
+                @click="handleSelectNode('render-1')"
+              />
+            </div>
+          </div>
+        </template>
+      </NodeGraph>
+    `,
+  }),
+}
+
+// ============================================================
+// Surfaces → Compositor → Render
+// ============================================================
+
+export const SurfacesToCompositorToRender: Story = {
+  render: () => ({
+    components: { NodeGraph, SurfaceNode, CompositorNode, RenderNode },
+    setup() {
+      const surfaces = [
+        createMockSurface('solid'),
+        createMockSurface('stripe', { width1: 15, width2: 15, angle: 45 }),
+      ]
+      const renderConfig = createRenderConfig(surfaces)
+      const selectedNode = ref<string | null>(null)
+      const palette = DEFAULT_PALETTE
+
+      const connections: Connection[] = [
+        // Surfaces → Compositor
+        {
+          from: { nodeId: 'surface-1', position: 'right' },
+          to: { nodeId: 'compositor-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'surface-2', position: 'right' },
+          to: { nodeId: 'compositor-1', position: 'left' },
+        },
+        // Compositor → Render
+        {
+          from: { nodeId: 'compositor-1', position: 'right' },
+          to: { nodeId: 'render-1', position: 'left' },
+        },
+      ]
+
+      const handleSelectNode = (nodeId: string) => {
+        selectedNode.value = selectedNode.value === nodeId ? null : nodeId
+      }
+
+      return { surfaces, renderConfig, selectedNode, connections, handleSelectNode, palette }
+    },
+    template: `
+      <NodeGraph :connections="connections" :columns="3" gap="2rem">
+        <template #default="{ setNodeRef }">
+          <!-- Column 1: Surfaces -->
+          <div style="display: flex; flex-direction: column; gap: 1rem; width: fit-content;">
+            <div
+              v-for="(surface, index) in surfaces"
+              :key="'surface-' + (index + 1)"
+              :ref="(el) => setNodeRef('surface-' + (index + 1), el)"
+              style="width: fit-content;"
+            >
+              <SurfaceNode
+                :surface="surface"
+                :palette="palette"
+                :selected="selectedNode === 'surface-' + (index + 1)"
+                @click="handleSelectNode('surface-' + (index + 1))"
+              />
+            </div>
+          </div>
+
+          <!-- Column 2: Compositor -->
+          <div style="display: flex; align-items: center; justify-content: center;">
+            <div :ref="(el) => setNodeRef('compositor-1', el)" style="width: fit-content;">
+              <CompositorNode
+                :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'compositor-1'"
+                @click="handleSelectNode('compositor-1')"
+              />
+            </div>
+          </div>
+
+          <!-- Column 3: Render -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('render-1', el)" style="width: fit-content;">
               <RenderNode

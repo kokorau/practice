@@ -5,9 +5,7 @@ import type { PrimitivePalette } from '@practice/semantic-color-palette/Domain'
 import HeroPreview from '../HeroGenerator/HeroPreview.vue'
 
 const props = defineProps<{
-  /**
-   * Full config to render (combines all input surfaces/processors)
-   */
+  label?: string
   config?: HeroViewConfig
   palette?: PrimitivePalette
   selected?: boolean
@@ -22,19 +20,19 @@ const hasPreview = computed(() => props.config && props.palette)
 
 <template>
   <div
-    class="render-node"
+    class="compositor-node"
     :class="{ 'is-selected': selected }"
     @click="emit('click')"
   >
     <!-- Title (outside, above the box) -->
     <div class="node-title">
-      <span class="material-icons node-icon">panorama</span>
-      <span class="node-name">Output</span>
+      <span class="material-icons node-icon">layers</span>
+      <span class="node-name">{{ label ?? 'Compositor' }}</span>
     </div>
 
     <!-- Node body -->
     <div class="node-body">
-      <!-- Input port (left side, protruding) - rendered first so preview overlaps it -->
+      <!-- Input port (left side) -->
       <div class="port port-input" />
 
       <div class="node-preview">
@@ -45,19 +43,22 @@ const hasPreview = computed(() => props.config && props.palette)
           :palette="palette"
         />
         <div v-else class="preview-placeholder">
-          No Input
+          <span class="placeholder-label">Compose</span>
         </div>
         <!-- Fallback overlay -->
         <div class="preview-fallback">
           <div class="preview-pattern" />
         </div>
       </div>
+
+      <!-- Output port (right side) -->
+      <div class="port port-output" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.render-node {
+.compositor-node {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -83,11 +84,11 @@ const hasPreview = computed(() => props.config && props.palette)
   color: #8a8a9a;
 }
 
-.render-node.is-selected .node-name {
+.compositor-node.is-selected .node-name {
   color: #b0b0c0;
 }
 
-.render-node.is-selected .node-icon {
+.compositor-node.is-selected .node-icon {
   color: #b0b0c0;
 }
 
@@ -100,11 +101,11 @@ const hasPreview = computed(() => props.config && props.palette)
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.render-node:hover .node-body {
+.compositor-node:hover .node-body {
   border-color: #6a6a7a;
 }
 
-.render-node.is-selected .node-body {
+.compositor-node.is-selected .node-body {
   border-color: #8a8a9a;
   box-shadow: 0 0 0 2px rgba(138, 138, 154, 0.3);
 }
@@ -124,8 +125,11 @@ const hasPreview = computed(() => props.config && props.palette)
   align-items: center;
   justify-content: center;
   background: #1e1e3a;
-  color: #555;
+}
+
+.placeholder-label {
   font-size: 11px;
+  color: #555;
 }
 
 .preview-fallback {
@@ -141,7 +145,7 @@ const hasPreview = computed(() => props.config && props.palette)
   opacity: 0.2;
 }
 
-/* Port: protruding half-circle on the left edge */
+/* Ports */
 .port {
   position: absolute;
   width: 12px;
@@ -152,6 +156,12 @@ const hasPreview = computed(() => props.config && props.palette)
 
 .port-input {
   left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.port-output {
+  right: -6px;
   top: 50%;
   transform: translateY(-50%);
 }
