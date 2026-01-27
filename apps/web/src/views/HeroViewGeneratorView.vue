@@ -301,7 +301,7 @@ const debugSections = computed(() => [
 ])
 
 // ============================================================
-// Foreground Element (Composable)
+// Foreground Element (directly from heroScene to avoid state duplication)
 // ============================================================
 const {
   selectedForegroundElementId,
@@ -325,6 +325,8 @@ const {
 } = useForegroundElement({
   foregroundConfig: heroScene.foreground.foregroundConfig,
   layerSelection,
+  // Pass repository for direct access to ensure reactivity
+  heroViewRepository: heroScene.usecase.heroViewRepository,
 })
 
 // ============================================================
