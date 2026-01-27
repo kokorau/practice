@@ -79,6 +79,15 @@ export type {
 } from './SelectProcessorUsecase'
 export { createSelectProcessorUsecase } from './SelectProcessorUsecase'
 
+// Re-export SelectLayer UseCase
+export type {
+  SelectLayerEffectManagerPort,
+  SelectLayerResult,
+  SelectLayerUsecase,
+  SelectLayerUsecaseDeps,
+} from './SelectLayerUsecase'
+export { createSelectLayerUsecase } from './SelectLayerUsecase'
+
 // Re-export ApplyAnimatedPreset UseCase
 export type {
   ForegroundConfigSyncPort,

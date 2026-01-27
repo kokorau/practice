@@ -455,6 +455,7 @@ export {
   createSurfaceUsecase,
   createProcessorUsecase,
   createSelectProcessorUsecase,
+  createSelectLayerUsecase,
   createApplyAnimatedPresetUsecase,
   createGetProcessorWithTargetUsecase,
   getProcessorWithTargetUsecase,

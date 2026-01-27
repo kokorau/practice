@@ -609,6 +609,10 @@ export interface UsecaseState {
   readonly selectProcessorUsecase: {
     execute: (layers: LayerNodeConfig[], layerId: string, processorType: 'effect' | 'mask') => void
   }
+  /** SelectLayer usecase - syncs effect manager with layer selection */
+  readonly selectLayerUsecase: {
+    execute: (layers: LayerNodeConfig[], layerId: string) => void
+  }
   /** ApplyAnimatedPreset usecase - handles animated preset application */
   readonly applyAnimatedPresetUsecase: {
     execute: (preset: HeroViewPreset, baseLayerId: string) => void
