@@ -8,9 +8,12 @@ interface DebugSection {
   data: unknown
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   sections: DebugSection[]
-}>()
+  showHeader?: boolean
+}>(), {
+  showHeader: true,
+})
 
 const expandedSections = ref<Set<string>>(new Set(['heroViewConfig']))
 
@@ -36,7 +39,7 @@ const sectionsMeta = computed(() => {
 
 <template>
   <div class="debug-panel">
-    <div class="debug-header">
+    <div v-if="showHeader" class="debug-header">
       <h2 class="debug-title">HeroScene Debug</h2>
       <p class="debug-description">Real-time state visualization</p>
     </div>
