@@ -106,15 +106,23 @@ export const SingleEffect: Story = {
       const palette = DEFAULT_PALETTE
 
       const connections: Connection[] = [
-        // Surface → Pipeline
+        // External connections
         {
           from: { nodeId: 'surface-1', position: 'right' },
           to: { nodeId: 'pipeline-1', position: 'left' },
         },
-        // Pipeline → Render
         {
           from: { nodeId: 'pipeline-1', position: 'right' },
           to: { nodeId: 'render-1', position: 'left' },
+        },
+        // Internal connections: Junction → Blur → Output
+        {
+          from: { nodeId: 'pipeline-1', position: 'left' },
+          to: { nodeId: 'blur-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'blur-1', position: 'right' },
+          to: { nodeId: 'pipeline-1', position: 'right' },
         },
       ]
 
@@ -146,7 +154,9 @@ export const SingleEffect: Story = {
                 :selected="selectedNode === 'pipeline-1'"
                 @click="handleSelectNode('pipeline-1')"
               >
-                <FilterNode type="effect" label="Blur" />
+                <div :ref="(el) => setNodeRef('blur-1', el)">
+                  <FilterNode type="effect" label="Blur" />
+                </div>
               </ProcessorPipeline>
             </div>
           </div>
@@ -182,6 +192,7 @@ export const EffectChain: Story = {
       const palette = DEFAULT_PALETTE
 
       const connections: Connection[] = [
+        // External connections
         {
           from: { nodeId: 'surface-1', position: 'right' },
           to: { nodeId: 'pipeline-1', position: 'left' },
@@ -189,6 +200,19 @@ export const EffectChain: Story = {
         {
           from: { nodeId: 'pipeline-1', position: 'right' },
           to: { nodeId: 'render-1', position: 'left' },
+        },
+        // Internal connections: Junction → Blur → Contrast → Output
+        {
+          from: { nodeId: 'pipeline-1', position: 'left' },
+          to: { nodeId: 'blur-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'blur-1', position: 'right' },
+          to: { nodeId: 'contrast-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'contrast-1', position: 'right' },
+          to: { nodeId: 'pipeline-1', position: 'right' },
         },
       ]
 
@@ -220,8 +244,12 @@ export const EffectChain: Story = {
                 :selected="selectedNode === 'pipeline-1'"
                 @click="handleSelectNode('pipeline-1')"
               >
-                <FilterNode type="effect" label="Blur" />
-                <FilterNode type="effect" label="Contrast" />
+                <div :ref="(el) => setNodeRef('blur-1', el)">
+                  <FilterNode type="effect" label="Blur" />
+                </div>
+                <div :ref="(el) => setNodeRef('contrast-1', el)">
+                  <FilterNode type="effect" label="Contrast" />
+                </div>
               </ProcessorPipeline>
             </div>
           </div>
@@ -257,18 +285,28 @@ export const SingleMask: Story = {
       const selectedNode = ref<string | null>(null)
       const palette = DEFAULT_PALETTE
 
-      // Only Pipeline connections - no internal Graymap → Mask connection needed
-      // (they're visually stacked inside the pipeline)
       const connections: Connection[] = [
-        // Surface → Pipeline
+        // External connections
         {
           from: { nodeId: 'surface-1', position: 'right' },
           to: { nodeId: 'pipeline-1', position: 'left' },
         },
-        // Pipeline → Render
         {
           from: { nodeId: 'pipeline-1', position: 'right' },
           to: { nodeId: 'render-1', position: 'left' },
+        },
+        // Internal connections: Junction → Mask (main), Graymap → Mask (mask), Mask → Output
+        {
+          from: { nodeId: 'pipeline-1', position: 'left' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.3 },
+        },
+        {
+          from: { nodeId: 'graymap-1', position: 'right' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.7 },
+        },
+        {
+          from: { nodeId: 'mask-1', position: 'right' },
+          to: { nodeId: 'pipeline-1', position: 'right' },
         },
       ]
 
@@ -293,17 +331,19 @@ export const SingleMask: Story = {
             </div>
           </div>
 
-          <!-- Column 2: Pipeline with Mask + Graymap stacked -->
+          <!-- Column 2: Pipeline with Graymap (left) → Mask (right) -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('pipeline-1', el)" style="width: fit-content;">
               <ProcessorPipeline
                 :selected="selectedNode === 'pipeline-1'"
                 @click="handleSelectNode('pipeline-1')"
               >
-                <!-- Mask with Graymap below -->
-                <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                  <FilterNode type="mask" label="Vignette" />
+                <!-- Graymap on left, Mask on right -->
+                <div :ref="(el) => setNodeRef('graymap-1', el)" style="align-self: flex-end;">
                   <GraymapNode label="Radial Gradient" />
+                </div>
+                <div :ref="(el) => setNodeRef('mask-1', el)">
+                  <FilterNode type="mask" label="Vignette" />
                 </div>
               </ProcessorPipeline>
             </div>
@@ -340,15 +380,31 @@ export const EffectThenMask: Story = {
       const palette = DEFAULT_PALETTE
 
       const connections: Connection[] = [
-        // Surface → Pipeline
+        // External connections
         {
           from: { nodeId: 'surface-1', position: 'right' },
           to: { nodeId: 'pipeline-1', position: 'left' },
         },
-        // Pipeline → Render
         {
           from: { nodeId: 'pipeline-1', position: 'right' },
           to: { nodeId: 'render-1', position: 'left' },
+        },
+        // Internal connections: Junction → Blur → Mask, Graymap → Mask, Mask → Output
+        {
+          from: { nodeId: 'pipeline-1', position: 'left' },
+          to: { nodeId: 'blur-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'blur-1', position: 'right' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.3 },
+        },
+        {
+          from: { nodeId: 'graymap-1', position: 'right' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.7 },
+        },
+        {
+          from: { nodeId: 'mask-1', position: 'right' },
+          to: { nodeId: 'pipeline-1', position: 'right' },
         },
       ]
 
@@ -373,18 +429,21 @@ export const EffectThenMask: Story = {
             </div>
           </div>
 
-          <!-- Column 2: Pipeline with Effect → Mask + Graymap -->
+          <!-- Column 2: Pipeline with Blur → Graymap/Mask -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('pipeline-1', el)" style="width: fit-content;">
               <ProcessorPipeline
                 :selected="selectedNode === 'pipeline-1'"
                 @click="handleSelectNode('pipeline-1')"
               >
-                <FilterNode type="effect" label="Blur" />
-                <!-- Mask with Graymap below -->
-                <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                  <FilterNode type="mask" label="Fade" />
+                <div :ref="(el) => setNodeRef('blur-1', el)">
+                  <FilterNode type="effect" label="Blur" />
+                </div>
+                <div :ref="(el) => setNodeRef('graymap-1', el)" style="align-self: flex-end;">
                   <GraymapNode label="Linear Gradient" />
+                </div>
+                <div :ref="(el) => setNodeRef('mask-1', el)">
+                  <FilterNode type="mask" label="Fade" />
                 </div>
               </ProcessorPipeline>
             </div>
@@ -426,20 +485,28 @@ export const MultipleInputs: Story = {
       const palette = DEFAULT_PALETTE
 
       const connections: Connection[] = [
-        // Surface1 → Pipeline
+        // External: Surfaces → Pipeline
         {
           from: { nodeId: 'surface-1', position: 'right' },
           to: { nodeId: 'pipeline-1', position: 'left' },
         },
-        // Surface2 → Pipeline
         {
           from: { nodeId: 'surface-2', position: 'right' },
           to: { nodeId: 'pipeline-1', position: 'left' },
         },
-        // Pipeline → Render
+        // External: Pipeline → Render
         {
           from: { nodeId: 'pipeline-1', position: 'right' },
           to: { nodeId: 'render-1', position: 'left' },
+        },
+        // Internal: Junction → Blur → Output
+        {
+          from: { nodeId: 'pipeline-1', position: 'left' },
+          to: { nodeId: 'blur-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'blur-1', position: 'right' },
+          to: { nodeId: 'pipeline-1', position: 'right' },
         },
       ]
 
@@ -479,7 +546,9 @@ export const MultipleInputs: Story = {
                 :selected="selectedNode === 'pipeline-1'"
                 @click="handleSelectNode('pipeline-1')"
               >
-                <FilterNode type="effect" label="Blur" />
+                <div :ref="(el) => setNodeRef('blur-1', el)">
+                  <FilterNode type="effect" label="Blur" />
+                </div>
               </ProcessorPipeline>
             </div>
           </div>
@@ -519,7 +588,7 @@ export const ComplexPipeline: Story = {
       const palette = DEFAULT_PALETTE
 
       const connections: Connection[] = [
-        // Surfaces → Pipeline
+        // External: Surfaces → Pipeline
         {
           from: { nodeId: 'surface-1', position: 'right' },
           to: { nodeId: 'pipeline-1', position: 'left' },
@@ -532,10 +601,31 @@ export const ComplexPipeline: Story = {
           from: { nodeId: 'surface-3', position: 'right' },
           to: { nodeId: 'pipeline-1', position: 'left' },
         },
-        // Pipeline → Render
+        // External: Pipeline → Render
         {
           from: { nodeId: 'pipeline-1', position: 'right' },
           to: { nodeId: 'render-1', position: 'left' },
+        },
+        // Internal: Junction → Blur → Contrast → Mask, Graymap → Mask, Mask → Output
+        {
+          from: { nodeId: 'pipeline-1', position: 'left' },
+          to: { nodeId: 'blur-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'blur-1', position: 'right' },
+          to: { nodeId: 'contrast-1', position: 'left' },
+        },
+        {
+          from: { nodeId: 'contrast-1', position: 'right' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.3 },
+        },
+        {
+          from: { nodeId: 'graymap-1', position: 'right' },
+          to: { nodeId: 'mask-1', position: 'left', portOffset: 0.7 },
+        },
+        {
+          from: { nodeId: 'mask-1', position: 'right' },
+          to: { nodeId: 'pipeline-1', position: 'right' },
         },
       ]
 
@@ -576,19 +666,24 @@ export const ComplexPipeline: Story = {
             </div>
           </div>
 
-          <!-- Column 2: Pipeline with Effect → Effect → Mask + Graymap -->
+          <!-- Column 2: Pipeline with Blur → Contrast → Graymap/Mask -->
           <div style="display: flex; align-items: center;">
             <div :ref="(el) => setNodeRef('pipeline-1', el)" style="width: fit-content;">
               <ProcessorPipeline
                 :selected="selectedNode === 'pipeline-1'"
                 @click="handleSelectNode('pipeline-1')"
               >
-                <FilterNode type="effect" label="Blur" />
-                <FilterNode type="effect" label="Contrast" />
-                <!-- Mask with Graymap below -->
-                <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                  <FilterNode type="mask" label="Vignette" />
+                <div :ref="(el) => setNodeRef('blur-1', el)">
+                  <FilterNode type="effect" label="Blur" />
+                </div>
+                <div :ref="(el) => setNodeRef('contrast-1', el)">
+                  <FilterNode type="effect" label="Contrast" />
+                </div>
+                <div :ref="(el) => setNodeRef('graymap-1', el)" style="align-self: flex-end;">
                   <GraymapNode label="Radial Fade" />
+                </div>
+                <div :ref="(el) => setNodeRef('mask-1', el)">
+                  <FilterNode type="mask" label="Vignette" />
                 </div>
               </ProcessorPipeline>
             </div>
