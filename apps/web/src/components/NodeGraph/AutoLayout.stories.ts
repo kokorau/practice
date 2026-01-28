@@ -14,6 +14,7 @@ import FilterNode from './FilterNode.vue'
 import GraymapNode from './GraymapNode.vue'
 import RenderNode from './RenderNode.vue'
 import { useAutoLayout } from './useAutoLayout'
+import { extractPartialConfig } from './extractPartialConfig'
 import type { HeroViewConfig, SurfaceLayerNodeConfig, SingleEffectConfig, MaskProcessorConfig } from '@practice/section-visual'
 import { $PropertyValue, HERO_CANVAS_WIDTH, HERO_CANVAS_HEIGHT } from '@practice/section-visual'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
@@ -783,6 +784,146 @@ export const Complex: Story = {
             <div :ref="(el) => setNodeRef('render', el)" style="width: fit-content;">
               <RenderNode
                 :config="renderConfig"
+                :palette="palette"
+                :selected="selectedNode === 'render'"
+                @click="handleSelectNode('render')"
+              />
+            </div>
+          </div>
+        </template>
+      </NodeGraph>
+    `,
+  }),
+}
+
+// ============================================================
+// WithPreview: All nodes show step-by-step previews
+// ============================================================
+
+export const WithPreview: Story = {
+  render: () => ({
+    components: { NodeGraph, SurfaceNode, ProcessorPipeline, FilterNode, GraymapNode, RenderNode },
+    setup() {
+      const config = ref(withMaskConfig)
+      const layout = useAutoLayout(config)
+      const selectedNode = ref<string | null>(null)
+      const palette = DEFAULT_PALETTE
+
+      const handleSelectNode = (nodeId: string) => {
+        selectedNode.value = selectedNode.value === nodeId ? null : nodeId
+      }
+
+      // Get partial config for each node
+      const getNodePreviewConfig = (nodeId: string) => {
+        const result = extractPartialConfig(config.value, nodeId)
+        return result.found ? result.config : undefined
+      }
+
+      const getSurfaceConfig = (nodeId: string) => {
+        const node = layout.value.sourceNodes.find(n => n.id === nodeId)
+        if (node?.config && 'surface' in (node.config as SurfaceLayerNodeConfig)) {
+          return (node.config as SurfaceLayerNodeConfig).surface
+        }
+        return null
+      }
+
+      const getProcessorFilters = (processorId: string) => {
+        return layout.value.filterNodes.filter(f => f.parentPipelineId === processorId)
+      }
+
+      const getGraymapForMask = (maskId: string) => {
+        const maskIndex = maskId.split('-').pop()
+        return layout.value.graymapNodes.find(g => g.id.endsWith(`-graymap-${maskIndex}`))
+      }
+
+      return {
+        layout,
+        config,
+        selectedNode,
+        palette,
+        handleSelectNode,
+        getNodePreviewConfig,
+        getSurfaceConfig,
+        getProcessorFilters,
+        getGraymapForMask,
+      }
+    },
+    template: `
+      <NodeGraph :connections="layout.connections" :columns="layout.columnCount" gap="2rem">
+        <template #default="{ setNodeRef }">
+          <!-- Column 1: Sources -->
+          <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+            <div
+              v-for="source in layout.sourceNodes"
+              :key="source.id"
+              :ref="(el) => setNodeRef(source.id, el)"
+              style="width: fit-content;"
+            >
+              <SurfaceNode
+                :surface="getSurfaceConfig(source.id)"
+                :palette="palette"
+                :selected="selectedNode === source.id"
+                @click="handleSelectNode(source.id)"
+              />
+            </div>
+          </div>
+
+          <!-- Column 2: Processors with step-by-step previews -->
+          <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+            <div
+              v-for="processor in layout.processorNodes"
+              :key="processor.id"
+              :ref="(el) => setNodeRef(processor.id, el)"
+              style="width: fit-content;"
+            >
+              <ProcessorPipeline
+                :selected="selectedNode === processor.id"
+                @click="handleSelectNode(processor.id)"
+              >
+                <template v-for="filter in getProcessorFilters(processor.id)" :key="filter.id">
+                  <!-- If it's a mask with graymap, render them together -->
+                  <template v-if="filter.type === 'mask'">
+                    <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                      <div :ref="(el) => setNodeRef(filter.id, el)">
+                        <FilterNode
+                          :type="'mask'"
+                          :label="filter.label"
+                          :config="getNodePreviewConfig(filter.id)"
+                          :palette="palette"
+                        />
+                      </div>
+                      <div
+                        v-if="getGraymapForMask(filter.id)"
+                        :ref="(el) => setNodeRef(getGraymapForMask(filter.id)?.id, el)"
+                      >
+                        <GraymapNode
+                          :label="getGraymapForMask(filter.id)?.label"
+                          :config="getNodePreviewConfig(getGraymapForMask(filter.id)?.id)"
+                          :palette="palette"
+                        />
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div :ref="(el) => setNodeRef(filter.id, el)">
+                      <FilterNode
+                        :type="'effect'"
+                        :label="filter.label"
+                        :config="getNodePreviewConfig(filter.id)"
+                        :palette="palette"
+                      />
+                    </div>
+                  </template>
+                </template>
+              </ProcessorPipeline>
+            </div>
+          </div>
+
+          <!-- Column 3: Render -->
+          <div v-if="layout.renderNode" style="display: flex; align-items: center;">
+            <div :ref="(el) => setNodeRef('render', el)" style="width: fit-content;">
+              <RenderNode
+                :config="getNodePreviewConfig('render')"
                 :palette="palette"
                 :selected="selectedNode === 'render'"
                 @click="handleSelectNode('render')"

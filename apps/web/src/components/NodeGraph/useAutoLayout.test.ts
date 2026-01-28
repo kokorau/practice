@@ -126,7 +126,8 @@ describe('generateAutoLayout', () => {
     expect(result.renderNode).not.toBeNull()
     expect(result.renderNode?.id).toBe('render')
     expect(result.renderNode?.type).toBe('render')
-    expect(result.renderNode?.column).toBe(2)
+    // With single pipeline (no composite needed), render is at column 1
+    expect(result.renderNode?.column).toBe(1)
   })
 
   it('should create direct source-to-render connection when no processor', () => {
@@ -142,10 +143,14 @@ describe('generateAutoLayout', () => {
     const config = createConfigWithProcessor()
     const result = generateAutoLayout(config)
 
-    expect(result.processorNodes).toHaveLength(1)
-    expect(result.processorNodes[0].id).toBe('processor-1')
-    expect(result.processorNodes[0].type).toBe('processor')
-    expect(result.processorNodes[0].column).toBe(1)
+    // Top-level processors are now processed as pipelines of their modifiers
+    // The processor node itself is not created; instead, effect/mask nodes are created
+    // So processorNodes will be empty for top-level processors
+    expect(result.processorNodes).toHaveLength(0)
+    // But filterNodes should contain the effect
+    expect(result.filterNodes).toHaveLength(1)
+    expect(result.filterNodes[0].type).toBe('effect')
+    expect(result.filterNodes[0].parentPipelineId).toBe('processor-1')
   })
 
   it('should extract filter nodes inside processor', () => {
@@ -162,21 +167,30 @@ describe('generateAutoLayout', () => {
     const config = createConfigWithProcessor()
     const result = generateAutoLayout(config)
 
-    // External: surface → processor, processor → render
-    // Internal: pipeline.left → effect, effect → pipeline.right
-    expect(result.connections).toHaveLength(4)
+    // With current architecture:
+    // - Top-level surface creates its own pipeline (surface → render via composite)
+    // - Top-level processor creates effect pipeline (effect → render via composite)
+    // - Both connect to composite, composite connects to render
+    // Expected connections: surface → composite, effect → composite, composite → render
+    expect(result.connections).toHaveLength(3)
 
-    // Surface → Processor
-    const surfaceToProcessor = result.connections.find(
-      (c) => c.from.nodeId === 'surface-1' && c.to.nodeId === 'processor-1'
+    // Surface → Composite (since we have 2 pipelines)
+    const surfaceToComposite = result.connections.find(
+      (c) => c.from.nodeId === 'surface-1' && c.to.nodeId === 'composite'
     )
-    expect(surfaceToProcessor).toBeDefined()
+    expect(surfaceToComposite).toBeDefined()
 
-    // Processor → Render
-    const processorToRender = result.connections.find(
-      (c) => c.from.nodeId === 'processor-1' && c.to.nodeId === 'render'
+    // Effect → Composite
+    const effectToComposite = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1-effect-0' && c.to.nodeId === 'composite'
     )
-    expect(processorToRender).toBeDefined()
+    expect(effectToComposite).toBeDefined()
+
+    // Composite → Render
+    const compositeToRender = result.connections.find(
+      (c) => c.from.nodeId === 'composite' && c.to.nodeId === 'render'
+    )
+    expect(compositeToRender).toBeDefined()
   })
 
   it('should extract mask and graymap nodes', () => {
@@ -249,20 +263,25 @@ describe('generateAutoLayout', () => {
 
     const result = generateAutoLayout(config)
 
-    // External: 2 sources → processor, processor → render = 3
-    // Internal: pipeline.left → effect, effect → pipeline.right = 2
-    // Total: 5
-    expect(result.connections).toHaveLength(5)
+    // With current architecture, each top-level layer forms its own pipeline:
+    // - surface-1 → composite
+    // - surface-2 → composite
+    // - effect → composite
+    // - composite → render
+    // Total: 4
+    expect(result.connections).toHaveLength(4)
 
-    const sourceConnections = result.connections.filter(
-      (c) => c.to.nodeId === 'processor-1' && c.from.nodeId.startsWith('surface')
+    // Both sources connect to composite
+    const sourceToComposite = result.connections.filter(
+      (c) => c.to.nodeId === 'composite' && c.from.nodeId.startsWith('surface')
     )
-    expect(sourceConnections).toHaveLength(2)
+    expect(sourceToComposite).toHaveLength(2)
 
-    // All sources connect to the same junction point (no portOffset)
-    sourceConnections.forEach((conn) => {
-      expect(conn.to.portOffset).toBeUndefined()
-    })
+    // Effect also connects to composite
+    const effectToComposite = result.connections.find(
+      (c) => c.to.nodeId === 'composite' && c.from.nodeId === 'processor-1-effect-0'
+    )
+    expect(effectToComposite).toBeDefined()
   })
 
   it('should skip invisible layers', () => {
@@ -375,27 +394,21 @@ describe('internal pipeline connections', () => {
 
     const result = generateAutoLayout(config)
 
-    // External: surface → processor, processor → render
-    // Internal: processor.left → blur, blur → processor.right
-    const internalConnections = result.connections.filter(
-      (c) =>
-        c.from.nodeId.includes('processor-1') ||
-        c.to.nodeId.includes('processor-1') ||
-        c.from.nodeId.includes('effect') ||
-        c.to.nodeId.includes('effect')
-    )
+    // With current architecture (no pipeline nodes):
+    // - surface-1 forms its own pipeline → composite
+    // - processor-1's effect forms another pipeline → composite
+    // - composite → render
+    // Effect connects directly to composite (no internal pipeline left/right connections)
 
-    // Should have: pipeline.left → effect, effect → pipeline.right
-    const pipelineToEffect = result.connections.find(
-      (c) => c.from.nodeId === 'processor-1' && c.from.position === 'left'
+    // Find effect to composite connection
+    const effectToComposite = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1-effect-0' && c.to.nodeId === 'composite'
     )
-    expect(pipelineToEffect).toBeDefined()
-    expect(pipelineToEffect?.to.nodeId).toBe('processor-1-effect-0')
+    expect(effectToComposite).toBeDefined()
 
-    const effectToPipeline = result.connections.find(
-      (c) => c.from.nodeId === 'processor-1-effect-0' && c.to.nodeId === 'processor-1' && c.to.position === 'right'
-    )
-    expect(effectToPipeline).toBeDefined()
+    // Verify the effect node exists
+    expect(result.filterNodes).toHaveLength(1)
+    expect(result.filterNodes[0].id).toBe('processor-1-effect-0')
   })
 
   it('should create chain connections for multiple effects', () => {
@@ -504,12 +517,12 @@ describe('internal pipeline connections', () => {
     expect(graymapToMask).toBeDefined()
     expect(graymapToMask?.to.portOffset).toBe(0.7)
 
-    // pipeline.left → mask (with portOffset 0.3 for main input)
-    const pipelineToMask = result.connections.find(
-      (c) => c.from.nodeId === 'processor-1' && c.from.position === 'left' && c.to.nodeId === 'processor-1-mask-0'
+    // Mask (as first modifier with graymap) has no incoming connection from previous modifier
+    // It connects directly to composite as the output of this processor pipeline
+    const maskToComposite = result.connections.find(
+      (c) => c.from.nodeId === 'processor-1-mask-0' && c.to.nodeId === 'composite'
     )
-    expect(pipelineToMask).toBeDefined()
-    expect(pipelineToMask?.to.portOffset).toBe(0.3)
+    expect(maskToComposite).toBeDefined()
   })
 
   it('should create effect-then-mask connections', () => {
@@ -633,9 +646,12 @@ describe('useAutoLayout', () => {
     }
 
     // Layout should update
-    // External: surface → processor, processor → render = 2
-    // Internal: pipeline.left → effect, effect → pipeline.right = 2
-    expect(layout.value.processorNodes).toHaveLength(1)
-    expect(layout.value.connections).toHaveLength(4)
+    // With current architecture:
+    // - surface → composite
+    // - effect → composite
+    // - composite → render
+    // Total: 3 connections
+    expect(layout.value.filterNodes).toHaveLength(1)
+    expect(layout.value.connections).toHaveLength(3)
   })
 })
