@@ -48,12 +48,14 @@ export interface GraphNode {
   id: string
   type: GraphNodeType
   label: string
-  /** Column index (0-based) */
+  /** Grid column (0-based) */
   column: number
-  /** Row index within the column (0-based) */
+  /** Grid row start (0-based) */
   row: number
-  /** Parent processor ID (for effects, masks, graymaps inside a pipeline) */
-  parentPipelineId?: string
+  /** How many rows this node spans (default: 1, use 2 for vertical centering) */
+  rowSpan?: number
+  /** Whether this node is inside a processor box */
+  isProcessorInternal?: boolean
   /** Parent group ID (for nodes belonging to a group) */
   parentGroupId?: string
   /** Original config reference */
@@ -61,18 +63,16 @@ export interface GraphNode {
 }
 
 /**
- * Represents a node in the pipeline sequence
+ * Represents a node in the pipeline sequence (internal)
  */
 interface PipelineNode {
   node: GraphNode
   /** Relative column position within the pipeline (0 = leftmost) */
   relativeColumn: number
-  /** Row offset within the group (for graymap below mask) */
-  rowOffset: number
 }
 
 /**
- * Represents a group's pipeline structure
+ * Represents a group's pipeline structure (internal)
  */
 interface GroupPipeline {
   groupId: string
@@ -81,46 +81,25 @@ interface GroupPipeline {
   pipelineNodes: PipelineNode[]
   /** The length of this pipeline (number of columns) */
   pipelineLength: number
-  /** The row index where this group starts */
+  /** The row index where this group starts (in 2-row units) */
   groupRowStart: number
-  /** The number of rows this group occupies */
-  groupRowCount: number
   /** The node ID that represents this group's output */
   outputNodeId: string
-  /** Processor group info (for visual grouping) */
-  processorGroup: ProcessorGroupInfo | null
 }
 
 /**
- * Information about a processor's visual grouping box
- */
-interface ProcessorGroupInfo {
-  processorId: string
-  /** Node IDs that belong to this processor (effects, masks, graymaps) */
-  nodeIds: string[]
-  /** Relative start column within the pipeline */
-  relativeStartColumn: number
-  /** Relative end column within the pipeline */
-  relativeEndColumn: number
-  /** Row offset start */
-  rowOffsetStart: number
-  /** Row offset end */
-  rowOffsetEnd: number
-}
-
-/**
- * Exported processor group with absolute positions
+ * Exported processor group with absolute grid positions
+ * Calculated from nodes with isProcessorInternal: true
  */
 export interface ProcessorGroup {
   processorId: string
-  nodeIds: string[]
   /** Absolute start column */
   startColumn: number
   /** Absolute end column */
   endColumn: number
   /** Absolute start row */
   startRow: number
-  /** Absolute end row */
+  /** Absolute end row (exclusive, for grid-row-end) */
   endRow: number
 }
 
@@ -178,31 +157,43 @@ function isImage(layer: LayerNodeConfig): layer is ImageLayerNodeConfig {
 }
 
 // ============================================================
+// Constants
+// ============================================================
+
+/** Each group uses 2 grid rows (row 0 for main nodes, row 1 for graymaps) */
+const ROWS_PER_GROUP = 2
+
+// ============================================================
 // Main Layout Logic
 // ============================================================
 
 /**
  * Generate auto-layout from HeroViewConfig
  *
- * Right-aligned pipeline layout:
- * - Each group forms a horizontal pipeline
+ * Grid-based layout with 2 rows per group:
+ * - Row 0: Main pipeline nodes (sources with rowSpan:2, effects with rowSpan:2, masks)
+ * - Row 1: Graymap nodes (mask input sources)
  * - Pipelines are right-aligned (shorter pipelines start further right)
- * - Groups are stacked vertically
  */
 export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
   const connections: Connection[] = []
   const groupPipelines: GroupPipeline[] = []
 
-  let currentGroupRow = 0
+  let currentGroupIndex = 0
 
   // Phase 1: Build pipeline structures for each group
   for (const layer of config.layers) {
     if (!layer.visible) continue
 
     if (isGroup(layer)) {
-      const pipeline = buildGroupPipeline(layer, currentGroupRow, connections)
+      const pipeline = buildGroupPipeline(layer, currentGroupIndex, connections)
       groupPipelines.push(pipeline)
-      currentGroupRow += pipeline.groupRowCount
+      currentGroupIndex++
+    } else if (isProcessor(layer)) {
+      // Top-level processor - create pipeline for its modifiers
+      const pipeline = buildProcessorPipeline(layer, currentGroupIndex, connections)
+      groupPipelines.push(pipeline)
+      currentGroupIndex++
     } else if (isSurface(layer) || isImage(layer)) {
       // Top-level source without group - create implicit single-node pipeline
       const sourceNode: GraphNode = {
@@ -210,20 +201,19 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
         type: isSurface(layer) ? 'surface' : 'image',
         label: isSurface(layer) ? getSurfaceLabel((layer as SurfaceLayerNodeConfig).surface) : 'Image',
         column: 0, // Will be adjusted in Phase 2
-        row: currentGroupRow,
+        row: currentGroupIndex * ROWS_PER_GROUP,
+        rowSpan: ROWS_PER_GROUP,
         config: layer,
       }
       groupPipelines.push({
         groupId: `implicit-${layer.id}`,
         groupName: layer.name || 'Layer',
-        pipelineNodes: [{ node: sourceNode, relativeColumn: 0, rowOffset: 0 }],
+        pipelineNodes: [{ node: sourceNode, relativeColumn: 0 }],
         pipelineLength: 1,
-        groupRowStart: currentGroupRow,
-        groupRowCount: 1,
+        groupRowStart: currentGroupIndex * ROWS_PER_GROUP,
         outputNodeId: sourceNode.id,
-        processorGroup: null,
       })
-      currentGroupRow++
+      currentGroupIndex++
     }
   }
 
@@ -244,7 +234,6 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
     for (const pn of pipeline.pipelineNodes) {
       // Adjust column to right-align
       pn.node.column = columnOffset + pn.relativeColumn
-      pn.node.row = pipeline.groupRowStart + pn.rowOffset
       nodes.push(pn.node)
 
       // Categorize nodes
@@ -273,9 +262,9 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
   const outputColumn = maxPipelineLength + (needsComposite ? 1 : 0)
   const columnCount = outputColumn + 1
 
-  // Calculate vertical center for Composite/Output
-  const totalRows = currentGroupRow
-  const centerRow = Math.floor((totalRows - 1) / 2)
+  // Calculate total grid rows and center position
+  const totalGridRows = currentGroupIndex * ROWS_PER_GROUP
+  const centerRow = Math.floor((totalGridRows - ROWS_PER_GROUP) / 2)
 
   let compositeNode: GraphNode | null = null
   if (needsComposite) {
@@ -285,6 +274,7 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
       label: 'Composite',
       column: compositeColumn,
       row: centerRow,
+      rowSpan: ROWS_PER_GROUP,
     }
     nodes.push(compositeNode)
 
@@ -306,6 +296,7 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
       label: 'Output',
       column: outputColumn,
       row: centerRow,
+      rowSpan: ROWS_PER_GROUP,
     }
     nodes.push(renderNode)
 
@@ -322,19 +313,38 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
     }
   }
 
-  // Phase 4: Calculate processor groups with absolute positions
+  // Phase 4: Calculate processor groups from isProcessorInternal nodes
+  // Note: Processor box covers only the main row (row 0 within group), not the graymap row
   const processorGroups: ProcessorGroup[] = []
-  for (const pipeline of groupPipelines) {
-    if (pipeline.processorGroup) {
-      const columnOffset = maxPipelineLength - pipeline.pipelineLength
-      processorGroups.push({
-        processorId: pipeline.processorGroup.processorId,
-        nodeIds: pipeline.processorGroup.nodeIds,
-        startColumn: columnOffset + pipeline.processorGroup.relativeStartColumn,
-        endColumn: columnOffset + pipeline.processorGroup.relativeEndColumn,
-        startRow: pipeline.groupRowStart + pipeline.processorGroup.rowOffsetStart,
-        endRow: pipeline.groupRowStart + pipeline.processorGroup.rowOffsetEnd,
-      })
+  const internalNodes = nodes.filter((n) => n.isProcessorInternal)
+
+  if (internalNodes.length > 0) {
+    // Group by parentGroupId to handle multiple processors
+    const groupedByParent = new Map<string | undefined, GraphNode[]>()
+    for (const node of internalNodes) {
+      const key = node.parentGroupId
+      if (!groupedByParent.has(key)) {
+        groupedByParent.set(key, [])
+      }
+      groupedByParent.get(key)!.push(node)
+    }
+
+    for (const [groupId, groupNodes] of groupedByParent) {
+      if (groupNodes.length > 0) {
+        const cols = groupNodes.map((n) => n.column)
+        const rows = groupNodes.map((n) => n.row)
+        // Use only startRow for processor box (don't include rowSpan which extends into graymap row)
+        // Processor box covers just the main row, so endRow = startRow + 1
+        const minRow = Math.min(...rows)
+
+        processorGroups.push({
+          processorId: groupId ?? 'processor',
+          startColumn: Math.min(...cols),
+          endColumn: Math.max(...cols),
+          startRow: minRow,
+          endRow: minRow + 1, // Cover only the main row, not graymap row
+        })
+      }
     }
   }
 
@@ -353,23 +363,145 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
 }
 
 /**
- * Build a GroupPipeline from a group layer
+ * Build a GroupPipeline from a top-level processor layer
  *
- * Pipeline structure: [Sources] → [Effects] → [Masks with Graymaps]
- * Each step is a column, laid out left to right
+ * This handles processor layers that are direct children of config.layers,
+ * not inside a group layer. The processor modifiers form the pipeline.
  */
-function buildGroupPipeline(
-  group: GroupLayerNodeConfig,
-  groupRowStart: number,
+function buildProcessorPipeline(
+  processor: ProcessorNodeConfig,
+  groupIndex: number,
   connections: Connection[]
 ): GroupPipeline {
   const pipelineNodes: PipelineNode[] = []
   let relativeColumn = 0
-  let maxRowOffset = 0
+
+  // Calculate base row for this group (each group uses ROWS_PER_GROUP rows)
+  const groupBaseRow = groupIndex * ROWS_PER_GROUP
+
+  let prevModifierNodeId: string | null = null
+  let outputNodeId: string = processor.id
+
+  for (let mIndex = 0; mIndex < processor.modifiers.length; mIndex++) {
+    const modifier = processor.modifiers[mIndex]
+
+    if (modifier.type === 'effect') {
+      const effectNode: GraphNode = {
+        id: `${processor.id}-effect-${mIndex}`,
+        type: 'effect',
+        label: getEffectLabel(modifier),
+        column: 0, // Will be adjusted later
+        row: groupBaseRow,
+        rowSpan: 1, // Same row as masks
+        isProcessorInternal: true, // Inside processor box
+        parentGroupId: processor.id,
+        config: modifier,
+      }
+      pipelineNodes.push({ node: effectNode, relativeColumn })
+
+      // Connect from previous modifier if any
+      if (prevModifierNodeId !== null) {
+        connections.push({
+          from: { nodeId: prevModifierNodeId, position: 'right' },
+          to: { nodeId: effectNode.id, position: 'left' },
+        })
+      }
+
+      prevModifierNodeId = effectNode.id
+      outputNodeId = effectNode.id
+      relativeColumn++
+    } else if (modifier.type === 'mask') {
+      // Check if mask has graymap children
+      const hasGraymap = modifier.children && modifier.children.length > 0
+
+      const maskNode: GraphNode = {
+        id: `${processor.id}-mask-${mIndex}`,
+        type: 'mask',
+        label: 'Mask',
+        column: 0, // Will be adjusted later
+        row: groupBaseRow,
+        rowSpan: hasGraymap ? 1 : ROWS_PER_GROUP, // Top only if has graymap, else centered
+        isProcessorInternal: true, // Inside processor box
+        parentGroupId: processor.id,
+        config: modifier,
+      }
+      pipelineNodes.push({ node: maskNode, relativeColumn })
+
+      // Connect from previous modifier (main input)
+      if (prevModifierNodeId !== null) {
+        connections.push({
+          from: { nodeId: prevModifierNodeId, position: 'right' },
+          to: { nodeId: maskNode.id, position: 'left', portOffset: hasGraymap ? 0.3 : 0.5 },
+        })
+      }
+
+      // Create graymap if mask has children
+      if (hasGraymap) {
+        let graymapLabel = 'Graymap'
+        const firstChild = modifier.children![0]
+        if (firstChild && isSurface(firstChild)) {
+          graymapLabel = getSurfaceLabel(firstChild.surface)
+        }
+
+        const graymapNode: GraphNode = {
+          id: `${processor.id}-graymap-${mIndex}`,
+          type: 'graymap',
+          label: graymapLabel,
+          column: 0, // Will be adjusted later
+          row: groupBaseRow + 1, // Bottom row
+          rowSpan: 1,
+          isProcessorInternal: false, // Outside processor box
+          parentGroupId: processor.id,
+          config: firstChild?.type === 'surface' ? (firstChild as SurfaceLayerNodeConfig).surface : undefined,
+        }
+        // Place graymap at the same column as the mask (for top-level processors)
+        pipelineNodes.push({ node: graymapNode, relativeColumn })
+
+        // Connect graymap to mask
+        connections.push({
+          from: { nodeId: graymapNode.id, position: 'right' },
+          to: { nodeId: maskNode.id, position: 'left', portOffset: 0.7 },
+        })
+      }
+
+      prevModifierNodeId = maskNode.id
+      outputNodeId = maskNode.id
+      relativeColumn++
+    }
+  }
+
+  return {
+    groupId: processor.id,
+    groupName: processor.name || 'Processor',
+    pipelineNodes,
+    pipelineLength: relativeColumn,
+    groupRowStart: groupBaseRow,
+    outputNodeId,
+  }
+}
+
+/**
+ * Build a GroupPipeline from a group layer
+ *
+ * Grid-based layout:
+ * - Sources: row 0, rowSpan 2 (vertically centered)
+ * - Effects: row 0, rowSpan 2, isProcessorInternal (vertically centered, in processor box)
+ * - Masks: row 0, rowSpan 1, isProcessorInternal (top only, in processor box)
+ * - Graymaps: row 1, rowSpan 1 (bottom only, outside processor box)
+ */
+function buildGroupPipeline(
+  group: GroupLayerNodeConfig,
+  groupIndex: number,
+  connections: Connection[]
+): GroupPipeline {
+  const pipelineNodes: PipelineNode[] = []
+  let relativeColumn = 0
+
+  // Calculate base row for this group (each group uses ROWS_PER_GROUP rows)
+  const groupBaseRow = groupIndex * ROWS_PER_GROUP
 
   // Track nodes for connections
   const sourceNodeIds: string[] = []
-  let lastNodeId: string | null = null
   let outputNodeId: string = group.id
 
   // Step 1: Extract sources from group children
@@ -377,19 +509,18 @@ function buildGroupPipeline(
     if (!child.visible) continue
 
     if (isSurface(child) || isImage(child)) {
-      const rowOffset = sourceNodeIds.length
       const sourceNode: GraphNode = {
         id: child.id,
         type: isSurface(child) ? 'surface' : 'image',
         label: isSurface(child) ? getSurfaceLabel((child as SurfaceLayerNodeConfig).surface) : 'Image',
-        column: 0,
-        row: 0,
+        column: 0, // Will be adjusted later
+        row: groupBaseRow,
+        rowSpan: ROWS_PER_GROUP, // Vertically centered
         parentGroupId: group.id,
         config: child,
       }
-      pipelineNodes.push({ node: sourceNode, relativeColumn, rowOffset })
+      pipelineNodes.push({ node: sourceNode, relativeColumn })
       sourceNodeIds.push(sourceNode.id)
-      maxRowOffset = Math.max(maxRowOffset, rowOffset)
       outputNodeId = sourceNode.id
     }
   }
@@ -397,22 +528,13 @@ function buildGroupPipeline(
   // Move to next column if we have sources
   if (sourceNodeIds.length > 0) {
     relativeColumn++
-    lastNodeId = sourceNodeIds[sourceNodeIds.length - 1]
   }
 
   // Step 2: Extract processor and its modifiers
-  // Track processor group info
-  let processorGroup: ProcessorGroupInfo | null = null
-  let processorNodeIds: string[] = []
-  let processorStartColumn: number | null = null
-  let processorEndColumn: number = 0
-  let processorRowOffsetEnd: number = 0
-
   for (const child of group.children) {
     if (!child.visible) continue
 
     if (isProcessor(child)) {
-      // Process each modifier in the processor
       let prevModifierNodeId: string | null = null
 
       for (let mIndex = 0; mIndex < child.modifiers.length; mIndex++) {
@@ -423,22 +545,17 @@ function buildGroupPipeline(
             id: `${child.id}-effect-${mIndex}`,
             type: 'effect',
             label: getEffectLabel(modifier),
-            column: 0,
-            row: 0,
-            parentPipelineId: child.id,
+            column: 0, // Will be adjusted later
+            row: groupBaseRow,
+            rowSpan: 1, // Same row as masks
+            isProcessorInternal: true, // Inside processor box
             parentGroupId: group.id,
             config: modifier,
           }
-          pipelineNodes.push({ node: effectNode, relativeColumn, rowOffset: 0 })
-
-          // Track for processor group
-          processorNodeIds.push(effectNode.id)
-          if (processorStartColumn === null) processorStartColumn = relativeColumn
-          processorEndColumn = relativeColumn
+          pipelineNodes.push({ node: effectNode, relativeColumn })
 
           // Connect from sources or previous modifier
           if (prevModifierNodeId === null) {
-            // First modifier - connect from all sources
             for (const sourceId of sourceNodeIds) {
               connections.push({
                 from: { nodeId: sourceId, position: 'right' },
@@ -446,7 +563,6 @@ function buildGroupPipeline(
               })
             }
           } else {
-            // Connect from previous modifier
             connections.push({
               from: { nodeId: prevModifierNodeId, position: 'right' },
               to: { nodeId: effectNode.id, position: 'left' },
@@ -457,43 +573,41 @@ function buildGroupPipeline(
           outputNodeId = effectNode.id
           relativeColumn++
         } else if (modifier.type === 'mask') {
+          // Check if mask has graymap children
+          const hasGraymap = modifier.children && modifier.children.length > 0
+
           const maskNode: GraphNode = {
             id: `${child.id}-mask-${mIndex}`,
             type: 'mask',
             label: 'Mask',
-            column: 0,
-            row: 0,
-            parentPipelineId: child.id,
+            column: 0, // Will be adjusted later
+            row: groupBaseRow,
+            rowSpan: hasGraymap ? 1 : ROWS_PER_GROUP, // Top only if has graymap, else centered
+            isProcessorInternal: true, // Inside processor box
             parentGroupId: group.id,
             config: modifier,
           }
-          pipelineNodes.push({ node: maskNode, relativeColumn, rowOffset: 0 })
-
-          // Track for processor group
-          processorNodeIds.push(maskNode.id)
-          if (processorStartColumn === null) processorStartColumn = relativeColumn
-          processorEndColumn = relativeColumn
+          pipelineNodes.push({ node: maskNode, relativeColumn })
 
           // Connect from sources or previous modifier (main input)
           if (prevModifierNodeId === null) {
             for (const sourceId of sourceNodeIds) {
               connections.push({
                 from: { nodeId: sourceId, position: 'right' },
-                to: { nodeId: maskNode.id, position: 'left', portOffset: 0.3 },
+                to: { nodeId: maskNode.id, position: 'left', portOffset: hasGraymap ? 0.3 : 0.5 },
               })
             }
           } else {
             connections.push({
               from: { nodeId: prevModifierNodeId, position: 'right' },
-              to: { nodeId: maskNode.id, position: 'left', portOffset: 0.3 },
+              to: { nodeId: maskNode.id, position: 'left', portOffset: hasGraymap ? 0.3 : 0.5 },
             })
           }
 
           // Create graymap if mask has children
-          // Graymap is placed one column to the left of the mask
-          if (modifier.children && modifier.children.length > 0) {
+          if (hasGraymap) {
             let graymapLabel = 'Graymap'
-            const firstChild = modifier.children[0]
+            const firstChild = modifier.children![0]
             if (firstChild && isSurface(firstChild)) {
               graymapLabel = getSurfaceLabel(firstChild.surface)
             }
@@ -502,20 +616,16 @@ function buildGroupPipeline(
               id: `${child.id}-graymap-${mIndex}`,
               type: 'graymap',
               label: graymapLabel,
-              column: 0,
-              row: 0,
-              parentPipelineId: child.id,
+              column: 0, // Will be adjusted later
+              row: groupBaseRow + 1, // Bottom row
+              rowSpan: 1,
+              isProcessorInternal: false, // Outside processor box
               parentGroupId: group.id,
               config: firstChild?.type === 'surface' ? (firstChild as SurfaceLayerNodeConfig).surface : undefined,
             }
-            // Place graymap one column left of the mask (same column as previous modifier or source)
-            const graymapColumn = Math.max(0, relativeColumn - 1)
-            pipelineNodes.push({ node: graymapNode, relativeColumn: graymapColumn, rowOffset: 1 })
-            maxRowOffset = Math.max(maxRowOffset, 1)
-
-            // Track for processor group (graymap extends row range)
-            processorNodeIds.push(graymapNode.id)
-            processorRowOffsetEnd = Math.max(processorRowOffsetEnd, 1)
+            // Place graymap one column left of the mask
+            const graymapRelativeColumn = Math.max(0, relativeColumn - 1)
+            pipelineNodes.push({ node: graymapNode, relativeColumn: graymapRelativeColumn })
 
             // Connect graymap to mask
             connections.push({
@@ -530,18 +640,6 @@ function buildGroupPipeline(
         }
       }
 
-      // Create processor group if we have any processor nodes
-      if (processorNodeIds.length > 0 && processorStartColumn !== null) {
-        processorGroup = {
-          processorId: child.id,
-          nodeIds: processorNodeIds,
-          relativeStartColumn: processorStartColumn,
-          relativeEndColumn: processorEndColumn,
-          rowOffsetStart: 0,
-          rowOffsetEnd: processorRowOffsetEnd,
-        }
-      }
-
       break // Only process first processor
     }
   }
@@ -551,10 +649,8 @@ function buildGroupPipeline(
     groupName: group.name || 'Group',
     pipelineNodes,
     pipelineLength: relativeColumn,
-    groupRowStart,
-    groupRowCount: maxRowOffset + 1,
+    groupRowStart: groupBaseRow,
     outputNodeId,
-    processorGroup,
   }
 }
 

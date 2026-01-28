@@ -5,7 +5,11 @@ import { useNodeConnections } from './useNodeConnections'
 
 export interface GroupBox {
   id: string
-  nodeIds: string[]
+  /** Grid-based bounds (if provided, pixel calculation uses grid) */
+  startColumn?: number
+  endColumn?: number
+  startRow?: number
+  endRow?: number
   label?: string
 }
 
@@ -13,11 +17,13 @@ const props = withDefaults(
   defineProps<{
     connections: Connection[]
     columns?: number
+    rows?: number
     gap?: string
     groups?: GroupBox[]
   }>(),
   {
     columns: 8,
+    rows: 2,
     gap: '3rem',
     groups: () => [],
   }
@@ -41,6 +47,7 @@ function setNodeRef(nodeId: string, el: HTMLElement | null) {
 
 const gridStyle = computed(() => ({
   gridTemplateColumns: `repeat(${props.columns}, 1fr)`,
+  gridTemplateRows: `repeat(${props.rows}, auto)`,
   gap: props.gap,
 }))
 
@@ -57,31 +64,68 @@ function updateGroupRects() {
   const rects: typeof groupRects.value = []
 
   for (const group of props.groups) {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    let foundAny = false
+    // Use grid-based bounds: find nodes at each corner and calculate pixel bounds
+    if (
+      group.startColumn !== undefined &&
+      group.endColumn !== undefined &&
+      group.startRow !== undefined &&
+      group.endRow !== undefined
+    ) {
+      // Find nodes at the corner positions to calculate pixel bounds
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      let foundAny = false
 
-    for (const nodeId of group.nodeIds) {
-      const nodeEl = nodeRefs.value.get(nodeId)
-      if (nodeEl) {
-        const rect = nodeEl.getBoundingClientRect()
-        minX = Math.min(minX, rect.left - containerRect.left)
-        minY = Math.min(minY, rect.top - containerRect.top)
-        maxX = Math.max(maxX, rect.right - containerRect.left)
-        maxY = Math.max(maxY, rect.bottom - containerRect.top)
-        foundAny = true
+      for (const [, nodeEl] of nodeRefs.value) {
+        if (!nodeEl) continue
+        const nodeRect = nodeEl.getBoundingClientRect()
+
+        // Get the node's grid position from data attributes or computed style
+        const nodeColumn = parseInt(nodeEl.closest('[style*="grid-column"]')?.getAttribute('style')?.match(/grid-column:\s*(\d+)/)?.[1] ?? '-1')
+        const nodeRow = parseInt(nodeEl.closest('[style*="grid-row"]')?.getAttribute('style')?.match(/grid-row:\s*(\d+)/)?.[1] ?? '-1')
+
+        // Check if this node is within the group's grid bounds
+        // Since we're looking at internal nodes, check based on position matching
+        if (nodeColumn >= 0 && nodeRow >= 0) {
+          // Node is within bounds
+          if (nodeColumn >= group.startColumn && nodeColumn <= group.endColumn &&
+              nodeRow >= group.startRow && nodeRow < group.endRow) {
+            minX = Math.min(minX, nodeRect.left - containerRect.left)
+            minY = Math.min(minY, nodeRect.top - containerRect.top)
+            maxX = Math.max(maxX, nodeRect.right - containerRect.left)
+            maxY = Math.max(maxY, nodeRect.bottom - containerRect.top)
+            foundAny = true
+          }
+        }
       }
-    }
 
-    if (foundAny) {
-      const padding = 12
-      rects.push({
-        id: group.id,
-        x: minX - padding,
-        y: minY - padding,
-        width: maxX - minX + padding * 2,
-        height: maxY - minY + padding * 2,
-        label: group.label,
-      })
+      // Fallback: If no nodes found via grid position, find nodes that match processor internal pattern
+      if (!foundAny) {
+        // Find all nodes with isProcessorInternal by checking their position pattern
+        for (const [nodeId, nodeEl] of nodeRefs.value) {
+          if (!nodeEl) continue
+          // Effects and masks (processor internal) have specific node ID patterns
+          if (nodeId.includes('-effect-') || nodeId.includes('-mask-')) {
+            const nodeRect = nodeEl.getBoundingClientRect()
+            minX = Math.min(minX, nodeRect.left - containerRect.left)
+            minY = Math.min(minY, nodeRect.top - containerRect.top)
+            maxX = Math.max(maxX, nodeRect.right - containerRect.left)
+            maxY = Math.max(maxY, nodeRect.bottom - containerRect.top)
+            foundAny = true
+          }
+        }
+      }
+
+      if (foundAny) {
+        const padding = 12
+        rects.push({
+          id: group.id,
+          x: minX - padding,
+          y: minY - padding,
+          width: maxX - minX + padding * 2,
+          height: maxY - minY + padding * 2,
+          label: group.label,
+        })
+      }
     }
   }
 

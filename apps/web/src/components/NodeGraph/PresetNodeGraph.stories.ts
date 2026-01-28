@@ -15,7 +15,7 @@ import FilterNode from './FilterNode.vue'
 import GraymapNode from './GraymapNode.vue'
 import CompositorNode from './CompositorNode.vue'
 import RenderNode from './RenderNode.vue'
-import { useAutoLayout, generateAutoLayout, type GraphNode, type ProcessorGroup } from './useAutoLayout'
+import { useAutoLayout, generateAutoLayout, type GraphNode } from './useAutoLayout'
 import type { GroupBox } from './NodeGraph.vue'
 import { extractPartialConfig } from './extractPartialConfig'
 import type { HeroViewPreset, SurfaceLayerNodeConfig, HeroViewConfig } from '@practice/section-visual'
@@ -64,31 +64,17 @@ const DEFAULT_PALETTE: PrimitivePalette = createPrimitivePalette({
 })
 
 /**
- * Group nodes by column for grid-based rendering
+ * Convert processor groups (with grid coordinates) to GroupBoxes
  */
-function groupNodesByColumn(nodes: GraphNode[]): Map<number, GraphNode[]> {
-  const columnMap = new Map<number, GraphNode[]>()
-  for (const node of nodes) {
-    const col = node.column
-    if (!columnMap.has(col)) {
-      columnMap.set(col, [])
-    }
-    columnMap.get(col)!.push(node)
-  }
-  // Sort nodes within each column by row
-  for (const nodes of columnMap.values()) {
-    nodes.sort((a, b) => a.row - b.row)
-  }
-  return columnMap
-}
-
-/**
- * Convert ProcessorGroup to GroupBox for NodeGraph
- */
-function processorGroupsToGroupBoxes(processorGroups: ProcessorGroup[]): GroupBox[] {
-  return processorGroups.map(pg => ({
+function processorGroupsToGroupBoxes(
+  processorGroups: { processorId: string; startColumn: number; endColumn: number; startRow: number; endRow: number }[]
+): GroupBox[] {
+  return processorGroups.map((pg) => ({
     id: pg.processorId,
-    nodeIds: pg.nodeIds,
+    startColumn: pg.startColumn,
+    endColumn: pg.endColumn,
+    startRow: pg.startRow,
+    endRow: pg.endRow,
     label: 'Processor',
   }))
 }
@@ -156,15 +142,27 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
         return null
       }
 
-      // Group all pipeline nodes by column
-      const nodesByColumn = computed(() => {
+      // Get total rows for grid layout
+      const totalRows = computed(() => {
         const l = layout.value
-        if (!l) return new Map<number, GraphNode[]>()
-        const pipelineNodes = l.nodes.filter(n => n.type !== 'composite' && n.type !== 'render')
-        return groupNodesByColumn(pipelineNodes)
+        if (!l) return 2
+        // Find max row end from all nodes
+        let maxRow = 0
+        for (const node of l.nodes) {
+          const rowEnd = node.row + (node.rowSpan ?? 1)
+          if (rowEnd > maxRow) maxRow = rowEnd
+        }
+        return maxRow || 2
       })
 
-      // Convert processor groups to group boxes
+      // All nodes (excluding composite and render which are handled separately)
+      const pipelineNodes = computed(() => {
+        const l = layout.value
+        if (!l) return []
+        return l.nodes.filter(n => n.type !== 'composite' && n.type !== 'render')
+      })
+
+      // Convert processor groups to group boxes (using grid coordinates)
       const groupBoxes = computed(() => {
         const l = layout.value
         if (!l) return []
@@ -173,6 +171,15 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
 
       const presetName = preset.name
       const isAnimated = isAnimatedPreset(preset)
+
+      // Helper to get grid style for a node
+      const getNodeGridStyle = (node: GraphNode) => ({
+        gridColumn: `${node.column + 1}`,
+        gridRow: `${node.row + 1} / span ${node.rowSpan ?? 1}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      })
 
       return {
         layout,
@@ -184,8 +191,10 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
         handleSelectNode,
         getNodePreviewConfig,
         getSurfaceConfig,
-        nodesByColumn,
+        pipelineNodes,
+        totalRows,
         groupBoxes,
+        getNodeGridStyle,
       }
     },
     template: `
@@ -195,90 +204,85 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
           <span v-if="isAnimated" style="background: #4a5a8a; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px;">Animated</span>
         </div>
         <div v-if="!layout" style="color: #666;">No config available</div>
-        <NodeGraph v-else :connections="layout.connections" :columns="layout.columnCount" :groups="groupBoxes" gap="2rem">
+        <NodeGraph v-else :connections="layout.connections" :columns="layout.columnCount" :rows="totalRows" :groups="groupBoxes" gap="2rem">
           <template #default="{ setNodeRef }">
-            <!-- Render each column -->
-            <template v-for="col in layout.columnCount" :key="col">
-              <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; justify-content: center;">
-                <!-- Pipeline nodes for this column -->
-                <template v-for="node in (nodesByColumn.get(col - 1) || [])" :key="node.id">
-                  <!-- Surface/Image nodes -->
-                  <div v-if="node.type === 'surface' || node.type === 'image'"
-                       :ref="(el) => setNodeRef(node.id, el)"
-                       style="width: fit-content;">
-                    <SurfaceNode
-                      :surface="getSurfaceConfig(node.id)"
-                      :palette="palette"
-                      :selected="selectedNode === node.id"
-                      @click="handleSelectNode(node.id)"
-                    />
-                  </div>
-                  <!-- Effect nodes -->
-                  <div v-else-if="node.type === 'effect'"
-                       :ref="(el) => setNodeRef(node.id, el)"
-                       style="width: fit-content;">
-                    <FilterNode
-                      type="effect"
-                      :label="node.label"
-                      :config="getNodePreviewConfig(node.id)"
-                      :palette="palette"
-                      :selected="selectedNode === node.id"
-                      @click="handleSelectNode(node.id)"
-                    />
-                  </div>
-                  <!-- Mask nodes -->
-                  <div v-else-if="node.type === 'mask'"
-                       :ref="(el) => setNodeRef(node.id, el)"
-                       style="width: fit-content;">
-                    <FilterNode
-                      type="mask"
-                      :label="node.label"
-                      :config="getNodePreviewConfig(node.id)"
-                      :palette="palette"
-                      :selected="selectedNode === node.id"
-                      @click="handleSelectNode(node.id)"
-                    />
-                  </div>
-                  <!-- Graymap nodes -->
-                  <div v-else-if="node.type === 'graymap'"
-                       :ref="(el) => setNodeRef(node.id, el)"
-                       style="width: fit-content;">
-                    <GraymapNode
-                      :label="node.label"
-                      :config="getNodePreviewConfig(node.id)"
-                      :palette="palette"
-                      :selected="selectedNode === node.id"
-                      @click="handleSelectNode(node.id)"
-                    />
-                  </div>
-                </template>
-
-                <!-- Composite node (only in its column) -->
-                <div v-if="layout.compositeNode && layout.compositeNode.column === col - 1"
-                     :ref="(el) => setNodeRef('composite', el)"
-                     style="width: fit-content;">
-                  <CompositorNode
-                    label="Composite"
-                    :config="config"
-                    :palette="palette"
-                    :selected="selectedNode === 'composite'"
-                    @click="handleSelectNode('composite')"
-                  />
-                </div>
-
-                <!-- Render node (only in its column) -->
-                <div v-if="layout.renderNode && layout.renderNode.column === col - 1"
-                     :ref="(el) => setNodeRef('render', el)"
-                     style="width: fit-content;">
-                  <RenderNode
-                    :config="getNodePreviewConfig('render')"
-                    :palette="palette"
-                    :selected="selectedNode === 'render'"
-                    @click="handleSelectNode('render')"
-                  />
-                </div>
+            <!-- Render each node with explicit grid position -->
+            <template v-for="node in pipelineNodes" :key="node.id">
+              <!-- Surface/Image nodes -->
+              <div v-if="node.type === 'surface' || node.type === 'image'"
+                   :ref="(el) => setNodeRef(node.id, el)"
+                   :style="getNodeGridStyle(node)">
+                <SurfaceNode
+                  :surface="getSurfaceConfig(node.id)"
+                  :palette="palette"
+                  :selected="selectedNode === node.id"
+                  @click="handleSelectNode(node.id)"
+                />
+              </div>
+              <!-- Effect nodes -->
+              <div v-else-if="node.type === 'effect'"
+                   :ref="(el) => setNodeRef(node.id, el)"
+                   :style="getNodeGridStyle(node)">
+                <FilterNode
+                  type="effect"
+                  :label="node.label"
+                  :config="getNodePreviewConfig(node.id)"
+                  :palette="palette"
+                  :selected="selectedNode === node.id"
+                  @click="handleSelectNode(node.id)"
+                />
+              </div>
+              <!-- Mask nodes -->
+              <div v-else-if="node.type === 'mask'"
+                   :ref="(el) => setNodeRef(node.id, el)"
+                   :style="getNodeGridStyle(node)">
+                <FilterNode
+                  type="mask"
+                  :label="node.label"
+                  :config="getNodePreviewConfig(node.id)"
+                  :palette="palette"
+                  :selected="selectedNode === node.id"
+                  @click="handleSelectNode(node.id)"
+                />
+              </div>
+              <!-- Graymap nodes -->
+              <div v-else-if="node.type === 'graymap'"
+                   :ref="(el) => setNodeRef(node.id, el)"
+                   :style="getNodeGridStyle(node)">
+                <GraymapNode
+                  :label="node.label"
+                  :config="getNodePreviewConfig(node.id)"
+                  :palette="palette"
+                  :selected="selectedNode === node.id"
+                  @click="handleSelectNode(node.id)"
+                />
               </div>
             </template>
+
+            <!-- Composite node -->
+            <div v-if="layout.compositeNode"
+                 :ref="(el) => setNodeRef('composite', el)"
+                 :style="getNodeGridStyle(layout.compositeNode)">
+              <CompositorNode
+                label="Composite"
+                :config="config"
+                :palette="palette"
+                :selected="selectedNode === 'composite'"
+                @click="handleSelectNode('composite')"
+              />
+            </div>
+
+            <!-- Render node -->
+            <div v-if="layout.renderNode"
+                 :ref="(el) => setNodeRef('render', el)"
+                 :style="getNodeGridStyle(layout.renderNode)">
+              <RenderNode
+                :config="getNodePreviewConfig('render')"
+                :palette="palette"
+                :selected="selectedNode === 'render'"
+                @click="handleSelectNode('render')"
+              />
+            </div>
           </template>
         </NodeGraph>
       </div>
@@ -333,15 +337,26 @@ export const Interactive: Story = {
         return null
       }
 
-      // Group all nodes by column
-      const nodesByColumn = computed(() => {
+      // Get total rows for grid layout
+      const totalRows = computed(() => {
         const l = layout.value
-        if (!l) return new Map()
-        const pipelineNodes = l.nodes.filter(n => n.type !== 'composite' && n.type !== 'render')
-        return groupNodesByColumn(pipelineNodes)
+        if (!l) return 2
+        let maxRow = 0
+        for (const node of l.nodes) {
+          const rowEnd = node.row + (node.rowSpan ?? 1)
+          if (rowEnd > maxRow) maxRow = rowEnd
+        }
+        return maxRow || 2
       })
 
-      // Convert processor groups to group boxes
+      // All nodes (excluding composite and render)
+      const pipelineNodes = computed(() => {
+        const l = layout.value
+        if (!l) return []
+        return l.nodes.filter(n => n.type !== 'composite' && n.type !== 'render')
+      })
+
+      // Convert processor groups to group boxes (using grid coordinates)
       const groupBoxes = computed(() => {
         const l = layout.value
         if (!l) return []
@@ -353,6 +368,15 @@ export const Interactive: Story = {
       const isAnimated = computed(() => preset.value ? isAnimatedPreset(preset.value) : false)
       const nodeCount = computed(() => layout.value?.nodes.length ?? 0)
       const connectionCount = computed(() => layout.value?.connections.length ?? 0)
+
+      // Helper to get grid style for a node
+      const getNodeGridStyle = (node: GraphNode) => ({
+        gridColumn: `${node.column + 1}`,
+        gridRow: `${node.row + 1} / span ${node.rowSpan ?? 1}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      })
 
       return {
         layout,
@@ -370,8 +394,10 @@ export const Interactive: Story = {
         handlePresetChange,
         getNodePreviewConfig,
         getSurfaceConfig,
-        nodesByColumn,
+        pipelineNodes,
+        totalRows,
         groupBoxes,
+        getNodeGridStyle,
       }
     },
     template: `
@@ -393,90 +419,85 @@ export const Interactive: Story = {
         </div>
 
         <div v-if="!layout" style="color: #666;">No config available</div>
-        <NodeGraph v-else :connections="layout.connections" :columns="layout.columnCount" :groups="groupBoxes" gap="2rem">
+        <NodeGraph v-else :connections="layout.connections" :columns="layout.columnCount" :rows="totalRows" :groups="groupBoxes" gap="2rem">
           <template #default="{ setNodeRef }">
-            <!-- Render each column -->
-            <template v-for="col in layout.columnCount" :key="col">
-              <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; justify-content: center;">
-                <!-- Pipeline nodes for this column -->
-                <template v-for="node in (nodesByColumn.get(col - 1) || [])" :key="node.id">
-                  <!-- Surface/Image nodes -->
-                  <div v-if="node.type === 'surface' || node.type === 'image'"
-                       :ref="(el) => setNodeRef(node.id, el)"
-                       style="width: fit-content;">
-                    <SurfaceNode
-                      :surface="getSurfaceConfig(node.id)"
-                      :palette="palette"
-                      :selected="selectedNode === node.id"
-                      @click="handleSelectNode(node.id)"
-                    />
-                  </div>
-                  <!-- Effect nodes -->
-                  <div v-else-if="node.type === 'effect'"
-                       :ref="(el) => setNodeRef(node.id, el)"
-                       style="width: fit-content;">
-                    <FilterNode
-                      type="effect"
-                      :label="node.label"
-                      :config="getNodePreviewConfig(node.id)"
-                      :palette="palette"
-                      :selected="selectedNode === node.id"
-                      @click="handleSelectNode(node.id)"
-                    />
-                  </div>
-                  <!-- Mask nodes -->
-                  <div v-else-if="node.type === 'mask'"
-                       :ref="(el) => setNodeRef(node.id, el)"
-                       style="width: fit-content;">
-                    <FilterNode
-                      type="mask"
-                      :label="node.label"
-                      :config="getNodePreviewConfig(node.id)"
-                      :palette="palette"
-                      :selected="selectedNode === node.id"
-                      @click="handleSelectNode(node.id)"
-                    />
-                  </div>
-                  <!-- Graymap nodes -->
-                  <div v-else-if="node.type === 'graymap'"
-                       :ref="(el) => setNodeRef(node.id, el)"
-                       style="width: fit-content;">
-                    <GraymapNode
-                      :label="node.label"
-                      :config="getNodePreviewConfig(node.id)"
-                      :palette="palette"
-                      :selected="selectedNode === node.id"
-                      @click="handleSelectNode(node.id)"
-                    />
-                  </div>
-                </template>
-
-                <!-- Composite node (only in its column) -->
-                <div v-if="layout.compositeNode && layout.compositeNode.column === col - 1"
-                     :ref="(el) => setNodeRef('composite', el)"
-                     style="width: fit-content;">
-                  <CompositorNode
-                    label="Composite"
-                    :config="config"
-                    :palette="palette"
-                    :selected="selectedNode === 'composite'"
-                    @click="handleSelectNode('composite')"
-                  />
-                </div>
-
-                <!-- Render node (only in its column) -->
-                <div v-if="layout.renderNode && layout.renderNode.column === col - 1"
-                     :ref="(el) => setNodeRef('render', el)"
-                     style="width: fit-content;">
-                  <RenderNode
-                    :config="getNodePreviewConfig('render')"
-                    :palette="palette"
-                    :selected="selectedNode === 'render'"
-                    @click="handleSelectNode('render')"
-                  />
-                </div>
+            <!-- Render each node with explicit grid position -->
+            <template v-for="node in pipelineNodes" :key="node.id">
+              <!-- Surface/Image nodes -->
+              <div v-if="node.type === 'surface' || node.type === 'image'"
+                   :ref="(el) => setNodeRef(node.id, el)"
+                   :style="getNodeGridStyle(node)">
+                <SurfaceNode
+                  :surface="getSurfaceConfig(node.id)"
+                  :palette="palette"
+                  :selected="selectedNode === node.id"
+                  @click="handleSelectNode(node.id)"
+                />
+              </div>
+              <!-- Effect nodes -->
+              <div v-else-if="node.type === 'effect'"
+                   :ref="(el) => setNodeRef(node.id, el)"
+                   :style="getNodeGridStyle(node)">
+                <FilterNode
+                  type="effect"
+                  :label="node.label"
+                  :config="getNodePreviewConfig(node.id)"
+                  :palette="palette"
+                  :selected="selectedNode === node.id"
+                  @click="handleSelectNode(node.id)"
+                />
+              </div>
+              <!-- Mask nodes -->
+              <div v-else-if="node.type === 'mask'"
+                   :ref="(el) => setNodeRef(node.id, el)"
+                   :style="getNodeGridStyle(node)">
+                <FilterNode
+                  type="mask"
+                  :label="node.label"
+                  :config="getNodePreviewConfig(node.id)"
+                  :palette="palette"
+                  :selected="selectedNode === node.id"
+                  @click="handleSelectNode(node.id)"
+                />
+              </div>
+              <!-- Graymap nodes -->
+              <div v-else-if="node.type === 'graymap'"
+                   :ref="(el) => setNodeRef(node.id, el)"
+                   :style="getNodeGridStyle(node)">
+                <GraymapNode
+                  :label="node.label"
+                  :config="getNodePreviewConfig(node.id)"
+                  :palette="palette"
+                  :selected="selectedNode === node.id"
+                  @click="handleSelectNode(node.id)"
+                />
               </div>
             </template>
+
+            <!-- Composite node -->
+            <div v-if="layout.compositeNode"
+                 :ref="(el) => setNodeRef('composite', el)"
+                 :style="getNodeGridStyle(layout.compositeNode)">
+              <CompositorNode
+                label="Composite"
+                :config="config"
+                :palette="palette"
+                :selected="selectedNode === 'composite'"
+                @click="handleSelectNode('composite')"
+              />
+            </div>
+
+            <!-- Render node -->
+            <div v-if="layout.renderNode"
+                 :ref="(el) => setNodeRef('render', el)"
+                 :style="getNodeGridStyle(layout.renderNode)">
+              <RenderNode
+                :config="getNodePreviewConfig('render')"
+                :palette="palette"
+                :selected="selectedNode === 'render'"
+                @click="handleSelectNode('render')"
+              />
+            </div>
           </template>
         </NodeGraph>
       </div>
