@@ -210,17 +210,13 @@ watch(() => props.modelValue, (stops) => {
     <!-- Selected stop editor -->
     <div v-if="selectedStop" class="stop-editor">
       <div class="stop-controls">
-        <div class="position-control">
-          <label>Position</label>
-          <input
-            type="range"
-            :value="selectedStop.position"
-            min="0"
-            max="1"
-            step="0.01"
-            @input="updatePosition(selectedStop.id, parseFloat(($event.target as HTMLInputElement).value))"
+        <div class="color-control">
+          <label>Color</label>
+          <PrimitiveColorPicker
+            :model-value="selectedStop.color"
+            :palette="palette"
+            @update:model-value="updateColor(selectedStop.id, $event)"
           />
-          <span class="position-value">{{ Math.round(selectedStop.position * 100) }}%</span>
         </div>
         <button
           class="remove-btn"
@@ -230,14 +226,6 @@ watch(() => props.modelValue, (stops) => {
         >
           Remove
         </button>
-      </div>
-      <div class="color-control">
-        <label>Color</label>
-        <PrimitiveColorPicker
-          :model-value="selectedStop.color"
-          :palette="palette"
-          @update:model-value="updateColor(selectedStop.id, $event)"
-        />
       </div>
     </div>
   </div>
@@ -357,40 +345,6 @@ watch(() => props.modelValue, (stops) => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.position-control {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.position-control label {
-  font-size: 0.7rem;
-  color: oklch(0.50 0.02 260);
-  min-width: 3rem;
-}
-
-:global(.dark) .position-control label {
-  color: oklch(0.60 0.02 260);
-}
-
-.position-control input[type="range"] {
-  flex: 1;
-  height: 0.25rem;
-  accent-color: oklch(0.55 0.20 250);
-}
-
-.position-value {
-  font-size: 0.7rem;
-  color: oklch(0.40 0.02 260);
-  min-width: 2.5rem;
-  text-align: right;
-}
-
-:global(.dark) .position-value {
-  color: oklch(0.70 0.02 260);
 }
 
 .remove-btn {
