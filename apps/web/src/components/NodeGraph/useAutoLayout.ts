@@ -29,6 +29,7 @@ import type {
   SingleEffectConfig,
   NormalizedSurfaceConfig,
 } from '@practice/section-visual'
+import { $NodeGrid, type NodeGrid } from '../../modules/NodeGraph'
 
 // ============================================================
 // Graph Node Types (internal representation)
@@ -369,6 +370,8 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
  *
  * This handles processor layers that are direct children of config.layers,
  * not inside a group layer. The processor modifiers form the pipeline.
+ *
+ * Uses NodeGrid for collision detection to prevent overlapping nodes.
  */
 function buildProcessorPipeline(
   processor: ProcessorNodeConfig,
@@ -377,6 +380,9 @@ function buildProcessorPipeline(
 ): GroupPipeline {
   const pipelineNodes: PipelineNode[] = []
   let relativeColumn = 0
+
+  // Create a local grid for collision detection within this pipeline
+  let localGrid: NodeGrid = $NodeGrid.create(100, ROWS_PER_GROUP)
 
   // Calculate base row for this group (each group uses ROWS_PER_GROUP rows)
   const groupBaseRow = groupIndex * ROWS_PER_GROUP
@@ -402,6 +408,16 @@ function buildProcessorPipeline(
         config: modifier,
       }
       pipelineNodes.push({ node: effectNode, relativeColumn })
+
+      // Register in local grid
+      const placeResult = $NodeGrid.placeNode(localGrid, {
+        nodeId: effectNode.id,
+        column: relativeColumn,
+        row: 0,
+        rowSpan: 1,
+        isProcessorInternal: true,
+      })
+      localGrid = placeResult.grid
 
       // Connect from previous modifier if any
       if (prevModifierNodeId !== null) {
@@ -433,6 +449,16 @@ function buildProcessorPipeline(
       }
       pipelineNodes.push({ node: maskNode, relativeColumn })
 
+      // Register mask in local grid
+      const maskPlaceResult = $NodeGrid.placeNode(localGrid, {
+        nodeId: maskNode.id,
+        column: relativeColumn,
+        row: 0,
+        rowSpan: hasGraymap ? 1 : ROWS_PER_GROUP,
+        isProcessorInternal: true,
+      })
+      localGrid = maskPlaceResult.grid
+
       // Connect from previous modifier (main input)
       if (prevModifierNodeId !== null) {
         connections.push({
@@ -461,8 +487,26 @@ function buildProcessorPipeline(
           parentPipelineId: processor.id,
           config: firstChild?.type === 'surface' ? (firstChild as SurfaceLayerNodeConfig).surface : undefined,
         }
-        // Place graymap at the same column as the mask (for top-level processors)
-        pipelineNodes.push({ node: graymapNode, relativeColumn })
+
+        // Find available column for graymap using collision detection
+        // For top-level processors, prefer same column as mask
+        const graymapRelativeColumn = $NodeGrid.findAvailableColumn(
+          localGrid,
+          relativeColumn,
+          1, // Graymap row (relative)
+          1 // rowSpan
+        )
+        pipelineNodes.push({ node: graymapNode, relativeColumn: graymapRelativeColumn })
+
+        // Register graymap in local grid
+        const graymapPlaceResult = $NodeGrid.placeNode(localGrid, {
+          nodeId: graymapNode.id,
+          column: graymapRelativeColumn,
+          row: 1,
+          rowSpan: 1,
+          isProcessorInternal: false,
+        })
+        localGrid = graymapPlaceResult.grid
 
         // Connect graymap to mask
         connections.push({
@@ -495,6 +539,8 @@ function buildProcessorPipeline(
  * - Effects: row 0, rowSpan 2, isProcessorInternal (vertically centered, in processor box)
  * - Masks: row 0, rowSpan 1, isProcessorInternal (top only, in processor box)
  * - Graymaps: row 1, rowSpan 1 (bottom only, outside processor box)
+ *
+ * Uses NodeGrid for collision detection to prevent overlapping nodes.
  */
 function buildGroupPipeline(
   group: GroupLayerNodeConfig,
@@ -503,6 +549,10 @@ function buildGroupPipeline(
 ): GroupPipeline {
   const pipelineNodes: PipelineNode[] = []
   let relativeColumn = 0
+
+  // Create a local grid for collision detection within this pipeline
+  // Use relative rows (0 = main row, 1 = graymap row)
+  let localGrid: NodeGrid = $NodeGrid.create(100, ROWS_PER_GROUP)
 
   // Calculate base row for this group (each group uses ROWS_PER_GROUP rows)
   const groupBaseRow = groupIndex * ROWS_PER_GROUP
@@ -527,6 +577,17 @@ function buildGroupPipeline(
         config: child,
       }
       pipelineNodes.push({ node: sourceNode, relativeColumn })
+
+      // Register in local grid for collision detection (using relative row 0)
+      const placeResult = $NodeGrid.placeNode(localGrid, {
+        nodeId: child.id,
+        column: relativeColumn,
+        row: 0, // Relative row within group
+        rowSpan: ROWS_PER_GROUP,
+        isProcessorInternal: false,
+      })
+      localGrid = placeResult.grid
+
       sourceNodeIds.push(sourceNode.id)
       outputNodeId = sourceNode.id
     }
@@ -562,6 +623,16 @@ function buildGroupPipeline(
             config: modifier,
           }
           pipelineNodes.push({ node: effectNode, relativeColumn })
+
+          // Register in local grid (row 0 only for effects)
+          const placeResult = $NodeGrid.placeNode(localGrid, {
+            nodeId: effectNode.id,
+            column: relativeColumn,
+            row: 0,
+            rowSpan: 1,
+            isProcessorInternal: true,
+          })
+          localGrid = placeResult.grid
 
           // Connect from sources or previous modifier
           if (prevModifierNodeId === null) {
@@ -600,6 +671,16 @@ function buildGroupPipeline(
           }
           pipelineNodes.push({ node: maskNode, relativeColumn })
 
+          // Register mask in local grid
+          const maskPlaceResult = $NodeGrid.placeNode(localGrid, {
+            nodeId: maskNode.id,
+            column: relativeColumn,
+            row: 0,
+            rowSpan: hasGraymap ? 1 : ROWS_PER_GROUP,
+            isProcessorInternal: true,
+          })
+          localGrid = maskPlaceResult.grid
+
           // Connect from sources or previous modifier (main input)
           if (prevModifierNodeId === null) {
             for (const sourceId of sourceNodeIds) {
@@ -635,9 +716,28 @@ function buildGroupPipeline(
               parentPipelineId: child.id,
               config: firstChild?.type === 'surface' ? (firstChild as SurfaceLayerNodeConfig).surface : undefined,
             }
-            // Place graymap one column left of the mask
-            const graymapRelativeColumn = Math.max(0, relativeColumn - 1)
+
+            // Find available column for graymap using collision detection
+            // Prefer one column left of the mask, but check for collisions
+            const preferredColumn = Math.max(0, relativeColumn - 1)
+            const graymapRelativeColumn = $NodeGrid.findAvailableColumn(
+              localGrid,
+              preferredColumn,
+              1, // Graymap row (relative)
+              1 // rowSpan
+            )
+
             pipelineNodes.push({ node: graymapNode, relativeColumn: graymapRelativeColumn })
+
+            // Register graymap in local grid
+            const graymapPlaceResult = $NodeGrid.placeNode(localGrid, {
+              nodeId: graymapNode.id,
+              column: graymapRelativeColumn,
+              row: 1, // Graymap row (relative)
+              rowSpan: 1,
+              isProcessorInternal: false,
+            })
+            localGrid = graymapPlaceResult.grid
 
             // Connect graymap to mask
             connections.push({
