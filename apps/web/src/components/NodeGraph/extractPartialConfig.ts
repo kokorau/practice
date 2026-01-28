@@ -18,7 +18,6 @@ import { computed, type Ref, unref, type MaybeRef } from 'vue'
 import type {
   HeroViewConfig,
   LayerNodeConfig,
-  ProcessorNodeConfig,
 } from '@practice/section-visual'
 
 export interface PartialConfigResult {
@@ -48,10 +47,12 @@ function parseNodeId(nodeId: string): ParsedNodeId {
   const internalMatch = nodeId.match(/^(.+)-(effect|mask|graymap)-(\d+)$/)
   if (internalMatch) {
     const [, processorId, modType, indexStr] = internalMatch
-    return {
-      type: modType as 'effect' | 'mask' | 'graymap',
-      processorId,
-      modifierIndex: parseInt(indexStr, 10),
+    if (processorId && modType && indexStr) {
+      return {
+        type: modType as 'effect' | 'mask' | 'graymap',
+        processorId,
+        modifierIndex: parseInt(indexStr, 10),
+      }
     }
   }
 
@@ -71,6 +72,7 @@ function findLayerIndex(
 ): { index: number; isProcessor: boolean } | null {
   for (let i = 0; i < layers.length; i++) {
     const layer = layers[i]
+    if (!layer) continue
     if (layer.id === layerId) {
       return { index: i, isProcessor: layer.type === 'processor' }
     }
@@ -95,6 +97,7 @@ function findProcessorIndex(
 ): number {
   for (let i = 0; i < layers.length; i++) {
     const layer = layers[i]
+    if (!layer) continue
     if (layer.type === 'processor' && layer.id === processorId) {
       return i
     }
@@ -224,7 +227,7 @@ export function extractPartialConfig(
     const sourceLayers: LayerNodeConfig[] = []
     for (let i = 0; i <= result.index; i++) {
       const layer = config.layers[i]
-      if (layer.type !== 'processor') {
+      if (layer && layer.type !== 'processor') {
         sourceLayers.push(cloneLayerWithModifiers(layer))
       }
     }

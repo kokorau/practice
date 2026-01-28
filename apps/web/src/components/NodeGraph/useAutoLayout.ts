@@ -58,6 +58,8 @@ export interface GraphNode {
   isProcessorInternal?: boolean
   /** Parent group ID (for nodes belonging to a group) */
   parentGroupId?: string
+  /** Parent pipeline/processor ID for filter and graymap nodes */
+  parentPipelineId?: string
   /** Original config reference */
   config?: LayerNodeConfig | ProcessorConfig | NormalizedSurfaceConfig
 }
@@ -305,7 +307,7 @@ export function generateAutoLayout(config: HeroViewConfig): AutoLayoutResult {
         from: { nodeId: 'composite', position: 'right' },
         to: { nodeId: 'render', position: 'left' },
       })
-    } else if (groupPipelines.length === 1) {
+    } else if (groupPipelines.length === 1 && groupPipelines[0]) {
       connections.push({
         from: { nodeId: groupPipelines[0].outputNodeId, position: 'right' },
         to: { nodeId: 'render', position: 'left' },
@@ -384,6 +386,7 @@ function buildProcessorPipeline(
 
   for (let mIndex = 0; mIndex < processor.modifiers.length; mIndex++) {
     const modifier = processor.modifiers[mIndex]
+    if (!modifier) continue
 
     if (modifier.type === 'effect') {
       const effectNode: GraphNode = {
@@ -395,6 +398,7 @@ function buildProcessorPipeline(
         rowSpan: 1, // Same row as masks
         isProcessorInternal: true, // Inside processor box
         parentGroupId: processor.id,
+        parentPipelineId: processor.id,
         config: modifier,
       }
       pipelineNodes.push({ node: effectNode, relativeColumn })
@@ -412,7 +416,8 @@ function buildProcessorPipeline(
       relativeColumn++
     } else if (modifier.type === 'mask') {
       // Check if mask has graymap children
-      const hasGraymap = modifier.children && modifier.children.length > 0
+      const maskChildren = 'children' in modifier ? modifier.children : undefined
+      const hasGraymap = maskChildren && maskChildren.length > 0
 
       const maskNode: GraphNode = {
         id: `${processor.id}-mask-${mIndex}`,
@@ -423,6 +428,7 @@ function buildProcessorPipeline(
         rowSpan: hasGraymap ? 1 : ROWS_PER_GROUP, // Top only if has graymap, else centered
         isProcessorInternal: true, // Inside processor box
         parentGroupId: processor.id,
+        parentPipelineId: processor.id,
         config: modifier,
       }
       pipelineNodes.push({ node: maskNode, relativeColumn })
@@ -436,9 +442,9 @@ function buildProcessorPipeline(
       }
 
       // Create graymap if mask has children
-      if (hasGraymap) {
+      if (hasGraymap && maskChildren) {
         let graymapLabel = 'Graymap'
-        const firstChild = modifier.children![0]
+        const firstChild = maskChildren[0]
         if (firstChild && isSurface(firstChild)) {
           graymapLabel = getSurfaceLabel(firstChild.surface)
         }
@@ -452,6 +458,7 @@ function buildProcessorPipeline(
           rowSpan: 1,
           isProcessorInternal: false, // Outside processor box
           parentGroupId: processor.id,
+          parentPipelineId: processor.id,
           config: firstChild?.type === 'surface' ? (firstChild as SurfaceLayerNodeConfig).surface : undefined,
         }
         // Place graymap at the same column as the mask (for top-level processors)
@@ -539,6 +546,7 @@ function buildGroupPipeline(
 
       for (let mIndex = 0; mIndex < child.modifiers.length; mIndex++) {
         const modifier = child.modifiers[mIndex]
+        if (!modifier) continue
 
         if (modifier.type === 'effect') {
           const effectNode: GraphNode = {
@@ -550,6 +558,7 @@ function buildGroupPipeline(
             rowSpan: 1, // Same row as masks
             isProcessorInternal: true, // Inside processor box
             parentGroupId: group.id,
+            parentPipelineId: child.id,
             config: modifier,
           }
           pipelineNodes.push({ node: effectNode, relativeColumn })
@@ -574,7 +583,8 @@ function buildGroupPipeline(
           relativeColumn++
         } else if (modifier.type === 'mask') {
           // Check if mask has graymap children
-          const hasGraymap = modifier.children && modifier.children.length > 0
+          const maskChildren = 'children' in modifier ? modifier.children : undefined
+          const hasGraymap = maskChildren && maskChildren.length > 0
 
           const maskNode: GraphNode = {
             id: `${child.id}-mask-${mIndex}`,
@@ -585,6 +595,7 @@ function buildGroupPipeline(
             rowSpan: hasGraymap ? 1 : ROWS_PER_GROUP, // Top only if has graymap, else centered
             isProcessorInternal: true, // Inside processor box
             parentGroupId: group.id,
+            parentPipelineId: child.id,
             config: modifier,
           }
           pipelineNodes.push({ node: maskNode, relativeColumn })
@@ -605,9 +616,9 @@ function buildGroupPipeline(
           }
 
           // Create graymap if mask has children
-          if (hasGraymap) {
+          if (hasGraymap && maskChildren) {
             let graymapLabel = 'Graymap'
-            const firstChild = modifier.children![0]
+            const firstChild = maskChildren[0]
             if (firstChild && isSurface(firstChild)) {
               graymapLabel = getSurfaceLabel(firstChild.surface)
             }
@@ -621,6 +632,7 @@ function buildGroupPipeline(
               rowSpan: 1,
               isProcessorInternal: false, // Outside processor box
               parentGroupId: group.id,
+              parentPipelineId: child.id,
               config: firstChild?.type === 'surface' ? (firstChild as SurfaceLayerNodeConfig).surface : undefined,
             }
             // Place graymap one column left of the mask

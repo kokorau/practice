@@ -83,8 +83,8 @@ const completeConfig: HeroViewConfig = {
         } satisfies SingleEffectConfig,
         {
           type: 'effect',
-          id: 'contrast',
-          params: { amount: $PropertyValue.static(1.2) },
+          id: 'vignette',
+          params: { intensity: $PropertyValue.static(0.5) },
         } satisfies SingleEffectConfig,
         {
           type: 'mask',

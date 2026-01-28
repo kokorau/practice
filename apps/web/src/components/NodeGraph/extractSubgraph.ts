@@ -106,7 +106,9 @@ export function extractSubgraph(
       processorNodes: [],
       filterNodes: [],
       graymapNodes: [],
+      compositeNode: null,
       renderNode: null,
+      processorGroups: [],
     }
   }
 
@@ -156,6 +158,14 @@ export function extractSubgraph(
   const graymapNodes = filteredNodes.filter((n) => n.type === 'graymap')
   const renderNode = filteredNodes.find((n) => n.type === 'render') ?? null
 
+  // Include composite node if it exists in filtered nodes
+  const compositeNode = filteredNodes.find((n) => n.type === 'composite') ?? null
+
+  // Filter processor groups to only include those with nodes in the subgraph
+  const processorGroups = layout.processorGroups.filter((pg) =>
+    filteredNodes.some((n) => n.parentPipelineId === pg.processorId)
+  )
+
   return {
     nodes: filteredNodes,
     connections: filteredConnections,
@@ -164,7 +174,9 @@ export function extractSubgraph(
     processorNodes,
     filterNodes,
     graymapNodes,
+    compositeNode,
     renderNode,
+    processorGroups,
   }
 }
 

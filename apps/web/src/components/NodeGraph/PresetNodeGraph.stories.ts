@@ -18,7 +18,7 @@ import RenderNode from './RenderNode.vue'
 import { useAutoLayout, generateAutoLayout, type GraphNode } from './useAutoLayout'
 import type { GroupBox } from './NodeGraph.vue'
 import { extractPartialConfig } from './extractPartialConfig'
-import type { HeroViewPreset, SurfaceLayerNodeConfig, HeroViewConfig } from '@practice/section-visual'
+import type { HeroViewPreset, SurfaceLayerNodeConfig } from '@practice/section-visual'
 import { getPresetConfig, isAnimatedPreset } from '@practice/section-visual'
 import { TIMELINE_PRESETS } from '../../modules/Timeline/Infra/timelinePresets'
 import { createPrimitivePalette } from '@practice/semantic-color-palette/Infra'
@@ -115,7 +115,11 @@ const createPresetStory = (preset: HeroViewPreset): Story => ({
   render: () => ({
     components: { NodeGraph, SurfaceNode, FilterNode, GraymapNode, CompositorNode, RenderNode },
     setup() {
-      const config = ref(getPresetConfig(preset))
+      const presetConfig = getPresetConfig(preset)
+      if (!presetConfig) {
+        throw new Error(`Preset "${preset}" not found`)
+      }
+      const config = ref(presetConfig)
       const layout = useAutoLayout(config)
       const selectedNode = ref<string | null>(null)
       const palette = createPaletteFromPreset(preset) ?? DEFAULT_PALETTE
