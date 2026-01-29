@@ -137,8 +137,6 @@ export interface ClipMaskConfig {
   shape: ClipMaskShape
   /** 形状パラメータ（形状タイプに応じた設定） */
   shapeParams: ClipMaskShapeParams
-  /** 内側/外側の反転 (true: 外側を表示) */
-  invert: boolean
   /** エッジのフェード量 (0-1, 0=シャープ, 1=最大フェード) */
   feather: number
   /** マスク表面のテクスチャスペック（オプション） */
@@ -501,7 +499,6 @@ export const createDefaultClipMask = (
   return {
     shape,
     shapeParams: defaultShapeParams[shape],
-    invert: false,
     feather: 0,
     ...options,
   }

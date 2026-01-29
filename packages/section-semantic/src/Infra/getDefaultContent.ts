@@ -341,7 +341,6 @@ const corporateCleanConfig: HeroViewConfig = {
               },
             },
           ],
-          invert: false,
           feather: 0,
         },
       ],

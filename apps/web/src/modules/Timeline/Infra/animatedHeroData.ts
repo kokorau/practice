@@ -156,6 +156,7 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
   viewport: { width: 1280, height: 720 },
   colors: { semanticContext: 'canvas' },
   layers: [
+    // Background Group (bottom layer): stripes as full background
     {
       type: 'group',
       id: 'background-group',
@@ -165,7 +166,7 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
         {
           type: 'surface',
           id: 'background',
-          name: 'Surface',
+          name: 'Stripe',
           visible: true,
           surface: {
             id: 'stripe',
@@ -180,6 +181,7 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
         },
       ],
     },
+    // Clip Group (top layer): circular gradient in center with mask
     {
       type: 'group',
       id: 'clip-group',
@@ -188,8 +190,8 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
       children: [
         {
           type: 'surface',
-          id: 'surface-mask',
-          name: 'Surface',
+          id: 'surface-gradient',
+          name: 'Gradient',
           visible: true,
           surface: {
             id: 'gradientGrainRadial',
@@ -207,8 +209,8 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
         },
         {
           type: 'processor',
-          id: 'processor-mask',
-          name: 'Mask',
+          id: 'processor-gradient-mask',
+          name: 'Gradient Mask',
           visible: true,
           modifiers: [
             {
@@ -224,7 +226,7 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
               children: [
                 {
                   type: 'surface',
-                  id: 'mask-circle',
+                  id: 'mask-circle-inner',
                   name: 'Circle',
                   visible: true,
                   surface: {
@@ -237,7 +239,6 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
                   },
                 },
               ],
-              invert: false,
               feather: 0.02,
             },
           ],
@@ -388,7 +389,6 @@ const createRotatingSunburstConfig = (): HeroViewConfig => ({
                   },
                 },
               ],
-              invert: false,
               feather: 0.05,
             },
           ],
@@ -545,7 +545,6 @@ const createFlowingWavesConfig = (): HeroViewConfig => ({
                   },
                 },
               ],
-              invert: false,
               feather: 0,
             },
           ],
@@ -696,7 +695,6 @@ const createPulsingGridConfig = (): HeroViewConfig => ({
                   },
                 },
               ],
-              invert: false,
               feather: 0.08,
             },
           ],
@@ -847,7 +845,6 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
                   },
                 },
               ],
-              invert: false,
               feather: 0.1,
             },
           ],
@@ -897,7 +894,6 @@ const createOrganicScalesConfig = (): HeroViewConfig => ({
                   },
                 },
               ],
-              invert: false,
               feather: 0.05,
             },
           ],
@@ -1078,7 +1074,6 @@ const createMorphingBlobConfig = (): HeroViewConfig => ({
                   },
                 },
               ],
-              invert: false,
               feather: 0.01,
             },
           ],

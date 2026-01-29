@@ -1102,7 +1102,6 @@ export interface MaskProcessorConfig {
   shape?: NormalizedMaskConfig
   /** Layer tree used as mask source. Rendered to luminance greymap. */
   children: LayerNodeConfig[]
-  invert: boolean
   feather: number
 }
 
@@ -1625,7 +1624,7 @@ export interface ForegroundLayerConfig {
  *       visible: true,
  *       modifiers: [
  *         { type: 'effect', id: 'blur', params: { radius: 8 } },
- *         { type: 'mask', enabled: true, shape: { ... }, invert: false, feather: 0 }
+ *         { type: 'mask', enabled: true, shape: { ... }, feather: 0 }
  *       ]
  *     }
  *   ],
@@ -1670,7 +1669,6 @@ export const createDefaultMaskProcessorConfig = (): MaskProcessorConfig => ({
   type: 'mask',
   enabled: true,
   children: [],
-  invert: false,
   feather: 0,
 })
 
@@ -2002,7 +2000,6 @@ function migrateLayerConfig(layer: LayerNodeConfig): LayerNodeConfig {
             enabled: modifier.enabled,
             shape: normalizedShape,
             children: migratedChildren,
-            invert: modifier.invert,
             feather: modifier.feather,
           }
         }

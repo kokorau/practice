@@ -99,7 +99,6 @@ describe('extractTrackIdsFromLayers', () => {
                 cutout: $PropertyValue.static(false),
               },
             },
-            invert: false,
             feather: 0,
           },
         ],
@@ -288,7 +287,6 @@ describe('extractTrackIdsFromLayers', () => {
                 radius: $PropertyValue.range('track-radius', 0.1, 0.5),
               },
             },
-            invert: false,
             feather: 0,
           },
           {
@@ -348,7 +346,6 @@ describe('extractTrackIdsFromHeroViewConfig', () => {
                       radius: $PropertyValue.range('track-mask', 0.1, 0.5),
                     },
                   },
-                  invert: false,
                   feather: 0,
                 },
               ],

@@ -79,7 +79,6 @@ describe('buildDependencyGraph', () => {
                   centerX: $PropertyValue.static(0.5),
                 },
               },
-              invert: false,
               feather: 0,
             },
           ],

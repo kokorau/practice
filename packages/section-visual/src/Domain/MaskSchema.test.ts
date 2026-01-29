@@ -77,11 +77,9 @@ describe('MaskSchema', () => {
       const config = createMaskConfigForShape('circle', {
         enabled: false,
         feather: 10,
-        invert: true,
       })
       expect(config.enabled).toBe(false)
       expect(config.feather).toBe(10)
-      expect(config.invert).toBe(true)
     })
   })
 
@@ -90,14 +88,12 @@ describe('MaskSchema', () => {
       const legacy: LegacyClipMaskConfig = {
         shape: 'circle',
         shapeParams: { type: 'circle', centerX: 0.3, centerY: 0.7, radius: 0.4 },
-        invert: true,
         feather: 5,
       }
       const result = migrateClipMaskConfig(legacy, true)
       expect(result).not.toBeNull()
       expect(result!.shape).toBe('circle')
       expect(result!.enabled).toBe(true)
-      expect(result!.invert).toBe(true)
       expect(result!.feather).toBe(5)
       if (isCircleMaskConfig(result!)) {
         expect(result.centerX).toBe(0.3)
@@ -117,7 +113,6 @@ describe('MaskSchema', () => {
           height: 0.4,
           cornerRadius: [0.1, 0.1, 0.1, 0.1] as [number, number, number, number],
         },
-        invert: false,
         feather: 0,
       }
       const result = migrateClipMaskConfig(legacy)
@@ -136,7 +131,6 @@ describe('MaskSchema', () => {
       const legacy: LegacyClipMaskConfig = {
         shape: 'perlin',
         shapeParams: { type: 'perlin', seed: 123, threshold: 0.6, scale: 8, octaves: 6 },
-        invert: false,
         feather: 0,
       }
       const result = migrateClipMaskConfig(legacy)
@@ -154,7 +148,6 @@ describe('MaskSchema', () => {
       const legacy: LegacyClipMaskConfig = {
         shape: 'image',
         shapeParams: { type: 'image', source: 'test.png' },
-        invert: false,
         feather: 0,
       }
       const result = migrateClipMaskConfig(legacy)
@@ -170,7 +163,6 @@ describe('MaskSchema', () => {
         config: {
           shape: 'circle',
           shapeParams: { type: 'circle', centerX: 0.5, centerY: 0.5, radius: 0.3 },
-          invert: false,
           feather: 0,
         },
       }
@@ -186,7 +178,6 @@ describe('MaskSchema', () => {
         shape: 'circle',
         enabled: true,
         feather: 5,
-        invert: true,
         centerX: 0.3,
         centerY: 0.7,
         radius: 0.4,
@@ -194,7 +185,6 @@ describe('MaskSchema', () => {
       }
       const legacy = toLegacyClipMaskConfig(config)
       expect(legacy.shape).toBe('circle')
-      expect(legacy.invert).toBe(true)
       expect(legacy.feather).toBe(5)
       expect(legacy.shapeParams.type).toBe('circle')
       expect(legacy.shapeParams.centerX).toBe(0.3)
@@ -209,7 +199,6 @@ describe('MaskSchema', () => {
         shape: 'circle',
         enabled: false,
         feather: 0,
-        invert: false,
         centerX: 0.5,
         centerY: 0.5,
         radius: 0.3,

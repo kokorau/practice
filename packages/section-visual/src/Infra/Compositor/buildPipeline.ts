@@ -364,8 +364,7 @@ function buildProcessorNode(
       if (maskChildNodes.length > 0) {
         const maskChildrenRenderNode = createMaskChildrenRenderNode(
           `${maskId}-render`,
-          maskChildNodes,
-          compiledMask.invert
+          maskChildNodes
         )
         nodes.push(maskChildrenRenderNode)
 

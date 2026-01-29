@@ -280,7 +280,6 @@ describe('compileHeroView', () => {
                     cutout: $PropertyValue.static(false),
                   },
                 },
-                invert: false,
                 feather: 0,
               },
             ],

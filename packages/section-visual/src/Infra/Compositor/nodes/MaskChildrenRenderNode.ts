@@ -38,8 +38,8 @@ const luminanceShader = /* wgsl */ `
 struct Params {
   viewportWidth: f32,
   viewportHeight: f32,
-  invert: f32,
-  _padding: f32,
+  _padding1: f32,
+  _padding2: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
@@ -67,14 +67,8 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let rgb = color.rgb * color.a;
   let luminance = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
 
-  // Apply invert if needed
-  var value = luminance;
-  if (params.invert > 0.5) {
-    value = 1.0 - value;
-  }
-
   // Output as greyscale with full alpha
-  return vec4f(value, value, value, 1.0);
+  return vec4f(luminance, luminance, luminance, 1.0);
 }
 `
 
@@ -164,9 +158,6 @@ export interface MaskChildrenRenderNodeConfig {
 
   /** Child nodes to render as mask source */
   children: ReadonlyArray<RenderNode | CompositorNode>
-
-  /** Whether to invert the mask (0 = no invert, 1 = invert) */
-  invert?: boolean
 }
 
 /**
@@ -175,7 +166,6 @@ export interface MaskChildrenRenderNodeConfig {
  * Process:
  * 1. Render children on black background (RGBA composite)
  * 2. Convert to luminance (ITU-R BT.709)
- * 3. Optional: Apply invert
  *
  * Fallback:
  * - If children is empty, output white plane (no clipping)
@@ -192,7 +182,6 @@ export interface MaskChildrenRenderNodeConfig {
  * const maskNode = new MaskChildrenRenderNode({
  *   id: 'my-mask',
  *   children: [childNode1, childNode2],
- *   invert: false
  * })
  *
  * maskNode.render(context) // Renders children to luminance greymap
@@ -204,7 +193,6 @@ export class MaskChildrenRenderNode extends BaseTextureOwner implements RenderNo
   readonly id: string
 
   private readonly children: ReadonlyArray<RenderNode | CompositorNode>
-  private readonly invert: boolean
 
   // Intermediate texture for compositing children before luminance conversion
   private compositeTexture: GPUTexture | null = null
@@ -213,7 +201,6 @@ export class MaskChildrenRenderNode extends BaseTextureOwner implements RenderNo
     super()
     this.id = config.id
     this.children = config.children
-    this.invert = config.invert ?? false
   }
 
   /**
@@ -383,7 +370,7 @@ export class MaskChildrenRenderNode extends BaseTextureOwner implements RenderNo
     const view = new Float32Array(buffer)
     view[0] = viewport.width
     view[1] = viewport.height
-    view[2] = this.invert ? 1.0 : 0.0
+    view[2] = 0 // padding
     view[3] = 0 // padding
 
     const spec = {
@@ -492,8 +479,7 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
  */
 export function createMaskChildrenRenderNode(
   id: string,
-  children: ReadonlyArray<RenderNode | CompositorNode>,
-  invert: boolean = false
+  children: ReadonlyArray<RenderNode | CompositorNode>
 ): MaskChildrenRenderNode {
-  return new MaskChildrenRenderNode({ id, children, invert })
+  return new MaskChildrenRenderNode({ id, children })
 }

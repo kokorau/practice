@@ -71,7 +71,6 @@
                   "radius": 0.35,
                   "cutout": false
                 },
-                "invert": false,
                 "feather": 0
               },
               {

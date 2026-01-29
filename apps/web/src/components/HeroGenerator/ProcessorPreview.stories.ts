@@ -74,7 +74,6 @@ const createMaskConfig = (_maskPattern: MaskPattern): HeroViewConfig => {
     type: 'mask',
     enabled: true,
     children: [createDefaultMaskChild()],
-    invert: false,
     feather: 0,
   }
 
@@ -135,7 +134,6 @@ const createMaskWithEffectConfig = (
     type: 'mask',
     enabled: true,
     children: [createDefaultMaskChild()],
-    invert: false,
     feather: 0,
   }
 
