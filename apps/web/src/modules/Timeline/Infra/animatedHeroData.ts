@@ -156,7 +156,32 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
   viewport: { width: 1280, height: 720 },
   colors: { semanticContext: 'canvas' },
   layers: [
-    // Clip Group first (bottom layer): circular gradient in center
+    // Background Group (bottom layer): stripes as full background
+    {
+      type: 'group',
+      id: 'background-group',
+      name: 'Background',
+      visible: true,
+      children: [
+        {
+          type: 'surface',
+          id: 'background',
+          name: 'Stripe',
+          visible: true,
+          surface: {
+            id: 'stripe',
+            params: {
+              width1: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.STRIPE_WIDTH, 20, 28),
+              width2: $PropertyValue.static(20),
+              angle: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.STRIPE_ANGLE, 40, 50),
+              color1: $PropertyValue.static('B'),
+              color2: $PropertyValue.static('auto'),
+            },
+          },
+        },
+      ],
+    },
+    // Clip Group (top layer): circular gradient in center with mask
     {
       type: 'group',
       id: 'clip-group',
@@ -202,60 +227,6 @@ const createBreathingCircleConfig = (): HeroViewConfig => ({
                 {
                   type: 'surface',
                   id: 'mask-circle-inner',
-                  name: 'Circle',
-                  visible: true,
-                  surface: {
-                    id: 'circle',
-                    params: {
-                      centerX: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.MASK_CENTER_X, 0.42, 0.58),
-                      centerY: $PropertyValue.static(0.5),
-                      radius: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.MASK_RADIUS, 0.2, 0.4),
-                    },
-                  },
-                },
-              ],
-              feather: 0.02,
-            },
-          ],
-        },
-      ],
-    },
-    // Background Group second (top layer): stripes outside the circle
-    {
-      type: 'group',
-      id: 'background-group',
-      name: 'Background',
-      visible: true,
-      children: [
-        {
-          type: 'surface',
-          id: 'background',
-          name: 'Stripe',
-          visible: true,
-          surface: {
-            id: 'stripe',
-            params: {
-              width1: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.STRIPE_WIDTH, 20, 28),
-              width2: $PropertyValue.static(20),
-              angle: $PropertyValue.range(BREATHING_CIRCLE_TRACK_IDS.STRIPE_ANGLE, 40, 50),
-              color1: $PropertyValue.static('B'),
-              color2: $PropertyValue.static('auto'),
-            },
-          },
-        },
-        {
-          type: 'processor',
-          id: 'processor-stripe-mask',
-          name: 'Stripe Mask',
-          visible: true,
-          modifiers: [
-            {
-              type: 'mask',
-              enabled: true,
-              children: [
-                {
-                  type: 'surface',
-                  id: 'mask-circle-outer',
                   name: 'Circle',
                   visible: true,
                   surface: {
