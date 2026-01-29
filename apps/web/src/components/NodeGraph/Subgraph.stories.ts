@@ -107,7 +107,6 @@ const completeConfig: HeroViewConfig = {
               },
             },
           ],
-          invert: false,
           feather: 0,
         } satisfies MaskProcessorConfig,
       ],
