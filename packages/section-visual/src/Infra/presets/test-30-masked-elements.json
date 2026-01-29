@@ -51,7 +51,7 @@
             "id": "processor-01",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.15 }, "radius": { "type": "static", "value": 0.08 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.15 }, "radius": { "type": "static", "value": 0.08 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -74,7 +74,7 @@
             "id": "processor-02",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.05 }, "bottom": { "type": "static", "value": 0.25 }, "radiusTopLeft": { "type": "static", "value": 0.01 }, "radiusTopRight": { "type": "static", "value": 0.01 }, "radiusBottomLeft": { "type": "static", "value": 0.01 }, "radiusBottomRight": { "type": "static", "value": 0.01 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.05 }, "bottom": { "type": "static", "value": 0.25 }, "radiusTopLeft": { "type": "static", "value": 0.01 }, "radiusTopRight": { "type": "static", "value": 0.01 }, "radiusBottomLeft": { "type": "static", "value": 0.01 }, "radiusBottomRight": { "type": "static", "value": 0.01 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -97,7 +97,7 @@
             "id": "processor-03",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.15 }, "radius": { "type": "static", "value": 0.1 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.15 }, "radius": { "type": "static", "value": 0.1 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -120,7 +120,7 @@
             "id": "processor-04",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.05 }, "bottom": { "type": "static", "value": 0.25 }, "radiusTopLeft": { "type": "static", "value": 0.02 }, "radiusTopRight": { "type": "static", "value": 0.02 }, "radiusBottomLeft": { "type": "static", "value": 0.02 }, "radiusBottomRight": { "type": "static", "value": 0.02 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.05 }, "bottom": { "type": "static", "value": 0.25 }, "radiusTopLeft": { "type": "static", "value": 0.02 }, "radiusTopRight": { "type": "static", "value": 0.02 }, "radiusBottomLeft": { "type": "static", "value": 0.02 }, "radiusBottomRight": { "type": "static", "value": 0.02 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -143,7 +143,7 @@
             "id": "processor-05",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.15 }, "radius": { "type": "static", "value": 0.08 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.15 }, "radius": { "type": "static", "value": 0.08 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -166,7 +166,7 @@
             "id": "processor-06",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.38 }, "baseRadius": { "type": "static", "value": 0.08 }, "amplitude": { "type": "static", "value": 0.02 }, "octaves": { "type": "static", "value": 3 }, "seed": { "type": "static", "value": 42 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.38 }, "baseRadius": { "type": "static", "value": 0.08 }, "amplitude": { "type": "static", "value": 0.02 }, "octaves": { "type": "static", "value": 3 }, "seed": { "type": "static", "value": 42 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -189,7 +189,7 @@
             "id": "processor-07",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.28 }, "bottom": { "type": "static", "value": 0.48 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": 5 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.28 }, "bottom": { "type": "static", "value": 0.48 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": 5 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -212,7 +212,7 @@
             "id": "processor-08",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.38 }, "radius": { "type": "static", "value": 0.1 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.38 }, "radius": { "type": "static", "value": 0.1 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -235,7 +235,7 @@
             "id": "processor-09",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.28 }, "bottom": { "type": "static", "value": 0.48 }, "radiusTopLeft": { "type": "static", "value": 0.03 }, "radiusTopRight": { "type": "static", "value": 0.03 }, "radiusBottomLeft": { "type": "static", "value": 0.03 }, "radiusBottomRight": { "type": "static", "value": 0.03 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.28 }, "bottom": { "type": "static", "value": 0.48 }, "radiusTopLeft": { "type": "static", "value": 0.03 }, "radiusTopRight": { "type": "static", "value": 0.03 }, "radiusBottomLeft": { "type": "static", "value": 0.03 }, "radiusBottomRight": { "type": "static", "value": 0.03 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -258,7 +258,7 @@
             "id": "processor-10",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.38 }, "baseRadius": { "type": "static", "value": 0.09 }, "amplitude": { "type": "static", "value": 0.025 }, "octaves": { "type": "static", "value": 4 }, "seed": { "type": "static", "value": 123 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.38 }, "baseRadius": { "type": "static", "value": 0.09 }, "amplitude": { "type": "static", "value": 0.025 }, "octaves": { "type": "static", "value": 4 }, "seed": { "type": "static", "value": 123 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -281,7 +281,7 @@
             "id": "processor-11",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.62 }, "radius": { "type": "static", "value": 0.1 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.62 }, "radius": { "type": "static", "value": 0.1 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -304,7 +304,7 @@
             "id": "processor-12",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.52 }, "bottom": { "type": "static", "value": 0.72 }, "radiusTopLeft": { "type": "static", "value": 0.05 }, "radiusTopRight": { "type": "static", "value": 0.05 }, "radiusBottomLeft": { "type": "static", "value": 0.05 }, "radiusBottomRight": { "type": "static", "value": 0.05 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.52 }, "bottom": { "type": "static", "value": 0.72 }, "radiusTopLeft": { "type": "static", "value": 0.05 }, "radiusTopRight": { "type": "static", "value": 0.05 }, "radiusBottomLeft": { "type": "static", "value": 0.05 }, "radiusBottomRight": { "type": "static", "value": 0.05 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -327,7 +327,7 @@
             "id": "processor-13",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.62 }, "baseRadius": { "type": "static", "value": 0.1 }, "amplitude": { "type": "static", "value": 0.03 }, "octaves": { "type": "static", "value": 5 }, "seed": { "type": "static", "value": 777 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.62 }, "baseRadius": { "type": "static", "value": 0.1 }, "amplitude": { "type": "static", "value": 0.03 }, "octaves": { "type": "static", "value": 5 }, "seed": { "type": "static", "value": 777 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -350,7 +350,7 @@
             "id": "processor-14",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.52 }, "bottom": { "type": "static", "value": 0.72 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": -5 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.52 }, "bottom": { "type": "static", "value": 0.72 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": -5 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -373,7 +373,7 @@
             "id": "processor-15",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.62 }, "radius": { "type": "static", "value": 0.08 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.62 }, "radius": { "type": "static", "value": 0.08 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -396,7 +396,7 @@
             "id": "processor-16",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.85 }, "baseRadius": { "type": "static", "value": 0.07 }, "amplitude": { "type": "static", "value": 0.015 }, "octaves": { "type": "static", "value": 3 }, "seed": { "type": "static", "value": 999 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.1 }, "centerY": { "type": "static", "value": 0.85 }, "baseRadius": { "type": "static", "value": 0.07 }, "amplitude": { "type": "static", "value": 0.015 }, "octaves": { "type": "static", "value": 3 }, "seed": { "type": "static", "value": 999 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -419,7 +419,7 @@
             "id": "processor-17",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.75 }, "bottom": { "type": "static", "value": 0.95 }, "radiusTopLeft": { "type": "static", "value": 0.01 }, "radiusTopRight": { "type": "static", "value": 0.01 }, "radiusBottomLeft": { "type": "static", "value": 0.01 }, "radiusBottomRight": { "type": "static", "value": 0.01 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.22 }, "right": { "type": "static", "value": 0.38 }, "top": { "type": "static", "value": 0.75 }, "bottom": { "type": "static", "value": 0.95 }, "radiusTopLeft": { "type": "static", "value": 0.01 }, "radiusTopRight": { "type": "static", "value": 0.01 }, "radiusBottomLeft": { "type": "static", "value": 0.01 }, "radiusBottomRight": { "type": "static", "value": 0.01 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -442,7 +442,7 @@
             "id": "processor-18",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.85 }, "radius": { "type": "static", "value": 0.09 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.85 }, "radius": { "type": "static", "value": 0.09 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -465,7 +465,7 @@
             "id": "processor-19",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.75 }, "bottom": { "type": "static", "value": 0.95 }, "radiusTopLeft": { "type": "static", "value": 0.02 }, "radiusTopRight": { "type": "static", "value": 0.02 }, "radiusBottomLeft": { "type": "static", "value": 0.02 }, "radiusBottomRight": { "type": "static", "value": 0.02 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.62 }, "right": { "type": "static", "value": 0.78 }, "top": { "type": "static", "value": 0.75 }, "bottom": { "type": "static", "value": 0.95 }, "radiusTopLeft": { "type": "static", "value": 0.02 }, "radiusTopRight": { "type": "static", "value": 0.02 }, "radiusBottomLeft": { "type": "static", "value": 0.02 }, "radiusBottomRight": { "type": "static", "value": 0.02 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -488,7 +488,7 @@
             "id": "processor-20",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.85 }, "baseRadius": { "type": "static", "value": 0.08 }, "amplitude": { "type": "static", "value": 0.02 }, "octaves": { "type": "static", "value": 4 }, "seed": { "type": "static", "value": 456 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.9 }, "centerY": { "type": "static", "value": 0.85 }, "baseRadius": { "type": "static", "value": 0.08 }, "amplitude": { "type": "static", "value": 0.02 }, "octaves": { "type": "static", "value": 4 }, "seed": { "type": "static", "value": 456 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -511,7 +511,7 @@
             "id": "processor-21",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.15 }, "centerY": { "type": "static", "value": 0.5 }, "radius": { "type": "static", "value": 0.06 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.15 }, "centerY": { "type": "static", "value": 0.5 }, "radius": { "type": "static", "value": 0.06 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -534,7 +534,7 @@
             "id": "processor-22",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.02 }, "right": { "type": "static", "value": 0.18 }, "top": { "type": "static", "value": 0.52 }, "bottom": { "type": "static", "value": 0.58 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.02 }, "right": { "type": "static", "value": 0.18 }, "top": { "type": "static", "value": 0.52 }, "bottom": { "type": "static", "value": 0.58 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -557,7 +557,7 @@
             "id": "processor-23",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.85 }, "centerY": { "type": "static", "value": 0.5 }, "baseRadius": { "type": "static", "value": 0.06 }, "amplitude": { "type": "static", "value": 0.015 }, "octaves": { "type": "static", "value": 3 }, "seed": { "type": "static", "value": 321 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.85 }, "centerY": { "type": "static", "value": 0.5 }, "baseRadius": { "type": "static", "value": 0.06 }, "amplitude": { "type": "static", "value": 0.015 }, "octaves": { "type": "static", "value": 3 }, "seed": { "type": "static", "value": 321 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -580,7 +580,7 @@
             "id": "processor-24",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.82 }, "right": { "type": "static", "value": 0.98 }, "top": { "type": "static", "value": 0.42 }, "bottom": { "type": "static", "value": 0.58 }, "radiusTopLeft": { "type": "static", "value": 0.04 }, "radiusTopRight": { "type": "static", "value": 0.04 }, "radiusBottomLeft": { "type": "static", "value": 0.04 }, "radiusBottomRight": { "type": "static", "value": 0.04 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.82 }, "right": { "type": "static", "value": 0.98 }, "top": { "type": "static", "value": 0.42 }, "bottom": { "type": "static", "value": 0.58 }, "radiusTopLeft": { "type": "static", "value": 0.04 }, "radiusTopRight": { "type": "static", "value": 0.04 }, "radiusBottomLeft": { "type": "static", "value": 0.04 }, "radiusBottomRight": { "type": "static", "value": 0.04 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -603,7 +603,7 @@
             "id": "processor-25",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.3 }, "centerY": { "type": "static", "value": 0.5 }, "radius": { "type": "static", "value": 0.05 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.3 }, "centerY": { "type": "static", "value": 0.5 }, "radius": { "type": "static", "value": 0.05 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -626,7 +626,7 @@
             "id": "processor-26",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.7 }, "centerY": { "type": "static", "value": 0.5 }, "baseRadius": { "type": "static", "value": 0.05 }, "amplitude": { "type": "static", "value": 0.01 }, "octaves": { "type": "static", "value": 2 }, "seed": { "type": "static", "value": 654 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.7 }, "centerY": { "type": "static", "value": 0.5 }, "baseRadius": { "type": "static", "value": 0.05 }, "amplitude": { "type": "static", "value": 0.01 }, "octaves": { "type": "static", "value": 2 }, "seed": { "type": "static", "value": 654 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -649,7 +649,7 @@
             "id": "processor-27",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.4 }, "right": { "type": "static", "value": 0.46 }, "top": { "type": "static", "value": 0.3 }, "bottom": { "type": "static", "value": 0.7 }, "radiusTopLeft": { "type": "static", "value": 0.01 }, "radiusTopRight": { "type": "static", "value": 0.01 }, "radiusBottomLeft": { "type": "static", "value": 0.01 }, "radiusBottomRight": { "type": "static", "value": 0.01 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.4 }, "right": { "type": "static", "value": 0.46 }, "top": { "type": "static", "value": 0.3 }, "bottom": { "type": "static", "value": 0.7 }, "radiusTopLeft": { "type": "static", "value": 0.01 }, "radiusTopRight": { "type": "static", "value": 0.01 }, "radiusBottomLeft": { "type": "static", "value": 0.01 }, "radiusBottomRight": { "type": "static", "value": 0.01 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -672,7 +672,7 @@
             "id": "processor-28",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.54 }, "right": { "type": "static", "value": 0.6 }, "top": { "type": "static", "value": 0.3 }, "bottom": { "type": "static", "value": 0.7 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "rect", "params": { "left": { "type": "static", "value": 0.54 }, "right": { "type": "static", "value": 0.6 }, "top": { "type": "static", "value": 0.3 }, "bottom": { "type": "static", "value": 0.7 }, "radiusTopLeft": { "type": "static", "value": 0 }, "radiusTopRight": { "type": "static", "value": 0 }, "radiusBottomLeft": { "type": "static", "value": 0 }, "radiusBottomRight": { "type": "static", "value": 0 }, "rotation": { "type": "static", "value": 0 }, "perspectiveX": { "type": "static", "value": 0 }, "perspectiveY": { "type": "static", "value": 0 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -695,7 +695,7 @@
             "id": "processor-29",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.5 }, "radius": { "type": "static", "value": 0.04 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "circle", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.5 }, "radius": { "type": "static", "value": 0.04 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       },
@@ -718,7 +718,7 @@
             "id": "processor-30",
             "name": "Mask",
             "visible": true,
-            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.5 }, "baseRadius": { "type": "static", "value": 0.15 }, "amplitude": { "type": "static", "value": 0.04 }, "octaves": { "type": "static", "value": 5 }, "seed": { "type": "static", "value": 888 }, "cutout": { "type": "static", "value": false } } }, "invert": false, "feather": 0 }]
+            "modifiers": [{ "type": "mask", "enabled": true, "shape": { "id": "blob", "params": { "centerX": { "type": "static", "value": 0.5 }, "centerY": { "type": "static", "value": 0.5 }, "baseRadius": { "type": "static", "value": 0.15 }, "amplitude": { "type": "static", "value": 0.04 }, "octaves": { "type": "static", "value": 5 }, "seed": { "type": "static", "value": 888 }, "cutout": { "type": "static", "value": false } } }, "feather": 0 }]
           }
         ]
       }

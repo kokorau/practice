@@ -68,7 +68,6 @@
                   "radius": 0.5,
                   "cutout": false
                 },
-                "invert": false,
                 "feather": 0
               }
             ]

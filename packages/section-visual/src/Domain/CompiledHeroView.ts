@@ -96,7 +96,6 @@ export interface CompiledMaskProcessor {
   shape?: CompiledMaskShape
   /** Compiled layer tree used as mask source */
   children: CompiledMaskChildren
-  invert: boolean
   feather: number
 }
 

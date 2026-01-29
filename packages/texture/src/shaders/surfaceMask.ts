@@ -40,11 +40,9 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let surface = textureSample(surfaceTexture, inputSampler, uv);
 
   // Sample greymap mask
-  // Greymap convention: innerValue=0 (inside shape), outerValue=1 (outside shape)
-  // We want: inside shape = opaque, outside shape = transparent
-  // So we invert: maskAlpha = 1.0 - mask.r
+  // Greymap convention: 1 = opaque, 0 = transparent
   let mask = textureSample(maskTexture, inputSampler, uv);
-  let maskAlpha = 1.0 - mask.r;
+  let maskAlpha = mask.r;
 
   // Combine: surface color with mask alpha
   let finalAlpha = surface.a * maskAlpha;

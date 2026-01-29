@@ -508,7 +508,6 @@ describe('SurfaceUsecase', () => {
         {
           type: 'mask',
           shape: { id: 'circle', params: maskParams },
-          invert: false,
           feather: 0,
         } as MaskProcessorConfig,
       ],
@@ -594,7 +593,6 @@ describe('SurfaceUsecase', () => {
                 radius: rangeExpr, // RangeExpr to preserve
               },
             },
-            invert: false,
             feather: 0,
           } as MaskProcessorConfig,
         ],
@@ -618,7 +616,6 @@ describe('SurfaceUsecase', () => {
                 radius: rangeExpr, // Preserved!
               },
             },
-            invert: false,
             feather: 0,
           },
         ],
@@ -654,7 +651,6 @@ describe('SurfaceUsecase', () => {
                 radius: $PropertyValue.static(0.4),
               },
             },
-            invert: false,
             feather: 0,
           },
         ],

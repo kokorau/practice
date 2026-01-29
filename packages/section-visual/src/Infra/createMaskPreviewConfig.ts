@@ -160,7 +160,6 @@ export function createMaskPreviewConfig(
     type: 'mask',
     enabled: true,
     children: staticizedChildren,
-    invert: false,
     feather: 0,
   }
 

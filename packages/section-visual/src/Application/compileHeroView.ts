@@ -283,7 +283,6 @@ function compileMaskProcessor(
     enabled: mask.enabled,
     shape: compiledShape,
     children: compiledChildren,
-    invert: mask.invert,
     feather: mask.feather,
   }
 }

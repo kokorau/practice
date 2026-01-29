@@ -40,7 +40,6 @@ export const MaskBaseSchema = defineSchema({
   enabled: boolean({ label: 'Enabled', default: true }),
   shape: select({ label: 'Shape', options: MaskShapeOptions, default: 'circle' }),
   feather: number({ label: 'Feather', min: 0, max: 100, step: 1, default: 0, unit: 'px' }),
-  invert: boolean({ label: 'Invert', default: false }),
 })
 
 export type MaskBase = Infer<typeof MaskBaseSchema>
@@ -179,7 +178,6 @@ export const MaskShapeSchemas = {
 interface MaskConfigBase {
   enabled: boolean
   feather: number
-  invert: boolean
 }
 
 export interface CircleMaskConfig extends MaskConfigBase {
@@ -284,7 +282,6 @@ export const createDefaultMaskConfig = (): CircleMaskConfig => ({
   enabled: true,
   shape: 'circle',
   feather: 0,
-  invert: false,
   centerX: 0.5,
   centerY: 0.5,
   radius: 0.3,
@@ -293,7 +290,7 @@ export const createDefaultMaskConfig = (): CircleMaskConfig => ({
 
 /**
  * Create mask config with proper defaults for a given shape
- * Preserves common properties (enabled, feather, invert) from existing config
+ * Preserves common properties (enabled, feather) from existing config
  */
 export function createMaskConfigForShape(
   shape: MaskShape,
@@ -302,7 +299,6 @@ export function createMaskConfigForShape(
   const base: MaskConfigBase = {
     enabled: existing?.enabled ?? true,
     feather: existing?.feather ?? 0,
-    invert: existing?.invert ?? false,
   }
 
   switch (shape) {
@@ -457,7 +453,6 @@ export interface LegacyClipMaskConfig {
     type: LegacyClipMaskShape
     [key: string]: unknown
   }
-  invert: boolean
   feather: number
   surface?: unknown
 }
@@ -493,14 +488,14 @@ export function migrateClipMaskConfig(
   legacy: LegacyClipMaskConfig,
   enabled: boolean = true
 ): MaskConfig | null {
-  const { shape, shapeParams, invert, feather } = legacy
+  const { shape, shapeParams, feather } = legacy
 
   // Image masks are not supported in new format
   if (shape === 'image') {
     return null
   }
 
-  const base = { enabled, invert, feather }
+  const base = { enabled, feather }
 
   switch (shape) {
     case 'circle': {
@@ -626,7 +621,7 @@ export function migrateMaskModifier(modifier: LegacyMaskModifier): MaskConfig | 
  * @returns Legacy ClipMaskConfig format
  */
 export function toLegacyClipMaskConfig(config: MaskConfig): LegacyClipMaskConfig {
-  const { shape, invert, feather, ...shapeParams } = config
+  const { shape, feather, ...shapeParams } = config
 
   // Remove base properties from shape params
   const cleanShapeParams = { ...shapeParams }
@@ -638,7 +633,6 @@ export function toLegacyClipMaskConfig(config: MaskConfig): LegacyClipMaskConfig
       type: shape as LegacyClipMaskShape,
       ...cleanShapeParams,
     },
-    invert,
     feather,
   }
 }
