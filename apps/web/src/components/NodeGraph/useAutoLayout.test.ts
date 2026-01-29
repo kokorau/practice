@@ -599,6 +599,150 @@ describe('internal pipeline connections', () => {
   })
 })
 
+describe('collision detection', () => {
+  it('should avoid placing graymap on top of source node (Preset2 Rotating Sunburst scenario)', () => {
+    // This is the exact structure from Preset2 (Rotating Sunburst) that caused collision
+    // - center-solid (Surface) at column=0, rowSpan=2 (occupies rows 0-1)
+    // - mask at column=1, row=0
+    // - graymap would normally go to column=0, row=1 but collides with source
+    const config: HeroViewConfig = {
+      viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
+      colors: { semanticContext: 'canvas' },
+      layers: [
+        {
+          type: 'group',
+          id: 'accent-group',
+          name: 'Accent',
+          visible: true,
+          children: [
+            {
+              type: 'surface',
+              id: 'center-solid',
+              name: 'Center',
+              visible: true,
+              surface: {
+                id: 'solid',
+                params: { color1: $PropertyValue.static('A') },
+              },
+            },
+            {
+              type: 'processor',
+              id: 'processor-center-mask',
+              name: 'Center Mask',
+              visible: true,
+              modifiers: [
+                {
+                  type: 'mask',
+                  enabled: true,
+                  children: [
+                    {
+                      type: 'surface',
+                      id: 'mask-circle',
+                      name: 'Circle',
+                      visible: true,
+                      surface: {
+                        id: 'circle',
+                        params: {
+                          centerX: $PropertyValue.static(0.5),
+                          centerY: $PropertyValue.static(0.5),
+                          radius: $PropertyValue.static(0.15),
+                        },
+                      },
+                    },
+                  ],
+                  invert: false,
+                  feather: 0.05,
+                } satisfies MaskProcessorConfig,
+              ],
+            },
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+
+    const result = generateAutoLayout(config)
+
+    // Find the source and graymap nodes
+    const sourceNode = result.sourceNodes.find((n) => n.id === 'center-solid')
+    const graymapNode = result.graymapNodes.find((n) => n.id === 'processor-center-mask-graymap-0')
+
+    expect(sourceNode).toBeDefined()
+    expect(graymapNode).toBeDefined()
+
+    // Source is at column 0, rowSpan 2 (occupies rows 0-1)
+    expect(sourceNode?.column).toBe(0)
+    expect(sourceNode?.rowSpan).toBe(2)
+    expect(sourceNode?.row).toBe(0)
+
+    // Graymap is at row 1 (second row of the group)
+    expect(graymapNode?.row).toBe(1)
+
+    // CRITICAL: Graymap should NOT be at column 0 (same as source)
+    // Because source occupies both rows 0 and 1 at column 0
+    expect(graymapNode?.column).not.toBe(0)
+
+    // Instead, graymap should be placed at an available column (column 1 in this case)
+    expect(graymapNode?.column).toBeGreaterThan(0)
+  })
+
+  it('should place graymap one column left of mask for first-mask processors', () => {
+    // Test case: top-level processor with first modifier being a mask
+    // Graymap should be placed one column left of mask (mask's left-bottom position)
+    const config: HeroViewConfig = {
+      viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
+      colors: { semanticContext: 'canvas' },
+      layers: [
+        {
+          type: 'processor',
+          id: 'processor-1',
+          name: 'Test',
+          visible: true,
+          modifiers: [
+            {
+              type: 'mask',
+              enabled: true,
+              children: [
+                {
+                  type: 'surface',
+                  id: 'mask-surface',
+                  name: 'Circle',
+                  visible: true,
+                  surface: {
+                    id: 'circle',
+                    params: {
+                      centerX: $PropertyValue.static(0.5),
+                      centerY: $PropertyValue.static(0.5),
+                      radius: $PropertyValue.static(0.15),
+                    },
+                  },
+                },
+              ],
+              invert: false,
+              feather: 0,
+            } satisfies MaskProcessorConfig,
+          ],
+        },
+      ],
+      foreground: { elements: [] },
+    }
+
+    const result = generateAutoLayout(config)
+
+    const maskNode = result.filterNodes.find((n) => n.type === 'mask')
+    const graymapNode = result.graymapNodes[0]
+
+    expect(maskNode).toBeDefined()
+    expect(graymapNode).toBeDefined()
+
+    // First-mask reserves space, so mask is at column 1 and graymap at column 0
+    // Graymap is one column left of mask (mask's left-bottom position)
+    expect(maskNode?.column).toBe(1)
+    expect(graymapNode?.column).toBe(0)
+    expect(graymapNode?.column).toBe(maskNode!.column - 1)
+  })
+})
+
 describe('useAutoLayout', () => {
   it('should return computed layout that updates with config', () => {
     const config = ref<HeroViewConfig>({
