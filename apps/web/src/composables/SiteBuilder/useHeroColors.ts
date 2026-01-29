@@ -267,14 +267,14 @@ const paletteToRgba = (oklch: Oklch, alpha: number = 1.0): RGBA => {
 
 /**
  * Resolve ColorValue to Oklch
- * Handles 'auto', PrimitiveKey, and CustomColor
+ * Handles 'auto', 'transparent', PrimitiveKey, and CustomColor
  */
 const resolveColorValue = (
   value: ColorValue,
   palette: PrimitivePalette,
   fallbackKey: PrimitiveKey
 ): Oklch => {
-  if (value === 'auto') {
+  if (value === 'auto' || value === 'transparent') {
     return palette[fallbackKey]
   }
   if (isCustomColor(value)) {
@@ -446,7 +446,7 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
 
   const resolvedMaskPrimaryColorOklch = computed((): Oklch => {
     const value = maskColorKey1.value
-    if (value === 'auto') {
+    if (value === 'auto' || value === 'transparent') {
       // Use larger delta (0.12) to create visible contrast for patterns
       const surface = primitivePalette.value[maskSurfaceKey.value]
       const deltaL = isDark.value ? 0.12 : -0.12
