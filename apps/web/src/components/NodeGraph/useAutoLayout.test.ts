@@ -686,8 +686,9 @@ describe('collision detection', () => {
     expect(graymapNode?.column).toBeGreaterThan(0)
   })
 
-  it('should allow graymap at same column when source does not span to graymap row', () => {
-    // Test case where source has rowSpan=1, so graymap row is available
+  it('should place graymap one column left of mask for first-mask processors', () => {
+    // Test case: top-level processor with first modifier being a mask
+    // Graymap should be placed one column left of mask (mask's left-bottom position)
     const config: HeroViewConfig = {
       viewport: { width: HERO_CANVAS_WIDTH, height: HERO_CANVAS_HEIGHT },
       colors: { semanticContext: 'canvas' },
@@ -734,9 +735,11 @@ describe('collision detection', () => {
     expect(maskNode).toBeDefined()
     expect(graymapNode).toBeDefined()
 
-    // For top-level processor without source, graymap can be at same column as mask
-    // since there's no source node occupying that space
-    expect(graymapNode?.column).toBe(maskNode?.column)
+    // First-mask reserves space, so mask is at column 1 and graymap at column 0
+    // Graymap is one column left of mask (mask's left-bottom position)
+    expect(maskNode?.column).toBe(1)
+    expect(graymapNode?.column).toBe(0)
+    expect(graymapNode?.column).toBe(maskNode!.column - 1)
   })
 })
 

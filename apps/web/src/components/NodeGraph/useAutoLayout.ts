@@ -435,6 +435,13 @@ function buildProcessorPipeline(
       const maskChildren = 'children' in modifier ? modifier.children : undefined
       const hasGraymap = maskChildren && maskChildren.length > 0
 
+      // If this is the first modifier (no effect before) and has graymap,
+      // reserve space for graymap by advancing relativeColumn
+      // This ensures graymap can be placed at mask's left-bottom position
+      if (prevModifierNodeId === null && hasGraymap) {
+        relativeColumn++
+      }
+
       const maskNode: GraphNode = {
         id: `${processor.id}-mask-${mIndex}`,
         type: 'mask',
@@ -489,10 +496,11 @@ function buildProcessorPipeline(
         }
 
         // Find available column for graymap using collision detection
-        // For top-level processors, prefer same column as mask
+        // Place graymap one column left of the mask (left-bottom position)
+        const preferredColumn = Math.max(0, relativeColumn - 1)
         const graymapRelativeColumn = $NodeGrid.findAvailableColumn(
           localGrid,
-          relativeColumn,
+          preferredColumn,
           1, // Graymap row (relative)
           1 // rowSpan
         )
@@ -656,6 +664,13 @@ function buildGroupPipeline(
           // Check if mask has graymap children
           const maskChildren = 'children' in modifier ? modifier.children : undefined
           const hasGraymap = maskChildren && maskChildren.length > 0
+
+          // If this is the first modifier (no effect before) and has graymap,
+          // reserve space for graymap by advancing relativeColumn
+          // This ensures graymap can be placed at mask's left-bottom position
+          if (prevModifierNodeId === null && hasGraymap && sourceNodeIds.length > 0) {
+            relativeColumn++
+          }
 
           const maskNode: GraphNode = {
             id: `${child.id}-mask-${mIndex}`,
