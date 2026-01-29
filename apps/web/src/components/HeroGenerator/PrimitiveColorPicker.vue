@@ -85,6 +85,9 @@ const selectedColorStyle = computed(() => {
   if (props.modelValue === 'auto') {
     return {} // Auto uses gradient background from CSS
   }
+  if (props.modelValue === 'transparent') {
+    return {} // Transparent uses checkerboard background from CSS
+  }
   if (isCustomColor(props.modelValue)) {
     return { backgroundColor: customColorHex.value }
   }
@@ -93,6 +96,7 @@ const selectedColorStyle = computed(() => {
 
 const selectedLabel = computed(() => {
   if (props.modelValue === 'auto') return 'Auto'
+  if (props.modelValue === 'transparent') return 'Transparent'
   if (isCustomColor(props.modelValue)) return 'Custom'
   return props.modelValue
 })
@@ -135,7 +139,7 @@ const updatePopupPosition = () => {
   }
 }
 
-const selectColor = (key: PrimitiveKey | 'auto') => {
+const selectColor = (key: PrimitiveKey | 'auto' | 'transparent') => {
   emit('update:modelValue', key)
   isOpen.value = false
   isCustomMode.value = false
@@ -192,7 +196,7 @@ const cancelCustomMode = () => {
     >
       <span
         class="trigger-swatch"
-        :class="{ 'auto-swatch': modelValue === 'auto' }"
+        :class="{ 'auto-swatch': modelValue === 'auto', 'transparent-swatch': modelValue === 'transparent' }"
         :style="selectedColorStyle"
       />
       <span class="trigger-value">{{ selectedLabel }}</span>
@@ -226,7 +230,7 @@ const cancelCustomMode = () => {
 
         <!-- Normal mode: Palette selection -->
         <template v-else>
-          <!-- Auto and Custom options -->
+          <!-- Auto, Transparent and Custom options -->
           <div v-if="showAuto || showCustom" class="color-group special-options">
             <button
               v-if="showAuto"
@@ -237,6 +241,12 @@ const cancelCustomMode = () => {
             >
               <span class="auto-icon">A</span>
             </button>
+            <button
+              class="color-chip transparent-chip"
+              :class="{ active: modelValue === 'transparent' }"
+              @click="selectColor('transparent')"
+              title="Transparent"
+            />
             <button
               v-if="showCustom"
               class="color-chip custom-chip"
@@ -319,6 +329,17 @@ const cancelCustomMode = () => {
   );
 }
 
+.trigger-swatch.transparent-swatch {
+  background:
+    linear-gradient(45deg, oklch(0.85 0.01 260) 25%, transparent 25%),
+    linear-gradient(-45deg, oklch(0.85 0.01 260) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, oklch(0.85 0.01 260) 75%),
+    linear-gradient(-45deg, transparent 75%, oklch(0.85 0.01 260) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  background-color: white;
+}
+
 .dark .trigger-swatch {
   border-color: oklch(0.35 0.02 260);
 }
@@ -329,6 +350,17 @@ const cancelCustomMode = () => {
     oklch(0.50 0.01 260) 50%,
     oklch(0.70 0.01 260) 100%
   );
+}
+
+.dark .trigger-swatch.transparent-swatch {
+  background:
+    linear-gradient(45deg, oklch(0.35 0.02 260) 25%, transparent 25%),
+    linear-gradient(-45deg, oklch(0.35 0.02 260) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, oklch(0.35 0.02 260) 75%),
+    linear-gradient(-45deg, transparent 75%, oklch(0.35 0.02 260) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  background-color: oklch(0.18 0.02 260);
 }
 
 .trigger-value {
@@ -462,6 +494,28 @@ const cancelCustomMode = () => {
     oklch(0.50 0.01 260) 50%,
     oklch(0.70 0.01 260) 100%
   );
+}
+
+.transparent-chip {
+  background:
+    linear-gradient(45deg, oklch(0.85 0.01 260) 25%, transparent 25%),
+    linear-gradient(-45deg, oklch(0.85 0.01 260) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, oklch(0.85 0.01 260) 75%),
+    linear-gradient(-45deg, transparent 75%, oklch(0.85 0.01 260) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  background-color: white;
+}
+
+.dark .transparent-chip {
+  background:
+    linear-gradient(45deg, oklch(0.35 0.02 260) 25%, transparent 25%),
+    linear-gradient(-45deg, oklch(0.35 0.02 260) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, oklch(0.35 0.02 260) 75%),
+    linear-gradient(-45deg, transparent 75%, oklch(0.35 0.02 260) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  background-color: oklch(0.18 0.02 260);
 }
 
 .auto-icon {

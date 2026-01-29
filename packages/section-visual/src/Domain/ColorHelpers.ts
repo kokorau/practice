@@ -248,6 +248,11 @@ export function resolveSurfaceColorKey(
   isDark: boolean,
   isPrimary: boolean = false
 ): RGBA {
+  // Handle transparent color
+  if (colorKey === 'transparent') {
+    return [0, 0, 0, 0]
+  }
+
   // Handle custom color
   if (isCustomColor(colorKey)) {
     const oklch = hsvToOklch(colorKey.hue, colorKey.saturation, colorKey.value)

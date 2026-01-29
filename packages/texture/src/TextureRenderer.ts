@@ -378,7 +378,10 @@ export class TextureRenderer {
   }
 
   private getOrCreateColorRampPipeline(spec: TextureRenderSpec): ColorRampPipelineCache {
-    const existing = this.colorRampCache.get(spec.shader)
+    // Use shader code + blend state as cache key
+    const blendKey = spec.blend ? ':blend' : ''
+    const cacheKey = `${spec.shader}${blendKey}`
+    const existing = this.colorRampCache.get(cacheKey)
     if (existing) {
       return existing
     }
@@ -430,7 +433,7 @@ export class TextureRenderer {
       sampler,
       colorRampTexture,
     }
-    this.colorRampCache.set(spec.shader, cached)
+    this.colorRampCache.set(cacheKey, cached)
     return cached
   }
 
@@ -788,8 +791,11 @@ export class TextureRenderer {
   }
 
   private getOrCreatePipeline(spec: TextureRenderSpec): PipelineCache {
-    // Use shader code as cache key
-    const existing = this.cache.get(spec.shader)
+    // Use shader code + blend state as cache key
+    // Blend state affects pipeline configuration, so different blend states need different pipelines
+    const blendKey = spec.blend ? ':blend' : ''
+    const cacheKey = `${spec.shader}${blendKey}`
+    const existing = this.cache.get(cacheKey)
     if (existing) {
       return existing
     }
@@ -835,7 +841,7 @@ export class TextureRenderer {
     })
 
     const cached: PipelineCache = { pipeline, buffer, bindGroup }
-    this.cache.set(spec.shader, cached)
+    this.cache.set(cacheKey, cached)
     return cached
   }
 

@@ -277,4 +277,26 @@ describe('resolveSurfaceColorKey', () => {
     expect(rgba[1]).toBeCloseTo(0.95, 1)
     expect(rgba[2]).toBeCloseTo(0.95, 1)
   })
+
+  it('should resolve transparent to fully transparent black [0,0,0,0]', () => {
+    const palette = createTestPalette()
+    const rgba = resolveSurfaceColorKey(palette, 'transparent', 'F1', false, false)
+    expect(rgba).toEqual([0, 0, 0, 0])
+  })
+
+  it('should resolve transparent regardless of isPrimary flag', () => {
+    const palette = createTestPalette()
+    const rgbaPrimary = resolveSurfaceColorKey(palette, 'transparent', 'F1', false, true)
+    const rgbaSecondary = resolveSurfaceColorKey(palette, 'transparent', 'F1', false, false)
+    expect(rgbaPrimary).toEqual([0, 0, 0, 0])
+    expect(rgbaSecondary).toEqual([0, 0, 0, 0])
+  })
+
+  it('should resolve transparent regardless of dark mode', () => {
+    const palette = createTestPalette()
+    const rgbaLight = resolveSurfaceColorKey(palette, 'transparent', 'F1', false, false)
+    const rgbaDark = resolveSurfaceColorKey(palette, 'transparent', 'F8', true, false)
+    expect(rgbaLight).toEqual([0, 0, 0, 0])
+    expect(rgbaDark).toEqual([0, 0, 0, 0])
+  })
 })

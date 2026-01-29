@@ -35,9 +35,9 @@ export interface CustomColor {
 }
 
 /**
- * Color value that can be a primitive key, 'auto', or a custom HSV color
+ * Color value that can be a primitive key, 'auto', 'transparent', or a custom HSV color
  */
-export type ColorValue = HeroPrimitiveKey | 'auto' | CustomColor
+export type ColorValue = HeroPrimitiveKey | 'auto' | 'transparent' | CustomColor
 
 /**
  * Type guard for CustomColor
