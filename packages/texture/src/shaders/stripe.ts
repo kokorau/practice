@@ -1,4 +1,4 @@
-import { fullscreenVertex, aaUtils, moduloUtils } from './common'
+import { fullscreenVertex, aaUtils, moduloUtils, maskBlendState } from './common'
 import type { TextureRenderSpec } from '../Domain'
 
 /**
@@ -53,7 +53,9 @@ fn fragmentMain(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   // edge1: color1 -> color2, edge2: color2 -> color1 (wrap)
   let blend = edge1 - edge2;
-  return mix(params.color1, params.color2, blend);
+  let result = mix(params.color1, params.color2, blend);
+  // Output as premultiplied alpha for correct blending
+  return vec4f(result.rgb * result.a, result.a);
 }
 `
 
@@ -69,9 +71,12 @@ export function createStripeSpec(params: StripeTextureParams): TextureRenderSpec
     params.angle,
     0, // padding
   ])
+  // Enable alpha blending if either color has transparency
+  const hasTransparency = params.color1[3] < 1 || params.color2[3] < 1
   return {
     shader: stripeShader,
     uniforms: data.buffer,
     bufferSize: 48,
+    blend: hasTransparency ? maskBlendState : undefined,
   }
 }

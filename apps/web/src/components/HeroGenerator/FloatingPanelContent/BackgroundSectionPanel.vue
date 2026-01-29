@@ -58,6 +58,9 @@ const colorValueToRgba = (color: ColorValue): RGBA => {
       // Auto color - use brand color as default
       return resolveKeyToRgba(props.palette, 'B')
     }
+    if (color === 'transparent') {
+      return [0, 0, 0, 0]
+    }
     return resolveKeyToRgba(props.palette, color)
   }
   if (isCustomColor(color)) {

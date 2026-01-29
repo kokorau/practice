@@ -1,0 +1,80 @@
+{
+  "id": "test-transparent-stripe",
+  "name": "Test: Transparent Stripe",
+  "config": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "colors": {
+      "semanticContext": "canvas"
+    },
+    "layers": [
+      {
+        "type": "group",
+        "id": "background-group",
+        "name": "Background",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "solid-background",
+            "name": "Solid Background",
+            "visible": true,
+            "surface": {
+              "type": "solid"
+            },
+            "colors": {
+              "primary": "A",
+              "secondary": "A"
+            }
+          }
+        ]
+      },
+      {
+        "type": "group",
+        "id": "stripe-group",
+        "name": "Stripe Layer",
+        "visible": true,
+        "children": [
+          {
+            "type": "surface",
+            "id": "transparent-stripe",
+            "name": "Transparent Stripe",
+            "visible": true,
+            "surface": {
+              "type": "stripe",
+              "width1": 40,
+              "width2": 40,
+              "angle": 45
+            },
+            "colors": {
+              "primary": "B",
+              "secondary": "transparent"
+            }
+          }
+        ]
+      }
+    ],
+    "foreground": {
+      "elements": []
+    }
+  },
+  "colorPreset": {
+    "brand": {
+      "hue": 220,
+      "saturation": 70,
+      "value": 60
+    },
+    "accent": {
+      "hue": 0,
+      "saturation": 80,
+      "value": 60
+    },
+    "foundation": {
+      "hue": 0,
+      "saturation": 0,
+      "value": 97
+    }
+  }
+}

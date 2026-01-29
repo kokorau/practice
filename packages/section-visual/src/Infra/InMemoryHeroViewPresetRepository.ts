@@ -40,13 +40,17 @@ import testEffectHexagonMosaic from './presets/test-effect-hexagon-mosaic.json'
 import testEffectVoronoiMosaic from './presets/test-effect-voronoi-mosaic.json'
 // Surface + Text + Mask combined test
 import testSurfaceTextMask from './presets/test-surface-text-mask.json'
+// Transparent color test
+import testTransparentStripe from './presets/test-transparent-stripe.json'
 
 // ============================================================
 // Preset Data
 // ============================================================
 
 const DEFAULT_PRESETS: HeroViewPreset[] = [
-  // Surface + Text + Mask combined test (first for debugging)
+  // Transparent color test (first for debugging)
+  testTransparentStripe as unknown as HeroViewPreset,
+  // Surface + Text + Mask combined test
   testSurfaceTextMask as unknown as HeroViewPreset,
   // Effect test presets (first for easy access during debugging)
   testEffectDotHalftoneAberration as unknown as HeroViewPreset,

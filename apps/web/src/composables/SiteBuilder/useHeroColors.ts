@@ -267,14 +267,14 @@ const paletteToRgba = (oklch: Oklch, alpha: number = 1.0): RGBA => {
 
 /**
  * Resolve ColorValue to Oklch
- * Handles 'auto', PrimitiveKey, and CustomColor
+ * Handles 'auto', 'transparent', PrimitiveKey, and CustomColor
  */
 const resolveColorValue = (
   value: ColorValue,
   palette: PrimitivePalette,
   fallbackKey: PrimitiveKey
 ): Oklch => {
-  if (value === 'auto') {
+  if (value === 'auto' || value === 'transparent') {
     return palette[fallbackKey]
   }
   if (isCustomColor(value)) {
@@ -332,10 +332,16 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   const canvasSurfaceKey = computed((): PrimitiveKey => CONTEXT_SURFACE_KEYS[themeMode.value].canvas)
 
   const textureColor1 = computed((): RGBA => {
+    if (backgroundColorKey1.value === 'transparent') {
+      return [0, 0, 0, 0]
+    }
     const color = resolveColorValue(backgroundColorKey1.value, primitivePalette.value, 'B')
     return paletteToRgba(color)
   })
   const textureColor2 = computed((): RGBA => {
+    if (backgroundColorKey2.value === 'transparent') {
+      return [0, 0, 0, 0]
+    }
     const color = resolveColorValue(backgroundColorKey2.value, primitivePalette.value, canvasSurfaceKey.value)
     return paletteToRgba(color)
   })
@@ -388,6 +394,9 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
 
   const midgroundTextureColor1 = computed((): RGBA => {
     const value = maskColorKey1.value
+    if (value === 'transparent') {
+      return [0, 0, 0, 0]
+    }
     if (value === 'auto') {
       // Use larger delta (0.12) to create visible contrast for patterns
       const surface = primitivePalette.value[maskSurfaceKey.value]
@@ -402,6 +411,9 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
   })
 
   const midgroundTextureColor2 = computed((): RGBA => {
+    if (maskColorKey2.value === 'transparent') {
+      return [0, 0, 0, 0]
+    }
     const color = resolveColorValue(maskColorKey2.value, primitivePalette.value, maskSurfaceKey.value)
     return paletteToRgba(color)
   })
@@ -434,7 +446,7 @@ export function useHeroColors(options: UseHeroColorsOptions): UseHeroColorsRetur
 
   const resolvedMaskPrimaryColorOklch = computed((): Oklch => {
     const value = maskColorKey1.value
-    if (value === 'auto') {
+    if (value === 'auto' || value === 'transparent') {
       // Use larger delta (0.12) to create visible contrast for patterns
       const surface = primitivePalette.value[maskSurfaceKey.value]
       const deltaL = isDark.value ? 0.12 : -0.12
