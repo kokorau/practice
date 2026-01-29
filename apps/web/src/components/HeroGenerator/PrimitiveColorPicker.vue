@@ -15,12 +15,15 @@ import { isCustomColor } from '@practice/section-visual'
 import BrandColorPicker from '../SiteBuilder/BrandColorPicker.vue'
 import { hsvToRgb, rgbToHex } from '../SiteBuilder/utils/colorConversion'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: ColorValue
   palette: PrimitivePalette
   label?: string
   showAuto?: boolean
-}>()
+  showCustom?: boolean
+}>(), {
+  showCustom: true,
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: ColorValue]
@@ -224,8 +227,9 @@ const cancelCustomMode = () => {
         <!-- Normal mode: Palette selection -->
         <template v-else>
           <!-- Auto and Custom options -->
-          <div v-if="showAuto" class="color-group special-options">
+          <div v-if="showAuto || showCustom" class="color-group special-options">
             <button
+              v-if="showAuto"
               class="color-chip auto-chip"
               :class="{ active: modelValue === 'auto' }"
               @click="selectColor('auto')"
@@ -234,6 +238,7 @@ const cancelCustomMode = () => {
               <span class="auto-icon">A</span>
             </button>
             <button
+              v-if="showCustom"
               class="color-chip custom-chip"
               :class="{ active: isCustomColor(modelValue) }"
               @click="toggleCustomMode($event)"
