@@ -94,28 +94,131 @@ const getColorCss = (color: ColorValue): string => {
   return '#888'
 }
 
-// Add a new stop
-const addStop = () => {
-  // Find a good position for the new stop (middle of largest gap)
-  const sorted = sortedStops.value
-  let bestPos = 0.5
-  if (sorted.length >= 2) {
-    let maxGap = 0
-    let gapStart = 0
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const gap = sorted[i + 1]!.position - sorted[i]!.position
-      if (gap > maxGap) {
-        maxGap = gap
-        gapStart = sorted[i]!.position
-      }
+// Convert ColorValue to RGB for interpolation
+const colorToRgb = (color: ColorValue): { r: number; g: number; b: number } => {
+  if (typeof color === 'string') {
+    if (color === 'auto') {
+      const paletteColor = props.palette['B']
+      return oklchToRgb(paletteColor.L, paletteColor.C, paletteColor.H)
     }
-    bestPos = gapStart + maxGap / 2
+    const paletteColor = props.palette[color as Exclude<keyof PrimitivePalette, 'theme'>]
+    if (paletteColor) {
+      return oklchToRgb(paletteColor.L, paletteColor.C, paletteColor.H)
+    }
+    return { r: 136, g: 136, b: 136 }
   }
+  if (color && typeof color === 'object' && 'type' in color && color.type === 'custom') {
+    return hsvToRgb(color.hue, color.saturation, color.value)
+  }
+  return { r: 136, g: 136, b: 136 }
+}
+
+// Oklch to RGB conversion (approximate)
+const oklchToRgb = (L: number, C: number, H: number): { r: number; g: number; b: number } => {
+  // Simplified conversion via HSV approximation
+  const h = H
+  const s = Math.min(100, C * 100)
+  const v = L * 100
+  return hsvToRgb(h, s, v)
+}
+
+// HSV to RGB conversion
+const hsvToRgb = (h: number, s: number, v: number): { r: number; g: number; b: number } => {
+  const hNorm = h / 360
+  const sNorm = s / 100
+  const vNorm = v / 100
+  const c = vNorm * sNorm
+  const x = c * (1 - Math.abs((hNorm * 6) % 2 - 1))
+  const m = vNorm - c
+  let r = 0, g = 0, b = 0
+  const hh = hNorm * 6
+  if (hh < 1) { r = c; g = x; b = 0 }
+  else if (hh < 2) { r = x; g = c; b = 0 }
+  else if (hh < 3) { r = 0; g = c; b = x }
+  else if (hh < 4) { r = 0; g = x; b = c }
+  else if (hh < 5) { r = x; g = 0; b = c }
+  else { r = c; g = 0; b = x }
+  return {
+    r: Math.round((r + m) * 255),
+    g: Math.round((g + m) * 255),
+    b: Math.round((b + m) * 255),
+  }
+}
+
+// RGB to HSV conversion
+const rgbToHsv = (r: number, g: number, b: number): { h: number; s: number; v: number } => {
+  const rNorm = r / 255
+  const gNorm = g / 255
+  const bNorm = b / 255
+  const max = Math.max(rNorm, gNorm, bNorm)
+  const min = Math.min(rNorm, gNorm, bNorm)
+  const d = max - min
+  let h = 0
+  if (d !== 0) {
+    if (max === rNorm) h = ((gNorm - bNorm) / d) % 6
+    else if (max === gNorm) h = (bNorm - rNorm) / d + 2
+    else h = (rNorm - gNorm) / d + 4
+    h *= 60
+    if (h < 0) h += 360
+  }
+  const s = max === 0 ? 0 : d / max
+  return { h, s: s * 100, v: max * 100 }
+}
+
+// Get interpolated color at position
+const getColorAtPosition = (position: number): ColorValue => {
+  const sorted = sortedStops.value
+  if (sorted.length === 0) return 'B'
+  if (sorted.length === 1) return sorted[0]!.color
+
+  // Find surrounding stops
+  let leftStop = sorted[0]!
+  let rightStop = sorted[sorted.length - 1]!
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    if (sorted[i]!.position <= position && sorted[i + 1]!.position >= position) {
+      leftStop = sorted[i]!
+      rightStop = sorted[i + 1]!
+      break
+    }
+  }
+
+  // Handle edge cases
+  if (position <= leftStop.position) return leftStop.color
+  if (position >= rightStop.position) return rightStop.color
+
+  // Interpolate
+  const t = (position - leftStop.position) / (rightStop.position - leftStop.position)
+  const leftRgb = colorToRgb(leftStop.color)
+  const rightRgb = colorToRgb(rightStop.color)
+
+  const r = Math.round(leftRgb.r + (rightRgb.r - leftRgb.r) * t)
+  const g = Math.round(leftRgb.g + (rightRgb.g - leftRgb.g) * t)
+  const b = Math.round(leftRgb.b + (rightRgb.b - leftRgb.b) * t)
+
+  const hsv = rgbToHsv(r, g, b)
+  return {
+    type: 'custom',
+    hue: Math.round(hsv.h),
+    saturation: Math.round(hsv.s),
+    value: Math.round(hsv.v),
+  }
+}
+
+// Add stop at clicked position on gradient bar
+const addStopAtPosition = (event: MouseEvent) => {
+  if (!barRef.value) return
+  // Ignore if clicking on a handle
+  if ((event.target as HTMLElement).closest('.stop-handle')) return
+
+  const rect = barRef.value.getBoundingClientRect()
+  const x = event.clientX - rect.left
+  const position = Math.max(0, Math.min(1, x / rect.width))
 
   const newStop: GradientStop = {
     id: generateId(),
-    color: 'B', // Default to brand color
-    position: bestPos,
+    color: getColorAtPosition(position),
+    position,
   }
 
   emit('update:modelValue', [...props.modelValue, newStop])
@@ -187,12 +290,11 @@ watch(() => props.modelValue, (stops) => {
   <div class="gradient-stop-editor">
     <div class="editor-header">
       <span class="editor-label">Color Stops</span>
-      <button class="add-btn" @click="addStop" title="Add color stop">+</button>
     </div>
 
-    <!-- Gradient preview bar with handles -->
+    <!-- Gradient preview bar with handles (click to add stop) -->
     <div class="gradient-bar-container">
-      <div ref="barRef" class="gradient-bar" :style="gradientStyle">
+      <div ref="barRef" class="gradient-bar" :style="gradientStyle" @click="addStopAtPosition">
         <div
           v-for="stop in sortedStops"
           :key="stop.id"
@@ -210,17 +312,13 @@ watch(() => props.modelValue, (stops) => {
     <!-- Selected stop editor -->
     <div v-if="selectedStop" class="stop-editor">
       <div class="stop-controls">
-        <div class="position-control">
-          <label>Position</label>
-          <input
-            type="range"
-            :value="selectedStop.position"
-            min="0"
-            max="1"
-            step="0.01"
-            @input="updatePosition(selectedStop.id, parseFloat(($event.target as HTMLInputElement).value))"
+        <div class="color-control">
+          <label>Color</label>
+          <PrimitiveColorPicker
+            :model-value="selectedStop.color"
+            :palette="palette"
+            @update:model-value="updateColor(selectedStop.id, $event)"
           />
-          <span class="position-value">{{ Math.round(selectedStop.position * 100) }}%</span>
         </div>
         <button
           class="remove-btn"
@@ -230,14 +328,6 @@ watch(() => props.modelValue, (stops) => {
         >
           Remove
         </button>
-      </div>
-      <div class="color-control">
-        <label>Color</label>
-        <PrimitiveColorPicker
-          :model-value="selectedStop.color"
-          :palette="palette"
-          @update:model-value="updateColor(selectedStop.id, $event)"
-        />
       </div>
     </div>
   </div>
@@ -265,25 +355,6 @@ watch(() => props.modelValue, (stops) => {
   color: oklch(0.70 0.02 260);
 }
 
-.add-btn {
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.25rem;
-  background: oklch(0.55 0.15 250);
-  color: white;
-  border: none;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.add-btn:hover {
-  background: oklch(0.50 0.18 250);
-}
-
 .gradient-bar-container {
   position: relative;
   padding: 0.75rem 0;
@@ -294,6 +365,7 @@ watch(() => props.modelValue, (stops) => {
   height: 1.5rem;
   border-radius: 0.25rem;
   border: 1px solid oklch(0.80 0.02 260);
+  cursor: crosshair;
 }
 
 :global(.dark) .gradient-bar {
@@ -357,40 +429,6 @@ watch(() => props.modelValue, (stops) => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.position-control {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.position-control label {
-  font-size: 0.7rem;
-  color: oklch(0.50 0.02 260);
-  min-width: 3rem;
-}
-
-:global(.dark) .position-control label {
-  color: oklch(0.60 0.02 260);
-}
-
-.position-control input[type="range"] {
-  flex: 1;
-  height: 0.25rem;
-  accent-color: oklch(0.55 0.20 250);
-}
-
-.position-value {
-  font-size: 0.7rem;
-  color: oklch(0.40 0.02 260);
-  min-width: 2.5rem;
-  text-align: right;
-}
-
-:global(.dark) .position-value {
-  color: oklch(0.70 0.02 260);
 }
 
 .remove-btn {
